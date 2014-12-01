@@ -40,7 +40,7 @@ Equalities and Uninterpreted Functions (EUF).
 Usage
 =====
 
-```
+```python
 from pysmt.shortcuts import Symbol, And, Not, FALSE, Solver
 
 with Solver() as solver:
@@ -73,7 +73,7 @@ A more complex example is the following:
   Is there a value for each letter so that H+E+L+L+O = W+O+R+L+D = 36?
 
 The following is the pySMT code for solving this problem:
-```
+```python
 from pysmt.shortcuts import Symbol, LE, GE, Int, And, Equals, Plus, Solver
 from pysmt.typing import INT
 
