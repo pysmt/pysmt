@@ -1,0 +1,12 @@
+diff --git a/src/expr/expr_manager.i b/src/expr/expr_manager.i
+index fccadf4..6378f96 100644
+--- a/src/expr/expr_manager.i
++++ b/src/expr/expr_manager.i
+@@ -65,6 +65,6 @@
+ %template(mkConst) CVC4::ExprManager::mkConst<CVC4::Predicate>;
+ %template(mkConst) CVC4::ExprManager::mkConst<CVC4::String>;
+ %template(mkConst) CVC4::ExprManager::mkConst<CVC4::RegExp>;
+-%template(mkConst) CVC4::ExprManager::mkConst<bool>;
++%template(mkBoolConst) CVC4::ExprManager::mkConst<bool>;
+ 
+ %include "expr/expr_manager.h"

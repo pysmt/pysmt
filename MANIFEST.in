@@ -1,0 +1,3 @@
+include LICENSE.txt, README.txt
+recursive-include docs *.txt
+include example.py
