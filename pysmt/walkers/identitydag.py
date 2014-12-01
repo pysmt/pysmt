@@ -15,7 +15,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from pysmt.walkers.dag_walker import DagWalker
+from pysmt.walkers.dag import DagWalker
 
 class IdentityDagWalker(DagWalker):
     """This class traverses a formula and rebuilds it recursively

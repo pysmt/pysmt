@@ -15,7 +15,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from pysmt.walkers.generic_walker import Walker
+from pysmt.walkers.generic import Walker
 
 class TreeWalker(Walker):
     """TreeWalker treats the formula as a Tree and does not perform memoization.

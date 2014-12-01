@@ -15,7 +15,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from pysmt.walkers.tree_walker import Walker
+from pysmt.walkers.tree import Walker
 
 class DagWalker(Walker):
     """DagWalker treats the formula as a DAG and performs memoization of the

@@ -18,7 +18,7 @@
 from fractions import Fraction
 
 import pysmt.operators as op
-from pysmt.walkers.others import IdentityDagWalker
+from pysmt.walkers.identitydag import IdentityDagWalker
 from pysmt.typing import REAL, INT, BOOL, PySMTType
 
 class GenericNumber(object):

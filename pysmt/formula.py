@@ -35,9 +35,8 @@ import pysmt.typing as types
 import pysmt.operators as op
 
 from pysmt.fnode import FNode, FNodeContent
-from pysmt.decorators import deprecated
 from pysmt.exceptions import NonLinearError
-from pysmt.walkers.others import IdentityDagWalker
+from pysmt.walkers.identitydag import IdentityDagWalker
 
 class FormulaManager(object):
     """FormulaManager is responsible for the creation of all formulae."""
