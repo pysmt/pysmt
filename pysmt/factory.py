@@ -29,7 +29,7 @@ from functools import partial
 from pysmt.exceptions import NoSolverAvailableError, SolverRedefinitionError
 from pysmt.logics import PYSMT_LOGICS, most_generic_logic, get_closer_logic
 
-DEFAULT_SOLVER_PREFERENCE_LIST = ['msat', 'z3', 'cvc4', 'yices']
+DEFAULT_SOLVER_PREFERENCE_LIST = ['msat', 'z3', 'cvc4', 'yices', 'bdd']
 DEFAULT_QELIM_PREFERENCE_LIST = ['z3']
 
 
@@ -176,6 +176,13 @@ class Factory(object):
         try:
             from pysmt.solvers.yices import YicesSolver
             self._all_solvers['yices'] = YicesSolver
+
+        except ImportError:
+            pass
+
+        try:
+            from pysmt.solvers.bdd import BddSolver
+            self._all_solvers['bdd'] = BddSolver
 
         except ImportError:
             pass

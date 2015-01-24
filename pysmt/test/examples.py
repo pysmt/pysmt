@@ -60,21 +60,27 @@ def get_example_formulae(environment=None):
             Example(expr=Iff(x, y),
                     is_valid=False,
                     is_sat=True,
-                    logic=pysmt.logics.QF_UF
+                    logic=pysmt.logics.QF_BOOL
                 ),
 
             # (x \/ y )  /\ ! ( x \/ y )
             Example(expr=And(Or(x, y), Not(Or(x, y))),
                     is_valid=False,
                     is_sat=False,
-                    logic=pysmt.logics.QF_UF
+                    logic=pysmt.logics.QF_BOOL
                 ),
+
+            # (x /\ !y)
+            Example(expr=And(x, Not(y)),
+                    is_valid=False,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_BOOL),
 
             # False -> True
             Example(expr=Implies(FALSE(),TRUE()),
                     is_valid=True,
                     is_sat=True,
-                    logic=pysmt.logics.QF_UF
+                    logic=pysmt.logics.QF_BOOL
                 ),
 
             #

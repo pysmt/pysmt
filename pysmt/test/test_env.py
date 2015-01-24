@@ -91,7 +91,7 @@ class TestEnvironment(TestCase):
         self.assertEquals(factory.solver_preference_list,
                           pysmt.factory.DEFAULT_SOLVER_PREFERENCE_LIST)
 
-        for solver_name in factory.all_solvers():
+        for solver_name in factory.all_solvers(logic=QF_UFLIRA):
             factory.set_solver_preference_list([solver_name])
             self.assertEquals(factory.solver_preference_list, [solver_name])
             solver = factory.get_solver(logic=QF_UFLIRA)
