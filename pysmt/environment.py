@@ -48,7 +48,7 @@ class Environment(object):
         self._factory = None
         # Configurations
         self.enable_infix_notation = False
-
+        self.dwf = {} # {nodetype, {walker: function}}
 
     @property
     def formula_manager(self):
@@ -75,6 +75,22 @@ class Environment(object):
     def qfo(self):
         """ Get the Quantifier Oracle """
         return self._qfo
+
+    def add_dynamic_walker_function(self, nodetype, walker, function):
+        """Dynamically bind the given function to the walker for the nodetype.
+
+        This function enables the extension of walkers for new
+        nodetypes. When introducing a new nodetype, we link a new
+        function to a given walker, so that the walker will be able to
+        handle the new nodetype.
+
+        See Walker.walk_error for more information.
+        """
+        if nodetype not in self.dwf:
+            self.dwf[nodetype] = {}
+
+        assert walker not in self.dwf[nodetype], "Redefinition"
+        self.dwf[nodetype][walker] = function
 
 
     @pysmt.decorators.deprecated("Environment.factory")
