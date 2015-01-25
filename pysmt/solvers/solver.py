@@ -248,7 +248,7 @@ class Model(object):
         """
         res = self.get_value(formula)
         assert res.is_constant()
-        return res.value
+        return res.constant_value()
 
 
     def get_py_values(self, formulae):
