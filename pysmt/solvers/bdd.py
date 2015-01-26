@@ -58,8 +58,12 @@ class BddSolver(Solver):
         self.converter = BddConverter(environment=self.environment,
                                       ddmanager=self.ddmanager)
 
+        # This stack keeps a pair (Expr, Bdd), with the semantics that
+        # the bdd at the i-th element of the list contains the bdd of
+        # the conjunction of all previous expressions.
+        # The construction of the Bdd is done during solve()
         self.assertions_stack = None
-        self.reset_assertions()
+        self.reset_assertions() # Initialize the stack
 
         self.backtrack = []
         self.latest_model = None
@@ -67,9 +71,8 @@ class BddSolver(Solver):
     @clear_pending_pop
     def reset_assertions(self):
         true_formula = self.mgr.Bool(True)
-        self.assertions_stack = [(
-            true_formula,
-            self.converter.convert(true_formula))]
+        self.assertions_stack = [(true_formula,
+                                  self.converter.convert(true_formula))]
 
     @clear_pending_pop
     def declare_variable(self, var):
@@ -78,10 +81,7 @@ class BddSolver(Solver):
     @clear_pending_pop
     def add_assertion(self, formula, named=None):
         assert_ddmanager(self.ddmanager)
-        bdd_expr = self.converter.convert(formula)
-        _, last_state = self.assertions_stack[-1]
-        new_state = last_state.And(bdd_expr)
-        self.assertions_stack.append((formula, new_state))
+        self.assertions_stack.append((formula, None))
 
     @clear_pending_pop
     def solve(self, assumptions=None):
@@ -91,6 +91,13 @@ class BddSolver(Solver):
             self.pending_pop = True
 
         assert_ddmanager(self.ddmanager)
+        for (i, (expr, bdd)) in enumerate(self.assertions_stack):
+            if bdd is None:
+                bdd_expr = self.converter.convert(expr)
+                _, previous_bdd = self.assertions_stack[i-1]
+                new_bdd = previous_bdd.And(bdd_expr)
+                self.assertions_stack[i] = (expr, new_bdd)
+
         _, current_state = self.assertions_stack[-1]
         res = (current_state != self.ddmanager.Zero())
         # Invalidate cached model
@@ -110,9 +117,10 @@ class BddSolver(Solver):
         # operations on the model (e.g., enumeration) in a simple way.
         if self.latest_model is None:
             assert_ddmanager(self.ddmanager)
+            _, current_state = self.assertions_stack[-1]
+            assert current_state is not None, "solve() should be called before get_model()"
             # Build ddArray of variables
             var_array = self.converter.get_all_vars_array()
-            _, current_state = self.assertions_stack[-1]
             minterm_set = current_state.PickOneMinterm(var_array, len(var_array))
             minterm = next(iter(minterm_set))
             assignment = {}

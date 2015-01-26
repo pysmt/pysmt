@@ -86,7 +86,7 @@ class TestBdd(TestCase):
         f = And(self.x, Not(self.y))
 
         solver.add_assertion(f)
-        self.assertTrue(solver.solve)
+        self.assertTrue(solver.solve())
         model = solver.get_model()
         self.assertEquals(model[self.x], Bool(True))
         self.assertEquals(model[self.y], Bool(False))
