@@ -192,10 +192,6 @@ class BddConverter(DagWalker):
         cube = self.ddmanager.IndicesToCube(indices, len(var_list))
         return cube
 
-    @deprecated("convert")
-    def expr_to_bdd(self, formula):
-        return self.walk(formula)
-
     def declare_variable(self, var):
         if not var.is_symbol(type_=types.BOOL): raise TypeError
         assert_ddmanager(self.ddmanager)
