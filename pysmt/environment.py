@@ -76,11 +76,6 @@ class Environment(object):
         """ Get the Quantifier Oracle """
         return self._qfo
 
-
-    @pysmt.decorators.deprecated("Environment.factory")
-    def get_factory(self):
-        return self.factory
-
     @property
     def factory(self):
         if self._factory is None:
