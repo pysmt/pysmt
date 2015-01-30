@@ -23,7 +23,7 @@ class EagerModel(Model):
     """A model that does not require the existence of a solver instance.
 
     This is useful when we want to change the state of the solver but
-    maintain a version of the previously fund model.  An EagerModel
+    maintain a version of the previously found model. An EagerModel
     can also be constructed manually, and provides a simple way to
     define a model.
     """

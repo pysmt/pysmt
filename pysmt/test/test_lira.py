@@ -18,7 +18,7 @@
 from pysmt.shortcuts import *
 from pysmt.typing import INT, REAL, FunctionType
 from pysmt.test import TestCase
-
+from pysmt.logics import QF_UFLIRA, UFLIRA
 
 class TestLIRA(TestCase):
 
@@ -27,7 +27,7 @@ class TestLIRA(TestCase):
         b = Symbol("b", INT)
 
         check = And(Equals(a, Real(3)), Equals(a, ToReal(b)))
-        for sname in get_env().factory.all_solvers():
+        for sname in get_env().factory.all_solvers(logic=QF_UFLIRA):
             with Solver(name=sname) as s:
                 s.add_assertion(check)
                 c = s.solve()
@@ -57,7 +57,7 @@ class TestLIRA(TestCase):
                             GE(Function(h, (ToReal(b), b)), Real(3))),
                         GE(Function(h, (a, b)), Real(0)))
 
-        for sname in get_env().factory.all_solvers():
+        for sname in get_env().factory.all_solvers(logic=UFLIRA):
             self.assertTrue(is_valid(check, solver_name=sname))
 
 

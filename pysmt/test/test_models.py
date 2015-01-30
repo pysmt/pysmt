@@ -19,6 +19,8 @@ from pysmt.shortcuts import Solver, Symbol, And, Real, GT, LT, Implies, FALSE
 from pysmt.shortcuts import get_env
 from pysmt.typing import BOOL, REAL
 from pysmt.test import TestCase, skipIfNoSolverAvailable
+from pysmt.logics import QF_UFLIRA
+
 
 class TestModels(TestCase):
 
@@ -32,7 +34,7 @@ class TestModels(TestCase):
         f1 = Implies(varA, And(GT(varB, zero), LT(varB, zero)))
 
         model = None
-        for solver_name in get_env().factory.all_solvers():
+        for solver_name in get_env().factory.all_solvers(logic=QF_UFLIRA):
             with Solver(name=solver_name) as s:
                 s.add_assertion(f1)
                 check = s.solve()

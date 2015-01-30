@@ -198,7 +198,7 @@ class TestBasic(TestCase):
 
         xor = Or(And(v1, Not(v2)), And(Not(v1), v2))
 
-        for name in get_env().factory.all_solvers():
+        for name in get_env().factory.all_solvers(logic=QF_UFLIRA):
             with Solver(name=name) as solver:
                 solver.add_assertion(xor)
                 res1 = solver.solve(assumptions=[v1, Not(v2)])
@@ -224,7 +224,7 @@ class TestBasic(TestCase):
 
         xor = Or(And(v1, Not(v2)), And(Not(v1), v2))
 
-        for name in get_env().factory.all_solvers():
+        for name in get_env().factory.all_solvers(logic=QF_UFLIRA):
             with Solver(name=name) as solver:
                 solver.add_assertion(xor)
                 res1 = solver.solve(assumptions=[v1, Not(v2)])
@@ -248,7 +248,7 @@ class TestBasic(TestCase):
         f1 = Plus(r, r)
         f2 = GT(r, r)
 
-        for sname in get_env().factory.all_solvers():
+        for sname in get_env().factory.all_solvers(logic=QF_UFLIRA):
             with Solver(name=sname) as solver:
                 with self.assertRaises(TypeError):
                     solver.add_assertion(f1)
@@ -261,7 +261,7 @@ class TestBasic(TestCase):
 
         h_0_0 = Function(h, (Real(0), Real(1)))
         f = GT(h_0_0, Real(0))
-        for sname in get_env().factory.all_solvers():
+        for sname in get_env().factory.all_solvers(logic=QF_UFLIRA):
             with Solver(name=sname) as solver:
                 solver.add_assertion(f)
                 res = solver.solve()

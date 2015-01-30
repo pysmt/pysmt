@@ -22,6 +22,7 @@ from pysmt.shortcuts import (Real, Plus, Symbol, Equals, And, Bool, Or,
 from pysmt.shortcuts import Solver, is_valid, get_env, is_sat
 from pysmt.typing import REAL, BOOL, INT, FunctionType
 from pysmt.test import TestCase, skipIfSolverNotAvailable, skipIfNoSolverAvailable
+from pysmt.logics import QF_UFLIRA, QF_BOOL
 
 
 class TestRegressions(TestCase):
@@ -100,13 +101,14 @@ class TestRegressions(TestCase):
         f_plus_many = LT(Plus(r,r,r,r,r,r,r,r,r,r,r), Real(0))
 
 
-        for name in get_env().factory.all_solvers(): # ['cvc4', 'z3', 'msat']:
+        for name in get_env().factory.all_solvers(logic=QF_BOOL):
             self.assertTrue(is_sat(f_and_one, solver_name=name))
             self.assertTrue(is_sat(f_or_one, solver_name=name))
-            self.assertTrue(is_sat(f_plus_one, solver_name=name))
-
             self.assertTrue(is_sat(f_and_many, solver_name=name))
             self.assertTrue(is_sat(f_or_many, solver_name=name))
+
+        for name in get_env().factory.all_solvers(logic=QF_UFLIRA):
+            self.assertTrue(is_sat(f_plus_one, solver_name=name))
             self.assertTrue(is_sat(f_plus_many, solver_name=name))
 
     def test_dependencies_not_includes_toreal(self):

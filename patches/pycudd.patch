@@ -1,0 +1,494 @@
+diff --git a/cudd-2.4.2/Makefile_64bit b/cudd-2.4.2/Makefile_64bit
+new file mode 100644
+index 0000000..ae063be
+--- /dev/null
++++ b/cudd-2.4.2/Makefile_64bit
+@@ -0,0 +1,331 @@
++# $Id$
++#
++# Makefile for the CUDD distribution kit
++#---------------------------------------------------------------------------
++
++# Beginning of the configuration section. These symbol definitions can
++# be overridden from the command line.
++
++# C++ compiler
++CPP	= g++
++#CPP	= icpc
++#CPP	= ecpc
++#CPP	= CC
++#CPP	= /usr/local/opt/SUNWspro/bin/CC
++#CPP	= cxx
++
++# Specific options for compilation of C++ files.
++CPPFLAGS =
++# Stricter standard conformance for g++.
++#CPPFLAGS = -std=c++98
++# For Sun CC version 5, this invokes compatibility mode.
++#CPPFLAGS = -compat
++# On some versions of UP-UX, it is necessary to pass the option +a1
++# to CC for the C++ test program to compile successfully.
++#CPPFLAGS = +a1
++
++# C compiler used for all targets except optimize_dec, which always uses cc.
++#CC	= cc
++#CC	= /usr/local/opt/SUNWspro/bin/cc
++CC	= gcc
++#CC	= icc
++#CC	= ecc
++#CC	= /usr/ucb/cc
++#CC	= c89
++#CC	= $(CPP)
++
++# On some machines ranlib is either non-existent or redundant.
++# Use the following definition if your machine has ranlib and you think
++# it is needed.
++RANLIB	= ranlib
++# Use the following definition if your machine either does not have
++# ranlib (e.g., SUN running solaris) or can do without it (e.g., DEC Alpha).
++#RANLIB	= :
++
++# Use ICFLAGS to specify machine-independent compilation flags.
++# These three are typical settings for cc.
++#ICFLAGS	= -g
++#ICFLAGS	= -O
++#ICFLAGS	=
++# These four are typical settings for optimized code with gcc.  The
++# last two also work with icc/ecc.
++#ICFLAGS	= -g -O6 -Wall
++ICFLAGS	= -g -O6
++#ICFLAGS	= -g -O3 -Wall
++#ICFLAGS	= -g -O3
++
++# Use XCFLAGS to specify machine-dependent compilation flags.
++# For some platforms no special flags are needed.
++#XCFLAGS	= -DHAVE_IEEE_754 -DBSD
++#
++#==========================
++#  Linux
++#
++# Gcc 3.2.2 or higher on i686.
++#XCFLAGS	= -mtune=pentium4 -malign-double -DHAVE_IEEE_754 -DBSD
++# Gcc 2.8.1 on i686.
++#XCFLAGS	= -mcpu=pentiumpro -malign-double -DHAVE_IEEE_754 -DBSD
++# Gcc 4.2.4 or higher on x86 (32-bit)
++#XCFLAGS	= -m32 -DHAVE_IEEE_754 -DBSD -DSIZEOF_VOID_P=4 -DSIZEOF_LONG=8 -fPIC
++# Gcc 4.2.4 or higher on x86_64 (64-bit compilation)
++XCFLAGS	= -mtune=native -DHAVE_IEEE_754 -DBSD -DSIZEOF_VOID_P=8 -DSIZEOF_LONG=8 -fPIC
++# Gcc 4.2.4 or higher on x86_64 (32-bit compilation)
++#XCFLAGS	= -m32 -mtune=native -malign-double -DHAVE_IEEE_754 -DBSD
++# Icc on i686 (older versions may not support -xHost).
++#XCFLAGS	= -ansi -xHost -align -ip -DHAVE_IEEE_754 -DBSD
++# Icc on x86_64 (64-bit compilation).
++#XCFLAGS	= -ansi -xHost -align -ip -DHAVE_IEEE_754 -DBSD -DSIZEOF_VOID_P=8 -DSIZEOF_LONG=8
++# Gcc on ia64.
++#XCFLAGS	= -DHAVE_IEEE_754 -DBSD -DSIZEOF_VOID_P=8 -DSIZEOF_LONG=8
++# Icc/ecc on ia64.
++#XCFLAGS = -ansi -DBSD -DHAVE_IEEE_754 -DSIZEOF_VOID_P=8 -DSIZEOF_LONG=8
++#
++#==========================
++#  Solaris
++#
++# For Solaris, BSD should not be replaced by UNIX100.
++#XCFLAGS	= -DHAVE_IEEE_754 -DUNIX100 -DEPD_BIG_ENDIAN
++# Gcc 2.8.1 or higher on Ultrasparc.
++#XCFLAGS	= -mcpu=ultrasparc -DHAVE_IEEE_754 -DUNIX100 -DEPD_BIG_ENDIAN
++# For Solaris 2.5 and higher, optimized code with /usr/bin/cc or CC.
++#XCFLAGS	= -DHAVE_IEEE_754 -DUNIX100 -xO5 -native -dalign -DEPD_BIG_ENDIAN
++# On IA platforms, -dalign is not supported and causes warnings.
++#XCFLAGS	= -DHAVE_IEEE_754 -DUNIX100 -xO5 -native
++# Recent Sun compilers won't let you use -native on old Ultras.
++#XCFLAGS	= -DHAVE_IEEE_754 -DUNIX100 -xO5 -dalign -xlibmil -DEPD_BIG_ENDIAN
++# For Solaris 2.4, optimized code with /usr/bin/cc.
++#XCFLAGS	= -DHAVE_IEEE_754 -DUNIX100 -xO4 -dalign -DEPD_BIG_ENDIAN
++# For Solaris 2.5 and higher, optimized code with /usr/ucb/cc.
++#XCFLAGS	= -DHAVE_IEEE_754 -DBSD -xO5 -native -dalign -DEPD_BIG_ENDIAN
++#XCFLAGS	= -DHAVE_IEEE_754 -DBSD -xO5 -dalign -xlibmil -DEPD_BIG_ENDIAN
++# For Solaris 2.4, optimized code with /usr/ucb/cc.
++#XCFLAGS	= -DHAVE_IEEE_754 -DBSD -xO4 -dalign -DEPD_BIG_ENDIAN
++#
++#==========================
++#  DEC Alphas running Digital Unix
++#
++# For DEC Alphas either -ieee_with_inexact or -ieee_with_no_inexact is
++# needed. If you use only BDDs, -ieee_with_no_inexact is enough.
++# In the following, we consider three different compilers:
++# - the old native compiler (the one of MIPS ancestry that produces u-code);
++# - the new native compiler;
++# - gcc
++# On the Alphas, gcc (as of release 2.7.2) does not support 32-bit pointers
++# and IEEE 754 floating point arithmetic. Therefore, for this architecture
++# only, the native compilers provide a substatial advantage.
++# With the native compilers, specify -xtaso for 32-bit pointers.
++# Do not use -xtaso_short because explicit reference to stdout and stderr
++# does not work with this option. (Among other things.)
++# Notice that -taso must be included in LDFLAGS for -xtaso to work.
++# Given the number of possible choices, only some typical configurations
++# are proposed here.
++#
++# Old native compiler for the Alphas; 64-bit pointers.
++#XCFLAGS	= -DBSD -DHAVE_IEEE_754 -ieee_with_no_inexact -tune host -DSIZEOF_VOID_P=8 -DSIZEOF_LONG=8
++# Old native compiler for the Alphas; 32-bit pointers.
++#XCFLAGS	= -DBSD -DHAVE_IEEE_754 -ieee_with_no_inexact -tune host -xtaso -DSIZEOF_LONG=8
++# New native compiler for the Alphas; 64-bit pointers.
++#XCFLAGS	= -g3 -O4 -std -DBSD -DHAVE_IEEE_754 -ieee_with_no_inexact -tune host -DSIZEOF_VOID_P=8 -DSIZEOF_LONG=8
++# New native compiler for the Alphas; 32-bit pointers.
++#XCFLAGS	= -g3 -O4 -std -DBSD -DHAVE_IEEE_754 -ieee_with_no_inexact -tune host -xtaso -DSIZEOF_LONG=8
++# gcc for the Alphas: compile without HAVE_IEEE_754.
++#XCFLAGS	= -DBSD -DSIZEOF_VOID_P=8 -DSIZEOF_LONG=8
++#
++#==========================
++#
++#  IBM RS6000
++#
++# For the IBM RS6000 -qstrict is necessary when specifying -O3 with cc.
++#XCFLAGS	= -DBSD -DHAVE_IEEE_754 -DEPD_BIG_ENDIAN -O3 -qstrict
++#
++#==========================
++#
++#  HP-UX
++#
++# I haven't figured out how to enable IEEE 754 on the HPs I've tried...
++# For HP-UX using gcc.
++#XCFLAGS	= -DUNIX100 -DEPD_BIG_ENDIAN
++# For HP-UX using c89.
++#XCFLAGS	= +O3 -DUNIX100 -DEPD_BIG_ENDIAN
++#
++#==========================
++#
++#  Windows 95/98/NT/XP/Vista with Cygwin tools
++#
++# The value of RLIMIT_DATA_DEFAULT should reflect the amount of
++# available memory (expressed in bytes).
++# Recent versions of cygwin have getrlimit, but the datasize limit
++# cannot be set.
++#XCFLAGS	= -mtune=pentium4 -malign-double -DHAVE_IEEE_754 -DHAVE_GETRLIMIT=0 -DRLIMIT_DATA_DEFAULT=268435456
++
++
++# Define the level of self-checking and verbosity of the CUDD package.
++#DDDEBUG = -DDD_DEBUG -DDD_VERBOSE -DDD_STATS -DDD_CACHE_PROFILE -DDD_UNIQUE_PROFILE -DDD_COUNT
++DDDEBUG	=
++
++# Define the level of self-checking and verbosity of the MTR package.
++#MTRDEBUG = -DMTR_DEBUG
++MTRDEBUG =
++
++# Loader options.
++LDFLAGS	=
++# This may produce faster code on the DECstations.
++#LDFLAGS	= -jmpopt -Olimit 1000
++# This may be necessary under some old versions of Linux.
++#LDFLAGS	= -static
++# This normally makes the program faster on the DEC Alphas.
++#LDFLAGS	= -non_shared -om
++# This is for 32-bit pointers on the DEC Alphas.
++#LDFLAGS	= -non_shared -om -taso
++#LDFLAGS	= -non_shared -taso
++
++# Define PURE as purify to link with purify.
++# Define PURE as quantify to link with quantify.
++# Remember to compile with -g if you want line-by-line info with quantify.
++PURE =
++#PURE	= purify
++#PURE	= quantify
++
++# Define EXE as .exe for MS-DOS and derivatives.  Not required by recent
++# versions of cygwin.
++EXE	=
++#EXE	= .exe
++
++# End of the configuration section.
++#---------------------------------------------------------------------------
++
++MFLAG   = -DMNEMOSYNE
++MNEMLIB	= ../mnemosyne/libmnem.a
++
++DDWDIR	= .
++IDIR	= $(DDWDIR)/include
++INCLUDE = -I$(IDIR)
++
++BDIRS	= cudd dddmp mtr st util epd
++DIRS	= $(BDIRS) nanotrav
++
++#------------------------------------------------------------------------
++
++.PHONY : build
++.PHONY : nanotrav
++.PHONY : check_leaks
++.PHONY : optimize_dec
++.PHONY : testcudd
++.PHONY : libobj
++.PHONY : testobj
++.PHONY : testdddmp
++.PHONY : testmtr
++.PHONY : lint
++.PHONY : all
++.PHONY : clean
++.PHONY : distclean
++
++
++build:
++	sh ./setup.sh
++	@for dir in $(DIRS); do \
++		(cd $$dir; \
++		echo Making $$dir ...; \
++		make CC=$(CC) RANLIB=$(RANLIB) MFLAG= MNEMLIB= ICFLAGS="$(ICFLAGS)" XCFLAGS="$(XCFLAGS)" DDDEBUG="$(DDDEBUG)" MTRDEBUG="$(MTRDEBUG)" LDFLAGS="$(LDFLAGS)" PURE="$(PURE)" EXE="$(EXE)" )\
++	done
++
++libso:
++	@for dir in $(DIRS); do\
++		(cd $$dir;\
++		echo Making $$ dir;\
++		make libso CC=$(CC) RANLIB=$(RANLIB) MFLAG= MNEMLIB= ICFLAGS="$(ICFLAGS)" XCFLAGS="$(XCFLAGS)" DDDEBUG="$(DDDEBUG)" MTRDEBUG="$(MTRDEBUG)" LDFLAGS="$(LDFLAGS)" PURE="$(PURE)" EXE="$(EXE)" )\
++	done
++
++nanotrav: build
++
++check_leaks:
++	sh ./setup.sh
++	@for dir in mnemosyne $(DIRS); do \
++		(cd $$dir; \
++		echo Making $$dir ...; \
++		make CC=$(CC) RANLIB=$(RANLIB) MFLAG=$(MFLAG) MNEMLIB=$(MNEMLIB) ICFLAGS="$(ICFLAGS)" XCFLAGS="$(XCFLAGS)" DDDEBUG="$(DDDEBUG)" MTRDEBUG="$(MTRDEBUG)" LDFLAGS="$(LDFLAGS)" EXE="$(EXE)" )\
++	done
++
++optimize_dec:
++	sh ./setup.sh
++	@for dir in $(DIRS); do \
++		(cd $$dir; \
++		echo Making $$dir ...; \
++		make CC=$(CC) RANLIB=$(RANLIB) XCFLAGS="$(XCFLAGS)" LDFLAGS="$(LDFLAGS)" optimize_dec )\
++	done
++
++lint:
++	sh ./setup.sh
++	@for dir in $(DIRS) obj; do \
++		(cd $$dir; \
++		echo Making lint in $$dir ...; \
++		make CC=$(CC) lint )\
++	done
++
++tags:
++	sh ./setup.sh
++	@for dir in $(DIRS) obj; do \
++		(cd $$dir; \
++		echo Making tags in $$dir ...; \
++		make CC=$(CC) tags )\
++	done
++
++all:
++	sh ./setup.sh
++	@for dir in $(DIRS); do \
++		(cd $$dir; \
++		echo Making all in $$dir ...; \
++		make CC=$(CC) RANLIB=$(RANLIB) MFLAG= MNEMLIB= ICFLAGS="$(ICFLAGS)" XCFLAGS="$(XCFLAGS)" DDDEBUG="$(DDDEBUG)" MTRDEBUG="$(MTRDEBUG)" LDFLAGS="$(LDFLAGS)" PURE="$(PURE)" EXE="$(EXE)" all )\
++	done
++
++testcudd:
++	sh ./setup.sh
++	@for dir in util st mtr epd; do \
++		(cd $$dir; \
++		echo Making $$dir ...; \
++		make CC=$(CC) RANLIB=$(RANLIB) MFLAG= MNEMLIB= ICFLAGS="$(ICFLAGS)" XCFLAGS="$(XCFLAGS)" DDDEBUG="$(DDDEBUG)" MTRDEBUG="$(MTRDEBUG)" LDFLAGS="$(LDFLAGS)" PURE="$(PURE)" EXE="$(EXE)" )\
++	done
++	@(cd cudd; \
++	echo Making testcudd ...; \
++	make CC=$(CC) RANLIB=$(RANLIB) MFLAG= MNEMLIB= ICFLAGS="$(ICFLAGS)" XCFLAGS="$(XCFLAGS)" DDDEBUG="$(DDDEBUG)" MTRDEBUG="$(MTRDEBUG)" LDFLAGS="$(LDFLAGS)" PURE="$(PURE)" EXE="$(EXE)" testcudd$(EXE) )
++
++objlib:
++	sh ./setup.sh
++	@for dir in $(BDIRS); do \
++		(cd $$dir; \
++		echo Making $$dir ...; \
++		make CC=$(CC) RANLIB=$(RANLIB) MFLAG= MNEMLIB= ICFLAGS="$(ICFLAGS)" XCFLAGS="$(XCFLAGS)" DDDEBUG="$(DDDEBUG)" MTRDEBUG="$(MTRDEBUG)" LDFLAGS="$(LDFLAGS)" PURE="$(PURE)" EXE="$(EXE)" )\
++	done
++	@(cd obj; \
++	echo Making obj ...; \
++	make CPP=$(CPP) CPPFLAGS=$(CPPFLAGS) RANLIB=$(RANLIB) MFLAG= MNEMLIB= ICFLAGS="$(ICFLAGS)" XCFLAGS="$(XCFLAGS)" DDDEBUG="$(DDDEBUG)" MTRDEBUG="$(MTRDEBUG)" LDFLAGS="$(LDFLAGS)" PURE="$(PURE)" EXE="$(EXE)" )
++
++testobj: objlib
++	@(cd obj; \
++	echo Making testobj ...; \
++	make CPP=$(CPP) CPPFLAGS=$(CPPFLAGS) RANLIB=$(RANLIB) MFLAG= MNEMLIB= ICFLAGS="$(ICFLAGS)" XCFLAGS="$(XCFLAGS)" DDDEBUG="$(DDDEBUG)" MTRDEBUG="$(MTRDEBUG)" LDFLAGS="$(LDFLAGS)" PURE="$(PURE)" EXE="$(EXE)" testobj$(EXE) )
++
++testdddmp: build
++	@(cd dddmp; \
++	echo Making testdddmp ...; \
++	make CC=$(CC) RANLIB=$(RANLIB) MFLAG= MNEMLIB= ICFLAGS="$(ICFLAGS)" XCFLAGS="$(XCFLAGS)" DDDEBUG="$(DDDEBUG)" MTRDEBUG="$(MTRDEBUG)" LDFLAGS="$(LDFLAGS)" PURE="$(PURE)" EXE="$(EXE)" testdddmp$(EXE) )
++
++testmtr: build
++	@(cd mtr; \
++	echo Making testmtr ...; \
++	make CC=$(CC) RANLIB=$(RANLIB) MFLAG= MNEMLIB= ICFLAGS="$(ICFLAGS)" XCFLAGS="$(XCFLAGS)" DDDEBUG="$(DDDEBUG)" MTRDEBUG="$(MTRDEBUG)" LDFLAGS="$(LDFLAGS)" PURE="$(PURE)" EXE="$(EXE)" testmtr$(EXE) )
++
++clean:
++	@for dir in mnemosyne $(DIRS) obj; do	\
++	    (cd $$dir;	\
++	     echo Cleaning $$dir ...; \
++	     make -s clean	) \
++	done
++
++distclean:
++	@for dir in mnemosyne $(DIRS) obj; do	\
++	    (cd $$dir;	\
++	     echo Cleaning $$dir ...; \
++	     make -s EXE="$(EXE)" distclean	) \
++	done
++	sh ./shutdown.sh
+diff --git a/cudd-2.4.2/cudd/libcudd.a b/cudd-2.4.2/cudd/libcudd.a
+index f041391..c093791 100644
+Binary files a/cudd-2.4.2/cudd/libcudd.a and b/cudd-2.4.2/cudd/libcudd.a differ
+diff --git a/cudd-2.4.2/dddmp/libdddmp.a b/cudd-2.4.2/dddmp/libdddmp.a
+index 2c6eca4..bc59509 100644
+Binary files a/cudd-2.4.2/dddmp/libdddmp.a and b/cudd-2.4.2/dddmp/libdddmp.a differ
+diff --git a/cudd-2.4.2/epd/libepd.a b/cudd-2.4.2/epd/libepd.a
+index 5f90c37..86e7e71 100644
+Binary files a/cudd-2.4.2/epd/libepd.a and b/cudd-2.4.2/epd/libepd.a differ
+diff --git a/cudd-2.4.2/mtr/libmtr.a b/cudd-2.4.2/mtr/libmtr.a
+index 7888ae1..a166e44 100644
+Binary files a/cudd-2.4.2/mtr/libmtr.a and b/cudd-2.4.2/mtr/libmtr.a differ
+diff --git a/cudd-2.4.2/nanotrav/nanotrav b/cudd-2.4.2/nanotrav/nanotrav
+index ceebad2..9aaeceb 100755
+Binary files a/cudd-2.4.2/nanotrav/nanotrav and b/cudd-2.4.2/nanotrav/nanotrav differ
+diff --git a/cudd-2.4.2/st/libst.a b/cudd-2.4.2/st/libst.a
+index 93c0b29..35709ac 100644
+Binary files a/cudd-2.4.2/st/libst.a and b/cudd-2.4.2/st/libst.a differ
+diff --git a/cudd-2.4.2/util/libutil.a b/cudd-2.4.2/util/libutil.a
+index adb5749..f7ee67a 100644
+Binary files a/cudd-2.4.2/util/libutil.a and b/cudd-2.4.2/util/libutil.a differ
+diff --git a/pycudd/Makefile b/pycudd/Makefile
+index 76e0976..c51c631 100644
+--- a/pycudd/Makefile
++++ b/pycudd/Makefile
+@@ -17,7 +17,8 @@ MOD = pycudd
+ ## Change these to reflect local settings
+ ##
+ #######
+-CUDD        := ../cudd-2.4.2/
++TOP         := $(shell pwd)
++CUDD        := $(TOP)/../cudd-2.4.2/
+ CUDDVER     = 0x020400
+ PYTHON_LOC  := /usr
+ # Change the following to lib64 for 64-bit architectures
+@@ -39,7 +40,7 @@ PYCUDD_DEBUG =
+ 
+ ##
+ ## For internal use only
+-TESTING = 
++TESTING =
+ 
+ #######
+ ##
+@@ -64,16 +65,16 @@ SWIG_FLAGS  := -c++ -python -o $(MOD)_wrap.cpp -DCUDDVER=$(CUDDVER)
+ #FLAGS       := -malign-double -DCUDDVER=$(CUDDVER)
+ #
+ # For AMD64:
+-# -malign-double is meaningless. 
++# -malign-double is meaningless.
+ FLAGS       := -DCUDDVER=$(CUDDVER) -fPIC
+ #
+ ifdef PYCUDD_DEBUG
+ FLAGS       := $(FLAGS) -g -DPYCUDD_DEBUG
+ SWIG_FLAGS  := $(SWIG_FLAGS) -DPYCUDD_DEBUG -v -Wall
+ else
+-FLAGS       := $(FLAGS) -O2 
++FLAGS       := $(FLAGS) -O2
+ endif
+-LFLAGS      := -Xlinker -rpath $(CUDD)/lib 
++LFLAGS      := -Xlinker -rpath $(CUDD)/lib
+ 
+ #######
+ ##
+@@ -86,7 +87,7 @@ BREL_INCL   := -I$(BREL_LOC) -I$(BREL_LOC)/list
+ INCLUDES    := $(INCLUDES) $(BREL_INCL)
+ DEP_INCL    := $(DEP_INCL) $(BREL_INCL)
+ LDFLAGS     := $(LDFLAGS) -L$(BREL_LOC) -lbrel
+-FLAGS       := $(FLAGS) -DBREL_R_THERE 
++FLAGS       := $(FLAGS) -DBREL_R_THERE
+ LFLAGS      := $(LFLAGS) -Xlinker -rpath $(BREL_LOC)
+ SWIG_FLAGS  := $(SWIG_FLAGS) -DBREL_R_THERE
+ endif
+@@ -128,11 +129,11 @@ $(MOD)_wrap.cpp:$(SWG)
+ clean:
+ 	rm -f *.o *_wrap* *.pyc *.pyo _$(MOD).so $(MOD).py $(MOD)tmp.py docstring.h;
+ 
+-depend: 
++depend:
+ 	@sed "/^# DO NOT CHANGE THIS OR ANY SUCCEEDING LINE -- AUTOGENERATED DEPS/, $$ d" Makefile > mktemp
+ 	@echo "# DO NOT CHANGE THIS OR ANY SUCCEEDING LINE -- AUTOGENERATED DEPS" >> mktemp
+ 	@$(CCPLUS) $(FLAGS) $(DEP_INCL) -E -MM $(MOD).cpp >> mktemp
+-# The next line tries to get the C++ dependencies for the SWIG interface files 
++# The next line tries to get the C++ dependencies for the SWIG interface files
+ # First sed prints out the raw C++ code between %{...%}. Second sed removes those markers and any #error directives. Finally, generate a rule for our wrapper cpp file
+ 	@sed -n "/^%{/,/%}/ p" $(SWG) | sed -e "s/^%[{}].*\|#error.*//" | $(CCPLUS) -x c++ $(FLAGS) $(DEP_INCL) -E -MM -MQ "$(MOD)_wrap.cpp" - >> mktemp
+ 	@mv -f mktemp Makefile
+diff --git a/pycudd/ddmanager.i b/pycudd/ddmanager.i
+index e62abb9..f8f2cb5 100644
+--- a/pycudd/ddmanager.i
++++ b/pycudd/ddmanager.i
+@@ -157,7 +157,9 @@ struct DdManager { };
+ #endif
+     int retval = Cudd_CheckZeroRef(self);
+     if (!retval) {
++#ifdef PYCUDD_DEBUG
+       cerr << "Quitting manager" << endl;
++#endif
+     } else {
+ #ifdef PYCUDD_DEBUG
+       cerr << retval << " unexpected non-zero reference counts" << endl;
+@@ -170,12 +172,21 @@ struct DdManager { };
+     mgr = NULL;
+   }
+ 
++  bool __eq__(DdManager* other) {
++    return self == other ? TRUE : FALSE;
++  }
++
++  bool __neq__(DdManager* other) {
++    return self != other ? TRUE : FALSE;
++  }
++
++
+   // This takes a long int representing the address of a DdNode and 
+   // derefs it. Use with caution!!
+   void KillNode(long int num) {
+ #ifdef PYCUDD_DEBUG
+     cerr << "Derefing " << hex << num << endl;
+-#endif PYCUDD_DEBUG
++#endif /* PYCUDD_DEBUG */
+     Cudd_RecursiveDeref(self, (DdNode *) num);
+   }
+ 
+@@ -492,4 +503,5 @@ struct DdManager { };
+   void SetDefault() {
+     mgr = self;
+   }
++
+ };
+diff --git a/pycudd/pycudd.cpp b/pycudd/pycudd.cpp
+index e9702a9..4782cd5 100644
+--- a/pycudd/pycudd.cpp
++++ b/pycudd/pycudd.cpp
+@@ -597,3 +597,9 @@ DdArray::ArrayStore( char *ddname, StringArray *rootnames, StringArray *varnames
+ 				  (Dddmp_VarInfoType) varinfo, filename, fp); 
+   return roots;
+ }
++
++DdManager* GetDefaultDdManager()
++{
++  if (mgr) return mgr;
++  else return NULL;
++}
+diff --git a/pycudd/pycudd.h b/pycudd/pycudd.h
+index eda593c..b77ba42 100644
+--- a/pycudd/pycudd.h
++++ b/pycudd/pycudd.h
+@@ -11,6 +11,8 @@ extern DdManager* mgr;
+ %feature("autodoc","1");
+ #endif
+ 
++DdManager* GetDefaultDdManager();
++
+ // Exception class
+ class RangeError {};
+ 
