@@ -16,7 +16,7 @@
 #   limitations under the License.
 #
 from pysmt.test import TestCase
-from pysmt.operators import ALL_TYPES
+from pysmt.operators import ALL_TYPES, CUSTOM_NODE_TYPES, new_node_type
 from pysmt.type_checker import SimpleTypeChecker
 from pysmt.printers import HRPrinter
 from pysmt.shortcuts import get_env, Symbol
@@ -55,3 +55,14 @@ class TestDwf(TestCase):
         # We did not define an implementation for the Simplifier
         with self.assertRaises(NotImplementedError):
             f1.simplify()
+
+
+    def test_new_node_type(self):
+        self.assertEquals(len(CUSTOM_NODE_TYPES), 0, "Initially there should be no custom types")
+        idx = new_node_type()
+        self.assertIsNotNone(idx)
+        with self.assertRaises(AssertionError):
+            new_node_type(idx)
+
+        n = new_node_type(idx+100)
+        self.assertEquals(n, idx+100)
