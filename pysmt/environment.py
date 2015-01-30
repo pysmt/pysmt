@@ -96,11 +96,6 @@ class Environment(object):
         assert walker not in self.dwf[nodetype], "Redefinition"
         self.dwf[nodetype][walker] = function
 
-
-    @pysmt.decorators.deprecated("Environment.factory")
-    def get_factory(self):
-        return self.factory
-
     @property
     def factory(self):
         if self._factory is None:

@@ -20,7 +20,6 @@ from fractions import Fraction
 
 import mathsat
 
-import pysmt.operators as op
 import pysmt.logics
 from pysmt import typing as types
 from pysmt.solvers.solver import Solver
@@ -28,8 +27,6 @@ from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 from pysmt.solvers.eager import EagerModel
 from pysmt.walkers import DagWalker
 from pysmt.exceptions import SolverReturnedUnknownResultError
-from pysmt.solvers.qelim import QuantifierEliminator
-from pysmt.walkers.others import IdentityDagWalker
 from pysmt.exceptions import InternalSolverError
 from pysmt.decorators import clear_pending_pop
 from pysmt.environment import TypeUnsafeEnvironment
