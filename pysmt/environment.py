@@ -48,7 +48,10 @@ class Environment(object):
         self._factory = None
         # Configurations
         self.enable_infix_notation = False
-        self.dwf = {} # {nodetype, {walker: function}}
+
+        # Dynamic Walker Configuration Map
+        # See: add_dynamic_walker_function
+        self.dwf = {}
 
     @property
     def formula_manager(self):
@@ -86,6 +89,7 @@ class Environment(object):
 
         See Walker.walk_error for more information.
         """
+        # self.dwf is a map of maps: {nodetype, {walker: function}}
         if nodetype not in self.dwf:
             self.dwf[nodetype] = {}
 
