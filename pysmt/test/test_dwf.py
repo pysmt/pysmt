@@ -16,7 +16,7 @@
 #   limitations under the License.
 #
 from pysmt.test import TestCase
-from pysmt.operators import ALL_TYPES, CUSTOM_NODE_TYPES, new_node_type
+from pysmt.operators import CUSTOM_NODE_TYPES, new_node_type
 from pysmt.type_checker import SimpleTypeChecker
 from pysmt.printers import HRPrinter
 from pysmt.shortcuts import get_env, Symbol
@@ -24,7 +24,19 @@ from pysmt.shortcuts import get_env, Symbol
 
 class TestDwf(TestCase):
 
-    def test_dwf(self):
+    # NOTE: We enforce order of execution of the tests, since in the
+    # other test we define a custom type.
+    def test_00_new_node_type(self):
+        self.assertEquals(len(CUSTOM_NODE_TYPES), 0, "Initially there should be no custom types")
+        idx = new_node_type()
+        self.assertIsNotNone(idx)
+        with self.assertRaises(AssertionError):
+            new_node_type(idx)
+
+        n = new_node_type(idx+100)
+        self.assertEquals(n, idx+100)
+
+    def test_01_dwf(self):
         # Ad-hoc method to handle printing of the new node
         def hrprinter_walk_XOR(self, formula):
             self.stream.write(self.tb("("))
@@ -39,7 +51,7 @@ class TestDwf(TestCase):
         create_node = get_env().formula_manager.create_node
 
         # Define the new node type and register the walkers in the env
-        XOR = ALL_TYPES[-1] + 1
+        XOR = new_node_type()
         add_dwf(XOR, SimpleTypeChecker, SimpleTypeChecker.walk_bool_to_bool)
         add_dwf(XOR, HRPrinter, hrprinter_walk_XOR)
 
@@ -55,14 +67,3 @@ class TestDwf(TestCase):
         # We did not define an implementation for the Simplifier
         with self.assertRaises(NotImplementedError):
             f1.simplify()
-
-
-    def test_new_node_type(self):
-        self.assertEquals(len(CUSTOM_NODE_TYPES), 0, "Initially there should be no custom types")
-        idx = new_node_type()
-        self.assertIsNotNone(idx)
-        with self.assertRaises(AssertionError):
-            new_node_type(idx)
-
-        n = new_node_type(idx+100)
-        self.assertEquals(n, idx+100)
