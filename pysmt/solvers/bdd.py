@@ -143,9 +143,6 @@ class BddSolver(Solver):
             l = self.backtrack.pop()
             self.assertions_stack = self.assertions_stack[:l]
 
-    def exit(self):
-        raise NotImplementedError
-
     def __del__(self):
         del self.ddmanager
 
