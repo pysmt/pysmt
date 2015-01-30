@@ -15,7 +15,10 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+from functools import partial
+
 import pysmt.operators as op
+
 
 class Walker(object):
 
@@ -55,6 +58,13 @@ class Walker(object):
         """ Default function for a node that is not handled by the Walker, by
         raising a NotImplementedError.
         """
+        node_type = formula.node_type()
+        if node_type in self.env.dwf:
+            dwf = self.env.dwf[node_type]
+            walker_class = type(self)
+            if type(self) in dwf:
+                self.functions[node_type] = partial(dwf[walker_class], self)
+                return self.functions[node_type](formula, **kwargs)
 
         raise NotImplementedError("Was not expecting a node of type %d" %
                                   formula.node_type())

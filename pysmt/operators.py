@@ -43,3 +43,18 @@ BOOL_OPERATORS = frozenset(QUANTIFIERS | BOOL_CONNECTIVES)
 RELATIONS = frozenset([LE, LT, EQUALS])
 
 CONSTANTS = frozenset([REAL_CONSTANT, BOOL_CONSTANT, INT_CONSTANT])
+
+CUSTOM_NODE_TYPES = []
+
+def new_node_type(new_node_id=None):
+    """Adds a new node type to the list of custom node types and returns the ID."""
+    if new_node_id is None:
+        if len(CUSTOM_NODE_TYPES) == 0:
+            new_node_id = ALL_TYPES[-1] + 1
+        else:
+            new_node_id = CUSTOM_NODE_TYPES[-1] + 1
+
+    assert new_node_id not in ALL_TYPES
+    assert new_node_id not in CUSTOM_NODE_TYPES
+    CUSTOM_NODE_TYPES.append(new_node_id)
+    return new_node_id
