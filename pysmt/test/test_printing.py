@@ -15,16 +15,17 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from six.moves import cStringIO
 import unittest
+from six.moves import cStringIO
 from six.moves import xrange
 
 from pysmt.shortcuts import Or, And, Not, Plus, Iff, Implies
-from pysmt.shortcuts import Exists, ForAll, Ite
+from pysmt.shortcuts import Exists, ForAll, Ite, ExactlyOne
 from pysmt.shortcuts import Bool, Real, Int, Symbol, Function
 from pysmt.shortcuts import Times, Minus, Equals, LE, LT, ToReal
 from pysmt.typing import REAL, INT, FunctionType
 from pysmt.smtlib.printers import SmtPrinter, SmtDagPrinter
+from pysmt.printers import smart_serialize
 from pysmt.test import TestCase
 from pysmt.test.examples import get_example_formulae
 
@@ -172,6 +173,28 @@ class TestPrinting(TestCase):
     def test_examples(self):
         for (f, _, _, _) in get_example_formulae():
             self.assertTrue(len(str(f)) >= 1, str(f))
+
+    def test_smart_serialize(self):
+        x, y = Symbol("x"), Symbol("y")
+        f1 = And(x,y)
+        f = Implies(x, f1)
+        substitutions = {f1: "f1"}  # Mapping FNode -> String
+        res = smart_serialize(f, subs=substitutions)
+        self.assertEquals("(x -> f1)", res)
+
+        # If no smarties are provided, the printing is compatible
+        # with standard one
+        res = smart_serialize(f)
+        self.assertIsNotNone(res)
+        self.assertEquals(str(f), res)
+
+        fvars = [Symbol("x%d" % i) for i in xrange(5)]
+        ex = ExactlyOne(fvars)
+        substitutions = {ex: "ExactlyOne(%s)" % ",".join(str(v) for v in fvars)}
+        old_str = ex.serialize()
+        smart_str = smart_serialize(ex, subs=substitutions)
+        self.assertTrue(len(old_str) > len(smart_str))
+        self.assertEquals("ExactlyOne(x0,x1,x2,x3,x4)", smart_str)
 
 
 if __name__ == '__main__':
