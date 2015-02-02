@@ -126,7 +126,7 @@ class BddSolver(Solver):
             assignment = {}
             for i, node in enumerate(var_array):
                 value = self.mgr.Bool(minterm[i] == 1)
-                key = self.converter.node2var[node]
+                key = self.converter.idx2var[node.NodeReadIndex()]
                 assignment[key] = value
             self.latest_model = EagerModel(assignment=assignment,
                                            environment=self.environment)
@@ -158,8 +158,11 @@ class BddConverter(DagWalker):
         # Note: Nodes in pycudd are not shared, but they overload all
         # methods to perform comparison. This means that for two
         # wrappers for the variable x, we have that id(x) != id(x1)
-        # but x == x1.
-        self.node2var = {}
+        # but x == x1.  Nevertheless, we need to store the ids, since
+        # nodes can be moved during operations by the
+        # ddManager. Therefore, when using nodes in a map, we should
+        # use the ids.
+        self.idx2var = {}
         self.var2node = {}
 
     def convert(self, formula):
@@ -176,9 +179,9 @@ class BddConverter(DagWalker):
         #       robust.  There might be an issue if variables are
         #       added and the order of enumeration of the dictionary
         #       changes and we rely on this order outside of this class.
-        var_array = pycudd.DdArray(len(self.node2var))
-        for i, node in enumerate(self.node2var):
-            var_array[i] = node
+        var_array = pycudd.DdArray(len(self.idx2var))
+        for i, node_idx in enumerate(self.idx2var):
+            var_array[i] = self.ddmanager[node_idx]
         return var_array
 
     def cube_from_var_list(self, var_list):
@@ -194,7 +197,7 @@ class BddConverter(DagWalker):
         assert_ddmanager(self.ddmanager)
         if var not in self.var2node:
             node = self.ddmanager.NewVar()
-            self.node2var[node] = var
+            self.idx2var[node.NodeReadIndex()] = var
             self.var2node[var] = node
 
     def walk_and(self, formula, args):
@@ -255,7 +258,7 @@ class BddConverter(DagWalker):
         elif bdd == self.ddmanager.One():
             res = self.fmgr.Bool(True)
         else:
-            var = self.node2var[bdd]
+            var = self.idx2var[bdd.NodeReadIndex()]
             t = self.fmgr.Implies(var, self.bdd_to_expr(bdd.T()))
             e = self.fmgr.Implies(self.fmgr.Not(var), self.bdd_to_expr(bdd.E()))
             # (v -> t) /\ (!v -> e)
@@ -274,7 +277,7 @@ class BddConverter(DagWalker):
         elif bdd == self.ddmanager.One():
             res = self.fmgr.Bool(True)
         else:
-            var = self.node2var[bdd]
+            var = self.idx2var[bdd.NodeReadIndex()]
 
             t = self.bdd_to_expr2(bdd.T())
             e = self.bdd_to_expr2(bdd.E())
@@ -307,7 +310,7 @@ class BddConverter(DagWalker):
         elif bdd == self.ddmanager.One():
             res = self.fmgr.Bool(not invert)
         else:
-            var = self.node2var[bdd]
+            var = self.idx2var[bdd.NodeReadIndex()]
 
             if (bdd.IsComplement() and not invert) or \
                (not bdd.IsComplement() and invert):
