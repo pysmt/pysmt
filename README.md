@@ -13,6 +13,7 @@ Among others, you can:
   SMT-Lib complaint solver.
 
 [![Build Status](https://api.shippable.com/projects/54d4edba5ab6cc13528b1970/badge?branchName=master)](https://app.shippable.com/projects/54d4edba5ab6cc13528b1970/builds/latest)
+[![Documentation Status](https://readthedocs.org/projects/pysmt/badge/?version=latest)](https://readthedocs.org/projects/pysmt/?badge=latest)
 
 Requirements
 ============
