@@ -1,0 +1,21 @@
+language: python
+build_image: shippableimages/ubuntu1204_python
+python:
+  - 2.6
+  - 2.7
+  - 3.2
+  - 3.3
+  - 3.4
+  - pypy
+
+install:
+  - pip install nose
+  - pip install coverage
+
+# Make folders for the reports
+before_script:
+  - mkdir -p shippable/testresults
+  - mkdir -p shippable/codecoverage
+
+script:
+  - nosetests pysmt --with-xunit --xunit-file=shippable/testresults/nosetests.xml --with-coverage --cover-package=pysmt --cover-xml --cover-xml-file=shippable/codecoverage/coverage.xml --cover-branch
