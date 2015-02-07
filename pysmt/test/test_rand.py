@@ -18,12 +18,10 @@
 from nose.plugins.attrib import attr
 
 from pysmt.randomizer import build_random_formula, build_random_qf_formula
-from pysmt.shortcuts import is_valid, qelim, Iff, Not, Solver, Equals, Symbol
+from pysmt.shortcuts import is_valid, Iff
 from pysmt.shortcuts import get_env
-from pysmt.typing import REAL
-from pysmt.simplifier import Simplifier
 from pysmt.type_checker import SimpleTypeChecker
-from pysmt.test import TestCase
+from pysmt.test import TestCase, skipIfSolverNotAvailable
 
 
 global FEW_ITERATIONS
@@ -37,6 +35,7 @@ MANY_ITERATIONS=15
 class TestRand(TestCase):
 
     @attr("slow")
+    @skipIfSolverNotAvailable('z3')
     def test_simplify_qf_hard(self):
         """Test simplifier on random formula.
 
@@ -56,6 +55,7 @@ class TestRand(TestCase):
                             "result:\n f= %s\n sf = %s" % (f, sf))
 
     @attr("slow")
+    @skipIfSolverNotAvailable('z3')
     def test_simplify_qf_z3(self):
         """ Test simplifier on quantifier free random formula using Z3 """
         for i in xrange(MANY_ITERATIONS):
@@ -70,6 +70,7 @@ class TestRand(TestCase):
                             "result:\n f= %s\n sf = %s" % (f, sf))
 
     @attr("slow")
+    @skipIfSolverNotAvailable('msat')
     def test_simplify_qf_msat(self):
         """ Test simplifier on quantifier free random formula using MathSAT"""
         for i in xrange(MANY_ITERATIONS):
