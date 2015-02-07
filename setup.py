@@ -11,6 +11,6 @@ setup(
     url='http://www.pysmt.org',
     license='LICENSE',
     description='A library for SMT Formulae manipulation and solving',
-    long_description=open('README.txt').read(),
+    long_description=open('README.rst').read(),
     install_requires=[ ],
 )
