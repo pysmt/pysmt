@@ -1,14 +1,29 @@
 Change Log
 ==========
 
+0.2.2 2015-02-07 -- BDDs
+------------------------
+
+Solvers:
+
+* pyCUDD to perform BDD-based reasoning
+
+General:
+
+* Dynamic Walker Function: Dynamic Handlers for new node types can now
+  be registered through the environment (see
+  Environment.add_dynamic_walker_function).
+
 0.2.1 2014-11-29 -- SMT-LIB
 ---------------------------
 
 Solvers:
+
 * Yices 2
 * Generic Wrapper: enable usage of any SMT-LIB compatible solver.
 
 General:
+
 * SMT-LIB parsing
 * Changed internal representation of FNode
 * Multiple performance improvements

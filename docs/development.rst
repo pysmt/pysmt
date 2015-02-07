@@ -39,6 +39,3 @@ will produce a tar.gz file inside the ``dist/`` directory.
 
 For convenience the script *make_distrib.sh* is provided, this builds
 both the binary and source distributions within ``dist/``.
-
-
-.. include:: CHANGES.rst
