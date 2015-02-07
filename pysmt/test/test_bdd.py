@@ -18,11 +18,11 @@
 import unittest
 
 import pysmt
-from pysmt.shortcuts import And, Not, Symbol, Bool, Exists, ForAll
+from pysmt.shortcuts import And, Not, Symbol, Bool, Exists, Solver
 from pysmt.shortcuts import get_env
 from pysmt.test import TestCase, skipIfSolverNotAvailable
 from pysmt.test.examples import EXAMPLE_FORMULAS
-from pysmt.solvers.bdd import BddSolver
+
 
 class TestBdd(TestCase):
 
@@ -30,8 +30,8 @@ class TestBdd(TestCase):
     def setUp(self):
         self.x, self.y = Symbol("x"), Symbol("y")
 
-        self.bdd_solver = BddSolver(environment=get_env(),
-                                    logic=pysmt.logics.BOOL)
+        self.bdd_solver = Solver(logic=pysmt.logics.BOOL,
+                                 name='bdd')
         self.bdd_converter = self.bdd_solver.converter
 
     @skipIfSolverNotAvailable("bdd")
@@ -72,8 +72,8 @@ class TestBdd(TestCase):
         for example in EXAMPLE_FORMULAS:
             if example.logic != pysmt.logics.BOOL:
                 continue
-            solver = BddSolver(environment=get_env(),
-                               logic=pysmt.logics.BOOL)
+            solver = Solver(logic=pysmt.logics.BOOL,
+                            name='bdd')
             solver.add_assertion(example.expr)
             if example.is_sat:
                 self.assertTrue(solver.solve())
