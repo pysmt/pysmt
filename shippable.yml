@@ -1,3 +1,4 @@
+cache: true
 language: python
 build_image: shippableimages/ubuntu1204_python
 python:
@@ -11,6 +12,7 @@ python:
 install:
   - pip install nose
   - pip install coverage
+  - cd solvers; ./install.py --msat --confirm-agreement
 
 # Make folders for the reports
 before_script:
