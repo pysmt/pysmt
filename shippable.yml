@@ -2,7 +2,7 @@ cache: true
 language: python
 build_image: shippableimages/ubuntu1204_python
 python:
-  # - 2.6
+  - 2.6
   - 2.7
   # - 3.2
   # - 3.3
@@ -16,12 +16,15 @@ install:
   - apt-get install -y python-all-dev
   - pushd .; cd solvers; ./install.py --confirm-agreement --msat; popd
 
+env:
+ # Multiple envs for each single solver
+ - PYTHONPATH=$PYTHONPATH
+ - PYTHONPATH=$PYTHONPATH:`pwd`/solvers/mathsat-5.2.12-linux-x86_64/python:`pwd`/solvers/mathsat-5.2.12-linux-x86_64/python/build/lib.linux-x86_64-2.7"
+
 # Make folders for the reports
 before_script:
   - mkdir -p shippable/testresults
   - mkdir -p shippable/codecoverage
-  # Add PYTHONPATH
-  - "export PYTHONPATH=$PYTHONPATH:`pwd`/solvers/mathsat-5.2.12-linux-x86_64/python:`pwd`/solvers/mathsat-5.2.12-linux-x86_64/python/build/lib.linux-x86_64-2.7"
 
 script:
   - nosetests pysmt --with-xunit --xunit-file=shippable/testresults/nosetests.xml --with-coverage --cover-package=pysmt --cover-xml --cover-xml-file=shippable/codecoverage/coverage.xml --cover-branch
