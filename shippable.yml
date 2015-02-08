@@ -15,6 +15,7 @@ install:
   - apt-get install -y make build-essential swig libgmp-dev
   - apt-get install -y python-all-dev
   - pushd .; cd solvers; ./install.py --confirm-agreement --msat; popd
+  - pushd .; cd solvers; ./install.py --confirm-agreement --z3; popd
 
 env:
  # Multiple envs for each single solver
