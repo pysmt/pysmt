@@ -14,7 +14,7 @@ install:
   - pip install coverage
   - apt-get install -y make build-essential swig libgmp-dev
   - apt-get install -y python-all-dev
-  - cd solvers; ./install.py --confirm-agreement --msat
+  - pushd .; cd solvers; ./install.py --confirm-agreement --msat; popd
 
 # Make folders for the reports
 before_script:
