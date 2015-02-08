@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ "$PYSMT_SOLVER" == "msat" ]
+if [ "$1" == "msat" ]
 then
     apt-get install -y make build-essential swig libgmp-dev
     apt-get install -y python-all-dev
@@ -11,7 +11,7 @@ then
     echo "MSAT Installed"
 fi
 
-if [ "$PYSMT_SOLVER" == "z3" ]
+if [ "$1" == "z3" ]
 then
     apt-get install -y make build-essential swig libgmp-dev
     apt-get install -y python-all-dev

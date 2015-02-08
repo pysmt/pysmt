@@ -9,10 +9,11 @@ python:
   # - 3.4
   # - pypy
 
+
 install:
   - pip install nose
   - pip install coverage
-  - . shippable.sh
+  - ./shippable.sh $PYSMT_SOLVERS
 
 
 env:
