@@ -19,7 +19,7 @@ install:
 env:
  # Multiple envs for each single solver
  - PYTHONPATH=$PYTHONPATH
- - PYTHONPATH=$PYTHONPATH:`pwd`/solvers/mathsat-5.2.12-linux-x86_64/python:`pwd`/solvers/mathsat-5.2.12-linux-x86_64/python/build/lib.linux-x86_64-2.7"
+ - PYTHONPATH=$PYTHONPATH:$TRAVIS_BUILD_DIR/solvers/mathsat-5.2.12-linux-x86_64/python:$TRAVIS_BUILD_DIR/solvers/mathsat-5.2.12-linux-x86_64/python/build/lib.linux-x86_64-2.7
 
 # Make folders for the reports
 before_script:
