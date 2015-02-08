@@ -1,6 +1,6 @@
 cache: true
 language: python
-build_image: shippableimages/ubuntu1204_python
+build_image: gario/docker4pysmt
 python:
   # - 2.6
   - 2.7
@@ -9,11 +9,11 @@ python:
   # - 3.4
   # - pypy
 
-before_install:
-  - apt-get install -y make build-essential swig libgmp-dev
-  - apt-get install -y python-all-dev
-  - pushd .; cd solvers; ./install.py --confirm-agreement --msat; popd
-  - pushd .; cd solvers; ./install.py --confirm-agreement --z3; popd
+# before_install:
+#   - apt-get install -y make build-essential swig libgmp-dev
+#   - apt-get install -y python-all-dev
+#   - pushd .; cd solvers; ./install.py --confirm-agreement --msat; popd
+#   - pushd .; cd solvers; ./install.py --confirm-agreement --z3; popd
 
 install:
   - pip install nose
@@ -26,9 +26,9 @@ env:
  # 2. PySMT with one solver at the time
  # 3. PySMT with all solvers
  - PYTHONPATH=$PYTHONPATH
- - PYTHONPATH=$PYTHONPATH:$TRAVIS_BUILD_DIR/solvers/mathsat-5.2.12-linux-x86_64/python:$TRAVIS_BUILD_DIR/solvers/mathsat-5.2.12-linux-x86_64/python/build/lib.linux-x86_64-2.7
- - PYTHONPATH=$PYTHONPATH:$TRAVIS_BUILD_DIR/solvers/z3_bin/lib/python2.7/dist-packages
- - PYTHONPATH=$PYTHONPATH:$TRAVIS_BUILD_DIR/solvers/mathsat-5.2.12-linux-x86_64/python:$TRAVIS_BUILD_DIR/solvers/mathsat-5.2.12-linux-x86_64/python/build/lib.linux-x86_64-2.7:$TRAVIS_BUILD_DIR/solvers/z3_bin/lib/python2.7/dist-packages
+ - PYTHONPATH=$PYTHONPATH:/tmp/mathsat-5.2.12-linux-x86_64/python:/tmp/solvers/mathsat-5.2.12-linux-x86_64/python/build/lib.linux-x86_64-2.7
+# - PYTHONPATH=$PYTHONPATH:/tmp/z3_bin/lib/python2.7/dist-packages
+# - PYTHONPATH=$PYTHONPATH:/tmp/mathsat-5.2.12-linux-x86_64/python:/tmp/mathsat-5.2.12-linux-x86_64/python/build/lib.linux-x86_64-2.7:/tmp/z3_bin/lib/python2.7/dist-packages
 
 # Make folders for the reports
 before_script:
