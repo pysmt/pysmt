@@ -9,13 +9,15 @@ python:
   # - 3.4
   # - pypy
 
-install:
-  - pip install nose
-  - pip install coverage
+before_install:
   - apt-get install -y make build-essential swig libgmp-dev
   - apt-get install -y python-all-dev
   - pushd .; cd solvers; ./install.py --confirm-agreement --msat; popd
   - pushd .; cd solvers; ./install.py --confirm-agreement --z3; popd
+
+install:
+  - pip install nose
+  - pip install coverage
 
 env:
  # Multiple envs will cause multiple build across multiple python versions.
