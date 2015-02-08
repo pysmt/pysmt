@@ -14,7 +14,7 @@ install:
   - pip install coverage
   - apt-get install -y make build-essential swig libgmp-dev
   - apt-get install -y python-all-dev
-  - ./shippable.sh
+  - . shippable.sh
 
 
 env:
