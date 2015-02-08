@@ -7,6 +7,7 @@ then
     cd solvers
     ./install.py --confirm-agreement --msat
     popd
+    echo "MSAT Installed"
 fi
 
 if [ "$PYSMT_SOLVER" == "z3" ]

@@ -23,8 +23,8 @@ env:
  # 1. PySMT w/o solvers
  # 2. PySMT with one solver at the time
  - PYSMT_SOLVERS="None" PYTHONPATH=$PYTHONPATH
- - PYSMT_SOLVERS="msat" PYTHONPATH=$PYTHONPATH:/tmp/mathsat-5.2.12-linux-x86_64/python:/tmp/solvers/mathsat-5.2.12-linux-x86_64/python/build/lib.linux-x86_64-2.7
- - PYSMT_SOLVERS="z3" PYTHONPATH=$PYTHONPATH:/tmp/z3_bin/lib/python2.7/dist-packages
+ - PYSMT_SOLVERS="msat" PYTHONPATH=$PYTHONPATH:$TRAVIS_BUILD_DIR/solvers/mathsat-5.2.12-linux-x86_64/python:$TRAVIS_BUILD_DIR/solvers/mathsat-5.2.12-linux-x86_64/python/build/lib.linux-x86_64-2.7
+ - PYSMT_SOLVERS="z3" PYTHONPATH=$PYTHONPATH:/solvers/z3_bin/lib/python2.7/dist-packages
 
 
 # Make folders for the reports
