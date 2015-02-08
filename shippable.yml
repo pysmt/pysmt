@@ -14,8 +14,7 @@ install:
   - pip install coverage
   - apt-get install -y make build-essential swig libgmp-dev
   - apt-get install -y python-all-dev
-  - [ "$PYSMT_SOLVER" == "msat" ] && (pushd .; cd solvers; ./install.py --confirm-agreement --msat; popd)
-  - [ "$PYSMT_SOLVER" == "z3" ] && (pushd .; cd solvers; ./install.py --confirm-agreement --z3 --make-j 2; popd)
+  - ./shippable.sh
 
 
 env:
