@@ -12,7 +12,7 @@ python:
 install:
   - pip install nose
   - pip install coverage
-  - apt-get install -y make build-essential swig
+  - apt-get install -y make build-essential swig libgmp-dev
   - apt-get install -y python-all-dev
   - cd solvers; ./install.py --confirm-agreement --msat
 
