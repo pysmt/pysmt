@@ -177,6 +177,81 @@ class QuantifierOracle(walkers.DagWalker):
 
 # EOC QuantifierOracle
 
+class TheoryOracle(walkers.DagWalker):
+    def __init__(self, env=None):
+        walkers.DagWalker.__init__(self, env=env)
+
+        self.functions[op.AND] = self.walk_combine
+        self.functions[op.OR] = self.walk_combine
+        self.functions[op.NOT] = self.walk_combine
+        self.functions[op.IMPLIES] = self.walk_combine
+        self.functions[op.IFF] = self.walk_combine
+        self.functions[op.SYMBOL] = self.walk_symbol
+        self.functions[op.LE] = self.walk_combine
+        self.functions[op.LT] = self.walk_combine
+        self.functions[op.FORALL] = self.walk_combine
+        self.functions[op.EXISTS] = self.walk_combine
+        self.functions[op.MINUS] = self.walk_combine
+        self.functions[op.ITE] = self.walk_combine
+
+        self.functions[op.REAL_CONSTANT] = self.walk_constant
+        self.functions[op.SYMBOL] = self.walk_symbol
+        self.functions[op.FUNCTION] = self.walk_function
+        self.functions[op.BOOL_CONSTANT] = self.walk_constant
+        self.functions[op.INT_CONSTANT] = self.walk_constant
+        self.functions[op.TOREAL] = self.walk_lira
+        self.functions[op.TIMES] = self.walk_times
+        self.functions[op.PLUS] = self.walk_plus
+        self.functions[op.EQUALS] = self.walk_equals
+
+    def walk_combine(self, formula, args):
+        """Combines the current theory value of the children"""
+        theory_out = sum(args)
+        return theory_out
+
+    def walk_constant(self, formula, args):
+        """Returns a new theory object with the type of the constant."""
+        theory_out = Theory(formula.get_type())
+        return theory_out
+
+    def walk_symbol(self, formula, args):
+        """Returns a new theory object with the type of the symbol."""
+        theory_out = Theory(formula.get_type())
+        # Check whether we are dealing with uninterpreted functions.
+        return theory_out
+
+
+    def walk_lira(self, formula, args):
+        """Extends the Theory with LIRA."""
+        theory_in = args[0]
+        theory_out = thoery_in.set_lira()
+        return theory_out
+
+    def walk_times(self, formula, args):
+        """Extends the Theory with Non-Linear, if needed."""
+        theory_out = sum(args)
+        if args[0].is_symbol() and args[1].is_symbol():
+            theory_out = theory_out.set_non_linear()
+        # Extend also from difference logic
+        theory_out = theory_out.unset_difference_logic()
+        return theory_out
+
+    def walk_plus(self, formula, args):
+        theory_in = sum(args)
+        theory_out = theory_in.unset_difference_logic()
+        return theory_out
+
+    def equals(self, formula, args):
+        # TODO: Does EQUAL need a special treatment?
+        return self.walk_combine(formula, args)
+
+    def get_logic(self, formula):
+        """ Returns whether formula is Quantifier Free. """
+        return self.walk(formula)
+
+
+# EOC TheoryOracle
+
 
 def assert_no_boolean_in_args(args):
     """ Enforces that the elements in args are not of BOOL type."""
