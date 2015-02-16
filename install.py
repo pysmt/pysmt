@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2015 Andrea Micheli and Marco Gario
+# Copyright 2014 Andrea Micheli and Marco Gario
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,13 +21,83 @@ import sys
 import platform
 import zipfile
 import argparse
+import sys
+import time
 
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-LOG = []
+class ProgressBar(object):
+    """ProgressBar class holds the options of the progress bar.
+    The options are:
+        start   State from which start the progress. For example, if start is
+                5 and the end is 10, the progress of this state is 50%
+        end     State in which the progress has terminated.
+        width   --
+        fill    String to use for "filled" used to represent the progress
+        blank   String to use for "filled" used to represent remaining space.
+        format  Format
+        incremental
+    """
+    def __init__(self, start=0, end=10, width=12, fill='=', blank='.', format='[%(fill)s>%(blank)s] %(progress)s%%', incremental=True):
+        super(ProgressBar, self).__init__()
 
-def log(msg):
-    LOG.append(msg)
+        self.start = start
+        self.end = end
+        self.width = width
+        self.fill = fill
+        self.blank = blank
+        self.format = format
+        self.incremental = incremental
+        self.step = 100 / float(width) #fix
+        self.reset()
+
+    def __add__(self, increment):
+        increment = self._get_progress(increment)
+        if 100 > self.progress + increment:
+            self.progress += increment
+        else:
+            self.progress = 100
+        return self
+
+    def __str__(self):
+        progressed = int(self.progress / self.step) #fix
+        fill = progressed * self.fill
+        blank = (self.width - progressed) * self.blank
+        return self.format % {'fill': fill, 'blank': blank, 'progress': int(self.progress)}
+
+    __repr__ = __str__
+
+    def _get_progress(self, increment):
+        return float(increment * 100) / self.end
+
+    def reset(self):
+        """Resets the current progress to the start point"""
+        self.progress = self._get_progress(self.start)
+        return self
+
+
+class AnimatedProgressBar(ProgressBar):
+    """Extends ProgressBar to allow you to use it straighforward on a script.
+    Accepts an extra keyword argument named `stdout` (by default use sys.stdout)
+    and may be any file-object to which send the progress status.
+    """
+    def __init__(self, *args, **kwargs):
+        super(AnimatedProgressBar, self).__init__(*args, **kwargs)
+        self.stdout = kwargs.get('stdout', sys.stdout)
+
+    def show_progress(self):
+        if hasattr(self.stdout, 'isatty') and self.stdout.isatty():
+            self.stdout.write('\r')
+        else:
+            self.stdout.write('\n')
+        self.stdout.write(str(self))
+        self.stdout.flush()
+
+
+
+CWD = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.join(CWD, ".smt_solvers")
+PATHS = []
+
 
 def short_python_version():
     return "%d.%d" % sys.version_info[0:2]
@@ -49,24 +119,23 @@ def download(url, file_name):
     u = urllib2.urlopen(url)
     f = open(file_name, 'wb')
     meta = u.info()
+    bar = None
     if len(meta.getheaders("Content-Length")) > 0:
         file_size = int(meta.getheaders("Content-Length")[0])
         print("Downloading: %s Bytes: %s" % (file_name, file_size))
+        bar = AnimatedProgressBar(end=file_size, width=80)
 
-
-    file_size_dl = 0
     block_sz = 8192
     while True:
         buff = u.read(block_sz)
         if not buff:
             break
 
-        file_size_dl += len(buff)
         f.write(buff)
         if len(meta.getheaders("Content-Length")) > 0:
-            status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
-            status = status + chr(8)*(len(status)+1)
-            print status,
+            bar + len(buff)
+            bar.show_progress()
+    print ""
     f.close()
 
 
@@ -83,9 +152,8 @@ def install_msat(options):
 
     os.system('cd %s/python; python setup.py build' % dir_path)
 
-    log("Install done, add the following to enable mathsat")
-    log("export PYTHONPATH=\"$PYTHONPATH:%s/python:%s/python/build/lib.linux-x86_64-2.7\"" %\
-        (dir_path, dir_path))
+    PATHS.append("%s/python" % dir_path)
+    PATHS.append("%s/python/build/lib.linux-x86_64-2.7" % dir_path)
 
 
 def install_z3(options):
@@ -106,9 +174,7 @@ def install_z3(options):
 
     # os.system('cd %s/python; python setup.py build' % dir_path)
 
-    log("Install done, add the following to enable z3")
-    log("export PYTHONPATH=\"$PYTHONPATH:%s/lib/python2.7/dist-packages\"" % install_path)
-
+    PATHS.append("%s/lib/python2.7/dist-packages" % install_path)
 
 def install_cvc4(options):
     git = "68f22235a62f5276b206e9a6692a85001beb8d42"
@@ -129,12 +195,10 @@ def install_cvc4(options):
     make -j%d" % (dir_path, dir_path, dir_path, options.make_j))
     os.system("cd %s/builds/src/bindings/python; mv .libs/CVC4.so.3.0.0 ./_CVC4.so" % dir_path)
 
-    log("Install done, add the following to enable cvc4")
-    log("export PYTHONPATH=\"$PYTHONPATH:%s/builds/src/bindings/python\"" % dir_path)
+    PATHS.append("%s/builds/src/bindings/python" % dir_path)
 
 
 def install_yices(options):
-    raise NotImplementedError
     base_name =  "yices-2.2.2"
     archive_name = "%s-%s-unknown-linux-gnu-static-gmp.tar.gz" % (base_name, get_architecture())
     archive = os.path.join(BASE_DIR, archive_name)
@@ -163,7 +227,7 @@ def install_yices(options):
     # print "export PYTHONPATH=\"$PYTHONPATH:%s/python:%s/python/build/lib.linux-x86_64-2.7\"" %\
     #     (dir_path, dir_path)
 
-def install_cudd(options):
+def install_pycudd(options):
     raise NotImplementedError
 
 
@@ -213,6 +277,10 @@ Notice: the installation process might require building tools
 
 
 def main():
+    # create install folder if needed
+    if not os.path.exists(BASE_DIR):
+        os.mkdir(BASE_DIR)
+
     options = parse_options()
     if not options.skip_intro:
         print_welcome()
@@ -230,9 +298,12 @@ def main():
         install_yices(options)
 
     if options.cudd:
-        insatll_pycudd(options)
+        install_pycudd(options)
 
-    print("\n".join(LOG))
+    print("Add the following to your .bashrc file or to your environment")
+    print("export PYTHONPATH=\"PYTHONPATH:"+ ":".join(PATHS) + "\"")
+
+
 
 if __name__ == "__main__":
     main()
