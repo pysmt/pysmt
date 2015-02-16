@@ -192,9 +192,6 @@ def install_z3(options):
     # Extract the Z3 distribution
     unzip(archive, dir_path)
 
-    # Patch the distribution to avoid a known problem
-    os.system("cd %s; patch -p1 -i %s/patches/z3.py_patch" % (dir_path, CWD))
-
     # Creating the path in which z3 will be installed
     if not os.path.exists(install_path):
         os.mkdir(install_path)
