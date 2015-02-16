@@ -234,7 +234,23 @@ def install_yices(options):
 
 
 def install_pycudd(options):
-    raise NotImplementedError
+    base_name =  "pycudd2.0.2"
+    archive_name = "%s.tar.gz" % base_name
+    archive = os.path.join(BASE_DIR, archive_name)
+    dir_path = os.path.join(BASE_DIR, base_name)
+
+    if not os.path.exists(archive):
+        download("http://bears.ece.ucsb.edu/ftp/pub/pycudd2.0/%s" % archive_name, archive)
+
+    if os.path.exists(dir_path):
+        os.system("rm -rf %s" % dir_path)
+    untar(archive, BASE_DIR)
+    os.system("cd %s; patch -p1 -i %s/patches/pycudd.patch" % (dir_path, CWD))
+    # -j is not supported by this building system
+    os.system("cd %s/cudd-2.4.2; ./setup.sh; make -f Makefile_64bit; make -f Makefile_64bit libso" % dir_path)
+    os.system("cd %s/pycudd; make" % dir_path)
+
+    PATHS.append("%s/pycudd" % dir_path)
 
 
 
@@ -307,6 +323,8 @@ def main():
     if options.cudd:
         install_pycudd(options)
 
+    print("\n")
+    print("*" * 80)
     print("Add the following to your .bashrc file or to your environment:")
     print("export PYTHONPATH=\"$PYTHONPATH:"+ ":".join(PATHS) + "\"")
 
