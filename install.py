@@ -100,22 +100,27 @@ PATHS = []
 
 
 def get_python_version():
+    """Returns the string indicating the python version currently in
+    use. E.g. '2.7'"""
     return "%d.%d" % sys.version_info[0:2]
 
 def get_architecture():
+    """Returns the short anme of the architecture in use. E.g. 'x86_64'"""
     return platform.machine()
 
 def untar(fname, directory=".", mode='r:gz'):
-    # open the tarfile and use the 'r:gz' parameter
-    # the 'r:gz' mode enables gzip compression reading
+    """Opens the tarfile (using the specified mode) and extracts it in the
+    given directory"""
     tfile = tarfile.open(fname, mode)
     tfile.extractall(directory)
 
 def unzip(fname, directory="."):
+    """Unzips the given archive into the given directory"""
     with zipfile.ZipFile(fname, "r") as myzip:
         myzip.extractall(directory)
 
 def download(url, file_name):
+    """Downloads the given url into the given file name"""
     u = urllib2.urlopen(url)
     f = open(file_name, 'wb')
     meta = u.info()
@@ -140,116 +145,195 @@ def download(url, file_name):
 
 
 def install_msat(options):
+    """Installer for the MathSAT5 solver python interafce"""
+
     base_name =  "mathsat-5.2.12-linux-%s" % get_architecture()
     archive_name = "%s.tar.gz" % base_name
     archive = os.path.join(BASE_DIR, archive_name)
     dir_path = os.path.join(BASE_DIR, base_name)
 
+    # Download the mathsat release if needed
     if not os.path.exists(archive):
         download("http://mathsat.fbk.eu/download.php?file=%s" % archive_name, archive)
 
+    # clear the destination directory, if any
+    if os.path.exists(dir_path):
+        os.system("rm -rf %s" % dir_path)
+
+    # Extract the MathSAT5 distribution
     untar(archive, BASE_DIR)
 
+    # Build the python wrapper
     os.system('cd %s/python; python setup.py build' % dir_path)
 
+    # Save the paths
     PATHS.append("%s/python" % dir_path)
     PATHS.append("%s/build/lib.linux-%s-%s" % (dir_path, get_architecture(), get_python_version()))
 
 
 
 def install_z3(options):
+    """Installer for the Z3 solver python interafce"""
+
     base_name =  "z3"
     archive_name = "%s.zip" % base_name
     archive = os.path.join(BASE_DIR, archive_name)
     dir_path = os.path.join(BASE_DIR, base_name)
     install_path = os.path.join(BASE_DIR, "z3_bin")
 
+    # Download the z3 release if needed
     if not os.path.exists(archive):
         download("http://download-codeplex.sec.s-msft.com/Download/SourceControlFileDownload.ashx?ProjectName=z3&changeSetId=cee7dd39444c9060186df79c2a2c7f8845de415b", archive)
 
+    # clear the destination directory, if any
+    if os.path.exists(dir_path):
+        os.system("rm -rf %s" % dir_path)
+
+    # Extract the Z3 distribution
     unzip(archive, dir_path)
+
+    # Patch the distribution to avoid a known problem
+    os.system("cd %s; patch -p1 -i %s/patches/z3.py_patch" % (dir_path, CWD))
+
+    # Creating the path in which z3 will be installed
     if not os.path.exists(install_path):
         os.mkdir(install_path)
+    else:
+        os.system("rm -rf %s/*" % install_path)
+
+    #Building Z3 and its wrapper
     os.system("cd %s; python scripts/mk_make.py --prefix=%s" % (dir_path, install_path))
     os.system("cd %s/build; make -j%d; make install" % (dir_path, options.make_j))
 
+    # Save the paths
     PATHS.append("%s/lib/python2.7/dist-packages" % install_path)
 
 
 
 def install_cvc4(options):
+    """Installer for the CVC4 solver python interafce"""
+
     git = "68f22235a62f5276b206e9a6692a85001beb8d42"
     base_name =  "CVC4-%s" % git
     archive_name = "%s.tar.gz" % base_name
     archive = os.path.join(BASE_DIR, archive_name)
     dir_path = os.path.join(BASE_DIR, base_name)
 
+    # Download the cvc4 release if needed
     if not os.path.exists(archive):
         download("https://codeload.github.com/CVC4/CVC4/tar.gz/%s" % git, archive)
 
+    # clear the destination directory, if any
+    if os.path.exists(dir_path):
+        os.system("rm -rf %s" % dir_path)
+
+    # Extract the Z3 distribution
     untar(archive, BASE_DIR)
+
+    # Patch the distribution to avoid a known problem
+    os.system("cd %s; patch -p1 -i %s/patches/cvc4_wrapper.patch" % (dir_path, CWD))
+
+    # Prepare the building system
     os.system("cd %s; bash autogen.sh;" % dir_path)
+    # Build ANTLR
     os.system("cd %s/contrib; bash get-antlr-3.4;" % dir_path)
+    # Configure and build CVC4
     os.system("cd %s; \
     ./configure --enable-language-bindings=python \
                 --with-antlr-dir=%s/antlr-3.4 ANTLR=%s/antlr-3.4/bin/antlr3;\
     make -j%d" % (dir_path, dir_path, dir_path, options.make_j))
+    # Fix the paths of the bindings
     os.system("cd %s/builds/src/bindings/python; mv .libs/CVC4.so.3.0.0 ./_CVC4.so" % dir_path)
 
+    # Save the paths
     PATHS.append("%s/builds/src/bindings/python" % dir_path)
 
 
 
 def install_yices(options):
+    """Installer for the Yices solver python interafce"""
+
     base_name =  "yices-2.3.0"
     archive_name = "%s-%s-unknown-linux-gnu-static-gmp.tar.gz" % (base_name, get_architecture())
     archive = os.path.join(BASE_DIR, archive_name)
     dir_path = os.path.join(BASE_DIR, base_name)
     yices_path = os.path.join(BASE_DIR, "yices_bin")
 
+    # Download the yices release if needed
     if not os.path.exists(archive):
-        #http://yices.csl.sri.com/cgi-bin/yices2-newnewdownload.cgi?file=yices-2.3.0-x86_64-unknown-linux-gnu-static-gmp.tar.gz&accept=I+Agree
         download("http://yices.csl.sri.com/cgi-bin/yices2-newnewdownload.cgi?file=%s&accept=I+Agree" % archive_name, archive)
 
+    # clear the destination directory, if any
+    if os.path.exists(dir_path):
+        os.system("rm -rf %s" % dir_path)
+
+    # Extract the Yices distribution
     untar(archive, BASE_DIR)
+
+    # Prepare an empty folder for installing yices
     if not os.path.exists(yices_path):
         os.mkdir(yices_path)
+    else:
+        os.system("rm -rf %s" % yices_path)
+
+    # Install Yices in 'yices_path'
     os.system("cd %s; ./install-yices %s" % (dir_path, yices_path))
 
+    # pyices
     pyices_git = "aa0b91c39aa00c19c2160e83aad822dc468ce328"
     pyices_base_name =  "pyices-%s" % pyices_git
     pyices_archive_name = "%s.tar.gz" % pyices_base_name
     pyices_archive = os.path.join(BASE_DIR, pyices_archive_name)
     pyices_dir_path = os.path.join(BASE_DIR, pyices_base_name)
 
+    # Download pyices if needed
     if not os.path.exists(pyices_archive):
         download("https://codeload.github.com/cheshire/pyices/tar.gz/%s" % pyices_git, pyices_archive)
 
+    # clear the destination directory, if any
+    if os.path.exists(pyices_dir_path):
+        os.system("rm -rf %s" % pyices_dir_path)
+
+    # Extract the pyices distribution
     untar(pyices_archive, BASE_DIR)
+
+    # Build pyices
     os.system("export YICES_PATH=\"%s\"; cd %s; python setup.py install --user" % (yices_path, pyices_dir_path))
     os.system('cd %s; python setup.py build' % pyices_dir_path)
 
+    # Save the paths
     PATHS.append("%s/build/lib.linux-%s-%s" % (pyices_dir_path, get_architecture(), get_python_version()))
 
 
 
 def install_pycudd(options):
+    """Installer for the CUDD library python interafce"""
+
     base_name =  "pycudd2.0.2"
     archive_name = "%s.tar.gz" % base_name
     archive = os.path.join(BASE_DIR, archive_name)
     dir_path = os.path.join(BASE_DIR, base_name)
 
+    # Download pycudd if needed
     if not os.path.exists(archive):
         download("http://bears.ece.ucsb.edu/ftp/pub/pycudd2.0/%s" % archive_name, archive)
 
+    # clear the destination directory, if any
     if os.path.exists(dir_path):
         os.system("rm -rf %s" % dir_path)
+
+    # Extract the pycudd distribution
     untar(archive, BASE_DIR)
+
+    # patch the distribution
     os.system("cd %s; patch -p1 -i %s/patches/pycudd.patch" % (dir_path, CWD))
-    # -j is not supported by this building system
+
+    # Build the pycudd
+    # NOTE: -j is not supported by this building system
     os.system("cd %s/cudd-2.4.2; ./setup.sh; make -f Makefile_64bit; make -f Makefile_64bit libso" % dir_path)
     os.system("cd %s/pycudd; make" % dir_path)
 
+    # Save the paths
     PATHS.append("%s/pycudd" % dir_path)
 
 
