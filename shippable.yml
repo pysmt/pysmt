@@ -1,16 +1,30 @@
+cache: true
 language: python
 build_image: shippableimages/ubuntu1204_python
 python:
-  - 2.6
+  # - 2.6
   - 2.7
-  - 3.2
-  - 3.3
-  - 3.4
-  - pypy
+  # - 3.2
+  # - 3.3
+  # - 3.4
+  # - pypy
+
 
 install:
   - pip install nose
   - pip install coverage
+  - ./shippable.sh $PYSMT_SOLVERS
+
+
+env:
+ # Multiple envs will cause multiple build across multiple python versions.
+ # We test the following:
+ # 1. PySMT w/o solvers
+ # 2. PySMT with one solver at the time
+ - PYSMT_SOLVERS="None" PYTHONPATH=$PYTHONPATH
+ - PYSMT_SOLVERS="msat" PYTHONPATH=$PYTHONPATH:$TRAVIS_BUILD_DIR/solvers/mathsat-5.2.12-linux-x86_64/python:$TRAVIS_BUILD_DIR/solvers/mathsat-5.2.12-linux-x86_64/python/build/lib.linux-x86_64-2.7
+ - PYSMT_SOLVERS="z3" PYTHONPATH=$PYTHONPATH:/solvers/z3_bin/lib/python2.7/dist-packages
+
 
 # Make folders for the reports
 before_script:
