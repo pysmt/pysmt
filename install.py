@@ -99,7 +99,7 @@ BASE_DIR = os.path.join(CWD, ".smt_solvers")
 PATHS = []
 
 
-def short_python_version():
+def get_python_version():
     return "%d.%d" % sys.version_info[0:2]
 
 def get_architecture():
@@ -153,7 +153,8 @@ def install_msat(options):
     os.system('cd %s/python; python setup.py build' % dir_path)
 
     PATHS.append("%s/python" % dir_path)
-    PATHS.append("%s/python/build/lib.linux-x86_64-2.7" % dir_path)
+    PATHS.append("%s/build/lib.linux-%s-%s" % (dir_path, get_architecture(), get_python_version()))
+
 
 
 def install_z3(options):
@@ -172,9 +173,9 @@ def install_z3(options):
     os.system("cd %s; python scripts/mk_make.py --prefix=%s" % (dir_path, install_path))
     os.system("cd %s/build; make -j%d; make install" % (dir_path, options.make_j))
 
-    # os.system('cd %s/python; python setup.py build' % dir_path)
-
     PATHS.append("%s/lib/python2.7/dist-packages" % install_path)
+
+
 
 def install_cvc4(options):
     git = "68f22235a62f5276b206e9a6692a85001beb8d42"
@@ -198,17 +199,22 @@ def install_cvc4(options):
     PATHS.append("%s/builds/src/bindings/python" % dir_path)
 
 
+
 def install_yices(options):
-    base_name =  "yices-2.2.2"
+    base_name =  "yices-2.3.0"
     archive_name = "%s-%s-unknown-linux-gnu-static-gmp.tar.gz" % (base_name, get_architecture())
     archive = os.path.join(BASE_DIR, archive_name)
     dir_path = os.path.join(BASE_DIR, base_name)
+    yices_path = os.path.join(BASE_DIR, "yices_bin")
 
     if not os.path.exists(archive):
-        download("http://yices.csl.sri.com/cgi-bin/yices2-newnewdownload.cgi?file=%s&accept=I+accept" % archive_name, archive)
+        #http://yices.csl.sri.com/cgi-bin/yices2-newnewdownload.cgi?file=yices-2.3.0-x86_64-unknown-linux-gnu-static-gmp.tar.gz&accept=I+Agree
+        download("http://yices.csl.sri.com/cgi-bin/yices2-newnewdownload.cgi?file=%s&accept=I+Agree" % archive_name, archive)
 
     untar(archive, BASE_DIR)
-    os.system("cd %s; ./install-yices ../" % base_name)
+    if not os.path.exists(yices_path):
+        os.mkdir(yices_path)
+    os.system("cd %s; ./install-yices %s" % (dir_path, yices_path))
 
     pyices_git = "aa0b91c39aa00c19c2160e83aad822dc468ce328"
     pyices_base_name =  "pyices-%s" % pyices_git
@@ -220,15 +226,16 @@ def install_yices(options):
         download("https://codeload.github.com/cheshire/pyices/tar.gz/%s" % pyices_git, pyices_archive)
 
     untar(pyices_archive, BASE_DIR)
-    os.system("export YICES_PATH=\"%s\"; cd %s; python setup.py install --user" % (dir_path, pyices_dir_path))
-    # os.system('cd %s/python; python setup.py build' % dir_path)
+    os.system("export YICES_PATH=\"%s\"; cd %s; python setup.py install --user" % (yices_path, pyices_dir_path))
+    os.system('cd %s; python setup.py build' % pyices_dir_path)
 
-    # print "Install done, add the following to enable mathsat"
-    # print "export PYTHONPATH=\"$PYTHONPATH:%s/python:%s/python/build/lib.linux-x86_64-2.7\"" %\
-    #     (dir_path, dir_path)
+    PATHS.append("%s/build/lib.linux-%s-%s" % (pyices_dir_path, get_architecture(), get_python_version()))
+
+
 
 def install_pycudd(options):
     raise NotImplementedError
+
 
 
 def parse_options():
@@ -300,8 +307,8 @@ def main():
     if options.cudd:
         install_pycudd(options)
 
-    print("Add the following to your .bashrc file or to your environment")
-    print("export PYTHONPATH=\"PYTHONPATH:"+ ":".join(PATHS) + "\"")
+    print("Add the following to your .bashrc file or to your environment:")
+    print("export PYTHONPATH=\"$PYTHONPATH:"+ ":".join(PATHS) + "\"")
 
 
 
