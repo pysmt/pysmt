@@ -24,7 +24,7 @@ import argparse
 import sys
 import time
 
-
+#MG: TODO: Add credits for this class.
 class ProgressBar(object):
     """ProgressBar class holds the options of the progress bar.
     The options are:
@@ -37,7 +37,10 @@ class ProgressBar(object):
         format  Format
         incremental
     """
-    def __init__(self, start=0, end=10, width=12, fill='=', blank='.', format='[%(fill)s>%(blank)s] %(progress)s%%', incremental=True):
+    def __init__(self, start=0, end=10, width=12,
+                 fill='=', blank='.',
+                 format='[%(fill)s>%(blank)s] %(progress)s%%',
+                 incremental=True):
         super(ProgressBar, self).__init__()
 
         self.start = start
@@ -100,17 +103,15 @@ PATHS = []
 
 
 def get_python_version():
-    """Returns the string indicating the python version currently in
-    use. E.g. '2.7'"""
+    """Returns the current python version as string E.g. '2.7'"""
     return "%d.%d" % sys.version_info[0:2]
 
 def get_architecture():
-    """Returns the short anme of the architecture in use. E.g. 'x86_64'"""
+    """Returns the short name of the architecture in use. E.g. 'x86_64'"""
     return platform.machine()
 
 def untar(fname, directory=".", mode='r:gz'):
-    """Opens the tarfile (using the specified mode) and extracts it in the
-    given directory"""
+    """Extracts the tarfile using the specified mode in the given directory."""
     tfile = tarfile.open(fname, mode)
     tfile.extractall(directory)
 
@@ -224,7 +225,7 @@ def install_cvc4(options):
     if os.path.exists(dir_path):
         os.system("rm -rf %s" % dir_path)
 
-    # Extract the Z3 distribution
+    # Extract the CVC4 distribution
     untar(archive, BASE_DIR)
 
     # Patch the distribution to avoid a known problem
@@ -327,6 +328,7 @@ def install_pycudd(options):
 
     # Build the pycudd
     # NOTE: -j is not supported by this building system
+    # MG: shouldn't this check if we are 64 or 32 bit?
     os.system("cd %s/cudd-2.4.2; ./setup.sh; make -f Makefile_64bit; make -f Makefile_64bit libso" % dir_path)
     os.system("cd %s/pycudd; make" % dir_path)
 
@@ -409,6 +411,8 @@ def main():
     print("Add the following to your .bashrc file or to your environment:")
     print("export PYTHONPATH=\"$PYTHONPATH:"+ ":".join(PATHS) + "\"")
 
+    with open(os.path.join(BASE_DIR, "set_paths.sh"), "w") as fout:
+        fout.write("export PYTHONPATH=\"$PYTHONPATH:"+ ":".join(PATHS) + "\"")
 
 
 if __name__ == "__main__":
