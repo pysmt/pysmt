@@ -27,7 +27,6 @@ from pysmt.shortcuts import (Symbol, And, Plus, Minus, Times, Equals, Or, Iff,
                              Function)
 from pysmt.shortcuts import get_env
 from pysmt.test import TestCase
-from pysmt.test.examples import EXAMPLE_FORMULAS
 from pysmt.decorators import typecheck_result
 
 
@@ -151,13 +150,6 @@ class TestSimpleTypeChecker(TestCase):
             self.assertEqual(t, INT, f)
 
 
-    def test_quantifier_oracle(self):
-        oracle = self.qfo
-        for (f, _, _, logic) in EXAMPLE_FORMULAS:
-            is_qf = oracle.is_qf(f)
-            self.assertEqual(is_qf, logic.quantifier_free, f)
-
-
     def test_assert_args(self):
         assert_no_boolean_in_args([self.r, self.p])
         with self.assertRaises(TypeError):
@@ -196,14 +188,6 @@ class TestSimpleTypeChecker(TestCase):
         with self.assertRaises(TypeError):
             super_bad_function()
 
-
-class TestOracles(TestCase):
-
-    def test_get_logic(self):
-        for example in EXAMPLE_FORMULAS:
-            target_logic = example.logic
-            res = get_logic(example.expr)
-            self.assertEquals(res, target_logic)
 
 
 if __name__ == '__main__':

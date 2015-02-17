@@ -27,6 +27,7 @@ import pysmt.simplifier
 import pysmt.printers
 import pysmt.substituter
 import pysmt.type_checker
+import pysmt.oracles
 import pysmt.formula
 import pysmt.factory
 import pysmt.shortcuts
@@ -43,7 +44,8 @@ class Environment(object):
         self._simplifier = pysmt.simplifier.Simplifier(self)
         self._substituter = pysmt.substituter.Substituter(self)
         self._serializer = pysmt.printers.HRSerializer(self)
-        self._qfo = pysmt.type_checker.QuantifierOracle(self)
+        self._qfo = pysmt.oracles.QuantifierOracle(self)
+        self._theoryo = pysmt.oracles.TheoryOracle(self)
 
         self._factory = None
         # Configurations
@@ -78,6 +80,11 @@ class Environment(object):
     def qfo(self):
         """ Get the Quantifier Oracle """
         return self._qfo
+
+    @property
+    def theoryo(self):
+        """ Get the Theory Oracle """
+        return self._theoryo
 
     def add_dynamic_walker_function(self, nodetype, walker, function):
         """Dynamically bind the given function to the walker for the nodetype.
