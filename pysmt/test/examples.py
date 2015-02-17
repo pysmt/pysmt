@@ -142,7 +142,7 @@ def get_example_formulae(environment=None):
             Example(expr=And(GT(r, s), Implies(x, y)),
                     is_valid=False,
                     is_sat=True,
-                    logic=pysmt.logics.QF_LRA
+                    logic=pysmt.logics.QF_RDL
                 ),
 
             # (r + s) = 5.6 /\ (r > s)
@@ -156,7 +156,7 @@ def get_example_formulae(environment=None):
             Example(expr=Or(GE(r, s), LE(r, s)),
                     is_valid=True,
                     is_sat=True,
-                    logic=pysmt.logics.QF_LRA
+                    logic=pysmt.logics.QF_RDL
                 ),
 
             # !( (r / (1/2)) < s * 2 )

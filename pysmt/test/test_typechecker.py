@@ -16,12 +16,12 @@
 #   limitations under the License.
 #
 from pysmt.typing import REAL, BOOL, INT, FunctionType
-from pysmt.type_checker import QuantifierOracle
+
 from pysmt.type_checker import (assert_no_boolean_in_args,
                                 assert_boolean_args,
                                 assert_same_type_args,
                                 assert_args_type_in)
-from pysmt.type_checker import get_logic
+
 from pysmt.shortcuts import (Symbol, And, Plus, Minus, Times, Equals, Or, Iff,
                              LE, LT, Not, GE, GT, Ite, Bool, Int, Real, Div,
                              Function)

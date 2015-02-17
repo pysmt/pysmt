@@ -232,7 +232,8 @@ class SmtLibParser(object):
 
         """
         return self.logic is None or \
-            (self.logic.integer_arithmetic and self.logic.real_arithmetic)
+            (self.logic.theory.integer_arithmetic and
+             self.logic.theory.real_arithmetic)
 
     def _minus_or_uminus(self, *args):
         """Utility function that handles both unary and binary minus"""
@@ -243,12 +244,12 @@ class SmtLibParser(object):
                     return GenericNumber(-1 * args[0].value)
                 return mgr.Times(GenericNumber(-1), args[0])
             else:
-                if self.logic.real_arithmetic:
+                if self.logic.theory.real_arithmetic:
                     if args[0].is_real_constant():
                         return mgr.Real(-1 * args[0].constant_value())
                     return mgr.Times(mgr.Real(-1), args[0])
                 else:
-                    assert self.logic.integer_arithmetic
+                    assert self.logic.theory.integer_arithmetic
                     if args[0].is_int_constant():
                         return mgr.Int(-1 * args[0].constant_value())
                     return mgr.Times(mgr.Int(-1), args[0])
@@ -321,10 +322,10 @@ class SmtLibParser(object):
                 # an Int, a Real, or an unknown GenericNumber.
                 if self._is_unknown_constant_type():
                     res = GenericNumber(iterm)
-                elif self.logic.real_arithmetic:
+                elif self.logic.theory.real_arithmetic:
                     res = mgr.Real(iterm)
                 else:
-                    assert self.logic.integer_arithmetic, \
+                    assert self.logic.theory.integer_arithmetic, \
                         "Integer constant found in a logic that does not " \
                         "support arithmetic"
                     res = mgr.Int(iterm)

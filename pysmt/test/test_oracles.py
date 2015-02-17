@@ -18,12 +18,12 @@
 from pysmt.shortcuts import get_env
 from pysmt.test.examples import EXAMPLE_FORMULAS
 from pysmt.test import TestCase
-from pysmt.oracle import get_logic
+from pysmt.oracles import get_logic
 
 class TestOracles(TestCase):
 
     def test_quantifier_oracle(self):
-        oracle = get_env.qfo
+        oracle = get_env().qfo
         for (f, _, _, logic) in EXAMPLE_FORMULAS:
             is_qf = oracle.is_qf(f)
             self.assertEqual(is_qf, logic.quantifier_free, f)
@@ -32,4 +32,5 @@ class TestOracles(TestCase):
         for example in EXAMPLE_FORMULAS:
             target_logic = example.logic
             res = get_logic(example.expr)
-            self.assertEquals(res, target_logic)
+            self.assertEquals(res, target_logic, "%s - %s != %s" % \
+                              (example.expr, target_logic, res))

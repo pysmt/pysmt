@@ -26,7 +26,7 @@ import pysmt.walkers as walkers
 import pysmt.operators as op
 import pysmt.shortcuts
 
-from pysmt.logics import Logic, get_closer_pysmt_logic
+from pysmt.logics import Logic, Theory, get_closer_pysmt_logic
 
 
 class QuantifierOracle(walkers.DagWalker):
@@ -85,23 +85,18 @@ class TheoryOracle(walkers.DagWalker):
         """Combines the current theory value of the children"""
         theory_out = args[0]
         for t in args[1:]:
-            theory_out = theory_out | t
-
+            theory_out = theory_out.combine(t)
         return theory_out
 
     def walk_constant(self, formula, args):
         """Returns a new theory object with the type of the constant."""
         if formula.is_real_constant():
-            theory_out = Logic(name="", description="",
-                               real_arithmetic=True, real_difference=True,
-                               linear=True)
+            theory_out = Theory(real_arithmetic=True, real_difference=True)
         elif formula.is_int_constant():
-            theory_out = Logic(name="", description="",
-                               integer_arithmetic=True, integer_difference=True,
-                               linear=True)
+            theory_out = Theory(integer_arithmetic=True, integer_difference=True)
         else:
             assert formula.is_bool_constant()
-            theory_out = Logic(name="", description="")
+            theory_out = Theory()
 
         return theory_out
 
@@ -109,19 +104,14 @@ class TheoryOracle(walkers.DagWalker):
         """Returns a new theory object with the type of the symbol."""
         f_type = formula.symbol_type()
         if f_type.is_real_type():
-            theory_out = Logic(name="", description="",
-                               real_arithmetic=True, real_difference=True,
-                               linear=True)
+            theory_out = Theory(real_arithmetic=True, real_difference=True)
         elif f_type.is_int_type():
-            theory_out = Logic(name="", description="",
-                               integer_arithmetic=True, integer_difference=True,
-                               linear=True)
+            theory_out = Theory(integer_arithmetic=True, integer_difference=True)
         elif f_type.is_bool_type():
-            theory_out = Logic(name="", description="")
+            theory_out = Theory()
         else:
             assert f_type.is_function_type()
-            theory_out = Logic(name="", description="",
-                               uninterpreted=True)
+            theory_out = Theory(uninterpreted=True)
 
         return theory_out
 
@@ -130,9 +120,9 @@ class TheoryOracle(walkers.DagWalker):
         if len(args) > 0:
             theory_out = args[0]
             for t in args[1:]:
-                theory_out = theory_out | t
+                theory_out = theory_out.combine(t)
         else:
-            theory_out = Logic(name="",description="")
+            theory_out = Theory()
 
         theory_out.uninterpreted = True
         return theory_out
@@ -148,7 +138,7 @@ class TheoryOracle(walkers.DagWalker):
         """Extends the Theory with Non-Linear, if needed."""
         theory_out = args[0]
         for t in args[1:]:
-            theory_out = theory_out | t
+            theory_out = theory_out.combine(t)
         # if Left and Right children are symbolic
         #    theory_out = theory_out.set_non_linear()
         theory_out = theory_out.set_difference_logic(False)
@@ -157,8 +147,10 @@ class TheoryOracle(walkers.DagWalker):
     def walk_plus(self, formula, args):
         theory_out = args[0]
         for t in args[1:]:
-            theory_out = theory_out | t
-        theory_out = theory_out.set_difference_logic()
+            theory_out = theory_out.combine(t)
+        theory_out = theory_out.set_difference_logic(value=False)
+        assert not theory_out.real_difference
+        assert not theory_out.integer_difference
         return theory_out
 
     def walk_equals(self, formula, args):
@@ -179,6 +171,7 @@ def get_logic(formula):
     # Get Quantifier Information
     qf = env.qfo.is_qf(formula)
     theory = env.theoryo.get_theory(formula)
-    theory.quantifier_free = qf
+    logic = Logic(name="Detected Logic", description="",
+                  quantifier_free=qf, theory=theory)
     # Return a logic supported by PySMT that is close to the one computed
-    return get_closer_pysmt_logic(theory)
+    return get_closer_pysmt_logic(logic)
