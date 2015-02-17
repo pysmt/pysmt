@@ -21,6 +21,7 @@ from pysmt.type_checker import (assert_no_boolean_in_args,
                                 assert_boolean_args,
                                 assert_same_type_args,
                                 assert_args_type_in)
+from pysmt.type_checker import get_logic
 from pysmt.shortcuts import (Symbol, And, Plus, Minus, Times, Equals, Or, Iff,
                              LE, LT, Not, GE, GT, Ite, Bool, Int, Real, Div,
                              Function)
@@ -194,6 +195,16 @@ class TestSimpleTypeChecker(TestCase):
 
         with self.assertRaises(TypeError):
             super_bad_function()
+
+
+class TestOracles(TestCase):
+
+    def test_get_logic(self):
+        for example in EXAMPLE_FORMULAS:
+            target_logic = example.logic
+            res = get_logic(example.expr)
+            self.assertEquals(res, target_logic)
+
 
 if __name__ == '__main__':
     import unittest

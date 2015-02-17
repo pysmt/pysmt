@@ -40,7 +40,7 @@ class Logic(object):
                  integer_difference = False,
                  real_difference = False,
                  linear = False,
-                 non_linear = False,
+                 non_linear = False, # MG: Isn't linear = not non_linear?
                  uninterpreted = False):
 
         self.name = name
@@ -58,6 +58,54 @@ class Logic(object):
         self.uninterpreted = uninterpreted
 
         return
+
+    def set_lira(self, value=True):
+        res = self.copy()
+        self.integer_arithmetic = value
+        self.real_arithmetic = value
+        return res
+
+    def set_non_linear(self, value=True):
+        res = self.copy()
+        self.non_linear = value
+        return res
+
+    def set_difference_logic(self, value=True):
+        res = self.copy()
+        self.non_linear = value
+        return res
+
+    def copy(self):
+        new_logic = Logic(name = self.name,
+                          description = self.description,
+                          quantifier_free = self.quantifier_free,
+                          arrays = self.arrays,
+                          bit_vectors = self.bit_vectors,
+                          floating_point = self.floating_point,
+                          integer_arithmetic = self.integer_arithmetic,
+                          real_arithmetic = self.real_arithmetic,
+                          integer_difference = self.integer_difference,
+                          real_difference = self.real_difference,
+                          linear = self.linear,
+                          non_linear = self.non_linear,
+                          uninterpreted = self.uninterpreted)
+
+        return new_logic
+
+    def __or__(self, other):
+        return Logic(name="", description="",
+            quantifier_free=self.quantifier_free | other.quantifier_free,
+            arrays=self.arrays | other.arrays,
+            bit_vectors=self.bit_vectors | other.bit_vectors,
+            floating_point=self.floating_point | other.floating_point,
+            integer_arithmetic=self.integer_arithmetic | other.integer_arithmetic,
+            real_arithmetic=self.real_arithmetic | other.real_arithmetic,
+            integer_difference=self.integer_difference | other.integer_difference,
+            real_difference=self.real_difference | other.real_difference,
+            linear=self.linear | other.linear,
+            non_linear=self.non_linear | other.non_linear,
+            uninterpreted=self.uninterpreted | other.uninterpreted)
+
 
     def __str__(self):
         return self.name
@@ -555,3 +603,6 @@ def get_closer_logic(supported_logics, logic):
     if len(res) == 0:
         raise NoLogicAvailableError("Logic %s is not supported" % logic)
     return min(res)
+
+def get_closer_pysmt_logic(target_logic):
+    return get_closer_logic(PYSMT_LOGICS, target_logic)
