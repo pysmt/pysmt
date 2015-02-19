@@ -22,11 +22,62 @@ import platform
 import zipfile
 import argparse
 
+################################################################################
+# Base variables
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 BASE_DIR = os.path.join(CWD, ".smt_solvers")
 PATHS = []
 
+# Address of a mirror website containing packages to avoid continuous
+# downloads from original websites in CI
+mirror = os.environ.get('PYSMT_INSTALL_MIRROR')
+
+
+################################################################################
+# Link generators
+
+def get_msat_download_link(archive_name):
+    if mirror is not None:
+        return mirror + "/" + archive_name
+    return "http://mathsat.fbk.eu/download.php?file=%s" % archive_name
+
+def get_z3_download_link(git_version):
+    if mirror is not None:
+        return mirror + ("/z3-%s.zip" % git_version)
+    return "http://download-codeplex.sec.s-msft.com/Download/SourceControlFileDownload.ashx?ProjectName=z3&changeSetId=%s" % git_version
+
+def get_cvc4_download_link(git_version):
+    if mirror is not None:
+        return mirror + ("/cvc4-%s.tar.gz" % git_version)
+    return "https://codeload.github.com/CVC4/CVC4/tar.gz/%s" % git_version
+
+def get_yices_download_link(archive_name):
+    if mirror is not None:
+        return mirror + "/" + archive_name
+    return "http://yices.csl.sri.com/cgi-bin/yices2-newnewdownload.cgi?file=%s&accept=I+Agree" % archive_name
+
+def get_pyices_download_link(git_version):
+    if mirror is not None:
+        return mirror + ("/pyices-%s.tar.gz" % git_version)
+    return "https://codeload.github.com/cheshire/pyices/tar.gz/%s" % git_version
+
+def get_pycudd_download_link(archive_name):
+    if mirror is not None:
+        return mirror + "/" + archive_name
+    return"http://bears.ece.ucsb.edu/ftp/pub/pycudd2.0/%s" % archive_name
+
+
+################################################################################
+# Utility functions
+
+def get_architecture_bits():
+    """Returns the native word width of this architecture. E.g. 32 or 64"""
+    is_64bits = sys.maxsize > 2**32
+    if is_64bits:
+        return 64
+    else:
+        return 32
 
 def get_python_version():
     """Returns the current python version as string E.g. '2.7'"""
@@ -74,6 +125,8 @@ def download(url, file_name):
     print ""
     f.close()
 
+################################################################################
+# Installers
 
 def install_msat(options):
     """Installer for the MathSAT5 solver python interafce"""
@@ -85,7 +138,7 @@ def install_msat(options):
 
     # Download the mathsat release if needed
     if not os.path.exists(archive):
-        download("http://mathsat.fbk.eu/download.php?file=%s" % archive_name, archive)
+        download(get_msat_download_link(archive_name), archive)
 
     # clear the destination directory, if any
     if os.path.exists(dir_path):
@@ -106,6 +159,7 @@ def install_msat(options):
 def install_z3(options):
     """Installer for the Z3 solver python interafce"""
 
+    git = "cee7dd39444c9060186df79c2a2c7f8845de415b"
     base_name =  "z3"
     archive_name = "%s.zip" % base_name
     archive = os.path.join(BASE_DIR, archive_name)
@@ -114,7 +168,7 @@ def install_z3(options):
 
     # Download the z3 release if needed
     if not os.path.exists(archive):
-        download("http://download-codeplex.sec.s-msft.com/Download/SourceControlFileDownload.ashx?ProjectName=z3&changeSetId=cee7dd39444c9060186df79c2a2c7f8845de415b", archive)
+        download(get_z3_download_link(git), archive)
 
     # clear the destination directory, if any
     if os.path.exists(dir_path):
@@ -149,7 +203,7 @@ def install_cvc4(options):
 
     # Download the cvc4 release if needed
     if not os.path.exists(archive):
-        download("https://codeload.github.com/CVC4/CVC4/tar.gz/%s" % git, archive)
+        download(get_cvc4_download_link(git), archive)
 
     # clear the destination directory, if any
     if os.path.exists(dir_path):
@@ -189,7 +243,7 @@ def install_yices(options):
 
     # Download the yices release if needed
     if not os.path.exists(archive):
-        download("http://yices.csl.sri.com/cgi-bin/yices2-newnewdownload.cgi?file=%s&accept=I+Agree" % archive_name, archive)
+        download(get_yices_download_link(archive_name), archive)
 
     # clear the destination directory, if any
     if os.path.exists(dir_path):
@@ -216,7 +270,7 @@ def install_yices(options):
 
     # Download pyices if needed
     if not os.path.exists(pyices_archive):
-        download("https://codeload.github.com/cheshire/pyices/tar.gz/%s" % pyices_git, pyices_archive)
+        download(get_pyices_download_link(pyices_git), pyices_archive)
 
     # clear the destination directory, if any
     if os.path.exists(pyices_dir_path):
@@ -244,7 +298,7 @@ def install_pycudd(options):
 
     # Download pycudd if needed
     if not os.path.exists(archive):
-        download("http://bears.ece.ucsb.edu/ftp/pub/pycudd2.0/%s" % archive_name, archive)
+        download(get_pycudd_download_link(archive_name), archive)
 
     # clear the destination directory, if any
     if os.path.exists(dir_path):
@@ -294,6 +348,9 @@ def parse_options():
     options = parser.parse_args()
     return options
 
+
+################################################################################
+# Main functions
 
 def print_welcome():
     msg = """\
