@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name='PySMT',
-    version='0.2.2-dev',
+    version='0.2.2',
     author='PySMT Team',
     author_email='',
     packages=['pysmt', 'pysmt.smtlib', 'pysmt.solvers',

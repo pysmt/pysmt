@@ -13,6 +13,7 @@ Contents:
 
    intro
    getting_started
+   changes
    development
    api_ref
 
@@ -23,4 +24,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
