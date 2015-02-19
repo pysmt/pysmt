@@ -310,10 +310,15 @@ def install_pycudd(options):
     # patch the distribution
     os.system("cd %s; patch -p1 -i %s/patches/pycudd.patch" % (dir_path, CWD))
 
+    # Select the correct Makefile to be used
+    makefile = "Makefile"
+    if get_architecture_bits() == 64:
+        makefile = "Makefile_64bit"
+
     # Build the pycudd
     # NOTE: -j is not supported by this building system
-    # MG: shouldn't this check if we are 64 or 32 bit?
-    os.system("cd %s/cudd-2.4.2; ./setup.sh; make -f Makefile_64bit; make -f Makefile_64bit libso" % dir_path)
+    os.system("cd %s/cudd-2.4.2; ./setup.sh; make -f %s" % (dir_path, makefile))
+    os.system("cd %s/cudd-2.4.2; make -f %s libso" % (dir_path, makefile))
     os.system("cd %s/pycudd; make" % dir_path)
 
     # Save the paths
