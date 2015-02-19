@@ -324,6 +324,21 @@ def install_pycudd(options):
     # Save the paths
     PATHS.append("%s/pycudd" % dir_path)
 
+def check_install():
+    """Checks whether a solver is visible by pySMT."""
+
+    from pysmt.shortcuts import Solver
+    from pysmt.exceptions import NoSolverAvailableError
+
+    for solver in ['msat', 'z3', 'cvc4', 'yices', 'bdd']:
+        is_installed = False
+        try:
+            Solver(name=solver)
+            is_installed = True
+        except NoSolverAvailableError:
+            is_installed = False
+        print("%s: \t %s" % (solver, is_installed))
+
 
 
 def parse_options():
@@ -341,6 +356,9 @@ def parse_options():
     parser.add_argument('--make-j', dest='make_j', metavar='N',
                         type=int, default=1,
                         help='Define paralellism for make (Default: 1)')
+    parser.add_argument('--check', dest='check', action='store_true',
+                        default=False,
+                        help='Checks the installation of the solvers')
     parser.add_argument('--confirm-agreement', dest='skip_intro',
                         action='store_true', default=False,
                         help='Confirm that you agree with the licenses of the\
@@ -375,13 +393,19 @@ Notice: the installation process might require building tools
 
 
 def main():
+    options = parse_options()
+
+    # If checking only the installation, we exit immediately
+    if options.check:
+        check_install()
+        exit(0)
+
+    if not options.skip_intro:
+        print_welcome()
+
     # create install folder if needed
     if not os.path.exists(BASE_DIR):
         os.mkdir(BASE_DIR)
-
-    options = parse_options()
-    if not options.skip_intro:
-        print_welcome()
 
     if options.z3:
         install_z3(options)
