@@ -152,8 +152,7 @@ def install_msat(options):
 
     # Save the paths
     PATHS.append("%s/python" % dir_path)
-    PATHS.append("%s/build/lib.linux-%s-%s" % (dir_path, get_architecture(), get_python_version()))
-
+    PATHS.append("%s/python/build/lib.linux-%s-%s" % (dir_path, get_architecture(), get_python_version()))
 
 
 def install_z3(options):
