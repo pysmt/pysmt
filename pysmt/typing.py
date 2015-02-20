@@ -34,6 +34,8 @@ __CUSTOM_TYPES__ = {}
 
 
 class PySMTType(object):
+    def __init__(self, type_id=-1):
+        self.type_id = type_id
 
     def is_bool_type(self):
         return False
@@ -47,8 +49,21 @@ class PySMTType(object):
     def is_function_type(self):
         return False
 
+    def __hash__(self):
+        return self.type_id
+
+    def __eq__(self, other):
+        if other is None:
+            return False
+        return self.type_id == other.type_id
+
+    def __ne__(self, other):
+        return not (self == other)
 
 class BooleanType(PySMTType):
+    def __init__(self):
+        PySMTType.__init__(self, type_id = 0)
+
     def is_bool_type(self):
         return True
 
@@ -63,6 +78,8 @@ class BooleanType(PySMTType):
 
 
 class RealType(PySMTType):
+    def __init__(self):
+        PySMTType.__init__(self, type_id = 1)
 
     def is_real_type(self):
         return True
@@ -78,6 +95,9 @@ class RealType(PySMTType):
 
 
 class IntType(PySMTType):
+    def __init__(self):
+        PySMTType.__init__(self, type_id = 2)
+
     def is_int_type(self):
         return True
 
@@ -107,9 +127,10 @@ def FunctionType(return_type, param_types):
 class _FunctionType(PySMTType):
 
     def __init__(self, return_type, param_types):
-        PySMTType.__init__(self)
+        PySMTType.__init__(self, type_id = 4)
         self.return_type = return_type
         self.param_types = param_types
+        self._hash = hash(str(self))
         return
 
     def as_smtlib(self, funstyle=True):
@@ -130,6 +151,17 @@ class _FunctionType(PySMTType):
     def is_function_type(self):
         return True
 
+    def __eq__(self, other):
+        if other is None:
+            return False
+        if self.type_id != other.type_id:
+            return False
+        if id(self) == id(other):
+            return True
+        return str(self) == str(other)
+
+    def __hash__(self):
+        return self._hash
 
 BOOL = BooleanType()
 
