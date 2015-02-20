@@ -1,6 +1,15 @@
 Change Log
 ==========
 
+0.2.3 XXXXXXXXXX -- YYY
+-----------------------
+
+General:
+
+* install.py: script to automate the installation of supported
+  solvers.
+
+
 0.2.2 2015-02-07 -- BDDs
 ------------------------
 
