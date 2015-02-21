@@ -35,6 +35,7 @@ if [ "$1" == "cudd" ]
 then
     apt-get update
     apt-get install -y make build-essential swig libgmp-dev
+    apt-get install -y python-all-dev
     ./install.py --confirm-agreement --cudd  --make-j 2
 fi
 
