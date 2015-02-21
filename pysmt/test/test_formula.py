@@ -22,7 +22,8 @@ from pysmt.typing import BOOL, REAL, INT, FunctionType
 from pysmt.shortcuts import Symbol, is_sat, is_valid, Implies, GT, Plus
 from pysmt.shortcuts import get_env
 from pysmt.environment import Environment
-from pysmt.test import TestCase, skipIfNoSolverAvailable
+from pysmt.test import TestCase, skipIfNoSolverForLogic
+from pysmt.logics import QF_BOOL
 from pysmt.exceptions import NonLinearError
 from pysmt.formula import FormulaManager
 
@@ -480,14 +481,14 @@ class TestFormulaManager(TestCase):
         self.assertEqual(c, self.mgr.Bool(False),
                          "ExactlyOne should not allow 2 symbols to be True")
 
-    @skipIfNoSolverAvailable
+    @skipIfNoSolverForLogic(QF_BOOL)
     def test_exactly_one_is_sat(self):
         symbols = [ self.mgr.Symbol("s%d"%i, BOOL) for i in range(5) ]
         c = self.mgr.ExactlyOne(symbols)
         all_zero = self.mgr.And([self.mgr.Iff(s, self.mgr.Bool(False))
                                   for s in symbols])
         test_zero = self.mgr.And(c, all_zero)
-        self.assertFalse(is_sat(test_zero),
+        self.assertFalse(is_sat(test_zero, logic=QF_BOOL),
                          "ExactlyOne should not allow all symbols to be False")
 
 

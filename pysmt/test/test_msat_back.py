@@ -19,15 +19,14 @@ import unittest
 from pysmt.shortcuts import FreshSymbol, GT, And, Plus, Real, Int, LE, Iff
 from pysmt.shortcuts import is_valid, get_env
 from pysmt.typing import REAL, INT
-from pysmt.test import TestCase
+from pysmt.test import TestCase, skipIfSolverNotAvailable
 from pysmt.test.examples import get_example_formulae
 from pysmt.logics import QF_UFLIRA
 
 
 class TestBasic(TestCase):
 
-    @unittest.skipIf('msat' not in get_env().factory.all_solvers(),
-                     "MathSAT is not available.")
+    @skipIfSolverNotAvailable("msat")
     def test_msat_back_simple(self):
         from pysmt.solvers.msat import MathSAT5Solver, MSatConverter
 
@@ -44,14 +43,12 @@ class TestBasic(TestCase):
         term = new_converter.convert(f)
         res = new_converter.back(term)
 
-        # Checking equality is not enough: see net test as MathSAT can
-        # change the shape of the formula into a logically equivalent
-        # form.
-        self.assertTrue(is_valid(Iff(f, res)))
+        # Checking equality is not enough: MathSAT can change the
+        # shape of the formula into a logically equivalent form.
+        self.assertTrue(is_valid(Iff(f, res), logic=QF_UFLIRA))
 
 
-    @unittest.skipIf('msat' not in get_env().factory.all_solvers(),
-                     "MathSAT is not available.")
+    @skipIfSolverNotAvailable("msat")
     def test_msat_back_not_identical(self):
         from pysmt.solvers.msat import MathSAT5Solver, MSatConverter
 
@@ -68,8 +65,7 @@ class TestBasic(TestCase):
         self.assertFalse(f == res)
 
 
-    @unittest.skipIf('msat' not in get_env().factory.all_solvers(),
-                     "MathSAT is not available.")
+    @skipIfSolverNotAvailable("msat")
     def test_msat_back_formulae(self):
         from pysmt.solvers.msat import MathSAT5Solver, MSatConverter
 
@@ -81,7 +77,7 @@ class TestBasic(TestCase):
             if logic.quantifier_free:
                 term = new_converter.convert(formula)
                 res = new_converter.back(term)
-                self.assertTrue(is_valid(Iff(formula, res)))
+                self.assertTrue(is_valid(Iff(formula, res), logic=QF_UFLIRA))
 
 
 

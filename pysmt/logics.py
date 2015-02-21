@@ -462,7 +462,7 @@ QF_LOGICS = [l for l in LOGICS if l.quantifier_free]
 #
 PYSMT_LOGICS = [QF_BOOL, QF_IDL, QF_LIA, QF_LRA, QF_RDL, QF_UF, QF_UFIDL,
                 QF_UFLIA, QF_UFLRA, QF_UFLIRA,
-                BOOL, LRA, LIA, UFLIRA ]
+                BOOL, LRA, LIA, UFLIRA, UFLRA ]
 
 PYSMT_QF_LOGICS = [l for l in PYSMT_LOGICS if l.quantifier_free]
 

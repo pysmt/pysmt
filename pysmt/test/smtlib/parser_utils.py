@@ -18,11 +18,11 @@
 import os
 import unittest
 
-from pysmt.test import skipIfNoSolverAvailable
 from pysmt.shortcuts import Solver, reset_env
 from pysmt.smtlib.parser import SmtLibParser
 from pysmt.smtlib.script import check_sat_filter
 from pysmt.logics import QF_LIA, QF_LRA, LRA, QF_UFLIRA
+from pysmt.exceptions import NoSolverAvailableError
 
 SMTLIB_DIR = "pysmt/test/smtlib"
 SMTLIB_TEST_FILES = [
@@ -87,7 +87,6 @@ SMTLIB_TEST_FILES = [
 #  $ nosetests pysmt/test/smtlib/test_parser_qf_lra.py
 # The function 'execute_script_fname' is a generator that
 # returns the correct arguments for the test
-@skipIfNoSolverAvailable
 def execute_script_fname(smtfile, logic, expected_result):
     """Read and call a Solver to solve the instance"""
 
@@ -95,7 +94,10 @@ def execute_script_fname(smtfile, logic, expected_result):
     assert os.path.exists(smtfile)
     parser = SmtLibParser()
     script = parser.get_script_fname(smtfile)
-    log = script.evaluate(Solver(logic=logic))
+    try:
+        log = script.evaluate(Solver(logic=logic))
+    except NoSolverAvailableError:
+        raise unittest.SkipTest("No solver for logic %s." % logic)
 
     res = check_sat_filter(log)
     if res:
