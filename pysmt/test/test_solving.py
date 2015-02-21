@@ -31,7 +31,7 @@ class TestBasic(TestCase):
 
     @skipIfNoSolverForLogic(QF_BOOL)
     def test_create_and_solve(self):
-        solver = Solver()
+        solver = Solver(logic=QF_BOOL)
 
         varA = Symbol("A", BOOL)
         varB = Symbol("B", BOOL)
@@ -55,7 +55,7 @@ class TestBasic(TestCase):
         f = And(varA, Not(varB))
         g = f.substitute({varB:varA})
 
-        res = is_sat(g)
+        res = is_sat(g, logic=QF_BOOL)
         self.assertFalse(res, "Formula was expected to be UNSAT")
 
         for solver in get_env().factory.all_solvers():
@@ -66,7 +66,7 @@ class TestBasic(TestCase):
     def test_get_py_value(self):
         varA = Symbol("A", BOOL)
 
-        with Solver() as s:
+        with Solver(logic=QF_BOOL) as s:
             s.add_assertion(varA)
             s.solve()
             self.assertTrue(s.get_py_value(varA))
