@@ -21,7 +21,7 @@ from pysmt.shortcuts import (Real, Plus, Symbol, Equals, And, Bool, Or,
                              Div, LT, Int, ToReal)
 from pysmt.shortcuts import Solver, is_valid, get_env, is_sat
 from pysmt.typing import REAL, BOOL, INT, FunctionType
-from pysmt.test import TestCase, skipIfSolverNotAvailable, skipIfNoSolverAvailable
+from pysmt.test import TestCase, skipIfSolverNotAvailable, skipIfNoSolverForLogic
 from pysmt.logics import QF_UFLIRA, QF_BOOL
 
 
@@ -86,7 +86,7 @@ class TestRegressions(TestCase):
         new_type = get_type(f)
         self.assertEqual(new_type, old_type)
 
-    @skipIfNoSolverAvailable
+    @skipIfNoSolverForLogic(QF_UFLIRA)
     def test_nary_operators_in_solver_converter(self):
         """Conversion of n-ary operators was not handled correctly by converters."""
         x = Symbol("x")
