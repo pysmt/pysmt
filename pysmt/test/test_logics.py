@@ -109,7 +109,7 @@ class TestLogic(unittest.TestCase):
             self.assertIsNotNone(s)
         else:
             with self.assertRaises(NoSolverAvailableError):
-                Solver(logic=pysmt.logic.QF_BOOL)
+                Solver(logic=pysmt.logics.QF_BOOL)
 
         with self.assertRaises(NoSolverAvailableError):
             Solver(logic="p")
