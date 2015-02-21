@@ -79,14 +79,34 @@ class Theory(object):
         return new_theory
 
     def combine(self, other):
+        if self.integer_arithmetic and other.integer_arithmetic:
+            integer_difference = self.integer_difference and other.integer_difference
+        elif self.integer_arithmetic and not other.integer_arithmetic:
+            integer_difference = self.integer_difference
+        elif not self.integer_arithmetic and other.integer_arithmetic:
+            integer_difference = other.integer_difference
+        else:
+            assert not self.integer_arithmetic and not other.integer_arithmetic
+            integer_difference = False
+
+        if self.real_arithmetic and other.real_arithmetic:
+            real_difference = self.real_difference and other.real_difference
+        elif self.real_arithmetic and not other.real_arithmetic:
+            real_difference = self.real_difference
+        elif not self.real_arithmetic and other.real_arithmetic:
+            real_difference = other.real_difference
+        else:
+            assert not self.real_arithmetic and not other.real_arithmetic
+            real_difference = False
+
         return Theory(
             arrays=self.arrays | other.arrays,
             bit_vectors=self.bit_vectors | other.bit_vectors,
             floating_point=self.floating_point | other.floating_point,
             integer_arithmetic=self.integer_arithmetic | other.integer_arithmetic,
             real_arithmetic=self.real_arithmetic | other.real_arithmetic,
-            integer_difference=self.integer_difference & other.integer_difference,
-            real_difference=self.real_difference & other.real_difference,
+            integer_difference=integer_difference,
+            real_difference=real_difference,
             linear=self.linear | other.linear,
             uninterpreted=self.uninterpreted | other.uninterpreted)
 
@@ -111,17 +131,17 @@ class Theory(object):
     def __le__(self, other):
         if self.integer_difference == other.integer_difference:
             le_integer_difference = True
-        elif self.integer_difference and not other.integer_arithmetic:
-            le_integer_difference = False
-        else:
+        elif self.integer_difference and other.integer_arithmetic:
             le_integer_difference = True
+        else:
+            le_integer_difference = False
 
         if self.real_difference == other.real_difference:
             le_real_difference = True
-        elif self.real_difference and not other.real_arithmetic:
-            le_real_difference = False
-        else:
+        elif self.real_difference and other.real_arithmetic:
             le_real_difference = True
+        else:
+            le_real_difference = False
 
         return (self.arrays <= other.arrays and
                 self.bit_vectors <= other.bit_vectors and
@@ -132,6 +152,19 @@ class Theory(object):
                 le_real_difference and
                 self.real_arithmetic <= other.real_arithmetic and
                 self.linear <= other.linear)
+
+    def __str__(self):
+        return "Arrays: %s, " % self.arrays +\
+            "BV: %s, " % self.bit_vectors +\
+            "FP: %s, " % self.floating_point +\
+            "IA: %s, " % self.integer_arithmetic +\
+            "RA: %s, " % self.real_arithmetic +\
+            "ID: %s, " % self.integer_difference +\
+            "RD: %s, " % self.real_difference +\
+            "Linear: %s, " % self.linear +\
+            "EUF: %s" % self.uninterpreted
+
+    __repr__ = __str__
 
 
 class Logic(object):

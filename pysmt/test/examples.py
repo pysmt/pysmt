@@ -90,7 +90,7 @@ def get_example_formulae(environment=None):
             Example(expr=And(GT(p, q), Implies(x, y)),
                     is_valid=False,
                     is_sat=True,
-                    logic=pysmt.logics.QF_LIA
+                    logic=pysmt.logics.QF_IDL
                 ),
 
             # (p + q) = 5 /\ (p > q)
@@ -104,7 +104,7 @@ def get_example_formulae(environment=None):
             Example(expr=Or(GE(p, q), LE(p, q)),
                     is_valid=True,
                     is_sat=True,
-                    logic=pysmt.logics.QF_LIA
+                    logic=pysmt.logics.QF_IDL
                 ),
 
             # !( p < q * 2 )
@@ -118,7 +118,7 @@ def get_example_formulae(environment=None):
             Example(expr=GT(Minus(p, Minus(Int(5), Int(2))), p),
                     is_valid=False,
                     is_sat=False,
-                    logic=pysmt.logics.QF_LIA
+                    logic=pysmt.logics.QF_IDL
                 ),
 
             # x ? 7: (p + -1) * 3 = q
@@ -170,7 +170,7 @@ def get_example_formulae(environment=None):
             Example(expr=Not(GT(Minus(r, Minus(Real(5), Real(2))), r)),
                     is_valid=True,
                     is_sat=True,
-                    logic=pysmt.logics.QF_LRA
+                    logic=pysmt.logics.QF_RDL
                 ),
 
             # x ? 7: (s + -1) * 3 = r
