@@ -426,7 +426,7 @@ def main():
     print("Add the following to your .bashrc file or to your environment:")
     print("export PYTHONPATH=\"$PYTHONPATH:"+ ":".join(PATHS) + "\"")
 
-    with open(os.path.join(BASE_DIR, "set_paths.sh"), "w") as fout:
+    with open(os.path.join(BASE_DIR, "set_paths.sh"), "a") as fout:
         fout.write("export PYTHONPATH=\"$PYTHONPATH:"+ ":".join(PATHS) + "\"")
 
 

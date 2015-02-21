@@ -1,16 +1,32 @@
+cache: true
 language: python
 build_image: shippableimages/ubuntu1204_python
 python:
-  - 2.6
+  # - 2.6
   - 2.7
-  - 3.2
-  - 3.3
-  - 3.4
-  - pypy
+  # - 3.2
+  # - 3.3
+  # - 3.4
+  # - pypy
+
 
 install:
   - pip install nose
   - pip install coverage
+  - source shippable.sh $PYSMT_SOLVER
+
+env:
+ # Multiple envs will cause multiple build across multiple python versions.
+ # We test the following:
+ # 1. PySMT w/o solvers
+ # 2. PySMT with one solver at the time
+ - PYSMT_SOLVER="None"
+ - PYSMT_SOLVER="msat"  PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.2.12-linux-x86_64/python:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.2.12-linux-x86_64/python/build/lib.linux-x86_64-2.7"
+ - PYSMT_SOLVER="z3"    PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/z3_bin/lib/python2.7/dist-packages"
+ - PYSMT_SOLVER="cvc4"  PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/CVC4-68f22235a62f5276b206e9a6692a85001beb8d42/builds/src/bindings/python"
+ - PYSMT_SOLVER="yices" PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/pyices-aa0b91c39aa00c19c2160e83aad822dc468ce328/build/lib.linux-x86_64-2.7"
+ - PYSMT_SOLVER="cudd"  PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/pycudd2.0.2/pycudd"
+
 
 # Make folders for the reports
 before_script:
@@ -18,4 +34,5 @@ before_script:
   - mkdir -p shippable/codecoverage
 
 script:
+  - ./install.py --check
   - nosetests pysmt --with-xunit --xunit-file=shippable/testresults/nosetests.xml --with-coverage --cover-package=pysmt --cover-xml --cover-xml-file=shippable/codecoverage/coverage.xml --cover-branch
