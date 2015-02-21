@@ -83,6 +83,9 @@ class TheoryOracle(walkers.DagWalker):
 
     def walk_combine(self, formula, args):
         """Combines the current theory value of the children"""
+        if len(args) == 1:
+            return args[0].copy()
+
         theory_out = args[0]
         for t in args[1:]:
             theory_out = theory_out.combine(t)
@@ -117,7 +120,9 @@ class TheoryOracle(walkers.DagWalker):
 
     def walk_function(self, formula, args):
         """Extends the Theory with UF."""
-        if len(args) > 0:
+        if len(args) == 1:
+            theory_out = args[0].copy()
+        elif len(args) > 1:
             theory_out = args[0]
             for t in args[1:]:
                 theory_out = theory_out.combine(t)
@@ -127,20 +132,21 @@ class TheoryOracle(walkers.DagWalker):
         theory_out.uninterpreted = True
         return theory_out
 
-
     def walk_lira(self, formula, args):
         """Extends the Theory with LIRA."""
-        theory_out = args[0]
+        theory_out = args[0].copy()
         theory_out = theory_out.set_lira()
         return theory_out
 
     def walk_times(self, formula, args):
         """Extends the Theory with Non-Linear, if needed."""
-        theory_out = args[0]
-        for t in args[1:]:
-            theory_out = theory_out.combine(t)
-        # if Left and Right children are symbolic
-        #    theory_out = theory_out.set_non_linear()
+        if len(args) == 1:
+            theory_out = args[0].copy()
+        else:
+            theory_out = args[0]
+            for t in args[1:]:
+                theory_out = theory_out.combine(t)
+        # Check for non linear?
         theory_out = theory_out.set_difference_logic(False)
         return theory_out
 

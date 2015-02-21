@@ -23,14 +23,12 @@ from pysmt.test import TestCase
 from pysmt.oracles import get_logic
 
 class TestOracles(TestCase):
-
     @skip
     def test_quantifier_oracle(self):
         oracle = get_env().qfo
         for (f, _, _, logic) in EXAMPLE_FORMULAS:
             is_qf = oracle.is_qf(f)
             self.assertEqual(is_qf, logic.quantifier_free, f)
-
 
     def test_get_logic(self):
         for example in EXAMPLE_FORMULAS:
@@ -40,13 +38,11 @@ class TestOracles(TestCase):
                               (example.expr, target_logic, res))
 
     def test_regression(self):
-        from pysmt.shortcuts import Symbol, Plus, Equals, Real, GT, Implies, And
+        from pysmt.shortcuts import Symbol, Plus, Equals, Real, GT, LT, Implies, And, ForAll, Minus
         from pysmt.typing import REAL
         r,s = Symbol("r", REAL), Symbol("s", REAL)
         x,y = Symbol("x"), Symbol("y")
 
-        f1 = GT(r,s)
-        f2 = Implies(x,y)
-        f3 = And(f1, f2)
-
-        print(f3, get_logic(f3))
+        f4 = ForAll([r,s], Implies(And(GT(r, Real(0)), GT(s, Real(0))),
+                              (LT(Minus(r,s), r))))
+        print(f4, get_logic(f4))
