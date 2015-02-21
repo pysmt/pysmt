@@ -324,10 +324,14 @@ def install_pycudd(options):
     PATHS.append("%s/pycudd" % dir_path)
 
 def check_install():
-    """Checks whether a solver is visible by pySMT."""
+    """Checks which solvers are visible to pySMT."""
 
     from pysmt.shortcuts import Solver
     from pysmt.exceptions import NoSolverAvailableError
+
+    required_solver = os.environ.get("PYSMT_SOLVER")
+    if required_solver is None:
+        required_solver = "None"
 
     for solver in ['msat', 'z3', 'cvc4', 'yices', 'bdd']:
         is_installed = False
@@ -337,6 +341,10 @@ def check_install():
         except NoSolverAvailableError:
             is_installed = False
         print("%s: \t %s" % (solver, is_installed))
+
+        if solver == required_solver and not is_installed:
+            assert "Was expecting to find %s installed" % required_solver
+
 
 
 
