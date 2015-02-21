@@ -18,13 +18,13 @@
 from pysmt.shortcuts import Solver, Symbol, And, Real, GT, LT, Implies, FALSE
 from pysmt.shortcuts import get_env
 from pysmt.typing import BOOL, REAL
-from pysmt.test import TestCase, skipIfNoSolverAvailable
-from pysmt.logics import QF_UFLIRA
+from pysmt.test import TestCase, skipIfNoSolverForLogic
+from pysmt.logics import QF_UFLIRA, QF_LRA, QF_BOOL
 
 
 class TestModels(TestCase):
 
-    @skipIfNoSolverAvailable
+    @skipIfNoSolverForLogic(QF_LRA)
     def test_get_model(self):
         varA = Symbol("A", BOOL)
         varB = Symbol("B", REAL)
@@ -35,7 +35,7 @@ class TestModels(TestCase):
 
         model = None
         for solver_name in get_env().factory.all_solvers(logic=QF_UFLIRA):
-            with Solver(name=solver_name) as s:
+            with Solver(name=solver_name, logic=QF_LRA) as s:
                 s.add_assertion(f1)
                 check = s.solve()
                 self.assertTrue(check)
@@ -44,11 +44,11 @@ class TestModels(TestCase):
             # Here the solver is gone
             self.assertEquals(model[varA], FALSE())
 
-    @skipIfNoSolverAvailable
+    @skipIfNoSolverForLogic(QF_BOOL)
     def test_get_py_value_model(self):
         varA = Symbol("A", BOOL)
 
-        with Solver() as s:
+        with Solver(logic=QF_BOOL) as s:
             s.add_assertion(varA)
             s.solve()
             model = s.get_model()

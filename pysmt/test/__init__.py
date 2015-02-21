@@ -20,6 +20,7 @@ import unittest
 from functools import wraps
 
 from pysmt.shortcuts import reset_env, get_env
+from pysmt.decorators import deprecated
 
 class TestCase(unittest.TestCase):
     """Wrapper on the unittest TestCase class.
@@ -34,8 +35,10 @@ class TestCase(unittest.TestCase):
     def tearDown(self):
         pass
 
-
+@deprecated("skipIfNoSolverForLogic (be specific about expectations!)")
 def skipIfNoSolverAvailable(test_fun):
+    """Skip the test if no solver is available."""
+
     msg = "No solver available"
     cond = len(get_env().factory.all_solvers()) == 0
     @unittest.skipIf(cond, msg)
@@ -46,6 +49,7 @@ def skipIfNoSolverAvailable(test_fun):
 
 
 class skipIfSolverNotAvailable(object):
+    """Skip a test if the given solver is not available."""
 
     def __init__(self, solver):
         self.solver = solver
@@ -58,4 +62,19 @@ class skipIfSolverNotAvailable(object):
         def wrapper(*args, **kwargs):
             return test_fun(*args, **kwargs)
         return wrapper
-        
+
+
+class skipIfNoSolverForLogic(object):
+    """Skip a test if there is no solver for the given logic."""
+
+    def __init__(self, logic):
+        self.logic = logic
+
+    def __call__(self, test_fun):
+        msg = "Solver for %s not available" % self.logic
+        cond = len(get_env().factory.all_solvers(logic=self.logic)) == 0
+        @unittest.skipIf(cond, msg)
+        @wraps(test_fun)
+        def wrapper(*args, **kwargs):
+            return test_fun(*args, **kwargs)
+        return wrapper

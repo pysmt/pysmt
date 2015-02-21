@@ -17,12 +17,14 @@
 #
 from pysmt.shortcuts import *
 from pysmt.typing import INT, REAL, FunctionType
-from pysmt.test import TestCase, skipIfSolverNotAvailable, skipIfNoSolverAvailable
+from pysmt.logics import UFLRA, UFLIRA
+from pysmt.test import TestCase
+from pysmt.test import skipIfSolverNotAvailable, skipIfNoSolverForLogic
+
 
 class TestEUF(TestCase):
 
-    @skipIfSolverNotAvailable("msat")
-    @skipIfSolverNotAvailable("z3")
+    @skipIfNoSolverForLogic(UFLIRA)
     def test_euf(self):
         ftype1 = FunctionType(REAL, [REAL])
         ftype2 = FunctionType(REAL, [REAL, INT])
@@ -32,12 +34,10 @@ class TestEUF(TestCase):
 
         check = Equals(Function(f, [Real(1)]), Function(g, (Real(2), Int(4))))
 
-        self.assertTrue(is_sat(check, solver_name="msat"),
-                        "Formula was expected to be sat")
-        self.assertTrue(is_sat(check, solver_name="z3"),
+        self.assertTrue(is_sat(check, logic=UFLIRA),
                         "Formula was expected to be sat")
 
-    @skipIfNoSolverAvailable
+    @skipIfNoSolverForLogic(UFLRA)
     def test_quantified_euf(self):
         ftype1 = FunctionType(REAL, [REAL, REAL])
 
@@ -53,9 +53,8 @@ class TestEUF(TestCase):
 
         check = Implies(axiom, And(test1, test2))
 
-        self.assertTrue(is_valid(check, quantified=True),
+        self.assertTrue(is_valid(check, logic=UFLRA),
                         "Formula was expected to be valid")
-
 
 
     def test_simplify(self):
