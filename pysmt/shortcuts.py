@@ -242,7 +242,7 @@ def get_model(formula, quantified=False, solver_name=None, logic=None):
     satisfiable, otherwise None."""
     env = get_env()
     if formula not in env.formula_manager:
-        warnings.warn("Warning: Contextualizing formula during is_sat")
+        warnings.warn("Warning: Contextualizing formula during get_model")
         formula = env.formula_manager.normalize(formula)
 
     return env.factory.get_model(formula,

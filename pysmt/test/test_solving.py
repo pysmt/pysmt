@@ -91,7 +91,7 @@ class TestBasic(TestCase):
 
         for solver in get_env().factory.all_solvers():
             res = get_model(f, solver_name=solver)
-            self.assertIsNotNone(res, "Formula was expected to be UNSAT")
+            self.assertIsNotNone(res, "Formula was expected to be SAT")
             self.assertTrue(res.get_value(varA) == TRUE())
             self.assertTrue(res.get_value(varX) == Real(8))
 
