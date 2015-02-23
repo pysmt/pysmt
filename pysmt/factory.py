@@ -258,29 +258,30 @@ class Factory(object):
         return self.get_quantifier_eliminator(name=name)
 
     def is_sat(self, formula, quantified=None, solver_name=None, logic=None):
-        solver = self.Solver(quantified=quantified, name=solver_name, logic=logic)
-        return solver.is_sat(formula)
+        with self.Solver(quantified=quantified, name=solver_name, logic=logic) \
+             as solver:
+            return solver.is_sat(formula)
 
     def get_model(self, formula, quantified=None, solver_name=None, logic=None):
-        solver = self.Solver(quantified=quantified, name=solver_name, logic=logic)
-        solver.add_assertion(formula)
-        check = solver.solve()
-        retval = None
-        if check:
-            retval = solver.get_model()
-        solver.exit()
-        return retval
+        with self.Solver(quantified=quantified, name=solver_name, logic=logic) \
+             as solver:
+            solver.add_assertion(formula)
+            check = solver.solve()
+            retval = None
+            if check:
+                retval = solver.get_model()
+            return retval
 
     def is_valid(self, formula, quantified=False, solver_name=None, logic=None):
-        solver = self.Solver(quantified=quantified,
-                             name=solver_name,
-                             logic=logic)
-        return solver.is_valid(formula)
+        with self.Solver(quantified=quantified, name=solver_name, logic=logic) \
+             as solver:
+            return solver.is_valid(formula)
 
     def is_unsat(self, formula, quantified=False, solver_name=None, logic=None):
-        solver = self.Solver(quantified=quantified, name=solver_name, logic=logic)
-        return solver.is_unsat(formula)
+        with self.Solver(quantified=quantified, name=solver_name, logic=logic) \
+             as solver:
+            return solver.is_unsat(formula)
 
     def qelim(self, formula, solver_name=None):
-        qe = self.QuantifierEliminator(name=solver_name)
-        return qe.eliminate_quantifiers(formula)
+        with self.QuantifierEliminator(name=solver_name) as qe:
+            return qe.eliminate_quantifiers(formula)
