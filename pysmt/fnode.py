@@ -304,6 +304,6 @@ class FNode(object):
         return self._apply_infix(right, shortcuts.LT)
 
     def __le__(self, right):
-        return self._apply_infix(right, shortcuts.GE)
+        return self._apply_infix(right, shortcuts.LE)
 
 # EOC FNode

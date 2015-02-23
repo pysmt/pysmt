@@ -18,7 +18,7 @@
 from fractions import Fraction
 
 from pysmt.shortcuts import (Real, Plus, Symbol, Equals, And, Bool, Or,
-                             Div, LT, Int, ToReal)
+                             Div, LT, LE, Int, ToReal)
 from pysmt.shortcuts import Solver, is_valid, get_env, is_sat
 from pysmt.typing import REAL, BOOL, INT, FunctionType
 from pysmt.test import TestCase, skipIfSolverNotAvailable, skipIfNoSolverAvailable
@@ -118,6 +118,11 @@ class TestRegressions(TestCase):
 
         self.assertIn(p, deps)
         self.assertNotIn(r, deps)
+
+    def test_infix_notation_wrong_le(self):
+        p = Symbol("p", INT)
+        get_env().enable_infix_notation = True
+        self.assertEquals(LE(p, Int(2)), p <= Int(2))
 
 
     def test_multiple_declaration_w_same_functiontype(self):
