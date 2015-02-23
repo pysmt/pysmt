@@ -17,11 +17,12 @@
 #
 from pysmt.shortcuts import *
 from pysmt.typing import INT, REAL
-from pysmt.test import TestCase, skipIfNoSolverAvailable
+from pysmt.test import TestCase, skipIfNoSolverForLogic
+from pysmt.logics import QF_LIA, QF_UFLIRA
 
 class TestLIA(TestCase):
 
-    @skipIfNoSolverAvailable
+    @skipIfNoSolverForLogic(QF_LIA)
     def test_eq(self):
         varA = Symbol("At", INT)
         varB = Symbol("Bt", INT)
@@ -30,10 +31,10 @@ class TestLIA(TestCase):
                 GT(varA, Minus(varB, Int(1))))
         g = Equals(varA, varB)
 
-        self.assertTrue(is_valid(Iff(f, g)),
+        self.assertTrue(is_valid(Iff(f, g), logic=QF_LIA),
                         "Formulae were expected to be equivalent")
 
-    @skipIfNoSolverAvailable
+    @skipIfNoSolverForLogic(QF_LIA)
     def test_lira(self):
         varA = Symbol("A", REAL)
         varB = Symbol("B", INT)
@@ -43,7 +44,8 @@ class TestLIA(TestCase):
                     GT(varA, Minus(varB, Real(1))))
             g = Equals(varB, Int(0))
 
-            self.assertTrue(is_unsat(And(f, g, Equals(varA, Real(1.2)))),
+            self.assertTrue(is_unsat(And(f, g, Equals(varA, Real(1.2))),
+                                     logic=QF_UFLIRA),
                             "Formula was expected to be unsat")
 
 
