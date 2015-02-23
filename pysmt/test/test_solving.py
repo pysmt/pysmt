@@ -22,16 +22,16 @@ from pysmt.shortcuts import Bool, TRUE, Real, LE, FALSE, Or, Equals
 from pysmt.shortcuts import Solver
 from pysmt.shortcuts import is_sat, is_valid, get_env, get_model
 from pysmt.typing import BOOL, REAL, FunctionType
-from pysmt.test import TestCase, skipIfNoSolverAvailable, skipIfSolverNotAvailable
+from pysmt.test import TestCase, skipIfSolverNotAvailable, skipIfNoSolverForLogic
 from pysmt.test.examples import get_example_formulae
 from pysmt.exceptions import SolverReturnedUnknownResultError, InternalSolverError
-from pysmt.logics import QF_UFLIRA
+from pysmt.logics import QF_UFLIRA, QF_BOOL, QF_LRA
 
 class TestBasic(TestCase):
 
-    @skipIfNoSolverAvailable
+    @skipIfNoSolverForLogic(QF_BOOL)
     def test_create_and_solve(self):
-        solver = Solver()
+        solver = Solver(logic=QF_BOOL)
 
         varA = Symbol("A", BOOL)
         varB = Symbol("B", BOOL)
@@ -47,7 +47,7 @@ class TestBasic(TestCase):
         simp_h = h.simplify()
         self.assertEquals(simp_h, Bool(False))
 
-    @skipIfNoSolverAvailable
+    @skipIfNoSolverForLogic(QF_BOOL)
     def test_is_sat(self):
         varA = Symbol("A", BOOL)
         varB = Symbol("B", BOOL)
@@ -55,14 +55,14 @@ class TestBasic(TestCase):
         f = And(varA, Not(varB))
         g = f.substitute({varB:varA})
 
-        res = is_sat(g)
+        res = is_sat(g, logic=QF_BOOL)
         self.assertFalse(res, "Formula was expected to be UNSAT")
 
-        for solver in get_env().factory.all_solvers(): #['msat', 'z3', 'cvc4']:
+        for solver in get_env().factory.all_solvers():
             res = is_sat(g, solver_name=solver)
             self.assertFalse(res, "Formula was expected to be UNSAT")
 
-    @skipIfNoSolverAvailable
+    @skipIfNoSolverForLogic(QF_BOOL)
     def test_get_model_unsat(self):
         varA = Symbol("A", BOOL)
         varB = Symbol("B", BOOL)
@@ -77,7 +77,7 @@ class TestBasic(TestCase):
             res = get_model(g, solver_name=solver)
             self.assertIsNone(res, "Formula was expected to be UNSAT")
 
-    @skipIfNoSolverAvailable
+    @skipIfNoSolverForLogic(QF_LRA)
     def test_get_model_sat(self):
         varA = Symbol("A", BOOL)
         varX = Symbol("X", REAL)
@@ -95,11 +95,11 @@ class TestBasic(TestCase):
             self.assertTrue(res.get_value(varA) == TRUE())
             self.assertTrue(res.get_value(varX) == Real(8))
 
-    @skipIfNoSolverAvailable
+    @skipIfNoSolverForLogic(QF_BOOL)
     def test_get_py_value(self):
         varA = Symbol("A", BOOL)
 
-        with Solver() as s:
+        with Solver(logic=QF_BOOL) as s:
             s.add_assertion(varA)
             s.solve()
             self.assertTrue(s.get_py_value(varA))
@@ -189,16 +189,16 @@ class TestBasic(TestCase):
             self.assertEquals(validity, v, f)
             self.assertEquals(satisfiability, s, f)
 
-    @skipIfNoSolverAvailable
     def test_examples_by_logic(self):
         for (f, validity, satisfiability, logic) in get_example_formulae():
-            v = is_valid(f, logic=logic)
-            s = is_sat(f, logic=logic)
+            if len(get_env().factory.all_solvers(logic=logic)) > 0:
+                v = is_valid(f, logic=logic)
+                s = is_sat(f, logic=logic)
 
-            self.assertEquals(validity, v, f)
-            self.assertEquals(satisfiability, s, f)
+                self.assertEquals(validity, v, f)
+                self.assertEquals(satisfiability, s, f)
 
-    @skipIfNoSolverAvailable
+
     def test_solving_under_assumption(self):
         v1, v2 = [FreshSymbol() for _ in xrange(2)]
         xor = Or(And(v1, Not(v2)), And(Not(v1), v2))
@@ -221,7 +221,6 @@ class TestBasic(TestCase):
                 self.assertEquals(model2.get_value(v2), TRUE())
 
 
-    @skipIfNoSolverAvailable
     def test_solving_under_assumption_theory(self):
         x = Symbol("x", REAL)
         y = Symbol("y", REAL)
@@ -231,7 +230,7 @@ class TestBasic(TestCase):
 
         xor = Or(And(v1, Not(v2)), And(Not(v1), v2))
 
-        for name in get_env().factory.all_solvers(logic=QF_UFLIRA):
+        for name in get_env().factory.all_solvers(logic=QF_LRA):
             with Solver(name=name) as solver:
                 solver.add_assertion(xor)
                 res1 = solver.solve(assumptions=[v1, Not(v2)])
@@ -248,7 +247,6 @@ class TestBasic(TestCase):
                 self.assertEquals(model2.get_value(v1), FALSE())
                 self.assertEquals(model2.get_value(v2), TRUE())
 
-    @skipIfNoSolverAvailable
     def test_solving_under_assumption_mixed(self):
         x = Symbol("x", REAL)
 
@@ -274,20 +272,18 @@ class TestBasic(TestCase):
                 self.assertEquals(model2.get_value(v1), FALSE())
                 self.assertEquals(model2.get_value(v2), TRUE())
 
-    @skipIfNoSolverAvailable
     def test_add_assertion(self):
         r = FreshSymbol(REAL)
 
         f1 = Plus(r, r)
         f2 = GT(r, r)
 
-        for sname in get_env().factory.all_solvers(logic=QF_UFLIRA):
+        for sname in get_env().factory.all_solvers(logic=QF_LRA):
             with Solver(name=sname) as solver:
                 with self.assertRaises(TypeError):
                     solver.add_assertion(f1)
                 self.assertIsNone(solver.add_assertion(f2))
 
-    @skipIfNoSolverAvailable
     def test_get_value_of_function(self):
         """get_value on a function should raise an exception."""
         h = Symbol("h", FunctionType(REAL, [REAL, REAL]))
@@ -302,6 +298,7 @@ class TestBasic(TestCase):
                 with self.assertRaises(TypeError):
                     solver.get_value(h)
                 self.assertIsNotNone(solver.get_value(h_0_0))
+
 
     @skipIfSolverNotAvailable("msat")
     def test_msat_converter_on_msat_error(self):

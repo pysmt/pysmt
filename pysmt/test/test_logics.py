@@ -105,11 +105,11 @@ class TestLogic(unittest.TestCase):
 
     def test_get_solver_by_logic(self):
         if len(get_env().factory.all_solvers()) > 0:
-            s = Solver(logic=pysmt.logics.UFLIRA)
+            s = Solver(logic=pysmt.logics.QF_BOOL)
             self.assertIsNotNone(s)
         else:
             with self.assertRaises(NoSolverAvailableError):
-                Solver(logic=pysmt.logics.UFLIRA)
+                Solver(logic=pysmt.logics.QF_BOOL)
 
         with self.assertRaises(NoSolverAvailableError):
             Solver(logic="p")
