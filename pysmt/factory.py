@@ -261,6 +261,16 @@ class Factory(object):
         solver = self.Solver(quantified=quantified, name=solver_name, logic=logic)
         return solver.is_sat(formula)
 
+    def get_model(self, formula, quantified=None, solver_name=None, logic=None):
+        solver = self.Solver(quantified=quantified, name=solver_name, logic=logic)
+        solver.add_assertion(formula)
+        check = solver.solve()
+        retval = None
+        if check:
+            retval = solver.get_model()
+        solver.exit()
+        return retval
+
     def is_valid(self, formula, quantified=False, solver_name=None, logic=None):
         solver = self.Solver(quantified=quantified,
                              name=solver_name,
