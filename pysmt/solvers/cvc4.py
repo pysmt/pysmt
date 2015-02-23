@@ -39,7 +39,6 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         self.cvc4.setOption("produce-models", CVC4.SExpr("true"))
 
         logic_name = str(logic)
-        print "--->", logic_name
         if logic_name == "QF_BOOL":
             logic_name = "QF_LRA"
         self.cvc4.setLogic(logic_name)
