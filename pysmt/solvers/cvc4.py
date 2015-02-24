@@ -27,7 +27,7 @@ from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 from pysmt.solvers.eager import EagerModel
 
 class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
-    LOGICS = pysmt.logics.PYSMT_LOGICS
+    LOGICS = pysmt.logics.PYSMT_QF_LOGICS
 
     def __init__(self, environment, logic, options=None):
         Solver.__init__(self,
@@ -38,7 +38,10 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         self.cvc4 = CVC4.SmtEngine(self.em)
         self.cvc4.setOption("produce-models", CVC4.SExpr("true"))
 
-        self.cvc4.setLogic(str(logic))
+        logic_name = str(logic)
+        if logic_name == "QF_BOOL":
+            logic_name = "QF_LRA"
+        self.cvc4.setLogic(logic_name)
         self.converter = CVC4Converter(environment, cvc4_exprMgr=self.em)
         self.declarations = set()
         return

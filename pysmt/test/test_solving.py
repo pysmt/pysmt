@@ -85,6 +85,7 @@ class TestBasic(TestCase):
     def test_examples_cvc4(self):
         for (f, validity, satisfiability, logic) in get_example_formulae():
             try:
+                if not logic.quantifier_free: continue
                 v = is_valid(f, solver_name='cvc4')
                 s = is_sat(f, solver_name='cvc4')
 
