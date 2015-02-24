@@ -18,9 +18,9 @@
 import unittest
 import pysmt.operators as op
 from pysmt.shortcuts import Symbol, FreshSymbol, And, Not, GT, Function, Plus
-from pysmt.shortcuts import Bool, TRUE, Real, LE, FALSE, Or
+from pysmt.shortcuts import Bool, TRUE, Real, LE, FALSE, Or, Equals
 from pysmt.shortcuts import Solver
-from pysmt.shortcuts import is_sat, is_valid, get_env
+from pysmt.shortcuts import is_sat, is_valid, get_env, get_model
 from pysmt.typing import BOOL, REAL, FunctionType
 from pysmt.test import TestCase, skipIfSolverNotAvailable, skipIfNoSolverForLogic
 from pysmt.test.examples import get_example_formulae
@@ -61,6 +61,39 @@ class TestBasic(TestCase):
         for solver in get_env().factory.all_solvers():
             res = is_sat(g, solver_name=solver)
             self.assertFalse(res, "Formula was expected to be UNSAT")
+
+    @skipIfNoSolverForLogic(QF_BOOL)
+    def test_get_model_unsat(self):
+        varA = Symbol("A", BOOL)
+        varB = Symbol("B", BOOL)
+
+        f = And(varA, Not(varB))
+        g = f.substitute({varB:varA})
+
+        res = get_model(g)
+        self.assertIsNone(res, "Formula was expected to be UNSAT")
+
+        for solver in get_env().factory.all_solvers():
+            res = get_model(g, solver_name=solver)
+            self.assertIsNone(res, "Formula was expected to be UNSAT")
+
+    @skipIfNoSolverForLogic(QF_LRA)
+    def test_get_model_sat(self):
+        varA = Symbol("A", BOOL)
+        varX = Symbol("X", REAL)
+
+        f = And(varA, Equals(varX, Real(8)))
+
+        res = get_model(f)
+        self.assertIsNotNone(res, "Formula was expected to be SAT")
+        self.assertTrue(res.get_value(varA) == TRUE())
+        self.assertTrue(res.get_value(varX) == Real(8))
+
+        for solver in get_env().factory.all_solvers():
+            res = get_model(f, solver_name=solver)
+            self.assertIsNotNone(res, "Formula was expected to be SAT")
+            self.assertTrue(res.get_value(varA) == TRUE())
+            self.assertTrue(res.get_value(varX) == Real(8))
 
     @skipIfNoSolverForLogic(QF_BOOL)
     def test_get_py_value(self):

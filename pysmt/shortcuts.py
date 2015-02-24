@@ -237,6 +237,19 @@ def is_sat(formula, quantified=False, solver_name=None, logic=None):
                               solver_name=solver_name,
                               logic=logic)
 
+def get_model(formula, quantified=False, solver_name=None, logic=None):
+    """ Similar to :py:func:`is_sat` but returns a model if the formula is
+    satisfiable, otherwise None."""
+    env = get_env()
+    if formula not in env.formula_manager:
+        warnings.warn("Warning: Contextualizing formula during get_model")
+        formula = env.formula_manager.normalize(formula)
+
+    return env.factory.get_model(formula,
+                                 quantified=quantified,
+                                 solver_name=solver_name,
+                                 logic=logic)
+
 def is_valid(formula, quantified=False, solver_name=None, logic=None):
     """Similar to :py:func:`is_sat` but checks validity."""
     env = get_env()
