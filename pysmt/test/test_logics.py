@@ -40,16 +40,15 @@ class TestLogic(unittest.TestCase):
     def test_get_logic(self):
         for l in pysmt.logics.LOGICS:
             l_out = get_logic(quantifier_free=l.quantifier_free,
-                              arrays=l.arrays,
-                              bit_vectors=l.bit_vectors,
-                              floating_point=l.floating_point,
-                              integer_arithmetic=l.integer_arithmetic,
-                              real_arithmetic=l.real_arithmetic,
-                              integer_difference=l.integer_difference,
-                              real_difference=l.real_difference,
-                              linear=l.linear,
-                              non_linear=l.non_linear,
-                              uninterpreted=l.uninterpreted)
+                              arrays=l.theory.arrays,
+                              bit_vectors=l.theory.bit_vectors,
+                              floating_point=l.theory.floating_point,
+                              integer_arithmetic=l.theory.integer_arithmetic,
+                              real_arithmetic=l.theory.real_arithmetic,
+                              integer_difference=l.theory.integer_difference,
+                              real_difference=l.theory.real_difference,
+                              linear=l.theory.linear,
+                              uninterpreted=l.theory.uninterpreted)
             self.assertEquals(l_out, l,
                               "Expected %s, got %s instead" % \
                               (l, l_out))
@@ -67,7 +66,7 @@ class TestLogic(unittest.TestCase):
                                              real_arithmetic=True)),
             (pysmt.logics.AUFNIRA, get_logic(arrays=True,
                                              uninterpreted=True,
-                                             non_linear=True,
+                                             linear=False,
                                              integer_arithmetic=True,
                                              real_arithmetic=True)),
             (pysmt.logics.LRA, get_logic(linear=True,

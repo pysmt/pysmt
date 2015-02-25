@@ -16,17 +16,17 @@
 #   limitations under the License.
 #
 from pysmt.typing import REAL, BOOL, INT, FunctionType
-from pysmt.type_checker import QuantifierOracle
+
 from pysmt.type_checker import (assert_no_boolean_in_args,
                                 assert_boolean_args,
                                 assert_same_type_args,
                                 assert_args_type_in)
+
 from pysmt.shortcuts import (Symbol, And, Plus, Minus, Times, Equals, Or, Iff,
                              LE, LT, Not, GE, GT, Ite, Bool, Int, Real, Div,
                              Function)
 from pysmt.shortcuts import get_env
 from pysmt.test import TestCase
-from pysmt.test.examples import EXAMPLE_FORMULAS
 from pysmt.decorators import typecheck_result
 
 
@@ -150,13 +150,6 @@ class TestSimpleTypeChecker(TestCase):
             self.assertEqual(t, INT, f)
 
 
-    def test_quantifier_oracle(self):
-        oracle = self.qfo
-        for (f, _, _, logic) in EXAMPLE_FORMULAS:
-            is_qf = oracle.is_qf(f)
-            self.assertEqual(is_qf, logic.quantifier_free, f)
-
-
     def test_assert_args(self):
         assert_no_boolean_in_args([self.r, self.p])
         with self.assertRaises(TypeError):
@@ -194,6 +187,8 @@ class TestSimpleTypeChecker(TestCase):
 
         with self.assertRaises(TypeError):
             super_bad_function()
+
+
 
 if __name__ == '__main__':
     import unittest

@@ -19,7 +19,6 @@
 reasoning about the type of formulae.
 
  * SimpleTypeChecker provides the pysmt.typing type of a formula
- * QuantifierOracle says whether a formula is quantifier free
  * The functions assert_*_args are useful for testing the type of
    arguments of a given function.
 """
@@ -29,6 +28,7 @@ import pysmt.operators as op
 import pysmt.shortcuts
 
 from pysmt.typing import BOOL, REAL, INT
+
 
 class SimpleTypeChecker(walkers.DagWalker):
 
@@ -150,32 +150,6 @@ class SimpleTypeChecker(walkers.DagWalker):
         return tp.return_type
 
 # EOC SimpleTypeChecker
-
-
-class QuantifierOracle(walkers.DagWalker):
-    def __init__(self, env=None):
-        walkers.DagWalker.__init__(self, env=env)
-
-        # Clear the mapping function
-        self.functions.clear()
-
-        # Propagate truth value, and force False when a Quantifier
-        # is found.
-        for elem in op.ALL_TYPES:
-            if elem in [op.FORALL, op.EXISTS]:
-                self.functions[elem] = self.walk_false
-            else:
-                self.functions[elem] = self.walk_all
-
-        # Check that no operator in undefined
-        assert self.is_complete(verbose=True)
-
-    def is_qf(self, formula):
-        """ Returns whether formula is Quantifier Free. """
-        return self.walk(formula)
-
-
-# EOC QuantifierOracle
 
 
 def assert_no_boolean_in_args(args):
