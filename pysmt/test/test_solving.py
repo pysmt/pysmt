@@ -143,7 +143,7 @@ class TestBasic(TestCase):
 
     def do_model(self, solver_name):
         for (f, _, satisfiability, logic) in get_example_formulae():
-            if satisfiability and not logic.uninterpreted and logic.quantifier_free:
+            if satisfiability and not logic.theory.uninterpreted and logic.quantifier_free:
                 with Solver(name=solver_name) as s:
                     s.add_assertion(f)
 
