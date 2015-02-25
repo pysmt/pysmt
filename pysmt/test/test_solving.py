@@ -70,10 +70,10 @@ class TestBasic(TestCase):
         f = And(varA, Not(varB))
         g = f.substitute({varB:varA})
 
-        res = get_model(g)
+        res = get_model(g, logic=QF_BOOL)
         self.assertIsNone(res, "Formula was expected to be UNSAT")
 
-        for solver in get_env().factory.all_solvers():
+        for solver in get_env().factory.all_solvers(logic=QF_BOOL):
             res = get_model(g, solver_name=solver)
             self.assertIsNone(res, "Formula was expected to be UNSAT")
 
@@ -84,12 +84,12 @@ class TestBasic(TestCase):
 
         f = And(varA, Equals(varX, Real(8)))
 
-        res = get_model(f)
+        res = get_model(f, logic=QF_LRA)
         self.assertIsNotNone(res, "Formula was expected to be SAT")
         self.assertTrue(res.get_value(varA) == TRUE())
         self.assertTrue(res.get_value(varX) == Real(8))
 
-        for solver in get_env().factory.all_solvers():
+        for solver in get_env().factory.all_solvers(logic=QF_LRA):
             res = get_model(f, solver_name=solver)
             self.assertIsNotNone(res, "Formula was expected to be SAT")
             self.assertTrue(res.get_value(varA) == TRUE())
