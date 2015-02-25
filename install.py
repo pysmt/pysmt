@@ -280,7 +280,6 @@ def install_yices(options):
 
     # Build pyices
     os.system("export YICES_PATH=\"%s\"; cd %s; python setup.py install --user" % (yices_path, pyices_dir_path))
-    os.system('cd %s; python setup.py build' % pyices_dir_path)
 
     # Save the paths
     PATHS.append("%s/build/lib.linux-%s-%s" % (pyices_dir_path, get_architecture(), get_python_version()))
