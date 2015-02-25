@@ -27,7 +27,7 @@ fi
 
 if [ "$1" == "yices" ]
 then
-    pip install ctypesgen
+    easy_install ctypesgen
     ./install.py --confirm-agreement --yices
 fi
 
