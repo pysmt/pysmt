@@ -171,11 +171,10 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
             raise NotImplementedError()
 
 
-    def destroy(self):
-        return self.exit()
-
     def exit(self):
-        libyices.yices_free_context(self.yices)
+        if not self._destroyed:
+            libyices.yices_free_context(self.yices)
+            self._destroyed = True
 
 
     def _get_yices_value(self, term, term_type, getter_func):

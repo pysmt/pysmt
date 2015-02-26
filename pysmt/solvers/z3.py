@@ -158,9 +158,10 @@ class Z3Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         return r
 
     def exit(self):
-        del self.z3
-        self.z3 = None
-        return
+        if not self._destroyed:
+            self._destroyed = True
+            del self.z3
+
 
 
 class Z3Converter(DagWalker):
