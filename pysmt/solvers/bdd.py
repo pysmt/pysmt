@@ -36,15 +36,16 @@ def dd_manager(mgr):
     current_manager = pycudd.GetDefaultDdManager()
     assert current_manager is None or current_manager == mgr
     mgr.SetDefault()
+    assert pycudd.GetDefaultDdManager() == mgr
     _depth += 1
-    try:
-        yield
-    finally:
-        if pycudd.GetDefaultDdManager() == mgr:
-            warnings.warn("The default DdManager changed without a context protecting it")
-        _depth -= 1
-        if _depth == 0:
-            pycudd.ResetDefaultDdManager()
+
+    yield
+
+    if not pycudd.GetDefaultDdManager() == mgr:
+        warnings.warn("The default DdManager changed without a context protecting it")
+    _depth -= 1
+    if _depth == 0:
+        pycudd.ResetDefaultDdManager()
 
 
 class BddSolver(Solver):
