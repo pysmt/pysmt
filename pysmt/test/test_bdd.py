@@ -22,7 +22,6 @@ from pysmt.shortcuts import And, Not, Symbol, Bool, Exists, Solver
 from pysmt.shortcuts import get_env
 from pysmt.test import TestCase, skipIfSolverNotAvailable
 from pysmt.test.examples import EXAMPLE_FORMULAS
-from pysmt.solvers.bdd import dd_manager
 
 class TestBdd(TestCase):
 
@@ -47,6 +46,8 @@ class TestBdd(TestCase):
 
     @skipIfSolverNotAvailable("bdd")
     def test_basic_expr(self):
+        from pysmt.solvers.bdd import dd_manager
+
         convert = self.bdd_converter.convert
 
         bdd_x = convert(self.x)

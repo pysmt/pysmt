@@ -92,13 +92,13 @@ class BddSolver(Solver):
             self.add_assertion(self.mgr.And(assumptions))
             self.pending_pop = True
 
-        with dd_manager(self.ddmanager):
-            for (i, (expr, bdd)) in enumerate(self.assertions_stack):
-                if bdd is None:
-                    bdd_expr = self.converter.convert(expr)
-                    _, previous_bdd = self.assertions_stack[i-1]
+        for (i, (expr, bdd)) in enumerate(self.assertions_stack):
+            if bdd is None:
+                bdd_expr = self.converter.convert(expr)
+                _, previous_bdd = self.assertions_stack[i-1]
+                with dd_manager(self.ddmanager):
                     new_bdd = previous_bdd.And(bdd_expr)
-                    self.assertions_stack[i] = (expr, new_bdd)
+                self.assertions_stack[i] = (expr, new_bdd)
 
         _, current_state = self.assertions_stack[-1]
         res = (current_state != self.ddmanager.Zero())
