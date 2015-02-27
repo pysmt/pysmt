@@ -16,10 +16,11 @@
 #   limitations under the License.
 #
 from pysmt.shortcuts import Solver, Symbol, And, Real, GT, LT, Implies, FALSE
-from pysmt.shortcuts import get_env
+from pysmt.shortcuts import get_env, get_model
 from pysmt.typing import BOOL, REAL
 from pysmt.test import TestCase, skipIfNoSolverForLogic
 from pysmt.logics import QF_UFLIRA, QF_LRA, QF_BOOL
+from pysmt.solvers.eager import EagerModel
 
 
 class TestModels(TestCase):
@@ -53,6 +54,23 @@ class TestModels(TestCase):
             s.solve()
             model = s.get_model()
             self.assertTrue(model.get_py_value(varA))
+
+
+    @skipIfNoSolverForLogic(QF_BOOL)
+    def test_eager_model_iterator(self):
+        x, y, z = [Symbol(s) for s in "xyz"]
+        with Solver(logic=QF_BOOL) as s:
+            s.add_assertion(And(x,y))
+            assert s.solve()
+            d = {}
+            d[x] = s.get_value(x)
+            d[y] = s.get_value(y)
+        m = EagerModel(assignment=d)
+
+        # The model does not talk about 'z'
+        for (k,_) in m:
+            self.assertFalse(k == z)
+
 
 
 if __name__ == '__main__':
