@@ -135,6 +135,15 @@ class TestRegressions(TestCase):
         # a "different" type.
         f1 = Symbol("f1", ft2)
 
+    def test_multiple_exit(self):
+        for sname in get_env().factory.all_solvers():
+            # Multiple exits should be ignored
+            s = Solver(name=sname)
+            s.exit()
+            s.exit()
+            self.assertTrue(True)
+
+
 if __name__ == "__main__":
     import unittest
     unittest.main()
