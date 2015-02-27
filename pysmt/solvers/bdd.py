@@ -16,6 +16,7 @@
 #   limitations under the License.
 #
 import contextlib
+import warnings
 
 import pycudd
 
@@ -39,7 +40,8 @@ def dd_manager(mgr):
     try:
         yield
     finally:
-        assert pycudd.GetDefaultDdManager() == mgr
+        if pycudd.GetDefaultDdManager() == mgr:
+            warnings.warn("The default DdManager changed without a context protecting it")
         _depth -= 1
         if _depth == 0:
             pycudd.ResetDefaultDdManager()
