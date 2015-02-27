@@ -16,6 +16,7 @@ install:
   - source shippable.sh $PYSMT_SOLVER
 
 env:
+ - secure: IzzUEuWb2+h3gzttT0237NDkptzu4UvPN1okinDgm4Rx0uADXVWJy6gvcWaeL8F6tl8KGkpcFvzGHmwj7RGGRk8AAj+OVf+VilSlWwNe1g8SYHwxOPrTgD4ECX3860hleeI3F2DD+yFIo9Hgw3ZiHBsfbombtFGTB5WWwUgezXsENMKuNJ580MN8+c3I4IV44pSXJ179GluJ3O1e/xUkwJ5/nvysWd4q7wqJ6aIz5ZFMFhs/FKAbeEdtmmGODn2FspGJ+iKVyc0IbQpzLJO1MeizBXnGZfN9Ojv7mkPJcgzqFMjvLnpCJAEmZl3BzJFc0j9xxILvrrjHU/TKrlJkSw==
  # Multiple envs will cause multiple build across multiple python versions.
  # We test the following:
  # 1. PySMT w/o solvers
