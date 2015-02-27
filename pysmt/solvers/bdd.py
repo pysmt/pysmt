@@ -15,7 +15,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import warnings
+import contextlib
 
 import pycudd
 
@@ -28,14 +28,21 @@ from pysmt.walkers import DagWalker
 from pysmt.decorators import clear_pending_pop
 
 
-_current_manager = None
-def _gain_manager(self):
-    assert _current_manager is None or _current_manager == self.ddmanager
-    self.ddmanager.SetDefault()
-
-
-def _release_manager(self):
-    _current_manager = None
+_depth = 0
+@contextlib.contextmanager
+def dd_manager(mgr):
+    global _depth
+    current_manager = pycudd.GetDefaultDdManager()
+    assert current_manager is None or current_manager == mgr
+    mgr.SetDefault()
+    _depth += 1
+    try:
+        yield
+    finally:
+        assert pycudd.GetDefaultDdManager() == mgr
+        _depth -= 1
+        if _depth == 0:
+            pycudd.ResetDefaultDdManager()
 
 
 class BddSolver(Solver):
@@ -83,14 +90,13 @@ class BddSolver(Solver):
             self.add_assertion(self.mgr.And(assumptions))
             self.pending_pop = True
 
-        _gain_manager(self)
-        for (i, (expr, bdd)) in enumerate(self.assertions_stack):
-            if bdd is None:
-                bdd_expr = self.converter.convert(expr)
-                _, previous_bdd = self.assertions_stack[i-1]
-                new_bdd = previous_bdd.And(bdd_expr)
-                self.assertions_stack[i] = (expr, new_bdd)
-        _release_manager(self)
+        with dd_manager(self.ddmanager):
+            for (i, (expr, bdd)) in enumerate(self.assertions_stack):
+                if bdd is None:
+                    bdd_expr = self.converter.convert(expr)
+                    _, previous_bdd = self.assertions_stack[i-1]
+                    new_bdd = previous_bdd.And(bdd_expr)
+                    self.assertions_stack[i] = (expr, new_bdd)
 
         _, current_state = self.assertions_stack[-1]
         res = (current_state != self.ddmanager.Zero())
@@ -110,19 +116,18 @@ class BddSolver(Solver):
         # DdManager. This would make it possible to apply other
         # operations on the model (e.g., enumeration) in a simple way.
         if self.latest_model is None:
-            _gain_manager(self)
-            _, current_state = self.assertions_stack[-1]
-            assert current_state is not None, "solve() should be called before get_model()"
-            # Build ddArray of variables
-            var_array = self.converter.get_all_vars_array()
-            minterm_set = current_state.PickOneMinterm(var_array, len(var_array))
-            minterm = next(iter(minterm_set))
-            assignment = {}
-            for i, node in enumerate(var_array):
-                value = self.mgr.Bool(minterm[i] == 1)
-                key = self.converter.idx2var[node.NodeReadIndex()]
-                assignment[key] = value
-            _release_manager(self)
+            with dd_manager(self.ddmanager):
+                _, current_state = self.assertions_stack[-1]
+                assert current_state is not None, "solve() should be called before get_model()"
+                # Build ddArray of variables
+                var_array = self.converter.get_all_vars_array()
+                minterm_set = current_state.PickOneMinterm(var_array, len(var_array))
+                minterm = next(iter(minterm_set))
+                assignment = {}
+                for i, node in enumerate(var_array):
+                    value = self.mgr.Bool(minterm[i] == 1)
+                    key = self.converter.idx2var[node.NodeReadIndex()]
+                    assignment[key] = value
 
             self.latest_model = EagerModel(assignment=assignment,
                                            environment=self.environment)
@@ -165,56 +170,49 @@ class BddConverter(DagWalker):
 
     def convert(self, formula):
         """Convert a PySMT formula into a BDD."""
-        _gain_manager(self)
-        res = self.walk(formula)
-        _release_manager(self)
-        return res
+        with dd_manager(self.ddmanager):
+            return self.walk(formula)
 
     def back(self, bdd_expr):
-        _gain_manager(self)
-        res = self.bdd_to_expr3(bdd_expr).simplify()
-        _release_manager(self)
-        return res
+        with dd_manager(self.ddmanager):
+            return self.bdd_to_expr3(bdd_expr).simplify()
 
     def get_all_vars_array(self):
         # NOTE: This way of building the var_array does not look
         #       robust.  There might be an issue if variables are
         #       added and the order of enumeration of the dictionary
         #       changes and we rely on this order outside of this class.
-        _gain_manager(self)
-        var_array = pycudd.DdArray(len(self.idx2var))
-        for i, node_idx in enumerate(self.idx2var):
-            var_array[i] = self.ddmanager[node_idx]
-        _release_manager(self)
-        return var_array
+        with dd_manager(self.ddmanager):
+            var_array = pycudd.DdArray(len(self.idx2var))
+            for i, node_idx in enumerate(self.idx2var):
+                var_array[i] = self.ddmanager[node_idx]
+            return var_array
 
     def cube_from_var_list(self, var_list):
-        _gain_manager(self)
-        indices = pycudd.IntArray(len(var_list))
-        for i, v in enumerate(var_list):
-            indices[i] = self.var2node[v].NodeReadIndex()
-        cube = self.ddmanager.IndicesToCube(indices, len(var_list))
-        _release_manager(self)
-        return cube
+        with dd_manager(self.ddmanager):
+            indices = pycudd.IntArray(len(var_list))
+            for i, v in enumerate(var_list):
+                indices[i] = self.var2node[v].NodeReadIndex()
+            cube = self.ddmanager.IndicesToCube(indices, len(var_list))
+            return cube
 
     def declare_variable(self, var):
         if not var.is_symbol(type_=types.BOOL): raise TypeError
         if var not in self.var2node:
-            _gain_manager(self)
-            node = self.ddmanager.NewVar()
-            self.idx2var[node.NodeReadIndex()] = var
-            self.var2node[var] = node
-            _release_manager(self)
+            with dd_manager(self.ddmanager):
+                node = self.ddmanager.NewVar()
+                self.idx2var[node.NodeReadIndex()] = var
+                self.var2node[var] = node
 
     def walk_and(self, formula, args):
-        res = self.ddmanager.One()
-        for a in args:
+        res = args[0]
+        for a in args[1:]:
             res = res.And(a)
         return res
 
     def walk_or(self, formula, args):
-        res = self.ddmanager.Zero()
-        for a in args:
+        res = args[0]
+        for a in args[1:]:
             res = res.Or(a)
         return res
 
