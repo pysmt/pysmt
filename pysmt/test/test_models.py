@@ -59,7 +59,7 @@ class TestModels(TestCase):
     @skipIfNoSolverForLogic(QF_BOOL)
     def test_eager_model_iterator(self):
         x, y, z = [Symbol(s) for s in "xyz"]
-        with Solver() as s:
+        with Solver(logic=QF_BOOL) as s:
             s.add_assertion(And(x,y))
             assert s.solve()
             d = {}
