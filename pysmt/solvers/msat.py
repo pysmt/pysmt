@@ -191,13 +191,10 @@ class MathSAT5Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
 
     def exit(self):
-        if self.msat_env:
+        if not self._destroyed:
+            self._destroyed = True
             mathsat.msat_destroy_env(self.msat_env)
             mathsat.msat_destroy_config(self.config)
-            self.msat_env = None
-            self.config = None
-        return
-
 
 
 class MSatConverter(DagWalker):

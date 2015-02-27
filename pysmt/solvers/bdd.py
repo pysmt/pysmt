@@ -143,8 +143,10 @@ class BddSolver(Solver):
             l = self.backtrack.pop()
             self.assertions_stack = self.assertions_stack[:l]
 
-    def __del__(self):
-        del self.ddmanager
+    def exit(self):
+        if not self._destroyed:
+            self._destroyed = True
+            del self.ddmanager
 
 
 class BddConverter(DagWalker):

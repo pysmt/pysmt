@@ -118,9 +118,9 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         return res
 
     def exit(self):
-        del self.cvc4
-        self.cvc4 = None
-        return
+        if not self._destroyed:
+            self._destroyed = True
+            del self.cvc4
 
 
 class CVC4Converter(DagWalker):

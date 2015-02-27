@@ -30,6 +30,7 @@ class Solver(object):
         self.pending_pop = False
         assert logic is not None
         assert options is None, "Options are not supported, yet."
+        self._destroyed = False
         return
 
     def is_sat(self, formula):
