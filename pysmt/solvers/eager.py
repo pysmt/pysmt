@@ -60,3 +60,10 @@ class EagerModel(Model):
                                 (s, s.symbol_type()))
 
             self.assignment[s] = value
+
+    def __iter__(self):
+        """Overloading of iterator from Model.  We iterate only on the
+        variables defined in the assignment. Call complete_model to
+        include more variables.
+        """
+        return iter(self.assignment.items())
