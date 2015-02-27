@@ -15,6 +15,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+import warnings
+
 import pycudd
 
 import pysmt.logics
@@ -37,10 +39,10 @@ def assert_ddmanager(target):
     needed. In particular, it might be enough to simply set the
     DdManager everytime time we operate on it.
     """
-
-    assert pycudd.GetDefaultDdManager() == target, \
-        "Global DdManager does not match local DdManager. Multiple" +\
-        "DdManagers are currently not supported."
+    if not pycudd.GetDefaultDdManager() == target:
+        warnings.warn("Global DdManager does not match local DdManager.\n" +\
+                      "Note: PyCuDD does not support multiple DdManagers.")
+        target.SetDefault()
 
 
 class BddSolver(Solver):
