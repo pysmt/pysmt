@@ -15,6 +15,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+import warnings
+
 import pycudd
 
 import pysmt.logics
@@ -30,6 +32,7 @@ _current_manager = None
 def _gain_manager(self):
     assert _current_manager is None or _current_manager == self.ddmanager
     self.ddmanager.SetDefault()
+
 
 def _release_manager(self):
     _current_manager = None

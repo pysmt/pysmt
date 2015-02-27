@@ -20,10 +20,10 @@ env:
  # We test the following:
  # 1. PySMT w/o solvers
  # 2. PySMT with one solver at the time
- # - PYSMT_SOLVER="None"
- # - PYSMT_SOLVER="msat"  PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.2.12-linux-x86_64/python:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.2.12-linux-x86_64/python/build/lib.linux-x86_64-2.7"
- # - PYSMT_SOLVER="z3"    PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/z3_bin/lib/python2.7/dist-packages"
- # - PYSMT_SOLVER="cvc4"  PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/CVC4-68f22235a62f5276b206e9a6692a85001beb8d42/builds/src/bindings/python"
+ - PYSMT_SOLVER="None"
+ - PYSMT_SOLVER="msat"  PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.2.12-linux-x86_64/python:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.2.12-linux-x86_64/python/build/lib.linux-x86_64-2.7"
+ - PYSMT_SOLVER="z3"    PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/z3_bin/lib/python2.7/dist-packages"
+ - PYSMT_SOLVER="cvc4"  PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/CVC4-68f22235a62f5276b206e9a6692a85001beb8d42/builds/src/bindings/python"
  - PYSMT_SOLVER="yices" PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/pyices-aa0b91c39aa00c19c2160e83aad822dc468ce328/build/lib.linux-x86_64-2.7"
  - PYSMT_SOLVER="cudd"  PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/pycudd2.0.2/pycudd"
 

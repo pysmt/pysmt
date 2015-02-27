@@ -754,7 +754,6 @@ if __name__ == "__main__":
 
     def main():
         """Simple testing script"""
-        from pysmt.shortcuts import Solver
         args = sys.argv
         if len(args) != 2 and len(args) != 3:
             print "Usage %s <file.smt2> [-tu]" % args[0]
@@ -779,8 +778,6 @@ if __name__ == "__main__":
 
         res = parser.get_script_fname(fname)
         assert res != None
-
-        res.evaluate(Solver(name='yices'))
 
         print "Done"
 
