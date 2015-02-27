@@ -23,24 +23,16 @@ from pysmt import typing as types
 from pysmt.solvers.solver import Solver
 from pysmt.solvers.eager import EagerModel
 from pysmt.walkers import DagWalker
-from pysmt.decorators import clear_pending_pop, deprecated
+from pysmt.decorators import clear_pending_pop
 
 
-def assert_ddmanager(target):
-    """The global DdManager should match target.
+_current_manager = None
+def _gain_manager(self):
+    assert _current_manager is None or _current_manager == self.ddmanager
+    self.ddmanager.SetDefault()
 
-    pyCUDD uses a global DdManager. Therefore, we need to make sure
-    that we are operating on the right DdManager. This method enforces
-    that the global DdManager matches the one we are expecting.
-
-    Note: This solution might be stronger that what is actually
-    needed. In particular, it might be enough to simply set the
-    DdManager everytime time we operate on it.
-    """
-
-    assert pycudd.GetDefaultDdManager() == target, \
-        "Global DdManager does not match local DdManager. Multiple" +\
-        "DdManagers are currently not supported."
+def _release_manager(self):
+    _current_manager = None
 
 
 class BddSolver(Solver):
@@ -54,7 +46,6 @@ class BddSolver(Solver):
 
         self.mgr = environment.formula_manager
         self.ddmanager = pycudd.DdManager()
-        self.ddmanager.SetDefault()
         self.converter = BddConverter(environment=self.environment,
                                       ddmanager=self.ddmanager)
 
@@ -80,7 +71,6 @@ class BddSolver(Solver):
 
     @clear_pending_pop
     def add_assertion(self, formula, named=None):
-        assert_ddmanager(self.ddmanager)
         self.assertions_stack.append((formula, None))
 
     @clear_pending_pop
@@ -90,13 +80,14 @@ class BddSolver(Solver):
             self.add_assertion(self.mgr.And(assumptions))
             self.pending_pop = True
 
-        assert_ddmanager(self.ddmanager)
+        _gain_manager(self)
         for (i, (expr, bdd)) in enumerate(self.assertions_stack):
             if bdd is None:
                 bdd_expr = self.converter.convert(expr)
                 _, previous_bdd = self.assertions_stack[i-1]
                 new_bdd = previous_bdd.And(bdd_expr)
                 self.assertions_stack[i] = (expr, new_bdd)
+        _release_manager(self)
 
         _, current_state = self.assertions_stack[-1]
         res = (current_state != self.ddmanager.Zero())
@@ -116,7 +107,7 @@ class BddSolver(Solver):
         # DdManager. This would make it possible to apply other
         # operations on the model (e.g., enumeration) in a simple way.
         if self.latest_model is None:
-            assert_ddmanager(self.ddmanager)
+            _gain_manager(self)
             _, current_state = self.assertions_stack[-1]
             assert current_state is not None, "solve() should be called before get_model()"
             # Build ddArray of variables
@@ -128,6 +119,8 @@ class BddSolver(Solver):
                 value = self.mgr.Bool(minterm[i] == 1)
                 key = self.converter.idx2var[node.NodeReadIndex()]
                 assignment[key] = value
+            _release_manager(self)
+
             self.latest_model = EagerModel(assignment=assignment,
                                            environment=self.environment)
         return self.latest_model
@@ -169,38 +162,46 @@ class BddConverter(DagWalker):
 
     def convert(self, formula):
         """Convert a PySMT formula into a BDD."""
-        assert_ddmanager(self.ddmanager)
-        return self.walk(formula)
+        _gain_manager(self)
+        res = self.walk(formula)
+        _release_manager(self)
+        return res
 
     def back(self, bdd_expr):
-        assert_ddmanager(self.ddmanager)
-        return self.bdd_to_expr3(bdd_expr).simplify()
+        _gain_manager(self)
+        res = self.bdd_to_expr3(bdd_expr).simplify()
+        _release_manager(self)
+        return res
 
     def get_all_vars_array(self):
         # NOTE: This way of building the var_array does not look
         #       robust.  There might be an issue if variables are
         #       added and the order of enumeration of the dictionary
         #       changes and we rely on this order outside of this class.
+        _gain_manager(self)
         var_array = pycudd.DdArray(len(self.idx2var))
         for i, node_idx in enumerate(self.idx2var):
             var_array[i] = self.ddmanager[node_idx]
+        _release_manager(self)
         return var_array
 
     def cube_from_var_list(self, var_list):
-        assert_ddmanager(self.ddmanager)
+        _gain_manager(self)
         indices = pycudd.IntArray(len(var_list))
         for i, v in enumerate(var_list):
             indices[i] = self.var2node[v].NodeReadIndex()
         cube = self.ddmanager.IndicesToCube(indices, len(var_list))
+        _release_manager(self)
         return cube
 
     def declare_variable(self, var):
         if not var.is_symbol(type_=types.BOOL): raise TypeError
-        assert_ddmanager(self.ddmanager)
         if var not in self.var2node:
+            _gain_manager(self)
             node = self.ddmanager.NewVar()
             self.idx2var[node.NodeReadIndex()] = var
             self.var2node[var] = node
+            _release_manager(self)
 
     def walk_and(self, formula, args):
         res = self.ddmanager.One()
