@@ -50,6 +50,9 @@ before_script:
 
 script:
   - ./install.py --check
-  - nosetests pysmt --with-xunit --xunit-file=shippable/testresults/nosetests.xml --with-coverage --cover-package=pysmt --cover-xml --cover-xml-file=shippable/codecoverage/coverage.xml --cover-branch
+  - nosetests pysmt --processes=4 --process-timeout=360 --with-xunit --xunit-file=shippable/testresults/nosetests.xml
 
-commit_container: gario/shippable_pysmt
+# --with-coverage --cover-package=pysmt --cover-xml --cover-xml-file=shippable/codecoverage/coverage.xml --cover-branch
+
+# Disable push of container for now
+#commit_container: gario/shippable_pysmt
