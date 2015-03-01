@@ -51,3 +51,5 @@ before_script:
 script:
   - ./install.py --check
   - nosetests pysmt --with-xunit --xunit-file=shippable/testresults/nosetests.xml --with-coverage --cover-package=pysmt --cover-xml --cover-xml-file=shippable/codecoverage/coverage.xml --cover-branch
+
+commit_container: gario/nb_pysmt
