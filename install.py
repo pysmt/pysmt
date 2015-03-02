@@ -342,9 +342,7 @@ def check_install():
         print("%s: \t %s" % (solver, is_installed))
 
         if solver == required_solver and not is_installed:
-            assert "Was expecting to find %s installed" % required_solver
-
-
+            raise Exception("Was expecting to find %s installed" % required_solver)
 
 
 def parse_options():

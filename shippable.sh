@@ -21,7 +21,7 @@ then
                        python-all-dev \
                        autoconf libtool antlr3 wget \
                        curl libboost-dev
-    ./install.py --confirm-agreement --cvc4 --make-j 2
+    ./install.py --confirm-agreement --cvc4
 fi
 
 

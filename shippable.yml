@@ -15,18 +15,33 @@ install:
   - pip install coverage
   - source shippable.sh $PYSMT_SOLVER
 
-env:
- # Multiple envs will cause multiple build across multiple python versions.
- # We test the following:
- # 1. PySMT w/o solvers
- # 2. PySMT with one solver at the time
- - PYSMT_SOLVER="None"
- - PYSMT_SOLVER="msat"  PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.2.12-linux-x86_64/python:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.2.12-linux-x86_64/python/build/lib.linux-x86_64-2.7"
- - PYSMT_SOLVER="z3"    PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/z3_bin/lib/python2.7/dist-packages"
- - PYSMT_SOLVER="cvc4"  PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/CVC4-68f22235a62f5276b206e9a6692a85001beb8d42/builds/src/bindings/python"
- - PYSMT_SOLVER="yices" PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/pyices-aa0b91c39aa00c19c2160e83aad822dc468ce328/build/lib.linux-x86_64-2.7"
- - PYSMT_SOLVER="cudd"  PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/pycudd2.0.2/pycudd"
 
+# Multiple envs will cause multiple build across multiple python versions.
+# We test the following:
+# 1. PySMT w/o solvers
+# 2. PySMT with one solver at the time
+#
+env:
+  global:
+    - secure: IzzUEuWb2+h3gzttT0237NDkptzu4UvPN1okinDgm4Rx0uADXVWJy6gvcWaeL8F6tl8KGkpcFvzGHmwj7RGGRk8AAj+OVf+VilSlWwNe1g8SYHwxOPrTgD4ECX3860hleeI3F2DD+yFIo9Hgw3ZiHBsfbombtFGTB5WWwUgezXsENMKuNJ580MN8+c3I4IV44pSXJ179GluJ3O1e/xUkwJ5/nvysWd4q7wqJ6aIz5ZFMFhs/FKAbeEdtmmGODn2FspGJ+iKVyc0IbQpzLJO1MeizBXnGZfN9Ojv7mkPJcgzqFMjvLnpCJAEmZl3BzJFc0j9xxILvrrjHU/TKrlJkSw==
+  matrix:
+    - PYSMT_SOLVER="None"
+    - PYSMT_SOLVER="msat"  PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.2.12-linux-x86_64/python:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.2.12-linux-x86_64/python/build/lib.linux-x86_64-2.7"
+    - PYSMT_SOLVER="z3"    PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/z3_bin/lib/python2.7/dist-packages"
+    - PYSMT_SOLVER="cvc4"  PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/CVC4-68f22235a62f5276b206e9a6692a85001beb8d42/builds/src/bindings/python"
+    - PYSMT_SOLVER="yices" PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/pyices-aa0b91c39aa00c19c2160e83aad822dc468ce328/build/lib.linux-x86_64-2.7"
+    - PYSMT_SOLVER="cudd"  PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/pycudd2.0.2/pycudd"
+
+matrix:
+  include:
+    - env: PYSMT_SOLVER="None"
+      python: 2.6
+    - env: PYSMT_SOLVER="None"
+      python: 3.3
+    - env: PYSMT_SOLVER="None"
+      python: 3.4
+    - env: PYSMT_SOLVER="None"
+      python: pypy
 
 # Make folders for the reports
 before_script:
@@ -35,4 +50,9 @@ before_script:
 
 script:
   - ./install.py --check
-  - nosetests pysmt --with-xunit --xunit-file=shippable/testresults/nosetests.xml --with-coverage --cover-package=pysmt --cover-xml --cover-xml-file=shippable/codecoverage/coverage.xml --cover-branch
+  - nosetests pysmt --processes=4 --process-timeout=360 --with-xunit --xunit-file=shippable/testresults/nosetests.xml
+
+# --with-coverage --cover-package=pysmt --cover-xml --cover-xml-file=shippable/codecoverage/coverage.xml --cover-branch
+
+# Disable push of container for now
+#commit_container: gario/shippable_pysmt
