@@ -15,7 +15,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import contextlib
 import warnings
 
 import pycudd
@@ -29,23 +28,37 @@ from pysmt.walkers import DagWalker
 from pysmt.decorators import clear_pending_pop
 
 
-_depth = 0
-@contextlib.contextmanager
-def dd_manager(mgr):
-    global _depth
-    current_manager = pycudd.GetDefaultDdManager()
-    assert current_manager is None or current_manager == mgr
-    mgr.SetDefault()
-    assert pycudd.GetDefaultDdManager() == mgr
-    _depth += 1
+class LockDdManager(object):
+    """Context class that must be used to guard any usage of pycudd. This
+    ensures that the default DdManager is the one passed at the
+    constructor.
 
-    yield
+    E.g.
 
-    if not pycudd.GetDefaultDdManager() == mgr:
-        warnings.warn("The default DdManager changed without a context protecting it")
-    _depth -= 1
-    if _depth == 0:
-        pycudd.ResetDefaultDdManager()
+    with LockDdManager(ddmanager):
+        Do something with bdds
+
+    """
+    _depth = 0
+
+    def __init__(self, manager):
+        self.manager = manager
+
+    def __enter__(self):
+        current_manager = pycudd.GetDefaultDdManager()
+        assert current_manager is None or current_manager == self.manager
+        self.manager.SetDefault()
+        assert pycudd.GetDefaultDdManager() == self.manager
+        LockDdManager._depth += 1
+
+    def __exit__(self, type, value, traceback):
+        if not pycudd.GetDefaultDdManager() == self.manager:
+            warnings.warn("The default DdManager changed without a " \
+                          "context protecting it")
+        LockDdManager._depth -= 1
+        if LockDdManager._depth == 0:
+            pycudd.ResetDefaultDdManager()
+
 
 
 class BddSolver(Solver):
@@ -97,7 +110,7 @@ class BddSolver(Solver):
             if bdd is None:
                 bdd_expr = self.converter.convert(expr)
                 _, previous_bdd = self.assertions_stack[i-1]
-                with dd_manager(self.ddmanager):
+                with LockDdManager(self.ddmanager):
                     new_bdd = previous_bdd.And(bdd_expr)
                 self.assertions_stack[i] = (expr, new_bdd)
 
@@ -119,7 +132,7 @@ class BddSolver(Solver):
         # DdManager. This would make it possible to apply other
         # operations on the model (e.g., enumeration) in a simple way.
         if self.latest_model is None:
-            with dd_manager(self.ddmanager):
+            with LockDdManager(self.ddmanager):
                 _, current_state = self.assertions_stack[-1]
                 assert current_state is not None, "solve() should be called before get_model()"
                 # Build ddArray of variables
@@ -173,11 +186,11 @@ class BddConverter(DagWalker):
 
     def convert(self, formula):
         """Convert a PySMT formula into a BDD."""
-        with dd_manager(self.ddmanager):
+        with LockDdManager(self.ddmanager):
             return self.walk(formula)
 
     def back(self, bdd_expr):
-        with dd_manager(self.ddmanager):
+        with LockDdManager(self.ddmanager):
             return self.bdd_to_expr3(bdd_expr).simplify()
 
     def get_all_vars_array(self):
@@ -185,14 +198,14 @@ class BddConverter(DagWalker):
         #       robust.  There might be an issue if variables are
         #       added and the order of enumeration of the dictionary
         #       changes and we rely on this order outside of this class.
-        with dd_manager(self.ddmanager):
+        with LockDdManager(self.ddmanager):
             var_array = pycudd.DdArray(len(self.idx2var))
             for i, node_idx in enumerate(self.idx2var):
                 var_array[i] = self.ddmanager[node_idx]
             return var_array
 
     def cube_from_var_list(self, var_list):
-        with dd_manager(self.ddmanager):
+        with LockDdManager(self.ddmanager):
             indices = pycudd.IntArray(len(var_list))
             for i, v in enumerate(var_list):
                 indices[i] = self.var2node[v].NodeReadIndex()
@@ -202,7 +215,7 @@ class BddConverter(DagWalker):
     def declare_variable(self, var):
         if not var.is_symbol(type_=types.BOOL): raise TypeError
         if var not in self.var2node:
-            with dd_manager(self.ddmanager):
+            with LockDdManager(self.ddmanager):
                 node = self.ddmanager.NewVar()
                 self.idx2var[node.NodeReadIndex()] = var
                 self.var2node[var] = node
