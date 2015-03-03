@@ -22,7 +22,7 @@ import z3
 from fractions import Fraction
 
 from pysmt import typing as types
-from pysmt.solvers.solver import Solver, Model
+from pysmt.solvers.solver import Solver, Model, Converter
 from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 from pysmt.solvers.qelim import QuantifierEliminator
 
@@ -164,7 +164,7 @@ class Z3Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
 
 
-class Z3Converter(DagWalker):
+class Z3Converter(Converter, DagWalker):
 
     def __init__(self, environment):
         DagWalker.__init__(self, environment)

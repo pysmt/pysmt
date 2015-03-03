@@ -27,7 +27,7 @@ import pyices.fix_env
 from pyices.yices_lib import String
 
 from pysmt.solvers.eager import EagerModel
-from pysmt.solvers.solver import Solver
+from pysmt.solvers.solver import Solver, Converter
 from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 
 from pysmt.walkers import DagWalker
@@ -188,7 +188,7 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
 
 
-class YicesConverter(DagWalker):
+class YicesConverter(Converter, DagWalker):
 
     def __init__(self, environment):
         DagWalker.__init__(self, environment)
