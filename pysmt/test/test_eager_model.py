@@ -74,6 +74,13 @@ class TestEagerModel(TestCase):
         self.assertTrue(model.get_value(p).is_constant(INT))
         self.assertTrue(model.get_value(r).is_constant(REAL))
 
+    def test_contains(self):
+        x, y, z = [FreshSymbol() for _ in xrange(3)]
+        d = {x: TRUE(), y: FALSE()}
+        model = EagerModel(assignment=d,
+                           environment=get_env())
+        self.assertTrue(x in model)
+        self.assertFalse(z in model)
 
 if __name__ == '__main__':
     import unittest

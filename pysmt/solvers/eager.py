@@ -67,3 +67,7 @@ class EagerModel(Model):
         include more variables.
         """
         return iter(self.assignment.items())
+
+    def __contains__(self, x):
+        """Returns whether the model contains a value for 'x'."""
+        return x in self.assignment
