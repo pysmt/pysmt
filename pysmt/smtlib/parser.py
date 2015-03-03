@@ -28,6 +28,7 @@ from pysmt.exceptions import UnknownSmtLibCommandError
 from pysmt.utils.generic_number import GenericNumber, disambiguate
 from pysmt.environment import TypeUnsafeEnvironment
 from pysmt.smtlib.script import SmtLibCommand, SmtLibScript
+from pysmt.smtlib.annotations import Annotations
 
 
 def get_formula(script_stream, environment=None):
@@ -79,7 +80,7 @@ class SmtLibExecutionCache(object):
     def __init__(self):
         self.keys = {}
         self.definitions = {}
-        self.annotations = {}
+        self.annotations = Annotations()
 
     def bind(self, name, value):
         """Binds a symbol in this environment"""
@@ -195,13 +196,23 @@ class SmtLibParser(object):
 
     def __init__(self, environment=None):
         self.pysmt_env = get_env() if environment is None else environment
-        self._current_env = self.pysmt_env
-        self.cache = SmtLibExecutionCache()
+
+        # Placeholders for fields filled by self._reset
+        self._current_env = None
+        self.cache = None
         self.logic = None
 
         # Special tokens appearing in expressions
         self.parentheses = set(["(", ")"])
         self.specials = set(["let", "!", "exists", "forall"])
+
+
+
+    def _reset(self):
+        """Resets the parser to the initial state"""
+        self.cache = SmtLibExecutionCache()
+        self.logic = None
+        self._current_env = self.pysmt_env
 
         mgr = self.pysmt_env.formula_manager
         self.cache.update({'+':mgr.Plus,
@@ -224,6 +235,7 @@ class SmtLibParser(object):
                            'true':mgr.TRUE(),
                            'to_real':mgr.ToReal,
                            })
+
 
     def _is_unknown_constant_type(self):
         """
@@ -407,18 +419,18 @@ class SmtLibParser(object):
         """
         This method is invoked when we finish parsing an annotated expression
         """
-        pyterm_annotations = self.cache.annotations.setdefault(pyterm, {})
 
         # Iterate on elements.
         i = 0
         while i < len(attrs):
             if i+1 < len(attrs) and str(attrs[i+1])[0] != ":" :
                 key, value = attrs[i], attrs[i+1]
+                self.cache.annotations.add(pyterm, key, value)
                 i += 2
             else:
-                key, value = attrs[i], True
+                key = attrs[i]
+                self.cache.annotations.add(pyterm, key)
                 i += 1
-            pyterm_annotations[key] = value
 
         return pyterm
 
@@ -518,9 +530,11 @@ class SmtLibParser(object):
         """
         Takes a file object and returns a SmtLibScript object representing the file
         """
+        self._reset() # prepare the parser
         res = SmtLibScript()
         for cmd in self.get_command_generator(script):
             res.add_command(cmd)
+        res.annotations = self.cache.annotations
         return res
 
     def get_command_generator(self, script):
