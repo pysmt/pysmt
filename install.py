@@ -331,6 +331,10 @@ def check_install():
     required_solver = os.environ.get("PYSMT_SOLVER")
     if required_solver is None:
         required_solver = "None"
+    elif required_solver == "cudd":
+        # Special case for bdd
+        required_solver = "bdd"
+
 
     for solver in ['msat', 'z3', 'cvc4', 'yices', 'bdd']:
         is_installed = False
