@@ -20,7 +20,7 @@ from fractions import Fraction
 import CVC4
 
 import pysmt
-from pysmt.solvers.solver import Solver
+from pysmt.solvers.solver import Solver, Converter
 from pysmt.exceptions import SolverReturnedUnknownResultError
 from pysmt.walkers import DagWalker
 from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
@@ -123,7 +123,7 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
             del self.cvc4
 
 
-class CVC4Converter(DagWalker):
+class CVC4Converter(Converter, DagWalker):
 
     def __init__(self, environment, cvc4_exprMgr):
         DagWalker.__init__(self, environment)

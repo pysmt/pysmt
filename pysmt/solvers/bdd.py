@@ -22,7 +22,7 @@ import pycudd
 import pysmt.logics
 
 from pysmt import typing as types
-from pysmt.solvers.solver import Solver
+from pysmt.solvers.solver import Solver, Converter
 from pysmt.solvers.eager import EagerModel
 from pysmt.walkers import DagWalker
 from pysmt.decorators import clear_pending_pop
@@ -166,7 +166,7 @@ class BddSolver(Solver):
             del self.ddmanager
 
 
-class BddConverter(DagWalker):
+class BddConverter(Converter, DagWalker):
 
     def __init__(self, environment, ddmanager):
         DagWalker.__init__(self)

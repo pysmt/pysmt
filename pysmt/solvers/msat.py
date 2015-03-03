@@ -22,7 +22,7 @@ import mathsat
 
 import pysmt.logics
 from pysmt import typing as types
-from pysmt.solvers.solver import Solver
+from pysmt.solvers.solver import Solver, Converter
 from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 from pysmt.solvers.eager import EagerModel
 from pysmt.walkers import DagWalker
@@ -197,7 +197,7 @@ class MathSAT5Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
             mathsat.msat_destroy_config(self.config)
 
 
-class MSatConverter(DagWalker):
+class MSatConverter(Converter, DagWalker):
 
     def __init__(self, environment, msat_env):
         DagWalker.__init__(self, environment)
