@@ -373,14 +373,15 @@ def check_install():
         required_solver = "bdd"
 
 
-    for solver in ['msat', 'z3', 'cvc4', 'yices', 'bdd']:
+    for solver in ['msat', 'z3', 'cvc4', 'yices', 'bdd', 'picosat']:
         is_installed = False
         try:
             Solver(name=solver)
             is_installed = True
         except NoSolverAvailableError:
             is_installed = False
-        print("%s: \t %s" % (solver, is_installed))
+        spaces = " " * (10 - len(solver))
+        print("%s%s%s" % (solver, spaces, is_installed))
 
         if solver == required_solver and not is_installed:
             raise Exception("Was expecting to find %s installed" % required_solver)
