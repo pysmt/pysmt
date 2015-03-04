@@ -11,8 +11,8 @@ diff -Naur picosat-960/configure picosat.patched/configure
    [ $trace = yes ] && CFLAGS="$CFLAGS -DTRACE"
 diff -Naur picosat-960/picosat_python.i picosat.patched/picosat_python.i
 --- picosat-960/picosat_python.i	1970-01-01 01:00:00.000000000 +0100
-+++ picosat.patched/picosat_python.i	2015-03-04 10:56:23.850508301 +0100
-@@ -0,0 +1,39 @@
++++ picosat.patched/picosat_python.i	2015-03-04 11:46:44.022432617 +0100
+@@ -0,0 +1,38 @@
 +/* -*- swig -*- */
 +/* SWIG interface file to create the Python API for PicoSAT */
 +/* author: Andrea Micheli <micheli.andrea@gmail.com> */
@@ -45,7 +45,6 @@ diff -Naur picosat-960/picosat_python.i picosat.patched/picosat_python.i
 +
 +%}
 +
-+/* %apply msat_term *OUTPUT {msat_term *t, msat_term *v} */
 +
 +%pythoncode %{
 +
