@@ -62,6 +62,17 @@ class TestBasic(TestCase):
             res = is_sat(g, solver_name=solver)
             self.assertFalse(res, "Formula was expected to be UNSAT")
 
+    @skipIfSolverNotAvailable("bdd")
+    def test_get_logic_in_is_sat(self):
+        varA = Symbol("A", BOOL)
+        varB = Symbol("B", BOOL)
+
+        f = And(varA, Not(varB))
+        # This test works only if is_sat requests QF_BOOL as logic.
+        res = is_sat(f)
+        self.assertTrue(res)
+
+
     @skipIfNoSolverForLogic(QF_BOOL)
     def test_get_model_unsat(self):
         varA = Symbol("A", BOOL)
