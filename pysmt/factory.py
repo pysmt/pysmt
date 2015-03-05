@@ -27,7 +27,9 @@ import warnings
 from functools import partial
 
 from pysmt.exceptions import NoSolverAvailableError, SolverRedefinitionError
-from pysmt.logics import PYSMT_LOGICS, most_generic_logic, get_closer_logic
+from pysmt.logics import PYSMT_LOGICS, PYSMT_QF_LOGICS
+from pysmt.logics import most_generic_logic, get_closer_logic
+from pysmt.oracles import get_logic
 
 DEFAULT_SOLVER_PREFERENCE_LIST = ['msat', 'z3', 'cvc4', 'yices', 'bdd']
 DEFAULT_QELIM_PREFERENCE_LIST = ['z3']
@@ -87,7 +89,8 @@ class Factory(object):
                 raise NoSolverAvailableError("Solver %s is not available" % name)
 
         if logic is None:
-            logic = most_generic_logic(PYSMT_LOGICS)
+            assert not quantified
+            logic = most_generic_logic(PYSMT_QF_LOGICS)
 
         solvers = self.all_solvers(logic=logic)
 
@@ -258,11 +261,15 @@ class Factory(object):
         return self.get_quantifier_eliminator(name=name)
 
     def is_sat(self, formula, quantified=None, solver_name=None, logic=None):
+        if logic is None:
+            logic = get_logic(formula, self.environment)
         with self.Solver(quantified=quantified, name=solver_name, logic=logic) \
              as solver:
             return solver.is_sat(formula)
 
     def get_model(self, formula, quantified=None, solver_name=None, logic=None):
+        if logic is None:
+            logic = get_logic(formula, self.environment)
         with self.Solver(quantified=quantified, name=solver_name, logic=logic) \
              as solver:
             solver.add_assertion(formula)
@@ -273,11 +280,15 @@ class Factory(object):
             return retval
 
     def is_valid(self, formula, quantified=False, solver_name=None, logic=None):
+        if logic is None:
+            logic = get_logic(formula, self.environment)
         with self.Solver(quantified=quantified, name=solver_name, logic=logic) \
              as solver:
             return solver.is_valid(formula)
 
     def is_unsat(self, formula, quantified=False, solver_name=None, logic=None):
+        if logic is None:
+            logic = get_logic(formula, self.environment)
         with self.Solver(quantified=quantified, name=solver_name, logic=logic) \
              as solver:
             return solver.is_unsat(formula)
