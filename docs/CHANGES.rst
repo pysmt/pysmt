@@ -8,6 +8,10 @@ General:
 
 * install.py: script to automate the installation of supported
   solvers.
+* get_logic() Oracle: Detects the logic used in a formula. This is now
+  automatically used in _is_sat()_, _is_unsat()_, _is_valid()_, and
+  _get_model()_.
+
 
 
 0.2.2 2015-02-07 -- BDDs
