@@ -26,8 +26,6 @@ from pysmt.cnf import CNFizer
 from pysmt.decorators import clear_pending_pop
 
 
-
-
 class PicosatSolver(Solver):
     LOGICS = [ pysmt.logics.QF_BOOL ]
 
@@ -42,7 +40,6 @@ class PicosatSolver(Solver):
         self.converter = None
         self.cnfizer = CNFizer(environment=environment)
         self.latest_model = None
-
         self._var_ids = {}
 
 

@@ -39,9 +39,6 @@ class TestCnf(TestCase):
             res = is_sat(cnf, logic=logic)
             self.assertEqual(res, example.is_sat)
 
-            res = is_valid(cnf, logic=logic)
-            self.assertEqual(res, example.is_valid)
-
 
     @skipIfNoSolverForLogic(QF_BOOL)
     def test_examples_solving_bool(self):
