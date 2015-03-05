@@ -186,15 +186,15 @@ class CNFizer(DagWalker):
 
     def walk_equals(self, formula, args):
         assert all(a == CNFizer.THEORY_PLACEHOLDER for a in args)
-        return formula, frozenset([frozenset([formula])])
+        return formula, CNFizer.TRUE_CNF
 
     def walk_le(self, formula, args):
         assert all(a == CNFizer.THEORY_PLACEHOLDER for a in args)
-        return formula, frozenset([frozenset([formula])])
+        return formula, CNFizer.TRUE_CNF
 
     def walk_lt(self, formula, args):
         assert all(a == CNFizer.THEORY_PLACEHOLDER for a in args), str(args)
-        return formula, frozenset([frozenset([formula])])
+        return formula, CNFizer.TRUE_CNF
 
     def walk_ite(self, formula, args):
         if any(a == CNFizer.THEORY_PLACEHOLDER for a in args):
