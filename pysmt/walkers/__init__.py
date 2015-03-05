@@ -40,3 +40,6 @@ assert TreeWalker
 
 from pysmt.walkers.identitydag import IdentityDagWalker
 assert IdentityDagWalker
+
+from pysmt.walkers.polaritydag import PolarityDagWalker
+assert PolarityDagWalker
