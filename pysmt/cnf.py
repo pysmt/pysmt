@@ -200,10 +200,18 @@ class CNFizer(DagWalker):
         if any(a == CNFizer.THEORY_PLACEHOLDER for a in args):
             return CNFizer.THEORY_PLACEHOLDER
         else:
-            i,t,e = formula.args()
-            f = self.mgr.And(self.mgr.Iff(i, t),
-                             self.mgr.Iff(self.mgr.Not(i), e))
-            return self.walk(f)
+            (i,cnf_i),(t,cnf_t),(e,cnf_e) = args
+            k = self._key_var(formula)
+            not_i = self.mgr.Not(i).simplify()
+            not_t = self.mgr.Not(t).simplify()
+            not_e = self.mgr.Not(e).simplify()
+            not_k = self.mgr.Not(k)
+
+            return k, (cnf_i | cnf_t | cnf_e |
+                       frozenset([frozenset([not_i, not_t, k]),
+                                  frozenset([not_i, t, not_k]),
+                                  frozenset([i, not_e, k]),
+                                  frozenset([i, e, not_k])]))
 
     def walk_toreal(self, formula, args):
         return CNFizer.THEORY_PLACEHOLDER
