@@ -12,6 +12,12 @@ General:
   automatically used in _is_sat()_, _is_unsat()_, _is_valid()_, and
   _get_model()_.
 
+Backwards Incompatible Changes:
+
+* The default logic for Factory.get_solver() is now the most generic
+  *quantifier free* logic supported by pySMT (currently,
+  QF_UFLIRA). Previously it was UFLIRA, but this was due to a bug in
+  the logic of get_solver().
 
 
 0.2.2 2015-02-07 -- BDDs
