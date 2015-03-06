@@ -437,13 +437,14 @@ class FormulaManager(object):
             raise TypeError("Argument is of type %s, but INT was expected!\n" % t)
 
 
-    def AtMostOne(self, bool_exprs):
+    def AtMostOne(self, *args):
         """ At most one of the bool expressions can be true at anytime.
 
         This using a quadratic encoding:
            A -> !(B \/ C)
            B -> !(C)
         """
+        bool_exprs = self._polymorph_args_to_tuple(args)
         constraints = []
         for (i, elem) in enumerate(bool_exprs[:-1], start=1):
             constraints.append(self.Implies(elem,
@@ -451,7 +452,7 @@ class FormulaManager(object):
         return self.And(constraints)
 
 
-    def ExactlyOne(self, bool_exprs):
+    def ExactlyOne(self, *args):
         """ Encodes an exactly-one constraint on the boolean symbols.
 
         This using a quadratic encoding:
@@ -459,13 +460,40 @@ class FormulaManager(object):
            A -> !(B \/ C)
            B -> !(C)
         """
-        return self.And(self.Or(bool_exprs),
-                        self.AtMostOne(bool_exprs))
+        return self.And(self.Or(*args),
+                        self.AtMostOne(*args))
 
 
     def Xor(self, left, right):
         """Returns the xor of left and right: left XOR right """
         return self.Not(self.Iff(left, right))
+
+    def Min(self, *args):
+        """Returns the encoding of the minimum expression within exprs"""
+        exprs = self._polymorph_args_to_tuple(args)
+        assert len(exprs) > 0
+        if len(exprs) == 1:
+            return exprs[0]
+        elif len(exprs) == 2:
+            a, b = exprs
+            return self.Ite(self.LE(a, b), a, b)
+        else:
+            h = len(exprs) / 2
+            return self.Min(self.Min(exprs[0:h]), self.Min(exprs[h:]))
+
+    def Max(self, *args):
+        """Returns the encoding of the minimum expression within exprs"""
+        exprs = self._polymorph_args_to_tuple(args)
+        assert len(exprs) > 0
+        if len(exprs) == 1:
+            return exprs[0]
+        elif len(exprs) == 2:
+            a, b = exprs
+            return self.Ite(self.LE(a, b), b, a)
+        else:
+            h = len(exprs) / 2
+            return self.Max(self.Max(exprs[0:h]), self.Max(exprs[h:]))
+
 
 
     def normalize(self, formula):
