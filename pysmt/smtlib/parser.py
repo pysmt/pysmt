@@ -325,23 +325,26 @@ class SmtLibParser(object):
         """
         res = self.cache.get(token)
         if res is None:
-            # This is a numerical constant
-            if "." in token:
-                res = mgr.Real(Fraction(token))
-            else:
-                iterm = int(token)
-                # We found an integer, depending on the logic this can be
-                # an Int, a Real, or an unknown GenericNumber.
-                if self._is_unknown_constant_type():
-                    res = GenericNumber(iterm)
-                elif self.logic.theory.real_arithmetic:
-                    res = mgr.Real(iterm)
+            # This may be a numerical constant or an annotation
+            try:
+                if "." in token:
+                    res = mgr.Real(Fraction(token))
                 else:
-                    assert self.logic.theory.integer_arithmetic, \
-                        "Integer constant found in a logic that does not " \
-                        "support arithmetic"
-                    res = mgr.Int(iterm)
-            self.cache.bind(token, res)
+                    iterm = int(token)
+                    # We found an integer, depending on the logic this can be
+                    # an Int, a Real, or an unknown GenericNumber.
+                    if self._is_unknown_constant_type():
+                        res = GenericNumber(iterm)
+                    elif self.logic.theory.real_arithmetic:
+                        res = mgr.Real(iterm)
+                    else:
+                        assert self.logic.theory.integer_arithmetic, \
+                            "Integer constant found in a logic that does not " \
+                            "support arithmetic"
+                        res = mgr.Int(iterm)
+                self.cache.bind(token, res)
+            except ValueError:
+                return token
         return res
 
 
@@ -415,7 +418,7 @@ class SmtLibParser(object):
         return fun(vrs, body)
 
 
-    def _handle_annotation(self, pyterm, attrs):
+    def _handle_annotation(self, pyterm, *attrs):
         """
         This method is invoked when we finish parsing an annotated expression
         """
@@ -424,12 +427,16 @@ class SmtLibParser(object):
         i = 0
         while i < len(attrs):
             if i+1 < len(attrs) and str(attrs[i+1])[0] != ":" :
-                key, value = attrs[i], attrs[i+1]
-                self.cache.annotations.add(pyterm, key, value)
+                key, value = str(attrs[i]), str(attrs[i+1])
+                if key[0] != ":":
+                    raise SyntaxError("Annotations keys should start with colon")
+                self.cache.annotations.add(pyterm, key[1:], value)
                 i += 2
             else:
-                key = attrs[i]
-                self.cache.annotations.add(pyterm, key)
+                key = str(attrs[i])
+                if key[0] != ":":
+                    raise SyntaxError("Annotations keys should start with colon")
+                self.cache.annotations.add(pyterm, key[1:])
                 i += 1
 
         return pyterm

@@ -25,7 +25,6 @@ class Annotations(object):
             self._annotations = initial_annotations
         else:
             self._annotations = {}
-        self._reversed = {}
 
 
     def add(self, formula, annotation, value=None):
@@ -69,3 +68,15 @@ class Annotations(object):
                     if value in amap[annotation]:
                         res.append(f)
         return res
+
+
+    def __str__(self):
+        res = ["Annotations: {"]
+        for t, m in self._annotations.iteritems():
+            res.append(str(t) + " -> ")
+            for a, lst in m.iteritems():
+                res.append(":" + str(a) + "{")
+                for v in lst:
+                    res.append(str(v) + ", ")
+                res.append("} ")
+        return "".join(res + ["}"])
