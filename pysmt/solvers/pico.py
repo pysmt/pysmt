@@ -27,6 +27,8 @@ from pysmt.decorators import clear_pending_pop
 
 
 class PicosatSolver(Solver):
+    """PicoSAT solver"""
+
     LOGICS = [ pysmt.logics.QF_BOOL ]
 
     def __init__(self, environment, logic, options=None):
