@@ -469,7 +469,7 @@ class FormulaManager(object):
         return self.Not(self.Iff(left, right))
 
     def Min(self, *args):
-        """Returns the encoding of the minimum expression within exprs"""
+        """Returns the encoding of the minimum expression within args"""
         exprs = self._polymorph_args_to_tuple(args)
         assert len(exprs) > 0
         if len(exprs) == 1:
@@ -482,7 +482,7 @@ class FormulaManager(object):
             return self.Min(self.Min(exprs[0:h]), self.Min(exprs[h:]))
 
     def Max(self, *args):
-        """Returns the encoding of the minimum expression within exprs"""
+        """Returns the encoding of the maximum expression within args"""
         exprs = self._polymorph_args_to_tuple(args)
         assert len(exprs) > 0
         if len(exprs) == 1:
