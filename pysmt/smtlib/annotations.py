@@ -15,16 +15,10 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import cStringIO
-from collections import namedtuple
 
-import pysmt.smtlib.commands as smtcmd
-from pysmt.exceptions import UnknownSmtLibCommandError
-from pysmt.shortcuts import And
-from pysmt.smtlib.printers import SmtPrinter, SmtDagPrinter
-from pysmt.logics import UFLIRA
 
 class Annotations(object):
+    """Handles and stores (key,value) annotations for formulae"""
 
     def __init__(self, initial_annotations=None):
         if initial_annotations is not None:
