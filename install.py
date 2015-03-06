@@ -380,8 +380,7 @@ def check_install():
             is_installed = True
         except NoSolverAvailableError:
             is_installed = False
-        spaces = " " * (10 - len(solver))
-        print("%s%s%s" % (solver, spaces, is_installed))
+        print("%s%s" % (solver.ljust(10), is_installed))
 
         if solver == required_solver and not is_installed:
             raise Exception("Was expecting to find %s installed" % required_solver)
