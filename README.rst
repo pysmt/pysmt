@@ -32,8 +32,9 @@ Requirements
 * CVC4 (http://cvc4.cs.nyu.edu/web/) (Optional)
 * Yices 2 (http://yices.csl.sri.com/) (Optional)
 * pyCUDD (http://bears.ece.ucsb.edu/pycudd.html) (Optional)
+* picosat (http://fmv.jku.at/picosat/) >= 960 (Optional)
 
-The library assumes that the python binding for the SMT Solver are installed
+The library assumes that the python binding for the SMT Solvers are installed
 and accessible from your PYTHONPATH.
 For Yices 2 we rely on pyices (https://github.com/cheshire/pyices).
 
@@ -43,7 +44,8 @@ Supported Theories
 
 pySMT provides methods to define a formula in Linear Real Arithmetic
 (LRA), Real Difference Logic (RDL), their combination (LIRA) and
-Equalities and Uninterpreted Functions (EUF).
+Equalities and Uninterpreted Functions (EUF), or any subset of these
+logics (e.g., quantified boolean formulae).
 
 
 Usage
