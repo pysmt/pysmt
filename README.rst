@@ -51,28 +51,20 @@ Usage
 
 .. code:: python
 
-  from pysmt.shortcuts import Symbol, And, Not, FALSE, Solver
+  from pysmt.shortcuts import Symbol, And, Not, is_sat
 
-  with Solver() as solver:
+  varA = Symbol("A") # Default type is Boolean
+  varB = Symbol("B")
+  f = And([varA, Not(varB)])
+  g = f.substitute({varB:varA})
 
-      varA = Symbol("A") # Default type is Boolean
-      varB = Symbol("B")
+  res = is_sat(f)
+  assert res # SAT
+  print("f := %s is SAT? %s" % (f, res))
 
-      f = And([varA, Not(varB)])
-
-      print(f)
-
-      g = f.substitute({varB:varA})
-
-      print(g)
-
-      solver.add_assertion(g)
-      res = solver.solve()
-      assert not res
-
-      h = And(g, FALSE())
-      simp_h = h.simplify()
-      print(h, "-->", simp_h)
+  res = is_sat(g)
+  print("g := %s is SAT? %s" % (g, res))
+  assert not res # UNSAT
 
 
 A more complex example is the following:
@@ -85,34 +77,26 @@ The following is the pySMT code for solving this problem:
 
 .. code:: python
 
-  from pysmt.shortcuts import Symbol, LE, GE, Int, And, Equals, Plus, Solver
+  from pysmt.shortcuts import Symbol, And, GE, LT, Plus, Equals, Int, get_model
   from pysmt.typing import INT
 
   hello = [Symbol(s, INT) for s in "hello"]
   world = [Symbol(s, INT) for s in "world"]
-
   letters = set(hello+world)
-
-  domains = And([And(LE(Int(1), l),
-                     GE(Int(10), l) ) for l in letters])
+  domains = And([And(GE(l, Int(1)),
+                     LT(l, Int(10))) for l in letters])
 
   sum_hello = Plus(hello) # n-ary operators can take lists
   sum_world = Plus(world) # as arguments
-
   problem = And(Equals(sum_hello, sum_world),
                 Equals(sum_hello, Int(25)))
-
   formula = And(domains, problem)
 
   print("Serialization of the formula:")
   print(formula)
 
-  # Use context to create and free a solver. Solver are selected by name
-  # and can be used in a uniform way (try name="msat")
-  with Solver(name="z3") as solver:
-      solver.add_assertion(formula)
-      if solver.solve():
-         for l in letters:
-            print("%s = %s" %(l, solver.get_value(l)))
-      else:
-        print("No solution found")
+  model = get_model(formula)
+  if model:
+    print(model)
+  else:
+    print("No solution found")
