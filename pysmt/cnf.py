@@ -42,6 +42,10 @@ class CNFizer(DagWalker):
         return res
 
     def convert(self, formula):
+        """Convert formula into an Equisatisfiable CNF.
+
+        Returns a set of clauses: a set of set of literals.
+        """
         tl, cnf = self.walk(formula)
         res = [frozenset([tl])]
         for clause in cnf:
@@ -50,15 +54,21 @@ class CNFizer(DagWalker):
             simp = []
             for lit in clause:
                 if lit.is_true():
+                    # Prune clauses that are trivially TRUE
                     simp = None
                     break
                 elif not lit.is_false():
+                    # Prune FALSE literals
                     simp.append(lit)
             if simp:
                 res.append(frozenset(simp))
         return frozenset(res)
 
     def convert_as_formula(self, formula):
+        """Convert formula into an Equisatisfiable CNF.
+
+        Returns an FNode.
+        """
         lsts = self.convert(formula)
 
         conj = []
@@ -66,6 +76,7 @@ class CNFizer(DagWalker):
             if len(clause) == 0:
                 return self.mgr.FALSE()
             elif len(clause) == 1:
+                # Get single element from set
                 conj.append(next(iter(clause)))
             else:
                 conj.append(self.mgr.Or(clause))
