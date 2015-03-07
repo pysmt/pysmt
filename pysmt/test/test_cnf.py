@@ -16,13 +16,16 @@
 #   limitations under the License.
 #
 import unittest
+import os
+from nose.plugins.attrib import attr
 
-import pysmt
-from pysmt.shortcuts import And, Not, Symbol, Bool, Implies, is_sat, is_valid
+from pysmt.shortcuts import Implies, is_sat, is_valid, reset_env
 from pysmt.cnf import CNFizer
-from pysmt.logics import QF_BOOL, QF_LRA, QF_LIA
+from pysmt.logics import QF_BOOL, QF_LRA, QF_LIA, UFLIRA
 from pysmt.test import TestCase, skipIfNoSolverForLogic
 from pysmt.test.examples import EXAMPLE_FORMULAS
+from pysmt.test.smtlib.parser_utils import SMTLIB_TEST_FILES, SMTLIB_DIR
+from pysmt.smtlib.parser import get_formula_fname
 
 class TestCnf(TestCase):
 
@@ -52,6 +55,43 @@ class TestCnf(TestCase):
     def test_examples_solving_lia(self):
         self.do_examples(QF_LIA)
 
+    @skipIfNoSolverForLogic(QF_LIA)
+    def test_smtlib_cnf_small(self):
+        cnt = 0
+        max_cnt = 3
+        for (logic, f, expected_result) in SMTLIB_TEST_FILES:
+            if logic != QF_LIA:
+                continue
+            self._smtlib_cnf(f, logic, expected_result=="sat")
+            cnt += 1
+            if cnt == max_cnt:
+                break
+
+    @attr("slow")
+    @skipIfNoSolverForLogic(UFLIRA)
+    def test_smtlib_cnf(self):
+        for (logic, f, expected_result) in SMTLIB_TEST_FILES:
+            self._smtlib_cnf(f, logic, expected_result=="sat")
+
+    def _smtlib_cnf(self, filename, logic, res_is_sat):
+        reset_env()
+        conv = CNFizer()
+        smtfile = os.path.join(SMTLIB_DIR, filename)
+        assert os.path.exists(smtfile)
+
+        expr = get_formula_fname(smtfile)
+        expr = expr[0] ## MG: WHY -- This seems to be a bug of get_formula_fname.
+        if not logic.quantifier_free:
+            with self.assertRaises(NotImplementedError):
+                conv.convert_as_formula(expr)
+            return
+        print(len(str(expr)))
+        cnf = conv.convert_as_formula(expr)
+        res = is_valid(Implies(cnf, expr), logic=logic)
+        self.assertTrue(res)
+
+        res = is_sat(cnf, logic=logic)
+        self.assertEqual(res, res_is_sat)
 
 if __name__ == '__main__':
     unittest.main()
