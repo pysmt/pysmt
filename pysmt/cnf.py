@@ -89,13 +89,16 @@ class CNFizer(DagWalker):
             return self.mgr.And(conj)
 
     def printer(self, cnf):
-        print "{",
+        print(self.serialize(cnf))
+        return
+
+    def serialize(self, cnf):
+        clauses = []
         for clause in cnf:
-            print " {",
-            for lit in clause:
-                print "",lit,
-            print "}",
-        print " }"
+            clauses +=[" { " + " ".join(str(lit) for lit in clause) + "} "]
+        res = ["{"] + clauses + ["}"]
+        return "".join(res)
+
 
 
     def walk_forall(self, formula, args):
