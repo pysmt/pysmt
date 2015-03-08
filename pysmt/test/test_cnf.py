@@ -80,12 +80,10 @@ class TestCnf(TestCase):
         assert os.path.exists(smtfile)
 
         expr = get_formula_fname(smtfile)
-        expr = expr[0] ## MG: WHY -- This seems to be a bug of get_formula_fname.
         if not logic.quantifier_free:
             with self.assertRaises(NotImplementedError):
                 conv.convert_as_formula(expr)
             return
-        print(len(str(expr)))
         cnf = conv.convert_as_formula(expr)
         res = is_valid(Implies(cnf, expr), logic=logic)
         self.assertTrue(res)
