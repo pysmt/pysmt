@@ -1,3 +1,2 @@
-include LICENSE.txt, README.rst
-recursive-include docs *.txt
-include example.py
+include LICENSE README.rst
+recursive-include docs *.rst

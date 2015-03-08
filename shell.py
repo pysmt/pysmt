@@ -130,7 +130,14 @@ class PysmtShell(object):
                 input_stream = open(self.args.file, "r")
             self.smtlib_solver(input_stream)
 
+def main_interactive():
+    shell = PysmtShell(sys.argv[1:])
+    shell.interactive()
 
-if __name__ == "__main__":
+def main():
     shell = PysmtShell(sys.argv[1:])
     shell.main()
+
+
+if __name__ == "__main__":
+    main()
