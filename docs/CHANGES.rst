@@ -9,6 +9,7 @@ General:
 * install.py: script to automate the installation of supported
   solvers.
 
+* Expressions: Added Min/Max operators.
 
 0.2.2 2015-02-07 -- BDDs
 ------------------------

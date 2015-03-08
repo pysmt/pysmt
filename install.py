@@ -32,6 +32,8 @@ PATHS = []
 # Address of a mirror website containing packages to avoid continuous
 # downloads from original websites in CI
 mirror = os.environ.get('PYSMT_INSTALL_MIRROR')
+# Download a binary version of the compiled solver (Used by CI)
+bin_mirror = os.environ.get('PYSMT_BIN_MIRROR')
 
 
 ################################################################################
@@ -170,11 +172,19 @@ def install_z3(options):
     dir_path = os.path.join(BASE_DIR, base_name)
     install_path = os.path.join(BASE_DIR, "z3_bin")
 
+    # Use precompiled version of the solver
+    if bin_mirror is not None:
+        bin_archive = os.path.join(bin_mirror, archive_name)
+        download(bin_archive, archive)
+        unzip(archive, install_path)
+        PATHS.append("%s/lib/python2.7/dist-packages" % install_path)
+        return
+
     # Download the z3 release if needed
     if not os.path.exists(archive):
         download(get_z3_download_link(git), archive)
 
-    # clear the destination directory, if any
+    # Clear the destination directory, if any
     if os.path.exists(dir_path):
         os.system("rm -rf %s" % dir_path)
 
@@ -205,6 +215,15 @@ def install_cvc4(options):
     archive = os.path.join(BASE_DIR, archive_name)
     dir_path = os.path.join(BASE_DIR, base_name)
 
+    # Use precompiled version of the solver
+    if bin_mirror is not None:
+        bin_archive = os.path.join(bin_mirror, archive_name)
+        download(bin_archive, archive)
+        untar(archive, BASE_DIR)
+        PATHS.append("%s/CVC4_bin/share/pyshared" % BASE_DIR)
+        PATHS.append("%s/CVC4_bin/lib/pyshared" % BASE_DIR)
+        return
+
     # Download the cvc4 release if needed
     if not os.path.exists(archive):
         download(get_cvc4_download_link(git), archive)
@@ -226,8 +245,8 @@ def install_cvc4(options):
     # Configure and build CVC4
     os.system("cd %s; \
     ./configure --enable-language-bindings=python \
-                --with-antlr-dir=%s/antlr-3.4 ANTLR=%s/antlr-3.4/bin/antlr3;\
-    make -j%d" % (dir_path, dir_path, dir_path, options.make_j))
+                --with-antlr-dir=%s/antlr-3.4 ANTLR=%s/antlr-3.4/bin/antlr3; make " %\
+              (dir_path, dir_path, dir_path))
     # Fix the paths of the bindings
     os.system("cd %s/builds/src/bindings/python; mv .libs/CVC4.so.3.0.0 ./_CVC4.so" % dir_path)
 
@@ -298,6 +317,14 @@ def install_pycudd(options):
     archive_name = "%s.tar.gz" % base_name
     archive = os.path.join(BASE_DIR, archive_name)
     dir_path = os.path.join(BASE_DIR, base_name)
+
+    # Use precompiled version of the solver
+    if bin_mirror is not None:
+        bin_archive = os.path.join(bin_mirror, archive_name)
+        download(bin_archive, archive)
+        untar(archive, BASE_DIR)
+        PATHS.append("%s/lib/python2.7/dist-packages" % dir_path)
+        return
 
     # Download pycudd if needed
     if not os.path.exists(archive):

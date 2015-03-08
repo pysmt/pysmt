@@ -23,30 +23,34 @@ Among others, you can:
            :alt: Documentation Status
 
 
-Requirements
-============
+Getting Started
+===============
+You can install the latest stable release of pySMT from PyPI:
 
-* Python (http://www.python.org) >= 2.6
-* MathSAT (http://mathsat.fbk.eu/) >= 5 (Optional)
-* Z3 (http://z3.codeplex.com/releases) >= 4 (Optional)
-* CVC4 (http://cvc4.cs.nyu.edu/web/) (Optional)
-* Yices 2 (http://yices.csl.sri.com/) (Optional)
-* pyCUDD (http://bears.ece.ucsb.edu/pycudd.html) (Optional)
-* picosat (http://fmv.jku.at/picosat/) >= 960 (Optional)
+  $ pip install pysmt
+this will additionally install the *pysmt-install* command, that can be used to install the solvers: e.g.,
 
-The library assumes that the python binding for the SMT Solvers are installed
-and accessible from your PYTHONPATH.
-For Yices 2 we rely on pyices (https://github.com/cheshire/pyices).
+  $ pysmt-install --msat
+this will download and install Mathsat 5. You will need to set your PYTHONPATH as suggested by the installer to make the python bindings visible. To verify that a solver has been installed run
+
+  $ pysmt-install --check
+*Note* pysmt-install is provided to simplify the installation of solvers. However, each solver has its own license and restriction on use that you need to take into account.
 
 
-Supported Theories
-==================
+Supported Theories and Solvers
+==============================
+pySMT provides methods to define a formula in Linear Real Arithmetic (LRA), Real Difference Logic (RDL), their combination (LIRA) and
+Equalities and Uninterpreted Functions (EUF). The following solvers are supported:
 
-pySMT provides methods to define a formula in Linear Real Arithmetic
-(LRA), Real Difference Logic (RDL), their combination (LIRA) and
-Equalities and Uninterpreted Functions (EUF), or any subset of these
-logics (e.g., quantified boolean formulae).
+* MathSAT (http://mathsat.fbk.eu/) >= 5
+* Z3 (http://z3.codeplex.com/releases) >= 4
+* CVC4 (http://cvc4.cs.nyu.edu/web/)
+* Yices 2 (http://yices.csl.sri.com/)
+* pyCUDD (http://bears.ece.ucsb.edu/pycudd.html)
+* PicoSAT (http://fmv.jku.at/picosat/)
 
+The library assumes that the python binding for the SMT Solver are installed
+and accessible from your PYTHONPATH. For Yices 2 we rely on pyices (https://github.com/cheshire/pyices).
 
 Usage
 =====
