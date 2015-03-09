@@ -282,14 +282,14 @@ class Factory(object):
             return retval
 
     def is_valid(self, formula, quantified=False, solver_name=None, logic=None):
-        if logic is AUTO_LOGIC:
+        if logic == AUTO_LOGIC:
             logic = get_logic(formula, self.environment)
         with self.Solver(quantified=quantified, name=solver_name, logic=logic) \
              as solver:
             return solver.is_valid(formula)
 
     def is_unsat(self, formula, quantified=False, solver_name=None, logic=None):
-        if logic is None:
+        if logic == AUTO_LOGIC:
             logic = get_logic(formula, self.environment)
         with self.Solver(quantified=quantified, name=solver_name, logic=logic) \
              as solver:
