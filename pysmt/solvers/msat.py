@@ -29,8 +29,6 @@ from pysmt.walkers import DagWalker
 from pysmt.exceptions import SolverReturnedUnknownResultError
 from pysmt.exceptions import InternalSolverError
 from pysmt.decorators import clear_pending_pop
-from pysmt.environment import TypeUnsafeEnvironment
-from pysmt.utils.generic_number import GenericNumber, disambiguate
 
 
 class MathSAT5Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
@@ -221,11 +219,104 @@ class MSatConverter(Converter, DagWalker):
 
 
     def back(self, expr):
-        tu_env = TypeUnsafeEnvironment()
-        tu_res = self._walk_back(expr, tu_env.formula_manager)
-        tu_f = disambiguate(tu_env, tu_res, create_toreal_on_demand=True)
-        return self.env.formula_manager.normalize(tu_f)
+        return self._walk_back(expr, self.mgr)
 
+    def _most_generic(self, ty1, ty2):
+        if ty1 == ty2:
+            return ty1
+
+        assert ty1 in [types.REAL, types.INT]
+        assert ty2 in [types.REAL, types.INT]
+        return types.REAL
+
+
+    def _get_signature(self, term, args):
+        """Returns the signature of the given term.
+        For example:
+        - a term x & y returns a function type Bool -> Bool -> Bool,
+        - a term 14 returns Int
+        - a term x ? 13 : 15.0 returns Bool -> Real -> Real -> Real
+        """
+        res = None
+
+        if mathsat.msat_term_is_true(self.msat_env, term):
+            res = types.BOOL
+
+        elif mathsat.msat_term_is_false(self.msat_env, term):
+            res = types.BOOL
+
+        elif mathsat.msat_term_is_number(self.msat_env, term):
+            ty = mathsat.msat_term_get_type(term)
+            if mathsat.msat_is_integer_type(self.msat_env, ty):
+                res = types.INT
+            elif mathsat.msat_is_rational_type(self.msat_env, ty):
+                res = types.REAL
+            else:
+                raise NotImplementedError
+
+        elif mathsat.msat_term_is_and(self.msat_env, term):
+            res = types.FunctionType(types.BOOL, [types.BOOL, types.BOOL])
+
+        elif mathsat.msat_term_is_or(self.msat_env, term):
+            res = types.FunctionType(types.BOOL, [types.BOOL, types.BOOL])
+
+        elif mathsat.msat_term_is_not(self.msat_env, term):
+            res = types.FunctionType(types.BOOL, [types.BOOL])
+
+        elif mathsat.msat_term_is_iff(self.msat_env, term):
+            res = types.FunctionType(types.BOOL, [types.BOOL, types.BOOL])
+
+        elif mathsat.msat_term_is_term_ite(self.msat_env, term):
+            t1 = self.env.stc.get_type(args[1])
+            t2 = self.env.stc.get_type(args[2])
+            t = self._most_generic(t1, t2)
+            res = types.FunctionType(t, [types.BOOL, t, t])
+
+        elif mathsat.msat_term_is_equal(self.msat_env, term):
+            t1 = self.env.stc.get_type(args[0])
+            t2 = self.env.stc.get_type(args[1])
+            t = self._most_generic(t1, t2)
+            res = types.FunctionType(types.BOOL, [t, t])
+
+        elif mathsat.msat_term_is_leq(self.msat_env, term):
+            t1 = self.env.stc.get_type(args[0])
+            t2 = self.env.stc.get_type(args[1])
+            t = self._most_generic(t1, t2)
+            res = types.FunctionType(types.BOOL, [t, t])
+
+        elif mathsat.msat_term_is_plus(self.msat_env, term):
+            t1 = self.env.stc.get_type(args[0])
+            t2 = self.env.stc.get_type(args[1])
+            t = self._most_generic(t1, t2)
+            res = types.FunctionType(t, [t, t])
+
+        elif mathsat.msat_term_is_times(self.msat_env, term):
+            t1 = self.env.stc.get_type(args[0])
+            t2 = self.env.stc.get_type(args[1])
+            t = self._most_generic(t1, t2)
+            res = types.FunctionType(t, [t, t])
+
+        elif mathsat.msat_term_is_boolean_constant(self.msat_env, term):
+            res = types.BOOL
+
+        elif mathsat.msat_term_is_constant(self.msat_env, term):
+            ty = mathsat.msat_term_get_type(term)
+            if mathsat.msat_is_rational_type(self.msat_env, ty):
+                res = types.REAL
+            elif mathsat.msat_is_integer_type(self.msat_env, ty):
+                res = types.INT
+            else:
+                raise NotImplementedError("Unsupported variable type found")
+
+        elif mathsat.msat_term_is_uf(self.msat_env, term):
+            d = mathsat.msat_term_get_decl(term)
+            fun = self.get_symbol_from_declaration(d)
+            res = fun.symbol_type()
+
+        else:
+            raise TypeError("Unsupported expression:",
+                            mathsat.msat_term_repr(term))
+        return res
 
     def _back_single_term(self, term, mgr, args):
         """Builds the pysmt formula given a term and the list of formulae
@@ -258,7 +349,7 @@ class MSatConverter(Converter, DagWalker):
         elif mathsat.msat_term_is_number(self.msat_env, term):
             ty = mathsat.msat_term_get_type(term)
             if mathsat.msat_is_integer_type(self.msat_env, ty):
-                res = GenericNumber(int(mathsat.msat_term_repr(term)))
+                res = mgr.Int(int(mathsat.msat_term_repr(term)))
             elif mathsat.msat_is_rational_type(self.msat_env, ty):
                 res = mgr.Real(Fraction(mathsat.msat_term_repr(term)))
             else:
@@ -323,6 +414,7 @@ class MSatConverter(Converter, DagWalker):
         return res
 
 
+
     def get_symbol_from_declaration(self, decl):
         return self.decl_to_symbol[mathsat.msat_decl_id(decl)]
 
@@ -341,7 +433,15 @@ class MSatConverter(Converter, DagWalker):
             elif self.back_memoization[current] is None:
                 args=[self.back_memoization[mathsat.msat_term_get_arg(current,i)]
                       for i in xrange(arity)]
-                res = self._back_single_term(current, mgr, args)
+
+                signature = self._get_signature(current, args)
+                new_args = []
+                for i, a in enumerate(args):
+                    t = self.env.stc.get_type(a)
+                    if t != signature.param_types[i]:
+                        a = mgr.ToReal(a)
+                    new_args.append(a)
+                res = self._back_single_term(current, mgr, new_args)
                 self.back_memoization[current] = res
             else:
                 # we already visited the node, nothing else to do

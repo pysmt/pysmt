@@ -431,6 +431,8 @@ class FormulaManager(object):
             # Ignore casting of a Real
             return formula
         elif t == types.INT:
+            if formula.is_int_constant():
+                return self.Real(formula.constant_value())
             return self.create_node(node_type=op.TOREAL,
                                     args=(formula,))
         else:
