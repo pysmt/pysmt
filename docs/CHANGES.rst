@@ -11,6 +11,8 @@ General:
 
 * Expressions: Added Min/Max operators.
 
+* Added PicoSAT solver wrapper
+
 0.2.2 2015-02-07 -- BDDs
 ------------------------
 
