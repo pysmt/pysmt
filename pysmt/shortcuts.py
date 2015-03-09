@@ -187,20 +187,32 @@ def ToReal(formula):
     """Explicit cast of a term into a Real term."""
     return get_env().formula_manager.ToReal(formula)
 
-def AtMostOne(bool_exprs):
+def AtMostOne(*args):
     """
     Cardinality constraint over a set of boolean expressions.
     At most one can be true at anytime.
     """
-    return get_env().formula_manager.AtMostOne(bool_exprs)
+    return get_env().formula_manager.AtMostOne(*args)
 
-def ExactlyOne(bool_symbols):
-    """Given a set of boolean symbols requires that exactly one holds."""
-    return get_env().formula_manager.ExactlyOne(bool_symbols)
+def ExactlyOne(*args):
+    """Given a set of boolean expressions requires that exactly one holds."""
+    return get_env().formula_manager.ExactlyOne(*args)
 
 def Xor(left, right):
     """Returns the XOR of left and right"""
     return get_env().formula_manager.Xor(left, right)
+
+def Min(*args):
+    """
+    Minimum over a set of real or integer terms
+    """
+    return get_env().formula_manager.Min(*args)
+
+def Max(*args):
+    """
+    Maximum over a set of real or integer terms
+    """
+    return get_env().formula_manager.Max(*args)
 
 
 #### Shortcuts for Solvers Factory #####

@@ -519,6 +519,39 @@ class TestFormulaManager(TestCase):
                          "Xor should be True if both arguments are False")
 
 
+    def test_min(self):
+        min1 = self.mgr.Min(self.p, Plus(self.q, self.mgr.Int(1)))
+        self.assertIsNotNone(min1)
+
+        with self.assertRaises(TypeError):
+            self.mgr.Min(self.p, self.r)
+
+        min_int = self.mgr.Min(self.mgr.Int(1), self.mgr.Int(2), self.mgr.Int(3))
+        self.assertEqual(min_int.simplify(), self.mgr.Int(1),
+                         "The minimum of 1, 2 and 3 should be 1")
+
+        min_real = self.mgr.Min(self.mgr.Real(1), self.mgr.Real(2), self.mgr.Real(3))
+        self.assertEqual(min_real.simplify(), self.mgr.Real(1),
+                         "The minimum of 1.0, 2.0 and 3.0 should be 1.0")
+
+
+    def test_max(self):
+        max1 = self.mgr.Max(self.p, Plus(self.q, self.mgr.Int(1)))
+        self.assertIsNotNone(max1)
+
+        with self.assertRaises(TypeError):
+            self.mgr.Max(self.p, self.r)
+
+        max_int = self.mgr.Max(self.mgr.Int(1), self.mgr.Int(2), self.mgr.Int(3))
+        self.assertEqual(max_int.simplify(), self.mgr.Int(3),
+                         "The maximum of 1, 2 and 3 should be 3")
+
+        max_real = self.mgr.Max(self.mgr.Real(1), self.mgr.Real(2), self.mgr.Real(3))
+        self.assertEqual(max_real.simplify(), self.mgr.Real(3),
+                         "The maximum of 1.0, 2.0 and 3.0 should be 3.0")
+
+
+
     def test_pickling(self):
         import pickle
 
@@ -608,9 +641,6 @@ class TestFormulaManager(TestCase):
         new_mgr = FormulaManager(get_env())
         y = new_mgr.FreshSymbol()
         and_y_y = new_mgr.And(y, y)
-
-        print self.mgr.symbols
-        print y
 
         self.assertTrue(x in self.mgr)
         self.assertFalse(y in self.mgr)

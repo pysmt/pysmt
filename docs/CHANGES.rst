@@ -19,6 +19,7 @@ Backwards Incompatible Changes:
   QF_UFLIRA). Previously it was UFLIRA, but this was due to a bug in
   the logic of get_solver().
 
+* Expressions: Added Min/Max operators.
 
 0.2.2 2015-02-07 -- BDDs
 ------------------------
