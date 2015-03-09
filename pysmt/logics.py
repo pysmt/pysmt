@@ -527,6 +527,8 @@ symbols.""",
               linear=False,
               uninterpreted=True)
 
+AUTO = Logic(name="Auto",
+             description="Special logic used to indicate that the logic to be used depends on the formula.")
 
 SMTLIB2_LOGICS = [ AUFLIA,
                    AUFLIRA,

@@ -21,11 +21,12 @@ from pysmt.shortcuts import Symbol, FreshSymbol, And, Not, GT, Function, Plus
 from pysmt.shortcuts import Bool, TRUE, Real, LE, FALSE, Or, Equals
 from pysmt.shortcuts import Solver
 from pysmt.shortcuts import is_sat, is_valid, get_env, get_model
+from pysmt.shortcuts import get_env
 from pysmt.typing import BOOL, REAL, FunctionType
 from pysmt.test import TestCase, skipIfSolverNotAvailable, skipIfNoSolverForLogic
 from pysmt.test.examples import get_example_formulae
 from pysmt.exceptions import SolverReturnedUnknownResultError, InternalSolverError
-from pysmt.logics import QF_UFLIRA, QF_BOOL, QF_LRA
+from pysmt.logics import QF_UFLIRA, QF_BOOL, QF_LRA, AUTO
 
 class TestBasic(TestCase):
 
@@ -62,13 +63,27 @@ class TestBasic(TestCase):
             res = is_sat(g, solver_name=solver)
             self.assertFalse(res, "Formula was expected to be UNSAT")
 
+    # This test works only if is_sat requests QF_BOOL as logic, since
+    # that is the only logic handled by BDDs
     @skipIfSolverNotAvailable("bdd")
     def test_get_logic_in_is_sat(self):
         varA = Symbol("A", BOOL)
         varB = Symbol("B", BOOL)
 
         f = And(varA, Not(varB))
-        # This test works only if is_sat requests QF_BOOL as logic.
+        res = is_sat(f, logic=AUTO)
+        self.assertTrue(res)
+
+    @skipIfSolverNotAvailable("bdd")
+    def test_default_logic_in_is_sat(self):
+        factory = get_env().factory
+        factory.default_logic = QF_BOOL
+
+        self.assertEquals(factory.default_logic, QF_BOOL)
+        varA = Symbol("A", BOOL)
+        varB = Symbol("B", BOOL)
+
+        f = And(varA, Not(varB))
         res = is_sat(f)
         self.assertTrue(res)
 

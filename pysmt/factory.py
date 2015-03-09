@@ -27,13 +27,14 @@ import warnings
 from functools import partial
 
 from pysmt.exceptions import NoSolverAvailableError, SolverRedefinitionError
-from pysmt.logics import PYSMT_LOGICS, PYSMT_QF_LOGICS
+from pysmt.logics import PYSMT_LOGICS, PYSMT_QF_LOGICS, UFLIRA
+from pysmt.logics import AUTO as AUTO_LOGIC
 from pysmt.logics import most_generic_logic, get_closer_logic
 from pysmt.oracles import get_logic
 
 DEFAULT_SOLVER_PREFERENCE_LIST = ['msat', 'z3', 'cvc4', 'yices', 'bdd']
 DEFAULT_QELIM_PREFERENCE_LIST = ['z3']
-
+DEFAULT_LOGIC = UFLIRA
 
 class Factory(object):
 
@@ -52,6 +53,7 @@ class Factory(object):
         if qelim_preference_list is None:
             qelim_preference_list = DEFAULT_QELIM_PREFERENCE_LIST
         self.qelim_preference_list = qelim_preference_list
+        self._default_logic = DEFAULT_LOGIC
 
         self._get_available_solvers()
         self._get_available_qe()
@@ -90,7 +92,7 @@ class Factory(object):
 
         if logic is None:
             assert not quantified
-            logic = most_generic_logic(PYSMT_QF_LOGICS)
+            logic = self.default_logic
 
         solvers = self.all_solvers(logic=logic)
 
@@ -261,14 +263,14 @@ class Factory(object):
         return self.get_quantifier_eliminator(name=name)
 
     def is_sat(self, formula, quantified=None, solver_name=None, logic=None):
-        if logic is None:
+        if logic == AUTO_LOGIC:
             logic = get_logic(formula, self.environment)
         with self.Solver(quantified=quantified, name=solver_name, logic=logic) \
              as solver:
             return solver.is_sat(formula)
 
     def get_model(self, formula, quantified=None, solver_name=None, logic=None):
-        if logic is None:
+        if logic == AUTO_LOGIC:
             logic = get_logic(formula, self.environment)
         with self.Solver(quantified=quantified, name=solver_name, logic=logic) \
              as solver:
@@ -280,7 +282,7 @@ class Factory(object):
             return retval
 
     def is_valid(self, formula, quantified=False, solver_name=None, logic=None):
-        if logic is None:
+        if logic is AUTO_LOGIC:
             logic = get_logic(formula, self.environment)
         with self.Solver(quantified=quantified, name=solver_name, logic=logic) \
              as solver:
@@ -296,3 +298,11 @@ class Factory(object):
     def qelim(self, formula, solver_name=None):
         with self.QuantifierEliminator(name=solver_name) as qe:
             return qe.eliminate_quantifiers(formula)
+
+    @property
+    def default_logic(self):
+        return self._default_logic
+
+    @default_logic.setter
+    def default_logic(self, value):
+        self._default_logic = value
