@@ -535,28 +535,3 @@ class FormulaManager(object):
             return False
 
 #EOC FormulaManager
-
-class TypeUnsafeFormulaManager(FormulaManager):
-    """Subclass of FormulaManager in which type-checking is disabled.
-
-    TypeUnsafeFormulaManager makes it possible to build expressions
-    that are incorrect: e.g., True + 1.  This is used mainly to avoid
-    the overhead of having to check each expression for type. For
-    example, during parsing we post-pone the type-check after the
-    whole expression has been built.
-
-    This should be used with caution.
-    """
-
-    def __init__(self, env=None):
-        FormulaManager.__init__(self, env)
-
-    def _do_type_check(self, formula):
-        pass
-
-    def ToReal(self, formula):
-        """ Cast a formula to real type. """
-        return self.create_node(node_type=op.TOREAL,
-                                args=(formula,))
-
-#EOC TypeUnsafeFormulaManager
