@@ -23,18 +23,17 @@ This makes it possible to write algorithms that do not depend on a
 particular solver.
 """
 
-import warnings
 from functools import partial
 
 from pysmt.exceptions import NoSolverAvailableError, SolverRedefinitionError
-from pysmt.logics import PYSMT_LOGICS, PYSMT_QF_LOGICS, UFLIRA
+from pysmt.logics import QF_UFLIRA
 from pysmt.logics import AUTO as AUTO_LOGIC
 from pysmt.logics import most_generic_logic, get_closer_logic
 from pysmt.oracles import get_logic
 
 DEFAULT_SOLVER_PREFERENCE_LIST = ['msat', 'z3', 'cvc4', 'yices', 'bdd']
 DEFAULT_QELIM_PREFERENCE_LIST = ['z3']
-DEFAULT_LOGIC = UFLIRA
+DEFAULT_LOGIC = QF_UFLIRA
 
 class Factory(object):
 
@@ -61,14 +60,10 @@ class Factory(object):
 
     def get_solver(self, quantified=False, name=None, logic=None):
         assert quantified is False or logic is None, \
-            "Cannot specify both quantified and logic"
+            "Cannot specify both quantified and logic."
 
         if quantified is True:
-            warnings.warn("Keyword 'quantified' in get_solver is deprecated" \
-                          ", use 'logic=UFLIRA' instead",
-                          DeprecationWarning)
-            quantified = False
-            logic = most_generic_logic(PYSMT_LOGICS)
+            logic = self.default_logic.get_quantified_version
 
         if name is not None:
             if name in self._all_solvers:
@@ -91,7 +86,6 @@ class Factory(object):
                 raise NoSolverAvailableError("Solver %s is not available" % name)
 
         if logic is None:
-            assert not quantified
             logic = self.default_logic
 
         solvers = self.all_solvers(logic=logic)
@@ -262,17 +256,17 @@ class Factory(object):
     def QuantifierEliminator(self, name=None):
         return self.get_quantifier_eliminator(name=name)
 
-    def is_sat(self, formula, quantified=None, solver_name=None, logic=None):
+    def is_sat(self, formula, solver_name=None, logic=None):
         if logic == AUTO_LOGIC:
             logic = get_logic(formula, self.environment)
-        with self.Solver(quantified=quantified, name=solver_name, logic=logic) \
+        with self.Solver(name=solver_name, logic=logic) \
              as solver:
             return solver.is_sat(formula)
 
-    def get_model(self, formula, quantified=None, solver_name=None, logic=None):
+    def get_model(self, formula, solver_name=None, logic=None):
         if logic == AUTO_LOGIC:
             logic = get_logic(formula, self.environment)
-        with self.Solver(quantified=quantified, name=solver_name, logic=logic) \
+        with self.Solver(name=solver_name, logic=logic) \
              as solver:
             solver.add_assertion(formula)
             check = solver.solve()
@@ -281,17 +275,17 @@ class Factory(object):
                 retval = solver.get_model()
             return retval
 
-    def is_valid(self, formula, quantified=False, solver_name=None, logic=None):
+    def is_valid(self, formula, solver_name=None, logic=None):
         if logic == AUTO_LOGIC:
             logic = get_logic(formula, self.environment)
-        with self.Solver(quantified=quantified, name=solver_name, logic=logic) \
+        with self.Solver(name=solver_name, logic=logic) \
              as solver:
             return solver.is_valid(formula)
 
-    def is_unsat(self, formula, quantified=False, solver_name=None, logic=None):
+    def is_unsat(self, formula, solver_name=None, logic=None):
         if logic == AUTO_LOGIC:
             logic = get_logic(formula, self.environment)
-        with self.Solver(quantified=quantified, name=solver_name, logic=logic) \
+        with self.Solver(name=solver_name, logic=logic) \
              as solver:
             return solver.is_unsat(formula)
 
