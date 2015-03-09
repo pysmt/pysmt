@@ -344,13 +344,6 @@ class SmtLibParser(object):
         self._current_env = env
 
 
-    def get_expression(self, tokens):
-        """
-        Returns the pysmt representation of the given parsed expression
-        """
-        return self._do_get_expression(tokens)
-
-
     def _handle_let(self, varlist, bdy):
         """ Cleans the execution environment when we exit the scope of a 'let' """
         for k in varlist:
@@ -387,9 +380,9 @@ class SmtLibParser(object):
         return pyterm
 
 
-    def _do_get_expression(self, tokens):
+    def get_expression(self, tokens):
         """
-        Iteratively parse the token stream
+        Returns the pysmt representation of the given parsed expression
         """
         mgr = self._current_env.formula_manager
         stack = []
@@ -412,7 +405,7 @@ class SmtLibParser(object):
                                 if current != "(":
                                     raise SyntaxError("Expected '(' in let binding")
                                 vname = self.parse_atom(tokens, "expression")
-                                expr = self._do_get_expression(tokens)
+                                expr = self.get_expression(tokens)
                                 newvals[vname] = expr
                                 self.consume_closing(tokens, "expression")
                                 current = next(tokens)
