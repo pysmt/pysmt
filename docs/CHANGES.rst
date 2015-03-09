@@ -11,7 +11,10 @@ General:
 
 * Expressions: Added Min/Max operators.
 
+* SMT-LIB: Substantially improved parser performances.
+
 * Added PicoSAT solver wrapper
+
 
 0.2.2 2015-02-07 -- BDDs
 ------------------------
