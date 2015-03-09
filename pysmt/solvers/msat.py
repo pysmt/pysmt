@@ -222,6 +222,7 @@ class MSatConverter(Converter, DagWalker):
         return self._walk_back(expr, self.mgr)
 
     def _most_generic(self, ty1, ty2):
+        """Returns teh most generic, yet compatible type between ty1 and ty2"""
         if ty1 == ty2:
             return ty1
 
@@ -239,10 +240,9 @@ class MSatConverter(Converter, DagWalker):
         """
         res = None
 
-        if mathsat.msat_term_is_true(self.msat_env, term):
-            res = types.BOOL
-
-        elif mathsat.msat_term_is_false(self.msat_env, term):
+        if mathsat.msat_term_is_true(self.msat_env, term) or \
+            mathsat.msat_term_is_false(self.msat_env, term) or \
+            mathsat.msat_term_is_boolean_constant(self.msat_env, term):
             res = types.BOOL
 
         elif mathsat.msat_term_is_number(self.msat_env, term):
@@ -254,17 +254,13 @@ class MSatConverter(Converter, DagWalker):
             else:
                 raise NotImplementedError
 
-        elif mathsat.msat_term_is_and(self.msat_env, term):
-            res = types.FunctionType(types.BOOL, [types.BOOL, types.BOOL])
-
-        elif mathsat.msat_term_is_or(self.msat_env, term):
+        elif mathsat.msat_term_is_and(self.msat_env, term) or \
+             mathsat.msat_term_is_or(self.msat_env, term) or \
+             mathsat.msat_term_is_iff(self.msat_env, term):
             res = types.FunctionType(types.BOOL, [types.BOOL, types.BOOL])
 
         elif mathsat.msat_term_is_not(self.msat_env, term):
             res = types.FunctionType(types.BOOL, [types.BOOL])
-
-        elif mathsat.msat_term_is_iff(self.msat_env, term):
-            res = types.FunctionType(types.BOOL, [types.BOOL, types.BOOL])
 
         elif mathsat.msat_term_is_term_ite(self.msat_env, term):
             t1 = self.env.stc.get_type(args[1])
@@ -272,32 +268,19 @@ class MSatConverter(Converter, DagWalker):
             t = self._most_generic(t1, t2)
             res = types.FunctionType(t, [types.BOOL, t, t])
 
-        elif mathsat.msat_term_is_equal(self.msat_env, term):
+        elif mathsat.msat_term_is_equal(self.msat_env, term) or \
+             mathsat.msat_term_is_leq(self.msat_env, term):
             t1 = self.env.stc.get_type(args[0])
             t2 = self.env.stc.get_type(args[1])
             t = self._most_generic(t1, t2)
             res = types.FunctionType(types.BOOL, [t, t])
 
-        elif mathsat.msat_term_is_leq(self.msat_env, term):
-            t1 = self.env.stc.get_type(args[0])
-            t2 = self.env.stc.get_type(args[1])
-            t = self._most_generic(t1, t2)
-            res = types.FunctionType(types.BOOL, [t, t])
-
-        elif mathsat.msat_term_is_plus(self.msat_env, term):
+        elif mathsat.msat_term_is_plus(self.msat_env, term) or \
+             mathsat.msat_term_is_times(self.msat_env, term):
             t1 = self.env.stc.get_type(args[0])
             t2 = self.env.stc.get_type(args[1])
             t = self._most_generic(t1, t2)
             res = types.FunctionType(t, [t, t])
-
-        elif mathsat.msat_term_is_times(self.msat_env, term):
-            t1 = self.env.stc.get_type(args[0])
-            t2 = self.env.stc.get_type(args[1])
-            t = self._most_generic(t1, t2)
-            res = types.FunctionType(t, [t, t])
-
-        elif mathsat.msat_term_is_boolean_constant(self.msat_env, term):
-            res = types.BOOL
 
         elif mathsat.msat_term_is_constant(self.msat_env, term):
             ty = mathsat.msat_term_get_type(term)
