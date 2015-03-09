@@ -25,8 +25,6 @@ from pysmt.shortcuts import get_env
 from pysmt.typing import BOOL, REAL, INT, FunctionType
 from pysmt.logics import get_logic_by_name, UndefinedLogicError
 from pysmt.exceptions import UnknownSmtLibCommandError
-from pysmt.utils.generic_number import GenericNumber, disambiguate
-from pysmt.environment import TypeUnsafeEnvironment
 from pysmt.smtlib.script import SmtLibCommand, SmtLibScript
 from pysmt.smtlib.annotations import Annotations
 
@@ -237,34 +235,21 @@ class SmtLibParser(object):
                            })
 
 
-    def _is_unknown_constant_type(self):
-        """
-        Returns true if the logic at hand allows for bot Real and Integer
-        constants
-
-        """
-        return self.logic is None or \
-            (self.logic.theory.integer_arithmetic and
-             self.logic.theory.real_arithmetic)
-
     def _minus_or_uminus(self, *args):
         """Utility function that handles both unary and binary minus"""
         mgr = self._current_env.formula_manager
         if len(args) == 1:
-            if self._is_unknown_constant_type():
-                if type(args[0]) == GenericNumber:
-                    return GenericNumber(-1 * args[0].value)
-                return mgr.Times(GenericNumber(-1), args[0])
+            lty = self._current_env.stc.get_type(args[0])
+            mult = None
+            if lty == INT:
+                if args[0].is_int_constant():
+                    return mgr.Int(-1 * args[0].constant_value())
+                mult = mgr.Int(-1)
             else:
-                if self.logic.theory.real_arithmetic:
-                    if args[0].is_real_constant():
-                        return mgr.Real(-1 * args[0].constant_value())
-                    return mgr.Times(mgr.Real(-1), args[0])
-                else:
-                    assert self.logic.theory.integer_arithmetic
-                    if args[0].is_int_constant():
-                        return mgr.Int(-1 * args[0].constant_value())
-                    return mgr.Times(mgr.Int(-1), args[0])
+                if args[0].is_real_constant():
+                    return mgr.Real(-1 * args[0].constant_value())
+                mult = mgr.Real(-1)
+            return mgr.Times(mult, args[0])
         else:
             assert len(args) == 2
             return mgr.Minus(args[0], args[1])
@@ -273,20 +258,16 @@ class SmtLibParser(object):
     def _equals_or_iff(self, left, right):
         """Utility function that treats = between booleans as <->"""
         mgr = self._current_env.formula_manager
-        if self._is_unknown_constant_type():
-            return mgr.Equals(left, right)
-
+        lty = self._current_env.stc.get_type(left)
+        if lty == BOOL:
+            return mgr.Iff(left, right)
         else:
-            lty = self._current_env.stc.get_type(left)
-            if lty == BOOL:
-                return mgr.Iff(left, right)
-            else:
-                return mgr.Equals(left, right)
+            return mgr.Equals(left, right)
 
     def _division(self, left, right):
         """Utility function that builds a division"""
         mgr = self._current_env.formula_manager
-        if left.is_real_constant() and right.is_real_constant():
+        if left.is_constant() and right.is_constant():
             return mgr.Real(Fraction(left.constant_value()) / \
                             Fraction(right.constant_value()))
         return mgr.Div(left, right)
@@ -325,26 +306,21 @@ class SmtLibParser(object):
         """
         res = self.cache.get(token)
         if res is None:
-            # This may be a numerical constant or an annotation
             try:
+                # This is a numerical constant
                 if "." in token:
                     res = mgr.Real(Fraction(token))
                 else:
                     iterm = int(token)
                     # We found an integer, depending on the logic this can be
-                    # an Int, a Real, or an unknown GenericNumber.
-                    if self._is_unknown_constant_type():
-                        res = GenericNumber(iterm)
-                    elif self.logic.theory.real_arithmetic:
-                        res = mgr.Real(iterm)
-                    else:
-                        assert self.logic.theory.integer_arithmetic, \
-                            "Integer constant found in a logic that does not " \
-                            "support arithmetic"
+                    # an Int or a Real
+                    if self.logic is None or self.logic.theory.integer_arithmetic:
                         res = mgr.Int(iterm)
-                self.cache.bind(token, res)
+                    else:
+                        res = mgr.Real(iterm)
             except ValueError:
-                return token
+                res = token
+            self.cache.bind(token, res)
         return res
 
 
@@ -380,26 +356,6 @@ class SmtLibParser(object):
                                'or', 'xor', '=>', '<->', 'ite', 'false', 'true',
                                'to_real'])
         self._current_env = env
-
-
-    def get_expression(self, tokens):
-        """
-        Returns the pysmt representation of the given parsed expression
-        """
-        tu_env = None
-        if self._is_unknown_constant_type():
-            old_env = self._current_env
-            tu_env = TypeUnsafeEnvironment()
-            self._use_env(tu_env)
-
-            r = self._do_get_expression(tokens)
-
-            dis = disambiguate(tu_env, r, fix_equals=True)
-            self._reset_env(old_env)
-            return self.pysmt_env.formula_manager.normalize(dis)
-
-        else:
-            return self._do_get_expression(tokens)
 
 
     def _handle_let(self, varlist, bdy):
@@ -442,9 +398,9 @@ class SmtLibParser(object):
         return pyterm
 
 
-    def _do_get_expression(self, tokens):
+    def get_expression(self, tokens):
         """
-        Iteratively parse the token stream
+        Returns the pysmt representation of the given parsed expression
         """
         mgr = self._current_env.formula_manager
         stack = []
@@ -467,7 +423,7 @@ class SmtLibParser(object):
                                 if current != "(":
                                     raise SyntaxError("Expected '(' in let binding")
                                 vname = self.parse_atom(tokens, "expression")
-                                expr = self._do_get_expression(tokens)
+                                expr = self.get_expression(tokens)
                                 newvals[vname] = expr
                                 self.consume_closing(tokens, "expression")
                                 current = next(tokens)
