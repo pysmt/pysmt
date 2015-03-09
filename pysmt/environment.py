@@ -119,10 +119,3 @@ class Environment(object):
         pysmt.shortcuts.pop_env()
 
 # EOC Environment
-
-
-
-class TypeUnsafeEnvironment(Environment):
-    FormulaManagerClass = pysmt.formula.TypeUnsafeFormulaManager
-
-#EOC TypeUnsafeFormulaManager

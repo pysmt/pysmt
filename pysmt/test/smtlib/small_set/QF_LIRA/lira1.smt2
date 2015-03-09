@@ -10,7 +10,7 @@
 (declare-fun y_1 () Int)
 (declare-fun y_2 () Int)
 
-(assert (> (ite (= x_0 x_1) 2 5) x_2))
+(assert (> (ite (= x_0 x_1) 2.0 5.0) x_2))
 (assert (> (ite (= y_0 y_1) 2 8) y_2))
 (assert (> (ite (= y_0 y_1) 2 4) 1))
 (check-sat)

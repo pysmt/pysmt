@@ -74,7 +74,7 @@ class TestSmtLibScript(TestCase):
 (declare-fun x () Bool)
 (declare-fun y () Bool)
 (declare-fun r () Real)
-(assert (> r 0))
+(assert (> r 0.0))
 (assert x)
 (check-sat)
 """

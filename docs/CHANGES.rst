@@ -11,6 +11,9 @@ General:
 
 * Expressions: Added Min/Max operators.
 
+* SMT-LIB: Substantially improved parser performances.
+
+
 0.2.2 2015-02-07 -- BDDs
 ------------------------
 

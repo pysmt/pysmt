@@ -41,7 +41,7 @@ class TestPrinting(TestCase):
                    Symbol("y", REAL)])
 
         f_string = self.print_to_string(f)
-        self.assertEquals(f_string, "(+ 1 x y)")
+        self.assertEquals(f_string, "(+ 1.0 x y)")
 
     def test_boolean(self):
         x, y, z = Symbol("x"), Symbol("y"), Symbol("z")
@@ -105,7 +105,7 @@ class TestPrinting(TestCase):
         r3_string = self.print_to_string(r3)
 
         self.assertEquals(r1_string, "(/ 11 2)")
-        self.assertEquals(r2_string, "5")
+        self.assertEquals(r2_string, "5.0")
         self.assertEquals(r3_string, "(- (/ 11 2))")
 
         i1_string = self.print_to_string(i1)
