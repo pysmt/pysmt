@@ -103,7 +103,7 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
                        if name_filter(var))
 
         for var in var_set:
-            print(var.symbol_name(), "=", self.get_value(var))
+            print("%s = %s", (var.symbol_name(), self.get_value(var)))
 
         return
 

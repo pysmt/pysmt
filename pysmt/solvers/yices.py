@@ -144,7 +144,7 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
     def print_model(self, name_filter=None):
         for var in self.declarations:
             if name_filter is None or not var.symbol_name().startswith(name_filter):
-                print var.symbol_name(), "=", self.get_value(var)
+                print("%s = %s", (var.symbol_name(), self.get_value(var)))
 
 
     def get_value(self, item):

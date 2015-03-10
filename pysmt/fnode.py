@@ -19,7 +19,7 @@
 
 import collections
 
-import shortcuts
+import pysmt.shortcuts
 from pysmt.operators import ALL_TYPES, QUANTIFIERS, CONSTANTS
 from pysmt.operators import (FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF,
                              SYMBOL, FUNCTION,
@@ -108,10 +108,10 @@ class FNode(object):
 
 
     def simplify(self):
-        return shortcuts.simplify(self)
+        return pysmt.shortcuts.simplify(self)
 
     def substitute(self, subs):
-        return shortcuts.substitute(self, subs=subs)
+        return pysmt.shortcuts.substitute(self, subs=subs)
 
     def is_constant(self, _type=None, value=None):
         if self.node_type() not in CONSTANTS:
@@ -217,7 +217,7 @@ class FNode(object):
         return str(self)
 
     def serialize(self, threshold=None):
-        return shortcuts.serialize(self, threshold=threshold)
+        return pysmt.shortcuts.serialize(self, threshold=threshold)
 
     def is_quantifier(self):
         return self.is_exists() or self.is_forall()
@@ -256,54 +256,54 @@ class FNode(object):
 
     # Infix Notation
     def _apply_infix(self, right, function):
-        if shortcuts.get_env().enable_infix_notation:
+        if pysmt.shortcuts.get_env().enable_infix_notation:
             return function(self, right)
         else:
             raise Exception("Cannot use infix notation")
 
     def Implies(self, right):
-        return self._apply_infix(right, shortcuts.Implies)
+        return self._apply_infix(right, pysmt.shortcuts.Implies)
 
     def Iff(self, right):
-        return self._apply_infix(right, shortcuts.Iff)
+        return self._apply_infix(right, pysmt.shortcuts.Iff)
 
     def Equals(self, right):
-        return self._apply_infix(right, shortcuts.Equals)
+        return self._apply_infix(right, pysmt.shortcuts.Equals)
 
     def Ite(self, right):
-        return self._apply_infix(right, shortcuts.Ite)
+        return self._apply_infix(right, pysmt.shortcuts.Ite)
 
     def And(self, right):
-        return self._apply_infix(right, shortcuts.And)
+        return self._apply_infix(right, pysmt.shortcuts.And)
 
     def Or(self, right):
-        return self._apply_infix(right, shortcuts.Or)
+        return self._apply_infix(right, pysmt.shortcuts.Or)
 
     def __add__(self, right):
-        return self._apply_infix(right, shortcuts.Plus)
+        return self._apply_infix(right, pysmt.shortcuts.Plus)
 
     def __sub__(self, right):
-        return self._apply_infix(right, shortcuts.Minus)
+        return self._apply_infix(right, pysmt.shortcuts.Minus)
 
     def __mul__(self, right):
-        return self._apply_infix(right, shortcuts.Times)
+        return self._apply_infix(right, pysmt.shortcuts.Times)
 
     def __div__(self, right):
-        return self._apply_infix(right, shortcuts.Div)
+        return self._apply_infix(right, pysmt.shortcuts.Div)
 
     def __truediv__(self, right):
         return self.__div__(right)
 
     def __gt__(self, right):
-        return self._apply_infix(right, shortcuts.GT)
+        return self._apply_infix(right, pysmt.shortcuts.GT)
 
     def __ge__(self, right):
-        return self._apply_infix(right, shortcuts.GE)
+        return self._apply_infix(right, pysmt.shortcuts.GE)
 
     def __lt__(self, right):
-        return self._apply_infix(right, shortcuts.LT)
+        return self._apply_infix(right, pysmt.shortcuts.LT)
 
     def __le__(self, right):
-        return self._apply_infix(right, shortcuts.LE)
+        return self._apply_infix(right, pysmt.shortcuts.LE)
 
 # EOC FNode
