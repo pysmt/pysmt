@@ -20,6 +20,8 @@ import functools
 from fractions import Fraction
 from warnings import warn
 from six import iteritems
+from six.moves import xrange
+
 
 import pysmt.smtlib.commands as smtcmd
 from pysmt.shortcuts import get_env
@@ -713,30 +715,16 @@ if __name__ == "__main__":
     def main():
         """Simple testing script"""
         args = sys.argv
-        if len(args) != 2 and len(args) != 3:
-            print "Usage %s <file.smt2> [-tu]" % args[0]
+        if len(args) != 2:
+            print("Usage %s <file.smt2>" % args[0])
             exit(1)
 
         fname = args[1]
-        unsafe = False
-        if len(args) == 3:
-            if args[1] == "-tu":
-                unsafe = True
-                fname = args[2]
-            elif args[2] == "-tu":
-                unsafe = True
-            else:
-                print "Invalid options specified"
-                exit(1)
 
-        if unsafe:
-            parser = SmtLibParser(TypeUnsafeEnvironment())
-        else:
-            parser = SmtLibParser()
-
+        parser = SmtLibParser()
         res = parser.get_script_fname(fname)
         assert res != None
 
-        print "Done"
+        print("Done")
 
     main()

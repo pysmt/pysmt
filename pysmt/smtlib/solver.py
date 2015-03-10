@@ -35,18 +35,18 @@ class SmtLibSolver(Solver):
 
 
     def _send_command(self, cmd):
-        if self.dbg: print "Sending: " + cmd.serialize_to_string()
+        if self.dbg: print("Sending: " + cmd.serialize_to_string())
         cmd.serialize(self.solver.stdin, daggify=True)
         self.solver.stdin.write("\n")
 
     def _get_answer(self):
         res = self.solver.stdout.readline().strip()
-        if self.dbg: print "Read: ", res
+        if self.dbg: print("Read: " + str(res))
         return res
 
     def _get_value_answer(self):
         lst = self.parser.get_assignment_list(self.solver.stdout)
-        if self.dbg: print "Read: ", lst
+        if self.dbg: print("Read: " + str(lst))
         return lst
 
     def _declare_variable(self, symbol):
@@ -95,7 +95,7 @@ class SmtLibSolver(Solver):
         if name_filter is not None:
             raise NotImplementedError
         for v in self.declared_vars:
-            print v, "=", self.get_value(v)
+            print("%s = %s" % (v, self.get_value(v)))
 
     def get_model(self):
         assignment = {}
