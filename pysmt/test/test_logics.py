@@ -29,7 +29,7 @@ class TestLogic(unittest.TestCase):
     def test_get_logic_by_name(self):
         for l in pysmt.logics.LOGICS:
             l_out = get_logic_by_name(l.name)
-            self.assertEquals(l_out, l,
+            self.assertEqual(l_out, l,
                               "Expecting %s, got %s instead" % \
                               (l, l_out))
 
@@ -49,7 +49,7 @@ class TestLogic(unittest.TestCase):
                               real_difference=l.theory.real_difference,
                               linear=l.theory.linear,
                               uninterpreted=l.theory.uninterpreted)
-            self.assertEquals(l_out, l,
+            self.assertEqual(l_out, l,
                               "Expected %s, got %s instead" % \
                               (l, l_out))
 
@@ -97,7 +97,7 @@ class TestLogic(unittest.TestCase):
         ]
 
         for t in tests:
-            self.assertEquals(t[0], t[1],
+            self.assertEqual(t[0], t[1],
                               "Expected %s, got %s instead" % \
                               (t[0].name, t[1].name))
 
@@ -126,9 +126,9 @@ class TestLogic(unittest.TestCase):
         self.assertFalse(LRA >= LIA)
         self.assertFalse(LRA <= LIA)
         mgl = most_generic_logic([QF_LIA, LIA, LRA, UFLIRA])
-        self.assertEquals(mgl, UFLIRA)
+        self.assertEqual(mgl, UFLIRA)
         mgl = most_generic_logic(PYSMT_LOGICS)
-        self.assertEquals(mgl, UFLIRA)
+        self.assertEqual(mgl, UFLIRA)
 
 if __name__ == "__main__":
     unittest.main()

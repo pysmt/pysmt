@@ -37,7 +37,7 @@ class TestSMTParseExamples(TestCase):
             parser = SmtLibParser()
             script_in = parser.get_script(buf_in)
             f_in = script_in.get_last_formula()
-            self.assertEquals(f_in, f_out)
+            self.assertEqual(f_in, f_out)
 
 
     def test_parse_examples_daggified(self):
@@ -52,4 +52,4 @@ class TestSMTParseExamples(TestCase):
             parser = SmtLibParser()
             script_in = parser.get_script(buf_in)
             f_in = script_in.get_last_formula()
-            self.assertEquals(f_in, f_out)
+            self.assertEqual(f_in, f_out)

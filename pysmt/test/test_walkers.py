@@ -39,10 +39,10 @@ class TestWalkers(TestCase):
 
         res = substitute(h, subs={varA:varB})
 
-        self.assertEquals(res, h.substitute({varA:varB}))
+        self.assertEqual(res, h.substitute({varA:varB}))
 
         res = substitute(h, subs={varA:Int(1)})
-        self.assertEquals(res, h.substitute({varA:Int(1)}))
+        self.assertEqual(res, h.substitute({varA:Int(1)}))
 
     def test_substituter_conditions(self):
         x = Symbol("x")
@@ -116,12 +116,12 @@ class TestWalkers(TestCase):
         cnf = And(Or(x,y,z), Or(z, Not(y)))
         fake_dnf = Or(And(x,y,z), And(z, Not(y)))
         result = walker.walk(cnf)
-        self.assertEquals(result, fake_dnf)
+        self.assertEqual(result, fake_dnf)
 
         alternation = Or(cnf, Not(cnf))
         expected = And(fake_dnf, Not(fake_dnf))
         result = walker.walk(alternation)
-        self.assertEquals(result, expected)
+        self.assertEqual(result, expected)
 
 
     def test_substitution_on_quantifiers(self):
@@ -132,11 +132,11 @@ class TestWalkers(TestCase):
 
         subs = {y: Bool(True)}
         f_subs = substitute(f, subs).simplify()
-        self.assertEquals(f_subs, ForAll([x], x))
+        self.assertEqual(f_subs, ForAll([x], x))
 
         subs = {x: Bool(True)}
         f_subs = substitute(f, subs).simplify()
-        self.assertEquals(f_subs, f)
+        self.assertEqual(f_subs, f)
 
     def test_substitution_complex(self):
         x, y = FreshSymbol(REAL), FreshSymbol(REAL)
@@ -148,7 +148,7 @@ class TestWalkers(TestCase):
         subs = {y: Real(0),
                 ForAll([x], And(GT(x, Real(3)), LT(Real(0), Real(2)))): TRUE()}
         f_subs = substitute(f, subs).simplify()
-        self.assertEquals(f_subs, TRUE())
+        self.assertEqual(f_subs, TRUE())
 
 
     def test_substitution_term(self):
@@ -161,7 +161,7 @@ class TestWalkers(TestCase):
         f_subs = substitute(f, subs)
         # Since 'x' is quantified, we cannot replace the term
         # therefore the substitution does not yield any result.
-        self.assertEquals(f_subs, f)
+        self.assertEqual(f_subs, f)
 
 
     def test_substitution_on_functions(self):
@@ -171,13 +171,13 @@ class TestWalkers(TestCase):
         phi = Function(f, [Plus(i, Int(1)), Minus(r, Real(2))])
 
         phi_sub = substitute(phi, {i: Int(0)}).simplify()
-        self.assertEquals(phi_sub, Function(f, [Int(1), Minus(r, Real(2))]))
+        self.assertEqual(phi_sub, Function(f, [Int(1), Minus(r, Real(2))]))
 
         phi_sub = substitute(phi, {r: Real(0)}).simplify()
-        self.assertEquals(phi_sub, Function(f, [Plus(i, Int(1)), Real(-2)]))
+        self.assertEqual(phi_sub, Function(f, [Plus(i, Int(1)), Real(-2)]))
 
         phi_sub = substitute(phi, {r: Real(0), i: Int(0)}).simplify()
-        self.assertEquals(phi_sub, Function(f, [Int(1), Real(-2)]))
+        self.assertEqual(phi_sub, Function(f, [Int(1), Real(-2)]))
 
 
 

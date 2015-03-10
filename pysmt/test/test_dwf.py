@@ -27,14 +27,14 @@ class TestDwf(TestCase):
     # NOTE: We enforce order of execution of the tests, since in the
     # other test we define a custom type.
     def test_00_new_node_type(self):
-        self.assertEquals(len(CUSTOM_NODE_TYPES), 0, "Initially there should be no custom types")
+        self.assertEqual(len(CUSTOM_NODE_TYPES), 0, "Initially there should be no custom types")
         idx = new_node_type()
         self.assertIsNotNone(idx)
         with self.assertRaises(AssertionError):
             new_node_type(idx)
 
         n = new_node_type(idx+100)
-        self.assertEquals(n, idx+100)
+        self.assertEqual(n, idx+100)
 
     def test_01_dwf(self):
         # Ad-hoc method to handle printing of the new node
@@ -62,7 +62,7 @@ class TestDwf(TestCase):
 
         # String conversion should use the function defined above.
         s_f1 = str(f1)
-        self.assertEquals(s_f1, "(x *+* x)")
+        self.assertEqual(s_f1, "(x *+* x)")
 
         # We did not define an implementation for the Simplifier
         with self.assertRaises(NotImplementedError):

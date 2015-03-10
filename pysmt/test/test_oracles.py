@@ -34,7 +34,7 @@ class TestOracles(TestCase):
         for example in EXAMPLE_FORMULAS:
             target_logic = example.logic
             res = get_logic(example.expr)
-            self.assertEquals(res, target_logic, "%s - %s != %s" % \
+            self.assertEqual(res, target_logic, "%s - %s != %s" % \
                               (example.expr, target_logic, res))
 
     def test_regression(self):

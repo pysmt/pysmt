@@ -41,7 +41,7 @@ class TestBdd(TestCase):
         bdd_y = convert(self.y)
 
         self.assertIsNotNone(bdd_x)
-        self.assertEquals(bdd_x, bdd_x_2)
+        self.assertEqual(bdd_x, bdd_x_2)
         self.assertNotEquals(bdd_x, bdd_y)
 
     @skipIfSolverNotAvailable("bdd")
@@ -58,7 +58,7 @@ class TestBdd(TestCase):
         x_and_y = And(self.x, self.y)
         converted_expr = convert(x_and_y)
 
-        self.assertEquals(bdd_x_and_y, converted_expr)
+        self.assertEqual(bdd_x_and_y, converted_expr)
 
     @skipIfSolverNotAvailable("bdd")
     def test_examples_conversion(self):
@@ -90,8 +90,8 @@ class TestBdd(TestCase):
         solver.add_assertion(f)
         self.assertTrue(solver.solve())
         model = solver.get_model()
-        self.assertEquals(model[self.x], Bool(True))
-        self.assertEquals(model[self.y], Bool(False))
+        self.assertEqual(model[self.x], Bool(True))
+        self.assertEqual(model[self.y], Bool(False))
         self.assertFalse(solver.get_py_value(self.y))
 
         solver.push()
@@ -107,7 +107,7 @@ class TestBdd(TestCase):
         f = Exists([self.x], And(self.x, self.y))
         bdd_g = convert(f)
         g = self.bdd_converter.back(bdd_g)
-        self.assertEquals(g, self.y)
+        self.assertEqual(g, self.y)
 
 if __name__ == '__main__':
     unittest.main()
