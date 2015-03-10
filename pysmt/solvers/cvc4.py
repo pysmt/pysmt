@@ -16,7 +16,7 @@
 #   limitations under the License.
 #
 from fractions import Fraction
-
+from six.moves import xrange
 import CVC4
 
 import pysmt

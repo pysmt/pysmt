@@ -25,6 +25,7 @@ particular solver.
 
 import warnings
 from functools import partial
+from six import iteritems
 
 from pysmt.exceptions import NoSolverAvailableError, SolverRedefinitionError
 from pysmt.logics import PYSMT_LOGICS, most_generic_logic, get_closer_logic
@@ -232,7 +233,7 @@ class Factory(object):
         """
         res = {}
         if logic is not None:
-            for s, v in self._all_solvers.iteritems():
+            for s, v in iteritems(self._all_solvers):
                 for l in v.LOGICS:
                     if logic <= l:
                         res[s] = v

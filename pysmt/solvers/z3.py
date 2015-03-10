@@ -20,6 +20,7 @@ from __future__ import absolute_import
 import z3
 
 from fractions import Fraction
+from six.moves import xrange
 
 from pysmt import typing as types
 from pysmt.solvers.solver import Solver, Model, Converter

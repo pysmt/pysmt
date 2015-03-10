@@ -17,6 +17,7 @@
 #
 import re
 from fractions import Fraction
+from six.moves import xrange
 
 import mathsat
 

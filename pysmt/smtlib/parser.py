@@ -19,6 +19,7 @@ import io
 import functools
 from fractions import Fraction
 from warnings import warn
+from six import iteritems
 
 import pysmt.smtlib.commands as smtcmd
 from pysmt.shortcuts import get_env
@@ -115,7 +116,7 @@ class SmtLibExecutionCache(object):
 
     def update(self, value_map):
         """Binds all the symbols in 'value_map'"""
-        for k, val in value_map.iteritems():
+        for k, val in iteritems(value_map):
             self.bind(k, val)
 
     def unbind_all(self, values):
@@ -410,7 +411,7 @@ class SmtLibParser(object):
                                 self.consume_closing(tokens, "expression")
                                 current = next(tokens)
 
-                            for k, val in newvals.iteritems():
+                            for k, val in iteritems(newvals):
                                 self.cache.bind(k, val)
                             stack[-1].append(self._handle_let)
                             stack[-1].append(newvals.keys())

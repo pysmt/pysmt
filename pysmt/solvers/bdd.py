@@ -16,6 +16,7 @@
 #   limitations under the License.
 #
 import warnings
+from six.moves import xrange
 
 import pycudd
 

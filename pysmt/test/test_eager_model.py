@@ -15,6 +15,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+from six.moves import xrange
+
 from pysmt.test import TestCase
 from pysmt.shortcuts import And, Or, FALSE, TRUE, FreshSymbol, get_env
 from pysmt.solvers.eager import EagerModel

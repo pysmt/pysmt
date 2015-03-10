@@ -17,6 +17,7 @@
 #
 import cStringIO
 from collections import namedtuple
+from six.moves import xrange
 
 import pysmt.smtlib.commands as smtcmd
 from pysmt.exceptions import UnknownSmtLibCommandError

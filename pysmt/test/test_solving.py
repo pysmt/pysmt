@@ -16,6 +16,8 @@
 #   limitations under the License.
 #
 import unittest
+from six.moves import xrange
+
 import pysmt.operators as op
 from pysmt.shortcuts import Symbol, FreshSymbol, And, Not, GT, Function, Plus
 from pysmt.shortcuts import Bool, TRUE, Real, LE, FALSE, Or, Equals

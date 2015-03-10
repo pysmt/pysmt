@@ -1,4 +1,5 @@
 from subprocess import Popen, PIPE
+from six import iteritems
 
 import pysmt.smtlib.commands as smtcmd
 from pysmt.solvers.eager import EagerModel
@@ -7,7 +8,6 @@ from pysmt.smtlib.script import SmtLibCommand
 from pysmt.solvers.solver import Solver
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               UnknownSolverAnswerError)
-
 
 class SmtLibSolver(Solver):
     """Wrapper for using a solver via textual SMT-LIB interface.
@@ -29,7 +29,7 @@ class SmtLibSolver(Solver):
         self._send_command(SmtLibCommand(smtcmd.SET_OPTION, [":print-success", "false"]))
         self._send_command(SmtLibCommand(smtcmd.SET_OPTION, [":produce-models", "true"]))
         if options is not None:
-            for o,v in options.iteritems():
+            for o,v in iteritems(options):
                 self._send_command(SmtLibCommand(smtcmd.SET_OPTION, [o, v]))
         self._send_command(SmtLibCommand(smtcmd.SET_LOGIC, [logic]))
 

@@ -17,6 +17,7 @@
 #
 import cStringIO
 import unittest
+from six.moves import xrange
 
 from pysmt.shortcuts import Or, And, Not, Plus, Iff, Implies
 from pysmt.shortcuts import Exists, ForAll, Ite

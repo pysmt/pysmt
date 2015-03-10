@@ -20,6 +20,7 @@ import ctypes
 import warnings
 
 from fractions import Fraction
+from six.moves import xrange
 
 import pyices.context
 import pyices.yices_lib as libyices

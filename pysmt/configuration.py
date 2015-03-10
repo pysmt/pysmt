@@ -39,11 +39,7 @@ of the solver.
 """
 
 import os.path
-from pysmt.utils import is_python_2
-if is_python_2():
-    import ConfigParser as cp
-else:
-    import configparser as cp
+import six.moves.configparser as cp
 from warnings import warn
 
 from pysmt.logics import get_logic_by_name

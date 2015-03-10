@@ -39,11 +39,11 @@ class TestDwf(TestCase):
     def test_01_dwf(self):
         # Ad-hoc method to handle printing of the new node
         def hrprinter_walk_XOR(self, formula):
-            self.stream.write(self.tb("("))
+            self.stream.write("(")
             self.walk(formula.arg(0))
-            self.stream.write(self.tb(" *+* "))
+            self.stream.write(" *+* ")
             self.walk(formula.arg(1))
-            self.stream.write(self.tb(")"))
+            self.stream.write(")")
             return
 
         # Shortcuts for function in env
