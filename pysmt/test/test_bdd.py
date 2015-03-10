@@ -42,7 +42,7 @@ class TestBdd(TestCase):
 
         self.assertIsNotNone(bdd_x)
         self.assertEqual(bdd_x, bdd_x_2)
-        self.assertNotEquals(bdd_x, bdd_y)
+        self.assertNotEqual(bdd_x, bdd_y)
 
     @skipIfSolverNotAvailable("bdd")
     def test_basic_expr(self):

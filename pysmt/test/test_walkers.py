@@ -62,7 +62,7 @@ class TestWalkers(TestCase):
         # 2. All arguments belong to the manager of the substituter.
         new_mgr = FormulaManager(get_env())
         new_x = new_mgr.Symbol("x")
-        self.assertNotEquals(x, new_x)
+        self.assertNotEqual(x, new_x)
         args_1 = {x: new_x}
         args_2 = {new_x: new_x}
 

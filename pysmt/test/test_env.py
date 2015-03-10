@@ -41,7 +41,7 @@ class TestEnvironment(TestCase):
         self.assertEqual(env1, pop_env(), "Pushed environment was ignored.")
         env2  = get_env()
         self.assertIsNotNone(env2)
-        self.assertNotEquals(env1, pop_env(), "New environment was not created.")
+        self.assertNotEqual(env1, pop_env(), "New environment was not created.")
 
 
     def test_with_env(self):
@@ -50,9 +50,9 @@ class TestEnvironment(TestCase):
         with Environment():
             env2 = get_env()
             self.assertIsNotNone(env2, "Context should create an environment")
-            self.assertNotEquals(env1, env2, "Context should create a new environment")
+            self.assertNotEqual(env1, env2, "Context should create a new environment")
             a2 = Symbol("A", REAL)
-            self.assertNotEquals(a1, a2, "Symbols in different context should differ")
+            self.assertNotEqual(a1, a2, "Symbols in different context should differ")
 
         a3 = Symbol("A", REAL)
         self.assertEqual(a1, a3, "Exiting a context should restore the previous environment")

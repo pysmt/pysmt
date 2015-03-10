@@ -56,7 +56,7 @@ class TestRegressions(TestCase):
         g = f.substitute({a:Bool(True)})
         h = f.substitute({a:Bool(False)})
 
-        self.assertNotEquals(h, g)
+        self.assertNotEqual(h, g)
 
     @skipIfSolverNotAvailable("msat")
     def test_msat_bool_back_conversion(self):
