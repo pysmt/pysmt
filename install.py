@@ -124,7 +124,7 @@ def download(url, file_name):
             sys.stdout.write(str_perc)
             sys.stdout.write(" " * (10 - len(str_perc)))
 
-    print ""
+    print("")
     f.close()
 
 ################################################################################
