@@ -104,8 +104,8 @@ def download(url, file_name):
     u = urllib2.urlopen(url)
     f = open(file_name, 'wb')
     meta = u.info()
-    if len(meta.getheaders("Content-Length")) > 0:
-        file_size = int(meta.getheaders("Content-Length")[0])
+    if len(meta.get("Content-Length")) > 0:
+        file_size = int(meta.get("Content-Length"))
         print("Downloading: %s Bytes: %s" % (file_name, file_size))
 
     block_sz = 8192
@@ -116,7 +116,7 @@ def download(url, file_name):
             break
 
         f.write(buff)
-        if len(meta.getheaders("Content-Length")) > 0 and sys.stdout.isatty():
+        if len(meta.get("Content-Length")) > 0 and sys.stdout.isatty():
             count += len(buff)
             perc = (float(count) / float(file_size)) * 100.0
             str_perc = "%.1f%%" % perc
