@@ -133,5 +133,5 @@ def write_environment_configuration(config_filename, environment):
 
 
     # Writing the configuration to file
-    with open(config_filename, 'wb') as configfile:
+    with open(config_filename, 'wt') as configfile:
         config.write(configfile)

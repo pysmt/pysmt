@@ -21,7 +21,7 @@ from fractions import Fraction
 from warnings import warn
 from six import iteritems
 from six.moves import xrange
-
+from six import PY2
 
 import pysmt.smtlib.commands as smtcmd
 from pysmt.shortcuts import get_env
@@ -68,7 +68,7 @@ def get_formula_fname(script_fname, environment=None, strict=True):
     """
     Returns the formula asserted at the end of the given script
     """
-    with io.BufferedReader(io.FileIO(script_fname, 'r')) as script:
+    with io.BufferedReader(open(script_fname, 'rt')) as script:
         if strict:
             return get_formula_strict(script, environment)
         else:
@@ -143,6 +143,7 @@ class Tokenizer(object):
 
     def tokens(self):
         c = self.read(1)
+        print(c)
         while not self.eof:
             if c in self.specials:
                 # consume all the spaces
@@ -497,8 +498,12 @@ class SmtLibParser(object):
 
     def get_script_fname(self, script_fname):
         """Given a filename and a Solver, executes the solver on the file."""
-        with io.BufferedReader(io.FileIO(script_fname, 'r')) as script:
-            return self.get_script(script)
+        if PY2:
+            with io.BufferedReader(io.FileIO(script_fname, 'r')) as script:
+                return self.get_script(script)
+        else:
+            with io.TextIOWrapper(open(script_fname, 'rb')) as script:
+                return self.get_script(script)
 
 
     def parse_atoms(self, tokens, command, min_size, max_size=None):
