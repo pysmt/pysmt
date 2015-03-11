@@ -111,7 +111,7 @@ class TestLogic(unittest.TestCase):
                 Solver(logic=pysmt.logics.QF_BOOL)
 
         with self.assertRaises(NoSolverAvailableError):
-            Solver(logic=pysmt.logics.AUTO)
+            Solver(logic=pysmt.logics.QF_ABV)
 
         with self.assertRaises(NoSolverAvailableError):
             Solver(name='msat', logic=pysmt.logics.QF_BV)
