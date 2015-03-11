@@ -1,12 +1,13 @@
 # cache: true # This yields random results
 language: python
-build_image: shippableimages/ubuntu1404_python
+#build_image: shippableimages/ubuntu1404_python
 python:
   - 2.7
 
 install:
   - pip install nose
   - pip install coverage
+  - pip install six
   - source shippable.sh $PYSMT_SOLVER
 
 
