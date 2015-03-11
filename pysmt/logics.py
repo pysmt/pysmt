@@ -237,7 +237,7 @@ class Logic(object):
         return (other.__le__(self))
 
     def __gt__(self, other):
-        return other.__lt__(self)
+        return (other.__lt__(self))
 
 
 # Logics
