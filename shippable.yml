@@ -1,9 +1,19 @@
 # cache: true # This yields random results
 language: python
-#build_image: shippableimages/ubuntu1404_python
+
+build_image: shippableimages/ubuntu1404_python
+
 python:
   - 2.7
   - 3.4
+
+
+before_install:
+ #  set up a virtualenv and activate the python version that you want to use
+   - mkdir -p $HOME/bldve/
+   - virtualenv -p $SHIPPABLE_PYTHON $HOME/bldve/
+   - source $HOME/bldve/bin/activate
+
 
 install:
   - pip install nose
@@ -23,7 +33,7 @@ env:
     - secure: IzzUEuWb2+h3gzttT0237NDkptzu4UvPN1okinDgm4Rx0uADXVWJy6gvcWaeL8F6tl8KGkpcFvzGHmwj7RGGRk8AAj+OVf+VilSlWwNe1g8SYHwxOPrTgD4ECX3860hleeI3F2DD+yFIo9Hgw3ZiHBsfbombtFGTB5WWwUgezXsENMKuNJ580MN8+c3I4IV44pSXJ179GluJ3O1e/xUkwJ5/nvysWd4q7wqJ6aIz5ZFMFhs/FKAbeEdtmmGODn2FspGJ+iKVyc0IbQpzLJO1MeizBXnGZfN9Ojv7mkPJcgzqFMjvLnpCJAEmZl3BzJFc0j9xxILvrrjHU/TKrlJkSw==
     - secure: nuGI4WDZOFDezaSxQUKyOP19iqRmQSASv5tpCCsryQ3AtI3in/1dYndDUwmzGYfoVkHTOsf6n4O3XEAruktPpVZzLSlek9zcr8v0IERTfzhoGCWRqqYDrDoCU6Hc2WYyGOhGGEzfldsY1EVMx5+LsVz0JoVZFe75CO6oWvuEYVYRmeJYzKQWLuXXwQMkfYulX1ouF1b5JCdeepbUfwcf4o34RPrd6eLoL7Y1RT4SBsR0uX4lpnWvUB2qqoyOEvu/hXt9Zft57tW4OY2GUdlRlj/Hx/5fPIFGYJmsGu7BM/+Q1cLgZnyyH0mxaHtBkjt8ecMwUc/9PbNJ2alZDmIMyw==
   matrix:
-    - PYSMT_SOLVER="msat"  PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.2.12-linux-x86_64/python:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.2.12-linux-x86_64/python/build/lib.linux-x86_64-2.7"
+    - PYSMT_SOLVER="msat"  PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.2.12-linux-x86_64/python:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.2.12-linux-x86_64/python/build/lib.linux-x86_64-$TRAVIS_PYTHON_VERSION"
     - PYSMT_SOLVER="z3"    PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/z3_bin/lib/python2.7/dist-packages"
     # We use a different path for binary CVC4 to keep the pkg that we need to download small
     - PYSMT_SOLVER="cvc4"  PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/CVC4_bin/share/pyshared:$TRAVIS_BUILD_DIR/.smt_solvers/CVC4_bin/lib/pyshared"
@@ -36,8 +46,6 @@ matrix:
       python: 2.6
     - env: PYSMT_SOLVER="None"
       python: 3.3
-    - env: PYSMT_SOLVER="None"
-      python: 3.4
     - env: PYSMT_SOLVER="None"
       python: pypy
 
