@@ -11,8 +11,7 @@ python:
 before_install:
  #  set up a virtualenv and activate the python version that you want to use
    - mkdir -p $HOME/bldve/
-   - if [ "$VIRTUALENV_PYTHON" == "pypy" ]; then apt-get install -y pypy; fi
-   - virtualenv -p $SHIPPABLE_PYTHON $HOME/bldve/
+   - if [ "$VIRTUALENV_PYTHON" == "pypy" ]; then apt-get install -y pypy; virtualenv -p "`which pypy`" $HOME/bldve; else virtualenv -p $SHIPPABLE_PYTHON $HOME/bldve/; fi
    - source $HOME/bldve/bin/activate
 
 
