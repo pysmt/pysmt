@@ -150,7 +150,7 @@ def install_msat(options):
     untar(archive, BASE_DIR)
 
     # Build the python wrapper
-    os.system('cd %s/python; python3 setup.py build' % dir_path)
+    os.system('cd %s/python; python setup.py build' % dir_path)
 
     # Save the paths
     PATHS.append("%s/python" % dir_path)
