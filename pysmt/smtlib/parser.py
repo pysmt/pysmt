@@ -26,6 +26,7 @@ from pysmt.typing import BOOL, REAL, INT, FunctionType
 from pysmt.logics import get_logic_by_name, UndefinedLogicError
 from pysmt.exceptions import UnknownSmtLibCommandError
 from pysmt.smtlib.script import SmtLibCommand, SmtLibScript
+from pysmt.smtlib.annotations import Annotations
 
 
 def get_formula(script_stream, environment=None):
@@ -77,7 +78,7 @@ class SmtLibExecutionCache(object):
     def __init__(self):
         self.keys = {}
         self.definitions = {}
-        self.annotations = {}
+        self.annotations = Annotations()
 
     def bind(self, name, value):
         """Binds a symbol in this environment"""
@@ -193,13 +194,23 @@ class SmtLibParser(object):
 
     def __init__(self, environment=None):
         self.pysmt_env = get_env() if environment is None else environment
-        self._current_env = self.pysmt_env
-        self.cache = SmtLibExecutionCache()
+
+        # Placeholders for fields filled by self._reset
+        self._current_env = None
+        self.cache = None
         self.logic = None
 
         # Special tokens appearing in expressions
         self.parentheses = set(["(", ")"])
         self.specials = set(["let", "!", "exists", "forall"])
+
+
+
+    def _reset(self):
+        """Resets the parser to the initial state"""
+        self.cache = SmtLibExecutionCache()
+        self.logic = None
+        self._current_env = self.pysmt_env
 
         mgr = self.pysmt_env.formula_manager
         self.cache.update({'+':mgr.Plus,
@@ -295,17 +306,20 @@ class SmtLibParser(object):
         """
         res = self.cache.get(token)
         if res is None:
-            # This is a numerical constant
-            if "." in token:
-                res = mgr.Real(Fraction(token))
-            else:
-                iterm = int(token)
-                # We found an integer, depending on the logic this can be
-                # an Int or a Real
-                if self.logic is None or self.logic.theory.integer_arithmetic:
-                    res = mgr.Int(iterm)
+            try:
+                # This is a numerical constant
+                if "." in token:
+                    res = mgr.Real(Fraction(token))
                 else:
-                    res = mgr.Real(iterm)
+                    iterm = int(token)
+                    # We found an integer, depending on the logic this can be
+                    # an Int or a Real
+                    if self.logic is None or self.logic.theory.integer_arithmetic:
+                        res = mgr.Int(iterm)
+                    else:
+                        res = mgr.Real(iterm)
+            except ValueError:
+                res = token
             self.cache.bind(token, res)
         return res
 
@@ -360,22 +374,26 @@ class SmtLibParser(object):
         return fun(vrs, body)
 
 
-    def _handle_annotation(self, pyterm, attrs):
+    def _handle_annotation(self, pyterm, *attrs):
         """
         This method is invoked when we finish parsing an annotated expression
         """
-        pyterm_annotations = self.cache.annotations.setdefault(pyterm, {})
 
         # Iterate on elements.
         i = 0
         while i < len(attrs):
             if i+1 < len(attrs) and str(attrs[i+1])[0] != ":" :
-                key, value = attrs[i], attrs[i+1]
+                key, value = str(attrs[i]), str(attrs[i+1])
+                if key[0] != ":":
+                    raise SyntaxError("Annotations keys should start with colon")
+                self.cache.annotations.add(pyterm, key[1:], value)
                 i += 2
             else:
-                key, value = attrs[i], True
+                key = str(attrs[i])
+                if key[0] != ":":
+                    raise SyntaxError("Annotations keys should start with colon")
+                self.cache.annotations.add(pyterm, key[1:])
                 i += 1
-            pyterm_annotations[key] = value
 
         return pyterm
 
@@ -475,9 +493,11 @@ class SmtLibParser(object):
         """
         Takes a file object and returns a SmtLibScript object representing the file
         """
+        self._reset() # prepare the parser
         res = SmtLibScript()
         for cmd in self.get_command_generator(script):
             res.add_command(cmd)
+        res.annotations = self.cache.annotations
         return res
 
     def get_command_generator(self, script):
