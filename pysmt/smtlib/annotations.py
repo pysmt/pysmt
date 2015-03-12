@@ -36,11 +36,23 @@ class Annotations(object):
             values.add(value)
 
 
-    def remove(self, formula, annotation, value=None):
-        """Adds an annotation for the given formula, possibly with the
-        specified value"""
-        term_annotations = self._annotations.setdefault(formula, {})
-        term_annotations[annotation] = value
+    def remove(self, formula):
+        """Removes all the annotations for the given formula"""
+        del self._annotations[formula]
+
+
+    def remove_annotation(self, formula, annotation):
+        """Removes the given annotation for the given formula"""
+        if annotation in self._annotations[formula]:
+            del self._annotations[formula][annotation]
+
+
+    def remove_value(self, formula, annotation, value):
+        """Removes the given annotation for the given formula"""
+        if annotation in self._annotations[formula]:
+            d = self._annotations[formula][annotation]
+            if value in d:
+                d.remove(value)
 
 
     def annotations(self, formula):
@@ -67,7 +79,7 @@ class Annotations(object):
                 else:
                     if value in amap[annotation]:
                         res.append(f)
-        return res
+        return set(res)
 
 
     def __str__(self):
