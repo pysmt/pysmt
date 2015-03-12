@@ -73,20 +73,8 @@ class CNFizer(DagWalker):
 
         conj = []
         for clause in lsts:
-            if len(clause) == 0:
-                return self.mgr.FALSE()
-            elif len(clause) == 1:
-                # Get single element from set
-                conj.append(next(iter(clause)))
-            else:
-                conj.append(self.mgr.Or(clause))
-
-        if len(conj) == 0:
-            return self.mgr.TRUE()
-        elif len(conj) == 1:
-            return conj[0]
-        else:
-            return self.mgr.And(conj)
+            conj.append(self.mgr.Or(clause))
+        return self.mgr.And(conj)
 
     def printer(self, cnf):
         print(self.serialize(cnf))
