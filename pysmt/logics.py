@@ -206,7 +206,14 @@ class Logic(object):
 
         return
 
-
+    def get_quantified_version(self):
+        """Returns the quantified version of logic."""
+        if self.quantifier_free:
+            return self
+        target_logic = Logic(name="", description="",
+                             quantifier_free=False,
+                             theory=self.theory)
+        return get_closer_pysmt_logic(target_logic)
 
     def __str__(self):
         return self.name
@@ -527,6 +534,8 @@ symbols.""",
               linear=False,
               uninterpreted=True)
 
+AUTO = Logic(name="Auto",
+             description="Special logic used to indicate that the logic to be used depends on the formula.")
 
 SMTLIB2_LOGICS = [ AUFLIA,
                    AUFLIRA,

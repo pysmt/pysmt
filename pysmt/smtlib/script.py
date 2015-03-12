@@ -105,6 +105,7 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
 class SmtLibScript(object):
 
     def __init__(self):
+        self.annotations = None
         self.commands = []
 
     def add(self, name, args):

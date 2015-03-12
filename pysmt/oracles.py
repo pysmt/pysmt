@@ -172,8 +172,9 @@ class TheoryOracle(walkers.DagWalker):
 # EOC TheoryOracle
 
 
-def get_logic(formula):
-    env = pysmt.shortcuts.get_env()
+def get_logic(formula, env=None):
+    if env is None:
+        env = pysmt.shortcuts.get_env()
     # Get Quantifier Information
     qf = env.qfo.is_qf(formula)
     theory = env.theoryo.get_theory(formula)
