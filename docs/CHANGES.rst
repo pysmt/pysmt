@@ -21,7 +21,8 @@ Backwards Incompatible Changes:
 
 * Expressions: Added Min/Max operators.
 
-* SMT-LIB: Substantially improved parser performances.
+* SMT-LIB: Substantially improved parser performances. Added explicit
+  Annotations object to deal with SMT-LIB Annotations.
 
 
 0.2.2 2015-02-07 -- BDDs
