@@ -1,28 +1,32 @@
 Change Log
 ==========
 
-0.2.3 XXXXXXXXXX -- YYY
------------------------
+0.2.3 2015-03-12 -- Logics Refactoring
+--------------------------------------
 
 General:
 
 * install.py: script to automate the installation of supported
-  solvers.
-* get_logic() Oracle: Detects the logic used in a formula. This is now
-  automatically used in _is_sat()_, _is_unsat()_, _is_valid()_, and
-  _get_model()_.
-
-Backwards Incompatible Changes:
-
-* The default logic for Factory.get_solver() is now the most generic
-  *quantifier free* logic supported by pySMT (currently,
-  QF_UFLIRA). Previously it was UFLIRA, but this was due to a bug in
-  the logic of get_solver().
+  solvers. 
+  
+* get_logic() Oracle: Detects the logic used in a formula. This can now be used in the shortcuts (_is_sat()_, _is_unsat()_, _is_valid()_, and
+  _get_model()_) by choosing the special logic pysmt.logics.AUTO.
 
 * Expressions: Added Min/Max operators.
 
 * SMT-LIB: Substantially improved parser performances. Added explicit
   Annotations object to deal with SMT-LIB Annotations.
+
+* Improved iteration methods on EagerModel
+
+**Backwards Incompatible Changes**:
+
+* The default logic for Factory.get_solver() is now the most generic
+  *quantifier free* logic supported by pySMT (currently,
+  QF_UFLIRA). The factory not provides a way to change this default.
+  
+* Removed option _quantified_ from all shortcuts.
+
 
 
 0.2.2 2015-02-07 -- BDDs
