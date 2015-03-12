@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='PySMT',
-    version='0.2.3.dev',
+    version='0.2.3',
     author='PySMT Team',
     author_email='info@pysmt.org',
     packages = find_packages(),
