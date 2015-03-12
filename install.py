@@ -15,6 +15,8 @@
 # limitations under the License.
 
 from six.moves.urllib import request as urllib2
+from six.moves import input
+
 import os
 import tarfile
 import sys
@@ -28,6 +30,7 @@ import argparse
 CWD = os.path.dirname(os.path.abspath(__file__))
 BASE_DIR = os.path.join(CWD, ".smt_solvers")
 PATHS = []
+PYTHON = sys.executable
 
 # Address of a mirror website containing packages to avoid continuous
 # downloads from original websites in CI
@@ -150,7 +153,7 @@ def install_msat(options):
     untar(archive, BASE_DIR)
 
     # Build the python wrapper
-    os.system('cd %s/python; python setup.py build' % dir_path)
+    os.system('cd %s/python; %s setup.py build' % (dir_path, PYTHON))
 
     # Save the paths
     PATHS.append("%s/python" % dir_path)
@@ -193,11 +196,12 @@ def install_z3(options):
         os.system("rm -rf %s/*" % install_path)
 
     #Building Z3 and its wrapper
-    os.system("cd %s; python scripts/mk_make.py --prefix=%s" % (dir_path, install_path))
+    os.system("cd %s; perl -pi -e 's/\\t/        /' scripts/update_api.py" % dir_path)
+    os.system("cd %s; %s scripts/mk_make.py --prefix=%s" % (dir_path, PYTHON, install_path))
     os.system("cd %s/build; make -j%d; make install" % (dir_path, options.make_j))
 
     # Save the paths
-    PATHS.append("%s/lib/python2.7/dist-packages" % install_path)
+    PATHS.append("%s/lib/python%s/dist-packages" % (get_python_version(), install_path))
 
 
 
@@ -298,7 +302,7 @@ def install_yices(options):
     untar(pyices_archive, BASE_DIR)
 
     # Build pyices
-    os.system("export YICES_PATH=\"%s\"; cd %s; python setup.py install --user" % (yices_path, pyices_dir_path))
+    os.system("export YICES_PATH=\"%s\"; cd %s; %s setup.py install --user" % (yices_path, pyices_dir_path, PYTHON))
 
     # Save the paths
     PATHS.append("%s/build/lib.linux-%s-%s" % (pyices_dir_path, get_architecture(), get_python_version()))
@@ -421,7 +425,7 @@ Notice: the installation process might require building tools
         (e.g., make and gcc).
 """
     print(msg)
-    res = raw_input("Continue? [Y]es/[N]o: ").lower()
+    res = input("Continue? [Y]es/[N]o: ").lower()
 
     if res != "y":
         exit(-1)
