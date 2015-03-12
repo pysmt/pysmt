@@ -1,7 +1,7 @@
 # cache: true # This yields random results
 language: python
 
-build_image: shippableimages/ubuntu1404_python
+build_image: shippableimages/ubuntu1204_python
 
 python:
   - 2.7
