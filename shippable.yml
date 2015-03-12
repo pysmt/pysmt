@@ -10,7 +10,7 @@ python:
 before_install:
  #  set up a virtualenv and activate the python version that you want to use
    - mkdir -p $HOME/bldve/
-   - if [ "$VIRTUALENV_PYTHON" == "pypy" ]; then apt-get install -y pypy; virtualenv -p "`which pypy`" $HOME/bldve; else if [ "$VIRTUALENV_PYTHON" == "2.6" ]; then apt-get install -y python2.6; fi; virtualenv -p $SHIPPABLE_PYTHON $HOME/bldve/; fi
+   - if [ "$VIRTUALENV_PYTHON" == "pypy" ]; then apt-get install -y pypy; virtualenv -p "`which pypy`" $HOME/bldve; else virtualenv -p $SHIPPABLE_PYTHON $HOME/bldve/; fi
    - source $HOME/bldve/bin/activate
 
 
@@ -41,8 +41,6 @@ env:
 
 matrix:
   include:
-    - env: PYSMT_SOLVER="None"
-      python: 2.6
     - env: PYSMT_SOLVER="None"
       python: 3.3
     - env: PYSMT_SOLVER="None"
