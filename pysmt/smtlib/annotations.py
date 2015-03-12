@@ -38,21 +38,38 @@ class Annotations(object):
 
     def remove(self, formula):
         """Removes all the annotations for the given formula"""
-        del self._annotations[formula]
+        if formula in self._annotations:
+            del self._annotations[formula]
 
 
     def remove_annotation(self, formula, annotation):
         """Removes the given annotation for the given formula"""
-        if annotation in self._annotations[formula]:
-            del self._annotations[formula][annotation]
+        if formula in self._annotations:
+            if annotation in self._annotations[formula]:
+                del self._annotations[formula][annotation]
 
 
     def remove_value(self, formula, annotation, value):
         """Removes the given annotation for the given formula"""
-        if annotation in self._annotations[formula]:
-            d = self._annotations[formula][annotation]
-            if value in d:
-                d.remove(value)
+        if formula in self._annotations:
+            if annotation in self._annotations[formula]:
+                d = self._annotations[formula][annotation]
+                if value in d:
+                    d.remove(value)
+
+
+    def has_annotation(self, formula, annotation, value=None):
+        """Returns True iff the given formula has the given annotation. If
+        Value is specified, True is returned only if the value is
+        matching.
+        """
+        if formula in self._annotations:
+            if annotation in self._annotations[formula]:
+                if value is None:
+                    return True
+                else:
+                    return (value in self._annotations[formula][annotation])
+        return False
 
 
     def annotations(self, formula):
@@ -81,6 +98,10 @@ class Annotations(object):
                         res.append(f)
         return set(res)
 
+
+    def __contains__(self, formula):
+        """Checks if formula has at least one annotation"""
+        return formula in self._annotations
 
     def __str__(self):
         res = ["Annotations: {"]

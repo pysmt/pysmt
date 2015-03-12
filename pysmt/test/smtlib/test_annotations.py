@@ -37,6 +37,8 @@ class TestBasic(TestCase):
         ann.add(a, "related", next_a)
         ann.add(a, "related", init_a)
 
+        self.assertIn(a, ann)
+
         self.assertEqual(set([next_a]), ann.annotations(a)["next"])
         self.assertEqual(set([init_a]), ann.annotations(a)["init"])
         self.assertEqual(set([init_a, next_a]), ann.annotations(a)["related"])
@@ -59,7 +61,11 @@ class TestBasic(TestCase):
         ann.add(a, "related", next_a)
         ann.add(a, "related", init_a)
 
+        self.assertIn(a, ann)
+
         ann.remove(a)
+
+        self.assertNotIn(a, ann)
 
         self.assertEqual(None, ann.annotations(a))
 
@@ -123,6 +129,13 @@ class TestBasic(TestCase):
         self.assertIn("A_1__AT0 ->", str(ann))
 
         a1 = Symbol("A_1__AT0")
+
+        self.assertIn(a1, ann)
+        self.assertTrue(ann.has_annotation(a1, "next"))
+        self.assertFalse(ann.has_annotation(a1, "non-existent"))
+        self.assertTrue(ann.has_annotation(a1, "next", "A_1__AT1"))
+        self.assertFalse(ann.has_annotation(a1, "next", "non-existent"))
+
         self.assertIn("A_1__AT1", ann.annotations(a1)["next"])
 
         curr_a1 = ann.all_annotated_formulae("next", "A_1__AT1")
