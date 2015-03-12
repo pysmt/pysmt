@@ -21,7 +21,7 @@ from nose.plugins.attrib import attr
 
 from pysmt.shortcuts import Implies, is_sat, is_valid, reset_env
 from pysmt.cnf import CNFizer
-from pysmt.logics import QF_BOOL, QF_LRA, QF_LIA, UFLIRA
+from pysmt.logics import QF_BOOL, QF_LRA, QF_LIA, QF_UFLIRA
 from pysmt.test import TestCase, skipIfNoSolverForLogic
 from pysmt.test.examples import EXAMPLE_FORMULAS
 from pysmt.test.smtlib.parser_utils import SMTLIB_TEST_FILES, SMTLIB_DIR
@@ -68,7 +68,7 @@ class TestCnf(TestCase):
                 break
 
     @attr("slow")
-    @skipIfNoSolverForLogic(UFLIRA)
+    @skipIfNoSolverForLogic(QF_UFLIRA)
     def test_smtlib_cnf(self):
         for (logic, f, expected_result) in SMTLIB_TEST_FILES:
             self._smtlib_cnf(f, logic, expected_result=="sat")
