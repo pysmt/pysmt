@@ -71,6 +71,8 @@ class TestCnf(TestCase):
     @skipIfNoSolverForLogic(QF_UFLIRA)
     def test_smtlib_cnf(self):
         for (logic, f, expected_result) in SMTLIB_TEST_FILES:
+            if logic != QF_UFLIRA:
+                continue
             self._smtlib_cnf(f, logic, expected_result=="sat")
 
     def _smtlib_cnf(self, filename, logic, res_is_sat):
