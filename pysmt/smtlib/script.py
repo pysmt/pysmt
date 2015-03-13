@@ -200,7 +200,7 @@ def smtlibscript_from_formula(formula):
     script.add(name=smtcmd.SET_LOGIC,
                args=[UFLIRA])
 
-    deps = formula.get_dependencies()
+    deps = formula.get_free_variables()
     # Declare all variables
     for symbol in deps:
         assert symbol.is_symbol()

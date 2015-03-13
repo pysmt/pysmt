@@ -114,7 +114,7 @@ class TestRegressions(TestCase):
     def test_dependencies_not_includes_toreal(self):
         p = Symbol("p", INT)
         r = ToReal(p)
-        deps = r.get_dependencies()
+        deps = r.get_free_variables()
 
         self.assertIn(p, deps)
         self.assertNotIn(r, deps)

@@ -46,6 +46,7 @@ class Environment(object):
         self._serializer = pysmt.printers.HRSerializer(self)
         self._qfo = pysmt.oracles.QuantifierOracle(self)
         self._theoryo = pysmt.oracles.TheoryOracle(self)
+        self._fvo = pysmt.oracles.FreeVarsOracle(self)
 
         self._factory = None
         # Configurations
@@ -85,6 +86,11 @@ class Environment(object):
     def theoryo(self):
         """ Get the Theory Oracle """
         return self._theoryo
+
+    @property
+    def fvo(self):
+        """ Get the FreeVars Oracle """
+        return self._fvo
 
     def add_dynamic_walker_function(self, nodetype, walker, function):
         """Dynamically bind the given function to the walker for the nodetype.

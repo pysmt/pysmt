@@ -1,14 +1,23 @@
 Change Log
 ==========
 
+0.2.4 XXXXXXXX  -- YYYY
+-----------------------
+
+General:
+
+* Iterative implementation of FNode.get_free_variables().
+  This also deprecates FNode.get_dependencies().
+
+
 0.2.3 2015-03-12 -- Logics Refactoring
 --------------------------------------
 
 General:
 
 * install.py: script to automate the installation of supported
-  solvers. 
-  
+  solvers.
+
 * get_logic() Oracle: Detects the logic used in a formula. This can now be used in the shortcuts (_is_sat()_, _is_unsat()_, _is_valid()_, and
   _get_model()_) by choosing the special logic pysmt.logics.AUTO.
 
@@ -24,7 +33,7 @@ General:
 * The default logic for Factory.get_solver() is now the most generic
   *quantifier free* logic supported by pySMT (currently,
   QF_UFLIRA). The factory not provides a way to change this default.
-  
+
 * Removed option _quantified_ from all shortcuts.
 
 
