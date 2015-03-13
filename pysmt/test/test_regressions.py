@@ -18,7 +18,7 @@
 from fractions import Fraction
 
 from pysmt.shortcuts import (Real, Plus, Symbol, Equals, And, Bool, Or,
-                             Div, LT, LE, Int, ToReal)
+                             Div, LT, LE, Int, ToReal, Iff)
 from pysmt.shortcuts import Solver, is_valid, get_env, is_sat
 from pysmt.typing import REAL, BOOL, INT, FunctionType
 from pysmt.test import TestCase, skipIfSolverNotAvailable, skipIfNoSolverForLogic
@@ -134,6 +134,28 @@ class TestRegressions(TestCase):
         # since the same symbol has already been defined with
         # a "different" type.
         f1 = Symbol("f1", ft2)
+
+    @skipIfSolverNotAvailable("z3")
+    def test_z3_iff(self):
+        z3 = Solver(name="z3")
+        conv = z3.converter
+
+        x, y = Symbol("x"), Symbol("y")
+        term = conv.convert(Iff(x, y))
+        back = conv.back(term)
+        self.assertEqual(Iff(x, y), back)
+
+    @skipIfSolverNotAvailable("msat")
+    def test_msat_iff(self):
+        msat = Solver(name="msat")
+        conv = msat.converter
+
+        x, y = Symbol("x"), Symbol("y")
+        term = conv.convert(Iff(x, y))
+        back = conv.back(term)
+        # Mathsat can reorder variables...
+        self.assertTrue(Iff(x, y) == back or Iff(y, x) == back)
+
 
     def test_multiple_exit(self):
         for sname in get_env().factory.all_solvers():
