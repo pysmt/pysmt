@@ -4,6 +4,10 @@ Change Log
 0.2.4 XXXXXXXX  -- YYYY
 -----------------------
 
+Solvers:
+
+* PicoSAT solver wrapper
+
 General:
 
 * Iterative implementation of FNode.get_free_variables().
@@ -37,7 +41,6 @@ General:
 * Removed option _quantified_ from all shortcuts.
 
 
-* Added PicoSAT solver wrapper
 
 
 0.2.2 2015-02-07 -- BDDs
