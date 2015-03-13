@@ -219,7 +219,7 @@ class FreeVarsOracle(pysmt.walkers.DagWalker):
         return frozenset(res)
 
     def walk_quantifier(self, formula, args):
-        return args[0].difference(formula._content.payload)
+        return args[0].difference(formula.quantifier_vars())
 
     def walk_symbol(self, formula, args):
         return frozenset([formula])
@@ -228,8 +228,7 @@ class FreeVarsOracle(pysmt.walkers.DagWalker):
         return frozenset()
 
     def walk_function(self, formula, args):
-        # MG: Do we need to create a list?
-        res = set([formula._content.payload])
+        res = set([formula.function_name()])
         for arg in args:
             res.update(arg)
         return frozenset(res)
