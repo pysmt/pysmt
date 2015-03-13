@@ -176,62 +176,47 @@ class CVC4Converter(Converter, DagWalker):
         return self.walk(formula)
 
     def walk_and(self, formula, args):
-        assert len(args) >= 2
         return self.mkExpr(CVC4.AND, args)
 
     def walk_or(self, formula, args):
-        assert len(args) >= 2
         return self.mkExpr(CVC4.OR, args)
 
     def walk_not(self, formula, args):
-        assert len(args) == 1
         return self.mkExpr(CVC4.NOT, args[0])
 
     def walk_symbol(self, formula, args):
-        assert len(args) == 0
         if formula not in self.declared_vars:
             self.declare_variable(formula)
         return self.declared_vars[formula]
 
     def walk_iff(self, formula, args):
-        assert len(args) == 2
         return self.mkExpr(CVC4.IFF, args[0], args[1])
 
     def walk_implies(self, formula, args):
-        assert len(args) == 2
         return self.mkExpr(CVC4.IMPLIES, args[0], args[1])
 
     def walk_le(self, formula, args):
-        assert len(args) == 2
         return self.mkExpr(CVC4.LEQ, args[0], args[1])
 
     def walk_lt(self, formula, args):
-        assert len(args) == 2
         return self.mkExpr(CVC4.LT, args[0], args[1])
 
     def walk_ite(self, formula, args):
-        assert len(args) == 3
         return self.mkExpr(CVC4.ITE, *args)
 
     def walk_real_constant(self, formula, args):
-        assert len(args) == 0
-        assert type(formula.constant_value()) == Fraction
         frac = formula.constant_value()
         n,d = frac.numerator, frac.denominator
         return self.mkConst(CVC4.Rational(n, d))
 
     def walk_int_constant(self, formula, args):
-        assert len(args) == 0
         assert type(formula.constant_value()) == int
         return self.mkConst(CVC4.Rational(formula.constant_value()))
 
     def walk_bool_constant(self, formula, args):
-        assert len(args) == 0
-        assert type(formula.constant_value()) == bool
         return self.cvc4_exprMgr.mkBoolConst(formula.constant_value())
 
     def walk_exists(self, formula, args):
-        assert len(args) == 1
         (bound_formula, var_list) = \
                  self._rename_bound_variables(args[0], formula.quantifier_vars())
         bound_vars_list = self.mkExpr(CVC4.BOUND_VAR_LIST, var_list)
@@ -240,7 +225,6 @@ class CVC4Converter(Converter, DagWalker):
                            bound_formula)
 
     def walk_forall(self, formula, args):
-        assert len(args) == 1
         (bound_formula, var_list) = \
                  self._rename_bound_variables(args[0], formula.quantifier_vars())
         bound_vars_list = self.mkExpr(CVC4.BOUND_VAR_LIST, var_list)
@@ -249,24 +233,19 @@ class CVC4Converter(Converter, DagWalker):
                            bound_formula)
 
     def walk_plus(self, formula, args):
-        assert len(args) >= 2
         res = self.mkExpr(CVC4.PLUS, args)
         return res
 
     def walk_minus(self, formula, args):
-        assert len(args) == 2
         return self.mkExpr(CVC4.MINUS, args[0], args[1])
 
     def walk_equals(self, formula, args):
-        assert len(args) == 2
         return self.mkExpr(CVC4.EQUAL, args[0], args[1])
 
     def walk_times(self, formula, args):
-        assert len(args) == 2
         return self.mkExpr(CVC4.MULT, args[0], args[1])
 
     def walk_toreal(self, formula, args):
-        assert len(args) == 1
         return self.mkExpr(CVC4.TO_REAL, args[0])
 
     def walk_function(self, formula, args):

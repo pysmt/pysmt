@@ -463,7 +463,7 @@ def main():
     print("export PYTHONPATH=\"$PYTHONPATH:"+ ":".join(PATHS) + "\"")
 
     with open(os.path.join(BASE_DIR, "set_paths.sh"), "a") as fout:
-        fout.write("export PYTHONPATH=\"$PYTHONPATH:"+ ":".join(PATHS) + "\"")
+        fout.write("export PYTHONPATH=\"$PYTHONPATH:"+ ":".join(PATHS) + "\"\n")
 
 
 if __name__ == "__main__":

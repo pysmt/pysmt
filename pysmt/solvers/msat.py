@@ -458,27 +458,22 @@ class MSatConverter(Converter, DagWalker):
         return res
 
     def walk_not(self, formula, args):
-        assert len(args) == 1
         return mathsat.msat_make_not(self.msat_env, args[0])
 
     def walk_symbol(self, formula, args):
-        assert len(args) == 0
         if formula not in self.symbol_to_decl:
             self.declare_variable(formula)
         decl = self.symbol_to_decl[formula]
         return mathsat.msat_make_constant(self.msat_env, decl)
 
     def walk_le(self, formula, args):
-        assert len(args) == 2
         return mathsat.msat_make_leq(self.msat_env, args[0], args[1])
 
     def walk_lt(self, formula, args):
-        assert len(args) == 2
         leq = mathsat.msat_make_leq(self.msat_env, args[1], args[0])
         return mathsat.msat_make_not(self.msat_env, leq)
 
     def walk_ite(self, formula, args):
-        assert len(args) == 3
         i = args[0]
         t = args[1]
         e = args[2]
@@ -494,7 +489,6 @@ class MSatConverter(Converter, DagWalker):
             return mathsat.msat_make_term_ite(self.msat_env, i, t, e)
 
     def walk_real_constant(self, formula, args):
-        assert len(args) == 0
         assert type(formula.constant_value()) == Fraction
         frac = formula.constant_value()
         n,d = frac.numerator, frac.denominator
@@ -502,14 +496,12 @@ class MSatConverter(Converter, DagWalker):
         return mathsat.msat_make_number(self.msat_env, rep)
 
     def walk_int_constant(self, formula, args):
-        assert len(args) == 0
         assert type(formula.constant_value()) == int or \
             type(formula.constant_value()) == long
         rep = str(formula.constant_value())
         return mathsat.msat_make_number(self.msat_env, rep)
 
     def walk_bool_constant(self, formula, args):
-        assert len(args) == 0
         if formula.constant_value():
             return mathsat.msat_make_true(self.msat_env)
         else:
@@ -528,27 +520,17 @@ class MSatConverter(Converter, DagWalker):
         return res
 
     def walk_minus(self, formula, args):
-        assert len(args) == 2
         n_one = mathsat.msat_make_number(self.msat_env, "-1")
         n_s2 = mathsat.msat_make_times(self.msat_env, n_one, args[1])
         return mathsat.msat_make_plus(self.msat_env, args[0], n_s2)
 
     def walk_equals(self, formula, args):
-        assert len(args) == 2
         return mathsat.msat_make_equal(self.msat_env, args[0], args[1])
 
     def walk_iff(self, formula, args):
-        assert len(args) == 2
-        lf = formula.arg(0)
-        rf = formula.arg(1)
-
-        li = self.walk_implies(self.mgr.Implies(lf, rf), [args[0], args[1]])
-        ri = self.walk_implies(self.mgr.Implies(rf, lf), [args[1], args[0]])
-
-        return mathsat.msat_make_and(self.msat_env, li, ri)
+        return mathsat.msat_make_iff(self.msat_env, args[0], args[1])
 
     def walk_implies(self, formula, args):
-        assert len(args) == 2
         neg = self.walk_not(self.mgr.Not(formula.arg(0)), [args[0]])
         return mathsat.msat_make_or(self.msat_env, neg, args[1])
 
@@ -563,7 +545,6 @@ class MSatConverter(Converter, DagWalker):
         return mathsat.msat_make_uf(self.msat_env, decl, args)
 
     def walk_toreal(self, formula, args):
-        assert len(args) == 1
         # In mathsat toreal is implicit
         return args[0]
 
