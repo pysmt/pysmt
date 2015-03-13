@@ -92,7 +92,7 @@ class TestFormulaManager(TestCase):
         n = self.mgr.And(self.x, self.y)
         self.assertIsNotNone(n)
         self.assertTrue(n.is_and())
-        self.assertEquals(n.get_dependencies(), set([self.x, self.y]))
+        self.assertEquals(n.get_free_variables(), set([self.x, self.y]))
 
         m = self.mgr.And([self.x, self.y])
         self.assertEquals(m, n, "And(1,2) != And([1,2]")
@@ -112,7 +112,7 @@ class TestFormulaManager(TestCase):
         n = self.mgr.Or(self.x, self.y)
         self.assertIsNotNone(n)
         self.assertTrue(n.is_or())
-        self.assertEquals(n.get_dependencies(), set([self.x, self.y]))
+        self.assertEquals(n.get_free_variables(), set([self.x, self.y]))
 
         m = self.mgr.Or([self.x, self.y])
         self.assertEquals(m, n, "Or(1,2) != Or([1,2]")
@@ -134,7 +134,7 @@ class TestFormulaManager(TestCase):
         self.assertIsNotNone(n)
 
         self.assertTrue(n.is_not())
-        self.assertEquals(n.get_dependencies(), set([self.x]))
+        self.assertEquals(n.get_free_variables(), set([self.x]))
 
         sons = n.get_sons()
         self.assertIn(self.x, sons)
@@ -145,7 +145,7 @@ class TestFormulaManager(TestCase):
         self.assertIsNotNone(n)
 
         self.assertTrue(n.is_implies())
-        self.assertEquals(n.get_dependencies(), set([self.x, self.y]))
+        self.assertEquals(n.get_free_variables(), set([self.x, self.y]))
 
         sons = n.get_sons()
         self.assertEqual(self.x, sons[0])
@@ -157,7 +157,7 @@ class TestFormulaManager(TestCase):
         self.assertIsNotNone(n)
 
         self.assertTrue(n.is_iff())
-        self.assertEquals(n.get_dependencies(), set([self.x, self.y]))
+        self.assertEquals(n.get_free_variables(), set([self.x, self.y]))
 
         sons = n.get_sons()
         self.assertIn(self.x, sons)
@@ -217,7 +217,7 @@ class TestFormulaManager(TestCase):
         self.assertIsNotNone(n)
 
         self.assertTrue(n.is_minus())
-        self.assertEquals(n.get_dependencies(), set([self.p, self.q]))
+        self.assertEquals(n.get_free_variables(), set([self.p, self.q]))
 
         with self.assertRaises(TypeError):
             n = self.mgr.Minus(self.r, self.q)
@@ -241,7 +241,7 @@ class TestFormulaManager(TestCase):
         n = self.mgr.Times(self.r, self.s)
         self.assertIsNotNone(n)
         self.assertTrue(n.is_times())
-        self.assertEquals(n.get_dependencies(), set([self.r, self.s]))
+        self.assertEquals(n.get_free_variables(), set([self.r, self.s]))
 
         n = self.mgr.Times(self.iconst, self.q)
         self.assertIsNotNone(n)
@@ -282,7 +282,7 @@ class TestFormulaManager(TestCase):
         self.assertIsNotNone(n)
 
         self.assertTrue(n.is_equals())
-        self.assertEquals(n.get_dependencies(), set([self.p, self.q]))
+        self.assertEquals(n.get_free_variables(), set([self.p, self.q]))
 
         with self.assertRaises(TypeError):
             n = self.mgr.Equals(self.p, self.r)
@@ -337,7 +337,7 @@ class TestFormulaManager(TestCase):
         self.assertIsNotNone(n)
 
         self.assertTrue(n.is_le())
-        self.assertEquals(n.get_dependencies(), set([self.r, self.s]))
+        self.assertEquals(n.get_free_variables(), set([self.r, self.s]))
 
         sons = n.get_sons()
         self.assertIn(self.r, sons)
@@ -364,7 +364,7 @@ class TestFormulaManager(TestCase):
         self.assertIsNotNone(n)
 
         self.assertTrue(n.is_lt())
-        self.assertEquals(n.get_dependencies(), set([self.r, self.s]))
+        self.assertEquals(n.get_free_variables(), set([self.r, self.s]))
 
         sons = n.get_sons()
         self.assertIn(self.r, sons)
@@ -387,7 +387,7 @@ class TestFormulaManager(TestCase):
         self.assertIsNotNone(n)
 
         self.assertTrue(n.is_ite())
-        self.assertEquals(n.get_dependencies(), set([self.x, self.p, self.q]))
+        self.assertEquals(n.get_free_variables(), set([self.x, self.p, self.q]))
 
         with self.assertRaises(TypeError):
             self.mgr.Ite(self.x, self.p, self.r)
@@ -403,7 +403,7 @@ class TestFormulaManager(TestCase):
         self.assertEqual(len(sons), 2)
 
         self.assertTrue(n.is_function_application())
-        self.assertEquals(n.get_dependencies(), set([self.f, self.r, self.s]))
+        self.assertEquals(n.get_free_variables(), set([self.f, self.r, self.s]))
 
 
     def test_constant(self):
@@ -464,7 +464,7 @@ class TestFormulaManager(TestCase):
         self.assertEqual(n1, n2, "Constructed Plus expression do not match")
 
         self.assertTrue(n1.is_plus())
-        self.assertEquals(set([self.r, self.s]), n1.get_dependencies())
+        self.assertEquals(set([self.r, self.s]), n1.get_free_variables())
 
         one = self.mgr.Plus([self.p])
         self.assertEquals(one, self.p)
@@ -613,7 +613,7 @@ class TestFormulaManager(TestCase):
         self.assertEquals(f1, f2)
 
         self.assertTrue(f1.is_toreal())
-        self.assertEquals(set([self.p]), f1.get_dependencies())
+        self.assertEquals(set([self.p]), f1.get_free_variables())
 
         f3 = self.mgr.Equals(self.iconst, self.p)
         with self.assertRaises(TypeError):

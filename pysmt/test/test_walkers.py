@@ -181,12 +181,12 @@ class TestWalkers(TestCase):
         phi_sub = substitute(phi, {r: Real(0), i: Int(0)}).simplify()
         self.assertEquals(phi_sub, Function(f, [Int(1), Real(-2)]))
 
-    def test_iterative_get_dependencies(self):
+    def test_iterative_get_free_variables(self):
         f = Symbol("x")
         for _ in xrange(1000):
             f = And(f, f)
 
-        cone = f.get_dependencies()
+        cone = f.get_free_variables()
         self.assertEqual(cone, set([Symbol("x")]))
 
 
