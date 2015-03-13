@@ -26,6 +26,8 @@ from pysmt.walkers import TreeWalker, DagWalker, IdentityDagWalker
 from pysmt.test import TestCase
 from pysmt.formula import FormulaManager
 
+
+
 class TestWalkers(TestCase):
 
     def test_subst(self):
@@ -179,6 +181,13 @@ class TestWalkers(TestCase):
         phi_sub = substitute(phi, {r: Real(0), i: Int(0)}).simplify()
         self.assertEquals(phi_sub, Function(f, [Int(1), Real(-2)]))
 
+    def test_iterative_get_dependencies(self):
+        f = Symbol("x")
+        for _ in xrange(1000):
+            f = And(f, f)
+
+        cone = f.get_dependencies()
+        self.assertEqual(cone, set([Symbol("x")]))
 
 
 if __name__ == '__main__':

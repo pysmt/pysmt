@@ -20,6 +20,7 @@ properties of formulae.
 
  * QuantifierOracle says whether a formula is quantifier free
  * TheoryOracle says which logic is used in the formula.
+ * FreeVarsOracle says which variables are free in the formula
 """
 
 import pysmt.walkers as walkers
@@ -168,9 +169,72 @@ class TheoryOracle(walkers.DagWalker):
         """Returns the thoery for the formula."""
         return self.walk(formula)
 
-
 # EOC TheoryOracle
 
+
+# Operators for which Args is an FNode
+DEPENDENCIES_SIMPLE_ARGS = (set(op.ALL_TYPES) - \
+                           (set([op.SYMBOL, op.FUNCTION]) | op.QUANTIFIERS | op.CONSTANTS))
+
+class FreeVarsOracle(pysmt.walkers.DagWalker):
+    def __init__(self, env=None):
+        pysmt.walkers.DagWalker.__init__(self, env=env)
+
+        # Clear the mapping function
+        self.functions.clear()
+
+        # We have only few categories for this walker.
+        #
+        # - Simple Args simply need to combine the cone/dependencies
+        #   of the children.
+        # - Quantifiers need to exclude bounded variables
+        # - Constants have no impact
+        #
+        for elem in op.ALL_TYPES:
+            if elem in DEPENDENCIES_SIMPLE_ARGS:
+                self.functions[elem] = self.walk_simple_args
+            elif elem in op.QUANTIFIERS:
+                self.functions[elem] = self.walk_quantifier
+            elif elem in op.CONSTANTS:
+                self.functions[elem] = self.walk_constant
+            else:
+                self.functions[elem] = self.walk_error
+
+        # These are the only 2 cases that can introduce elements.
+        self.functions[op.SYMBOL] = self.walk_symbol
+        self.functions[op.FUNCTION] = self.walk_function
+
+        # Check that no operator in undefined
+        assert self.is_complete(verbose=True)
+
+
+    def get_free_variables(self, formula):
+        """Returns the set of Symbols appearing free in the formula."""
+        return self.walk(formula)
+
+    def walk_simple_args(self, formula, args):
+        res = set()
+        for arg in args:
+            res.update(arg)
+        return frozenset(res)
+
+    def walk_quantifier(self, formula, args):
+        return args[0].difference(formula._content.payload)
+
+    def walk_symbol(self, formula, args):
+        return frozenset([formula])
+
+    def walk_constant(self, formula, args):
+        return frozenset()
+
+    def walk_function(self, formula, args):
+        # MG: Do we need to create a list?
+        res = set([formula._content.payload])
+        for arg in args:
+            res.update(arg)
+        return frozenset(res)
+
+# EOC FreeVarsOracle
 
 def get_logic(formula, env=None):
     if env is None:

@@ -81,6 +81,10 @@ def serialize(formula, threshold=None):
     return get_env().serializer.serialize(formula,
                                           threshold=threshold)
 
+def get_free_variables(formula):
+    """Returns the simplified version of the formula."""
+    return get_env().fvo.get_free_variables(formula)
+
 ##### Nodes Creation #####
 
 def ForAll(variables, formula):
