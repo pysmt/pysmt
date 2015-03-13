@@ -27,17 +27,17 @@ env:
     - PYSMT_SOLVER="cvc4"  PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/CVC4_bin/share/pyshared:$TRAVIS_BUILD_DIR/.smt_solvers/CVC4_bin/lib/pyshared"
     - PYSMT_SOLVER="yices" PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/pyices-aa0b91c39aa00c19c2160e83aad822dc468ce328/build/lib.linux-x86_64-2.7"
     - PYSMT_SOLVER="cudd"  PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/pycudd2.0.2/pycudd"
-
-matrix:
-  include:
-    - env: PYSMT_SOLVER="None"
-      python: 2.6
-    - env: PYSMT_SOLVER="None"
-      python: 3.3
-    - env: PYSMT_SOLVER="None"
-      python: 3.4
-    - env: PYSMT_SOLVER="None"
-      python: pypy
+    - PYSMT_SOLVER="picosat"  PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/picosat-960:$TRAVIS_BUILD_DIR/.smt_solvers/picosat-960/build/lib.linux-x86_64-2.7"
+# matrix:
+#   include:
+#     - env: PYSMT_SOLVER="None"
+#       python: 2.6
+#     - env: PYSMT_SOLVER="None"
+#       python: 3.3
+#     - env: PYSMT_SOLVER="None"
+#       python: 3.4
+#     - env: PYSMT_SOLVER="None"
+#       python: pypy
 
 # Make folders for the reports
 before_script:
