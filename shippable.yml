@@ -52,15 +52,11 @@ matrix:
       env: PYSMT_SOLVER="msat"
     - python: 3.3
       env: PYSMT_SOLVER="picosat"
-    - python: 3.3
-      env: PYSMT_SOLVER="cudd"
 
     - python: 3.4
       env: PYSMT_SOLVER="msat"
     - python: 3.4
       env: PYSMT_SOLVER="picosat"
-    - python: 3.4
-      env: PYSMT_SOLVER="cudd"
 
 
 # Make folders for the reports
