@@ -25,6 +25,7 @@ from pysmt.solvers.eager import EagerModel
 from pysmt.cnf import CNFizer
 from pysmt.decorators import clear_pending_pop
 
+from six.moves import xrange
 
 class PicosatSolver(Solver):
     """PicoSAT solver"""
