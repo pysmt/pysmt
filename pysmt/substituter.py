@@ -80,7 +80,7 @@ class Substituter(walkers.DagWalker):
                 # we do not consider this substitution in the body of
                 # the quantifier.
                 if all(m not in formula.quantifier_vars()
-                       for m in k.get_dependencies()):
+                       for m in k.get_free_variables()):
                     new_subs[k] = v
 
             # 2. We apply the substitution on the quantifier body with

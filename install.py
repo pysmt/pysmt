@@ -70,7 +70,12 @@ def get_pyices_download_link(git_version):
 def get_pycudd_download_link(archive_name):
     if mirror is not None:
         return mirror + "/" + archive_name
-    return"http://bears.ece.ucsb.edu/ftp/pub/pycudd2.0/%s" % archive_name
+    return "http://bears.ece.ucsb.edu/ftp/pub/pycudd2.0/%s" % archive_name
+
+def get_picosat_download_link(archive_name):
+    if mirror is not None:
+        return mirror + "/" + archive_name
+    return "http://fmv.jku.at/picosat/%s" % archive_name
 
 
 ################################################################################
@@ -353,6 +358,38 @@ def install_pycudd(options):
     # Save the paths
     PATHS.append("%s/pycudd" % dir_path)
 
+
+
+def install_picosat(options):
+    """Installer for the CUDD library python interafce"""
+
+    base_name =  "picosat-960"
+    archive_name = "%s.tar.gz" % base_name
+    archive = os.path.join(BASE_DIR, archive_name)
+    dir_path = os.path.join(BASE_DIR, base_name)
+
+    # Download picosat if needed
+    if not os.path.exists(archive):
+        download(get_picosat_download_link(archive_name), archive)
+
+    # clear the destination directory, if any
+    if os.path.exists(dir_path):
+        os.system("rm -rf %s" % dir_path)
+
+    # Extract the picosat distribution
+    untar(archive, BASE_DIR)
+
+    # patch the distribution
+    os.system("cd %s; patch -p1 -i %s/patches/picosat.patch" % (dir_path, CWD))
+
+    # Build picosat
+    os.system("cd %s; bash configure; make; python setup.py build" % dir_path)
+
+    # Save the paths
+    PATHS.append("%s" % dir_path)
+    PATHS.append("%s/build/lib.linux-%s-%s" % (dir_path, get_architecture(), get_python_version()))
+
+
 def check_install():
     """Checks which solvers are visible to pySMT."""
 
@@ -367,14 +404,14 @@ def check_install():
         required_solver = "bdd"
 
 
-    for solver in ['msat', 'z3', 'cvc4', 'yices', 'bdd']:
+    for solver in ['msat', 'z3', 'cvc4', 'yices', 'bdd', 'picosat']:
         is_installed = False
         try:
             Solver(name=solver)
             is_installed = True
         except NoSolverAvailableError:
             is_installed = False
-        print("%s: \t %s" % (solver, is_installed))
+        print("%s%s" % (solver.ljust(10), is_installed))
 
         if solver == required_solver and not is_installed:
             raise Exception("Was expecting to find %s installed" % required_solver)
@@ -392,6 +429,9 @@ def parse_options():
                         default=False, help='Install Yices')
     parser.add_argument('--cudd', dest='cudd', action='store_true',
                         default=False, help='Install CUDD (pycudd)')
+    parser.add_argument('--picosat', dest='picosat', action='store_true',
+                        default=False, help='Install PicoSAT')
+
     parser.add_argument('--make-j', dest='make_j', metavar='N',
                         type=int, default=1,
                         help='Define paralellism for make (Default: 1)')
@@ -461,13 +501,16 @@ def main():
     if options.cudd:
         install_pycudd(options)
 
+    if options.picosat:
+        install_picosat(options)
+
     print("\n")
     print("*" * 80)
     print("Add the following to your .bashrc file or to your environment:")
     print("export PYTHONPATH=\"$PYTHONPATH:"+ ":".join(PATHS) + "\"")
 
     with open(os.path.join(BASE_DIR, "set_paths.sh"), "a") as fout:
-        fout.write("export PYTHONPATH=\"$PYTHONPATH:"+ ":".join(PATHS) + "\"")
+        fout.write("export PYTHONPATH=\"$PYTHONPATH:"+ ":".join(PATHS) + "\"\n")
 
 
 if __name__ == "__main__":

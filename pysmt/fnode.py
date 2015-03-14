@@ -16,11 +16,10 @@
 #   limitations under the License.
 #
 """FNode are the building blocks of formulae."""
-
 import collections
 
 import pysmt.shortcuts
-from pysmt.operators import ALL_TYPES, QUANTIFIERS, CONSTANTS
+from pysmt.operators import CONSTANTS
 from pysmt.operators import (FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF,
                              SYMBOL, FUNCTION,
                              REAL_CONSTANT, BOOL_CONSTANT, INT_CONSTANT,
@@ -29,14 +28,10 @@ from pysmt.operators import (FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF,
                              ITE,
                              TOREAL)
 from pysmt.typing import BOOL, REAL, INT, PYSMT_TYPES
+from pysmt.decorators import deprecated
 
 FNodeContent = collections.namedtuple("FNodeContent",
                                       ["node_type", "args", "payload"])
-
-# Operators for which Args is an FNode (used by compute_dependencies
-DEPENDENCIES_SIMPLE_ARGS = (set(ALL_TYPES) - \
-                            (set([SYMBOL, FUNCTION]) | QUANTIFIERS | CONSTANTS))
-
 
 class FNode(object):
     r"""FNode represent the basic structure for representing a formula.
@@ -55,7 +50,6 @@ class FNode(object):
 
     def __init__(self, content):
         self._content = content
-        self._dependencies = None
         return
 
     # __eq__ and __hash__ are left as default
@@ -70,42 +64,15 @@ class FNode(object):
     def arg(self, idx):
         return self._content.args[idx]
 
-
+    @deprecated("get_free_variables")
     def get_dependencies(self):
-        if self._dependencies is None:
-            self._dependencies = self._compute_dependencies()
-        return self._dependencies
+        return self.get_free_variables()
 
-    def _compute_dependencies(self):
-        if self.node_type() in DEPENDENCIES_SIMPLE_ARGS:
-            res = set()
-            for s in self.get_sons():
-                res.update(s.get_dependencies())
-            return res
-
-        elif self.node_type() in QUANTIFIERS:
-            return self.arg(0).get_dependencies().difference(self._content.payload)
-
-        elif self.node_type() == SYMBOL:
-            return frozenset([self])
-
-        elif self.node_type() in CONSTANTS:
-            return frozenset()
-
-        elif self.node_type() == FUNCTION:
-            res = set([self._content.payload])
-            for p in self.args():
-                res.update(p.get_dependencies())
-            return res
-
-        else:
-            assert False
-        return
-
+    def get_free_variables(self):
+        return pysmt.shortcuts.get_free_variables(self)
 
     def get_sons(self):
         return self.args()
-
 
     def simplify(self):
         return pysmt.shortcuts.simplify(self)

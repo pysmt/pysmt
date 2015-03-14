@@ -106,6 +106,7 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
 class SmtLibScript(object):
 
     def __init__(self):
+        self.annotations = None
         self.commands = []
 
     def add(self, name, args):
@@ -139,8 +140,8 @@ class SmtLibScript(object):
         assert self.count_command_occurrences(smtcmd.CHECK_SAT) == 1
         _And = mgr.And if mgr else And
 
-        assertions = (cmd.args
-                      for cmd in self.filter_by_command_name([smtcmd.ASSERT]))
+        assertions = [cmd.args[0]
+                      for cmd in self.filter_by_command_name([smtcmd.ASSERT])]
         return _And(assertions)
 
     def get_last_formula(self, mgr=None):
@@ -200,7 +201,7 @@ def smtlibscript_from_formula(formula):
     script.add(name=smtcmd.SET_LOGIC,
                args=[UFLIRA])
 
-    deps = formula.get_dependencies()
+    deps = formula.get_free_variables()
     # Declare all variables
     for symbol in deps:
         assert symbol.is_symbol()

@@ -23,7 +23,6 @@ from pysmt.shortcuts import Symbol, FreshSymbol, And, Not, GT, Function, Plus
 from pysmt.shortcuts import Bool, TRUE, Real, LE, FALSE, Or, Equals
 from pysmt.shortcuts import Solver
 from pysmt.shortcuts import is_sat, is_valid, get_env, get_model
-from pysmt.shortcuts import get_env
 from pysmt.typing import BOOL, REAL, FunctionType
 from pysmt.test import TestCase, skipIfSolverNotAvailable, skipIfNoSolverForLogic
 from pysmt.test.examples import get_example_formulae
@@ -180,7 +179,7 @@ class TestBasic(TestCase):
 
                     # Ask single values to the solver
                     subs = {}
-                    for d in f.get_dependencies():
+                    for d in f.get_free_variables():
                         m = s.get_value(d)
                         subs[d] = m
 
@@ -190,7 +189,7 @@ class TestBasic(TestCase):
                     # Ask the eager model
                     subs = {}
                     model = s.get_model()
-                    for d in f.get_dependencies():
+                    for d in f.get_free_variables():
                         m = model.get_value(d)
                         subs[d] = m
 

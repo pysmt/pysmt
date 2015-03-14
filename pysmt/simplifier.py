@@ -248,7 +248,7 @@ class Simplifier(walkers.DagWalker):
         assert len(args) == 1
         sf = args[0]
 
-        varset = set(formula.quantifier_vars()).intersection(sf.get_dependencies())
+        varset = set(formula.quantifier_vars()).intersection(sf.get_free_variables())
 
         if len(varset) == 0:
             return sf
@@ -260,7 +260,7 @@ class Simplifier(walkers.DagWalker):
         assert len(args) == 1
         sf = args[0]
 
-        varset = set(formula.quantifier_vars()).intersection(sf.get_dependencies())
+        varset = set(formula.quantifier_vars()).intersection(sf.get_free_variables())
 
         if len(varset) == 0:
             return sf

@@ -72,7 +72,7 @@ class SmtLibSolver(Solver):
         return
 
     def add_assertion(self, formula, named=None):
-        deps = formula.get_dependencies()
+        deps = formula.get_free_variables()
         for d in deps:
             if d not in self.declared_vars:
                 self._declare_variable(d)

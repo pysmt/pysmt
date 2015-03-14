@@ -173,7 +173,7 @@ class SmtDagPrinter(DagWalker):
     def printer(self, f):
         self.openings = 0
         self.name_seed = 0
-        self.names = set(x.symbol_name() for x in f.get_dependencies())
+        self.names = set(x.symbol_name() for x in f.get_free_variables())
 
         key = self.walk(f)
         self.write(key)

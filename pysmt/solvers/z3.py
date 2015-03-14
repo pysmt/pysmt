@@ -200,51 +200,42 @@ class Z3Converter(Converter, DagWalker):
             res = self.mgr.Plus(args)
 
         elif z3.is_div(expr):
-            assert len(args) == 2
             res = self.mgr.Div(args[0], args[1])
 
         elif z3.is_eq(expr):
-            assert len(args) == 2
-            res = self.mgr.Equals(args[0], args[1])
+            if self._get_type(args[0]) == types.BOOL:
+                res = self.mgr.Iff(args[0], args[1])
+            else:
+                res = self.mgr.Equals(args[0], args[1])
 
         elif z3.is_false(expr):
-            assert len(args) == 0
             res = self.mgr.FALSE()
 
         elif z3.is_true(expr):
-            assert len(args) == 0
             res = self.mgr.TRUE()
 
         elif z3.is_gt(expr):
-            assert len(args) == 2
             res = self.mgr.GT(args[0], args[1])
 
         elif z3.is_ge(expr):
-            assert len(args) == 2
             res = self.mgr.GE(args[0], args[1])
 
         elif z3.is_lt(expr):
-            assert len(args) == 2
             res = self.mgr.LT(args[0], args[1])
 
         elif z3.is_le(expr):
-            assert len(args) == 2
             res = self.mgr.LE(args[0], args[1])
 
         elif z3.is_mul(expr):
-            assert len(args) == 2
             res = self.mgr.Times(args[0], args[1])
 
         elif z3.is_sub(expr):
-            assert len(args) == 2
             res = self.mgr.Minus(args[0], args[1])
 
         elif z3.is_not(expr):
-            assert len(args) == 1
             res = self.mgr.Not(args[0])
 
         elif z3.is_quantifier(expr):
-            assert len(args) == 2
             if expr.is_forall():
                 pass
             else:
@@ -266,7 +257,6 @@ class Z3Converter(Converter, DagWalker):
 
 
         elif z3.is_ite(expr):
-            assert len(args) == 3
             res = self.mgr.Ite(args[0], args[1], args[2])
 
         else:
@@ -287,11 +277,9 @@ class Z3Converter(Converter, DagWalker):
         return z3.Or(*args)
 
     def walk_not(self, formula, args):
-        assert len(args) == 1
         return z3.Not(args[0])
 
     def walk_symbol(self, formula, args):
-        assert len(args) == 0
         symbol_type = formula.symbol_type()
         if symbol_type == types.BOOL:
             res = z3.Bool(formula.symbol_name())
@@ -304,24 +292,18 @@ class Z3Converter(Converter, DagWalker):
         return res
 
     def walk_iff(self, formula, args):
-        assert len(args) == 2
-        return z3.And(z3.Implies(args[0], args[1]),
-                      z3.Implies(args[1], args[0]))
+        return (args[0] == args[1])
 
     def walk_implies(self, formula, args):
-        assert len(args) == 2
         return z3.Implies(*args)
 
     def walk_le(self, formula, args):
-        assert len(args) == 2
         return (args[0] <= args[1])
 
     def walk_lt(self, formula, args):
-        assert len(args) == 2
         return (args[0] < args[1])
 
     def walk_ite(self, formula, args):
-        assert len(args) == 3
         i = args[0]
         t = args[1]
         e = args[2]
@@ -332,53 +314,42 @@ class Z3Converter(Converter, DagWalker):
             return z3.If(i, t, e)
 
     def walk_real_constant(self, formula, args):
-        assert len(args) == 0
-        assert type(formula.constant_value()) == Fraction
         frac = formula.constant_value()
         n,d = frac.numerator, frac.denominator
         rep = str(n) + "/" + str(d)
         return z3.RealVal(rep)
 
     def walk_int_constant(self, formula, args):
-        assert len(args) == 0
         assert type(formula.constant_value()) == int or \
             type(formula.constant_value()) == long
         return z3.IntVal(formula.constant_value())
 
     def walk_bool_constant(self, formula, args):
-        assert len(args) == 0
         return z3.BoolVal(formula.constant_value())
 
     def walk_exists(self, formula, args):
-        assert len(args) == 1
         return z3.Exists([self.walk_symbol(x, [])
                           for x in formula.quantifier_vars()],
                          args[0])
 
     def walk_forall(self, formula, args):
-        assert len(args) == 1
         return z3.ForAll([self.walk_symbol(x, [])
                           for x in formula.quantifier_vars()],
                          args[0])
 
     def walk_plus(self, formula, args):
-        assert len(args) >= 2
         return z3.Sum(*args)
 
     def walk_minus(self, formula, args):
-        assert len(args) == 2
         return (args[0] - args[1])
 
     def walk_equals(self, formula, args):
-        assert len(args) == 2
         return (args[0] == args[1])
 
     def walk_times(self, formula, args):
-        assert len(args) == 2
         return (args[0] * args[1])
 
     def walk_toreal(self, formula, args):
-        assert len(args) == 1
         return z3.ToReal(args[0])
 
     def walk_function(self, formula, args):

@@ -32,7 +32,7 @@ from pysmt.logics import AUTO as AUTO_LOGIC
 from pysmt.logics import most_generic_logic, get_closer_logic
 from pysmt.oracles import get_logic
 
-DEFAULT_SOLVER_PREFERENCE_LIST = ['msat', 'z3', 'cvc4', 'yices', 'bdd']
+DEFAULT_SOLVER_PREFERENCE_LIST = ['msat', 'z3', 'cvc4', 'yices', 'picosat', 'bdd']
 DEFAULT_QELIM_PREFERENCE_LIST = ['z3']
 DEFAULT_LOGIC = QF_UFLIRA
 
@@ -183,6 +183,14 @@ class Factory(object):
         try:
             from pysmt.solvers.bdd import BddSolver
             self._all_solvers['bdd'] = BddSolver
+
+        except ImportError:
+            pass
+
+
+        try:
+            from pysmt.solvers.pico import PicosatSolver
+            self._all_solvers['picosat'] = PicosatSolver
 
         except ImportError:
             pass

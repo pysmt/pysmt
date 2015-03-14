@@ -40,4 +40,13 @@ then
     ./install.py --confirm-agreement --cudd  --make-j 2
 fi
 
+
+if [ "$1" == "picosat" ]
+then
+    apt-get update
+    apt-get install -y make build-essential swig
+    apt-get install -y python-all-dev
+    ./install.py --confirm-agreement --picosat
+fi
+
 echo "Exiting..."
