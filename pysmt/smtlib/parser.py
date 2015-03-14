@@ -69,6 +69,22 @@ def get_formula_fname(script_fname, environment=None, strict=True):
     """
     Returns the formula asserted at the end of the given script
     """
+    if PY2:
+        with io.BufferedReader(io.FileIO(script_fname, 'r')) as script:
+            if strict:
+                return get_formula_strict(script, environment)
+            else:
+                return get_formula(script, environment)
+    else:
+        with io.TextIOWrapper(open(script_fname, 'rb')) as script:
+            if strict:
+                return get_formula_strict(script, environment)
+            else:
+                return get_formula(script, environment)
+
+
+
+
     with io.BufferedReader(open(script_fname, 'rt')) as script:
         if strict:
             return get_formula_strict(script, environment)
