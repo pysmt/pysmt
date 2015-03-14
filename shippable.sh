@@ -49,4 +49,5 @@ then
     ./install.py --confirm-agreement --picosat
 fi
 
+echo "All done for '$1'..."
 echo "Exiting..."

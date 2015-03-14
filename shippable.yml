@@ -32,12 +32,12 @@ env:
     - secure: IzzUEuWb2+h3gzttT0237NDkptzu4UvPN1okinDgm4Rx0uADXVWJy6gvcWaeL8F6tl8KGkpcFvzGHmwj7RGGRk8AAj+OVf+VilSlWwNe1g8SYHwxOPrTgD4ECX3860hleeI3F2DD+yFIo9Hgw3ZiHBsfbombtFGTB5WWwUgezXsENMKuNJ580MN8+c3I4IV44pSXJ179GluJ3O1e/xUkwJ5/nvysWd4q7wqJ6aIz5ZFMFhs/FKAbeEdtmmGODn2FspGJ+iKVyc0IbQpzLJO1MeizBXnGZfN9Ojv7mkPJcgzqFMjvLnpCJAEmZl3BzJFc0j9xxILvrrjHU/TKrlJkSw==
     - secure: nuGI4WDZOFDezaSxQUKyOP19iqRmQSASv5tpCCsryQ3AtI3in/1dYndDUwmzGYfoVkHTOsf6n4O3XEAruktPpVZzLSlek9zcr8v0IERTfzhoGCWRqqYDrDoCU6Hc2WYyGOhGGEzfldsY1EVMx5+LsVz0JoVZFe75CO6oWvuEYVYRmeJYzKQWLuXXwQMkfYulX1ouF1b5JCdeepbUfwcf4o34RPrd6eLoL7Y1RT4SBsR0uX4lpnWvUB2qqoyOEvu/hXt9Zft57tW4OY2GUdlRlj/Hx/5fPIFGYJmsGu7BM/+Q1cLgZnyyH0mxaHtBkjt8ecMwUc/9PbNJ2alZDmIMyw==
   matrix:
-    - PYSMT_SOLVER="msat"  PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.2.12-linux-x86_64/python:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.2.12-linux-x86_64/python/build/lib.linux-x86_64-$TRAVIS_PYTHON_VERSION"
-    - PYSMT_SOLVER="z3"    PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/z3_bin/lib/python2.7/dist-packages"
+    - PYSMT_SOLVER="msat"     PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.2.12-linux-x86_64/python:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.2.12-linux-x86_64/python/build/lib.linux-x86_64-$TRAVIS_PYTHON_VERSION"
+    - PYSMT_SOLVER="z3"       PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/z3_bin/lib/python2.7/dist-packages"
     # We use a different path for binary CVC4 to keep the pkg that we need to download small
-    - PYSMT_SOLVER="cvc4"  PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/CVC4_bin/share/pyshared:$TRAVIS_BUILD_DIR/.smt_solvers/CVC4_bin/lib/pyshared"
-    - PYSMT_SOLVER="yices" PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/pyices-aa0b91c39aa00c19c2160e83aad822dc468ce328/build/lib.linux-x86_64-2.7"
-    - PYSMT_SOLVER="cudd"  PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/pycudd2.0.2/pycudd"
+    - PYSMT_SOLVER="cvc4"     PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/CVC4_bin/share/pyshared:$TRAVIS_BUILD_DIR/.smt_solvers/CVC4_bin/lib/pyshared"
+    - PYSMT_SOLVER="yices"    PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/pyices-aa0b91c39aa00c19c2160e83aad822dc468ce328/build/lib.linux-x86_64-2.7"
+    - PYSMT_SOLVER="cudd"     PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/pycudd2.0.2/pycudd"
     - PYSMT_SOLVER="picosat"  PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/picosat-960:$TRAVIS_BUILD_DIR/.smt_solvers/picosat-960/build/lib.linux-x86_64-$TRAVIS_PYTHON_VERSION"
 
 matrix:
@@ -48,17 +48,17 @@ matrix:
       python: 3.4
     - env: PYSMT_SOLVER="None"
       python: pypy
-    - env: PYSMT_SOLVER="msat"  PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.2.12-linux-x86_64/python:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.2.12-linux-x86_64/python/build/lib.linux-x86_64-$TRAVIS_PYTHON_VERSION"
+    - env: PYSMT_SOLVER="msat"     PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.2.12-linux-x86_64/python:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.2.12-linux-x86_64/python/build/lib.linux-x86_64-$TRAVIS_PYTHON_VERSION"
       python: 3.3
     - env: PYSMT_SOLVER="picosat"  PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/picosat-960:$TRAVIS_BUILD_DIR/.smt_solvers/picosat-960/build/lib.linux-x86_64-$TRAVIS_PYTHON_VERSION"
       python: 3.3
-    - env: PYSMT_SOLVER="cudd"  PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/pycudd2.0.2/pycudd"
-      python: 3.3
-    - env: PYSMT_SOLVER="msat"  PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.2.12-linux-x86_64/python:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.2.12-linux-x86_64/python/build/lib.linux-x86_64-$TRAVIS_PYTHON_VERSION"
+    - env: PYSMT_SOLVER="cudd"     PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/pycudd2.0.2/pycudd"
+      python: 3.4
+    - env: PYSMT_SOLVER="msat"     PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.2.12-linux-x86_64/python:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.2.12-linux-x86_64/python/build/lib.linux-x86_64-$TRAVIS_PYTHON_VERSION"
       python: 3.4
     - env: PYSMT_SOLVER="picosat"  PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/picosat-960:$TRAVIS_BUILD_DIR/.smt_solvers/picosat-960/build/lib.linux-x86_64-$TRAVIS_PYTHON_VERSION"
       python: 3.4
-    - env: PYSMT_SOLVER="cudd"  PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/pycudd2.0.2/pycudd"
+    - env: PYSMT_SOLVER="cudd"     PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/pycudd2.0.2/pycudd"
       python: 3.4
 
 # Make folders for the reports
