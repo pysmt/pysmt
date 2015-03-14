@@ -53,30 +53,27 @@ matrix:
         - PYSMT_SOLVER="None"
 
     - python: 3.3
-      env:
-        - PYSMT_SOLVER="msat"
-        - PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.2.12-linux-x86_64/python:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.2.12-linux-x86_64/python/build/lib.linux-x86_64-$TRAVIS_PYTHON_VERSION"
-    - python: 3.3
-      env:
-        - PYSMT_SOLVER="picosat"
-        - PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/picosat-960:$TRAVIS_BUILD_DIR/.smt_solvers/picosat-960/build/lib.linux-x86_64-$TRAVIS_PYTHON_VERSION"
-    - python: 3.3
-      env:
-        - PYSMT_SOLVER="cudd"
-        - PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/pycudd2.0.2/pycudd"
-
-    - python: 3.4
-      env:
-        - PYSMT_SOLVER="msat"
-        - PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.2.12-linux-x86_64/python:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.2.12-linux-x86_64/python/build/lib.linux-x86_64-$TRAVIS_PYTHON_VERSION"
-    - python: 3.4
-      env:
-        - PYSMT_SOLVER="picosat"
-        - PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/picosat-960:$TRAVIS_BUILD_DIR/.smt_solvers/picosat-960/build/lib.linux-x86_64-$TRAVIS_PYTHON_VERSION"
-    - python: 3.4
-      env:
-        - PYSMT_SOLVER="cudd"
-        - PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/pycudd2.0.2/pycudd"
+      env: PYSMT_SOLVER="msat";PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.2.12-linux-x86_64/python:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.2.12-linux-x86_64/python/build/lib.linux-x86_64-$TRAVIS_PYTHON_VERSION"
+    # - python: 3.3
+    #   env:
+    #     - PYSMT_SOLVER="picosat"
+    #     - PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/picosat-960:$TRAVIS_BUILD_DIR/.smt_solvers/picosat-960/build/lib.linux-x86_64-$TRAVIS_PYTHON_VERSION"
+    # - python: 3.3
+    #   env:
+    #     - PYSMT_SOLVER="cudd"
+    #     - PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/pycudd2.0.2/pycudd"
+    # - python: 3.4
+    #   env:
+    #     - PYSMT_SOLVER="msat"
+    #     - PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.2.12-linux-x86_64/python:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.2.12-linux-x86_64/python/build/lib.linux-x86_64-$TRAVIS_PYTHON_VERSION"
+    # - python: 3.4
+    #   env:
+    #     - PYSMT_SOLVER="picosat"
+    #     - PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/picosat-960:$TRAVIS_BUILD_DIR/.smt_solvers/picosat-960/build/lib.linux-x86_64-$TRAVIS_PYTHON_VERSION"
+    # - python: 3.4
+    #   env:
+    #     - PYSMT_SOLVER="cudd"
+    #     - PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/pycudd2.0.2/pycudd"
 
 
 # Make folders for the reports
