@@ -24,9 +24,20 @@ import argparse
 
 ################################################################################
 # Base variables
+def update_cwd(value):
+    """Allows to define the CWD from outside the module.
 
-CWD = os.path.dirname(os.path.abspath(__file__))
-BASE_DIR = os.path.join(CWD, ".smt_solvers")
+    Call update_cwd before calling the main().
+    """
+    global CWD, BASE_DIR
+    CWD = value
+    BASE_DIR = os.path.join(CWD, ".smt_solvers")
+
+CWD = None
+BASE_DIR = None
+update_cwd(os.path.dirname(os.path.abspath(__file__)))
+
+
 PATHS = []
 
 # Address of a mirror website containing packages to avoid continuous
