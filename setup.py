@@ -17,9 +17,9 @@ setup(
     long_description=open('README.rst').read(),
     entry_points={
         'console_scripts': [
-            'pysmt = shell:main',
-            'pysmt-shell = shell:main_interactive',
-            'pysmt-install = install:main',
+            'pysmt = pysmt.cmd.shell:main',
+            'pysmt-shell = pysmt.cmd.shell:main_interactive',
+            'pysmt-install = pysmt.cmd.install:main',
         ],
     },
 )
