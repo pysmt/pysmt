@@ -31,7 +31,7 @@ map.
 
 # Global dictionary of types
 __CUSTOM_TYPES__ = {}
-
+__BV_TYPES__ = {}
 
 class PySMTType(object):
     def __init__(self, type_id=-1):
@@ -44,6 +44,9 @@ class PySMTType(object):
         return False
 
     def is_real_type(self):
+        return False
+
+    def is_bv_type(self):
         return False
 
     def is_function_type(self):
@@ -110,6 +113,44 @@ class IntType(PySMTType):
     def __str__(self):
         return "Int"
 
+# BV is a Factory for _BVType
+def BVType(width=32):
+    key = width
+    if key in __BV_TYPES__:
+        return  __BV_TYPES__[key]
+
+    res = _BVType(width=width)
+    __BV_TYPES__[key] = res
+    return res
+
+
+class _BVType(PySMTType):
+    def __init__(self, width=32):
+        PySMTType.__init__(self, type_id = 3)
+        self.width = width
+
+    def is_bv_type(self, width=None):
+        if width:
+            return self.width == width
+        return True
+
+    def as_smtlib(self, funstyle=True):
+        if funstyle:
+            return "() BV"
+        else:
+            return "(_ BV %d)" % self.width
+
+    def __str__(self):
+        return "BV%d" % self.width
+
+    def __eq__(self, other):
+        if other is None:
+            return False
+        if self.type_id != other.type_id:
+            return False
+        if self.width != other.width:
+            return False
+        return True
 
 # FunctionType is a Factory that returns a _FunctionType
 def FunctionType(return_type, param_types):
@@ -170,3 +211,5 @@ REAL = RealType()
 INT = IntType()
 
 PYSMT_TYPES = frozenset([BOOL, REAL, INT])
+
+BV1, BV8, BV16, BV32, BV64, BV128 = [BVType(i) for i in [1, 8, 16, 32, 64, 128]]

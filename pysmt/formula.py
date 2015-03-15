@@ -497,6 +497,147 @@ class FormulaManager(object):
             h = len(exprs) // 2
             return self.Max(self.Max(exprs[0:h]), self.Max(exprs[h:]))
 
+    # BitVectors
+    def BV(self, value, width=32):
+        """Return a constant of type BitVector."""
+        if is_integer(value):
+            n = self.create_node(node_type=op.BV_CONSTANT,
+                                 args=tuple(),
+                                 payload=(value, width))
+            return n
+        else:
+            raise TypeError("Invalid type in constant. The type was:" + \
+                            str(type(value)))
+
+    def BVNot(self, formula):
+        """Returns the bitvector Not(bv)"""
+        return self.create_node(node_type=op.BV_NOT,
+                                args=(formula,),
+                                payload=(formula.bv_width(),))
+
+    def BVAnd(self, left, right):
+        """Returns the Bit-wise AND of two bitvectors of the same size."""
+        return self.create_node(node_type=op.BV_AND,
+                                args=(left,right),
+                                payload=(left.bv_width(),))
+
+    def BVOr(self, left, right):
+        """Returns the Bit-wise OR of two bitvectors of the same size."""
+        return self.create_node(node_type=op.BV_OR,
+                                args=(left,right),
+                                payload=(left.bv_width(),))
+
+    def BVXor(self, left, right):
+        """Returns the Bit-wise XOR of two bitvectors of the same size."""
+        return self.create_node(node_type=op.BV_XOR,
+                                args=(left,right),
+                                payload=(left.bv_width(),))
+
+    def BVConcat(self, left, right):
+        """Returns the Concatenation of the two BVs"""
+        return self.create_node(node_type=op.BV_CONCAT,
+                                args=(left,right),
+                                payload=(left.bv_width()+right.bv_width(),))
+
+    def BVExtract(self, formula, start=0, end=None):
+        """Returns the slice of formula from start to end (inclusive)."""
+        if end is None: end = formula.bv_width()
+        assert is_integer(start) and is_integer(end)
+        size = end-start+1
+        assert size <= formula.bv_width()
+        return self.create_node(node_type=op.BV_EXTRACT,
+                                args=(formula,),
+                                payload=(size, start, end))
+
+    def BVULT(self, left, right):
+        """Returns the formula left < right."""
+        return self.create_node(node_type=op.BV_ULT,
+                                args=(left, right),
+                                payload=(left.bv_width(),))
+
+    def BVNeg(self, formula):
+        """Returns the arithmetic negation of the BV."""
+        return self.create_node(node_type=op.BV_NEG,
+                                args=(formula,),
+                                payload=(formula.bv_width(),))
+
+    def BVAdd(self, left, right):
+        """Returns the sum of two BV."""
+        return self.create_node(node_type=op.BV_ADD,
+                                args=(left, right),
+                                payload=(left.bv_width(),))
+
+    def BVMul(self, left, right):
+        """Returns the product of two BV."""
+        return self.create_node(node_type=op.BV_MUL,
+                                args=(left, right),
+                                payload=(left.bv_width(),))
+
+    def BVUDiv(self, left, right):
+        """Returns the division of the two BV."""
+        return self.create_node(node_type=op.BV_UDIV,
+                                args=(left, right),
+                                payload=(left.bv_width(),))
+
+    def BVURem(self, left, right):
+        """Returns the reminder of the two BV."""
+        return self.create_node(node_type=op.BV_UREM,
+                                args=(left, right),
+                                payload=(left.bv_width(),))
+
+    def BVLShl(self, left, right):
+        """Returns the logical left shift the BV."""
+        if is_integer(right):
+            right = self.BV(right, left.bv_width())
+        return self.create_node(node_type=op.BV_LSHL,
+                                args=(left, right),
+                                payload=(left.bv_width(),))
+
+    def BVLShr(self, left, right):
+        """Returns the logical right shift the BV."""
+        if is_integer(right):
+            right = self.BV(right, left.bv_width())
+        return self.create_node(node_type=op.BV_LSHR,
+                                args=(left, right),
+                                payload=(left.bv_width(),))
+
+    def BVRol(self, formula, steps):
+        """Returns the LEFT rotation of the BV by the number of steps."""
+        if not is_integer(steps):
+            raise TypeError("BVRol: 'steps' should be an integer. Got %s" % steps)
+        return self.create_node(node_type=op.BV_ROL,
+                                args=(formula,),
+                                payload=(formula.bv_width(), steps))
+
+    def BVRor(self, formula, steps):
+        """Returns the RIGHT rotation of the BV by the number of steps."""
+        if not is_integer(steps):
+            raise TypeError("BVRor: 'steps' should be an integer. Got %s" % steps)
+        return self.create_node(node_type=op.BV_ROR,
+                                args=(formula,),
+                                payload=(formula.bv_width(), steps))
+
+    def BVZExt(self, formula, width):
+        """Returns the extension of the BV to reach the given width.
+
+        New bits are set to zero.
+        """
+        if not is_integer(width):
+            raise TypeError("BVZext: 'width' should be an integer. Got %s" % steps)
+        return self.create_node(node_type=op.BV_ZEXT,
+                                args=(formula,),
+                                payload=(width, ))
+
+    def BVSExt(self, formula, width):
+        """Returns the signed extension of the BV to reach the given width.
+
+        New bits are set according to the most-significant-bit.
+        """
+        if not is_integer(width):
+            raise TypeError("BVSext: 'width' should be an integer. Got %s" % steps)
+        return self.create_node(node_type=op.BV_SEXT,
+                                args=(formula,),
+                                payload=(width, ))
 
 
     def normalize(self, formula):

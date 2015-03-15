@@ -22,7 +22,8 @@ they will be rewritten (during construction) in order to only use
 these operators.
 """
 
-ALL_TYPES = range(0,20)
+ALL_TYPES = range(0,39)
+
 
 (
 FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF, # Boolean Logic (0-6)
@@ -31,7 +32,21 @@ REAL_CONSTANT, BOOL_CONSTANT, INT_CONSTANT, # Constants (9-11)
 PLUS, MINUS, TIMES,                         # LIA/LRA operators (12-14)
 LE, LT, EQUALS,                             # LIA/LRA relations (15-17)
 ITE,                                        # Term-ite (18)
-TOREAL                                      # LIRA toreal() function (19)
+TOREAL,                                     # LIRA toreal() function (19)
+#
+# MG: FLOOR? INT_MOD_CONGR?
+#
+# BV
+BV_CONSTANT,                                # 20
+BV_NOT, BV_AND, BV_OR, BV_XOR,              # Logical Operators on Bit
+BV_CONCAT, BV_EXTRACT,                      #
+BV_ULT, #BV_SLT, BV_ULE, BV_SLE,             # Comparison  (26-29)
+#BV_COMP,
+BV_NEG, BV_ADD, #BV_SUB,                     # Basic arithmetic (31-33)
+BV_MUL, BV_UDIV, BV_UREM, # BV_SDIV, BV_SREM, # Division/Multiplication (34-38)
+BV_LSHL, BV_LSHR, #BV_ASHR,                  # Shifts (39-41)
+BV_ROL, BV_ROR,                             # Rotation (42-43)
+BV_ZEXT, BV_SEXT,                           # Extension (44-45)
 ) = ALL_TYPES
 
 QUANTIFIERS = frozenset([FORALL, EXISTS])
@@ -42,7 +57,7 @@ BOOL_OPERATORS = frozenset(QUANTIFIERS | BOOL_CONNECTIVES)
 
 RELATIONS = frozenset([LE, LT, EQUALS])
 
-CONSTANTS = frozenset([REAL_CONSTANT, BOOL_CONSTANT, INT_CONSTANT])
+CONSTANTS = frozenset([REAL_CONSTANT, BOOL_CONSTANT, INT_CONSTANT, BV_CONSTANT])
 
 CUSTOM_NODE_TYPES = []
 
