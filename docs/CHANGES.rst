@@ -1,20 +1,23 @@
 Change Log
 ==========
 
-0.2.4 XXXXXXXX  -- YYYY
------------------------
+0.2.4: 2015-03-15  -- PicoSAT
+-----------------------------
 
 Solvers:
 
-* PicoSAT solver wrapper
+* PicoSAT solver support
 
 General:
 
 * Iterative implementation of FNode.get_free_variables().
   This also deprecates FNode.get_dependencies().
 
+Bugfix:
 
-0.2.3 2015-03-12 -- Logics Refactoring
+* Fixed bug (#48) in pypi package, making pysmt-install (and other commands) unavailable. Thanks to Rhishikesh Limaye for reporting this.
+
+0.2.3: 2015-03-12 -- Logics Refactoring
 --------------------------------------
 
 General:
@@ -43,7 +46,7 @@ General:
 
 
 
-0.2.2 2015-02-07 -- BDDs
+0.2.2: 2015-02-07 -- BDDs
 ------------------------
 
 Solvers:
@@ -56,7 +59,7 @@ General:
   be registered through the environment (see
   Environment.add_dynamic_walker_function).
 
-0.2.1 2014-11-29 -- SMT-LIB
+0.2.1: 2014-11-29 -- SMT-LIB
 ---------------------------
 
 Solvers:
@@ -72,7 +75,7 @@ General:
 * Added configuration file
 
 
-0.2.0 2014-10-02 -- Beta release.
+0.2.0: 2014-10-02 -- Beta release.
 ----------------------------------
 
 Theories: LIRA
@@ -96,7 +99,7 @@ Backwards Incompatible Changes:
   with the Python Standard Library.
 
 
-0.1.0 2014-03-10 -- Alpha release.
+0.1.0: 2014-03-10 -- Alpha release.
 ----------------------------------
 
 Theories: LIA, LRA, RDL, EUF
@@ -108,5 +111,5 @@ General Functionalities:
 * Unified Quantifier Elimination (Z3 support only)
 
 
-0.0.1 2014-02-01 -- Initial release.
+0.0.1: 2014-02-01 -- Initial release.
 ------------------------------------
