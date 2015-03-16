@@ -481,7 +481,7 @@ class FormulaManager(object):
             a, b = exprs
             return self.Ite(self.LE(a, b), a, b)
         else:
-            h = int(len(exprs) / 2)
+            h = len(exprs) // 2
             return self.Min(self.Min(exprs[0:h]), self.Min(exprs[h:]))
 
     def Max(self, *args):
@@ -494,7 +494,7 @@ class FormulaManager(object):
             a, b = exprs
             return self.Ite(self.LE(a, b), b, a)
         else:
-            h = int(len(exprs) / 2)
+            h = len(exprs) // 2
             return self.Max(self.Max(exprs[0:h]), self.Max(exprs[h:]))
 
 
