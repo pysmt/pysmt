@@ -35,6 +35,10 @@ class TestCase(unittest.TestCase):
     def tearDown(self):
         pass
 
+    if "assertRaisesRegex" not in dir(unittest.TestCase):
+        assertRaisesRegex = unittest.TestCase.assertRaisesRegexp
+
+
 @deprecated("skipIfNoSolverForLogic (be specific about expectations!)")
 def skipIfNoSolverAvailable(test_fun):
     """Skip the test if no solver is available."""

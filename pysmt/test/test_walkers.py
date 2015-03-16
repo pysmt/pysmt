@@ -59,7 +59,7 @@ class TestWalkers(TestCase):
         args_bad = {x:f}
 
         substitute(and_x_x, args_good)
-        with self.assertRaisesRegexp(TypeError, " substitutions"):
+        with self.assertRaisesRegex(TypeError, " substitutions"):
             substitute(and_x_x, args_bad)
 
         # 2. All arguments belong to the manager of the substituter.
@@ -69,14 +69,13 @@ class TestWalkers(TestCase):
         args_1 = {x: new_x}
         args_2 = {new_x: new_x}
 
-        with self.assertRaisesRegexp(TypeError, "Formula Manager" ):
+        with self.assertRaisesRegex(TypeError, "Formula Manager" ):
             substitute(and_x_x, args_1)
 
-        with self.assertRaisesRegexp(TypeError, "Formula Manager."):
+        with self.assertRaisesRegex(TypeError, "Formula Manager."):
             substitute(and_x_x, args_2)
 
-        with self.assertRaisesRegexp(TypeError,
-                                     "substitute()"):
+        with self.assertRaisesRegex(TypeError, "substitute()"):
             substitute(f, {x:x})
 
     def test_undefined_node(self):
