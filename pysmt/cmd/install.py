@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # Copyright 2014 Andrea Micheli and Marco Gario
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import urllib2
+from six.moves.urllib import request as urllib2
+from six.moves import input
+
 import os
 import tarfile
 import sys
@@ -120,8 +120,8 @@ def download(url, file_name):
     u = urllib2.urlopen(url)
     f = open(file_name, 'wb')
     meta = u.info()
-    if len(meta.getheaders("Content-Length")) > 0:
-        file_size = int(meta.getheaders("Content-Length")[0])
+    if len(meta.get("Content-Length")) > 0:
+        file_size = int(meta.get("Content-Length"))
         print("Downloading: %s Bytes: %s" % (file_name, file_size))
 
     block_sz = 8192
@@ -132,7 +132,7 @@ def download(url, file_name):
             break
 
         f.write(buff)
-        if len(meta.getheaders("Content-Length")) > 0 and sys.stdout.isatty():
+        if len(meta.get("Content-Length")) > 0 and sys.stdout.isatty():
             count += len(buff)
             perc = (float(count) / float(file_size)) * 100.0
             str_perc = "%.1f%%" % perc
@@ -140,8 +140,9 @@ def download(url, file_name):
             sys.stdout.write(str_perc)
             sys.stdout.write(" " * (10 - len(str_perc)))
 
-    print ""
+    print("")
     f.close()
+
 
 ################################################################################
 # Installers
@@ -472,7 +473,7 @@ Notice: the installation process might require building tools
         (e.g., make and gcc).
 """
     print(msg)
-    res = raw_input("Continue? [Y]es/[N]o: ").lower()
+    res = input("Continue? [Y]es/[N]o: ").lower()
 
     if res != "y":
         exit(-1)

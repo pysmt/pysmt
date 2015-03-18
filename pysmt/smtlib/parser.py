@@ -15,10 +15,11 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import io
 import functools
 from fractions import Fraction
 from warnings import warn
+from six import iteritems
+from six.moves import xrange
 
 import pysmt.smtlib.commands as smtcmd
 from pysmt.shortcuts import get_env
@@ -27,7 +28,7 @@ from pysmt.logics import get_logic_by_name, UndefinedLogicError
 from pysmt.exceptions import UnknownSmtLibCommandError
 from pysmt.smtlib.script import SmtLibCommand, SmtLibScript
 from pysmt.smtlib.annotations import Annotations
-
+import pysmt.utils as utils
 
 def get_formula(script_stream, environment=None):
     """
@@ -66,7 +67,7 @@ def get_formula_fname(script_fname, environment=None, strict=True):
     """
     Returns the formula asserted at the end of the given script
     """
-    with io.BufferedReader(io.FileIO(script_fname, 'r')) as script:
+    with utils.BufferedTextReader(script_fname) as script:
         if strict:
             return get_formula_strict(script, environment)
         else:
@@ -116,7 +117,7 @@ class SmtLibExecutionCache(object):
 
     def update(self, value_map):
         """Binds all the symbols in 'value_map'"""
-        for k, val in value_map.iteritems():
+        for k, val in iteritems(value_map):
             self.bind(k, val)
 
     def unbind_all(self, values):
@@ -428,7 +429,7 @@ class SmtLibParser(object):
                                 self.consume_closing(tokens, "expression")
                                 current = next(tokens)
 
-                            for k, val in newvals.iteritems():
+                            for k, val in iteritems(newvals):
                                 self.cache.bind(k, val)
                             stack[-1].append(self._handle_let)
                             stack[-1].append(newvals.keys())
@@ -514,9 +515,8 @@ class SmtLibParser(object):
 
     def get_script_fname(self, script_fname):
         """Given a filename and a Solver, executes the solver on the file."""
-        with io.BufferedReader(io.FileIO(script_fname, 'r')) as script:
+        with utils.BufferedTextReader(script_fname) as script:
             return self.get_script(script)
-
 
     def parse_atoms(self, tokens, command, min_size, max_size=None):
         """
@@ -732,30 +732,16 @@ if __name__ == "__main__":
     def main():
         """Simple testing script"""
         args = sys.argv
-        if len(args) != 2 and len(args) != 3:
-            print "Usage %s <file.smt2> [-tu]" % args[0]
+        if len(args) != 2:
+            print("Usage %s <file.smt2>" % args[0])
             exit(1)
 
         fname = args[1]
-        unsafe = False
-        if len(args) == 3:
-            if args[1] == "-tu":
-                unsafe = True
-                fname = args[2]
-            elif args[2] == "-tu":
-                unsafe = True
-            else:
-                print "Invalid options specified"
-                exit(1)
 
-        if unsafe:
-            parser = SmtLibParser(TypeUnsafeEnvironment())
-        else:
-            parser = SmtLibParser()
-
+        parser = SmtLibParser()
         res = parser.get_script_fname(fname)
         assert res != None
 
-        print "Done"
+        print("Done")
 
     main()

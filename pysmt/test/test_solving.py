@@ -16,6 +16,8 @@
 #   limitations under the License.
 #
 import unittest
+from six.moves import xrange
+
 import pysmt.operators as op
 from pysmt.shortcuts import Symbol, FreshSymbol, And, Not, GT, Function, Plus
 from pysmt.shortcuts import Bool, TRUE, Real, LE, FALSE, Or, Equals
@@ -45,7 +47,7 @@ class TestBasic(TestCase):
 
         h = And(g, Bool(False))
         simp_h = h.simplify()
-        self.assertEquals(simp_h, Bool(False))
+        self.assertEqual(simp_h, Bool(False))
 
     @skipIfNoSolverForLogic(QF_BOOL)
     def test_is_sat(self):
@@ -136,8 +138,8 @@ class TestBasic(TestCase):
             v = is_valid(f, solver_name='msat')
             s = is_sat(f, solver_name='msat')
 
-            self.assertEquals(validity, v, f)
-            self.assertEquals(satisfiability, s, f)
+            self.assertEqual(validity, v, f)
+            self.assertEqual(satisfiability, s, f)
 
     @skipIfSolverNotAvailable("cvc4")
     def test_examples_cvc4(self):
@@ -147,8 +149,8 @@ class TestBasic(TestCase):
                 v = is_valid(f, solver_name='cvc4')
                 s = is_sat(f, solver_name='cvc4')
 
-                self.assertEquals(validity, v, f)
-                self.assertEquals(satisfiability, s, f)
+                self.assertEqual(validity, v, f)
+                self.assertEqual(satisfiability, s, f)
 
             except SolverReturnedUnknownResultError:
                 # CVC4 does not handle quantifiers in a complete way
@@ -161,8 +163,8 @@ class TestBasic(TestCase):
             v = is_valid(f, solver_name='yices')
             s = is_sat(f, solver_name='yices')
 
-            self.assertEquals(validity, v, f)
-            self.assertEquals(satisfiability, s, f)
+            self.assertEqual(validity, v, f)
+            self.assertEqual(satisfiability, s, f)
 
 
 
@@ -182,7 +184,7 @@ class TestBasic(TestCase):
                         subs[d] = m
 
                     simp = f.substitute(subs).simplify()
-                    self.assertEquals(simp, TRUE())
+                    self.assertEqual(simp, TRUE())
 
                     # Ask the eager model
                     subs = {}
@@ -192,7 +194,7 @@ class TestBasic(TestCase):
                         subs[d] = m
 
                     simp = f.substitute(subs).simplify()
-                    self.assertEquals(simp, TRUE())
+                    self.assertEqual(simp, TRUE())
 
     @skipIfSolverNotAvailable("cvc4")
     def test_model_cvc4(self):
@@ -212,8 +214,8 @@ class TestBasic(TestCase):
             v = is_valid(f, solver_name='z3')
             s = is_sat(f, solver_name='z3')
 
-            self.assertEquals(validity, v, f)
-            self.assertEquals(satisfiability, s, f)
+            self.assertEqual(validity, v, f)
+            self.assertEqual(satisfiability, s, f)
 
     def test_examples_by_logic(self):
         for (f, validity, satisfiability, logic) in get_example_formulae():
@@ -221,8 +223,8 @@ class TestBasic(TestCase):
                 v = is_valid(f, logic=logic)
                 s = is_sat(f, logic=logic)
 
-                self.assertEquals(validity, v, f)
-                self.assertEquals(satisfiability, s, f)
+                self.assertEqual(validity, v, f)
+                self.assertEqual(satisfiability, s, f)
 
 
     def test_solving_under_assumption(self):
@@ -241,10 +243,10 @@ class TestBasic(TestCase):
                 self.assertTrue(res2)
                 self.assertFalse(res3)
 
-                self.assertEquals(model1.get_value(v1), TRUE())
-                self.assertEquals(model1.get_value(v2), FALSE())
-                self.assertEquals(model2.get_value(v1), FALSE())
-                self.assertEquals(model2.get_value(v2), TRUE())
+                self.assertEqual(model1.get_value(v1), TRUE())
+                self.assertEqual(model1.get_value(v2), FALSE())
+                self.assertEqual(model2.get_value(v1), FALSE())
+                self.assertEqual(model2.get_value(v2), TRUE())
 
 
     def test_solving_under_assumption_theory(self):
@@ -268,10 +270,10 @@ class TestBasic(TestCase):
                 self.assertTrue(res2)
                 self.assertFalse(res3)
 
-                self.assertEquals(model1.get_value(v1), TRUE())
-                self.assertEquals(model1.get_value(v2), FALSE())
-                self.assertEquals(model2.get_value(v1), FALSE())
-                self.assertEquals(model2.get_value(v2), TRUE())
+                self.assertEqual(model1.get_value(v1), TRUE())
+                self.assertEqual(model1.get_value(v2), FALSE())
+                self.assertEqual(model2.get_value(v1), FALSE())
+                self.assertEqual(model2.get_value(v2), TRUE())
 
     def test_solving_under_assumption_mixed(self):
         x = Symbol("x", REAL)
@@ -293,10 +295,10 @@ class TestBasic(TestCase):
                 self.assertTrue(res2)
                 self.assertFalse(res3)
 
-                self.assertEquals(model1.get_value(v1), TRUE())
-                self.assertEquals(model1.get_value(v2), FALSE())
-                self.assertEquals(model2.get_value(v1), FALSE())
-                self.assertEquals(model2.get_value(v2), TRUE())
+                self.assertEqual(model1.get_value(v1), TRUE())
+                self.assertEqual(model1.get_value(v2), FALSE())
+                self.assertEqual(model2.get_value(v1), FALSE())
+                self.assertEqual(model2.get_value(v2), TRUE())
 
     def test_add_assertion(self):
         r = FreshSymbol(REAL)

@@ -11,6 +11,7 @@ setup(
     license='APACHE',
     description='A library for SMT Formulae manipulation and solving',
     long_description=open('README.rst').read(),
+    install_requires=["six"],
     entry_points={
         'console_scripts': [
             'pysmt = pysmt.cmd.shell:main',

@@ -94,8 +94,8 @@ class TestGenericWrapper(TestCase):
                 v = is_valid(f, solver_name=n, logic=logic)
                 s = is_sat(f, solver_name=n, logic=logic)
 
-                self.assertEquals(validity, v, f)
-                self.assertEquals(satisfiability, s, f)
+                self.assertEqual(validity, v, f)
+                self.assertEqual(satisfiability, s, f)
 
 
     def test_redefinition(self):

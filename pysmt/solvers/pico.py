@@ -25,6 +25,8 @@ from pysmt.solvers.eager import EagerModel
 from pysmt.cnf import CNFizer
 from pysmt.decorators import clear_pending_pop
 
+from six.moves import xrange
+from six import iteritems
 
 class PicosatSolver(Solver):
     """PicoSAT solver"""
@@ -106,7 +108,7 @@ class PicosatSolver(Solver):
 
     def get_model(self):
         assignment = {}
-        for var, vid in self._var_ids.iteritems():
+        for var, vid in iteritems(self._var_ids):
             v = picosat.picosat_deref(self.pico, vid)
             if v == 0:
                 assert False

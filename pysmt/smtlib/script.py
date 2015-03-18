@@ -15,8 +15,9 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import cStringIO
+from six.moves import cStringIO
 from collections import namedtuple
+from six.moves import xrange
 
 import pysmt.smtlib.commands as smtcmd
 from pysmt.exceptions import UnknownSmtLibCommandError
@@ -96,7 +97,7 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
 
 
     def serialize_to_string(self):
-        buf = cStringIO.StringIO()
+        buf = cStringIO()
         self.serialize(buf)
         return buf.getvalue()
 

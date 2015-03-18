@@ -17,6 +17,7 @@
 #
 import re
 from fractions import Fraction
+from six.moves import xrange
 
 import mathsat
 
@@ -150,7 +151,7 @@ class MathSAT5Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         for v in self.converter.symbol_to_decl.keys():
             var = self.mgr.Symbol(v)
             assert var is not None
-            print v, "=", self.get_value(var)
+            print("%s = %s", (v, self.get_value(var)))
 
     def get_value(self, item):
         self._assert_no_function_type(item)

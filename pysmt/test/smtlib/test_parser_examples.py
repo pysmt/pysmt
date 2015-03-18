@@ -15,7 +15,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from cStringIO import StringIO
+from six.moves import cStringIO
 
 from pysmt.test import TestCase
 from pysmt.test.examples import get_example_formulae
@@ -29,27 +29,27 @@ class TestSMTParseExamples(TestCase):
         fs = get_example_formulae()
 
         for (f_out, _, _, _) in fs:
-            buf_out = StringIO()
+            buf_out = cStringIO()
             script_out = smtlibscript_from_formula(f_out)
             script_out.serialize(outstream=buf_out)
 
-            buf_in = StringIO(buf_out.getvalue())
+            buf_in = cStringIO(buf_out.getvalue())
             parser = SmtLibParser()
             script_in = parser.get_script(buf_in)
             f_in = script_in.get_last_formula()
-            self.assertEquals(f_in, f_out)
+            self.assertEqual(f_in, f_out)
 
 
     def test_parse_examples_daggified(self):
         fs = get_example_formulae()
 
         for (f_out, _, _, _) in fs:
-            buf_out = StringIO()
+            buf_out = cStringIO()
             script_out = smtlibscript_from_formula(f_out)
             script_out.serialize(outstream=buf_out, daggify=True)
 
-            buf_in = StringIO(buf_out.getvalue())
+            buf_in = cStringIO(buf_out.getvalue())
             parser = SmtLibParser()
             script_in = parser.get_script(buf_in)
             f_in = script_in.get_last_formula()
-            self.assertEquals(f_in, f_out)
+            self.assertEqual(f_in, f_out)

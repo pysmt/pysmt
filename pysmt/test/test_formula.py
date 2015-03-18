@@ -56,10 +56,10 @@ class TestFormulaManager(TestCase):
         self.assertIsNotNone(fv1, "New symbol was not created.")
 
         fv2 = self.mgr.new_fresh_symbol(BOOL)
-        self.assertNotEquals(fv1, fv2, "Fresh symbol is not new.")
+        self.assertNotEqual(fv1, fv2, "Fresh symbol is not new.")
 
         fv3 = self.mgr.new_fresh_symbol(BOOL, "abc_%d")
-        self.assertEquals(fv3.symbol_name()[:3], "abc",
+        self.assertEqual(fv3.symbol_name()[:3], "abc",
                           "Fresh variable doesn't have the desired prefix")
 
     def test_get_symbol(self):
@@ -75,7 +75,7 @@ class TestFormulaManager(TestCase):
         a = self.mgr.get_or_create_symbol("a", REAL)
         self.assertIsNotNone(a, "Symbol was not created")
         a2 = self.mgr.get_or_create_symbol("a", REAL)
-        self.assertEquals(a, a2, "Symbol was not memoized")
+        self.assertEqual(a, a2, "Symbol was not memoized")
         with self.assertRaises(TypeError):
             self.mgr.get_or_create_symbol("a", BOOL)
 
@@ -86,36 +86,36 @@ class TestFormulaManager(TestCase):
         self.assertEqual(a1, a2, "Symbol is not memoized")
 
         c = self.mgr.Symbol("c")
-        self.assertEquals(c.symbol_type(), BOOL, "Default Symbol Type is not BOOL")
+        self.assertEqual(c.symbol_type(), BOOL, "Default Symbol Type is not BOOL")
 
     def test_and_node(self):
         n = self.mgr.And(self.x, self.y)
         self.assertIsNotNone(n)
         self.assertTrue(n.is_and())
-        self.assertEquals(n.get_free_variables(), set([self.x, self.y]))
+        self.assertEqual(n.get_free_variables(), set([self.x, self.y]))
 
         m = self.mgr.And([self.x, self.y])
-        self.assertEquals(m, n, "And(1,2) != And([1,2]")
+        self.assertEqual(m, n, "And(1,2) != And([1,2]")
 
         sons = m.get_sons()
         self.assertTrue(self.x in sons and self.y in sons)
         self.assertTrue(len(sons) == 2)
 
         zero = self.mgr.And()
-        self.assertEquals(zero, self.mgr.TRUE())
+        self.assertEqual(zero, self.mgr.TRUE())
 
         one = self.mgr.And(self.x)
-        self.assertEquals(one, self.x)
+        self.assertEqual(one, self.x)
 
 
     def test_or_node(self):
         n = self.mgr.Or(self.x, self.y)
         self.assertIsNotNone(n)
         self.assertTrue(n.is_or())
-        self.assertEquals(n.get_free_variables(), set([self.x, self.y]))
+        self.assertEqual(n.get_free_variables(), set([self.x, self.y]))
 
         m = self.mgr.Or([self.x, self.y])
-        self.assertEquals(m, n, "Or(1,2) != Or([1,2]")
+        self.assertEqual(m, n, "Or(1,2) != Or([1,2]")
 
         sons = m.get_sons()
         self.assertIn(self.x, sons)
@@ -123,10 +123,10 @@ class TestFormulaManager(TestCase):
         self.assertEqual(len(sons), 2)
 
         zero = self.mgr.Or()
-        self.assertEquals(zero, self.mgr.FALSE())
+        self.assertEqual(zero, self.mgr.FALSE())
 
         one = self.mgr.Or(self.x)
-        self.assertEquals(one, self.x)
+        self.assertEqual(one, self.x)
 
 
     def test_not_node(self):
@@ -134,7 +134,7 @@ class TestFormulaManager(TestCase):
         self.assertIsNotNone(n)
 
         self.assertTrue(n.is_not())
-        self.assertEquals(n.get_free_variables(), set([self.x]))
+        self.assertEqual(n.get_free_variables(), set([self.x]))
 
         sons = n.get_sons()
         self.assertIn(self.x, sons)
@@ -145,7 +145,7 @@ class TestFormulaManager(TestCase):
         self.assertIsNotNone(n)
 
         self.assertTrue(n.is_implies())
-        self.assertEquals(n.get_free_variables(), set([self.x, self.y]))
+        self.assertEqual(n.get_free_variables(), set([self.x, self.y]))
 
         sons = n.get_sons()
         self.assertEqual(self.x, sons[0])
@@ -157,7 +157,7 @@ class TestFormulaManager(TestCase):
         self.assertIsNotNone(n)
 
         self.assertTrue(n.is_iff())
-        self.assertEquals(n.get_free_variables(), set([self.x, self.y]))
+        self.assertEqual(n.get_free_variables(), set([self.x, self.y]))
 
         sons = n.get_sons()
         self.assertIn(self.x, sons)
@@ -217,7 +217,7 @@ class TestFormulaManager(TestCase):
         self.assertIsNotNone(n)
 
         self.assertTrue(n.is_minus())
-        self.assertEquals(n.get_free_variables(), set([self.p, self.q]))
+        self.assertEqual(n.get_free_variables(), set([self.p, self.q]))
 
         with self.assertRaises(TypeError):
             n = self.mgr.Minus(self.r, self.q)
@@ -241,7 +241,7 @@ class TestFormulaManager(TestCase):
         n = self.mgr.Times(self.r, self.s)
         self.assertIsNotNone(n)
         self.assertTrue(n.is_times())
-        self.assertEquals(n.get_free_variables(), set([self.r, self.s]))
+        self.assertEqual(n.get_free_variables(), set([self.r, self.s]))
 
         n = self.mgr.Times(self.iconst, self.q)
         self.assertIsNotNone(n)
@@ -282,7 +282,7 @@ class TestFormulaManager(TestCase):
         self.assertIsNotNone(n)
 
         self.assertTrue(n.is_equals())
-        self.assertEquals(n.get_free_variables(), set([self.p, self.q]))
+        self.assertEqual(n.get_free_variables(), set([self.p, self.q]))
 
         with self.assertRaises(TypeError):
             n = self.mgr.Equals(self.p, self.r)
@@ -337,7 +337,7 @@ class TestFormulaManager(TestCase):
         self.assertIsNotNone(n)
 
         self.assertTrue(n.is_le())
-        self.assertEquals(n.get_free_variables(), set([self.r, self.s]))
+        self.assertEqual(n.get_free_variables(), set([self.r, self.s]))
 
         sons = n.get_sons()
         self.assertIn(self.r, sons)
@@ -364,7 +364,7 @@ class TestFormulaManager(TestCase):
         self.assertIsNotNone(n)
 
         self.assertTrue(n.is_lt())
-        self.assertEquals(n.get_free_variables(), set([self.r, self.s]))
+        self.assertEqual(n.get_free_variables(), set([self.r, self.s]))
 
         sons = n.get_sons()
         self.assertIn(self.r, sons)
@@ -387,7 +387,7 @@ class TestFormulaManager(TestCase):
         self.assertIsNotNone(n)
 
         self.assertTrue(n.is_ite())
-        self.assertEquals(n.get_free_variables(), set([self.x, self.p, self.q]))
+        self.assertEqual(n.get_free_variables(), set([self.x, self.p, self.q]))
 
         with self.assertRaises(TypeError):
             self.mgr.Ite(self.x, self.p, self.r)
@@ -403,7 +403,7 @@ class TestFormulaManager(TestCase):
         self.assertEqual(len(sons), 2)
 
         self.assertTrue(n.is_function_application())
-        self.assertEquals(n.get_free_variables(), set([self.f, self.r, self.s]))
+        self.assertEqual(n.get_free_variables(), set([self.f, self.r, self.s]))
 
 
     def test_constant(self):
@@ -413,17 +413,17 @@ class TestFormulaManager(TestCase):
         self.assertTrue(n1.is_real_constant())
 
         n2 = self.mgr.Real((100, 10))
-        self.assertEquals(n1, n2,
+        self.assertEqual(n1, n2,
                 "Generation of constant does not provide a consistent result.")
         n3 = self.mgr.Real(10)
-        self.assertEquals(n1, n3,
+        self.assertEqual(n1, n3,
                 "Generation of constant does not provide a consistent result.")
         n4 = self.mgr.Real(10.0)
-        self.assertEquals(n1, n4,
+        self.assertEqual(n1, n4,
                 "Generation of constant does not provide a consistent result.")
 
         nd = self.mgr.Real(Fraction(100,1))
-        self.assertNotEquals(nd, n1)
+        self.assertNotEqual(nd, n1)
 
         with self.assertRaises(TypeError):
             self.mgr.Real(True)
@@ -438,7 +438,7 @@ class TestFormulaManager(TestCase):
         m = self.mgr.Bool(False)
         self.assertIsNotNone(n)
         self.assertIsNotNone(m)
-        self.assertNotEquals(n, m)
+        self.assertNotEqual(n, m)
 
         self.assertTrue(n.is_constant())
         self.assertTrue(n.is_bool_constant())
@@ -464,10 +464,10 @@ class TestFormulaManager(TestCase):
         self.assertEqual(n1, n2, "Constructed Plus expression do not match")
 
         self.assertTrue(n1.is_plus())
-        self.assertEquals(set([self.r, self.s]), n1.get_free_variables())
+        self.assertEqual(set([self.r, self.s]), n1.get_free_variables())
 
         one = self.mgr.Plus([self.p])
-        self.assertEquals(one, self.p)
+        self.assertEqual(one, self.p)
 
     def test_exactly_one(self):
         symbols = [ self.mgr.Symbol("s%d"%i, BOOL) for i in range(5) ]
@@ -564,7 +564,7 @@ class TestFormulaManager(TestCase):
         b = src_mgr.Symbol("B")
         f = src_mgr.And(a, src_mgr.Not(b))
 
-        self.assertEquals(str(f), "(A & (! B))", str(f))
+        self.assertEqual(str(f), "(A & (! B))", str(f))
 
         serialized = pickle.dumps(f)
 
@@ -572,7 +572,7 @@ class TestFormulaManager(TestCase):
         f_new = dst_mgr.normalize(f)
 
         args = f_new.get_sons()
-        self.assertEquals(str(args[0]), "A",
+        self.assertEqual(str(args[0]), "A",
                           "Expecting symbol A, " +
                           "symbol %s found instead" % str(args[0]))
 
@@ -581,9 +581,9 @@ class TestFormulaManager(TestCase):
         g = dst_mgr.And(a, dst_mgr.Not(b))
 
         # Contextualized formula is memoized
-        self.assertEquals(f_new, g, "%s != %s" % (id(f_new), id(g)))
+        self.assertEqual(f_new, g, "%s != %s" % (id(f_new), id(g)))
         # But it differs from the one in the other formula manager
-        self.assertNotEquals(f_new, f)
+        self.assertNotEqual(f_new, f)
 
         # Normalizing a formula in the same manager should not
         # be a problem
@@ -596,10 +596,10 @@ class TestFormulaManager(TestCase):
         with self.assertRaises(Exception):
             x.Implies(y)
         get_env().enable_infix_notation = True
-        self.assertEquals(Implies(x,y), x.Implies(y))
+        self.assertEqual(Implies(x,y), x.Implies(y))
 
-        self.assertEquals(p + p, Plus(p,p))
-        self.assertEquals(p > p, GT(p,p))
+        self.assertEqual(p + p, Plus(p,p))
+        self.assertEqual(p > p, GT(p,p))
 
     def test_toReal(self):
         f = self.mgr.Equals(self.rconst, self.mgr.ToReal(self.p))
@@ -610,10 +610,10 @@ class TestFormulaManager(TestCase):
 
         f1 = self.mgr.ToReal(self.p)
         f2 = self.mgr.ToReal(f1)
-        self.assertEquals(f1, f2)
+        self.assertEqual(f1, f2)
 
         self.assertTrue(f1.is_toreal())
-        self.assertEquals(set([self.p]), f1.get_free_variables())
+        self.assertEqual(set([self.p]), f1.get_free_variables())
 
         f3 = self.mgr.Equals(self.iconst, self.p)
         with self.assertRaises(TypeError):
@@ -621,7 +621,7 @@ class TestFormulaManager(TestCase):
 
         f4 = self.mgr.Plus(self.rconst, self.r)
         f5 = self.mgr.ToReal(f4)
-        self.assertEquals(f5, f4)
+        self.assertEqual(f5, f4)
 
 
 
@@ -668,7 +668,7 @@ class TestShortcuts(TestCase):
         a1 = Symbol("z", BOOL)
         a2 = global_mgr.Symbol("z", BOOL)
 
-        self.assertEquals(a1, a2,
+        self.assertEqual(a1, a2,
                           "Symbols generated by env and Symbol are not the same")
 
 

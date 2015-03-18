@@ -52,6 +52,11 @@ Equalities and Uninterpreted Functions (EUF). The following solvers are supporte
 The library assumes that the python binding for the SMT Solver are installed
 and accessible from your PYTHONPATH. For Yices 2 we rely on pyices (https://github.com/cheshire/pyices).
 
+pySMT works on both Python 2 and Python 3. Some solvers support both
+versions (e.g., MathSAT) but in general, many solvers still support
+only Python 2.
+
+
 Usage
 =====
 

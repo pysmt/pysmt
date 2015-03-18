@@ -16,6 +16,7 @@
 #   limitations under the License.
 #
 
+from six import iteritems
 
 class Annotations(object):
     """Handles and stores (key,value) annotations for formulae"""
@@ -89,7 +90,7 @@ class Annotations(object):
         specified value are returned.
         """
         res = []
-        for f,amap in self._annotations.iteritems():
+        for f,amap in iteritems(self._annotations):
             if annotation in amap:
                 if value is None:
                     res.append(f)
@@ -105,9 +106,9 @@ class Annotations(object):
 
     def __str__(self):
         res = ["Annotations: {"]
-        for t, m in self._annotations.iteritems():
+        for t, m in iteritems(self._annotations):
             res.append(str(t) + " -> ")
-            for a, lst in m.iteritems():
+            for a, lst in iteritems(m):
                 res.append(":" + str(a) + "{")
                 for v in lst:
                     res.append(str(v) + ", ")

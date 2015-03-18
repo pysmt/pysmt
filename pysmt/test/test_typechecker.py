@@ -57,7 +57,7 @@ class TestSimpleTypeChecker(TestCase):
 
         tc = get_env().stc
         res = tc.walk(h)
-        self.assertEquals(res, BOOL)
+        self.assertEqual(res, BOOL)
 
 
     def test_functions(self):
@@ -69,11 +69,11 @@ class TestSimpleTypeChecker(TestCase):
 
         tc = get_env().stc
 
-        self.assertEquals(tc.walk(Function(f, [vr])), INT)
-        self.assertEquals(tc.walk(Function(g, [vi])), REAL)
-        self.assertEquals(tc.walk(Function(f, [Function(g, [vi])])), INT)
-        self.assertEquals(tc.walk(LE(Plus(vi, Function(f, [Real(4)])), Int(8))), BOOL)
-        self.assertEquals(tc.walk(LE(Plus(vr, Function(g, [Int(4)])), Real(8))), BOOL)
+        self.assertEqual(tc.walk(Function(f, [vr])), INT)
+        self.assertEqual(tc.walk(Function(g, [vi])), REAL)
+        self.assertEqual(tc.walk(Function(f, [Function(g, [vi])])), INT)
+        self.assertEqual(tc.walk(LE(Plus(vi, Function(f, [Real(4)])), Int(8))), BOOL)
+        self.assertEqual(tc.walk(LE(Plus(vr, Function(g, [Int(4)])), Real(8))), BOOL)
 
         with self.assertRaises(TypeError):
             LE(Plus(vr, Function(g, [Real(4)])), Real(8))
@@ -92,13 +92,13 @@ class TestSimpleTypeChecker(TestCase):
         args3 = [None, None]
 
         t = self.tc.walk_type_to_type(f, args1, BOOL, REAL)
-        self.assertEquals(t, REAL)
+        self.assertEqual(t, REAL)
 
         t = self.tc.walk_type_to_type(f, args2, BOOL, REAL)
-        self.assertEquals(t, None)
+        self.assertEqual(t, None)
 
         t = self.tc.walk_type_to_type(f, args3, BOOL, REAL)
-        self.assertEquals(t, None)
+        self.assertEqual(t, None)
 
     def test_misc(self):
         bool_list = [

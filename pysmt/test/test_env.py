@@ -31,17 +31,17 @@ class TestEnvironment(TestCase):
     def test_global_env_is_unique(self):
         env1 = get_env()
         env2 = get_env()
-        self.assertEquals(env1, env2, "Global environment is not unique.")
+        self.assertEqual(env1, env2, "Global environment is not unique.")
 
     def test_stack_env(self):
         env1 = get_env()
         push_env()
         push_env(env1)
 
-        self.assertEquals(env1, pop_env(), "Pushed environment was ignored.")
+        self.assertEqual(env1, pop_env(), "Pushed environment was ignored.")
         env2  = get_env()
         self.assertIsNotNone(env2)
-        self.assertNotEquals(env1, pop_env(), "New environment was not created.")
+        self.assertNotEqual(env1, pop_env(), "New environment was not created.")
 
 
     def test_with_env(self):
@@ -50,12 +50,12 @@ class TestEnvironment(TestCase):
         with Environment():
             env2 = get_env()
             self.assertIsNotNone(env2, "Context should create an environment")
-            self.assertNotEquals(env1, env2, "Context should create a new environment")
+            self.assertNotEqual(env1, env2, "Context should create a new environment")
             a2 = Symbol("A", REAL)
-            self.assertNotEquals(a1, a2, "Symbols in different context should differ")
+            self.assertNotEqual(a1, a2, "Symbols in different context should differ")
 
         a3 = Symbol("A", REAL)
-        self.assertEquals(a1, a3, "Exiting a context should restore the previous environment")
+        self.assertEqual(a1, a3, "Exiting a context should restore the previous environment")
 
 
     def test_cannot_replace_global_walkers(self):
@@ -88,12 +88,12 @@ class TestEnvironment(TestCase):
         env = get_env()
 
         factory = env.factory
-        self.assertEquals(factory.solver_preference_list,
+        self.assertEqual(factory.solver_preference_list,
                           pysmt.factory.DEFAULT_SOLVER_PREFERENCE_LIST)
 
         for solver_name in factory.all_solvers(logic=QF_UFLIRA):
             factory.set_solver_preference_list([solver_name])
-            self.assertEquals(factory.solver_preference_list, [solver_name])
+            self.assertEqual(factory.solver_preference_list, [solver_name])
             solver = factory.get_solver(logic=QF_UFLIRA)
             self.assertTrue(isinstance(solver, factory.all_solvers()[solver_name]))
 
@@ -103,7 +103,7 @@ class TestEnvironment(TestCase):
 
         for qelim_name in factory.all_qelims():
             factory.set_qelim_preference_list([qelim_name])
-            self.assertEquals(factory.qelim_preference_list, [qelim_name])
+            self.assertEqual(factory.qelim_preference_list, [qelim_name])
             qelim = factory.get_quantifier_eliminator()
             self.assertTrue(isinstance(qelim, factory.all_qelims()[qelim_name]))
 

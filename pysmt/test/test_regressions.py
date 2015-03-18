@@ -56,7 +56,7 @@ class TestRegressions(TestCase):
         g = f.substitute({a:Bool(True)})
         h = f.substitute({a:Bool(False)})
 
-        self.assertNotEquals(h, g)
+        self.assertNotEqual(h, g)
 
     @skipIfSolverNotAvailable("msat")
     def test_msat_bool_back_conversion(self):
@@ -122,7 +122,7 @@ class TestRegressions(TestCase):
     def test_infix_notation_wrong_le(self):
         p = Symbol("p", INT)
         get_env().enable_infix_notation = True
-        self.assertEquals(LE(p, Int(2)), p <= Int(2))
+        self.assertEqual(LE(p, Int(2)), p <= Int(2))
 
 
     def test_multiple_declaration_w_same_functiontype(self):

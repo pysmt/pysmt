@@ -1,6 +1,15 @@
 Change Log
 ==========
 
+0.2.5: XXXXXXXXXX  -- YYYYYY
+----------------------------
+
+General:
+
+* Added support for Python 3. The library works with both Python 2 and
+  Python 3.
+
+
 0.2.4: 2015-03-15  -- PicoSAT
 -----------------------------
 

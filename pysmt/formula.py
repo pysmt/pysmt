@@ -34,6 +34,7 @@ from fractions import Fraction
 import pysmt.typing as types
 import pysmt.operators as op
 
+from pysmt.utils import is_integer
 from pysmt.fnode import FNode, FNodeContent
 from pysmt.exceptions import NonLinearError
 from pysmt.walkers.identitydag import IdentityDagWalker
@@ -313,7 +314,7 @@ class FormulaManager(object):
             val = value
         elif type(value) == tuple:
             val = Fraction(value[0], value[1])
-        elif type(value) == long or type(value) == int:
+        elif is_integer(value):
             val = Fraction(value, 1)
         elif type(value) == float:
             val = Fraction.from_float(value)
@@ -332,7 +333,7 @@ class FormulaManager(object):
         if value in self.int_constants:
             return self.int_constants[value]
 
-        if type(value) == long or type(value) == int:
+        if is_integer(value):
             n = self.create_node(node_type=op.INT_CONSTANT,
                                  args=tuple(),
                                  payload=value)
@@ -480,7 +481,7 @@ class FormulaManager(object):
             a, b = exprs
             return self.Ite(self.LE(a, b), a, b)
         else:
-            h = len(exprs) / 2
+            h = len(exprs) // 2
             return self.Min(self.Min(exprs[0:h]), self.Min(exprs[h:]))
 
     def Max(self, *args):
@@ -493,7 +494,7 @@ class FormulaManager(object):
             a, b = exprs
             return self.Ite(self.LE(a, b), b, a)
         else:
-            h = len(exprs) / 2
+            h = len(exprs) // 2
             return self.Max(self.Max(exprs[0:h]), self.Max(exprs[h:]))
 
 

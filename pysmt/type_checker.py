@@ -22,6 +22,7 @@ reasoning about the type of formulae.
  * The functions assert_*_args are useful for testing the type of
    arguments of a given function.
 """
+from six.moves import xrange
 
 import pysmt.walkers as walkers
 import pysmt.operators as op
