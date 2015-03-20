@@ -19,14 +19,16 @@ import unittest
 
 from pysmt.shortcuts import *
 from pysmt.typing import REAL, BOOL, INT
-from pysmt.test import TestCase
+from pysmt.test import TestCase, skipIfNoSolverForLogic
 from pysmt.exceptions import SolverReturnedUnknownResultError
-from pysmt.logics import LRA
+from pysmt.logics import LRA, QF_LIA
+
 
 class TestQE(TestCase):
 
     @unittest.skipIf(len(get_env().factory.all_qelims()) == 0,
                      "No QE available.")
+    @skipIfNoSolverForLogic(LRA)
     def test_qe_eq(self):
         qe = QuantifierEliminator()
 
@@ -68,6 +70,51 @@ class TestQE(TestCase):
         with self.assertRaises(NotImplementedError):
             qe.eliminate_quantifiers(f).simplify()
 
+    @unittest.skipIf('msat_fm' not in get_env().factory.all_qelims(),
+                     "MathSAT quantifier elimination is not available.")
+    def test_qe_msat_fm(self):
+        qe = QuantifierEliminator(name='msat_fm')
+        self._bool_example(qe)
+        self._real_example(qe)
+        self._alternation_bool_example(qe)
+        self._alternation_real_example(qe)
+
+        with self.assertRaises(NotImplementedError):
+            self._int_example(qe)
+            self._alternation_int_example(qe)
+
+        # Additional test for raising error on back conversion of
+        # quantified formulae
+        p, q = Symbol("p", INT), Symbol("q", INT)
+
+        f = ForAll([p], Exists([q], Equals(ToReal(p),
+                                           Plus(ToReal(q), ToReal(Int(1))))))
+        with self.assertRaises(NotImplementedError):
+            qe.eliminate_quantifiers(f).simplify()
+
+
+    @unittest.skipIf('msat_lw' not in get_env().factory.all_qelims(),
+                     "MathSAT quantifier elimination is not available.")
+    def test_qe_msat_lw(self):
+        qe = QuantifierEliminator(name='msat_lw')
+        self._bool_example(qe)
+        self._real_example(qe)
+        self._alternation_bool_example(qe)
+        self._alternation_real_example(qe)
+
+        with self.assertRaises(NotImplementedError):
+            self._int_example(qe)
+            self._alternation_int_example(qe)
+
+        # Additional test for raising error on back conversion of
+        # quantified formulae
+        p, q = Symbol("p", INT), Symbol("q", INT)
+
+        f = ForAll([p], Exists([q], Equals(ToReal(p),
+                                           Plus(ToReal(q), ToReal(Int(1))))))
+        with self.assertRaises(NotImplementedError):
+            qe.eliminate_quantifiers(f).simplify()
+
 
     def _bool_example(self, qe):
         # Bool Example
@@ -96,7 +143,7 @@ class TestQE(TestCase):
         f = ForAll([p], Implies(LT(Int(0), p), LT(q, p)))
         qf = qe.eliminate_quantifiers(f).simplify()
 
-        self.assertTrue(is_valid(Iff(qf, LE(q, Int(0)))))
+        self.assertTrue(is_valid(Iff(qf, LE(q, Int(0))), logic=QF_LIA))
 
     def _alternation_bool_example(self, qe):
         # Alternation of quantifiers

@@ -131,7 +131,7 @@ def download(url, file_name):
 def install_msat(options):
     """Installer for the MathSAT5 solver python interafce"""
 
-    base_name =  "mathsat-5.2.12-linux-%s" % get_architecture()
+    base_name =  "mathsat-5.3.4-linux-%s" % get_architecture()
     archive_name = "%s.tar.gz" % base_name
     archive = os.path.join(BASE_DIR, archive_name)
     dir_path = os.path.join(BASE_DIR, base_name)
@@ -325,12 +325,13 @@ def install_pycudd(options):
 def check_install():
     """Checks which solvers are visible to pySMT."""
 
-    from pysmt.shortcuts import Solver
+    from pysmt.shortcuts import Solver, QuantifierEliminator
     from pysmt.exceptions import NoSolverAvailableError
 
     required_solver = os.environ.get("PYSMT_SOLVER")
     if required_solver is None:
         required_solver = "None"
+
 
     for solver in ['msat', 'z3', 'cvc4', 'yices', 'bdd']:
         is_installed = False
@@ -344,6 +345,19 @@ def check_install():
         if solver == required_solver and not is_installed:
             assert "Was expecting to find %s installed" % required_solver
 
+
+
+    for solver in ['msat_fm', 'msat_lw', 'z3']:
+        is_installed = False
+        try:
+            QuantifierEliminator(name=solver)
+            is_installed = True
+        except NoSolverAvailableError:
+            is_installed = False
+        print("%s: \t %s" % (solver, is_installed))
+
+        if solver == required_solver and not is_installed:
+            assert "Was expecting to find %s installed" % required_solver
 
 
 

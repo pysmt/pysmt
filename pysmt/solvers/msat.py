@@ -20,7 +20,8 @@ from fractions import Fraction
 
 import mathsat
 
-import pysmt.logics
+from pysmt.logics import Logic, get_closer_pysmt_logic, LRA, PYSMT_QF_LOGICS
+
 import pysmt.operators as op
 from pysmt import typing as types
 
@@ -38,7 +39,7 @@ from pysmt.walkers.identitydag import IdentityDagWalker
 
 class MathSAT5Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
-    LOGICS = pysmt.logics.PYSMT_QF_LOGICS
+    LOGICS = PYSMT_QF_LOGICS
 
     def __init__(self, environment, logic, options=None, debugFile=None):
         Solver.__init__(self,
@@ -547,19 +548,24 @@ if hasattr(mathsat, "MSAT_EXIST_ELIM_ALLSMT_FM"):
 
 
         def exist_elim(self, variables, formula, alg='fm'):
+            theory = self.env.theoryo.get_theory(formula)
+            logic = Logic(name="Detected Logic", description="",
+                          quantifier_free=False, theory=theory)
+            logic = get_closer_pysmt_logic(logic)
+            if not logic <= LRA:
+                raise NotImplementedError("MathSAT qunatifier elimination only"\
+                                          " supports LRA (detected logic " \
+                                          "is: %s)" % str(logic))
+
             fterm = self.converter.convert(formula)
             tvars = [self.converter.convert(x) for x in variables]
 
             assert alg in ['fm', 'lw']
             algo = mathsat.MSAT_EXIST_ELIM_ALLSMT_FM
             if alg == 'lw':
-                algo = mathsat.MSAT_EXIST_ELIM_LW
+                algo = mathsat.MSAT_EXIST_ELIM_VTS
 
-            opts = mathsat.msat_exist_elim_options()
-            opts.toplevel_propagation = 0
-            opts.boolean_simplifications = 1
-            opts.remove_redundant_constraints = 1
-            res = mathsat.msat_exist_elim(self.msat_env, fterm, tvars, algo, opts)
+            res = mathsat.msat_exist_elim(self.msat_env, fterm, tvars, algo)
 
             return self.converter.back(res)
 
