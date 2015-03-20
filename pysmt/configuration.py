@@ -39,7 +39,7 @@ of the solver.
 """
 
 import os.path
-import ConfigParser as cp
+import six.moves.configparser as cp
 from warnings import warn
 
 from pysmt.logics import get_logic_by_name
@@ -133,5 +133,5 @@ def write_environment_configuration(config_filename, environment):
 
 
     # Writing the configuration to file
-    with open(config_filename, 'wb') as configfile:
+    with open(config_filename, 'wt') as configfile:
         config.write(configfile)

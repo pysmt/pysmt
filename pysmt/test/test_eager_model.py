@@ -15,6 +15,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+from six.moves import xrange
+
 from pysmt.test import TestCase
 from pysmt.shortcuts import And, Or, FALSE, TRUE, FreshSymbol, get_env
 from pysmt.solvers.eager import EagerModel
@@ -32,9 +34,9 @@ class TestEagerModel(TestCase):
         model = EagerModel(assignment=d,
                            environment=get_env())
 
-        self.assertEquals(model.get_value(x), TRUE())
-        self.assertEquals(model.get_value(y), FALSE())
-        self.assertEquals(model.get_value(And(x,y)), FALSE())
+        self.assertEqual(model.get_value(x), TRUE())
+        self.assertEqual(model.get_value(y), FALSE())
+        self.assertEqual(model.get_value(And(x,y)), FALSE())
 
     def test_env_default_arguments(self):
         """Test use global env"""
@@ -42,7 +44,7 @@ class TestEagerModel(TestCase):
         d = {x: TRUE()}
 
         model = EagerModel(d)
-        self.assertEquals(model.get_value(x), TRUE())
+        self.assertEqual(model.get_value(x), TRUE())
 
     def test_result_is_const(self):
         """The result of get_value is a constant"""
@@ -69,11 +71,18 @@ class TestEagerModel(TestCase):
         model = EagerModel(assignment=d)
         model.complete_model([x,y,r,p])
 
-        self.assertEquals(model.get_value(x), TRUE())
-        self.assertEquals(model.get_value(Or(x,y)), TRUE())
+        self.assertEqual(model.get_value(x), TRUE())
+        self.assertEqual(model.get_value(Or(x,y)), TRUE())
         self.assertTrue(model.get_value(p).is_constant(INT))
         self.assertTrue(model.get_value(r).is_constant(REAL))
 
+    def test_contains(self):
+        x, y, z = [FreshSymbol() for _ in xrange(3)]
+        d = {x: TRUE(), y: FALSE()}
+        model = EagerModel(assignment=d,
+                           environment=get_env())
+        self.assertTrue(x in model)
+        self.assertFalse(z in model)
 
 if __name__ == '__main__':
     import unittest

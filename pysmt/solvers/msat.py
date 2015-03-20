@@ -17,6 +17,7 @@
 #
 import re
 from fractions import Fraction
+from six.moves import xrange
 
 import mathsat
 
@@ -25,17 +26,16 @@ from pysmt.logics import Logic, get_closer_pysmt_logic, LRA, PYSMT_QF_LOGICS
 import pysmt.operators as op
 from pysmt import typing as types
 
-from pysmt.solvers.solver import Solver
+from pysmt.solvers.solver import Solver, Converter
 from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 from pysmt.solvers.eager import EagerModel
 from pysmt.walkers import DagWalker
 from pysmt.exceptions import SolverReturnedUnknownResultError
 from pysmt.exceptions import InternalSolverError
 from pysmt.decorators import clear_pending_pop
-from pysmt.environment import TypeUnsafeEnvironment
-from pysmt.utils.generic_number import GenericNumber, disambiguate
 from pysmt.solvers.qelim import QuantifierEliminator
 from pysmt.walkers.identitydag import IdentityDagWalker
+
 
 class MathSAT5Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
@@ -156,7 +156,7 @@ class MathSAT5Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         for v in self.converter.symbol_to_decl.keys():
             var = self.mgr.Symbol(v)
             assert var is not None
-            print v, "=", self.get_value(var)
+            print("%s = %s", (v, self.get_value(var)))
 
     def get_value(self, item):
         self._assert_no_function_type(item)
@@ -201,7 +201,7 @@ class MathSAT5Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
             mathsat.msat_destroy_config(self.config)
 
 
-class MSatConverter(DagWalker):
+class MSatConverter(Converter, DagWalker):
 
     def __init__(self, environment, msat_env):
         DagWalker.__init__(self, environment)
@@ -225,11 +225,87 @@ class MSatConverter(DagWalker):
 
 
     def back(self, expr):
-        tu_env = TypeUnsafeEnvironment()
-        tu_res = self._walk_back(expr, tu_env.formula_manager)
-        tu_f = disambiguate(tu_env, tu_res, create_toreal_on_demand=True)
-        return self.env.formula_manager.normalize(tu_f)
+        return self._walk_back(expr, self.mgr)
 
+    def _most_generic(self, ty1, ty2):
+        """Returns teh most generic, yet compatible type between ty1 and ty2"""
+        if ty1 == ty2:
+            return ty1
+
+        assert ty1 in [types.REAL, types.INT]
+        assert ty2 in [types.REAL, types.INT]
+        return types.REAL
+
+
+    def _get_signature(self, term, args):
+        """Returns the signature of the given term.
+        For example:
+        - a term x & y returns a function type Bool -> Bool -> Bool,
+        - a term 14 returns Int
+        - a term x ? 13 : 15.0 returns Bool -> Real -> Real -> Real
+        """
+        res = None
+
+        if mathsat.msat_term_is_true(self.msat_env, term) or \
+            mathsat.msat_term_is_false(self.msat_env, term) or \
+            mathsat.msat_term_is_boolean_constant(self.msat_env, term):
+            res = types.BOOL
+
+        elif mathsat.msat_term_is_number(self.msat_env, term):
+            ty = mathsat.msat_term_get_type(term)
+            if mathsat.msat_is_integer_type(self.msat_env, ty):
+                res = types.INT
+            elif mathsat.msat_is_rational_type(self.msat_env, ty):
+                res = types.REAL
+            else:
+                raise NotImplementedError
+
+        elif mathsat.msat_term_is_and(self.msat_env, term) or \
+             mathsat.msat_term_is_or(self.msat_env, term) or \
+             mathsat.msat_term_is_iff(self.msat_env, term):
+            res = types.FunctionType(types.BOOL, [types.BOOL, types.BOOL])
+
+        elif mathsat.msat_term_is_not(self.msat_env, term):
+            res = types.FunctionType(types.BOOL, [types.BOOL])
+
+        elif mathsat.msat_term_is_term_ite(self.msat_env, term):
+            t1 = self.env.stc.get_type(args[1])
+            t2 = self.env.stc.get_type(args[2])
+            t = self._most_generic(t1, t2)
+            res = types.FunctionType(t, [types.BOOL, t, t])
+
+        elif mathsat.msat_term_is_equal(self.msat_env, term) or \
+             mathsat.msat_term_is_leq(self.msat_env, term):
+            t1 = self.env.stc.get_type(args[0])
+            t2 = self.env.stc.get_type(args[1])
+            t = self._most_generic(t1, t2)
+            res = types.FunctionType(types.BOOL, [t, t])
+
+        elif mathsat.msat_term_is_plus(self.msat_env, term) or \
+             mathsat.msat_term_is_times(self.msat_env, term):
+            t1 = self.env.stc.get_type(args[0])
+            t2 = self.env.stc.get_type(args[1])
+            t = self._most_generic(t1, t2)
+            res = types.FunctionType(t, [t, t])
+
+        elif mathsat.msat_term_is_constant(self.msat_env, term):
+            ty = mathsat.msat_term_get_type(term)
+            if mathsat.msat_is_rational_type(self.msat_env, ty):
+                res = types.REAL
+            elif mathsat.msat_is_integer_type(self.msat_env, ty):
+                res = types.INT
+            else:
+                raise NotImplementedError("Unsupported variable type found")
+
+        elif mathsat.msat_term_is_uf(self.msat_env, term):
+            d = mathsat.msat_term_get_decl(term)
+            fun = self.get_symbol_from_declaration(d)
+            res = fun.symbol_type()
+
+        else:
+            raise TypeError("Unsupported expression:",
+                            mathsat.msat_term_repr(term))
+        return res
 
     def _back_single_term(self, term, mgr, args):
         """Builds the pysmt formula given a term and the list of formulae
@@ -262,7 +338,7 @@ class MSatConverter(DagWalker):
         elif mathsat.msat_term_is_number(self.msat_env, term):
             ty = mathsat.msat_term_get_type(term)
             if mathsat.msat_is_integer_type(self.msat_env, ty):
-                res = GenericNumber(int(mathsat.msat_term_repr(term)))
+                res = mgr.Int(int(mathsat.msat_term_repr(term)))
             elif mathsat.msat_is_rational_type(self.msat_env, ty):
                 res = mgr.Real(Fraction(mathsat.msat_term_repr(term)))
             else:
@@ -327,6 +403,7 @@ class MSatConverter(DagWalker):
         return res
 
 
+
     def get_symbol_from_declaration(self, decl):
         return self.decl_to_symbol[mathsat.msat_decl_id(decl)]
 
@@ -345,7 +422,15 @@ class MSatConverter(DagWalker):
             elif self.back_memoization[current] is None:
                 args=[self.back_memoization[mathsat.msat_term_get_arg(current,i)]
                       for i in xrange(arity)]
-                res = self._back_single_term(current, mgr, args)
+
+                signature = self._get_signature(current, args)
+                new_args = []
+                for i, a in enumerate(args):
+                    t = self.env.stc.get_type(a)
+                    if t != signature.param_types[i]:
+                        a = mgr.ToReal(a)
+                    new_args.append(a)
+                res = self._back_single_term(current, mgr, new_args)
                 self.back_memoization[current] = res
             else:
                 # we already visited the node, nothing else to do
@@ -379,27 +464,22 @@ class MSatConverter(DagWalker):
         return res
 
     def walk_not(self, formula, args):
-        assert len(args) == 1
         return mathsat.msat_make_not(self.msat_env, args[0])
 
     def walk_symbol(self, formula, args):
-        assert len(args) == 0
         if formula not in self.symbol_to_decl:
             self.declare_variable(formula)
         decl = self.symbol_to_decl[formula]
         return mathsat.msat_make_constant(self.msat_env, decl)
 
     def walk_le(self, formula, args):
-        assert len(args) == 2
         return mathsat.msat_make_leq(self.msat_env, args[0], args[1])
 
     def walk_lt(self, formula, args):
-        assert len(args) == 2
         leq = mathsat.msat_make_leq(self.msat_env, args[1], args[0])
         return mathsat.msat_make_not(self.msat_env, leq)
 
     def walk_ite(self, formula, args):
-        assert len(args) == 3
         i = args[0]
         t = args[1]
         e = args[2]
@@ -415,7 +495,6 @@ class MSatConverter(DagWalker):
             return mathsat.msat_make_term_ite(self.msat_env, i, t, e)
 
     def walk_real_constant(self, formula, args):
-        assert len(args) == 0
         assert type(formula.constant_value()) == Fraction
         frac = formula.constant_value()
         n,d = frac.numerator, frac.denominator
@@ -423,14 +502,12 @@ class MSatConverter(DagWalker):
         return mathsat.msat_make_number(self.msat_env, rep)
 
     def walk_int_constant(self, formula, args):
-        assert len(args) == 0
         assert type(formula.constant_value()) == int or \
             type(formula.constant_value()) == long
         rep = str(formula.constant_value())
         return mathsat.msat_make_number(self.msat_env, rep)
 
     def walk_bool_constant(self, formula, args):
-        assert len(args) == 0
         if formula.constant_value():
             return mathsat.msat_make_true(self.msat_env)
         else:
@@ -449,27 +526,17 @@ class MSatConverter(DagWalker):
         return res
 
     def walk_minus(self, formula, args):
-        assert len(args) == 2
         n_one = mathsat.msat_make_number(self.msat_env, "-1")
         n_s2 = mathsat.msat_make_times(self.msat_env, n_one, args[1])
         return mathsat.msat_make_plus(self.msat_env, args[0], n_s2)
 
     def walk_equals(self, formula, args):
-        assert len(args) == 2
         return mathsat.msat_make_equal(self.msat_env, args[0], args[1])
 
     def walk_iff(self, formula, args):
-        assert len(args) == 2
-        lf = formula.arg(0)
-        rf = formula.arg(1)
-
-        li = self.walk_implies(self.mgr.Implies(lf, rf), [args[0], args[1]])
-        ri = self.walk_implies(self.mgr.Implies(rf, lf), [args[1], args[0]])
-
-        return mathsat.msat_make_and(self.msat_env, li, ri)
+        return mathsat.msat_make_iff(self.msat_env, args[0], args[1])
 
     def walk_implies(self, formula, args):
-        assert len(args) == 2
         neg = self.walk_not(self.mgr.Not(formula.arg(0)), [args[0]])
         return mathsat.msat_make_or(self.msat_env, neg, args[1])
 
@@ -484,7 +551,6 @@ class MSatConverter(DagWalker):
         return mathsat.msat_make_uf(self.msat_env, decl, args)
 
     def walk_toreal(self, formula, args):
-        assert len(args) == 1
         # In mathsat toreal is implicit
         return args[0]
 

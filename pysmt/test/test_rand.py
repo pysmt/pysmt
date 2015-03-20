@@ -16,6 +16,7 @@
 #   limitations under the License.
 #
 from nose.plugins.attrib import attr
+from six.moves import xrange
 
 from pysmt.randomizer import build_random_formula, build_random_qf_formula
 from pysmt.shortcuts import is_valid, Iff

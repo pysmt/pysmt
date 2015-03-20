@@ -123,7 +123,7 @@ class TestQE(TestCase):
         f = ForAll([x], Implies(x,y))
         qf = qe.eliminate_quantifiers(f).simplify()
 
-        self.assertEquals(qf, y)
+        self.assertEqual(qf, y)
 
 
     def _real_example(self, qe):
@@ -133,7 +133,7 @@ class TestQE(TestCase):
         f = ForAll([r], Implies(LT(Real(0), r), LT(s, r)))
         qf = qe.eliminate_quantifiers(f).simplify()
 
-        self.assertEquals(qf, LE(s, Real(0)))
+        self.assertEqual(qf, LE(s, Real(0)))
 
 
     def _int_example(self, qe):
@@ -152,7 +152,7 @@ class TestQE(TestCase):
         f = ForAll([x], Exists([y], Iff(x, Not(y))))
         qf = qe.eliminate_quantifiers(f).simplify()
 
-        self.assertEquals(qf, TRUE())
+        self.assertEqual(qf, TRUE())
 
 
     def _alternation_real_example(self, qe):
@@ -162,7 +162,7 @@ class TestQE(TestCase):
         f = ForAll([r], Exists([s], Equals(r, Plus(s, Real(1)))))
         qf = qe.eliminate_quantifiers(f).simplify()
 
-        self.assertEquals(qf, TRUE())
+        self.assertEqual(qf, TRUE())
 
     def _alternation_int_example(self, qe):
         # Alternation of quantifiers
@@ -171,7 +171,7 @@ class TestQE(TestCase):
         f = ForAll([p], Exists([q], Equals(p, Plus(q, Int(1)))))
         qf = qe.eliminate_quantifiers(f).simplify()
 
-        self.assertEquals(qf, TRUE())
+        self.assertEqual(qf, TRUE())
 
 
 if __name__ == '__main__':

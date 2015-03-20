@@ -16,7 +16,7 @@
 #   limitations under the License.
 #
 import unittest
-import cStringIO
+from six.moves import cStringIO
 
 import pysmt.smtlib.commands as smtcmd
 from pysmt.shortcuts import And, Or, Symbol, GT, Real, Not
@@ -58,7 +58,7 @@ class TestSmtLibScript(TestCase):
         script = smtlibscript_from_formula(f)
 
         self.assertIsNotNone(script)
-        outstream = cStringIO.StringIO()
+        outstream = cStringIO()
         script.serialize(outstream)
         output = outstream.getvalue()
         self.assertIn("(set-logic ", output)
@@ -74,7 +74,7 @@ class TestSmtLibScript(TestCase):
 (declare-fun x () Bool)
 (declare-fun y () Bool)
 (declare-fun r () Real)
-(assert (> r 0))
+(assert (> r 0.0))
 (assert x)
 (check-sat)
 """
@@ -88,15 +88,15 @@ class TestSmtLibScript(TestCase):
         target_one = And(GT(r, Real(0)), x)
         target_two = And(GT(r, Real(0)), x, Not(y))
 
-        stream_in = cStringIO.StringIO(smtlib_single)
+        stream_in = cStringIO(smtlib_single)
         f = get_formula(stream_in)
         self.assertEqual(f, target_one)
 
-        stream_in = cStringIO.StringIO(smtlib_double)
+        stream_in = cStringIO(smtlib_double)
         f = get_formula(stream_in)
         self.assertEqual(f, target_two)
 
-        stream_in = cStringIO.StringIO(smtlib_double)
+        stream_in = cStringIO(smtlib_double)
         with self.assertRaises(AssertionError):
             f = get_formula_strict(stream_in)
 

@@ -20,6 +20,7 @@ import ctypes
 import warnings
 
 from fractions import Fraction
+from six.moves import xrange
 
 import pyices.context
 import pyices.yices_lib as libyices
@@ -27,7 +28,7 @@ import pyices.fix_env
 from pyices.yices_lib import String
 
 from pysmt.solvers.eager import EagerModel
-from pysmt.solvers.solver import Solver
+from pysmt.solvers.solver import Solver, Converter
 from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 
 from pysmt.walkers import DagWalker
@@ -144,7 +145,7 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
     def print_model(self, name_filter=None):
         for var in self.declarations:
             if name_filter is None or not var.symbol_name().startswith(name_filter):
-                print var.symbol_name(), "=", self.get_value(var)
+                print("%s = %s", (var.symbol_name(), self.get_value(var)))
 
 
     def get_value(self, item):
@@ -188,7 +189,7 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
 
 
-class YicesConverter(DagWalker):
+class YicesConverter(Converter, DagWalker):
 
     def __init__(self, environment):
         DagWalker.__init__(self, environment)
@@ -215,11 +216,9 @@ class YicesConverter(DagWalker):
         return libyices.yices_or(len(args), arr)
 
     def walk_not(self, formula, args):
-        assert len(args) == 1
         return libyices.yices_not(args[0])
 
     def walk_symbol(self, formula, args):
-        assert len(args) == 0
         symbol_type = formula.symbol_type()
         var_type = self._type_to_yices(symbol_type)
         term = libyices.yices_new_uninterpreted_term(var_type)
@@ -234,28 +233,22 @@ class YicesConverter(DagWalker):
         return term
 
     def walk_iff(self, formula, args):
-        assert len(args) == 2
         return libyices.yices_iff(args[0], args[1])
 
     def walk_implies(self, formula, args):
-        assert len(args) == 2
         return libyices.yices_implies(args[0], args[1])
 
     def walk_le(self, formula, args):
-        assert len(args) == 2
         return libyices.yices_arith_leq_atom(args[0], args[1])
 
     def walk_lt(self, formula, args):
-        assert len(args) == 2
         return libyices.yices_arith_lt_atom(args[0], args[1])
 
     def walk_ite(self, formula, args):
-        assert len(args) == 3
         i, t, e = args
         return libyices.yices_ite(i, t, e)
 
     def walk_real_constant(self, formula, args):
-        assert len(args) == 0
         assert type(formula.constant_value()) == Fraction
         frac = formula.constant_value()
         n,d = frac.numerator, frac.denominator
@@ -263,28 +256,24 @@ class YicesConverter(DagWalker):
         return libyices.yices_parse_rational(String(rep))
 
     def walk_int_constant(self, formula, args):
-        assert len(args) == 0
         assert type(formula.constant_value()) == int or \
             type(formula.constant_value()) == long
         rep = str(formula.constant_value())
         return libyices.yices_parse_rational(String(rep))
 
     def walk_bool_constant(self, formula, args):
-        assert len(args) == 0
         if formula.constant_value():
             return libyices.yices_true()
         else:
             return libyices.yices_false()
 
     def walk_exists(self, formula, args):
-        assert len(args) == 1
         (bound_formula, var_list) = \
                  self._rename_bound_variables(args[0], formula.quantifier_vars())
         arr = (libyices.term_t * len(var_list))(*var_list)
         return libyices.yices_exists(len(var_list), arr, bound_formula)
 
     def walk_forall(self, formula, args):
-        assert len(args) == 1
         (bound_formula, var_list) = \
                  self._rename_bound_variables(args[0], formula.quantifier_vars())
         arr = (libyices.term_t * len(var_list))(*var_list)
@@ -306,24 +295,19 @@ class YicesConverter(DagWalker):
 
 
     def walk_plus(self, formula, args):
-        assert len(args) >= 2
         arr = (libyices.term_t * len(args))(*args)
         return libyices.yices_sum(len(args), arr)
 
     def walk_minus(self, formula, args):
-        assert len(args) == 2
         return libyices.yices_sub(args[0], args[1])
 
     def walk_equals(self, formula, args):
-        assert len(args) == 2
         return libyices.yices_arith_eq_atom(args[0], args[1])
 
     def walk_times(self, formula, args):
-        assert len(args) == 2
         return libyices.yices_mul(args[0], args[1])
 
     def walk_toreal(self, formula, args):
-        assert len(args) == 1
         return args[0]
 
     def walk_function(self, formula, args):

@@ -1,16 +1,61 @@
 Change Log
 ==========
 
-0.2.3 XXXXXXXXXX -- YYY
------------------------
+0.2.5: XXXXXXXXXX  -- YYYYYY
+----------------------------
+
+General:
+
+* Added support for Python 3. The library works with both Python 2 and
+  Python 3.
+
+
+0.2.4: 2015-03-15  -- PicoSAT
+-----------------------------
+
+Solvers:
+
+* PicoSAT solver support
+
+General:
+
+* Iterative implementation of FNode.get_free_variables().
+  This also deprecates FNode.get_dependencies().
+
+Bugfix:
+
+* Fixed bug (#48) in pypi package, making pysmt-install (and other commands) unavailable. Thanks to Rhishikesh Limaye for reporting this.
+
+0.2.3: 2015-03-12 -- Logics Refactoring
+--------------------------------------
 
 General:
 
 * install.py: script to automate the installation of supported
   solvers.
 
+* get_logic() Oracle: Detects the logic used in a formula. This can now be used in the shortcuts (_is_sat()_, _is_unsat()_, _is_valid()_, and
+  _get_model()_) by choosing the special logic pysmt.logics.AUTO.
 
-0.2.2 2015-02-07 -- BDDs
+* Expressions: Added Min/Max operators.
+
+* SMT-LIB: Substantially improved parser performances. Added explicit
+  Annotations object to deal with SMT-LIB Annotations.
+
+* Improved iteration methods on EagerModel
+
+**Backwards Incompatible Changes**:
+
+* The default logic for Factory.get_solver() is now the most generic
+  *quantifier free* logic supported by pySMT (currently,
+  QF_UFLIRA). The factory not provides a way to change this default.
+
+* Removed option _quantified_ from all shortcuts.
+
+
+
+
+0.2.2: 2015-02-07 -- BDDs
 ------------------------
 
 Solvers:
@@ -23,7 +68,7 @@ General:
   be registered through the environment (see
   Environment.add_dynamic_walker_function).
 
-0.2.1 2014-11-29 -- SMT-LIB
+0.2.1: 2014-11-29 -- SMT-LIB
 ---------------------------
 
 Solvers:
@@ -39,7 +84,7 @@ General:
 * Added configuration file
 
 
-0.2.0 2014-10-02 -- Beta release.
+0.2.0: 2014-10-02 -- Beta release.
 ----------------------------------
 
 Theories: LIRA
@@ -63,7 +108,7 @@ Backwards Incompatible Changes:
   with the Python Standard Library.
 
 
-0.1.0 2014-03-10 -- Alpha release.
+0.1.0: 2014-03-10 -- Alpha release.
 ----------------------------------
 
 Theories: LIA, LRA, RDL, EUF
@@ -75,5 +120,5 @@ General Functionalities:
 * Unified Quantifier Elimination (Z3 support only)
 
 
-0.0.1 2014-02-01 -- Initial release.
+0.0.1: 2014-02-01 -- Initial release.
 ------------------------------------

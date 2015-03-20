@@ -222,6 +222,7 @@ class Model(object):
 
     def __init__(self, environment):
         self.environment = environment
+        self._converter = None
 
     def get_value(self, formula):
         """ Returns the value of formula in the current model (if one exists).
@@ -263,6 +264,15 @@ class Model(object):
             res[f] = v
         return res
 
+    @property
+    def converter(self):
+        """Get the Converter associated with the Solver."""
+        return self._converter
+
+    @converter.setter
+    def converter(self, value):
+        self._converter = value
+
     def __getitem__(self, idx):
         return self.get_value(idx)
 
@@ -273,3 +283,20 @@ class Model(object):
 
     def __str__(self):
         return "\n".join([ "%s := %s" % (var, value) for (var, value) in self])
+
+
+class Converter(object):
+    """A Converter implements functionalities to convert expressions.
+
+    There are two key methods: convert() and back().
+    The first performs the forward conversion (pySMT -> Solver API),
+    the second performs the backwards conversion (Solver API -> pySMT)
+    """
+
+    def convert(self, formula):
+        """Convert a PySMT formula into a Solver term."""
+        raise NotImplementedError
+
+    def back(self, expr):
+        """Convert an expression of the Solver into a PySMT term."""
+        raise NotImplementedError

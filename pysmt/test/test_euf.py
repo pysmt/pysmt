@@ -67,7 +67,7 @@ class TestEUF(TestCase):
 
         f = Function(plus, (Minus(Real(5), Real(5)),
                             Plus(y, Minus(z, z))))
-        self.assertEquals(Function(plus, (Real(0), y)),
+        self.assertEqual(Function(plus, (Real(0), y)),
                           f.simplify())
 
 if __name__ == '__main__':

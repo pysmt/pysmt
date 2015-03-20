@@ -15,20 +15,20 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import io
 import functools
 from fractions import Fraction
 from warnings import warn
+from six import iteritems
+from six.moves import xrange
 
 import pysmt.smtlib.commands as smtcmd
 from pysmt.shortcuts import get_env
 from pysmt.typing import BOOL, REAL, INT, FunctionType
 from pysmt.logics import get_logic_by_name, UndefinedLogicError
 from pysmt.exceptions import UnknownSmtLibCommandError
-from pysmt.utils.generic_number import GenericNumber, disambiguate
-from pysmt.environment import TypeUnsafeEnvironment
 from pysmt.smtlib.script import SmtLibCommand, SmtLibScript
-
+from pysmt.smtlib.annotations import Annotations
+import pysmt.utils as utils
 
 def get_formula(script_stream, environment=None):
     """
@@ -67,7 +67,7 @@ def get_formula_fname(script_fname, environment=None, strict=True):
     """
     Returns the formula asserted at the end of the given script
     """
-    with io.BufferedReader(io.FileIO(script_fname, 'r')) as script:
+    with utils.BufferedTextReader(script_fname) as script:
         if strict:
             return get_formula_strict(script, environment)
         else:
@@ -79,7 +79,7 @@ class SmtLibExecutionCache(object):
     def __init__(self):
         self.keys = {}
         self.definitions = {}
-        self.annotations = {}
+        self.annotations = Annotations()
 
     def bind(self, name, value):
         """Binds a symbol in this environment"""
@@ -117,7 +117,7 @@ class SmtLibExecutionCache(object):
 
     def update(self, value_map):
         """Binds all the symbols in 'value_map'"""
-        for k, val in value_map.iteritems():
+        for k, val in iteritems(value_map):
             self.bind(k, val)
 
     def unbind_all(self, values):
@@ -195,13 +195,23 @@ class SmtLibParser(object):
 
     def __init__(self, environment=None):
         self.pysmt_env = get_env() if environment is None else environment
-        self._current_env = self.pysmt_env
-        self.cache = SmtLibExecutionCache()
+
+        # Placeholders for fields filled by self._reset
+        self._current_env = None
+        self.cache = None
         self.logic = None
 
         # Special tokens appearing in expressions
         self.parentheses = set(["(", ")"])
         self.specials = set(["let", "!", "exists", "forall"])
+
+
+
+    def _reset(self):
+        """Resets the parser to the initial state"""
+        self.cache = SmtLibExecutionCache()
+        self.logic = None
+        self._current_env = self.pysmt_env
 
         mgr = self.pysmt_env.formula_manager
         self.cache.update({'+':mgr.Plus,
@@ -225,34 +235,22 @@ class SmtLibParser(object):
                            'to_real':mgr.ToReal,
                            })
 
-    def _is_unknown_constant_type(self):
-        """
-        Returns true if the logic at hand allows for bot Real and Integer
-        constants
-
-        """
-        return self.logic is None or \
-            (self.logic.theory.integer_arithmetic and
-             self.logic.theory.real_arithmetic)
 
     def _minus_or_uminus(self, *args):
         """Utility function that handles both unary and binary minus"""
         mgr = self._current_env.formula_manager
         if len(args) == 1:
-            if self._is_unknown_constant_type():
-                if type(args[0]) == GenericNumber:
-                    return GenericNumber(-1 * args[0].value)
-                return mgr.Times(GenericNumber(-1), args[0])
+            lty = self._current_env.stc.get_type(args[0])
+            mult = None
+            if lty == INT:
+                if args[0].is_int_constant():
+                    return mgr.Int(-1 * args[0].constant_value())
+                mult = mgr.Int(-1)
             else:
-                if self.logic.theory.real_arithmetic:
-                    if args[0].is_real_constant():
-                        return mgr.Real(-1 * args[0].constant_value())
-                    return mgr.Times(mgr.Real(-1), args[0])
-                else:
-                    assert self.logic.theory.integer_arithmetic
-                    if args[0].is_int_constant():
-                        return mgr.Int(-1 * args[0].constant_value())
-                    return mgr.Times(mgr.Int(-1), args[0])
+                if args[0].is_real_constant():
+                    return mgr.Real(-1 * args[0].constant_value())
+                mult = mgr.Real(-1)
+            return mgr.Times(mult, args[0])
         else:
             assert len(args) == 2
             return mgr.Minus(args[0], args[1])
@@ -261,20 +259,16 @@ class SmtLibParser(object):
     def _equals_or_iff(self, left, right):
         """Utility function that treats = between booleans as <->"""
         mgr = self._current_env.formula_manager
-        if self._is_unknown_constant_type():
-            return mgr.Equals(left, right)
-
+        lty = self._current_env.stc.get_type(left)
+        if lty == BOOL:
+            return mgr.Iff(left, right)
         else:
-            lty = self._current_env.stc.get_type(left)
-            if lty == BOOL:
-                return mgr.Iff(left, right)
-            else:
-                return mgr.Equals(left, right)
+            return mgr.Equals(left, right)
 
     def _division(self, left, right):
         """Utility function that builds a division"""
         mgr = self._current_env.formula_manager
-        if left.is_real_constant() and right.is_real_constant():
+        if left.is_constant() and right.is_constant():
             return mgr.Real(Fraction(left.constant_value()) / \
                             Fraction(right.constant_value()))
         return mgr.Div(left, right)
@@ -313,22 +307,20 @@ class SmtLibParser(object):
         """
         res = self.cache.get(token)
         if res is None:
-            # This is a numerical constant
-            if "." in token:
-                res = mgr.Real(Fraction(token))
-            else:
-                iterm = int(token)
-                # We found an integer, depending on the logic this can be
-                # an Int, a Real, or an unknown GenericNumber.
-                if self._is_unknown_constant_type():
-                    res = GenericNumber(iterm)
-                elif self.logic.theory.real_arithmetic:
-                    res = mgr.Real(iterm)
+            try:
+                # This is a numerical constant
+                if "." in token:
+                    res = mgr.Real(Fraction(token))
                 else:
-                    assert self.logic.theory.integer_arithmetic, \
-                        "Integer constant found in a logic that does not " \
-                        "support arithmetic"
-                    res = mgr.Int(iterm)
+                    iterm = int(token)
+                    # We found an integer, depending on the logic this can be
+                    # an Int or a Real
+                    if self.logic is None or self.logic.theory.integer_arithmetic:
+                        res = mgr.Int(iterm)
+                    else:
+                        res = mgr.Real(iterm)
+            except ValueError:
+                res = token
             self.cache.bind(token, res)
         return res
 
@@ -367,26 +359,6 @@ class SmtLibParser(object):
         self._current_env = env
 
 
-    def get_expression(self, tokens):
-        """
-        Returns the pysmt representation of the given parsed expression
-        """
-        tu_env = None
-        if self._is_unknown_constant_type():
-            old_env = self._current_env
-            tu_env = TypeUnsafeEnvironment()
-            self._use_env(tu_env)
-
-            r = self._do_get_expression(tokens)
-
-            dis = disambiguate(tu_env, r, fix_equals=True)
-            self._reset_env(old_env)
-            return self.pysmt_env.formula_manager.normalize(dis)
-
-        else:
-            return self._do_get_expression(tokens)
-
-
     def _handle_let(self, varlist, bdy):
         """ Cleans the execution environment when we exit the scope of a 'let' """
         for k in varlist:
@@ -403,29 +375,33 @@ class SmtLibParser(object):
         return fun(vrs, body)
 
 
-    def _handle_annotation(self, pyterm, attrs):
+    def _handle_annotation(self, pyterm, *attrs):
         """
         This method is invoked when we finish parsing an annotated expression
         """
-        pyterm_annotations = self.cache.annotations.setdefault(pyterm, {})
 
         # Iterate on elements.
         i = 0
         while i < len(attrs):
             if i+1 < len(attrs) and str(attrs[i+1])[0] != ":" :
-                key, value = attrs[i], attrs[i+1]
+                key, value = str(attrs[i]), str(attrs[i+1])
+                if key[0] != ":":
+                    raise SyntaxError("Annotations keys should start with colon")
+                self.cache.annotations.add(pyterm, key[1:], value)
                 i += 2
             else:
-                key, value = attrs[i], True
+                key = str(attrs[i])
+                if key[0] != ":":
+                    raise SyntaxError("Annotations keys should start with colon")
+                self.cache.annotations.add(pyterm, key[1:])
                 i += 1
-            pyterm_annotations[key] = value
 
         return pyterm
 
 
-    def _do_get_expression(self, tokens):
+    def get_expression(self, tokens):
         """
-        Iteratively parse the token stream
+        Returns the pysmt representation of the given parsed expression
         """
         mgr = self._current_env.formula_manager
         stack = []
@@ -448,12 +424,12 @@ class SmtLibParser(object):
                                 if current != "(":
                                     raise SyntaxError("Expected '(' in let binding")
                                 vname = self.parse_atom(tokens, "expression")
-                                expr = self._do_get_expression(tokens)
+                                expr = self.get_expression(tokens)
                                 newvals[vname] = expr
                                 self.consume_closing(tokens, "expression")
                                 current = next(tokens)
 
-                            for k, val in newvals.iteritems():
+                            for k, val in iteritems(newvals):
                                 self.cache.bind(k, val)
                             stack[-1].append(self._handle_let)
                             stack[-1].append(newvals.keys())
@@ -518,9 +494,11 @@ class SmtLibParser(object):
         """
         Takes a file object and returns a SmtLibScript object representing the file
         """
+        self._reset() # prepare the parser
         res = SmtLibScript()
         for cmd in self.get_command_generator(script):
             res.add_command(cmd)
+        res.annotations = self.cache.annotations
         return res
 
     def get_command_generator(self, script):
@@ -537,9 +515,8 @@ class SmtLibParser(object):
 
     def get_script_fname(self, script_fname):
         """Given a filename and a Solver, executes the solver on the file."""
-        with io.BufferedReader(io.FileIO(script_fname, 'r')) as script:
+        with utils.BufferedTextReader(script_fname) as script:
             return self.get_script(script)
-
 
     def parse_atoms(self, tokens, command, min_size, max_size=None):
         """
@@ -755,30 +732,16 @@ if __name__ == "__main__":
     def main():
         """Simple testing script"""
         args = sys.argv
-        if len(args) != 2 and len(args) != 3:
-            print "Usage %s <file.smt2> [-tu]" % args[0]
+        if len(args) != 2:
+            print("Usage %s <file.smt2>" % args[0])
             exit(1)
 
         fname = args[1]
-        unsafe = False
-        if len(args) == 3:
-            if args[1] == "-tu":
-                unsafe = True
-                fname = args[2]
-            elif args[2] == "-tu":
-                unsafe = True
-            else:
-                print "Invalid options specified"
-                exit(1)
 
-        if unsafe:
-            parser = SmtLibParser(TypeUnsafeEnvironment())
-        else:
-            parser = SmtLibParser()
-
+        parser = SmtLibParser()
         res = parser.get_script_fname(fname)
         assert res != None
 
-        print "Done"
+        print("Done")
 
     main()

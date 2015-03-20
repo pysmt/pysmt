@@ -87,7 +87,7 @@ class SmtPrinter(TreeWalker):
         if d != 1:
             res = template % ( "(/ " + str(n) + " " + str(d) + ")" )
         else:
-            res = template % str(n)
+            res = template % (str(n) + ".0")
 
         self.write(res)
 
@@ -173,7 +173,7 @@ class SmtDagPrinter(DagWalker):
     def printer(self, f):
         self.openings = 0
         self.name_seed = 0
-        self.names = set(x.symbol_name() for x in f.get_dependencies())
+        self.names = set(x.symbol_name() for x in f.get_free_variables())
 
         key = self.walk(f)
         self.write(key)
@@ -221,7 +221,7 @@ class SmtDagPrinter(DagWalker):
         if d != 1:
             return template % ( "(/ " + str(n) + " " + str(d) + ")" )
         else:
-            return template % str(n)
+            return template % (str(n) + ".0")
 
     def walk_bool_constant(self, formula, args, **kwargs):
         if formula.constant_value():

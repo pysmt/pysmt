@@ -15,8 +15,9 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import cStringIO
+from six.moves import cStringIO
 import unittest
+from six.moves import xrange
 
 from pysmt.shortcuts import Or, And, Not, Plus, Iff, Implies
 from pysmt.shortcuts import Exists, ForAll, Ite
@@ -29,7 +30,7 @@ from pysmt.test import TestCase
 
 class TestPrinting(TestCase):
     def print_to_string(self, formula):
-        buf = cStringIO.StringIO()
+        buf = cStringIO()
         printer = SmtPrinter(buf)
         printer.printer(formula)
 
@@ -41,14 +42,14 @@ class TestPrinting(TestCase):
                    Symbol("y", REAL)])
 
         f_string = self.print_to_string(f)
-        self.assertEquals(f_string, "(+ 1 x y)")
+        self.assertEqual(f_string, "(+ 1.0 x y)")
 
     def test_boolean(self):
         x, y, z = Symbol("x"), Symbol("y"), Symbol("z")
         f = Or(And(Not(x), Iff(x, y)), Implies(x, z))
 
         f_string = self.print_to_string(f)
-        self.assertEquals(f_string,
+        self.assertEqual(f_string,
                           "(or (and (not x) (= x y)) (=> x z))")
 
     def test_int(self):
@@ -57,7 +58,7 @@ class TestPrinting(TestCase):
                LT(p,q), LE(Int(6), Int(1)))
 
         f_string = self.print_to_string(f)
-        self.assertEquals(f_string,
+        self.assertEqual(f_string,
                           "(or (= (* p 5) (- p q)) (< p q) (<= 6 1))")
 
     def test_ite(self):
@@ -67,7 +68,7 @@ class TestPrinting(TestCase):
         f = Ite(x, p, q)
         f_string = self.print_to_string(f)
 
-        self.assertEquals(f_string,
+        self.assertEqual(f_string,
                           "(ite x p q)")
 
     def test_quantifiers(self):
@@ -78,10 +79,10 @@ class TestPrinting(TestCase):
         fa_string = self.print_to_string(fa)
         fe_string = self.print_to_string(fe)
 
-        self.assertEquals(fa_string,
+        self.assertEqual(fa_string,
                           "(forall ((x Bool)) (and x (not x)))")
 
-        self.assertEquals(fe_string,
+        self.assertEqual(fe_string,
                           "(exists ((x Bool)) (and x (not x)))")
 
 
@@ -97,22 +98,22 @@ class TestPrinting(TestCase):
         b1_string = self.print_to_string(b1)
         b2_string = self.print_to_string(b2)
 
-        self.assertEquals(b1_string, "true")
-        self.assertEquals(b2_string, "false")
+        self.assertEqual(b1_string, "true")
+        self.assertEqual(b2_string, "false")
 
         r1_string = self.print_to_string(r1)
         r2_string = self.print_to_string(r2)
         r3_string = self.print_to_string(r3)
 
-        self.assertEquals(r1_string, "(/ 11 2)")
-        self.assertEquals(r2_string, "5")
-        self.assertEquals(r3_string, "(- (/ 11 2))")
+        self.assertEqual(r1_string, "(/ 11 2)")
+        self.assertEqual(r2_string, "5.0")
+        self.assertEqual(r3_string, "(- (/ 11 2))")
 
         i1_string = self.print_to_string(i1)
         i2_string = self.print_to_string(i2)
 
-        self.assertEquals(i1_string, "4")
-        self.assertEquals(i2_string, "(- 4)")
+        self.assertEqual(i1_string, "4")
+        self.assertEqual(i2_string, "(- 4)")
 
     def test_function(self):
         f1_type = FunctionType(REAL, [REAL, REAL])
@@ -128,15 +129,15 @@ class TestPrinting(TestCase):
         f1_string = self.print_to_string(f1)
         f2_string = self.print_to_string(f2)
 
-        self.assertEquals(f1_string, "(f1 p q)")
-        self.assertEquals(f2_string, "(f2)")
+        self.assertEqual(f1_string, "(f1 p q)")
+        self.assertEqual(f2_string, "(f2)")
 
     def test_toreal(self):
         p = Symbol("p", INT)
         rp = ToReal(p)
 
         rp_string = self.print_to_string(rp)
-        self.assertEquals(rp_string, "(to_real p)")
+        self.assertEqual(rp_string, "(to_real p)")
 
     def test_threshold_printing(self):
         x = Symbol("x")
@@ -154,8 +155,8 @@ class TestPrinting(TestCase):
         for _ in xrange(10):
             f = And(f,f)
 
-        tree_buf = cStringIO.StringIO()
-        dag_buf = cStringIO.StringIO()
+        tree_buf = cStringIO()
+        dag_buf = cStringIO()
         tree_printer = SmtPrinter(tree_buf)
         dag_printer = SmtDagPrinter(dag_buf)
 

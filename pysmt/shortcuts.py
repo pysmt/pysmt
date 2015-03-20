@@ -81,6 +81,10 @@ def serialize(formula, threshold=None):
     return get_env().serializer.serialize(formula,
                                           threshold=threshold)
 
+def get_free_variables(formula):
+    """Returns the simplified version of the formula."""
+    return get_env().fvo.get_free_variables(formula)
+
 ##### Nodes Creation #####
 
 def ForAll(variables, formula):
@@ -187,20 +191,32 @@ def ToReal(formula):
     """Explicit cast of a term into a Real term."""
     return get_env().formula_manager.ToReal(formula)
 
-def AtMostOne(bool_exprs):
+def AtMostOne(*args):
     """
     Cardinality constraint over a set of boolean expressions.
     At most one can be true at anytime.
     """
-    return get_env().formula_manager.AtMostOne(bool_exprs)
+    return get_env().formula_manager.AtMostOne(*args)
 
-def ExactlyOne(bool_symbols):
-    """Given a set of boolean symbols requires that exactly one holds."""
-    return get_env().formula_manager.ExactlyOne(bool_symbols)
+def ExactlyOne(*args):
+    """Given a set of boolean expressions requires that exactly one holds."""
+    return get_env().formula_manager.ExactlyOne(*args)
 
 def Xor(left, right):
     """Returns the XOR of left and right"""
     return get_env().formula_manager.Xor(left, right)
+
+def Min(*args):
+    """
+    Minimum over a set of real or integer terms
+    """
+    return get_env().formula_manager.Min(*args)
+
+def Max(*args):
+    """
+    Maximum over a set of real or integer terms
+    """
+    return get_env().formula_manager.Max(*args)
 
 
 #### Shortcuts for Solvers Factory #####
@@ -214,14 +230,11 @@ def QuantifierEliminator(name=None):
     """Returns a quantifier eliminator"""
     return get_env().factory.QuantifierEliminator(name=name)
 
-def is_sat(formula, quantified=False, solver_name=None, logic=None):
+def is_sat(formula, solver_name=None, logic=None):
     """ Returns whether a formula is satisfiable.
 
     :param formula: The formula to check satisfiability
     :type  formula: FNode
-    :param quantified: A boolean indicating whether the formula is
-                       quantified (this will influence the choice of
-                       the solver.
     :param solver_name: Specify the name of the solver to be used.
     :param logic: Specify the logic that is going to be used.
     :returns: Whether the formula is SAT or UNSAT.
@@ -233,11 +246,10 @@ def is_sat(formula, quantified=False, solver_name=None, logic=None):
         formula = env.formula_manager.normalize(formula)
 
     return env.factory.is_sat(formula,
-                              quantified=quantified,
                               solver_name=solver_name,
                               logic=logic)
 
-def get_model(formula, quantified=False, solver_name=None, logic=None):
+def get_model(formula, solver_name=None, logic=None):
     """ Similar to :py:func:`is_sat` but returns a model if the formula is
     satisfiable, otherwise None."""
     env = get_env()
@@ -246,11 +258,10 @@ def get_model(formula, quantified=False, solver_name=None, logic=None):
         formula = env.formula_manager.normalize(formula)
 
     return env.factory.get_model(formula,
-                                 quantified=quantified,
                                  solver_name=solver_name,
                                  logic=logic)
 
-def is_valid(formula, quantified=False, solver_name=None, logic=None):
+def is_valid(formula, solver_name=None, logic=None):
     """Similar to :py:func:`is_sat` but checks validity."""
     env = get_env()
     if formula not in env.formula_manager:
@@ -258,11 +269,10 @@ def is_valid(formula, quantified=False, solver_name=None, logic=None):
         formula = env.formula_manager.normalize(formula)
 
     return env.factory.is_valid(formula,
-                                quantified=quantified,
                                 solver_name=solver_name,
                                 logic=logic)
 
-def is_unsat(formula, quantified=False, solver_name=None, logic=None):
+def is_unsat(formula, solver_name=None, logic=None):
     """Similar to :py:func:`is_sat` but checks unsatisfiability."""
     env = get_env()
     if formula not in env.formula_manager:
@@ -270,7 +280,6 @@ def is_unsat(formula, quantified=False, solver_name=None, logic=None):
         formula = env.formula_manager.normalize(formula)
 
     return env.factory.is_unsat(formula,
-                                quantified=quantified,
                                 solver_name=solver_name,
                                 logic=logic)
 

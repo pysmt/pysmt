@@ -17,10 +17,12 @@
 #
 from unittest import skip
 
-from pysmt.shortcuts import get_env
+from pysmt.shortcuts import get_env, get_free_variables
+from pysmt.shortcuts import Symbol, Implies, And, Not
 from pysmt.test.examples import EXAMPLE_FORMULAS
 from pysmt.test import TestCase
 from pysmt.oracles import get_logic
+
 
 class TestOracles(TestCase):
     @skip
@@ -34,15 +36,12 @@ class TestOracles(TestCase):
         for example in EXAMPLE_FORMULAS:
             target_logic = example.logic
             res = get_logic(example.expr)
-            self.assertEquals(res, target_logic, "%s - %s != %s" % \
+            self.assertEqual(res, target_logic, "%s - %s != %s" % \
                               (example.expr, target_logic, res))
 
-    def test_regression(self):
-        from pysmt.shortcuts import Symbol, Plus, Equals, Real, GT, LT, Implies, And, ForAll, Minus
-        from pysmt.typing import REAL
-        r,s = Symbol("r", REAL), Symbol("s", REAL)
-        x,y = Symbol("x"), Symbol("y")
+    def test_get_free_vars(self):
+        x, y = Symbol("x"), Symbol("y")
+        f = Implies(x, And(y, Not(x)))
 
-        f4 = ForAll([r,s], Implies(And(GT(r, Real(0)), GT(s, Real(0))),
-                              (LT(Minus(r,s), r))))
-        print(f4, get_logic(f4))
+        s = get_free_variables(f)
+        self.assertEqual(set([x,y]), s)

@@ -34,6 +34,7 @@ from fractions import Fraction
 import pysmt.typing as types
 import pysmt.operators as op
 
+from pysmt.utils import is_integer
 from pysmt.fnode import FNode, FNodeContent
 from pysmt.exceptions import NonLinearError
 from pysmt.walkers.identitydag import IdentityDagWalker
@@ -313,7 +314,7 @@ class FormulaManager(object):
             val = value
         elif type(value) == tuple:
             val = Fraction(value[0], value[1])
-        elif type(value) == long or type(value) == int:
+        elif is_integer(value):
             val = Fraction(value, 1)
         elif type(value) == float:
             val = Fraction.from_float(value)
@@ -332,7 +333,7 @@ class FormulaManager(object):
         if value in self.int_constants:
             return self.int_constants[value]
 
-        if type(value) == long or type(value) == int:
+        if is_integer(value):
             n = self.create_node(node_type=op.INT_CONSTANT,
                                  args=tuple(),
                                  payload=value)
@@ -431,19 +432,22 @@ class FormulaManager(object):
             # Ignore casting of a Real
             return formula
         elif t == types.INT:
+            if formula.is_int_constant():
+                return self.Real(formula.constant_value())
             return self.create_node(node_type=op.TOREAL,
                                     args=(formula,))
         else:
             raise TypeError("Argument is of type %s, but INT was expected!\n" % t)
 
 
-    def AtMostOne(self, bool_exprs):
+    def AtMostOne(self, *args):
         """ At most one of the bool expressions can be true at anytime.
 
         This using a quadratic encoding:
            A -> !(B \/ C)
            B -> !(C)
         """
+        bool_exprs = self._polymorph_args_to_tuple(args)
         constraints = []
         for (i, elem) in enumerate(bool_exprs[:-1], start=1):
             constraints.append(self.Implies(elem,
@@ -451,7 +455,7 @@ class FormulaManager(object):
         return self.And(constraints)
 
 
-    def ExactlyOne(self, bool_exprs):
+    def ExactlyOne(self, *args):
         """ Encodes an exactly-one constraint on the boolean symbols.
 
         This using a quadratic encoding:
@@ -459,13 +463,40 @@ class FormulaManager(object):
            A -> !(B \/ C)
            B -> !(C)
         """
-        return self.And(self.Or(bool_exprs),
-                        self.AtMostOne(bool_exprs))
+        return self.And(self.Or(*args),
+                        self.AtMostOne(*args))
 
 
     def Xor(self, left, right):
         """Returns the xor of left and right: left XOR right """
         return self.Not(self.Iff(left, right))
+
+    def Min(self, *args):
+        """Returns the encoding of the minimum expression within args"""
+        exprs = self._polymorph_args_to_tuple(args)
+        assert len(exprs) > 0
+        if len(exprs) == 1:
+            return exprs[0]
+        elif len(exprs) == 2:
+            a, b = exprs
+            return self.Ite(self.LE(a, b), a, b)
+        else:
+            h = len(exprs) // 2
+            return self.Min(self.Min(exprs[0:h]), self.Min(exprs[h:]))
+
+    def Max(self, *args):
+        """Returns the encoding of the maximum expression within args"""
+        exprs = self._polymorph_args_to_tuple(args)
+        assert len(exprs) > 0
+        if len(exprs) == 1:
+            return exprs[0]
+        elif len(exprs) == 2:
+            a, b = exprs
+            return self.Ite(self.LE(a, b), b, a)
+        else:
+            h = len(exprs) // 2
+            return self.Max(self.Max(exprs[0:h]), self.Max(exprs[h:]))
+
 
 
     def normalize(self, formula):
@@ -507,28 +538,3 @@ class FormulaManager(object):
             return False
 
 #EOC FormulaManager
-
-class TypeUnsafeFormulaManager(FormulaManager):
-    """Subclass of FormulaManager in which type-checking is disabled.
-
-    TypeUnsafeFormulaManager makes it possible to build expressions
-    that are incorrect: e.g., True + 1.  This is used mainly to avoid
-    the overhead of having to check each expression for type. For
-    example, during parsing we post-pone the type-check after the
-    whole expression has been built.
-
-    This should be used with caution.
-    """
-
-    def __init__(self, env=None):
-        FormulaManager.__init__(self, env)
-
-    def _do_type_check(self, formula):
-        pass
-
-    def ToReal(self, formula):
-        """ Cast a formula to real type. """
-        return self.create_node(node_type=op.TOREAL,
-                                args=(formula,))
-
-#EOC TypeUnsafeFormulaManager

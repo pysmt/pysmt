@@ -32,18 +32,18 @@ class TestLIRA(TestCase):
                 s.add_assertion(check)
                 c = s.solve()
                 self.assertTrue(c)
-                self.assertEquals(s.get_value(b), Int(3))
+                self.assertEqual(s.get_value(b), Int(3))
 
 
     def test_toreal(self):
         a = Symbol("a", REAL)
         b = Symbol("b", INT)
 
-        self.assertEquals(a, ToReal(a))
-        self.assertEquals(Plus(a, Real(1)), ToReal(Plus(a, Real(1))))
+        self.assertEqual(a, ToReal(a))
+        self.assertEqual(Plus(a, Real(1)), ToReal(Plus(a, Real(1))))
 
-        self.assertEquals(ToReal(b), ToReal(ToReal(b)))
-        self.assertEquals(ToReal(Plus(b, Int(1))),
+        self.assertEqual(ToReal(b), ToReal(ToReal(b)))
+        self.assertEqual(ToReal(Plus(b, Int(1))),
                           ToReal(ToReal(Plus(b, Int(1)))))
 
 

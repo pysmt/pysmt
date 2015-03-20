@@ -16,11 +16,10 @@
 #   limitations under the License.
 #
 """FNode are the building blocks of formulae."""
-
 import collections
 
-import shortcuts
-from pysmt.operators import ALL_TYPES, QUANTIFIERS, CONSTANTS
+import pysmt.shortcuts
+from pysmt.operators import CONSTANTS
 from pysmt.operators import (FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF,
                              SYMBOL, FUNCTION,
                              REAL_CONSTANT, BOOL_CONSTANT, INT_CONSTANT,
@@ -29,14 +28,10 @@ from pysmt.operators import (FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF,
                              ITE,
                              TOREAL)
 from pysmt.typing import BOOL, REAL, INT, PYSMT_TYPES
+from pysmt.decorators import deprecated
 
 FNodeContent = collections.namedtuple("FNodeContent",
                                       ["node_type", "args", "payload"])
-
-# Operators for which Args is an FNode (used by compute_dependencies
-DEPENDENCIES_SIMPLE_ARGS = (set(ALL_TYPES) - \
-                            (set([SYMBOL, FUNCTION]) | QUANTIFIERS | CONSTANTS))
-
 
 class FNode(object):
     r"""FNode represent the basic structure for representing a formula.
@@ -55,7 +50,6 @@ class FNode(object):
 
     def __init__(self, content):
         self._content = content
-        self._dependencies = None
         return
 
     # __eq__ and __hash__ are left as default
@@ -70,48 +64,21 @@ class FNode(object):
     def arg(self, idx):
         return self._content.args[idx]
 
-
+    @deprecated("get_free_variables")
     def get_dependencies(self):
-        if self._dependencies is None:
-            self._dependencies = self._compute_dependencies()
-        return self._dependencies
+        return self.get_free_variables()
 
-    def _compute_dependencies(self):
-        if self.node_type() in DEPENDENCIES_SIMPLE_ARGS:
-            res = set()
-            for s in self.get_sons():
-                res.update(s.get_dependencies())
-            return res
-
-        elif self.node_type() in QUANTIFIERS:
-            return self.arg(0).get_dependencies().difference(self._content.payload)
-
-        elif self.node_type() == SYMBOL:
-            return frozenset([self])
-
-        elif self.node_type() in CONSTANTS:
-            return frozenset()
-
-        elif self.node_type() == FUNCTION:
-            res = set([self._content.payload])
-            for p in self.args():
-                res.update(p.get_dependencies())
-            return res
-
-        else:
-            assert False
-        return
-
+    def get_free_variables(self):
+        return pysmt.shortcuts.get_free_variables(self)
 
     def get_sons(self):
         return self.args()
 
-
     def simplify(self):
-        return shortcuts.simplify(self)
+        return pysmt.shortcuts.simplify(self)
 
     def substitute(self, subs):
-        return shortcuts.substitute(self, subs=subs)
+        return pysmt.shortcuts.substitute(self, subs=subs)
 
     def is_constant(self, _type=None, value=None):
         if self.node_type() not in CONSTANTS:
@@ -217,7 +184,7 @@ class FNode(object):
         return str(self)
 
     def serialize(self, threshold=None):
-        return shortcuts.serialize(self, threshold=threshold)
+        return pysmt.shortcuts.serialize(self, threshold=threshold)
 
     def is_quantifier(self):
         return self.is_exists() or self.is_forall()
@@ -256,54 +223,54 @@ class FNode(object):
 
     # Infix Notation
     def _apply_infix(self, right, function):
-        if shortcuts.get_env().enable_infix_notation:
+        if pysmt.shortcuts.get_env().enable_infix_notation:
             return function(self, right)
         else:
             raise Exception("Cannot use infix notation")
 
     def Implies(self, right):
-        return self._apply_infix(right, shortcuts.Implies)
+        return self._apply_infix(right, pysmt.shortcuts.Implies)
 
     def Iff(self, right):
-        return self._apply_infix(right, shortcuts.Iff)
+        return self._apply_infix(right, pysmt.shortcuts.Iff)
 
     def Equals(self, right):
-        return self._apply_infix(right, shortcuts.Equals)
+        return self._apply_infix(right, pysmt.shortcuts.Equals)
 
     def Ite(self, right):
-        return self._apply_infix(right, shortcuts.Ite)
+        return self._apply_infix(right, pysmt.shortcuts.Ite)
 
     def And(self, right):
-        return self._apply_infix(right, shortcuts.And)
+        return self._apply_infix(right, pysmt.shortcuts.And)
 
     def Or(self, right):
-        return self._apply_infix(right, shortcuts.Or)
+        return self._apply_infix(right, pysmt.shortcuts.Or)
 
     def __add__(self, right):
-        return self._apply_infix(right, shortcuts.Plus)
+        return self._apply_infix(right, pysmt.shortcuts.Plus)
 
     def __sub__(self, right):
-        return self._apply_infix(right, shortcuts.Minus)
+        return self._apply_infix(right, pysmt.shortcuts.Minus)
 
     def __mul__(self, right):
-        return self._apply_infix(right, shortcuts.Times)
+        return self._apply_infix(right, pysmt.shortcuts.Times)
 
     def __div__(self, right):
-        return self._apply_infix(right, shortcuts.Div)
+        return self._apply_infix(right, pysmt.shortcuts.Div)
 
     def __truediv__(self, right):
         return self.__div__(right)
 
     def __gt__(self, right):
-        return self._apply_infix(right, shortcuts.GT)
+        return self._apply_infix(right, pysmt.shortcuts.GT)
 
     def __ge__(self, right):
-        return self._apply_infix(right, shortcuts.GE)
+        return self._apply_infix(right, pysmt.shortcuts.GE)
 
     def __lt__(self, right):
-        return self._apply_infix(right, shortcuts.LT)
+        return self._apply_infix(right, pysmt.shortcuts.LT)
 
     def __le__(self, right):
-        return self._apply_infix(right, shortcuts.LE)
+        return self._apply_infix(right, pysmt.shortcuts.LE)
 
 # EOC FNode

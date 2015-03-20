@@ -16,6 +16,8 @@
 #   limitations under the License.
 #
 import unittest
+from six.moves import xrange
+
 import pysmt.operators as op
 from pysmt.shortcuts import Symbol, FreshSymbol, And, Not, GT, Function, Plus
 from pysmt.shortcuts import Bool, TRUE, Real, LE, FALSE, Or, Equals
@@ -25,7 +27,7 @@ from pysmt.typing import BOOL, REAL, FunctionType
 from pysmt.test import TestCase, skipIfSolverNotAvailable, skipIfNoSolverForLogic
 from pysmt.test.examples import get_example_formulae
 from pysmt.exceptions import SolverReturnedUnknownResultError, InternalSolverError
-from pysmt.logics import QF_UFLIRA, QF_BOOL, QF_LRA
+from pysmt.logics import QF_UFLIRA, QF_BOOL, QF_LRA, AUTO
 
 class TestBasic(TestCase):
 
@@ -45,7 +47,7 @@ class TestBasic(TestCase):
 
         h = And(g, Bool(False))
         simp_h = h.simplify()
-        self.assertEquals(simp_h, Bool(False))
+        self.assertEqual(simp_h, Bool(False))
 
     @skipIfNoSolverForLogic(QF_BOOL)
     def test_is_sat(self):
@@ -61,6 +63,31 @@ class TestBasic(TestCase):
         for solver in get_env().factory.all_solvers():
             res = is_sat(g, solver_name=solver)
             self.assertFalse(res, "Formula was expected to be UNSAT")
+
+    # This test works only if is_sat requests QF_BOOL as logic, since
+    # that is the only logic handled by BDDs
+    @skipIfSolverNotAvailable("bdd")
+    def test_get_logic_in_is_sat(self):
+        varA = Symbol("A", BOOL)
+        varB = Symbol("B", BOOL)
+
+        f = And(varA, Not(varB))
+        res = is_sat(f, logic=AUTO)
+        self.assertTrue(res)
+
+    @skipIfSolverNotAvailable("bdd")
+    def test_default_logic_in_is_sat(self):
+        factory = get_env().factory
+        factory.default_logic = QF_BOOL
+
+        self.assertEquals(factory.default_logic, QF_BOOL)
+        varA = Symbol("A", BOOL)
+        varB = Symbol("B", BOOL)
+
+        f = And(varA, Not(varB))
+        res = is_sat(f)
+        self.assertTrue(res)
+
 
     @skipIfNoSolverForLogic(QF_BOOL)
     def test_get_model_unsat(self):
@@ -111,8 +138,8 @@ class TestBasic(TestCase):
             v = is_valid(f, solver_name='msat')
             s = is_sat(f, solver_name='msat')
 
-            self.assertEquals(validity, v, f)
-            self.assertEquals(satisfiability, s, f)
+            self.assertEqual(validity, v, f)
+            self.assertEqual(satisfiability, s, f)
 
     @skipIfSolverNotAvailable("cvc4")
     def test_examples_cvc4(self):
@@ -122,8 +149,8 @@ class TestBasic(TestCase):
                 v = is_valid(f, solver_name='cvc4')
                 s = is_sat(f, solver_name='cvc4')
 
-                self.assertEquals(validity, v, f)
-                self.assertEquals(satisfiability, s, f)
+                self.assertEqual(validity, v, f)
+                self.assertEqual(satisfiability, s, f)
 
             except SolverReturnedUnknownResultError:
                 # CVC4 does not handle quantifiers in a complete way
@@ -136,8 +163,8 @@ class TestBasic(TestCase):
             v = is_valid(f, solver_name='yices')
             s = is_sat(f, solver_name='yices')
 
-            self.assertEquals(validity, v, f)
-            self.assertEquals(satisfiability, s, f)
+            self.assertEqual(validity, v, f)
+            self.assertEqual(satisfiability, s, f)
 
 
 
@@ -152,22 +179,22 @@ class TestBasic(TestCase):
 
                     # Ask single values to the solver
                     subs = {}
-                    for d in f.get_dependencies():
+                    for d in f.get_free_variables():
                         m = s.get_value(d)
                         subs[d] = m
 
                     simp = f.substitute(subs).simplify()
-                    self.assertEquals(simp, TRUE())
+                    self.assertEqual(simp, TRUE())
 
                     # Ask the eager model
                     subs = {}
                     model = s.get_model()
-                    for d in f.get_dependencies():
+                    for d in f.get_free_variables():
                         m = model.get_value(d)
                         subs[d] = m
 
                     simp = f.substitute(subs).simplify()
-                    self.assertEquals(simp, TRUE())
+                    self.assertEqual(simp, TRUE())
 
     @skipIfSolverNotAvailable("cvc4")
     def test_model_cvc4(self):
@@ -187,8 +214,8 @@ class TestBasic(TestCase):
             v = is_valid(f, solver_name='z3')
             s = is_sat(f, solver_name='z3')
 
-            self.assertEquals(validity, v, f)
-            self.assertEquals(satisfiability, s, f)
+            self.assertEqual(validity, v, f)
+            self.assertEqual(satisfiability, s, f)
 
     def test_examples_by_logic(self):
         for (f, validity, satisfiability, logic) in get_example_formulae():
@@ -196,8 +223,8 @@ class TestBasic(TestCase):
                 v = is_valid(f, logic=logic)
                 s = is_sat(f, logic=logic)
 
-                self.assertEquals(validity, v, f)
-                self.assertEquals(satisfiability, s, f)
+                self.assertEqual(validity, v, f)
+                self.assertEqual(satisfiability, s, f)
 
 
     def test_solving_under_assumption(self):
@@ -216,10 +243,10 @@ class TestBasic(TestCase):
                 self.assertTrue(res2)
                 self.assertFalse(res3)
 
-                self.assertEquals(model1.get_value(v1), TRUE())
-                self.assertEquals(model1.get_value(v2), FALSE())
-                self.assertEquals(model2.get_value(v1), FALSE())
-                self.assertEquals(model2.get_value(v2), TRUE())
+                self.assertEqual(model1.get_value(v1), TRUE())
+                self.assertEqual(model1.get_value(v2), FALSE())
+                self.assertEqual(model2.get_value(v1), FALSE())
+                self.assertEqual(model2.get_value(v2), TRUE())
 
 
     def test_solving_under_assumption_theory(self):
@@ -243,10 +270,10 @@ class TestBasic(TestCase):
                 self.assertTrue(res2)
                 self.assertFalse(res3)
 
-                self.assertEquals(model1.get_value(v1), TRUE())
-                self.assertEquals(model1.get_value(v2), FALSE())
-                self.assertEquals(model2.get_value(v1), FALSE())
-                self.assertEquals(model2.get_value(v2), TRUE())
+                self.assertEqual(model1.get_value(v1), TRUE())
+                self.assertEqual(model1.get_value(v2), FALSE())
+                self.assertEqual(model2.get_value(v1), FALSE())
+                self.assertEqual(model2.get_value(v2), TRUE())
 
     def test_solving_under_assumption_mixed(self):
         x = Symbol("x", REAL)
@@ -268,10 +295,10 @@ class TestBasic(TestCase):
                 self.assertTrue(res2)
                 self.assertFalse(res3)
 
-                self.assertEquals(model1.get_value(v1), TRUE())
-                self.assertEquals(model1.get_value(v2), FALSE())
-                self.assertEquals(model2.get_value(v1), FALSE())
-                self.assertEquals(model2.get_value(v2), TRUE())
+                self.assertEqual(model1.get_value(v1), TRUE())
+                self.assertEqual(model1.get_value(v2), FALSE())
+                self.assertEqual(model2.get_value(v1), FALSE())
+                self.assertEqual(model2.get_value(v2), TRUE())
 
     def test_add_assertion(self):
         r = FreshSymbol(REAL)

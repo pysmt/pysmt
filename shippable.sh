@@ -21,13 +21,13 @@ then
                        python-all-dev \
                        autoconf libtool antlr3 wget \
                        curl libboost-dev
-    ./install.py --confirm-agreement --cvc4 --make-j 2
+    ./install.py --confirm-agreement --cvc4
 fi
 
 
 if [ "$1" == "yices" ]
 then
-    pip install ctypesgen
+    easy_install ctypesgen
     ./install.py --confirm-agreement --yices
 fi
 
@@ -35,9 +35,19 @@ fi
 if [ "$1" == "cudd" ]
 then
     apt-get update
-    apt-get install -y make build-essential swig libgmp-dev
+    apt-get install -y make build-essential swig
     apt-get install -y python-all-dev
     ./install.py --confirm-agreement --cudd  --make-j 2
 fi
 
+
+if [ "$1" == "picosat" ]
+then
+    apt-get update
+    apt-get install -y make build-essential swig
+    apt-get install -y python-all-dev
+    ./install.py --confirm-agreement --picosat
+fi
+
+echo "All done for '$1'..."
 echo "Exiting..."

@@ -1,4 +1,5 @@
 from subprocess import Popen, PIPE
+from six import iteritems
 
 import pysmt.smtlib.commands as smtcmd
 from pysmt.solvers.eager import EagerModel
@@ -7,7 +8,6 @@ from pysmt.smtlib.script import SmtLibCommand
 from pysmt.solvers.solver import Solver
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               UnknownSolverAnswerError)
-
 
 class SmtLibSolver(Solver):
     """Wrapper for using a solver via textual SMT-LIB interface.
@@ -29,24 +29,24 @@ class SmtLibSolver(Solver):
         self._send_command(SmtLibCommand(smtcmd.SET_OPTION, [":print-success", "false"]))
         self._send_command(SmtLibCommand(smtcmd.SET_OPTION, [":produce-models", "true"]))
         if options is not None:
-            for o,v in options.iteritems():
+            for o,v in iteritems(options):
                 self._send_command(SmtLibCommand(smtcmd.SET_OPTION, [o, v]))
         self._send_command(SmtLibCommand(smtcmd.SET_LOGIC, [logic]))
 
 
     def _send_command(self, cmd):
-        if self.dbg: print "Sending: " + cmd.serialize_to_string()
+        if self.dbg: print("Sending: " + cmd.serialize_to_string())
         cmd.serialize(self.solver.stdin, daggify=True)
         self.solver.stdin.write("\n")
 
     def _get_answer(self):
         res = self.solver.stdout.readline().strip()
-        if self.dbg: print "Read: ", res
+        if self.dbg: print("Read: " + str(res))
         return res
 
     def _get_value_answer(self):
         lst = self.parser.get_assignment_list(self.solver.stdout)
-        if self.dbg: print "Read: ", lst
+        if self.dbg: print("Read: " + str(lst))
         return lst
 
     def _declare_variable(self, symbol):
@@ -72,7 +72,7 @@ class SmtLibSolver(Solver):
         return
 
     def add_assertion(self, formula, named=None):
-        deps = formula.get_dependencies()
+        deps = formula.get_free_variables()
         for d in deps:
             if d not in self.declared_vars:
                 self._declare_variable(d)
@@ -95,7 +95,7 @@ class SmtLibSolver(Solver):
         if name_filter is not None:
             raise NotImplementedError
         for v in self.declared_vars:
-            print v, "=", self.get_value(v)
+            print("%s = %s" % (v, self.get_value(v)))
 
     def get_model(self):
         assignment = {}

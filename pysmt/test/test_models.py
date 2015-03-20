@@ -43,7 +43,7 @@ class TestModels(TestCase):
                 model = s.get_model()
 
             # Here the solver is gone
-            self.assertEquals(model[varA], FALSE())
+            self.assertEqual(model[varA], FALSE())
 
     @skipIfNoSolverForLogic(QF_BOOL)
     def test_get_py_value_model(self):

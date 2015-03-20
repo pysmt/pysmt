@@ -30,5 +30,5 @@ if __name__ == "__main__":
 
     serialization_exec_time = (serialization_exec_time-creation_exec_time)
 
-    print "Formula creation:", creation_exec_time
-    print "Formula serialization:", serialization_exec_time
+    print("Formula creation: " + str(creation_exec_time))
+    print("Formula serialization: " + str(serialization_exec_time))

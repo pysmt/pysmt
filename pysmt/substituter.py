@@ -15,9 +15,10 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+from six import iteritems
+
 import pysmt.walkers as walkers
 import pysmt.operators as op
-
 
 class Substituter(walkers.DagWalker):
 
@@ -74,12 +75,12 @@ class Substituter(walkers.DagWalker):
             #    bound variables from the substitution map
             substitutions = kwargs["substitutions"]
             new_subs = {}
-            for k,v in substitutions.iteritems():
+            for k,v in iteritems(substitutions):
                 # If at least one bound variable is in the cone of k,
                 # we do not consider this substitution in the body of
                 # the quantifier.
                 if all(m not in formula.quantifier_vars()
-                       for m in k.get_dependencies()):
+                       for m in k.get_free_variables()):
                     new_subs[k] = v
 
             # 2. We apply the substitution on the quantifier body with
