@@ -64,6 +64,7 @@ before_script:
   - mkdir -p shippable/testresults
   - mkdir -p shippable/codecoverage
   - export PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.2.12-linux-x86_64/python:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.2.12-linux-x86_64/python/build/lib.linux-x86_64-$TRAVIS_PYTHON_VERSION"
+  - export PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.3.4-linux-x86_64/python:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.3.4-linux-x86_64/python/build/lib.linux-x86_64-$TRAVIS_PYTHON_VERSION"
   - export PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/z3_bin/lib/python2.7/dist-packages"
   # We use a different path for binary CVC4 to keep the pkg that we need to download small
   - export PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/CVC4_bin/share/pyshared:$TRAVIS_BUILD_DIR/.smt_solvers/CVC4_bin/lib/pyshared"
