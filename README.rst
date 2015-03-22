@@ -33,6 +33,7 @@ Equalities and Uninterpreted Functions (EUF). The following solvers are supporte
 * Yices 2 (http://yices.csl.sri.com/)
 * pyCUDD (http://bears.ece.ucsb.edu/pycudd.html)
 * PicoSAT (http://fmv.jku.at/picosat/)
+* Any SMT-LIB 2 compliant solver
 
 The library assumes that the python binding for the SMT Solver are installed and accessible from your PYTHONPATH. For Yices 2 we rely on pyices (https://github.com/cheshire/pyices).
 
