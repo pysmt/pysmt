@@ -25,7 +25,7 @@ Among others, you can:
 Supported Theories and Solvers
 ==============================
 pySMT provides methods to define a formula in Linear Real Arithmetic (LRA), Real Difference Logic (RDL), their combination (LIRA) and
-Equalities and Uninterpreted Functions (EUF). The following solvers are supported:
+Equalities and Uninterpreted Functions (EUF). The following solvers are supported through native APIs:
 
 * MathSAT (http://mathsat.fbk.eu/) >= 5
 * Z3 (http://z3.codeplex.com/releases) >= 4
@@ -33,9 +33,10 @@ Equalities and Uninterpreted Functions (EUF). The following solvers are supporte
 * Yices 2 (http://yices.csl.sri.com/)
 * pyCUDD (http://bears.ece.ucsb.edu/pycudd.html)
 * PicoSAT (http://fmv.jku.at/picosat/)
-* Any SMT-LIB 2 compliant solver
 
-The library assumes that the python binding for the SMT Solver are installed and accessible from your PYTHONPATH. For Yices 2 we rely on pyices (https://github.com/cheshire/pyices).
+Additionally, you can use any SMT-LIB 2 compliant solver.
+
+PySMT assumes that the python bindings for the SMT Solver are installed and accessible from your PYTHONPATH. For Yices 2 we rely on pyices (https://github.com/cheshire/pyices).
 
 pySMT works on both Python 2 and Python 3. Some solvers support both versions (e.g., MathSAT) but in general, many solvers still support only Python 2.
 
@@ -48,7 +49,7 @@ You can install the latest stable release of pySMT from PyPI:
 this will additionally install the *pysmt-install* command, that can be used to install the solvers: e.g.,
 
   $ pysmt-install --check
-will show you which solvers have been found in your PYTHONPATH. For instructions on how to install each solver refer to the section on /solvers installation/.
+will show you which solvers have been found in your PYTHONPATH. For instructions on how to install each solver refer to the section on *solvers installation*.
 
 Usage
 =====
@@ -111,9 +112,12 @@ Solvers Installation
 
 PySMT does not depend directly on any solver. If you want to perform solving, you need to have at least one solver installed, and then call it via pySMT either through its native API, or passing through an SMT-LIB file.
 
-On Linux systems, we provide the script pysmt-install to simplify the installation of the solvers. This script does not install required dependencies for the solvers (e.g., make or gcc) and may not work on other platforms. Although we suggest that you refer to the documentation of each solver to understand how to install it with its python bindings, in case of problems you can look at pysmt/cmd/install.py for more information.
+The script *pysmt-install* can be used to simplify the installation of the solvers:
 
-Finally, for CVC4, pycudd and picosat, we have patches that need to applied. The patches are available in the repository pysmt/solvers_patches and apply to the following versions of the solvers:
+ $ pysmt-install --msat
+will install MathSAT 5. This script does not install required dependencies for building the solver (e.g., make or gcc) and has been tested mainly on Linux Debian/Ubuntu systems. We suggest that you refer to the documentation of each solver to understand how to install it with its python bindings. Nevertheless, we try to keep *pysmt/cmd/install.py* as readable and documented as possible..
+
+Finally, for CVC4, pycudd and picosat, we have patches that need to be applied. The patches are available in the repository 'pysmt/solvers_patches' and should be applied against the following versions of the solvers:
 
 - CVC4: Git revision 68f22235a62f5276b206e9a6692a85001beb8d42
 - pycudd: 2.0.2
