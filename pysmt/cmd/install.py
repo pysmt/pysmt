@@ -115,6 +115,11 @@ def unzip(fname, directory="."):
     with zipfile.ZipFile(fname, "r") as myzip:
         myzip.extractall(directory)
 
+def download_patch(name, target):
+    SOURCE_URL="https://raw.githubusercontent.com/pysmt/solvers_patches/"
+    url = SOURCE_URL + name
+    download(url, target)
+
 def download(url, file_name):
     """Downloads the given url into the given file name"""
     u = urllib2.urlopen(url)
@@ -226,6 +231,7 @@ def install_cvc4(options):
     archive_name = "%s.tar.gz" % base_name
     archive = os.path.join(BASE_DIR, archive_name)
     dir_path = os.path.join(BASE_DIR, base_name)
+    patch_name = "dc5f12722b06cf18aa06686921885b9ad9441f9d/cvc4_wrapper.patch"
 
     # Use precompiled version of the solver
     if bin_mirror is not None:
@@ -248,7 +254,8 @@ def install_cvc4(options):
     untar(archive, BASE_DIR)
 
     # Patch the distribution to avoid a known problem
-    os.system("cd %s; patch -p1 -i %s/patches/cvc4_wrapper.patch" % (dir_path, CWD))
+    download_patch(patch_name, "%s/cvc4_wrapper.patch" % dir_path)
+    os.system("cd %s; patch -p1 -i cvc4_wrapper.patch" % dir_path)
 
     # Prepare the building system
     os.system("cd %s; bash autogen.sh;" % dir_path)
@@ -329,6 +336,7 @@ def install_pycudd(options):
     archive_name = "%s.tar.gz" % base_name
     archive = os.path.join(BASE_DIR, archive_name)
     dir_path = os.path.join(BASE_DIR, base_name)
+    patch_name = "dc5f12722b06cf18aa06686921885b9ad9441f9d/pycudd.patch"
 
     # Use precompiled version of the solver
     if bin_mirror is not None:
@@ -342,7 +350,7 @@ def install_pycudd(options):
     if not os.path.exists(archive):
         download(get_pycudd_download_link(archive_name), archive)
 
-    # clear the destination directory, if any
+    # Clear the destination directory, if any
     if os.path.exists(dir_path):
         os.system("rm -rf %s" % dir_path)
 
@@ -350,7 +358,8 @@ def install_pycudd(options):
     untar(archive, BASE_DIR)
 
     # patch the distribution
-    os.system("cd %s; patch -p1 -i %s/patches/pycudd.patch" % (dir_path, CWD))
+    download_patch(patch_name, "%s/pycudd.patch" % dir_path)
+    os.system("cd %s; patch -p1 -i pycudd.patch" % dir_path)
 
     # Select the correct Makefile to be used
     makefile = "Makefile"
@@ -375,6 +384,7 @@ def install_picosat(options):
     archive_name = "%s.tar.gz" % base_name
     archive = os.path.join(BASE_DIR, archive_name)
     dir_path = os.path.join(BASE_DIR, base_name)
+    patch_name = "dc5f12722b06cf18aa06686921885b9ad9441f9d/picosat.patch"
 
     # Download picosat if needed
     if not os.path.exists(archive):
@@ -388,7 +398,8 @@ def install_picosat(options):
     untar(archive, BASE_DIR)
 
     # patch the distribution
-    os.system("cd %s; patch -p1 -i %s/patches/picosat.patch" % (dir_path, CWD))
+    download_patch(patch_name, "%s/picosat.patch" % dir_path)
+    os.system("cd %s; patch -p1 -i picosat.patch" % dir_path)
 
     # Build picosat
     os.system("cd %s; bash configure; make; python setup.py build" % dir_path)
