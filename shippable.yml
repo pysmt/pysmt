@@ -77,7 +77,7 @@ before_script:
 script:
   - ./install.py --check
   - if [ "$PYSMT_SOLVER" == "msat_wrap" ]; then cd $TRAVIS_BUILD_DIR/pysmt/test/smtlib/bin; cp $TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.2.12-linux-x86_64/bin/mathsat .; mv mathsat.solver.sh.template mathsat.solver.sh; fi
-  - nosetests pysmt -v --processes=4 --process-timeout=360 --with-xunit --xunit-file=shippable/testresults/nosetests.xml
+  - nosetests pysmt --processes=4 --process-timeout=360 --with-xunit --xunit-file=shippable/testresults/nosetests.xml
 
 # Push of container is disabled
 # commit_container: gario/shippable_pysmt
