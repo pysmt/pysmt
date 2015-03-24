@@ -231,6 +231,7 @@ def install_cvc4(options):
     archive_name = "%s.tar.gz" % base_name
     archive = os.path.join(BASE_DIR, archive_name)
     dir_path = os.path.join(BASE_DIR, base_name)
+    bin_path = os.path.join(BASE_DIR, "CVC4_bin")
     patch_name = "dc5f12722b06cf18aa06686921885b9ad9441f9d/cvc4_wrapper.patch"
 
     # Use precompiled version of the solver
@@ -238,8 +239,6 @@ def install_cvc4(options):
         bin_archive = os.path.join(bin_mirror, archive_name)
         download(bin_archive, archive)
         untar(archive, BASE_DIR)
-        PATHS.append("%s/CVC4_bin/share/pyshared" % BASE_DIR)
-        PATHS.append("%s/CVC4_bin/lib/pyshared" % BASE_DIR)
         return
 
     # Download the cvc4 release if needed
@@ -247,8 +246,8 @@ def install_cvc4(options):
         download(get_cvc4_download_link(git), archive)
 
     # clear the destination directory, if any
-    if os.path.exists(dir_path):
-        os.system("rm -rf %s" % dir_path)
+    if os.path.exists(bin_path):
+        os.system("rm -rf %s" % bin_path)
 
     # Extract the CVC4 distribution
     untar(archive, BASE_DIR)
@@ -262,15 +261,19 @@ def install_cvc4(options):
     # Build ANTLR
     os.system("cd %s/contrib; bash get-antlr-3.4;" % dir_path)
     # Configure and build CVC4
-    os.system("cd %s; \
-    ./configure --enable-language-bindings=python \
-                --with-antlr-dir=%s/antlr-3.4 ANTLR=%s/antlr-3.4/bin/antlr3; make " %\
-              (dir_path, dir_path, dir_path))
+    os.system("cd {dir_path}; \
+    ./configure --prefix={bin_path} \
+                --enable-language-bindings=python \
+                --with-antlr-dir={dir_path}/antlr-3.4 ANTLR={dir_path}/antlr-3.4/bin/antlr3;\
+    make; \
+    make install ".format(bin_path=bin_path, dir_path=dir_path))
+
     # Fix the paths of the bindings
-    os.system("cd %s/builds/src/bindings/python; mv .libs/CVC4.so.3.0.0 ./_CVC4.so" % dir_path)
+    os.system("cd %s/lib/pyshared; ln -s CVC4.so.3.0.0 _CVC4.so" % bin_path )
 
     # Save the paths
-    PATHS.append("%s/builds/src/bindings/python" % dir_path)
+    PATHS.append("%s/share/pyshared" % bin_path)
+    PATHS.append("%s/lib/pyshared" % bin_path)
 
 
 
