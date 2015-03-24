@@ -31,7 +31,8 @@ from pysmt.walkers import DagWalker
 from pysmt.exceptions import SolverReturnedUnknownResultError
 from pysmt.decorators import clear_pending_pop
 
-import pysmt.logics
+from pysmt.logics import Logic, get_closer_pysmt_logic, LRA, LIA, PYSMT_LOGICS
+
 
 # patch z3api
 z3.is_ite = lambda x: z3.is_app_of(x, z3.Z3_OP_ITE)
@@ -65,7 +66,7 @@ class Z3Model(Model):
 
 class Z3Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
-    LOGICS = pysmt.logics.PYSMT_LOGICS
+    LOGICS = PYSMT_LOGICS
 
     def __init__(self, environment, logic, options=None):
         Solver.__init__(self,
@@ -380,6 +381,15 @@ class Z3QuantifierEliminator(QuantifierEliminator):
 
 
     def eliminate_quantifiers(self, formula):
+        theory = self.environment.theoryo.get_theory(formula)
+        logic = Logic(name="Detected Logic", description="",
+                      quantifier_free=False, theory=theory)
+        logic = get_closer_pysmt_logic(logic)
+        if not logic <= LRA and not logic <= LIA:
+            raise NotImplementedError("Z3 qunatifier elimination only "\
+                                      "supports LRA or LIA without combination."\
+                                      "(detected logic is: %s)" % str(logic))
+
         simplifier = z3.Tactic('simplify')
         eliminator = z3.Tactic('qe')
 
