@@ -12,3 +12,4 @@ pySMT. Suggested order:
    (BMC+K-Induction) in ~150 lines
 6. allsat.py: How to access functionalities of solvers not currently
    wrapped by pySMT.
+7. generic_smtlib.py: Shows how to use any SMT-LIB complaint SMT solver
