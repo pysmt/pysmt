@@ -6,6 +6,15 @@ then
     ./install.py --confirm-agreement --msat
 fi
 
+if [ "$1" == "msat_wrap" ]
+then
+    apt-get update
+    apt-get install -y make build-essential swig libgmp-dev
+    apt-get install -y python-all-dev
+    ./install.py --confirm-agreement --msat
+fi
+
+
 if [ "$1" == "z3" ]
 then
     apt-get update

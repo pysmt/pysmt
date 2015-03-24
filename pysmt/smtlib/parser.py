@@ -200,6 +200,7 @@ class SmtLibParser(object):
         self._current_env = None
         self.cache = None
         self.logic = None
+        self._reset()
 
         # Special tokens appearing in expressions
         self.parentheses = set(["(", ")"])
