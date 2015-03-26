@@ -32,6 +32,9 @@ from pysmt.logics import AUTO as AUTO_LOGIC
 from pysmt.logics import most_generic_logic, get_closer_logic
 from pysmt.oracles import get_logic
 
+import pysmt.solvers.solver
+from pysmt.solvers.solver import SolverOptions
+
 DEFAULT_SOLVER_PREFERENCE_LIST = ['msat', 'z3', 'cvc4', 'yices', 'picosat', 'bdd']
 DEFAULT_QELIM_PREFERENCE_LIST = ['z3']
 DEFAULT_LOGIC = QF_UFLIRA
@@ -43,6 +46,7 @@ class Factory(object):
                  qelim_preference_list=None):
         self.environment = environment
         self._all_solvers = None
+        self._unsat_core_solvers = None
         self._all_qelims = None
         self._generic_solvers = {}
 
@@ -82,7 +86,7 @@ class Factory(object):
                 closer_logic = get_closer_logic(SolverClass.LOGICS, logic)
                 return SolverClass(environment=self.environment,
                                    logic=closer_logic,
-                                   options=None)
+                                   options=SolverOptions(generate_models=True))
             else:
                 raise NoSolverAvailableError("Solver %s is not available" % name)
 
@@ -97,7 +101,54 @@ class Factory(object):
             closer_logic = get_closer_logic(SolverClass.LOGICS, logic)
             return SolverClass(environment=self.environment,
                                logic=closer_logic,
-                               options=None)
+                               options=SolverOptions(generate_models=True))
+        else:
+            raise NoSolverAvailableError("No solver is available for logic %s" %\
+                                         logic)
+
+
+    def get_unsat_core_solver(self, quantified=False, name=None, logic=None):
+        assert quantified is False or logic is None, \
+            "Cannot specify both quantified and logic."
+
+        if quantified is True:
+            logic = self.default_logic.get_quantified_version
+
+        if name is not None:
+            if name in self._unsat_core_solvers:
+                if logic is None:
+                    SolverClass = self._unsat_core_solvers[name]
+                    logic = most_generic_logic(SolverClass.LOGICS)
+                else:
+                    if name in self.all_unsat_core_solvers(logic=logic):
+                        SolverClass = self._unsat_core_solvers[name]
+                    else:
+                        raise NoSolverAvailableError("Solver '%s' does not" \
+                                                     " support logic %s" %
+                                                     (name, logic))
+
+                closer_logic = get_closer_logic(SolverClass.LOGICS, logic)
+                return SolverClass(environment=self.environment,
+                                   logic=closer_logic,
+                                   options=SolverOptions(generate_models=True,
+                                                         unsat_cores=True))
+            else:
+                raise NoSolverAvailableError("Solver %s is not available with " \
+                                             "Unsat Cores" % name)
+
+        if logic is None:
+            logic = self.default_logic
+
+        solvers = self.all_unsat_core_solvers(logic=logic)
+
+        if solvers is not None and len(solvers) > 0:
+            # Pick the first solver based on preference list
+            SolverClass = self.pick_favorite_solver(solvers)
+            closer_logic = get_closer_logic(SolverClass.LOGICS, logic)
+            return SolverClass(environment=self.environment,
+                               logic=closer_logic,
+                               options=SolverOptions(generate_models=True,
+                                                     unsat_cores=True))
         else:
             raise NoSolverAvailableError("No solver is available for logic %s" %\
                                          logic)
@@ -151,6 +202,7 @@ class Factory(object):
 
     def _get_available_solvers(self):
         self._all_solvers = {}
+        self._unsat_core_solvers = {}
 
         try:
             from pysmt.solvers.z3 import Z3Solver
@@ -194,6 +246,11 @@ class Factory(object):
 
         except ImportError:
             pass
+
+
+        for k,s in iteritems(self._all_solvers):
+            if isinstance(s, pysmt.solvers.solver.UnsatCoreSolver):
+                self._unsat_core_solvers[k] = s
 
 
 
@@ -251,6 +308,31 @@ class Factory(object):
 
         return solvers
 
+    def all_unsat_core_solvers(self, logic=None):
+        """
+        Returns a dict <solver_name, solver_class> including all and only
+        the solvers supporting unsat core extraction and directly or
+        indirectly supporting the given logic.  A solver supports a
+        logic if either the given logic is declared in the LOGICS
+        class field or if a logic subsuming the given logic is
+        declared in the LOGICS class field.
+
+        If logic is None, the map will contain all the known solvers
+
+        """
+        res = {}
+        if logic is not None:
+            for s, v in iteritems(self._unsat_core_solvers):
+                for l in v.LOGICS:
+                    if logic <= l:
+                        res[s] = v
+                        break
+            return res
+        else:
+            solvers = self._unsat_core_solvers
+
+        return solvers
+
     def all_qelims(self):
         return self._all_qelims
 
@@ -261,6 +343,12 @@ class Factory(object):
         return self.get_solver(quantified=quantified,
                                name=name,
                                logic=logic)
+
+    def UnsatCoreSolver(self, quantified=False, name=None, logic=None):
+        return self.get_unsat_core_solver(quantified=quantified,
+                                          name=name,
+                                          logic=logic)
+
 
     def QuantifierEliminator(self, name=None):
         return self.get_quantifier_eliminator(name=name)

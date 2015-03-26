@@ -226,6 +226,12 @@ def Solver(quantified=False, name=None, logic=None):
                                     name=name,
                                     logic=logic)
 
+def UnsatCoreSolver(quantified=False, name=None, logic=None):
+    """Returns a solver supporting unsat core extraction."""
+    return get_env().factory.UnsatCoreSolver(quantified=quantified,
+                                             name=name,
+                                             logic=logic)
+
 def QuantifierEliminator(name=None):
     """Returns a quantifier eliminator"""
     return get_env().factory.QuantifierEliminator(name=name)

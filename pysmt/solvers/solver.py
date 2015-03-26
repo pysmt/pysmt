@@ -15,9 +15,15 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from pysmt.decorators import deprecated
 from pysmt.shortcuts import get_type
 from pysmt.typing import BOOL
+
+class SolverOptions(object):
+
+    def __init__(self, generate_models=True, unsat_cores=None):
+        self.generate_models = generate_models
+        self.unsat_cores = unsat_cores
+
 
 class Solver(object):
     """ Represents a generic SMT Solver. """
@@ -25,11 +31,16 @@ class Solver(object):
     # Define the supported logics for the Solver
     LOGICS = []
 
-    def __init__(self, environment, logic, options=None):
+    def __init__(self, environment, logic, options):
         self.environment = environment
         self.pending_pop = False
+
         assert logic is not None
-        assert options is None, "Options are not supported, yet."
+        self.logic = logic
+
+        assert options is not None
+        self.options = options
+
         self._destroyed = False
         return
 
@@ -210,6 +221,23 @@ class Solver(object):
             raise TypeError("Argument must be boolean.")
 
 
+class UnsatCoreSolver(Solver):
+    """ A solver supporting unsat core extraction"""
+
+    def __init__(self, environment, logic, options):
+        Solver.__init__(self, environment, logic, options)
+
+
+    def get_unsat_core(self):
+        """After a call to solve() yielding UNSAT, returns the unsat core as a
+        set of formulae"""
+        raise NotImplementedError
+
+
+    def get_named_core(self):
+        """After a call to solve() yielding UNSAT, returns the unsat core as a
+        dict of names to formulae"""
+        raise NotImplementedError
 
 
 class Model(object):

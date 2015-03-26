@@ -36,15 +36,24 @@ class MathSAT5Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
     LOGICS = pysmt.logics.PYSMT_QF_LOGICS
 
-    def __init__(self, environment, logic, options=None, debugFile=None):
+    def __init__(self, environment, logic, options, debugFile=None):
         Solver.__init__(self,
                         environment=environment,
                         logic=logic,
                         options=options)
 
         self.config = mathsat.msat_create_default_config(str(logic))
-        check = mathsat.msat_set_option(self.config, "model_generation", "true")
-        assert check == 0
+
+        if options.generate_models:
+            check = mathsat.msat_set_option(self.config, "model_generation",
+                                            "true")
+            assert check == 0
+
+        if options.unsat_cores is not None:
+            check = mathsat.msat_set_option(self.config, "unsat_core_generation",
+                                            "1")
+            assert check == 0
+
 
         if debugFile is not None:
             mathsat.msat_set_option(self.config, "debug.api_call_trace", "1")
