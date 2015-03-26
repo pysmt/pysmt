@@ -9,6 +9,11 @@ General:
 * Added support for Python 3. The library works with both Python 2 and
   Python 3.
 
+* Added two new quantifier eliminators for LRA based on the MathSAT
+  api. One (msat_fm) used Fourier-Motzkin algorithm, the other
+  (msat_lw) uses Loos-Weisspfenning elimination (aka Virtual
+  Substitution)
+
 
 0.2.4: 2015-03-15  -- PicoSAT
 -----------------------------
