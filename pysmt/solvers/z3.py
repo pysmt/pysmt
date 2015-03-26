@@ -31,7 +31,8 @@ from pysmt.walkers import DagWalker
 from pysmt.exceptions import SolverReturnedUnknownResultError
 from pysmt.decorators import clear_pending_pop
 
-from pysmt.logics import Logic, get_closer_pysmt_logic, LRA, LIA, PYSMT_LOGICS
+from pysmt.logics import LRA, LIA, PYSMT_LOGICS
+from pysmt.oracles import get_logic
 
 
 # patch z3api
@@ -381,12 +382,9 @@ class Z3QuantifierEliminator(QuantifierEliminator):
 
 
     def eliminate_quantifiers(self, formula):
-        theory = self.environment.theoryo.get_theory(formula)
-        logic = Logic(name="Detected Logic", description="",
-                      quantifier_free=False, theory=theory)
-        logic = get_closer_pysmt_logic(logic)
+        logic = get_logic(formula, self.environment)
         if not logic <= LRA and not logic <= LIA:
-            raise NotImplementedError("Z3 qunatifier elimination only "\
+            raise NotImplementedError("Z3 quantifier elimination only "\
                                       "supports LRA or LIA without combination."\
                                       "(detected logic is: %s)" % str(logic))
 

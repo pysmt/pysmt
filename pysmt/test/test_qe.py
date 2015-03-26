@@ -81,6 +81,8 @@ class TestQE(TestCase):
 
         with self.assertRaises(NotImplementedError):
             self._int_example(qe)
+
+        with self.assertRaises(NotImplementedError):
             self._alternation_int_example(qe)
 
         # Additional test for raising error on back conversion of
@@ -104,6 +106,8 @@ class TestQE(TestCase):
 
         with self.assertRaises(NotImplementedError):
             self._int_example(qe)
+
+        with self.assertRaises(NotImplementedError):
             self._alternation_int_example(qe)
 
         # Additional test for raising error on back conversion of
@@ -143,7 +147,7 @@ class TestQE(TestCase):
         f = ForAll([p], Implies(LT(Int(0), p), LT(q, p)))
         qf = qe.eliminate_quantifiers(f).simplify()
 
-        self.assertTrue(is_valid(Iff(qf, LE(q, Int(0))), logic=QF_LIA))
+        self.assertTrue(is_valid(Iff(qf, LE(q, Int(0)))))
 
     def _alternation_bool_example(self, qe):
         # Alternation of quantifiers

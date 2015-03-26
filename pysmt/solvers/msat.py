@@ -21,7 +21,8 @@ from six.moves import xrange
 
 import mathsat
 
-from pysmt.logics import Logic, get_closer_pysmt_logic, LRA, PYSMT_QF_LOGICS
+from pysmt.logics import LRA, PYSMT_QF_LOGICS
+from pysmt.oracles import get_logic
 
 import pysmt.operators as op
 from pysmt import typing as types
@@ -581,7 +582,7 @@ class MSatConverter(Converter, DagWalker):
             self.decl_to_symbol[mathsat.msat_decl_id(decl)] = var
 
 
-# Check if we are working on a patched version of the mathsat API
+# Check if we are working on a version MathSAT supporting quantifier elimination
 if hasattr(mathsat, "MSAT_EXIST_ELIM_ALLSMT_FM"):
     class MSatQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
 
@@ -613,22 +614,18 @@ if hasattr(mathsat, "MSAT_EXIST_ELIM_ALLSMT_FM"):
             return self.walk(formula)
 
 
-        def exist_elim(self, variables, formula, alg='fm'):
-            theory = self.env.theoryo.get_theory(formula)
-            logic = Logic(name="Detected Logic", description="",
-                          quantifier_free=False, theory=theory)
-            logic = get_closer_pysmt_logic(logic)
+        def exist_elim(self, variables, formula):
+            logic = get_logic(formula, self.env)
             if not logic <= LRA:
-                raise NotImplementedError("MathSAT qunatifier elimination only"\
+                raise NotImplementedError("MathSAT quantifier elimination only"\
                                           " supports LRA (detected logic " \
                                           "is: %s)" % str(logic))
 
             fterm = self.converter.convert(formula)
             tvars = [self.converter.convert(x) for x in variables]
 
-            assert alg in ['fm', 'lw']
             algo = mathsat.MSAT_EXIST_ELIM_ALLSMT_FM
-            if alg == 'lw':
+            if self.algorithm == 'lw':
                 algo = mathsat.MSAT_EXIST_ELIM_VTS
 
             res = mathsat.msat_exist_elim(self.msat_env, fterm, tvars, algo)
@@ -646,7 +643,7 @@ if hasattr(mathsat, "MSAT_EXIST_ELIM_ALLSMT_FM"):
             assert formula.is_exists()
             variables = formula.quantifier_vars()
             subf = formula.arg(0)
-            return self.exist_elim(variables, subf, alg=self.algorithm)
+            return self.exist_elim(variables, subf)
 
 
     class MSatFMQuantifierEliminator(MSatQuantifierEliminator):
