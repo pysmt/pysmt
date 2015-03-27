@@ -61,7 +61,8 @@ matrix:
       env: PYSMT_SOLVER="cudd"
     - python: 3.4
       env: PYSMT_SOLVER="cudd"
-
+  allow_failures:
+    - env: PYSMT_SOLVER="msat_wrap"
 
 # Make folders for the reports
 before_script:
