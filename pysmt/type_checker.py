@@ -175,10 +175,10 @@ class SimpleTypeChecker(walkers.DagWalker):
         if args[0].is_real_type():
             return self.walk_type_to_type(formula, args, REAL, BOOL)
         if args[0].is_int_type():
-            rval = self.walk_type_to_type(formula, args, INT, BOOL)
+            return self.walk_type_to_type(formula, args, INT, BOOL)
         if args[0].is_bv_type():
-            rval = self.walk_bv_to_bool(formula, args)
-        return rval
+            return self.walk_bv_to_bool(formula, args)
+        return None
 
     def walk_ite(self, formula, args):
         assert formula is not None
