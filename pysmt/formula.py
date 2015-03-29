@@ -555,6 +555,20 @@ class FormulaManager(object):
         return self.create_node(node_type=op.BV_ULT,
                                 args=(left, right))
 
+    def BVUGT(self, left, right):
+        """Returns the formula left > right."""
+        return self.create_node(node_type=op.BV_ULT,
+                                args=(right, left))
+
+    def BVULE(self, left, right):
+        """Returns the formula left <= right."""
+        return self.create_node(node_type=op.BV_ULE,
+                                args=(left, right))
+
+    def BVUGE(self, left, right):
+        """Returns the formula left >= right."""
+        return self.create_node(node_type=op.BV_ULE,
+                                args=(right, left))
 
     def BVNeg(self, formula):
         """Returns the arithmetic negation of the BV."""

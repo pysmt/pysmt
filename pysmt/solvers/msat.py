@@ -527,6 +527,10 @@ class MSatConverter(Converter, DagWalker):
         return mathsat.msat_make_bv_ult(self.msat_env,
                                         args[0], args[1])
 
+    def walk_bv_ule(self, formula, args):
+        return mathsat.msat_make_bv_uleq(self.msat_env,
+                                         args[0], args[1])
+
     def walk_bv_concat(self, formula, args):
         return mathsat.msat_make_bv_concat(self.msat_env,
                                            args[0], args[1])
@@ -642,6 +646,7 @@ class MSatConverter(Converter, DagWalker):
     def walk_toreal(self, formula, args):
         # In mathsat toreal is implicit
         return args[0]
+
 
     def _type_to_msat(self, tp):
         if tp.is_bool_type():

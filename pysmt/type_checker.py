@@ -59,6 +59,7 @@ class SimpleTypeChecker(walkers.DagWalker):
 
         self.functions[op.BV_CONSTANT] = self.walk_identity_bv
         self.functions[op.BV_ULT] = self.walk_bv_to_bool
+        self.functions[op.BV_ULE] = self.walk_bv_to_bool
         self.functions[op.BV_ADD] = self.walk_bv_to_bv
         self.functions[op.BV_NOT] = self.walk_bv_to_bv
         self.functions[op.BV_AND] = self.walk_bv_to_bv

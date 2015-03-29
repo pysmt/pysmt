@@ -22,7 +22,7 @@ they will be rewritten (during construction) in order to only use
 these operators.
 """
 
-ALL_TYPES = range(0,39)
+ALL_TYPES = range(0,40)
 
 
 (
@@ -40,7 +40,7 @@ TOREAL,                                     # LIRA toreal() function (19)
 BV_CONSTANT,                                # 20
 BV_NOT, BV_AND, BV_OR, BV_XOR,              # Logical Operators on Bit
 BV_CONCAT, BV_EXTRACT,                      #
-BV_ULT, #BV_SLT, BV_ULE, BV_SLE,             # Comparison  (26-29)
+BV_ULT, BV_ULE, #BV_SLT,  BV_SLE,           # Comparison
 #BV_COMP,
 BV_NEG, BV_ADD, #BV_SUB,                     # Basic arithmetic (31-33)
 BV_MUL, BV_UDIV, BV_UREM, # BV_SDIV, BV_SREM, # Division/Multiplication (34-38)
@@ -60,7 +60,7 @@ RELATIONS = frozenset([LE, LT, EQUALS])
 CONSTANTS = frozenset([REAL_CONSTANT, BOOL_CONSTANT, INT_CONSTANT, BV_CONSTANT])
 
 BV_OPERATORS = frozenset([BV_CONSTANT, BV_NOT, BV_AND, BV_OR, BV_XOR,
-                          BV_CONCAT, BV_EXTRACT, BV_ULT, BV_NEG, BV_ADD, BV_MUL,
+                          BV_CONCAT, BV_EXTRACT, BV_ULT, BV_ULE, BV_NEG, BV_ADD, BV_MUL,
                           BV_UDIV, BV_UREM, BV_LSHL, BV_LSHR, BV_ROL, BV_ROR,
                           BV_ZEXT, BV_SEXT])
 CUSTOM_NODE_TYPES = []

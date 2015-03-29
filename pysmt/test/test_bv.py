@@ -31,21 +31,29 @@ class TestBV(TestCase):
 
         # Constants
         one = BV(1, 32)
-        hexample = BV(0x0F, 32)
         zero = BV(0, 32)
-        s_one = BV(-1, 32)
         big = BV(127, 128)
 
         # Variables
         b128 = Symbol("b", BV128) # BV1, BV8 etc. are defined in pysmt.typing
-        bcustom = Symbol("bc", BVType(42))
         b32 = Symbol("b32", BV32)
+        hexample = BV(0x10, 32)
+        s_one = BV(-1, 32)
+        bcustom = Symbol("bc", BVType(42))
+
+        self.assertIsNotNone(hexample)
+        self.assertIsNotNone(bcustom)
+        self.assertIsNotNone(s_one)
+        self.assertEqual(bcustom.bv_width(), 42)
+        self.assertEqual(hexample.constant_value(), 16)
+        self.assertEqual(str(s_one), "-1_32")
 
         not_zero32 = mgr.BVNot(zero)
         not_b128 = mgr.BVNot(b128)
 
         f1 = Equals(not_zero32, b32)
         f2 = Equals(not_b128, big)
+
         #print(f1)
         #print(f2)
 
@@ -163,6 +171,16 @@ class TestBV(TestCase):
 
         model = get_model(g, logic=QF_BV)
         self.assertTrue(model[x] == TRUE())
+
+        gt_1 = mgr.BVUGT(zero, one)
+        gt_2 = mgr.BVULT(one, zero)
+        self.assertEqual(gt_1, gt_2)
+
+        gte_1 = mgr.BVULE(zero, one)
+        gte_2 = mgr.BVUGE(one, zero)
+        self.assertEqual(gte_1, gte_2)
+
+        self.assertTrue(is_valid(gte_2, logic=QF_BV))
 
         return
 

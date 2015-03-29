@@ -58,8 +58,8 @@ class Walker(object):
         self.functions[op.BV_OR] = self.walk_bv_or
         self.functions[op.BV_XOR] = self.walk_bv_xor
         self.functions[op.BV_ULT] = self.walk_bv_ult
+        self.functions[op.BV_ULE] = self.walk_bv_ule
 #        self.functions[op.BV_SLT] = self.walk_bv_slt
-#        self.functions[op.BV_ULE] = self.walk_bv_ule
 #        self.functions[op.BV_SLE] = self.walk_bv_sle
 #        self.functions[op.BV_COMP] = self.walk_bv_comp
         self.functions[op.BV_NEG] = self.walk_bv_neg
