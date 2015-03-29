@@ -24,13 +24,14 @@ from pysmt.typing import BVType, BV1, BV8, BV32, BV128
 from pysmt.logics import QF_BV
 
 class TestBV(TestCase):
+
     def test_bv(self):
         mgr = get_env().formula_manager
         BV = mgr.BV
 
         # Constants
         one = BV(1, 32)
-        hexample = BV(0x16, 32)
+        hexample = BV(0x0F, 32)
         zero = BV(0, 32)
         s_one = BV(-1, 32)
         big = BV(127, 128)
@@ -55,6 +56,7 @@ class TestBV(TestCase):
         zero_or_one = mgr.BVOr(zero, one)
         zero_xor_one = mgr.BVXor(zero, one)
 
+        zero_xor_one.simplify()
         # print(zero_and_one)
         # print(zero_or_one)
         # print(zero_xor_one)
