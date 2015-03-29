@@ -188,8 +188,10 @@ class HRPrinter(TreeWalker):
 
     def walk_bv_constant(self, formula):
         # This is the simplest SMT-LIB way of printing the value of a BV
-        self.stream.write("(_ bv%d %d)" % (formula.bv_width(),
-                                           formula.constant_value()))
+        # self.stream.write("(_ bv%d %d)" % (formula.bv_width(),
+        #                                    formula.constant_value()))
+        self.stream.write("%d_%d" % (formula.constant_value(),
+                                     formula.bv_width()))
         return
 
     def walk_bv_xor(self, formula):
