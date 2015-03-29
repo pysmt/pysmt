@@ -174,10 +174,13 @@ class MathSAT5Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
                                           int(match.group(2))))
                 else:
                     return self.mgr.Real(int(rep))
-            else:
-                assert self.environment.stc.get_type(item).is_int_type()
+            elif self.environment.stc.get_type(item).is_int_type():
                 return self.mgr.Int(int(rep))
-
+            else:
+                assert self.environment.stc.get_type(item).is_bv_type()
+                # MathSAT representation is <value>_<width>
+                value, width = rep.split("_")
+                return self.mgr.BV(int(value), int(width))
 
         else:
             assert mathsat.msat_term_is_true(self.msat_env, tval) or \
@@ -514,6 +517,91 @@ class MSatConverter(Converter, DagWalker):
         else:
             return mathsat.msat_make_false(self.msat_env)
 
+    def walk_bv_constant(self, formula, args):
+        rep = str(formula.constant_value())
+        width = formula.bv_width()
+        return mathsat.msat_make_bv_number(self.msat_env,
+                                           rep, width, 10)
+
+    def walk_bv_ult(self, formula, args):
+        return mathsat.msat_make_bv_ult(self.msat_env,
+                                        args[0], args[1])
+
+    def walk_bv_concat(self, formula, args):
+        return mathsat.msat_make_bv_concat(self.msat_env,
+                                           args[0], args[1])
+
+    def walk_bv_extract(self, formula, args):
+        return mathsat.msat_make_bv_extract(self.msat_env,
+                                            formula.bv_extract_end(),
+                                            formula.bv_extract_start(),
+                                            args[0])
+
+    def walk_bv_or(self, formula, args):
+        return mathsat.msat_make_bv_or(self.msat_env,
+                                       args[0], args[1])
+
+    def walk_bv_not(self, formula, args):
+        return mathsat.msat_make_bv_not(self.msat_env, args[0])
+
+    def walk_bv_and(self, formula, args):
+        return mathsat.msat_make_bv_and(self.msat_env,
+                                        args[0], args[1])
+
+    def walk_bv_xor(self, formula, args):
+        return mathsat.msat_make_bv_xor(self.msat_env,
+                                        args[0], args[1])
+
+    def walk_bv_add(self, formula, args):
+        return mathsat.msat_make_bv_plus(self.msat_env,
+                                         args[0], args[1])
+
+    def walk_bv_neg(self, formula, args):
+        return mathsat.msat_make_bv_neg(self.msat_env, args[0])
+
+    def walk_bv_mul(self, formula, args):
+        return mathsat.msat_make_bv_times(self.msat_env,
+                                          args[0], args[1])
+
+    def walk_bv_udiv(self, formula, args):
+        return mathsat.msat_make_bv_udiv(self.msat_env,
+                                         args[0], args[1])
+
+    def walk_bv_urem(self, formula, args):
+        return mathsat.msat_make_bv_urem(self.msat_env,
+                                         args[0], args[1])
+
+    def walk_bv_lshl(self, formula, args):
+        return mathsat.msat_make_bv_lshl(self.msat_env,
+                                         args[0], args[1])
+
+    def walk_bv_lshr(self, formula, args):
+        return mathsat.msat_make_bv_lshr(self.msat_env,
+                                         args[0], args[1])
+
+    def walk_bv_rol(self, formula, args):
+        return mathsat.msat_make_bv_rol(self.msat_env,
+                                        formula.bv_rotation_step(),
+                                        args[0])
+
+    def walk_bv_ror(self, formula, args):
+        return mathsat.msat_make_bv_ror(self.msat_env,
+                                        formula.bv_rotation_step(),
+                                        args[0])
+
+    def walk_bv_zext(self, formula, args):
+        return mathsat.msat_make_bv_zext(self.msat_env,
+                                         formula.bv_width(),
+                                         args[0])
+
+    def walk_bv_sext (self, formula, args):
+        return mathsat.msat_make_bv_sext(self.msat_env,
+                                         formula.bv_width(),
+                                         args[0])
+
+
+
+
     def walk_forall(self, formula, args):
         raise NotImplementedError
 
@@ -568,6 +656,8 @@ class MSatConverter(Converter, DagWalker):
             return mathsat.msat_get_function_type(self.msat_env,
                                                 stps,
                                                 rtp)
+        elif tp.is_bv_type():
+            return mathsat.msat_get_bv_type(self.msat_env, tp.width)
         else:
             raise NotImplementedError
 

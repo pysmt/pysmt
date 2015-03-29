@@ -242,7 +242,8 @@ class FormulaManager(object):
 
         Restriction: Left and Right must be both REAL or INT type
         """
-        n = self.create_node(node_type=op.EQUALS, args=(left, right))
+        n = self.create_node(node_type=op.EQUALS,
+                             args=(left, right))
         return n
 
 
@@ -552,8 +553,8 @@ class FormulaManager(object):
     def BVULT(self, left, right):
         """Returns the formula left < right."""
         return self.create_node(node_type=op.BV_ULT,
-                                args=(left, right),
-                                payload=(left.bv_width(),))
+                                args=(left, right))
+
 
     def BVNeg(self, formula):
         """Returns the arithmetic negation of the BV."""

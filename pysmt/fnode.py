@@ -267,7 +267,7 @@ class FNode(object):
 
     def bv_rotation_step(self):
         assert self.is_bv_ror() or self.is_bv_rol()
-        return self._content.payload[0]
+        return self._content.payload[1]
 
     def __str__(self):
         return self.serialize(threshold=5)

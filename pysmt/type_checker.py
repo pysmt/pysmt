@@ -121,8 +121,9 @@ class SimpleTypeChecker(walkers.DagWalker):
         return target_bv_type
 
     def walk_bv_to_bool(self, formula, args):
-        for a in args:
-            if formula.bv_width() != a.width:
+        width = args[0].width
+        for a in args[1:]:
+            if width != a.width:
                 return None
         return BOOL
 
@@ -170,9 +171,12 @@ class SimpleTypeChecker(walkers.DagWalker):
 
 
     def walk_math_relation(self, formula, args):
-        rval = self.walk_type_to_type(formula, args, REAL, BOOL)
-        if rval is None:
+        if args[0].is_real_type():
+            return self.walk_type_to_type(formula, args, REAL, BOOL)
+        if args[0].is_int_type():
             rval = self.walk_type_to_type(formula, args, INT, BOOL)
+        if args[0].is_bv_type():
+            rval = self.walk_bv_to_bool(formula, args)
         return rval
 
     def walk_ite(self, formula, args):

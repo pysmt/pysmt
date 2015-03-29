@@ -18,9 +18,10 @@
 
 from pysmt.test import TestCase
 
-from pysmt.shortcuts import Symbol, get_env, And
+from pysmt.shortcuts import Symbol, And, Not, Solver, Symbol, Equals, TRUE
+from pysmt.shortcuts import get_env, is_sat, is_valid, get_model, is_unsat
 from pysmt.typing import BVType, BV1, BV8, BV32, BV128
-
+from pysmt.logics import QF_BV
 
 class TestBV(TestCase):
     def test_bv(self):
@@ -29,28 +30,44 @@ class TestBV(TestCase):
 
         # Constants
         one = BV(1, 32)
-        hexample = BV(0x16, 8)
+        hexample = BV(0x16, 32)
         zero = BV(0, 32)
         s_one = BV(-1, 32)
-        big = BV(127, 28)
+        big = BV(127, 128)
 
         # Variables
         b128 = Symbol("b", BV128) # BV1, BV8 etc. are defined in pysmt.typing
         bcustom = Symbol("bc", BVType(42))
-        b32 = Symbol("b3", BV32)
+        b32 = Symbol("b32", BV32)
 
-        not_zero = mgr.BVNot(zero)
-        not_b = mgr.BVNot(b128)
-        print(not_zero)
-        print(not_b)
+        not_zero32 = mgr.BVNot(zero)
+        not_b128 = mgr.BVNot(b128)
+
+        f1 = Equals(not_zero32, b32)
+        f2 = Equals(not_b128, big)
+        #print(f1)
+        #print(f2)
+
+        self.assertTrue(is_sat(f1, logic=QF_BV))
+        self.assertTrue(is_sat(f2, logic=QF_BV))
 
         zero_and_one = mgr.BVAnd(zero, one)
         zero_or_one = mgr.BVOr(zero, one)
-        zero_xor_one = mgr.BVXor(one, one)
+        zero_xor_one = mgr.BVXor(zero, one)
 
-        print(zero_and_one)
-        print(zero_or_one)
-        print(zero_xor_one)
+        # print(zero_and_one)
+        # print(zero_or_one)
+        # print(zero_xor_one)
+
+        f1 = Equals(zero_and_one, b32)
+        f2 = Equals(zero_or_one, b32)
+        f3 = Equals(zero_xor_one, b32)
+        f4 = Equals(zero_xor_one, one)
+
+        self.assertTrue(is_sat(f1, logic=QF_BV), f1)
+        self.assertTrue(is_sat(f2, logic=QF_BV), f2)
+        self.assertTrue(is_sat(f3, logic=QF_BV), f3)
+        self.assertTrue(is_valid(f4, logic=QF_BV), f4)
 
         with self.assertRaises(TypeError):
             mgr.BVAnd(b128, zero)
@@ -58,57 +75,93 @@ class TestBV(TestCase):
         f = mgr.BVAnd(b32, zero)
         f = mgr.BVOr(f, b32)
         f = mgr.BVXor(f, b32)
-        print(f)
+        f = Equals(f, zero)
+
+        self.assertTrue(is_sat(f, logic=QF_BV), f)
 
         zero_one_64 = mgr.BVConcat(zero, one)
-        self.assertTrue(zero_one_64.bv_width() == 64)
-        print(zero_one_64)
+        one_zero_64 = mgr.BVConcat(one, zero)
+        one_one_64  = mgr.BVConcat(one, one)
 
-        extraction = mgr.BVExtract(zero_one_64, 5, 10)
-        print(extraction)
+        self.assertTrue(zero_one_64.bv_width() == 64)
+        f1 = Equals(mgr.BVXor(one_zero_64, zero_one_64),
+                    one_one_64)
+
+        self.assertTrue(is_sat(f1, logic=QF_BV), f1)
+
+        # MG: BV indexes grow to the left.
+        # This is confusing and we should address this.
+        extraction = mgr.BVExtract(zero_one_64, 32, 63)
+        self.assertTrue(is_valid(Equals(extraction, zero)))
+        #print(extraction)
 
         ult = mgr.BVULT(zero, one)
-        print(ult)
+        neg = mgr.BVNeg(one)
+        self.assertTrue(is_valid(ult, logic=QF_BV), ult)
+        test_eq = Equals(neg, one)
+        self.assertTrue(is_unsat(test_eq, logic=QF_BV))
 
-        neg = mgr.BVNeg(extraction)
-        print(neg)
+        # print(ult)
+        # print(neg)
 
+        f = zero
         addition = mgr.BVAdd(f, one)
-        print(addition)
-
         multiplication = mgr.BVMul(f, one)
-        print(multiplication)
-
         udiv = mgr.BVUDiv(f, one)
-        print(udiv)
 
-        reminder = mgr.BVURem(f, one)
-        print(reminder)
+        self.assertTrue(is_valid(Equals(addition, one), logic=QF_BV), addition)
+        self.assertTrue(is_valid(Equals(multiplication, zero), logic=QF_BV), multiplication)
+        self.assertTrue(is_valid(Equals(udiv, zero), logic=QF_BV), udiv)
 
-        shift_l = mgr.BVLShl(f, one)
-        print(shift_l)
-        shift_l = mgr.BVLShl(f, 1)
-        print(shift_l)
+        # print(addition)
+        # print(multiplication)
+        # print(udiv)
 
-        shift_r = mgr.BVLShr(f, one)
-        print(shift_r)
-        shift_r = mgr.BVLShr(f, 1)
-        print(shift_r)
+        three = mgr.BV(3, 32)
+        two = mgr.BV(2, 32)
 
-        rotate_l = mgr.BVRol(f, 3)
-        print(rotate_l)
-        rotate_r = mgr.BVRor(f, 2)
-        print(rotate_r)
+        reminder = mgr.BVURem(three, two)
+        shift_l_a = mgr.BVLShl(one, one)
+        shift_l_b = mgr.BVLShl(one, 1)
+
+        self.assertTrue(is_valid(Equals(reminder, one)), reminder)
+        self.assertEqual(shift_l_a, shift_l_b)
+        self.assertTrue(is_valid(Equals(shift_l_a, two)))
+        # print(reminder)
+        # print(shift_l_a)
+        # print(shift_l_b)
+
+        shift_r_a = mgr.BVLShr(one, one)
+        shift_r_b = mgr.BVLShr(one, 1)
+        self.assertEqual(shift_r_a, shift_r_b)
+        self.assertTrue(is_valid(Equals(shift_r_a, zero)))
+
+        rotate_l = mgr.BVRol(one, 3)
+        rotate_r = mgr.BVRor(rotate_l, 3)
+        self.assertTrue(is_valid(Equals(one, rotate_r)))
+
+        # print(rotate_l)
+        # print(rotate_r)
 
         zero_ext = mgr.BVZExt(one, 64)
-        print(zero_ext)
-
         signed_ext = mgr.BVSExt(one, 64)
-        print(signed_ext)
+        signed_ext2 = mgr.BVSExt(mgr.BVNeg(one), 64)
+
+        self.assertNotEqual(signed_ext2, signed_ext)
+        self.assertTrue(is_valid(Equals(zero_ext, signed_ext), logic=QF_BV))
+
+        # print(zero_ext)
+        # print(signed_ext)
 
         x = Symbol("x")
         g = And(x, mgr.BVULT(zero, one))
-        print(g)
+
+        res = is_sat(g, logic=QF_BV)
+        self.assertTrue(res)
+
+        model = get_model(g, logic=QF_BV)
+        self.assertTrue(model[x] == TRUE())
+
         return
 
 if __name__ == "__main__":
