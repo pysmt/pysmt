@@ -1,5 +1,7 @@
+from io import TextIOWrapper
 from subprocess import Popen, PIPE
-from six import iteritems
+
+from six import iteritems, PY2
 
 import pysmt.smtlib.commands as smtcmd
 from pysmt.solvers.eager import EagerModel
@@ -23,6 +25,13 @@ class SmtLibSolver(Solver):
         self.declared_vars = set()
         self.solver = Popen(args, stdout=PIPE, stderr=PIPE, stdin=PIPE)
         self.parser = SmtLibParser()
+        if PY2:
+            self.solver_stdin = self.solver.stdin
+            self.solver_stdout = self.solver.stdout
+        else:
+            self.solver_stdin = TextIOWrapper(self.solver.stdin)
+            self.solver_stdout = TextIOWrapper(self.solver.stdout)
+
         self.dbg = False
 
         # Initialize solver
@@ -36,16 +45,17 @@ class SmtLibSolver(Solver):
 
     def _send_command(self, cmd):
         if self.dbg: print("Sending: " + cmd.serialize_to_string())
-        cmd.serialize(self.solver.stdin, daggify=True)
-        self.solver.stdin.write("\n")
+        cmd.serialize(self.solver_stdin, daggify=True)
+        self.solver_stdin.write("\n")
+        self.solver_stdin.flush()
 
     def _get_answer(self):
-        res = self.solver.stdout.readline().strip()
+        res = self.solver_stdout.readline().strip()
         if self.dbg: print("Read: " + str(res))
         return res
 
     def _get_value_answer(self):
-        lst = self.parser.get_assignment_list(self.solver.stdout)
+        lst = self.parser.get_assignment_list(self.solver_stdout)
         if self.dbg: print("Read: " + str(lst))
         return lst
 
@@ -108,5 +118,7 @@ class SmtLibSolver(Solver):
 
     def exit(self):
         self._send_command(SmtLibCommand(smtcmd.EXIT, []))
+        self.solver_stdin.close()
+        self.solver_stdout.close()
         self.solver.terminate()
         return

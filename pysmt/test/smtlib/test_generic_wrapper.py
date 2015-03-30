@@ -129,3 +129,6 @@ class TestGenericWrapper(TestCase):
                 s.add_assertion(f)
                 res = s.solve()
                 self.assertFalse(res)
+
+if __name__ == "__main__":
+    unittest.main()

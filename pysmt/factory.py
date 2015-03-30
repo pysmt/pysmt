@@ -36,7 +36,7 @@ import pysmt.solvers.solver
 from pysmt.solvers.solver import SolverOptions
 
 DEFAULT_SOLVER_PREFERENCE_LIST = ['msat', 'z3', 'cvc4', 'yices', 'picosat', 'bdd']
-DEFAULT_QELIM_PREFERENCE_LIST = ['z3']
+DEFAULT_QELIM_PREFERENCE_LIST = ['z3', 'msat_fm', 'msat_lw']
 DEFAULT_LOGIC = QF_UFLIRA
 
 class Factory(object):
@@ -260,6 +260,14 @@ class Factory(object):
         try:
             from pysmt.solvers.z3 import Z3QuantifierEliminator
             self._all_qelims['z3'] = Z3QuantifierEliminator
+        except ImportError:
+            pass
+
+        try:
+            from pysmt.solvers.msat import (MSatFMQuantifierEliminator,
+                                            MSatLWQuantifierEliminator)
+            self._all_qelims['msat_fm'] = MSatFMQuantifierEliminator
+            self._all_qelims['msat_lw'] = MSatLWQuantifierEliminator
         except ImportError:
             pass
 
