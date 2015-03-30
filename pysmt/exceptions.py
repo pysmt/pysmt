@@ -53,3 +53,17 @@ class SolverRedefinitionError(Exception):
     """Exception representing errors caused by multiple defintion of solvers
        having the same name."""
     pass
+
+class SolverNotConfiguredForUnsatCoresError(Exception):
+    """
+    Exception raised if a solver not configured for generating unsat
+    cores is required to produce a core.
+    """
+    pass
+
+class SolverStatusError(Exception):
+    """
+    Exception raised if a method requiring a specific solver status is
+    incorrectly called in the wrong status.
+    """
+    pass

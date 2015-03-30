@@ -23,24 +23,26 @@ import mathsat
 
 import pysmt.logics
 from pysmt import typing as types
-from pysmt.solvers.solver import Solver, Converter
+from pysmt.solvers.solver import UnsatCoreSolver, Converter
 from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 from pysmt.solvers.eager import EagerModel
 from pysmt.walkers import DagWalker
-from pysmt.exceptions import SolverReturnedUnknownResultError
+from pysmt.exceptions import (SolverReturnedUnknownResultError,
+                              SolverNotConfiguredForUnsatCoresError,
+                              SolverStatusError)
 from pysmt.exceptions import InternalSolverError
 from pysmt.decorators import clear_pending_pop
 
 
-class MathSAT5Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
+class MathSAT5Solver(UnsatCoreSolver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
     LOGICS = pysmt.logics.PYSMT_QF_LOGICS
 
     def __init__(self, environment, logic, options, debugFile=None):
-        Solver.__init__(self,
-                        environment=environment,
-                        logic=logic,
-                        options=options)
+        UnsatCoreSolver.__init__(self,
+                                 environment=environment,
+                                 logic=logic,
+                                 options=options)
 
         self.config = mathsat.msat_create_default_config(str(logic))
 
@@ -68,6 +70,7 @@ class MathSAT5Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
         self.mgr = environment.formula_manager
         self.converter = MSatConverter(environment, self.msat_env)
+        self.last_result = None
         return
 
     @clear_pending_pop
@@ -119,8 +122,38 @@ class MathSAT5Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
         assert res in [mathsat.MSAT_UNKNOWN,mathsat.MSAT_SAT,mathsat.MSAT_UNSAT]
         if res == mathsat.MSAT_UNKNOWN:
+            self.last_result = "unknown"
             raise SolverReturnedUnknownResultError()
-        return res == mathsat.MSAT_SAT
+        self.last_result = (res == mathsat.MSAT_SAT)
+        return self.last_result
+
+
+    def get_unsat_core(self):
+        """After a call to solve() yielding UNSAT, returns the unsat core as a
+        set of formulae"""
+        if self.options.unsat_cores is None:
+            raise SolverNotConfiguredForUnsatCoresError
+
+        if self.last_result != False:
+            raise SolverStatusError("The last call to solve() was not" \
+                                    " unsatisfiable")
+
+        terms = mathsat.msat_get_unsat_core(self.msat_env)
+        return set(self.converter.convert(t) for t in terms)
+
+
+
+    def get_named_core(self):
+        """After a call to solve() yielding UNSAT, returns the unsat core as a
+        dict of names to formulae"""
+        if self.options.unsat_cores is None:
+            raise SolverNotConfiguredForUnsatCoresError
+
+        if self.last_result != False:
+            raise SolverStatusError("The last call to solve() was not" \
+                                    " unsatisfiable")
+        raise NotImplementedError
+
 
     @clear_pending_pop
     def all_sat(self, important, callback):
