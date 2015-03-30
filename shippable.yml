@@ -68,8 +68,7 @@ matrix:
 before_script:
   - mkdir -p shippable/testresults
   - mkdir -p shippable/codecoverage
-  - export PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.2.12-linux-x86_64/python:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.2.12-linux-x86_64/python/build/lib.linux-x86_64-$TRAVIS_PYTHON_VERSION"
-  - export PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.3.4-linux-x86_64/python:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.3.4-linux-x86_64/python/build/lib.linux-x86_64-$TRAVIS_PYTHON_VERSION"
+  - export PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.3.5-linux-x86_64/python:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.3.5-linux-x86_64/python/build/lib.linux-x86_64-$TRAVIS_PYTHON_VERSION"
   - export PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/z3_bin/lib/python2.7/dist-packages"
   # We have 2 different paths for CVC4 1) if we compile 2) if we download the binary
   - export PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/CVC4-68f22235a62f5276b206e9a6692a85001beb8d42/builds/src/bindings/python"
@@ -81,7 +80,7 @@ before_script:
 
 script:
   - ./install.py --check
-  - if [ "$PYSMT_SOLVER" == "msat_wrap" ]; then cd $TRAVIS_BUILD_DIR/pysmt/test/smtlib/bin; cp $TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.3.4-linux-x86_64/bin/mathsat .; mv mathsat.solver.sh.template mathsat.solver.sh; cd $TRAVIS_BUILD_DIR/; fi
+  - if [ "$PYSMT_SOLVER" == "msat_wrap" ]; then cd $TRAVIS_BUILD_DIR/pysmt/test/smtlib/bin; cp $TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.3.5-linux-x86_64/bin/mathsat .; mv mathsat.solver.sh.template mathsat.solver.sh; cd $TRAVIS_BUILD_DIR/; fi
   - nosetests pysmt -v --processes=4 --process-timeout=360 --with-xunit --xunit-file=shippable/testresults/nosetests.xml
 
 # Push of container is disabled
