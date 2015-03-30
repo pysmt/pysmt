@@ -65,7 +65,7 @@ class LockDdManager(object):
 class BddSolver(Solver):
     LOGICS = [ pysmt.logics.QF_BOOL, pysmt.logics.BOOL ]
 
-    def __init__(self, environment, logic, options=None):
+    def __init__(self, environment, logic, options):
         Solver.__init__(self,
                         environment=environment,
                         logic=logic,

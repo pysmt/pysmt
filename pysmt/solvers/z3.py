@@ -73,7 +73,7 @@ class Z3Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         Solver.__init__(self,
                         environment=environment,
                         logic=logic,
-                        options)
+                        options=options)
         # Here we could use:
         # self.z3 = z3.SolverFor(str(logic))
         # But it seems to have problems with quantified formulae

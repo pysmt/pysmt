@@ -15,7 +15,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from pysmt.shortcuts import get_type
+import pysmt.shortcuts
 from pysmt.typing import BOOL
 
 class SolverOptions(object):
@@ -216,7 +216,7 @@ class Solver(object):
 
         Raises TypeError.
         """
-        t = get_type(formula)
+        t = pysmt.shortcuts.get_type(formula)
         if t != BOOL:
             raise TypeError("Argument must be boolean.")
 

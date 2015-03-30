@@ -144,7 +144,7 @@ class MathSAT5Solver(UnsatCoreSolver, SmtLibBasicSolver, SmtLibIgnoreMixin):
                                     " unsatisfiable")
 
         terms = mathsat.msat_get_unsat_core(self.msat_env)
-        return set(self.converter.convert(t) for t in terms)
+        return set(self.converter.back(t) for t in terms)
 
 
 

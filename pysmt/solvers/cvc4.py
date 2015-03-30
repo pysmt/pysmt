@@ -29,7 +29,7 @@ from pysmt.solvers.eager import EagerModel
 class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
     LOGICS = pysmt.logics.PYSMT_QF_LOGICS
 
-    def __init__(self, environment, logic, options=None):
+    def __init__(self, environment, logic, options):
         Solver.__init__(self,
                         environment=environment,
                         logic=logic,

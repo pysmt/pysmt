@@ -133,8 +133,8 @@ class Factory(object):
                                    options=SolverOptions(generate_models=True,
                                                          unsat_cores=True))
             else:
-                raise NoSolverAvailableError("Solver %s is not available with " \
-                                             "Unsat Cores" % name)
+                raise NoSolverAvailableError("Solver %s has no support for " \
+                                             "unsat cores" % name)
 
         if logic is None:
             logic = self.default_logic
@@ -150,8 +150,8 @@ class Factory(object):
                                options=SolverOptions(generate_models=True,
                                                      unsat_cores=True))
         else:
-            raise NoSolverAvailableError("No solver is available for logic %s" %\
-                                         logic)
+            raise NoSolverAvailableError("No solver supporting unsat cores is" \
+                                         " available for logic %s" % logic)
 
 
 
@@ -249,7 +249,7 @@ class Factory(object):
 
 
         for k,s in iteritems(self._all_solvers):
-            if isinstance(s, pysmt.solvers.solver.UnsatCoreSolver):
+            if issubclass(s, pysmt.solvers.solver.UnsatCoreSolver):
                 self._unsat_core_solvers[k] = s
 
 
