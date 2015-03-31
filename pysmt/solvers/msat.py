@@ -87,6 +87,7 @@ class MathSAT5Solver(Solver, UnsatCoreSolver, SmtLibBasicSolver,
 
     @clear_pending_pop
     def reset_assertions(self):
+        self._last_command = "reset_assertions"
         mathsat.msat_reset_env(self.msat_env)
         return
 
@@ -111,7 +112,6 @@ class MathSAT5Solver(Solver, UnsatCoreSolver, SmtLibBasicSolver,
             raise InternalSolverError(msat_msg)
 
         self._last_command = "assert"
-        return
 
 
     @clear_pending_pop
