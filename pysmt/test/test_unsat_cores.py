@@ -17,10 +17,11 @@
 #
 import unittest
 
-from pysmt.test import TestCase
-from pysmt.shortcuts import get_env, Not, Symbol, UnsatCoreSolver
+from pysmt.test import TestCase, skipIfSolverNotAvailable
+from pysmt.shortcuts import get_env, And, Not, Symbol, UnsatCoreSolver, is_unsat
 from pysmt.logics import QF_BOOL
 from pysmt.exceptions import SolverStatusError
+from pysmt.test.examples import get_example_formulae
 
 class TestUnsatCores(TestCase):
 
@@ -97,6 +98,53 @@ class TestUnsatCores(TestCase):
                 s.get_unsat_core()
 
 
+    @skipIfSolverNotAvailable("msat")
+    def test_examples_msat(self):
+        for (f, _, satisfiability, logic) in get_example_formulae():
+            if not logic.quantifier_free: continue
+            if satisfiability == False:
+                with UnsatCoreSolver(name="msat", unsat_cores_mode="named") as s:
+                    clauses = [f]
+                    if f.is_and():
+                        clauses = f.get_sons()
+
+                    for i,c in enumerate(clauses):
+                        s.add_assertion(c, "a%d" % i)
+
+                    r = s.solve()
+                    self.assertFalse(r)
+
+                    core = s.get_named_unsat_core()
+
+                    self.assertTrue(len(core) <= len(clauses))
+                    for k in core.values():
+                        self.assertIn(k, clauses)
+
+                    self.assertTrue(is_unsat(And(core.values()), logic=logic))
+
+
+    @skipIfSolverNotAvailable("z3")
+    def test_examples_z3(self):
+        for (f, _, satisfiability, logic) in get_example_formulae():
+            if satisfiability == False:
+                with UnsatCoreSolver(name="z3", unsat_cores_mode="named") as s:
+                    clauses = [f]
+                    if f.is_and():
+                        clauses = f.get_sons()
+
+                    for i,c in enumerate(clauses):
+                        s.add_assertion(c, "a%d" % i)
+
+                    r = s.solve()
+                    self.assertFalse(r)
+
+                    core = s.get_named_unsat_core()
+
+                    self.assertTrue(len(core) <= len(clauses))
+                    for k in core.values():
+                        self.assertIn(k, clauses)
+
+                    self.assertTrue(is_unsat(And(core.values()), logic=logic))
 
 if __name__ == '__main__':
     unittest.main()
