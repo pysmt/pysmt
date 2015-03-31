@@ -33,7 +33,6 @@ from pysmt.logics import most_generic_logic, get_closer_logic
 from pysmt.oracles import get_logic
 
 import pysmt.solvers.solver
-from pysmt.solvers.solver import SolverOptions
 
 DEFAULT_SOLVER_PREFERENCE_LIST = ['msat', 'z3', 'cvc4', 'yices', 'picosat', 'bdd']
 DEFAULT_QELIM_PREFERENCE_LIST = ['z3', 'msat_fm', 'msat_lw']
@@ -86,7 +85,7 @@ class Factory(object):
                 closer_logic = get_closer_logic(SolverClass.LOGICS, logic)
                 return SolverClass(environment=self.environment,
                                    logic=closer_logic,
-                                   options=SolverOptions(generate_models=True))
+                                   user_options={"generate_models":True})
             else:
                 raise NoSolverAvailableError("Solver %s is not available" % name)
 
@@ -101,13 +100,14 @@ class Factory(object):
             closer_logic = get_closer_logic(SolverClass.LOGICS, logic)
             return SolverClass(environment=self.environment,
                                logic=closer_logic,
-                               options=SolverOptions(generate_models=True))
+                               user_options={"generate_models":True})
         else:
             raise NoSolverAvailableError("No solver is available for logic %s" %\
                                          logic)
 
 
-    def get_unsat_core_solver(self, quantified=False, name=None, logic=None):
+    def get_unsat_core_solver(self, quantified=False, name=None,
+                              logic=None, unsat_cores_mode="all"):
         assert quantified is False or logic is None, \
             "Cannot specify both quantified and logic."
 
@@ -130,8 +130,8 @@ class Factory(object):
                 closer_logic = get_closer_logic(SolverClass.LOGICS, logic)
                 return SolverClass(environment=self.environment,
                                    logic=closer_logic,
-                                   options=SolverOptions(generate_models=True,
-                                                         unsat_cores=True))
+                                   user_options={"generate_models" : True,
+                                        "unsat_cores_mode" : unsat_cores_mode})
             else:
                 raise NoSolverAvailableError("Solver %s has no support for " \
                                              "unsat cores" % name)
@@ -147,8 +147,8 @@ class Factory(object):
             closer_logic = get_closer_logic(SolverClass.LOGICS, logic)
             return SolverClass(environment=self.environment,
                                logic=closer_logic,
-                               options=SolverOptions(generate_models=True,
-                                                     unsat_cores=True))
+                               user_options={"generate_models" : True,
+                                        "unsat_cores_mode" : unsat_cores_mode})
         else:
             raise NoSolverAvailableError("No solver supporting unsat cores is" \
                                          " available for logic %s" % logic)
@@ -185,13 +185,14 @@ class Factory(object):
                                      "eliminator in the preference list")
 
 
-    def add_generic_solver(self, name, args, logics):
+    def add_generic_solver(self, name, args, logics, unsat_core_support=False):
         from pysmt.smtlib.solver import SmtLibSolver
         if name in self._all_solvers:
             raise SolverRedefinitionError("Solver %s already defined" % name)
         self._generic_solvers[name] = (args, logics)
         solver = partial(SmtLibSolver, args)
         solver.LOGICS = logics
+        solver.UNSAT_CORE_SUPPORT = unsat_core_support
         self._all_solvers[name] = solver
 
     def is_generic_solver(self, name):
@@ -249,9 +250,11 @@ class Factory(object):
 
 
         for k,s in iteritems(self._all_solvers):
-            if issubclass(s, pysmt.solvers.solver.UnsatCoreSolver):
-                self._unsat_core_solvers[k] = s
-
+            try:
+                if s.UNSAT_CORE_SUPPORT:
+                    self._unsat_core_solvers[k] = s
+            except AttributeError:
+                pass
 
 
     def _get_available_qe(self):
@@ -352,10 +355,12 @@ class Factory(object):
                                name=name,
                                logic=logic)
 
-    def UnsatCoreSolver(self, quantified=False, name=None, logic=None):
+    def UnsatCoreSolver(self, quantified=False, name=None, logic=None,
+                        unsat_cores_mode="all"):
         return self.get_unsat_core_solver(quantified=quantified,
                                           name=name,
-                                          logic=logic)
+                                          logic=logic,
+                                          unsat_cores_mode=unsat_cores_mode)
 
 
     def QuantifierEliminator(self, name=None):

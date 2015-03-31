@@ -69,11 +69,11 @@ class Z3Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
     LOGICS = PYSMT_LOGICS
 
-    def __init__(self, environment, logic, options):
+    def __init__(self, environment, logic, user_options):
         Solver.__init__(self,
                         environment=environment,
                         logic=logic,
-                        options=options)
+                        user_options=user_options)
         # Here we could use:
         # self.z3 = z3.SolverFor(str(logic))
         # But it seems to have problems with quantified formulae

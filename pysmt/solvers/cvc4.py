@@ -29,11 +29,11 @@ from pysmt.solvers.eager import EagerModel
 class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
     LOGICS = pysmt.logics.PYSMT_QF_LOGICS
 
-    def __init__(self, environment, logic, options):
+    def __init__(self, environment, logic, user_options):
         Solver.__init__(self,
                         environment=environment,
                         logic=logic,
-                        options=options)
+                        user_options=user_options)
         self.em = CVC4.ExprManager()
         self.cvc4 = CVC4.SmtEngine(self.em)
         self.cvc4.setOption("produce-models", CVC4.SExpr("true"))

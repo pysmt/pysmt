@@ -20,9 +20,10 @@ from pysmt.typing import BOOL
 
 class SolverOptions(object):
 
-    def __init__(self, generate_models=True, unsat_cores=None):
+    def __init__(self, generate_models=True, unsat_cores_mode=None):
         self.generate_models = generate_models
-        self.unsat_cores = unsat_cores
+        self.unsat_cores_mode = unsat_cores_mode
+
 
 
 class Solver(object):
@@ -31,18 +32,25 @@ class Solver(object):
     # Define the supported logics for the Solver
     LOGICS = []
 
-    def __init__(self, environment, logic, options):
+    def __init__(self, environment, logic, user_options=None):
         self.environment = environment
         self.pending_pop = False
 
         assert logic is not None
         self.logic = logic
 
-        assert options is not None
-        self.options = options
+        self.options = self.get_default_options(logic, user_options)
 
         self._destroyed = False
         return
+
+    def get_default_options(self, logic=None, user_options=None):
+        res = SolverOptions()
+        if user_options is not None:
+            for k in ["generate_models", "unsat_cores_mode"]:
+                if k in user_options:
+                    setattr(res, k, user_options[k])
+        return res
 
     def is_sat(self, formula):
         assert formula in self.environment.formula_manager, \
@@ -221,12 +229,10 @@ class Solver(object):
             raise TypeError("Argument must be boolean.")
 
 
-class UnsatCoreSolver(Solver):
+class UnsatCoreSolver(object):
     """ A solver supporting unsat core extraction"""
 
-    def __init__(self, environment, logic, options):
-        Solver.__init__(self, environment, logic, options)
-
+    UNSAT_CORE_SUPPORT = True
 
     def get_unsat_core(self):
         """After a call to solve() yielding UNSAT, returns the unsat core as a
@@ -234,7 +240,7 @@ class UnsatCoreSolver(Solver):
         raise NotImplementedError
 
 
-    def get_named_core(self):
+    def get_named_unsat_core(self):
         """After a call to solve() yielding UNSAT, returns the unsat core as a
         dict of names to formulae"""
         raise NotImplementedError

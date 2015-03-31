@@ -20,6 +20,7 @@ import unittest
 from pysmt.test import TestCase
 from pysmt.shortcuts import get_env, Not, Symbol, UnsatCoreSolver
 from pysmt.logics import QF_BOOL
+from pysmt.exceptions import SolverStatusError
 
 class TestUnsatCores(TestCase):
 
@@ -32,10 +33,68 @@ class TestUnsatCores(TestCase):
             s.add_assertion(Not(x))
             r = s.solve()
             self.assertFalse(r)
+
             core = s.get_unsat_core()
             self.assertEqual(len(core), 2)
             self.assertIn(x, core)
             self.assertIn(Not(x), core)
+
+            named_core = s.get_named_unsat_core()
+            self.assertEqual(len(core), 2)
+            self.assertIn(x, named_core.values())
+            self.assertIn(Not(x), named_core.values())
+
+
+    @unittest.skipIf(len(get_env().factory.all_unsat_core_solvers()) == 0,
+                     "No Solver supporting Unsat Cores is available.")
+    def test_basic_named(self):
+        x = Symbol("x")
+        with UnsatCoreSolver(logic=QF_BOOL, unsat_cores_mode="named") as s:
+            s.add_assertion(x, named="a1")
+            s.add_assertion(Not(x), named="a2")
+            r = s.solve()
+            self.assertFalse(r)
+
+            core = s.get_unsat_core()
+            self.assertEqual(len(core), 2)
+            self.assertIn(x, core)
+            self.assertIn(Not(x), core)
+
+            named_core = s.get_named_unsat_core()
+            self.assertEqual(len(named_core), 2)
+            self.assertIn("a1", named_core)
+            self.assertIn("a2", named_core)
+            self.assertEqual(named_core["a1"], x)
+            self.assertEqual(named_core["a2"], Not(x))
+
+
+    @unittest.skipIf(len(get_env().factory.all_unsat_core_solvers()) == 0,
+                     "No Solver supporting Unsat Cores is available.")
+    def test_modify_state(self):
+        x = Symbol("x")
+        with UnsatCoreSolver(logic=QF_BOOL) as s:
+            s.add_assertion(x)
+            s.push()
+            s.add_assertion(Not(x))
+            r = s.solve()
+            self.assertFalse(r)
+            s.pop()
+            with self.assertRaises(SolverStatusError):
+                s.get_unsat_core()
+
+
+    @unittest.skipIf(len(get_env().factory.all_unsat_core_solvers()) == 0,
+                     "No Solver supporting Unsat Cores is available.")
+    def test_modify_state_assert(self):
+        x = Symbol("x")
+        with UnsatCoreSolver(logic=QF_BOOL) as s:
+            s.add_assertion(x)
+            s.add_assertion(Not(x))
+            r = s.solve()
+            self.assertFalse(r)
+            s.add_assertion(Symbol("y"))
+            with self.assertRaises(SolverStatusError):
+                s.get_unsat_core()
 
 
 
