@@ -34,7 +34,6 @@ from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               SolverNotConfiguredForUnsatCoresError,
                               SolverStatusError,
                               InternalSolverError)
-from pysmt.exceptions import InternalSolverError
 from pysmt.decorators import clear_pending_pop
 from pysmt.solvers.qelim import QuantifierEliminator
 from pysmt.walkers.identitydag import IdentityDagWalker

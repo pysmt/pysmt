@@ -45,6 +45,8 @@ class SmtLibSolver(Solver):
                 self._send_command(SmtLibCommand(smtcmd.SET_OPTION, [o, v]))
         self._send_command(SmtLibCommand(smtcmd.SET_LOGIC, [logic]))
 
+    def get_default_options(self, logic=None, user_options=None):
+        return user_options
 
     def _send_command(self, cmd):
         if self.dbg: print("Sending: " + cmd.serialize_to_string())
