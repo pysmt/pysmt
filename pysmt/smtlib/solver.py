@@ -40,9 +40,9 @@ class SmtLibSolver(Solver):
         # Initialize solver
         self._send_command(SmtLibCommand(smtcmd.SET_OPTION, [":print-success", "false"]))
         self._send_command(SmtLibCommand(smtcmd.SET_OPTION, [":produce-models", "true"]))
-        if self.options is not None:
-            for o,v in iteritems(self.options):
-                self._send_command(SmtLibCommand(smtcmd.SET_OPTION, [o, v]))
+        # if self.options is not None:
+        #     for o,v in iteritems(self.options):
+        #         self._send_command(SmtLibCommand(smtcmd.SET_OPTION, [o, v]))
         self._send_command(SmtLibCommand(smtcmd.SET_LOGIC, [logic]))
 
     def get_default_options(self, logic=None, user_options=None):
