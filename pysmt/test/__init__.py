@@ -19,7 +19,7 @@ import unittest
 
 from functools import wraps
 
-from pysmt.shortcuts import reset_env, get_env
+from pysmt.shortcuts import reset_env, get_env, is_sat, is_valid, is_unsat
 from pysmt.decorators import deprecated
 
 class TestCase(unittest.TestCase):
@@ -37,6 +37,27 @@ class TestCase(unittest.TestCase):
 
     if "assertRaisesRegex" not in dir(unittest.TestCase):
         assertRaisesRegex = unittest.TestCase.assertRaisesRegexp
+
+    def assertValid(self, formula, msg=None, solver_name=None, logic=None):
+        """Assert that formula is VALID."""
+        self.assertTrue(self.env.factory.is_valid(formula=formula,
+                                                  solver_name=solver_name,
+                                                  logic=logic),
+                        msg=msg)
+
+    def assertSat(self, formula, msg=None, solver_name=None, logic=None):
+        """Assert that formula is SAT."""
+        self.assertTrue(self.env.factory.is_sat(formula=formula,
+                                                solver_name=solver_name,
+                                                logic=logic),
+                        msg=msg)
+
+    def assertUnsat(self, formula, msg=None, solver_name=None, logic=None):
+        """Assert that formula is UNSAT."""
+        self.assertTrue(self.env.factory.is_unsat(formula=formula,
+                                                  solver_name=solver_name,
+                                                  logic=logic),
+                        msg=msg)
 
 
 @deprecated("skipIfNoSolverForLogic (be specific about expectations!)")

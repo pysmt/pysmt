@@ -34,8 +34,8 @@ class TestEUF(TestCase):
 
         check = Equals(Function(f, [Real(1)]), Function(g, (Real(2), Int(4))))
 
-        self.assertTrue(is_sat(check, logic=UFLIRA),
-                        "Formula was expected to be sat")
+        self.assertSat(check, logic=UFLIRA,
+                       msg="Formula was expected to be sat")
 
     @skipIfNoSolverForLogic(UFLRA)
     def test_quantified_euf(self):
@@ -53,8 +53,8 @@ class TestEUF(TestCase):
 
         check = Implies(axiom, And(test1, test2))
 
-        self.assertTrue(is_valid(check, logic=UFLRA),
-                        "Formula was expected to be valid")
+        self.assertValid(check, logic=UFLRA,
+                        msg="Formula was expected to be valid")
 
 
     def test_simplify(self):
