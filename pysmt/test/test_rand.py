@@ -19,7 +19,7 @@ from nose.plugins.attrib import attr
 from six.moves import xrange
 
 from pysmt.randomizer import build_random_formula, build_random_qf_formula
-from pysmt.shortcuts import is_valid, Iff
+from pysmt.shortcuts import Iff
 from pysmt.shortcuts import get_env
 from pysmt.type_checker import SimpleTypeChecker
 from pysmt.test import TestCase, skipIfSolverNotAvailable
@@ -50,10 +50,9 @@ class TestRand(TestCase):
             sf = f.simplify()
             get_env().simplifier.validate_simplifications = False
 
-            res = is_valid(Iff(f, sf), solver_name='z3')
-            self.assertTrue(res,
-                            "Simplification did not provide equivalent "+
-                            "result:\n f= %s\n sf = %s" % (f, sf))
+            self.assertValid(Iff(f, sf), solver_name='z3',
+                             msg="Simplification did not provide equivalent "+
+                                "result:\n f= %s\n sf = %s" % (f, sf))
 
     @attr("slow")
     @skipIfSolverNotAvailable('z3')
@@ -63,12 +62,10 @@ class TestRand(TestCase):
             f = build_random_qf_formula(10, 20, 4, 0.1, seed=i)
             sf = f.simplify()
             test = Iff(f, sf)
-            res = is_valid(test, solver_name='z3')
-
-            self.assertTrue(res,
-                            "Simplification of formula %d " % i +
-                            "did not provide equivalent "+
-                            "result:\n f= %s\n sf = %s" % (f, sf))
+            self.assertValid(test, solver_name='z3',
+                             msg="Simplification of formula %d " % i +
+                                 "did not provide equivalent "+
+                                 "result:\n f= %s\n sf = %s" % (f, sf))
 
     @attr("slow")
     @skipIfSolverNotAvailable('msat')
@@ -78,12 +75,10 @@ class TestRand(TestCase):
             f = build_random_qf_formula(10, 20, 4, 0.1, seed=i)
             sf = f.simplify()
             test = Iff(f, sf)
-            res = is_valid(test, solver_name='msat')
-
-            self.assertTrue(res,
-                            "Simplification of formula %d " % i +
-                            "did not provide equivalent "+
-                            "result:\n f= %s\n sf = %s" % (f, sf))
+            self.assertValid(test, solver_name='msat',
+                             msg="Simplification of formula %d " % i +
+                                 "did not provide equivalent "+
+                                 "result:\n f= %s\n sf = %s" % (f, sf))
 
 
     def test_hrserializer(self):

@@ -45,10 +45,10 @@ class TestQE(TestCase):
         r1 = qe.eliminate_quantifiers(qf)
 
         try:
-            res = is_valid(Iff(r1, qf), logic=LRA)
+            self.assertValid(Iff(r1, qf), logic=LRA,
+                             msg="The two formulas should be equivalent.")
         except SolverReturnedUnknownResultError:
             pass
-        self.assertTrue(res, "The two formulas whould be equivalent.")
 
 
     @unittest.skipIf('z3' not in get_env().factory.all_qelims(),
@@ -147,7 +147,7 @@ class TestQE(TestCase):
         f = ForAll([p], Implies(LT(Int(0), p), LT(q, p)))
         qf = qe.eliminate_quantifiers(f).simplify()
 
-        self.assertTrue(is_valid(Iff(qf, LE(q, Int(0)))))
+        self.assertValid(Iff(qf, LE(q, Int(0))))
 
     def _alternation_bool_example(self, qe):
         # Alternation of quantifiers
