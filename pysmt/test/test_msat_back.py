@@ -17,7 +17,7 @@
 #
 import unittest
 from pysmt.shortcuts import FreshSymbol, GT, And, Plus, Real, Int, LE, Iff
-from pysmt.shortcuts import is_valid, get_env
+from pysmt.shortcuts import get_env
 from pysmt.typing import REAL, INT
 from pysmt.test import TestCase, skipIfSolverNotAvailable
 from pysmt.test.examples import get_example_formulae
@@ -45,7 +45,7 @@ class TestBasic(TestCase):
 
         # Checking equality is not enough: MathSAT can change the
         # shape of the formula into a logically equivalent form.
-        self.assertTrue(is_valid(Iff(f, res), logic=QF_UFLIRA))
+        self.assertValid(Iff(f, res), logic=QF_UFLIRA)
 
 
     @skipIfSolverNotAvailable("msat")
@@ -77,8 +77,7 @@ class TestBasic(TestCase):
             if logic.quantifier_free:
                 term = new_converter.convert(formula)
                 res = new_converter.back(term)
-                self.assertTrue(is_valid(Iff(formula, res), logic=QF_UFLIRA))
-
+                self.assertValid(Iff(formula, res), logic=QF_UFLIRA)
 
 
 if __name__ == '__main__':
