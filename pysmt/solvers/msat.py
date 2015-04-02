@@ -223,14 +223,12 @@ class MathSAT5Solver(Solver, UnsatCoreSolver, SmtLibBasicSolver,
         for _ in xrange(levels):
             mathsat.msat_push_backtrack_point(self.msat_env)
         self._last_command = "push"
-        return
 
     @clear_pending_pop
     def pop(self, levels=1):
         for _ in xrange(levels):
             mathsat.msat_pop_backtrack_point(self.msat_env)
         self._last_command = "pop"
-        return
 
     def _var2term(self, var):
         decl = mathsat.msat_find_decl(self.msat_env, var.symbol_name())
