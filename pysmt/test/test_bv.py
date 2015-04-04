@@ -34,6 +34,12 @@ class TestBV(TestCase):
         one = BV(1, 32)
         zero = BV(0, 32)
         big = BV(127, 128)
+        binary = BV("111")
+        binary2 = BV("0b111")
+        binary3 = BV(0b111, 3) # In this case we need to explicit the width
+
+        self.assertEqual(binary, binary2)
+        self.assertEqual(binary2, binary3)
 
         # Variables
         b128 = Symbol("b", BV128) # BV1, BV8 etc. are defined in pysmt.typing

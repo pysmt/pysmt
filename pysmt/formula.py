@@ -499,8 +499,23 @@ class FormulaManager(object):
             return self.Max(self.Max(exprs[0:h]), self.Max(exprs[h:]))
 
     # BitVectors
-    def BV(self, value, width=32):
+    def BV(self, value, width=None):
         """Return a constant of type BitVector."""
+
+        try:
+            if value[:2] == "#b":
+                value = value[2:]
+            if value[0] in ["0", "1"]:
+                value = int(value, 2)
+                width = len(value)
+        except ValueError:
+            raise ValueError("Expecting binary value as string, got %s instead." % value)
+        except TypeError:
+            pass
+
+        if width is None:
+            raise ValueError("Need to specify a width for the constant")
+
         if is_integer(value):
             n = self.create_node(node_type=op.BV_CONSTANT,
                                  args=tuple(),
@@ -509,6 +524,11 @@ class FormulaManager(object):
         else:
             raise TypeError("Invalid type in constant. The type was:" + \
                             str(type(value)))
+
+    def BVZero(self, width):
+        """Returns the bit-vector with all bits set to zero."""
+        return self.BV(0, width=width)
+
 
     def BVNot(self, formula):
         """Returns the bitvector Not(bv)"""
