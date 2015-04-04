@@ -51,13 +51,32 @@ class MathSAT5Solver(Solver, UnsatCoreSolver, SmtLibBasicSolver,
                         user_options=user_options)
 
         self.msat_config = mathsat.msat_create_default_config(str(logic))
+        self._prepare_config(self.options, debugFile)
+        self.msat_env = mathsat.msat_create_env(self.msat_config)
 
-        if self.options.generate_models:
+        self.realType = mathsat.msat_get_rational_type(self.msat_env)
+        self.intType = mathsat.msat_get_integer_type(self.msat_env)
+        self.boolType = mathsat.msat_get_bool_type(self.msat_env)
+
+        self.mgr = environment.formula_manager
+        self.converter = MSatConverter(environment, self.msat_env)
+
+        self._last_result = None
+        self._last_command = None
+        self._assertion_names = {}
+        self._named_assertions_stack = []
+        self._named_backtrack_points = []
+        return
+
+
+    def _prepare_config(self, options, debugFile=None):
+        """Sets the relevant options in self.msat_config"""
+        if options.generate_models:
             check = mathsat.msat_set_option(self.msat_config, "model_generation",
                                             "true")
             assert check == 0
 
-        if self.options.unsat_cores_mode is not None:
+        if options.unsat_cores_mode is not None:
             check = mathsat.msat_set_option(self.msat_config,
                                             "unsat_core_generation",
                                             "1")
@@ -71,19 +90,6 @@ class MathSAT5Solver(Solver, UnsatCoreSolver, SmtLibBasicSolver,
                                     "debug.api_call_trace_filename",
                                     debugFile)
 
-        self.msat_env = mathsat.msat_create_env(self.msat_config)
-
-        self.realType = mathsat.msat_get_rational_type(self.msat_env)
-        self.intType = mathsat.msat_get_integer_type(self.msat_env)
-        self.boolType = mathsat.msat_get_bool_type(self.msat_env)
-
-        self.mgr = environment.formula_manager
-        self.converter = MSatConverter(environment, self.msat_env)
-
-        self._last_result = None
-        self._last_command = None
-        self._assertion_names = {}
-        return
 
     @clear_pending_pop
     def reset_assertions(self):
@@ -100,9 +106,12 @@ class MathSAT5Solver(Solver, UnsatCoreSolver, SmtLibBasicSolver,
         self._assert_is_boolean(formula)
 
         if named is not None and self.options.unsat_cores_mode == "named":
+            # If we want named unsat cores, we need to rewrite the
+            # formulae as implications
             key = self.mgr.FreshSymbol(template="_assertion_%s_%%d" % named)
             self._assertion_names[key] = (named, formula)
             formula = self.mgr.Implies(key, formula)
+            self._named_assertions_stack.append(key)
 
         term = self.converter.convert(formula)
         res = mathsat.msat_assert_formula(self.msat_env, term)
@@ -118,11 +127,11 @@ class MathSAT5Solver(Solver, UnsatCoreSolver, SmtLibBasicSolver,
     def solve(self, assumptions=None):
         res = None
 
-        if len(self._assertion_names) > 0:
+        if len(self._named_assertions_stack) > 0:
             if assumptions is None:
-                assumptions = self._assertion_names.keys()
+                assumptions = self._named_assertions_stack
             else:
-                assumptions += self._assertion_names.keys()
+                assumptions += self._named_assertions_stack
 
         if assumptions is not None:
             bool_ass = []
@@ -160,19 +169,19 @@ class MathSAT5Solver(Solver, UnsatCoreSolver, SmtLibBasicSolver,
     def get_unsat_core(self):
         """After a call to solve() yielding UNSAT, returns the unsat core as a
         set of formulae"""
-        if self.options.unsat_cores_mode is None:
-            raise SolverNotConfiguredForUnsatCoresError
-
-        if self._last_result != False:
-            raise SolverStatusError("The last call to solve() was not" \
-                                    " unsatisfiable")
-
-        if self._last_command != "solve":
-            raise SolverStatusError("The solver status has been modified by a" \
-                                    " '%s' command after the last call to" \
-                                    " solve()" % self._last_command)
-
         if self.options.unsat_cores_mode == "all":
+            if self.options.unsat_cores_mode is None:
+                raise SolverNotConfiguredForUnsatCoresError
+
+            if self._last_result != False:
+                raise SolverStatusError("The last call to solve() was not" \
+                                        " unsatisfiable")
+
+            if self._last_command != "solve":
+                raise SolverStatusError("The solver status has been modified by a" \
+                                        " '%s' command after the last call to" \
+                                        " solve()" % self._last_command)
+
             terms = mathsat.msat_get_unsat_core(self.msat_env)
             if terms is None:
                 raise InternalSolverError(
@@ -185,19 +194,19 @@ class MathSAT5Solver(Solver, UnsatCoreSolver, SmtLibBasicSolver,
     def get_named_unsat_core(self):
         """After a call to solve() yielding UNSAT, returns the unsat core as a
         dict of names to formulae"""
-        if self.options.unsat_cores_mode is None:
-            raise SolverNotConfiguredForUnsatCoresError
-
-        if self._last_result != False:
-            raise SolverStatusError("The last call to solve() was not" \
-                                    " unsatisfiable")
-
-        if self._last_command != "solve":
-            raise SolverStatusError("The solver status has been modified by a" \
-                                    " '%s' command after the last call to" \
-                                    " solve()" % self._last_command)
-
         if self.options.unsat_cores_mode == "named":
+            if self.options.unsat_cores_mode is None:
+                raise SolverNotConfiguredForUnsatCoresError
+
+            if self._last_result != False:
+                raise SolverStatusError("The last call to solve() was not" \
+                                        " unsatisfiable")
+
+            if self._last_command != "solve":
+                raise SolverStatusError("The solver status has been modified by a" \
+                                        " '%s' command after the last call to" \
+                                        " solve()" % self._last_command)
+
             assumptions = mathsat.msat_get_unsat_assumptions(self.msat_env)
             pysmt_assumptions = set(self.converter.back(t) for t in assumptions)
 
@@ -207,6 +216,7 @@ class MathSAT5Solver(Solver, UnsatCoreSolver, SmtLibBasicSolver,
                     (name, formula) = self._assertion_names[key]
                     res[name] = formula
             return res
+
         else:
             return {"_a%d" % i : f for i,f in enumerate(self.get_unsat_core())}
 
@@ -222,12 +232,15 @@ class MathSAT5Solver(Solver, UnsatCoreSolver, SmtLibBasicSolver,
     def push(self, levels=1):
         for _ in xrange(levels):
             mathsat.msat_push_backtrack_point(self.msat_env)
+            self._named_backtrack_points.append(len(self._named_assertions_stack))
         self._last_command = "push"
 
     @clear_pending_pop
     def pop(self, levels=1):
         for _ in xrange(levels):
             mathsat.msat_pop_backtrack_point(self.msat_env)
+            l = self._named_backtrack_points.pop()
+            self._named_assertions_stack = self._named_assertions_stack[0:l]
         self._last_command = "pop"
 
     def _var2term(self, var):
