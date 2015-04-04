@@ -19,8 +19,14 @@ from collections import namedtuple
 from fractions import Fraction
 
 import pysmt.logics
-from pysmt.shortcuts import *
-from pysmt.typing import REAL, BOOL, INT, FunctionType
+from pysmt.shortcuts import get_env
+from pysmt.shortcuts import (Symbol, Function,
+                             Int, Real, FALSE, TRUE,
+                             And, Iff, Or, Not, Implies, Ite,
+                             LT, LE, GT, GE,
+                             Times, Equals, Plus, Minus, Div, ToReal,
+                             ForAll, Exists)
+from pysmt.typing import REAL, BOOL, INT, FunctionType, BV8, BV16
 
 
 Example = namedtuple('Example',
@@ -46,6 +52,9 @@ def get_example_formulae(environment=None):
 
         ih = Symbol("ih", FunctionType(INT, [REAL, INT]))
         ig = Symbol("ig", FunctionType(INT, [INT]))
+
+        bv8 = Symbol("bv1", BV8)
+        bv16 =Symbol("bv2", BV16)
 
         result = [
             # Formula, is_valid, is_sat, is_qf

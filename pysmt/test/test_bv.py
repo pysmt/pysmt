@@ -16,7 +16,7 @@
 #   limitations under the License.
 #
 
-from pysmt.test import TestCase
+from pysmt.test import TestCase, skipIfNoSolverForLogic
 
 from pysmt.shortcuts import Symbol, And, Not, Solver, Symbol, Equals, TRUE
 from pysmt.shortcuts import get_env, is_sat, is_valid, get_model, is_unsat
@@ -25,6 +25,7 @@ from pysmt.logics import QF_BV
 
 class TestBV(TestCase):
 
+    @skipIfNoSolverForLogic(QF_BV)
     def test_bv(self):
         mgr = get_env().formula_manager
         BV = mgr.BV
