@@ -232,9 +232,29 @@ class Solver(object):
 
 
 class IncrementalTrackingSolver(Solver):
-    """A solver that keeps track of the asserted formulae"""
+    """A solver that keeps track of the asserted formulae
+
+    This class provides tracking of the assertions that are stored
+    inside the solver, the last executed command and the last solving
+    result.
+
+    It requires the extending class to implement the following proxy
+    methods:
+
+    * _reset_assertions
+    * _add_assertion
+    * _solve
+    * _push
+    * _pop
+
+    The semantics of each function is the same as the non-proxy
+    version except for _add_assertion that is supposed to return a
+    result (of any type) that will constitute the elements of the
+    self.assertions list.
+    """
 
     def __init__(self, environment, logic, user_options=None):
+        """See Solver.__init__()"""
         Solver.__init__(self, environment, logic, user_options=user_options)
 
         self._last_result = None
@@ -245,14 +265,23 @@ class IncrementalTrackingSolver(Solver):
 
     @property
     def last_command(self):
+        """Returns the name of the laste executed command"""
         return self._last_command
 
     @property
     def last_result(self):
+        """
+        Returns True, False or "unknown": the last result of the last call
+        to solve(). If solve has never been called, None is returned
+        """
         return self._last_result
 
     @property
     def assertions(self):
+        """
+        Returns the list of results of calls to _add_assertion() that are
+        still asserted in the solver
+        """
         return self._assertion_stack
 
     def _reset_assertions(self):
