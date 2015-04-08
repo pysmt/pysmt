@@ -18,6 +18,7 @@
 import pysmt.shortcuts
 from pysmt.typing import BOOL
 from pysmt.exceptions import SolverReturnedUnknownResultError
+from six.moves import xrange
 
 class SolverOptions(object):
 
