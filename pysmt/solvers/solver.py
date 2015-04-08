@@ -17,6 +17,7 @@
 #
 import pysmt.shortcuts
 from pysmt.typing import BOOL
+from pysmt.exceptions import SolverReturnedUnknownResultError
 
 class SolverOptions(object):
 
@@ -229,6 +230,85 @@ class Solver(object):
             raise TypeError("Argument must be boolean.")
 
 
+class IncrementalTrackingSolver(Solver):
+    """A solver that keeps track of the asserted formulae"""
+
+    def __init__(self, environment, logic, user_options=None):
+        Solver.__init__(self, environment, logic, user_options=user_options)
+
+        self._last_result = None
+        self._last_command = None
+
+        self._assertion_stack = []
+        self._backtrack_points = []
+
+    @property
+    def last_command(self):
+        return self._last_command
+
+    @property
+    def last_result(self):
+        return self._last_result
+
+    @property
+    def assertions(self):
+        return self._assertion_stack
+
+    def _reset_assertions(self):
+        raise NotImplementedError
+
+    def reset_assertions(self):
+        self._reset_assertions()
+        self._last_command = "reset_assertions"
+
+
+    def _add_assertion(self, formula, named=None):
+        raise NotImplementedError
+
+    def add_assertion(self, formula, named=None):
+        tracked = self._add_assertion(formula, named=named)
+        self._assertion_stack.append(tracked)
+        self._last_command = "assert"
+
+
+    def _solve(self, assumptions=None):
+        raise NotImplementedError
+
+    def solve(self, assumptions=None):
+        try:
+            res = self._solve(assumptions=assumptions)
+            self._last_result = res
+            return res
+        except SolverReturnedUnknownResultError:
+            self._last_result = "unknown"
+            raise
+
+        finally:
+            self._last_command = "solve"
+
+
+    def _push(self, levels=1):
+        raise NotImplementedError
+
+    def push(self, levels=1):
+        self._push(levels=levels)
+        point = len(self._assertion_stack)
+        for _ in xrange(levels):
+            self._backtrack_points.append(point)
+        self._last_command = "push"
+
+
+    def _pop(self, levels=1):
+        raise NotImplementedError
+
+    def pop(self, levels=1):
+        self._pop(levels=levels)
+        for _ in xrange(levels):
+            point = self._backtrack_points.pop()
+            self._assertion_stack = self._assertion_stack[0:point]
+        self._last_command = "pop"
+
+
 class UnsatCoreSolver(object):
     """ A solver supporting unsat core extraction"""
 
@@ -244,6 +324,7 @@ class UnsatCoreSolver(object):
         """After a call to solve() yielding UNSAT, returns the unsat core as a
         dict of names to formulae"""
         raise NotImplementedError
+
 
 
 class Model(object):
