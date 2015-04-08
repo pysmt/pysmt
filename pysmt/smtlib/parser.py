@@ -237,8 +237,18 @@ class SmtLibParser(object):
                            'concat':mgr.BVConcat,
                            'bvadd':mgr.BVAdd,
                            'bvult':mgr.BVULT,
-                           #'bvsub':mgr.BVSub,
-                           # TODO: add all the operators here!!!
+                           'bvsub':mgr.BVSub,
+                           'bvnot':mgr.BVNot,
+                           'bvneg':mgr.BVNeg,
+                           'bvand':mgr.BVAnd,
+                           'bvor':mgr.BVOr,
+                           'bvxor':mgr.BVXor,
+                           'bvmul':mgr.BVMul,
+                           'bvudiv':mgr.BVUDiv,
+                           'bvurem':mgr.BVURem,
+                           'bvshl':mgr.BVLShl,
+                           'bvlshr':mgr.BVLShr,
+                           'bvult':mgr.BVULT,
                            '_':self._smtlib_underscore,
                            })
 
@@ -273,7 +283,7 @@ class SmtLibParser(object):
                 end = int(send.constant_value())
             except ValueError:
                 raise SyntaxError("Expected number in '(_ extract) expression'")
-            return lambda x : mgr.BVExtract(x, start, end)
+            return lambda x : mgr.BVExtract(x, end, start)
 
         if args[0] == "bv0":
             try:

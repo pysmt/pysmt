@@ -253,6 +253,15 @@ class FNode(object):
         elif self.is_symbol():
             assert self.symbol_type().is_bv_type()
             return self.symbol_type().width
+        elif self.is_function_application():
+            # Return width defined in the declaration
+            return self.function_name().symbol_type().return_type.width
+        elif self.is_ite():
+            # Recursively call bv_width on the children
+            width_l = self.arg(1).bv_width()
+            width_r = self.arg(2).bv_width()
+            assert width_l == width_r
+            return width_l
         else:
             # BV Operator
             return self._content.payload[0]

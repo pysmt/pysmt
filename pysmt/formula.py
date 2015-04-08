@@ -564,8 +564,12 @@ class FormulaManager(object):
         """Returns the slice of formula from start to end (inclusive)."""
         if end is None: end = formula.bv_width()
         assert is_integer(start) and is_integer(end)
+        assert end >= start and start >= 0
         size = end-start+1
-        assert size <= formula.bv_width()
+
+        assert size <= formula.bv_width(), \
+            "Invalid size: start=%d, end=%d, width=%d" % \
+            (start, end, formula.bv_width())
         return self.create_node(node_type=op.BV_EXTRACT,
                                 args=(formula,),
                                 payload=(size, start, end))
@@ -601,6 +605,10 @@ class FormulaManager(object):
         return self.create_node(node_type=op.BV_ADD,
                                 args=(left, right),
                                 payload=(left.bv_width(),))
+
+    def BVSub(self, left, right):
+        """Returns the difference of two BV."""
+        return self.BVAdd(left, self.BVNeg(right))
 
     def BVMul(self, left, right):
         """Returns the product of two BV."""
