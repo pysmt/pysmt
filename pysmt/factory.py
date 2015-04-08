@@ -26,11 +26,12 @@ particular solver.
 from functools import partial
 from six import iteritems
 
-from pysmt.exceptions import NoSolverAvailableError, SolverRedefinitionError
+from pysmt.exceptions import NoSolverAvailableError, SolverRedefinitionError, NoLogicAvailableError
 from pysmt.logics import QF_UFLIRA
 from pysmt.logics import AUTO as AUTO_LOGIC
 from pysmt.logics import most_generic_logic, get_closer_logic
 from pysmt.oracles import get_logic
+
 
 DEFAULT_SOLVER_PREFERENCE_LIST = ['msat', 'z3', 'cvc4', 'yices', 'picosat', 'bdd']
 DEFAULT_QELIM_PREFERENCE_LIST = ['z3', 'msat_fm', 'msat_lw']
@@ -70,7 +71,13 @@ class Factory(object):
             if name in self._all_solvers:
                 if logic is None:
                     SolverClass = self._all_solvers[name]
-                    logic = most_generic_logic(SolverClass.LOGICS)
+                    try:
+                        logic = most_generic_logic(SolverClass.LOGICS)
+                    except NoLogicAvailableError:
+                        if self.default_logic in SolverClass.LOGICS:
+                            logic = self.default_logic
+                        else:
+                            raise NoLogicAvailableError("Cannot automatically select a logic")
                 else:
                     if name in self.all_solvers(logic=logic):
                         SolverClass = self._all_solvers[name]
