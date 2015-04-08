@@ -658,7 +658,7 @@ class FormulaManager(object):
         New bits are set to zero.
         """
         if not is_integer(width):
-            raise TypeError("BVZext: 'width' should be an integer. Got %s" % steps)
+            raise TypeError("BVZext: 'width' should be an integer. Got %s" % width)
         return self.create_node(node_type=op.BV_ZEXT,
                                 args=(formula,),
                                 payload=(width, ))
@@ -669,7 +669,7 @@ class FormulaManager(object):
         New bits are set according to the most-significant-bit.
         """
         if not is_integer(width):
-            raise TypeError("BVSext: 'width' should be an integer. Got %s" % steps)
+            raise TypeError("BVSext: 'width' should be an integer. Got %s" % width)
         return self.create_node(node_type=op.BV_SEXT,
                                 args=(formula,),
                                 payload=(width, ))
