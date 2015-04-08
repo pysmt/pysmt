@@ -503,14 +503,16 @@ class FormulaManager(object):
         """Return a constant of type BitVector."""
 
         try:
-            if value[:2] == "#b":
+            if value.startswith("#b"):
                 value = value[2:]
             if value[0] in ["0", "1"]:
-                value = int(value, 2)
                 width = len(value)
+                value = int(value, 2)
         except ValueError:
             raise ValueError("Expecting binary value as string, got %s instead." % value)
         except TypeError:
+            pass
+        except AttributeError:
             pass
 
         if width is None:

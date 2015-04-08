@@ -35,7 +35,7 @@ class TestBV(TestCase):
         zero = BV(0, 32)
         big = BV(127, 128)
         binary = BV("111")
-        binary2 = BV("0b111")
+        binary2 = BV("#b111")
         binary3 = BV(0b111, 3) # In this case we need to explicit the width
 
         self.assertEqual(binary, binary2)
