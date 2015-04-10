@@ -385,6 +385,21 @@ class Factory(object):
                 retval = solver.get_model()
             return retval
 
+    def get_unsat_core(self, clauses, solver_name=None, logic=None):
+        if logic == AUTO_LOGIC:
+            logic = get_logic(self.environment.formula_manager.And(clauses),
+                              self.environment)
+
+        with self.UnsatCoreSolver(name=solver_name, logic=logic) \
+             as solver:
+            for c in clauses:
+                solver.add_assertion(c)
+            check = solver.solve()
+            if check:
+                return None
+
+            return solver.get_unsat_core()
+
     def is_valid(self, formula, solver_name=None, logic=None):
         if logic == AUTO_LOGIC:
             logic = get_logic(formula, self.environment)

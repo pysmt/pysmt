@@ -19,7 +19,8 @@ import unittest
 
 from pysmt.test import (TestCase, skipIfSolverNotAvailable,
                         skipIfNoUnsatCoreSolverForLogic)
-from pysmt.shortcuts import get_env, And, Not, Symbol, UnsatCoreSolver, is_unsat
+from pysmt.shortcuts import (get_unsat_core, And, Not, Symbol, UnsatCoreSolver,
+                             is_unsat)
 from pysmt.logics import QF_BOOL
 from pysmt.exceptions import SolverStatusError
 from pysmt.test.examples import get_example_formulae
@@ -70,6 +71,15 @@ class TestUnsatCores(TestCase):
             self.assertEqual(len(core), 2)
             self.assertIn(x, named_core.values())
             self.assertIn(Not(x), named_core.values())
+
+
+    @skipIfNoUnsatCoreSolverForLogic(QF_BOOL)
+    def test_shortcut(self):
+        x = Symbol("x")
+        core = get_unsat_core([x, Not(x)])
+        self.assertEqual(len(core), 2)
+        self.assertIn(x, core)
+        self.assertIn(Not(x), core)
 
 
     @skipIfNoUnsatCoreSolverForLogic(QF_BOOL)
