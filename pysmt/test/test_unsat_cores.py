@@ -17,7 +17,8 @@
 #
 import unittest
 
-from pysmt.test import TestCase, skipIfSolverNotAvailable
+from pysmt.test import (TestCase, skipIfSolverNotAvailable,
+                        skipIfNoUnsatCoreSolverForLogic)
 from pysmt.shortcuts import get_env, And, Not, Symbol, UnsatCoreSolver, is_unsat
 from pysmt.logics import QF_BOOL
 from pysmt.exceptions import SolverStatusError
@@ -25,8 +26,33 @@ from pysmt.test.examples import get_example_formulae
 
 class TestUnsatCores(TestCase):
 
-    @unittest.skipIf(len(get_env().factory.all_unsat_core_solvers()) == 0,
-                     "No Solver supporting Unsat Cores is available.")
+    def _helper_check_examples(self, solver_name):
+        for (f, _, satisfiability, logic) in get_example_formulae():
+            if not logic.quantifier_free: continue
+            if satisfiability == False:
+                with UnsatCoreSolver(name=solver_name,
+                                     unsat_cores_mode="named") as solver:
+                    clauses = [f]
+                    if f.is_and():
+                        clauses = f.get_sons()
+
+                    for i,c in enumerate(clauses):
+                        solver.add_assertion(c, "a%d" % i)
+
+                    r = solver.solve()
+                    self.assertFalse(r)
+
+                    core = solver.get_named_unsat_core()
+
+                    self.assertTrue(len(core) <= len(clauses))
+                    for k in core.values():
+                        self.assertIn(k, clauses)
+
+                    self.assertTrue(is_unsat(And(core.values()), logic=logic))
+
+
+
+    @skipIfNoUnsatCoreSolverForLogic(QF_BOOL)
     def test_basic(self):
         x = Symbol("x")
         with UnsatCoreSolver(logic=QF_BOOL) as s:
@@ -46,8 +72,7 @@ class TestUnsatCores(TestCase):
             self.assertIn(Not(x), named_core.values())
 
 
-    @unittest.skipIf(len(get_env().factory.all_unsat_core_solvers()) == 0,
-                     "No Solver supporting Unsat Cores is available.")
+    @skipIfNoUnsatCoreSolverForLogic(QF_BOOL)
     def test_basic_named(self):
         x = Symbol("x")
         with UnsatCoreSolver(logic=QF_BOOL, unsat_cores_mode="named") as s:
@@ -69,8 +94,7 @@ class TestUnsatCores(TestCase):
             self.assertEqual(named_core["a2"], Not(x))
 
 
-    @unittest.skipIf(len(get_env().factory.all_unsat_core_solvers()) == 0,
-                     "No Solver supporting Unsat Cores is available.")
+    @skipIfNoUnsatCoreSolverForLogic(QF_BOOL)
     def test_modify_state(self):
         x = Symbol("x")
         with UnsatCoreSolver(logic=QF_BOOL) as s:
@@ -84,8 +108,7 @@ class TestUnsatCores(TestCase):
                 s.get_unsat_core()
 
 
-    @unittest.skipIf(len(get_env().factory.all_unsat_core_solvers()) == 0,
-                     "No Solver supporting Unsat Cores is available.")
+    @skipIfNoUnsatCoreSolverForLogic(QF_BOOL)
     def test_modify_state_assert(self):
         x = Symbol("x")
         with UnsatCoreSolver(logic=QF_BOOL) as s:
@@ -100,51 +123,13 @@ class TestUnsatCores(TestCase):
 
     @skipIfSolverNotAvailable("msat")
     def test_examples_msat(self):
-        for (f, _, satisfiability, logic) in get_example_formulae():
-            if not logic.quantifier_free: continue
-            if satisfiability == False:
-                with UnsatCoreSolver(name="msat", unsat_cores_mode="named") as s:
-                    clauses = [f]
-                    if f.is_and():
-                        clauses = f.get_sons()
-
-                    for i,c in enumerate(clauses):
-                        s.add_assertion(c, "a%d" % i)
-
-                    r = s.solve()
-                    self.assertFalse(r)
-
-                    core = s.get_named_unsat_core()
-
-                    self.assertTrue(len(core) <= len(clauses))
-                    for k in core.values():
-                        self.assertIn(k, clauses)
-
-                    self.assertTrue(is_unsat(And(core.values()), logic=logic))
+        self._helper_check_examples("msat")
 
 
     @skipIfSolverNotAvailable("z3")
     def test_examples_z3(self):
-        for (f, _, satisfiability, logic) in get_example_formulae():
-            if satisfiability == False:
-                with UnsatCoreSolver(name="z3", unsat_cores_mode="named") as s:
-                    clauses = [f]
-                    if f.is_and():
-                        clauses = f.get_sons()
+        self._helper_check_examples("z3")
 
-                    for i,c in enumerate(clauses):
-                        s.add_assertion(c, "a%d" % i)
-
-                    r = s.solve()
-                    self.assertFalse(r)
-
-                    core = s.get_named_unsat_core()
-
-                    self.assertTrue(len(core) <= len(clauses))
-                    for k in core.values():
-                        self.assertIn(k, clauses)
-
-                    self.assertTrue(is_unsat(And(core.values()), logic=logic))
 
 if __name__ == '__main__':
     unittest.main()
