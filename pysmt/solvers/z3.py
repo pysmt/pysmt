@@ -162,14 +162,14 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
         if self.options.unsat_cores_mode is None:
             raise SolverNotConfiguredForUnsatCoresError
 
-        if self._last_result != False:
+        if self.last_result != False:
             raise SolverStatusError("The last call to solve() was not" \
                                     " unsatisfiable")
 
-        if self._last_command != "solve":
+        if self.last_command != "solve":
             raise SolverStatusError("The solver status has been modified by a" \
                                     " '%s' command after the last call to" \
-                                    " solve()" % self._last_command)
+                                    " solve()" % self.last_command)
 
         assumptions = self.z3.unsat_core()
         pysmt_assumptions = set(self.converter.back(t) for t in assumptions)
