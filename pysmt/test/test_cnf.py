@@ -36,8 +36,7 @@ class TestCnf(TestCase):
                 continue
             cnf = conv.convert_as_formula(example.expr)
 
-            res = is_valid(Implies(cnf, example.expr), logic=logic)
-            self.assertTrue(res)
+            self.assertValid(Implies(cnf, example.expr), logic=logic)
 
             res = is_sat(cnf, logic=logic)
             self.assertEqual(res, example.is_sat)
@@ -87,8 +86,7 @@ class TestCnf(TestCase):
                 conv.convert_as_formula(expr)
             return
         cnf = conv.convert_as_formula(expr)
-        res = is_valid(Implies(cnf, expr), logic=logic)
-        self.assertTrue(res)
+        self.assertValid(Implies(cnf, expr), logic=logic)
 
         res = is_sat(cnf, logic=logic)
         self.assertEqual(res, res_is_sat)

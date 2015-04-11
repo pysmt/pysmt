@@ -18,8 +18,11 @@ class SmtLibSolver(Solver):
     the executable. Interaction with the solver occurs via pipe.
     """
 
-    def __init__(self, args, environment, logic, options=None):
-        Solver.__init__(self, environment, logic=logic, options=options)
+    def __init__(self, args, environment, logic, user_options=None):
+        Solver.__init__(self,
+                        environment,
+                        logic=logic,
+                        user_options=user_options)
 
         self.args = args
         self.declared_vars = set()
@@ -37,11 +40,18 @@ class SmtLibSolver(Solver):
         # Initialize solver
         self._send_command(SmtLibCommand(smtcmd.SET_OPTION, [":print-success", "false"]))
         self._send_command(SmtLibCommand(smtcmd.SET_OPTION, [":produce-models", "true"]))
-        if options is not None:
-            for o,v in iteritems(options):
+
+        if self.options is not None:
+            for o,v in iteritems(self.options):
                 self._send_command(SmtLibCommand(smtcmd.SET_OPTION, [o, v]))
         self._send_command(SmtLibCommand(smtcmd.SET_LOGIC, [logic]))
 
+    def get_default_options(self, logic=None, user_options=None):
+        res = {}
+        for o,v in iteritems(user_options):
+            if o not in ["generate_models", "unsat_cores_mode"]:
+                res[o] = v
+        return res
 
     def _send_command(self, cmd):
         if self.dbg: print("Sending: " + cmd.serialize_to_string())

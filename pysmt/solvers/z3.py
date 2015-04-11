@@ -23,12 +23,16 @@ from fractions import Fraction
 from six.moves import xrange
 
 from pysmt import typing as types
-from pysmt.solvers.solver import Solver, Model, Converter
+from pysmt.solvers.solver import (IncrementalTrackingSolver, UnsatCoreSolver,
+                                  Model, Converter)
 from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 from pysmt.solvers.qelim import QuantifierEliminator
 
 from pysmt.walkers import DagWalker
-from pysmt.exceptions import SolverReturnedUnknownResultError
+from pysmt.exceptions import (SolverReturnedUnknownResultError,
+                              SolverNotConfiguredForUnsatCoresError,
+                              SolverStatusError,
+                              InternalSolverError)
 from pysmt.decorators import clear_pending_pop
 
 from pysmt.logics import LRA, LIA, PYSMT_LOGICS
@@ -65,30 +69,34 @@ class Z3Model(Model):
         return self.converter.back(z3_res)
 
 
-class Z3Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
+class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
+               SmtLibBasicSolver, SmtLibIgnoreMixin):
 
     LOGICS = PYSMT_LOGICS
 
-    def __init__(self, environment, logic, options=None):
-        Solver.__init__(self,
-                        environment=environment,
-                        logic=logic,
-                        options=options)
+    def __init__(self, environment, logic, user_options):
+        IncrementalTrackingSolver.__init__(self,
+                                           environment=environment,
+                                           logic=logic,
+                                           user_options=user_options)
         # Here we could use:
         # self.z3 = z3.SolverFor(str(logic))
         # But it seems to have problems with quantified formulae
         self.z3 = z3.Solver()
 
+        if self.options.unsat_cores_mode != None:
+            self.z3.set(unsat_core=True)
+
         self.declarations = set()
         self.converter = Z3Converter(environment)
         self.mgr = environment.formula_manager
+
+        self._name_cnt = 0
         return
 
     @clear_pending_pop
-    def reset_assertions(self):
+    def _reset_assertions(self):
         self.z3.reset()
-        return
-
 
     @clear_pending_pop
     def declare_variable(self, var):
@@ -96,17 +104,24 @@ class Z3Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         return
 
     @clear_pending_pop
-    def add_assertion(self, formula, named=None):
+    def _add_assertion(self, formula, named=None):
         self._assert_is_boolean(formula)
         term = self.converter.convert(formula)
-        self.z3.add(term)
-        return
+
+        if self.options.unsat_cores_mode is not None:
+            key = self.mgr.FreshSymbol(template="_assertion_%d")
+            tkey = self.converter.convert(key)
+            self.z3.assert_and_track(term, tkey)
+            return (key, named, formula)
+        else:
+            self.z3.add(term)
+            return formula
 
     def get_model(self):
         return Z3Model(self.environment, self.z3.model())
 
     @clear_pending_pop
-    def solve(self, assumptions=None):
+    def _solve(self, assumptions=None):
         if assumptions is not None:
             bool_ass = []
             other_ass = []
@@ -128,21 +143,61 @@ class Z3Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         sres = str(res)
         assert sres in ['unknown', 'sat', 'unsat']
         if sres == 'unknown':
-            raise SolverReturnedUnknownResultError()
+            raise SolverReturnedUnknownResultError
+        return (sres == 'sat')
 
-        return sres == 'sat'
+    def get_unsat_core(self):
+        """After a call to solve() yielding UNSAT, returns the unsat core as a
+        set of formulae"""
+        return self.get_named_unsat_core().values()
+
+    def _named_assertions_map(self):
+        if self.options.unsat_cores_mode is not None:
+            return {t[0] : (t[1],t[2]) for t in self.assertions}
+        return None
+
+    def get_named_unsat_core(self):
+        """After a call to solve() yielding UNSAT, returns the unsat core as a
+        dict of names to formulae"""
+        if self.options.unsat_cores_mode is None:
+            raise SolverNotConfiguredForUnsatCoresError
+
+        if self.last_result != False:
+            raise SolverStatusError("The last call to solve() was not" \
+                                    " unsatisfiable")
+
+        if self.last_command != "solve":
+            raise SolverStatusError("The solver status has been modified by a" \
+                                    " '%s' command after the last call to" \
+                                    " solve()" % self.last_command)
+
+        assumptions = self.z3.unsat_core()
+        pysmt_assumptions = set(self.converter.back(t) for t in assumptions)
+
+        res = {}
+        n_ass_map = self._named_assertions_map()
+        cnt = 0
+        for key in pysmt_assumptions:
+            if key in n_ass_map:
+                (name, formula) = n_ass_map[key]
+                if name is None:
+                    name = "_a_%d" % cnt
+                    cnt += 1
+                res[name] = formula
+        return res
+
 
     @clear_pending_pop
     def all_sat(self, important, callback):
         raise NotImplementedError
 
     @clear_pending_pop
-    def push(self, levels=1):
+    def _push(self, levels=1):
         for _ in xrange(levels):
             self.z3.push()
 
     @clear_pending_pop
-    def pop(self, levels=1):
+    def _pop(self, levels=1):
         for _ in xrange(levels):
             self.z3.pop()
 

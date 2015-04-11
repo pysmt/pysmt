@@ -19,7 +19,7 @@ from fractions import Fraction
 
 from pysmt.shortcuts import (Real, Plus, Symbol, Equals, And, Bool, Or,
                              Div, LT, LE, Int, ToReal, Iff)
-from pysmt.shortcuts import Solver, is_valid, get_env, is_sat
+from pysmt.shortcuts import Solver, get_env
 from pysmt.typing import REAL, BOOL, INT, FunctionType
 from pysmt.test import TestCase, skipIfSolverNotAvailable, skipIfNoSolverForLogic
 from pysmt.logics import QF_UFLIRA, QF_BOOL
@@ -43,9 +43,9 @@ class TestRegressions(TestCase):
         p2 = Plus(a, b, c, Real((1,6)))
 
 
-        self.assertTrue(is_valid(Equals(p1, p2)))
-        self.assertTrue(is_valid(Equals(p1, p2), solver_name='z3'))
-        self.assertTrue(is_valid(Equals(p1, p2), solver_name='msat'))
+        self.assertValid(Equals(p1, p2))
+        self.assertValid(Equals(p1, p2), solver_name='z3')
+        self.assertValid(Equals(p1, p2), solver_name='msat')
 
 
     def test_substitute_memoization(self):
@@ -69,12 +69,12 @@ class TestRegressions(TestCase):
     @skipIfSolverNotAvailable("msat")
     @skipIfSolverNotAvailable("z3")
     def test_conversion_of_fractions_in_z3(self):
-        self.assertTrue(is_valid(Equals(Real(Fraction(1,9)),
-                                        Div(Real(1), Real(9))),
-                                 solver_name="msat"))
-        self.assertTrue(is_valid(Equals(Real(Fraction(1,9)),
-                                        Div(Real(1), Real(9))),
-                                 solver_name="z3"))
+        self.assertValid(Equals(Real(Fraction(1,9)),
+                                Div(Real(1), Real(9))),
+                         solver_name="msat")
+        self.assertValid(Equals(Real(Fraction(1,9)),
+                                Div(Real(1), Real(9))),
+                         solver_name="z3")
 
     def test_simplifying_int_plus_changes_type_of_expression(self):
         varA = Symbol("At", INT)
@@ -102,14 +102,14 @@ class TestRegressions(TestCase):
 
 
         for name in get_env().factory.all_solvers(logic=QF_BOOL):
-            self.assertTrue(is_sat(f_and_one, solver_name=name))
-            self.assertTrue(is_sat(f_or_one, solver_name=name))
-            self.assertTrue(is_sat(f_and_many, solver_name=name))
-            self.assertTrue(is_sat(f_or_many, solver_name=name))
+            self.assertSat(f_and_one, solver_name=name)
+            self.assertSat(f_or_one, solver_name=name)
+            self.assertSat(f_and_many, solver_name=name)
+            self.assertSat(f_or_many, solver_name=name)
 
         for name in get_env().factory.all_solvers(logic=QF_UFLIRA):
-            self.assertTrue(is_sat(f_plus_one, solver_name=name))
-            self.assertTrue(is_sat(f_plus_many, solver_name=name))
+            self.assertSat(f_plus_one, solver_name=name)
+            self.assertSat(f_plus_many, solver_name=name)
 
     def test_dependencies_not_includes_toreal(self):
         p = Symbol("p", INT)

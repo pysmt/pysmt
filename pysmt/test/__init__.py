@@ -19,7 +19,7 @@ import unittest
 
 from functools import wraps
 
-from pysmt.shortcuts import reset_env, get_env
+from pysmt.shortcuts import reset_env, get_env, is_sat, is_valid, is_unsat
 from pysmt.decorators import deprecated
 
 class TestCase(unittest.TestCase):
@@ -37,6 +37,27 @@ class TestCase(unittest.TestCase):
 
     if "assertRaisesRegex" not in dir(unittest.TestCase):
         assertRaisesRegex = unittest.TestCase.assertRaisesRegexp
+
+    def assertValid(self, formula, msg=None, solver_name=None, logic=None):
+        """Assert that formula is VALID."""
+        self.assertTrue(self.env.factory.is_valid(formula=formula,
+                                                  solver_name=solver_name,
+                                                  logic=logic),
+                        msg=msg)
+
+    def assertSat(self, formula, msg=None, solver_name=None, logic=None):
+        """Assert that formula is SAT."""
+        self.assertTrue(self.env.factory.is_sat(formula=formula,
+                                                solver_name=solver_name,
+                                                logic=logic),
+                        msg=msg)
+
+    def assertUnsat(self, formula, msg=None, solver_name=None, logic=None):
+        """Assert that formula is UNSAT."""
+        self.assertTrue(self.env.factory.is_unsat(formula=formula,
+                                                  solver_name=solver_name,
+                                                  logic=logic),
+                        msg=msg)
 
 
 @deprecated("skipIfNoSolverForLogic (be specific about expectations!)")
@@ -77,6 +98,22 @@ class skipIfNoSolverForLogic(object):
     def __call__(self, test_fun):
         msg = "Solver for %s not available" % self.logic
         cond = len(get_env().factory.all_solvers(logic=self.logic)) == 0
+        @unittest.skipIf(cond, msg)
+        @wraps(test_fun)
+        def wrapper(*args, **kwargs):
+            return test_fun(*args, **kwargs)
+        return wrapper
+
+
+class skipIfNoUnsatCoreSolverForLogic(object):
+    """Skip a test if there is no solver for the given logic."""
+
+    def __init__(self, logic):
+        self.logic = logic
+
+    def __call__(self, test_fun):
+        msg = "Unsat Core Solver for %s not available" % self.logic
+        cond = len(get_env().factory.all_unsat_core_solvers(logic=self.logic)) == 0
         @unittest.skipIf(cond, msg)
         @wraps(test_fun)
         def wrapper(*args, **kwargs):

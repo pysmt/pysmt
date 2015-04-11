@@ -31,8 +31,8 @@ class TestLIA(TestCase):
                 GT(varA, Minus(varB, Int(1))))
         g = Equals(varA, varB)
 
-        self.assertTrue(is_valid(Iff(f, g), logic=QF_LIA),
-                        "Formulae were expected to be equivalent")
+        self.assertValid(Iff(f, g), "Formulae were expected to be equivalent",
+                         logic=QF_LIA)
 
     @skipIfNoSolverForLogic(QF_LIA)
     def test_lira(self):
@@ -44,9 +44,9 @@ class TestLIA(TestCase):
                     GT(varA, Minus(varB, Real(1))))
             g = Equals(varB, Int(0))
 
-            self.assertTrue(is_unsat(And(f, g, Equals(varA, Real(1.2))),
-                                     logic=QF_UFLIRA),
-                            "Formula was expected to be unsat")
+            self.assertUnsat(And(f, g, Equals(varA, Real(1.2))),
+                             "Formula was expected to be unsat",
+                             logic=QF_UFLIRA)
 
 
 

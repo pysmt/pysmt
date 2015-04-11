@@ -322,6 +322,14 @@ def Solver(quantified=False, name=None, logic=None):
                                     name=name,
                                     logic=logic)
 
+def UnsatCoreSolver(quantified=False, name=None, logic=None,
+                    unsat_cores_mode="all"):
+    """Returns a solver supporting unsat core extraction."""
+    return get_env().factory.UnsatCoreSolver(quantified=quantified,
+                                             name=name,
+                                             logic=logic,
+                                             unsat_cores_mode=unsat_cores_mode)
+
 def QuantifierEliminator(name=None):
     """Returns a quantifier eliminator"""
     return get_env().factory.QuantifierEliminator(name=name)
@@ -356,6 +364,18 @@ def get_model(formula, solver_name=None, logic=None):
     return env.factory.get_model(formula,
                                  solver_name=solver_name,
                                  logic=logic)
+
+def get_unsat_core(clauses, solver_name=None, logic=None):
+    """Similar to :py:func:`get_model` but returns the unsat core of the
+    conjunction of the input clauses"""
+    env = get_env()
+    if any(c not in env.formula_manager for c in clauses):
+        warnings.warn("Warning: Contextualizing formula during get_model")
+        clauses = [env.formula_manager.normalize(c) for c in clauses]
+
+    return env.factory.get_unsat_core(clauses,
+                                      solver_name=solver_name,
+                                      logic=logic)
 
 def is_valid(formula, solver_name=None, logic=None):
     """Similar to :py:func:`is_sat` but checks validity."""

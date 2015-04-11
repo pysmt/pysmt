@@ -58,7 +58,7 @@ class TestLIRA(TestCase):
                         GE(Function(h, (a, b)), Real(0)))
 
         for sname in get_env().factory.all_solvers(logic=UFLIRA):
-            self.assertTrue(is_valid(check, solver_name=sname))
+            self.assertValid(check, solver_name=sname)
 
 
 if __name__ == '__main__':

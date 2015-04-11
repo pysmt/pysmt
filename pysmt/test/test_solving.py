@@ -22,7 +22,7 @@ import pysmt.operators as op
 from pysmt.shortcuts import Symbol, FreshSymbol, And, Not, GT, Function, Plus
 from pysmt.shortcuts import Bool, TRUE, Real, LE, FALSE, Or, Equals
 from pysmt.shortcuts import Solver
-from pysmt.shortcuts import is_sat, is_valid, get_env, get_model
+from pysmt.shortcuts import get_env, get_model, is_valid, is_sat
 from pysmt.typing import BOOL, REAL, FunctionType
 from pysmt.test import TestCase, skipIfSolverNotAvailable, skipIfNoSolverForLogic
 from pysmt.test.examples import get_example_formulae
@@ -57,12 +57,12 @@ class TestBasic(TestCase):
         f = And(varA, Not(varB))
         g = f.substitute({varB:varA})
 
-        res = is_sat(g, logic=QF_BOOL)
-        self.assertFalse(res, "Formula was expected to be UNSAT")
+        self.assertUnsat(g, logic=QF_BOOL,
+                         msg="Formula was expected to be UNSAT")
 
         for solver in get_env().factory.all_solvers():
-            res = is_sat(g, solver_name=solver)
-            self.assertFalse(res, "Formula was expected to be UNSAT")
+            self.assertUnsat(g, solver_name=solver,
+                             msg="Formula was expected to be UNSAT")
 
     # This test works only if is_sat requests QF_BOOL as logic, since
     # that is the only logic handled by BDDs
@@ -72,8 +72,7 @@ class TestBasic(TestCase):
         varB = Symbol("B", BOOL)
 
         f = And(varA, Not(varB))
-        res = is_sat(f, logic=AUTO)
-        self.assertTrue(res)
+        self.assertSat(f, logic=AUTO)
 
     @skipIfSolverNotAvailable("bdd")
     def test_default_logic_in_is_sat(self):
@@ -85,8 +84,7 @@ class TestBasic(TestCase):
         varB = Symbol("B", BOOL)
 
         f = And(varA, Not(varB))
-        res = is_sat(f)
-        self.assertTrue(res)
+        self.assertSat(f)
 
 
     @skipIfNoSolverForLogic(QF_BOOL)
