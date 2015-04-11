@@ -14,6 +14,11 @@ General:
   (msat_lw) uses Loos-Weisspfenning elimination (aka Virtual
   Substitution)
 
+* Added support for unsat core extraction using the MathSAT and the Z3
+  solvers. Dedicated shortcuts (get_unsat_core and UnsatCoreSolver)
+  have been added.
+
+
 
 0.2.4: 2015-03-15  -- PicoSAT
 -----------------------------

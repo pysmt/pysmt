@@ -26,38 +26,34 @@ from pysmt.oracles import get_logic
 
 import pysmt.operators as op
 from pysmt import typing as types
-
-from pysmt.solvers.solver import Solver, Converter
+from pysmt.solvers.solver import (IncrementalTrackingSolver, UnsatCoreSolver,
+                                  Converter)
 from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 from pysmt.solvers.eager import EagerModel
 from pysmt.walkers import DagWalker
-from pysmt.exceptions import SolverReturnedUnknownResultError
-from pysmt.exceptions import InternalSolverError
+from pysmt.exceptions import (SolverReturnedUnknownResultError,
+                              SolverNotConfiguredForUnsatCoresError,
+                              SolverStatusError,
+                              InternalSolverError)
 from pysmt.decorators import clear_pending_pop
 from pysmt.solvers.qelim import QuantifierEliminator
 from pysmt.walkers.identitydag import IdentityDagWalker
 
 
-class MathSAT5Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
+class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
+                     SmtLibBasicSolver, SmtLibIgnoreMixin):
 
     LOGICS = PYSMT_QF_LOGICS
 
-    def __init__(self, environment, logic, options=None, debugFile=None):
-        Solver.__init__(self,
-                        environment=environment,
-                        logic=logic,
-                        options=options)
+    def __init__(self, environment, logic, user_options=None, debugFile=None):
+        IncrementalTrackingSolver.__init__(self,
+                                           environment=environment,
+                                           logic=logic,
+                                           user_options=user_options)
 
-        self.config = mathsat.msat_create_default_config(str(logic))
-        check = mathsat.msat_set_option(self.config, "model_generation", "true")
-        assert check == 0
-
-        if debugFile is not None:
-            mathsat.msat_set_option(self.config, "debug.api_call_trace", "1")
-            mathsat.msat_set_option(self.config, "debug.api_call_trace_filename",
-                                    debugFile)
-
-        self.msat_env = mathsat.msat_create_env(self.config)
+        self.msat_config = mathsat.msat_create_default_config(str(logic))
+        self._prepare_config(self.options, debugFile)
+        self.msat_env = mathsat.msat_create_env(self.msat_config)
 
         self.realType = mathsat.msat_get_rational_type(self.msat_env)
         self.intType = mathsat.msat_get_integer_type(self.msat_env)
@@ -67,31 +63,79 @@ class MathSAT5Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         self.converter = MSatConverter(environment, self.msat_env)
         return
 
+
+    def _prepare_config(self, options, debugFile=None):
+        """Sets the relevant options in self.msat_config"""
+        if options.generate_models:
+            check = mathsat.msat_set_option(self.msat_config, "model_generation",
+                                            "true")
+            assert check == 0
+
+        if options.unsat_cores_mode is not None:
+            check = mathsat.msat_set_option(self.msat_config,
+                                            "unsat_core_generation",
+                                            "1")
+            assert check == 0
+
+
+        if debugFile is not None:
+            mathsat.msat_set_option(self.msat_config,
+                                    "debug.api_call_trace", "1")
+            mathsat.msat_set_option(self.msat_config,
+                                    "debug.api_call_trace_filename",
+                                    debugFile)
+
+
     @clear_pending_pop
-    def reset_assertions(self):
+    def _reset_assertions(self):
         mathsat.msat_reset_env(self.msat_env)
-        return
 
     @clear_pending_pop
     def declare_variable(self, var):
         self.converter.declare_variable(var)
 
     @clear_pending_pop
-    def add_assertion(self, formula, named=None):
+    def _add_assertion(self, formula, named=None):
         self._assert_is_boolean(formula)
-        term = self.converter.convert(formula)
 
+        result = formula
+        if self.options.unsat_cores_mode == "named":
+            # If we want named unsat cores, we need to rewrite the
+            # formulae as implications
+            key = self.mgr.FreshSymbol(template="_assertion_%d")
+            result = (key, named, formula)
+            formula = self.mgr.Implies(key, formula)
+
+        term = self.converter.convert(formula)
         res = mathsat.msat_assert_formula(self.msat_env, term)
 
         if res != 0:
             msat_msg = mathsat.msat_last_error_message(self.msat_env)
             raise InternalSolverError(msat_msg)
-        return
 
+        return result
+
+    def _named_assertions(self):
+        if self.options.unsat_cores_mode == "named":
+            return [t[0] for t in self.assertions]
+        return None
+
+    def _named_assertions_map(self):
+        if self.options.unsat_cores_mode == "named":
+            return {t[0] : (t[1],t[2]) for t in self.assertions}
+        return None
 
     @clear_pending_pop
-    def solve(self, assumptions=None):
+    def _solve(self, assumptions=None):
         res = None
+
+        n_ass = self._named_assertions()
+        if n_ass is not None and len(n_ass) > 0:
+            if assumptions is None:
+                assumptions = n_ass
+            else:
+                assumptions += n_ass
+
         if assumptions is not None:
             bool_ass = []
             other_ass = []
@@ -116,8 +160,63 @@ class MathSAT5Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
         assert res in [mathsat.MSAT_UNKNOWN,mathsat.MSAT_SAT,mathsat.MSAT_UNSAT]
         if res == mathsat.MSAT_UNKNOWN:
-            raise SolverReturnedUnknownResultError()
-        return res == mathsat.MSAT_SAT
+            raise SolverReturnedUnknownResultError
+
+        return (res == mathsat.MSAT_SAT)
+
+
+    def _check_unsat_core_config(self):
+        if self.options.unsat_cores_mode is None:
+            raise SolverNotConfiguredForUnsatCoresError
+
+        if self.last_result != False:
+            raise SolverStatusError("The last call to solve() was not" \
+                                    " unsatisfiable")
+
+        if self.last_command != "solve":
+            raise SolverStatusError("The solver status has been modified by a" \
+                                    " '%s' command after the last call to" \
+                                    " solve()" % self.last_command)
+
+
+    def get_unsat_core(self):
+        """After a call to solve() yielding UNSAT, returns the unsat core as a
+        set of formulae"""
+        if self.options.unsat_cores_mode == "all":
+            self._check_unsat_core_config()
+
+            terms = mathsat.msat_get_unsat_core(self.msat_env)
+            if terms is None:
+                raise InternalSolverError(
+                    mathsat.msat_last_error_message(self.msat_env))
+            return set(self.converter.back(t) for t in terms)
+        else:
+            return self.get_named_unsat_core().values()
+
+
+    def get_named_unsat_core(self):
+        """After a call to solve() yielding UNSAT, returns the unsat core as a
+        dict of names to formulae"""
+        if self.options.unsat_cores_mode == "named":
+            self._check_unsat_core_config()
+
+            assumptions = mathsat.msat_get_unsat_assumptions(self.msat_env)
+            pysmt_assumptions = set(self.converter.back(t) for t in assumptions)
+
+            res = {}
+            n_ass_map = self._named_assertions_map()
+            cnt = 0
+            for key in pysmt_assumptions:
+                if key in n_ass_map:
+                    (name, formula) = n_ass_map[key]
+                    if name is None:
+                        name = "_a_%d" % cnt
+                        cnt += 1
+                    res[name] = formula
+            return res
+
+        else:
+            return {"_a%d" % i : f for i,f in enumerate(self.get_unsat_core())}
 
     @clear_pending_pop
     def all_sat(self, important, callback):
@@ -128,16 +227,14 @@ class MathSAT5Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         self.pop()
 
     @clear_pending_pop
-    def push(self, levels=1):
+    def _push(self, levels=1):
         for _ in xrange(levels):
             mathsat.msat_push_backtrack_point(self.msat_env)
-        return
 
     @clear_pending_pop
-    def pop(self, levels=1):
+    def _pop(self, levels=1):
         for _ in xrange(levels):
             mathsat.msat_pop_backtrack_point(self.msat_env)
-        return
 
     def _var2term(self, var):
         decl = mathsat.msat_find_decl(self.msat_env, var.symbol_name())
@@ -199,7 +296,7 @@ class MathSAT5Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         if not self._destroyed:
             self._destroyed = True
             mathsat.msat_destroy_env(self.msat_env)
-            mathsat.msat_destroy_config(self.config)
+            mathsat.msat_destroy_config(self.msat_config)
 
 
 class MSatConverter(Converter, DagWalker):
@@ -601,8 +698,8 @@ if hasattr(mathsat, "MSAT_EXIST_ELIM_ALLSMT_FM"):
             assert algorithm in ['fm', 'lw']
             self.algorithm = algorithm
 
-            self.config = mathsat.msat_create_default_config("QF_LRA")
-            self.msat_env = mathsat.msat_create_env(self.config)
+            self.msat_config = mathsat.msat_create_default_config("QF_LRA")
+            self.msat_env = mathsat.msat_create_env(self.msat_config)
             self.converter = MSatConverter(environment, self.msat_env)
 
 

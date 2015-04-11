@@ -103,3 +103,19 @@ class skipIfNoSolverForLogic(object):
         def wrapper(*args, **kwargs):
             return test_fun(*args, **kwargs)
         return wrapper
+
+
+class skipIfNoUnsatCoreSolverForLogic(object):
+    """Skip a test if there is no solver for the given logic."""
+
+    def __init__(self, logic):
+        self.logic = logic
+
+    def __call__(self, test_fun):
+        msg = "Unsat Core Solver for %s not available" % self.logic
+        cond = len(get_env().factory.all_unsat_core_solvers(logic=self.logic)) == 0
+        @unittest.skipIf(cond, msg)
+        @wraps(test_fun)
+        def wrapper(*args, **kwargs):
+            return test_fun(*args, **kwargs)
+        return wrapper
