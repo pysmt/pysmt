@@ -67,3 +67,18 @@ class SolverStatusError(Exception):
     incorrectly called in the wrong status.
     """
     pass
+
+class ConvertExpressionError(Exception):
+    """
+    Exception raised if the converter cannot convert an expression
+    due to limited expressiveness in pySMT.
+    """
+
+    def __init__(self, message=None, expression=None):
+        if message is not None:
+            Exception.__init__(self, message)
+        else:
+            Exception.__init__(self)
+        self.expression=expression
+
+    pass
