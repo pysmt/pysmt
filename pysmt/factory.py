@@ -27,7 +27,7 @@ from functools import partial
 from six import iteritems
 
 from pysmt.exceptions import NoSolverAvailableError, SolverRedefinitionError
-from pysmt.logics import QF_UFLIRA
+from pysmt.logics import QF_UFLIRA, LRA
 from pysmt.logics import AUTO as AUTO_LOGIC
 from pysmt.logics import most_generic_logic, get_closer_logic
 from pysmt.oracles import get_logic
@@ -37,6 +37,7 @@ import pysmt.solvers.solver
 DEFAULT_SOLVER_PREFERENCE_LIST = ['msat', 'z3', 'cvc4', 'yices', 'picosat', 'bdd']
 DEFAULT_QELIM_PREFERENCE_LIST = ['z3', 'msat_fm', 'msat_lw']
 DEFAULT_LOGIC = QF_UFLIRA
+DEFAULT_QE_LOGIC = LRA
 
 class Factory(object):
 
@@ -57,6 +58,7 @@ class Factory(object):
             qelim_preference_list = DEFAULT_QELIM_PREFERENCE_LIST
         self.qelim_preference_list = qelim_preference_list
         self._default_logic = DEFAULT_LOGIC
+        self._default_qe_logic = DEFAULT_QE_LOGIC
 
         self._get_available_solvers()
         self._get_available_qe()
@@ -155,18 +157,46 @@ class Factory(object):
 
 
 
-    def get_quantifier_eliminator(self, name=None):
+    def get_quantifier_eliminator(self, name=None, logic=None):
         if len(self._all_qelims) == 0:
             raise NoSolverAvailableError("No quantifier eliminator is available")
 
-        if name is None:
-            QElimClass = self.pick_favorite_qelim(self._all_qelims)
-        elif name in self._all_qelims:
-            QElimClass = self._all_qelims[name]
-        else:
-            raise NoSolverAvailableError("No quantifier eliminator %s" % name)
+        if name is not None:
+            if name in self._all_qelims:
+                if logic is None:
+                    SolverClass = self._all_qelims[name]
+                    logic = SolverClass.LOGICS[0]
+                else:
+                    if name in self.all_quantifier_eliminators(logic=logic):
+                        SolverClass = self._all_qelims[name]
+                    else:
+                        raise NoSolverAvailableError("QuantifierEliminator '%s' does not" \
+                                                     " support logic %s" %
+                                                     (name, logic))
 
-        return QElimClass(self.environment)
+                closer_logic = get_closer_logic(SolverClass.LOGICS, logic)
+                return SolverClass(environment=self.environment,
+                                   logic=closer_logic)
+            else:
+                raise NoSolverAvailableError("No QuantifierEliminator named " \
+                                             "'%s' found" % name)
+
+        if logic is None:
+            logic = self.default_qe_logic
+
+        solvers = self.all_quantifier_eliminators(logic=logic)
+
+        if solvers is not None and len(solvers) > 0:
+            # Pick the first solver based on preference list
+            SolverClass = self.pick_favorite_qelim(solvers)
+            closer_logic = get_closer_logic(SolverClass.LOGICS, logic)
+            return SolverClass(environment=self.environment,
+                               logic=closer_logic)
+        else:
+            raise NoSolverAvailableError("No quantifier eliminator is" \
+                                         " available for logic %s" % logic)
+
+
 
 
     def pick_favorite_solver(self, solvers):
@@ -319,6 +349,29 @@ class Factory(object):
 
         return solvers
 
+    def all_quantifier_eliminators(self, logic=None):
+        """
+        Returns a dict <solver_name, solver_class> including all and only
+        the solvers directly or indirectly supporting the given logic.
+        A solver supports a logic if either the given logic is
+        declared in the LOGICS class field or if a logic subsuming the
+        given logic is declared in the LOGICS class field.
+
+        If logic is None, the map will contain all the known solvers
+        """
+        res = {}
+        if logic is not None:
+            for s, v in iteritems(self._all_qelims):
+                for l in v.LOGICS:
+                    if logic <= l:
+                        res[s] = v
+                        break
+            return res
+        else:
+            solvers = self._all_qelims
+
+        return solvers
+
     def all_unsat_core_solvers(self, logic=None):
         """
         Returns a dict <solver_name, solver_class> including all and only
@@ -363,8 +416,8 @@ class Factory(object):
                                           unsat_cores_mode=unsat_cores_mode)
 
 
-    def QuantifierEliminator(self, name=None):
-        return self.get_quantifier_eliminator(name=name)
+    def QuantifierEliminator(self, name=None, logic=None):
+        return self.get_quantifier_eliminator(name=name, logic=logic)
 
     def is_sat(self, formula, solver_name=None, logic=None):
         if logic == AUTO_LOGIC:
@@ -425,3 +478,11 @@ class Factory(object):
     @default_logic.setter
     def default_logic(self, value):
         self._default_logic = value
+
+    @property
+    def default_qe_logic(self):
+        return self._default_qe_logic
+
+    @default_qe_logic.setter
+    def default_qe_logic(self, value):
+        self._default_qe_logic = value

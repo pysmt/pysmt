@@ -431,8 +431,11 @@ class Z3Converter(Converter, DagWalker):
 
 class Z3QuantifierEliminator(QuantifierEliminator):
 
-    def __init__(self, environment):
+    LOGICS = [LIA, LRA]
+
+    def __init__(self, environment, logic=None):
         self.environment = environment
+        self.logic = logic
         self.converter = Z3Converter(environment)
 
 

@@ -234,9 +234,9 @@ def UnsatCoreSolver(quantified=False, name=None, logic=None,
                                              logic=logic,
                                              unsat_cores_mode=unsat_cores_mode)
 
-def QuantifierEliminator(name=None):
+def QuantifierEliminator(name=None, logic=None):
     """Returns a quantifier eliminator"""
-    return get_env().factory.QuantifierEliminator(name=name)
+    return get_env().factory.QuantifierEliminator(name=name, logic=logic)
 
 def is_sat(formula, solver_name=None, logic=None):
     """ Returns whether a formula is satisfiable.
