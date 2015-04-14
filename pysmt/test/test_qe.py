@@ -20,8 +20,9 @@ import unittest
 from pysmt.shortcuts import *
 from pysmt.typing import REAL, BOOL, INT
 from pysmt.test import TestCase, skipIfNoSolverForLogic
-from pysmt.exceptions import SolverReturnedUnknownResultError
-from pysmt.logics import LRA, QF_LIA
+from pysmt.exceptions import (SolverReturnedUnknownResultError, \
+                              NoSolverAvailableError)
+from pysmt.logics import LRA, LIA, UFLIRA
 
 
 class TestQE(TestCase):
@@ -30,7 +31,7 @@ class TestQE(TestCase):
                      "No QE available.")
     @skipIfNoSolverForLogic(LRA)
     def test_qe_eq(self):
-        qe = QuantifierEliminator()
+        qe = QuantifierEliminator(logic=LRA)
 
         varA = Symbol("A", BOOL)
         varB = Symbol("B", BOOL)
@@ -49,6 +50,17 @@ class TestQE(TestCase):
                              msg="The two formulas should be equivalent.")
         except SolverReturnedUnknownResultError:
             pass
+
+    def test_selection(self):
+        with self.assertRaises(NoSolverAvailableError):
+            QuantifierEliminator(logic=UFLIRA)
+
+        with self.assertRaises(NoSolverAvailableError):
+            QuantifierEliminator(name="nonexistent")
+
+        # MathSAT QE does not support LIA
+        with self.assertRaises(NoSolverAvailableError):
+            QuantifierEliminator(name="msat", logic=LIA)
 
 
     @unittest.skipIf('z3' not in get_env().factory.all_quantifier_eliminators(),
