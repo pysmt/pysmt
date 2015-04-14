@@ -303,10 +303,17 @@ def is_unsat(formula, solver_name=None, logic=None):
                                 solver_name=solver_name,
                                 logic=logic)
 
-def qelim(formula, solver_name=None):
+def qelim(formula, solver_name=None, logic=None):
     """Performs quantifier elimination of the given formula."""
-    _qelim = get_env().factory.QuantifierEliminator(name=solver_name)
-    return _qelim.eliminate_quantifiers(formula)
+    env = get_env()
+    if formula not in env.formula_manager:
+        warnings.warn("Warning: Contextualizing formula during is_unsat")
+        formula = env.formula_manager.normalize(formula)
+
+    return env.factory.qelim(formula,
+                             solver_name=solver_name,
+                             logic=logic)
+
 
 
 def read_configuration(config_filename, environment=None):

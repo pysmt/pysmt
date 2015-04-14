@@ -414,8 +414,11 @@ class Factory(object):
              as solver:
             return solver.is_unsat(formula)
 
-    def qelim(self, formula, solver_name=None):
-        with self.QuantifierEliminator(name=solver_name) as qe:
+    def qelim(self, formula, solver_name=None, logic=None):
+        if logic == AUTO_LOGIC:
+            logic = get_logic(formula, self.environment)
+
+        with self.QuantifierEliminator(name=solver_name, logic=logic) as qe:
             return qe.eliminate_quantifiers(formula)
 
     @property
