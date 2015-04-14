@@ -33,8 +33,6 @@ from pysmt.logics import AUTO as AUTO_LOGIC
 from pysmt.logics import most_generic_logic, get_closer_logic
 from pysmt.oracles import get_logic
 
-import pysmt.solvers.solver
-
 DEFAULT_SOLVER_PREFERENCE_LIST = ['msat', 'z3', 'cvc4', 'yices', 'picosat', 'bdd']
 DEFAULT_QELIM_PREFERENCE_LIST = ['z3', 'msat_fm', 'msat_lw']
 DEFAULT_LOGIC = QF_UFLIRA
@@ -63,7 +61,6 @@ class Factory(object):
 
         self._get_available_solvers()
         self._get_available_qe()
-
 
 
     def get_solver(self, quantified=False, name=None, logic=None):
