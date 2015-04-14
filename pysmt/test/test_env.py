@@ -101,11 +101,11 @@ class TestEnvironment(TestCase):
         with self.assertRaises(NoSolverAvailableError):
             factory.get_solver()
 
-        for qelim_name in factory.all_qelims():
+        for qelim_name in factory.all_quantifier_eliminators():
             factory.set_qelim_preference_list([qelim_name])
             self.assertEqual(factory.qelim_preference_list, [qelim_name])
             qelim = factory.get_quantifier_eliminator()
-            self.assertTrue(isinstance(qelim, factory.all_qelims()[qelim_name]))
+            self.assertTrue(isinstance(qelim, factory.all_quantifier_eliminators()[qelim_name]))
 
         factory.set_qelim_preference_list(['nosolver'])
         with self.assertRaises(NoSolverAvailableError):

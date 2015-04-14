@@ -325,6 +325,29 @@ class Factory(object):
         assert len(preference_list) > 0
         self.qelim_preference_list = preference_list
 
+    def _filter_solvers(self, solver_list, logic=None):
+        """
+        Returns a dict <solver_name, solver_class> including all and only
+        the solvers directly or indirectly supporting the given logic.
+        A solver supports a logic if either the given logic is
+        declared in the LOGICS class field or if a logic subsuming the
+        given logic is declared in the LOGICS class field.
+
+        If logic is None, the map will contain all the known solvers
+        """
+        res = {}
+        if logic is not None:
+            for s, v in iteritems(solver_list):
+                for l in v.LOGICS:
+                    if logic <= l:
+                        res[s] = v
+                        break
+            return res
+        else:
+            solvers = solver_list
+
+        return solvers
+
 
     def all_solvers(self, logic=None):
         """
@@ -336,41 +359,22 @@ class Factory(object):
 
         If logic is None, the map will contain all the known solvers
         """
-        res = {}
-        if logic is not None:
-            for s, v in iteritems(self._all_solvers):
-                for l in v.LOGICS:
-                    if logic <= l:
-                        res[s] = v
-                        break
-            return res
-        else:
-            solvers = self._all_solvers
+        return self._filter_solvers(self._all_solvers, logic=logic)
 
-        return solvers
 
     def all_quantifier_eliminators(self, logic=None):
-        """
-        Returns a dict <solver_name, solver_class> including all and only
-        the solvers directly or indirectly supporting the given logic.
-        A solver supports a logic if either the given logic is
-        declared in the LOGICS class field or if a logic subsuming the
-        given logic is declared in the LOGICS class field.
+        """Returns a dict <qelim_name, qelim_class> including all and only the
+        quantifier eliminators directly or indirectly supporting the
+        given logic.  A qelim supports a logic if either the given
+        logic is declared in the LOGICS class field or if a logic
+        subsuming the given logic is declared in the LOGICS class
+        field.
 
-        If logic is None, the map will contain all the known solvers
+        If logic is None, the map will contain all the known
+        quantifier eliminators
         """
-        res = {}
-        if logic is not None:
-            for s, v in iteritems(self._all_qelims):
-                for l in v.LOGICS:
-                    if logic <= l:
-                        res[s] = v
-                        break
-            return res
-        else:
-            solvers = self._all_qelims
+        return self._filter_solvers(self._all_qelims, logic=logic)
 
-        return solvers
 
     def all_unsat_core_solvers(self, logic=None):
         """
@@ -382,23 +386,9 @@ class Factory(object):
         declared in the LOGICS class field.
 
         If logic is None, the map will contain all the known solvers
-
         """
-        res = {}
-        if logic is not None:
-            for s, v in iteritems(self._unsat_core_solvers):
-                for l in v.LOGICS:
-                    if logic <= l:
-                        res[s] = v
-                        break
-            return res
-        else:
-            solvers = self._unsat_core_solvers
+        return self._filter_solvers(self._unsat_core_solvers, logic=logic)
 
-        return solvers
-
-    def all_qelims(self):
-        return self._all_qelims
 
     ##
     ## Wrappers: These functions are exported in shortcuts

@@ -26,7 +26,7 @@ from pysmt.logics import LRA, QF_LIA
 
 class TestQE(TestCase):
 
-    @unittest.skipIf(len(get_env().factory.all_qelims()) == 0,
+    @unittest.skipIf(len(get_env().factory.all_quantifier_eliminators()) == 0,
                      "No QE available.")
     @skipIfNoSolverForLogic(LRA)
     def test_qe_eq(self):
@@ -51,7 +51,7 @@ class TestQE(TestCase):
             pass
 
 
-    @unittest.skipIf('z3' not in get_env().factory.all_qelims(),
+    @unittest.skipIf('z3' not in get_env().factory.all_quantifier_eliminators(),
                      "Z3 is not available.")
     def test_qe_z3(self):
         qe = QuantifierEliminator(name='z3')
@@ -70,7 +70,7 @@ class TestQE(TestCase):
         with self.assertRaises(NotImplementedError):
             qe.eliminate_quantifiers(f).simplify()
 
-    @unittest.skipIf('msat_fm' not in get_env().factory.all_qelims(),
+    @unittest.skipIf('msat_fm' not in get_env().factory.all_quantifier_eliminators(),
                      "MathSAT quantifier elimination is not available.")
     def test_qe_msat_fm(self):
         qe = QuantifierEliminator(name='msat_fm')
@@ -95,7 +95,7 @@ class TestQE(TestCase):
             qe.eliminate_quantifiers(f).simplify()
 
 
-    @unittest.skipIf('msat_lw' not in get_env().factory.all_qelims(),
+    @unittest.skipIf('msat_lw' not in get_env().factory.all_quantifier_eliminators(),
                      "MathSAT quantifier elimination is not available.")
     def test_qe_msat_lw(self):
         qe = QuantifierEliminator(name='msat_lw')
