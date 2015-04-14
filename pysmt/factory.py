@@ -134,10 +134,14 @@ class Factory(object):
                                              (solver_type, name, logic))
 
             SolverClass = solver_list[name]
-            try:
-                logic = most_generic_logic(SolverClass.LOGICS)
-            except NoLogicAvailableError:
-                logic = SolverClass.LOGICS[0]
+            if logic is None:
+                try:
+                    logic = most_generic_logic(SolverClass.LOGICS)
+                except NoLogicAvailableError:
+                    if default_logic in SolverClass.LOGICS:
+                        logic = default_logic
+                    else:
+                        raise NoLogicAvailableError("Cannot automatically select a logic")
 
             closer_logic = get_closer_logic(SolverClass.LOGICS, logic)
 
