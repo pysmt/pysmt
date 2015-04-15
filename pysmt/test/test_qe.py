@@ -62,6 +62,9 @@ class TestQE(TestCase):
         with self.assertRaises(NoSolverAvailableError):
             QuantifierEliminator(name="msat", logic=LIA)
 
+    @skipIfNoQEForLogic(LRA)
+    def test_selection_lra(self):
+        QuantifierEliminator(logic=LRA)
 
     @skipIfQENotAvailable('z3')
     def test_qe_z3(self):
