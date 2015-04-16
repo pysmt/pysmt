@@ -58,43 +58,42 @@ class SizeOracle(walkers.DagWalker):
         assert self.is_complete(verbose=True)
 
 
+    def _get_key(self, formula, counting_type):
+        # Memoize using a tuple (counting_type, formula)
+        return (counting_type, formula)
+
+
     def get_size(self, formula, counting_type=None):
         if counting_type is None:
             # By default, count tree nodes
             counting_type = SizeOracle.COUNTING_TYPE_TREE_NODES
 
-        (tree_size, dag_members, leaves, depth) = self.walk(formula)
+        res = self.walk(formula, counting_type=counting_type)
 
-        if counting_type == SizeOracle.COUNTING_TYPE_TREE_NODES:
-            return tree_size
-        elif counting_type == SizeOracle.COUNTING_TYPE_DAG_NODES:
-            return len(dag_members)
-        elif counting_type == SizeOracle.COUNTING_TYPE_LEAVES:
-            return leaves
-        elif counting_type == SizeOracle.COUNTING_TYPE_DEPTH:
-            return depth
-        else:
-            raise NotImplementedError
+        if counting_type == SizeOracle.COUNTING_TYPE_DAG_NODES:
+            return len(res)
+        return res
 
 
-    def walk_count(self, formula, args):
+    def walk_count(self, formula, args, counting_type):
         """ Returns the sizes of the formula """
-        tree_size =  1
-        dag_members = [formula]
-        leaves = 1 if len(args) == 0 else 0
-        depth = 0
+        if counting_type == SizeOracle.COUNTING_TYPE_TREE_NODES:
+            return 1 + sum(args)
 
-        for s_t, s_dm, s_l, s_d in args:
-            tree_size += s_t
+        if counting_type == SizeOracle.COUNTING_TYPE_DAG_NODES:
+            return frozenset([formula]) | frozenset([x for s in args for x in s])
 
-            for m in s_dm:
-                dag_members.append(m)
 
-            leaves += s_l
+        is_leaf = (len(args) == 0)
 
-            depth = max(depth, s_d)
+        if counting_type == SizeOracle.COUNTING_TYPE_LEAVES:
+            return (1 if is_leaf else 0) + sum(args)
 
-        return (tree_size, frozenset(dag_members), leaves, 1 + depth)
+        if counting_type == SizeOracle.COUNTING_TYPE_DEPTH:
+            return 1 + (0 if is_leaf else max(args))
+
+        raise NotImplementedError("Counting type '%s' not supported" \
+                                  % counting_type)
 
 
 

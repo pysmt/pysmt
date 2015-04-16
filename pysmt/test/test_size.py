@@ -53,6 +53,11 @@ class TestSize(TestCase):
             self.assertTrue(dag_size >= depth)
             self.assertTrue(dag_size >= leaves)
 
+    def test_error(self):
+        varA = Symbol("A")
+        with self.assertRaises(NotImplementedError):
+            varA.size("non-existent")
+
 
 if __name__ == '__main__':
     unittest.main()
