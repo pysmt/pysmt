@@ -32,7 +32,8 @@ from pysmt.walkers import DagWalker
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               SolverNotConfiguredForUnsatCoresError,
                               SolverStatusError,
-                              InternalSolverError)
+                              InternalSolverError,
+                              ConvertExpressionError)
 from pysmt.decorators import clear_pending_pop
 
 from pysmt.logics import LRA, LIA, PYSMT_LOGICS
@@ -246,6 +247,7 @@ class Z3Converter(Converter, DagWalker):
                 "Quantified back conversion is currently not supported")
 
         args = [self.back(x) for x in expr.children()]
+
         res = None
         if z3.is_and(expr):
             res = self.mgr.And(args)
@@ -316,11 +318,11 @@ class Z3Converter(Converter, DagWalker):
         elif z3.is_ite(expr):
             res = self.mgr.Ite(args[0], args[1], args[2])
 
-        else:
-            raise TypeError("Unsupported expression:", expr)
 
         if res is None:
-            raise TypeError("Unsupported expression:", expr)
+            raise ConvertExpressionError(message=("Unsupported expression: %s" %
+                                                   str(expr)),
+                                          expression=expr)
 
         self.backconversion[askey(expr)] = res
 
@@ -455,4 +457,19 @@ class Z3QuantifierEliminator(QuantifierEliminator):
                        pull_cheap_ite=True,
                        ite_extra_rules=True).as_expr()
         res = eliminator(s, eliminate_variables_as_block=True).as_expr()
-        return self.converter.back(res)
+
+        pysmt_res = None
+        try:
+            pysmt_res = self.converter.back(res)
+        except ConvertExpressionError:
+            if logic <= LRA:
+                raise
+            raise ConvertExpressionError(message=("Unable to represent" \
+                "expression %s in pySMT: the quantifier elimination for " \
+                "LIA is incomplete as it requires the modulus. You can " \
+                "find the Z3 expression representing the quantifier " \
+                "elimination as the attribute 'expression' of this " \
+                "exception object" % str(res)),
+                                          expression=res)
+
+        return pysmt_res

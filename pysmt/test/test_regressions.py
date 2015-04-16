@@ -18,11 +18,12 @@
 from fractions import Fraction
 
 from pysmt.shortcuts import (Real, Plus, Symbol, Equals, And, Bool, Or,
-                             Div, LT, LE, Int, ToReal, Iff)
-from pysmt.shortcuts import Solver, get_env
+                             Div, LT, LE, Int, ToReal, Iff, Exists, Times)
+from pysmt.shortcuts import Solver, get_env, qelim
 from pysmt.typing import REAL, BOOL, INT, FunctionType
 from pysmt.test import TestCase, skipIfSolverNotAvailable, skipIfNoSolverForLogic
-from pysmt.logics import QF_UFLIRA, QF_BOOL
+from pysmt.logics import QF_UFLIRA, QF_BOOL, LIA
+from pysmt.exceptions import ConvertExpressionError
 
 
 class TestRegressions(TestCase):
@@ -164,6 +165,20 @@ class TestRegressions(TestCase):
             s.exit()
             s.exit()
             self.assertTrue(True)
+
+    @skipIfNoSolverForLogic(LIA)
+    def test_lia_qe_requiring_modulus(self):
+        x = Symbol("x", INT)
+        y = Symbol("y", INT)
+        f = Exists([x], Equals(y, Times(x, Int(2))))
+        with self.assertRaises(ConvertExpressionError):
+            qelim(f)
+
+        try:
+            qelim(f)
+        except ConvertExpressionError as ex:
+            # The modulus operator must be there
+            self.assertIn("%2", str(ex.expression))
 
 
 if __name__ == "__main__":

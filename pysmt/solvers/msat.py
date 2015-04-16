@@ -704,6 +704,7 @@ if hasattr(mathsat, "MSAT_EXIST_ELIM_ALLSMT_FM"):
             self.msat_config = mathsat.msat_create_default_config("QF_LRA")
             self.msat_env = mathsat.msat_create_env(self.msat_config)
             self.converter = MSatConverter(environment, self.msat_env)
+            self._destroyed = False
 
 
         def eliminate_quantifiers(self, formula):
@@ -744,6 +745,12 @@ if hasattr(mathsat, "MSAT_EXIST_ELIM_ALLSMT_FM"):
             variables = formula.quantifier_vars()
             subf = formula.arg(0)
             return self.exist_elim(variables, subf)
+
+        def __del__(self):
+            if not self._destroyed:
+                self._destroyed = True
+                mathsat.msat_destroy_env(self.msat_env)
+                mathsat.msat_destroy_config(self.msat_config)
 
 
     class MSatFMQuantifierEliminator(MSatQuantifierEliminator):
