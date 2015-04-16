@@ -19,18 +19,19 @@ import unittest
 
 from pysmt.shortcuts import *
 from pysmt.typing import REAL, BOOL, INT
-from pysmt.test import TestCase, skipIfNoSolverForLogic
-from pysmt.exceptions import SolverReturnedUnknownResultError
-from pysmt.logics import LRA, QF_LIA
+from pysmt.test import (TestCase, skipIfNoSolverForLogic, skipIfNoQEForLogic,
+                        skipIfQENotAvailable)
+from pysmt.exceptions import (SolverReturnedUnknownResultError, \
+                              NoSolverAvailableError)
+from pysmt.logics import LRA, LIA, UFLIRA
 
 
 class TestQE(TestCase):
 
-    @unittest.skipIf(len(get_env().factory.all_qelims()) == 0,
-                     "No QE available.")
     @skipIfNoSolverForLogic(LRA)
+    @skipIfNoQEForLogic(LRA)
     def test_qe_eq(self):
-        qe = QuantifierEliminator()
+        qe = QuantifierEliminator(logic=LRA)
 
         varA = Symbol("A", BOOL)
         varB = Symbol("B", BOOL)
@@ -50,9 +51,22 @@ class TestQE(TestCase):
         except SolverReturnedUnknownResultError:
             pass
 
+    def test_selection(self):
+        with self.assertRaises(NoSolverAvailableError):
+            QuantifierEliminator(logic=UFLIRA)
 
-    @unittest.skipIf('z3' not in get_env().factory.all_qelims(),
-                     "Z3 is not available.")
+        with self.assertRaises(NoSolverAvailableError):
+            QuantifierEliminator(name="nonexistent")
+
+        # MathSAT QE does not support LIA
+        with self.assertRaises(NoSolverAvailableError):
+            QuantifierEliminator(name="msat", logic=LIA)
+
+    @skipIfNoQEForLogic(LRA)
+    def test_selection_lra(self):
+        QuantifierEliminator(logic=LRA)
+
+    @skipIfQENotAvailable('z3')
     def test_qe_z3(self):
         qe = QuantifierEliminator(name='z3')
         self._bool_example(qe)
@@ -70,8 +84,8 @@ class TestQE(TestCase):
         with self.assertRaises(NotImplementedError):
             qe.eliminate_quantifiers(f).simplify()
 
-    @unittest.skipIf('msat_fm' not in get_env().factory.all_qelims(),
-                     "MathSAT quantifier elimination is not available.")
+
+    @skipIfQENotAvailable('msat_fm')
     def test_qe_msat_fm(self):
         qe = QuantifierEliminator(name='msat_fm')
         self._bool_example(qe)
@@ -95,8 +109,7 @@ class TestQE(TestCase):
             qe.eliminate_quantifiers(f).simplify()
 
 
-    @unittest.skipIf('msat_lw' not in get_env().factory.all_qelims(),
-                     "MathSAT quantifier elimination is not available.")
+    @skipIfQENotAvailable('msat_lw')
     def test_qe_msat_lw(self):
         qe = QuantifierEliminator(name='msat_lw')
         self._bool_example(qe)

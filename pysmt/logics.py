@@ -652,7 +652,7 @@ def most_generic_logic(logics):
     res = [ l for l in logics if all(l >= x for x in logics)]
 
     if len(res) != 1:
-        raise NoLogicAvailableError("Could not find the most generic"
+        raise NoLogicAvailableError("Could not find the most generic "
                                     "logic for %s." % str(logics))
     return res[0]
 

@@ -18,6 +18,11 @@ General:
   solvers. Dedicated shortcuts (get_unsat_core and UnsatCoreSolver)
   have been added.
 
+* QuantifierEliminator and qelim shortcuts, as well as the respective
+  factory methods can now accept a 'logic' parameter that allows to
+  select a quantifier eliminator instance supporting a given logic
+  (analogously to what happens for solvers).
+
 
 
 0.2.4: 2015-03-15  -- PicoSAT
