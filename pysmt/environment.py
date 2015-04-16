@@ -47,6 +47,7 @@ class Environment(object):
         self._qfo = pysmt.oracles.QuantifierOracle(self)
         self._theoryo = pysmt.oracles.TheoryOracle(self)
         self._fvo = pysmt.oracles.FreeVarsOracle(self)
+        self._sizeo = pysmt.oracles.SizeOracle(self)
 
         self._factory = None
         # Configurations
@@ -91,6 +92,11 @@ class Environment(object):
     def fvo(self):
         """ Get the FreeVars Oracle """
         return self._fvo
+
+    @property
+    def sizeo(self):
+        """ Get the FreeVars Oracle """
+        return self._sizeo
 
     def add_dynamic_walker_function(self, nodetype, walker, function):
         """Dynamically bind the given function to the walker for the nodetype.

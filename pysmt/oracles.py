@@ -30,6 +30,74 @@ import pysmt.shortcuts
 from pysmt.logics import Logic, Theory, get_closer_pysmt_logic
 
 
+class SizeOracle(walkers.DagWalker):
+    """Evaluates the size of a formula"""
+
+    # Counting type can be:
+    # - TREE_NODES : counts the number of nodes in the formula seen as a tree
+    # - DAG_NODES  : counts the number of nodes in the formula seen as a DAG
+    # - LEAVES     : counts the number of leaves in the formula seen as a tree
+    # - DEPTH      : counts the maximum number of levels in the formula
+    (COUNTING_TYPE_TREE_NODES,
+     COUNTING_TYPE_DAG_NODES,
+     COUNTING_TYPE_LEAVES,
+     COUNTING_TYPE_DEPTH) = range(4)
+
+    def __init__(self, env=None):
+        walkers.DagWalker.__init__(self, env=env)
+
+        # Clear the mapping function
+        self.functions.clear()
+
+        # Propagate truth value, and force False when a Quantifier
+        # is found.
+        for elem in op.ALL_TYPES:
+            self.functions[elem] = self.walk_count
+
+        # Check that no operator in undefined
+        assert self.is_complete(verbose=True)
+
+
+    def get_size(self, formula, counting_type=None):
+        if counting_type is None:
+            # By default, count tree nodes
+            counting_type = SizeOracle.COUNTING_TYPE_TREE_NODES
+
+        (tree_size, dag_members, leaves, depth) = self.walk(formula)
+
+        if counting_type == SizeOracle.COUNTING_TYPE_TREE_NODES:
+            return tree_size
+        elif counting_type == SizeOracle.COUNTING_TYPE_DAG_NODES:
+            return len(dag_members)
+        elif counting_type == SizeOracle.COUNTING_TYPE_LEAVES:
+            return leaves
+        elif counting_type == SizeOracle.COUNTING_TYPE_DEPTH:
+            return depth
+        else:
+            raise NotImplementedError
+
+
+    def walk_count(self, formula, args):
+        """ Returns the sizes of the formula """
+        tree_size =  1
+        dag_members = [formula]
+        leaves = 1 if len(args) == 0 else 0
+        depth = 0
+
+        for s_t, s_dm, s_l, s_d in args:
+            tree_size += s_t
+
+            for m in s_dm:
+                dag_members.append(m)
+
+            leaves += s_l
+
+            depth = max(depth, s_d)
+
+        return (tree_size, frozenset(dag_members), leaves, 1 + depth)
+
+
+
 class QuantifierOracle(walkers.DagWalker):
     def __init__(self, env=None):
         walkers.DagWalker.__init__(self, env=env)
