@@ -31,6 +31,16 @@ class TestSize(TestCase):
         self.assertEqual(varA.size(SizeOracle.MEASURE_DAG_NODES), 1)
         self.assertEqual(varA.size(SizeOracle.MEASURE_LEAVES), 1)
         self.assertEqual(varA.size(SizeOracle.MEASURE_DEPTH), 1)
+        self.assertEqual(varA.size(SizeOracle.MEASURE_SYMBOLS), 1)
+
+    def test_const_leaf(self):
+        f = Int(0)
+        self.assertEqual(f.size(), 1)
+        self.assertEqual(f.size(SizeOracle.MEASURE_TREE_NODES), 1)
+        self.assertEqual(f.size(SizeOracle.MEASURE_DAG_NODES), 1)
+        self.assertEqual(f.size(SizeOracle.MEASURE_LEAVES), 1)
+        self.assertEqual(f.size(SizeOracle.MEASURE_DEPTH), 1)
+        self.assertEqual(f.size(SizeOracle.MEASURE_SYMBOLS), 0)
 
     def test_basic(self):
         varA = Symbol("A")
@@ -41,6 +51,7 @@ class TestSize(TestCase):
         self.assertEqual(f.size(SizeOracle.MEASURE_DAG_NODES), 3)
         self.assertEqual(varA.size(SizeOracle.MEASURE_LEAVES), 1)
         self.assertEqual(f.size(SizeOracle.MEASURE_DEPTH), 3)
+        self.assertEqual(f.size(SizeOracle.MEASURE_SYMBOLS), 1)
 
     def test_examples(self):
         for (f, _, _, _) in get_example_formulae():
@@ -48,10 +59,12 @@ class TestSize(TestCase):
             dag_size = f.size(SizeOracle.MEASURE_DAG_NODES)
             leaves = f.size(SizeOracle.MEASURE_LEAVES)
             depth = f.size(SizeOracle.MEASURE_DEPTH)
+            symbols = f.size(SizeOracle.MEASURE_SYMBOLS)
 
             self.assertTrue(tree_size >= dag_size)
             self.assertTrue(dag_size >= depth)
             self.assertTrue(dag_size >= leaves)
+            self.assertTrue(leaves >= symbols)
 
     def test_error(self):
         varA = Symbol("A")

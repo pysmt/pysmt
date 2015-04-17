@@ -41,7 +41,8 @@ class SizeOracle(walkers.DagWalker):
     (MEASURE_TREE_NODES,
      MEASURE_DAG_NODES,
      MEASURE_LEAVES,
-     MEASURE_DEPTH) = range(4)
+     MEASURE_DEPTH,
+     MEASURE_SYMBOLS) = range(5)
 
     def __init__(self, env=None):
         walkers.DagWalker.__init__(self, env=env)
@@ -50,7 +51,8 @@ class SizeOracle(walkers.DagWalker):
                         {SizeOracle.MEASURE_TREE_NODES: self.walk_count_tree,
                          SizeOracle.MEASURE_DAG_NODES: self.walk_count_dag,
                          SizeOracle.MEASURE_LEAVES: self.walk_count_leaves,
-                         SizeOracle.MEASURE_DEPTH: self.walk_count_depth}
+                         SizeOracle.MEASURE_DEPTH: self.walk_count_depth,
+                         SizeOracle.MEASURE_SYMBOLS: self.walk_count_symbols}
 
         # Check that no operator in undefined
         assert self.is_complete(verbose=True)
@@ -77,7 +79,8 @@ class SizeOracle(walkers.DagWalker):
         self.set_walking_measure(measure)
         res = self.walk(formula, measure=measure)
 
-        if measure == SizeOracle.MEASURE_DAG_NODES:
+        if measure == SizeOracle.MEASURE_DAG_NODES or \
+           measure == SizeOracle.MEASURE_SYMBOLS:
             return len(res)
         return res
 
@@ -95,6 +98,13 @@ class SizeOracle(walkers.DagWalker):
     def walk_count_depth(self, formula, args, measure):
         is_leaf = (len(args) == 0)
         return 1 + (0 if is_leaf else max(args))
+
+    def walk_count_symbols(self, formula, args, measure):
+        is_sym = formula.is_symbol()
+        a_res = frozenset([x for s in args for x in s])
+        if is_sym:
+            return frozenset([formula]) | a_res
+        return a_res
 
 
 
