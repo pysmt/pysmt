@@ -38,6 +38,7 @@ class SizeOracle(walkers.DagWalker):
     # - DAG_NODES  : counts the number of nodes in the formula seen as a DAG
     # - LEAVES     : counts the number of leaves in the formula seen as a tree
     # - DEPTH      : counts the maximum number of levels in the formula
+    # - SYMBOLS    : counts the number of different symbols occurring in the formula
     (MEASURE_TREE_NODES,
      MEASURE_DAG_NODES,
      MEASURE_LEAVES,
@@ -54,8 +55,6 @@ class SizeOracle(walkers.DagWalker):
                          SizeOracle.MEASURE_DEPTH: self.walk_count_depth,
                          SizeOracle.MEASURE_SYMBOLS: self.walk_count_symbols}
 
-        # Check that no operator in undefined
-        assert self.is_complete(verbose=True)
 
     def set_walking_measure(self, measure):
         if measure not in self.measure_to_fun:
@@ -64,6 +63,9 @@ class SizeOracle(walkers.DagWalker):
         self.functions.clear()
         for elem in op.ALL_TYPES:
             self.functions[elem] = self.measure_to_fun[measure]
+
+        # Check that no operator in undefined
+        assert self.is_complete(verbose=True)
 
 
     def _get_key(self, formula, measure):
