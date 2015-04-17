@@ -85,11 +85,11 @@ def get_free_variables(formula):
     """Returns the simplified version of the formula."""
     return get_env().fvo.get_free_variables(formula)
 
-def get_formula_size(formula, counting_type=None):
+def get_formula_size(formula, measure=None):
     """Returns the size of the formula as measured by the given counting type.
     See pysmt.oracles.SizeOracle for details.
     """
-    return get_env().sizeo.get_size(formula, counting_type)
+    return get_env().sizeo.get_size(formula, measure)
 
 
 ##### Nodes Creation #####

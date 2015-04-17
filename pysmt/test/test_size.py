@@ -27,27 +27,27 @@ class TestSize(TestCase):
     def test_leaf(self):
         varA = Symbol("A")
         self.assertEqual(varA.size(), 1)
-        self.assertEqual(varA.size(SizeOracle.COUNTING_TYPE_TREE_NODES), 1)
-        self.assertEqual(varA.size(SizeOracle.COUNTING_TYPE_DAG_NODES), 1)
-        self.assertEqual(varA.size(SizeOracle.COUNTING_TYPE_LEAVES), 1)
-        self.assertEqual(varA.size(SizeOracle.COUNTING_TYPE_DEPTH), 1)
+        self.assertEqual(varA.size(SizeOracle.MEASURE_TREE_NODES), 1)
+        self.assertEqual(varA.size(SizeOracle.MEASURE_DAG_NODES), 1)
+        self.assertEqual(varA.size(SizeOracle.MEASURE_LEAVES), 1)
+        self.assertEqual(varA.size(SizeOracle.MEASURE_DEPTH), 1)
 
     def test_basic(self):
         varA = Symbol("A")
         f = And(varA, Not(varA))
 
         self.assertEqual(f.size(), 4)
-        self.assertEqual(f.size(SizeOracle.COUNTING_TYPE_TREE_NODES), 4)
-        self.assertEqual(f.size(SizeOracle.COUNTING_TYPE_DAG_NODES), 3)
-        self.assertEqual(varA.size(SizeOracle.COUNTING_TYPE_LEAVES), 1)
-        self.assertEqual(f.size(SizeOracle.COUNTING_TYPE_DEPTH), 3)
+        self.assertEqual(f.size(SizeOracle.MEASURE_TREE_NODES), 4)
+        self.assertEqual(f.size(SizeOracle.MEASURE_DAG_NODES), 3)
+        self.assertEqual(varA.size(SizeOracle.MEASURE_LEAVES), 1)
+        self.assertEqual(f.size(SizeOracle.MEASURE_DEPTH), 3)
 
     def test_examples(self):
         for (f, _, _, _) in get_example_formulae():
-            tree_size = f.size(SizeOracle.COUNTING_TYPE_TREE_NODES)
-            dag_size = f.size(SizeOracle.COUNTING_TYPE_DAG_NODES)
-            leaves = f.size(SizeOracle.COUNTING_TYPE_LEAVES)
-            depth = f.size(SizeOracle.COUNTING_TYPE_DEPTH)
+            tree_size = f.size(SizeOracle.MEASURE_TREE_NODES)
+            dag_size = f.size(SizeOracle.MEASURE_DAG_NODES)
+            leaves = f.size(SizeOracle.MEASURE_LEAVES)
+            depth = f.size(SizeOracle.MEASURE_DEPTH)
 
             self.assertTrue(tree_size >= dag_size)
             self.assertTrue(dag_size >= depth)

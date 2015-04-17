@@ -38,62 +38,63 @@ class SizeOracle(walkers.DagWalker):
     # - DAG_NODES  : counts the number of nodes in the formula seen as a DAG
     # - LEAVES     : counts the number of leaves in the formula seen as a tree
     # - DEPTH      : counts the maximum number of levels in the formula
-    (COUNTING_TYPE_TREE_NODES,
-     COUNTING_TYPE_DAG_NODES,
-     COUNTING_TYPE_LEAVES,
-     COUNTING_TYPE_DEPTH) = range(4)
+    (MEASURE_TREE_NODES,
+     MEASURE_DAG_NODES,
+     MEASURE_LEAVES,
+     MEASURE_DEPTH) = range(4)
 
     def __init__(self, env=None):
         walkers.DagWalker.__init__(self, env=env)
 
-        # Clear the mapping function
-        self.functions.clear()
-
-        # Propagate truth value, and force False when a Quantifier
-        # is found.
-        for elem in op.ALL_TYPES:
-            self.functions[elem] = self.walk_count
+        self.measure_to_fun = \
+                        {SizeOracle.MEASURE_TREE_NODES: self.walk_count_tree,
+                         SizeOracle.MEASURE_DAG_NODES: self.walk_count_dag,
+                         SizeOracle.MEASURE_LEAVES: self.walk_count_leaves,
+                         SizeOracle.MEASURE_DEPTH: self.walk_count_depth}
 
         # Check that no operator in undefined
         assert self.is_complete(verbose=True)
 
+    def set_walking_measure(self, measure):
+        if measure not in self.measure_to_fun:
+            raise NotImplementedError
 
-    def _get_key(self, formula, counting_type):
-        # Memoize using a tuple (counting_type, formula)
-        return (counting_type, formula)
+        self.functions.clear()
+        for elem in op.ALL_TYPES:
+            self.functions[elem] = self.measure_to_fun[measure]
 
 
-    def get_size(self, formula, counting_type=None):
-        if counting_type is None:
+    def _get_key(self, formula, measure):
+        # Memoize using a tuple (measure, formula)
+        return (measure, formula)
+
+
+    def get_size(self, formula, measure=None):
+        if measure is None:
             # By default, count tree nodes
-            counting_type = SizeOracle.COUNTING_TYPE_TREE_NODES
+            measure = SizeOracle.MEASURE_TREE_NODES
 
-        res = self.walk(formula, counting_type=counting_type)
+        self.set_walking_measure(measure)
+        res = self.walk(formula, measure=measure)
 
-        if counting_type == SizeOracle.COUNTING_TYPE_DAG_NODES:
+        if measure == SizeOracle.MEASURE_DAG_NODES:
             return len(res)
         return res
 
 
-    def walk_count(self, formula, args, counting_type):
-        """ Returns the sizes of the formula """
-        if counting_type == SizeOracle.COUNTING_TYPE_TREE_NODES:
-            return 1 + sum(args)
+    def walk_count_tree(self, formula, args, measure):
+        return 1 + sum(args)
 
-        if counting_type == SizeOracle.COUNTING_TYPE_DAG_NODES:
-            return frozenset([formula]) | frozenset([x for s in args for x in s])
+    def walk_count_dag(self, formula, args, measure):
+        return frozenset([formula]) | frozenset([x for s in args for x in s])
 
-
+    def walk_count_leaves(self, formula, args, measure):
         is_leaf = (len(args) == 0)
+        return (1 if is_leaf else 0) + sum(args)
 
-        if counting_type == SizeOracle.COUNTING_TYPE_LEAVES:
-            return (1 if is_leaf else 0) + sum(args)
-
-        if counting_type == SizeOracle.COUNTING_TYPE_DEPTH:
-            return 1 + (0 if is_leaf else max(args))
-
-        raise NotImplementedError("Counting type '%s' not supported" \
-                                  % counting_type)
+    def walk_count_depth(self, formula, args, measure):
+        is_leaf = (len(args) == 0)
+        return 1 + (0 if is_leaf else max(args))
 
 
 
