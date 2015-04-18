@@ -88,6 +88,21 @@ class skipIfSolverNotAvailable(object):
             return test_fun(*args, **kwargs)
         return wrapper
 
+class skipIfQENotAvailable(object):
+    """Skip a test if the given solver is not available."""
+
+    def __init__(self, qe):
+        self.qe = qe
+
+    def __call__(self, test_fun):
+        msg = "Quantifier Eliminator %s not available" % self.qe
+        cond = self.qe not in get_env().factory.all_quantifier_eliminators()
+        @unittest.skipIf(cond, msg)
+        @wraps(test_fun)
+        def wrapper(*args, **kwargs):
+            return test_fun(*args, **kwargs)
+        return wrapper
+
 
 class skipIfNoSolverForLogic(object):
     """Skip a test if there is no solver for the given logic."""
@@ -114,6 +129,22 @@ class skipIfNoUnsatCoreSolverForLogic(object):
     def __call__(self, test_fun):
         msg = "Unsat Core Solver for %s not available" % self.logic
         cond = len(get_env().factory.all_unsat_core_solvers(logic=self.logic)) == 0
+        @unittest.skipIf(cond, msg)
+        @wraps(test_fun)
+        def wrapper(*args, **kwargs):
+            return test_fun(*args, **kwargs)
+        return wrapper
+
+
+class skipIfNoQEForLogic(object):
+    """Skip a test if there is no quantifier eliminator for the given logic."""
+
+    def __init__(self, logic):
+        self.logic = logic
+
+    def __call__(self, test_fun):
+        msg = "Quantifier Eliminator for %s not available" % self.logic
+        cond = len(get_env().factory.all_quantifier_eliminators(logic=self.logic)) == 0
         @unittest.skipIf(cond, msg)
         @wraps(test_fun)
         def wrapper(*args, **kwargs):

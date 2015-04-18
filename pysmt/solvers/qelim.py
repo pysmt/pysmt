@@ -29,3 +29,16 @@ class QuantifierEliminator(object):
         separately.
         """
         raise NotImplementedError
+
+    def __enter__(self):
+        """ Manage entering a Context (i.e., with statement) """
+        return self
+
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """ Manage exiting from Context (i.e., with statement)
+
+        The default behaviour is to explicitely destroy the qelim to free
+        the associated resources.
+        """
+        del self

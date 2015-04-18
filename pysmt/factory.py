@@ -26,16 +26,17 @@ particular solver.
 from functools import partial
 from six import iteritems
 
-from pysmt.exceptions import NoSolverAvailableError, SolverRedefinitionError, NoLogicAvailableError
-from pysmt.logics import QF_UFLIRA
+from pysmt.exceptions import (NoSolverAvailableError, SolverRedefinitionError,
+                              NoLogicAvailableError)
+from pysmt.logics import QF_UFLIRA, LRA
 from pysmt.logics import AUTO as AUTO_LOGIC
 from pysmt.logics import most_generic_logic, get_closer_logic
 from pysmt.oracles import get_logic
 
-
 DEFAULT_SOLVER_PREFERENCE_LIST = ['msat', 'z3', 'cvc4', 'yices', 'picosat', 'bdd']
 DEFAULT_QELIM_PREFERENCE_LIST = ['z3', 'msat_fm', 'msat_lw']
 DEFAULT_LOGIC = QF_UFLIRA
+DEFAULT_QE_LOGIC = LRA
 
 class Factory(object):
 
@@ -44,7 +45,7 @@ class Factory(object):
                  qelim_preference_list=None):
         self.environment = environment
         self._all_solvers = None
-        self._unsat_core_solvers = None
+        self._all_unsat_core_solvers = None
         self._all_qelims = None
         self._generic_solvers = {}
 
@@ -56,6 +57,7 @@ class Factory(object):
             qelim_preference_list = DEFAULT_QELIM_PREFERENCE_LIST
         self.qelim_preference_list = qelim_preference_list
         self._default_logic = DEFAULT_LOGIC
+        self._default_qe_logic = DEFAULT_QE_LOGIC
 
         self._get_available_solvers()
         self._get_available_qe()
@@ -68,47 +70,17 @@ class Factory(object):
         if quantified is True:
             logic = self.default_logic.get_quantified_version
 
-        if name is not None:
-            if name in self._all_solvers:
-                if logic is None:
-                    SolverClass = self._all_solvers[name]
-                    try:
-                        logic = most_generic_logic(SolverClass.LOGICS)
-                    except NoLogicAvailableError:
-                        if self.default_logic in SolverClass.LOGICS:
-                            logic = self.default_logic
-                        else:
-                            raise NoLogicAvailableError("Cannot automatically select a logic")
-                else:
-                    if name in self.all_solvers(logic=logic):
-                        SolverClass = self._all_solvers[name]
-                    else:
-                        raise NoSolverAvailableError("Solver '%s' does not" \
-                                                     " support logic %s" %
-                                                     (name, logic))
+        SolverClass, closer_logic = \
+           self._get_solver_class(solver_list=self._all_solvers,
+                                  solver_type="Solver",
+                                  preference_list=self.solver_preference_list,
+                                  default_logic=self.default_logic,
+                                  name=name,
+                                  logic=logic)
 
-                closer_logic = get_closer_logic(SolverClass.LOGICS, logic)
-                return SolverClass(environment=self.environment,
-                                   logic=closer_logic,
-                                   user_options={"generate_models":True})
-            else:
-                raise NoSolverAvailableError("Solver %s is not available" % name)
-
-        if logic is None:
-            logic = self.default_logic
-
-        solvers = self.all_solvers(logic=logic)
-
-        if solvers is not None and len(solvers) > 0:
-            # Pick the first solver based on preference list
-            SolverClass = self.pick_favorite_solver(solvers)
-            closer_logic = get_closer_logic(SolverClass.LOGICS, logic)
-            return SolverClass(environment=self.environment,
-                               logic=closer_logic,
-                               user_options={"generate_models":True})
-        else:
-            raise NoSolverAvailableError("No solver is available for logic %s" %\
-                                         logic)
+        return SolverClass(environment=self.environment,
+                           logic=closer_logic,
+                           user_options={"generate_models" : True})
 
 
     def get_unsat_core_solver(self, quantified=False, name=None,
@@ -119,81 +91,84 @@ class Factory(object):
         if quantified is True:
             logic = self.default_logic.get_quantified_version
 
-        if name is not None:
-            if name in self._unsat_core_solvers:
-                if logic is None:
-                    SolverClass = self._unsat_core_solvers[name]
-                    try:
-                        logic = most_generic_logic(SolverClass.LOGICS)
-                    except NoLogicAvailableError:
-                        if self.default_logic in SolverClass.LOGICS:
-                            logic = self.default_logic
-                        else:
-                            raise NoLogicAvailableError("Cannot automatically select a logic")
-                else:
-                    if name in self.all_unsat_core_solvers(logic=logic):
-                        SolverClass = self._unsat_core_solvers[name]
-                    else:
-                        raise NoSolverAvailableError("Solver '%s' does not" \
-                                                     " support logic %s" %
-                                                     (name, logic))
+        SolverClass, closer_logic = \
+           self._get_solver_class(solver_list=self._all_unsat_core_solvers,
+                                  solver_type="Solver supporting Unsat Cores",
+                                  preference_list=self.solver_preference_list,
+                                  default_logic=self.default_logic,
+                                  name=name,
+                                  logic=logic)
 
-                closer_logic = get_closer_logic(SolverClass.LOGICS, logic)
-                return SolverClass(environment=self.environment,
-                                   logic=closer_logic,
-                                   user_options={"generate_models" : True,
-                                        "unsat_cores_mode" : unsat_cores_mode})
-            else:
-                raise NoSolverAvailableError("Solver %s has no support for " \
-                                             "unsat cores" % name)
+        return SolverClass(environment=self.environment,
+                           logic=closer_logic,
+                           user_options={"generate_models" : True,
+                                         "unsat_cores_mode" : unsat_cores_mode})
+
+
+    def get_quantifier_eliminator(self, name=None, logic=None):
+        SolverClass, closer_logic = \
+           self._get_solver_class(solver_list=self._all_qelims,
+                                  solver_type="Quantifier Eliminator",
+                                  preference_list=self.qelim_preference_list,
+                                  default_logic=self.default_qe_logic,
+                                  name=name,
+                                  logic=logic)
+
+        return SolverClass(environment=self.environment,
+                           logic=closer_logic)
+
+
+    def _get_solver_class(self, solver_list, solver_type, preference_list,
+                          default_logic, name=None, logic=None):
+        if len(solver_list) == 0:
+            raise NoSolverAvailableError("No %s is available" % solver_type)
+
+        if name is not None:
+            if name not in solver_list:
+                raise NoSolverAvailableError("%s '%s' is not available" % \
+                                             (solver_type, name))
+
+            if logic is not None and \
+               name not in self._filter_solvers(solver_list, logic=logic):
+                raise NoSolverAvailableError("%s '%s' does not support logic %s"%
+                                             (solver_type, name, logic))
+
+            SolverClass = solver_list[name]
+            if logic is None:
+                try:
+                    logic = most_generic_logic(SolverClass.LOGICS)
+                except NoLogicAvailableError:
+                    if default_logic in SolverClass.LOGICS:
+                        logic = default_logic
+                    else:
+                        raise NoLogicAvailableError("Cannot automatically select a logic")
+
+            closer_logic = get_closer_logic(SolverClass.LOGICS, logic)
+
+            return SolverClass, closer_logic
 
         if logic is None:
-            logic = self.default_logic
+            logic = default_logic
 
-        solvers = self.all_unsat_core_solvers(logic=logic)
+        solvers = self._filter_solvers(solver_list, logic=logic)
 
         if solvers is not None and len(solvers) > 0:
             # Pick the first solver based on preference list
-            SolverClass = self.pick_favorite_solver(solvers)
+            SolverClass = self._pick_favorite(preference_list, solver_list, solvers)
             closer_logic = get_closer_logic(SolverClass.LOGICS, logic)
-            return SolverClass(environment=self.environment,
-                               logic=closer_logic,
-                               user_options={"generate_models" : True,
-                                        "unsat_cores_mode" : unsat_cores_mode})
+            return SolverClass, closer_logic
+
         else:
-            raise NoSolverAvailableError("No solver supporting unsat cores is" \
-                                         " available for logic %s" % logic)
+            raise NoSolverAvailableError("No %s is available for logic %s" %
+                                         (solver_type, logic))
 
 
-
-    def get_quantifier_eliminator(self, name=None):
-        if len(self._all_qelims) == 0:
-            raise NoSolverAvailableError("No quantifier eliminator is available")
-
-        if name is None:
-            QElimClass = self.pick_favorite_qelim(self._all_qelims)
-        elif name in self._all_qelims:
-            QElimClass = self._all_qelims[name]
-        else:
-            raise NoSolverAvailableError("No quantifier eliminator %s" % name)
-
-        return QElimClass(self.environment)
-
-
-    def pick_favorite_solver(self, solvers):
-        for candidate in self.solver_preference_list:
+    def _pick_favorite(self, preference_list, solver_list, solvers):
+        for candidate in preference_list:
             if candidate in solvers:
-                return self._all_solvers[candidate]
+                return solver_list[candidate]
         raise NoSolverAvailableError(
-            "Cannot find a matching solver in the preference list: %s "% solvers)
-
-
-    def pick_favorite_qelim(self, qelims):
-        for candidate in self.qelim_preference_list:
-            if candidate in qelims:
-                return self._all_qelims[candidate]
-        raise NoSolverAvailableError("Cannot find a matching quantifier " \
-                                     "eliminator in the preference list")
+            "Cannot find a matching solver in the preference list: %s " % solvers)
 
 
     def add_generic_solver(self, name, args, logics, unsat_core_support=False):
@@ -214,7 +189,7 @@ class Factory(object):
 
     def _get_available_solvers(self):
         self._all_solvers = {}
-        self._unsat_core_solvers = {}
+        self._all_unsat_core_solvers = {}
 
         try:
             from pysmt.solvers.z3 import Z3Solver
@@ -263,7 +238,7 @@ class Factory(object):
         for k,s in iteritems(self._all_solvers):
             try:
                 if s.UNSAT_CORE_SUPPORT:
-                    self._unsat_core_solvers[k] = s
+                    self._all_unsat_core_solvers[k] = s
             except AttributeError:
                 pass
 
@@ -306,8 +281,7 @@ class Factory(object):
         assert len(preference_list) > 0
         self.qelim_preference_list = preference_list
 
-
-    def all_solvers(self, logic=None):
+    def _filter_solvers(self, solver_list, logic=None):
         """
         Returns a dict <solver_name, solver_class> including all and only
         the solvers directly or indirectly supporting the given logic.
@@ -319,16 +293,44 @@ class Factory(object):
         """
         res = {}
         if logic is not None:
-            for s, v in iteritems(self._all_solvers):
+            for s, v in iteritems(solver_list):
                 for l in v.LOGICS:
                     if logic <= l:
                         res[s] = v
                         break
             return res
         else:
-            solvers = self._all_solvers
+            solvers = solver_list
 
         return solvers
+
+
+    def all_solvers(self, logic=None):
+        """
+        Returns a dict <solver_name, solver_class> including all and only
+        the solvers directly or indirectly supporting the given logic.
+        A solver supports a logic if either the given logic is
+        declared in the LOGICS class field or if a logic subsuming the
+        given logic is declared in the LOGICS class field.
+
+        If logic is None, the map will contain all the known solvers
+        """
+        return self._filter_solvers(self._all_solvers, logic=logic)
+
+
+    def all_quantifier_eliminators(self, logic=None):
+        """Returns a dict <qelim_name, qelim_class> including all and only the
+        quantifier eliminators directly or indirectly supporting the
+        given logic.  A qelim supports a logic if either the given
+        logic is declared in the LOGICS class field or if a logic
+        subsuming the given logic is declared in the LOGICS class
+        field.
+
+        If logic is None, the map will contain all the known
+        quantifier eliminators
+        """
+        return self._filter_solvers(self._all_qelims, logic=logic)
+
 
     def all_unsat_core_solvers(self, logic=None):
         """
@@ -340,23 +342,10 @@ class Factory(object):
         declared in the LOGICS class field.
 
         If logic is None, the map will contain all the known solvers
-
         """
-        res = {}
-        if logic is not None:
-            for s, v in iteritems(self._unsat_core_solvers):
-                for l in v.LOGICS:
-                    if logic <= l:
-                        res[s] = v
-                        break
-            return res
-        else:
-            solvers = self._unsat_core_solvers
+        return self._filter_solvers(self._all_unsat_core_solvers, logic=logic)
 
-        return solvers
 
-    def all_qelims(self):
-        return self._all_qelims
 
     ##
     ## Wrappers: These functions are exported in shortcuts
@@ -374,8 +363,8 @@ class Factory(object):
                                           unsat_cores_mode=unsat_cores_mode)
 
 
-    def QuantifierEliminator(self, name=None):
-        return self.get_quantifier_eliminator(name=name)
+    def QuantifierEliminator(self, name=None, logic=None):
+        return self.get_quantifier_eliminator(name=name, logic=logic)
 
     def is_sat(self, formula, solver_name=None, logic=None):
         if logic == AUTO_LOGIC:
@@ -425,8 +414,11 @@ class Factory(object):
              as solver:
             return solver.is_unsat(formula)
 
-    def qelim(self, formula, solver_name=None):
-        with self.QuantifierEliminator(name=solver_name) as qe:
+    def qelim(self, formula, solver_name=None, logic=None):
+        if logic == AUTO_LOGIC:
+            logic = get_logic(formula, self.environment)
+
+        with self.QuantifierEliminator(name=solver_name, logic=logic) as qe:
             return qe.eliminate_quantifiers(formula)
 
     @property
@@ -436,3 +428,11 @@ class Factory(object):
     @default_logic.setter
     def default_logic(self, value):
         self._default_logic = value
+
+    @property
+    def default_qe_logic(self):
+        return self._default_qe_logic
+
+    @default_qe_logic.setter
+    def default_qe_logic(self, value):
+        self._default_qe_logic = value

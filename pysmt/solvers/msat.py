@@ -778,7 +778,9 @@ class MSatConverter(Converter, DagWalker):
 if hasattr(mathsat, "MSAT_EXIST_ELIM_ALLSMT_FM"):
     class MSatQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
 
-        def __init__(self, environment, algorithm='fm'):
+        LOGICS = [LRA]
+
+        def __init__(self, environment, logic=None, algorithm='fm'):
             """Algorithm can be either 'fm' (for Fourier-Motzkin) or 'lw' (for
                Loos-Weisspfenning)"""
 
@@ -789,6 +791,7 @@ if hasattr(mathsat, "MSAT_EXIST_ELIM_ALLSMT_FM"):
             self.functions[op.BOOL_CONSTANT] = self.walk_identity
             self.functions[op.INT_CONSTANT] = self.walk_identity
 
+            self.logic = logic
 
             assert algorithm in ['fm', 'lw']
             self.algorithm = algorithm
@@ -796,6 +799,7 @@ if hasattr(mathsat, "MSAT_EXIST_ELIM_ALLSMT_FM"):
             self.msat_config = mathsat.msat_create_default_config("QF_LRA")
             self.msat_env = mathsat.msat_create_env(self.msat_config)
             self.converter = MSatConverter(environment, self.msat_env)
+            self._destroyed = False
 
 
         def eliminate_quantifiers(self, formula):
@@ -837,12 +841,20 @@ if hasattr(mathsat, "MSAT_EXIST_ELIM_ALLSMT_FM"):
             subf = formula.arg(0)
             return self.exist_elim(variables, subf)
 
+        def __del__(self):
+            if not self._destroyed:
+                self._destroyed = True
+                mathsat.msat_destroy_env(self.msat_env)
+                mathsat.msat_destroy_config(self.msat_config)
+
 
     class MSatFMQuantifierEliminator(MSatQuantifierEliminator):
-        def __init__(self, env):
-            MSatQuantifierEliminator.__init__(self, env, 'fm')
+        def __init__(self, environment, logic=None):
+            MSatQuantifierEliminator.__init__(self, environment,
+                                              logic=logic, algorithm='fm')
 
 
     class MSatLWQuantifierEliminator(MSatQuantifierEliminator):
-        def __init__(self, env):
-            MSatQuantifierEliminator.__init__(self, env, 'lw')
+        def __init__(self, environment, logic=None):
+            MSatQuantifierEliminator.__init__(self, environment,
+                                              logic=logic, algorithm='lw')

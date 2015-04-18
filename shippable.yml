@@ -35,6 +35,7 @@ env:
     # Binaries Mirror:
     - secure: nuGI4WDZOFDezaSxQUKyOP19iqRmQSASv5tpCCsryQ3AtI3in/1dYndDUwmzGYfoVkHTOsf6n4O3XEAruktPpVZzLSlek9zcr8v0IERTfzhoGCWRqqYDrDoCU6Hc2WYyGOhGGEzfldsY1EVMx5+LsVz0JoVZFe75CO6oWvuEYVYRmeJYzKQWLuXXwQMkfYulX1ouF1b5JCdeepbUfwcf4o34RPrd6eLoL7Y1RT4SBsR0uX4lpnWvUB2qqoyOEvu/hXt9Zft57tW4OY2GUdlRlj/Hx/5fPIFGYJmsGu7BM/+Q1cLgZnyyH0mxaHtBkjt8ecMwUc/9PbNJ2alZDmIMyw==
   matrix:
+    - PYSMT_SOLVER="None"
     - PYSMT_SOLVER="msat"
     - PYSMT_SOLVER="z3"
     - PYSMT_SOLVER="cvc4"
@@ -79,7 +80,7 @@ before_script:
 script:
   - ./install.py --check
   - if [ "$PYSMT_SOLVER" == "msat_wrap" ]; then cd $TRAVIS_BUILD_DIR/pysmt/test/smtlib/bin; cp $TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.3.5-linux-x86_64/bin/mathsat .; mv mathsat.solver.sh.template mathsat.solver.sh; cd $TRAVIS_BUILD_DIR/; fi
-  - nosetests pysmt -v --processes=4 --process-timeout=360 --with-xunit --xunit-file=shippable/testresults/nosetests.xml
+  - nosetests pysmt -v --processes=4 --process-timeout=600 --with-xunit --xunit-file=shippable/testresults/nosetests.xml
 
 # Push of container is disabled
 # commit_container: gario/shippable_pysmt
