@@ -87,6 +87,9 @@ class FNode(object):
     def substitute(self, subs):
         return pysmt.shortcuts.substitute(self, subs=subs)
 
+    def size(self, measure=None):
+        return pysmt.shortcuts.get_formula_size(self, measure)
+
     def is_constant(self, _type=None, value=None):
         if self.node_type() not in CONSTANTS:
             return False
