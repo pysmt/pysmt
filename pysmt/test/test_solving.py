@@ -215,7 +215,7 @@ class TestBasic(TestCase):
         self.do_model("yices")
 
     @skipIfSolverNotAvailable("picosat")
-    def test_model_yices(self):
+    def test_model_picosat(self):
         self.do_model("picosat")
 
     @skipIfSolverNotAvailable("z3")
