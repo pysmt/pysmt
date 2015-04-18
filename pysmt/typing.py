@@ -152,6 +152,9 @@ class _BVType(PySMTType):
             return False
         return True
 
+    def __hash__(self):
+        return hash(self.type_id + self.width)
+
 # FunctionType is a Factory that returns a _FunctionType
 def FunctionType(return_type, param_types):
     param_types = tuple(param_types)

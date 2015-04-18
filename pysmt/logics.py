@@ -246,6 +246,8 @@ class Logic(object):
     def __gt__(self, other):
         return (other.__lt__(self))
 
+    def __hash__(self):
+        return hash(self.name)
 
 # Logics
 

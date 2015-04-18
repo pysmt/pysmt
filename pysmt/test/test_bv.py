@@ -15,13 +15,14 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+import unittest
 
 from pysmt.test import TestCase, skipIfNoSolverForLogic
-
 from pysmt.shortcuts import Symbol, And, Not, Solver, Symbol, Equals, TRUE
 from pysmt.shortcuts import get_env, is_sat, is_valid, get_model, is_unsat
 from pysmt.typing import BVType, BV1, BV8, BV32, BV128
 from pysmt.logics import QF_BV
+
 
 class TestBV(TestCase):
 
@@ -192,4 +193,4 @@ class TestBV(TestCase):
         return
 
 if __name__ == "__main__":
-    main()
+    unittest.main()
