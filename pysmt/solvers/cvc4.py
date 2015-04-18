@@ -267,7 +267,7 @@ class CVC4Converter(Converter, DagWalker):
             rtp = self._type_to_cvc4(tp.return_type)
             return self.cvc4_exprMgr.mkFunctionType(stps, rtp)
         else:
-            raise NotImplementedError
+            raise NotImplementedError("Unsupported type: %s" %tp)
 
     def _rename_bound_variables(self, formula, variables):
         """Bounds the variables in formula.
