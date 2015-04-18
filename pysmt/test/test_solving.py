@@ -184,7 +184,7 @@ class TestBasic(TestCase):
                             subs[d] = m
 
                         simp = f.substitute(subs).simplify()
-                        self.assertEqual(simp, TRUE())
+                        self.assertEqual(simp, TRUE(), "%s -- %s" % (f, subs))
 
                         # Ask the eager model
                         subs = {}

@@ -15,8 +15,10 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+import warnings
 from fractions import Fraction
 from six.moves import xrange
+
 import CVC4
 
 from pysmt.logics import PYSMT_QF_LOGICS, BV_LOGICS
@@ -64,6 +66,10 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
     def get_model(self):
         assignment = {}
         for s in self.environment.formula_manager.get_all_symbols():
+            if s.symbol_type().is_bv_type():
+                 # Workaround for #76
+                warnings.warn("Skipping unsupported bit-vector symbol")
+                continue
             if s.is_term():
                 v = self.get_value(s)
                 assignment[s] = v
