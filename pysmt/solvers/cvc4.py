@@ -19,7 +19,7 @@ from fractions import Fraction
 from six.moves import xrange
 import CVC4
 
-import pysmt
+from pysmt.logics import PYSMT_QF_LOGICS, BV_LOGICS
 from pysmt.solvers.solver import Solver, Converter
 from pysmt.exceptions import SolverReturnedUnknownResultError
 from pysmt.walkers import DagWalker
@@ -27,7 +27,7 @@ from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 from pysmt.solvers.eager import EagerModel
 
 class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
-    LOGICS = pysmt.logics.PYSMT_QF_LOGICS
+    LOGICS = PYSMT_QF_LOGICS - BV_LOGICS
 
     def __init__(self, environment, logic, user_options):
         Solver.__init__(self,
