@@ -30,6 +30,86 @@ import pysmt.shortcuts
 from pysmt.logics import Logic, Theory, get_closer_pysmt_logic
 
 
+class SizeOracle(walkers.DagWalker):
+    """Evaluates the size of a formula"""
+
+    # Counting type can be:
+    # - TREE_NODES : counts the number of nodes in the formula seen as a tree
+    # - DAG_NODES  : counts the number of nodes in the formula seen as a DAG
+    # - LEAVES     : counts the number of leaves in the formula seen as a tree
+    # - DEPTH      : counts the maximum number of levels in the formula
+    # - SYMBOLS    : counts the number of different symbols occurring in the formula
+    (MEASURE_TREE_NODES,
+     MEASURE_DAG_NODES,
+     MEASURE_LEAVES,
+     MEASURE_DEPTH,
+     MEASURE_SYMBOLS) = range(5)
+
+    def __init__(self, env=None):
+        walkers.DagWalker.__init__(self, env=env)
+
+        self.measure_to_fun = \
+                        {SizeOracle.MEASURE_TREE_NODES: self.walk_count_tree,
+                         SizeOracle.MEASURE_DAG_NODES: self.walk_count_dag,
+                         SizeOracle.MEASURE_LEAVES: self.walk_count_leaves,
+                         SizeOracle.MEASURE_DEPTH: self.walk_count_depth,
+                         SizeOracle.MEASURE_SYMBOLS: self.walk_count_symbols}
+
+
+    def set_walking_measure(self, measure):
+        if measure not in self.measure_to_fun:
+            raise NotImplementedError
+
+        self.functions.clear()
+        for elem in op.ALL_TYPES:
+            self.functions[elem] = self.measure_to_fun[measure]
+
+        # Check that no operator in undefined
+        assert self.is_complete(verbose=True)
+
+
+    def _get_key(self, formula, measure):
+        # Memoize using a tuple (measure, formula)
+        return (measure, formula)
+
+
+    def get_size(self, formula, measure=None):
+        if measure is None:
+            # By default, count tree nodes
+            measure = SizeOracle.MEASURE_TREE_NODES
+
+        self.set_walking_measure(measure)
+        res = self.walk(formula, measure=measure)
+
+        if measure == SizeOracle.MEASURE_DAG_NODES or \
+           measure == SizeOracle.MEASURE_SYMBOLS:
+            return len(res)
+        return res
+
+
+    def walk_count_tree(self, formula, args, measure):
+        return 1 + sum(args)
+
+    def walk_count_dag(self, formula, args, measure):
+        return frozenset([formula]) | frozenset([x for s in args for x in s])
+
+    def walk_count_leaves(self, formula, args, measure):
+        is_leaf = (len(args) == 0)
+        return (1 if is_leaf else 0) + sum(args)
+
+    def walk_count_depth(self, formula, args, measure):
+        is_leaf = (len(args) == 0)
+        return 1 + (0 if is_leaf else max(args))
+
+    def walk_count_symbols(self, formula, args, measure):
+        is_sym = formula.is_symbol()
+        a_res = frozenset([x for s in args for x in s])
+        if is_sym:
+            return frozenset([formula]) | a_res
+        return a_res
+
+
+
 class QuantifierOracle(walkers.DagWalker):
     def __init__(self, env=None):
         walkers.DagWalker.__init__(self, env=env)
