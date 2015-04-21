@@ -158,18 +158,37 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
                                         libyices.yices_get_bool_value)
             return self.mgr.Bool(res)
 
-        elif ty.is_int_type():
-            res = self._get_yices_value(titem, ctypes.c_int64(),
-                                        libyices.yices_get_int64_value)
-            warnings.warn("yices wrapper currently uses finite-precision integers!")
-            return self.mgr.Int(res)
-
-        elif ty.is_real_type():
-            res = self._get_yices_rational_value(titem)
-            warnings.warn("yices wrapper currently uses finite-precision reals!")
-            return self.mgr.Real(res)
         else:
-            raise NotImplementedError()
+            yval = libyices.yval_t()
+            status = libyices.yices_get_value(self.model, titem,
+                                              ctypes.byref(yval))
+            assert status == 0, "Failed to read the variable from the model"
+
+            if ty.is_int_type():
+                if libyices.yices_val_is_int64(self.model,
+                                               ctypes.byref(yval)) == 0:
+                    raise NotImplementedError("Yices wrapper currently uses "\
+                                              "finite-precision integers! "\
+                                              "Your query required a non-"\
+                                              "representable integer.")
+                else:
+                    res = self._get_yices_value(titem, ctypes.c_int64(),
+                                                libyices.yices_get_int64_value)
+                    return self.mgr.Int(res)
+
+            elif ty.is_real_type():
+                if libyices.yices_val_is_rational64(self.model,
+                                                    ctypes.byref(yval)) == 0:
+                    raise NotImplementedError("Yices wrapper currently uses "\
+                                              "finite-precision rationals! "\
+                                              "Your query required a non-"\
+                                              "representable rational.")
+
+                else:
+                    res = self._get_yices_rational_value(titem)
+                    return self.mgr.Real(res)
+            else:
+                raise NotImplementedError()
 
 
     def exit(self):
