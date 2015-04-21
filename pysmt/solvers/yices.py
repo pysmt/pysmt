@@ -17,7 +17,6 @@
 #
 import atexit
 import ctypes
-import warnings
 
 from fractions import Fraction
 from six.moves import xrange
