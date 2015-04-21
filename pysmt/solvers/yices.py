@@ -159,13 +159,13 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
             return self.mgr.Bool(res)
 
         elif ty.is_int_type():
-            res = self._get_yices_value(titem, ctypes.c_int(),
-                                        libyices.yices_get_int32_value)
+            res = self._get_yices_value(titem, ctypes.c_int64(),
+                                        libyices.yices_get_int64_value)
+            warnings.warn("yices wrapper currently uses finite-precision integers!")
             return self.mgr.Int(res)
 
         elif ty.is_real_type():
-            res = self._get_yices_value(titem, ctypes.c_double(),
-                                        libyices.yices_get_double_value)
+            res = self._get_yices_rational_value(titem)
             warnings.warn("yices wrapper currently uses finite-precision reals!")
             return self.mgr.Real(res)
         else:
@@ -186,6 +186,17 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         )
         assert status == 0, "Failed to read the variable from the model"
         return term_type.value
+
+    def _get_yices_rational_value(self, term):
+        n = ctypes.c_int64()
+        d = ctypes.c_uint64()
+        status = libyices.yices_get_rational64_value(
+            self.model,
+            term,
+            ctypes.byref(n),
+            ctypes.byref(d))
+        assert status == 0, "Failed to read the variable from the model"
+        return Fraction(n.value, d.value)
 
 
 
