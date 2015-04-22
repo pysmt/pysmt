@@ -206,6 +206,10 @@ class TestBasic(TestCase):
     def test_model_msat(self):
         self.do_model("msat")
 
+    @skipIfSolverNotAvailable("yices")
+    def test_model_yices(self):
+        self.do_model("yices")
+
     @skipIfSolverNotAvailable("z3")
     def test_examples_z3(self):
         for (f, validity, satisfiability, _) in get_example_formulae():
