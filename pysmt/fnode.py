@@ -264,10 +264,9 @@ class FNode(object):
             # Return width defined in the declaration
             return self.function_name().symbol_type().return_type.width
         elif self.is_ite():
-            # Recursively call bv_width on the children
+            # Recursively call bv_width on the left child
+            # (The right child has the same width if the node is well-formed)
             width_l = self.arg(1).bv_width()
-            width_r = self.arg(2).bv_width()
-            assert width_l == width_r
             return width_l
         else:
             # BV Operator
