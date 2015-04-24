@@ -33,7 +33,8 @@ from pysmt.operators import (FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF,
                              BV_MUL, BV_UDIV, BV_UREM,
                              BV_LSHL, BV_LSHR,
                              BV_ROL, BV_ROR,
-                             BV_ZEXT, BV_SEXT)
+                             BV_ZEXT, BV_SEXT,
+                             BV_OPERATORS)
 from pysmt.typing import BOOL, REAL, INT, PYSMT_TYPES, BVType
 from pysmt.decorators import deprecated
 
@@ -196,6 +197,9 @@ class FNode(object):
     def is_lt(self):
         return self.node_type() == LT
 
+    def is_bv_op(self):
+        return self.node_type() in BV_OPERATORS
+
     def is_bv_not(self):
         return self.node_type() == BV_NOT
 
@@ -267,6 +271,7 @@ class FNode(object):
             return width_l
         else:
             # BV Operator
+            assert self.is_bv_op(), "Unsupported method bv_width on %s" % self
             return self._content.payload[0]
 
     def bv_extract_start(self):

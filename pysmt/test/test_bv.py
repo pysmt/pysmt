@@ -41,6 +41,8 @@ class TestBV(TestCase):
 
         self.assertEqual(binary, binary2)
         self.assertEqual(binary2, binary3)
+        self.assertEqual(one, mgr.BVOne(32))
+        self.assertEqual(zero, mgr.BVZero(32))
 
         # Variables
         b128 = Symbol("b", BV128) # BV1, BV8 etc. are defined in pysmt.typing

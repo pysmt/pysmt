@@ -296,7 +296,7 @@ class SmtLibParser(object):
                 l = int(args[1].constant_value())
             except ValueError:
                 raise SyntaxError("Expected number in '(_ bv1) expression'")
-            return mgr.BV((2**l - 1), l)
+            return mgr.BV(1, l)
 
         else:
             raise SyntaxError("Unexpected '_ expression'")

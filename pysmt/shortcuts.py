@@ -227,8 +227,16 @@ def Max(*args):
 
 # Bit Vectors
 def BV(value, width=32):
-    """Return a constant of type BitVector."""
+    """Returns a constant of type BitVector."""
     return get_env().formula_manager.BV(value, width)
+
+def BVOne(value, width=32):
+    """Returns the unsigned one constant BitVector."""
+    return get_env().formula_manager.BVOne(value, width)
+
+def BVZero(value, width=32):
+    """Returns the zero constant BitVector."""
+    return get_env().formula_manager.BVZero(value, width)
 
 def BVNot(formula):
     """Returns the bitvector Not(bv)"""

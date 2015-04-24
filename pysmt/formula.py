@@ -502,18 +502,15 @@ class FormulaManager(object):
     def BV(self, value, width=None):
         """Return a constant of type BitVector."""
 
-        try:
+        if type(value) is str:
             if value.startswith("#b"):
-                value = value[2:]
-            if value[0] in ["0", "1"]:
+                width = len(value)-2
+                value = int(value[2:],2)
+            elif value[0] in ["0", "1"]:
                 width = len(value)
                 value = int(value, 2)
-        except ValueError:
-            raise ValueError("Expecting binary value as string, got %s instead." % value)
-        except TypeError:
-            pass
-        except AttributeError:
-            pass
+            else:
+                raise ValueError("Expecting binary value as string, got %s instead." % value)
 
         if width is None:
             raise ValueError("Need to specify a width for the constant")
@@ -527,10 +524,13 @@ class FormulaManager(object):
             raise TypeError("Invalid type in constant. The type was:" + \
                             str(type(value)))
 
+    def BVOne(self, width):
+        """Returns the bit-vector representing the unsigned one."""
+        return self.BV(1, width=width)
+
     def BVZero(self, width):
         """Returns the bit-vector with all bits set to zero."""
         return self.BV(0, width=width)
-
 
     def BVNot(self, formula):
         """Returns the bitvector Not(bv)"""
