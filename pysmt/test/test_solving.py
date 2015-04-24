@@ -218,6 +218,7 @@ class TestBasic(TestCase):
     def test_model_picosat(self):
         self.do_model("picosat")
 
+
     @skipIfSolverNotAvailable("z3")
     def test_examples_z3(self):
         for (f, validity, satisfiability, _) in get_example_formulae():
