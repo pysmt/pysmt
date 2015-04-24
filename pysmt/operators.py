@@ -40,13 +40,19 @@ TOREAL,                                     # LIRA toreal() function (19)
 BV_CONSTANT,                                # 20
 BV_NOT, BV_AND, BV_OR, BV_XOR,              # Logical Operators on Bit
 BV_CONCAT, BV_EXTRACT,                      #
-BV_ULT, BV_ULE, #BV_SLT,  BV_SLE,           # Comparison
-#BV_COMP,
-BV_NEG, BV_ADD, #BV_SUB,                     # Basic arithmetic (31-33)
-BV_MUL, BV_UDIV, BV_UREM, # BV_SDIV, BV_SREM, # Division/Multiplication (34-38)
-BV_LSHL, BV_LSHR, #BV_ASHR,                  # Shifts (39-41)
+BV_ULT, BV_ULE,                             # Comparison
+BV_NEG, BV_ADD,                             # Basic arithmetic (31-33)
+BV_MUL, BV_UDIV, BV_UREM,                   # Division/Multiplication (34-38)
+BV_LSHL, BV_LSHR,                           # Shifts (39-41)
 BV_ROL, BV_ROR,                             # Rotation (42-43)
 BV_ZEXT, BV_SEXT,                           # Extension (44-45)
+# BV Operators to be supported in the future
+# BV_SLT, BV_SLE
+# BV_COMP
+# BV_SUB
+# BV_SDIV
+# BV_SREM
+# BV_ASHR
 ) = ALL_TYPES
 
 QUANTIFIERS = frozenset([FORALL, EXISTS])
