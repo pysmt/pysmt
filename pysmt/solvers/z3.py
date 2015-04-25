@@ -63,11 +63,16 @@ class Z3Model(Model):
         Model.__init__(self, environment)
         self.z3_model = z3_model
         self.converter = Z3Converter(environment)
+        self.model_completion = False
+
+    def complete_model(self, symbols=None):
+        self.model_completion = True
 
     def get_value(self, formula):
         titem = self.converter.convert(formula)
-        z3_res = self.z3_model.eval(titem, model_completion=True)
+        z3_res = self.z3_model.eval(titem, model_completion=self.model_completion)
         return self.converter.back(z3_res)
+
 
 
 class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
