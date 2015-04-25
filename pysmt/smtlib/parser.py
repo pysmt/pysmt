@@ -23,7 +23,7 @@ from six.moves import xrange
 
 import pysmt.smtlib.commands as smtcmd
 from pysmt.shortcuts import get_env
-from pysmt.typing import BOOL, REAL, INT, FunctionType
+from pysmt.typing import BOOL, REAL, INT, FunctionType, BVType
 from pysmt.logics import get_logic_by_name, UndefinedLogicError
 from pysmt.exceptions import UnknownSmtLibCommandError
 from pysmt.smtlib.script import SmtLibCommand, SmtLibScript
@@ -234,6 +234,22 @@ class SmtLibParser(object):
                            'false':mgr.FALSE(),
                            'true':mgr.TRUE(),
                            'to_real':mgr.ToReal,
+                           'concat':mgr.BVConcat,
+                           'bvadd':mgr.BVAdd,
+                           'bvult':mgr.BVULT,
+                           'bvsub':mgr.BVSub,
+                           'bvnot':mgr.BVNot,
+                           'bvneg':mgr.BVNeg,
+                           'bvand':mgr.BVAnd,
+                           'bvor':mgr.BVOr,
+                           'bvxor':mgr.BVXor,
+                           'bvmul':mgr.BVMul,
+                           'bvudiv':mgr.BVUDiv,
+                           'bvurem':mgr.BVURem,
+                           'bvshl':mgr.BVLShl,
+                           'bvlshr':mgr.BVLShr,
+                           'bvult':mgr.BVULT,
+                           '_':self._smtlib_underscore,
                            })
 
 
@@ -257,6 +273,36 @@ class SmtLibParser(object):
             return mgr.Minus(args[0], args[1])
 
 
+    def _smtlib_underscore(self, *args):
+        """Utility function that handles _ special function in SMTLIB"""
+        mgr = self._current_env.formula_manager
+        if args[0] == "extract":
+            sstart, send = args[1:]
+            try:
+                start = int(sstart.constant_value())
+                end = int(send.constant_value())
+            except ValueError:
+                raise SyntaxError("Expected number in '(_ extract) expression'")
+            return lambda x : mgr.BVExtract(x, end, start)
+
+        if args[0] == "bv0":
+            try:
+                l = int(args[1].constant_value())
+            except ValueError:
+                raise SyntaxError("Expected number in '(_ bv0) expression'")
+            return mgr.BV(0, l)
+        if args[0] == "bv1":
+            try:
+                l = int(args[1].constant_value())
+            except ValueError:
+                raise SyntaxError("Expected number in '(_ bv1) expression'")
+            return mgr.BV(1, l)
+
+        else:
+            raise SyntaxError("Unexpected '_ expression'")
+
+
+
     def _equals_or_iff(self, left, right):
         """Utility function that treats = between booleans as <->"""
         mgr = self._current_env.formula_manager
@@ -275,28 +321,30 @@ class SmtLibParser(object):
         return mgr.Div(left, right)
 
 
-    def _get_basic_type(self, type_name, params):
+    def _get_basic_type(self, type_name, params=None):
         """
         Returns the pysmt type representation for the given type name.
         If params is specified, the type is interpreted as a function type.
         """
-        if len(params) == 0:
+        if params is None or len(params) == 0:
             if type_name == "Bool":
                 return BOOL
-            if type_name == "Int":
+            elif type_name == "Int":
                 return INT
             elif type_name == "Real":
                 return REAL
+            elif type_name.startswith("BV"):
+                size = int(type_name[2:])
+                return BVType(size)
         else:
-            rt = self._get_basic_type(type_name, [])
-            pt = [self._get_basic_type(par, []) for par in params]
+            rt = self._get_basic_type(type_name)
+            pt = [self._get_basic_type(par) for par in params]
             return FunctionType(rt, pt)
 
 
     def _get_var(self, name, type_name, params=None):
         """Returns the PySMT variable corresponding to a declaration"""
-        rp = params if params is not None else []
-        typename = self._get_basic_type(type_name, rp)
+        typename = self._get_basic_type(type_name, params)
         return self._current_env.formula_manager.Symbol(name=name,
                                                         typename=typename)
 
@@ -412,8 +460,10 @@ class SmtLibParser(object):
 
             if tk in self.parentheses:
                 if tk == "(":
-                    stack.append([])
-                    key = next(tokens)
+                    key = tk
+                    while key == "(":
+                        stack.append([])
+                        key = next(tokens)
 
                     if key in self.specials:
                         if key == 'let':
@@ -444,7 +494,7 @@ class SmtLibParser(object):
                                 if current != "(":
                                     raise SyntaxError("Expected '(' in let binding")
                                 vname = self.parse_atom(tokens, "expression")
-                                typename = self.parse_atom(tokens, "expression")
+                                typename = self.parse_type(tokens, "expression")
 
                                 var = self._get_var(vname, typename)
                                 self.cache.bind(vname, var)
@@ -478,6 +528,10 @@ class SmtLibParser(object):
                         raise SyntaxError("Unexpected ')'")
                     lst = stack.pop()
                     fun = lst.pop(0)
+
+                    if not callable(fun):
+                        raise NotImplementedError("Unknown function '%s'" % fun)
+
                     res = fun(*lst)
                     if len(stack) > 0:
                         stack[-1].append(res)
@@ -549,6 +603,39 @@ class SmtLibParser(object):
                           "most %d arguments." % (current, command, max_size))
 
 
+    def parse_type(self, tokens, command, additional_token=None):
+        """Parses a single type name from the tokens"""
+        if additional_token is not None:
+            var = additional_token
+        else:
+            var = next(tokens)
+        if var == "(":
+            op = next(tokens)
+            if op != "_":
+                raise SyntaxError("Unexpected token '%s' in %s command." % \
+                                  (op, command))
+            ts = next(tokens)
+            if ts != "BitVec":
+                raise SyntaxError("Unexpected token '%s' in %s command." % \
+                                  (ts, command))
+
+            size = 0
+            dim = next(tokens)
+            try:
+                size = int(dim)
+            except ValueError:
+                raise SyntaxError("Unexpected token '%s' in %s command." % \
+                                  (dim, command))
+
+            self.consume_closing(tokens, command)
+            return "BV%d" % size
+
+        elif var == ")":
+            raise SyntaxError("Unexpected token '%s' in %s command." % \
+                              (var, command))
+        return var
+
+
     def parse_atom(self, tokens, command):
         """Parses a single name from the tokens"""
         var = next(tokens)
@@ -563,10 +650,7 @@ class SmtLibParser(object):
         current = next(tokens)
         res = []
         while current != ")":
-            if current == "(":
-                raise SyntaxError("Unexpected token '(' in parameter " \
-                                  "type definition")
-            res.append(current)
+            res.append(self.parse_type(tokens, command,additional_token=current))
             current = next(tokens)
         return res
 
@@ -692,7 +776,7 @@ class SmtLibParser(object):
             elif current == smtcmd.DECLARE_FUN:
                 var = self.parse_atom(tokens, current)
                 params = self.parse_params(tokens, current)
-                typename = self.parse_atom(tokens, current)
+                typename = self.parse_type(tokens, current)
                 self.consume_closing(tokens, current)
 
                 v = self._get_var(var, typename, params)
@@ -706,7 +790,7 @@ class SmtLibParser(object):
             elif current == smtcmd.DEFINE_FUN:
                 var = self.parse_atom(tokens, current)
                 params = self.parse_params(tokens, current)
-                typename = self.parse_atom(tokens, current)
+                self.parse_type(tokens, current)
                 ebody = self.get_expression(tokens)
                 self.consume_closing(tokens, current)
 

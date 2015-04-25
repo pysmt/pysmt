@@ -225,6 +225,110 @@ def Max(*args):
     """
     return get_env().formula_manager.Max(*args)
 
+# Bit Vectors
+def BV(value, width=32):
+    """Returns a constant of type BitVector."""
+    return get_env().formula_manager.BV(value, width)
+
+def BVOne(value, width=32):
+    """Returns the unsigned one constant BitVector."""
+    return get_env().formula_manager.BVOne(value, width)
+
+def BVZero(value, width=32):
+    """Returns the zero constant BitVector."""
+    return get_env().formula_manager.BVZero(value, width)
+
+def BVNot(formula):
+    """Returns the bitvector Not(bv)"""
+    return get_env().formula_manager.BVNot(formula)
+
+def BVAnd(left, right):
+    """Returns the Bit-wise AND of two bitvectors of the same size."""
+    return get_env().formula_manager.BVAnd(left, right)
+
+def BVOr(left, right):
+    """Returns the Bit-wise OR of two bitvectors of the same size."""
+    return get_env().formula_manager.BVOr(left, right)
+
+def BVXor(left, right):
+    """Returns the Bit-wise XOR of two bitvectors of the same size."""
+    return get_env().formula_manager.BVXor(left, right)
+
+def BVConcat(left, right):
+    """Returns the Concatenation of the two BVs"""
+    return get_env().formula_manager.BVConcat(left, right)
+
+def BVExtract(formula, start=0, end=None):
+    """Returns the slice of formula from start to end (inclusive)."""
+    return get_env().formula_manager.BVExtract(formula, start=start, end=end)
+
+def BVULT(left, right):
+    """Returns the formula left < right."""
+    return get_env().formula_manager.BVULT(left, right)
+
+def BVUGT(left, right):
+    """Returns the formula left > right."""
+    return get_env().formula_manager.BVUGT(left, right)
+
+def BVULE(left, right):
+    """Returns the formula left <= right."""
+    return get_env().formula_manager.BVULE(left, right)
+
+def BVUGE(left, right):
+    """Returns the formula left >= right."""
+    return get_env().formula_manager.BVUGE(left, right)
+
+def BVNeg(formula):
+    """Returns the arithmetic negation of the BV."""
+    return get_env().formula_manager.BVNeg(formula)
+
+def BVAdd(left, right):
+    """Returns the sum of two BV."""
+    return get_env().formula_manager.BVAdd(left, right)
+
+def BVMul(left, right):
+    """Returns the product of two BV."""
+    return get_env().formula_manager.BVMul(left, right)
+
+def BVUDiv(left, right):
+    """Returns the division of the two BV."""
+    return get_env().formula_manager.BVDiv(left, right)
+
+def BVURem(left, right):
+    """Returns the reminder of the two BV."""
+    return get_env().formula_manager.BVRem(left, right)
+
+def BVLShl(left, right):
+    """Returns the logical left shift the BV."""
+    return get_env().formula_manager.BVShl(left, right)
+
+def BVLShr(left, right):
+    """Returns the logical right shift the BV."""
+    return get_env().formula_manager.BVShr(left, right)
+
+def BVRol(formula, steps):
+    """Returns the LEFT rotation of the BV by the number of steps."""
+    return get_env().formula_manager.BVRol(formula, steps)
+
+def BVRor(formula, steps):
+    """Returns the RIGHT rotation of the BV by the number of steps."""
+    return get_env().formula_manager.BVRor(formula, steps)
+
+def BVZExt(formula, width):
+    """Returns the extension of the BV to reach the given width.
+
+    New bits are set to zero.
+    """
+    return get_env().formula_manager.BVZExt(formula, width)
+
+
+def BVSExt(formula, width):
+    """Returns the signed extension of the BV to reach the given width.
+
+    New bits are set according to the most-significant-bit.
+    """
+    return get_env().formula_manager.BVSExt(formula, width)
+
 
 #### Shortcuts for Solvers Factory #####
 def Solver(quantified=False, name=None, logic=None):

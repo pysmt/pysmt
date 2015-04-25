@@ -22,7 +22,8 @@ they will be rewritten (during construction) in order to only use
 these operators.
 """
 
-ALL_TYPES = range(0,20)
+ALL_TYPES = range(0,40)
+
 
 (
 FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF, # Boolean Logic (0-6)
@@ -31,7 +32,27 @@ REAL_CONSTANT, BOOL_CONSTANT, INT_CONSTANT, # Constants (9-11)
 PLUS, MINUS, TIMES,                         # LIA/LRA operators (12-14)
 LE, LT, EQUALS,                             # LIA/LRA relations (15-17)
 ITE,                                        # Term-ite (18)
-TOREAL                                      # LIRA toreal() function (19)
+TOREAL,                                     # LIRA toreal() function (19)
+#
+# MG: FLOOR? INT_MOD_CONGR?
+#
+# BV
+BV_CONSTANT,                                # 20
+BV_NOT, BV_AND, BV_OR, BV_XOR,              # Logical Operators on Bit
+BV_CONCAT, BV_EXTRACT,                      #
+BV_ULT, BV_ULE,                             # Comparison
+BV_NEG, BV_ADD,                             # Basic arithmetic (31-33)
+BV_MUL, BV_UDIV, BV_UREM,                   # Division/Multiplication (34-38)
+BV_LSHL, BV_LSHR,                           # Shifts (39-41)
+BV_ROL, BV_ROR,                             # Rotation (42-43)
+BV_ZEXT, BV_SEXT,                           # Extension (44-45)
+# BV Operators to be supported in the future
+# BV_SLT, BV_SLE
+# BV_COMP
+# BV_SUB
+# BV_SDIV
+# BV_SREM
+# BV_ASHR
 ) = ALL_TYPES
 
 QUANTIFIERS = frozenset([FORALL, EXISTS])
@@ -42,8 +63,12 @@ BOOL_OPERATORS = frozenset(QUANTIFIERS | BOOL_CONNECTIVES)
 
 RELATIONS = frozenset([LE, LT, EQUALS])
 
-CONSTANTS = frozenset([REAL_CONSTANT, BOOL_CONSTANT, INT_CONSTANT])
+CONSTANTS = frozenset([REAL_CONSTANT, BOOL_CONSTANT, INT_CONSTANT, BV_CONSTANT])
 
+BV_OPERATORS = frozenset([BV_CONSTANT, BV_NOT, BV_AND, BV_OR, BV_XOR,
+                          BV_CONCAT, BV_EXTRACT, BV_ULT, BV_ULE, BV_NEG, BV_ADD, BV_MUL,
+                          BV_UDIV, BV_UREM, BV_LSHL, BV_LSHR, BV_ROL, BV_ROR,
+                          BV_ZEXT, BV_SEXT])
 CUSTOM_NODE_TYPES = []
 
 def new_node_type(new_node_id=None):

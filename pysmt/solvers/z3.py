@@ -36,7 +36,7 @@ from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               ConvertExpressionError)
 from pysmt.decorators import clear_pending_pop
 
-from pysmt.logics import LRA, LIA, PYSMT_LOGICS
+from pysmt.logics import LRA, LIA, PYSMT_LOGICS, BV_LOGICS
 from pysmt.oracles import get_logic
 
 
@@ -73,7 +73,7 @@ class Z3Model(Model):
 class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
                SmtLibBasicSolver, SmtLibIgnoreMixin):
 
-    LOGICS = PYSMT_LOGICS
+    LOGICS = PYSMT_LOGICS - BV_LOGICS
 
     def __init__(self, environment, logic, user_options):
         IncrementalTrackingSolver.__init__(self,

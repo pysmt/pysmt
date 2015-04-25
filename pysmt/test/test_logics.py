@@ -20,7 +20,9 @@ import unittest
 import pysmt.logics
 from pysmt.logics import get_logic_by_name, get_logic, most_generic_logic
 from pysmt.logics import PYSMT_LOGICS
-from pysmt.exceptions import UndefinedLogicError, NoSolverAvailableError
+from pysmt.logics import QF_LIA, LIA, UFLIRA, LRA, QF_UFLIRA, QF_BV
+from pysmt.exceptions import (UndefinedLogicError, NoSolverAvailableError,
+                              NoLogicAvailableError)
 from pysmt.shortcuts import Solver, get_env
 
 
@@ -114,11 +116,10 @@ class TestLogic(unittest.TestCase):
             Solver(logic=pysmt.logics.QF_ABV)
 
         with self.assertRaises(NoSolverAvailableError):
-            Solver(name='msat', logic=pysmt.logics.QF_BV)
+            Solver(name='picosat', logic=pysmt.logics.QF_BV)
 
 
     def test_most_generic(self):
-        from pysmt.logics import QF_LIA, LIA, UFLIRA, LRA
         self.assertTrue(QF_LIA < LIA)
         self.assertTrue(LIA < UFLIRA)
         self.assertTrue(UFLIRA > QF_LIA)
@@ -127,8 +128,11 @@ class TestLogic(unittest.TestCase):
         self.assertFalse(LRA <= LIA)
         mgl = most_generic_logic([QF_LIA, LIA, LRA, UFLIRA])
         self.assertEqual(mgl, UFLIRA)
-        mgl = most_generic_logic(PYSMT_LOGICS)
-        self.assertEqual(mgl, UFLIRA)
+        self.assertFalse(QF_BV >= QF_UFLIRA)
+        self.assertFalse(QF_BV <= QF_UFLIRA)
+        with self.assertRaises(NoLogicAvailableError):
+            most_generic_logic(PYSMT_LOGICS)
+
 
 if __name__ == "__main__":
     unittest.main()

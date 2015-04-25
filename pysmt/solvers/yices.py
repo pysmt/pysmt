@@ -17,6 +17,7 @@
 #
 import atexit
 import ctypes
+import warnings
 
 from fractions import Fraction
 from six.moves import xrange
@@ -63,7 +64,7 @@ STATUS_UNSAT = 4
 
 class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
-    LOGICS = pysmt.logics.PYSMT_QF_LOGICS
+    LOGICS = pysmt.logics.PYSMT_QF_LOGICS - pysmt.logics.BV_LOGICS
 
     def __init__(self, environment, logic, user_options):
         Solver.__init__(self,
@@ -98,6 +99,10 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
     def get_model(self):
         assignment = {}
         for s in self.environment.formula_manager.get_all_symbols():
+            if s.symbol_type().is_bv_type():
+                # Workaround for #76
+                warnings.warn("Skipping unsupported bit-vector symbol")
+                continue
             if s.is_term():
                 v = self.get_value(s)
                 assignment[s] = v

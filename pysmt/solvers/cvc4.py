@@ -15,11 +15,13 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+import warnings
 from fractions import Fraction
 from six.moves import xrange
+
 import CVC4
 
-import pysmt
+from pysmt.logics import PYSMT_QF_LOGICS, BV_LOGICS
 from pysmt.solvers.solver import Solver, Converter
 from pysmt.exceptions import SolverReturnedUnknownResultError
 from pysmt.walkers import DagWalker
@@ -27,7 +29,7 @@ from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 from pysmt.solvers.eager import EagerModel
 
 class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
-    LOGICS = pysmt.logics.PYSMT_QF_LOGICS
+    LOGICS = PYSMT_QF_LOGICS - BV_LOGICS
 
     def __init__(self, environment, logic, user_options):
         Solver.__init__(self,
@@ -64,6 +66,10 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
     def get_model(self):
         assignment = {}
         for s in self.environment.formula_manager.get_all_symbols():
+            if s.symbol_type().is_bv_type():
+                 # Workaround for #76
+                warnings.warn("Skipping unsupported bit-vector symbol")
+                continue
             if s.is_term():
                 v = self.get_value(s)
                 assignment[s] = v
@@ -267,7 +273,7 @@ class CVC4Converter(Converter, DagWalker):
             rtp = self._type_to_cvc4(tp.return_type)
             return self.cvc4_exprMgr.mkFunctionType(stps, rtp)
         else:
-            raise NotImplementedError
+            raise NotImplementedError("Unsupported type: %s" %tp)
 
     def _rename_bound_variables(self, formula, variables):
         """Bounds the variables in formula.

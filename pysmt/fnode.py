@@ -26,8 +26,16 @@ from pysmt.operators import (FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF,
                              PLUS, MINUS, TIMES,
                              LE, LT, EQUALS,
                              ITE,
-                             TOREAL)
-from pysmt.typing import BOOL, REAL, INT, PYSMT_TYPES
+                             TOREAL,
+                             BV_CONSTANT, BV_NOT, BV_AND, BV_OR, BV_XOR,
+                             BV_CONCAT, BV_EXTRACT,
+                             BV_ULT, BV_NEG, BV_ADD,
+                             BV_MUL, BV_UDIV, BV_UREM,
+                             BV_LSHL, BV_LSHR,
+                             BV_ROL, BV_ROR,
+                             BV_ZEXT, BV_SEXT,
+                             BV_OPERATORS)
+from pysmt.typing import BOOL, REAL, INT, PYSMT_TYPES, BVType
 from pysmt.decorators import deprecated
 
 FNodeContent = collections.namedtuple("FNodeContent",
@@ -87,19 +95,22 @@ class FNode(object):
         if self.node_type() not in CONSTANTS:
             return False
 
-        assert _type is None or _type in PYSMT_TYPES
         if _type is not None:
-            if _type == INT and self.node_type() != INT_CONSTANT:
+            if _type.is_int_type() and self.node_type() != INT_CONSTANT:
                 return False
-            if _type == REAL and self.node_type() != REAL_CONSTANT:
+            if _type.is_real_type() and self.node_type() != REAL_CONSTANT:
                 return False
-            if _type == BOOL and self.node_type() != BOOL_CONSTANT:
+            if _type.is_bool_type() and self.node_type() != BOOL_CONSTANT:
                 return False
+            if _type.is_bv_type():
+                if self.node_type() != BV_CONSTANT:
+                    return False
+                if self._content.payload[1] != _type.width:
+                    return False
 
         if value is not None:
-            return self._content.payload == value
-        else:
-            return True
+            return value == self.constant_value()
+        return True
 
     def is_bool_constant(self, value=None):
         return self.is_constant(BOOL, value)
@@ -110,6 +121,12 @@ class FNode(object):
     def is_int_constant(self, value=None):
         return self.is_constant(INT, value)
 
+    def is_bv_constant(self, value=None, width=None):
+        if width is None:
+            return self.is_constant(value=value)
+        else:
+            return self.is_constant(_type=BVType(width=width),
+                                    value=value)
 
     def is_symbol(self, type_=None):
         if type_:
@@ -180,6 +197,94 @@ class FNode(object):
     def is_lt(self):
         return self.node_type() == LT
 
+    def is_bv_op(self):
+        return self.node_type() in BV_OPERATORS
+
+    def is_bv_not(self):
+        return self.node_type() == BV_NOT
+
+    def is_bv_and(self):
+        return self.node_type() == BV_AND
+
+    def is_bv_or(self):
+        return self.node_type() == BV_OR
+
+    def is_bv_xor(self):
+        return self.node_type() == BV_XOR
+
+    def is_bv_concat(self):
+        return self.node_type() == BV_CONCAT
+
+    def is_bv_extract(self):
+        return self.node_type() == BV_EXTRACT
+
+    def is_bv_ult(self):
+        return self.node_type() == BV_ULT
+
+    def is_bv_neg(self):
+        return self.node_type() == BV_NEG
+
+    def is_bv_add(self):
+        return self.node_type() == BV_ADD
+
+    def is_bv_mul(self):
+        return self.node_type() == BV_MUL
+
+    def is_bv_udiv(self):
+        return self.node_type() == BV_UDIV
+
+    def is_bv_urem(self):
+        return self.node_type() == BV_UREM
+
+    def is_bv_lshl(self):
+        return self.node_type() == BV_LSHL
+
+    def is_bv_lshr(self):
+        return self.node_type() == BV_LSHR
+
+    def is_bv_rol(self):
+        return self.node_type() == BV_ROL
+
+    def is_bv_ror(self):
+        return self.node_type() == BV_ROR
+
+    def is_bv_zext(self):
+        return self.node_type() == BV_ZEXT
+
+    def is_bv_sext(self):
+        return self.node_type() == BV_SEXT
+
+    def bv_width(self):
+        if self.is_bv_constant():
+            return self._content.payload[1]
+        elif self.is_symbol():
+            assert self.symbol_type().is_bv_type()
+            return self.symbol_type().width
+        elif self.is_function_application():
+            # Return width defined in the declaration
+            return self.function_name().symbol_type().return_type.width
+        elif self.is_ite():
+            # Recursively call bv_width on the left child
+            # (The right child has the same width if the node is well-formed)
+            width_l = self.arg(1).bv_width()
+            return width_l
+        else:
+            # BV Operator
+            assert self.is_bv_op(), "Unsupported method bv_width on %s" % self
+            return self._content.payload[0]
+
+    def bv_extract_start(self):
+        assert self.is_bv_extract()
+        return self._content.payload[1]
+
+    def bv_extract_end(self):
+        assert self.is_bv_extract()
+        return self._content.payload[2]
+
+    def bv_rotation_step(self):
+        assert self.is_bv_ror() or self.is_bv_rol()
+        return self._content.payload[1]
+
     def __str__(self):
         return self.serialize(threshold=5)
 
@@ -216,6 +321,8 @@ class FNode(object):
         return self._content.payload[0]
 
     def constant_value(self):
+        if self.node_type() == BV_CONSTANT:
+            return self._content.payload[0]
         return self._content.payload
 
     def function_name(self):

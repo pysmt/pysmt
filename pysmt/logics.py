@@ -246,6 +246,8 @@ class Logic(object):
     def __gt__(self, other):
         return (other.__lt__(self))
 
+    def __hash__(self):
+        return hash(self.name)
 
 # Logics
 
@@ -537,51 +539,53 @@ symbols.""",
 AUTO = Logic(name="Auto",
              description="Special logic used to indicate that the logic to be used depends on the formula.")
 
-SMTLIB2_LOGICS = [ AUFLIA,
-                   AUFLIRA,
-                   AUFNIRA,
-                   ALIA,
-                   LRA,
-                   LIA,
-                   NIA,
-                   NRA,
-                   UFLRA,
-                   UFNIA,
-                   UFLIRA,
-                   QF_ABV,
-                   QF_AUFBV,
-                   QF_AUFLIA,
-                   QF_ALIA,
-                   QF_AX,
-                   QF_BV,
-                   QF_IDL,
-                   QF_LIA,
-                   QF_LRA,
-                   QF_NIA,
-                   QF_NRA,
-                   QF_RDL,
-                   QF_UF,
-                   QF_UFBV ,
-                   QF_UFIDL,
-                   QF_UFLIA,
-                   QF_UFLRA,
-                   QF_UFNRA,
-                   QF_UFNIA,
-                   QF_UFLIRA
-               ]
+SMTLIB2_LOGICS = frozenset([ AUFLIA,
+                             AUFLIRA,
+                             AUFNIRA,
+                             ALIA,
+                             LRA,
+                             LIA,
+                             NIA,
+                             NRA,
+                             UFLRA,
+                             UFNIA,
+                             UFLIRA,
+                             QF_ABV,
+                             QF_AUFBV,
+                             QF_AUFLIA,
+                             QF_ALIA,
+                             QF_AX,
+                             QF_BV,
+                             QF_IDL,
+                             QF_LIA,
+                             QF_LRA,
+                             QF_NIA,
+                             QF_NRA,
+                             QF_RDL,
+                             QF_UF,
+                             QF_UFBV ,
+                             QF_UFIDL,
+                             QF_UFLIA,
+                             QF_UFLRA,
+                             QF_UFNRA,
+                             QF_UFNIA,
+                             QF_UFLIRA
+                         ])
 
-LOGICS = SMTLIB2_LOGICS + [ QF_BOOL, BOOL ]
+LOGICS = SMTLIB2_LOGICS | frozenset([ QF_BOOL, BOOL ])
 
-QF_LOGICS = [_l for _l in LOGICS if _l.quantifier_free]
+QF_LOGICS = frozenset(_l for _l in LOGICS if _l.quantifier_free)
 
 #
 # This is the set of logics supported by the current version of pySMT
 #
-PYSMT_LOGICS = [QF_BOOL, QF_IDL, QF_LIA, QF_LRA, QF_RDL, QF_UF, QF_UFIDL,
-                QF_UFLIA, QF_UFLRA, QF_UFLIRA,
-                BOOL, LRA, LIA, UFLIRA, UFLRA ]
+PYSMT_LOGICS = frozenset([QF_BOOL, QF_IDL, QF_LIA, QF_LRA, QF_RDL, QF_UF, QF_UFIDL,
+                          QF_UFLIA, QF_UFLRA, QF_UFLIRA,
+                          BOOL, LRA, LIA, UFLIRA, UFLRA,
+                          QF_BV, QF_UFBV])
+BV_LOGICS = frozenset([QF_BV, QF_UFBV])
 
-PYSMT_QF_LOGICS = [_l for _l in PYSMT_LOGICS if _l.quantifier_free]
+PYSMT_QF_LOGICS = frozenset(_l for _l in PYSMT_LOGICS if _l.quantifier_free)
 
 
 def get_logic_by_name(name):

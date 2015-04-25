@@ -186,6 +186,98 @@ class HRPrinter(TreeWalker):
             self.stream.write("False")
         return
 
+    def walk_bv_constant(self, formula):
+        # This is the simplest SMT-LIB way of printing the value of a BV
+        # self.stream.write("(_ bv%d %d)" % (formula.bv_width(),
+        #                                    formula.constant_value()))
+        self.stream.write("%d_%d" % (formula.constant_value(),
+                                     formula.bv_width()))
+        return
+
+    def walk_bv_xor(self, formula):
+        self.stream.write("(")
+        self.walk(formula.arg(0))
+        self.stream.write(" xor ")
+        self.walk(formula.arg(1))
+        self.stream.write(")")
+
+    def walk_bv_concat(self, formula):
+        self.stream.write("(")
+        self.walk(formula.arg(0))
+        self.stream.write("::")
+        self.walk(formula.arg(1))
+        self.stream.write(")")
+
+    def walk_bv_extract(self, formula):
+        self.walk(formula.arg(0))
+        self.stream.write("[%d:%d]" % (formula.bv_extract_start(),
+                                       formula.bv_extract_end()))
+
+    def walk_bv_neg(self, formula):
+        self.stream.write("(- ")
+        self.walk(formula.arg(0))
+        self.stream.write(")")
+
+    def walk_bv_udiv(self, formula):
+        self.stream.write("(")
+        self.walk(formula.arg(0))
+        self.stream.write(" / ")
+        self.walk(formula.arg(1))
+        self.stream.write(")")
+
+    def walk_bv_urem(self, formula):
+        self.stream.write("(")
+        self.walk(formula.arg(0))
+        self.stream.write(" % ")
+        self.walk(formula.arg(1))
+        self.stream.write(")")
+
+    def walk_bv_lshl(self, formula):
+        self.stream.write("(")
+        self.walk(formula.arg(0))
+        self.stream.write(" << ")
+        self.walk(formula.arg(1))
+        self.stream.write(")")
+
+    def walk_bv_lshr(self, formula):
+        self.stream.write("(")
+        self.walk(formula.arg(0))
+        self.stream.write(" >> ")
+        self.walk(formula.arg(1))
+        self.stream.write(")")
+
+    def walk_bv_ror(self, formula):
+        self.stream.write("(")
+        self.walk(formula.arg(0))
+        self.stream.write(" ROR ")
+        self.stream.write("%d)" % formula.bv_rotation_step())
+
+    def walk_bv_rol(self, formula):
+        self.stream.write("(")
+        self.walk(formula.arg(0))
+        self.stream.write(" ROL ")
+        self.stream.write("%d)" % formula.bv_rotation_step())
+
+    def walk_bv_zext(self, formula):
+        self.stream.write("Zext(")
+        self.walk(formula.arg(0))
+        self.stream.write(", %d)" % formula.bv_width())
+
+    def walk_bv_sext(self, formula):
+        self.stream.write("Sext(")
+        self.walk(formula.arg(0))
+        self.stream.write(", %d)" % formula.bv_width())
+
+    # Recycling functions form LIRA
+    walk_bv_not = walk_not
+    walk_bv_and = walk_and
+    walk_bv_or = walk_or
+    walk_bv_ult = walk_lt
+    walk_bv_add = walk_plus
+    walk_bv_mul = walk_times
+
+
+
     def walk_ite(self, formula):
         self.stream.write("(")
         self.walk(formula.arg(0))

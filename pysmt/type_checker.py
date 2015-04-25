@@ -28,7 +28,7 @@ import pysmt.walkers as walkers
 import pysmt.operators as op
 import pysmt.shortcuts
 
-from pysmt.typing import BOOL, REAL, INT
+from pysmt.typing import BOOL, REAL, INT, BVType
 
 
 class SimpleTypeChecker(walkers.DagWalker):
@@ -57,8 +57,26 @@ class SimpleTypeChecker(walkers.DagWalker):
         self.functions[op.TOREAL] = self.walk_int_to_real
         self.functions[op.FUNCTION] = self.walk_function
 
-        assert self.is_complete(verbose=True)
+        self.functions[op.BV_CONSTANT] = self.walk_identity_bv
+        self.functions[op.BV_ULT] = self.walk_bv_to_bool
+        self.functions[op.BV_ULE] = self.walk_bv_to_bool
+        self.functions[op.BV_ADD] = self.walk_bv_to_bv
+        self.functions[op.BV_NOT] = self.walk_bv_to_bv
+        self.functions[op.BV_AND] = self.walk_bv_to_bv
+        self.functions[op.BV_OR] = self.walk_bv_to_bv
+        self.functions[op.BV_XOR] = self.walk_bv_to_bv
+        self.functions[op.BV_NEG] = self.walk_bv_to_bv
+        self.functions[op.BV_MUL] = self.walk_bv_to_bv
+        self.functions[op.BV_UDIV] = self.walk_bv_to_bv
+        self.functions[op.BV_UREM] = self.walk_bv_to_bv
+        self.functions[op.BV_LSHL] = self.walk_bv_to_bv
+        self.functions[op.BV_LSHR] = self.walk_bv_to_bv
+        self.functions[op.BV_ROL] = self.walk_bv_rotate
+        self.functions[op.BV_ROR] = self.walk_bv_rotate
+        self.functions[op.BV_ZEXT] = self.walk_bv_extend
+        self.functions[op.BV_SEXT] = self.walk_bv_extend
 
+        assert self.is_complete(verbose=True)
         self.be_nice = False
 
     def _get_key(self, formula, **kwargs):
@@ -95,11 +113,72 @@ class SimpleTypeChecker(walkers.DagWalker):
             rval = self.walk_type_to_type(formula, args, INT, INT)
         return rval
 
+    def walk_bv_to_bv(self, formula, args):
+        # We check that all children are BV and the same size
+        target_bv_type = BVType(formula.bv_width())
+        for a in args:
+            if not a == target_bv_type:
+                return None
+        return target_bv_type
+
+    def walk_bv_to_bool(self, formula, args):
+        width = args[0].width
+        for a in args[1:]:
+            if width != a.width:
+                return None
+        return BOOL
+
+    def walk_bv_concat(self, formula, args):
+        # Width of BV operators are computed at construction time.
+        # The type-checker only verifies that they are indeed
+        # correct.
+        try:
+            l_width = args[0].width
+            r_width = args[1].width
+            target_width = formula.bv_width()
+        except AttributeError:
+            return None
+        if not l_width + r_width == target_width:
+            None
+        return BVType(target_width)
+
+    def walk_bv_extract(self, formula, args):
+        arg = args[0]
+        if not arg.is_bv_type():
+            return None
+        base_width = arg.width
+        target_width, start, end = formula._content.payload
+        if start >= base_width or end >= base_width:
+            return None
+        if base_width < target_width:
+            return None
+        if target_width != (end-start+1):
+            return None
+        return BVType(target_width)
+
+    def walk_bv_rotate(self, formula, args):
+        target_width = formula.bv_width()
+        if target_width < formula.bv_rotation_step() or target_width < 0:
+            return None
+        if target_width != args[0].width:
+            return None
+        return BVType(target_width)
+
+    def walk_bv_extend(self, formula, args):
+        target_width = formula.bv_width()
+        if target_width < args[0].width or target_width < 0:
+            return None
+        return BVType(target_width)
+
+
     def walk_math_relation(self, formula, args):
-        rval = self.walk_type_to_type(formula, args, REAL, BOOL)
-        if rval is None:
-            rval = self.walk_type_to_type(formula, args, INT, BOOL)
-        return rval
+        if args[0].is_real_type():
+            return self.walk_type_to_type(formula, args, REAL, BOOL)
+        if args[0].is_int_type():
+            return self.walk_type_to_type(formula, args, INT, BOOL)
+        if args[0].is_bv_type():
+            return self.walk_bv_to_bool(formula, args)
+        return None
 
     def walk_ite(self, formula, args):
         assert formula is not None
@@ -122,6 +201,11 @@ class SimpleTypeChecker(walkers.DagWalker):
         assert formula is not None
         assert len(args) == 0
         return INT
+
+    def walk_identity_bv(self, formula, args):
+        assert formula is not None
+        assert len(args) == 0
+        return BVType(formula.bv_width())
 
     def walk_symbol(self, formula, args):
         assert formula is not None

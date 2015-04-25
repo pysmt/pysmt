@@ -26,7 +26,8 @@ from pysmt.shortcuts import get_env, get_model, is_valid, is_sat
 from pysmt.typing import BOOL, REAL, FunctionType
 from pysmt.test import TestCase, skipIfSolverNotAvailable, skipIfNoSolverForLogic
 from pysmt.test.examples import get_example_formulae
-from pysmt.exceptions import SolverReturnedUnknownResultError, InternalSolverError
+from pysmt.exceptions import (SolverReturnedUnknownResultError,
+                              InternalSolverError, NoSolverAvailableError)
 from pysmt.logics import QF_UFLIRA, QF_BOOL, QF_LRA, AUTO
 
 class TestBasic(TestCase):
@@ -169,30 +170,33 @@ class TestBasic(TestCase):
     def do_model(self, solver_name):
         for (f, _, satisfiability, logic) in get_example_formulae():
             if satisfiability and not logic.theory.uninterpreted and logic.quantifier_free:
-                with Solver(name=solver_name) as s:
-                    s.add_assertion(f)
+                try:
+                    with Solver(name=solver_name, logic=logic) as s:
+                        s.add_assertion(f)
 
-                    check = s.solve()
-                    self.assertTrue(check)
+                        check = s.solve()
+                        self.assertTrue(check)
 
-                    # Ask single values to the solver
-                    subs = {}
-                    for d in f.get_free_variables():
-                        m = s.get_value(d)
-                        subs[d] = m
+                        # Ask single values to the solver
+                        subs = {}
+                        for d in f.get_free_variables():
+                            m = s.get_value(d)
+                            subs[d] = m
 
-                    simp = f.substitute(subs).simplify()
-                    self.assertEqual(simp, TRUE())
+                        simp = f.substitute(subs).simplify()
+                        self.assertEqual(simp, TRUE(), "%s -- %s" % (f, subs))
 
-                    # Ask the eager model
-                    subs = {}
-                    model = s.get_model()
-                    for d in f.get_free_variables():
-                        m = model.get_value(d)
-                        subs[d] = m
+                        # Ask the eager model
+                        subs = {}
+                        model = s.get_model()
+                        for d in f.get_free_variables():
+                            m = model.get_value(d)
+                            subs[d] = m
 
-                    simp = f.substitute(subs).simplify()
-                    self.assertEqual(simp, TRUE())
+                        simp = f.substitute(subs).simplify()
+                        self.assertEqual(simp, TRUE())
+                except NoSolverAvailableError:
+                    pass
 
     @skipIfSolverNotAvailable("cvc4")
     def test_model_cvc4(self):
@@ -209,6 +213,11 @@ class TestBasic(TestCase):
     @skipIfSolverNotAvailable("yices")
     def test_model_yices(self):
         self.do_model("yices")
+
+    @skipIfSolverNotAvailable("picosat")
+    def test_model_picosat(self):
+        self.do_model("picosat")
+
 
     @skipIfSolverNotAvailable("z3")
     def test_examples_z3(self):

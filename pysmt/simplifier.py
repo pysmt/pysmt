@@ -31,6 +31,9 @@ class Simplifier(walkers.DagWalker):
         self.functions[op.BOOL_CONSTANT] = self.walk_identity
         self.functions[op.INT_CONSTANT] = self.walk_identity
 
+        for bvop in op.BV_OPERATORS:
+            self.functions[bvop] = self.walk_identity
+
         self._validate_simplifications = None
 
     @property
