@@ -359,7 +359,10 @@ class MSatConverter(Converter, DagWalker):
             elif mathsat.msat_is_rational_type(self.msat_env, ty):
                 res = types.REAL
             else:
-                raise NotImplementedError
+                assert "_" in str(term), "Unrecognized type for '%s'" % str(term)
+                width = int(str(term).split("_")[1])
+                res = types.BVType(width)
+
 
         elif mathsat.msat_term_is_and(self.msat_env, term) or \
              mathsat.msat_term_is_or(self.msat_env, term) or \
@@ -396,13 +399,30 @@ class MSatConverter(Converter, DagWalker):
             elif mathsat.msat_is_integer_type(self.msat_env, ty):
                 res = types.INT
             else:
-                raise NotImplementedError("Unsupported variable type found")
+                _, width = mathsat.msat_is_bv_type(self.msat_env, ty)
+                assert width is not None, "Unsupported type for '%s'" % str(term)
+                res = types.BVType(width)
 
         elif mathsat.msat_term_is_uf(self.msat_env, term):
             d = mathsat.msat_term_get_decl(term)
             fun = self.get_symbol_from_declaration(d)
             res = fun.symbol_type()
 
+        elif  mathsat.msat_term_is_bv_times(self.msat_env, term) or \
+              mathsat.msat_term_is_bv_plus(self.msat_env, term) or \
+              mathsat.msat_term_is_bv_minus(self.msat_env, term) or \
+              mathsat.msat_term_is_bv_or(self.msat_env, term) or \
+              mathsat.msat_term_is_bv_and(self.msat_env, term) or \
+              mathsat.msat_term_is_bv_lshl(self.msat_env, term) or \
+              mathsat.msat_term_is_bv_lshr(self.msat_env, term) or \
+              mathsat.msat_term_is_bv_ashr(self.msat_env, term) or \
+              mathsat.msat_term_is_bv_xor(self.msat_env, term) or \
+              mathsat.msat_term_is_bv_urem(self.msat_env, term) or \
+              mathsat.msat_term_is_bv_udiv(self.msat_env, term) or \
+              mathsat.msat_term_is_bv_sdiv(self.msat_env, term) or \
+              mathsat.msat_term_is_bv_srem(self.msat_env, term):
+            t = self.env.stc.get_type(args[0])
+            res = types.FunctionType(t, [t, t])
         else:
             raise TypeError("Unsupported expression:",
                             mathsat.msat_term_repr(term))
@@ -443,7 +463,11 @@ class MSatConverter(Converter, DagWalker):
             elif mathsat.msat_is_rational_type(self.msat_env, ty):
                 res = mgr.Real(Fraction(mathsat.msat_term_repr(term)))
             else:
-                raise NotImplementedError
+                assert "_" in str(term), "Unsupported type for '%s'" % str(term)
+                val, width = str(term).split("_")
+                val = int(val)
+                width = int(width)
+                res = mgr.BV(val, width)
 
         elif mathsat.msat_term_is_and(self.msat_env, term):
             res = mgr.And(args)
@@ -491,12 +515,28 @@ class MSatConverter(Converter, DagWalker):
             elif mathsat.msat_is_integer_type(self.msat_env, ty):
                 res = mgr.Symbol(rep, types.INT)
             else:
-                raise NotImplementedError("Unsupported variable type found")
+                _, width = mathsat.msat_is_bv_type(self.msat_env, ty)
+                assert width is not None, "Unsupported variable type for '%s'"%str(term)
+                res = mgr.Symbol(rep, types.BVType(width))
+
 
         elif mathsat.msat_term_is_uf(self.msat_env, term):
             d = mathsat.msat_term_get_decl(term)
             fun = self.get_symbol_from_declaration(d)
             res = mgr.Function(fun, args)
+
+        elif mathsat.msat_term_is_bv_times(self.msat_env, term):
+            assert arity == 2
+            res = mgr.BVMul(args[0], args[1])
+        elif mathsat.msat_term_is_bv_plus(self.msat_env, term):
+            assert arity == 2
+            res = mgr.BVAdd(args[0], args[1])
+        elif mathsat.msat_term_is_bv_udiv(self.msat_env, term):
+            assert arity == 2
+            res = mgr.BVUDiv(args[0], args[1])
+        elif mathsat.msat_term_is_bv_urem(self.msat_env, term):
+            assert arity == 2
+            res = mgr.BVURem(args[0], args[1])
 
         else:
             raise TypeError("Unsupported expression:",
@@ -692,12 +732,12 @@ class MSatConverter(Converter, DagWalker):
 
     def walk_bv_zext(self, formula, args):
         return mathsat.msat_make_bv_zext(self.msat_env,
-                                         formula.bv_width(),
+                                         formula.bv_extend_step(),
                                          args[0])
 
     def walk_bv_sext (self, formula, args):
         return mathsat.msat_make_bv_sext(self.msat_env,
-                                         formula.bv_width(),
+                                         formula.bv_extend_step(),
                                          args[0])
 
 

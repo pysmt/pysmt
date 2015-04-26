@@ -184,7 +184,7 @@ class TestBasic(TestCase):
                             subs[d] = m
 
                         simp = f.substitute(subs).simplify()
-                        self.assertEqual(simp, TRUE(), "%s -- %s" % (f, subs))
+                        self.assertEqual(simp, TRUE(), "%s -- %s :> %s" % (f, subs, simp))
 
                         # Ask the eager model
                         subs = {}
@@ -234,8 +234,8 @@ class TestBasic(TestCase):
                 v = is_valid(f, logic=logic)
                 s = is_sat(f, logic=logic)
 
-                self.assertEqual(validity, v, f)
-                self.assertEqual(satisfiability, s, f)
+                self.assertEqual(validity, v, f.serialize())
+                self.assertEqual(satisfiability, s, f.serialize())
 
 
     def test_solving_under_assumption(self):

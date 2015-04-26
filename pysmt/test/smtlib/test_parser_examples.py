@@ -17,10 +17,12 @@
 #
 from six.moves import cStringIO
 
-from pysmt.test import TestCase
+from pysmt.test import TestCase, skipIfNoSolverForLogic
 from pysmt.test.examples import get_example_formulae
 from pysmt.smtlib.parser import SmtLibParser
 from pysmt.smtlib.script import smtlibscript_from_formula
+from pysmt.shortcuts import Iff
+from pysmt.logics import QF_BV
 
 
 class TestSMTParseExamples(TestCase):
@@ -28,7 +30,10 @@ class TestSMTParseExamples(TestCase):
     def test_parse_examples(self):
         fs = get_example_formulae()
 
-        for (f_out, _, _, _) in fs:
+        for (f_out, _, _, logic) in fs:
+            if logic == QF_BV:
+                # See test_parse_examples_bv
+                continue
             buf_out = cStringIO()
             script_out = smtlibscript_from_formula(f_out)
             script_out.serialize(outstream=buf_out)
@@ -37,19 +42,64 @@ class TestSMTParseExamples(TestCase):
             parser = SmtLibParser()
             script_in = parser.get_script(buf_in)
             f_in = script_in.get_last_formula()
+
             self.assertEqual(f_in, f_out)
 
 
-    def test_parse_examples_daggified(self):
+    @skipIfNoSolverForLogic(QF_BV)
+    def test_parse_examples_bv(self):
+        """For BV we represent a superset of the operators defined in SMT-LIB.
+
+        We verify the correctness of the serialization process by
+        checking the equivalence of the original and serialized
+        expression.
+        """
         fs = get_example_formulae()
 
-        for (f_out, _, _, _) in fs:
+        for (f_out, _, _, logic) in fs:
+            if logic != QF_BV:
+                continue
             buf_out = cStringIO()
             script_out = smtlibscript_from_formula(f_out)
-            script_out.serialize(outstream=buf_out, daggify=True)
+            script_out.serialize(outstream=buf_out)
 
             buf_in = cStringIO(buf_out.getvalue())
             parser = SmtLibParser()
             script_in = parser.get_script(buf_in)
             f_in = script_in.get_last_formula()
+
+            self.assertValid(Iff(f_in, f_out))
+
+
+    def test_parse_examples_daggified(self):
+        fs = get_example_formulae()
+
+        for (f_out, _, _, logic) in fs:
+            if logic == QF_BV:
+                # See test_parse_examples_daggified_bv
+                continue
+            buf_out = cStringIO()
+            script_out = smtlibscript_from_formula(f_out)
+            script_out.serialize(outstream=buf_out, daggify=True)
+            buf_in = cStringIO(buf_out.getvalue())
+            parser = SmtLibParser()
+            script_in = parser.get_script(buf_in)
+            f_in = script_in.get_last_formula()
             self.assertEqual(f_in, f_out)
+
+    @skipIfNoSolverForLogic(QF_BV)
+    def test_parse_examples_daggified_bv(self):
+        fs = get_example_formulae()
+
+        for (f_out, _, _, logic) in fs:
+            if logic != QF_BV:
+                # See test_parse_examples_daggified
+                continue
+            buf_out = cStringIO()
+            script_out = smtlibscript_from_formula(f_out)
+            script_out.serialize(outstream=buf_out, daggify=True)
+            buf_in = cStringIO(buf_out.getvalue())
+            parser = SmtLibParser()
+            script_in = parser.get_script(buf_in)
+            f_in = script_in.get_last_formula()
+            self.assertValid(Iff(f_in, f_out), f_in.serialize())

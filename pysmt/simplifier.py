@@ -30,9 +30,7 @@ class Simplifier(walkers.DagWalker):
         self.functions[op.REAL_CONSTANT] = self.walk_identity
         self.functions[op.BOOL_CONSTANT] = self.walk_identity
         self.functions[op.INT_CONSTANT] = self.walk_identity
-
-        for bvop in op.BV_OPERATORS:
-            self.functions[bvop] = self.walk_identity
+        self.functions[op.BV_CONSTANT] = self.walk_identity
 
         self._validate_simplifications = None
 
@@ -392,5 +390,126 @@ class Simplifier(walkers.DagWalker):
             return self.manager.Real(args[0].constant_value())
         return self.manager.ToReal(args[0])
 
+    def walk_bv_and(self, formula, args):
+        if args[0].is_bv_constant() and args[1].is_bv_constant():
+            lhs = args[0].constant_value()
+            rhs = args[1].constant_value()
+            res = lhs & rhs
+            return self.manager.BV(res, width=formula.bv_width())
+        return self.manager.BVAnd(*args)
 
- # EOC Simplifier
+    def walk_bv_not(self, formula, args):
+        if args[0].is_bv_constant():
+            res = ~args[0].constant_value() & (2**formula.bv_width() - 1)
+            return self.manager.BV(res, width=formula.bv_width())
+        return self.walk_identity(formula, args)
+
+    def walk_bv_neg(self, formula, args):
+        if args[0].is_bv_constant():
+            res = - args[0].constant_value()
+            return self.manager.BV(res, width=formula.bv_width())
+        return self.walk_identity(formula, args)
+
+    def walk_bv_or(self, formula, args):
+        if args[0].is_bv_constant() and args[1].is_bv_constant:
+            res = args[0].constant_value() | args[1].constant_value()
+            return self.manager.BV(res, width=formula.bv_width())
+        return self.walk_identity(formula, args)
+
+    def walk_bv_xor(self, formula, args):
+        if args[0].is_bv_constant() and args[1].is_bv_constant:
+            res = args[0].constant_value() ^ args[1].constant_value()
+            return self.manager.BV(res, width=formula.bv_width())
+        return self.walk_identity(formula, args)
+
+    def walk_bv_add(self, formula, args):
+        if args[0].is_bv_constant() and args[1].is_bv_constant:
+            res = args[0].constant_value() + args[1].constant_value()
+            return self.manager.BV(res, width=formula.bv_width())
+        return self.walk_identity(formula, args)
+
+    def walk_bv_mul(self, formula, args):
+        if args[0].is_bv_constant() and args[1].is_bv_constant:
+            res = args[0].constant_value() * args[1].constant_value()
+            return self.manager.BV(res, width=formula.bv_width())
+        return self.walk_identity(formula, args)
+
+    def walk_bv_udiv(self, formula, args):
+        if args[0].is_bv_constant() and args[1].is_bv_constant:
+            res = args[0].bv_unsigned_value() / args[1].bv_unsigned_value()
+            return self.manager.BV(res, width=formula.bv_width())
+        return self.walk_identity(formula, args)
+
+    def walk_bv_udiv(self, formula, args):
+        if args[0].is_bv_constant() and args[1].is_bv_constant:
+            res = args[0].bv_unsigned_value() / args[1].bv_unsigned_value()
+            return self.manager.BV(res, width=formula.bv_width())
+        return self.walk_identity(formula, args)
+
+    def walk_bv_urem(self, formula, args):
+        if args[0].is_bv_constant() and args[1].is_bv_constant:
+            res = args[0].bv_unsigned_value() % args[1].bv_unsigned_value()
+            return self.manager.BV(res, width=formula.bv_width())
+        return self.walk_identity(formula, args)
+
+    def walk_bv_ult(self, formula, args):
+        if args[0].is_bv_constant() and args[1].is_bv_constant:
+            res = args[0].bv_unsigned_value() < args[1].bv_unsigned_value()
+            return self.manager.Bool(res)
+        return self.walk_identity(formula, args)
+
+    def walk_bv_ule(self, formula, args):
+        if args[0].is_bv_constant() and args[1].is_bv_constant:
+            res = args[0].bv_unsigned_value() <= args[1].bv_unsigned_value()
+            return self.manager.Bool(res)
+        return self.walk_identity(formula, args)
+
+    def walk_bv_extract(self, formula, args):
+        if args[0].is_bv_constant():
+            bitstr = args[0].bv_bin_str(reverse=True)
+            res = bitstr[formula.bv_extract_start():
+                         formula.bv_extract_end()][::-1]
+            return self.manager.BV("0b%s"%res, width=formula.bv_width())
+        return self.walk_identity(formula, args)
+
+    def walk_bv_ror(self, formula, args):
+        if args[0].is_bv_constant():
+            bitstr = args[0].bv_bin_str(reverse=True)
+            # Takes first k elements and move to end
+            slice1 = bitstr[0:formula.bv_rotation_step()]
+            slice2 = bitstr[formula.bv_rotation_step():]
+            res = (slice2 + slice1)[::-1]
+            print("ROR:", res)
+            return self.manager.BV(res)
+        return self.walk_identity(formula, args)
+
+    def walk_bv_rol(self, formula, args):
+        if args[0].is_bv_constant():
+            bitstr = args[0].bv_bin_str(reverse=True)
+            # Takes last k elements and move to beginning
+            slice1 = bitstr[0:-formula.bv_rotation_step()]
+            slice2 = bitstr[-formula.bv_rotation_step():]
+            res = (slice2 + slice1)[::-1]
+            print("ROL:", res)
+            return self.manager.BV(res)
+        return self.walk_identity(formula, args)
+
+    def walk_bv_sext(self, formula, args):
+        if args[0].is_bv_constant():
+            bitstr = args[0].bv_bin_str()
+            filler = bitstr[-1]
+            res = filler*formula.bv_extend_step() + bitstr
+            return self.manager.BV(res, width=formula.bv_width())
+        return self.walk_identity(formula, args)
+
+    def walk_bv_zext(self, formula, args):
+        if args[0].is_bv_constant():
+            bitstr = args[0].bv_bin_str()
+            filler = "0"
+            res = filler*formula.bv_extend_step() + bitstr
+            return self.manager.BV(res, width=formula.bv_width())
+        return self.walk_identity(formula, args)
+
+
+
+# EOC Simplifier

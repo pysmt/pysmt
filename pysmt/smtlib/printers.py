@@ -17,6 +17,7 @@
 #
 from functools import partial
 
+from pysmt.shortcuts import get_env
 from pysmt.walkers import TreeWalker, DagWalker
 import pysmt.operators as op
 
@@ -26,6 +27,7 @@ class SmtPrinter(TreeWalker):
         TreeWalker.__init__(self)
         self.stream = stream
         self.write = self.stream.write
+        self.mgr = get_env().formula_manager
 
         self.functions[op.FORALL] = self.walk_forall
         self.functions[op.EXISTS] = self.walk_exists
@@ -34,6 +36,7 @@ class SmtPrinter(TreeWalker):
         self.functions[op.REAL_CONSTANT] = self.walk_real_constant
         self.functions[op.BOOL_CONSTANT] = self.walk_bool_constant
         self.functions[op.INT_CONSTANT] = self.walk_int_constant
+        self.functions[op.BV_CONSTANT] = self.walk_bv_constant
 
         self.functions[op.AND] = partial(self._walk_nary, "and")
         self.functions[op.OR] = partial(self._walk_nary, "or")
@@ -48,6 +51,26 @@ class SmtPrinter(TreeWalker):
         self.functions[op.LT]     = partial(self._walk_nary, "<")
         self.functions[op.ITE]    = partial(self._walk_nary, "ite")
         self.functions[op.TOREAL] = partial(self._walk_nary, "to_real")
+
+        self.functions[op.BV_AND] = partial(self._walk_nary, "bvand")
+        self.functions[op.BV_OR] = partial(self._walk_nary, "bvor")
+        self.functions[op.BV_NOT] = partial(self._walk_nary, "bvnot")
+        self.functions[op.BV_XOR] = partial(self._walk_nary, "bvxor")
+        self.functions[op.BV_ADD] = partial(self._walk_nary, "bvadd")
+        self.functions[op.BV_NEG] = partial(self._walk_nary, "bvneg")
+        self.functions[op.BV_MUL] = partial(self._walk_nary, "bvmul")
+        self.functions[op.BV_UDIV] = partial(self._walk_nary, "bvudiv")
+        self.functions[op.BV_UREM] = partial(self._walk_nary, "bvurem")
+        self.functions[op.BV_LSHL] = partial(self._walk_nary, "bvshl")
+        self.functions[op.BV_LSHR] = partial(self._walk_nary, "bvlshr")
+        self.functions[op.BV_ULT] = partial(self._walk_nary, "bvult")
+        self.functions[op.BV_ULE] = partial(self._walk_nary, "bvule")
+        self.functions[op.BV_CONCAT] = partial(self._walk_nary, "concat")
+        self.functions[op.BV_EXTRACT] = self.walk_bv_extract
+        self.functions[op.BV_ROR] = self.walk_bv_rotate
+        self.functions[op.BV_ROL] = self.walk_bv_rotate
+        self.functions[op.BV_ZEXT] = self.walk_bv_extend
+        self.functions[op.BV_SEXT] = self.walk_bv_extend
 
 
     def printer(self, f):
@@ -97,6 +120,14 @@ class SmtPrinter(TreeWalker):
         else:
             self.write("false")
 
+    def walk_bv_constant(self, formula):
+        short_res = str(bin(formula.constant_value()))[2:]
+        if formula.constant_value() >= 0:
+            filler = "0"
+        else:
+            raise NotImplementedError
+        res = short_res.rjust(formula.bv_width(), filler)
+        self.write("#b" + res)
 
     def walk_forall(self, formula):
         self._walk_quantifier("forall", formula)
@@ -117,6 +148,34 @@ class SmtPrinter(TreeWalker):
         self.walk(formula.arg(0))
         self.write(")")
 
+    def walk_bv_extract(self, formula):
+        self.write("((_ extract %d %d) " % (formula.bv_extract_end(),
+                                            formula.bv_extract_start()))
+        self.walk(formula.arg(0))
+        self.write(")")
+
+    def walk_bv_rotate(self, formula):
+        if formula.is_bv_ror():
+            rotate_type = "rotate_right"
+        else:
+            assert formula.is_bv_rol()
+            rotate_type = "rotate_left"
+        self.write("((_ %s %d ) " % (rotate_type,
+                                     formula.bv_rotation_step()))
+        self.walk(formula.arg(0))
+        self.write(")")
+
+    def walk_bv_extend(self, formula):
+        if formula.is_bv_zext():
+            extend_type = "zero_extend"
+        else:
+            assert formula.is_bv_sext()
+            extend_type = "sign_extend"
+        self.write("((_ %s %d ) " % (extend_type,
+                                     formula.bv_extend_step()))
+        self.walk(formula.arg(0))
+        self.write(")")
+
 
 class SmtDagPrinter(DagWalker):
 
@@ -128,6 +187,7 @@ class SmtDagPrinter(DagWalker):
         self.name_seed = 0
         self.template = template
         self.names = None
+        self.mgr = get_env().formula_manager
 
         self.functions[op.FORALL] = self.walk_forall
         self.functions[op.EXISTS] = self.walk_exists
@@ -136,6 +196,7 @@ class SmtDagPrinter(DagWalker):
         self.functions[op.REAL_CONSTANT] = self.walk_real_constant
         self.functions[op.BOOL_CONSTANT] = self.walk_bool_constant
         self.functions[op.INT_CONSTANT] = self.walk_int_constant
+        self.functions[op.BV_CONSTANT] = self.walk_bv_constant
 
         self.functions[op.AND] = partial(self._walk_nary, "and")
         self.functions[op.OR] = partial(self._walk_nary, "or")
@@ -150,6 +211,26 @@ class SmtDagPrinter(DagWalker):
         self.functions[op.LT]     = partial(self._walk_nary, "<")
         self.functions[op.ITE]    = partial(self._walk_nary, "ite")
         self.functions[op.TOREAL] = partial(self._walk_nary, "to_real")
+
+        self.functions[op.BV_AND] = partial(self._walk_nary, "bvand")
+        self.functions[op.BV_OR] = partial(self._walk_nary, "bvor")
+        self.functions[op.BV_NOT] = partial(self._walk_nary, "bvnot")
+        self.functions[op.BV_XOR] = partial(self._walk_nary, "bvxor")
+        self.functions[op.BV_ADD] = partial(self._walk_nary, "bvadd")
+        self.functions[op.BV_NEG] = partial(self._walk_nary, "bvneg")
+        self.functions[op.BV_MUL] = partial(self._walk_nary, "bvmul")
+        self.functions[op.BV_UDIV] = partial(self._walk_nary, "bvudiv")
+        self.functions[op.BV_UREM] = partial(self._walk_nary, "bvurem")
+        self.functions[op.BV_LSHL] = partial(self._walk_nary, "bvshl")
+        self.functions[op.BV_LSHR] = partial(self._walk_nary, "bvlshr")
+        self.functions[op.BV_ULT] = partial(self._walk_nary, "bvult")
+        self.functions[op.BV_ULE] = partial(self._walk_nary, "bvule")
+        self.functions[op.BV_CONCAT] = partial(self._walk_nary, "concat")
+        self.functions[op.BV_EXTRACT] = self.walk_bv_extract
+        self.functions[op.BV_ROR] = self.walk_bv_rotate
+        self.functions[op.BV_ROL] = self.walk_bv_rotate
+        self.functions[op.BV_SEXT] = self.walk_bv_extend
+        self.functions[op.BV_ZEXT] = self.walk_bv_extend
 
 
     def _push_with_children_to_stack(self, formula, **kwargs):
@@ -223,12 +304,21 @@ class SmtDagPrinter(DagWalker):
         else:
             return template % (str(n) + ".0")
 
+    def walk_bv_constant(self, formula, args):
+        short_res = str(bin(formula.constant_value()))[2:]
+        if formula.constant_value() >= 0:
+            filler = "0"
+        else:
+            raise NotImplementedError
+        res = short_res.rjust(formula.bv_width(), filler)
+        return "#b" + res
+
+
     def walk_bool_constant(self, formula, args, **kwargs):
         if formula.constant_value():
             return "true"
         else:
             return "false"
-
 
     def walk_forall(self, formula, args, **kwargs):
         return self._walk_quantifier("forall", formula, args)
@@ -254,4 +344,51 @@ class SmtDagPrinter(DagWalker):
         subprinter.printer(formula.arg(0))
 
         self.write(")))")
+        return sym
+
+    def walk_bv_extract(self, formula, args):
+        assert formula is not None
+        sym = self._new_symbol()
+        self.openings += 1
+        self.write("(let ((%s ((_ extract %d %d)" % (sym,
+                                                     formula.bv_extract_end(),
+                                                     formula.bv_extract_start()))
+        for s in args:
+            self.write(" ")
+            self.write(s)
+        self.write("))) ")
+        return sym
+
+    def walk_bv_extend(self, formula, args):
+        if formula.is_bv_zext():
+            extend_type = "zero_extend"
+        else:
+            assert formula.is_bv_sext()
+            extend_type = "sign_extend"
+
+        sym = self._new_symbol()
+        self.openings += 1
+        self.write("(let ((%s ((_ %s %d)" % (sym, extend_type,
+                                                formula.bv_extend_step()))
+        for s in args:
+            self.write(" ")
+            self.write(s)
+        self.write("))) ")
+        return sym
+
+    def walk_bv_rotate(self, formula, args):
+        if formula.is_bv_ror():
+            rotate_type = "rotate_right"
+        else:
+            assert formula.is_bv_rol()
+            rotate_type = "rotate_left"
+
+        sym = self._new_symbol()
+        self.openings += 1
+        self.write("(let ((%s ((_ %s %d)" % (sym, rotate_type,
+                                             formula.bv_rotation_step()))
+        for s in args:
+            self.write(" ")
+            self.write(s)
+        self.write("))) ")
         return sym

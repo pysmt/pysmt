@@ -230,13 +230,13 @@ def BV(value, width=32):
     """Returns a constant of type BitVector."""
     return get_env().formula_manager.BV(value, width)
 
-def BVOne(value, width=32):
+def BVOne(width=32):
     """Returns the unsigned one constant BitVector."""
-    return get_env().formula_manager.BVOne(value, width)
+    return get_env().formula_manager.BVOne(width)
 
-def BVZero(value, width=32):
+def BVZero(width=32):
     """Returns the zero constant BitVector."""
-    return get_env().formula_manager.BVZero(value, width)
+    return get_env().formula_manager.BVZero(width)
 
 def BVNot(formula):
     """Returns the bitvector Not(bv)"""
@@ -286,25 +286,30 @@ def BVAdd(left, right):
     """Returns the sum of two BV."""
     return get_env().formula_manager.BVAdd(left, right)
 
+def BVSub(left, right):
+    """Returns the difference of two BV."""
+    return get_env().formula_manager.BVSub(left, right)
+
+
 def BVMul(left, right):
     """Returns the product of two BV."""
     return get_env().formula_manager.BVMul(left, right)
 
 def BVUDiv(left, right):
     """Returns the division of the two BV."""
-    return get_env().formula_manager.BVDiv(left, right)
+    return get_env().formula_manager.BVUDiv(left, right)
 
 def BVURem(left, right):
     """Returns the reminder of the two BV."""
-    return get_env().formula_manager.BVRem(left, right)
+    return get_env().formula_manager.BVURem(left, right)
 
 def BVLShl(left, right):
     """Returns the logical left shift the BV."""
-    return get_env().formula_manager.BVShl(left, right)
+    return get_env().formula_manager.BVLShl(left, right)
 
 def BVLShr(left, right):
     """Returns the logical right shift the BV."""
-    return get_env().formula_manager.BVShr(left, right)
+    return get_env().formula_manager.BVLShr(left, right)
 
 def BVRol(formula, steps):
     """Returns the LEFT rotation of the BV by the number of steps."""
@@ -314,20 +319,20 @@ def BVRor(formula, steps):
     """Returns the RIGHT rotation of the BV by the number of steps."""
     return get_env().formula_manager.BVRor(formula, steps)
 
-def BVZExt(formula, width):
-    """Returns the extension of the BV to reach the given width.
+def BVZExt(formula, increase):
+    """Returns the extension of the BV
 
     New bits are set to zero.
     """
-    return get_env().formula_manager.BVZExt(formula, width)
+    return get_env().formula_manager.BVZExt(formula, increase)
 
 
-def BVSExt(formula, width):
-    """Returns the signed extension of the BV to reach the given width.
+def BVSExt(formula, increase):
+    """Returns the signed extension of the BV
 
     New bits are set according to the most-significant-bit.
     """
-    return get_env().formula_manager.BVSExt(formula, width)
+    return get_env().formula_manager.BVSExt(formula, increase)
 
 
 #### Shortcuts for Solvers Factory #####

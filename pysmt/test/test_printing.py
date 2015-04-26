@@ -23,7 +23,6 @@ from pysmt.shortcuts import Or, And, Not, Plus, Iff, Implies
 from pysmt.shortcuts import Exists, ForAll, Ite
 from pysmt.shortcuts import Bool, Real, Int, Symbol, Function
 from pysmt.shortcuts import Times, Minus, Equals, LE, LT, ToReal
-from pysmt.shortcuts import get_env
 from pysmt.typing import REAL, INT, FunctionType
 from pysmt.smtlib.printers import SmtPrinter, SmtDagPrinter
 from pysmt.test import TestCase
