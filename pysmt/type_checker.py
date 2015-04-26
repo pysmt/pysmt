@@ -124,7 +124,7 @@ class SimpleTypeChecker(walkers.DagWalker):
     def walk_bv_to_bool(self, formula, args):
         width = args[0].width
         for a in args[1:]:
-            if width != a.width:
+            if (not a.is_bv_type()) or width != a.width:
                 return None
         return BOOL
 
