@@ -54,7 +54,7 @@ class TestEagerModel(TestCase):
 
         model = EagerModel(assignment=d)
         with self.assertRaises(TypeError):
-            model.get_value(And(x,y))
+            model.get_value(And(x,y), model_completion=False)
 
         d2 = {x:TRUE(), y:x}
         model = EagerModel(assignment=d2)
@@ -77,7 +77,7 @@ class TestEagerModel(TestCase):
 
         self.assertEqual(model.get_value(x, model_completion=False), TRUE())
         with self.assertRaises(TypeError):
-            model.get_value(Or(x,y), model_completion=False)
+            model.get_value(And(x,y), model_completion=False)
         with self.assertRaises(TypeError):
             model.get_value(p, model_completion=False)
         with self.assertRaises(TypeError):
