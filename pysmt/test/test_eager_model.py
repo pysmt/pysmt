@@ -69,12 +69,20 @@ class TestEagerModel(TestCase):
         d = {x:TRUE()}
 
         model = EagerModel(assignment=d)
-        model.complete_model([x,y,r,p])
 
         self.assertEqual(model.get_value(x), TRUE())
         self.assertEqual(model.get_value(Or(x,y)), TRUE())
         self.assertTrue(model.get_value(p).is_constant(INT))
         self.assertTrue(model.get_value(r).is_constant(REAL))
+
+        self.assertEqual(model.get_value(x, model_completion=False), TRUE())
+        with self.assertRaises(TypeError):
+            model.get_value(Or(x,y), model_completion=False)
+        with self.assertRaises(TypeError):
+            model.get_value(p, model_completion=False)
+        with self.assertRaises(TypeError):
+            model.get_value(r, model_completion=False)
+
 
     def test_contains(self):
         x, y, z = [FreshSymbol() for _ in xrange(3)]

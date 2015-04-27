@@ -189,7 +189,6 @@ class TestBasic(TestCase):
                         # Ask the eager model
                         subs = {}
                         model = s.get_model()
-                        model.complete_model(f.get_free_variables())
                         for d in f.get_free_variables():
                             m = model.get_value(d)
                             subs[d] = m
