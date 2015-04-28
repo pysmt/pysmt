@@ -504,13 +504,18 @@ class FormulaManager(object):
 
         if type(value) is str:
             if value.startswith("#b"):
-                width = len(value)-2
+                str_width = len(value)-2
                 value = int(value[2:],2)
-            elif value[0] in ["0", "1"]:
-                width = len(value)
+            elif all(v in ["0", "1"] for v in value):
+                str_width = len(value)
                 value = int(value, 2)
             else:
                 raise ValueError("Expecting binary value as string, got %s instead." % value)
+
+            if width is not None and width != str_width:
+                raise ValueError("Specified width does not match string width" \
+                                 " (%d !- %d)" % (width, str_width))
+            width = str_width
 
         if width is None:
             raise ValueError("Need to specify a width for the constant")

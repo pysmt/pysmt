@@ -402,73 +402,83 @@ class Simplifier(walkers.DagWalker):
         if args[0].is_bv_constant():
             res = ~args[0].constant_value() & (2**formula.bv_width() - 1)
             return self.manager.BV(res, width=formula.bv_width())
-        return self.walk_identity(formula, args)
+        return self.manager.BVNot(args[0])
 
     def walk_bv_neg(self, formula, args):
         if args[0].is_bv_constant():
             res = 2**formula.bv_width() - args[0].constant_value()
             res = res % 2**formula.bv_width()
             return self.manager.BV(res, width=formula.bv_width())
-        return self.walk_identity(formula, args)
+        return self.manager.BVNeg(*args)
 
     def walk_bv_or(self, formula, args):
         if args[0].is_bv_constant() and args[1].is_bv_constant:
             res = args[0].constant_value() | args[1].constant_value()
             return self.manager.BV(res, width=formula.bv_width())
-        return self.walk_identity(formula, args)
+        return self.manager.BVOr(*args)
 
     def walk_bv_xor(self, formula, args):
         if args[0].is_bv_constant() and args[1].is_bv_constant:
             res = args[0].constant_value() ^ args[1].constant_value()
             return self.manager.BV(res, width=formula.bv_width())
-        return self.walk_identity(formula, args)
+        return self.manager.BVXor(*args)
 
     def walk_bv_add(self, formula, args):
         if args[0].is_bv_constant() and args[1].is_bv_constant:
             res = args[0].constant_value() + args[1].constant_value()
             res = res % 2**formula.bv_width()
             return self.manager.BV(res, width=formula.bv_width())
-        return self.walk_identity(formula, args)
+        return self.manager.BVAdd(*args)
 
     def walk_bv_mul(self, formula, args):
         if args[0].is_bv_constant() and args[1].is_bv_constant:
             res = args[0].constant_value() * args[1].constant_value()
             res = res % 2**formula.bv_width()
             return self.manager.BV(res, width=formula.bv_width())
-        return self.walk_identity(formula, args)
+        return self.manager.BVMul(*args)
 
     def walk_bv_udiv(self, formula, args):
         if args[0].is_bv_constant() and args[1].is_bv_constant:
-            res = args[0].bv_unsigned_value() / args[1].bv_unsigned_value()
-            res = res% 2**formula.bv_width()
+            if args[1].bv_unsigned_value() == 0:
+                res = 2**formula.bv_width() - 1
+            else:
+                res = args[0].bv_unsigned_value() / args[1].bv_unsigned_value()
+                res = res% 2**formula.bv_width()
             return self.manager.BV(res, width=formula.bv_width())
-        return self.walk_identity(formula, args)
+        return self.manager.BVUdiv(*args)
 
     def walk_bv_urem(self, formula, args):
         if args[0].is_bv_constant() and args[1].is_bv_constant:
-            res = args[0].bv_unsigned_value() % args[1].bv_unsigned_value()
+            if args[1].bv_unsigned_value() == 0:
+                res = args[0].bv_unsigned_value()
+            else:
+                res = args[0].bv_unsigned_value() % args[1].bv_unsigned_value()
             return self.manager.BV(res, width=formula.bv_width())
-        return self.walk_identity(formula, args)
+        return self.manager.BVUrem(*args)
 
     def walk_bv_ult(self, formula, args):
         if args[0].is_bv_constant() and args[1].is_bv_constant:
             res = args[0].bv_unsigned_value() < args[1].bv_unsigned_value()
             return self.manager.Bool(res)
-        return self.walk_identity(formula, args)
+        return self.manager.BVULT(*args)
 
     def walk_bv_ule(self, formula, args):
         if args[0].is_bv_constant() and args[1].is_bv_constant:
             res = args[0].bv_unsigned_value() <= args[1].bv_unsigned_value()
             return self.manager.Bool(res)
-        return self.walk_identity(formula, args)
+        return self.manager.BVULE(*args)
 
     def walk_bv_extract(self, formula, args):
         if args[0].is_bv_constant():
             bitstr = args[0].bv_bin_str(reverse=True)
-            res = bitstr[formula.bv_extract_start():
-                         formula.bv_extract_end()][::-1]
-            return self.manager.BV("0b%s"%res, width=formula.bv_width())
-        return self.walk_identity(formula, args)
+            start = formula.bv_extract_start()
+            end = formula.bv_extract_end()
+            res = bitstr[start:end+1][::-1]
+            w = (end+1)-start
+            return self.manager.BV("#b%s" % res, width=w)
+        return self.manager.BVExtract(args[0],
+                                      start=formula.bv_extract_start(),
+                                      end=formula.bv_extract_end())
 
     def walk_bv_ror(self, formula, args):
         if args[0].is_bv_constant():
@@ -477,9 +487,8 @@ class Simplifier(walkers.DagWalker):
             slice1 = bitstr[0:formula.bv_rotation_step()]
             slice2 = bitstr[formula.bv_rotation_step():]
             res = (slice2 + slice1)[::-1]
-            print("ROR:", res)
             return self.manager.BV(res)
-        return self.walk_identity(formula, args)
+        return self.manager.BVRor(args[0], formula.bv_rotation_step())
 
     def walk_bv_rol(self, formula, args):
         if args[0].is_bv_constant():
@@ -488,17 +497,16 @@ class Simplifier(walkers.DagWalker):
             slice1 = bitstr[0:-formula.bv_rotation_step()]
             slice2 = bitstr[-formula.bv_rotation_step():]
             res = (slice2 + slice1)[::-1]
-            print("ROL:", res)
             return self.manager.BV(res)
-        return self.walk_identity(formula, args)
+        return self.manager.BVRol(args[0], formula.bv_rotation_step())
 
     def walk_bv_sext(self, formula, args):
         if args[0].is_bv_constant():
             bitstr = args[0].bv_bin_str()
-            filler = bitstr[-1]
+            filler = bitstr[0]
             res = filler*formula.bv_extend_step() + bitstr
             return self.manager.BV(res, width=formula.bv_width())
-        return self.walk_identity(formula, args)
+        return self.manager.BVSext(args[0], formula.bv_extend_step())
 
     def walk_bv_zext(self, formula, args):
         if args[0].is_bv_constant():
@@ -506,6 +514,29 @@ class Simplifier(walkers.DagWalker):
             filler = "0"
             res = filler*formula.bv_extend_step() + bitstr
             return self.manager.BV(res, width=formula.bv_width())
-        return self.walk_identity(formula, args)
+        return self.manager.BVZExt(args[0], formula.bv_extend_step())
+
+    def walk_bv_concat(self, formula, args):
+        if args[0].is_bv_constant() and args[1].is_bv_constant:
+            w0 = args[0].bv_width()
+            w1 = args[1].bv_width()
+            res = (2**w1) * args[0].bv_unsigned_value() + \
+                  args[1].bv_unsigned_value()
+            return self.manager.BV(res, w1 + w0)
+        return self.manager.BVConcat(*args)
+
+    def walk_bv_lshl(self, formula, args):
+        if args[0].is_bv_constant() and args[1].is_bv_constant:
+            res = args[0].bv_unsigned_value() << args[1].bv_unsigned_value()
+            w = args[0].bv_width()
+            return self.manager.BV(res % (2 ** w), w)
+        return self.manager.BVLShl(*args)
+
+    def walk_bv_lshr(self, formula, args):
+        if args[0].is_bv_constant() and args[1].is_bv_constant:
+            res = args[0].bv_unsigned_value() >> args[1].bv_unsigned_value()
+            w = args[0].bv_width()
+            return self.manager.BV(res % (2 ** w), w)
+        return self.manager.BVLShr(*args)
 
 # EOC Simplifier
