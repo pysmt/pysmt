@@ -18,7 +18,7 @@
 #
 
 export NOSE_PROCESSES=4
-export NOSE_PROCESS_TIMEOUT=180
+export NOSE_PROCESS_TIMEOUT=240
 export PYTHONDONTWRITEBYTECODE=True
 
 # Skip slow tests (-A "not slow")

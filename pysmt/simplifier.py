@@ -406,7 +406,8 @@ class Simplifier(walkers.DagWalker):
 
     def walk_bv_neg(self, formula, args):
         if args[0].is_bv_constant():
-            res = - args[0].constant_value()
+            res = 2**formula.bv_width() - args[0].constant_value()
+            res = res % 2**formula.bv_width()
             return self.manager.BV(res, width=formula.bv_width())
         return self.walk_identity(formula, args)
 
@@ -425,24 +426,21 @@ class Simplifier(walkers.DagWalker):
     def walk_bv_add(self, formula, args):
         if args[0].is_bv_constant() and args[1].is_bv_constant:
             res = args[0].constant_value() + args[1].constant_value()
+            res = res % 2**formula.bv_width()
             return self.manager.BV(res, width=formula.bv_width())
         return self.walk_identity(formula, args)
 
     def walk_bv_mul(self, formula, args):
         if args[0].is_bv_constant() and args[1].is_bv_constant:
             res = args[0].constant_value() * args[1].constant_value()
+            res = res % 2**formula.bv_width()
             return self.manager.BV(res, width=formula.bv_width())
         return self.walk_identity(formula, args)
 
     def walk_bv_udiv(self, formula, args):
         if args[0].is_bv_constant() and args[1].is_bv_constant:
             res = args[0].bv_unsigned_value() / args[1].bv_unsigned_value()
-            return self.manager.BV(res, width=formula.bv_width())
-        return self.walk_identity(formula, args)
-
-    def walk_bv_udiv(self, formula, args):
-        if args[0].is_bv_constant() and args[1].is_bv_constant:
-            res = args[0].bv_unsigned_value() / args[1].bv_unsigned_value()
+            res = res% 2**formula.bv_width()
             return self.manager.BV(res, width=formula.bv_width())
         return self.walk_identity(formula, args)
 
@@ -509,7 +507,5 @@ class Simplifier(walkers.DagWalker):
             res = filler*formula.bv_extend_step() + bitstr
             return self.manager.BV(res, width=formula.bv_width())
         return self.walk_identity(formula, args)
-
-
 
 # EOC Simplifier

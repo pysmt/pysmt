@@ -516,6 +516,11 @@ class FormulaManager(object):
             raise ValueError("Need to specify a width for the constant")
 
         if is_integer(value):
+            if value < 0:
+                raise ValueError("Cannot specify a negative value: %d" % value)
+            if value >= 2**width:
+                raise ValueError("Cannot express %d in %d bits" % (value, width))
+
             n = self.create_node(node_type=op.BV_CONSTANT,
                                  args=tuple(),
                                  payload=(value, width))

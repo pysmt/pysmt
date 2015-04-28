@@ -333,16 +333,12 @@ class FNode(object):
         return self._content.payload
 
     def bv_unsigned_value(self):
+        # TODO: We currently support only unsigned bitvectors
         value = self.constant_value()
-        if value < 0:
-            return value + (2 << self.bv_width())
         return value
 
     def bv_bin_str(self, reverse=False):
-        if self.constant_value() >= 0:
-            fstr = '{0:0%db}' % self.bv_width()
-        else:
-            fstr = '{0:1%db}' % self.bv_width()
+        fstr = '{0:0%db}' % self.bv_width()
         bitstr = fstr.format(self.constant_value())
         if reverse:
             bitstr = bitstr[::-1]
