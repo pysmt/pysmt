@@ -442,8 +442,8 @@ class Simplifier(walkers.DagWalker):
             if args[1].bv_unsigned_value() == 0:
                 res = 2**formula.bv_width() - 1
             else:
-                res = args[0].bv_unsigned_value() / args[1].bv_unsigned_value()
-                res = res% 2**formula.bv_width()
+                res = args[0].bv_unsigned_value() // args[1].bv_unsigned_value()
+                res = res % 2**formula.bv_width()
             return self.manager.BV(res, width=formula.bv_width())
         return self.manager.BVUdiv(*args)
 
