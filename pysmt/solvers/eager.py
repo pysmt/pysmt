@@ -16,7 +16,7 @@
 #   limitations under the License.
 #
 from pysmt.solvers.solver import Model
-from pysmt.shortcuts import get_env, Real, Bool, Int
+from pysmt.shortcuts import get_env
 from pysmt.typing import REAL, BOOL, INT
 
 class EagerModel(Model):
@@ -34,37 +34,54 @@ class EagerModel(Model):
         Model.__init__(self, environment)
         self.environment = environment
         self.assignment = assignment
+        # Create a copy of the assignments to memoize completions
+        self.completed_assignment = dict(self.assignment)
 
-    def get_value(self, formula):
-        r = formula.substitute(self.assignment)
+    def get_value(self, formula, model_completion=True):
+        if model_completion:
+            syms = formula.get_free_variables()
+            self._complete_model(syms)
+            r = formula.substitute(self.completed_assignment)
+        else:
+            r = formula.substitute(self.assignment)
+
         res = r.simplify()
         if not res.is_constant():
             raise TypeError("Was expecting a constant but got %s" % res)
         return res
 
-    def complete_model(self, symbols):
-        undefined_symbols = (s for s in symbols if s not in self.assignment)
+
+    def _complete_model(self, symbols):
+        undefined_symbols = (s for s in symbols
+                             if s not in self.completed_assignment)
+        mgr = self.environment.formula_manager
 
         for s in undefined_symbols:
             if not s.is_symbol():
                 raise TypeError("Was expecting a symbol but got %s" %s)
 
-            if s.is_symbol(BOOL):
-                value = Bool(False)
-            elif s.is_symbol(REAL):
-                value = Real(0)
-            elif s.is_symbol(INT):
-                value = Int(0)
+            if s.symbol_type().is_bool_type():
+                value = mgr.Bool(False)
+            elif s.symbol_type().is_real_type():
+                value = mgr.Real(0)
+            elif s.symbol_type().is_int_type():
+                value = mgr.Int(0)
+            elif s.symbol_type().is_bv_type():
+                value = mgr.BVZero(s.bv_width())
             else:
                 raise TypeError("Unhandled type for %s: %s" %
                                 (s, s.symbol_type()))
 
-            self.assignment[s] = value
+            self.completed_assignment[s] = value
+
+
+    def iterator_over(self, language):
+        for x in language:
+            yield x, self.get_value(x, model_completion=True)
 
     def __iter__(self):
         """Overloading of iterator from Model.  We iterate only on the
-        variables defined in the assignment. Call complete_model to
-        include more variables.
+        variables defined in the assignment.
         """
         return iter(self.assignment.items())
 

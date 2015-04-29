@@ -369,43 +369,46 @@ class Model(object):
         self.environment = environment
         self._converter = None
 
-    def get_value(self, formula):
+    def get_value(self, formula, model_completion=True):
         """ Returns the value of formula in the current model (if one exists).
+
+        If model_completion is True, then variables not appearing in the
+        assignment are given a default value, otherwise an error is generated.
 
         This is a simplified version of the SMT-LIB funtion get_values .
         """
         raise NotImplementedError
 
-    def get_values(self, formulae):
+    def get_values(self, formulae, model_completion=True):
         """Evaluates the values of the formulae in the current model returning
            a dictionary.
         """
         res = {}
         for f in formulae:
-            v = self.get_value(f)
+            v = self.get_value(f, model_completion=model_completion)
             res[f] = v
         return res
 
 
-    def get_py_value(self, formula):
+    def get_py_value(self, formula, model_completion=True):
         """ Returns the value of formula as a python type.
 
         E.g., Bool(True) is translated into True.
         This simplifies writing code that branches on values in the model.
         """
-        res = self.get_value(formula)
+        res = self.get_value(formula, model_completion=model_completion)
         assert res.is_constant()
         return res.constant_value()
 
 
-    def get_py_values(self, formulae):
+    def get_py_values(self, formulae, model_completion=True):
         """Evaluates the values of the formulae as python types in the current
            model returning a dictionary.
         """
 
         res = {}
         for f in formulae:
-            v = self.get_py_value(f)
+            v = self.get_py_value(f, model_completion=model_completion)
             res[f] = v
         return res
 
@@ -419,12 +422,7 @@ class Model(object):
         self._converter = value
 
     def __getitem__(self, idx):
-        return self.get_value(idx)
-
-
-    def __iter__(self):
-        for var in self.environment.formula_manager.get_all_symbols():
-            yield var, self.get_value(var)
+        return self.get_value(idx, model_completion=True)
 
     def __str__(self):
         return "\n".join([ "%s := %s" % (var, value) for (var, value) in self])

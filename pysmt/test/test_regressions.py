@@ -180,6 +180,19 @@ class TestRegressions(TestCase):
             # The modulus operator must be there
             self.assertIn("%2", str(ex.expression))
 
+    @skipIfSolverNotAvailable("msat")
+    def test_msat_partial_model(self):
+        msat = Solver(name="msat")
+        x, y = Symbol("x"), Symbol("y")
+        msat.add_assertion(x)
+        c = msat.solve()
+        self.assertTrue(c)
+
+        model = msat.get_model()
+        self.assertNotIn(y, model)
+        self.assertIn(x, model)
+        msat.exit()
+
 
 if __name__ == "__main__":
     import unittest

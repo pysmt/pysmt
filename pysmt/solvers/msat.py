@@ -288,10 +288,16 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
 
     def get_model(self):
         assignment = {}
-        for s in self.environment.formula_manager.get_all_symbols():
-            if s.is_term():
-                v = self.get_value(s)
-                assignment[s] = v
+        msat_iterator = mathsat.msat_create_model_iterator(self.msat_env)
+        while mathsat.msat_model_iterator_has_next(msat_iterator):
+            term, value = mathsat.msat_model_iterator_next(msat_iterator)
+            pysmt_term = self.converter.back(term)
+            pysmt_value = self.converter.back(value)
+            if self.environment.stc.get_type(pysmt_term).is_real_type() and \
+               pysmt_value.is_int_constant():
+                pysmt_value = self.mgr.Real(pysmt_value.constant_value())
+            assignment[pysmt_term] = pysmt_value
+        mathsat.msat_destroy_model_iterator(msat_iterator)
         return EagerModel(assignment=assignment, environment=self.environment)
 
 

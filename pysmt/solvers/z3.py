@@ -64,10 +64,28 @@ class Z3Model(Model):
         self.z3_model = z3_model
         self.converter = Z3Converter(environment)
 
-    def get_value(self, formula):
+    def get_value(self, formula, model_completion=True):
         titem = self.converter.convert(formula)
-        z3_res = self.z3_model.eval(titem, model_completion=True)
+        z3_res = self.z3_model.eval(titem, model_completion=model_completion)
         return self.converter.back(z3_res)
+
+    def iterator_over(self, language):
+        for x in language:
+            yield x, self.get_value(x, model_completion=True)
+
+    def __iter__(self):
+        """Overloading of iterator from Model.  We iterate only on the
+        variables defined in the assignment.
+        """
+        for d in self.z3_model.decls():
+            pysmt_d = self.converter.back(d)
+            yield pysmt_d, self.get_value(pysmt_d)
+
+    def __contains__(self, x):
+        """Returns whether the model contains a value for 'x'."""
+        z3_x = self.converter.convert(x)
+        return z3_x in self.z3_model.decls()
+
 
 
 class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
