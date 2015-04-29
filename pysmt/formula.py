@@ -514,7 +514,7 @@ class FormulaManager(object):
 
             if width is not None and width != str_width:
                 raise ValueError("Specified width does not match string width" \
-                                 " (%d !- %d)" % (width, str_width))
+                                 " (%d != %d)" % (width, str_width))
             width = str_width
 
         if width is None:

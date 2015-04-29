@@ -229,8 +229,8 @@ def get_example_formulae(environment=None):
             #
 
             # bv_one & bv_zero == bv_zero
-            Example(expr=Equals(BVAnd(BVOne(), BVZero()),
-                                BVZero()),
+            Example(expr=Equals(BVAnd(BVOne(32), BVZero(32)),
+                                BVZero(32)),
                     is_valid=True,
                     is_sat=True,
                     logic=pysmt.logics.QF_BV),
@@ -257,7 +257,7 @@ def get_example_formulae(environment=None):
                     logic=pysmt.logics.QF_BV),
 
             # bv_one[:7] == bv_one
-            Example(expr=Equals(BVExtract(BVOne(), end=7),
+            Example(expr=Equals(BVExtract(BVOne(32), end=7),
                                 BVOne(8)),
                     is_valid=True,
                     is_sat=True,
@@ -272,29 +272,29 @@ def get_example_formulae(environment=None):
                     logic=pysmt.logics.QF_BV),
 
             # (BV(5) rem BV(2) > bv_zero) /\ (BV(5) rem BV(2) < bv_one)
-            Example(expr=And(BVUGT(BVURem(BV(5), BV(2)), BVZero()),
-                             BVULE(BVURem(BV(5), BV(2)), BVOne())),
+            Example(expr=And(BVUGT(BVURem(BV(5, width=32), BV(2, width=32)), BVZero(32)),
+                             BVULE(BVURem(BV(5, width=32), BV(2, width=32)), BVOne(32))),
                     is_valid=True,
                     is_sat=True,
                     logic=pysmt.logics.QF_BV),
 
             # ((bv_one + (- bv_one)) << 1) >> 1 == bv_one
-            Example(expr=Equals(BVLShr(BVLShl(BVAdd(BVOne(),
-                                                  BVNeg(BVOne())),
-                                            1), 1),
-                                BVOne()),
+            Example(expr=Equals(BVLShr(BVLShl(BVAdd(BVOne(32),
+                                                    BVNeg(BVOne(32))),
+                                              1), 1),
+                                BVOne(32)),
                     is_valid=False,
                     is_sat=False,
                     logic=pysmt.logics.QF_BV),
 
             # bv_one - bv_one == bv_zero
-            Example(expr=Equals(BVSub(BVOne(), BVOne()), BVZero()),
+            Example(expr=Equals(BVSub(BVOne(32), BVOne(32)), BVZero(32)),
                     is_valid=True,
                     is_sat=True,
                     logic=pysmt.logics.QF_BV),
 
             # Rotations
-            Example(expr=Equals(BVRor(BVRol(BVOne(), 1),1), BVOne()),
+            Example(expr=Equals(BVRor(BVRol(BVOne(32), 1),1), BVOne(32)),
                     is_valid=True,
                     is_sat=True,
                     logic=pysmt.logics.QF_BV),

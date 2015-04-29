@@ -82,7 +82,6 @@ SMTLIB_TEST_FILES = [
     #
     (QF_UFBV, "small_set/QF_UFBV/btfnt_atlas_out.smt2", "unsat"),
     (QF_UFBV, "small_set/QF_UFBV/calc2_sec2_bmc10.smt2", "unsat"),
-    (QF_UFBV, "small_set/QF_UFBV/calc2_sec2_shifter_mult_bmc25.smt2", "unsat"),
 ]
 
 # We use test generation in order to be able to obtain a separate
