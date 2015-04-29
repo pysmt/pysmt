@@ -89,13 +89,16 @@ class TestGenericWrapper(TestCase):
     @unittest.skipIf(NO_WRAPPERS_AVAILABLE, "No wrapper available")
     def test_examples(self):
         for n in self.all_solvers:
-            for (f, validity, satisfiability, logic) in get_example_formulae():
-                if not logic.quantifier_free: continue
-                v = is_valid(f, solver_name=n, logic=logic)
-                s = is_sat(f, solver_name=n, logic=logic)
+            with Solver(name=n) as solver:
+                for (f, validity, satisfiability, logic) in \
+                    get_example_formulae():
+                    if logic not in solver.LOGICS: continue
 
-                self.assertEqual(validity, v, f)
-                self.assertEqual(satisfiability, s, f)
+                    v = is_valid(f, solver_name=n, logic=logic)
+                    s = is_sat(f, solver_name=n, logic=logic)
+
+                    self.assertEqual(validity, v, f)
+                    self.assertEqual(satisfiability, s, f)
 
 
     def test_redefinition(self):
