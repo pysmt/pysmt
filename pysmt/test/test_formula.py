@@ -17,6 +17,8 @@
 #
 from fractions import Fraction
 
+from six.moves import xrange
+
 import pysmt
 from pysmt.typing import BOOL, REAL, INT, FunctionType
 from pysmt.shortcuts import Symbol, is_sat, is_valid, Implies, GT, Plus
