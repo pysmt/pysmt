@@ -30,6 +30,7 @@ class Substituter(walkers.DagWalker):
         self.functions[op.REAL_CONSTANT] = self.walk_identity
         self.functions[op.INT_CONSTANT] = self.walk_identity
         self.functions[op.BOOL_CONSTANT] = self.walk_identity
+        self.functions[op.BV_CONSTANT] = self.walk_identity
 
 
     def substitute(self, formula, subs):
@@ -224,5 +225,79 @@ class Substituter(walkers.DagWalker):
         return self._substitute(self.manager.Function(formula.function_name(),
                                                       args),
                                 substitutions)
+
+    def walk_bv_not(self, formula, args, substitutions):
+        return self._substitute(self.manager.BVNot(args[0]), substitutions)
+
+    def walk_bv_and(self, formula, args, substitutions):
+        return self._substitute(self.manager.BVAnd(*args), substitutions)
+
+    def walk_bv_or(self, formula, args, substitutions):
+        return self._substitute(self.manager.BVOr(*args), substitutions)
+
+    def walk_bv_xor(self, formula, args, substitutions):
+        return self._substitute(self.manager.BVXor(args[0]), substitutions)
+
+    def walk_bv_concat(self, formula, args, substitutions):
+        return self._substitute(self.manager.BVConcat(args[0], args[1]),
+                                substitutions)
+
+    def walk_bv_extract(self, formula, args, substitutions):
+        return self._substitute(self.manager.BVExtract(args[0],
+                                                       start=formula.bv_extract_start(),
+                                                       end=formula.bv_extract_end()),
+                                substitutions)
+
+    def walk_bv_ult(self, formula, args, substitutions):
+        return self._substitute(self.manager.BVULT(args[0], args[1]),
+                                substitutions)
+
+    def walk_bv_ule(self, formula, args, substitutions):
+        return self._substitute(self.manager.BVULE(args[0], args[1]),
+                                substitutions)
+
+    def walk_bv_neg(self, formula, args, substitutions):
+        return self._substitute(self.manager.BVNeg(args[0]), substitutions)
+
+    def walk_bv_add(self, formula, args, substitutions):
+        return self._substitute(self.manager.BVAdd(*args), substitutions)
+
+    def walk_bv_mul(self, formula, args, substitutions):
+        return self._substitute(self.manager.BVMul(args[0], args[1]), substitutions)
+
+    def walk_bv_udiv(self, formula, args, substitutions):
+        return self._substitute(self.manager.BVUDiv(args[0], args[1]), substitutions)
+
+    def walk_bv_urem(self, formula, args, substitutions):
+        return self._substitute(self.manager.BVURem(args[0], args[1]), substitutions)
+
+    def walk_bv_lshl(self, formula, args, substitutions):
+        return self._substitute(self.manager.BVLShl(args[0], args[1]),
+                                substitutions)
+
+    def walk_bv_lshr(self, formula, args, substitutions):
+        return self._substitute(self.manager.BVLShr(args[0], args[1]),
+                                substitutions)
+
+    def walk_bv_rol(self, formula, args, substitutions):
+        return self._substitute(self.manager.BVRol(args[0],
+                                                   formula.bv_rotation_step()),
+                                substitutions)
+
+    def walk_bv_ror(self, formula, args, substitutions):
+        return self._substitute(self.manager.BVRor(args[0],
+                                                   formula.bv_rotation_step()),
+                                substitutions)
+
+    def walk_bv_zext(self, formula, args, substitutions):
+        return self._substitute(self.manager.BVZExt(args[0],
+                                                    formula.bv_extend_step()),
+                                substitutions)
+
+    def walk_bv_sext(self, formula, args, substitutions):
+        return self._substitute(self.manager.BVSExt(args[0],
+                                                    formula.bv_extend_step()),
+                                substitutions)
+
 
 # EOC Substituter

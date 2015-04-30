@@ -261,18 +261,19 @@ class HRPrinter(TreeWalker):
     def walk_bv_zext(self, formula):
         self.stream.write("Zext(")
         self.walk(formula.arg(0))
-        self.stream.write(", %d)" % formula.bv_width())
+        self.stream.write(", %d)" % formula.bv_extend_step())
 
     def walk_bv_sext(self, formula):
         self.stream.write("Sext(")
         self.walk(formula.arg(0))
-        self.stream.write(", %d)" % formula.bv_width())
+        self.stream.write(", %d)" % formula.bv_extend_step())
 
     # Recycling functions form LIRA
     walk_bv_not = walk_not
     walk_bv_and = walk_and
     walk_bv_or = walk_or
     walk_bv_ult = walk_lt
+    walk_bv_ule = walk_le
     walk_bv_add = walk_plus
     walk_bv_mul = walk_times
 

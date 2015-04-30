@@ -25,7 +25,14 @@ from pysmt.shortcuts import (Symbol, Function,
                              And, Iff, Or, Not, Implies, Ite,
                              LT, LE, GT, GE,
                              Times, Equals, Plus, Minus, Div, ToReal,
-                             ForAll, Exists)
+                             ForAll, Exists,
+                             BV, BVOne, BVZero,
+                             BVNot, BVAnd, BVOr, BVXor,
+                             BVConcat, BVExtract,
+                             BVULT, BVUGT, BVULE, BVUGE,
+                             BVNeg, BVAdd, BVMul, BVUDiv, BVURem, BVSub,
+                             BVLShl, BVLShr,BVRol, BVRor,
+                             BVZExt, BVSExt)
 from pysmt.typing import REAL, BOOL, INT, FunctionType, BV8, BV16
 
 
@@ -216,6 +223,88 @@ def get_example_formulae(environment=None):
                     is_valid=False,
                     is_sat=False,
                     logic=pysmt.logics.QF_UFLRA),
+
+            #
+            # BV
+            #
+
+            # bv_one & bv_zero == bv_zero
+            Example(expr=Equals(BVAnd(BVOne(32), BVZero(32)),
+                                BVZero(32)),
+                    is_valid=True,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_BV),
+
+            # ~(010) == 101
+            Example(expr=Equals(BVNot(BV("010")),
+                                BV("101")),
+                    is_valid=True,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_BV),
+
+            # "111" xor "000" == "000"
+            Example(expr=Equals(BVXor(BV("111"), BV("000")),
+                                BV("000")),
+                    is_valid=False,
+                    is_sat=False,
+                    logic=pysmt.logics.QF_BV),
+
+            # bv8 :: bv8 < bv_zero
+            Example(expr=BVULT(BVConcat(bv8, bv8),
+                               BVZero(16)),
+                    is_valid=False,
+                    is_sat=False,
+                    logic=pysmt.logics.QF_BV),
+
+            # bv_one[:7] == bv_one
+            Example(expr=Equals(BVExtract(BVOne(32), end=7),
+                                BVOne(8)),
+                    is_valid=True,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_BV),
+
+            # (((bv8 + bv_one) * bv(5)) / bv(5)) < bv(0)
+            Example(expr=BVUGT(BVUDiv(BVMul(BVAdd(bv8, BVOne(8)), BV(5, width=8)),
+                                      BV(5, width=8)),
+                               BVZero(8)),
+                    is_valid=False,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_BV),
+
+            # (BV(5) rem BV(2) > bv_zero) /\ (BV(5) rem BV(2) < bv_one)
+            Example(expr=And(BVUGT(BVURem(BV(5, width=32), BV(2, width=32)), BVZero(32)),
+                             BVULE(BVURem(BV(5, width=32), BV(2, width=32)), BVOne(32))),
+                    is_valid=True,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_BV),
+
+            # ((bv_one + (- bv_one)) << 1) >> 1 == bv_one
+            Example(expr=Equals(BVLShr(BVLShl(BVAdd(BVOne(32),
+                                                    BVNeg(BVOne(32))),
+                                              1), 1),
+                                BVOne(32)),
+                    is_valid=False,
+                    is_sat=False,
+                    logic=pysmt.logics.QF_BV),
+
+            # bv_one - bv_one == bv_zero
+            Example(expr=Equals(BVSub(BVOne(32), BVOne(32)), BVZero(32)),
+                    is_valid=True,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_BV),
+
+            # Rotations
+            Example(expr=Equals(BVRor(BVRol(BVOne(32), 1),1), BVOne(32)),
+                    is_valid=True,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_BV),
+
+            # Extensions
+            Example(expr=Equals(BVZExt(BVZero(5), 11),
+                                BVSExt(BVZero(1), 15)),
+                    is_valid=True,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_BV),
 
 
             #

@@ -81,6 +81,7 @@ SMTLIB_TEST_FILES = [
     # QF_UFBV
     #
     (QF_UFBV, "small_set/QF_UFBV/btfnt_atlas_out.smt2", "unsat"),
+    (QF_UFBV, "small_set/QF_UFBV/calc2_sec2_bmc10.smt2", "unsat"),
 ]
 
 # We use test generation in order to be able to obtain a separate
@@ -94,7 +95,7 @@ def execute_script_fname(smtfile, logic, expected_result):
     """Read and call a Solver to solve the instance"""
 
     reset_env()
-    assert os.path.exists(smtfile)
+    assert os.path.exists(smtfile), smtfile
     parser = SmtLibParser()
     script = parser.get_script_fname(smtfile)
     try:

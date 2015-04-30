@@ -23,6 +23,8 @@ General:
   select a quantifier eliminator instance supporting a given logic
   (analogously to what happens for solvers).
 
+* BitVectors: Initial support for BitVector Theory added. Only MathSAT
+  has been extended to support them.
 
 
 0.2.4: 2015-03-15  -- PicoSAT

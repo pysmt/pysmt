@@ -33,6 +33,7 @@ class TestUnsatCores(TestCase):
             if satisfiability == False:
                 with UnsatCoreSolver(name=solver_name,
                                      unsat_cores_mode="named") as solver:
+                    if logic not in solver.LOGICS: continue
                     clauses = [f]
                     if f.is_and():
                         clauses = f.get_sons()

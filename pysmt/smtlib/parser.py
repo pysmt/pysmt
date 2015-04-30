@@ -63,10 +63,7 @@ def get_formula_strict(script_stream, environment=None):
 
 
 def get_formula_fname(script_fname, environment=None, strict=True):
-
-    """
-    Returns the formula asserted at the end of the given script
-    """
+    """Returns the formula asserted at the end of the given script."""
     with utils.BufferedTextReader(script_fname) as script:
         if strict:
             return get_formula_strict(script, environment)
@@ -235,21 +232,36 @@ class SmtLibParser(object):
                            'true':mgr.TRUE(),
                            'to_real':mgr.ToReal,
                            'concat':mgr.BVConcat,
-                           'bvadd':mgr.BVAdd,
-                           'bvult':mgr.BVULT,
-                           'bvsub':mgr.BVSub,
                            'bvnot':mgr.BVNot,
-                           'bvneg':mgr.BVNeg,
                            'bvand':mgr.BVAnd,
                            'bvor':mgr.BVOr,
-                           'bvxor':mgr.BVXor,
+                           'bvneg':mgr.BVNeg,
+                           'bvadd':mgr.BVAdd,
                            'bvmul':mgr.BVMul,
                            'bvudiv':mgr.BVUDiv,
                            'bvurem':mgr.BVURem,
                            'bvshl':mgr.BVLShl,
                            'bvlshr':mgr.BVLShr,
+                           'bvsub':mgr.BVSub,
                            'bvult':mgr.BVULT,
+                           'bvxor':mgr.BVXor,
                            '_':self._smtlib_underscore,
+                           # Extended Functions
+                           'bvnand':mgr.BVNand,
+                           'bvnor':mgr.BVNor,
+                           'bvxnor':mgr.BVXnor,
+                           'bvcomp':mgr.BVComp,
+                           'bvsdiv':mgr.BVSDiv,
+                           'bvsrem':mgr.BVSRem,
+                           'bvsmod':mgr.BVSMod,
+                           'bvashr':mgr.BVAShr,
+                           'bvule':mgr.BVULE,
+                           'bvugt':mgr.BVUGT,
+                           'bvuge':mgr.BVUGE,
+                           'bvslt':mgr.BVSLT,
+                           'bvsle':mgr.BVSLE,
+                           'bvsgt':mgr.BVSGT,
+                           'bvsge':mgr.BVSGE,
                            })
 
 
@@ -277,29 +289,64 @@ class SmtLibParser(object):
         """Utility function that handles _ special function in SMTLIB"""
         mgr = self._current_env.formula_manager
         if args[0] == "extract":
-            sstart, send = args[1:]
+            send, sstart = args[1:]
             try:
                 start = int(sstart.constant_value())
                 end = int(send.constant_value())
             except ValueError:
-                raise SyntaxError("Expected number in '(_ extract) expression'")
-            return lambda x : mgr.BVExtract(x, end, start)
+                raise SyntaxError("Expected number in '_ extract' expression")
+            return lambda x : mgr.BVExtract(x, start, end)
 
-        if args[0] == "bv0":
+        elif args[0] == "zero_extend":
+            swidth = args[1]
             try:
+                width = int(swidth.constant_value())
+            except ValueError:
+                raise SyntaxError("Expected number in '_ zero_extend' expression")
+            return lambda x: mgr.BVZExt(x, width)
+
+        elif args[0] == "repeat":
+            scount = args[1]
+            try:
+                count = int(scount.constant_value())
+            except ValueError:
+                raise SyntaxError("Expected number in '_ repeat' expression")
+            return lambda x: mgr.BVRepeat(x, count)
+
+        elif args[0] == "rotate_left":
+            sstep = args[1]
+            try:
+                step = int(sstep.constant_value())
+            except ValueError:
+                raise SyntaxError("Expected number in '_ rotate_left' expression")
+            return lambda x: mgr.BVRol(x, step)
+
+        elif args[0] == "rotate_right":
+            sstep = args[1]
+            try:
+                step = int(sstep.constant_value())
+            except ValueError:
+                raise SyntaxError("Expected number in '_ rotate_left' expression")
+            return lambda x: mgr.BVRor(x, step)
+
+        elif args[0] == "sign_extend":
+            swidth = args[1]
+            try:
+                width = int(swidth.constant_value())
+            except ValueError:
+                raise SyntaxError("Expected number in '(_ sign_extend) expression'")
+            return lambda x: mgr.BVSExt(x, width)
+
+        elif args[0].startswith("bv"):
+            try:
+                v = int(args[0][2:])
                 l = int(args[1].constant_value())
             except ValueError:
-                raise SyntaxError("Expected number in '(_ bv0) expression'")
-            return mgr.BV(0, l)
-        if args[0] == "bv1":
-            try:
-                l = int(args[1].constant_value())
-            except ValueError:
-                raise SyntaxError("Expected number in '(_ bv1) expression'")
-            return mgr.BV(1, l)
+                raise SyntaxError("Expected number in '_ bv' expression: '%s'" % args)
+            return mgr.BV(v, l)
 
         else:
-            raise SyntaxError("Unexpected '_ expression'")
+            raise SyntaxError("Unexpected '_' expression '%s'" % args[0])
 
 
 
@@ -360,6 +407,20 @@ class SmtLibParser(object):
                 # This is a numerical constant
                 if "." in token:
                     res = mgr.Real(Fraction(token))
+                elif token.startswith("#"):
+                    # it is a BitVector
+                    value = None
+                    width = None
+                    if token[1] == "b":
+                        # binary
+                        width = len(token) - 2
+                        value = int("0" + token[1:], 2)
+                    else:
+                        if token[1] != "x":
+                            raise SyntaxError("Invalid bit-vector constant '%s'" % token)
+                        width = (len(token) - 2) * 16
+                        value = int("0" + token[1:], 16)
+                    res = mgr.BV(value, width)
                 else:
                     iterm = int(token)
                     # We found an integer, depending on the logic this can be
@@ -528,7 +589,7 @@ class SmtLibParser(object):
                         raise SyntaxError("Unexpected ')'")
                     lst = stack.pop()
                     fun = lst.pop(0)
-
+                    # print fun, lst
                     if not callable(fun):
                         raise NotImplementedError("Unknown function '%s'" % fun)
 

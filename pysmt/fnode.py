@@ -122,6 +122,9 @@ class FNode(object):
         return self.is_constant(INT, value)
 
     def is_bv_constant(self, value=None, width=None):
+        if value is None and width is None:
+            return self.node_type() == BV_CONSTANT
+
         if width is None:
             return self.is_constant(value=value)
         else:
@@ -285,6 +288,10 @@ class FNode(object):
         assert self.is_bv_ror() or self.is_bv_rol()
         return self._content.payload[1]
 
+    def bv_extend_step(self):
+        assert self.is_bv_zext() or self.is_bv_sext()
+        return self._content.payload[1]
+
     def __str__(self):
         return self.serialize(threshold=5)
 
@@ -324,6 +331,18 @@ class FNode(object):
         if self.node_type() == BV_CONSTANT:
             return self._content.payload[0]
         return self._content.payload
+
+    def bv_unsigned_value(self):
+        # TODO: We currently support only unsigned bitvectors
+        value = self.constant_value()
+        return value
+
+    def bv_bin_str(self, reverse=False):
+        fstr = '{0:0%db}' % self.bv_width()
+        bitstr = fstr.format(self.constant_value())
+        if reverse:
+            bitstr = bitstr[::-1]
+        return bitstr
 
     def function_name(self):
         return self._content.payload

@@ -504,18 +504,28 @@ class FormulaManager(object):
 
         if type(value) is str:
             if value.startswith("#b"):
-                width = len(value)-2
+                str_width = len(value)-2
                 value = int(value[2:],2)
-            elif value[0] in ["0", "1"]:
-                width = len(value)
+            elif all(v in ["0", "1"] for v in value):
+                str_width = len(value)
                 value = int(value, 2)
             else:
                 raise ValueError("Expecting binary value as string, got %s instead." % value)
+
+            if width is not None and width != str_width:
+                raise ValueError("Specified width does not match string width" \
+                                 " (%d != %d)" % (width, str_width))
+            width = str_width
 
         if width is None:
             raise ValueError("Need to specify a width for the constant")
 
         if is_integer(value):
+            if value < 0:
+                raise ValueError("Cannot specify a negative value: %d" % value)
+            if value >= 2**width:
+                raise ValueError("Cannot express %d in %d bits" % (value, width))
+
             n = self.create_node(node_type=op.BV_CONSTANT,
                                  args=tuple(),
                                  payload=(value, width))
@@ -564,9 +574,9 @@ class FormulaManager(object):
 
     def BVExtract(self, formula, start=0, end=None):
         """Returns the slice of formula from start to end (inclusive)."""
-        if end is None: end = formula.bv_width()
+        if end is None: end = formula.bv_width()-1
         assert is_integer(start) and is_integer(end)
-        assert end >= start and start >= 0
+        assert end >= start and start >= 0, "Start: %d ; End: %d" % (start,end)
         size = end-start+1
 
         assert size <= formula.bv_width(), \
@@ -610,6 +620,7 @@ class FormulaManager(object):
 
     def BVSub(self, left, right):
         """Returns the difference of two BV."""
+        # TODO: Implement with ad-hoc operator
         return self.BVAdd(left, self.BVNeg(right))
 
     def BVMul(self, left, right):
@@ -662,27 +673,70 @@ class FormulaManager(object):
                                 args=(formula,),
                                 payload=(formula.bv_width(), steps))
 
-    def BVZExt(self, formula, width):
-        """Returns the extension of the BV to reach the given width.
+    def BVZExt(self, formula, increase):
+        """Returns the extension of the BV with 'increase' additional bits
 
         New bits are set to zero.
         """
-        if not is_integer(width):
-            raise TypeError("BVZext: 'width' should be an integer. Got %s" % width)
+        if not is_integer(increase):
+            raise TypeError("BVZext: 'increase' should be an integer. Got %s" % increase)
         return self.create_node(node_type=op.BV_ZEXT,
                                 args=(formula,),
-                                payload=(width, ))
+                                payload=(formula.bv_width()+increase,
+                                         increase))
 
-    def BVSExt(self, formula, width):
-        """Returns the signed extension of the BV to reach the given width.
+    def BVSExt(self, formula, increase):
+        """Returns the signed extension of the BV with 'increase' additional bits
 
         New bits are set according to the most-significant-bit.
         """
-        if not is_integer(width):
-            raise TypeError("BVSext: 'width' should be an integer. Got %s" % width)
+        if not is_integer(increase):
+            raise TypeError("BVSext: 'increase' should be an integer. Got %s" % increase)
         return self.create_node(node_type=op.BV_SEXT,
                                 args=(formula,),
-                                payload=(width, ))
+                                payload=(formula.bv_width()+increase,
+                                         increase))
+
+    def BVSLT(self, left, right):
+        raise NotImplementedError
+
+    def BVSLE(self, left, right):
+        raise NotImplementedError
+
+    def BVComp(self, left, right):
+        raise NotImplementedError
+
+    def BVSDiv(self, left, right):
+        raise NotImplementedError
+
+    def BVSRem(self, left, right):
+        raise NotImplementedError
+
+    def BVAShr(self, left, right):
+        raise NotImplementedError
+
+    def BVNand(self, left, right):
+        return self.BVNot(self.BVAnd(left, right))
+
+    def BVNor(self, left, right):
+        return self.BVNot(self.BVOr(left, right))
+
+    def BVXnor(self, left, right):
+        return self.BVOr(self.BVAnd(left, self.BVNot(right)),
+                         self.BVAnd(self.BVNot(left), right))
+
+    def BVSGT(self, left, right):
+        return self.BVSLT(right, left)
+
+    def BVSGE(self, left, right):
+        return self.BVSGE(left, right)
+
+    def BVSMod(self, left, right):
+        raise NotImplementedError("It is unclear how to encode BVSMod")
+
+    def BVRepeat(self, formula, count=1):
+        raise NotImplementedError
+
 
 
     def normalize(self, formula):

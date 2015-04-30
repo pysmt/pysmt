@@ -28,7 +28,7 @@ from pysmt.test import TestCase, skipIfSolverNotAvailable, skipIfNoSolverForLogi
 from pysmt.test.examples import get_example_formulae
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               InternalSolverError, NoSolverAvailableError)
-from pysmt.logics import QF_UFLIRA, QF_BOOL, QF_LRA, AUTO
+from pysmt.logics import QF_UFLIRA, QF_BOOL, QF_LRA, QF_BV, AUTO
 
 class TestBasic(TestCase):
 
@@ -143,6 +143,7 @@ class TestBasic(TestCase):
     @skipIfSolverNotAvailable("cvc4")
     def test_examples_cvc4(self):
         for (f, validity, satisfiability, logic) in get_example_formulae():
+            if logic == QF_BV: continue
             try:
                 if not logic.quantifier_free: continue
                 v = is_valid(f, solver_name='cvc4')
@@ -158,6 +159,7 @@ class TestBasic(TestCase):
     @skipIfSolverNotAvailable("yices")
     def test_examples_yices(self):
         for (f, validity, satisfiability, logic) in get_example_formulae():
+            if logic == QF_BV: continue
             if not logic.quantifier_free: continue
             v = is_valid(f, solver_name='yices')
             s = is_sat(f, solver_name='yices')
@@ -184,7 +186,7 @@ class TestBasic(TestCase):
                             subs[d] = m
 
                         simp = f.substitute(subs).simplify()
-                        self.assertEqual(simp, TRUE(), "%s -- %s" % (f, subs))
+                        self.assertEqual(simp, TRUE(), "%s -- %s :> %s" % (f, subs, simp))
 
                         # Ask the eager model
                         subs = {}
@@ -221,7 +223,8 @@ class TestBasic(TestCase):
 
     @skipIfSolverNotAvailable("z3")
     def test_examples_z3(self):
-        for (f, validity, satisfiability, _) in get_example_formulae():
+        for (f, validity, satisfiability, logic) in get_example_formulae():
+            if logic == QF_BV: continue
             v = is_valid(f, solver_name='z3')
             s = is_sat(f, solver_name='z3')
 
@@ -234,8 +237,8 @@ class TestBasic(TestCase):
                 v = is_valid(f, logic=logic)
                 s = is_sat(f, logic=logic)
 
-                self.assertEqual(validity, v, f)
-                self.assertEqual(satisfiability, s, f)
+                self.assertEqual(validity, v, f.serialize())
+                self.assertEqual(satisfiability, s, f.serialize())
 
 
     def test_solving_under_assumption(self):

@@ -136,7 +136,7 @@ class _BVType(PySMTType):
 
     def as_smtlib(self, funstyle=True):
         if funstyle:
-            return "() (_ BitVec %d)"
+            return "() (_ BitVec %d)" % self.width
         else:
             return "(_ BitVec %d)" % self.width
 

@@ -162,6 +162,14 @@ class TheoryOracle(walkers.DagWalker):
         self.functions[op.PLUS] = self.walk_plus
         self.functions[op.EQUALS] = self.walk_equals
 
+        for o in op.BV_OPERATORS:
+            # Just propagate BV
+            self.functions[o] = self.walk_combine
+
+        # This needs to be handled differently
+        self.functions[op.BV_CONSTANT] = self.walk_constant
+
+
     def walk_combine(self, formula, args):
         """Combines the current theory value of the children"""
         if len(args) == 1:
@@ -178,6 +186,8 @@ class TheoryOracle(walkers.DagWalker):
             theory_out = Theory(real_arithmetic=True, real_difference=True)
         elif formula.is_int_constant():
             theory_out = Theory(integer_arithmetic=True, integer_difference=True)
+        elif formula.is_bv_constant():
+            theory_out = Theory(bit_vectors=True)
         else:
             assert formula.is_bool_constant()
             theory_out = Theory()
@@ -193,6 +203,8 @@ class TheoryOracle(walkers.DagWalker):
             theory_out = Theory(integer_arithmetic=True, integer_difference=True)
         elif f_type.is_bool_type():
             theory_out = Theory()
+        elif f_type.is_bv_type():
+            theory_out = Theory(bit_vectors=True)
         else:
             assert f_type.is_function_type()
             theory_out = Theory(uninterpreted=True)

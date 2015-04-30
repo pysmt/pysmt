@@ -44,19 +44,26 @@ class TestBV(TestCase):
         self.assertEqual(one, mgr.BVOne(32))
         self.assertEqual(zero, mgr.BVZero(32))
 
+        with self.assertRaises(ValueError):
+            # Negative numbers are not supported
+            BV(-1, 10)
+        with self.assertRaises(ValueError):
+            # Number should fit in the width
+            BV(10, 2)
+
         # Variables
         b128 = Symbol("b", BV128) # BV1, BV8 etc. are defined in pysmt.typing
         b32 = Symbol("b32", BV32)
         hexample = BV(0x10, 32)
-        s_one = BV(-1, 32)
+        #s_one = BV(-1, 32)
         bcustom = Symbol("bc", BVType(42))
 
         self.assertIsNotNone(hexample)
         self.assertIsNotNone(bcustom)
-        self.assertIsNotNone(s_one)
+        #self.assertIsNotNone(s_one)
         self.assertEqual(bcustom.bv_width(), 42)
         self.assertEqual(hexample.constant_value(), 16)
-        self.assertEqual(str(s_one), "-1_32")
+        #self.assertEqual(str(s_one), "-1_32")
 
         not_zero32 = mgr.BVNot(zero)
         not_b128 = mgr.BVNot(b128)
