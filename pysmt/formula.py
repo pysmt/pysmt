@@ -467,6 +467,18 @@ class FormulaManager(object):
         return self.And(self.Or(*args),
                         self.AtMostOne(*args))
 
+    def AllDifferent(self, *args):
+        """ Encodes the 'all-different' constraint using two possible
+        encodings.
+
+        AllDifferent(x, y, z) := (x != y) & (x != z) & (y != z)
+        """
+        exprs = self._polymorph_args_to_tuple(args)
+        res = []
+        for i, a in enumerate(exprs):
+            for b in exprs[i+1:]:
+                res.append(self.Not(self.Equals(a, b)))
+        return self.And(res)
 
     def Xor(self, left, right):
         """Returns the xor of left and right: left XOR right """

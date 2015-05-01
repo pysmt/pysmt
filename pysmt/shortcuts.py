@@ -209,6 +209,12 @@ def ExactlyOne(*args):
     """Given a set of boolean expressions requires that exactly one holds."""
     return get_env().formula_manager.ExactlyOne(*args)
 
+def AllDifferent(*args):
+    """Given a set of non-boolean expressions, requires that each of them
+    has value different from all the others
+    """
+    return get_env().formula_manager.AllDifferent(*args)
+
 def Xor(left, right):
     """Returns the XOR of left and right"""
     return get_env().formula_manager.Xor(left, right)

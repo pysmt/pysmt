@@ -17,6 +17,8 @@
 #
 from fractions import Fraction
 
+from six.moves import xrange
+
 import pysmt
 from pysmt.typing import BOOL, REAL, INT, FunctionType
 from pysmt.shortcuts import Symbol, is_sat, is_valid, Implies, GT, Plus
@@ -517,6 +519,27 @@ class TestFormulaManager(TestCase):
         xor_true = self.mgr.Xor(self.mgr.TRUE(), self.mgr.FALSE()).simplify()
         self.assertEqual(xor_true, self.mgr.TRUE(),
                          "Xor should be True if both arguments are False")
+
+    def test_all_different(self):
+        many = 5
+        symbols = [self.mgr.Symbol("s%d"%i, INT) for i in range(many) ]
+        f = self.mgr.AllDifferent(symbols)
+
+        one = self.mgr.Int(1)
+        for i in xrange(many):
+            for j in xrange(many):
+                if i != j:
+                    c = f.substitute({symbols[i]: one,
+                                      symbols[j]: one}).simplify()
+                    self.assertEqual(c, self.mgr.Bool(False),
+                                     "AllDifferent should not allow 2 symbols "\
+                                     "to be 1")
+
+
+        c = f.substitute({symbols[i]: self.mgr.Int(i) for i in xrange(many)})
+        self.assertEqual(c.simplify(), self.mgr.Bool(True),
+                         "AllDifferent should be tautological for a set " \
+                         "of different values")
 
 
     def test_min(self):
