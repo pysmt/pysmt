@@ -13,7 +13,7 @@ Contents:
 
    intro
    getting_started
-   changes
+   CHANGES
    development
    api_ref
 

@@ -13,3 +13,5 @@ pySMT. Suggested order:
 6. allsat.py: How to access functionalities of solvers not currently
    wrapped by pySMT.
 7. generic_smtlib.py: Shows how to use any SMT-LIB complaint SMT solver
+8. efsmt.py: Shows how to combine two different solvers to solve an
+   Exists Forall problem.

@@ -1,30 +1,39 @@
 Change Log
 ==========
 
-0.2.5: XXXXXXXXXX  -- YYYYYY
-----------------------------
+0.3.0: 2015-05-01  -- BitVectors/UnsatCores
+-------------------------------------------
+
+Theories:
+
+* Added initial support for BitVectors and QF_BV logic.
+  Current support is limited to MathSAT and unsigned operators.
+
+Solvers:
+
+* Two new quantifier eliminators for LRA using MathSAT API:
+  Fourier-Motzkin (msat_fm) and Loos-Weisspfenning (msat_lw)
+
+* Yices: Improved handling of int/real precision
 
 General:
 
-* Added support for Python 3. The library works with both Python 2 and
-  Python 3.
+* Unsat Cores: Unsat core extraction with dedicated shortcut
+  get_unsat_core . Current support is limited to MathSAT and Z3
 
-* Added two new quantifier eliminators for LRA based on the MathSAT
-  api. One (msat_fm) used Fourier-Motzkin algorithm, the other
-  (msat_lw) uses Loos-Weisspfenning elimination (aka Virtual
-  Substitution)
-
-* Added support for unsat core extraction using the MathSAT and the Z3
-  solvers. Dedicated shortcuts (get_unsat_core and UnsatCoreSolver)
-  have been added.
+* Added support for Python 3. The library now works with both Python 2
+  and Python 3.
 
 * QuantifierEliminator and qelim shortcuts, as well as the respective
   factory methods can now accept a 'logic' parameter that allows to
   select a quantifier eliminator instance supporting a given logic
   (analogously to what happens for solvers).
 
-* BitVectors: Initial support for BitVector Theory added. Only MathSAT
-  has been extended to support them.
+* Partial Model Support: Return a partial model whenever possible.
+  Current support is limited to MathSAT and Z3.
+
+* FNode.size(): Added method to compute the size of an expression
+  using multiple metrics.
 
 
 0.2.4: 2015-03-15  -- PicoSAT
@@ -44,7 +53,7 @@ Bugfix:
 * Fixed bug (#48) in pypi package, making pysmt-install (and other commands) unavailable. Thanks to Rhishikesh Limaye for reporting this.
 
 0.2.3: 2015-03-12 -- Logics Refactoring
---------------------------------------
+---------------------------------------
 
 General:
 
@@ -73,7 +82,7 @@ General:
 
 
 0.2.2: 2015-02-07 -- BDDs
-------------------------
+-------------------------
 
 Solvers:
 
@@ -86,7 +95,7 @@ General:
   Environment.add_dynamic_walker_function).
 
 0.2.1: 2014-11-29 -- SMT-LIB
----------------------------
+----------------------------
 
 Solvers:
 
@@ -126,7 +135,7 @@ Backwards Incompatible Changes:
 
 
 0.1.0: 2014-03-10 -- Alpha release.
-----------------------------------
+-----------------------------------
 
 Theories: LIA, LRA, RDL, EUF
 Solvers: MathSAT, Z3
@@ -138,4 +147,4 @@ General Functionalities:
 
 
 0.0.1: 2014-02-01 -- Initial release.
-------------------------------------
+-------------------------------------
