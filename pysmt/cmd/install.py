@@ -439,7 +439,7 @@ def check_install():
             raise Exception("Was expecting to find %s installed" % required_solver)
 
     print("\nQuantifier Eliminators:")
-    for solver in ['msat_fm', 'msat_lw', 'z3']:
+    for solver in ['msat_fm', 'msat_lw', 'z3', 'bdd']:
         is_installed = False
         try:
             QuantifierEliminator(name=solver)

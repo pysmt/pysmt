@@ -19,7 +19,7 @@ import unittest
 
 import pysmt
 from pysmt.shortcuts import And, Not, Symbol, Bool, Exists, Solver
-from pysmt.shortcuts import get_env
+from pysmt.shortcuts import get_env, qelim
 from pysmt.test import TestCase, skipIfSolverNotAvailable
 from pysmt.test.examples import EXAMPLE_FORMULAS
 
@@ -108,6 +108,13 @@ class TestBdd(TestCase):
         bdd_g = convert(f)
         g = self.bdd_converter.back(bdd_g)
         self.assertEqual(g, self.y)
+
+    @skipIfSolverNotAvailable("bdd")
+    def test_quantifier_eliminator(self):
+        f = Exists([self.x], And(self.x, self.y))
+        g = qelim(f, solver_name="bdd")
+        self.assertEqual(g, self.y)
+
 
 if __name__ == '__main__':
     unittest.main()

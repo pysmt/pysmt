@@ -27,7 +27,8 @@ from pysmt.solvers.solver import Solver, Converter
 from pysmt.solvers.eager import EagerModel
 from pysmt.walkers import DagWalker
 from pysmt.decorators import clear_pending_pop
-
+from pysmt.oracles import get_logic
+from pysmt.solvers.qelim import QuantifierEliminator
 
 class LockDdManager(object):
     """Context class that must be used to guard any usage of pycudd. This
@@ -347,3 +348,28 @@ class BddConverter(Converter, DagWalker):
         return res
 
  # EOC BddConverter
+
+
+class BddQuantifierEliminator(QuantifierEliminator):
+
+    LOGICS = [pysmt.logics.BOOL]
+
+    def __init__(self, environment, logic=None):
+        self.environment = environment
+        self.logic = logic
+        self.ddmanager = pycudd.DdManager()
+        self.converter = BddConverter(environment=environment,
+                                      ddmanager=self.ddmanager)
+
+
+    def eliminate_quantifiers(self, formula):
+        logic = get_logic(formula, self.environment)
+        if not logic <= pysmt.logics.BOOL:
+            raise NotImplementedError("BDD-based quantifier elimination only "\
+                                      "supports pure-boolean formulae."\
+                                      "(detected logic is: %s)" % str(logic))
+
+        bdd = self.converter.convert(formula)
+        pysmt_res = self.converter.back(bdd)
+
+        return pysmt_res
