@@ -17,13 +17,13 @@
 #
 import unittest
 
+from pysmt.shortcuts import get_env, push_env, pop_env, Symbol
 import pysmt.factory
 from pysmt.test import TestCase
 from pysmt.typing import REAL
-from pysmt.shortcuts import get_env, push_env, pop_env, Symbol
 from pysmt.environment import Environment
 from pysmt.exceptions import NoSolverAvailableError
-from pysmt.logics import QF_UFLIRA
+from pysmt import logics
 
 
 class TestEnvironment(TestCase):
@@ -91,10 +91,10 @@ class TestEnvironment(TestCase):
         self.assertEqual(factory.solver_preference_list,
                           pysmt.factory.DEFAULT_SOLVER_PREFERENCE_LIST)
 
-        for solver_name in factory.all_solvers(logic=QF_UFLIRA):
+        for solver_name in factory.all_solvers(logic=logics.QF_UFLIRA):
             factory.set_solver_preference_list([solver_name])
             self.assertEqual(factory.solver_preference_list, [solver_name])
-            solver = factory.get_solver(logic=QF_UFLIRA)
+            solver = factory.get_solver(logic=logics.QF_UFLIRA)
             self.assertTrue(isinstance(solver, factory.all_solvers()[solver_name]))
 
         factory.set_solver_preference_list(['nosolver'])
@@ -104,7 +104,7 @@ class TestEnvironment(TestCase):
         for qelim_name in factory.all_quantifier_eliminators():
             factory.set_qelim_preference_list([qelim_name])
             self.assertEqual(factory.qelim_preference_list, [qelim_name])
-            qelim = factory.get_quantifier_eliminator()
+            qelim = factory.get_quantifier_eliminator(logic=logics.BOOL)
             self.assertTrue(isinstance(qelim, factory.all_quantifier_eliminators()[qelim_name]))
 
         factory.set_qelim_preference_list(['nosolver'])

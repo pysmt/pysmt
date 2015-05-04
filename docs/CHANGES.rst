@@ -1,6 +1,12 @@
 Change Log
 ==========
 
+X.X.X: XXX  -- XXX
+-------------------------------------------
+
+* Added BDD-Based quantifier eliminator for BOOL theory
+
+
 0.3.0: 2015-05-01  -- BitVectors/UnsatCores
 -------------------------------------------
 

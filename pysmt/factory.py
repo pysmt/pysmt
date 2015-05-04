@@ -260,6 +260,13 @@ class Factory(object):
         except ImportError:
             pass
 
+        try:
+            from pysmt.solvers.bdd import BddQuantifierEliminator
+            self._all_qelims['bdd'] = BddQuantifierEliminator
+        except ImportError:
+            pass
+
+
 
     def set_solver_preference_list(self, preference_list):
         """Defines the order in which to pick the solvers.
