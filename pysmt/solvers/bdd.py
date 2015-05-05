@@ -280,6 +280,9 @@ class BddConverter(Converter, DagWalker):
         with LockDdManager(self.ddmanager):
             while len(stack) > 0:
                 current = stack.pop()
+                # If the node haven't been explored yet, it is not in back_memoization,
+                # If back_memoization contains None, we are exploring the children
+                # Otherwise, it contains the pySMT expression corresponding to the node
                 if current not in self.back_memoization:
                     self.back_memoization[current] = None
                     stack.append(current)
