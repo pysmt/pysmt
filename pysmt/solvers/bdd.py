@@ -23,12 +23,13 @@ import pycudd
 import pysmt.logics
 
 from pysmt import typing as types
-from pysmt.solvers.solver import Solver, Converter
+from pysmt.solvers.solver import Solver, Converter, SolverOptions
 from pysmt.solvers.eager import EagerModel
 from pysmt.walkers import DagWalker
 from pysmt.decorators import clear_pending_pop
 from pysmt.oracles import get_logic
 from pysmt.solvers.qelim import QuantifierEliminator
+
 
 class LockDdManager(object):
     """Context class that must be used to guard any usage of pycudd. This
@@ -54,13 +55,56 @@ class LockDdManager(object):
         LockDdManager._depth += 1
 
     def __exit__(self, type, value, traceback):
-        if not pycudd.GetDefaultDdManager() == self.manager:
-            warnings.warn("The default DdManager changed without a " \
-                          "context protecting it")
-        LockDdManager._depth -= 1
-        if LockDdManager._depth == 0:
-            pycudd.ResetDefaultDdManager()
+        try:
+            assert self.manager is not None
+            current_manager = pycudd.GetDefaultDdManager()
+            if not current_manager == self.manager:
+                warnings.warn("The default DdManager changed without a " \
+                              "context protecting it", stacklevel=2)
+        finally:
+            LockDdManager._depth -= 1
+            if LockDdManager._depth == 0:
+                pycudd.ResetDefaultDdManager()
 
+
+
+class BddOptions(SolverOptions):
+
+    ## CUDD Reordering algorithms
+    CUDD_REORDER_SAME, \
+        CUDD_REORDER_NONE, \
+        CUDD_REORDER_RANDOM, \
+        CUDD_REORDER_RANDOM_PIVOT, \
+        CUDD_REORDER_SIFT, \
+        CUDD_REORDER_SIFT_CONVERGE, \
+        CUDD_REORDER_SYMM_SIFT, \
+        CUDD_REORDER_SYMM_SIFT_CONV, \
+        CUDD_REORDER_WINDOW2, \
+        CUDD_REORDER_WINDOW3, \
+        CUDD_REORDER_WINDOW4, \
+        CUDD_REORDER_WINDOW2_CONV, \
+        CUDD_REORDER_WINDOW3_CONV, \
+        CUDD_REORDER_WINDOW4_CONV, \
+        CUDD_REORDER_GROUP_SIFT, \
+        CUDD_REORDER_GROUP_SIFT_CONV, \
+        CUDD_REORDER_ANNEALING, \
+        CUDD_REORDER_GENETIC, \
+        CUDD_REORDER_LINEAR, \
+        CUDD_REORDER_LINEAR_CONVERGE, \
+        CUDD_REORDER_LAZY_SIFT, \
+        CUDD_REORDER_EXACT = range(22)
+
+    CUDD_ALL_REORDERING_ALGORITHMS = range(22)
+
+    def __init__(self, static_ordering=None,
+                 dynamic_reordering=False,
+                 reordering_algorithm=CUDD_REORDER_SIFT):
+        SolverOptions.__init__(self,
+                               generate_models=True,
+                               unsat_cores_mode=None)
+        self.static_ordering = static_ordering
+        self.dynamic_reordering = dynamic_reordering
+        self.reordering_algorithm = reordering_algorithm
 
 
 class BddSolver(Solver):
@@ -77,6 +121,23 @@ class BddSolver(Solver):
         self.converter = BddConverter(environment=self.environment,
                                       ddmanager=self.ddmanager)
 
+        # Impose initial ordering
+        if self.options.static_ordering is not None:
+            for var in self.options.static_ordering:
+                if not var.is_symbol(types.BOOL):
+                    raise ValueError("The BDD static ordering must be a " \
+                                     "list of Boolean variables")
+                self.declare_variable(var)
+
+        if self.options.dynamic_reordering:
+            with LockDdManager(self.ddmanager):
+                self.ddmanager.AutodynEnable(self.options.reordering_algorithm)
+                self.ddmanager.SetDefault()
+        else:
+            with LockDdManager(self.ddmanager):
+                self.ddmanager.AutodynDisable()
+                self.ddmanager.SetDefault()
+
         # This stack keeps a pair (Expr, Bdd), with the semantics that
         # the bdd at the i-th element of the list contains the bdd of
         # the conjunction of all previous expressions.
@@ -86,6 +147,22 @@ class BddSolver(Solver):
 
         self.backtrack = []
         self.latest_model = None
+
+    def get_default_options(self, logic=None, user_options=None):
+        res = BddOptions()
+        if user_options is not None:
+            if "unsat_cores_mode" in user_options:
+                if user_options["unsat_cores_mode"] != None:
+                    raise NotImplementedError("BddSolver does not "\
+                                              "support unsat cores")
+
+            for k in ["static_ordering",
+                      "dynamic_reordering",
+                      "reordering_algorithm"]:
+                if k in user_options:
+                    setattr(res, k, user_options[k])
+        return res
+
 
     @clear_pending_pop
     def reset_assertions(self):
@@ -212,7 +289,7 @@ class BddConverter(Converter, DagWalker):
             for i, v in enumerate(var_list):
                 indices[i] = self.var2node[v].NodeReadIndex()
             cube = self.ddmanager.IndicesToCube(indices, len(var_list))
-            return cube
+        return cube
 
     def declare_variable(self, var):
         if not var.is_symbol(type_=types.BOOL): raise TypeError
