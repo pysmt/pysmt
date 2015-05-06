@@ -391,6 +391,24 @@ def get_model(formula, solver_name=None, logic=None):
                                  solver_name=solver_name,
                                  logic=logic)
 
+
+def get_implicant(formula, solver_name=None, logic=None, complete=False):
+    """Returns a formula f_i such that Implies(f_i, formula) is valid or None
+    if formula is unsatisfiable.
+
+    if complete is set to true, all the variables appearing in the
+    formula are forced to appear in f_i.
+    """
+    env = get_env()
+    if formula not in env.formula_manager:
+        warnings.warn("Warning: Contextualizing formula during get_model")
+        formula = env.formula_manager.normalize(formula)
+
+    return env.factory.get_implicant(formula,
+                                     solver_name=solver_name,
+                                     logic=logic,
+                                     complete=complete)
+
 def get_unsat_core(clauses, solver_name=None, logic=None):
     """Similar to :py:func:`get_model` but returns the unsat core of the
     conjunction of the input clauses"""

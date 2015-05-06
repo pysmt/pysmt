@@ -78,7 +78,7 @@ class Z3Model(Model):
         variables defined in the assignment.
         """
         for d in self.z3_model.decls():
-            pysmt_d = self.converter.back(d)
+            pysmt_d = self.converter.back(d())
             yield pysmt_d, self.get_value(pysmt_d)
 
     def __contains__(self, x):
@@ -255,7 +255,7 @@ class Z3Converter(Converter, DagWalker):
         return self.walk(formula)
 
     def back(self, expr):
-        assert z3.is_expr(expr)
+        assert z3.is_expr(expr), str(expr)
 
         if askey(expr) in self.backconversion:
             return self.backconversion[askey(expr)]
