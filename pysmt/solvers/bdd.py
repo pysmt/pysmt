@@ -185,6 +185,7 @@ class BddConverter(Converter, DagWalker):
         # use the ids.
         self.idx2var = {}
         self.var2node = {}
+        self.back_memoization = {}
 
     def convert(self, formula):
         """Convert a PySMT formula into a BDD."""
@@ -192,8 +193,7 @@ class BddConverter(Converter, DagWalker):
             return self.walk(formula)
 
     def back(self, bdd_expr):
-        with LockDdManager(self.ddmanager):
-            return self.bdd_to_expr3(bdd_expr).simplify()
+        return self._walk_back(bdd_expr, self.fmgr).simplify()
 
     def get_all_vars_array(self):
         # NOTE: This way of building the var_array does not look
@@ -273,79 +273,55 @@ class BddConverter(Converter, DagWalker):
         else:
             return self.ddmanager.Zero()
 
-    def bdd_to_expr(self, bdd):
-        res = None
-        if bdd == self.ddmanager.Zero():
-            res = self.fmgr.Bool(False)
-        elif bdd == self.ddmanager.One():
-            res = self.fmgr.Bool(True)
-        else:
-            var = self.idx2var[bdd.NodeReadIndex()]
-            t = self.fmgr.Implies(var, self.bdd_to_expr(bdd.T()))
-            e = self.fmgr.Implies(self.fmgr.Not(var), self.bdd_to_expr(bdd.E()))
-            # (v -> t) /\ (!v -> e)
-            res = self.fmgr.And(t, e)
 
-            if bdd.IsComplement():
-                res = self.fmgr.Not(res)
+    def _walk_back(self, bdd, mgr):
+        stack = [bdd]
 
-        return res
+        with LockDdManager(self.ddmanager):
+            while len(stack) > 0:
+                current = stack.pop()
+                # If the node haven't been explored yet, it is not in back_memoization,
+                # If back_memoization contains None, we are exploring the children
+                # Otherwise, it contains the pySMT expression corresponding to the node
+                if current not in self.back_memoization:
+                    self.back_memoization[current] = None
+                    stack.append(current)
+                    if current != self.ddmanager.Zero() and \
+                       current != self.ddmanager.One():
+                        t = current.T()
+                        e = current.E()
+                        stack.append(t)
+                        stack.append(e)
+                elif self.back_memoization[current] is None:
+                    if current == self.ddmanager.Zero():
+                        res = mgr.FALSE()
+                    elif current == self.ddmanager.One():
+                        res = mgr.TRUE()
+                    else:
+                        var = self.idx2var[current.NodeReadIndex()]
+                        t = current.T()
+                        e = current.E()
+                        expr_t = self.back_memoization[t]
+                        expr_e = self.back_memoization[e]
 
+                        if current.IsComplement():
+                            # (v /\ !t) \/ (!v /\ !e)
+                            #     P            N
+                            p = mgr.And(var, mgr.Not(expr_t))
+                            n = mgr.And(mgr.Not(var), mgr.Not(expr_e))
+                            res = mgr.Or(p, n)
+                        else:
+                            # (v /\ t) \/ (!v /\ e)
+                            #    P             N
+                            p = mgr.And(var, expr_t)
+                            n = mgr.And(mgr.Not(var), expr_e)
+                            res = mgr.Or(p, n)
 
-    def bdd_to_expr2(self, bdd):
-        res = None
-        if bdd == self.ddmanager.Zero():
-            res = self.fmgr.Bool(False)
-        elif bdd == self.ddmanager.One():
-            res = self.fmgr.Bool(True)
-        else:
-            var = self.idx2var[bdd.NodeReadIndex()]
-
-            t = self.bdd_to_expr2(bdd.T())
-            e = self.bdd_to_expr2(bdd.E())
-            not_t = self.fmgr.Not(t)
-            not_e = self.fmgr.Not(e)
-
-            if bdd.IsComplement():
-                # (v /\ !t) \/ (!v /\ !e)
-                #     P            N
-                p = self.fmgr.And(var, not_t)
-                n = self.fmgr.And(self.fmgr.Not(var),
-                                  not_e)
-                res = self.fmgr.Or(p, n)
-            else:
-                # (v /\ t) \/ (!v /\ e)
-                #    P             N
-                p = self.fmgr.And(var, t)
-                n = self.fmgr.And(self.fmgr.Not(var), e)
-                res = self.fmgr.Or(p, n)
-
-        return res
-
-
-    def bdd_to_expr3(self, bdd, invert=False):
-        """Convert a bdd into an expression and push negation."""
-
-        res = None
-        if bdd == self.ddmanager.Zero():
-            res = self.fmgr.Bool(invert)
-        elif bdd == self.ddmanager.One():
-            res = self.fmgr.Bool(not invert)
-        else:
-            var = self.idx2var[bdd.NodeReadIndex()]
-
-            if (bdd.IsComplement() and not invert) or \
-               (not bdd.IsComplement() and invert):
-                ne = self.bdd_to_expr3(bdd.E(), not invert)
-                nt = self.bdd_to_expr3(bdd.T(), not invert)
-                res = self.fmgr.Or(self.fmgr.And(var, nt),
-                                   self.fmgr.And(self.fmgr.Not(var), ne))
-            else:
-                t = self.bdd_to_expr3(bdd.T(), invert)
-                e = self.bdd_to_expr3(bdd.E(), invert)
-                res = self.fmgr.Or(self.fmgr.And(var, t),
-                                   self.fmgr.And(self.fmgr.Not(var), e))
-        return res
+                    self.back_memoization[current] = res
+                else:
+                    # we already visited the node, nothing else to do
+                    pass
+        return self.back_memoization[bdd]
 
  # EOC BddConverter
 
