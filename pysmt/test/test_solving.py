@@ -20,9 +20,9 @@ from six.moves import xrange
 
 import pysmt.operators as op
 from pysmt.shortcuts import Symbol, FreshSymbol, And, Not, GT, Function, Plus
-from pysmt.shortcuts import Bool, TRUE, Real, LE, FALSE, Or, Equals
+from pysmt.shortcuts import Bool, TRUE, Real, LE, FALSE, Or, Equals, Implies
 from pysmt.shortcuts import Solver
-from pysmt.shortcuts import get_env, get_model, is_valid, is_sat
+from pysmt.shortcuts import get_env, get_model, is_valid, is_sat, get_implicant
 from pysmt.typing import BOOL, REAL, FunctionType
 from pysmt.test import TestCase, skipIfSolverNotAvailable, skipIfNoSolverForLogic
 from pysmt.test.examples import get_example_formulae
@@ -120,6 +120,38 @@ class TestBasic(TestCase):
             self.assertIsNotNone(res, "Formula was expected to be SAT")
             self.assertTrue(res.get_value(varA) == TRUE())
             self.assertTrue(res.get_value(varX) == Real(8))
+
+    @skipIfNoSolverForLogic(QF_BOOL)
+    def test_get_implicant_unsat(self):
+        varA = Symbol("A", BOOL)
+        varB = Symbol("B", BOOL)
+
+        f = And(varA, Not(varB))
+        g = f.substitute({varB:varA})
+
+        res = get_implicant(g, logic=QF_BOOL)
+        self.assertIsNone(res, "Formula was expected to be UNSAT")
+
+        for solver in get_env().factory.all_solvers(logic=QF_BOOL):
+            res = get_implicant(g, solver_name=solver)
+            self.assertIsNone(res, "Formula was expected to be UNSAT")
+
+    @skipIfNoSolverForLogic(QF_LRA)
+    def test_get_implicant_sat(self):
+        varA = Symbol("A", BOOL)
+        varX = Symbol("X", REAL)
+
+        f = And(varA, Equals(varX, Real(8)))
+
+        res = get_implicant(f, logic=QF_LRA)
+        self.assertIsNotNone(res, "Formula was expected to be SAT")
+        self.assertValid(Implies(res, f), logic=QF_LRA)
+
+        for solver in get_env().factory.all_solvers(logic=QF_LRA):
+            res = get_implicant(f, solver_name=solver)
+            self.assertIsNotNone(res, "Formula was expected to be SAT")
+            self.assertValid(Implies(res, f), logic=QF_LRA)
+
 
     @skipIfNoSolverForLogic(QF_BOOL)
     def test_get_py_value(self):
@@ -240,6 +272,16 @@ class TestBasic(TestCase):
                 self.assertEqual(validity, v, f.serialize())
                 self.assertEqual(satisfiability, s, f.serialize())
 
+
+    def test_examples_get_implicant(self):
+        for (f, _, satisfiability, logic) in get_example_formulae():
+            if logic.quantifier_free and \
+               (len(get_env().factory.all_solvers(logic=logic)) > 0):
+                f_i = get_implicant(f, logic=logic)
+                if satisfiability:
+                    self.assertValid(Implies(f_i, f), logic=logic)
+                else:
+                    self.assertIsNone(f_i)
 
     def test_solving_under_assumption(self):
         v1, v2 = [FreshSymbol() for _ in xrange(2)]

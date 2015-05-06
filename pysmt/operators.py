@@ -61,7 +61,7 @@ BOOL_CONNECTIVES = frozenset([AND, OR, NOT, IMPLIES, IFF])
 
 BOOL_OPERATORS = frozenset(QUANTIFIERS | BOOL_CONNECTIVES)
 
-RELATIONS = frozenset([LE, LT, EQUALS])
+RELATIONS = frozenset([LE, LT, EQUALS, BV_ULE, BV_ULT])
 
 CONSTANTS = frozenset([REAL_CONSTANT, BOOL_CONSTANT, INT_CONSTANT, BV_CONSTANT])
 
@@ -69,6 +69,8 @@ BV_OPERATORS = frozenset([BV_CONSTANT, BV_NOT, BV_AND, BV_OR, BV_XOR,
                           BV_CONCAT, BV_EXTRACT, BV_ULT, BV_ULE, BV_NEG, BV_ADD, BV_MUL,
                           BV_UDIV, BV_UREM, BV_LSHL, BV_LSHR, BV_ROL, BV_ROR,
                           BV_ZEXT, BV_SEXT])
+
+LIRA_OPERATORS = frozenset([PLUS, MINUS, TIMES, TOREAL])
 CUSTOM_NODE_TYPES = []
 
 def new_node_type(new_node_id=None):

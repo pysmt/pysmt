@@ -441,6 +441,31 @@ class Factory(object):
                 retval = solver.get_model()
             return retval
 
+    def get_implicant(self, formula, solver_name=None,
+                      logic=None):
+        mgr = self.environment.formula_manager
+        if logic == AUTO_LOGIC:
+            logic = get_logic(formula, self.environment)
+
+        with self.Solver(name=solver_name, logic=logic) \
+             as solver:
+            solver.add_assertion(formula)
+            check = solver.solve()
+            if not check:
+                return None
+            else:
+                model = solver.get_model()
+                atoms = formula.get_atoms()
+                res = []
+                for a in atoms:
+                    fv = a.get_free_variables()
+                    if any(v in model for v in fv):
+                        if solver.get_value(a).is_true():
+                            res.append(a)
+                        else:
+                            res.append(mgr.Not(a))
+                return mgr.And(res)
+
     def get_unsat_core(self, clauses, solver_name=None, logic=None):
         if logic == AUTO_LOGIC:
             logic = get_logic(self.environment.formula_manager.And(clauses),

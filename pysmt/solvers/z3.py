@@ -256,7 +256,7 @@ class Z3Converter(Converter, DagWalker):
         return self.walk(formula)
 
     def back(self, expr):
-        assert z3.is_expr(expr)
+        assert z3.is_expr(expr), str(expr)
 
         if askey(expr) in self.backconversion:
             return self.backconversion[askey(expr)]
@@ -516,7 +516,7 @@ class Z3Interpolator(Interpolator):
 
     def binary_interpolant(self, a, b):
         self._check_logic([a, b])
-            
+
         a = self.converter.convert(a)
         b = self.converter.convert(b)
 
@@ -525,7 +525,7 @@ class Z3Interpolator(Interpolator):
             pysmt_res = self.converter.back(itp)
         except z3.ModelRef:
             pysmt_res = None
-            
+
         return pysmt_res
 
 
@@ -539,5 +539,5 @@ class Z3Interpolator(Interpolator):
             pysmt_res = [self.converter.back(f) for f in itp]
         except z3.ModelRef:
             pysmt_res = None
-            
+
         return pysmt_res

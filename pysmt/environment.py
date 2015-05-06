@@ -48,6 +48,7 @@ class Environment(object):
         self._theoryo = pysmt.oracles.TheoryOracle(self)
         self._fvo = pysmt.oracles.FreeVarsOracle(self)
         self._sizeo = pysmt.oracles.SizeOracle(self)
+        self._ao = pysmt.oracles.AtomsOracle(self)
 
         self._factory = None
         # Configurations
@@ -82,6 +83,11 @@ class Environment(object):
     def qfo(self):
         """ Get the Quantifier Oracle """
         return self._qfo
+
+    @property
+    def ao(self):
+        """ Get the Atoms Oracle """
+        return self._ao
 
     @property
     def theoryo(self):

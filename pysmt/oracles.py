@@ -27,6 +27,8 @@ import pysmt.walkers as walkers
 import pysmt.operators as op
 import pysmt.shortcuts
 
+from pysmt import typing as types
+
 from pysmt.logics import Logic, Theory, get_closer_pysmt_logic
 
 
@@ -326,6 +328,75 @@ class FreeVarsOracle(pysmt.walkers.DagWalker):
         return frozenset(res)
 
 # EOC FreeVarsOracle
+
+class AtomsOracle(pysmt.walkers.DagWalker):
+    """This class returns the set of theory atoms involved in a formula"""
+    def __init__(self, env=None):
+        pysmt.walkers.DagWalker.__init__(self, env=env)
+
+        # Clear the mapping function
+        self.functions.clear()
+
+        # We have teh following categories for this walker.
+        #
+        # - Boolean operators, e.g. and, or, not...
+        # - Theory operators, e.g. +, -, bvshift
+        # - Theory relations, e.g. ==, <=
+        # - ITE terms
+        # - Symbols
+        # - Constants
+        #
+        for elem in op.ALL_TYPES:
+            if elem in op.BOOL_CONNECTIVES:
+                self.functions[elem] = self.walk_bool_op
+            elif elem in op.CONSTANTS:
+                self.functions[elem] = self.walk_constant
+            elif elem in op.RELATIONS:
+                self.functions[elem] = self.walk_theory_relation
+            elif elem in op.BV_OPERATORS or elem in op.LIRA_OPERATORS:
+                self.functions[elem] = self.walk_theory_op
+            else:
+                self.functions[elem] = self.walk_error
+
+        self.functions[op.SYMBOL] = self.walk_symbol
+        self.functions[op.FUNCTION] = self.walk_theory_op
+        self.functions[op.ITE] = self.walk_ite
+
+        # Check that no operator in undefined
+        assert self.is_complete(verbose=True)
+
+
+    def get_atoms(self, formula):
+        """Returns the set of atoms appearing in the formula."""
+        return self.walk(formula)
+
+    def walk_bool_op(self, formula, args):
+        return frozenset(x for a in args for x in a)
+
+    def walk_theory_relation(self, formula, args):
+        return frozenset([formula])
+
+    def walk_theory_op(self, formula, args):
+        return None
+
+    def walk_symbol(self, formula, args):
+        if formula.is_symbol(types.BOOL):
+            return frozenset([formula])
+        return None
+
+    def walk_constant(self, formula, args):
+        if formula.is_bool_constant():
+            return frozenset()
+        return None
+
+    def walk_ite(self, formula, args):
+        if any(a is None for a in args):
+            # Theory ITE
+            return None
+        else:
+            return frozenset(x for a in args for x in a)
+
+
 
 def get_logic(formula, env=None):
     if env is None:
