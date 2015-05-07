@@ -5,7 +5,6 @@ build_image: shippableimages/ubuntu1404_python
 
 python:
   - 2.7
-  - 3.3
   - 3.4
 
 
@@ -46,20 +45,12 @@ env:
 
 matrix:
   exclude:
-    - python: 3.3
-      env: PYSMT_SOLVER="z3"
     - python: 3.4
       env: PYSMT_SOLVER="z3"
-    - python: 3.3
-      env: PYSMT_SOLVER="cvc4"
     - python: 3.4
       env: PYSMT_SOLVER="cvc4"
-    - python: 3.3
-      env: PYSMT_SOLVER="yices"
     - python: 3.4
       env: PYSMT_SOLVER="yices"
-    - python: 3.3
-      env: PYSMT_SOLVER="cudd"
     - python: 3.4
       env: PYSMT_SOLVER="cudd"
 
@@ -80,7 +71,7 @@ before_script:
 script:
   - ./install.py --check
   - if [ "$PYSMT_SOLVER" == "msat_wrap" ]; then cd $TRAVIS_BUILD_DIR/pysmt/test/smtlib/bin; cp $TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.3.5-linux-x86_64/bin/mathsat .; mv mathsat.solver.sh.template mathsat.solver.sh; cd $TRAVIS_BUILD_DIR/; fi
-  - nosetests pysmt -v --processes=4 --process-timeout=600 --with-xunit --xunit-file=shippable/testresults/nosetests.xml
+  - nosetests pysmt -v --with-xunit --xunit-file=shippable/testresults/nosetests.xml
 
 # Push of container is disabled
 # commit_container: gario/shippable_pysmt
