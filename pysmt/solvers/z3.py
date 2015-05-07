@@ -78,13 +78,13 @@ class Z3Model(Model):
         variables defined in the assignment.
         """
         for d in self.z3_model.decls():
-            pysmt_d = self.converter.back(d)
-            yield pysmt_d, self.get_value(pysmt_d)
+            if d.arity() == 0:
+                pysmt_d = self.converter.back(d())
+                yield pysmt_d, self.get_value(pysmt_d)
 
     def __contains__(self, x):
         """Returns whether the model contains a value for 'x'."""
-        z3_x = self.converter.convert(x)
-        return z3_x in self.z3_model.decls()
+        return x in (v for v, _ in self)
 
 
 

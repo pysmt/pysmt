@@ -19,7 +19,7 @@ from fractions import Fraction
 
 from pysmt.shortcuts import (Real, Plus, Symbol, Equals, And, Bool, Or,
                              Div, LT, LE, Int, ToReal, Iff, Exists, Times)
-from pysmt.shortcuts import Solver, get_env, qelim
+from pysmt.shortcuts import Solver, get_env, qelim, get_model, TRUE
 from pysmt.typing import REAL, BOOL, INT, FunctionType
 from pysmt.test import TestCase, skipIfSolverNotAvailable, skipIfNoSolverForLogic
 from pysmt.logics import QF_UFLIRA, QF_BOOL, LIA
@@ -192,6 +192,15 @@ class TestRegressions(TestCase):
         self.assertNotIn(y, model)
         self.assertIn(x, model)
         msat.exit()
+
+    @skipIfSolverNotAvailable("z3")
+    def test_z3_model_iteration(self):
+        x, y = Symbol("x"), Symbol("y")
+        m = get_model(And(x, y), solver_name="z3")
+        self.assertIsNotNone(m)
+
+        for _, v in m:
+            self.assertEqual(v, TRUE())
 
 
 if __name__ == "__main__":
