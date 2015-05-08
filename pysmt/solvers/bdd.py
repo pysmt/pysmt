@@ -72,36 +72,47 @@ class BddOptions(SolverOptions):
 
     ## CUDD Reordering algorithms
     CUDD_REORDER_SAME, \
-        CUDD_REORDER_NONE, \
-        CUDD_REORDER_RANDOM, \
-        CUDD_REORDER_RANDOM_PIVOT, \
-        CUDD_REORDER_SIFT, \
-        CUDD_REORDER_SIFT_CONVERGE, \
-        CUDD_REORDER_SYMM_SIFT, \
-        CUDD_REORDER_SYMM_SIFT_CONV, \
-        CUDD_REORDER_WINDOW2, \
-        CUDD_REORDER_WINDOW3, \
-        CUDD_REORDER_WINDOW4, \
-        CUDD_REORDER_WINDOW2_CONV, \
-        CUDD_REORDER_WINDOW3_CONV, \
-        CUDD_REORDER_WINDOW4_CONV, \
-        CUDD_REORDER_GROUP_SIFT, \
-        CUDD_REORDER_GROUP_SIFT_CONV, \
-        CUDD_REORDER_ANNEALING, \
-        CUDD_REORDER_GENETIC, \
-        CUDD_REORDER_LINEAR, \
-        CUDD_REORDER_LINEAR_CONVERGE, \
-        CUDD_REORDER_LAZY_SIFT, \
-        CUDD_REORDER_EXACT = range(22)
+    CUDD_REORDER_NONE, \
+    CUDD_REORDER_RANDOM, \
+    CUDD_REORDER_RANDOM_PIVOT, \
+    CUDD_REORDER_SIFT, \
+    CUDD_REORDER_SIFT_CONVERGE, \
+    CUDD_REORDER_SYMM_SIFT, \
+    CUDD_REORDER_SYMM_SIFT_CONV, \
+    CUDD_REORDER_WINDOW2, \
+    CUDD_REORDER_WINDOW3, \
+    CUDD_REORDER_WINDOW4, \
+    CUDD_REORDER_WINDOW2_CONV, \
+    CUDD_REORDER_WINDOW3_CONV, \
+    CUDD_REORDER_WINDOW4_CONV, \
+    CUDD_REORDER_GROUP_SIFT, \
+    CUDD_REORDER_GROUP_SIFT_CONV, \
+    CUDD_REORDER_ANNEALING, \
+    CUDD_REORDER_GENETIC, \
+    CUDD_REORDER_LINEAR, \
+    CUDD_REORDER_LINEAR_CONVERGE, \
+    CUDD_REORDER_LAZY_SIFT, \
+    CUDD_REORDER_EXACT = range(22)
 
-    CUDD_ALL_REORDERING_ALGORITHMS = range(22)
+    CUDD_ALL_REORDERING_ALGORITHMS = range(1, 22)
 
-    def __init__(self, static_ordering=None,
+    def __init__(self,
+                 generate_models=True,
+                 unsat_cores_mode=None,
+                 static_ordering=None,
                  dynamic_reordering=False,
                  reordering_algorithm=CUDD_REORDER_SIFT):
+
+        if unsat_cores_mode is not None:
+            # Check if, for some reason, unsat cores are
+            # required. In case, raise an error.
+            raise NotImplementedError("BddSolver does not "\
+                                      "support unsat cores")
+
         SolverOptions.__init__(self,
-                               generate_models=True,
+                               generate_models=generate_models,
                                unsat_cores_mode=None)
+
         self.static_ordering = static_ordering
         self.dynamic_reordering = dynamic_reordering
         self.reordering_algorithm = reordering_algorithm
@@ -149,19 +160,10 @@ class BddSolver(Solver):
         self.latest_model = None
 
     def get_default_options(self, logic=None, user_options=None):
-        res = BddOptions()
         if user_options is not None:
-            if "unsat_cores_mode" in user_options:
-                if user_options["unsat_cores_mode"] != None:
-                    raise NotImplementedError("BddSolver does not "\
-                                              "support unsat cores")
-
-            for k in ["static_ordering",
-                      "dynamic_reordering",
-                      "reordering_algorithm"]:
-                if k in user_options:
-                    setattr(res, k, user_options[k])
-        return res
+            return BddOptions(**user_options)
+        else:
+            return BddOptions()
 
 
     @clear_pending_pop

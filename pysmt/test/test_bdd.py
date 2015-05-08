@@ -139,14 +139,35 @@ class TestBdd(TestCase):
                             "reordering_algorithm" : algo}) as s:
                 s.add_assertion(self.big_tree)
                 self.assertTrue(s.solve())
+                self.assertEquals(algo, s.ddmanager.ReorderingStatus()[1])
 
     @skipIfSolverNotAvailable("bdd")
     def test_fixed_ordering(self):
         from pysmt.solvers.bdd import BddSolver
-        with BddSolver(get_env(), pysmt.logics.BOOL,
-                       {"static_ordering" : [self.x, self.y]}) as s:
-            s.add_assertion(self.big_tree)
-            self.assertTrue(s.solve())
+        f_order = [self.x, self.y]
+        r_order = list(reversed(f_order))
+
+        for order in [f_order, r_order]:
+            with BddSolver(get_env(), pysmt.logics.BOOL,
+                           {"static_ordering" : order}) as s:
+                s.add_assertion(self.big_tree)
+                self.assertTrue(s.solve())
+
+                # Check that the ordering is understood by CUDD
+                for pos, var in enumerate(order):
+                    var_idx = s.converter.var2node[var].NodeReadIndex()
+                    perm = s.ddmanager.ReadPerm(var_idx)
+                    self.assertEqual(pos, perm)
+
+
+
+    @skipIfSolverNotAvailable("bdd")
+    def test_invalid_ordering(self):
+        from pysmt.solvers.bdd import BddSolver
+        with self.assertRaises(ValueError):
+            BddSolver(get_env(), pysmt.logics.BOOL,
+                      {"static_ordering" : [And(self.x, self.y), self.y]})
+
 
     @skipIfSolverNotAvailable("bdd")
     def test_initial_ordering(self):
@@ -156,7 +177,7 @@ class TestBdd(TestCase):
                         "dynamic_reordering" : True}) as s:
             s.add_assertion(self.big_tree)
             self.assertTrue(s.solve())
-
+            self.assertNotEquals(s.ddmanager.ReorderingStatus()[1], 0)
 
 if __name__ == '__main__':
     unittest.main()
