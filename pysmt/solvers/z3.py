@@ -27,6 +27,7 @@ from pysmt.solvers.solver import (IncrementalTrackingSolver, UnsatCoreSolver,
                                   Model, Converter)
 from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 from pysmt.solvers.qelim import QuantifierEliminator
+from pysmt.solvers.interpolation import Interpolator
 
 from pysmt.walkers import DagWalker
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
@@ -36,7 +37,7 @@ from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               ConvertExpressionError)
 from pysmt.decorators import clear_pending_pop
 
-from pysmt.logics import LRA, LIA, PYSMT_LOGICS, BV_LOGICS
+from pysmt.logics import LRA, LIA, QF_AUFLIA, QF_UFLRA, PYSMT_LOGICS, BV_LOGICS
 from pysmt.oracles import get_logic
 
 
@@ -490,4 +491,53 @@ class Z3QuantifierEliminator(QuantifierEliminator):
                 "exception object" % str(res)),
                                           expression=res)
 
+        return pysmt_res
+
+
+class Z3Interpolator(Interpolator):
+
+    LOGICS = [QF_AUFLIA, QF_UFLRA]
+
+    def __init__(self, environment, logic=None):
+        self.environment = environment
+        self.logic = logic
+        self.converter = Z3Converter(environment)
+
+
+    def _check_logic(self, formulas):
+        for f in formulas:
+            logic = get_logic(f, self.environment)
+            ok = any(logic <= l for l in self.LOGICS)
+            if not ok:
+                raise NotImplementedError(
+                    "Logic not supported by Z3 inteprolation."
+                    "(detected logic is: %s)" % str(logic))
+
+
+    def binary_interpolant(self, a, b):
+        self._check_logic([a, b])
+            
+        a = self.converter.convert(a)
+        b = self.converter.convert(b)
+
+        try:
+            itp = z3.binary_interpolant(a, b)
+            pysmt_res = self.converter.back(itp)
+        except z3.ModelRef:
+            pysmt_res = None
+            
+        return pysmt_res
+
+
+    def sequence_interpolant(self, formulas):
+        self._check_logic(formulas)
+
+        zf = [self.converter.convert(f) for f in formulas]
+
+        try:
+            itp = z3.sequence_interpolant(zf)
+            pysmt_res = [self.converter.back(f) for f in itp]
+        except z3.ModelRef:
+            pysmt_res = None
+            
         return pysmt_res
