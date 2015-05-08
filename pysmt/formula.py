@@ -34,7 +34,7 @@ from fractions import Fraction
 import pysmt.typing as types
 import pysmt.operators as op
 
-from pysmt.utils import is_integer
+from pysmt.utils import is_python_integer
 from pysmt.fnode import FNode, FNodeContent
 from pysmt.exceptions import NonLinearError
 from pysmt.walkers.identitydag import IdentityDagWalker
@@ -315,7 +315,7 @@ class FormulaManager(object):
             val = value
         elif type(value) == tuple:
             val = Fraction(value[0], value[1])
-        elif is_integer(value):
+        elif is_python_integer(value):
             val = Fraction(value, 1)
         elif type(value) == float:
             val = Fraction.from_float(value)
@@ -334,7 +334,7 @@ class FormulaManager(object):
         if value in self.int_constants:
             return self.int_constants[value]
 
-        if is_integer(value):
+        if is_python_integer(value):
             n = self.create_node(node_type=op.INT_CONSTANT,
                                  args=tuple(),
                                  payload=value)
@@ -532,7 +532,7 @@ class FormulaManager(object):
         if width is None:
             raise ValueError("Need to specify a width for the constant")
 
-        if is_integer(value):
+        if is_python_integer(value):
             if value < 0:
                 raise ValueError("Cannot specify a negative value: %d" % value)
             if value >= 2**width:
@@ -587,7 +587,7 @@ class FormulaManager(object):
     def BVExtract(self, formula, start=0, end=None):
         """Returns the slice of formula from start to end (inclusive)."""
         if end is None: end = formula.bv_width()-1
-        assert is_integer(start) and is_integer(end)
+        assert is_python_integer(start) and is_python_integer(end)
         assert end >= start and start >= 0, "Start: %d ; End: %d" % (start,end)
         size = end-start+1
 
@@ -655,7 +655,7 @@ class FormulaManager(object):
 
     def BVLShl(self, left, right):
         """Returns the logical left shift the BV."""
-        if is_integer(right):
+        if is_python_integer(right):
             right = self.BV(right, left.bv_width())
         return self.create_node(node_type=op.BV_LSHL,
                                 args=(left, right),
@@ -663,7 +663,7 @@ class FormulaManager(object):
 
     def BVLShr(self, left, right):
         """Returns the logical right shift the BV."""
-        if is_integer(right):
+        if is_python_integer(right):
             right = self.BV(right, left.bv_width())
         return self.create_node(node_type=op.BV_LSHR,
                                 args=(left, right),
@@ -671,7 +671,7 @@ class FormulaManager(object):
 
     def BVRol(self, formula, steps):
         """Returns the LEFT rotation of the BV by the number of steps."""
-        if not is_integer(steps):
+        if not is_python_integer(steps):
             raise TypeError("BVRol: 'steps' should be an integer. Got %s" % steps)
         return self.create_node(node_type=op.BV_ROL,
                                 args=(formula,),
@@ -679,7 +679,7 @@ class FormulaManager(object):
 
     def BVRor(self, formula, steps):
         """Returns the RIGHT rotation of the BV by the number of steps."""
-        if not is_integer(steps):
+        if not is_python_integer(steps):
             raise TypeError("BVRor: 'steps' should be an integer. Got %s" % steps)
         return self.create_node(node_type=op.BV_ROR,
                                 args=(formula,),
@@ -690,7 +690,7 @@ class FormulaManager(object):
 
         New bits are set to zero.
         """
-        if not is_integer(increase):
+        if not is_python_integer(increase):
             raise TypeError("BVZext: 'increase' should be an integer. Got %s" % increase)
         return self.create_node(node_type=op.BV_ZEXT,
                                 args=(formula,),
@@ -702,7 +702,7 @@ class FormulaManager(object):
 
         New bits are set according to the most-significant-bit.
         """
-        if not is_integer(increase):
+        if not is_python_integer(increase):
             raise TypeError("BVSext: 'increase' should be an integer. Got %s" % increase)
         return self.create_node(node_type=op.BV_SEXT,
                                 args=(formula,),

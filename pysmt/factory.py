@@ -28,25 +28,29 @@ from six import iteritems
 
 from pysmt.exceptions import (NoSolverAvailableError, SolverRedefinitionError,
                               NoLogicAvailableError)
-from pysmt.logics import QF_UFLIRA, LRA
+from pysmt.logics import QF_UFLIRA, LRA, QF_UFLRA
 from pysmt.logics import AUTO as AUTO_LOGIC
 from pysmt.logics import most_generic_logic, get_closer_logic
 from pysmt.oracles import get_logic
 
 DEFAULT_SOLVER_PREFERENCE_LIST = ['msat', 'z3', 'cvc4', 'yices', 'picosat', 'bdd']
 DEFAULT_QELIM_PREFERENCE_LIST = ['z3', 'msat_fm', 'msat_lw']
+DEFAULT_INTERPOLATION_PREFERENCE_LIST = ['msat', 'z3']
 DEFAULT_LOGIC = QF_UFLIRA
 DEFAULT_QE_LOGIC = LRA
+DEFAULT_INTERPOLATION_LOGIC = QF_UFLRA
 
 class Factory(object):
 
     def __init__(self, environment,
                  solver_preference_list=None,
-                 qelim_preference_list=None):
+                 qelim_preference_list=None,
+                 interpolation_preference_list=None):
         self.environment = environment
         self._all_solvers = None
         self._all_unsat_core_solvers = None
         self._all_qelims = None
+        self._all_interpolators = None
         self._generic_solvers = {}
 
         if solver_preference_list is None:
@@ -55,12 +59,19 @@ class Factory(object):
 
         if qelim_preference_list is None:
             qelim_preference_list = DEFAULT_QELIM_PREFERENCE_LIST
+
+        if interpolation_preference_list is None:
+            interpolation_preference_list = \
+                                          DEFAULT_INTERPOLATION_PREFERENCE_LIST
         self.qelim_preference_list = qelim_preference_list
+        self.interpolation_preference_list = interpolation_preference_list
         self._default_logic = DEFAULT_LOGIC
         self._default_qe_logic = DEFAULT_QE_LOGIC
+        self._default_interpolation_logic = DEFAULT_INTERPOLATION_LOGIC
 
         self._get_available_solvers()
         self._get_available_qe()
+        self._get_available_interpolators()
 
 
     def get_solver(self, quantified=False, name=None, logic=None):
@@ -113,6 +124,18 @@ class Factory(object):
                                   default_logic=self.default_qe_logic,
                                   name=name,
                                   logic=logic)
+
+        return SolverClass(environment=self.environment,
+                           logic=closer_logic)
+
+    def get_interpolator(self, name=None, logic=None):
+        SolverClass, closer_logic = self._get_solver_class(
+            solver_list=self._all_interpolators,
+            solver_type="Interpolator",
+            preference_list=self.interpolation_preference_list,
+            default_logic=self._default_interpolation_logic,
+            name=name,
+            logic=logic)
 
         return SolverClass(environment=self.environment,
                            logic=closer_logic)
@@ -267,6 +290,21 @@ class Factory(object):
             pass
 
 
+    def _get_available_interpolators(self):
+        self._all_interpolators = {}
+
+        try:
+            from pysmt.solvers.z3 import Z3Interpolator
+            self._all_interpolators['z3'] = Z3Interpolator
+        except ImportError:
+            pass
+
+        try:
+            from pysmt.solvers.msat import MSatInterpolator
+            self._all_interpolators['msat'] = MSatInterpolator
+        except ImportError:
+            pass
+
 
     def set_solver_preference_list(self, preference_list):
         """Defines the order in which to pick the solvers.
@@ -287,6 +325,14 @@ class Factory(object):
         assert preference_list is not None
         assert len(preference_list) > 0
         self.qelim_preference_list = preference_list
+
+
+    def set_interpolation_preference_list(self, preference_list):
+        """Defines the order in which to pick the solvers."""
+        assert preference_list is not None
+        assert len(preference_list) > 0
+        self.interpolation_preference_list = preference_list
+        
 
     def _filter_solvers(self, solver_list, logic=None):
         """
@@ -373,6 +419,9 @@ class Factory(object):
     def QuantifierEliminator(self, name=None, logic=None):
         return self.get_quantifier_eliminator(name=name, logic=logic)
 
+    def Interpolator(self, name=None, logic=None):
+        return self.get_interpolator(name=name, logic=logic)
+
     def is_sat(self, formula, solver_name=None, logic=None):
         if logic == AUTO_LOGIC:
             logic = get_logic(formula, self.environment)
@@ -427,6 +476,26 @@ class Factory(object):
 
         with self.QuantifierEliminator(name=solver_name, logic=logic) as qe:
             return qe.eliminate_quantifiers(formula)
+
+
+    def binary_interpolant(self, formula_a, formula_b,
+                           solver_name=None, logic=None):
+        if logic == AUTO_LOGIC:
+            logic = get_logic(
+                self.environment.formula_manager.And(formula_a, formula_b))
+
+        with self.Interpolator(name=solver_name, logic=logic) as itp:
+            return itp.binary_interpolant(formula_a, formula_b)
+
+
+    def sequence_interpolant(self, formulas, solver_name=None, logic=None):
+        if logic == AUTO_LOGIC:
+            logic = get_logic(
+                self.environment.formula_manager.And(formulas))
+
+        with self.Interpolator(name=solver_name, logic=logic) as itp:
+            return itp.sequence_interpolant(formulas)
+        
 
     @property
     def default_logic(self):

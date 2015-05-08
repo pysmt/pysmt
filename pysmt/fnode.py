@@ -37,6 +37,7 @@ from pysmt.operators import (FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF,
                              BV_OPERATORS)
 from pysmt.typing import BOOL, REAL, INT, PYSMT_TYPES, BVType
 from pysmt.decorators import deprecated
+from pysmt.utils import is_python_integer, is_python_rational
 
 FNodeContent = collections.namedtuple("FNodeContent",
                                       ["node_type", "args", "payload"])
@@ -352,7 +353,17 @@ class FNode(object):
 
     # Infix Notation
     def _apply_infix(self, right, function):
-        if pysmt.shortcuts.get_env().enable_infix_notation:
+        env = pysmt.shortcuts.get_env()
+        if env.enable_infix_notation:
+            if is_python_integer(right):
+                ty = env.stc.get_type(self)
+                if ty.is_real_type():
+                    right = pysmt.shortcuts.Real(right)
+                else:
+                    right = pysmt.shortcuts.Int(right)
+            elif is_python_rational(right):
+                right = pysmt.shortcuts.Real(right)
+
             return function(self, right)
         else:
             raise Exception("Cannot use infix notation")
@@ -401,5 +412,31 @@ class FNode(object):
 
     def __le__(self, right):
         return self._apply_infix(right, pysmt.shortcuts.LE)
+
+    def __and__(self, other):
+        return self.And(other)
+
+    def __or__(self, other):
+        return self.Or(other)
+
+    def __xor__(self, other):
+        return self._apply_infix(other, pysmt.shortcuts.Xor)
+
+    def __neg__(self):
+        return self._apply_infix(-1, pysmt.shortcuts.Times)
+
+    def __invert__(self):
+        env = pysmt.shortcuts.get_env()
+        if not env.enable_infix_notation:
+            raise Exception("Cannot use infix notation")
+        return pysmt.shortcuts.Not(self)
+
+    # TODO: We can consider implementing the following:
+    # def __int__(self):
+    # def __long__(self):
+    # def __float__(self):
+    # def __oct__(self):
+    # def __hex__(self):
+
 
 # EOC FNode
