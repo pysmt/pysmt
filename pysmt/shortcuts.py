@@ -360,6 +360,12 @@ def QuantifierEliminator(name=None, logic=None):
     """Returns a quantifier eliminator"""
     return get_env().factory.QuantifierEliminator(name=name, logic=logic)
 
+
+def Interpolator(name=None, logic=None):
+    """Returns an interpolator"""
+    return get_env().factory.Interpolator(name=name, logic=logic)
+
+
 def is_sat(formula, solver_name=None, logic=None):
     """ Returns whether a formula is satisfiable.
 
@@ -435,6 +441,38 @@ def qelim(formula, solver_name=None, logic=None):
     return env.factory.qelim(formula,
                              solver_name=solver_name,
                              logic=logic)
+
+
+def binary_interpolant(formula_a, formula_b, solver_name=None, logic=None):
+    """Computes an interpolant of (formula_a, formula_b). Returns None
+    if the conjunction is satisfiable"""
+    env = get_env()
+    formulas = [formula_a, formula_b]
+    for i, f in enumerate(formulas):
+        if f not in env.formula_manager:
+            warnings.warn("Warning: Contextualizing formula during "
+                          "binary_interpolant")
+            formulas[i] = env.formula_manager.normalize(f)
+
+    return env.factory.binary_interpolant(formulas[0], formulas[1],
+                                          solver_name=solver_name,
+                                          logic=logic)
+
+
+def sequence_interpolant(formulas, solver_name=None, logic=None):
+    """Computes a sequence interpolant of the formulas. Returns None
+    if the conjunction is satisfiable"""
+    env = get_env()
+    formulas = list(formulas)
+    for i, f in enumerate(formulas):
+        if f not in env.formula_manager:
+            warnings.warn("Warning: Contextualizing formula during "
+                          "sequence_interpolant")
+            formulas[i] = env.formula_manager.normalize(f)
+
+    return env.factory.sequence_interpolant(formulas,
+                                            solver_name=solver_name,
+                                            logic=logic)
 
 
 
