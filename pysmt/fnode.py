@@ -37,6 +37,7 @@ from pysmt.operators import (FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF,
                              BV_OPERATORS)
 from pysmt.typing import BOOL, REAL, INT, PYSMT_TYPES, BVType
 from pysmt.decorators import deprecated
+from pysmt.utils import is_python_integer, is_python_rational, is_python_boolean
 
 FNodeContent = collections.namedtuple("FNodeContent",
                                       ["node_type", "args", "payload"])
@@ -352,7 +353,19 @@ class FNode(object):
 
     # Infix Notation
     def _apply_infix(self, right, function):
-        if pysmt.shortcuts.get_env().enable_infix_notation:
+        env = pysmt.shortcuts.get_env()
+        if env.enable_infix_notation:
+            if is_python_boolean(right):
+                right = pysmt.shortcuts.Bool(right)
+            elif is_python_integer(right):
+                ty = env.stc.get_type(self)
+                if ty.is_real_type():
+                    right = pysmt.shortcuts.Real(right)
+                else:
+                    right = pysmt.shortcuts.Int(right)
+            elif is_python_rational(right):
+                right = pysmt.shortcuts.Real(right)
+
             return function(self, right)
         else:
             raise Exception("Cannot use infix notation")
@@ -378,10 +391,20 @@ class FNode(object):
     def __add__(self, right):
         return self._apply_infix(right, pysmt.shortcuts.Plus)
 
+    def __radd__(self, right):
+        return self._apply_infix(right, pysmt.shortcuts.Plus)
+
     def __sub__(self, right):
         return self._apply_infix(right, pysmt.shortcuts.Minus)
 
+    def __rsub__(self, right):
+        minus_self = -self
+        return minus_self._apply_infix(right, pysmt.shortcuts.Plus)
+
     def __mul__(self, right):
+        return self._apply_infix(right, pysmt.shortcuts.Times)
+
+    def __rmul__(self, right):
         return self._apply_infix(right, pysmt.shortcuts.Times)
 
     def __div__(self, right):
@@ -401,5 +424,46 @@ class FNode(object):
 
     def __le__(self, right):
         return self._apply_infix(right, pysmt.shortcuts.LE)
+
+    def __and__(self, other):
+        return self.And(other)
+
+    def __rand__(self, other):
+        return self.And(other)
+
+    def __or__(self, other):
+        return self.Or(other)
+
+    def __ror__(self, other):
+        return self.Or(other)
+
+    def __xor__(self, other):
+        return self._apply_infix(other, pysmt.shortcuts.Xor)
+
+    def __neg__(self):
+        return self._apply_infix(-1, pysmt.shortcuts.Times)
+
+    def __invert__(self):
+        env = pysmt.shortcuts.get_env()
+        if not env.enable_infix_notation:
+            raise Exception("Cannot use infix notation")
+        return pysmt.shortcuts.Not(self)
+
+    def __int__(self):
+        if self.is_int_constant():
+            return self.constant_value()
+        raise NotImplementedError("Cannot convert `%s` to integer" % str(self))
+
+    def __long__(self):
+        if self.is_int_constant():
+            return self.constant_value()
+        raise NotImplementedError("Cannot convert `%s` to integer" % str(self))
+
+    def __float__(self):
+        if self.is_int_constant() or self.is_real_constant():
+            return float(self.constant_value())
+        raise NotImplementedError("Cannot convert `%s` to float" % str(self))
+
+
 
 # EOC FNode

@@ -21,7 +21,8 @@ from six.moves import xrange
 
 import pysmt
 from pysmt.typing import BOOL, REAL, INT, FunctionType
-from pysmt.shortcuts import Symbol, is_sat, is_valid, Implies, GT, Plus
+from pysmt.shortcuts import Symbol, is_sat, Not, Implies, GT, Plus, Int, Real
+from pysmt.shortcuts import Minus, Times, Xor, And, Or, TRUE
 from pysmt.shortcuts import get_env
 from pysmt.environment import Environment
 from pysmt.test import TestCase, skipIfNoSolverForLogic
@@ -623,6 +624,46 @@ class TestFormulaManager(TestCase):
 
         self.assertEqual(p + p, Plus(p,p))
         self.assertEqual(p > p, GT(p,p))
+        get_env().enable_infix_notation = False
+
+    def test_infix_extended(self):
+        p, r, x, y = self.p, self.r, self.x, self.y
+        get_env().enable_infix_notation = True
+
+        self.assertEqual(Plus(p, Int(1)), p + 1)
+        self.assertEqual(Plus(r, Real(1)), r + 1)
+        self.assertEqual(Times(r, Real(1)), r * 1)
+
+        self.assertEqual(Minus(p, Int(1)), p - 1)
+        self.assertEqual(Minus(r, Real(1)), r - 1)
+        self.assertEqual(Times(r, Real(1)), r * 1)
+
+        self.assertEqual(Plus(r, Real(1.5)), r + 1.5)
+        self.assertEqual(Minus(r, Real(1.5)), r - 1.5)
+        self.assertEqual(Times(r, Real(1.5)), r * 1.5)
+
+        self.assertEqual(Plus(r, Real(1.5)), 1.5 + r)
+        self.assertEqual(Times(r, Real(1.5)), 1.5 * r)
+
+        with self.assertRaises(TypeError):
+            foo = p + 1.5
+
+        self.assertEqual(Not(x), ~x)
+
+        self.assertEqual(Times(r, Real(-1)), -r)
+        self.assertEqual(Times(p, Int(-1)), -p)
+
+        self.assertEqual(Xor(x, y), x ^ y)
+        self.assertEqual(And(x, y), x & y)
+        self.assertEqual(Or(x, y), x | y)
+
+        self.assertEqual(Or(x, TRUE()), x | True)
+        self.assertEqual(Or(x, TRUE()), True | x)
+
+        self.assertEqual(And(x, TRUE()), x & True)
+        self.assertEqual(And(x, TRUE()), True & x)
+
+        get_env().enable_infix_notation = False
 
     def test_toReal(self):
         f = self.mgr.Equals(self.rconst, self.mgr.ToReal(self.p))
