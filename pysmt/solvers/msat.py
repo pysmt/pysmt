@@ -21,7 +21,7 @@ from six.moves import xrange
 
 import mathsat
 
-from pysmt.logics import LRA, PYSMT_QF_LOGICS
+from pysmt.logics import LRA, QF_UFLIA, QF_UFLRA, QF_BV, PYSMT_QF_LOGICS
 from pysmt.oracles import get_logic
 
 import pysmt.operators as op
@@ -37,6 +37,7 @@ from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               InternalSolverError)
 from pysmt.decorators import clear_pending_pop
 from pysmt.solvers.qelim import QuantifierEliminator
+from pysmt.solvers.interpolation import Interpolator
 from pysmt.walkers.identitydag import IdentityDagWalker
 
 
@@ -904,3 +905,80 @@ if hasattr(mathsat, "MSAT_EXIST_ELIM_ALLSMT_FM"):
         def __init__(self, environment, logic=None):
             MSatQuantifierEliminator.__init__(self, environment,
                                               logic=logic, algorithm='lw')
+
+
+class MSatInterpolator(Interpolator):
+
+    LOGICS = [QF_UFLIA, QF_UFLRA, QF_BV]
+
+    def __init__(self, environment, logic=None):
+        self.msat_env = mathsat.msat_create_env()
+        self.converter = MSatConverter(environment, self.msat_env)
+        self.environment = environment
+        self.logic = logic
+
+
+    def __del__(self):
+        mathsat.msat_destroy_env(self.msat_env)
+
+
+    def _check_logic(self, formulas):
+        for f in formulas:
+            logic = get_logic(f, self.environment)
+            ok = any(logic <= l for l in self.LOGICS)
+            if not ok:
+                raise NotImplementedError(
+                    "Logic not supported by MathSAT inteprolation."
+                    "(detected logic is: %s)" % str(logic))
+
+
+    def binary_interpolant(self, a, b):
+        res = self.sequence_interpolant([a, b])
+        if res is not None:
+            res = res[0]
+        return res
+
+
+    def sequence_interpolant(self, formulas):
+        cfg, env = None, None
+        try:
+            self._check_logic(formulas)
+
+            if len(formulas) < 2:
+                raise Exception("interpolation needs at least 2 formulae")
+
+            cfg = mathsat.msat_create_config()
+            mathsat.msat_set_option(cfg, "interpolation", "true")
+            if self.logic == QF_BV:
+                mathsat.msat_set_option(cfg, "theory.bv.eager", "false")
+                mathsat.msat_set_option(cfg, "theory.eq_propagaion", "false")
+            env = mathsat.msat_create_env(cfg, self.msat_env)
+
+            groups = []
+            for f in formulas:
+                f = self.converter.convert(f)
+                g = mathsat.msat_create_itp_group(env)
+                mathsat.msat_set_itp_group(env, g)
+                groups.append(g)
+                mathsat.msat_assert_formula(env, f)
+
+            res = mathsat.msat_solve(env)
+            if res == mathsat.MSAT_UNKNOWN:
+                raise Exception("error in mathsat interpolation: %s" %
+                                mathsat.msat_last_error_message(env))
+
+            if res == mathsat.MSAT_SAT:
+                return None
+
+            pysmt_ret = []
+            for i in xrange(1, len(groups)):
+                itp = mathsat.msat_get_interpolant(env, groups[:i])
+                f = self.converter.back(itp)
+                pysmt_ret.append(f)
+
+            return pysmt_ret
+        finally:
+            if cfg:
+                mathsat.msat_destroy_config(cfg)
+            if env:
+                mathsat.msat_destroy_env(env)
