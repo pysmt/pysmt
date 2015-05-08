@@ -37,7 +37,7 @@ from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               ConvertExpressionError)
 from pysmt.decorators import clear_pending_pop
 
-from pysmt.logics import LRA, LIA, QF_AUFLIA, QF_UFLRA, PYSMT_LOGICS, BV_LOGICS
+from pysmt.logics import LRA, LIA, QF_UFLIA, QF_UFLRA, PYSMT_LOGICS, BV_LOGICS
 from pysmt.oracles import get_logic
 
 
@@ -496,7 +496,7 @@ class Z3QuantifierEliminator(QuantifierEliminator):
 
 class Z3Interpolator(Interpolator):
 
-    LOGICS = [QF_AUFLIA, QF_UFLRA]
+    LOGICS = [QF_UFLIA, QF_UFLRA]
 
     def __init__(self, environment, logic=None):
         self.environment = environment
