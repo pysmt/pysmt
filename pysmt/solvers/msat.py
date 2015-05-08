@@ -928,7 +928,7 @@ class MSatInterpolator(Interpolator):
             ok = any(logic <= l for l in self.LOGICS)
             if not ok:
                 raise NotImplementedError(
-                    "Logic not supported by Z3 inteprolation."
+                    "Logic not supported by MathSAT inteprolation."
                     "(detected logic is: %s)" % str(logic))
 
 

@@ -28,10 +28,10 @@ from pysmt.logics import LRA, LIA, UFLIRA
 class TestInterpolation(TestCase):
     def test_selection(self):
         with self.assertRaises(NoSolverAvailableError):
-            QuantifierEliminator(logic=UFLIRA)
+            Interpolator(logic=UFLIRA)
 
         with self.assertRaises(NoSolverAvailableError):
-            QuantifierEliminator(name="nonexistent")
+            Interpolator(name="nonexistent")
 
 
     @skipIfSolverNotAvailable('z3')
@@ -77,7 +77,6 @@ class TestInterpolation(TestCase):
 
         if binary:
             i = itp.binary_interpolant(a, b)
-            self.assertTrue(i is not None)
         else:
             i = itp.sequence_interpolant([a, b])
 
