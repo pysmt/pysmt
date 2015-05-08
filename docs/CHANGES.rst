@@ -6,6 +6,9 @@ X.X.X: XXX  -- XXX
 
 * Added BDD-Based quantifier eliminator for BOOL theory
 
+* Added Craig interpolation support through Interpolator class,
+  binary_interpolant and sequence_interpolant shortcuts.
+
 
 0.3.0: 2015-05-01  -- BitVectors/UnsatCores
 -------------------------------------------
