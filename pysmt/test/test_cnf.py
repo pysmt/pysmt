@@ -20,7 +20,7 @@ import os
 from nose.plugins.attrib import attr
 
 from pysmt.shortcuts import Implies, is_sat, is_valid, reset_env
-from pysmt.cnf import CNFizer
+from pysmt.rewritings import CNFizer
 from pysmt.logics import QF_BOOL, QF_LRA, QF_LIA, QF_UFLIRA
 from pysmt.test import TestCase, skipIfNoSolverForLogic
 from pysmt.test.examples import EXAMPLE_FORMULAS

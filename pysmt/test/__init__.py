@@ -112,7 +112,7 @@ class skipIfNoSolverForLogic(object):
 
     def __call__(self, test_fun):
         msg = "Solver for %s not available" % self.logic
-        cond = len(get_env().factory.all_solvers(logic=self.logic)) == 0
+        cond = not get_env().factory.has_solvers(logic=self.logic)
         @unittest.skipIf(cond, msg)
         @wraps(test_fun)
         def wrapper(*args, **kwargs):

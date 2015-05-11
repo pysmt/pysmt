@@ -34,7 +34,7 @@ from pysmt.operators import (FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF,
                              BV_LSHL, BV_LSHR,
                              BV_ROL, BV_ROR,
                              BV_ZEXT, BV_SEXT,
-                             BV_OPERATORS)
+                             BV_OPERATORS, THEORY_OPERATORS, RELATIONS)
 from pysmt.typing import BOOL, REAL, INT, PYSMT_TYPES, BVType
 from pysmt.decorators import deprecated
 from pysmt.utils import is_python_integer, is_python_rational, is_python_boolean
@@ -215,6 +215,12 @@ class FNode(object):
 
     def is_lt(self):
         return self.node_type() == LT
+
+    def is_theory_relation(self):
+        return self.node_type() in RELATIONS
+
+    def is_theory_op(self):
+        return self.node_type() in THEORY_OPERATORS
 
     def is_bv_op(self):
         return self.node_type() in BV_OPERATORS
