@@ -15,17 +15,18 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from unittest import skip
+import unittest
 
 from pysmt.shortcuts import get_env, get_free_variables
 from pysmt.shortcuts import Symbol, Implies, And, Not
 from pysmt.test.examples import EXAMPLE_FORMULAS
 from pysmt.test import TestCase
 from pysmt.oracles import get_logic
+from pysmt.typing import BOOL
 
 
 class TestOracles(TestCase):
-    @skip
+
     def test_quantifier_oracle(self):
         oracle = get_env().qfo
         for (f, _, _, logic) in EXAMPLE_FORMULAS:
@@ -45,3 +46,27 @@ class TestOracles(TestCase):
 
         s = get_free_variables(f)
         self.assertEqual(set([x,y]), s)
+
+
+    def test_atoms_oracle(self):
+        oracle = get_env().ao
+        stc = get_env().stc
+        for (f, _, _, _) in EXAMPLE_FORMULAS:
+            atoms = oracle.get_atoms(f)
+
+            if len(f.get_free_variables()) > 0:
+                self.assertTrue(len(atoms) > 0)
+
+            for a in atoms:
+                ty = stc.get_type(a)
+                self.assertEqual(ty, BOOL)
+
+                self.assertFalse(a.is_and())
+                self.assertFalse(a.is_or())
+                self.assertFalse(a.is_not())
+                self.assertFalse(a.is_iff())
+                self.assertFalse(a.is_quantifier())
+
+
+if __name__ == '__main__':
+    unittest.main()

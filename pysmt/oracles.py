@@ -330,7 +330,9 @@ class FreeVarsOracle(pysmt.walkers.DagWalker):
 # EOC FreeVarsOracle
 
 class AtomsOracle(pysmt.walkers.DagWalker):
-    """This class returns the set of theory atoms involved in a formula"""
+    """This class returns the set of Boolean atoms involved in a formula
+    A boolean atom is either a boolean variable or a theory atom
+    """
     def __init__(self, env=None):
         pysmt.walkers.DagWalker.__init__(self, env=env)
 
@@ -347,7 +349,7 @@ class AtomsOracle(pysmt.walkers.DagWalker):
         # - Constants
         #
         for elem in op.ALL_TYPES:
-            if elem in op.BOOL_CONNECTIVES:
+            if elem in op.BOOL_CONNECTIVES or elem in op.QUANTIFIERS:
                 self.functions[elem] = self.walk_bool_op
             elif elem in op.CONSTANTS:
                 self.functions[elem] = self.walk_constant

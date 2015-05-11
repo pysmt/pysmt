@@ -129,9 +129,6 @@ class TestBasic(TestCase):
         f = And(varA, Not(varB))
         g = f.substitute({varB:varA})
 
-        res = get_implicant(g, logic=QF_BOOL)
-        self.assertIsNone(res, "Formula was expected to be UNSAT")
-
         for solver in get_env().factory.all_solvers(logic=QF_BOOL):
             res = get_implicant(g, solver_name=solver)
             self.assertIsNone(res, "Formula was expected to be UNSAT")
@@ -142,10 +139,6 @@ class TestBasic(TestCase):
         varX = Symbol("X", REAL)
 
         f = And(varA, Equals(varX, Real(8)))
-
-        res = get_implicant(f, logic=QF_LRA)
-        self.assertIsNotNone(res, "Formula was expected to be SAT")
-        self.assertValid(Implies(res, f), logic=QF_LRA)
 
         for solver in get_env().factory.all_solvers(logic=QF_LRA):
             res = get_implicant(f, solver_name=solver)
