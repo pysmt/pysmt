@@ -80,6 +80,9 @@ class FNode(object):
     def get_free_variables(self):
         return pysmt.shortcuts.get_free_variables(self)
 
+    def get_atoms(self):
+        return pysmt.shortcuts.get_atoms(self)
+
     def get_sons(self):
         return self.args()
 

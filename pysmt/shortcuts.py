@@ -85,6 +85,10 @@ def get_free_variables(formula):
     """Returns the simplified version of the formula."""
     return get_env().fvo.get_free_variables(formula)
 
+def get_atoms(formula):
+    """Returns the set of atoms of the formula."""
+    return get_env().ao.get_atoms(formula)
+
 def get_formula_size(formula, measure=None):
     """Returns the size of the formula as measured by the given counting type.
     See pysmt.oracles.SizeOracle for details.
@@ -396,6 +400,23 @@ def get_model(formula, solver_name=None, logic=None):
     return env.factory.get_model(formula,
                                  solver_name=solver_name,
                                  logic=logic)
+
+
+def get_implicant(formula, solver_name=None, logic=None):
+    """Returns a formula f_i such that Implies(f_i, formula) is valid or None
+    if formula is unsatisfiable.
+
+    if complete is set to true, all the variables appearing in the
+    formula are forced to appear in f_i.
+    """
+    env = get_env()
+    if formula not in env.formula_manager:
+        warnings.warn("Warning: Contextualizing formula during get_model")
+        formula = env.formula_manager.normalize(formula)
+
+    return env.factory.get_implicant(formula,
+                                     solver_name=solver_name,
+                                     logic=logic)
 
 def get_unsat_core(clauses, solver_name=None, logic=None):
     """Similar to :py:func:`get_model` but returns the unsat core of the
