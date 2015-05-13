@@ -116,7 +116,7 @@ def unzip(fname, directory="."):
         myzip.extractall(directory)
 
 def download_patch(name, target):
-    SOURCE_URL="https://raw.githubusercontent.com/pysmt/solvers_patches/"
+    SOURCE_URL="https://raw.githubusercontent.com/pysmt/solvers_patches/master/"
     url = SOURCE_URL + name
     download(url, target)
 
@@ -232,7 +232,7 @@ def install_cvc4(options):
     archive = os.path.join(BASE_DIR, archive_name)
     dir_path = os.path.join(BASE_DIR, base_name)
     bin_path = os.path.join(BASE_DIR, "CVC4_bin")
-    patch_name = "dc5f12722b06cf18aa06686921885b9ad9441f9d/cvc4_wrapper.patch"
+    patch_name = "cvc4_wrapper.patch"
 
     # Use precompiled version of the solver
     if bin_mirror is not None:
@@ -339,7 +339,7 @@ def install_pycudd(options):
     archive_name = "%s.tar.gz" % base_name
     archive = os.path.join(BASE_DIR, archive_name)
     dir_path = os.path.join(BASE_DIR, base_name)
-    patch_name = "dc5f12722b06cf18aa06686921885b9ad9441f9d/pycudd.patch"
+    patch_name = "pycudd.patch"
 
     # Use precompiled version of the solver
     if bin_mirror is not None:
@@ -387,7 +387,7 @@ def install_picosat(options):
     archive_name = "%s.tar.gz" % base_name
     archive = os.path.join(BASE_DIR, archive_name)
     dir_path = os.path.join(BASE_DIR, base_name)
-    patch_name = "dc5f12722b06cf18aa06686921885b9ad9441f9d/picosat.patch"
+    patch_name = "picosat.patch"
 
     # Download picosat if needed
     if not os.path.exists(archive):
