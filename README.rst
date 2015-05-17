@@ -24,8 +24,8 @@ Among others, you can:
 
 Supported Theories and Solvers
 ==============================
-pySMT provides methods to define a formula in Linear Real Arithmetic (LRA), Real Difference Logic (RDL), their combination (LIRA) and
-Equalities and Uninterpreted Functions (EUF). The following solvers are supported through native APIs:
+pySMT provides methods to define a formula in Linear Real Arithmetic (LRA), Real Difference Logic (RDL), their combination (LIRA),
+Equalities and Uninterpreted Functions (EUF) and Bit-Vectors (BV). The following solvers are supported through native APIs:
 
 * MathSAT (http://mathsat.fbk.eu/) >= 5
 * Z3 (http://z3.codeplex.com/releases) >= 4

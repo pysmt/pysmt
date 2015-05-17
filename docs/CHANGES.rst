@@ -4,11 +4,22 @@ Change Log
 X.X.X: XXX  -- XXX
 -------------------------------------------
 
-* Added BDD-Based quantifier eliminator for BOOL theory
+* BDD: Added BDD-Based quantifier eliminator for BOOL theory
 
 * Added Craig interpolation support through Interpolator class,
   binary_interpolant and sequence_interpolant shortcuts.
+  Current support is limited to MathSAT and Z3.
+  Thanks to Alberto Griggio for implementing this!
 
+* get_implicant(): Returns the implicant of a satisfiable formula.
+
+* Improved support for infix notation.
+
+* BDD: Added support for static/dynamic variable ordering
+
+* BDD: Back-conversion from recursive to iterative
+
+* Z3Model Iteration bugfix
 
 0.3.0: 2015-05-01  -- BitVectors/UnsatCores
 -------------------------------------------
