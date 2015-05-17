@@ -445,7 +445,7 @@ class Simplifier(walkers.DagWalker):
                 res = args[0].bv_unsigned_value() // args[1].bv_unsigned_value()
                 res = res % 2**formula.bv_width()
             return self.manager.BV(res, width=formula.bv_width())
-        return self.manager.BVUdiv(*args)
+        return self.manager.BVUDiv(*args)
 
     def walk_bv_urem(self, formula, args):
         if args[0].is_bv_constant() and args[1].is_bv_constant:
@@ -454,7 +454,7 @@ class Simplifier(walkers.DagWalker):
             else:
                 res = args[0].bv_unsigned_value() % args[1].bv_unsigned_value()
             return self.manager.BV(res, width=formula.bv_width())
-        return self.manager.BVUrem(*args)
+        return self.manager.BVURem(*args)
 
     def walk_bv_ult(self, formula, args):
         if args[0].is_bv_constant() and args[1].is_bv_constant:
@@ -506,7 +506,7 @@ class Simplifier(walkers.DagWalker):
             filler = bitstr[0]
             res = filler*formula.bv_extend_step() + bitstr
             return self.manager.BV(res, width=formula.bv_width())
-        return self.manager.BVSext(args[0], formula.bv_extend_step())
+        return self.manager.BVSExt(args[0], formula.bv_extend_step())
 
     def walk_bv_zext(self, formula, args):
         if args[0].is_bv_constant():
@@ -517,7 +517,7 @@ class Simplifier(walkers.DagWalker):
         return self.manager.BVZExt(args[0], formula.bv_extend_step())
 
     def walk_bv_concat(self, formula, args):
-        if args[0].is_bv_constant() and args[1].is_bv_constant:
+        if args[0].is_bv_constant() and args[1].is_bv_constant():
             w0 = args[0].bv_width()
             w1 = args[1].bv_width()
             res = (2**w1) * args[0].bv_unsigned_value() + \
@@ -526,14 +526,14 @@ class Simplifier(walkers.DagWalker):
         return self.manager.BVConcat(*args)
 
     def walk_bv_lshl(self, formula, args):
-        if args[0].is_bv_constant() and args[1].is_bv_constant:
+        if args[0].is_bv_constant() and args[1].is_bv_constant():
             res = args[0].bv_unsigned_value() << args[1].bv_unsigned_value()
             w = args[0].bv_width()
             return self.manager.BV(res % (2 ** w), w)
         return self.manager.BVLShl(*args)
 
     def walk_bv_lshr(self, formula, args):
-        if args[0].is_bv_constant() and args[1].is_bv_constant:
+        if args[0].is_bv_constant() and args[1].is_bv_constant():
             res = args[0].bv_unsigned_value() >> args[1].bv_unsigned_value()
             w = args[0].bv_width()
             return self.manager.BV(res % (2 ** w), w)
