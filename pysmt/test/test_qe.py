@@ -17,11 +17,16 @@
 #
 import unittest
 
-from pysmt.shortcuts import *
+from pysmt.shortcuts import Symbol, ForAll, Exists, And, Iff, GE, LT, Real, Int
+from pysmt.shortcuts import Minus, Equals, Plus, ToReal, Implies, LE, TRUE, Not
+from pysmt.shortcuts import QuantifierEliminator
+from pysmt.shortcuts import is_sat, is_valid
 from pysmt.typing import REAL, BOOL, INT
-from pysmt.test import (TestCase, skipIfNoSolverForLogic, skipIfNoQEForLogic,
+from pysmt.test import TestCase
+from pysmt.test import (skipIfNoSolverForLogic, skipIfNoQEForLogic,
                         skipIfQENotAvailable)
-from pysmt.exceptions import (SolverReturnedUnknownResultError, \
+from pysmt.test.examples import get_example_formulae
+from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               NoSolverAvailableError)
 from pysmt.logics import LRA, LIA, UFLIRA
 
@@ -75,6 +80,8 @@ class TestQE(TestCase):
         self._alternation_bool_example(qe)
         self._alternation_real_example(qe)
         self._alternation_int_example(qe)
+        self._std_examples(qe, LRA)
+        self._std_examples(qe, LIA)
         # Additional test for raising error on back conversion of
         # quantified formulae
         p, q = Symbol("p", INT), Symbol("q", INT)
@@ -92,6 +99,7 @@ class TestQE(TestCase):
         self._real_example(qe)
         self._alternation_bool_example(qe)
         self._alternation_real_example(qe)
+        self._std_examples(qe, LRA)
 
         with self.assertRaises(NotImplementedError):
             self._int_example(qe)
@@ -190,6 +198,15 @@ class TestQE(TestCase):
 
         self.assertEqual(qf, TRUE())
 
+    def _std_examples(self, qe, target_logic):
+        for (f, validity, satisfiability, logic) in get_example_formulae():
+            if logic != target_logic: continue
+            qf = qe.eliminate_quantifiers(f)
+            s = is_sat(qf)
+            v = is_valid(qf)
+
+            self.assertEqual(validity, v, f)
+            self.assertEqual(satisfiability, s, f)
 
 if __name__ == '__main__':
     unittest.main()
