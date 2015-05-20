@@ -19,7 +19,7 @@ from fractions import Fraction
 
 from pysmt.shortcuts import (Real, Plus, Symbol, Equals, And, Bool, Or,
                              Div, LT, LE, Int, ToReal, Iff, Exists, Times)
-from pysmt.shortcuts import Solver, get_env, qelim, get_model, TRUE
+from pysmt.shortcuts import Solver, get_env, qelim, get_model, TRUE, ExactlyOne
 from pysmt.typing import REAL, BOOL, INT, FunctionType
 from pysmt.test import TestCase, skipIfSolverNotAvailable, skipIfNoSolverForLogic
 from pysmt.logics import QF_UFLIRA, QF_BOOL, LIA
@@ -202,6 +202,14 @@ class TestRegressions(TestCase):
         for _, v in m:
             self.assertEqual(v, TRUE())
 
+    def test_exactlyone_w_generator(self):
+        x, y = Symbol("x"), Symbol("y")
+
+        elems = [x,y]
+        f1 = ExactlyOne(elems)
+        f2 = ExactlyOne(e for e in elems)
+
+        self.assertEquals(f1, f2)
 
 if __name__ == "__main__":
     import unittest

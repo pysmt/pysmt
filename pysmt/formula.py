@@ -464,6 +464,7 @@ class FormulaManager(object):
            A -> !(B \/ C)
            B -> !(C)
         """
+        args = list(*args)
         return self.And(self.Or(*args),
                         self.AtMostOne(*args))
 
