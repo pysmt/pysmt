@@ -78,14 +78,12 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
                                             "1")
             assert check == 0
 
-
         if debugFile is not None:
             mathsat.msat_set_option(self.msat_config,
                                     "debug.api_call_trace", "1")
             mathsat.msat_set_option(self.msat_config,
                                     "debug.api_call_trace_filename",
                                     debugFile)
-
 
     @clear_pending_pop
     def _reset_assertions(self):
@@ -747,9 +745,6 @@ class MSatConverter(Converter, DagWalker):
                                          formula.bv_extend_step(),
                                          args[0])
 
-
-
-
     def walk_forall(self, formula, args):
         raise NotImplementedError
 
@@ -875,17 +870,18 @@ if hasattr(mathsat, "MSAT_EXIST_ELIM_ALLSMT_FM"):
 
             return self.converter.back(res)
 
-
         def walk_forall(self, formula, args):
-            nf = self.env.formula_manager.Not(args[0])
-            ex = self.env.formula_manager.Exists(formula.quantifier_vars(), nf)
-            return self.walk(self.env.formula_manager.Not(ex))
+            assert formula.is_forall()
+            variables = formula.quantifier_vars()
+            subf = self.env.formula_manager.Not(args[0])
+            ex_res = self.exist_elim(variables, subf)
+            return self.env.formula_manager.Not(ex_res)
 
         def walk_exists(self, formula, args):
             # Monolithic quantifier elimination
             assert formula.is_exists()
             variables = formula.quantifier_vars()
-            subf = formula.arg(0)
+            subf = args[0]
             return self.exist_elim(variables, subf)
 
         def __del__(self):

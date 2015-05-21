@@ -363,6 +363,13 @@ def get_example_formulae(environment=None):
                     logic=pysmt.logics.LRA
                 ),
 
+            # x /\ forall r. (r + s = 5)
+            Example(expr=And(x, ForAll([r], Equals(Plus(r,s), Real(5)))),
+                    is_valid=False,
+                    is_sat=False,
+                    logic=pysmt.logics.LRA
+                ),
+
             #
             # UFLIRA
             #
