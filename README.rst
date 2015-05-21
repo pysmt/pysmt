@@ -41,6 +41,44 @@ PySMT assumes that the python bindings for the SMT Solver are installed and acce
 pySMT works on both Python 2 and Python 3. Some solvers support both versions (e.g., MathSAT) but in general, many solvers still support only Python 2.
 
 
+The following table summarizes the features supported via pySMT for
+each of the available solvers. (We indicate with square brackets the
+features that are supported by the solver itself by not by the current
+wrapper used within pySMT).
+
+  =================   ==========   ==================   ==============   ==================   ==========
+  Solver              pySMT name   Supported Logics     Satisfiability   Model Construction   UNSAT-Core
+  =================   ==========   ==================   ==============   ==================   ==========
+  MathSAT             msat         QF_UFLIRA, QF_BV     Yes              Yes                  Yes
+  Z3                  z3           UFLIRA, [QF_BV]      Yes              Yes                  Yes
+  CVC4                cvc4         QF_UFLIRA, [QF_BV]   Yes              Yes                  No
+  Yices               yices        QF_UFLIRA, [QF_BV]   Yes              Yes                  No
+  SMT-Lib Interface   <custom>     UFLIRA, [QF_BV]      Yes              Yes                  No [Yes]
+  PicoSAT             picosat      QF_BOOL              Yes              Yes                  No [Yes]
+  BDD (CUDD)          bdd          BOOL                 Yes              Yes                  No
+  =================   ==========   ==================   ==============   ==================   ==========
+
+The following table summarizes the features supported via pySMT for each of the available quantifier eliminators
+
+  =====================   ==========   ================
+  Quantifier Eliminator   pySMT name   Supported Logics
+  =====================   ==========   ================
+  MathSAT FM              msat-fm      LRA
+  MathSAT LW              msat-lw      LRA
+  Z3                      z3           LRA, LIA
+  BDD (CUDD)              bdd          BOOL
+  =====================   ==========   ================
+
+The following table summarizes the features supported via pySMT for each of the available Craig interpolators
+
+  ============   ==========   =========================
+  Interpolator   pySMT name   Supported Logics
+  ============   ==========   =========================
+  MathSAT        msat         QF_UFLIA, QF_UFLRA, QF_BV
+  Z3             z3           QF_UFLIA, QF_UFLRA
+  ============   ==========   =========================
+
+
 Getting Started
 ===============
 You can install the latest stable release of pySMT from PyPI:
