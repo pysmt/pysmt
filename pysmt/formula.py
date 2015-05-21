@@ -50,6 +50,7 @@ class FormulaManager(object):
         self._fresh_guess = 0
         # get_type() from TypeChecker will be initialized lazily
         self.get_type = None
+        self._next_free_id = 1
 
         self.int_constants = {}
         self.real_constants = {}
@@ -74,7 +75,8 @@ class FormulaManager(object):
         if content in self.formulae:
             return self.formulae[content]
         else:
-            n = FNode(content)
+            n = FNode(content, self._next_free_id)
+            self._next_free_id += 1
             self.formulae[content] = n
             self._do_type_check(n)
             return n

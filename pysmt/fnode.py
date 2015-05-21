@@ -55,14 +55,26 @@ class FNode(object):
     (e.g., for the formula A /\ B, args=(A,B)) and its payload,
     content of the node that is not an FNode (e.g., for an integer
     constant, the payload might be the python value 1).
+
+    The node_id is an integer uniquely identifying the node within the
+    FormulaManager it belongs.
     """
 
-    def __init__(self, content):
+    def __init__(self, content, node_id):
         self._content = content
+        self._node_id = node_id
         return
 
-    # __eq__ and __hash__ are left as default
-    # This is because we always have shared FNode's
+    # __eq__ is left as default while __hash__ uses the node id. This
+    # is because we always have shared FNodes, hence in a single
+    # environment two nodes have always different ids, but in
+    # different environments they can have the same id. This is not an
+    # issue since, by default, equality coincides with identity.
+    def __hash__(self):
+        return self._node_id
+
+    def node_id(self):
+        return self._node_id
 
     def node_type(self):
         return self._content.node_type
