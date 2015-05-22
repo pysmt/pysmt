@@ -4,6 +4,9 @@ Change Log
 X.X.X: XXX  -- XXX
 -------------------------------------------
 
+* BDD: switched from pycudd wrapper to a custom re-entrant version
+  called repycudd (https://github.com/pysmt/repycudd)
+
 * BDD: Added BDD-Based quantifier eliminator for BOOL theory
 
 * Added Craig interpolation support through Interpolator class,

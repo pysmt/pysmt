@@ -75,10 +75,10 @@ def get_pyices_download_link(git_version):
         return mirror + ("/pyices-%s.tar.gz" % git_version)
     return "https://codeload.github.com/cheshire/pyices/tar.gz/%s" % git_version
 
-def get_pycudd_download_link(archive_name):
-    if mirror is not None:
-        return mirror + "/" + archive_name
-    return "http://bears.ece.ucsb.edu/ftp/pub/pycudd2.0/%s" % archive_name
+def get_pycudd_download_link(git_version, skip_mirror=False):
+    if not skip_mirror and mirror is not None:
+        return mirror + ("/repycudd-%s.tar.gz" % git_version)
+    return "https://codeload.github.com/pysmt/repycudd/tar.gz/%s" % git_version
 
 def get_picosat_download_link(archive_name):
     if mirror is not None:
@@ -125,7 +125,7 @@ def download(url, file_name):
     u = urllib2.urlopen(url)
     f = open(file_name, 'wb')
     meta = u.info()
-    if len(meta.get("Content-Length")) > 0:
+    if meta.get("Content-Length") and len(meta.get("Content-Length")) > 0:
         file_size = int(meta.get("Content-Length"))
         print("Downloading: %s Bytes: %s" % (file_name, file_size))
 
@@ -137,7 +137,8 @@ def download(url, file_name):
             break
 
         f.write(buff)
-        if len(meta.get("Content-Length")) > 0 and sys.stdout.isatty():
+        if meta.get("Content-Length") and len(meta.get("Content-Length")) > 0 \
+           and sys.stdout.isatty():
             count += len(buff)
             perc = (float(count) / float(file_size)) * 100.0
             str_perc = "%.1f%%" % perc
@@ -334,12 +335,11 @@ def install_yices(options):
 
 def install_pycudd(options):
     """Installer for the CUDD library python interafce"""
-
-    base_name =  "pycudd2.0.2"
+    pycudd_git = "4861f4df8abc2ca205a6a09b30fdc8cfd29f6ebb"
+    base_name =  "repycudd-%s" % pycudd_git
     archive_name = "%s.tar.gz" % base_name
     archive = os.path.join(BASE_DIR, archive_name)
     dir_path = os.path.join(BASE_DIR, base_name)
-    patch_name = "pycudd.patch"
 
     # Use precompiled version of the solver
     if bin_mirror is not None:
@@ -351,7 +351,7 @@ def install_pycudd(options):
 
     # Download pycudd if needed
     if not os.path.exists(archive):
-        download(get_pycudd_download_link(archive_name), archive)
+        download(get_pycudd_download_link(pycudd_git, True), archive)
 
     # Clear the destination directory, if any
     if os.path.exists(dir_path):
@@ -360,10 +360,6 @@ def install_pycudd(options):
     # Extract the pycudd distribution
     untar(archive, BASE_DIR)
 
-    # patch the distribution
-    download_patch(patch_name, "%s/pycudd.patch" % dir_path)
-    os.system("cd %s; patch -p1 -i pycudd.patch" % dir_path)
-
     # Select the correct Makefile to be used
     makefile = "Makefile"
     if get_architecture_bits() == 64:
@@ -371,12 +367,10 @@ def install_pycudd(options):
 
     # Build the pycudd
     # NOTE: -j is not supported by this building system
-    os.system("cd %s/cudd-2.4.2; ./setup.sh; make -f %s" % (dir_path, makefile))
-    os.system("cd %s/cudd-2.4.2; make -f %s libso" % (dir_path, makefile))
-    os.system("cd %s/pycudd; make" % dir_path)
+    os.system("make -C %s -f %s" % (dir_path, makefile))
 
     # Save the paths
-    PATHS.append("%s/pycudd" % dir_path)
+    PATHS.append(dir_path)
 
 
 
