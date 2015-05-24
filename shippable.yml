@@ -7,6 +7,8 @@ python:
   - 2.7
   - 3.4
 
+# Allow the download of the generated files
+archive: true
 
 before_install:
  #  set up a virtualenv and activate the python version that you want to use
