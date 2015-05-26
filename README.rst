@@ -161,4 +161,4 @@ Finally, for CVC4, pycudd and picosat, we have patches that need to be applied. 
 - pycudd: 2.0.2
 - picosat 960
 
-For instruction on how to use any SMT-LIB complaint solver with pySMT see examples/generic_wrapper.py
+For instruction on how to use any SMT-LIB complaint solver with pySMT see examples/generic_smtlib.py
