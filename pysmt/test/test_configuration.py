@@ -33,10 +33,8 @@ class TestConfiguration(TestCase):
     def _get_config_path(self, config_name):
         return os.path.join(BASE_DIR, "configs", config_name)
 
-
     def _get_tmp_file(self):
         return NamedTemporaryFile(delete=False)
-
 
     def test_read(self):
         env = get_env()
@@ -62,7 +60,10 @@ class TestConfiguration(TestCase):
 
         new_env = Environment()
         configure_environment(fname, new_env)
-        os.remove(fname)
+        try:
+            os.remove(fname)
+        except WindowsError:
+            print("Error deleting file...")
 
         self.assertEqual(new_env.enable_infix_notation,
                           env.enable_infix_notation)
@@ -83,7 +84,10 @@ class TestConfiguration(TestCase):
 
         new_env = Environment()
         read_configuration(fname, new_env)
-        os.remove(fname)
+        try:
+            os.remove(fname)
+        except WindowsError:
+            print("Error deleting file...")
 
         env = get_env()
         self.assertEqual(new_env.enable_infix_notation,
