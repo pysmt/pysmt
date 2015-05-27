@@ -31,7 +31,7 @@ Equalities and Uninterpreted Functions (EUF) and Bit-Vectors (BV). The following
 * Z3 (http://z3.codeplex.com/releases) >= 4
 * CVC4 (http://cvc4.cs.nyu.edu/web/)
 * Yices 2 (http://yices.csl.sri.com/)
-* pyCUDD (http://bears.ece.ucsb.edu/pycudd.html)
+* repycudd (https://github.com/pysmt/repycudd)
 * PicoSAT (http://fmv.jku.at/picosat/)
 
 Additionally, you can use any SMT-LIB 2 compliant solver.
@@ -155,7 +155,7 @@ The script *pysmt-install* can be used to simplify the installation of the solve
  $ pysmt-install --msat
 will install MathSAT 5. This script does not install required dependencies for building the solver (e.g., make or gcc) and has been tested mainly on Linux Debian/Ubuntu systems. We suggest that you refer to the documentation of each solver to understand how to install it with its python bindings. Nevertheless, we try to keep *pysmt/cmd/install.py* as readable and documented as possible..
 
-Finally, for CVC4, pycudd and picosat, we have patches that need to be applied. The patches are available in the repository 'pysmt/solvers_patches' and should be applied against the following versions of the solvers:
+Finally, for CVC4 and picosat, we have patches that need to be applied. The patches are available in the repository 'pysmt/solvers_patches' and should be applied against the following versions of the solvers:
 
 - CVC4: Git revision 68f22235a62f5276b206e9a6692a85001beb8d42
 - pycudd: 2.0.2

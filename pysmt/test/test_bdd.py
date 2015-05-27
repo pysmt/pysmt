@@ -53,14 +53,11 @@ class TestBdd(TestCase):
 
     @skipIfSolverNotAvailable("bdd")
     def test_basic_expr(self):
-        from pysmt.solvers.bdd import LockDdManager
-
         convert = self.bdd_converter.convert
 
         bdd_x = convert(self.x)
         bdd_y = convert(self.y)
-        with LockDdManager(self.bdd_converter.ddmanager):
-            bdd_x_and_y = bdd_x.And(bdd_y)
+        bdd_x_and_y = self.bdd_converter.ddmanager.And(bdd_x, bdd_y)
 
         x_and_y = And(self.x, self.y)
         converted_expr = convert(x_and_y)

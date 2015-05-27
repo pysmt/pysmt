@@ -70,7 +70,7 @@ before_script:
   - export PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/CVC4-68f22235a62f5276b206e9a6692a85001beb8d42/builds/src/bindings/python"
   - export PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/CVC4_bin/share/pyshared:$TRAVIS_BUILD_DIR/.smt_solvers/CVC4_bin/lib/pyshared"
   - export PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/pyices-aa0b91c39aa00c19c2160e83aad822dc468ce328/build/lib.linux-x86_64-2.7"
-  - export PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/pycudd2.0.2/pycudd"
+  - export PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/repycudd-4861f4df8abc2ca205a6a09b30fdc8cfd29f6ebb"
   - export PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/picosat-960:$TRAVIS_BUILD_DIR/.smt_solvers/picosat-960/build/lib.linux-x86_64-$TRAVIS_PYTHON_VERSION"
 
 
