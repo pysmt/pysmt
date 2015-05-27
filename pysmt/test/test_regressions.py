@@ -16,6 +16,7 @@
 #   limitations under the License.
 #
 from fractions import Fraction
+from six.moves import xrange
 
 from pysmt.shortcuts import (Real, Plus, Symbol, Equals, And, Bool, Or,
                              Div, LT, LE, Int, ToReal, Iff, Exists, Times)
@@ -24,7 +25,8 @@ from pysmt.typing import REAL, BOOL, INT, FunctionType
 from pysmt.test import TestCase, skipIfSolverNotAvailable, skipIfNoSolverForLogic
 from pysmt.logics import QF_UFLIRA, QF_BOOL, LIA
 from pysmt.exceptions import ConvertExpressionError
-
+from pysmt.test.examples import get_example_formulae
+from pysmt.environment import Environment
 
 class TestRegressions(TestCase):
 
@@ -210,6 +212,33 @@ class TestRegressions(TestCase):
         f2 = ExactlyOne(e for e in elems)
 
         self.assertEquals(f1, f2)
+
+    def test_determinism(self):
+        def get_set(env):
+            mgr = env.formula_manager
+            r = set(mgr.Symbol("x%d" % i) for i in xrange(1000))
+            for (f, _, _, _) in get_example_formulae(env):
+                r |= set([f])
+            return r
+
+        # As first thing on the environment we build the set of formulae
+        l1 = list(get_set(get_env()))
+
+        # We try this ten times...
+        for _ in xrange(10):
+            # Do something to screw up memory layout...
+            for y in (Symbol("y%d" % i) for i in xrange(1000)):
+                self.assertIsNotNone(y)
+
+            with Environment() as new_env:
+                # As first thing on the environment we build the set of formulae
+                l_test = list(get_set(new_env))
+
+                # The ordering of the sets should be the same...
+                for i,f in enumerate(l1):
+                    nf = new_env.formula_manager.normalize(f)
+                    self.assertEquals(nf, l_test[i])
+
 
 if __name__ == "__main__":
     import unittest
