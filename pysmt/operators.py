@@ -73,6 +73,8 @@ BV_OPERATORS = frozenset([BV_CONSTANT, BV_NOT, BV_AND, BV_OR, BV_XOR,
 LIRA_OPERATORS = frozenset([PLUS, MINUS, TIMES, TOREAL])
 CUSTOM_NODE_TYPES = []
 
+THEORY_OPERATORS = LIRA_OPERATORS | BV_OPERATORS
+
 def new_node_type(new_node_id=None):
     """Adds a new node type to the list of custom node types and returns the ID."""
     if new_node_id is None:

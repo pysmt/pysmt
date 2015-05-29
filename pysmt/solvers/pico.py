@@ -22,7 +22,7 @@ import pysmt.logics
 from pysmt import typing as types
 from pysmt.solvers.solver import Solver
 from pysmt.solvers.eager import EagerModel
-from pysmt.cnf import CNFizer
+from pysmt.rewritings import CNFizer
 from pysmt.decorators import clear_pending_pop
 
 from six.moves import xrange
@@ -82,8 +82,13 @@ class PicosatSolver(Solver):
 
     @clear_pending_pop
     def add_assertion(self, formula, named=None):
-        cnf = self.cnfizer.convert(formula)
-        self._add_cnf_assertion(cnf)
+        # First, we get rid of True/False constants
+        formula = formula.simplify()
+        if formula.is_false():
+            picosat.picosat_add(self.pico, 0)
+        elif not formula.is_true():
+            cnf = self.cnfizer.convert(formula)
+            self._add_cnf_assertion(cnf)
 
     def _add_cnf_assertion(self, cnf):
         for clause in cnf:

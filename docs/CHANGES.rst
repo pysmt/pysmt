@@ -3,6 +3,8 @@ Change Log
 
 X.X.X: XXX  -- XXX
 -------------------------------------------
+* Added rewriting functions: nnf-ization, prenex-normalization and
+  disjunctive/conjunctive partitioning.
 
 * BDD: switched from pycudd wrapper to a custom re-entrant version
   called repycudd (https://github.com/pysmt/repycudd)

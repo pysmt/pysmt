@@ -332,7 +332,7 @@ class Factory(object):
         assert preference_list is not None
         assert len(preference_list) > 0
         self.interpolation_preference_list = preference_list
-        
+
 
     def _filter_solvers(self, solver_list, logic=None):
         """
@@ -369,6 +369,13 @@ class Factory(object):
         If logic is None, the map will contain all the known solvers
         """
         return self._filter_solvers(self._all_solvers, logic=logic)
+
+
+    def has_solvers(self, logic=None):
+        """
+        Returns true if self.all_solvers(logic) is non-empty
+        """
+        return len(self.all_solvers(logic=logic)) > 0
 
 
     def all_quantifier_eliminators(self, logic=None):
@@ -520,7 +527,7 @@ class Factory(object):
 
         with self.Interpolator(name=solver_name, logic=logic) as itp:
             return itp.sequence_interpolant(formulas)
-        
+
 
     @property
     def default_logic(self):
