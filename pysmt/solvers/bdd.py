@@ -26,7 +26,7 @@ from pysmt import typing as types
 from pysmt.solvers.solver import Solver, Converter, SolverOptions
 from pysmt.solvers.eager import EagerModel
 from pysmt.walkers import DagWalker
-from pysmt.decorators import clear_pending_pop
+from pysmt.decorators import clear_pending_pop, catch_conversion_error
 from pysmt.oracles import get_logic
 from pysmt.solvers.qelim import QuantifierEliminator
 
@@ -225,6 +225,7 @@ class BddConverter(Converter, DagWalker):
         self.var2node = {}
         self.back_memoization = {}
 
+    @catch_conversion_error
     def convert(self, formula):
         """Convert a PySMT formula into a BDD."""
         return self.walk(formula)

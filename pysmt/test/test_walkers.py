@@ -26,6 +26,7 @@ from pysmt.walkers import TreeWalker, DagWalker, IdentityDagWalker
 from pysmt.test import TestCase
 from pysmt.formula import FormulaManager
 from pysmt.test.examples import get_example_formulae
+from pysmt.exceptions import UnsupportedOperatorError
 
 from six.moves import xrange
 
@@ -83,11 +84,11 @@ class TestWalkers(TestCase):
         varA = Symbol("At", INT)
 
         dag_walker = DagWalker()
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(UnsupportedOperatorError):
             dag_walker.walk(varA)
 
         tree_walker = TreeWalker()
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(UnsupportedOperatorError):
             tree_walker.walk(varA)
 
 

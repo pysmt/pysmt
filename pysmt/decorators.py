@@ -19,6 +19,7 @@ from functools import wraps
 import warnings
 
 import pysmt.shortcuts
+import pysmt.exceptions
 
 class deprecated(object):
     """This is a decorator which can be used to mark functions
@@ -57,19 +58,35 @@ def clear_pending_pop(f):
     """
 
     @wraps(f)
-    def wrapper(self, *args, **kwargs):
+    def clear_pending_pop_wrap(self, *args, **kwargs):
         if self.pending_pop:
             self.pending_pop = False
             self.pop()
         return f(self, *args, **kwargs)
-    return wrapper
+    return clear_pending_pop_wrap
 
 
 def typecheck_result(f):
     """Performs type checking on the return value using the global environment"""
 
     @wraps(f)
-    def wrapper(*args, **kwargs):
+    def typecheck_result_wrap(*args, **kwargs):
         res = f(*args, **kwargs)
         pysmt.shortcuts.get_type(res)
-    return wrapper
+    return typecheck_result_wrap
+
+def catch_conversion_error(f):
+    """Catch unknown operators errors and converts them into conversion error."""
+
+    @wraps(f)
+    def catch_conversion_error_wrap(*args, **kwargs):
+        try:
+            res = f(*args, **kwargs)
+        except pysmt.exceptions.UnsupportedOperatorError as ex:
+            raise pysmt.exceptions.ConvertExpressionError(message=
+                "Could not convert the input expression. " +
+                "The formula contains unsupported operators. " +
+                "The error was: %s" % ex.message,
+            expression=ex.expression)
+        return res
+    return catch_conversion_error_wrap

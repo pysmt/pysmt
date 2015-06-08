@@ -27,6 +27,8 @@ from pysmt.exceptions import SolverReturnedUnknownResultError
 from pysmt.walkers import DagWalker
 from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 from pysmt.solvers.eager import EagerModel
+from pysmt.decorators import catch_conversion_error
+
 
 class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
     LOGICS = PYSMT_QF_LOGICS - BV_LOGICS
@@ -176,8 +178,7 @@ class CVC4Converter(Converter, DagWalker):
 
         return res
 
-
-
+    @catch_conversion_error
     def convert(self, formula):
         return self.walk(formula)
 

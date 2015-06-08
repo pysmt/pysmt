@@ -33,8 +33,7 @@ from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 
 from pysmt.walkers import DagWalker
 from pysmt.exceptions import SolverReturnedUnknownResultError
-from pysmt.decorators import clear_pending_pop
-
+from pysmt.decorators import clear_pending_pop, catch_conversion_error
 
 import pysmt.logics
 
@@ -236,10 +235,9 @@ class YicesConverter(Converter, DagWalker):
         # Maps an internal yices instance into the corresponding symbol
         self.decl_to_symbol = {}
 
-
+    @catch_conversion_error
     def convert(self, formula):
         return self.walk(formula)
-
 
     def walk_and(self, formula, args):
         arr = (libyices.term_t * len(args))(*args)
