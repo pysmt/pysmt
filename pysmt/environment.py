@@ -19,8 +19,6 @@
 The Environment is a key structure in pySMT. It contains multiple
 singleton objects that are used throughout the system, such as the
 FormulaManager, Simplifier, HRSerializer, SimpleTypeChecker.
-
-A global environment is defined in shortcuts.py
 """
 
 import pysmt.simplifier
@@ -30,8 +28,8 @@ import pysmt.type_checker
 import pysmt.oracles
 import pysmt.formula
 import pysmt.factory
-import pysmt.shortcuts
 import pysmt.decorators
+
 
 class Environment(object):
     FormulaManagerClass = pysmt.formula.FormulaManager
@@ -129,11 +127,37 @@ class Environment(object):
 
     def __enter__(self):
         """Entering a Context """
-        pysmt.shortcuts.push_env(self)
+        push_env(self)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Remove environment from global stack."""
-        pysmt.shortcuts.pop_env()
+        pop_env()
 
 # EOC Environment
+
+#### GLOBAL ENVIRONMENTS STACKS ####
+ENVIRONMENTS_STACK = []
+
+def get_env():
+    """Returns the Environment at the head of the stack."""
+    return ENVIRONMENTS_STACK[-1]
+
+def push_env(env=None):
+    """Push a env in the stack. If env is None, a new Environment is created."""
+    if env is None:
+        env = Environment()
+    ENVIRONMENTS_STACK.append(env)
+
+def pop_env():
+    """Pop an env from the stack."""
+    return ENVIRONMENTS_STACK.pop()
+
+def reset_env():
+    """Destroys and recreate the head environment."""
+    pop_env()
+    push_env()
+    return get_env()
+
+# Create the default environment
+push_env()

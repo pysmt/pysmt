@@ -17,13 +17,13 @@
 #
 from six import iteritems
 
-import pysmt.walkers as walkers
+import pysmt.walkers
 import pysmt.operators as op
 
-class Substituter(walkers.DagWalker):
+class Substituter(pysmt.walkers.DagWalker):
 
     def __init__(self, env):
-        walkers.DagWalker.__init__(self, env=env, invalidate_memoization=True)
+        pysmt.walkers.DagWalker.__init__(self, env=env, invalidate_memoization=True)
         self.manager = self.env.formula_manager
 
         self.functions[op.SYMBOL] = self.walk_identity
@@ -98,9 +98,9 @@ class Substituter(walkers.DagWalker):
             key = self._get_key(formula, **kwargs)
             self.memoization[key] = res
         else:
-            walkers.DagWalker._push_with_children_to_stack(self,
-                                                           formula,
-                                                           **kwargs)
+            pysmt.walkers.DagWalker._push_with_children_to_stack(self,
+                                                                 formula,
+                                                                 **kwargs)
 
 
     def _substitute(self, formula, subs):

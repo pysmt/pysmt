@@ -22,6 +22,7 @@ This module defines some rewritings for pySMT formulae.
 from pysmt.walkers.dag import DagWalker
 import pysmt.typing as types
 import pysmt.operators as op
+import pysmt.environment
 
 class CNFizer(DagWalker):
 
@@ -227,8 +228,7 @@ class NNFizer(object):
     def __init__(self, environment=None):
         if environment is None:
             # Avoids possible circular imports
-            import pysmt.shortcuts
-            environment = pysmt.shortcuts.get_env()
+            environment = pysmt.environment.get_env()
 
         self.env = environment
         self.memoization = {}

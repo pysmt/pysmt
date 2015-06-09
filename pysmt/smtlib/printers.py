@@ -17,7 +17,7 @@
 #
 from functools import partial
 
-from pysmt.shortcuts import get_env
+from pysmt.environment import get_env
 from pysmt.walkers import TreeWalker, DagWalker
 import pysmt.operators as op
 

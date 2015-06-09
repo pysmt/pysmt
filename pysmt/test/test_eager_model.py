@@ -18,7 +18,7 @@
 from six.moves import xrange
 
 from pysmt.test import TestCase
-from pysmt.shortcuts import And, Or, FALSE, TRUE, FreshSymbol, get_env
+from pysmt.shortcuts import And, Or, FALSE, TRUE, FreshSymbol
 from pysmt.solvers.eager import EagerModel
 from pysmt.typing import REAL, INT
 
@@ -31,8 +31,7 @@ class TestEagerModel(TestCase):
 
         d = {x: TRUE(), y: FALSE()}
 
-        model = EagerModel(assignment=d,
-                           environment=get_env())
+        model = EagerModel(assignment=d)
 
         self.assertEqual(model.get_value(x), TRUE())
         self.assertEqual(model.get_value(y), FALSE())
@@ -87,8 +86,7 @@ class TestEagerModel(TestCase):
     def test_contains(self):
         x, y, z = [FreshSymbol() for _ in xrange(3)]
         d = {x: TRUE(), y: FALSE()}
-        model = EagerModel(assignment=d,
-                           environment=get_env())
+        model = EagerModel(assignment=d)
         self.assertTrue(x in model)
         self.assertFalse(z in model)
 
