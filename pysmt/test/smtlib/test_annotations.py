@@ -137,6 +137,7 @@ class TestBasic(TestCase):
         self.assertFalse(ann.has_annotation(a1, "next", "non-existent"))
 
         self.assertIn("A_1__AT1", ann.annotations(a1)["next"])
+        self.assertIn("A_1__AT1", ann[a1]["next"])
 
         curr_a1 = ann.all_annotated_formulae("next", "A_1__AT1")
         self.assertEqual(curr_a1, set([a1]))
