@@ -1,0 +1,5 @@
+strictness: medium
+
+pylint:
+  disable:
+    - cyclic-import
