@@ -143,6 +143,8 @@ class TestFormulaManager(TestCase):
         self.assertIn(self.x, sons)
         self.assertEqual(len(sons), 1)
 
+        self.assertEqual(self.mgr.Not(n), self.x)
+
     def test_implies_node(self):
         n = self.mgr.Implies(self.x, self.y)
         self.assertIsNotNone(n)
