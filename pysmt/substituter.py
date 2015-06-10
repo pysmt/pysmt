@@ -113,38 +113,38 @@ class Substituter(pysmt.walkers.DagWalker):
 
         return subs.get(formula, formula)
 
-    def walk_and(self, formula, args, substitutions):
+    def walk_and(self, formula, args, substitutions, **kwargs):
         return self._substitute(self.manager.And(args), substitutions)
 
-    def walk_or(self, formula, args, substitutions):
+    def walk_or(self, formula, args, substitutions, **kwargs):
         return self._substitute(self.manager.Or(args), substitutions)
 
-    def walk_not(self, formula, args, substitutions):
+    def walk_not(self, formula, args, substitutions, **kwargs):
         assert len(args) == 1
         return self._substitute(self.manager.Not(args[0]), substitutions)
 
-    def walk_equals(self, formula, args, substitutions):
+    def walk_equals(self, formula, args, substitutions, **kwargs):
         assert len(args) == 2
         sl = args[0]
         sr = args[1]
         return self._substitute(self.manager.Equals(sl, sr),
                                substitutions)
 
-    def walk_iff(self, formula, args, substitutions):
+    def walk_iff(self, formula, args, substitutions, **kwargs):
         assert len(args) == 2
         sl = args[0]
         sr = args[1]
         return self._substitute(self.manager.Iff(sl, sr),
                                substitutions)
 
-    def walk_implies(self, formula, args, substitutions):
+    def walk_implies(self, formula, args, substitutions, **kwargs):
         assert len(args) == 2
         sl = args[0]
         sr = args[1]
         return self._substitute(self.manager.Implies(sl, sr),
                                substitutions)
 
-    def walk_ite(self, formula, args, substitutions):
+    def walk_ite(self, formula, args, substitutions, **kwargs):
         assert len(args) == 3
         si = args[0]
         st = args[1]
@@ -152,15 +152,7 @@ class Substituter(pysmt.walkers.DagWalker):
         return self._substitute(self.manager.Ite(si, st, se),
                                substitutions)
 
-    def walk_ge(self, formula, args, substitutions):
-        assert len(args) == 2
-        sl = args[0]
-        sr = args[1]
-
-        return self._substitute(self.manager.GE(sl, sr),
-                               substitutions)
-
-    def walk_le(self, formula, args, substitutions):
+    def walk_le(self, formula, args, substitutions, **kwargs):
         assert len(args) == 2
 
         sl = args[0]
@@ -169,16 +161,7 @@ class Substituter(pysmt.walkers.DagWalker):
         return  self._substitute(self.manager.LE(sl, sr),
                                 substitutions)
 
-    def walk_gt(self, formula, args, substitutions):
-        assert len(args) == 2
-
-        sl = args[0]
-        sr = args[1]
-
-        return self._substitute(self.manager.GT(sl, sr),
-                               substitutions)
-
-    def walk_lt(self, formula, args, substitutions):
+    def walk_lt(self, formula, args, substitutions, **kwargs):
         assert len(args) == 2
 
         sl = args[0]
@@ -188,18 +171,18 @@ class Substituter(pysmt.walkers.DagWalker):
                                substitutions)
 
 
-    def walk_plus(self, formula, args, substitutions):
+    def walk_plus(self, formula, args, substitutions, **kwargs):
         return self._substitute(self.manager.Plus(args),
                                substitutions)
 
-    def walk_times(self, formula, args, substitutions):
+    def walk_times(self, formula, args, substitutions, **kwargs):
         assert len(args) == 2
         sl = args[0]
         sr = args[1]
 
         return self._substitute(self.manager.Times(sl, sr), substitutions)
 
-    def walk_minus(self, formula, args, substitutions):
+    def walk_minus(self, formula, args, substitutions, **kwargs):
         assert len(args) == 2
 
         sl = args[0]
@@ -207,94 +190,96 @@ class Substituter(pysmt.walkers.DagWalker):
 
         return self._substitute(self.manager.Minus(sl, sr), substitutions)
 
-    def walk_identity(self, formula, args, substitutions):
+    def walk_identity(self, formula, args, substitutions, **kwargs):
         assert len(args) == 0
         return self._substitute(formula, substitutions)
 
-    def walk_forall(self, formula, args, substitutions):
+    def walk_forall(self, formula, args, substitutions, **kwargs):
         return self._substitute(self.manager.ForAll(formula.quantifier_vars(),
                                                     args[0]),
                                 substitutions)
 
-    def walk_exists(self, formula, args, substitutions):
+    def walk_exists(self, formula, args, substitutions, **kwargs):
         return self._substitute(self.manager.Exists(formula.quantifier_vars(),
                                                     args[0]),
                                 substitutions)
 
-    def walk_function(self, formula, args, substitutions):
+    def walk_function(self, formula, args, substitutions, **kwargs):
         return self._substitute(self.manager.Function(formula.function_name(),
                                                       args),
                                 substitutions)
 
-    def walk_bv_not(self, formula, args, substitutions):
+    def walk_bv_not(self, formula, args, substitutions, **kwargs):
         return self._substitute(self.manager.BVNot(args[0]), substitutions)
 
-    def walk_bv_and(self, formula, args, substitutions):
-        return self._substitute(self.manager.BVAnd(*args), substitutions)
+    def walk_bv_and(self, formula, args, substitutions, **kwargs):
+        return self._substitute(self.manager.BVAnd(args[0], args[1]),
+                                substitutions)
 
-    def walk_bv_or(self, formula, args, substitutions):
-        return self._substitute(self.manager.BVOr(*args), substitutions)
+    def walk_bv_or(self, formula, args, substitutions, **kwargs):
+        return self._substitute(self.manager.BVOr(args[0], args[1]),
+                                substitutions)
 
-    def walk_bv_xor(self, formula, args, substitutions):
+    def walk_bv_xor(self, formula, args, substitutions, **kwargs):
         return self._substitute(self.manager.BVXor(args[0]), substitutions)
 
-    def walk_bv_concat(self, formula, args, substitutions):
+    def walk_bv_concat(self, formula, args, substitutions, **kwargs):
         return self._substitute(self.manager.BVConcat(args[0], args[1]),
                                 substitutions)
 
-    def walk_bv_extract(self, formula, args, substitutions):
+    def walk_bv_extract(self, formula, args, substitutions, **kwargs):
         return self._substitute(self.manager.BVExtract(args[0],
                                                        start=formula.bv_extract_start(),
                                                        end=formula.bv_extract_end()),
                                 substitutions)
 
-    def walk_bv_ult(self, formula, args, substitutions):
+    def walk_bv_ult(self, formula, args, substitutions, **kwargs):
         return self._substitute(self.manager.BVULT(args[0], args[1]),
                                 substitutions)
 
-    def walk_bv_ule(self, formula, args, substitutions):
+    def walk_bv_ule(self, formula, args, substitutions, **kwargs):
         return self._substitute(self.manager.BVULE(args[0], args[1]),
                                 substitutions)
 
-    def walk_bv_neg(self, formula, args, substitutions):
+    def walk_bv_neg(self, formula, args, substitutions, **kwargs):
         return self._substitute(self.manager.BVNeg(args[0]), substitutions)
 
-    def walk_bv_add(self, formula, args, substitutions):
-        return self._substitute(self.manager.BVAdd(*args), substitutions)
+    def walk_bv_add(self, formula, args, substitutions, **kwargs):
+        return self._substitute(self.manager.BVAdd(args[0], args[1]), substitutions)
 
-    def walk_bv_mul(self, formula, args, substitutions):
+    def walk_bv_mul(self, formula, args, substitutions, **kwargs):
         return self._substitute(self.manager.BVMul(args[0], args[1]), substitutions)
 
-    def walk_bv_udiv(self, formula, args, substitutions):
+    def walk_bv_udiv(self, formula, args, substitutions, **kwargs):
         return self._substitute(self.manager.BVUDiv(args[0], args[1]), substitutions)
 
-    def walk_bv_urem(self, formula, args, substitutions):
+    def walk_bv_urem(self, formula, args, substitutions, **kwargs):
         return self._substitute(self.manager.BVURem(args[0], args[1]), substitutions)
 
-    def walk_bv_lshl(self, formula, args, substitutions):
+    def walk_bv_lshl(self, formula, args, substitutions, **kwargs):
         return self._substitute(self.manager.BVLShl(args[0], args[1]),
                                 substitutions)
 
-    def walk_bv_lshr(self, formula, args, substitutions):
+    def walk_bv_lshr(self, formula, args, substitutions, **kwargs):
         return self._substitute(self.manager.BVLShr(args[0], args[1]),
                                 substitutions)
 
-    def walk_bv_rol(self, formula, args, substitutions):
+    def walk_bv_rol(self, formula, args, substitutions, **kwargs):
         return self._substitute(self.manager.BVRol(args[0],
                                                    formula.bv_rotation_step()),
                                 substitutions)
 
-    def walk_bv_ror(self, formula, args, substitutions):
+    def walk_bv_ror(self, formula, args, substitutions, **kwargs):
         return self._substitute(self.manager.BVRor(args[0],
                                                    formula.bv_rotation_step()),
                                 substitutions)
 
-    def walk_bv_zext(self, formula, args, substitutions):
+    def walk_bv_zext(self, formula, args, substitutions, **kwargs):
         return self._substitute(self.manager.BVZExt(args[0],
                                                     formula.bv_extend_step()),
                                 substitutions)
 
-    def walk_bv_sext(self, formula, args, substitutions):
+    def walk_bv_sext(self, formula, args, substitutions, **kwargs):
         return self._substitute(self.manager.BVSExt(args[0],
                                                     formula.bv_extend_step()),
                                 substitutions)

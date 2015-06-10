@@ -634,16 +634,16 @@ def get_logic(quantifier_free=False,
     """
 
     for logic in LOGICS:
-        if (logic.quantifier_free == quantifier_free and
-            logic.theory.arrays == arrays and \
-            logic.theory.bit_vectors == bit_vectors and \
-            logic.theory.floating_point == floating_point and \
-            logic.theory.integer_arithmetic == integer_arithmetic and \
-            logic.theory.real_arithmetic == real_arithmetic and \
-            logic.theory.integer_difference == integer_difference and \
-            logic.theory.real_difference == real_difference and \
-            logic.theory.linear == linear and \
-            logic.theory.uninterpreted == uninterpreted):
+        if (  logic.quantifier_free == quantifier_free and
+              logic.theory.arrays == arrays and \
+              logic.theory.bit_vectors == bit_vectors and \
+              logic.theory.floating_point == floating_point and \
+              logic.theory.integer_arithmetic == integer_arithmetic and \
+              logic.theory.real_arithmetic == real_arithmetic and \
+              logic.theory.integer_difference == integer_difference and \
+              logic.theory.real_difference == real_difference and \
+              logic.theory.linear == linear and \
+              logic.theory.uninterpreted == uninterpreted):
             return logic
     raise UndefinedLogicError
 

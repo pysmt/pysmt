@@ -118,15 +118,15 @@ class PysmtShell(object):
 
     def main(self):
         if self.args.interactive:
-            if self.args.file != None:
+            if self.args.file is not None:
                 print("Unable to execute in interactive mode with an input file")
-                exit(1)
+                sys.exit(1)
             if self.args.solver != "auto":
                 warn("The solver option will be ignored in interactive mode")
             self.interactive()
         else:
             input_stream = sys.stdin
-            if self.args.file != None:
+            if self.args.file is not None:
                 input_stream = open(self.args.file, "r")
             self.smtlib_solver(input_stream)
 

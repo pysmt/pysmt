@@ -89,7 +89,7 @@ def configure_environment(config_filename, environment):
             else:
                 warn("Unknown value for 'use_infix_notation': %s" % infix)
 
-        if pref_list != None:
+        if pref_list is not None:
             prefs = pref_list.split()
             for s in prefs:
                 if s not in factory.all_solvers():

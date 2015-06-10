@@ -4,7 +4,6 @@
 import urllib
 import zipfile
 import os.path
-import sys
 
 class BenchmarkNotFoundError(Exception):
     pass

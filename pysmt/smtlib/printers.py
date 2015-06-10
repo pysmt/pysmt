@@ -279,19 +279,19 @@ class SmtDagPrinter(DagWalker):
         self.write("))) ")
         return sym
 
-    def walk_symbol(self, formula, args, **kwargs):
+    def walk_symbol(self, formula, **kwargs):
         return formula.symbol_name()
 
     def walk_function(self, formula, args, **kwargs):
         return self._walk_nary(formula.function_name(), formula, args)
 
-    def walk_int_constant(self, formula, args, **kwargs):
+    def walk_int_constant(self, formula, **kwargs):
         if formula.constant_value() < 0:
             return "(- " + str(-formula.constant_value()) + ")"
         else:
             return str(formula.constant_value())
 
-    def walk_real_constant(self, formula, args, **kwargs):
+    def walk_real_constant(self, formula, **kwargs):
         if formula.constant_value() < 0:
             template = "(- %s)"
         else:
@@ -304,7 +304,7 @@ class SmtDagPrinter(DagWalker):
         else:
             return template % (str(n) + ".0")
 
-    def walk_bv_constant(self, formula, args):
+    def walk_bv_constant(self, formula, **kwargs):
         short_res = str(bin(formula.constant_value()))[2:]
         if formula.constant_value() >= 0:
             filler = "0"
@@ -314,7 +314,7 @@ class SmtDagPrinter(DagWalker):
         return "#b" + res
 
 
-    def walk_bool_constant(self, formula, args, **kwargs):
+    def walk_bool_constant(self, formula, **kwargs):
         if formula.constant_value():
             return "true"
         else:
@@ -346,7 +346,7 @@ class SmtDagPrinter(DagWalker):
         self.write(")))")
         return sym
 
-    def walk_bv_extract(self, formula, args):
+    def walk_bv_extract(self, formula, args, **kwargs):
         assert formula is not None
         sym = self._new_symbol()
         self.openings += 1
@@ -359,7 +359,8 @@ class SmtDagPrinter(DagWalker):
         self.write("))) ")
         return sym
 
-    def walk_bv_extend(self, formula, args):
+    def walk_bv_extend(self, formula, args, **kwargs):
+        #pylint: disable=unused-argument
         if formula.is_bv_zext():
             extend_type = "zero_extend"
         else:
@@ -376,7 +377,8 @@ class SmtDagPrinter(DagWalker):
         self.write("))) ")
         return sym
 
-    def walk_bv_rotate(self, formula, args):
+    def walk_bv_rotate(self, formula, args, **kwargs):
+        #pylint: disable=unused-argument
         if formula.is_bv_ror():
             rotate_type = "rotate_right"
         else:
