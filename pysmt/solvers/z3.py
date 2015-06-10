@@ -35,7 +35,7 @@ from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               SolverStatusError,
                               InternalSolverError,
                               ConvertExpressionError)
-from pysmt.decorators import clear_pending_pop
+from pysmt.decorators import clear_pending_pop, catch_conversion_error
 
 from pysmt.logics import LRA, LIA, QF_UFLIA, QF_UFLRA, PYSMT_LOGICS, BV_LOGICS
 from pysmt.oracles import get_logic
@@ -256,6 +256,7 @@ class Z3Converter(Converter, DagWalker):
 
         return
 
+    @catch_conversion_error
     def convert(self, formula):
         return self.walk(formula)
 
@@ -447,11 +448,9 @@ class Z3Converter(Converter, DagWalker):
             return z3.BoolSort()
         elif tp == types.REAL:
             return z3.RealSort()
-        elif tp == types.INT:
-            return z3.IntSort()
         else:
-            raise NotImplementedError
-
+            assert tp == types.INT, "Unsupported type '%s'" % tp
+            return z3.IntSort()
 
 
 class Z3QuantifierEliminator(QuantifierEliminator):
@@ -514,7 +513,7 @@ class Z3Interpolator(Interpolator):
             ok = any(logic <= l for l in self.LOGICS)
             if not ok:
                 raise NotImplementedError(
-                    "Logic not supported by Z3 inteprolation."
+                    "Logic not supported by Z3 interpolation."
                     "(detected logic is: %s)" % str(logic))
 
 

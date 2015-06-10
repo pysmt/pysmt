@@ -20,10 +20,10 @@ from pysmt.operators import CUSTOM_NODE_TYPES, new_node_type
 from pysmt.type_checker import SimpleTypeChecker
 from pysmt.printers import HRPrinter
 from pysmt.shortcuts import get_env, Symbol
+from pysmt.exceptions import UnsupportedOperatorError
 
 
 class TestDwf(TestCase):
-
     # NOTE: We enforce order of execution of the tests, since in the
     # other test we define a custom type.
     def test_00_new_node_type(self):
@@ -65,5 +65,5 @@ class TestDwf(TestCase):
         self.assertEqual(s_f1, "(x *+* x)")
 
         # We did not define an implementation for the Simplifier
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(UnsupportedOperatorError):
             f1.simplify()

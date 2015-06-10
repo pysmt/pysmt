@@ -35,7 +35,7 @@ from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               SolverNotConfiguredForUnsatCoresError,
                               SolverStatusError,
                               InternalSolverError)
-from pysmt.decorators import clear_pending_pop
+from pysmt.decorators import clear_pending_pop, catch_conversion_error
 from pysmt.solvers.qelim import QuantifierEliminator
 from pysmt.solvers.interpolation import Interpolator
 from pysmt.walkers.identitydag import IdentityDagWalker
@@ -548,8 +548,6 @@ class MSatConverter(Converter, DagWalker):
                             mathsat.msat_term_repr(term))
         return res
 
-
-
     def get_symbol_from_declaration(self, decl):
         return self.decl_to_symbol[mathsat.msat_decl_id(decl)]
 
@@ -583,7 +581,7 @@ class MSatConverter(Converter, DagWalker):
                 pass
         return self.back_memoization[term]
 
-
+    @catch_conversion_error
     def convert(self, formula):
         """Convert a PySMT formula into a MathSat Term.
 
@@ -595,7 +593,6 @@ class MSatConverter(Converter, DagWalker):
             msat_msg = mathsat.msat_last_error_message(self.msat_env)
             raise InternalSolverError(msat_msg)
         return res
-
 
     def walk_and(self, formula, args):
         res = mathsat.msat_make_true(self.msat_env)
@@ -745,12 +742,6 @@ class MSatConverter(Converter, DagWalker):
                                          formula.bv_extend_step(),
                                          args[0])
 
-    def walk_forall(self, formula, args):
-        raise NotImplementedError
-
-    def walk_exists(self, formula, args):
-        raise NotImplementedError
-
     def walk_plus(self, formula, args):
         res = mathsat.msat_make_number(self.msat_env, "0")
         for a in args:
@@ -800,13 +791,12 @@ class MSatConverter(Converter, DagWalker):
             return mathsat.msat_get_function_type(self.msat_env,
                                                 stps,
                                                 rtp)
-        elif tp.is_bv_type():
-            return mathsat.msat_get_bv_type(self.msat_env, tp.width)
         else:
-            raise NotImplementedError
+            assert tp.is_bv_type(), "Usupported type for '%s'" % tp
+            return mathsat.msat_get_bv_type(self.msat_env, tp.width)
 
     def declare_variable(self, var):
-        if not var.is_symbol(): raise TypeError
+        if not var.is_symbol(): raise TypeError(var)
         if var.symbol_name() not in self.symbol_to_decl:
             tp = self._type_to_msat(var.symbol_type())
             decl = mathsat.msat_declare_function(self.msat_env,
@@ -924,7 +914,7 @@ class MSatInterpolator(Interpolator):
             ok = any(logic <= l for l in self.LOGICS)
             if not ok:
                 raise NotImplementedError(
-                    "Logic not supported by MathSAT inteprolation."
+                    "Logic not supported by MathSAT interpolation."
                     "(detected logic is: %s)" % str(logic))
 
 

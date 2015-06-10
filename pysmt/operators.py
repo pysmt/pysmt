@@ -87,3 +87,53 @@ def new_node_type(new_node_id=None):
     assert new_node_id not in CUSTOM_NODE_TYPES
     CUSTOM_NODE_TYPES.append(new_node_id)
     return new_node_id
+
+
+def op_to_str(node_id):
+    """Returns a string representation of the given node."""
+    if node_id not in __OP_STR__:
+        return node_id
+    return __OP_STR__[node_id]
+
+__OP_STR__ = {
+    FORALL : "FORALL",
+    EXISTS : "EXISTS",
+    AND : "AND",
+    OR : "OR",
+    NOT : "NOT",
+    IMPLIES : "IMPLIES",
+    IFF : "IFF",
+    SYMBOL : "SYMBOL",
+    FUNCTION : "FUNCTION",
+    REAL_CONSTANT : "REAL_CONSTANT",
+    BOOL_CONSTANT : "BOOL_CONSTANT",
+    INT_CONSTANT : "INT_CONSTANT",
+    PLUS : "PLUS",
+    MINUS : "MINUS",
+    TIMES : "TIMES",
+    LE : "LE",
+    LT : "LT",
+    EQUALS : "EQUALS",
+    ITE : "ITE",
+    TOREAL : "TOREAL",
+    BV_CONSTANT : "BV_CONSTANT",
+    BV_NOT : "BV_NOT",
+    BV_AND : "BV_AND",
+    BV_OR : "BV_OR",
+    BV_XOR : "BV_XOR",
+    BV_CONCAT : "BV_CONCAT",
+    BV_EXTRACT : "BV_EXTRACT",
+    BV_ULT : "BV_ULT",
+    BV_ULE : "BV_ULE",
+    BV_NEG : "BV_NEG",
+    BV_ADD : "BV_ADD",
+    BV_MUL : "BV_MUL",
+    BV_UDIV : "BV_UDIV",
+    BV_UREM : "BV_UREM",
+    BV_LSHL : "BV_LSHL",
+    BV_LSHR : "BV_LSHR",
+    BV_ROL : "BV_ROL",
+    BV_ROR : "BV_ROR",
+    BV_ZEXT : "BV_ZEXT",
+    BV_SEXT : "BV_SEXT",
+}

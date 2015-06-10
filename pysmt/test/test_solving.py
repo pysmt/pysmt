@@ -27,7 +27,8 @@ from pysmt.typing import BOOL, REAL, FunctionType
 from pysmt.test import TestCase, skipIfSolverNotAvailable, skipIfNoSolverForLogic
 from pysmt.test.examples import get_example_formulae
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
-                              InternalSolverError, NoSolverAvailableError)
+                              InternalSolverError, NoSolverAvailableError,
+                              ConvertExpressionError)
 from pysmt.logics import QF_UFLIRA, QF_BOOL, QF_LRA, QF_BV, AUTO
 
 class TestBasic(TestCase):
@@ -405,6 +406,22 @@ class TestBasic(TestCase):
 
         with self.assertRaises(InternalSolverError):
             new_converter.convert(f2)
+
+    @skipIfNoSolverForLogic(QF_BOOL)
+    def test_conversion_error(self):
+        from pysmt.type_checker import SimpleTypeChecker
+        add_dwf = get_env().add_dynamic_walker_function
+        create_node = get_env().formula_manager.create_node
+
+        # Create a node that is not supported by any solver
+        idx = op.new_node_type()
+        x = Symbol("x")
+        add_dwf(idx, SimpleTypeChecker, SimpleTypeChecker.walk_bool_to_bool)
+        invalid_node = create_node(idx, args=(x,x))
+
+        for sname in get_env().factory.all_solvers(logic=QF_BOOL):
+            with self.assertRaises(ConvertExpressionError):
+                is_sat(invalid_node, solver_name=sname)
 
 
 if __name__ == '__main__':

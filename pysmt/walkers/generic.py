@@ -18,6 +18,7 @@
 from functools import partial
 
 import pysmt.operators as op
+import pysmt.exceptions
 
 
 class Walker(object):
@@ -87,8 +88,9 @@ class Walker(object):
                 self.functions[node_type] = partial(dwf[walker_class], self)
                 return self.functions[node_type](formula, **kwargs)
 
-        raise NotImplementedError("Was not expecting a node of type %d" %
-                                  formula.node_type())
+        node_type = formula.node_type()
+        raise pysmt.exceptions.UnsupportedOperatorError(node_type=node_type,
+                                                        expression=formula)
 
 
     def is_complete(self, verbose=False):
