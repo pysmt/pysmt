@@ -65,7 +65,7 @@ class Simplifier(pysmt.walkers.DagWalker):
         args = [self.walk(s, **kwargs) for s in formula.get_sons()]
 
         f = self.functions[formula.node_type()]
-        res = f(formula, args, **kwargs)
+        res = f(formula, args=args, **kwargs)
         ltype = get_type(formula)
         rtype = get_type(res)
         test = Equals(formula, res) if ltype != BOOL else Iff(formula, res)
