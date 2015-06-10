@@ -17,11 +17,11 @@
 #
 import unittest
 
-from pysmt.shortcuts import get_env, push_env, pop_env, Symbol
+from pysmt.shortcuts import Symbol
 import pysmt.factory
 from pysmt.test import TestCase
 from pysmt.typing import REAL
-from pysmt.environment import Environment
+from pysmt.environment import Environment, pop_env, push_env, get_env
 from pysmt.exceptions import NoSolverAvailableError
 from pysmt import logics
 

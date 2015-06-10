@@ -19,8 +19,9 @@ import unittest
 
 from functools import wraps
 
-from pysmt.shortcuts import reset_env, get_env, is_sat, is_valid, is_unsat
+from pysmt.environment import get_env, reset_env
 from pysmt.decorators import deprecated
+
 
 class TestCase(unittest.TestCase):
     """Wrapper on the unittest TestCase class.

@@ -22,7 +22,7 @@ from six import iteritems
 from six.moves import xrange
 
 import pysmt.smtlib.commands as smtcmd
-from pysmt.shortcuts import get_env
+from pysmt.environment import get_env
 from pysmt.typing import BOOL, REAL, INT, FunctionType, BVType
 from pysmt.logics import get_logic_by_name, UndefinedLogicError
 from pysmt.exceptions import UnknownSmtLibCommandError

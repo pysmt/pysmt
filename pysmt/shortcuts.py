@@ -26,46 +26,25 @@ particularly true for tests. For tests it is recommended to perform an
 environment reset in the setUp phase, to be guaranteed that a fresh
 environment is used.
 """
-
-import pysmt.typing as types
-import pysmt.environment
-import pysmt.configuration as config
-
 # Enable default deprecation warnings!
 import warnings
 warnings.simplefilter('default')
 
-#### GLOBAL ENVIRONMENTS STACKS ####
-ENVIRONMENTS_STACK = []
+import pysmt.typing as types
+import pysmt.configuration as config
+import pysmt.environment
 
 def get_env():
-    """Returns the Environment at the head of the stack."""
-    return ENVIRONMENTS_STACK[-1]
-
-def push_env(env=None):
-    """Push a env in the stack. If env is None, a new Environment is created."""
-    if env is None:
-        env = pysmt.environment.Environment()
-    ENVIRONMENTS_STACK.append(env)
-
-def pop_env():
-    """Pop an env from the stack."""
-    return ENVIRONMENTS_STACK.pop()
+    """Returns the global environment."""
+    return pysmt.environment.get_env()
 
 def reset_env():
-    """Destroys and recreate the head environment."""
-    pop_env()
-    push_env()
-    return get_env()
-
-# Create the default environment
-push_env()
-
+    """Resets the global environment, and returns the new one."""
+    return pysmt.environment.reset_env()
 
 ##### Shortcuts for FormulaManager #####
 def get_type(formula):
     """Returns the type of the formula."""
-#    return _choose_environment(env).stc.get_type(formula)
     return get_env().stc.get_type(formula)
 
 def simplify(formula):
@@ -336,7 +315,6 @@ def BVZExt(formula, increase):
     """
     return get_env().formula_manager.BVZExt(formula, increase)
 
-
 def BVSExt(formula, increase):
     """Returns the signed extension of the BV
 
@@ -364,11 +342,9 @@ def QuantifierEliminator(name=None, logic=None):
     """Returns a quantifier eliminator"""
     return get_env().factory.QuantifierEliminator(name=name, logic=logic)
 
-
 def Interpolator(name=None, logic=None):
     """Returns an interpolator"""
     return get_env().factory.Interpolator(name=name, logic=logic)
-
 
 def is_sat(formula, solver_name=None, logic=None):
     """ Returns whether a formula is satisfiable.
@@ -400,7 +376,6 @@ def get_model(formula, solver_name=None, logic=None):
     return env.factory.get_model(formula,
                                  solver_name=solver_name,
                                  logic=logic)
-
 
 def get_implicant(formula, solver_name=None, logic=None):
     """Returns a formula f_i such that Implies(f_i, formula) is valid or None
@@ -463,7 +438,6 @@ def qelim(formula, solver_name=None, logic=None):
                              solver_name=solver_name,
                              logic=logic)
 
-
 def binary_interpolant(formula_a, formula_b, solver_name=None, logic=None):
     """Computes an interpolant of (formula_a, formula_b). Returns None
     if the conjunction is satisfiable"""
@@ -478,7 +452,6 @@ def binary_interpolant(formula_a, formula_b, solver_name=None, logic=None):
     return env.factory.binary_interpolant(formulas[0], formulas[1],
                                           solver_name=solver_name,
                                           logic=logic)
-
 
 def sequence_interpolant(formulas, solver_name=None, logic=None):
     """Computes a sequence interpolant of the formulas. Returns None
@@ -495,8 +468,6 @@ def sequence_interpolant(formulas, solver_name=None, logic=None):
                                             solver_name=solver_name,
                                             logic=logic)
 
-
-
 def read_configuration(config_filename, environment=None):
     """
     Reads the pysmt configuration of the given file path and applies
@@ -506,7 +477,6 @@ def read_configuration(config_filename, environment=None):
     if environment is None:
         environment = get_env()
     config.configure_environment(config_filename, environment)
-
 
 def write_configuration(config_filename, environment=None):
     """

@@ -15,15 +15,15 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import pysmt.walkers as walkers
+import pysmt.walkers
 import pysmt.operators as op
 import pysmt.typing as types
 
 
-class Simplifier(walkers.DagWalker):
+class Simplifier(pysmt.walkers.DagWalker):
 
     def __init__(self, env=None):
-        walkers.DagWalker.__init__(self, env=env)
+        pysmt.walkers.DagWalker.__init__(self, env=env)
         self.manager = self.env.formula_manager
 
         self.functions[op.SYMBOL] = self.walk_identity

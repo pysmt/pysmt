@@ -23,16 +23,16 @@ properties of formulae.
  * FreeVarsOracle says which variables are free in the formula
 """
 
-import pysmt.walkers as walkers
+import pysmt.walkers
 import pysmt.operators as op
-import pysmt.shortcuts
+import pysmt.environment
 
 from pysmt import typing as types
 
 from pysmt.logics import Logic, Theory, get_closer_pysmt_logic
 
 
-class SizeOracle(walkers.DagWalker):
+class SizeOracle(pysmt.walkers.DagWalker):
     """Evaluates the size of a formula"""
 
     # Counting type can be:
@@ -48,7 +48,7 @@ class SizeOracle(walkers.DagWalker):
      MEASURE_SYMBOLS) = range(5)
 
     def __init__(self, env=None):
-        walkers.DagWalker.__init__(self, env=env)
+        pysmt.walkers.DagWalker.__init__(self, env=env)
 
         self.measure_to_fun = \
                         {SizeOracle.MEASURE_TREE_NODES: self.walk_count_tree,
@@ -112,9 +112,9 @@ class SizeOracle(walkers.DagWalker):
 
 
 
-class QuantifierOracle(walkers.DagWalker):
+class QuantifierOracle(pysmt.walkers.DagWalker):
     def __init__(self, env=None):
-        walkers.DagWalker.__init__(self, env=env)
+        pysmt.walkers.DagWalker.__init__(self, env=env)
 
         # Clear the mapping function
         self.functions.clear()
@@ -138,9 +138,9 @@ class QuantifierOracle(walkers.DagWalker):
 # EOC QuantifierOracle
 
 
-class TheoryOracle(walkers.DagWalker):
+class TheoryOracle(pysmt.walkers.DagWalker):
     def __init__(self, env=None):
-        walkers.DagWalker.__init__(self, env=env)
+        pysmt.walkers.DagWalker.__init__(self, env=env)
 
         self.functions[op.AND] = self.walk_combine
         self.functions[op.OR] = self.walk_combine
@@ -402,7 +402,7 @@ class AtomsOracle(pysmt.walkers.DagWalker):
 
 def get_logic(formula, env=None):
     if env is None:
-        env = pysmt.shortcuts.get_env()
+        env = pysmt.environment.get_env()
     # Get Quantifier Information
     qf = env.qfo.is_qf(formula)
     theory = env.theoryo.get_theory(formula)

@@ -19,7 +19,7 @@ from collections import namedtuple
 from fractions import Fraction
 
 import pysmt.logics
-from pysmt.shortcuts import get_env
+from pysmt.environment import get_env
 from pysmt.shortcuts import (Symbol, Function,
                              Int, Real, FALSE, TRUE,
                              And, Iff, Or, Not, Implies, Ite,

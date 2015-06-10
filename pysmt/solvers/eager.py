@@ -16,8 +16,8 @@
 #   limitations under the License.
 #
 from pysmt.solvers.solver import Model
-from pysmt.shortcuts import get_env
-from pysmt.typing import REAL, BOOL, INT
+from pysmt.environment import get_env
+
 
 class EagerModel(Model):
     """A model that does not require the existence of a solver instance.
