@@ -114,3 +114,6 @@ class Annotations(object):
                     res.append(str(v) + ", ")
                 res.append("} ")
         return "".join(res + ["}"])
+
+    def __getitem__(self, formula):
+        return self.annotations(formula)
