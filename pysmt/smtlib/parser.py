@@ -886,8 +886,7 @@ if __name__ == "__main__":
 
         parser = SmtLibParser()
         res = parser.get_script_fname(fname)
-        assert res != None
-
+        assert res is not None
         print("Done")
 
     main()

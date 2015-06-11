@@ -40,9 +40,9 @@ import pysmt.logics
 
 # Initialization
 def init():
-    if not getattr(init, '_initialized', False):
+    if not getattr(init, 'initialized', False):
         libyices.yices_init()
-    init._initialized = True
+    init.initialized = True
 
 def reset_yices():
     libyices.yices_reset()
@@ -239,18 +239,20 @@ class YicesConverter(Converter, DagWalker):
     def convert(self, formula):
         return self.walk(formula)
 
-    def walk_and(self, formula, args):
-        arr = (libyices.term_t * len(args))(*args)
-        return libyices.yices_and(len(args), arr)
+    def _to_term_array(self, arr):
+        #pylint: disable=star-args
+        return (libyices.term_t * len(arr))(*arr)
 
-    def walk_or(self, formula, args):
-        arr = (libyices.term_t * len(args))(*args)
-        return libyices.yices_or(len(args), arr)
+    def walk_and(self, formula, args, **kwargs):
+        return libyices.yices_and(len(args), self._to_term_array(args))
 
-    def walk_not(self, formula, args):
+    def walk_or(self, formula, args, **kwargs):
+        return libyices.yices_or(len(args),  self._to_term_array(args))
+
+    def walk_not(self, formula, args, **kwargs):
         return libyices.yices_not(args[0])
 
-    def walk_symbol(self, formula, args):
+    def walk_symbol(self, formula, **kwargs):
         symbol_type = formula.symbol_type()
         var_type = self._type_to_yices(symbol_type)
         term = libyices.yices_new_uninterpreted_term(var_type)
@@ -264,51 +266,51 @@ class YicesConverter(Converter, DagWalker):
         libyices.yices_set_term_name(term, String(var.symbol_name()))
         return term
 
-    def walk_iff(self, formula, args):
+    def walk_iff(self, formula, args, **kwargs):
         return libyices.yices_iff(args[0], args[1])
 
-    def walk_implies(self, formula, args):
+    def walk_implies(self, formula, args, **kwargs):
         return libyices.yices_implies(args[0], args[1])
 
-    def walk_le(self, formula, args):
+    def walk_le(self, formula, args, **kwargs):
         return libyices.yices_arith_leq_atom(args[0], args[1])
 
-    def walk_lt(self, formula, args):
+    def walk_lt(self, formula, args, **kwargs):
         return libyices.yices_arith_lt_atom(args[0], args[1])
 
-    def walk_ite(self, formula, args):
+    def walk_ite(self, formula, args, **kwargs):
         i, t, e = args
         return libyices.yices_ite(i, t, e)
 
-    def walk_real_constant(self, formula, args):
+    def walk_real_constant(self, formula, **kwargs):
         assert type(formula.constant_value()) == Fraction
         frac = formula.constant_value()
         n,d = frac.numerator, frac.denominator
         rep = str(n) + "/" + str(d)
         return libyices.yices_parse_rational(String(rep))
 
-    def walk_int_constant(self, formula, args):
+    def walk_int_constant(self, formula, **kwargs):
         assert type(formula.constant_value()) == int or \
             type(formula.constant_value()) == long
         rep = str(formula.constant_value())
         return libyices.yices_parse_rational(String(rep))
 
-    def walk_bool_constant(self, formula, args):
+    def walk_bool_constant(self, formula, **kwargs):
         if formula.constant_value():
             return libyices.yices_true()
         else:
             return libyices.yices_false()
 
-    def walk_exists(self, formula, args):
+    def walk_exists(self, formula, args, **kwargs):
         (bound_formula, var_list) = \
                  self._rename_bound_variables(args[0], formula.quantifier_vars())
-        arr = (libyices.term_t * len(var_list))(*var_list)
+        arr = self._to_term_array(var_list)
         return libyices.yices_exists(len(var_list), arr, bound_formula)
 
-    def walk_forall(self, formula, args):
+    def walk_forall(self, formula, args, **kwargs):
         (bound_formula, var_list) = \
                  self._rename_bound_variables(args[0], formula.quantifier_vars())
-        arr = (libyices.term_t * len(var_list))(*var_list)
+        arr = self._to_term_array(var_list)
         return libyices.yices_forall(len(var_list), arr, bound_formula)
 
     def _rename_bound_variables(self, formula, variables):
@@ -319,36 +321,35 @@ class YicesConverter(Converter, DagWalker):
         """
         new_vars = [self._bound_symbol(x) for x in variables]
         old_vars = [self.walk_symbol(x, []) for x in variables]
-        arr_new = (libyices.term_t * len(new_vars))(*new_vars)
-        arr_old = (libyices.term_t * len(old_vars))(*old_vars)
+        arr_new = self._to_term_array(new_vars)
+        arr_old = self._to_term_array(old_vars)
         new_formula = libyices.yices_subst_term(len(variables), arr_new,
                                                 arr_old, formula)
         return (new_formula, new_vars)
 
 
-    def walk_plus(self, formula, args):
-        arr = (libyices.term_t * len(args))(*args)
-        return libyices.yices_sum(len(args), arr)
+    def walk_plus(self, formula, args, **kwargs):
+        return libyices.yices_sum(len(args), self._to_term_array(args))
 
-    def walk_minus(self, formula, args):
+    def walk_minus(self, formula, args, **kwargs):
         return libyices.yices_sub(args[0], args[1])
 
-    def walk_equals(self, formula, args):
+    def walk_equals(self, formula, args, **kwargs):
         return libyices.yices_arith_eq_atom(args[0], args[1])
 
-    def walk_times(self, formula, args):
+    def walk_times(self, formula, args, **kwargs):
         return libyices.yices_mul(args[0], args[1])
 
-    def walk_toreal(self, formula, args):
+    def walk_toreal(self, formula, args, **kwargs):
         return args[0]
 
-    def walk_function(self, formula, args):
+    def walk_function(self, formula, args, **kwargs):
         name = formula.function_name()
         if name not in self.symbol_to_decl:
             self.declare_variable(name)
         decl = self.symbol_to_decl[name]
-        arr = (libyices.term_t * len(args))(*args)
-        return libyices.yices_application(decl, len(args), arr)
+        return libyices.yices_application(decl, len(args),
+                                          self._to_term_array(args))
 
     def _type_to_yices(self, tp):
         if tp.is_bool_type():
@@ -360,6 +361,7 @@ class YicesConverter(Converter, DagWalker):
         elif tp.is_function_type():
             stps = [self._type_to_yices(x) for x in tp.param_types]
             rtp = self._type_to_yices(tp.return_type)
+            #pylint: disable=star-args
             arr = (libyices.type_t * len(stps))(*stps)
             return libyices.yices_function_type(len(stps),
                                                 arr,

@@ -24,8 +24,8 @@ import pysmt.exceptions
 class Walker(object):
 
     def __init__(self, env=None):
-        import pysmt.environment
         if env is None:
+            import pysmt.environment
             env = pysmt.environment.get_env()
         self.env = env
 

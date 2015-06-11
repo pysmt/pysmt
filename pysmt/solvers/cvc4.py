@@ -42,18 +42,20 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         self.cvc4 = CVC4.SmtEngine(self.em)
         self.cvc4.setOption("produce-models", CVC4.SExpr("true"))
 
-        logic_name = str(logic)
-        if logic_name == "QF_BOOL":
-            logic_name = "QF_LRA"
-        self.cvc4.setLogic(logic_name)
+        self.logic_name = str(logic)
+        if self.logic_name == "QF_BOOL":
+            self.logic_name = "QF_LRA"
+        self.cvc4.setLogic(self.logic_name)
         self.converter = CVC4Converter(environment, cvc4_exprMgr=self.em)
         self.declarations = set()
         return
 
     def reset_assertions(self):
-        #TODO: Shall we just discard the current SmtEngine or is there a
-        # lightweight way to proceed?
-        raise NotImplementedError
+        del self.cvc4
+        self.cvc4 = CVC4.SmtEngine(self.em)
+        self.cvc4.setOption("produce-models", CVC4.SExpr("true"))
+        self.declarations = set()
+        self.cvc4.setLogic(self.logic_name)
 
     def declare_variable(self, var):
         self.converter.declare_variable(var)
@@ -69,7 +71,7 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         assignment = {}
         for s in self.environment.formula_manager.get_all_symbols():
             if s.symbol_type().is_bv_type():
-                 # Workaround for #76
+                # Workaround for #76
                 warnings.warn("Skipping unsupported bit-vector symbol")
                 continue
             if s.is_term():
@@ -104,7 +106,7 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         return
 
     def print_model(self, name_filter=None):
-        if name_filter == None:
+        if name_filter is None:
             var_set = self.declarations
         else:
             var_set = (var for var in self.declarations\
@@ -182,48 +184,48 @@ class CVC4Converter(Converter, DagWalker):
     def convert(self, formula):
         return self.walk(formula)
 
-    def walk_and(self, formula, args):
+    def walk_and(self, formula, args, **kwargs):
         return self.mkExpr(CVC4.AND, args)
 
-    def walk_or(self, formula, args):
+    def walk_or(self, formula, args, **kwargs):
         return self.mkExpr(CVC4.OR, args)
 
-    def walk_not(self, formula, args):
+    def walk_not(self, formula, args, **kwargs):
         return self.mkExpr(CVC4.NOT, args[0])
 
-    def walk_symbol(self, formula, args):
+    def walk_symbol(self, formula, **kwargs):
         if formula not in self.declared_vars:
             self.declare_variable(formula)
         return self.declared_vars[formula]
 
-    def walk_iff(self, formula, args):
+    def walk_iff(self, formula, args, **kwargs):
         return self.mkExpr(CVC4.IFF, args[0], args[1])
 
-    def walk_implies(self, formula, args):
+    def walk_implies(self, formula, args, **kwargs):
         return self.mkExpr(CVC4.IMPLIES, args[0], args[1])
 
-    def walk_le(self, formula, args):
+    def walk_le(self, formula, args, **kwargs):
         return self.mkExpr(CVC4.LEQ, args[0], args[1])
 
-    def walk_lt(self, formula, args):
+    def walk_lt(self, formula, args, **kwargs):
         return self.mkExpr(CVC4.LT, args[0], args[1])
 
-    def walk_ite(self, formula, args):
-        return self.mkExpr(CVC4.ITE, *args)
+    def walk_ite(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.ITE, args[0], args[1], args[2])
 
-    def walk_real_constant(self, formula, args):
+    def walk_real_constant(self, formula, **kwargs):
         frac = formula.constant_value()
         n,d = frac.numerator, frac.denominator
         return self.mkConst(CVC4.Rational(n, d))
 
-    def walk_int_constant(self, formula, args):
+    def walk_int_constant(self, formula, **kwargs):
         assert type(formula.constant_value()) == int
         return self.mkConst(CVC4.Rational(formula.constant_value()))
 
-    def walk_bool_constant(self, formula, args):
+    def walk_bool_constant(self, formula, **kwargs):
         return self.cvc4_exprMgr.mkBoolConst(formula.constant_value())
 
-    def walk_exists(self, formula, args):
+    def walk_exists(self, formula, args, **kwargs):
         (bound_formula, var_list) = \
                  self._rename_bound_variables(args[0], formula.quantifier_vars())
         bound_vars_list = self.mkExpr(CVC4.BOUND_VAR_LIST, var_list)
@@ -231,7 +233,7 @@ class CVC4Converter(Converter, DagWalker):
                            bound_vars_list,
                            bound_formula)
 
-    def walk_forall(self, formula, args):
+    def walk_forall(self, formula, args, **kwargs):
         (bound_formula, var_list) = \
                  self._rename_bound_variables(args[0], formula.quantifier_vars())
         bound_vars_list = self.mkExpr(CVC4.BOUND_VAR_LIST, var_list)
@@ -239,27 +241,28 @@ class CVC4Converter(Converter, DagWalker):
                            bound_vars_list,
                            bound_formula)
 
-    def walk_plus(self, formula, args):
+    def walk_plus(self, formula, args, **kwargs):
         res = self.mkExpr(CVC4.PLUS, args)
         return res
 
-    def walk_minus(self, formula, args):
+    def walk_minus(self, formula, args, **kwargs):
         return self.mkExpr(CVC4.MINUS, args[0], args[1])
 
-    def walk_equals(self, formula, args):
+    def walk_equals(self, formula, args, **kwargs):
         return self.mkExpr(CVC4.EQUAL, args[0], args[1])
 
-    def walk_times(self, formula, args):
+    def walk_times(self, formula, args, **kwargs):
         return self.mkExpr(CVC4.MULT, args[0], args[1])
 
-    def walk_toreal(self, formula, args):
+    def walk_toreal(self, formula, args, **kwargs):
         return self.mkExpr(CVC4.TO_REAL, args[0])
 
-    def walk_function(self, formula, args):
+    def walk_function(self, formula, args, **kwargs):
         name = formula.function_name()
         if name not in self.declared_vars:
             self.declare_variable(name)
         decl = self.declared_vars[name]
+        #pylint: disable=star-args
         return self.mkExpr(CVC4.APPLY_UF, decl, *args)
 
     def _type_to_cvc4(self, tp):

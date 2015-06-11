@@ -32,11 +32,10 @@ import pysmt.decorators
 
 
 class Environment(object):
-    FormulaManagerClass = pysmt.formula.FormulaManager
 
     def __init__(self):
         self._stc = pysmt.type_checker.SimpleTypeChecker(self)
-        self._formula_manager = self.FormulaManagerClass(self)
+        self._formula_manager = pysmt.formula.FormulaManager(self)
         # NOTE: Both Simplifier and Substituter keep an internal copy
         # of the Formula Manager
         self._simplifier = pysmt.simplifier.Simplifier(self)

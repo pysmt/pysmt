@@ -70,7 +70,7 @@ class SizeOracle(pysmt.walkers.DagWalker):
         assert self.is_complete(verbose=True)
 
 
-    def _get_key(self, formula, measure):
+    def _get_key(self, formula, measure, **kwargs):
         # Memoize using a tuple (measure, formula)
         return (measure, formula)
 
@@ -89,21 +89,26 @@ class SizeOracle(pysmt.walkers.DagWalker):
         return res
 
 
-    def walk_count_tree(self, formula, args, measure):
+    def walk_count_tree(self, formula, args, **kwargs):
+        #pylint: disable=unused-argument
         return 1 + sum(args)
 
-    def walk_count_dag(self, formula, args, measure):
+    def walk_count_dag(self, formula, args, measure, **kwargs):
+        #pylint: disable=unused-argument
         return frozenset([formula]) | frozenset([x for s in args for x in s])
 
-    def walk_count_leaves(self, formula, args, measure):
+    def walk_count_leaves(self, formula, args, measure, **kwargs):
+        #pylint: disable=unused-argument
         is_leaf = (len(args) == 0)
         return (1 if is_leaf else 0) + sum(args)
 
-    def walk_count_depth(self, formula, args, measure):
+    def walk_count_depth(self, formula, args, measure, **kwargs):
+        #pylint: disable=unused-argument
         is_leaf = (len(args) == 0)
         return 1 + (0 if is_leaf else max(args))
 
-    def walk_count_symbols(self, formula, args, measure):
+    def walk_count_symbols(self, formula, args, measure, **kwargs):
+        #pylint: disable=unused-argument
         is_sym = formula.is_symbol()
         a_res = frozenset([x for s in args for x in s])
         if is_sym:
@@ -172,7 +177,8 @@ class TheoryOracle(pysmt.walkers.DagWalker):
         self.functions[op.BV_CONSTANT] = self.walk_constant
 
 
-    def walk_combine(self, formula, args):
+    def walk_combine(self, formula, args, **kwargs):
+        #pylint: disable=unused-argument
         """Combines the current theory value of the children"""
         if len(args) == 1:
             return args[0].copy()
@@ -182,7 +188,8 @@ class TheoryOracle(pysmt.walkers.DagWalker):
             theory_out = theory_out.combine(t)
         return theory_out
 
-    def walk_constant(self, formula, args):
+    def walk_constant(self, formula, args, **kwargs):
+        #pylint: disable=unused-argument
         """Returns a new theory object with the type of the constant."""
         if formula.is_real_constant():
             theory_out = Theory(real_arithmetic=True, real_difference=True)
@@ -196,7 +203,8 @@ class TheoryOracle(pysmt.walkers.DagWalker):
 
         return theory_out
 
-    def walk_symbol(self, formula, args):
+    def walk_symbol(self, formula, args, **kwargs):
+        #pylint: disable=unused-argument
         """Returns a new theory object with the type of the symbol."""
         f_type = formula.symbol_type()
         if f_type.is_real_type():
@@ -213,7 +221,7 @@ class TheoryOracle(pysmt.walkers.DagWalker):
 
         return theory_out
 
-    def walk_function(self, formula, args):
+    def walk_function(self, formula, args, **kwargs):
         """Extends the Theory with UF."""
         if len(args) == 1:
             theory_out = args[0].copy()
@@ -227,13 +235,14 @@ class TheoryOracle(pysmt.walkers.DagWalker):
         theory_out.uninterpreted = True
         return theory_out
 
-    def walk_lira(self, formula, args):
+    def walk_lira(self, formula, args, **kwargs):
+        #pylint: disable=unused-argument
         """Extends the Theory with LIRA."""
         theory_out = args[0].copy()
         theory_out = theory_out.set_lira()
         return theory_out
 
-    def walk_times(self, formula, args):
+    def walk_times(self, formula, args, **kwargs):
         """Extends the Theory with Non-Linear, if needed."""
         if len(args) == 1:
             theory_out = args[0].copy()
@@ -245,7 +254,7 @@ class TheoryOracle(pysmt.walkers.DagWalker):
         theory_out = theory_out.set_difference_logic(False)
         return theory_out
 
-    def walk_plus(self, formula, args):
+    def walk_plus(self, formula, args, **kwargs):
         theory_out = args[0]
         for t in args[1:]:
             theory_out = theory_out.combine(t)
@@ -254,9 +263,7 @@ class TheoryOracle(pysmt.walkers.DagWalker):
         assert not theory_out.integer_difference
         return theory_out
 
-    def walk_equals(self, formula, args):
-        # TODO: Does EQUAL need a special treatment?
-        # We consider EUF as UF, shall we split the two concepts?
+    def walk_equals(self, formula, args, **kwargs):
         return self.walk_combine(formula, args)
 
     def get_theory(self, formula):
@@ -306,22 +313,26 @@ class FreeVarsOracle(pysmt.walkers.DagWalker):
         """Returns the set of Symbols appearing free in the formula."""
         return self.walk(formula)
 
-    def walk_simple_args(self, formula, args):
+    def walk_simple_args(self, formula, args, **kwargs):
+        #pylint: disable=unused-argument
         res = set()
         for arg in args:
             res.update(arg)
         return frozenset(res)
 
-    def walk_quantifier(self, formula, args):
+    def walk_quantifier(self, formula, args, **kwargs):
+        #pylint: disable=unused-argument
         return args[0].difference(formula.quantifier_vars())
 
-    def walk_symbol(self, formula, args):
+    def walk_symbol(self, formula, args, **kwargs):
+        #pylint: disable=unused-argument
         return frozenset([formula])
 
-    def walk_constant(self, formula, args):
+    def walk_constant(self, formula, args, **kwargs):
+        #pylint: disable=unused-argument
         return frozenset()
 
-    def walk_function(self, formula, args):
+    def walk_function(self, formula, args, **kwargs):
         res = set([formula.function_name()])
         for arg in args:
             res.update(arg)
@@ -372,26 +383,31 @@ class AtomsOracle(pysmt.walkers.DagWalker):
         """Returns the set of atoms appearing in the formula."""
         return self.walk(formula)
 
-    def walk_bool_op(self, formula, args):
+    def walk_bool_op(self, formula, args, **kwargs):
+        #pylint: disable=unused-argument
         return frozenset(x for a in args for x in a)
 
-    def walk_theory_relation(self, formula, args):
+    def walk_theory_relation(self, formula, **kwargs):
+        #pylint: disable=unused-argument
         return frozenset([formula])
 
-    def walk_theory_op(self, formula, args):
+    def walk_theory_op(self, formula, **kwargs):
+        #pylint: disable=unused-argument
         return None
 
-    def walk_symbol(self, formula, args):
+    def walk_symbol(self, formula, **kwargs):
         if formula.is_symbol(types.BOOL):
             return frozenset([formula])
         return None
 
-    def walk_constant(self, formula, args):
+    def walk_constant(self, formula, **kwargs):
+        #pylint: disable=unused-argument
         if formula.is_bool_constant():
             return frozenset()
         return None
 
-    def walk_ite(self, formula, args):
+    def walk_ite(self, formula, args, **kwargs):
+        #pylint: disable=unused-argument
         if any(a is None for a in args):
             # Theory ITE
             return None

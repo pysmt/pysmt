@@ -168,7 +168,7 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
         if self.options.unsat_cores_mode is None:
             raise SolverNotConfiguredForUnsatCoresError
 
-        if self.last_result != False:
+        if self.last_result is None or self.last_result:
             raise SolverStatusError("The last call to solve() was not" \
                                     " unsatisfiable")
 
@@ -594,35 +594,35 @@ class MSatConverter(Converter, DagWalker):
             raise InternalSolverError(msat_msg)
         return res
 
-    def walk_and(self, formula, args):
+    def walk_and(self, formula, args, **kwargs):
         res = mathsat.msat_make_true(self.msat_env)
         for a in args:
             res = mathsat.msat_make_and(self.msat_env, res, a)
         return res
 
-    def walk_or(self, formula, args):
+    def walk_or(self, formula, args, **kwargs):
         res = mathsat.msat_make_false(self.msat_env)
         for a in args:
             res = mathsat.msat_make_or(self.msat_env, res, a)
         return res
 
-    def walk_not(self, formula, args):
+    def walk_not(self, formula, args, **kwargs):
         return mathsat.msat_make_not(self.msat_env, args[0])
 
-    def walk_symbol(self, formula, args):
+    def walk_symbol(self, formula, **kwargs):
         if formula not in self.symbol_to_decl:
             self.declare_variable(formula)
         decl = self.symbol_to_decl[formula]
         return mathsat.msat_make_constant(self.msat_env, decl)
 
-    def walk_le(self, formula, args):
+    def walk_le(self, formula, args, **kwargs):
         return mathsat.msat_make_leq(self.msat_env, args[0], args[1])
 
-    def walk_lt(self, formula, args):
+    def walk_lt(self, formula, args, **kwargs):
         leq = mathsat.msat_make_leq(self.msat_env, args[1], args[0])
         return mathsat.msat_make_not(self.msat_env, leq)
 
-    def walk_ite(self, formula, args):
+    def walk_ite(self, formula, args, **kwargs):
         i = args[0]
         t = args[1]
         e = args[2]
@@ -637,143 +637,143 @@ class MSatConverter(Converter, DagWalker):
         else:
             return mathsat.msat_make_term_ite(self.msat_env, i, t, e)
 
-    def walk_real_constant(self, formula, args):
+    def walk_real_constant(self, formula, **kwargs):
         assert type(formula.constant_value()) == Fraction
         frac = formula.constant_value()
         n,d = frac.numerator, frac.denominator
         rep = str(n) + "/" + str(d)
         return mathsat.msat_make_number(self.msat_env, rep)
 
-    def walk_int_constant(self, formula, args):
+    def walk_int_constant(self, formula, **kwargs):
         assert type(formula.constant_value()) == int or \
             type(formula.constant_value()) == long
         rep = str(formula.constant_value())
         return mathsat.msat_make_number(self.msat_env, rep)
 
-    def walk_bool_constant(self, formula, args):
+    def walk_bool_constant(self, formula, **kwargs):
         if formula.constant_value():
             return mathsat.msat_make_true(self.msat_env)
         else:
             return mathsat.msat_make_false(self.msat_env)
 
-    def walk_bv_constant(self, formula, args):
+    def walk_bv_constant(self, formula, **kwargs):
         rep = str(formula.constant_value())
         width = formula.bv_width()
         return mathsat.msat_make_bv_number(self.msat_env,
                                            rep, width, 10)
 
-    def walk_bv_ult(self, formula, args):
+    def walk_bv_ult(self, formula, args, **kwargs):
         return mathsat.msat_make_bv_ult(self.msat_env,
                                         args[0], args[1])
 
-    def walk_bv_ule(self, formula, args):
+    def walk_bv_ule(self, formula, args, **kwargs):
         return mathsat.msat_make_bv_uleq(self.msat_env,
                                          args[0], args[1])
 
-    def walk_bv_concat(self, formula, args):
+    def walk_bv_concat(self, formula, args, **kwargs):
         return mathsat.msat_make_bv_concat(self.msat_env,
                                            args[0], args[1])
 
-    def walk_bv_extract(self, formula, args):
+    def walk_bv_extract(self, formula, args, **kwargs):
         return mathsat.msat_make_bv_extract(self.msat_env,
                                             formula.bv_extract_end(),
                                             formula.bv_extract_start(),
                                             args[0])
 
-    def walk_bv_or(self, formula, args):
+    def walk_bv_or(self, formula, args, **kwargs):
         return mathsat.msat_make_bv_or(self.msat_env,
                                        args[0], args[1])
 
-    def walk_bv_not(self, formula, args):
+    def walk_bv_not(self, formula, args, **kwargs):
         return mathsat.msat_make_bv_not(self.msat_env, args[0])
 
-    def walk_bv_and(self, formula, args):
+    def walk_bv_and(self, formula, args, **kwargs):
         return mathsat.msat_make_bv_and(self.msat_env,
                                         args[0], args[1])
 
-    def walk_bv_xor(self, formula, args):
+    def walk_bv_xor(self, formula, args, **kwargs):
         return mathsat.msat_make_bv_xor(self.msat_env,
                                         args[0], args[1])
 
-    def walk_bv_add(self, formula, args):
+    def walk_bv_add(self, formula, args, **kwargs):
         return mathsat.msat_make_bv_plus(self.msat_env,
                                          args[0], args[1])
 
-    def walk_bv_neg(self, formula, args):
+    def walk_bv_neg(self, formula, args, **kwargs):
         return mathsat.msat_make_bv_neg(self.msat_env, args[0])
 
-    def walk_bv_mul(self, formula, args):
+    def walk_bv_mul(self, formula, args, **kwargs):
         return mathsat.msat_make_bv_times(self.msat_env,
                                           args[0], args[1])
 
-    def walk_bv_udiv(self, formula, args):
+    def walk_bv_udiv(self, formula, args, **kwargs):
         return mathsat.msat_make_bv_udiv(self.msat_env,
                                          args[0], args[1])
 
-    def walk_bv_urem(self, formula, args):
+    def walk_bv_urem(self, formula, args, **kwargs):
         return mathsat.msat_make_bv_urem(self.msat_env,
                                          args[0], args[1])
 
-    def walk_bv_lshl(self, formula, args):
+    def walk_bv_lshl(self, formula, args, **kwargs):
         return mathsat.msat_make_bv_lshl(self.msat_env,
                                          args[0], args[1])
 
-    def walk_bv_lshr(self, formula, args):
+    def walk_bv_lshr(self, formula, args, **kwargs):
         return mathsat.msat_make_bv_lshr(self.msat_env,
                                          args[0], args[1])
 
-    def walk_bv_rol(self, formula, args):
+    def walk_bv_rol(self, formula, args, **kwargs):
         return mathsat.msat_make_bv_rol(self.msat_env,
                                         formula.bv_rotation_step(),
                                         args[0])
 
-    def walk_bv_ror(self, formula, args):
+    def walk_bv_ror(self, formula, args, **kwargs):
         return mathsat.msat_make_bv_ror(self.msat_env,
                                         formula.bv_rotation_step(),
                                         args[0])
 
-    def walk_bv_zext(self, formula, args):
+    def walk_bv_zext(self, formula, args, **kwargs):
         return mathsat.msat_make_bv_zext(self.msat_env,
                                          formula.bv_extend_step(),
                                          args[0])
 
-    def walk_bv_sext (self, formula, args):
+    def walk_bv_sext (self, formula, args, **kwargs):
         return mathsat.msat_make_bv_sext(self.msat_env,
                                          formula.bv_extend_step(),
                                          args[0])
 
-    def walk_plus(self, formula, args):
+    def walk_plus(self, formula, args, **kwargs):
         res = mathsat.msat_make_number(self.msat_env, "0")
         for a in args:
             res = mathsat.msat_make_plus(self.msat_env, res, a)
         return res
 
-    def walk_minus(self, formula, args):
+    def walk_minus(self, formula, args, **kwargs):
         n_one = mathsat.msat_make_number(self.msat_env, "-1")
         n_s2 = mathsat.msat_make_times(self.msat_env, n_one, args[1])
         return mathsat.msat_make_plus(self.msat_env, args[0], n_s2)
 
-    def walk_equals(self, formula, args):
+    def walk_equals(self, formula, args, **kwargs):
         return mathsat.msat_make_equal(self.msat_env, args[0], args[1])
 
-    def walk_iff(self, formula, args):
+    def walk_iff(self, formula, args, **kwargs):
         return mathsat.msat_make_iff(self.msat_env, args[0], args[1])
 
-    def walk_implies(self, formula, args):
+    def walk_implies(self, formula, args, **kwargs):
         neg = self.walk_not(self.mgr.Not(formula.arg(0)), [args[0]])
         return mathsat.msat_make_or(self.msat_env, neg, args[1])
 
-    def walk_times(self, formula, args):
+    def walk_times(self, formula, args, **kwargs):
         return mathsat.msat_make_times(self.msat_env, args[0], args[1])
 
-    def walk_function(self, formula, args):
+    def walk_function(self, formula, args, **kwargs):
         name = formula.function_name()
         if name not in self.symbol_to_decl:
             self.declare_variable(name)
         decl = self.symbol_to_decl[name]
         return mathsat.msat_make_uf(self.msat_env, decl, args)
 
-    def walk_toreal(self, formula, args):
+    def walk_toreal(self, formula, args, **kwargs):
         # In mathsat toreal is implicit
         return args[0]
 
@@ -860,14 +860,14 @@ if hasattr(mathsat, "MSAT_EXIST_ELIM_ALLSMT_FM"):
 
             return self.converter.back(res)
 
-        def walk_forall(self, formula, args):
+        def walk_forall(self, formula, args, **kwargs):
             assert formula.is_forall()
             variables = formula.quantifier_vars()
             subf = self.env.formula_manager.Not(args[0])
             ex_res = self.exist_elim(variables, subf)
             return self.env.formula_manager.Not(ex_res)
 
-        def walk_exists(self, formula, args):
+        def walk_exists(self, formula, args, **kwargs):
             # Monolithic quantifier elimination
             assert formula.is_exists()
             variables = formula.quantifier_vars()

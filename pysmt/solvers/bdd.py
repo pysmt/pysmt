@@ -15,7 +15,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import warnings
 from six.moves import xrange
 
 import repycudd
@@ -119,6 +118,7 @@ class BddSolver(Solver):
 
     def get_default_options(self, logic=None, user_options=None):
         if user_options is not None:
+            #pylint: disable=star-args
             return BddOptions(**user_options)
         else:
             return BddOptions()
@@ -257,51 +257,51 @@ class BddConverter(Converter, DagWalker):
             self.idx2var[node.NodeReadIndex()] = var
             self.var2node[var] = node
 
-    def walk_and(self, formula, args):
+    def walk_and(self, formula, args, **kwargs):
         res = args[0]
         for a in args[1:]:
             res = self.ddmanager.And(a, res)
         return res
 
-    def walk_or(self, formula, args):
+    def walk_or(self, formula, args, **kwargs):
         res = args[0]
         for a in args[1:]:
             res = self.ddmanager.Or(res,a)
         return res
 
-    def walk_not(self, formula, args):
+    def walk_not(self, formula, args, **kwargs):
         return self.ddmanager.Not(args[0])
 
-    def walk_symbol(self, formula, args):
+    def walk_symbol(self, formula, **kwargs):
         if not formula.is_symbol(types.BOOL): raise TypeError
         if formula not in self.var2node:
             self.declare_variable(formula)
         res = self.var2node[formula]
         return res
 
-    def walk_implies(self, formula, args):
+    def walk_implies(self, formula, args, **kwargs):
         lhs, rhs = args
         return self.ddmanager.Or(lhs.Not(), rhs)
 
-    def walk_iff(self, formula, args):
+    def walk_iff(self, formula, args, **kwargs):
         lhs, rhs = args
         pos = self.ddmanager.And(lhs, rhs)
         neg = self.ddmanager.And(lhs.Not(), rhs.Not())
         return self.ddmanager.Or(pos, neg)
 
-    def walk_forall(self, formula, args):
+    def walk_forall(self, formula, args, **kwargs):
         f = args[0]
         cube = self.cube_from_var_list(formula.quantifier_vars())
         res = self.ddmanager.UnivAbstract(f, cube)
         return res
 
-    def walk_exists(self, formula, args):
+    def walk_exists(self, formula, args, **kwargs):
         f = args[0]
         cube = self.cube_from_var_list(formula.quantifier_vars())
         res = self.ddmanager.ExistAbstract(f, cube)
         return res
 
-    def walk_bool_constant(self, formula, args):
+    def walk_bool_constant(self, formula, **kwargs):
         if formula.is_true():
             return self.ddmanager.One()
         else:
@@ -355,7 +355,7 @@ class BddConverter(Converter, DagWalker):
                 pass
         return self.back_memoization[bdd]
 
- # EOC BddConverter
+# EOC BddConverter
 
 
 class BddQuantifierEliminator(QuantifierEliminator):

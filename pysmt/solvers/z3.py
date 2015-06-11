@@ -33,7 +33,6 @@ from pysmt.walkers import DagWalker
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               SolverNotConfiguredForUnsatCoresError,
                               SolverStatusError,
-                              InternalSolverError,
                               ConvertExpressionError)
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
 
@@ -108,7 +107,7 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
         # But it seems to have problems with quantified formulae
         self.z3 = z3.Solver()
 
-        if self.options.unsat_cores_mode != None:
+        if self.options.unsat_cores_mode is not None:
             self.z3.set(unsat_core=True)
 
         self.declarations = set()
@@ -159,7 +158,7 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
                 self.push()
                 self.add_assertion(self.mgr.And(other_ass))
                 self.pending_pop = True
-
+            #pylint: disable=star-args
             res = self.z3.check(*bool_ass)
         else:
             res = self.z3.check()
@@ -186,7 +185,7 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
         if self.options.unsat_cores_mode is None:
             raise SolverNotConfiguredForUnsatCoresError
 
-        if self.last_result != False:
+        if self.last_result is not False:
             raise SolverStatusError("The last call to solve() was not" \
                                     " unsatisfiable")
 
@@ -353,16 +352,18 @@ class Z3Converter(Converter, DagWalker):
         return res
 
 
-    def walk_and(self, formula, args):
+    def walk_and(self, formula, args, **kwargs):
+        #pylint: disable=star-args
         return z3.And(*args)
 
-    def walk_or(self, formula, args):
+    def walk_or(self, formula, args, **kwargs):
+        #pylint: disable=star-args
         return z3.Or(*args)
 
-    def walk_not(self, formula, args):
+    def walk_not(self, formula, args, **kwargs):
         return z3.Not(args[0])
 
-    def walk_symbol(self, formula, args):
+    def walk_symbol(self, formula, **kwargs):
         symbol_type = formula.symbol_type()
         if symbol_type == types.BOOL:
             res = z3.Bool(formula.symbol_name())
@@ -374,19 +375,19 @@ class Z3Converter(Converter, DagWalker):
             assert False
         return res
 
-    def walk_iff(self, formula, args):
+    def walk_iff(self, formula, args, **kwargs):
         return (args[0] == args[1])
 
-    def walk_implies(self, formula, args):
-        return z3.Implies(*args)
+    def walk_implies(self, formula, args, **kwargs):
+        return z3.Implies(args[0], args[1])
 
-    def walk_le(self, formula, args):
+    def walk_le(self, formula, args, **kwargs):
         return (args[0] <= args[1])
 
-    def walk_lt(self, formula, args):
+    def walk_lt(self, formula, args, **kwargs):
         return (args[0] < args[1])
 
-    def walk_ite(self, formula, args):
+    def walk_ite(self, formula, args, **kwargs):
         i = args[0]
         t = args[1]
         e = args[2]
@@ -396,46 +397,48 @@ class Z3Converter(Converter, DagWalker):
         else:
             return z3.If(i, t, e)
 
-    def walk_real_constant(self, formula, args):
+    def walk_real_constant(self, formula, **kwargs):
         frac = formula.constant_value()
         n,d = frac.numerator, frac.denominator
         rep = str(n) + "/" + str(d)
         return z3.RealVal(rep)
 
-    def walk_int_constant(self, formula, args):
+    def walk_int_constant(self, formula, **kwargs):
         assert type(formula.constant_value()) == int or \
             type(formula.constant_value()) == long
         return z3.IntVal(formula.constant_value())
 
-    def walk_bool_constant(self, formula, args):
+    def walk_bool_constant(self, formula, **kwargs):
         return z3.BoolVal(formula.constant_value())
 
-    def walk_exists(self, formula, args):
-        return z3.Exists([self.walk_symbol(x, [])
+    def walk_exists(self, formula, args, **kwargs):
+        return z3.Exists([self.walk_symbol(x)
                           for x in formula.quantifier_vars()],
                          args[0])
 
-    def walk_forall(self, formula, args):
-        return z3.ForAll([self.walk_symbol(x, [])
+    def walk_forall(self, formula, args, **kwargs):
+        return z3.ForAll([self.walk_symbol(x)
                           for x in formula.quantifier_vars()],
                          args[0])
 
-    def walk_plus(self, formula, args):
+    def walk_plus(self, formula, args, **kwargs):
+        #pylint: disable=star-args
         return z3.Sum(*args)
 
-    def walk_minus(self, formula, args):
+    def walk_minus(self, formula, args, **kwargs):
         return (args[0] - args[1])
 
-    def walk_equals(self, formula, args):
+    def walk_equals(self, formula, args, **kwargs):
         return (args[0] == args[1])
 
-    def walk_times(self, formula, args):
+    def walk_times(self, formula, args, **kwargs):
         return (args[0] * args[1])
 
-    def walk_toreal(self, formula, args):
+    def walk_toreal(self, formula, args, **kwargs):
         return z3.ToReal(args[0])
 
-    def walk_function(self, formula, args):
+    def walk_function(self, formula, args, **kwargs):
+        #pylint: disable=star-args
         f = formula.function_name()
         tp = f.symbol_type()
         sig = [self._type_to_z3(x) for x in tp.param_types]
