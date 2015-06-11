@@ -178,6 +178,8 @@ class FormulaManager(object):
 
         Restriction: Formula must be of boolean type
         """
+        if formula.is_not():
+            return formula.arg(0)
         n = self.create_node(node_type=op.NOT, args=(formula,))
         return n
 
