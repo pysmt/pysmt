@@ -21,9 +21,10 @@ Note that other expressions can be built in the FormulaManager, but
 they will be rewritten (during construction) in order to only use
 these operators.
 """
+from six.moves import xrange
 
-ALL_TYPES = range(0,40)
 
+ALL_TYPES = list(xrange(0,40))
 
 (
 FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF, # Boolean Logic (0-6)
@@ -92,7 +93,7 @@ def new_node_type(new_node_id=None):
 def op_to_str(node_id):
     """Returns a string representation of the given node."""
     if node_id not in __OP_STR__:
-        return node_id
+        return str(node_id)
     return __OP_STR__[node_id]
 
 __OP_STR__ = {

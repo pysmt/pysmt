@@ -29,48 +29,40 @@ class SmtPrinter(TreeWalker):
         self.write = self.stream.write
         self.mgr = get_env().formula_manager
 
-        self.functions[op.FORALL] = self.walk_forall
-        self.functions[op.EXISTS] = self.walk_exists
-        self.functions[op.SYMBOL] = self.walk_symbol
-        self.functions[op.FUNCTION] = self.walk_function
-        self.functions[op.REAL_CONSTANT] = self.walk_real_constant
-        self.functions[op.BOOL_CONSTANT] = self.walk_bool_constant
-        self.functions[op.INT_CONSTANT] = self.walk_int_constant
-        self.functions[op.BV_CONSTANT] = self.walk_bv_constant
 
-        self.functions[op.AND] = partial(self._walk_nary, "and")
-        self.functions[op.OR] = partial(self._walk_nary, "or")
-        self.functions[op.NOT] = partial(self._walk_nary, "not")
-        self.functions[op.IMPLIES] = partial(self._walk_nary, "=>")
-        self.functions[op.IFF] = partial(self._walk_nary, "=")
-        self.functions[op.PLUS]   = partial(self._walk_nary, "+")
-        self.functions[op.MINUS]  = partial(self._walk_nary, "-")
-        self.functions[op.TIMES]  = partial(self._walk_nary, "*")
-        self.functions[op.EQUALS] = partial(self._walk_nary, "=")
-        self.functions[op.LE]     = partial(self._walk_nary, "<=")
-        self.functions[op.LT]     = partial(self._walk_nary, "<")
-        self.functions[op.ITE]    = partial(self._walk_nary, "ite")
-        self.functions[op.TOREAL] = partial(self._walk_nary, "to_real")
+        self.set_function(partial(self._walk_nary, "and"), op.AND)
+        self.set_function(partial(self._walk_nary, "or"), op.OR)
+        self.set_function(partial(self._walk_nary, "not"), op.NOT)
+        self.set_function(partial(self._walk_nary, "=>"), op.IMPLIES)
+        self.set_function(partial(self._walk_nary, "="), op.IFF)
+        self.set_function(partial(self._walk_nary, "+"), op.PLUS)
+        self.set_function(partial(self._walk_nary, "-"), op.MINUS)
+        self.set_function(partial(self._walk_nary, "*"), op.TIMES)
+        self.set_function(partial(self._walk_nary, "="), op.EQUALS)
+        self.set_function(partial(self._walk_nary, "<="), op.LE)
+        self.set_function(partial(self._walk_nary, "<"), op.LT)
+        self.set_function(partial(self._walk_nary, "ite"), op.ITE)
+        self.set_function(partial(self._walk_nary, "to_real"), op.TOREAL)
 
-        self.functions[op.BV_AND] = partial(self._walk_nary, "bvand")
-        self.functions[op.BV_OR] = partial(self._walk_nary, "bvor")
-        self.functions[op.BV_NOT] = partial(self._walk_nary, "bvnot")
-        self.functions[op.BV_XOR] = partial(self._walk_nary, "bvxor")
-        self.functions[op.BV_ADD] = partial(self._walk_nary, "bvadd")
-        self.functions[op.BV_NEG] = partial(self._walk_nary, "bvneg")
-        self.functions[op.BV_MUL] = partial(self._walk_nary, "bvmul")
-        self.functions[op.BV_UDIV] = partial(self._walk_nary, "bvudiv")
-        self.functions[op.BV_UREM] = partial(self._walk_nary, "bvurem")
-        self.functions[op.BV_LSHL] = partial(self._walk_nary, "bvshl")
-        self.functions[op.BV_LSHR] = partial(self._walk_nary, "bvlshr")
-        self.functions[op.BV_ULT] = partial(self._walk_nary, "bvult")
-        self.functions[op.BV_ULE] = partial(self._walk_nary, "bvule")
-        self.functions[op.BV_CONCAT] = partial(self._walk_nary, "concat")
-        self.functions[op.BV_EXTRACT] = self.walk_bv_extract
-        self.functions[op.BV_ROR] = self.walk_bv_rotate
-        self.functions[op.BV_ROL] = self.walk_bv_rotate
-        self.functions[op.BV_ZEXT] = self.walk_bv_extend
-        self.functions[op.BV_SEXT] = self.walk_bv_extend
+        self.set_function(partial(self._walk_nary, "bvand"), op.BV_AND)
+        self.set_function(partial(self._walk_nary, "bvor"), op.BV_OR)
+        self.set_function(partial(self._walk_nary, "bvnot"), op.BV_NOT)
+        self.set_function(partial(self._walk_nary, "bvxor"), op.BV_XOR)
+        self.set_function(partial(self._walk_nary, "bvadd"), op.BV_ADD)
+        self.set_function(partial(self._walk_nary, "bvneg"), op.BV_NEG)
+        self.set_function(partial(self._walk_nary, "bvmul"), op.BV_MUL)
+        self.set_function(partial(self._walk_nary, "bvudiv"), op.BV_UDIV)
+        self.set_function(partial(self._walk_nary, "bvurem"), op.BV_UREM)
+        self.set_function(partial(self._walk_nary, "bvshl"), op.BV_LSHL)
+        self.set_function(partial(self._walk_nary, "bvlshr"), op.BV_LSHR)
+        self.set_function(partial(self._walk_nary, "bvult"), op.BV_ULT)
+        self.set_function(partial(self._walk_nary, "bvule"), op.BV_ULE)
+        self.set_function(partial(self._walk_nary, "concat"), op.BV_CONCAT)
+        self.set_function(self.walk_bv_extract, op.BV_EXTRACT)
+        self.set_function(self.walk_bv_rotate, op.BV_ROR)
+        self.set_function(self.walk_bv_rotate, op.BV_ROL)
+        self.set_function(self.walk_bv_extend, op.BV_ZEXT)
+        self.set_function(self.walk_bv_extend, op.BV_SEXT)
 
 
     def printer(self, f):
@@ -189,48 +181,39 @@ class SmtDagPrinter(DagWalker):
         self.names = None
         self.mgr = get_env().formula_manager
 
-        self.functions[op.FORALL] = self.walk_forall
-        self.functions[op.EXISTS] = self.walk_exists
-        self.functions[op.SYMBOL] = self.walk_symbol
-        self.functions[op.FUNCTION] = self.walk_function
-        self.functions[op.REAL_CONSTANT] = self.walk_real_constant
-        self.functions[op.BOOL_CONSTANT] = self.walk_bool_constant
-        self.functions[op.INT_CONSTANT] = self.walk_int_constant
-        self.functions[op.BV_CONSTANT] = self.walk_bv_constant
+        self.set_function(partial(self._walk_nary, "and"), op.AND)
+        self.set_function(partial(self._walk_nary, "or"), op.OR)
+        self.set_function(partial(self._walk_nary, "not"), op.NOT)
+        self.set_function(partial(self._walk_nary, "=>"), op.IMPLIES)
+        self.set_function(partial(self._walk_nary, "="), op.IFF)
+        self.set_function(partial(self._walk_nary, "+"), op.PLUS)
+        self.set_function(partial(self._walk_nary, "-"), op.MINUS)
+        self.set_function(partial(self._walk_nary, "*"), op.TIMES)
+        self.set_function(partial(self._walk_nary, "="), op.EQUALS)
+        self.set_function(partial(self._walk_nary, "<="), op.LE)
+        self.set_function(partial(self._walk_nary, "<"), op.LT)
+        self.set_function(partial(self._walk_nary, "ite"), op.ITE)
+        self.set_function(partial(self._walk_nary, "to_real"), op.TOREAL)
 
-        self.functions[op.AND] = partial(self._walk_nary, "and")
-        self.functions[op.OR] = partial(self._walk_nary, "or")
-        self.functions[op.NOT] = partial(self._walk_nary, "not")
-        self.functions[op.IMPLIES] = partial(self._walk_nary, "=>")
-        self.functions[op.IFF] = partial(self._walk_nary, "=")
-        self.functions[op.PLUS]   = partial(self._walk_nary, "+")
-        self.functions[op.MINUS]  = partial(self._walk_nary, "-")
-        self.functions[op.TIMES]  = partial(self._walk_nary, "*")
-        self.functions[op.EQUALS] = partial(self._walk_nary, "=")
-        self.functions[op.LE]     = partial(self._walk_nary, "<=")
-        self.functions[op.LT]     = partial(self._walk_nary, "<")
-        self.functions[op.ITE]    = partial(self._walk_nary, "ite")
-        self.functions[op.TOREAL] = partial(self._walk_nary, "to_real")
-
-        self.functions[op.BV_AND] = partial(self._walk_nary, "bvand")
-        self.functions[op.BV_OR] = partial(self._walk_nary, "bvor")
-        self.functions[op.BV_NOT] = partial(self._walk_nary, "bvnot")
-        self.functions[op.BV_XOR] = partial(self._walk_nary, "bvxor")
-        self.functions[op.BV_ADD] = partial(self._walk_nary, "bvadd")
-        self.functions[op.BV_NEG] = partial(self._walk_nary, "bvneg")
-        self.functions[op.BV_MUL] = partial(self._walk_nary, "bvmul")
-        self.functions[op.BV_UDIV] = partial(self._walk_nary, "bvudiv")
-        self.functions[op.BV_UREM] = partial(self._walk_nary, "bvurem")
-        self.functions[op.BV_LSHL] = partial(self._walk_nary, "bvshl")
-        self.functions[op.BV_LSHR] = partial(self._walk_nary, "bvlshr")
-        self.functions[op.BV_ULT] = partial(self._walk_nary, "bvult")
-        self.functions[op.BV_ULE] = partial(self._walk_nary, "bvule")
-        self.functions[op.BV_CONCAT] = partial(self._walk_nary, "concat")
-        self.functions[op.BV_EXTRACT] = self.walk_bv_extract
-        self.functions[op.BV_ROR] = self.walk_bv_rotate
-        self.functions[op.BV_ROL] = self.walk_bv_rotate
-        self.functions[op.BV_SEXT] = self.walk_bv_extend
-        self.functions[op.BV_ZEXT] = self.walk_bv_extend
+        self.set_function(partial(self._walk_nary, "bvand"), op.BV_AND)
+        self.set_function(partial(self._walk_nary, "bvor"), op.BV_OR)
+        self.set_function(partial(self._walk_nary, "bvnot"), op.BV_NOT)
+        self.set_function(partial(self._walk_nary, "bvxor"), op.BV_XOR)
+        self.set_function(partial(self._walk_nary, "bvadd"), op.BV_ADD)
+        self.set_function(partial(self._walk_nary, "bvneg"), op.BV_NEG)
+        self.set_function(partial(self._walk_nary, "bvmul"), op.BV_MUL)
+        self.set_function(partial(self._walk_nary, "bvudiv"), op.BV_UDIV)
+        self.set_function(partial(self._walk_nary, "bvurem"), op.BV_UREM)
+        self.set_function(partial(self._walk_nary, "bvshl"), op.BV_LSHL)
+        self.set_function(partial(self._walk_nary, "bvlshr"), op.BV_LSHR)
+        self.set_function(partial(self._walk_nary, "bvult"), op.BV_ULT)
+        self.set_function(partial(self._walk_nary, "bvule"), op.BV_ULE)
+        self.set_function(partial(self._walk_nary, "concat"), op.BV_CONCAT)
+        self.set_function(self.walk_bv_extract, op.BV_EXTRACT)
+        self.set_function(self.walk_bv_rotate, op.BV_ROR)
+        self.set_function(self.walk_bv_rotate, op.BV_ROL)
+        self.set_function(self.walk_bv_extend, op.BV_SEXT)
+        self.set_function(self.walk_bv_extend, op.BV_ZEXT)
 
 
     def _push_with_children_to_stack(self, formula, **kwargs):

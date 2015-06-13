@@ -36,47 +36,28 @@ class SimpleTypeChecker(walkers.DagWalker):
     def __init__(self, env=None):
         walkers.DagWalker.__init__(self, env=env)
 
-        self.functions[op.AND] = self.walk_bool_to_bool
-        self.functions[op.OR] = self.walk_bool_to_bool
-        self.functions[op.NOT] = self.walk_bool_to_bool
-        self.functions[op.IMPLIES] = self.walk_bool_to_bool
-        self.functions[op.IFF] = self.walk_bool_to_bool
-        self.functions[op.SYMBOL] = self.walk_symbol
-        self.functions[op.EQUALS] = self.walk_math_relation
-        self.functions[op.LE] = self.walk_math_relation
-        self.functions[op.LT] = self.walk_math_relation
-        self.functions[op.REAL_CONSTANT] = self.walk_identity_real
-        self.functions[op.BOOL_CONSTANT] = self.walk_identity_bool
-        self.functions[op.INT_CONSTANT] = self.walk_identity_int
-        self.functions[op.FORALL] = self.walk_quantifier
-        self.functions[op.EXISTS] = self.walk_quantifier
-        self.functions[op.PLUS] = self.walk_realint_to_realint
-        self.functions[op.MINUS] = self.walk_realint_to_realint
-        self.functions[op.TIMES] = self.walk_realint_to_realint
-        self.functions[op.ITE] = self.walk_ite
-        self.functions[op.TOREAL] = self.walk_int_to_real
-        self.functions[op.FUNCTION] = self.walk_function
+        self.set_function(self.walk_bool_to_bool, op.AND, op.OR, op.NOT,
+                          op.IMPLIES, op.IFF)
+        self.set_function(self.walk_symbol, op.SYMBOL)
+        self.set_function(self.walk_math_relation, op.EQUALS, op.LE, op.LT)
+        self.set_function(self.walk_identity_real, op.REAL_CONSTANT)
+        self.set_function(self.walk_identity_bool, op.BOOL_CONSTANT)
+        self.set_function(self.walk_identity_int, op.INT_CONSTANT)
+        self.set_function(self.walk_quantifier, op.FORALL, op.EXISTS)
+        self.set_function(self.walk_realint_to_realint, op.PLUS, op.MINUS,
+                          op.TIMES)
+        self.set_function(self.walk_ite, op.ITE)
+        self.set_function(self.walk_int_to_real, op.TOREAL)
+        self.set_function(self.walk_function, op.FUNCTION)
 
-        self.functions[op.BV_CONSTANT] = self.walk_identity_bv
-        self.functions[op.BV_ULT] = self.walk_bv_to_bool
-        self.functions[op.BV_ULE] = self.walk_bv_to_bool
-        self.functions[op.BV_ADD] = self.walk_bv_to_bv
-        self.functions[op.BV_NOT] = self.walk_bv_to_bv
-        self.functions[op.BV_AND] = self.walk_bv_to_bv
-        self.functions[op.BV_OR] = self.walk_bv_to_bv
-        self.functions[op.BV_XOR] = self.walk_bv_to_bv
-        self.functions[op.BV_NEG] = self.walk_bv_to_bv
-        self.functions[op.BV_MUL] = self.walk_bv_to_bv
-        self.functions[op.BV_UDIV] = self.walk_bv_to_bv
-        self.functions[op.BV_UREM] = self.walk_bv_to_bv
-        self.functions[op.BV_LSHL] = self.walk_bv_to_bv
-        self.functions[op.BV_LSHR] = self.walk_bv_to_bv
-        self.functions[op.BV_ROL] = self.walk_bv_rotate
-        self.functions[op.BV_ROR] = self.walk_bv_rotate
-        self.functions[op.BV_ZEXT] = self.walk_bv_extend
-        self.functions[op.BV_SEXT] = self.walk_bv_extend
+        self.set_function(self.walk_identity_bv, op.BV_CONSTANT)
+        self.set_function(self.walk_bv_to_bool, op.BV_ULT, op.BV_ULE)
+        self.set_function(self.walk_bv_to_bv, op.BV_ADD, op.BV_NOT, op.BV_AND,
+                          op.BV_OR, op.BV_XOR, op.BV_NEG, op.BV_MUL, op.BV_UDIV,
+                          op.BV_UREM, op.BV_LSHL, op.BV_LSHR)
+        self.set_function(self.walk_bv_rotate, op.BV_ROL, op.BV_ROR)
+        self.set_function(self.walk_bv_extend, op.BV_ZEXT, op.BV_SEXT)
 
-        assert self.is_complete(verbose=True)
         self.be_nice = False
 
     def _get_key(self, formula, **kwargs):

@@ -26,11 +26,8 @@ class Simplifier(pysmt.walkers.DagWalker):
         pysmt.walkers.DagWalker.__init__(self, env=env)
         self.manager = self.env.formula_manager
 
-        self.functions[op.SYMBOL] = self.walk_identity
-        self.functions[op.REAL_CONSTANT] = self.walk_identity
-        self.functions[op.BOOL_CONSTANT] = self.walk_identity
-        self.functions[op.INT_CONSTANT] = self.walk_identity
-        self.functions[op.BV_CONSTANT] = self.walk_identity
+        self.set_function(self.walk_identity, op.SYMBOL, op.REAL_CONSTANT,
+                          op.INT_CONSTANT, op.BOOL_CONSTANT, op.BV_CONSTANT)
 
         self._validate_simplifications = None
 

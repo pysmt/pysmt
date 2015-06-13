@@ -53,7 +53,6 @@ class TestOracles(TestCase):
         stc = get_env().stc
         for (f, _, _, _) in EXAMPLE_FORMULAS:
             atoms = oracle.get_atoms(f)
-
             if len(f.get_free_variables()) > 0:
                 self.assertTrue(len(atoms) > 0)
 

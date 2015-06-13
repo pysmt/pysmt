@@ -818,10 +818,8 @@ if hasattr(mathsat, "MSAT_EXIST_ELIM_ALLSMT_FM"):
 
             IdentityDagWalker.__init__(self, env=environment)
 
-            self.functions[op.SYMBOL] = self.walk_identity
-            self.functions[op.REAL_CONSTANT] = self.walk_identity
-            self.functions[op.BOOL_CONSTANT] = self.walk_identity
-            self.functions[op.INT_CONSTANT] = self.walk_identity
+            self.set_function(self.walk_identity, op.SYMBOL, op.REAL_CONSTANT,
+                              op.BOOL_CONSTANT, op.INT_CONSTANT)
 
             self.logic = logic
 
