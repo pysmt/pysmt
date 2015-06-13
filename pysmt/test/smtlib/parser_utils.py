@@ -21,7 +21,7 @@ import unittest
 from pysmt.shortcuts import Solver, reset_env
 from pysmt.smtlib.parser import SmtLibParser
 from pysmt.smtlib.script import check_sat_filter
-from pysmt.logics import QF_LIA, QF_LRA, LRA, QF_UFLIRA, QF_UFBV
+from pysmt.logics import QF_LIA, QF_LRA, LRA, QF_UFLIRA, QF_UFBV, QF_BV
 from pysmt.exceptions import NoSolverAvailableError
 
 SMTLIB_DIR = "pysmt/test/smtlib"
@@ -80,8 +80,11 @@ SMTLIB_TEST_FILES = [
     #
     # QF_UFBV
     #
-    (QF_UFBV, "small_set/QF_UFBV/btfnt_atlas_out.smt2", "unsat"),
+    #(QF_UFBV, "small_set/QF_UFBV/btfnt_atlas_out.smt2", "unsat"),
     (QF_UFBV, "small_set/QF_UFBV/calc2_sec2_bmc10.smt2", "unsat"),
+    (QF_BV, "small_set/QF_BV/bench_4631.smt2", "sat"),
+    (QF_BV, "small_set/QF_BV/bench_5200.smt2", "unsat"),
+    (QF_BV, "small_set/QF_BV/bench_9457.smt2", "sat"),
 ]
 
 # We use test generation in order to be able to obtain a separate
