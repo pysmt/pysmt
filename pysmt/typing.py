@@ -21,19 +21,23 @@ In the current version these are:
  * Bool
  * Int
  * Real
+ * BVType
  * FunctionType
 
 Types are represented by singletons. Basic types (Bool, Int and Real)
-are constructed here by default, while FunctionType relies on a
-factory service, and existing FunctionTypes are stored in a global
-map.
+are constructed here by default, while BVType and FunctionType relies
+on a factory service. Each BitVector width is represented by a
+different instance of BVType.
+
 """
 
-# Global dictionary of types
+# Global dictionary of types, used to store the singletons
 __CUSTOM_TYPES__ = {}
 __BV_TYPES__ = {}
 
 class PySMTType(object):
+    """Abstract class for representing a type within pySMT."""
+
     def __init__(self, type_id=-1):
         self.type_id = type_id
 
@@ -62,6 +66,7 @@ class PySMTType(object):
 
     def __ne__(self, other):
         return not (self == other)
+
 
 class BooleanType(PySMTType):
     def __init__(self):
@@ -113,8 +118,14 @@ class IntType(PySMTType):
     def __str__(self):
         return "Int"
 
-# BV is a Factory for _BVType
+
 def BVType(width=32):
+    """Returns the singleton associated to the BV type for the given width.
+
+    This function takes care of building and registering the type
+    whenever needed. To see the functions provided by the type look at
+    _BVType.
+    """
     key = width
     if key in __BV_TYPES__:
         return  __BV_TYPES__[key]
@@ -125,6 +136,11 @@ def BVType(width=32):
 
 
 class _BVType(PySMTType):
+    """Internal class to represent a BitVector type.
+
+    This class should not be instantiated directly, but the factory
+    method BVType should be used instead.
+    """
     def __init__(self, width=32):
         PySMTType.__init__(self, type_id = 3)
         self.width = width
@@ -155,8 +171,15 @@ class _BVType(PySMTType):
     def __hash__(self):
         return hash(self.type_id + self.width)
 
+
 # FunctionType is a Factory that returns a _FunctionType
 def FunctionType(return_type, param_types):
+    """Returns the singleton associated to the Function type with the given arguments.
+
+    This function takes care of building and registering the type
+    whenever needed. To see the functions provided by the type look at
+    _FunctionType
+    """
     param_types = tuple(param_types)
     key = (return_type, param_types)
     if key in __CUSTOM_TYPES__:
@@ -169,7 +192,11 @@ def FunctionType(return_type, param_types):
 
 
 class _FunctionType(PySMTType):
+    """Internal class used to represent a Function type.
 
+    This class should not be instantiated directly, but the factory
+    method FunctionType should be used instead.
+    """
     def __init__(self, return_type, param_types):
         PySMTType.__init__(self, type_id = 4)
         self.return_type = return_type
@@ -207,12 +234,12 @@ class _FunctionType(PySMTType):
     def __hash__(self):
         return self._hash
 
+
+# Singletons for the basic types
 BOOL = BooleanType()
-
 REAL = RealType()
-
 INT = IntType()
 
+# Helper Constants
 PYSMT_TYPES = frozenset([BOOL, REAL, INT])
-
 BV1, BV8, BV16, BV32, BV64, BV128 = [BVType(i) for i in [1, 8, 16, 32, 64, 128]]
