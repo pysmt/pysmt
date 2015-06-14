@@ -239,6 +239,11 @@ class TestRegressions(TestCase):
                     nf = new_env.formula_manager.normalize(f)
                     self.assertEquals(nf, l_test[i])
 
+    def test_is_one(self):
+        self.assertTrue(Int(1).is_one())
+        self.assertTrue(Real(1).is_one())
+        self.assertTrue(Int(0).is_zero())
+        self.assertTrue(Real(0).is_zero())
 
 if __name__ == "__main__":
     import unittest

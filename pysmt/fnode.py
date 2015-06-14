@@ -166,10 +166,10 @@ class FNode(object):
         return self.is_bool_constant(False)
 
     def is_one(self):
-        return self.is_real_constant(1)
+        return self.is_real_constant(1) or self.is_int_constant(1)
 
     def is_zero(self):
-        return self.is_real_constant(0)
+        return self.is_real_constant(0) or self.is_int_constant(0)
 
     def is_toreal(self):
         return self.node_type() == TOREAL
