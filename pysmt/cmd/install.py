@@ -156,7 +156,7 @@ def download(url, file_name):
 def install_msat(options):
     """Installer for the MathSAT5 solver python interafce"""
 
-    base_name =  "mathsat-5.3.5-linux-%s" % get_architecture()
+    base_name =  "mathsat-5.3.6-linux-%s" % get_architecture()
     archive_name = "%s.tar.gz" % base_name
     archive = os.path.join(BASE_DIR, archive_name)
     dir_path = os.path.join(BASE_DIR, base_name)
