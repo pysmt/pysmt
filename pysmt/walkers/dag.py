@@ -45,10 +45,13 @@ class DagWalker(Walker):
         self.stack = []
         return
 
+    def _get_children(self, formula):
+        return formula.args()
+
     def _push_with_children_to_stack(self, formula, **kwargs):
         """Add children to the stack."""
         self.stack.append((True, formula))
-        for s in formula.args():
+        for s in self._get_children(formula):
             # Add only if not memoized already
             key = self._get_key(s, **kwargs)
             if key not in self.memoization:
@@ -68,7 +71,7 @@ class DagWalker(Walker):
                 f = self.walk_error
 
             args = [self.memoization[self._get_key(s, **kwargs)] \
-                    for s in formula.args()]
+                    for s in self._get_children(formula)]
             self.memoization[key] = f(formula, args=args, **kwargs)
         else:
             pass
