@@ -400,26 +400,19 @@ class PrenexNormalizer(DagWalker):
         # res = m
         # for Q, vars in L:
         #    res = Q(vars, res)
-
-        for elem in op.ALL_TYPES:
-            if elem in op.QUANTIFIERS:
-                self.functions[elem] = self.walk_quantifier
-            elif elem in op.CONSTANTS:
-                self.functions[elem] = self.walk_constant
-            elif elem in op.RELATIONS:
-                self.functions[elem] = self.walk_theory_relation
-            elif elem in op.BV_OPERATORS or elem in op.LIRA_OPERATORS:
-                self.functions[elem] = self.walk_theory_op
-            else:
-                self.functions[elem] = self.walk_error
-        self.functions[op.SYMBOL] = self.walk_symbol
-        self.functions[op.FUNCTION] = self.walk_function
-        self.functions[op.ITE] = self.walk_ite
-        self.functions[op.AND] = self.walk_conj_disj
-        self.functions[op.OR] = self.walk_conj_disj
-        self.functions[op.NOT] = self.walk_not
-        self.functions[op.IFF] = self.walk_iff
-        self.functions[op.IMPLIES] = self.walk_implies
+        self.set_function(self.walk_error, *op.ALL_TYPES)
+        self.set_function(self.walk_quantifier, *op.QUANTIFIERS)
+        self.set_function(self.walk_theory_op, *op.BV_OPERATORS)
+        self.set_function(self.walk_constant, *op.CONSTANTS)
+        self.set_function(self.walk_theory_relation, *op.RELATIONS)
+        self.set_function(self.walk_theory_op, *op.LIRA_OPERATORS)
+        self.set_function(self.walk_symbol, op.SYMBOL)
+        self.set_function(self.walk_function, op.FUNCTION)
+        self.set_function(self.walk_ite, op.ITE)
+        self.set_function(self.walk_conj_disj, op.AND, op.OR)
+        self.set_function(self.walk_not, op.NOT)
+        self.set_function(self.walk_iff, op.IFF)
+        self.set_function(self.walk_implies, op.IMPLIES)
 
 
     def normalize(self, formula):

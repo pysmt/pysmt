@@ -61,13 +61,7 @@ class SizeOracle(pysmt.walkers.DagWalker):
     def set_walking_measure(self, measure):
         if measure not in self.measure_to_fun:
             raise NotImplementedError
-
-        self.functions.clear()
-        for elem in op.ALL_TYPES:
-            self.functions[elem] = self.measure_to_fun[measure]
-
-        # Check that no operator in undefined
-        assert self.is_complete(verbose=True)
+        self.set_function(self.measure_to_fun[measure], *op.ALL_TYPES)
 
 
     def _get_key(self, formula, measure, **kwargs):
@@ -121,19 +115,10 @@ class QuantifierOracle(pysmt.walkers.DagWalker):
     def __init__(self, env=None):
         pysmt.walkers.DagWalker.__init__(self, env=env)
 
-        # Clear the mapping function
-        self.functions.clear()
-
         # Propagate truth value, and force False when a Quantifier
         # is found.
-        for elem in op.ALL_TYPES:
-            if elem in [op.FORALL, op.EXISTS]:
-                self.functions[elem] = self.walk_false
-            else:
-                self.functions[elem] = self.walk_all
-
-        # Check that no operator in undefined
-        assert self.is_complete(verbose=True)
+        self.set_function(self.walk_all, *op.ALL_TYPES)
+        self.set_function(self.walk_false, op.FORALL, op.EXISTS)
 
     def is_qf(self, formula):
         """ Returns whether formula is Quantifier Free. """
@@ -147,34 +132,21 @@ class TheoryOracle(pysmt.walkers.DagWalker):
     def __init__(self, env=None):
         pysmt.walkers.DagWalker.__init__(self, env=env)
 
-        self.functions[op.AND] = self.walk_combine
-        self.functions[op.OR] = self.walk_combine
-        self.functions[op.NOT] = self.walk_combine
-        self.functions[op.IMPLIES] = self.walk_combine
-        self.functions[op.IFF] = self.walk_combine
-        self.functions[op.LE] = self.walk_combine
-        self.functions[op.LT] = self.walk_combine
-        self.functions[op.FORALL] = self.walk_combine
-        self.functions[op.EXISTS] = self.walk_combine
-        self.functions[op.MINUS] = self.walk_combine
-        self.functions[op.ITE] = self.walk_combine
+        self.set_function(self.walk_combine, op.AND, op.OR, op.NOT, op.IMPLIES,
+                          op.IFF, op.LE, op.LT, op.FORALL, op.EXISTS, op.MINUS,
+                          op.ITE)
+        # Just propagate BV
+        self.set_function(self.walk_combine, *op.BV_OPERATORS)
 
-        self.functions[op.REAL_CONSTANT] = self.walk_constant
-        self.functions[op.SYMBOL] = self.walk_symbol
-        self.functions[op.FUNCTION] = self.walk_function
-        self.functions[op.BOOL_CONSTANT] = self.walk_constant
-        self.functions[op.INT_CONSTANT] = self.walk_constant
-        self.functions[op.TOREAL] = self.walk_lira
-        self.functions[op.TIMES] = self.walk_times
-        self.functions[op.PLUS] = self.walk_plus
-        self.functions[op.EQUALS] = self.walk_equals
+        self.set_function(self.walk_constant, op.REAL_CONSTANT, op.BOOL_CONSTANT,
+                          op.INT_CONSTANT, op.BV_CONSTANT)
+        self.set_function(self.walk_symbol, op.SYMBOL)
+        self.set_function(self.walk_function, op.FUNCTION)
+        self.set_function(self.walk_lira, op.TOREAL)
+        self.set_function(self.walk_times, op.TIMES)
+        self.set_function(self.walk_plus, op.PLUS)
+        self.set_function(self.walk_equals, op.EQUALS)
 
-        for o in op.BV_OPERATORS:
-            # Just propagate BV
-            self.functions[o] = self.walk_combine
-
-        # This needs to be handled differently
-        self.functions[op.BV_CONSTANT] = self.walk_constant
 
 
     def walk_combine(self, formula, args, **kwargs):
@@ -281,9 +253,6 @@ class FreeVarsOracle(pysmt.walkers.DagWalker):
     def __init__(self, env=None):
         pysmt.walkers.DagWalker.__init__(self, env=env)
 
-        # Clear the mapping function
-        self.functions.clear()
-
         # We have only few categories for this walker.
         #
         # - Simple Args simply need to combine the cone/dependencies
@@ -291,22 +260,15 @@ class FreeVarsOracle(pysmt.walkers.DagWalker):
         # - Quantifiers need to exclude bounded variables
         # - Constants have no impact
         #
-        for elem in op.ALL_TYPES:
-            if elem in DEPENDENCIES_SIMPLE_ARGS:
-                self.functions[elem] = self.walk_simple_args
-            elif elem in op.QUANTIFIERS:
-                self.functions[elem] = self.walk_quantifier
-            elif elem in op.CONSTANTS:
-                self.functions[elem] = self.walk_constant
-            else:
-                self.functions[elem] = self.walk_error
+        self.set_function(self.walk_error, *op.ALL_TYPES)
+        #pylint: disable=star-args
+        self.set_function(self.walk_simple_args, *DEPENDENCIES_SIMPLE_ARGS)
+        self.set_function(self.walk_constant, *op.CONSTANTS)
+        self.set_function(self.walk_quantifier, *op.QUANTIFIERS)
 
         # These are the only 2 cases that can introduce elements.
-        self.functions[op.SYMBOL] = self.walk_symbol
-        self.functions[op.FUNCTION] = self.walk_function
-
-        # Check that no operator in undefined
-        assert self.is_complete(verbose=True)
+        self.set_function(self.walk_symbol, op.SYMBOL)
+        self.set_function(self.walk_function, op.FUNCTION)
 
 
     def get_free_variables(self, formula):
@@ -347,9 +309,6 @@ class AtomsOracle(pysmt.walkers.DagWalker):
     def __init__(self, env=None):
         pysmt.walkers.DagWalker.__init__(self, env=env)
 
-        # Clear the mapping function
-        self.functions.clear()
-
         # We have teh following categories for this walker.
         #
         # - Boolean operators, e.g. and, or, not...
@@ -359,24 +318,17 @@ class AtomsOracle(pysmt.walkers.DagWalker):
         # - Symbols
         # - Constants
         #
-        for elem in op.ALL_TYPES:
-            if elem in op.BOOL_CONNECTIVES or elem in op.QUANTIFIERS:
-                self.functions[elem] = self.walk_bool_op
-            elif elem in op.CONSTANTS:
-                self.functions[elem] = self.walk_constant
-            elif elem in op.RELATIONS:
-                self.functions[elem] = self.walk_theory_relation
-            elif elem in op.BV_OPERATORS or elem in op.LIRA_OPERATORS:
-                self.functions[elem] = self.walk_theory_op
-            else:
-                self.functions[elem] = self.walk_error
+        self.set_function(self.walk_error, *op.ALL_TYPES)
+        self.set_function(self.walk_bool_op, *op.BOOL_CONNECTIVES)
+        self.set_function(self.walk_bool_op, *op.QUANTIFIERS)
+        self.set_function(self.walk_constant, *op.CONSTANTS)
+        self.set_function(self.walk_theory_op, *op.BV_OPERATORS)
+        self.set_function(self.walk_theory_op, *op.LIRA_OPERATORS)
+        self.set_function(self.walk_theory_relation, *op.RELATIONS)
 
-        self.functions[op.SYMBOL] = self.walk_symbol
-        self.functions[op.FUNCTION] = self.walk_theory_op
-        self.functions[op.ITE] = self.walk_ite
-
-        # Check that no operator in undefined
-        assert self.is_complete(verbose=True)
+        self.set_function(self.walk_symbol, op.SYMBOL)
+        self.set_function(self.walk_function, op.FUNCTION)
+        self.set_function(self.walk_ite, op.ITE)
 
 
     def get_atoms(self, formula):
@@ -397,6 +349,11 @@ class AtomsOracle(pysmt.walkers.DagWalker):
 
     def walk_symbol(self, formula, **kwargs):
         if formula.is_symbol(types.BOOL):
+            return frozenset([formula])
+        return None
+
+    def walk_function(self, formula, **kwargs):
+        if formula.function_name().symbol_type().return_type.is_bool_type():
             return frozenset([formula])
         return None
 

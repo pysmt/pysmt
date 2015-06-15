@@ -395,7 +395,7 @@ class TestBasic(TestCase):
 
         # Replace the function used to compute the Plus()
         # with one that returns a msat_error
-        new_converter.functions[op.PLUS] = walk_plus
+        new_converter.set_function(walk_plus, op.PLUS)
 
         r, s = FreshSymbol(REAL), FreshSymbol(REAL)
         f1 = GT(r, s)

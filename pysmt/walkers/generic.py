@@ -72,9 +72,19 @@ class Walker(object):
         self.functions[op.BV_ZEXT] = self.walk_bv_zext
         self.functions[op.BV_SEXT] = self.walk_bv_sext
 
-        assert self.is_complete()
+        undefined_types = set(op.ALL_TYPES) - set(self.functions.keys())
+        assert len(undefined_types) == 0, \
+            "The following types are not defined in the generic walker: {%s}" % \
+            (", ".join(op.op_to_str(u) for u in undefined_types))
 
-        return
+
+    def set_function(self, function, *node_types):
+        """Overrides the default walking function for each of the specified
+        node_types with the given function
+        """
+        for nt in node_types:
+            self.functions[nt] = function
+
 
     def walk_error(self, formula, **kwargs):
         """ Default function for a node that is not handled by the Walker, by
@@ -92,16 +102,6 @@ class Walker(object):
         raise pysmt.exceptions.UnsupportedOperatorError(node_type=node_type,
                                                         expression=formula)
 
-
-    def is_complete(self, verbose=False):
-        """ Returns whether a behaviour has been specified for each FNode. """
-
-        complete = True
-        for n in op.ALL_TYPES:
-            if n not in self.functions:
-                complete = False
-                if verbose: print("Node", n,"is missing")
-        return complete
 
     # Methods to be overwritten:
     # Formula will be provided in the key-word formula

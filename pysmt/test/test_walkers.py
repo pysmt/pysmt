@@ -93,14 +93,10 @@ class TestWalkers(TestCase):
 
 
     def test_walker_is_complete(self):
-        tree_walker = TreeWalker()
-        self.assertTrue(tree_walker.is_complete(verbose=True))
-
-        tree_walker.functions = dict((x, tree_walker.walk_skip)
-                                     for x in op.ALL_TYPES
-                                     if x is not op.AND)
-        self.assertFalse(tree_walker.is_complete())
-
+        op.ALL_TYPES.append(-1)
+        with self.assertRaises(AssertionError):
+            TreeWalker()
+        op.ALL_TYPES.remove(-1)
 
     def test_identity_walker_simple(self):
 
@@ -112,8 +108,8 @@ class TestWalkers(TestCase):
 
         walker = IdentityDagWalker(env=get_env())
 
-        walker.functions[op.AND] = walk_and_to_or
-        walker.functions[op.OR] = walk_or_to_and
+        walker.set_function(walk_and_to_or, op.AND)
+        walker.set_function(walk_or_to_and, op.OR)
 
         x, y, z = Symbol('x'), Symbol('y'), Symbol('z')
 
