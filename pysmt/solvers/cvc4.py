@@ -21,7 +21,7 @@ from six.moves import xrange
 
 import CVC4
 
-from pysmt.logics import PYSMT_QF_LOGICS, BV_LOGICS
+from pysmt.logics import PYSMT_QF_LOGICS
 from pysmt.solvers.solver import Solver, Converter
 from pysmt.exceptions import SolverReturnedUnknownResultError
 from pysmt.walkers import DagWalker
@@ -31,7 +31,7 @@ from pysmt.decorators import catch_conversion_error
 
 
 class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
-    LOGICS = PYSMT_QF_LOGICS - BV_LOGICS
+    LOGICS = PYSMT_QF_LOGICS
 
     def __init__(self, environment, logic, user_options):
         Solver.__init__(self,
@@ -70,10 +70,6 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
     def get_model(self):
         assignment = {}
         for s in self.environment.formula_manager.get_all_symbols():
-            if s.symbol_type().is_bv_type():
-                # Workaround for #76
-                warnings.warn("Skipping unsupported bit-vector symbol")
-                continue
             if s.is_term():
                 v = self.get_value(s)
                 assignment[s] = v
@@ -165,14 +161,18 @@ class CVC4Converter(Converter, DagWalker):
         if expr.isConst():
             if expr.getType().isBoolean():
                 v = expr.getConstBoolean()
-                res = self.env.formula_manager.Bool(v)
+                res = self.mgr.Bool(v)
             elif expr.getType().isInteger():
                 v = expr.getConstRational().toString()
-                res = self.env.formula_manager.Int(int(v))
+                res = self.mgr.Int(int(v))
             elif expr.getType().isReal():
                 v = expr.getConstRational().toString()
-                res = self.env.formula_manager.Real(Fraction(v))
-
+                res = self.mgr.Real(Fraction(v))
+            elif expr.getType().isBitVector():
+                bv = expr.getConstBitVector()
+                v = bv.getValue().toString()
+                width = bv.getSize()
+                res = self.mgr.BV(int(v), width)
             else:
                 raise TypeError("Unsupported constant type:", expr.getType())
         else:
@@ -265,6 +265,74 @@ class CVC4Converter(Converter, DagWalker):
         #pylint: disable=star-args
         return self.mkExpr(CVC4.APPLY_UF, decl, *args)
 
+    def walk_bv_constant(self, formula, **kwargs):
+        value = formula.constant_value()
+        width = formula.bv_width()
+        return self.mkConst(CVC4.BitVector(width, value))
+
+    def walk_bv_ult(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.BITVECTOR_ULT, args[0], args[1])
+
+    def walk_bv_ule(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.BITVECTOR_ULE, args[0], args[1])
+
+    def walk_bv_concat(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.BITVECTOR_CONCAT, args[0], args[1])
+
+    def walk_bv_extract(self, formula, args, **kwargs):
+        ext = self.mkConst(CVC4.BitVectorExtract(formula.bv_extract_end(),
+                                                 formula.bv_extract_start()))
+        return self.mkExpr(CVC4.BITVECTOR_EXTRACT, ext, args[0])
+
+    def walk_bv_or(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.BITVECTOR_OR, args[0], args[1])
+
+    def walk_bv_not(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.BITVECTOR_NOT, args[0])
+
+    def walk_bv_and(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.BITVECTOR_AND, args[0], args[1])
+
+    def walk_bv_xor(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.BITVECTOR_XOR, args[0], args[1])
+
+    def walk_bv_add(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.BITVECTOR_PLUS, args[0], args[1])
+
+    def walk_bv_neg(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.BITVECTOR_NEG, args[0])
+
+    def walk_bv_mul(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.BITVECTOR_MULT, args[0], args[1])
+
+    def walk_bv_udiv(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.BITVECTOR_UDIV, args[0], args[1])
+
+    def walk_bv_urem(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.BITVECTOR_UREM, args[0], args[1])
+
+    def walk_bv_lshl(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.BITVECTOR_SHL, args[0], args[1])
+
+    def walk_bv_lshr(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.BITVECTOR_LSHR, args[0], args[1])
+
+    def walk_bv_rol(self, formula, args, **kwargs):
+        ext = self.mkConst(CVC4.BitVectorRotateLeft(formula.bv_rotation_step()))
+        return self.mkExpr(CVC4.BITVECTOR_ROTATE_LEFT, ext, args[0])
+
+    def walk_bv_ror(self, formula, args, **kwargs):
+        ext = self.mkConst(CVC4.BitVectorRotateRight(formula.bv_rotation_step()))
+        return self.mkExpr(CVC4.BITVECTOR_ROTATE_RIGHT, ext, args[0])
+
+    def walk_bv_zext(self, formula, args, **kwargs):
+        ext = self.mkConst(CVC4.BitVectorZeroExtend(formula.bv_extend_step()))
+        return self.mkExpr(CVC4.BITVECTOR_ZERO_EXTEND, ext, args[0])
+
+    def walk_bv_sext (self, formula, args, **kwargs):
+        ext = self.mkConst(CVC4.BitVectorSignExtend(formula.bv_extend_step()))
+        return self.mkExpr(CVC4.BITVECTOR_SIGN_EXTEND, ext, args[0])
+
     def _type_to_cvc4(self, tp):
         if tp.is_bool_type():
             return self.boolType
@@ -276,6 +344,8 @@ class CVC4Converter(Converter, DagWalker):
             stps = [self._type_to_cvc4(x) for x in tp.param_types]
             rtp = self._type_to_cvc4(tp.return_type)
             return self.cvc4_exprMgr.mkFunctionType(stps, rtp)
+        elif tp.is_bv_type():
+            return self.cvc4_exprMgr.mkBitVectorType(tp.width)
         else:
             raise NotImplementedError("Unsupported type: %s" %tp)
 

@@ -273,7 +273,7 @@ class TestBasic(TestCase):
                (len(get_env().factory.all_solvers(logic=logic)) > 0):
                 f_i = get_implicant(f, logic=logic)
                 if satisfiability:
-                    self.assertValid(Implies(f_i, f), logic=logic)
+                    self.assertValid(Implies(f_i, f), logic=logic, msg=f)
                 else:
                     self.assertIsNone(f_i)
 
