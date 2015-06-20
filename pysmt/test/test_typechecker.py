@@ -16,17 +16,16 @@
 #   limitations under the License.
 #
 from pysmt.typing import REAL, BOOL, INT, FunctionType
-
 from pysmt.type_checker import (assert_no_boolean_in_args,
                                 assert_boolean_args,
                                 assert_same_type_args,
                                 assert_args_type_in)
-
 from pysmt.shortcuts import (Symbol, And, Plus, Minus, Times, Equals, Or, Iff,
                              LE, LT, Not, GE, GT, Ite, Bool, Int, Real, Div,
                              Function)
-from pysmt.shortcuts import get_env
+from pysmt.environment import get_env
 from pysmt.test import TestCase
+from pysmt.test.examples import get_example_formulae
 from pysmt.decorators import typecheck_result
 
 
@@ -188,7 +187,9 @@ class TestSimpleTypeChecker(TestCase):
         with self.assertRaises(TypeError):
             super_bad_function()
 
-
+    def test_examples(self):
+        for (f, _, _, _) in get_example_formulae():
+            self.assertIs(f.get_type(), BOOL)
 
 if __name__ == '__main__':
     import unittest

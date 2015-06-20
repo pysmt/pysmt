@@ -26,6 +26,8 @@ from pysmt.shortcuts import Times, Minus, Equals, LE, LT, ToReal
 from pysmt.typing import REAL, INT, FunctionType
 from pysmt.smtlib.printers import SmtPrinter, SmtDagPrinter
 from pysmt.test import TestCase
+from pysmt.test.examples import get_example_formulae
+
 
 class TestPrinting(TestCase):
     def print_to_string(self, formula):
@@ -166,6 +168,11 @@ class TestPrinting(TestCase):
         long_f_str = tree_buf.getvalue()
 
         self.assertTrue(len(short_f_str) < len(long_f_str))
+
+    def test_examples(self):
+        for (f, _, _, _) in get_example_formulae():
+            self.assertTrue(len(str(f)) >= 1, str(f))
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,6 +1,9 @@
 Change Log
 ==========
 
+Depreaced Randomizer and associated functions.
+
+
 0.4.0: 2015-06-15 -- Interpolation and BDDs
 --------------------------------------------
 

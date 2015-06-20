@@ -215,6 +215,10 @@ class Logic(object):
                              theory=self.theory)
         return get_closer_pysmt_logic(target_logic)
 
+    def is_quantified(self):
+        """Return whether the logic supports quantifiers."""
+        return not self.quantifier_free
+
     def __str__(self):
         return self.name
 

@@ -23,9 +23,12 @@ from pysmt.shortcuts import And, Or, Symbol, Not, Implies, Iff, \
                             LE, LT, Ite, Real, TRUE, FALSE, Int, \
                             ForAll, Exists
 from pysmt.typing import BOOL, REAL, INT
+from pysmt.decorators import deprecated
+
 
 class Randomizer(object):
 
+    @deprecated("No alternative.")
     def __init__(self, symbols_count, max_arity,
                  symbols_intro_ratio, seed=None,
                  available_ops=None):
@@ -250,7 +253,7 @@ class Randomizer(object):
 
 
 # EOC
-
+@deprecated("No alternative.")
 def build_random_formula(symbols_count, nestings_count,
                          max_arity, symbols_intro_ratio,
                          type_=BOOL, seed=None, available_ops=None):
@@ -273,6 +276,7 @@ def build_random_formula(symbols_count, nestings_count,
                    symbols_intro_ratio, seed=seed, available_ops=available_ops)
     return r.rand_formula(nestings_count, type_)
 
+@deprecated("No alternative.")
 def build_random_qf_formula(symbols_count, nestings_count,
                             max_arity, symbols_intro_ratio,
                             type_=BOOL, seed=None, available_ops=None):

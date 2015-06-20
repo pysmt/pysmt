@@ -70,20 +70,17 @@ class Simplifier(pysmt.walkers.DagWalker):
                ("Was: %s \n Obtained: %s\n" % (str(formula), str(res)))
         return res
 
-
     def walk_and(self, formula, args, **kwargs):
         args = [x for x in args if not x.is_true()]
         if len(args) == 0:
             return self.manager.TRUE()
         elif len(args) == 1:
             return args[0]
-
         else:
             if any(x.is_false() for x in args):
                 return self.manager.FALSE()
 
         return self.manager.And(args)
-
 
     def walk_or(self, formula, args, **kwargs):
         args = [x for x in args if not x.is_false()]
@@ -91,13 +88,11 @@ class Simplifier(pysmt.walkers.DagWalker):
             return self.manager.FALSE()
         elif len(args) == 1:
             return args[0]
-
         else:
             if any(x.is_true() for x in args):
                 return self.manager.TRUE()
 
         return self.manager.Or(args)
-
 
     def walk_not(self, formula, args, **kwargs):
         assert len(args) == 1
@@ -109,7 +104,6 @@ class Simplifier(pysmt.walkers.DagWalker):
             return args.arg(0)
 
         return self.manager.Not(args)
-
 
     def walk_iff(self, formula, args, **kwargs):
         assert len(args) == 2
@@ -149,7 +143,6 @@ class Simplifier(pysmt.walkers.DagWalker):
         else:
             return self.manager.Implies(sl, sr)
 
-
     def walk_equals(self, formula, args, **kwargs):
         assert len(args) == 2
 
@@ -181,7 +174,6 @@ class Simplifier(pysmt.walkers.DagWalker):
         else:
             return self.manager.Ite(si, st, se)
 
-
     def walk_le(self, formula, args, **kwargs):
         assert len(args) == 2
 
@@ -201,10 +193,7 @@ class Simplifier(pysmt.walkers.DagWalker):
         if sr.is_zero() and sr.is_minus():
             x, y = sr.arg(0), sr.arg(1)
             return self.manager.LE(x, y)
-
-
         return  self.manager.LE(sl, sr)
-
 
     def walk_lt(self, formula, args, **kwargs):
         assert len(args) == 2
@@ -218,7 +207,6 @@ class Simplifier(pysmt.walkers.DagWalker):
             return self.manager.Bool(l < r)
         return self.manager.LT(sl, sr)
 
-
     def walk_forall(self, formula, args, **kwargs):
         assert len(args) == 1
         sf = args[0]
@@ -230,7 +218,6 @@ class Simplifier(pysmt.walkers.DagWalker):
 
         return self.manager.ForAll(varset, sf)
 
-
     def walk_exists(self, formula, args, **kwargs):
         assert len(args) == 1
         sf = args[0]
@@ -241,7 +228,6 @@ class Simplifier(pysmt.walkers.DagWalker):
             return sf
 
         return self.manager.Exists(varset, sf)
-
 
     def walk_plus(self, formula, args, **kwargs):
         is_real = any(x.is_real_constant() for x in args)
@@ -286,7 +272,6 @@ class Simplifier(pysmt.walkers.DagWalker):
             return ns[0]
         return self.manager.Plus(ns)
 
-
     def walk_times(self, formula, args, **kwargs):
         assert len(args) == 2
 
@@ -324,8 +309,6 @@ class Simplifier(pysmt.walkers.DagWalker):
 
         return self.manager.Times(sl, sr)
 
-
-
     def walk_minus(self, formula, args, **kwargs):
         assert len(args) == 2
 
@@ -352,7 +335,6 @@ class Simplifier(pysmt.walkers.DagWalker):
                 return self.manager.Int(0)
 
         return self.manager.Minus(sl, sr)
-
 
     def walk_function(self, formula, args, **kwargs):
         return self.manager.Function(formula.function_name(), args)
@@ -386,33 +368,33 @@ class Simplifier(pysmt.walkers.DagWalker):
         return self.manager.BVNeg(args[0])
 
     def walk_bv_or(self, formula, args, **kwargs):
-        if args[0].is_bv_constant() and args[1].is_bv_constant:
+        if args[0].is_bv_constant() and args[1].is_bv_constant():
             res = args[0].constant_value() | args[1].constant_value()
             return self.manager.BV(res, width=formula.bv_width())
         return self.manager.BVOr(args[0], args[1])
 
     def walk_bv_xor(self, formula, args, **kwargs):
-        if args[0].is_bv_constant() and args[1].is_bv_constant:
+        if args[0].is_bv_constant() and args[1].is_bv_constant():
             res = args[0].constant_value() ^ args[1].constant_value()
             return self.manager.BV(res, width=formula.bv_width())
         return self.manager.BVXor(args[0], args[1])
 
     def walk_bv_add(self, formula, args, **kwargs):
-        if args[0].is_bv_constant() and args[1].is_bv_constant:
+        if args[0].is_bv_constant() and args[1].is_bv_constant():
             res = args[0].constant_value() + args[1].constant_value()
             res = res % 2**formula.bv_width()
             return self.manager.BV(res, width=formula.bv_width())
         return self.manager.BVAdd(args[0], args[1])
 
     def walk_bv_mul(self, formula, args, **kwargs):
-        if args[0].is_bv_constant() and args[1].is_bv_constant:
+        if args[0].is_bv_constant() and args[1].is_bv_constant():
             res = args[0].constant_value() * args[1].constant_value()
             res = res % 2**formula.bv_width()
             return self.manager.BV(res, width=formula.bv_width())
         return self.manager.BVMul(args[0], args[1])
 
     def walk_bv_udiv(self, formula, args, **kwargs):
-        if args[0].is_bv_constant() and args[1].is_bv_constant:
+        if args[0].is_bv_constant() and args[1].is_bv_constant():
             if args[1].bv_unsigned_value() == 0:
                 res = 2**formula.bv_width() - 1
             else:
@@ -422,7 +404,7 @@ class Simplifier(pysmt.walkers.DagWalker):
         return self.manager.BVUDiv(args[0], args[1])
 
     def walk_bv_urem(self, formula, args, **kwargs):
-        if args[0].is_bv_constant() and args[1].is_bv_constant:
+        if args[0].is_bv_constant() and args[1].is_bv_constant():
             if args[1].bv_unsigned_value() == 0:
                 res = args[0].bv_unsigned_value()
             else:
@@ -431,13 +413,13 @@ class Simplifier(pysmt.walkers.DagWalker):
         return self.manager.BVURem(args[0], args[1])
 
     def walk_bv_ult(self, formula, args, **kwargs):
-        if args[0].is_bv_constant() and args[1].is_bv_constant:
+        if args[0].is_bv_constant() and args[1].is_bv_constant():
             res = args[0].bv_unsigned_value() < args[1].bv_unsigned_value()
             return self.manager.Bool(res)
         return self.manager.BVULT(args[0], args[1])
 
     def walk_bv_ule(self, formula, args, **kwargs):
-        if args[0].is_bv_constant() and args[1].is_bv_constant:
+        if args[0].is_bv_constant() and args[1].is_bv_constant():
             res = args[0].bv_unsigned_value() <= args[1].bv_unsigned_value()
             return self.manager.Bool(res)
         return self.manager.BVULE(args[0], args[1])
