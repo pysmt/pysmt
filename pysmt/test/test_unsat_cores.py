@@ -36,7 +36,7 @@ class TestUnsatCores(TestCase):
                     if logic not in solver.LOGICS: continue
                     clauses = [f]
                     if f.is_and():
-                        clauses = f.get_sons()
+                        clauses = f.args()
 
                     for i,c in enumerate(clauses):
                         solver.add_assertion(c, "a%d" % i)
