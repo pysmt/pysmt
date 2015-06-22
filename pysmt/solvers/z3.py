@@ -22,7 +22,6 @@ import z3
 from fractions import Fraction
 from six.moves import xrange
 
-from pysmt import typing as types
 from pysmt.solvers.solver import (IncrementalTrackingSolver, UnsatCoreSolver,
                                   Model, Converter)
 from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
@@ -35,8 +34,7 @@ from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               SolverStatusError,
                               ConvertExpressionError)
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
-
-from pysmt.logics import LRA, LIA, QF_UFLIA, QF_UFLRA, PYSMT_LOGICS, BV_LOGICS
+from pysmt.logics import LRA, LIA, QF_UFLIA, QF_UFLRA, PYSMT_LOGICS
 from pysmt.oracles import get_logic
 
 
@@ -95,7 +93,7 @@ class Z3Model(Model):
 class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
                SmtLibBasicSolver, SmtLibIgnoreMixin):
 
-    LOGICS = PYSMT_LOGICS - BV_LOGICS
+    LOGICS = PYSMT_LOGICS
 
     def __init__(self, environment, logic, user_options):
         IncrementalTrackingSolver.__init__(self,
@@ -244,7 +242,6 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
             del self.z3
 
 
-
 class Z3Converter(Converter, DagWalker):
 
     def __init__(self, environment):
@@ -270,60 +267,40 @@ class Z3Converter(Converter, DagWalker):
                 "Quantified back conversion is currently not supported")
 
         args = [self.back(x) for x in expr.children()]
-
         res = None
         if z3.is_and(expr):
             res = self.mgr.And(args)
-
         elif z3.is_or(expr):
             res = self.mgr.Or(args)
-
         elif z3.is_add(expr):
             res = self.mgr.Plus(args)
-
         elif z3.is_div(expr):
             res = self.mgr.Div(args[0], args[1])
-
         elif z3.is_eq(expr):
-            if self._get_type(args[0]) == types.BOOL:
+            if self._get_type(args[0]).is_bool_type():
                 res = self.mgr.Iff(args[0], args[1])
             else:
                 res = self.mgr.Equals(args[0], args[1])
-
         elif z3.is_false(expr):
             res = self.mgr.FALSE()
-
         elif z3.is_true(expr):
             res = self.mgr.TRUE()
-
         elif z3.is_gt(expr):
             res = self.mgr.GT(args[0], args[1])
-
         elif z3.is_ge(expr):
             res = self.mgr.GE(args[0], args[1])
-
         elif z3.is_lt(expr):
             res = self.mgr.LT(args[0], args[1])
-
         elif z3.is_le(expr):
             res = self.mgr.LE(args[0], args[1])
-
         elif z3.is_mul(expr):
             res = self.mgr.Times(args[0], args[1])
-
         elif z3.is_sub(expr):
             res = self.mgr.Minus(args[0], args[1])
-
         elif z3.is_not(expr):
             res = self.mgr.Not(args[0])
-
         elif z3.is_quantifier(expr):
-            if expr.is_forall():
-                pass
-            else:
-                pass
             raise NotImplementedError
-
         elif z3.is_const(expr):
             if z3.is_rational_value(expr):
                 n = expr.numerator_as_long()
@@ -333,20 +310,20 @@ class Z3Converter(Converter, DagWalker):
             elif z3.is_int_value(expr):
                 n = expr.as_long()
                 res = self.mgr.Int(n)
+            elif z3.is_bv_value(expr):
+                n = expr.as_long()
+                w = expr.size()
+                res = self.mgr.BV(n, w)
             else:
                 # it must be a symbol
                 res = self.mgr.get_symbol(str(expr))
-
-
         elif z3.is_ite(expr):
             res = self.mgr.Ite(args[0], args[1], args[2])
-
 
         if res is None:
             raise ConvertExpressionError(message=("Unsupported expression: %s" %
                                                    str(expr)),
-                                          expression=expr)
-
+                                         expression=expr)
         self.backconversion[askey(expr)] = res
 
         return res
@@ -365,14 +342,16 @@ class Z3Converter(Converter, DagWalker):
 
     def walk_symbol(self, formula, **kwargs):
         symbol_type = formula.symbol_type()
-        if symbol_type == types.BOOL:
+        if symbol_type.is_bool_type():
             res = z3.Bool(formula.symbol_name())
-        elif symbol_type == types.REAL:
+        elif symbol_type.is_real_type():
             res = z3.Real(formula.symbol_name())
-        elif symbol_type == types.INT:
+        elif symbol_type.is_int_type():
             res = z3.Int(formula.symbol_name())
         else:
-            assert False
+            assert symbol_type.is_bv_type()
+            res = z3.BitVec(formula.symbol_name(),
+                            formula.bv_width())
         return res
 
     def walk_iff(self, formula, args, **kwargs):
@@ -392,7 +371,7 @@ class Z3Converter(Converter, DagWalker):
         t = args[1]
         e = args[2]
 
-        if self._get_type(formula) == types.BOOL:
+        if self._get_type(formula).is_bool_type():
             return z3.And(z3.Implies(i, t), z3.Implies(z3.Not(i), e))
         else:
             return z3.If(i, t, e)
@@ -446,14 +425,82 @@ class Z3Converter(Converter, DagWalker):
         z3_f = z3.Function(f.symbol_name(), *sig)
         return z3_f(*args)
 
+    def walk_bv_constant(self, formula, **kwargs):
+        value = formula.constant_value()
+        width = formula.bv_width()
+        return z3.BitVecVal(value, width)
+
+    def walk_bv_ult(self, formula, args, **kwargs):
+        return z3.ULT(args[0], args[1])
+
+    def walk_bv_ule(self, formula, args, **kwargs):
+        return z3.ULE(args[0], args[1])
+
+    def walk_bv_concat(self, formula, args, **kwargs):
+        return z3.Concat(args[0], args[1])
+
+    def walk_bv_extract(self, formula, args, **kwargs):
+        return z3.Extract(formula.bv_extract_end(),
+                          formula.bv_extract_start(),
+                          args[0])
+
+    def walk_bv_or(self, formula, args, **kwargs):
+        return args[0] | args[1]
+
+    def walk_bv_not(self, formula, args, **kwargs):
+        return ~args[0]
+
+    def walk_bv_and(self, formula, args, **kwargs):
+        return args[0] & args[1]
+
+    def walk_bv_xor(self, formula, args, **kwargs):
+        return args[0] ^ args[1]
+
+    def walk_bv_add(self, formula, args, **kwargs):
+        return args[0] + args[1]
+
+    def walk_bv_neg(self, formula, args, **kwargs):
+        return -args[0]
+
+    def walk_bv_mul(self, formula, args, **kwargs):
+        return args[0]*args[1]
+
+    def walk_bv_udiv(self, formula, args, **kwargs):
+        return z3.UDiv(args[0], args[1])
+
+    def walk_bv_urem(self, formula, args, **kwargs):
+        return z3.URem(args[0], args[1])
+
+    def walk_bv_lshl(self, formula, args, **kwargs):
+        return args[0] << args[1]
+
+    def walk_bv_lshr(self, formula, args, **kwargs):
+        return z3.LShR(args[0], args[1])
+
+    def walk_bv_rol(self, formula, args, **kwargs):
+        return z3.RotateLeft(args[0],
+                             formula.bv_rotation_step())
+
+    def walk_bv_ror(self, formula, args, **kwargs):
+        return z3.RotateRight(args[0],
+                             formula.bv_rotation_step())
+
+    def walk_bv_zext(self, formula, args, **kwargs):
+        return z3.ZeroExt(formula.bv_extend_step(), args[0])
+
+    def walk_bv_sext (self, formula, args, **kwargs):
+        return z3.SignExt(formula.bv_extend_step(), args[0])
+
     def _type_to_z3(self, tp):
-        if tp == types.BOOL:
+        if tp.is_bool_type():
             return z3.BoolSort()
-        elif tp == types.REAL:
+        elif tp.is_real_type():
             return z3.RealSort()
-        else:
-            assert tp == types.INT, "Unsupported type '%s'" % tp
+        elif tp.is_int_type():
             return z3.IntSort()
+        else:
+            assert tp.is_bv_type() , "Unsupported type '%s'" % tp
+            return z3.BitVecSort(tp.width)
 
 
 class Z3QuantifierEliminator(QuantifierEliminator):
