@@ -24,9 +24,9 @@ from pysmt.shortcuts import Solver, BVAnd, BVOr, BVXor, BVConcat, BVULT, BVUGT, 
     BVNeg, BVZExt, BVSExt, BVRor, BVRol, BV, BVExtract
 from pysmt.test import TestCase, skipIfSolverNotAvailable
 
+
 class TestBvSimplification(TestCase):
 
-    @skipIfSolverNotAvailable("msat")
     def setUp(self):
         self.width = 4
         self.bin_operators = [BVAnd, BVOr, BVXor, BVConcat, BVULT, BVUGT, BVULE,
@@ -34,11 +34,8 @@ class TestBvSimplification(TestCase):
                               BVLShr]
         self.unary_operators = [BVNot, BVNeg]
         self.special_operators = [BVZExt, BVSExt, BVRor, BVRol]
-
-        self.msat = Solver(name="msat")
-        conv = self.msat.converter
-        self.msat_simplify = lambda x: conv.back(conv.convert(x))
-
+        self.solver = None
+        self.solver_simplify = None
 
     def all_bv_numbers(self, width=None):
         if width is None:
@@ -46,42 +43,47 @@ class TestBvSimplification(TestCase):
         for x in xrange(2 ** width):
             yield BV(x, width)
 
+    @skipIfSolverNotAvailable("msat")
+    def test_msat(self):
+        self.solver = Solver(name="msat")
+        conv = self.solver.converter
+        self.solver_simplify = lambda x: conv.back(conv.convert(x))
+        # Run the tests
+        self.all_unary()
+        self.all_binary()
+        self.all_special()
+        self.extract()
+        self.concat_different_length()
 
     def check(self, f):
         simp_f = f.simplify()
-        msat_f = self.msat_simplify(f)
-        self.assertEqual(msat_f, simp_f)
+        solver_f = self.solver_simplify(f)
+        self.assertEqual(solver_f, simp_f)
 
-
-    @skipIfSolverNotAvailable("msat")
-    def test_all_binary(self):
+    def all_binary(self):
         for l in self.all_bv_numbers():
             for r in self.all_bv_numbers():
                 for op in self.bin_operators:
                     self.check(op(l, r))
 
-    @skipIfSolverNotAvailable("msat")
-    def test_all_unary(self):
+    def all_unary(self):
         for l in self.all_bv_numbers():
             for op in self.unary_operators:
                 self.check(op(l))
 
-    @skipIfSolverNotAvailable("msat")
-    def test_extract(self):
+    def extract(self):
         for l in self.all_bv_numbers():
             for s in xrange(0, self.width):
                 for e in xrange(s, self.width):
                     self.check(BVExtract(l, start=s, end=e))
 
-    @skipIfSolverNotAvailable("msat")
-    def test_concat_different_length(self):
+    def concat_different_length(self):
         for l in self.all_bv_numbers():
             for w in [1, self.width-1, self.width+1]:
                 for r in self.all_bv_numbers(w):
                     self.check(BVConcat(l, r))
 
-    @skipIfSolverNotAvailable("msat")
-    def test_all_special(self):
+    def all_special(self):
         for l in self.all_bv_numbers():
             for n in xrange(0, self.width + 1):
                 for op in self.special_operators:
