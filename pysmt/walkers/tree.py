@@ -54,7 +54,7 @@ class TreeWalker(Walker):
 
     def walk_skip(self, formula):
         """ Default function to skip a node and process the children """
-        for s in formula.get_sons():
+        for s in formula.args():
             self.walk(s)
         return
 

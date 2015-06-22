@@ -100,9 +100,9 @@ class TestFormulaManager(TestCase):
         m = self.mgr.And([self.x, self.y])
         self.assertEqual(m, n, "And(1,2) != And([1,2]")
 
-        sons = m.get_sons()
-        self.assertTrue(self.x in sons and self.y in sons)
-        self.assertTrue(len(sons) == 2)
+        args = m.args()
+        self.assertTrue(self.x in args and self.y in args)
+        self.assertTrue(len(args) == 2)
 
         zero = self.mgr.And()
         self.assertEqual(zero, self.mgr.TRUE())
@@ -120,10 +120,10 @@ class TestFormulaManager(TestCase):
         m = self.mgr.Or([self.x, self.y])
         self.assertEqual(m, n, "Or(1,2) != Or([1,2]")
 
-        sons = m.get_sons()
-        self.assertIn(self.x, sons)
-        self.assertIn(self.y, sons)
-        self.assertEqual(len(sons), 2)
+        args = m.args()
+        self.assertIn(self.x, args)
+        self.assertIn(self.y, args)
+        self.assertEqual(len(args), 2)
 
         zero = self.mgr.Or()
         self.assertEqual(zero, self.mgr.FALSE())
@@ -139,9 +139,9 @@ class TestFormulaManager(TestCase):
         self.assertTrue(n.is_not())
         self.assertEqual(n.get_free_variables(), set([self.x]))
 
-        sons = n.get_sons()
-        self.assertIn(self.x, sons)
-        self.assertEqual(len(sons), 1)
+        args = n.args()
+        self.assertIn(self.x, args)
+        self.assertEqual(len(args), 1)
 
         self.assertEqual(self.mgr.Not(n), self.x)
 
@@ -152,10 +152,10 @@ class TestFormulaManager(TestCase):
         self.assertTrue(n.is_implies())
         self.assertEqual(n.get_free_variables(), set([self.x, self.y]))
 
-        sons = n.get_sons()
-        self.assertEqual(self.x, sons[0])
-        self.assertEqual(self.y, sons[1])
-        self.assertEqual(len(sons), 2)
+        args = n.args()
+        self.assertEqual(self.x, args[0])
+        self.assertEqual(self.y, args[1])
+        self.assertEqual(len(args), 2)
 
     def test_iff_node(self):
         n = self.mgr.Iff(self.x, self.y)
@@ -164,10 +164,10 @@ class TestFormulaManager(TestCase):
         self.assertTrue(n.is_iff())
         self.assertEqual(n.get_free_variables(), set([self.x, self.y]))
 
-        sons = n.get_sons()
-        self.assertIn(self.x, sons)
-        self.assertIn(self.y, sons)
-        self.assertEqual(len(sons), 2)
+        args = n.args()
+        self.assertIn(self.x, args)
+        self.assertIn(self.y, args)
+        self.assertEqual(len(args), 2)
 
 
     def test_ge_node_type(self):
@@ -192,10 +192,10 @@ class TestFormulaManager(TestCase):
         n = self.mgr.GE(self.r, self.s)
         self.assertIsNotNone(n)
 
-        sons = n.get_sons()
-        self.assertIn(self.r, sons)
-        self.assertIn(self.s, sons)
-        self.assertEqual(len(sons), 2)
+        args = n.args()
+        self.assertIn(self.r, args)
+        self.assertIn(self.s, args)
+        self.assertEqual(len(args), 2)
 
         n = self.mgr.GE(self.p, self.q)
         self.assertIsNotNone(n)
@@ -213,10 +213,10 @@ class TestFormulaManager(TestCase):
         n = self.mgr.Minus(self.r, self.s)
         self.assertIsNotNone(n)
 
-        sons = n.get_sons()
-        self.assertIn(self.r, sons)
-        self.assertIn(self.s, sons)
-        self.assertEqual(len(sons), 2)
+        args = n.args()
+        self.assertIn(self.r, args)
+        self.assertIn(self.s, args)
+        self.assertEqual(len(args), 2)
 
         n = self.mgr.Minus(self.p, self.q)
         self.assertIsNotNone(n)
@@ -238,10 +238,10 @@ class TestFormulaManager(TestCase):
 
         n = self.mgr.Times(self.rconst, self.s)
         self.assertIsNotNone(n)
-        sons = n.get_sons()
-        self.assertIn(self.rconst, sons)
-        self.assertIn(self.s, sons)
-        self.assertEqual(len(sons), 2)
+        args = n.args()
+        self.assertIn(self.rconst, args)
+        self.assertIn(self.s, args)
+        self.assertEqual(len(args), 2)
 
         n = self.mgr.Times(self.r, self.s)
         self.assertIsNotNone(n)
@@ -278,10 +278,10 @@ class TestFormulaManager(TestCase):
         n = self.mgr.Equals(self.r, self.s)
         self.assertIsNotNone(n)
 
-        sons = n.get_sons()
-        self.assertIn(self.r, sons)
-        self.assertIn(self.s, sons)
-        self.assertEqual(len(sons), 2)
+        args = n.args()
+        self.assertIn(self.r, args)
+        self.assertIn(self.s, args)
+        self.assertEqual(len(args), 2)
 
         n = self.mgr.Equals(self.p, self.q)
         self.assertIsNotNone(n)
@@ -314,10 +314,10 @@ class TestFormulaManager(TestCase):
         n = self.mgr.GT(self.r, self.s)
         self.assertIsNotNone(n)
 
-        sons = n.get_sons()
-        self.assertIn(self.r, sons)
-        self.assertIn(self.s, sons)
-        self.assertEqual(len(sons), 2)
+        args = n.args()
+        self.assertIn(self.r, args)
+        self.assertIn(self.s, args)
+        self.assertEqual(len(args), 2)
 
         n = self.mgr.GT(self.p, self.q)
         self.assertIsNotNone(n)
@@ -344,10 +344,10 @@ class TestFormulaManager(TestCase):
         self.assertTrue(n.is_le())
         self.assertEqual(n.get_free_variables(), set([self.r, self.s]))
 
-        sons = n.get_sons()
-        self.assertIn(self.r, sons)
-        self.assertIn(self.s, sons)
-        self.assertEqual(len(sons), 2)
+        args = n.args()
+        self.assertIn(self.r, args)
+        self.assertIn(self.s, args)
+        self.assertEqual(len(args), 2)
 
     def test_lt_node_type(self):
         with self.assertRaises(TypeError):
@@ -371,19 +371,19 @@ class TestFormulaManager(TestCase):
         self.assertTrue(n.is_lt())
         self.assertEqual(n.get_free_variables(), set([self.r, self.s]))
 
-        sons = n.get_sons()
-        self.assertIn(self.r, sons)
-        self.assertIn(self.s, sons)
-        self.assertEqual(len(sons), 2)
+        args = n.args()
+        self.assertIn(self.r, args)
+        self.assertIn(self.s, args)
+        self.assertEqual(len(args), 2)
 
     def test_ite(self):
         n = self.mgr.Ite(self.x, self.y, self.x)
         self.assertIsNotNone(n)
 
-        sons = n.get_sons()
-        self.assertIn(self.x, sons)
-        self.assertIn(self.y, sons)
-        self.assertEqual(len(sons), 3)
+        args = n.args()
+        self.assertIn(self.x, args)
+        self.assertIn(self.y, args)
+        self.assertEqual(len(args), 3)
 
         n = self.mgr.Ite(self.x, self.s, self.r)
         self.assertIsNotNone(n)
@@ -402,10 +402,10 @@ class TestFormulaManager(TestCase):
         n = self.mgr.Function(self.f, [self.r, self.s])
         self.assertIsNotNone(n)
 
-        sons = n.get_sons()
-        self.assertIn(self.r, sons)
-        self.assertIn(self.s, sons)
-        self.assertEqual(len(sons), 2)
+        args = n.args()
+        self.assertIn(self.r, args)
+        self.assertIn(self.s, args)
+        self.assertEqual(len(args), 2)
 
         self.assertTrue(n.is_function_application())
         self.assertEqual(n.get_free_variables(), set([self.f, self.r, self.s]))
@@ -478,7 +478,7 @@ class TestFormulaManager(TestCase):
         symbols = [ self.mgr.Symbol("s%d"%i, BOOL) for i in range(5) ]
         c = self.mgr.ExactlyOne(symbols)
 
-        self.assertTrue(len(c.get_sons()) > 1)
+        self.assertTrue(len(c.args()) > 1)
 
         t = self.mgr.Bool(True)
         c = c.substitute({symbols[0]: t,
@@ -501,7 +501,7 @@ class TestFormulaManager(TestCase):
         symbols = [ self.mgr.Symbol("s%d"%i, BOOL) for i in range(5) ]
         c = self.mgr.AtMostOne(symbols)
 
-        self.assertTrue(len(c.get_sons()) > 1)
+        self.assertTrue(len(c.args()) > 1)
         t = self.mgr.Bool(True)
         c = c.substitute({symbols[0]: t,
                           symbols[1]: t}).simplify()
@@ -597,7 +597,7 @@ class TestFormulaManager(TestCase):
         f_new = pickle.loads(serialized)
         f_new = dst_mgr.normalize(f)
 
-        args = f_new.get_sons()
+        args = f_new.args()
         self.assertEqual(str(args[0]), "A",
                           "Expecting symbol A, " +
                           "symbol %s found instead" % str(args[0]))

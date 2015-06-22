@@ -576,7 +576,6 @@ def prenex_normal_form(formula, environment=None):
     normalizer = PrenexNormalizer(environment)
     return normalizer.normalize(formula)
 
-
 def conjunctive_partition(formula):
     """ Returns a generator over the top-level conjuncts of the given formula
 
@@ -590,10 +589,9 @@ def conjunctive_partition(formula):
         if cur not in seen:
             seen.add(cur)
             if cur.is_and():
-                to_process += cur.get_sons()
+                to_process += cur.args()
             else:
                 yield cur
-
 
 def disjunctive_partition(formula):
     """ Returns a generator over the top-level disjuncts of the given formula
@@ -608,6 +606,6 @@ def disjunctive_partition(formula):
         if cur not in seen:
             seen.add(cur)
             if cur.is_or():
-                to_process += cur.get_sons()
+                to_process += cur.args()
             else:
                 yield cur

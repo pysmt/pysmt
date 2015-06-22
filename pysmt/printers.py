@@ -41,12 +41,12 @@ class HRPrinter(TreeWalker):
 
     def walk_and(self, formula):
         self.stream.write("(")
-        sons = formula.get_sons()
+        args = formula.args()
         count = 0
-        for s in sons:
+        for s in args:
             self.walk(s)
             count += 1
-            if count != len(sons):
+            if count != len(args):
                 self.stream.write(" & ")
         self.stream.write(")")
         return
@@ -54,12 +54,12 @@ class HRPrinter(TreeWalker):
 
     def walk_or(self, formula):
         self.stream.write("(")
-        sons = formula.get_sons()
+        args = formula.args()
         count = 0
-        for s in sons:
+        for s in args:
             self.walk(s)
             count += 1
-            if count != len(sons):
+            if count != len(args):
                 self.stream.write(" | ")
         self.stream.write(")")
         return
@@ -79,12 +79,12 @@ class HRPrinter(TreeWalker):
 
     def walk_plus(self, formula):
         self.stream.write("(")
-        sons = formula.get_sons()
+        args = formula.args()
         count = 0
-        for s in sons:
+        for s in args:
             self.walk(s)
             count += 1
-            if count != len(sons):
+            if count != len(args):
                 self.stream.write(" + ")
         self.stream.write(")")
         return

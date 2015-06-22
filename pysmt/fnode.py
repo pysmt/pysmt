@@ -100,6 +100,7 @@ class FNode(object):
         """Return the set of atoms appearing in the formula."""
         return _env().ao.get_atoms(self)
 
+    @deprecated("args")
     def get_sons(self):
         return self.args()
 

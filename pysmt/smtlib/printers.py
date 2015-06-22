@@ -74,7 +74,7 @@ class SmtPrinter(TreeWalker):
 
     def _walk_nary(self, operator, formula):
         self.write("(%s" % operator)
-        for s in formula.get_sons():
+        for s in formula.args():
             self.write(" ")
             self.walk(s)
         self.write(")")
