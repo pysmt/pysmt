@@ -59,7 +59,7 @@ class Simplifier(pysmt.walkers.DagWalker):
         if formula in self.memoization:
             return self.memoization[formula]
 
-        args = [self.walk(s, **kwargs) for s in formula.get_sons()]
+        args = [self.walk(s, **kwargs) for s in formula.args()]
 
         f = self.functions[formula.node_type()]
         res = f(formula, args=args, **kwargs)

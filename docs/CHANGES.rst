@@ -1,6 +1,14 @@
 Change Log
 ==========
 
+0.4.1: XXXX-XX-XX -- YYYYYYYYYYYYYYY
+------------------------------------
+
+Deprecation:
+
+* Started deprecation of get_dependencies and get_sons
+
+
 0.4.0: 2015-06-15 -- Interpolation and BDDs
 --------------------------------------------
 
