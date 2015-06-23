@@ -169,7 +169,6 @@ class TestBasic(TestCase):
     @skipIfSolverNotAvailable("cvc4")
     def test_examples_cvc4(self):
         for (f, validity, satisfiability, logic) in get_example_formulae():
-            if logic == QF_BV: continue
             try:
                 if not logic.quantifier_free: continue
                 v = is_valid(f, solver_name='cvc4')
@@ -185,7 +184,6 @@ class TestBasic(TestCase):
     @skipIfSolverNotAvailable("yices")
     def test_examples_yices(self):
         for (f, validity, satisfiability, logic) in get_example_formulae():
-            if logic == QF_BV: continue
             if not logic.quantifier_free: continue
             v = is_valid(f, solver_name='yices')
             s = is_sat(f, solver_name='yices')
@@ -249,8 +247,7 @@ class TestBasic(TestCase):
 
     @skipIfSolverNotAvailable("z3")
     def test_examples_z3(self):
-        for (f, validity, satisfiability, logic) in get_example_formulae():
-            if logic == QF_BV: continue
+        for (f, validity, satisfiability, _) in get_example_formulae():
             v = is_valid(f, solver_name='z3')
             s = is_sat(f, solver_name='z3')
 
