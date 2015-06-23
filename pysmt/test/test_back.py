@@ -17,22 +17,19 @@
 #
 import unittest
 from pysmt.shortcuts import FreshSymbol, GT, And, Plus, Real, Int, LE, Iff
-from pysmt.shortcuts import get_env
+from pysmt.shortcuts import Solver
 from pysmt.typing import REAL, INT
 from pysmt.test import TestCase, skipIfSolverNotAvailable
 from pysmt.test.examples import get_example_formulae
 from pysmt.logics import QF_UFLIRA
+from pysmt.exceptions import NoSolverAvailableError
 
 
 class TestBasic(TestCase):
 
     @skipIfSolverNotAvailable("msat")
     def test_msat_back_simple(self):
-        from pysmt.solvers.msat import MathSAT5Solver, MSatConverter
-
-        env = get_env()
-        msat = MathSAT5Solver(environment=env, logic=QF_UFLIRA)
-        new_converter = MSatConverter(env, msat.msat_env)
+        msat = Solver(name="msat", logic=QF_UFLIRA)
 
         r, s = FreshSymbol(REAL), FreshSymbol(INT)
         f1 = GT(r, Real(1))
@@ -40,8 +37,8 @@ class TestBasic(TestCase):
         f3 = LE(Int(2), Int(3))
         f = And(f1, f2, f3)
 
-        term = new_converter.convert(f)
-        res = new_converter.back(term)
+        term = msat.converter.convert(f)
+        res = msat.converter.back(term)
 
         # Checking equality is not enough: MathSAT can change the
         # shape of the formula into a logically equivalent form.
@@ -50,34 +47,35 @@ class TestBasic(TestCase):
 
     @skipIfSolverNotAvailable("msat")
     def test_msat_back_not_identical(self):
-        from pysmt.solvers.msat import MathSAT5Solver, MSatConverter
-
-        env = get_env()
-        msat = MathSAT5Solver(environment=env, logic=QF_UFLIRA)
-        new_converter = MSatConverter(env, msat.msat_env)
+        msat = Solver(name="msat", logic=QF_UFLIRA)
 
         r, s = FreshSymbol(REAL), FreshSymbol(REAL)
         # r + 1 > s + 1
         f = GT(Plus(r, Real(1)), Plus(s, Real(1)))
 
-        term = new_converter.convert(f)
-        res = new_converter.back(term)
+        term = msat.converter.convert(f)
+        res = msat.converter.back(term)
         self.assertFalse(f == res)
 
 
-    @skipIfSolverNotAvailable("msat")
-    def test_msat_back_formulae(self):
-        from pysmt.solvers.msat import MathSAT5Solver, MSatConverter
-
-        env = get_env()
-        msat = MathSAT5Solver(environment=env, logic=QF_UFLIRA)
-        new_converter = MSatConverter(env, msat.msat_env)
-
+    def do_back(self, solver_name):
         for formula, _, _, logic in get_example_formulae():
             if logic.quantifier_free:
-                term = new_converter.convert(formula)
-                res = new_converter.back(term)
-                self.assertValid(Iff(formula, res), logic=QF_UFLIRA)
+                try:
+                    s = Solver(name=solver_name, logic=logic)
+                    term = s.converter.convert(formula)
+                    res = s.converter.back(term)
+                    self.assertValid(Iff(formula, res), logic=logic)
+                except NoSolverAvailableError:
+                    pass
+
+    @skipIfSolverNotAvailable("msat")
+    def test_msat_back_formulae(self):
+        self.do_back("msat")
+
+    @skipIfSolverNotAvailable("z3")
+    def test_z3_back_formulae(self):
+        self.do_back("z3")
 
 
 if __name__ == '__main__':

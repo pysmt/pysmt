@@ -21,7 +21,8 @@ from six.moves import xrange
 
 from pysmt.shortcuts import Solver, BVAnd, BVOr, BVXor, BVConcat, BVULT, BVUGT, \
     BVULE, BVUGE, BVAdd, BVSub, BVMul, BVUDiv, BVURem, BVLShl, BVLShr, BVNot, \
-    BVNeg, BVZExt, BVSExt, BVRor, BVRol, BV, BVExtract
+    BVNeg, BVZExt, BVSExt, BVRor, BVRol, BV, BVExtract, BVSLT, BVSLE, BVComp, \
+    BVSDiv, BVSRem, BVAShr
 from pysmt.test import TestCase, skipIfSolverNotAvailable
 
 
@@ -31,7 +32,8 @@ class TestBvSimplification(TestCase):
         self.width = 4
         self.bin_operators = [BVAnd, BVOr, BVXor, BVConcat, BVULT, BVUGT, BVULE,
                               BVUGE, BVAdd, BVSub, BVMul, BVUDiv, BVURem, BVLShl,
-                              BVLShr]
+                              BVLShr, BVSLT, BVSLE, BVComp, BVSDiv, BVSRem,
+                              BVAShr]
         self.unary_operators = [BVNot, BVNeg]
         self.special_operators = [BVZExt, BVSExt, BVRor, BVRol]
         self.solver = None

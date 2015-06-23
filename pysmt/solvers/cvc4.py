@@ -299,6 +299,9 @@ class CVC4Converter(Converter, DagWalker):
     def walk_bv_add(self, formula, args, **kwargs):
         return self.mkExpr(CVC4.BITVECTOR_PLUS, args[0], args[1])
 
+    def walk_bv_sub(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.BITVECTOR_SUB, args[0], args[1])
+
     def walk_bv_neg(self, formula, args, **kwargs):
         return self.mkExpr(CVC4.BITVECTOR_NEG, args[0])
 
@@ -332,6 +335,24 @@ class CVC4Converter(Converter, DagWalker):
     def walk_bv_sext (self, formula, args, **kwargs):
         ext = self.mkConst(CVC4.BitVectorSignExtend(formula.bv_extend_step()))
         return self.mkExpr(CVC4.BITVECTOR_SIGN_EXTEND, ext, args[0])
+
+    def walk_bv_slt(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.BITVECTOR_SLT, args[0], args[1])
+
+    def walk_bv_sle (self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.BITVECTOR_SLE, args[0], args[1])
+
+    def walk_bv_comp (self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.BITVECTOR_COMP, args[0], args[1])
+
+    def walk_bv_sdiv (self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.BITVECTOR_SDIV, args[0], args[1])
+
+    def walk_bv_srem (self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.BITVECTOR_SREM, args[0], args[1])
+
+    def walk_bv_ashr (self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.BITVECTOR_ASHR, args[0], args[1])
 
     def _type_to_cvc4(self, tp):
         if tp.is_bool_type():

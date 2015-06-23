@@ -21,8 +21,8 @@ from pysmt.test import (TestCase, skipIfSolverNotAvailable,
                         skipIfNoUnsatCoreSolverForLogic)
 from pysmt.shortcuts import (get_unsat_core, And, Not, Symbol, UnsatCoreSolver,
                              is_unsat)
-from pysmt.logics import QF_BOOL
-from pysmt.exceptions import SolverStatusError
+from pysmt.logics import QF_BOOL, QF_BV
+from pysmt.exceptions import SolverStatusError, SolverReturnedUnknownResultError
 from pysmt.test.examples import get_example_formulae
 
 class TestUnsatCores(TestCase):
@@ -41,8 +41,15 @@ class TestUnsatCores(TestCase):
                     for i,c in enumerate(clauses):
                         solver.add_assertion(c, "a%d" % i)
 
-                    r = solver.solve()
-                    self.assertFalse(r)
+                    try:
+                        r = solver.solve()
+                        self.assertFalse(r)
+                    except SolverReturnedUnknownResultError:
+                        if QF_BV <= logic:
+                            continue # Unsat-core support for QF_UFBV might be
+                                     # incomplete
+                        else:
+                            raise
 
                     core = solver.get_named_unsat_core()
 
@@ -51,7 +58,6 @@ class TestUnsatCores(TestCase):
                         self.assertIn(k, clauses)
 
                     self.assertTrue(is_unsat(And(core.values()), logic=logic))
-
 
 
     @skipIfNoUnsatCoreSolverForLogic(QF_BOOL)

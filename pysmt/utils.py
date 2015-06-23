@@ -22,3 +22,19 @@ def BufferedTextReader(fname):
         return io.BufferedReader(io.FileIO(fname, 'r'))
     else:
         return io.TextIOWrapper(open(fname, 'rb'))
+
+def set_bit(v, index, x):
+    """Set the index:th bit of v to x, and return the new value."""
+    mask = 1 << index
+    if x:
+        v |= mask
+    else:
+        v &= ~mask
+    return v
+
+
+def twos_complement(val, bits):
+    """Retuns the 2-complemented value of val assuming bits word width"""
+    if (val & (1 << (bits - 1))) != 0: # if sign bit is set
+        val = val - (2 ** bits)        # compute negative value
+    return val

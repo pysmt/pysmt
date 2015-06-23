@@ -15,10 +15,12 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+from six.moves import xrange
+
 import pysmt.walkers
 import pysmt.operators as op
 import pysmt.typing as types
-
+from pysmt.utils import set_bit
 
 class Simplifier(pysmt.walkers.DagWalker):
 
@@ -494,5 +496,98 @@ class Simplifier(pysmt.walkers.DagWalker):
             w = args[0].bv_width()
             return self.manager.BV(res % (2 ** w), w)
         return self.manager.BVLShr(args[0], args[1])
+
+    def walk_bv_sub(self, formula, args, **kwargs):
+        if args[0].is_bv_constant() and args[1].is_bv_constant():
+            res = args[0].constant_value() - args[1].constant_value()
+            res = res % 2**formula.bv_width()
+            return self.manager.BV(res, width=formula.bv_width())
+        return self.manager.BVSub(args[0], args[1])
+
+    def walk_bv_slt(self, formula, args, **kwargs):
+        if args[0].is_bv_constant() and args[1].is_bv_constant():
+            res = args[0].bv_signed_value() < args[1].bv_signed_value()
+            return self.manager.Bool(res)
+        return self.manager.BVSLT(args[0], args[1])
+
+    def walk_bv_sle(self, formula, args, **kwargs):
+        if args[0].is_bv_constant() and args[1].is_bv_constant():
+            res = args[0].bv_signed_value() <= args[1].bv_signed_value()
+            return self.manager.Bool(res)
+        return self.manager.BVSLE(args[0], args[1])
+
+    def walk_bv_comp(self, formula, args, **kwargs):
+        sl, sr = args
+
+        if sl == sr:
+            return self.manager.BV(1, 1)
+        elif sl.is_bv_constant() and sr.is_bv_constant():
+            return self.manager.BV(0, 1)
+        else:
+            return self.manager.BVComp(sl, sr)
+
+    def walk_bv_sdiv(self, formula, args, **kwargs):
+        l,r = args
+        if l.is_bv_constant() and r.is_bv_constant():
+            l_sign = l.bv_signed_value() < 0
+            r_sign = r.bv_signed_value() < 0
+            if (not l_sign) and (not r_sign):
+                return self.walk_bv_udiv(self.manager.BVUDiv(l,r), args, **kwargs)
+            elif l_sign and (not r_sign):
+                nl = self.walk_bv_neg(self.manager.BVNeg(l), [l], **kwargs)
+                div = self.walk_bv_udiv(self.manager.BVUDiv(nl, r), [nl, r],
+                                        **kwargs)
+                return self.walk_bv_neg(self.manager.BVNeg(div), [div], **kwargs)
+            elif (not l_sign) and r_sign:
+                nr = self.walk_bv_neg(self.manager.BVNeg(r), [r], **kwargs)
+                div = self.walk_bv_udiv(self.manager.BVUDiv(l, nr), [l, nr],
+                                        **kwargs)
+                return self.walk_bv_neg(self.manager.BVNeg(div), [div], **kwargs)
+            else:
+                nl = self.walk_bv_neg(self.manager.BVNeg(l), [l], **kwargs)
+                nr = self.walk_bv_neg(self.manager.BVNeg(r), [r], **kwargs)
+                return self.walk_bv_udiv(self.manager.BVUDiv(nl, nr), [nl, nr],
+                                         **kwargs)
+        return self.manager.BVSDiv(l, r)
+
+    def walk_bv_srem(self, formula, args, **kwargs):
+        if args[0].is_bv_constant() and args[1].is_bv_constant():
+            l = args[0]
+            if args[0].bv_signed_value() < 0:
+                l = self.walk_bv_neg(self.manager.BVNeg(args[0]), [args[0]],
+                                     **kwargs)
+
+            r = args[1]
+            if args[1].bv_signed_value() < 0:
+                r = self.walk_bv_neg(self.manager.BVNeg(args[1]), [args[1]],
+                                     **kwargs)
+
+
+            res = self.walk_bv_urem(self.manager.BVURem(l, r), [l, r],
+                                    **kwargs)
+
+            if args[0].bv_signed_value() < 0:
+                res = self.walk_bv_neg(self.manager.BVNeg(res), [res],
+                                       **kwargs)
+            return res
+        return self.manager.BVSRem(args[0], args[1])
+
+    def walk_bv_ashr(self, formula, args, **kwargs):
+        l,r = args
+        if l.is_bv_constant() and r.is_bv_constant():
+            sign = l.bv_signed_value() < 0
+            ret = self.walk_bv_lshr(self.manager.BVLShr(l, r), [l, r], **kwargs)
+            width = formula.bv_width()
+            if sign:
+                n = ret.bv_unsigned_value()
+                padlen = width
+                if width > r.bv_unsigned_value():
+                    padlen = r.bv_unsigned_value()
+
+                for i in xrange(width-padlen, width):
+                    n = set_bit(n, i, True)
+                ret = self.manager.BV(n, width)
+            return ret
+        return self.manager.BVAShr(l, r)
 
 # EOC Simplifier
