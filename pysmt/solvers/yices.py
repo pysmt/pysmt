@@ -17,7 +17,6 @@
 #
 import atexit
 import ctypes
-import warnings
 
 from fractions import Fraction
 from six.moves import xrange
@@ -33,6 +32,7 @@ from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 
 from pysmt.walkers import DagWalker
 from pysmt.exceptions import SolverReturnedUnknownResultError
+from pysmt.exceptions import InternalSolverError
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
 
 import pysmt.logics
@@ -250,7 +250,7 @@ class YicesConverter(Converter, DagWalker):
     def _check_term_result(self, res):
         if res == -1:
             err = str(libyices.yices_error_string())
-            assert False, "Yices returned an error: " + err
+            raise InternalSolverError("Yices returned an error: " + err)
 
     def walk_and(self, formula, args, **kwargs):
         res = libyices.yices_and(len(args), self._to_term_array(args))
@@ -272,7 +272,7 @@ class YicesConverter(Converter, DagWalker):
         var_type = self._type_to_yices(symbol_type)
         term = libyices.yices_new_uninterpreted_term(var_type)
         libyices.yices_set_term_name(term, String(formula.symbol_name()))
-        assert term != -1
+        self._check_term_result(term)
         return term
 
     def _bound_symbol(self, var):
@@ -411,11 +411,7 @@ class YicesConverter(Converter, DagWalker):
             res = libyices.yices_bvconst_uint64(width, value)
         else:
             # we must resort to strings to communicate the result to yices
-            short_rep = str(bin(formula.constant_value()))[2:]
-            if formula.constant_value() < 0:
-                raise NotImplementedError
-            bin_str = short_rep.rjust(width, "0")
-            res = libyices.yices_parse_bvbin(bin_str)
+            res = libyices.yices_parse_bvbin(formula.bv_bin_str())
         self._check_term_result(res)
         return res
 
