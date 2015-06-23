@@ -113,13 +113,7 @@ class SmtPrinter(TreeWalker):
             self.write("false")
 
     def walk_bv_constant(self, formula):
-        short_res = str(bin(formula.constant_value()))[2:]
-        if formula.constant_value() >= 0:
-            filler = "0"
-        else:
-            raise NotImplementedError
-        res = short_res.rjust(formula.bv_width(), filler)
-        self.write("#b" + res)
+        self.write("#b" + formula.bv_bin_str())
 
     def walk_forall(self, formula):
         self._walk_quantifier("forall", formula)

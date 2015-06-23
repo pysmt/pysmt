@@ -160,8 +160,8 @@ class TestBasic(TestCase):
     def test_examples_msat(self):
         for (f, validity, satisfiability, logic) in get_example_formulae():
             if not logic.quantifier_free: continue
-            v = is_valid(f, solver_name='msat')
-            s = is_sat(f, solver_name='msat')
+            v = is_valid(f, solver_name='msat', logic=logic)
+            s = is_sat(f, solver_name='msat', logic=logic)
 
             self.assertEqual(validity, v, f)
             self.assertEqual(satisfiability, s, f)
@@ -169,11 +169,10 @@ class TestBasic(TestCase):
     @skipIfSolverNotAvailable("cvc4")
     def test_examples_cvc4(self):
         for (f, validity, satisfiability, logic) in get_example_formulae():
-            if logic == QF_BV: continue
             try:
                 if not logic.quantifier_free: continue
-                v = is_valid(f, solver_name='cvc4')
-                s = is_sat(f, solver_name='cvc4')
+                v = is_valid(f, solver_name='cvc4', logic=logic)
+                s = is_sat(f, solver_name='cvc4', logic=logic)
 
                 self.assertEqual(validity, v, f)
                 self.assertEqual(satisfiability, s, f)
@@ -185,10 +184,9 @@ class TestBasic(TestCase):
     @skipIfSolverNotAvailable("yices")
     def test_examples_yices(self):
         for (f, validity, satisfiability, logic) in get_example_formulae():
-            if logic == QF_BV: continue
             if not logic.quantifier_free: continue
-            v = is_valid(f, solver_name='yices')
-            s = is_sat(f, solver_name='yices')
+            v = is_valid(f, solver_name='yices', logic=logic)
+            s = is_sat(f, solver_name='yices', logic=logic)
 
             self.assertEqual(validity, v, f)
             self.assertEqual(satisfiability, s, f)
@@ -250,9 +248,8 @@ class TestBasic(TestCase):
     @skipIfSolverNotAvailable("z3")
     def test_examples_z3(self):
         for (f, validity, satisfiability, logic) in get_example_formulae():
-            if logic == QF_BV: continue
-            v = is_valid(f, solver_name='z3')
-            s = is_sat(f, solver_name='z3')
+            v = is_valid(f, solver_name='z3', logic=logic)
+            s = is_sat(f, solver_name='z3', logic=logic)
 
             self.assertEqual(validity, v, f)
             self.assertEqual(satisfiability, s, f)
