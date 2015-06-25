@@ -27,16 +27,18 @@ Supported Theories and Solvers
 pySMT provides methods to define a formula in Linear Real Arithmetic (LRA), Real Difference Logic (RDL), their combination (LIRA),
 Equalities and Uninterpreted Functions (EUF) and Bit-Vectors (BV). The following solvers are supported through native APIs:
 
-* MathSAT (http://mathsat.fbk.eu/) >= 5
-* Z3 (http://z3.codeplex.com/releases) >= 4
+* MathSAT (http://mathsat.fbk.eu/)
+* Z3 (http://z3.codeplex.com/releases)
 * CVC4 (http://cvc4.cs.nyu.edu/web/)
 * Yices 2 (http://yices.csl.sri.com/)
-* repycudd (https://github.com/pysmt/repycudd)
+* CUDD (http://vlsi.colorado.edu/~fabio/CUDD/)
 * PicoSAT (http://fmv.jku.at/picosat/)
 
 Additionally, you can use any SMT-LIB 2 compliant solver.
 
-PySMT assumes that the python bindings for the SMT Solver are installed and accessible from your PYTHONPATH. For Yices 2 we rely on pyices (https://github.com/cheshire/pyices).
+PySMT assumes that the python bindings for the SMT Solver are
+installed and accessible from your PYTHONPATH. For Yices 2 we rely on
+pyices (https://github.com/cheshire/pyices). For CUDD we use repycudd (https://github.com/pysmt/repycudd).
 
 pySMT works on both Python 2 and Python 3. Some solvers support both versions (e.g., MathSAT) but in general, many solvers still support only Python 2.
 
@@ -50,9 +52,9 @@ wrapper used within pySMT).
   Solver              pySMT name   Supported Logics     Satisfiability   Model Construction   UNSAT-Core
   =================   ==========   ==================   ==============   ==================   ==========
   MathSAT             msat         QF_UFLIRA, QF_BV     Yes              Yes                  Yes
-  Z3                  z3           UFLIRA, [QF_BV]      Yes              Yes                  Yes
-  CVC4                cvc4         QF_UFLIRA, [QF_BV]   Yes              Yes                  No
-  Yices               yices        QF_UFLIRA, [QF_BV]   Yes              Yes                  No
+  Z3                  z3           UFLIRA, QF_BV        Yes              Yes                  Yes
+  CVC4                cvc4         QF_UFLIRA, QF_BV     Yes              Yes                  No
+  Yices               yices        QF_UFLIRA, QF_BV     Yes              Yes                  No
   SMT-Lib Interface   <custom>     UFLIRA, [QF_BV]      Yes              Yes                  No [Yes]
   PicoSAT             picosat      QF_BOOL              Yes              Yes                  No [Yes]
   BDD (CUDD)          bdd          BOOL                 Yes              Yes                  No
