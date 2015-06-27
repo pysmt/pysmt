@@ -170,7 +170,7 @@ class Substituter(pysmt.walkers.DagWalker):
 
     def walk_plus(self, formula, args, substitutions, **kwargs):
         return self._substitute(self.manager.Plus(args),
-                               substitutions)
+                                substitutions)
 
     def walk_times(self, formula, args, substitutions, **kwargs):
         assert len(args) == 2
@@ -186,6 +186,10 @@ class Substituter(pysmt.walkers.DagWalker):
         sr = args[1]
 
         return self._substitute(self.manager.Minus(sl, sr), substitutions)
+
+    def walk_toreal(self, formula, args, substitutions, **kwargs):
+        return self._substitute(self.manager.ToReal(args[0]),
+                                substitutions)
 
     def walk_identity(self, formula, args, substitutions, **kwargs):
         assert len(args) == 0

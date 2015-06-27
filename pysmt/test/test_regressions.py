@@ -245,6 +245,14 @@ class TestRegressions(TestCase):
         self.assertTrue(Int(0).is_zero())
         self.assertTrue(Real(0).is_zero())
 
+    def test_substitute_to_real(self):
+        p = Symbol("p", INT)
+        f = LT(ToReal(p), Real(0))
+
+        new_f = f.substitute({p: Real(1)}).simplify()
+        self.assertEqual(new_f, Bool(False))
+
+
 if __name__ == "__main__":
     import unittest
     unittest.main()
