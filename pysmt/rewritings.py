@@ -227,43 +227,24 @@ class CNFizer(DagWalker):
         return CNFizer.THEORY_PLACEHOLDER
 
 
-class NNFizer(object):
+class NNFizer(DagWalker):
 
     def __init__(self, environment=None):
-        if environment is None:
-            # Avoids possible circular imports
-            environment = pysmt.environment.get_env()
-
-        self.env = environment
-        self.memoization = {}
-        self.manager = self.env.formula_manager
+        DagWalker.__init__(self, env=environment)
+        self.mgr = self.env.formula_manager
+        self.set_function(self.walk_theory_relation, *op.RELATIONS)
 
 
     def convert(self, formula):
         """ Converts the given formula in NNF """
-        stack = [formula]
-        while len(stack) > 0:
-            current = stack.pop()
-            if current not in self.memoization:
-                self.memoization[current] = None
-                stack.append(current)
-                for son in self._get_children(current):
-                    stack.append(son)
-
-            elif self.memoization[current] is None:
-                res = self._rebuild(current)
-                self.memoization[current] = res
-            else:
-                # we already visited the node, nothing else to do
-                pass
-        return self.memoization[formula]
+        return self.walk(formula)
 
 
     def _get_children(self, formula):
         """Returns the arguments of the node on which an hypotetical recursion
         would be made, possibly negating them.
         """
-        mgr = self.manager
+        mgr = self.mgr
         if formula.is_not():
             s = formula.arg(0)
             if s.is_not():
@@ -313,71 +294,66 @@ class NNFizer(object):
             return []
 
 
-    def _rebuild(self, formula):
-        memo = self.memoization
-        mgr = self.manager
-        if formula.is_not():
-            s = formula.arg(0)
-            if s.is_symbol():
-                return mgr.Not(s)
-            elif s.is_not():
-                return memo[s.arg(0)]
-            elif s.is_and():
-                return mgr.Or([memo[mgr.Not(x)] for x in s.args()])
-            elif s.is_or():
-                return mgr.And([memo[mgr.Not(x)] for x in s.args()])
-            elif s.is_implies():
-                return mgr.And(memo[s.arg(0)], memo[mgr.Not(s.arg(1))])
-            elif s.is_iff():
-                return mgr.Or(mgr.And(memo[s.arg(0)], memo[mgr.Not(s.arg(1))]),
-                              mgr.And(memo[s.arg(1)], memo[mgr.Not(s.arg(0))]))
-            elif s.is_forall():
-                return mgr.Exists(s.quantifier_vars(), memo[mgr.Not(s.arg(0))])
-            elif s.is_exists():
-                return mgr.ForAll(s.quantifier_vars(), memo[mgr.Not(s.arg(0))])
-            else:
-                return mgr.Not(memo[s])
-
-        elif formula.is_implies():
-            return mgr.Or(memo[mgr.Not(formula.arg(0))], memo[formula.arg(1)])
-
-        elif formula.is_iff():
-            a, b = formula.args()
-            na, nb = mgr.Not(a), mgr.Not(b)
-            return mgr.And(mgr.Or(memo[na], memo[b]),
-                           mgr.Or(memo[nb], memo[a]))
-
-        elif formula.is_and():
-            return mgr.And(memo[x] for x in formula.args())
-
-        elif formula.is_or():
-            return mgr.Or(memo[x] for x in formula.args())
-
-        elif formula.is_ite():
-            # This must be a boolean ITE as we do not recur within
-            # theory atoms
-            assert self.env.stc.get_type(formula).is_bool_type()
-            i, t, e = formula.args()
-            ni = mgr.Not(i)
-            return mgr.And(mgr.Or(memo[ni], memo[t]),
-                           mgr.Or(memo[i], memo[e]))
-
-        elif formula.is_forall():
-            return mgr.ForAll(formula.quantifier_vars(), memo[formula.arg(0)])
-
-        elif formula.is_exists():
-            return mgr.Exists(formula.quantifier_vars(), memo[formula.arg(0)])
-
-        elif formula.is_symbol():
-            return formula
-
-        elif formula.is_bool_constant():
-            return formula
-
+    def walk_not(self, formula, args, **kwargs):
+        s = formula.arg(0)
+        if s.is_symbol():
+            return self.mgr.Not(s)
+        elif s.is_not():
+            return args[0]
+        elif s.is_and():
+            return self.mgr.Or(args)
+        elif s.is_or():
+            return self.mgr.And(args)
+        elif s.is_implies():
+            return self.mgr.And(args)
+        elif s.is_iff():
+            a, b, na, nb = args
+            return self.mgr.Or(self.mgr.And(a, nb),
+                          self.mgr.And(b, na))
+        elif s.is_forall():
+            return self.mgr.Exists(s.quantifier_vars(), args[0])
+        elif s.is_exists():
+            return self.mgr.ForAll(s.quantifier_vars(), args[0])
         else:
-            # This is a theory atom
-            assert formula.is_theory_relation()
-            return formula
+            return self.mgr.Not(args[0])
+
+
+    def walk_implies(self, formula, args, **kwargs):
+        return self.mgr.Or(args)
+
+    def walk_iff(self, formula, args, **kwargs):
+        a, b, na, nb = args
+        return self.mgr.And(self.mgr.Or(na, b),
+                       self.mgr.Or(nb, a))
+
+    def walk_and(self, formula, args, **kwargs):
+        return self.mgr.And(args)
+
+    def walk_or(self, formula, args, **kwargs):
+        return self.mgr.Or(args)
+
+    def walk_ite(self, formula, args, **kwargs):
+        # This must be a boolean ITE as we never add theory atoms in the stack
+        # See self._get_children()
+        assert self.env.stc.get_type(formula).is_bool_type()
+        i, ni, t, e = args
+        return self.mgr.And(self.mgr.Or(ni, t), self.mgr.Or(i, e))
+
+    def walk_forall(self, formula, args, **kwargs):
+        return self.mgr.ForAll(formula.quantifier_vars(), args[0])
+
+    def walk_exists(self, formula, args, **kwargs):
+        return self.mgr.Exists(formula.quantifier_vars(), args[0])
+
+    def walk_symbol(self, formula, **kwargs):
+        return formula
+
+    def walk_bool_constant(self, formula, **kwargs):
+        return formula
+
+    def walk_theory_relation(self, formula, **kwargs):
+        #pylint: disable=unused-argument
+        return formula
 
 
 class PrenexNormalizer(DagWalker):
