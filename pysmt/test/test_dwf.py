@@ -16,7 +16,7 @@
 #   limitations under the License.
 #
 from pysmt.test import TestCase
-from pysmt.operators import CUSTOM_NODE_TYPES, new_node_type
+from pysmt.operators import CUSTOM_NODE_TYPES, new_node_type, all_types
 from pysmt.type_checker import SimpleTypeChecker
 from pysmt.printers import HRPrinter
 from pysmt.shortcuts import get_env, Symbol
@@ -67,3 +67,9 @@ class TestDwf(TestCase):
         # We did not define an implementation for the Simplifier
         with self.assertRaises(UnsupportedOperatorError):
             f1.simplify()
+
+    def test_02_all_types(self):
+        old_types_set = set(all_types())
+        new_t = new_node_type()
+        new_types_set = set(all_types())
+        self.assertEqual(new_types_set - old_types_set, set([new_t]))

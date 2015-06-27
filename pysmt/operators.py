@@ -96,6 +96,11 @@ def op_to_str(node_id):
         return str(node_id)
     return __OP_STR__[node_id]
 
+def all_types():
+    """Returns an iterator over all base and custom types."""
+    return iter(ALL_TYPES + CUSTOM_NODE_TYPES)
+
+
 __OP_STR__ = {
     FORALL : "FORALL",
     EXISTS : "EXISTS",
