@@ -28,17 +28,22 @@ from pysmt.operators import (FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF,
                              TOREAL,
                              BV_CONSTANT, BV_NOT, BV_AND, BV_OR, BV_XOR,
                              BV_CONCAT, BV_EXTRACT,
-                             BV_ULT, BV_NEG, BV_ADD,
+                             BV_ULT, BV_NEG, BV_ADD, BV_SUB,
                              BV_MUL, BV_UDIV, BV_UREM,
                              BV_LSHL, BV_LSHR,
                              BV_ROL, BV_ROR,
-                             BV_ZEXT, BV_SEXT)
+                             BV_ZEXT, BV_SEXT,
+                             BV_SLT, BV_SLE,
+                             BV_COMP,
+                             BV_SDIV, BV_SREM,
+                             BV_ASHR)
 from pysmt.operators import  (BOOL_OPERATORS, THEORY_OPERATORS,
                               BV_OPERATORS, LIRA_OPERATORS,
                               RELATIONS, CONSTANTS)
 from pysmt.typing import BOOL, REAL, INT, BVType
 from pysmt.decorators import deprecated
 from pysmt.utils import is_python_integer, is_python_rational, is_python_boolean
+from pysmt.utils import twos_complement
 
 FNodeContent = collections.namedtuple("FNodeContent",
                                       ["node_type", "args", "payload"])
@@ -379,6 +384,34 @@ class FNode(object):
         """Test whether the node is the BVSext (signed extension) operator."""
         return self.node_type() == BV_SEXT
 
+    def is_bv_sub(self):
+        """Test whether the node is the BVSub (subtraction) operator."""
+        return self.node_type() == BV_SUB
+
+    def is_bv_slt(self):
+        """Test whether the node is the BVSLT (signed less-than) operator."""
+        return self.node_type() == BV_SLT
+
+    def is_bv_sle(self):
+        """Test whether the node is the BVSLE (signed less-than-or-equal-to) operator."""
+        return self.node_type() == BV_SLE
+
+    def is_bv_comp(self):
+        """Test whether the node is the BVComp (comparison) operator."""
+        return self.node_type() == BV_COMP
+
+    def is_bv_sdiv(self):
+        """Test whether the node is the BVSDiv (signed division) operator."""
+        return self.node_type() == BV_SDIV
+
+    def is_bv_srem(self):
+        """Test whether the node is the BVSRem (signed reminder) operator."""
+        return self.node_type() == BV_SREM
+
+    def is_bv_ashr(self):
+        """Test whether the node is the BVAshr (arithmetic shift right) operator."""
+        return self.node_type() == BV_ASHR
+
     def bv_width(self):
         """Return the BV width of the formula."""
         if self.is_bv_constant():
@@ -483,6 +516,10 @@ class FNode(object):
     def bv_unsigned_value(self):
         """Return the unsigned value encoded by the BitVector."""
         return self.constant_value()
+
+    def bv_signed_value(self):
+        """Return the signed value encoded by the BitVector."""
+        return twos_complement(self.constant_value(), self.bv_width())
 
     def bv_bin_str(self, reverse=False):
         """Return the binary representation of the BitVector as string.

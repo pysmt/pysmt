@@ -191,7 +191,7 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
                 width = ty.width
                 res = (ctypes.c_int32 * width)()
                 libyices.yices_val_get_bv(self.model, ctypes.byref(yval), res)
-                str_val = "".join(str(x) for x in res)
+                str_val = "".join(str(x) for x in reversed(res))
                 return self.mgr.BV("#b" + str_val)
 
             else:
@@ -462,6 +462,11 @@ class YicesConverter(Converter, DagWalker):
         self._check_term_result(res)
         return res
 
+    def walk_bv_sub(self, formula, args, **kwargs):
+        res = libyices.yices_bvsub(args[0], args[1])
+        self._check_term_result(res)
+        return res
+
     def walk_bv_neg(self, formula, args, **kwargs):
         res = libyices.yices_bvneg(args[0])
         self._check_term_result(res)
@@ -511,6 +516,42 @@ class YicesConverter(Converter, DagWalker):
         res = libyices.yices_sign_extend(args[0], formula.bv_extend_step())
         self._check_term_result(res)
         return res
+
+    def walk_bv_slt(self, formula, args, **kwargs):
+        res = libyices.yices_bvslt_atom(args[0], args[1])
+        self._check_term_result(res)
+        return res
+
+    def walk_bv_sle (self, formula, args, **kwargs):
+        res = libyices.yices_bvsle_atom(args[0], args[1])
+        self._check_term_result(res)
+        return res
+
+    def walk_bv_comp (self, formula, args, **kwargs):
+        a,b = args
+        eq = libyices.yices_bveq_atom(a, b)
+        self._check_term_result(eq)
+        one = libyices.yices_bvconst_int32(1, 1)
+        zero = libyices.yices_bvconst_int32(1, 0)
+        res = libyices.yices_ite(eq, one, zero)
+        self._check_term_result(res)
+        return res
+
+    def walk_bv_sdiv (self, formula, args, **kwargs):
+        res = libyices.yices_bvsdiv(args[0], args[1])
+        self._check_term_result(res)
+        return res
+
+    def walk_bv_srem (self, formula, args, **kwargs):
+        res = libyices.yices_bvsrem(args[0], args[1])
+        self._check_term_result(res)
+        return res
+
+    def walk_bv_ashr (self, formula, args, **kwargs):
+        res = libyices.yices_bvashr(args[0], args[1])
+        self._check_term_result(res)
+        return res
+
 
     def _type_to_yices(self, tp):
         if tp.is_bool_type():

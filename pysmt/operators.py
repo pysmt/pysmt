@@ -24,7 +24,7 @@ these operators.
 from six.moves import xrange
 
 
-ALL_TYPES = list(xrange(0,40))
+ALL_TYPES = list(xrange(0,47))
 
 (
 FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF, # Boolean Logic (0-6)
@@ -38,22 +38,21 @@ TOREAL,                                     # LIRA toreal() function (19)
 # MG: FLOOR? INT_MOD_CONGR?
 #
 # BV
-BV_CONSTANT,                                # 20
-BV_NOT, BV_AND, BV_OR, BV_XOR,              # Logical Operators on Bit
-BV_CONCAT, BV_EXTRACT,                      #
-BV_ULT, BV_ULE,                             # Comparison
-BV_NEG, BV_ADD,                             # Basic arithmetic (31-33)
-BV_MUL, BV_UDIV, BV_UREM,                   # Division/Multiplication (34-38)
-BV_LSHL, BV_LSHR,                           # Shifts (39-41)
-BV_ROL, BV_ROR,                             # Rotation (42-43)
-BV_ZEXT, BV_SEXT,                           # Extension (44-45)
-# BV Operators to be supported in the future
-# BV_SLT, BV_SLE
-# BV_COMP
-# BV_SUB
-# BV_SDIV
-# BV_SREM
-# BV_ASHR
+BV_CONSTANT,                                # Bit-Vector constant (20)
+BV_NOT, BV_AND, BV_OR, BV_XOR,              # Logical Operators on Bit (21-24)
+BV_CONCAT,                                  # BV Concatenation (25)
+BV_EXTRACT,                                 # BV sub-vector extraction (26)
+BV_ULT, BV_ULE,                             # Unsigned Comparison (27-28)
+BV_NEG, BV_ADD, BV_SUB,                     # Basic arithmetic (29-31)
+BV_MUL, BV_UDIV, BV_UREM,                   # Division/Multiplication (32-34)
+BV_LSHL, BV_LSHR,                           # Shifts (35-36)
+BV_ROL, BV_ROR,                             # Rotation (37-38)
+BV_ZEXT, BV_SEXT,                           # Extension (39-40)
+BV_SLT, BV_SLE,                             # Signed Comparison (41-42)
+BV_COMP,                                    # Returns 1_1 if the arguments are
+                                            # equal otherwise it returns 0_1 (44)
+BV_SDIV, BV_SREM,                           # Signed Division and Reminder(45-46)
+BV_ASHR,                                    # Arithmetic shift right (47)
 ) = ALL_TYPES
 
 QUANTIFIERS = frozenset([FORALL, EXISTS])
@@ -62,14 +61,15 @@ BOOL_CONNECTIVES = frozenset([AND, OR, NOT, IMPLIES, IFF])
 
 BOOL_OPERATORS = frozenset(QUANTIFIERS | BOOL_CONNECTIVES)
 
-RELATIONS = frozenset([LE, LT, EQUALS, BV_ULE, BV_ULT])
+RELATIONS = frozenset([LE, LT, EQUALS, BV_ULE, BV_ULT, BV_SLT, BV_SLE])
 
 CONSTANTS = frozenset([REAL_CONSTANT, BOOL_CONSTANT, INT_CONSTANT, BV_CONSTANT])
 
 BV_OPERATORS = frozenset([BV_CONSTANT, BV_NOT, BV_AND, BV_OR, BV_XOR,
-                          BV_CONCAT, BV_EXTRACT, BV_ULT, BV_ULE, BV_NEG, BV_ADD, BV_MUL,
-                          BV_UDIV, BV_UREM, BV_LSHL, BV_LSHR, BV_ROL, BV_ROR,
-                          BV_ZEXT, BV_SEXT])
+                          BV_CONCAT, BV_EXTRACT, BV_ULT, BV_ULE, BV_NEG, BV_ADD,
+                          BV_SUB, BV_MUL, BV_UDIV, BV_UREM, BV_LSHL, BV_LSHR,
+                          BV_ROL, BV_ROR, BV_ZEXT, BV_SEXT, BV_SLT, BV_SLE,
+                          BV_COMP, BV_SDIV, BV_SREM, BV_ASHR])
 
 LIRA_OPERATORS = frozenset([PLUS, MINUS, TIMES, TOREAL])
 CUSTOM_NODE_TYPES = []
@@ -133,6 +133,7 @@ __OP_STR__ = {
     BV_ULE : "BV_ULE",
     BV_NEG : "BV_NEG",
     BV_ADD : "BV_ADD",
+    BV_SUB : "BV_SUB",
     BV_MUL : "BV_MUL",
     BV_UDIV : "BV_UDIV",
     BV_UREM : "BV_UREM",
@@ -142,4 +143,10 @@ __OP_STR__ = {
     BV_ROR : "BV_ROR",
     BV_ZEXT : "BV_ZEXT",
     BV_SEXT : "BV_SEXT",
+    BV_SLT : "BV_SLT",
+    BV_SLE : "BV_SLE",
+    BV_COMP : "BV_COMP",
+    BV_SDIV : "BV_SDIV",
+    BV_SREM : "BV_SREM",
+    BV_ASHR : "BV_ASHR",
 }

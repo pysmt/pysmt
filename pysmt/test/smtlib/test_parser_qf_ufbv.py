@@ -22,5 +22,5 @@ from pysmt.test.smtlib.parser_utils import execute_script_fname, SMTLIB_TEST_FIL
 def test_generator():
     for (logic, f, expected_result) in SMTLIB_TEST_FILES:
         smtfile = os.path.join(SMTLIB_DIR, f)
-        if logic == QF_UFBV:
+        if logic <= QF_UFBV:
             yield execute_script_fname, smtfile, logic, expected_result

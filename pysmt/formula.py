@@ -30,9 +30,11 @@ its definition.
 import collections
 
 from fractions import Fraction
+from six.moves import xrange
 
 import pysmt.typing as types
 import pysmt.operators as op
+import pysmt.utils as utils
 
 from pysmt.utils import is_python_integer
 from pysmt.fnode import FNode, FNodeContent
@@ -517,7 +519,16 @@ class FormulaManager(object):
 
     # BitVectors
     def BV(self, value, width=None):
-        """Return a constant of type BitVector."""
+        """Return a constant of type BitVector.
+
+        value can be either:
+        - a string of 0s and 1s
+        - a string starting with "#b" followed by a sequence of 0s and 1s
+        - an integer number s.t. 0 <= value < 2**width
+
+        In order to create the BV representation of a signed integer,
+        the SBV() method shall be used.
+        """
 
         if type(value) is str:
             if value.startswith("#b"):
@@ -527,7 +538,8 @@ class FormulaManager(object):
                 str_width = len(value)
                 value = int(value, 2)
             else:
-                raise ValueError("Expecting binary value as string, got %s instead." % value)
+                raise ValueError("Expecting binary value as string, got %s" \
+                                 " instead." % value)
 
             if width is not None and width != str_width:
                 raise ValueError("Specified width does not match string width" \
@@ -550,6 +562,34 @@ class FormulaManager(object):
         else:
             raise TypeError("Invalid type in constant. The type was:" + \
                             str(type(value)))
+
+    def SBV(self, value, width=None):
+        """Returns a constant of type BitVector interpreting the sign.
+
+        If the specified value is an integer, it is converted in the
+        2-complement representation of the given number, otherwise the
+        behavior is the same as BV().
+        """
+        if is_python_integer(value):
+            if width is None:
+                raise ValueError("Need to specify a width for the constant")
+
+            min_val = -(2**(width-1))
+            max_val = (2**(width-1)) - 1
+            if value < min_val:
+                raise ValueError("Cannot represent a value (%d) lower than %d" \
+                                 " in %d bits" % (value, min_val, width))
+            if value > max_val:
+                raise ValueError("Cannot represent a value (%d) greater than " \
+                                 "%d in %d bits" % (value, max_val, width))
+
+            if value >= 0:
+                return self.BV(value, width)
+            else:
+                comp_value = (2**width) + value # value is negative!
+                return self.BV(comp_value, width)
+        else:
+            return self.BV(value, width=width)
 
     def BVOne(self, width):
         """Returns the bit-vector representing the unsigned one."""
@@ -637,8 +677,9 @@ class FormulaManager(object):
 
     def BVSub(self, left, right):
         """Returns the difference of two BV."""
-        # TODO: Implement with ad-hoc operator
-        return self.BVAdd(left, self.BVNeg(right))
+        return self.create_node(node_type=op.BV_SUB,
+                                args=(left, right),
+                                payload=(left.bv_width(),))
 
     def BVMul(self, left, right):
         """Returns the product of two BV."""
@@ -715,44 +756,113 @@ class FormulaManager(object):
                                          increase))
 
     def BVSLT(self, left, right):
-        raise NotImplementedError
+        """Returns the SIGNED LOWER-THAN comparison for BV."""
+        return self.create_node(node_type=op.BV_SLT,
+                                args=(left, right))
 
     def BVSLE(self, left, right):
-        raise NotImplementedError
+        """Returns the SIGNED LOWER-THAN-OR-EQUAL-TO comparison for BV."""
+        return self.create_node(node_type=op.BV_SLE,
+                                args=(left, right))
 
     def BVComp(self, left, right):
-        raise NotImplementedError
+        """Returns a BV of size 1 equal to 0 if left is equal to right,
+        otherwise 1 is returned."""
+        return self.create_node(node_type=op.BV_COMP,
+                                args=(left, right),
+                                payload=(1,))
 
     def BVSDiv(self, left, right):
-        raise NotImplementedError
+        """Returns the SIGNED DIVISION of left by right"""
+        return self.create_node(node_type=op.BV_SDIV,
+                                args=(left, right),
+                                payload=(left.bv_width(),))
 
     def BVSRem(self, left, right):
-        raise NotImplementedError
+        """Returns the SIGNED REMAINDER of left divided by right"""
+        return self.create_node(node_type=op.BV_SREM,
+                                args=(left, right),
+                                payload=(left.bv_width(),))
 
     def BVAShr(self, left, right):
-        raise NotImplementedError
+        """Returns the RIGHT arithmetic rotation of the left BV by the number
+        of steps specified by the right BV."""
+        return self.create_node(node_type=op.BV_ASHR,
+                                args=(left, right),
+                                payload=(left.bv_width(),))
 
     def BVNand(self, left, right):
+        """Returns the NAND composition of left and right."""
         return self.BVNot(self.BVAnd(left, right))
 
     def BVNor(self, left, right):
+        """Returns the NOR composition of left and right."""
         return self.BVNot(self.BVOr(left, right))
 
     def BVXnor(self, left, right):
+        """Returns the XNOR composition of left and right."""
         return self.BVOr(self.BVAnd(left, self.BVNot(right)),
                          self.BVAnd(self.BVNot(left), right))
 
     def BVSGT(self, left, right):
+        """Returns the SIGNED GREATER-THAN comparison for BV."""
         return self.BVSLT(right, left)
 
     def BVSGE(self, left, right):
-        return self.BVSGE(left, right)
+        """Returns the SIGNED GREATER-THAN-OR-EQUAL-TO comparison for BV."""
+        return self.BVSLE(right, left)
 
     def BVSMod(self, left, right):
-        raise NotImplementedError("It is unclear how to encode BVSMod")
+        """Returns the SIGNED MODULUS of left divided by right."""
+        # According to SMT-LIB standard (2015-06-23) BVSMod is defined as follows
+        # http://smtlib.cs.uiowa.edu/logics-all.shtml#QF_BV
+        #
+        # For all terms s,t of sort (_ BitVec m), where 0 < m,
+        # (bvsmod s t) abbreviates
+        # (let ((?msb_s ((_ extract |m-1| |m-1|) s))
+        #       (?msb_t ((_ extract |m-1| |m-1|) t)))
+        #   (let ((abs_s (ite (= ?msb_s #b0) s (bvneg s)))
+        #         (abs_t (ite (= ?msb_t #b0) t (bvneg t))))
+        #     (let ((u (bvurem abs_s abs_t)))
+        #       (ite (= u (_ bv0 m))
+        #            u
+        #       (ite (and (= ?msb_s #b0) (= ?msb_t #b0))
+        #            u
+        #       (ite (and (= ?msb_s #b1) (= ?msb_t #b0))
+        #            (bvadd (bvneg u) t)
+        #       (ite (and (= ?msb_s #b0) (= ?msb_t #b1))
+        #            (bvadd u t)
+        #            (bvneg u))))))))
+        m = left.bv_width()
+        s = left
+        t = right
+        zero_1 = self.BV("#b0")
+        one_1 = self.BV("#b1")
+
+        msb_s = self.BVExtract(s, m-1, m-1)
+        msb_t = self.BVExtract(t, m-1, m-1)
+        abs_s = self.Ite(self.Equals(msb_s, zero_1), s, self.BVNeg(s))
+        abs_t = self.Ite(self.Equals(msb_t, zero_1), t, self.BVNeg(t))
+        u = self.BVURem(abs_s, abs_t)
+
+        cond1 = self.Equals(u, self.BV(0, m))
+        cond2 = self.And(self.Equals(msb_s, zero_1), self.Equals(msb_t, zero_1))
+        cond3 = self.And(self.Equals(msb_s, one_1), self.Equals(msb_t, zero_1))
+        cond4 = self.And(self.Equals(msb_s, zero_1), self.Equals(msb_t, one_1))
+
+        case3 = self.BVAdd(self.BVNeg(u), t)
+        case4 = self.BVAdd(u, t)
+        case5 = self.BVNeg(u)
+
+        return self.Ite(self.Or(cond1, cond2), u,
+                        self.Ite(cond3, case3, self.Ite(cond4, case4, case5)))
 
     def BVRepeat(self, formula, count=1):
-        raise NotImplementedError
+        """Returns the concatenation of count copies of formula."""
+        res = formula
+        for _ in xrange(count-1):
+            res = self.BVConcat(res, formula)
+        return res
 
 
 

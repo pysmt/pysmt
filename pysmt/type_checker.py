@@ -51,13 +51,15 @@ class SimpleTypeChecker(walkers.DagWalker):
         self.set_function(self.walk_function, op.FUNCTION)
 
         self.set_function(self.walk_identity_bv, op.BV_CONSTANT)
-        self.set_function(self.walk_bv_to_bool, op.BV_ULT, op.BV_ULE)
-        self.set_function(self.walk_bv_to_bv, op.BV_ADD, op.BV_NOT, op.BV_AND,
-                          op.BV_OR, op.BV_XOR, op.BV_NEG, op.BV_MUL, op.BV_UDIV,
-                          op.BV_UREM, op.BV_LSHL, op.BV_LSHR)
+        self.set_function(self.walk_bv_to_bool, op.BV_ULT, op.BV_ULE, op.BV_SLT,
+                          op.BV_SLE)
+        self.set_function(self.walk_bv_to_bv, op.BV_ADD, op.BV_SUB, op.BV_NOT,
+                          op.BV_AND, op.BV_OR, op.BV_XOR, op.BV_NEG, op.BV_MUL,
+                          op.BV_UDIV, op.BV_UREM, op.BV_LSHL, op.BV_LSHR,
+                          op.BV_SDIV, op.BV_SREM, op.BV_ASHR)
         self.set_function(self.walk_bv_rotate, op.BV_ROL, op.BV_ROR)
         self.set_function(self.walk_bv_extend, op.BV_ZEXT, op.BV_SEXT)
-
+        self.set_function(self.walk_bv_comp, op.BV_COMP)
         self.be_nice = False
 
     def _get_key(self, formula, **kwargs):
@@ -108,6 +110,13 @@ class SimpleTypeChecker(walkers.DagWalker):
             if not a == target_bv_type:
                 return None
         return target_bv_type
+
+    def walk_bv_comp(self, formula, args, **kwargs):
+        # We check that all children are BV and the same size
+        a,b = args
+        if a != b or (not a.is_bv_type()):
+            return None
+        return BVType(1)
 
     def walk_bv_to_bool(self, formula, args, **kwargs):
         #pylint: disable=unused-argument

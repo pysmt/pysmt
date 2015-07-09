@@ -18,9 +18,9 @@
 import unittest
 
 from pysmt.test import TestCase, skipIfNoSolverForLogic
-from pysmt.shortcuts import Symbol, And, Not, Solver, Symbol, Equals, TRUE
+from pysmt.shortcuts import Symbol, And, Symbol, Equals, TRUE
 from pysmt.shortcuts import get_env, is_sat, is_valid, get_model, is_unsat
-from pysmt.typing import BVType, BV1, BV8, BV32, BV128
+from pysmt.typing import BVType, BV32, BV128
 from pysmt.logics import QF_BV
 
 
@@ -198,6 +198,36 @@ class TestBV(TestCase):
         self.assertEqual(gte_1, gte_2)
 
         self.assertTrue(is_valid(gte_2, logic=QF_BV))
+
+        ide = Equals(mgr.BVNeg(BV(10, 32)), mgr.SBV(-10, 32))
+        self.assertValid(ide, logic=QF_BV)
+
+        # These should work without exceptions
+        mgr.SBV(-2, 2)
+        mgr.SBV(-1, 2)
+        mgr.SBV(0, 2)
+        mgr.SBV(1, 2)
+
+        # Overflow and Underflow
+        with self.assertRaises(ValueError):
+            mgr.SBV(2, 2)
+        with self.assertRaises(ValueError):
+            mgr.SBV(-3, 2)
+
+        # These should work without exceptions
+        mgr.BV(0, 2)
+        mgr.BV(1, 2)
+        mgr.BV(2, 2)
+        mgr.BV(3, 2)
+        # Overflow
+        with self.assertRaises(ValueError):
+            mgr.BV(4, 2)
+        # No negative number allowed
+        with self.assertRaises(ValueError):
+            mgr.BV(-1, 2)
+
+        # SBV should behave as BV for positive numbers
+        self.assertEqual(mgr.SBV(10, 16), mgr.BV(10, 16))
 
         return
 

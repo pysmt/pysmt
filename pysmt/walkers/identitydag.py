@@ -120,6 +120,9 @@ class IdentityDagWalker(DagWalker):
     def walk_bv_add(self, formula, args, **kwargs):
         return self.mgr.BVAdd(args[0], args[1])
 
+    def walk_bv_sub(self, formula, args, **kwargs):
+        return self.mgr.BVSub(args[0], args[1])
+
     def walk_bv_mul(self, formula, args, **kwargs):
         return self.mgr.BVMul(args[0], args[1])
 
@@ -160,3 +163,21 @@ class IdentityDagWalker(DagWalker):
 
     def walk_bv_lshr(self, formula, args, **kwargs):
         return self.mgr.BVLShr(args[0], args[1])
+
+    def walk_bv_ashr(self, formula, args, **kwargs):
+        return self.mgr.BVAShr(args[0], args[1])
+
+    def walk_bv_comp(self, formula, args, **kwargs):
+        return self.mgr.BVComp(args[0], args[1])
+
+    def walk_bv_slt(self, formula, args, **kwargs):
+        return self.mgr.BVSLT(args[0], args[1])
+
+    def walk_bv_sle(self, formula, args, **kwargs):
+        return self.mgr.BVSLE(args[0], args[1])
+
+    def walk_bv_sdiv(self, formula, args, **kwargs):
+        return self.mgr.BVSDiv(args[0], args[1])
+
+    def walk_bv_srem(self, formula, args, **kwargs):
+        return self.mgr.BVSRem(args[0], args[1])

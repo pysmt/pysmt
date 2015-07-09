@@ -29,7 +29,7 @@ from pysmt.test.examples import get_example_formulae
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               InternalSolverError, NoSolverAvailableError,
                               ConvertExpressionError)
-from pysmt.logics import QF_UFLIRA, QF_BOOL, QF_LRA, QF_BV, AUTO
+from pysmt.logics import QF_UFLIRA, QF_BOOL, QF_LRA, AUTO
 
 class TestBasic(TestCase):
 

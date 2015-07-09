@@ -248,6 +248,9 @@ class Substituter(pysmt.walkers.DagWalker):
     def walk_bv_add(self, formula, args, substitutions, **kwargs):
         return self._substitute(self.manager.BVAdd(args[0], args[1]), substitutions)
 
+    def walk_bv_sub(self, formula, args, substitutions, **kwargs):
+        return self._substitute(self.manager.BVSub(args[0], args[1]), substitutions)
+
     def walk_bv_mul(self, formula, args, substitutions, **kwargs):
         return self._substitute(self.manager.BVMul(args[0], args[1]), substitutions)
 
@@ -284,6 +287,24 @@ class Substituter(pysmt.walkers.DagWalker):
         return self._substitute(self.manager.BVSExt(args[0],
                                                     formula.bv_extend_step()),
                                 substitutions)
+
+    def walk_bv_sdiv(self, formula, args, substitutions, **kwargs):
+        return self._substitute(self.manager.BVSDiv(args[0], args[1]), substitutions)
+
+    def walk_bv_srem(self, formula, args, substitutions, **kwargs):
+        return self._substitute(self.manager.BVSRem(args[0], args[1]), substitutions)
+
+    def walk_bv_slt(self, formula, args, substitutions, **kwargs):
+        return self._substitute(self.manager.BVSLT(args[0], args[1]), substitutions)
+
+    def walk_bv_sle(self, formula, args, substitutions, **kwargs):
+        return self._substitute(self.manager.BVSLE(args[0], args[1]), substitutions)
+
+    def walk_bv_comp(self, formula, args, substitutions, **kwargs):
+        return self._substitute(self.manager.BVComp(args[0], args[1]), substitutions)
+
+    def walk_bv_ashr(self, formula, args, substitutions, **kwargs):
+        return self._substitute(self.manager.BVAShr(args[0], args[1]), substitutions)
 
 
 # EOC Substituter

@@ -4,6 +4,14 @@ Change Log
 0.4.1: XXXX-XX-XX -- YYYYYYYYYYYYYYY
 ------------------------------------
 
+Theories:
+
+* BitVectors: Added Signed operators
+
+Solvers:
+
+* Support for BitVectors added for Z3, CVC4, and Yices
+
 Deprecation:
 
 * Started deprecation of get_dependencies and get_sons

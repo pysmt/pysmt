@@ -216,8 +216,26 @@ def Max(*args):
 
 # Bit Vectors
 def BV(value, width=None):
-    """Returns a constant of type BitVector."""
+    """Returns a constant of type BitVector.
+
+    value can be either:
+    - a string of 0s and 1s
+    - a string starting with "#b" followed by a sequence of 0s and 1s
+    - an integer number s.t. 0 <= value < 2**width
+
+    In order to create the BV representation of a signed integer,
+    the SBV() method shall be used.
+    """
     return get_env().formula_manager.BV(value, width)
+
+def SBV(value, width=None):
+    """Returns a constant of type BitVector interpreting the sign.
+
+    If the specified value is an integer, it is converted in the
+    2-complement representation of the given number, otherwise the
+    behavior is the same as BV().
+    """
+    return get_env().formula_manager.SBV(value, width)
 
 def BVOne(width=None):
     """Returns the unsigned one constant BitVector."""
@@ -321,6 +339,42 @@ def BVSExt(formula, increase):
     New bits are set according to the most-significant-bit.
     """
     return get_env().formula_manager.BVSExt(formula, increase)
+
+def BVSLT(left, right):
+    """Returns the SIGNED LOWER-THAN comparison for BV."""
+    return get_env().formula_manager.BVSLT(left, right)
+
+def BVSLE(left, right):
+    """Returns the SIGNED LOWER-THAN-OR-EQUAL-TO comparison for BV."""
+    return get_env().formula_manager.BVSLE(left, right)
+
+def BVSGT(left, right):
+    """Returns the SIGNED GREATER-THAN comparison for BV."""
+    return get_env().formula_manager.BVSGT(left, right)
+
+def BVSGE(left, right):
+    """Returns the SIGNED GREATER-THAN-OR-EQUAL-TO comparison for BV."""
+    return get_env().formula_manager.BVSGE(left, right)
+
+def BVSDiv(left, right):
+    """Returns the SIGNED DIVISION of left by right"""
+    return get_env().formula_manager.BVSDiv(left, right)
+
+def BVSRem(left, right):
+    """Returns the SIGNED REMAINDER of left divided by right"""
+    return get_env().formula_manager.BVSRem(left, right)
+
+def BVComp(left, right):
+    """Returns a BV of size 1 equal to 0 if left is equal to right,
+        otherwise 1 is returned."""
+    return get_env().formula_manager.BVComp(left, right)
+
+def BVAShr(left, right):
+    """Returns the RIGHT arithmetic rotation of the left BV by the number
+        of steps specified by the right BV."""
+    return get_env().formula_manager.BVAShr(left, right)
+
+
 
 
 #### Shortcuts for Solvers Factory #####

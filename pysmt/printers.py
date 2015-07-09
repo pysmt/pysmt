@@ -168,10 +168,10 @@ class HRPrinter(TreeWalker):
 
     def walk_bv_constant(self, formula):
         # This is the simplest SMT-LIB way of printing the value of a BV
-        # self.stream.write("(_ bv%d %d)" % (formula.bv_width(),
-        #                                    formula.constant_value()))
+        # self.write("(_ bv%d %d)" % (formula.bv_width(),
+        #                             formula.constant_value()))
         self.write("%d_%d" % (formula.constant_value(),
-                                     formula.bv_width()))
+                              formula.bv_width()))
 
     def walk_bv_xor(self, formula):
         self.write("(")
@@ -200,14 +200,56 @@ class HRPrinter(TreeWalker):
     def walk_bv_udiv(self, formula):
         self.write("(")
         self.walk(formula.arg(0))
-        self.write(" / ")
+        self.write(" u/ ")
         self.walk(formula.arg(1))
         self.write(")")
 
     def walk_bv_urem(self, formula):
         self.write("(")
         self.walk(formula.arg(0))
-        self.write(" % ")
+        self.write(" u% ")
+        self.walk(formula.arg(1))
+        self.write(")")
+
+    def walk_bv_sdiv(self, formula):
+        self.write("(")
+        self.walk(formula.arg(0))
+        self.write(" s/ ")
+        self.walk(formula.arg(1))
+        self.write(")")
+
+    def walk_bv_srem(self, formula):
+        self.write("(")
+        self.walk(formula.arg(0))
+        self.write(" s% ")
+        self.walk(formula.arg(1))
+        self.write(")")
+
+    def walk_bv_sle(self, formula):
+        self.write("(")
+        self.walk(formula.arg(0))
+        self.write(" s<= ")
+        self.walk(formula.arg(1))
+        self.write(")")
+
+    def walk_bv_slt(self, formula):
+        self.write("(")
+        self.walk(formula.arg(0))
+        self.write(" s< ")
+        self.walk(formula.arg(1))
+        self.write(")")
+
+    def walk_bv_ule(self, formula):
+        self.write("(")
+        self.walk(formula.arg(0))
+        self.write(" u<= ")
+        self.walk(formula.arg(1))
+        self.write(")")
+
+    def walk_bv_ult(self, formula):
+        self.write("(")
+        self.walk(formula.arg(0))
+        self.write(" u< ")
         self.walk(formula.arg(1))
         self.write(")")
 
@@ -222,6 +264,13 @@ class HRPrinter(TreeWalker):
         self.write("(")
         self.walk(formula.arg(0))
         self.write(" >> ")
+        self.walk(formula.arg(1))
+        self.write(")")
+
+    def walk_bv_ashr(self, formula):
+        self.write("(")
+        self.walk(formula.arg(0))
+        self.write(" a>> ")
         self.walk(formula.arg(1))
         self.write(")")
 
@@ -247,13 +296,19 @@ class HRPrinter(TreeWalker):
         self.walk(formula.arg(0))
         self.write(", %d)" % formula.bv_extend_step())
 
+    def walk_bv_comp(self, formula):
+        self.write("(")
+        self.walk(formula.arg(0))
+        self.write(" bvcomp ")
+        self.walk(formula.arg(1))
+        self.write(")")
+
     # Recycling functions form LIRA
     walk_bv_not = walk_not
     walk_bv_and = walk_and
     walk_bv_or = walk_or
-    walk_bv_ult = walk_lt
-    walk_bv_ule = walk_le
     walk_bv_add = walk_plus
+    walk_bv_sub = walk_minus
     walk_bv_mul = walk_times
 
     def walk_ite(self, formula):

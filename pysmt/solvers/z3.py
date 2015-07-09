@@ -40,6 +40,47 @@ from pysmt.oracles import get_logic
 
 # patch z3api
 z3.is_ite = lambda x: z3.is_app_of(x, z3.Z3_OP_ITE)
+z3.is_implies = lambda x: z3.is_app_of(x, z3.Z3_OP_IMPLIES)
+z3.is_function = lambda x: z3.is_app_of(x, z3.Z3_OP_UNINTERPRETED)
+z3.is_iff = lambda x: z3.is_app_of(x, z3.Z3_OP_IFF)
+z3.is_uminus = lambda x: z3.is_app_of(x, z3.Z3_OP_UMINUS)
+z3.is_xor = lambda x: z3.is_app_of(x, z3.Z3_OP_XOR)
+
+z3.is_bv_and = lambda x: z3.is_app_of(x, z3.Z3_OP_BAND)
+z3.is_bv_or = lambda x: z3.is_app_of(x, z3.Z3_OP_BOR)
+z3.is_bv_xor = lambda x: z3.is_app_of(x, z3.Z3_OP_BXOR)
+z3.is_bv_neg = lambda x: z3.is_app_of(x, z3.Z3_OP_BNEG)
+z3.is_bv_not = lambda x: z3.is_app_of(x, z3.Z3_OP_BNOT)
+z3.is_bv_concat = lambda x: z3.is_app_of(x, z3.Z3_OP_CONCAT)
+z3.is_bv_slt = lambda x: z3.is_app_of(x, z3.Z3_OP_SLT)
+z3.is_bv_sleq = lambda x: z3.is_app_of(x, z3.Z3_OP_SLEQ)
+z3.is_bv_ult = lambda x: z3.is_app_of(x, z3.Z3_OP_ULT)
+z3.is_bv_uleq = lambda x: z3.is_app_of(x, z3.Z3_OP_ULEQ)
+z3.is_bv_sgt = lambda x: z3.is_app_of(x, z3.Z3_OP_SLT)
+z3.is_bv_sgeq = lambda x: z3.is_app_of(x, z3.Z3_OP_SLEQ)
+z3.is_bv_ugt = lambda x: z3.is_app_of(x, z3.Z3_OP_ULT)
+z3.is_bv_ugeq = lambda x: z3.is_app_of(x, z3.Z3_OP_ULEQ)
+z3.is_bv_extract = lambda x: z3.is_app_of(x, z3.Z3_OP_EXTRACT)
+z3.is_bv_add = lambda x: z3.is_app_of(x, z3.Z3_OP_BADD)
+z3.is_bv_mul = lambda x: z3.is_app_of(x, z3.Z3_OP_BMUL)
+z3.is_bv_udiv = lambda x: z3.is_app_of(x, z3.Z3_OP_BUDIV)
+z3.is_bv_sdiv = lambda x: z3.is_app_of(x, z3.Z3_OP_BSDIV)
+z3.is_bv_urem = lambda x: z3.is_app_of(x, z3.Z3_OP_BUREM)
+z3.is_bv_srem = lambda x: z3.is_app_of(x, z3.Z3_OP_BSREM)
+z3.is_bv_lshl = lambda x: z3.is_app_of(x, z3.Z3_OP_BSHL)
+z3.is_bv_lshr = lambda x: z3.is_app_of(x, z3.Z3_OP_BLSHR)
+z3.is_bv_ashr = lambda x: z3.is_app_of(x, z3.Z3_OP_BASHR)
+z3.is_bv_sub = lambda x: z3.is_app_of(x, z3.Z3_OP_BSUB)
+z3.is_bv_rol = lambda x: z3.is_app_of(x, z3.Z3_OP_ROTATE_LEFT)
+z3.is_bv_ror = lambda x: z3.is_app_of(x, z3.Z3_OP_ROTATE_RIGHT)
+z3.is_bv_ext_rol = lambda x: z3.is_app_of(x, z3.Z3_OP_EXT_ROTATE_LEFT)
+z3.is_bv_ext_ror = lambda x: z3.is_app_of(x, z3.Z3_OP_EXT_ROTATE_RIGHT)
+z3.is_bv_zext = lambda x: z3.is_app_of(x, z3.Z3_OP_ZERO_EXT)
+z3.is_bv_sext = lambda x: z3.is_app_of(x, z3.Z3_OP_SIGN_EXT)
+
+z3.get_payload = lambda node,i : z3.Z3_get_decl_int_parameter(node.ctx.ref(),
+                                                              node.decl().ast, i)
+
 
 class AstRefKey:
     def __init__(self, n):
@@ -281,6 +322,10 @@ class Z3Converter(Converter, DagWalker):
                 res = self.mgr.Iff(args[0], args[1])
             else:
                 res = self.mgr.Equals(args[0], args[1])
+        elif z3.is_iff(expr):
+            res = self.mgr.Iff(args[0], args[1])
+        elif z3.is_xor(expr):
+            res = self.mgr.Xor(args[0], args[1])
         elif z3.is_false(expr):
             res = self.mgr.FALSE()
         elif z3.is_true(expr):
@@ -295,10 +340,20 @@ class Z3Converter(Converter, DagWalker):
             res = self.mgr.LE(args[0], args[1])
         elif z3.is_mul(expr):
             res = self.mgr.Times(args[0], args[1])
+        elif z3.is_uminus(expr):
+            tp = self._get_type(args[0])
+            if tp.is_real_type():
+                minus_one = self.mgr.Real(-1)
+            else:
+                assert tp.is_int_type()
+                minus_one = self.mgr.Int(-1)
+            res = self.mgr.Times(args[0], minus_one)
         elif z3.is_sub(expr):
             res = self.mgr.Minus(args[0], args[1])
         elif z3.is_not(expr):
             res = self.mgr.Not(args[0])
+        elif z3.is_implies(expr):
+            res = self.mgr.Implies(args[0], args[1])
         elif z3.is_quantifier(expr):
             raise NotImplementedError
         elif z3.is_const(expr):
@@ -319,6 +374,80 @@ class Z3Converter(Converter, DagWalker):
                 res = self.mgr.get_symbol(str(expr))
         elif z3.is_ite(expr):
             res = self.mgr.Ite(args[0], args[1], args[2])
+        elif z3.is_function(expr):
+            res = self.mgr.Function(self.mgr.get_symbol(expr.decl().name()), args)
+        elif z3.is_to_real(expr):
+            res = self.mgr.ToReal(args[0])
+        elif z3.is_bv_and(expr):
+            res = self.mgr.BVAnd(args[0], args[1])
+        elif z3.is_bv_or(expr):
+            res = self.mgr.BVOr(args[0], args[1])
+        elif z3.is_bv_xor(expr):
+            res = self.mgr.BVXor(args[0], args[1])
+        elif z3.is_bv_not(expr):
+            res = self.mgr.BVNot(args[0])
+        elif z3.is_bv_neg(expr):
+            res = self.mgr.BVNeg(args[0])
+        elif z3.is_bv_concat(expr):
+            res = self.mgr.BVConcat(args[0], args[1])
+        elif z3.is_bv_ult(expr):
+            res = self.mgr.BVULT(args[0], args[1])
+        elif z3.is_bv_uleq(expr):
+            res = self.mgr.BVULE(args[0], args[1])
+        elif z3.is_bv_slt(expr):
+            res = self.mgr.BVSLT(args[0], args[1])
+        elif z3.is_bv_sleq(expr):
+            res = self.mgr.BVSLE(args[0], args[1])
+        elif z3.is_bv_ugt(expr):
+            res = self.mgr.BVUGT(args[0], args[1])
+        elif z3.is_bv_ugeq(expr):
+            res = self.mgr.BVUGE(args[0], args[1])
+        elif z3.is_bv_sgt(expr):
+            res = self.mgr.BVSGT(args[0], args[1])
+        elif z3.is_bv_sgeq(expr):
+            res = self.mgr.BVSGE(args[0], args[1])
+        elif z3.is_bv_extract(expr):
+            end = z3.get_payload(expr, 0)
+            start = z3.get_payload(expr, 1)
+            res = self.mgr.BVExtract(args[0], start, end)
+        elif z3.is_bv_add(expr):
+            res = self.mgr.BVAdd(args[0], args[1])
+        elif z3.is_bv_mul(expr):
+            res = self.mgr.BVMul(args[0], args[1])
+        elif z3.is_bv_udiv(expr):
+            res = self.mgr.BVUDiv(args[0], args[1])
+        elif z3.is_bv_sdiv(expr):
+            res = self.mgr.BVSDiv(args[0], args[1])
+        elif z3.is_bv_urem(expr):
+            res = self.mgr.BVURem(args[0], args[1])
+        elif z3.is_bv_srem(expr):
+            res = self.mgr.BVSRem(args[0], args[1])
+        elif z3.is_bv_lshl(expr):
+            res = self.mgr.BVLShl(args[0], args[1])
+        elif z3.is_bv_lshr(expr):
+            res = self.mgr.BVLShr(args[0], args[1])
+        elif z3.is_bv_ashr(expr):
+            res = self.mgr.BVAShr(args[0], args[1])
+        elif z3.is_bv_sub(expr):
+            res = self.mgr.BVSub(args[0], args[1])
+        elif z3.is_bv_rol(expr):
+            amount = z3.get_payload(expr, 0)
+            res = self.mgr.BVRol(args[0], amount)
+        elif z3.is_bv_ror(expr):
+            amount = z3.get_payload(expr, 0)
+            res = self.mgr.BVRor(args[0], amount)
+        elif z3.is_bv_ext_rol(expr):
+            amount = args[1].bv_unsigned_value()
+            res = self.mgr.BVRol(args[0], amount)
+        elif z3.is_bv_ext_ror(expr):
+            amount = args[1].bv_unsigned_value()
+            res = self.mgr.BVRor(args[0], amount)
+        elif z3.is_bv_sext(expr):
+            amount = z3.get_payload(expr, 0)
+            res = self.mgr.BVSExt(args[0], amount)
+        elif z3.is_bv_zext(expr):
+            amount = z3.get_payload(expr, 0)
+            res = self.mgr.BVZExt(args[0], amount)
 
         if res is None:
             raise ConvertExpressionError(message=("Unsupported expression: %s" %
@@ -459,6 +588,9 @@ class Z3Converter(Converter, DagWalker):
     def walk_bv_add(self, formula, args, **kwargs):
         return args[0] + args[1]
 
+    def walk_bv_sub(self, formula, args, **kwargs):
+        return args[0] - args[1]
+
     def walk_bv_neg(self, formula, args, **kwargs):
         return -args[0]
 
@@ -490,6 +622,24 @@ class Z3Converter(Converter, DagWalker):
 
     def walk_bv_sext (self, formula, args, **kwargs):
         return z3.SignExt(formula.bv_extend_step(), args[0])
+
+    def walk_bv_slt(self, formula, args, **kwargs):
+        return args[0] < args[1]
+
+    def walk_bv_sle (self, formula, args, **kwargs):
+        return args[0] <= args[1]
+
+    def walk_bv_comp (self, formula, args, **kwargs):
+        return z3.If(args[0] == args[1], z3.BitVecVal(1, 1), z3.BitVecVal(0, 1))
+
+    def walk_bv_sdiv (self, formula, args, **kwargs):
+        return args[0] / args[1]
+
+    def walk_bv_srem (self, formula, args, **kwargs):
+        return z3.SRem(args[0], args[1])
+
+    def walk_bv_ashr (self, formula, args, **kwargs):
+        return args[0] >> args[1]
 
     def _type_to_z3(self, tp):
         if tp.is_bool_type():
