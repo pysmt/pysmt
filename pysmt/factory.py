@@ -199,7 +199,7 @@ class Factory(object):
         if name in self._all_solvers:
             raise SolverRedefinitionError("Solver %s already defined" % name)
         self._generic_solvers[name] = (args, logics)
-        solver = partial(SmtLibSolver, args)
+        solver = partial(SmtLibSolver, args, LOGICS=logics)
         solver.LOGICS = logics
         solver.UNSAT_CORE_SUPPORT = unsat_core_support
         self._all_solvers[name] = solver

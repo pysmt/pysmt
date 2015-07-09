@@ -18,12 +18,14 @@ class SmtLibSolver(Solver):
     the executable. Interaction with the solver occurs via pipe.
     """
 
-    def __init__(self, args, environment, logic, user_options=None):
+    def __init__(self, args, environment, logic, user_options=None,
+                 LOGICS=None):
         Solver.__init__(self,
                         environment,
                         logic=logic,
                         user_options=user_options)
 
+        if LOGICS is not None: self.LOGICS = LOGICS
         self.args = args
         self.declared_vars = set()
         self.solver = Popen(args, stdout=PIPE, stderr=PIPE, stdin=PIPE)
