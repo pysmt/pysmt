@@ -287,10 +287,9 @@ class Z3Converter(Converter, DagWalker):
 
     def __init__(self, environment):
         DagWalker.__init__(self, environment)
-        self.backconversion = {}
         self.mgr = environment.formula_manager
         self._get_type = environment.stc.get_type
-
+        self._back_memoization = {}
         return
 
     @catch_conversion_error
@@ -298,16 +297,33 @@ class Z3Converter(Converter, DagWalker):
         return self.walk(formula)
 
     def back(self, expr):
-        assert z3.is_expr(expr), str(expr)
+        stack = [expr]
+        while len(stack) > 0:
+            current = stack.pop()
+            key = askey(current)
+            if key not in self._back_memoization:
+                self._back_memoization[key] = None
+                stack.append(current)
+                for child in current.children():
+                    stack.append(child)
+            elif self._back_memoization[key] is None:
+                args = [self._back_memoization[askey(c)]
+                        for c in current.children()]
+                res = self._back_single_term(current, args)
+                self._back_memoization[key] = res
+            else:
+                # we already visited the node, nothing else to do
+                pass
+        return self._back_memoization[askey(expr)]
 
-        if askey(expr) in self.backconversion:
-            return self.backconversion[askey(expr)]
+
+    def _back_single_term(self, expr, args):
+        assert z3.is_expr(expr)
 
         if z3.is_quantifier(expr):
             raise NotImplementedError(
                 "Quantified back conversion is currently not supported")
 
-        args = [self.back(x) for x in expr.children()]
         res = None
         if z3.is_and(expr):
             res = self.mgr.And(args)
@@ -453,8 +469,6 @@ class Z3Converter(Converter, DagWalker):
             raise ConvertExpressionError(message=("Unsupported expression: %s" %
                                                    str(expr)),
                                          expression=expr)
-        self.backconversion[askey(expr)] = res
-
         return res
 
 
