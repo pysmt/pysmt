@@ -1,8 +1,8 @@
 Change Log
 ==========
 
-0.4.1: XXXX-XX-XX -- YYYYYYYYYYYYYYY
-------------------------------------
+0.4.1: 2015-07-13 -- BitVectors Extension
+-----------------------------------------
 
 Theories:
 
@@ -11,6 +11,15 @@ Theories:
 Solvers:
 
 * Support for BitVectors added for Z3, CVC4, and Yices
+
+General:
+
+* SmartPrinting: Print expression by replacing sub-expression with
+  custom strings.
+
+* Moved global environment initialization to environment.py. Now
+  internal functions do no need to import shortcuts.py anymore, thus
+  breaking some circular dependencies.
 
 Deprecation:
 
