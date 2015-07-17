@@ -538,11 +538,10 @@ class SmtLibParser(object):
                                 vname = self.parse_atom(tokens, "expression")
                                 expr = self.get_expression(tokens)
                                 newvals[vname] = expr
+                                self.cache.bind(vname, expr)
                                 self.consume_closing(tokens, "expression")
                                 current = next(tokens)
 
-                            for k, val in iteritems(newvals):
-                                self.cache.bind(k, val)
                             stack[-1].append(self._handle_let)
                             stack[-1].append(newvals.keys())
 

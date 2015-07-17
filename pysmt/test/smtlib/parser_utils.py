@@ -41,6 +41,7 @@ SMTLIB_TEST_FILES = [
     (QF_LIA, "small_set/QF_LIA/prp-25-47.smt2", "unsat"),
     (QF_LIA, "small_set/QF_LIA/prp-24-48.smt2", "unsat"),
     (QF_LIA, "small_set/QF_LIA/prp-25-46.smt2", "unsat"),
+    (QF_LIA, "small_set/QF_LIA/issue_159.smt2", "sat"),
     #
     # QF_LRA
     #
