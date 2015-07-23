@@ -1,7 +1,4 @@
-# cache: true # This yields random results
 language: python
-
-build_image: shippableimages/ubuntu1404_python
 
 python:
   - 2.7
@@ -13,15 +10,13 @@ archive: true
 before_install:
  #  set up a virtualenv and activate the python version that you want to use
    - mkdir -p $HOME/bldve/
-   - if [ "$VIRTUALENV_PYTHON" == "pypy" ]; then apt-get install -y pypy; virtualenv -p "`which pypy`" $HOME/bldve; else virtualenv -p $SHIPPABLE_PYTHON $HOME/bldve/; fi
+   - if [ "$VIRTUALENV_PYTHON" == "pypy" ]; then virtualenv -p "`which pypy`" $HOME/bldve; else virtualenv -p $SHIPPABLE_PYTHON $HOME/bldve/; fi
    - source $HOME/bldve/bin/activate
-
 
 install:
   - pip install nose
   - pip install coverage
   - pip install six
-  - source shippable.sh $PYSMT_SOLVER;
 
 
 # Multiple envs will cause multiple build across multiple python versions.
@@ -30,11 +25,6 @@ install:
 # 2. PySMT with one solver at the time
 #
 env:
-  global:
-    # Source Mirror:
-    - secure: IzzUEuWb2+h3gzttT0237NDkptzu4UvPN1okinDgm4Rx0uADXVWJy6gvcWaeL8F6tl8KGkpcFvzGHmwj7RGGRk8AAj+OVf+VilSlWwNe1g8SYHwxOPrTgD4ECX3860hleeI3F2DD+yFIo9Hgw3ZiHBsfbombtFGTB5WWwUgezXsENMKuNJ580MN8+c3I4IV44pSXJ179GluJ3O1e/xUkwJ5/nvysWd4q7wqJ6aIz5ZFMFhs/FKAbeEdtmmGODn2FspGJ+iKVyc0IbQpzLJO1MeizBXnGZfN9Ojv7mkPJcgzqFMjvLnpCJAEmZl3BzJFc0j9xxILvrrjHU/TKrlJkSw==
-    # Binaries Mirror:
-    - secure: nuGI4WDZOFDezaSxQUKyOP19iqRmQSASv5tpCCsryQ3AtI3in/1dYndDUwmzGYfoVkHTOsf6n4O3XEAruktPpVZzLSlek9zcr8v0IERTfzhoGCWRqqYDrDoCU6Hc2WYyGOhGGEzfldsY1EVMx5+LsVz0JoVZFe75CO6oWvuEYVYRmeJYzKQWLuXXwQMkfYulX1ouF1b5JCdeepbUfwcf4o34RPrd6eLoL7Y1RT4SBsR0uX4lpnWvUB2qqoyOEvu/hXt9Zft57tW4OY2GUdlRlj/Hx/5fPIFGYJmsGu7BM/+Q1cLgZnyyH0mxaHtBkjt8ecMwUc/9PbNJ2alZDmIMyw==
   matrix:
     - PYSMT_SOLVER="all" COVERAGE="true"
     - PYSMT_SOLVER="None"
@@ -64,20 +54,10 @@ matrix:
 before_script:
   - mkdir -p shippable/testresults
   - mkdir -p shippable/codecoverage
-  - export PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.3.6-linux-x86_64/python:$TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.3.6-linux-x86_64/python/build/lib.linux-x86_64-$TRAVIS_PYTHON_VERSION"
-  - export PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/z3_bin/lib/python2.7/dist-packages"
-  # We have 2 different paths for CVC4 1) if we compile 2) if we download the binary
-  - export PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/CVC4-68f22235a62f5276b206e9a6692a85001beb8d42/builds/src/bindings/python"
-  - export PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/CVC4_bin/share/pyshared:$TRAVIS_BUILD_DIR/.smt_solvers/CVC4_bin/lib/pyshared"
-  - export PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/pyices-aa0b91c39aa00c19c2160e83aad822dc468ce328/build/lib.linux-x86_64-2.7"
-  - export PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/repycudd-4861f4df8abc2ca205a6a09b30fdc8cfd29f6ebb"
-  - export PYTHONPATH="$PYTHONPATH:$TRAVIS_BUILD_DIR/.smt_solvers/picosat-960:$TRAVIS_BUILD_DIR/.smt_solvers/picosat-960/build/lib.linux-x86_64-$TRAVIS_PYTHON_VERSION"
-
+  - source shippable.sh $PYSMT_SOLVER $VIRTUALENV_PYTHON
 
 script:
+  - env
   - ./install.py --check
-  - if [ "$PYSMT_SOLVER" == "msat_wrap" ] || [ "$PYSMT_SOLVER" == "all" ]; then cd $TRAVIS_BUILD_DIR/pysmt/test/smtlib/bin; cp $TRAVIS_BUILD_DIR/.smt_solvers/mathsat-5.3.6-linux-x86_64/bin/mathsat .; mv mathsat.solver.sh.template mathsat.solver.sh; cd $TRAVIS_BUILD_DIR/; fi
+  - if [ "$PYSMT_SOLVER" == "msat_wrap" ] || [ "$PYSMT_SOLVER" == "all" ]; then cd $TRAVIS_BUILD_DIR/pysmt/test/smtlib/bin; cp /pysmt/.smt_solvers/mathsat-5.3.6-linux-x86_64/bin/mathsat .; mv mathsat.solver.sh.template mathsat.solver.sh; cd $TRAVIS_BUILD_DIR/; fi
   - if [ "$COVERAGE" == "true" ]; then nosetests pysmt -v -A "not slow" --with-xunit --xunit-file=shippable/testresults/nosetests.xml --with-coverage --cover-branches --cover-package=pysmt --cover-xml --cover-xml-file=shippable/codecoverage/coverage.xml; else nosetests pysmt -v --with-xunit --xunit-file=shippable/testresults/nosetests.xml; fi
-
-# Push of container is disabled
-# commit_container: gario/shippable_pysmt

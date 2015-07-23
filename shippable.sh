@@ -1,57 +1,63 @@
-apt-get update
+#!/bin/bash
 
-if [ "$1" == "msat" ] || [ "$1" == "all" ]
+# Remove all solvers and pysmt itself from PYTHONPATH
+export PYTHONPATH=""
+
+if [ "$1" == "all" ]
 then
-    apt-get install -y make build-essential swig libgmp-dev
-    apt-get install -y python-all-dev
-    ./install.py --confirm-agreement --msat
-fi
-
-if [ "$1" == "msat_wrap" ] || [ "$1" == "all" ]
-then
-    apt-get install -y make build-essential swig libgmp-dev
-    apt-get install -y python-all-dev
-    ./install.py --confirm-agreement --msat
-fi
-
-
-if [ "$1" == "z3" ] || [ "$1" == "all" ]
-then
-    apt-get install -y make build-essential swig libgmp-dev
-    apt-get install -y python-all-dev
-    ./install.py --confirm-agreement --z3 --make-j 2
-fi
-
-if [ "$1" == "cvc4" ] || [ "$1" == "all" ]
-then
-    apt-get install -y make build-essential swig libgmp-dev \
-                       python-all-dev \
-                       autoconf libtool antlr3 wget \
-                       curl libboost-dev
-    ./install.py --confirm-agreement --cvc4
+    if [ "$2" == "3.4" ]
+    then
+        export PYTHONPATH="${PYSMT_MSAT_PATH_3}:${PYSMT_PICOSAT_PATH_3}"
+    else
+        export PYTHONPATH="${PYSMT_MSAT_PATH}:${PYSMT_Z3_PATH}:${PYSMT_CVC4_PATH}:${PYSMT_YICES_PATH}:${PYSMT_PYCUDD_PATH}:${PYSMT_PICOSAT_PATH}"
+    fi
 fi
 
 
-if [ "$1" == "yices" ] || [ "$1" == "all" ]
+if [ "$1" == "msat" ]
 then
-    easy_install ctypesgen
-    ./install.py --confirm-agreement --yices
+    if [ "$2" == "3.4" ]
+    then
+        export PYTHONPATH="${PYSMT_MSAT_PATH_3}"
+    else
+        export PYTHONPATH="${PYSMT_MSAT_PATH}"
+    fi
 fi
 
 
-if [ "$1" == "cudd" ] || [ "$1" == "all" ]
+if [ "$1" == "z3" ]
 then
-    apt-get install -y make build-essential swig
-    apt-get install -y python-all-dev
-    ./install.py --confirm-agreement --cudd  --make-j 2
+    export PYTHONPATH="${PYSMT_Z3_PATH}"
 fi
 
 
-if [ "$1" == "picosat" ] || [ "$1" == "all" ]
+if [ "$1" == "cvc4" ]
 then
-    apt-get install -y make build-essential swig
-    apt-get install -y python-all-dev
-    ./install.py --confirm-agreement --picosat
+    export PYTHONPATH="${PYSMT_CVC4_PATH}"
+fi
+
+
+if [ "$1" == "yices" ]
+then
+    export PYTHONPATH="${PYSMT_YICES_PATH}"
+fi
+
+
+if [ "$1" == "cudd" ]
+then
+    export PYTHONPATH="${PYSMT_PYCUDD_PATH}"
+fi
+
+
+if [ "$1" == "picosat" ]
+then
+    if [ "$2" == "3.4" ]
+    then
+        export PYTHONPATH="${PYSMT_PICOSAT_PATH_3}"
+    else
+        export PYTHONPATH="${PYSMT_PICOSAT_PATH}"
+    fi
+
 fi
 
 echo "All done for '$1'..."
