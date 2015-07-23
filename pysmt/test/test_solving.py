@@ -191,6 +191,17 @@ class TestBasic(TestCase):
             self.assertEqual(validity, v, f)
             self.assertEqual(satisfiability, s, f)
 
+    @skipIfSolverNotAvailable("btor")
+    def test_examples_btor(self):
+        for (f, validity, satisfiability, logic) in get_example_formulae():
+            if not logic.quantifier_free: continue
+            try:
+                v = is_valid(f, solver_name='btor', logic=logic)
+                s = is_sat(f, solver_name='btor', logic=logic)
+                self.assertEqual(validity, v, f)
+                self.assertEqual(satisfiability, s, f)
+            except NoSolverAvailableError:
+                pass #Skip tests for unsupported logic
 
 
     def do_model(self, solver_name):
