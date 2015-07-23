@@ -22,7 +22,7 @@ import argparse
 from warnings import warn
 
 from pysmt.shortcuts import *
-from pysmt.typing import INT, REAL, BOOL
+from pysmt.typing import INT, REAL, BOOL, BVType, BV32
 
 from pysmt.smtlib.parser import SmtLibParser
 from pysmt.smtlib.script import evaluate_command
@@ -46,6 +46,8 @@ False
 >>>> is_unsat(f)
 True
 
+>>>> str(get_model(x))
+'x := True'
 
 Happy Solving!
 """
@@ -80,6 +82,8 @@ class PysmtShell(object):
 
 
     def interactive(self):
+        # Enable infix notation in Interactive mode
+        get_env().enable_infix_notation = True
         try:
             import IPython
             print(welcome_msg)
