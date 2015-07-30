@@ -19,7 +19,7 @@ import unittest
 
 from pysmt.shortcuts import And, get_env, Iff, Or, is_valid, Symbol, Exists, Implies, ForAll, Not
 from pysmt.test import TestCase, skipIfNoSolverForLogic
-from pysmt.rewritings import prenex_normal_form, nnf, conjunctive_partition
+from pysmt.rewritings import prenex_normal_form, nnf, conjunctive_partition, aig
 from pysmt.rewritings import disjunctive_partition
 from pysmt.test.examples import get_example_formulae
 from pysmt.exceptions import SolverReturnedUnknownResultError
@@ -107,6 +107,16 @@ class TestRewritings(TestCase):
                 except SolverReturnedUnknownResultError:
                     ok = not logic.quantifier_free
                 self.assertTrue(ok)
+
+    def test_aig_examples(self):
+        for (f, _, _, logic) in get_example_formulae():
+            if get_env().factory.has_solvers(logic=logic):
+                f_aig = aig(f)
+                try:
+                    ok = is_valid(Iff(f, f_aig), logic=logic)
+                except SolverReturnedUnknownResultError:
+                    ok = not logic.quantifier_free
+                self.assertTrue(ok, "Was: %s\n Got:%s" % (f, f_aig))
 
 if __name__ == "__main__":
     unittest.main()
