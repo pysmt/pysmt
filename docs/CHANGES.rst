@@ -4,6 +4,7 @@ Change Log
 0.4.2: XXXX-XX-XX -- YYYYYYYYYYYYYYYYYYY
 -----------------------------------------
 
+- AIG rewriting
 
 0.4.1: 2015-07-13 -- BitVectors Extension
 -----------------------------------------

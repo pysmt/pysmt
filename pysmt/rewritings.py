@@ -531,6 +531,71 @@ class PrenexNormalizer(DagWalker):
             return [], formula
         return None
 
+class AIGer(DagWalker):
+    """Converts a formula into an And-Inverted-Graph."""
+
+    def __init__(self, environment=None):
+        DagWalker.__init__(self, env=environment)
+        self.mgr = self.env.formula_manager
+        self.set_function(self.walk_nop, *op.RELATIONS)
+        self.set_function(self.walk_nop, *op.THEORY_OPERATORS)
+        self.set_function(self.walk_nop, *op.CONSTANTS)
+        self.set_function(self.walk_nop, op.SYMBOL, op.FUNCTION)
+        self.set_function(self.walk_quantifier, *op.QUANTIFIERS)
+
+    def convert(self, formula):
+        """ Converts the given formula in AIG """
+        return self.walk(formula)
+
+    def walk_nop(self, formula, args, **kwargs):
+        """We return the Theory subformulae without changes."""
+        return formula
+
+    def walk_quantifier(self, formula, args, **kwargs):
+        """Recreate the quantifiers, with the rewritten subformula."""
+        if formula.is_exists():
+            return self.mgr.Exists(formula.quantifier_vars(),
+                                   args[0])
+        else:
+            assert formula.is_forall()
+            return self.mgr.ForAll(formula.quantifier_vars(),
+                                   args[0])
+
+    def walk_and(self, formula, args, **kwargs):
+        return self.mgr.And(*args)
+
+    def walk_not(self, formula, args, **kwargs):
+        return self.mgr.Not(args[0])
+
+    def walk_or(self, formula, args, **kwargs):
+        """ a1 | ... | an = !( !a1 & ... & !an) """
+        return self.mgr.Not(self.mgr.And(self.mgr.Not(s) for s in args))
+
+    def walk_iff(self, formula, args, **kwargs):
+        """ a <-> b =  (!a | b) & (!b | a) = !( a & !b ) & !(b & !a)"""
+        lhs, rhs = args
+        r1 = self.mgr.Not(self.mgr.And(lhs, self.mgr.Not(rhs)))
+        r2 = self.mgr.Not(self.mgr.And(rhs, self.mgr.Not(lhs)))
+        return self.mgr.And(r1,r2)
+
+    def walk_implies(self, formula, args, **kwargs):
+        """ a -> b = !(a & !b) """
+        lhs, rhs = args
+        return self.mgr.Not(self.mgr.And(lhs, self.mgr.Not(rhs)))
+
+    def walk_ite(self, formula, args, **kwargs):
+        """This rewrites only boolean ITE, not theory ones.
+
+            x ? a: b  = (x -> a) & (!x -> b) = !(x & !a) & !(!x & !b)
+        """
+        i, t, e = args
+        if self.env.stc.get_type(t).is_bool_type():
+            r1 = self.mgr.Not(self.mgr.And(i, self.mgr.Not(t)))
+            r2 = self.mgr.Not(self.mgr.And(self.mgr.Not(i),
+                                           self.mgr.Not(e)))
+            return self.mgr.And(r1, r2)
+        else:
+            return formula
 
 def nnf(formula, environment=None):
     """Converts the given formula in NNF"""
@@ -551,6 +616,12 @@ def prenex_normal_form(formula, environment=None):
     """Converts the given formula in NNF"""
     normalizer = PrenexNormalizer(environment)
     return normalizer.normalize(formula)
+
+def aig(formula, environment=None):
+    """Converts the given formula in AIG"""
+    aiger = AIGer(environment)
+    return aiger.convert(formula)
+
 
 def conjunctive_partition(formula):
     """ Returns a generator over the top-level conjuncts of the given formula
