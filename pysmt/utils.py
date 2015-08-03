@@ -23,6 +23,13 @@ def BufferedTextReader(fname):
     else:
         return io.TextIOWrapper(open(fname, 'rb'))
 
+def interactive_char_iterator(handle):
+    c = handle.read(1)
+    while c:
+        yield c
+        c = handle.read(1)
+
+
 def set_bit(v, index, x):
     """Set the index:th bit of v to x, and return the new value."""
     mask = 1 << index

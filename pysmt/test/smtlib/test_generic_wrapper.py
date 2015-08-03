@@ -109,14 +109,12 @@ class TestGenericWrapper(TestCase):
     def test_examples(self):
         for n in self.all_solvers:
             with Solver(name=n) as solver:
-                print("Solver %s : %s" % (n, solver.LOGICS))
                 for (f, validity, satisfiability, logic) in \
                     get_example_formulae():
                     try:
                         get_closer_logic(solver.LOGICS, logic)
                     except NoLogicAvailableError:
                         continue
-                    print(f)
                     v = is_valid(f, solver_name=n, logic=logic)
                     s = is_sat(f, solver_name=n, logic=logic)
 

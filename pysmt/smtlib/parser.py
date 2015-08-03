@@ -20,6 +20,7 @@ from fractions import Fraction
 from warnings import warn
 from six import iteritems
 from six.moves import xrange
+import itertools
 
 import pysmt.smtlib.commands as smtcmd
 from pysmt.environment import get_env
@@ -28,7 +29,7 @@ from pysmt.logics import get_logic_by_name, UndefinedLogicError
 from pysmt.exceptions import UnknownSmtLibCommandError
 from pysmt.smtlib.script import SmtLibCommand, SmtLibScript
 from pysmt.smtlib.annotations import Annotations
-import pysmt.utils as utils
+from pysmt.utils import interactive_char_iterator
 
 def get_formula(script_stream, environment=None):
     """
@@ -64,7 +65,7 @@ def get_formula_strict(script_stream, environment=None):
 
 def get_formula_fname(script_fname, environment=None, strict=True):
     """Returns the formula asserted at the end of the given script."""
-    with utils.BufferedTextReader(script_fname) as script:
+    with open(script_fname) as script:
         if strict:
             return get_formula_strict(script, environment)
         else:
@@ -104,9 +105,10 @@ class SmtLibExecutionCache(object):
             if len(parameters) == 0:
                 return expression
             return self._define_adapter(parameters, expression)
-        if name in self.keys:
-            if len(self.keys[name]) > 0:
-                return self.keys[name][-1]
+        elif name in self.keys:
+            lst = self.keys[name]
+            if len(lst) > 0:
+                return lst[-1]
             else:
                 return None
         else:
@@ -123,153 +125,178 @@ class SmtLibExecutionCache(object):
             self.unbind(k)
 
 
-class Tokenizer(object):
-    """
-    Takes a file-like object and produces a stream of tokens following
+
+def tokenizer(handle, interactive=False):
+    """Takes a file-like object and produces a stream of tokens following
     the LISP rules.
+
+    If interative is True, the file reading proceeds char-by-char with
+    no buffering. This is useful for interactive use for example with
+    a SMT-Lib2-compliant solver
     """
+    spaces = set([" ", "\n", "\t"])
+    separators = set(["(", ")", "|"])
+    specials = spaces | separators | set([";", ""])
 
-    def __init__(self, handle):
-        self.handle = handle
-        self.spaces = set([" ", "\n", "\t"])
-        self.separators = set(["(", ")", "|"])
-        self.specials = self.spaces | self.separators | set([";", ""])
-        self.read = self.handle.read
-        self.eof = False
+    if not interactive:
+        reader = itertools.chain.from_iterable(handle) # reads char-by-char
+    else:
+        reader = interactive_char_iterator(handle)
+    c = next(reader)
 
-    def tokens(self):
-        c = self.read(1)
-        while not self.eof:
-            if c in self.specials:
-                # consume all the spaces
-                if c in self.spaces:
-                    while c and c in self.spaces:
-                        c = self.read(1)
+    eof = False
+    while not eof:
+        if c in specials:
+            # consume the spaces
+            if c in spaces:
+                c = next(reader)
 
-                elif c in self.separators:
-                    if c == "|":
-                        s = []
-                        c = self.read(1)
-                        while c and c != "|":
-                            s.append(c)
-                            c = self.read(1)
-                        if not c:
-                            raise SyntaxError("Expected '|'")
-                        yield ("".join(s))
-                    else:
-                        yield c
-                    c = self.read(1)
-
-                elif c == ";":
-                    while c and c != "\n":
-                        c = self.read(1)
-                    c = self.read(1)
-
+            elif c in separators:
+                if c == "|":
+                    s = []
+                    c = next(reader)
+                    while c and c != "|":
+                        if c == "\\": # This is a single '\'
+                            c = next(reader)
+                            if c != "|" and c != "\\":
+                                # Only \| and \\ are supported escapings
+                                raise SyntaxError("Unknown escaping in " \
+                                                  "quoted symbol: '\\%s'" % c)
+                        s.append(c)
+                        c = next(reader)
+                    if not c:
+                        raise SyntaxError("Expected '|'")
+                    yield ("".join(s))
                 else:
-                    # EOF
-                    self.eof = True
-                    assert len(c) == 0
+                    yield c
+                c = next(reader)
+
+            elif c == ";":
+                while c and c != "\n":
+                    c = next(reader)
+                c = next(reader)
+
             else:
-                tk = []
-                while c not in self.specials:
-                    tk.append(c)
-                    c = self.read(1)
-                yield "".join(tk)
+                # EOF
+                eof = True
+                assert len(c) == 0
+        else:
+            tk = []
+            while c not in specials:
+                tk.append(c)
+                c = next(reader)
+            yield "".join(tk)
 
 
 
 class SmtLibParser(object):
-    """
-    Parse an SmtLib file and builds an SmtLibScript object.
+    """Parse an SmtLib file and builds an SmtLibScript object.
 
     The main function is get_script (and its wrapper
-    get_script_fname).  This function relies on the Tokenizer (to
-    split the inputs in token) that is consumed by the get_command
+    get_script_fname).  This function relies on the tokenizer function
+    (to split the inputs in token) that is consumed by the get_command
     function that returns a SmtLibCommand for each command in the
     original file.
 
+    If the interactive flag is True, the file reading proceeds
+    char-by-char with no buffering. This is useful for interactive use
+    for example with a SMT-Lib2-compliant solver
     """
 
-    def __init__(self, environment=None):
-        self.pysmt_env = get_env() if environment is None else environment
+    def __init__(self, environment=None, interactive=False):
+        self.env = get_env() if environment is None else environment
+        self.interactive = interactive
 
         # Placeholders for fields filled by self._reset
-        self._current_env = None
         self.cache = None
         self.logic = None
         self._reset()
 
-        # Special tokens appearing in expressions
-        self.parentheses = set(["(", ")"])
-        self.specials = set(["let", "!", "exists", "forall"])
+        # Tokens representing interpreted functions appearing in expressions
+        # Each token is handled by a dedicated function that takes the
+        # recursion stack, the token stream and the parsed token
+        # Common tokens are handled in the _reset function
+        mgr = self.env.formula_manager
+        self.interpreted = {"let" : self._enter_let,
+                            "!" : self._enter_annotation,
+                            "exists" : self._enter_quantifier,
+                            "forall" : self._enter_quantifier,
+                            '+':self._operator_adapter(mgr.Plus),
+                            '-':self._operator_adapter(self._minus_or_uminus),
+                            '*':self._operator_adapter(mgr.Times),
+                            '/':self._operator_adapter(self._division),
+                            '>':self._operator_adapter(mgr.GT),
+                            '<':self._operator_adapter(mgr.LT),
+                            '>=':self._operator_adapter(mgr.GE),
+                            '<=':self._operator_adapter(mgr.LE),
+                            '=':self._operator_adapter(self._equals_or_iff),
+                            'not':self._operator_adapter(mgr.Not),
+                            'and':self._operator_adapter(mgr.And),
+                            'or':self._operator_adapter(mgr.Or),
+                            'xor':self._operator_adapter(mgr.Xor),
+                            '=>':self._operator_adapter(mgr.Implies),
+                            '<->':self._operator_adapter(mgr.Iff),
+                            'ite':self._operator_adapter(mgr.Ite),
+                            'to_real':self._operator_adapter(mgr.ToReal),
+                            'concat':self._operator_adapter(mgr.BVConcat),
+                            'bvnot':self._operator_adapter(mgr.BVNot),
+                            'bvand':self._operator_adapter(mgr.BVAnd),
+                            'bvor':self._operator_adapter(mgr.BVOr),
+                            'bvneg':self._operator_adapter(mgr.BVNeg),
+                            'bvadd':self._operator_adapter(mgr.BVAdd),
+                            'bvmul':self._operator_adapter(mgr.BVMul),
+                            'bvudiv':self._operator_adapter(mgr.BVUDiv),
+                            'bvurem':self._operator_adapter(mgr.BVURem),
+                            'bvshl':self._operator_adapter(mgr.BVLShl),
+                            'bvlshr':self._operator_adapter(mgr.BVLShr),
+                            'bvsub':self._operator_adapter(mgr.BVSub),
+                            'bvult':self._operator_adapter(mgr.BVULT),
+                            'bvxor':self._operator_adapter(mgr.BVXor),
+                            '_':self._operator_adapter(self._smtlib_underscore),
+                            # Extended Functions
+                            'bvnand':self._operator_adapter(mgr.BVNand),
+                            'bvnor':self._operator_adapter(mgr.BVNor),
+                            'bvxnor':self._operator_adapter(mgr.BVXnor),
+                            'bvcomp':self._operator_adapter(mgr.BVComp),
+                            'bvsdiv':self._operator_adapter(mgr.BVSDiv),
+                            'bvsrem':self._operator_adapter(mgr.BVSRem),
+                            'bvsmod':self._operator_adapter(mgr.BVSMod),
+                            'bvashr':self._operator_adapter(mgr.BVAShr),
+                            'bvule':self._operator_adapter(mgr.BVULE),
+                            'bvugt':self._operator_adapter(mgr.BVUGT),
+                            'bvuge':self._operator_adapter(mgr.BVUGE),
+                            'bvslt':self._operator_adapter(mgr.BVSLT),
+                            'bvsle':self._operator_adapter(mgr.BVSLE),
+                            'bvsgt':self._operator_adapter(mgr.BVSGT),
+                            'bvsge':self._operator_adapter(mgr.BVSGE),}
 
-
+        # Command tokens
+        self.commands = {smtcmd.SET_INFO : self._cmd_set_info,
+                         smtcmd.SET_OPTION : self._cmd_set_option,
+                         smtcmd.ASSERT : self._cmd_assert,
+                         smtcmd.CHECK_SAT : self._cmd_check_sat,
+                         smtcmd.PUSH : self._cmd_push,
+                         smtcmd.POP : self._cmd_pop,
+                         smtcmd.EXIT : self._cmd_exit,
+                         smtcmd.SET_LOGIC : self._cmd_set_logic,
+                         smtcmd.DECLARE_CONST : self._cmd_declare_const,
+                         smtcmd.GET_VALUE : self._cmd_get_value,
+                         smtcmd.DECLARE_FUN : self._cmd_declare_fun,
+                         smtcmd.DEFINE_FUN : self._cmd_define_fun,}
 
     def _reset(self):
         """Resets the parser to the initial state"""
         self.cache = SmtLibExecutionCache()
         self.logic = None
-        self._current_env = self.pysmt_env
-
-        mgr = self.pysmt_env.formula_manager
-        self.cache.update({'+':mgr.Plus,
-                           '-':self._minus_or_uminus,
-                           '*':mgr.Times,
-                           '/':self._division,
-                           '>':mgr.GT,
-                           '<':mgr.LT,
-                           '>=':mgr.GE,
-                           '<=':mgr.LE,
-                           '=':self._equals_or_iff,
-                           'not':mgr.Not,
-                           'and':mgr.And,
-                           'or':mgr.Or,
-                           'xor':mgr.Xor,
-                           '=>':mgr.Implies,
-                           '<->':mgr.Iff,
-                           'ite':mgr.Ite,
-                           'false':mgr.FALSE(),
-                           'true':mgr.TRUE(),
-                           'to_real':mgr.ToReal,
-                           'concat':mgr.BVConcat,
-                           'bvnot':mgr.BVNot,
-                           'bvand':mgr.BVAnd,
-                           'bvor':mgr.BVOr,
-                           'bvneg':mgr.BVNeg,
-                           'bvadd':mgr.BVAdd,
-                           'bvmul':mgr.BVMul,
-                           'bvudiv':mgr.BVUDiv,
-                           'bvurem':mgr.BVURem,
-                           'bvshl':mgr.BVLShl,
-                           'bvlshr':mgr.BVLShr,
-                           'bvsub':mgr.BVSub,
-                           'bvult':mgr.BVULT,
-                           'bvxor':mgr.BVXor,
-                           '_':self._smtlib_underscore,
-                           # Extended Functions
-                           'bvnand':mgr.BVNand,
-                           'bvnor':mgr.BVNor,
-                           'bvxnor':mgr.BVXnor,
-                           'bvcomp':mgr.BVComp,
-                           'bvsdiv':mgr.BVSDiv,
-                           'bvsrem':mgr.BVSRem,
-                           'bvsmod':mgr.BVSMod,
-                           'bvashr':mgr.BVAShr,
-                           'bvule':mgr.BVULE,
-                           'bvugt':mgr.BVUGT,
-                           'bvuge':mgr.BVUGE,
-                           'bvslt':mgr.BVSLT,
-                           'bvsle':mgr.BVSLE,
-                           'bvsgt':mgr.BVSGT,
-                           'bvsge':mgr.BVSGE,
-                           })
+        mgr = self.env.formula_manager
+        self.cache.update({'false':mgr.FALSE(), 'true':mgr.TRUE()})
 
 
     def _minus_or_uminus(self, *args):
         """Utility function that handles both unary and binary minus"""
-        mgr = self._current_env.formula_manager
+        mgr = self.env.formula_manager
         if len(args) == 1:
-            lty = self._current_env.stc.get_type(args[0])
+            lty = self.env.stc.get_type(args[0])
             mult = None
             if lty == INT:
                 if args[0].is_int_constant():
@@ -287,7 +314,7 @@ class SmtLibParser(object):
 
     def _smtlib_underscore(self, *args):
         """Utility function that handles _ special function in SMTLIB"""
-        mgr = self._current_env.formula_manager
+        mgr = self.env.formula_manager
         if args[0] == "extract":
             send, sstart = args[1:]
             try:
@@ -352,8 +379,8 @@ class SmtLibParser(object):
 
     def _equals_or_iff(self, left, right):
         """Utility function that treats = between booleans as <->"""
-        mgr = self._current_env.formula_manager
-        lty = self._current_env.stc.get_type(left)
+        mgr = self.env.formula_manager
+        lty = self.env.stc.get_type(left)
         if lty == BOOL:
             return mgr.Iff(left, right)
         else:
@@ -361,7 +388,7 @@ class SmtLibParser(object):
 
     def _division(self, left, right):
         """Utility function that builds a division"""
-        mgr = self._current_env.formula_manager
+        mgr = self.env.formula_manager
         if left.is_constant() and right.is_constant():
             return mgr.Real(Fraction(left.constant_value()) / \
                             Fraction(right.constant_value()))
@@ -392,7 +419,7 @@ class SmtLibParser(object):
     def _get_var(self, name, type_name, params=None):
         """Returns the PySMT variable corresponding to a declaration"""
         typename = self._get_basic_type(type_name, params)
-        return self._current_env.formula_manager.Symbol(name=name,
+        return self.env.formula_manager.Symbol(name=name,
                                                         typename=typename)
 
 
@@ -403,80 +430,53 @@ class SmtLibParser(object):
         """
         res = self.cache.get(token)
         if res is None:
-            try:
-                # This is a numerical constant
-                if "." in token:
-                    res = mgr.Real(Fraction(token))
-                elif token.startswith("#"):
-                    # it is a BitVector
-                    value = None
-                    width = None
-                    if token[1] == "b":
-                        # binary
-                        width = len(token) - 2
-                        value = int("0" + token[1:], 2)
-                    else:
-                        if token[1] != "x":
-                            raise SyntaxError("Invalid bit-vector constant '%s'" % token)
-                        width = (len(token) - 2) * 16
-                        value = int("0" + token[1:], 16)
-                    res = mgr.BV(value, width)
+            if token.startswith("#"):
+                # it is a BitVector
+                value = None
+                width = None
+                if token[1] == "b":
+                    # binary
+                    width = len(token) - 2
+                    value = int("0" + token[1:], 2)
                 else:
-                    iterm = int(token)
-                    # We found an integer, depending on the logic this can be
-                    # an Int or a Real
-                    if self.logic is None or self.logic.theory.integer_arithmetic:
-                        res = mgr.Int(iterm)
+                    if token[1] != "x":
+                        raise SyntaxError("Invalid bit-vector constant '%s'" % token)
+                    width = (len(token) - 2) * 16
+                    value = int("0" + token[1:], 16)
+                res = mgr.BV(value, width)
+            else:
+                # it could be a number or a string
+                try:
+                    frac = Fraction(token)
+                    if frac.denominator == 1:
+                        # We found an integer, depending on the logic this can be
+                        # an Int or a Real
+                        if self.logic is None or \
+                           self.logic.theory.integer_arithmetic:
+                            if "." in token:
+                                res = mgr.Real(frac)
+                            else:
+                                res = mgr.Int(frac.numerator)
+                        else:
+                            res = mgr.Real(frac)
                     else:
-                        res = mgr.Real(iterm)
-            except ValueError:
-                res = token
+                        res = mgr.Real(frac)
+
+                except ValueError:
+                    # a string constant
+                    res = token
             self.cache.bind(token, res)
         return res
 
 
-    def _use_env(self, env):
-        """
-        Sets the current environment to be the specified env
-        """
-        self._current_env = env
-        mgr = env.formula_manager
-        self.cache.update({'+':mgr.Plus,
-                           '*':mgr.Times,
-                           '>':mgr.GT,
-                           '<':mgr.LT,
-                           '>=':mgr.GE,
-                           '<=':mgr.LE,
-                           'not':mgr.Not,
-                           'and':mgr.And,
-                           'or':mgr.Or,
-                           'xor':mgr.Xor,
-                           '=>':mgr.Implies,
-                           '<->':mgr.Iff,
-                           'ite':mgr.Ite,
-                           'false':mgr.FALSE(),
-                           'true':mgr.TRUE(),
-                           'to_real':mgr.ToReal,
-                       })
-
-    def _reset_env(self, env):
-        """
-        Resets the status after a call of _use_env.
-        """
-        self.cache.unbind_all(['+', '*', '>', '<', '>=', '<=', 'not', 'and',
-                               'or', 'xor', '=>', '<->', 'ite', 'false', 'true',
-                               'to_real'])
-        self._current_env = env
-
-
-    def _handle_let(self, varlist, bdy):
+    def _exit_let(self, varlist, bdy):
         """ Cleans the execution environment when we exit the scope of a 'let' """
         for k in varlist:
             self.cache.unbind(k)
         return bdy
 
 
-    def _handle_quantifier(self, fun, vrs, body):
+    def _exit_quantifier(self, fun, vrs, body):
         """
         Cleans the execution environment when we exit the scope of a quantifier
         """
@@ -485,7 +485,7 @@ class SmtLibParser(object):
         return fun(vrs, body)
 
 
-    def _handle_annotation(self, pyterm, *attrs):
+    def _exit_annotation(self, pyterm, *attrs):
         """
         This method is invoked when we finish parsing an annotated expression
         """
@@ -509,99 +509,119 @@ class SmtLibParser(object):
         return pyterm
 
 
+    def _enter_let(self, stack, tokens, key):
+        """Handles a let expression by recurring on the expression and
+        updating the cache
+        """
+        #pylint: disable=unused-argument
+        self.consume_opening(tokens, "expression")
+        newvals = {}
+        current = "("
+        self.consume_opening(tokens, "expression")
+        while current != ")":
+            if current != "(":
+                raise SyntaxError("Expected '(' in let binding")
+            vname = self.parse_atom(tokens, "expression")
+            expr = self.get_expression(tokens)
+            newvals[vname] = expr
+            self.cache.bind(vname, expr)
+            self.consume_closing(tokens, "expression")
+            current = next(tokens)
+
+        stack[-1].append(self._exit_let)
+        stack[-1].append(newvals.keys())
+
+    def _operator_adapter(self, operator):
+        """Handles generic operator"""
+        def res(stack, tokens, key):
+            #pylint: disable=unused-argument
+            stack[-1].append(operator)
+        return res
+
+    def _enter_quantifier(self, stack, tokens, key):
+        """Handles quantifiers by defining the bound variable in the cache
+        before parsing the matrix
+        """
+        mgr = self.env.formula_manager
+        vrs = []
+        self.consume_opening(tokens, "expression")
+        current = "("
+        self.consume_opening(tokens, "expression")
+        while current != ")":
+            if current != "(":
+                raise SyntaxError("Expected '(' in let binding")
+            vname = self.parse_atom(tokens, "expression")
+            typename = self.parse_type(tokens, "expression")
+
+            var = self._get_var(vname, typename)
+            self.cache.bind(vname, var)
+            vrs.append(var)
+
+            self.consume_closing(tokens, "expression")
+            current = next(tokens)
+
+        quant = None
+        if key == 'forall':
+            quant = mgr.ForAll
+        else:
+            quant = mgr.Exists
+
+        stack[-1].append(self._exit_quantifier)
+        stack[-1].append(quant)
+        stack[-1].append(vrs)
+
+
+    def _enter_annotation(self, stack, tokens, key):
+        """Deals with annotations"""
+        #pylint: disable=unused-argument
+        stack[-1].append(self._exit_annotation)
+
+
     def get_expression(self, tokens):
         """
         Returns the pysmt representation of the given parsed expression
         """
-        mgr = self._current_env.formula_manager
+        mgr = self.env.formula_manager
         stack = []
 
         while True:
             tk = next(tokens)
 
-            if tk in self.parentheses:
-                if tk == "(":
-                    key = tk
-                    while key == "(":
-                        stack.append([])
-                        key = next(tokens)
+            if tk == "(":
+                while tk == "(":
+                    stack.append([])
+                    tk = next(tokens)
 
-                    if key in self.specials:
-                        if key == 'let':
-                            self.consume_opening(tokens, "expression")
-                            newvals = {}
-                            current = "("
-                            self.consume_opening(tokens, "expression")
-                            while current != ")":
-                                if current != "(":
-                                    raise SyntaxError("Expected '(' in let binding")
-                                vname = self.parse_atom(tokens, "expression")
-                                expr = self.get_expression(tokens)
-                                newvals[vname] = expr
-                                self.cache.bind(vname, expr)
-                                self.consume_closing(tokens, "expression")
-                                current = next(tokens)
-
-                            stack[-1].append(self._handle_let)
-                            stack[-1].append(newvals.keys())
-
-                        elif key == 'exists' or key == 'forall':
-                            vrs = []
-                            self.consume_opening(tokens, "expression")
-                            current = "("
-                            self.consume_opening(tokens, "expression")
-                            while current != ")":
-                                if current != "(":
-                                    raise SyntaxError("Expected '(' in let binding")
-                                vname = self.parse_atom(tokens, "expression")
-                                typename = self.parse_type(tokens, "expression")
-
-                                var = self._get_var(vname, typename)
-                                self.cache.bind(vname, var)
-                                vrs.append(var)
-
-                                self.consume_closing(tokens, "expression")
-                                current = next(tokens)
-
-
-                            quant = None
-                            if key == 'forall':
-                                quant = mgr.ForAll
-                            else:
-                                quant = mgr.Exists
-
-                            stack[-1].append(self._handle_quantifier)
-                            stack[-1].append(quant)
-                            stack[-1].append(vrs)
-
-                        else: # assert key == '!'
-                            # An annotation is made as:
-                            #   (! term attr1 ... attrn)
-                            # where an attribute is either a keyword, or a keyword and value.
-                            stack[-1].append(self._handle_annotation)
-
-                    else:
-                        stack[-1].append(self.atom(key, mgr))
-
-                else:
-                    if len(stack) == 0:
-                        raise SyntaxError("Unexpected ')'")
-                    lst = stack.pop()
-                    fun = lst.pop(0)
-                    # print fun, lst
-                    if not callable(fun):
-                        raise NotImplementedError("Unknown function '%s'" % fun)
-
-                    res = fun(*lst)
-                    if len(stack) > 0:
-                        stack[-1].append(res)
-                    else:
-                        return res
-            else:
-                if len(stack) == 0:
-                    return self.atom(tk, mgr)
+                if tk in self.interpreted:
+                    fun = self.interpreted[tk]
+                    fun(stack, tokens, tk)
                 else:
                     stack[-1].append(self.atom(tk, mgr))
+
+            elif tk == ")":
+                try:
+                    lst = stack.pop()
+                    fun = lst.pop(0)
+                except IndexError:
+                    raise SyntaxError("Unexpected ')'")
+
+                try:
+                    res = fun(*lst)
+                except TypeError as err:
+                    if not callable(fun):
+                        raise NotImplementedError("Unknown function '%s'" % fun)
+                    raise err
+
+                if len(stack) > 0:
+                    stack[-1].append(res)
+                else:
+                    return res
+
+            else:
+                try:
+                    stack[-1].append(self.atom(tk, mgr))
+                except IndexError:
+                    return self.atom(tk, mgr)
 
 
 
@@ -624,13 +644,13 @@ class SmtLibParser(object):
         whole command is read from the script.
 
         """
-        tokenizer = Tokenizer(script)
-        for cmd in self.get_command(tokenizer.tokens()):
+        tokens = tokenizer(script, interactive=self.interactive)
+        for cmd in self.get_command(tokens):
             yield cmd
 
     def get_script_fname(self, script_fname):
         """Given a filename and a Solver, executes the solver on the file."""
-        with utils.BufferedTextReader(script_fname) as script:
+        with open(script_fname) as script:
             return self.get_script(script)
 
     def parse_atoms(self, tokens, command, min_size, max_size=None):
@@ -742,7 +762,7 @@ class SmtLibParser(object):
 
     def _function_call_helper(self, v, *args):
         """ Helper function for dealing with function calls """
-        return self._current_env.formula_manager.Function(v, args)
+        return self.env.formula_manager.Function(v, args)
 
 
     def get_assignment_list(self, script):
@@ -750,10 +770,9 @@ class SmtLibParser(object):
         Parse an assignment list produced by get-model and get-value
         commands in SmtLib
         """
-        symbols = self._current_env.formula_manager.symbols
+        symbols = self.env.formula_manager.symbols
         self.cache.update(symbols)
-        tokenizer = Tokenizer(script)
-        tokens = tokenizer.tokens()
+        tokens = tokenizer(script, interactive=self.interactive)
         res = []
         self.consume_opening(tokens, "<main>")
         current = next(tokens)
@@ -775,100 +794,108 @@ class SmtLibParser(object):
         while True:
             self.consume_opening(tokens, "<main>")
             current = next(tokens)
-            if current in [smtcmd.SET_INFO, smtcmd.SET_OPTION]:
-                elements = self.parse_atoms(tokens, current, 2)
-                yield SmtLibCommand(current, elements)
-
-            elif current == smtcmd.ASSERT:
-                expr = self.get_expression(tokens)
-                self.consume_closing(tokens, current)
-                yield SmtLibCommand(current, [expr])
-
-            elif current == smtcmd.CHECK_SAT:
-                self.parse_atoms(tokens, current, 0)
-                yield SmtLibCommand(current, [])
-
-            elif current == smtcmd.PUSH:
-                elements = self.parse_atoms(tokens, current, 0, 1)
-
-                levels = 1
-                if len(elements) > 0:
-                    levels = int(elements[0])
-                yield SmtLibCommand(current, [levels])
-
-            elif current == smtcmd.POP:
-                elements = self.parse_atoms(tokens, current, 0, 1)
-
-                levels = 1
-                if len(elements) > 0:
-                    levels = int(elements[0])
-                yield SmtLibCommand(current, [levels])
-
-            elif current == smtcmd.EXIT:
-                self.parse_atoms(tokens, current, 0)
-                yield SmtLibCommand(current, [])
-
-            elif current == smtcmd.SET_LOGIC:
-                elements = self.parse_atoms(tokens, current, 1)
-
-                name = elements[0]
-                try:
-                    self.logic = get_logic_by_name(name)
-                    yield SmtLibCommand(current, [self.logic])
-                except UndefinedLogicError:
-                    warn("Unknown logic '" + name + \
-                         "'. Ignoring set-logic command.")
-                    yield SmtLibCommand(current, [None])
-
-            elif current == smtcmd.DECLARE_CONST:
-                elements = self.parse_atoms(tokens, current, 2)
-
-                (var, typename) = elements
-                v = self._get_var(var, typename)
-                self.cache.bind(var, v)
-                yield SmtLibCommand(current, [v])
-
-            elif current == smtcmd.GET_VALUE:
-                params = self.parse_expr_list(tokens, current)
-                self.consume_closing(tokens, current)
-                yield SmtLibCommand(current, params)
-
-            elif current == smtcmd.DECLARE_FUN:
-                var = self.parse_atom(tokens, current)
-                params = self.parse_params(tokens, current)
-                typename = self.parse_type(tokens, current)
-                self.consume_closing(tokens, current)
-
-                v = self._get_var(var, typename, params)
-                if v.symbol_type().is_function_type():
-                    self.cache.bind(var, \
-                            functools.partial(self._function_call_helper, v))
-                else:
-                    self.cache.bind(var, v)
-                yield SmtLibCommand(current, [v])
-
-            elif current == smtcmd.DEFINE_FUN:
-                var = self.parse_atom(tokens, current)
-                params = self.parse_params(tokens, current)
-                self.parse_type(tokens, current)
-                ebody = self.get_expression(tokens)
-                self.consume_closing(tokens, current)
-
-                formal = []
-                for k in params:
-                    (x,t) = k[0], k[1]
-                    v = self._get_var(x, t)
-                    self.cache.bind(x, v)
-                    formal.append(v)
-
-                for x in formal:
-                    self.cache.unbind(x.symbol_name())
-
-                self.cache.define(var, formal, ebody)
-                yield SmtLibCommand(current, [var, formal, ebody])
-
+            if current in self.commands:
+                fun = self.commands[current]
+                yield fun(current, tokens)
             else:
                 raise UnknownSmtLibCommandError(current)
+
+    def _cmd_set_info(self, current, tokens):
+        elements = self.parse_atoms(tokens, current, 2)
+        return SmtLibCommand(current, elements)
+
+    def _cmd_set_option(self, current, tokens):
+        elements = self.parse_atoms(tokens, current, 2)
+        return SmtLibCommand(current, elements)
+
+    def _cmd_assert(self, current, tokens):
+        expr = self.get_expression(tokens)
+        self.consume_closing(tokens, current)
+        return SmtLibCommand(current, [expr])
+
+    def _cmd_check_sat(self, current, tokens):
+        self.parse_atoms(tokens, current, 0)
+        return SmtLibCommand(current, [])
+
+    def _cmd_push(self, current, tokens):
+        elements = self.parse_atoms(tokens, current, 0, 1)
+
+        levels = 1
+        if len(elements) > 0:
+            levels = int(elements[0])
+        return SmtLibCommand(current, [levels])
+
+    def _cmd_pop(self, current, tokens):
+        elements = self.parse_atoms(tokens, current, 0, 1)
+
+        levels = 1
+        if len(elements) > 0:
+            levels = int(elements[0])
+        return SmtLibCommand(current, [levels])
+
+    def _cmd_exit(self, current, tokens):
+        self.parse_atoms(tokens, current, 0)
+        return SmtLibCommand(current, [])
+
+    def _cmd_set_logic(self, current, tokens):
+        elements = self.parse_atoms(tokens, current, 1)
+
+        name = elements[0]
+        try:
+            self.logic = get_logic_by_name(name)
+            return SmtLibCommand(current, [self.logic])
+        except UndefinedLogicError:
+            warn("Unknown logic '" + name + \
+                 "'. Ignoring set-logic command.")
+            return SmtLibCommand(current, [None])
+
+    def _cmd_declare_const(self, current, tokens):
+        elements = self.parse_atoms(tokens, current, 2)
+
+        (var, typename) = elements
+        v = self._get_var(var, typename)
+        self.cache.bind(var, v)
+        return SmtLibCommand(current, [v])
+
+    def _cmd_get_value(self, current, tokens):
+        params = self.parse_expr_list(tokens, current)
+        self.consume_closing(tokens, current)
+        return SmtLibCommand(current, params)
+
+    def _cmd_declare_fun(self, current, tokens):
+        var = self.parse_atom(tokens, current)
+        params = self.parse_params(tokens, current)
+        typename = self.parse_type(tokens, current)
+        self.consume_closing(tokens, current)
+
+        v = self._get_var(var, typename, params)
+        if v.symbol_type().is_function_type():
+            self.cache.bind(var, \
+                    functools.partial(self._function_call_helper, v))
+        else:
+            self.cache.bind(var, v)
+        return SmtLibCommand(current, [v])
+
+    def _cmd_define_fun(self, current, tokens):
+        var = self.parse_atom(tokens, current)
+        params = self.parse_params(tokens, current)
+        self.parse_type(tokens, current)
+        ebody = self.get_expression(tokens)
+        self.consume_closing(tokens, current)
+
+        formal = []
+        for k in params:
+            (x,t) = k[0], k[1]
+            v = self._get_var(x, t)
+            self.cache.bind(x, v)
+            formal.append(v)
+
+        for x in formal:
+            self.cache.unbind(x.symbol_name())
+
+        self.cache.define(var, formal, ebody)
+        return SmtLibCommand(current, [var, formal, ebody])
+
 
 
 if __name__ == "__main__":

@@ -534,6 +534,15 @@ def get_example_formulae(environment=None):
                     logic=pysmt.logics.QF_UFLIRA
                 ),
 
+            # Test complex names
+            Example(expr=And(Symbol("Did you know that any string works? #yolo"),
+                             Symbol("10"),
+                             Symbol("|#somesolverskeepthe||"),
+                             Symbol(" ")),
+                    is_valid=False,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_BOOL
+                ),
 
         ]
         return result
