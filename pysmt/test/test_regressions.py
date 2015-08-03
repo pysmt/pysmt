@@ -27,6 +27,7 @@ from pysmt.logics import QF_UFLIRA, QF_BOOL, LIA
 from pysmt.exceptions import ConvertExpressionError
 from pysmt.test.examples import get_example_formulae
 from pysmt.environment import Environment
+from pysmt.rewritings import cnf_as_set
 
 class TestRegressions(TestCase):
 
@@ -244,6 +245,10 @@ class TestRegressions(TestCase):
         self.assertTrue(Real(1).is_one())
         self.assertTrue(Int(0).is_zero())
         self.assertTrue(Real(0).is_zero())
+
+    def test_cnf_as_set(self):
+        r = cnf_as_set(Symbol("x"))
+        self.assertTrue(type(r) == frozenset)
 
     def test_substitute_to_real(self):
         p = Symbol("p", INT)

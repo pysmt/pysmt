@@ -610,7 +610,7 @@ def cnf(formula, environment=None):
 def cnf_as_set(formula, environment=None):
     """Converts the given formula in CNF represented as a set of sets"""
     cnfizer = CNFizer(environment)
-    return cnfizer.convert_as_formula(formula)
+    return cnfizer.convert(formula)
 
 def prenex_normal_form(formula, environment=None):
     """Converts the given formula in NNF"""
