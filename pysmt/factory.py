@@ -75,7 +75,6 @@ class Factory(object):
         self._all_interpolators = None
         self._all_optimizers = None
         self._generic_solvers = {}
-
         self.preferences = dict(DEFAULT_PREFERENCES)
         if preferences is not None:
             self.preferences.update(preferences)
@@ -460,6 +459,13 @@ class Factory(object):
         self.optimizer_preference_list = preference_list
 
 
+    def set_optimizer_preference_list(self, preference_list):
+        """Defines the order in which to pick the optimizers."""
+        assert preference_list is not None
+        assert len(preference_list) > 0
+        self.optimizer_preference_list = preference_list
+
+
     def _filter_solvers(self, solver_list, logic=None):
         """
         Returns a dict <solver_name, solver_class> including all and only
@@ -556,7 +562,6 @@ class Factory(object):
         If logic is None, the map will contain all the known solvers
         """
         return self._filter_solvers(self._all_optimizers, logic=logic)
-
 
 
     ##
