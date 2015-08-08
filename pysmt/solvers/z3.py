@@ -1046,7 +1046,6 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
             self.add_assertion(self._le(cost_function, initial_cost))
         obj = self.converter.convert(cost_function)
         h = self.z3.minimize(obj)
-
         res = self.z3.check()
         if res == z3.sat:
             opt_value = self.z3.lower(h)
@@ -1075,4 +1074,3 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
 
 class Z3SUAOptimizer(Z3Solver, SUAOptimizerMixin):
     LOGICS = Z3Solver.LOGICS
-

@@ -52,6 +52,5 @@ class TestOptimization(TestCase):
             with self.assertRaises(PysmtUnboundedOptimizationError):
                 opt.optimize(x)
 
-
 if __name__ == '__main__':
     main()

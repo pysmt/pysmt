@@ -37,7 +37,6 @@ from pysmt.oracles import get_logic
 from pysmt.solvers.qelim import (ShannonQuantifierEliminator,
                                  SelfSubstitutionQuantifierEliminator)
 from pysmt.solvers.solver import SolverOptions
-
 from pysmt.solvers.portfolio import Portfolio
 
 DEFAULT_SOLVER_PREFERENCE_LIST = ['msat', 'z3', 'cvc4', 'yices', 'btor',
@@ -47,7 +46,6 @@ DEFAULT_QELIM_PREFERENCE_LIST = ['z3', 'msat_lw', 'msat_fm', 'bdd',
                                  'shannon', 'selfsub']
 DEFAULT_INTERPOLATION_PREFERENCE_LIST = ['msat', 'z3']
 DEFAULT_OPTIMIZER_PREFERENCE_LIST = ['z3', 'msat_sua', 'z3_sua']
-
 DEFAULT_LOGIC = QF_UFLIRA
 DEFAULT_QE_LOGIC = LRA
 DEFAULT_INTERPOLATION_LOGIC = QF_UFLRA
@@ -337,6 +335,22 @@ class Factory(object):
         try:
             from pysmt.solvers.msat import MSatInterpolator
             self._all_interpolators['msat'] = MSatInterpolator
+        except SolverAPINotFound:
+            pass
+
+    def _get_available_optimizers(self):
+        self._all_optimizers = {}
+
+        try:
+            from pysmt.solvers.z3 import Z3NativeOptimizer, Z3SUAOptimizer
+            self._all_optimizers['z3'] = Z3NativeOptimizer
+            self._all_optimizers['z3_sua'] = Z3SUAOptimizer
+        except SolverAPINotFound:
+            pass
+
+        try:
+            from pysmt.solvers.msat import MSatSUAOptimizer
+            self._all_optimizers['msat_sua'] = MSatSUAOptimizer
         except SolverAPINotFound:
             pass
 
