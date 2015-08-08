@@ -853,6 +853,17 @@ def Interpolator(name=None, logic=None):
     return get_env().factory.Interpolator(name=name, logic=logic)
 
 
+def Optimizer(name=None, logic=None):
+    """Returns an interpolator
+
+    :param name: Specify the name of the solver
+    :param logic: Specify the logic that is going to be used.
+    :returns: An interpolator
+    :rtype: Interpolator
+    """
+    return get_env().factory.Optimizer(name=name, logic=logic)
+
+
 def is_sat(formula, solver_name=None, logic=None, portfolio=None):
     """ Returns whether a formula is satisfiable.
 
@@ -1001,7 +1012,6 @@ def qelim(formula, solver_name=None, logic=None):
     return env.factory.qelim(formula,
                              solver_name=solver_name,
                              logic=logic)
-
 
 def binary_interpolant(formula_a, formula_b, solver_name=None, logic=None):
     """Computes an interpolant of (formula_a, formula_b).

@@ -29,22 +29,23 @@ from six import iteritems
 from pysmt.exceptions import (NoSolverAvailableError, SolverRedefinitionError,
                               NoLogicAvailableError,
                               SolverAPINotFound)
-from pysmt.logics import QF_UFLIRA, LRA, QF_UFLRA
+from pysmt.logics import QF_UFLIRA, LRA, QF_UFLRA, QF_LIA
 from pysmt.logics import AUTO as AUTO_LOGIC
 from pysmt.logics import most_generic_logic, get_closer_logic
 from pysmt.logics import convert_logic_from_string
 from pysmt.oracles import get_logic
 from pysmt.solvers.qelim import ShannonQuantifierEliminator
-from pysmt.solvers.solver import SolverOptions
 from pysmt.solvers.portfolio import Portfolio
 
 DEFAULT_SOLVER_PREFERENCE_LIST = ['msat', 'z3', 'cvc4', 'yices', 'btor',
                                   'picosat', 'bdd']
 DEFAULT_QELIM_PREFERENCE_LIST = ['z3', 'msat_lw', 'msat_fm', 'bdd', 'shannon']
 DEFAULT_INTERPOLATION_PREFERENCE_LIST = ['msat', 'z3']
+DEFAULT_OPTIMIZER_PREFERENCE_LIST = ['z3', 'msat_sua', 'z3_sua']
 DEFAULT_LOGIC = QF_UFLIRA
 DEFAULT_QE_LOGIC = LRA
 DEFAULT_INTERPOLATION_LOGIC = QF_UFLRA
+DEFAULT_OPTIMIZER_LOGIC = QF_LIA
 
 
 class Factory(object):
@@ -58,12 +59,14 @@ class Factory(object):
     def __init__(self, environment,
                  solver_preference_list=None,
                  qelim_preference_list=None,
-                 interpolation_preference_list=None):
+                 interpolation_preference_list=None,
+                 optimizer_preference_list=None):
         self.environment = environment
         self._all_solvers = None
         self._all_unsat_core_solvers = None
         self._all_qelims = None
         self._all_interpolators = None
+        self._all_optimizers = None
         self._generic_solvers = {}
 
         #
@@ -76,14 +79,19 @@ class Factory(object):
         if interpolation_preference_list is None:
             interpolation_preference_list = DEFAULT_INTERPOLATION_PREFERENCE_LIST
         self.interpolation_preference_list = interpolation_preference_list
+        if optimizer_preference_list is None:
+            optimizer_preference_list = DEFAULT_OPTIMIZER_PREFERENCE_LIST
+        self.optimizer_preference_list = optimizer_preference_list
         #
         self._default_logic = DEFAULT_LOGIC
         self._default_qe_logic = DEFAULT_QE_LOGIC
         self._default_interpolation_logic = DEFAULT_INTERPOLATION_LOGIC
+        self._default_optimizer_logic = DEFAULT_OPTIMIZER_LOGIC
 
         self._get_available_solvers()
         self._get_available_qe()
         self._get_available_interpolators()
+        self._get_available_optimizers()
 
 
     def get_solver(self, name=None, logic=None, **options):
@@ -132,6 +140,18 @@ class Factory(object):
                                   solver_type="Interpolator",
                                   preference_list=self.interpolation_preference_list,
                                   default_logic=self._default_interpolation_logic,
+                                  name=name,
+                                  logic=logic)
+
+        return SolverClass(environment=self.environment,
+                           logic=closer_logic)
+
+    def get_optimizer(self, name=None, logic=None):
+        SolverClass, closer_logic = \
+           self._get_solver_class(solver_list=self._all_optimizers,
+                                  solver_type="Optimizer",
+                                  preference_list=self.optimizer_preference_list,
+                                  default_logic=self._default_optimizer_logic,
                                   name=name,
                                   logic=logic)
 
@@ -320,6 +340,22 @@ class Factory(object):
         except SolverAPINotFound:
             pass
 
+    def _get_available_optimizers(self):
+        self._all_optimizers = {}
+
+        try:
+            from pysmt.solvers.z3 import Z3NativeOptimizer, Z3SUAOptimizer
+            self._all_optimizers['z3'] = Z3NativeOptimizer
+            self._all_optimizers['z3_sua'] = Z3SUAOptimizer
+        except SolverAPINotFound:
+            pass
+
+        try:
+            from pysmt.solvers.msat import MSatSUAOptimizer
+            self._all_optimizers['msat_sua'] = MSatSUAOptimizer
+        except SolverAPINotFound:
+            pass
+
 
     def set_solver_preference_list(self, preference_list):
         """Defines the order in which to pick the solvers.
@@ -347,6 +383,13 @@ class Factory(object):
         assert preference_list is not None
         assert len(preference_list) > 0
         self.interpolation_preference_list = preference_list
+
+
+    def set_optimizer_preference_list(self, preference_list):
+        """Defines the order in which to pick the optimizers."""
+        assert preference_list is not None
+        assert len(preference_list) > 0
+        self.optimizer_preference_list = preference_list
 
 
     def _filter_solvers(self, solver_list, logic=None):
@@ -433,6 +476,19 @@ class Factory(object):
         """
         return self._filter_solvers(self._all_interpolators, logic=logic)
 
+    def all_optimizers(self, logic=None):
+        """
+        Returns a dict <solver_name, solver_class> including all and only
+        the solvers supporting optimization and directly or
+        indirectly supporting the given logic.  A solver supports a
+        logic if either the given logic is declared in the LOGICS
+        class field or if a logic subsuming the given logic is
+        declared in the LOGICS class field.
+
+        If logic is None, the map will contain all the known solvers
+        """
+        return self._filter_solvers(self._all_interpolators, logic=logic)
+
 
 
     ##
@@ -454,6 +510,9 @@ class Factory(object):
 
     def Interpolator(self, name=None, logic=None):
         return self.get_interpolator(name=name, logic=logic)
+
+    def Optimizer(self, name=None, logic=None):
+        return self.get_optimizer(name=name, logic=logic)
 
     def is_sat(self, formula, solver_name=None, logic=None, portfolio=None):
         if logic is None or logic == AUTO_LOGIC:
