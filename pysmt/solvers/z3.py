@@ -1043,6 +1043,7 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
                           logic=logic, **options)
         self.z3 = z3.Optimize()
 
+
     def optimize(self, cost_function, **kwargs):
         obj = self.converter.convert(cost_function)
         h = self.z3.minimize(obj)
