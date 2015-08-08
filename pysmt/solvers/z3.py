@@ -37,6 +37,8 @@ from pysmt.solvers.solver import (IncrementalTrackingSolver, UnsatCoreSolver,
                                   Model, Converter, SolverOptions)
 from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 from pysmt.solvers.qelim import QuantifierEliminator
+from pysmt.solvers.optimizer import Optimizer, SUAOptimizerMixin
+from pysmt.solvers.interpolation import Interpolator
 
 from pysmt.walkers import DagWalker
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
@@ -47,7 +49,7 @@ from pysmt.exceptions import (SolverReturnedUnknownResultError,
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
 from pysmt.logics import LRA, LIA, QF_UFLRA, PYSMT_LOGICS
 from pysmt.oracles import get_logic
-from pysmt.constants import Fraction, Numeral, is_pysmt_integer, to_python_integer
+from pysmt.constants import Fraction, Numeral, is_pysmt_integer
 
 
 # patch z3api
@@ -974,3 +976,98 @@ class Z3QuantifierEliminator(QuantifierEliminator):
 
     def _exit(self):
         pass
+
+
+class Z3Interpolator(Interpolator):
+
+    LOGICS = [QF_UFLIA, QF_UFLRA]
+
+    def __init__(self, environment, logic=None):
+        Interpolator.__init__(self)
+        self.environment = environment
+        self.logic = logic
+        self.converter = Z3Converter(environment, z3_ctx=z3._get_ctx(None))
+
+    def _check_logic(self, formulas):
+        for f in formulas:
+            logic = get_logic(f, self.environment)
+            ok = any(logic <= l for l in self.LOGICS)
+            if not ok:
+                raise PysmtValueError("Logic not supported by Z3 interpolation."
+                                      "(detected logic is: %s)" % str(logic))
+
+    def binary_interpolant(self, a, b):
+        self._check_logic([a, b])
+
+        a = self.converter.convert(a)
+        b = self.converter.convert(b)
+
+        try:
+            itp = z3.binary_interpolant(a, b)
+            pysmt_res = self.converter.back(itp)
+        except z3.ModelRef:
+            pysmt_res = None
+
+        return pysmt_res
+
+    def sequence_interpolant(self, formulas):
+        self._check_logic(formulas)
+
+        zf = [self.converter.convert(f) for f in formulas]
+        try:
+            itp = z3.sequence_interpolant(zf)
+            pysmt_res = [self.converter.back(f) for f in itp]
+        except z3.ModelRef:
+            pysmt_res = None
+
+        return pysmt_res
+
+    def _exit(self):
+        pass
+
+
+class Z3NativeOptimizer(Optimizer, Z3Solver):
+
+    LOGICS = Z3Solver.LOGICS
+
+    def __init__(self, environment, logic, **options):
+        Z3Solver.__init__(self, environment=environment,
+                          logic=logic, **options)
+        self.z3 = z3.Optimize()
+
+    def _le(self, x, y):
+        otype = self.environment.stc.get_type(x)
+        mgr = self.environment.formula_manager
+        if otype.is_int_type() or otype.is_real_type():
+            return mgr.LE(x, y)
+        elif otype.is_bv_type():
+            return mgr.BVULE(x, y)
+
+    def optimize(self, cost_function, initial_cost=None, callback=None):
+        if initial_cost is not None:
+            self.add_assertion(self._le(cost_function, initial_cost))
+        obj = self.converter.convert(cost_function)
+        self.z3.minimize(obj)
+
+        res = self.z3.check()
+        if res == z3.sat:
+            model = Z3Model(self.environment, self.z3.model())
+            return model
+        else:
+            return None
+
+
+    def pareto_optimize(self, cost_functions, callback=None):
+        self.z3.set(priority='pareto')
+        criteria = []
+        for cf in cost_functions:
+            obj = self.converter.convert(cf)
+            criteria.append(self.z3.minimize(obj))
+
+        while self.z3.check() == z3.sat:
+            model = Z3Model(self.environment, self.z3.model())
+            yield model
+
+class Z3SUAOptimizer(Z3Solver, SUAOptimizerMixin):
+    LOGICS = Z3Solver.LOGICS
+
