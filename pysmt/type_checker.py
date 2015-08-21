@@ -74,8 +74,9 @@ class SimpleTypeChecker(walkers.DagWalker):
 
     def walk_type_to_type(self, formula, args, type_in, type_out):
         assert formula is not None
-        if any((x is None or x != type_in) for x in args):
-            return None
+        for x in args:
+            if x is None or x != type_in:
+                return None
         return type_out
 
     def walk_bool_to_bool(self, formula, args, **kwargs):

@@ -16,10 +16,19 @@
 #   limitations under the License.
 #
 from functools import partial
+import re
 
 from pysmt.environment import get_env
 from pysmt.walkers import TreeWalker, DagWalker
 import pysmt.operators as op
+
+_simple_symbol_prog = re.compile(r"^[~!@\$%\^&\*_\-+=<>\.\?\/A-Za-z][~!@\$%\^&\*_\-+=<>\.\?\/A-Za-z0-9]*$")
+def quote(name):
+    if _simple_symbol_prog.match(name) is None:
+        name = name.replace("\\", "\\\\").replace("|", "\\|")
+        return "|%s|" % name
+    else:
+        return name
 
 class SmtPrinter(TreeWalker):
 
@@ -86,8 +95,9 @@ class SmtPrinter(TreeWalker):
             self.walk(s)
         self.write(")")
 
+
     def walk_symbol(self, formula):
-        self.write(formula.symbol_name())
+        self.write(quote(formula.symbol_name()))
 
     def walk_function(self, formula):
         return self._walk_nary(formula.function_name(), formula)
@@ -245,7 +255,7 @@ class SmtDagPrinter(DagWalker):
     def printer(self, f):
         self.openings = 0
         self.name_seed = 0
-        self.names = set(x.symbol_name() for x in f.get_free_variables())
+        self.names = set(quote(x.symbol_name()) for x in f.get_free_variables())
 
         key = self.walk(f)
         self.write(key)
@@ -271,7 +281,7 @@ class SmtDagPrinter(DagWalker):
         return sym
 
     def walk_symbol(self, formula, **kwargs):
-        return formula.symbol_name()
+        return quote(formula.symbol_name())
 
     def walk_function(self, formula, args, **kwargs):
         return self._walk_nary(formula.function_name(), formula, args)
@@ -327,7 +337,7 @@ class SmtDagPrinter(DagWalker):
 
         for s in formula.quantifier_vars():
             self.write("(")
-            self.write(s.symbol_name())
+            self.write(quote(s.symbol_name()))
             self.write(" %s)" % s.symbol_type().as_smtlib(False))
         self.write(") ")
 

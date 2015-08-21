@@ -22,7 +22,7 @@ from six.moves import xrange
 import pysmt.smtlib.commands as smtcmd
 from pysmt.exceptions import UnknownSmtLibCommandError
 from pysmt.shortcuts import And
-from pysmt.smtlib.printers import SmtPrinter, SmtDagPrinter
+from pysmt.smtlib.printers import SmtPrinter, SmtDagPrinter, quote
 from pysmt.logics import UFLIRA
 
 def check_sat_filter(log):
@@ -86,7 +86,7 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
             symbol = self.args[0]
             type_str = symbol.symbol_type().as_smtlib()
             outstream.write("(%s %s %s)" % (self.name,
-                                            symbol.symbol_name(),
+                                            quote(symbol.symbol_name()),
                                             type_str))
 
         elif self.name == smtcmd.DEFINE_FUN:

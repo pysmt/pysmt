@@ -84,6 +84,8 @@ class FormulaManager(object):
             return n
 
     def _create_symbol(self, name, typename=types.BOOL):
+        if len(name) == 0:
+            raise ValueError("Empty string is not a valid name")
         assert name not in self.symbols
         n = self.create_node(node_type=op.SYMBOL,
                              args=tuple(),

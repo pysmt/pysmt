@@ -65,7 +65,9 @@ class PySMTType(object):
         return self.type_id == other.type_id
 
     def __ne__(self, other):
-        return not (self == other)
+        if other is None:
+            return True
+        return self.type_id != other.type_id
 
 
 class BooleanType(PySMTType):
@@ -168,6 +170,16 @@ class _BVType(PySMTType):
             return False
         return True
 
+    def __ne__(self, other):
+        if other is None:
+            return True
+        if self.type_id != other.type_id:
+            return True
+        if self.width != other.width:
+            return True
+        return False
+
+        return True
     def __hash__(self):
         return hash(self.type_id + self.width)
 
@@ -230,6 +242,15 @@ class _FunctionType(PySMTType):
         if id(self) == id(other):
             return True
         return str(self) == str(other)
+
+    def __ne__(self, other):
+        if other is None:
+            return True
+        if self.type_id != other.type_id:
+            return True
+        if id(self) == id(other):
+            return False
+        return str(self) != str(other)
 
     def __hash__(self):
         return self._hash

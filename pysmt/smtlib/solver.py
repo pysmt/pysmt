@@ -29,7 +29,7 @@ class SmtLibSolver(Solver):
         self.args = args
         self.declared_vars = set()
         self.solver = Popen(args, stdout=PIPE, stderr=PIPE, stdin=PIPE)
-        self.parser = SmtLibParser()
+        self.parser = SmtLibParser(interactive=True)
         if PY2:
             self.solver_stdin = self.solver.stdin
             self.solver_stdout = self.solver.stdout

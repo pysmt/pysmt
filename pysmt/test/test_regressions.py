@@ -257,6 +257,10 @@ class TestRegressions(TestCase):
         new_f = f.substitute({p: Real(1)}).simplify()
         self.assertEqual(new_f, Bool(False))
 
+    def test_empty_string_symbol(self):
+        with self.assertRaises(ValueError):
+            Symbol("")
+
 
 if __name__ == "__main__":
     import unittest

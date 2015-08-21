@@ -44,6 +44,12 @@ class TestBV(TestCase):
         self.assertEqual(one, mgr.BVOne(32))
         self.assertEqual(zero, mgr.BVZero(32))
 
+        # Type Equality
+        self.assertTrue(BV32 != BV128)
+        self.assertFalse(BV32 != BV32)
+        self.assertFalse(BV32 == BV128)
+        self.assertTrue(BV32 == BV32)
+
         with self.assertRaises(ValueError):
             # Negative numbers are not supported
             BV(-1, 10)
