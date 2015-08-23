@@ -85,6 +85,10 @@ def get_picosat_download_link(archive_name):
         return mirror + "/" + archive_name
     return "http://fmv.jku.at/picosat/%s" % archive_name
 
+def get_boolector_download_link(archive_name):
+    if mirror is not None:
+        return mirror + "/" + archive_name
+    return "http://fmv.jku.at/boolector/%s" % archive_name
 
 ################################################################################
 # Utility functions
@@ -223,7 +227,6 @@ def install_z3(options):
     PATHS.append("%s/lib/python2.7/dist-packages" % install_path)
 
 
-
 def install_cvc4(options):
     """Installer for the CVC4 solver python interafce"""
 
@@ -275,7 +278,6 @@ def install_cvc4(options):
     # Save the paths
     PATHS.append("%s/share/pyshared" % bin_path)
     PATHS.append("%s/lib/pyshared" % bin_path)
-
 
 
 def install_yices(options):
@@ -332,7 +334,6 @@ def install_yices(options):
     PATHS.append("%s/build/lib.linux-%s-%s" % (pyices_dir_path, get_architecture(), get_python_version()))
 
 
-
 def install_pycudd(options):
     """Installer for the CUDD library python interafce"""
     pycudd_git = "4861f4df8abc2ca205a6a09b30fdc8cfd29f6ebb"
@@ -373,7 +374,6 @@ def install_pycudd(options):
     PATHS.append(dir_path)
 
 
-
 def install_picosat(options):
     """Installer for the CUDD library python interafce"""
 
@@ -406,6 +406,36 @@ def install_picosat(options):
     PATHS.append("%s/build/lib.linux-%s-%s" % (dir_path, get_architecture(), get_python_version()))
 
 
+def install_boolector(options):
+    """Installer Boolector"""
+
+    base_name =  "boolector-2.0.7-with-lingeling-azd"
+    archive_name = "%s.tar.bz2" % base_name
+    archive = os.path.join(BASE_DIR, archive_name)
+    dir_path = os.path.join(BASE_DIR, base_name)
+
+    # Download picosat if needed
+    if not os.path.exists(archive):
+        download(get_boolector_download_link(archive_name), archive)
+
+    # clear the destination directory, if any
+    if os.path.exists(dir_path):
+        os.system("rm -rf %s" % dir_path)
+
+    # Extract the picosat distribution
+    untar(archive, BASE_DIR, mode='r:bz2')
+
+    # First build
+    os.system("cd %s; make" % dir_path)
+
+    # Reconfigure and build python bindings
+    os.system("cd %s/lingeling/ ; ./configure.sh -fPIC; make" % dir_path)
+    os.system("cd %s/boolector/ ; ./configure.sh -python; make" % dir_path)
+
+    # Save the paths
+    PATHS.append("%s/boolector" % dir_path)
+
+
 def check_install():
     """Checks which solvers are visible to pySMT."""
 
@@ -420,7 +450,7 @@ def check_install():
         required_solver = "bdd"
 
     print("Solvers:")
-    for solver in ['msat', 'z3', 'cvc4', 'yices', 'bdd', 'picosat']:
+    for solver in ['msat', 'z3', 'cvc4', 'yices', 'bdd', 'picosat', 'btor']:
         is_installed = False
         try:
             Solver(name=solver)
@@ -460,6 +490,8 @@ def parse_options():
                         default=False, help='Install CUDD (pycudd)')
     parser.add_argument('--picosat', dest='picosat', action='store_true',
                         default=False, help='Install PicoSAT')
+    parser.add_argument('--btor', dest='btor', action='store_true',
+                        default=False, help='Install Boolector')
 
     parser.add_argument('--make-j', dest='make_j', metavar='N',
                         type=int, default=1,
@@ -532,6 +564,9 @@ def main():
 
     if options.picosat:
         install_picosat(options)
+
+    if options.btor:
+        install_boolector(options)
 
     print("\n")
     print("*" * 80)
