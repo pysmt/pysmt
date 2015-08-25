@@ -147,6 +147,8 @@ The following is the pySMT code for solving this problem:
     print("No solution found")
 
 
+Check out more examples of usage in the `examples/ directory <https://github.com/pysmt/pysmt/tree/master/examples>`_.
+
 Solvers Installation
 ====================
 
