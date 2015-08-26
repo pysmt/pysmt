@@ -430,7 +430,7 @@ def install_boolector(options):
 
     # Reconfigure and build python bindings
     os.system("cd %s/lingeling/ ; ./configure.sh -fPIC; make" % dir_path)
-    os.system("cd %s/boolector/ ; ./configure.sh -python; make" % dir_path)
+    os.system("cd %s/boolector/ ; ./configure -python; make" % dir_path)
 
     # Save the paths
     PATHS.append("%s/boolector" % dir_path)
