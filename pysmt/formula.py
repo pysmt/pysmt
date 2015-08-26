@@ -519,6 +519,18 @@ class FormulaManager(object):
             h = len(exprs) // 2
             return self.Max(self.Max(exprs[0:h]), self.Max(exprs[h:]))
 
+    def EqualsOrIff(self, left, right):
+        """Returns Equals() or Iff() depending on the type of the arguments.
+
+        This can be used to deal with ambiguous cases where we might be
+        dealing with both Theory and Boolean atoms.
+        """
+        type_ = self.env.stc.get_type(left)
+        if type_.is_bool_type():
+            return self.Iff(left, right)
+        else:
+            return self.Equals(left, right)
+
     # BitVectors
     def BV(self, value, width=None):
         """Return a constant of type BitVector.

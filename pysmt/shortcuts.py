@@ -182,9 +182,9 @@ def ToReal(formula):
     return get_env().formula_manager.ToReal(formula)
 
 def AtMostOne(*args):
-    """
+    """At most one can be true at anytime.
+
     Cardinality constraint over a set of boolean expressions.
-    At most one can be true at anytime.
     """
     return get_env().formula_manager.AtMostOne(*args)
 
@@ -203,19 +203,24 @@ def Xor(left, right):
     return get_env().formula_manager.Xor(left, right)
 
 def Min(*args):
-    """
-    Minimum over a set of real or integer terms
-    """
+    """Minimum over a set of real or integer terms."""
     return get_env().formula_manager.Min(*args)
 
 def Max(*args):
-    """
-    Maximum over a set of real or integer terms
-    """
+    """Maximum over a set of real or integer terms"""
     return get_env().formula_manager.Max(*args)
+
+def EqualsOrIff(left, right):
+    """Returns Equals() or Iff() depending on the type of the arguments.
+
+    This can be used to deal with ambiguous cases where we might be
+    dealing with both Theory and Boolean atoms.
+    """
+    return get_env().formula_manager.EqualsOrIff(left, right)
 
 # Bit Vectors
 def BV(value, width=None):
+
     """Returns a constant of type BitVector.
 
     value can be either:

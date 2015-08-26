@@ -1,5 +1,5 @@
-Example
-=======
+Examples
+========
 
 This directory contains examples to get you started using
 pySMT. Suggested order:
@@ -15,7 +15,9 @@ pySMT. Suggested order:
 7. generic_smtlib.py: Shows how to use any SMT-LIB complaint SMT solver
 8. efsmt.py: Shows how to combine two different solvers to solve an
    Exists Forall problem.
-9. sudoku/sudoku.py: Solves sudoku problems on the command line using
-   a simple encoding using either QF_LIA or QF_BV
-10. sudoku/gui.py: A small GUI that embeds sudoku.py and allows a
+9. allsmt.py: How to detect the logic of a formula and perform model
+    enumeration.
+10. sudoku/sudoku.py: Solves sudoku problems on the command line using
+    a simple encoding using either QF_LIA or QF_BV
+11. sudoku/gui.py: A small GUI that embeds sudoku.py and allows a
     user-friendly intercation with the sudoku solver.

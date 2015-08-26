@@ -689,8 +689,14 @@ class TestFormulaManager(TestCase):
         f5 = self.mgr.ToReal(f4)
         self.assertEqual(f5, f4)
 
+    def test_equals_or_iff(self):
+        eq_1 = self.mgr.EqualsOrIff(self.p, self.q)
+        eq_2 = self.mgr.Equals(self.p, self.q)
+        self.assertEqual(eq_1, eq_2)
 
-
+        iff_1 = self.mgr.EqualsOrIff(self.x, self.y)
+        iff_2 = self.mgr.Iff(self.x, self.y)
+        self.assertEqual(iff_1, iff_2)
 
     def test_is_term(self):
         and_x_x = self.mgr.And(self.x, self.x)
