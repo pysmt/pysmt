@@ -1,4 +1,5 @@
-import io
+import io, re
+
 from six import PY2
 from fractions import Fraction
 
@@ -45,3 +46,22 @@ def twos_complement(val, bits):
     if (val & (1 << (bits - 1))) != 0: # if sign bit is set
         val = val - (2 ** bits)        # compute negative value
     return val
+
+
+_simple_symbol_prog = re.compile(r"^[~!@\$%\^&\*_\-+=<>\.\?\/A-Za-z][~!@\$%\^&\*_\-+=<>\.\?\/A-Za-z0-9]*$")
+def quote(name, style='|'):
+    if _simple_symbol_prog.match(name) is None:
+        name = name.replace("\\", "\\\\").replace("%s" % style, "\\%s" % style)
+        return "%s%s%s" % (style, name, style)
+    else:
+        return name
+
+def unquote(name, style='|'):
+    if name.startswith(style):
+        if name.endswith(style):
+            name = name.replace("%s" % style, "\\%s" % style).replace("\\\\", "\\")
+            return name[1:-1]
+        else:
+            raise ValueError("Malformed Name")
+    else:
+        return name

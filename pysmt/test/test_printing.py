@@ -233,7 +233,7 @@ SERIALIZED_EXAMPLES = [
     """((((1_32 + (- ...)) << 1_32) >> 1_32) = 1_32)""",
     """((1_32 - 1_32) = 0_32)""",
     """(((1_32 ROL 1) ROR 1) = 1_32)""",
-    """(Zext(0_5, 11) = Sext(0_1, 15))""",
+    """((0_5 ZEXT 11) = (0_1 SEXT 15))""",
     """((bv2 - bv2) = 0_16)""",
     """((bv2 - bv2)[0:7] = bv1)""",
     """((bv2[0:7] bvcomp bv1) = 1_1)""",
@@ -263,7 +263,7 @@ SERIALIZED_EXAMPLES = [
     """(((p - 3) = q) -> ((p < ih(r, (... + ...))) | (ih(r, p) <= p)))""",
     """(((ToReal((... - ...)) = r) & (ToReal(q) = r)) -> ((p < ih(ToReal(...), (... + ...))) | (ih(r, p) <= p)))""",
     """(! (((ToReal(...) = r) & (ToReal(...) = r)) -> ((p < ...(..., ...)) | (...(..., ...) <= p))))""",
-    """(Did you know that any string works? #yolo & 10 & |#somesolverskeepthe|| &  )""",
+    """("Did you know that any string works? #yolo" & "10" & "|#somesolverskeepthe||" & " ")""",
     ]
 
 
