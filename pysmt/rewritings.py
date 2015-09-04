@@ -228,17 +228,37 @@ class CNFizer(DagWalker):
 
 
 class NNFizer(DagWalker):
+    """Converts a formula into Negation Normal Form.
+
+    The conversion to NNF is handled in 3 steps.
+
+    1. The function _get_children is extended, so that for each
+    expression inside a Not, it will return the effect of propagating
+    the Not downwards. For example, for Not(And(a, b)), the function
+    will return [Not(a), Not(b)].  For expressions that are not inside
+    a Not, it is important to return the same type of arguments. See
+    for example the case for Iff.
+
+    2. The usual walk_* function is implemented to rebuild the
+    expression. This is called only if the subformula was not negated.
+
+    3. walk_not takes care of rebuilding all negated expressions. For
+    example, for Not(And(a, b)), walk_not will return
+    Or(Not(a), Not(b)). Notice that args in walk_not contains the
+    subexpressions returned by _get_children.  In the above example,
+    walk_not will be called with args=[Not(a), Not(b)]. Therefore,
+    walk_not only need to change the And into a Not.
+
+    """
 
     def __init__(self, environment=None):
         DagWalker.__init__(self, env=environment)
         self.mgr = self.env.formula_manager
         self.set_function(self.walk_theory_relation, *op.RELATIONS)
 
-
     def convert(self, formula):
         """ Converts the given formula in NNF """
         return self.walk(formula)
-
 
     def _get_children(self, formula):
         """Returns the arguments of the node on which an hypotetical recursion
@@ -293,7 +313,6 @@ class NNFizer(DagWalker):
             assert formula.is_theory_relation(), str(formula)
             return []
 
-
     def walk_not(self, formula, args, **kwargs):
         s = formula.arg(0)
         if s.is_symbol():
@@ -316,7 +335,6 @@ class NNFizer(DagWalker):
             return self.mgr.ForAll(s.quantifier_vars(), args[0])
         else:
             return self.mgr.Not(args[0])
-
 
     def walk_implies(self, formula, args, **kwargs):
         return self.mgr.Or(args)
