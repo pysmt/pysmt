@@ -171,8 +171,9 @@ class TestPrinting(TestCase):
         self.assertTrue(len(short_f_str) < len(long_f_str))
 
     def test_examples(self):
-        for (f, _, _, _) in get_example_formulae():
+        for i, (f, _, _, _) in enumerate(get_example_formulae()):
             self.assertTrue(len(str(f)) >= 1, str(f))
+            self.assertEquals(str(f), SERIALIZED_EXAMPLES[i])
 
     def test_smart_serialize(self):
         x, y = Symbol("x"), Symbol("y")
@@ -195,6 +196,74 @@ class TestPrinting(TestCase):
         smart_str = smart_serialize(ex, subs=substitutions)
         self.assertTrue(len(old_str) > len(smart_str))
         self.assertEquals("ExactlyOne(x0,x1,x2,x3,x4)", smart_str)
+
+
+SERIALIZED_EXAMPLES = [
+    """(x & y)""",
+    """(x <-> y)""",
+    """((x | y) & (! (x | y)))""",
+    """(x & (! y))""",
+    """(False -> True)""",
+    """((q < p) & (x -> y))""",
+    """(((p + q) = 5) & (q < p))""",
+    """((q <= p) | (p <= q))""",
+    """(! (p < (q * 2)))""",
+    """(p < (p - (5 - 2)))""",
+    """((x ? 7 : ((p + -1) * 3)) = q)""",
+    """(p < (q + 1))""",
+    """((s < r) & (x -> y))""",
+    """(((r + s) = 28/5) & (s < r))""",
+    """((s <= r) | (r <= s))""",
+    """(! ((r * 2.0) < (s * 2.0)))""",
+    """(! (r < (r - (5.0 - 2.0))))""",
+    """((x ? 7.0 : ((s + -1.0) * 3.0)) = r)""",
+    """(rf(5.0, rg(r)) = 0.0)""",
+    """((rg(r) = (5.0 + 2.0)) <-> (rg(r) = 7.0))""",
+    """((r = (s + 1.0)) & (rg(s) = 5.0) & (rg((r - 1.0)) = 7.0))""",
+    """((1_32 & 0_32) = 0_32)""",
+    """((! 2_3) = 5_3)""",
+    """((7_3 xor 0_3) = 0_3)""",
+    """((bv1::bv1) u< 0_16)""",
+    """(1_32[0:7] = 1_8)""",
+    """(0_8 u< (((bv1 + 1_8) * 5_8) u/ 5_8))""",
+    """(0_16 u<= bv2)""",
+    """(0_16 s<= bv2)""",
+    """((0_32 u< (5_32 u% 2_32)) & ((5_32 u% 2_32) u<= 1_32))""",
+    """((((1_32 + (- ...)) << 1_32) >> 1_32) = 1_32)""",
+    """((1_32 - 1_32) = 0_32)""",
+    """(((1_32 ROL 1) ROR 1) = 1_32)""",
+    """(Zext(0_5, 11) = Sext(0_1, 15))""",
+    """((bv2 - bv2) = 0_16)""",
+    """((bv2 - bv2)[0:7] = bv1)""",
+    """((bv2[0:7] bvcomp bv1) = 1_1)""",
+    """((bv2 bvcomp bv2) = 0_1)""",
+    """(bv2 s< bv2)""",
+    """(bv2 s< 0_16)""",
+    """(bv2 u< bv2)""",
+    """(bv2 u< 0_16)""",
+    """((bv2 | 0_16) = bv2)""",
+    """((bv2 & 0_16) = 0_16)""",
+    """((0_16 s< bv2) & ((bv2 s/ 65535_16) s< 0_16))""",
+    """((0_16 s< bv2) & ((bv2 s% 1_16) s< 0_16))""",
+    """((bv2 u% 1_16) = 0_16)""",
+    """((bv2 s% 1_16) = 0_16)""",
+    """((bv2 s% (- 1_16)) = 0_16)""",
+    """((bv2 a>> 0_16) = bv2)""",
+    """((0_16 s<= bv2) & ((bv2 a>> 1_16) = (bv2 >> 1_16)))""",
+    """(forall y . (x -> y))""",
+    """(forall p, q . ((p + q) = 0))""",
+    """(forall r, s . (((0.0 < r) & (0.0 < s)) -> ((r - s) < r)))""",
+    """(exists x, y . (x -> y))""",
+    """(exists p, q . ((p + q) = 0))""",
+    """(exists r . (forall s . (r < (r - s))))""",
+    """(forall r . (exists s . (r < (r - s))))""",
+    """(x & (forall r . ((r + s) = 5.0)))""",
+    """((p < ih(r, q)) & (x -> y))""",
+    """(((p - 3) = q) -> ((p < ih(r, (... + ...))) | (ih(r, p) <= p)))""",
+    """(((ToReal((... - ...)) = r) & (ToReal(q) = r)) -> ((p < ih(ToReal(...), (... + ...))) | (ih(r, p) <= p)))""",
+    """(! (((ToReal(...) = r) & (ToReal(...) = r)) -> ((p < ...(..., ...)) | (...(..., ...) <= p))))""",
+    """(Did you know that any string works? #yolo & 10 & |#somesolverskeepthe|| &  )""",
+    ]
 
 
 if __name__ == '__main__':
