@@ -58,9 +58,10 @@ before_script:
 
 script:
   - env
-  - mkdir -p $HOME/bldve/
-  - if [ "$VIRTUALENV_PYTHON" == "pypy" ]; then virtualenv -p "`which pypy`" $HOME/bldve; else virtualenv -p $SHIPPABLE_PYTHON $HOME/bldve/; fi
-  - source $HOME/bldve/bin/activate
+#  - mkdir -p $HOME/bldve/
+#  - if [ "$VIRTUALENV_PYTHON" == "pypy" ]; then virtualenv -p "`which pypy`" $HOME/bldve; else virtualenv -p $SHIPPABLE_PYTHON $HOME/bldve/; fi
+#  - source $HOME/bldve/bin/activate
+   - source ${SHIPPABLE_VE_DIR}/bin/activate
   - pip install nose
   - pip install coverage
   - pip install six
