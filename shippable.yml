@@ -7,16 +7,16 @@ python:
 # Allow the download of the generated files
 archive: true
 
-before_install:
- #  set up a virtualenv and activate the python version that you want to use
-   - mkdir -p $HOME/bldve/
-   - if [ "$VIRTUALENV_PYTHON" == "pypy" ]; then virtualenv -p "`which pypy`" $HOME/bldve; else virtualenv -p $SHIPPABLE_PYTHON $HOME/bldve/; fi
-   - source $HOME/bldve/bin/activate
+# before_install:
+#  #  set up a virtualenv and activate the python version that you want to use
+#    - mkdir -p $HOME/bldve/
+#    - if [ "$VIRTUALENV_PYTHON" == "pypy" ]; then virtualenv -p "`which pypy`" $HOME/bldve; else virtualenv -p $SHIPPABLE_PYTHON $HOME/bldve/; fi
+#    - source $HOME/bldve/bin/activate
 
-install:
-  - pip install nose
-  - pip install coverage
-  - pip install six
+# install:
+#   - pip install nose
+#   - pip install coverage
+#   - pip install six
 
 
 # Multiple envs will cause multiple build across multiple python versions.
@@ -58,6 +58,9 @@ before_script:
 
 script:
   - env
+  - mkdir -p $HOME/bldve/
+  - if [ "$VIRTUALENV_PYTHON" == "pypy" ]; then virtualenv -p "`which pypy`" $HOME/bldve; else virtualenv -p $SHIPPABLE_PYTHON $HOME/bldve/; fi
+  - source $HOME/bldve/bin/activate
   - pip install nose
   - pip install coverage
   - pip install six
