@@ -46,27 +46,45 @@ class HRPrinter(TreeWalker):
     def walk_threshold(self, formula):
         self.write("...")
 
-    def walk_and(self, formula):
+    def walk_nary(self, op_symbol, formula):
         self.write("(")
         args = formula.args()
-        count = 0
-        for s in args:
+        for s in args[:-1]:
             self.walk(s)
-            count += 1
-            if count != len(args):
-                self.write(" & ")
+            self.write(op_symbol)
+        self.walk(args[-1])
         self.write(")")
 
-    def walk_or(self, formula):
+    def walk_binary(self, op_symbol, formula):
         self.write("(")
-        args = formula.args()
-        count = 0
-        for s in args:
-            self.walk(s)
-            count += 1
-            if count != len(args):
-                self.write(" | ")
+        self.walk(formula.arg(0))
+        self.write(op_symbol)
+        self.walk(formula.arg(1))
         self.write(")")
+
+    def walk_quantifier(self, op_symbol, var_sep, sep, formula):
+        if len(formula.quantifier_vars()) > 0:
+            self.write("(")
+            self.write(op_symbol)
+            for s in formula.quantifier_vars()[:-1]:
+                self.walk(s)
+                self.write(var_sep)
+            self.walk(formula.quantifier_vars()[-1])
+            self.write(sep)
+            self.walk(formula.arg(0))
+            self.write(")")
+        else:
+            self.walk(formula.arg(0))
+
+
+    def walk_and(self, formula):
+        self.walk_nary(" & ", formula)
+
+    def walk_or(self, formula):
+        self.walk_nary(" | ", formula)
+
+    def walk_plus(self, formula):
+        self.walk_nary(" + ", formula)
 
     def walk_not(self, formula):
         self.write("(! ")
@@ -76,75 +94,34 @@ class HRPrinter(TreeWalker):
     def walk_symbol(self, formula):
         self.write(formula.symbol_name())
 
-    def walk_plus(self, formula):
-        self.write("(")
-        args = formula.args()
-        count = 0
-        for s in args:
-            self.walk(s)
-            count += 1
-            if count != len(args):
-                self.write(" + ")
-        self.write(")")
-
     def walk_times(self, formula):
-        self.write("(")
-        self.walk(formula.arg(0))
-        self.write(" * ")
-        self.walk(formula.arg(1))
-        self.write(")")
+        self.walk_binary(" * ", formula)
 
     def walk_iff(self, formula):
-        self.write("(")
-        self.walk(formula.arg(0))
-        self.write(" <-> ")
-        self.walk(formula.arg(1))
-        self.write(")")
+        self.walk_binary(" <-> ", formula)
 
     def walk_implies(self, formula):
-        self.write("(")
-        self.walk(formula.arg(0))
-        self.write(" -> ")
-        self.walk(formula.arg(1))
-        self.write(")")
+        self.walk_binary(" -> ", formula)
 
     def walk_minus(self, formula):
-        self.write("(")
-        self.walk(formula.arg(0))
-        self.write(" - ")
-        self.walk(formula.arg(1))
-        self.write(")")
+        self.walk_binary(" - ", formula)
 
     def walk_equals(self, formula):
-        self.write("(")
-        self.walk(formula.arg(0))
-        self.write(" = ")
-        self.walk(formula.arg(1))
-        self.write(")")
+        self.walk_binary(" = ", formula)
 
     def walk_le(self, formula):
-        self.write("(")
-        self.walk(formula.arg(0))
-        self.write(" <= ")
-        self.walk(formula.arg(1))
-        self.write(")")
+        self.walk_binary(" <= ", formula)
 
     def walk_lt(self, formula):
-        self.write("(")
-        self.walk(formula.arg(0))
-        self.write(" < ")
-        self.walk(formula.arg(1))
-        self.write(")")
+        self.walk_binary(" < ", formula)
 
     def walk_function(self, formula):
         self.walk(formula.function_name())
         self.write("(")
-        count = 0
-        for p in formula.args():
+        for p in formula.args()[:-1]:
             self.walk(p)
-            count += 1
-            if count != len(formula.args()):
-                self.write(", ")
+            self.write(", ")
+        self.walk(formula.args()[-1])
         self.write(")")
 
     def walk_real_constant(self, formula):
@@ -174,18 +151,10 @@ class HRPrinter(TreeWalker):
                               formula.bv_width()))
 
     def walk_bv_xor(self, formula):
-        self.write("(")
-        self.walk(formula.arg(0))
-        self.write(" xor ")
-        self.walk(formula.arg(1))
-        self.write(")")
+        self.walk_binary(" xor ", formula)
 
     def walk_bv_concat(self, formula):
-        self.write("(")
-        self.walk(formula.arg(0))
-        self.write("::")
-        self.walk(formula.arg(1))
-        self.write(")")
+        self.walk_binary("::", formula)
 
     def walk_bv_extract(self, formula):
         self.walk(formula.arg(0))
@@ -198,81 +167,37 @@ class HRPrinter(TreeWalker):
         self.write(")")
 
     def walk_bv_udiv(self, formula):
-        self.write("(")
-        self.walk(formula.arg(0))
-        self.write(" u/ ")
-        self.walk(formula.arg(1))
-        self.write(")")
+        self.walk_binary(" u/ ", formula)
 
     def walk_bv_urem(self, formula):
-        self.write("(")
-        self.walk(formula.arg(0))
-        self.write(" u% ")
-        self.walk(formula.arg(1))
-        self.write(")")
+        self.walk_binary(" u% ", formula)
 
     def walk_bv_sdiv(self, formula):
-        self.write("(")
-        self.walk(formula.arg(0))
-        self.write(" s/ ")
-        self.walk(formula.arg(1))
-        self.write(")")
+        self.walk_binary(" s/ ", formula)
 
     def walk_bv_srem(self, formula):
-        self.write("(")
-        self.walk(formula.arg(0))
-        self.write(" s% ")
-        self.walk(formula.arg(1))
-        self.write(")")
+        self.walk_binary(" s% ", formula)
 
     def walk_bv_sle(self, formula):
-        self.write("(")
-        self.walk(formula.arg(0))
-        self.write(" s<= ")
-        self.walk(formula.arg(1))
-        self.write(")")
+        self.walk_binary(" s<= ", formula)
 
     def walk_bv_slt(self, formula):
-        self.write("(")
-        self.walk(formula.arg(0))
-        self.write(" s< ")
-        self.walk(formula.arg(1))
-        self.write(")")
+        self.walk_binary(" s< ", formula)
 
     def walk_bv_ule(self, formula):
-        self.write("(")
-        self.walk(formula.arg(0))
-        self.write(" u<= ")
-        self.walk(formula.arg(1))
-        self.write(")")
+        self.walk_binary(" u<= ", formula)
 
     def walk_bv_ult(self, formula):
-        self.write("(")
-        self.walk(formula.arg(0))
-        self.write(" u< ")
-        self.walk(formula.arg(1))
-        self.write(")")
+        self.walk_binary(" u< ", formula)
 
     def walk_bv_lshl(self, formula):
-        self.write("(")
-        self.walk(formula.arg(0))
-        self.write(" << ")
-        self.walk(formula.arg(1))
-        self.write(")")
+        self.walk_binary(" << ", formula)
 
     def walk_bv_lshr(self, formula):
-        self.write("(")
-        self.walk(formula.arg(0))
-        self.write(" >> ")
-        self.walk(formula.arg(1))
-        self.write(")")
+        self.walk_binary(" >> ", formula)
 
     def walk_bv_ashr(self, formula):
-        self.write("(")
-        self.walk(formula.arg(0))
-        self.write(" a>> ")
-        self.walk(formula.arg(1))
-        self.write(")")
+        self.walk_binary(" a>> ", formula)
 
     def walk_bv_ror(self, formula):
         self.write("(")
@@ -297,11 +222,8 @@ class HRPrinter(TreeWalker):
         self.write(", %d)" % formula.bv_extend_step())
 
     def walk_bv_comp(self, formula):
-        self.write("(")
-        self.walk(formula.arg(0))
-        self.write(" bvcomp ")
-        self.walk(formula.arg(1))
-        self.write(")")
+        self.walk_binary(" bvcomp ", formula)
+
 
     # Recycling functions form LIRA
     walk_bv_not = walk_not
@@ -321,37 +243,10 @@ class HRPrinter(TreeWalker):
         self.write(")")
 
     def walk_forall(self, formula):
-        if len(formula.quantifier_vars()) > 0:
-            self.write("(forall ")
-
-            count = 0
-            for s in formula.quantifier_vars():
-                self.walk(s)
-                count += 1
-                if count != len(formula.quantifier_vars()):
-                    self.write(", ")
-
-            self.write(" . ")
-            self.walk(formula.arg(0))
-            self.write(")")
-        else:
-            self.walk(formula.arg(0))
+        self.walk_quantifier("forall ", ", ", " . ", formula)
 
     def walk_exists(self, formula):
-        if len(formula.quantifier_vars()) > 0:
-            self.write("(exists ")
-
-            count = 0
-            for s in formula.quantifier_vars():
-                self.walk(s)
-                count += 1
-                if count != len(formula.quantifier_vars()):
-                    self.write(", ")
-            self.write(" . ")
-            self.walk(formula.arg(0))
-            self.write(")")
-        else:
-            self.walk(formula.arg(0))
+        self.walk_quantifier("exists ", ", ", " . ", formula)
 
     def walk_toreal(self, formula):
         self.write("ToReal(")
