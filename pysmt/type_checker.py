@@ -22,8 +22,6 @@ reasoning about the type of formulae.
  * The functions assert_*_args are useful for testing the type of
    arguments of a given function.
 """
-from six.moves import xrange
-
 import pysmt.walkers as walkers
 import pysmt.operators as op
 import pysmt.shortcuts
@@ -237,8 +235,8 @@ class SimpleTypeChecker(walkers.DagWalker):
         if len(args) != len(tp.param_types):
             return None
 
-        for i in xrange(len(args)):
-            if args[i] != tp.param_types[i]:
+        for (arg, p_type) in zip(args, tp.param_types):
+            if arg != p_type:
                 return None
 
         return tp.return_type
