@@ -32,20 +32,38 @@ import pysmt.decorators
 
 
 class Environment(object):
+    """The Environment provides global singleton instances of various objects.
+
+    FormulaManager and the TypeChecker are among the most commonly used ones.
+
+    Subclasses of Environment should take care of adjusting the list
+    of classes for the different services, by changing the class
+    attributes.
+    """
+    TypeCheckerClass = pysmt.type_checker.SimpleTypeChecker
+    FormulaManagerClass = pysmt.formula.FormulaManager
+    SimplifierClass = pysmt.simplifier.Simplifier
+    SubstituterClass = pysmt.substituter.Substituter
+    HRSerializerClass = pysmt.printers.HRSerializer
+    QuantifierOracleClass = pysmt.oracles.QuantifierOracle
+    TheoryOracleClass = pysmt.oracles.TheoryOracle
+    FreeVarsOracleClass= pysmt.oracles.FreeVarsOracle
+    SizeOracleClass = pysmt.oracles.SizeOracle
+    AtomsOracleClass = pysmt.oracles.AtomsOracle
 
     def __init__(self):
-        self._stc = pysmt.type_checker.SimpleTypeChecker(self)
-        self._formula_manager = pysmt.formula.FormulaManager(self)
+        self._stc = self.TypeCheckerClass(self)
+        self._formula_manager = self.FormulaManagerClass(self)
         # NOTE: Both Simplifier and Substituter keep an internal copy
-        # of the Formula Manager
-        self._simplifier = pysmt.simplifier.Simplifier(self)
-        self._substituter = pysmt.substituter.Substituter(self)
-        self._serializer = pysmt.printers.HRSerializer(self)
-        self._qfo = pysmt.oracles.QuantifierOracle(self)
-        self._theoryo = pysmt.oracles.TheoryOracle(self)
-        self._fvo = pysmt.oracles.FreeVarsOracle(self)
-        self._sizeo = pysmt.oracles.SizeOracle(self)
-        self._ao = pysmt.oracles.AtomsOracle(self)
+        # of the Formula Manager and need to be initialized afterwards
+        self._simplifier = self.SimplifierClass(self)
+        self._substituter = self.SubstituterClass(self)
+        self._serializer = self.HRSerializerClass(self)
+        self._qfo = self.QuantifierOracleClass(self)
+        self._theoryo = self.TheoryOracleClass(self)
+        self._fvo = self.FreeVarsOracleClass(self)
+        self._sizeo = self.SizeOracleClass(self)
+        self._ao = self.AtomsOracleClass(self)
 
         self._factory = None
         # Configurations
