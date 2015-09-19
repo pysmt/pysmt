@@ -418,7 +418,7 @@ class TestBasic(TestCase):
 
         for sname in get_env().factory.all_solvers(logic=QF_BOOL):
             with self.assertRaises(ConvertExpressionError):
-                is_sat(invalid_node, solver_name=sname)
+                is_sat(invalid_node, solver_name=sname, logic=QF_BOOL)
 
 
 if __name__ == '__main__':

@@ -430,14 +430,14 @@ class Factory(object):
         return self.get_interpolator(name=name, logic=logic)
 
     def is_sat(self, formula, solver_name=None, logic=None):
-        if logic == AUTO_LOGIC:
+        if logic is None or logic == AUTO_LOGIC:
             logic = get_logic(formula, self.environment)
         with self.Solver(name=solver_name, logic=logic) \
              as solver:
             return solver.is_sat(formula)
 
     def get_model(self, formula, solver_name=None, logic=None):
-        if logic == AUTO_LOGIC:
+        if logic is None or logic == AUTO_LOGIC:
             logic = get_logic(formula, self.environment)
         with self.Solver(name=solver_name, logic=logic) \
              as solver:
@@ -451,7 +451,7 @@ class Factory(object):
     def get_implicant(self, formula, solver_name=None,
                       logic=None):
         mgr = self.environment.formula_manager
-        if logic == AUTO_LOGIC:
+        if logic is None or logic == AUTO_LOGIC:
             logic = get_logic(formula, self.environment)
 
         with self.Solver(name=solver_name, logic=logic) \
@@ -474,7 +474,7 @@ class Factory(object):
                 return mgr.And(res)
 
     def get_unsat_core(self, clauses, solver_name=None, logic=None):
-        if logic == AUTO_LOGIC:
+        if logic is None or logic == AUTO_LOGIC:
             logic = get_logic(self.environment.formula_manager.And(clauses),
                               self.environment)
 
@@ -489,21 +489,21 @@ class Factory(object):
             return solver.get_unsat_core()
 
     def is_valid(self, formula, solver_name=None, logic=None):
-        if logic == AUTO_LOGIC:
+        if logic is None or logic == AUTO_LOGIC:
             logic = get_logic(formula, self.environment)
         with self.Solver(name=solver_name, logic=logic) \
              as solver:
             return solver.is_valid(formula)
 
     def is_unsat(self, formula, solver_name=None, logic=None):
-        if logic == AUTO_LOGIC:
+        if logic is None or logic == AUTO_LOGIC:
             logic = get_logic(formula, self.environment)
         with self.Solver(name=solver_name, logic=logic) \
              as solver:
             return solver.is_unsat(formula)
 
     def qelim(self, formula, solver_name=None, logic=None):
-        if logic == AUTO_LOGIC:
+        if logic is None or logic == AUTO_LOGIC:
             logic = get_logic(formula, self.environment)
 
         with self.QuantifierEliminator(name=solver_name, logic=logic) as qe:
@@ -512,7 +512,7 @@ class Factory(object):
 
     def binary_interpolant(self, formula_a, formula_b,
                            solver_name=None, logic=None):
-        if logic == AUTO_LOGIC:
+        if logic is None or logic == AUTO_LOGIC:
             logic = get_logic(
                 self.environment.formula_manager.And(formula_a, formula_b))
 
@@ -521,7 +521,7 @@ class Factory(object):
 
 
     def sequence_interpolant(self, formulas, solver_name=None, logic=None):
-        if logic == AUTO_LOGIC:
+        if logic is None or logic == AUTO_LOGIC:
             logic = get_logic(
                 self.environment.formula_manager.And(formulas))
 
