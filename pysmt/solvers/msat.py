@@ -85,6 +85,10 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
                                     "debug.api_call_trace_filename",
                                     debugFile)
 
+        mathsat.msat_set_option(self.msat_config,
+                                "theory.bv.div_by_zero_mode", "0")
+
+
     @clear_pending_pop
     def _reset_assertions(self):
         mathsat.msat_reset_env(self.msat_env)
