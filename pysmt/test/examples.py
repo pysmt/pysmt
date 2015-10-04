@@ -207,18 +207,18 @@ def get_example_formulae(environment=None):
             # EUF
             #
 
-            # f(x) = g(x)
-            Example(expr=Iff(Function(bf, (x,)), Function(bg, (x,))),
-                    is_valid=False,
-                    is_sat=True,
-                    logic=pysmt.logics.QF_UF
-                ),
+            # # f(x) = g(x)
+            # Example(expr=Iff(Function(bf, (x,)), Function(bg, (x,))),
+            #         is_valid=False,
+            #         is_sat=True,
+            #         logic=pysmt.logics.QF_UF
+            #     ),
 
             # f(x) -> g(x)
             Example(expr=Implies(Function(brf, (r,)), Function(brg, (s,))),
                     is_valid=False,
                     is_sat=True,
-                    logic=pysmt.logics.QF_UF
+                    logic=pysmt.logics.QF_UFLRA
                 ),
 
             # rf(5, rg(2)) = 0

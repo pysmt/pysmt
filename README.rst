@@ -33,6 +33,7 @@ Equalities and Uninterpreted Functions (EUF) and Bit-Vectors (BV). The following
 * Yices 2 (http://yices.csl.sri.com/)
 * CUDD (http://vlsi.colorado.edu/~fabio/CUDD/)
 * PicoSAT (http://fmv.jku.at/picosat/)
+* Boolector (http://fmv.jku.at/boolector/)
 
 Additionally, you can use any SMT-LIB 2 compliant solver.
 
@@ -57,6 +58,7 @@ wrapper used within pySMT).
   Yices               yices        QF_UFLIRA, QF_BV     Yes              Yes                  No
   SMT-Lib Interface   <custom>     UFLIRA, [QF_BV]      Yes              Yes                  No [Yes]
   PicoSAT             picosat      QF_BOOL              Yes              Yes                  No [Yes]
+  Boolector           btor         QF_UFBV              Yes              Yes                  No
   BDD (CUDD)          bdd          BOOL                 Yes              Yes                  No
   =================   ==========   ==================   ==============   ==================   ==========
 
@@ -159,10 +161,13 @@ The script *pysmt-install* can be used to simplify the installation of the solve
  $ pysmt-install --msat
 will install MathSAT 5. This script does not install required dependencies for building the solver (e.g., make or gcc) and has been tested mainly on Linux Debian/Ubuntu systems. We suggest that you refer to the documentation of each solver to understand how to install it with its python bindings. Nevertheless, we try to keep *pysmt/cmd/install.py* as readable and documented as possible..
 
-Finally, for CVC4 and picosat, we have patches that need to be applied. The patches are available in the repository 'pysmt/solvers_patches' and should be applied against the following versions of the solvers:
+Finally, for CVC4 we have a patch that needs to be applied. The patches are available in the repository 'pysmt/solvers_patches' and should be applied against the following versions of the solvers:
 
 - CVC4: Git revision 68f22235a62f5276b206e9a6692a85001beb8d42
-- pycudd: 2.0.2
-- picosat 960
+
+For picosat and cudd, we use custom wrappers:
+
+- repycudd (https://github.com/pysmt/repycudd)
+- pyPicoSAT (https://github.com/pysmt/pyPicoSAT)
 
 For instruction on how to use any SMT-LIB complaint solver with pySMT see examples/generic_smtlib.py
