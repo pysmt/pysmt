@@ -1,10 +1,49 @@
 Change Log
 ==========
 
-0.4.2: XXXX-XX-XX -- YYYYYYYYYYYYYYYYYYY
+0.4.2: 2015-10-12 -- Boolector
 -----------------------------------------
 
-- AIG rewriting
+Solvers:
+
+* Boolector 2.1.1 is now supported
+* MathSAT: Updated to 5.3.8
+
+
+General:
+
+* EqualsOrIff: Introduced shortcut to handle equality and mismatch
+  between theory and predicates atoms. This simply chooses what to use
+  depending on the operands: Equals if Theory, Iff if predicates.
+  Example usage in examples/all_smt.py
+
+* Environment Extensibility: The global classes defined in the
+  Environment can now be replaced. This makes it much easier for
+  external tools to define new FNode types, and override default
+  services.
+
+* Parser Extensibility: Simplified extensibility of the parser by
+  splitting the special-purpose code in the main loop in separate
+  functions. This also adds support for escaping symbols when dealing
+  with SMT-LIB.
+
+* AUTO Logic: Factory methods default to logics.AUTO, providing a
+  smarter selection of the logic depending on the formula being
+  solved. This impacts all is_* functions, get_model, and qelim.
+
+* Shell: Import BV32 and BVType by default, and enable infix notation
+
+* Simplified HRPrinter
+
+* Added AIG rewriting (rewritings.AIGer)
+
+Bugfix:
+
+* Fixed behavior of CNFizer.cnf_as_set()
+* Fixed issue #159: error in parsing let bindings that refer to
+  previous let-bound symbols.
+  Thanks to *Alberto Griggio* for reporting it!
+
 
 0.4.1: 2015-07-13 -- BitVectors Extension
 -----------------------------------------
