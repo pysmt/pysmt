@@ -16,6 +16,8 @@
 #   limitations under the License.
 #
 import re
+
+from warnings import warn
 from fractions import Fraction
 from six.moves import xrange
 
@@ -294,7 +296,6 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
             bval = (mathsat.msat_term_is_true(self.msat_env, tval) == 1)
             return self.mgr.Bool(bval)
 
-
     def get_model(self):
         assignment = {}
         msat_iterator = mathsat.msat_create_model_iterator(self.msat_env)
@@ -337,8 +338,11 @@ class MSatConverter(Converter, DagWalker):
         self.intType = mathsat.msat_get_integer_type(self.msat_env)
 
         self.back_memoization = {}
-        return
 
+        # Handling of UF bool args
+        self._ufrewriter = MSatBoolUFRewriter(environment)
+
+        return
 
     def back(self, expr):
         return self._walk_back(expr, self.mgr)
@@ -351,7 +355,6 @@ class MSatConverter(Converter, DagWalker):
         assert ty1 in [types.REAL, types.INT]
         assert ty2 in [types.REAL, types.INT]
         return types.REAL
-
 
     def _get_signature(self, term, args):
         """Returns the signature of the given term.
@@ -737,10 +740,14 @@ class MSatConverter(Converter, DagWalker):
         This function might throw a InternalSolverError exception if
         an error during conversion occurs.
         """
-        res = self.walk(formula)
+        # Rewrite to avoid UF with bool args
+        rformula = self._ufrewriter.walk(formula)
+        res = self.walk(rformula)
         if mathsat.MSAT_ERROR_TERM(res):
             msat_msg = mathsat.msat_last_error_message(self.msat_env)
             raise InternalSolverError(msat_msg)
+        if rformula != formula:
+            warn("MathSAT convert(): UF with bool arguments have been translated")
         return res
 
     def walk_and(self, formula, args, **kwargs):
@@ -954,8 +961,8 @@ class MSatConverter(Converter, DagWalker):
         # In mathsat toreal is implicit
         return args[0]
 
-
     def _type_to_msat(self, tp):
+        """Convert a pySMT type into a MathSAT type."""
         if tp.is_bool_type():
             return self.boolType
         elif tp.is_real_type():
@@ -1150,3 +1157,69 @@ class MSatInterpolator(Interpolator):
                 mathsat.msat_destroy_config(cfg)
             if env:
                 mathsat.msat_destroy_env(env)
+
+
+class MSatBoolUFRewriter(IdentityDagWalker):
+    """Rewrites an expression containing UF with boolean arguments into an
+       equivalent one with only theory UF.
+
+    This is needed because MathSAT does not support UF with boolean
+    arguments. This class could implement different rewriting
+    strategies. Eventually, we might consider integrating it into the
+    Converter directly.
+    """
+
+    def __init__(self, environment):
+        IdentityDagWalker.__init__(self, environment)
+        self.get_type = self.env.stc.get_type
+        self.mgr = self.env.formula_manager
+
+    def walk_function(self, formula, args, **kwargs):
+        from pysmt.typing import FunctionType
+        # Separate arguments
+        bool_args = []
+        other_args = []
+        for a in args:
+            if self.get_type(a).is_bool_type():
+                bool_args.append(a)
+            else:
+                other_args.append(a)
+
+        if len(bool_args) == 0:
+            # If no Bool Args, return as-is
+            return IdentityDagWalker.walk_function(self, formula, args, **kwargs)
+
+        # Build new function type
+        rtype = formula.function_name().symbol_type().return_type
+        ptype = [self.get_type(a) for a in other_args]
+        if len(ptype) == 0:
+            ftype = rtype
+        else:
+            ftype = FunctionType(rtype, ptype)
+
+        # Base-case
+        stack = []
+        for i in xrange(2**len(bool_args)):
+            fname = self.mgr.Symbol("%s#%i" % (formula.function_name(),i), ftype)
+            if len(ptype) == 0:
+                stack.append(fname)
+            else:
+                stack.append(self.mgr.Function(fname, tuple(other_args)))
+
+        # Recursive case
+        for b in bool_args:
+            tmp = []
+            while len(stack) > 0:
+                lhs = stack.pop()
+                rhs = stack.pop()
+                # Simplify branches, if b is a constant
+                if b.is_true():
+                    tmp.append(lhs)
+                elif b.is_false():
+                    tmp.append(rhs)
+                else:
+                    ite = self.mgr.Ite(b, lhs, rhs)
+                    tmp.append(ite)
+            stack = tmp
+        res = stack[0]
+        return res
