@@ -442,12 +442,15 @@ def check_install():
     from pysmt.shortcuts import Solver, QuantifierEliminator
     from pysmt.exceptions import NoSolverAvailableError
 
-    required_solver = os.environ.get("PYSMT_SOLVER")
-    if required_solver is None:
-        required_solver = "None"
-    elif required_solver == "cudd":
-        # Special case for bdd
-        required_solver = "bdd"
+    required_solvers = set()
+    request = os.environ.get("PYSMT_SOLVER")
+    if request == "cudd":
+        required_solvers.add("bdd")
+    elif request == "all":
+        required_solvers = set(['msat', 'z3', 'cvc4', 'yices', 'bdd',
+                                'picosat', 'btor'])
+    else:
+        required_solvers.add(request)
 
     print("Solvers:")
     for solver in ['msat', 'z3', 'cvc4', 'yices', 'bdd', 'picosat', 'btor']:
@@ -459,8 +462,8 @@ def check_install():
             is_installed = False
         print("  %s%s" % (solver.ljust(10), is_installed))
 
-        if solver == required_solver and not is_installed:
-            raise Exception("Was expecting to find %s installed" % required_solver)
+        if solver in required_solvers and not is_installed:
+            raise Exception("Was expecting to find %s installed" % solver)
 
     print("\nQuantifier Eliminators:")
     for solver in ['msat_fm', 'msat_lw', 'z3', 'bdd']:
@@ -472,8 +475,8 @@ def check_install():
             is_installed = False
         print("  %s%s" % (solver.ljust(10), is_installed))
 
-        if solver == required_solver and not is_installed:
-            raise Exception("Was expecting to find %s installed" % required_solver)
+        if solver in required_solvers and not is_installed:
+            raise Exception("Was expecting to find %s installed" % solver)
 
 
 def parse_options():
