@@ -959,9 +959,13 @@ class MSatConverter(Converter, DagWalker):
         elif tp.is_function_type():
             stps = [self._type_to_msat(x) for x in tp.param_types]
             rtp = self._type_to_msat(tp.return_type)
-            return mathsat.msat_get_function_type(self.msat_env,
-                                                stps,
-                                                rtp)
+            msat_type = mathsat.msat_get_function_type(self.msat_env,
+                                                       stps,
+                                                       rtp)
+            if mathsat.MSAT_ERROR_TYPE(msat_type):
+                msat_msg = mathsat.msat_last_error_message(self.msat_env)
+                raise InternalSolverError(msat_msg)
+            return msat_type
         else:
             assert tp.is_bv_type(), "Usupported type for '%s'" % tp
             return mathsat.msat_get_bv_type(self.msat_env, tp.width)
@@ -973,6 +977,9 @@ class MSatConverter(Converter, DagWalker):
             decl = mathsat.msat_declare_function(self.msat_env,
                                                  var.symbol_name(),
                                                  tp)
+            if mathsat.MSAT_ERROR_DECL(decl):
+                msat_msg = mathsat.msat_last_error_message(self.msat_env)
+                raise InternalSolverError(msat_msg)
             self.symbol_to_decl[var] = decl
             self.decl_to_symbol[mathsat.msat_decl_id(decl)] = var
 

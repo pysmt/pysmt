@@ -409,7 +409,7 @@ def install_picosat(options):
 def install_boolector(options):
     """Installer Boolector"""
 
-    base_name =  "boolector-2.0.7-with-lingeling-azd"
+    base_name =  "boolector-2.1.1-with-lingeling-b85"
     archive_name = "%s.tar.bz2" % base_name
     archive = os.path.join(BASE_DIR, archive_name)
     dir_path = os.path.join(BASE_DIR, base_name)

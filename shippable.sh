@@ -7,9 +7,9 @@ if [ "$1" == "all" ]
 then
     if [ "$2" == "3.4" ]
     then
-        export PYTHONPATH="${PYSMT_MSAT_PATH_3}:${PYSMT_PICOSAT_PATH_3}"
+        export PYTHONPATH="${PYSMT_MSAT_PATH_3}:${PYSMT_PICOSAT_PATH_3}:${PYSMT_BTOR_PATH_3}"
     else
-        export PYTHONPATH="${PYSMT_MSAT_PATH}:${PYSMT_Z3_PATH}:${PYSMT_CVC4_PATH}:${PYSMT_YICES_PATH}:${PYSMT_PYCUDD_PATH}:${PYSMT_PICOSAT_PATH}"
+        export PYTHONPATH="${PYSMT_MSAT_PATH}:${PYSMT_Z3_PATH}:${PYSMT_CVC4_PATH}:${PYSMT_YICES_PATH}:${PYSMT_PYCUDD_PATH}:${PYSMT_PICOSAT_PATH}:${PYSMT_BTOR_PATH}"
     fi
 fi
 
@@ -56,6 +56,17 @@ then
         export PYTHONPATH="${PYSMT_PICOSAT_PATH_3}"
     else
         export PYTHONPATH="${PYSMT_PICOSAT_PATH}"
+    fi
+
+fi
+
+if [ "$1" == "btor" ]
+then
+    if [ "$2" == "3.4" ]
+    then
+        export PYTHONPATH="${PYSMT_BTOR_PATH_3}"
+    else
+        export PYTHONPATH="${PYSMT_BTOR_PATH}"
     fi
 
 fi

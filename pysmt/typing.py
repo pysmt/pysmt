@@ -211,10 +211,28 @@ class _FunctionType(PySMTType):
     """
     def __init__(self, return_type, param_types):
         PySMTType.__init__(self, type_id = 4)
-        self.return_type = return_type
-        self.param_types = param_types
+        self._return_type = return_type
+        self._param_types = param_types
         self._hash = hash(str(self))
         return
+
+    @property
+    def param_types(self):
+        """Returns the arguments of the Function Type.
+
+        E.g.,  F: (Bool -> Bool) -> Real
+        Returns [BoolType, BoolType].
+        """
+        return self._param_types
+
+    @property
+    def return_type(self):
+        """Returns the return type of  the Function Type.
+
+        E.g.,  F: (Bool -> Bool) -> Real
+        Returns RealType.
+        """
+        return self._return_type
 
     def as_smtlib(self, funstyle=True):
         args = [p.as_smtlib(False)

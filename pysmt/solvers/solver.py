@@ -58,10 +58,18 @@ class Solver(object):
         assert formula in self.environment.formula_manager, \
                "Formula does not belong to the current Formula Manager"
 
-        self.push()
-        self.add_assertion(formula)
-        res = self.solve()
-        self.pending_pop = True
+        use_solving_under_assumption = False
+        try:
+            self.push()
+        except NotImplementedError:
+            use_solving_under_assumption = True
+
+        if use_solving_under_assumption:
+            res = self.solve([formula])
+        else:
+            self.add_assertion(formula)
+            res = self.solve()
+            self.pending_pop = True
         return res
 
     def is_valid(self, formula):
@@ -70,7 +78,6 @@ class Solver(object):
 
     def is_unsat(self, formula):
         return not self.is_sat(formula)
-
 
     def get_values(self, exprs):
         """ Returns the value of the expressions if a model was found.
@@ -180,11 +187,9 @@ class Solver(object):
             res[f] = v
         return res
 
-
     def get_model(self):
         """ Returns an instance of Model that survives the solver instance """
         raise NotImplementedError
-
 
     def set_options(self, options):
         """ Sets multiple options at once.
@@ -193,7 +198,6 @@ class Solver(object):
         :type options: Dictionary
         """
         raise NotImplementedError
-
 
     def __del__(self):
         """ Implicitely call distructor upon garbage collection. """

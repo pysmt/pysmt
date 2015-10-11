@@ -302,15 +302,11 @@ class NNFizer(DagWalker):
             i, t, e = formula.args()
             return [i, mgr.Not(i), t, e]
 
-        elif formula.is_symbol():
-            return []
-
-        elif formula.is_bool_constant():
-            return []
-
         else:
-            # This is a theory atom
-            assert formula.is_theory_relation(), str(formula)
+            assert formula.is_symbol() or \
+                formula.is_function_application() or \
+                formula.is_bool_constant() or \
+                formula.is_theory_relation(), str(formula)
             return []
 
     def walk_not(self, formula, args, **kwargs):
@@ -364,6 +360,9 @@ class NNFizer(DagWalker):
         return self.mgr.Exists(formula.quantifier_vars(), args[0])
 
     def walk_symbol(self, formula, **kwargs):
+        return formula
+
+    def walk_function(self, formula, **kwargs):
         return formula
 
     def walk_bool_constant(self, formula, **kwargs):
