@@ -1,0 +1,121 @@
+language: python
+
+sudo: false
+
+cache:
+  apt: true
+  directories:
+  - ${TRAVIS_BUILD_DIR}/.smt_solvers/z3_bin
+  - ${TRAVIS_BUILD_DIR}/.smt_solvers/z3
+  - ${TRAVIS_BUILD_DIR}/.smt_solvers/CVC4_bin
+  - ${TRAVIS_BUILD_DIR}/.smt_solvers/picosat-960
+  - ${TRAVIS_BUILD_DIR}/.smt_solvers/repycudd-4861f4df8abc2ca205a6a09b30fdc8cfd29f6ebb
+  - ${TRAVIS_BUILD_DIR}/.smt_solvers/boolector-2.1.1-with-lingeling-b85
+  - ${TRAVIS_BUILD_DIR}/.smt_solvers/pyices-aa0b91c39aa00c19c2160e83aad822dc468ce328
+  - ${TRAVIS_BUILD_DIR}/.smt_solvers/yices-2.3.0
+  - ${TRAVIS_BUILD_DIR}/.smt_solvers/yices_bin
+  - ${TRAVIS_BUILD_DIR}/.smt_solvers/mathsat-5.3.8-linux-x86_64
+  - ${HOME}/.local/lib/python2.7/site-packages
+  - $HOME/.cache/pip
+
+addons:
+  apt:
+    packages:
+    - python-setuptools
+    - python-nose
+    - python-pip
+    - python-dev
+    - make
+    - build-essential
+    - swig
+    - libgmp-dev
+    - autoconf
+    - libtool
+    - wget
+    - curl
+    - libboost-dev
+    - python3-dev
+
+python:
+  - 2.7
+  - 3.4
+  - pypy
+  - pypy3
+
+
+# Multiple envs will cause multiple build across multiple python versions.
+# We test the following:
+# 1. PySMT w/o solvers
+# 2. PySMT with one solver at the time
+#
+env:
+  matrix:
+    - PYSMT_SOLVER="all"
+    - PYSMT_SOLVER="None"
+    - PYSMT_SOLVER="msat"
+    - PYSMT_SOLVER="z3"
+    - PYSMT_SOLVER="cvc4"
+    - PYSMT_SOLVER="yices"
+    - PYSMT_SOLVER="cudd"
+    - PYSMT_SOLVER="picosat"
+    - PYSMT_SOLVER="btor"
+    - PYSMT_SOLVER="msat_wrap"
+
+matrix:
+  fast_finish: true
+  exclude:
+    - python: 3.4
+      env: PYSMT_SOLVER="z3"
+    - python: 3.4
+      env: PYSMT_SOLVER="cvc4"
+    - python: 3.4
+      env: PYSMT_SOLVER="yices"
+    - python: 3.4
+      env: PYSMT_SOLVER="cudd"
+    - python: 3.4
+      env: PYSMT_SOLVER="all"
+
+    - python: pypy
+      env: PYSMT_SOLVER="msat"
+    - python: pypy
+      env: PYSMT_SOLVER="z3"
+    - python: pypy
+      env: PYSMT_SOLVER="cvc4"
+    - python: pypy
+      env: PYSMT_SOLVER="yices"
+    - python: pypy
+      env: PYSMT_SOLVER="cudd"
+    - python: pypy
+      env: PYSMT_SOLVER="picosat"
+    - python: pypy
+      env: PYSMT_SOLVER="btor"
+    - python: pypy
+      env: PYSMT_SOLVER="all"
+
+    - python: pypy3
+      env: PYSMT_SOLVER="msat"
+    - python: pypy3
+      env: PYSMT_SOLVER="z3"
+    - python: pypy3
+      env: PYSMT_SOLVER="cvc4"
+    - python: pypy3
+      env: PYSMT_SOLVER="yices"
+    - python: pypy3
+      env: PYSMT_SOLVER="cudd"
+    - python: pypy3
+      env: PYSMT_SOLVER="picosat"
+    - python: pypy3
+      env: PYSMT_SOLVER="btor"
+    - python: pypy3
+      env: PYSMT_SOLVER="all"
+
+
+install:
+  - pip install six
+  - source ./travis.sh
+
+
+script:
+  - env
+  - python install.py --check
+  - nosetests pysmt -v

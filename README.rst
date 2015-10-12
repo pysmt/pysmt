@@ -13,9 +13,8 @@ Among others, you can:
 * Solve them using one of the native solvers, or by wrapping any
   SMT-Lib complaint solver.
 
-
-.. image:: https://api.shippable.com/projects/54d4edba5ab6cc13528b1970/badge?branchName=master
-           :target: https://app.shippable.com/projects/54d4edba5ab6cc13528b1970/builds/latest
+.. image:: https://travis-ci.org/pysmt/pysmt.svg
+           :target: https://travis-ci.org/pysmt/pysmt
            :alt: Build Status
 
 .. image:: https://readthedocs.org/projects/pysmt/badge/?version=latest
