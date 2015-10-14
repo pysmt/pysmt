@@ -68,7 +68,7 @@ def get_example_formulae(environment=None):
         brg = Symbol("brg", FunctionType(BOOL, [REAL]))
 
         bv8 = Symbol("bv1", BV8)
-        bv16 =Symbol("bv2", BV16)
+        bv16 = Symbol("bv2", BV16)
 
         result = [
             # Formula, is_valid, is_sat, is_qf

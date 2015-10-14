@@ -4,14 +4,14 @@ Examples
 This directory contains examples to get you started using
 pySMT. Suggested order:
 
-1. basic.py : First example of the README
-2. puzzle.py : Hello World word puzzle
-3. infix_notation.py : Hello World word puzzle using infix-notation
-4. combine_solvers.py : Combine multiple solvers to solve the same
-5. model_checking.py : Model-Checking an infinite state system (BMC+K-Induction) in ~150 lines
-6. allsat.py: How to access functionalities of solvers not currently wrapped by pySMT.
-7. generic_smtlib.py: Shows how to use any SMT-LIB complaint SMT solver
-8. efsmt.py: Shows how to combine two different solvers to solve an Exists Forall problem.
-9. allsmt.py: How to detect the logic of a formula and perform model enumeration.
-10. sudoku/sudoku.py: Solves sudoku problems on the command line using a simple encoding using either QF_LIA or QF_BV
-11. sudoku/gui.py: A small GUI that embeds sudoku.py and allows a user-friendly intercation with the sudoku solver.
+1. `basic.py </examples/basic.py>`_ : First example of the README
+2. `puzzle.py </examples/puzzle.py>`_ : Hello World word puzzle
+3. `infix_notation.py </examples/infix_notation.py>`_ : Hello World word puzzle using infix-notation
+4. `combine_solvers.py </examples/combine_solvers.py>`_ : Combine multiple solvers to solve the same
+5. `model_checking.py </examples/model_checking.py>`_ : Model-Checking an infinite state system (BMC+K-Induction) in ~150 lines
+6. `allsat.py </examples/allsat.py>`_ : How to access functionalities of solvers not currently wrapped by pySMT.
+7. `generic_smtlib.py </examples/generic_smtlib.py>`_ : Shows how to use any SMT-LIB complaint SMT solver
+8. `efsmt.py </examples/efsmt.py>`_ : Shows how to combine two different solvers to solve an Exists Forall problem.
+9. `allsmt.py </examples/allsmt.py>`_ : How to detect the logic of a formula and perform model enumeration.
+10. `sudoku/ </examples/sudoku/>`_ : Solves sudoku problems using a simple encoding using either QF_LIA or QF_BV
+11. `parallel.py </examples/parallel.py>`_ : Shows how to use multi-processing to perform parallel and asynchronous solving
