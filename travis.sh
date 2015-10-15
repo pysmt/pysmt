@@ -110,9 +110,12 @@ fi
 
 if [ "${PYSMT_SOLVER}" == "msat_wrap" ] || [ "${PYSMT_SOLVER}" == "all" ]
 then
-    python ./install.py --confirm-agreement --msat
-    cp .smt_solvers/mathsat-5.3.8-linux-x86_64/bin/mathsat $TRAVIS_BUILD_DIR/pysmt/test/smtlib/bin
-    mv $TRAVIS_BUILD_DIR/pysmt/test/smtlib/bin/mathsat.solver.sh.template $TRAVIS_BUILD_DIR/pysmt/test/smtlib/bin/mathsat.solver.sh
+    if [ ! -f .smt_solvers/mathsat-5.3.8-linux-x86_64/bin/mathsat ]
+    then
+        python ./install.py --confirm-agreement --msat
+    fi
+    cp .smt_solvers/mathsat-5.3.8-linux-x86_64/bin/mathsat ${TRAVIS_BUILD_DIR}/pysmt/test/smtlib/bin
+    mv ${TRAVIS_BUILD_DIR}/pysmt/test/smtlib/bin/mathsat.solver.sh.template ${TRAVIS_BUILD_DIR}/pysmt/test/smtlib/bin/mathsat.solver.sh
 fi
 
 echo "All done for '${PYSMT_SOLVER}'..."
