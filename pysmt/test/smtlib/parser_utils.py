@@ -16,8 +16,8 @@
 #   limitations under the License.
 #
 import os
-import unittest
 
+from pysmt.test import SkipTest
 from pysmt.shortcuts import Solver, reset_env
 from pysmt.smtlib.parser import SmtLibParser
 from pysmt.smtlib.script import check_sat_filter
@@ -105,7 +105,7 @@ def execute_script_fname(smtfile, logic, expected_result):
     try:
         log = script.evaluate(Solver(logic=logic))
     except NoSolverAvailableError:
-        raise unittest.SkipTest("No solver for logic %s." % logic)
+        raise SkipTest("No solver for logic %s." % logic)
 
     res = check_sat_filter(log)
     if res:

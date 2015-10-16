@@ -15,9 +15,13 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import unittest
-
+import os
 from functools import wraps
+
+try:
+    import unittest2 as unittest
+except ImportError:
+    import unittest
 
 from pysmt.environment import get_env, reset_env
 from pysmt.decorators import deprecated
@@ -38,6 +42,7 @@ class TestCase(unittest.TestCase):
 
     if "assertRaisesRegex" not in dir(unittest.TestCase):
         assertRaisesRegex = unittest.TestCase.assertRaisesRegexp
+
 
     def assertValid(self, formula, msg=None, solver_name=None, logic=None):
         """Assert that formula is VALID."""
@@ -151,3 +156,27 @@ class skipIfNoQEForLogic(object):
         def wrapper(*args, **kwargs):
             return test_fun(*args, **kwargs)
         return wrapper
+
+
+def skipIfNoSMTWrapper(test_fun):
+    """Skip a test if there is no quantifier eliminator for the given logic."""
+    msg = "No SMT-Lib solver is available"
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    cond = any(f.endswith(".solver.sh")
+               for _, _, fnames in os.walk(BASE_DIR)
+               for f in fnames)
+
+    @unittest.skipIf(cond, msg)
+    @wraps(test_fun)
+    def wrapper(*args, **kwargs):
+        return test_fun(*args, **kwargs)
+    return wrapper
+
+
+
+
+# Export a main function
+main = unittest.main
+
+# Export SkipTest
+SkipTest = unittest.SkipTest

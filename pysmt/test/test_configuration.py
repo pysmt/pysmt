@@ -24,7 +24,7 @@ from pysmt.configuration import (configure_environment,
                                  write_environment_configuration)
 from pysmt.environment import Environment
 
-from pysmt.test import TestCase
+from pysmt.test import TestCase, main
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
@@ -108,5 +108,4 @@ class TestConfiguration(TestCase):
 
 
 if __name__ == '__main__':
-    import unittest
-    unittest.main()
+    main()

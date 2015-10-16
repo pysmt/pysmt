@@ -16,9 +16,8 @@
 #   limitations under the License.
 #
 import os
-import unittest
 
-from pysmt.test import TestCase
+from pysmt.test import TestCase, main, skipIfNoSMTWrapper
 from pysmt.shortcuts import get_env, Solver, is_valid, is_sat
 from pysmt.shortcuts import LE, LT, Real, GT, Int, Symbol, And, Not
 from pysmt.typing import BOOL, REAL, INT
@@ -27,17 +26,7 @@ from pysmt.exceptions import SolverRedefinitionError, NoLogicAvailableError
 
 from pysmt.test.examples import get_example_formulae
 
-
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-def any_wrapper():
-    """Check if at least one wrapper is available."""
-    return any(f.endswith(".solver.sh")
-               for _, _, fnames in os.walk(BASE_DIR)
-               for f in fnames)
-
-NO_WRAPPERS_AVAILABLE = not any_wrapper()
-
 
 class TestGenericWrapper(TestCase):
 
@@ -59,7 +48,7 @@ class TestGenericWrapper(TestCase):
                     self.all_solvers.append(f)
 
 
-    @unittest.skipIf(NO_WRAPPERS_AVAILABLE, "No wrapper available")
+    @skipIfNoSMTWrapper
     def test_generic_wrapper_basic(self):
         a = Symbol("A", BOOL)
         f = And(a, Not(a))
@@ -71,7 +60,7 @@ class TestGenericWrapper(TestCase):
                 self.assertFalse(res)
 
 
-    @unittest.skipIf(NO_WRAPPERS_AVAILABLE, "No wrapper available")
+    @skipIfNoSMTWrapper
     def test_generic_wrapper_model(self):
         a = Symbol("A", BOOL)
         b = Symbol("B", BOOL)
@@ -87,7 +76,7 @@ class TestGenericWrapper(TestCase):
                 self.assertTrue(s.get_py_value(a))
 
 
-    @unittest.skipIf(NO_WRAPPERS_AVAILABLE, "No wrapper available")
+    @skipIfNoSMTWrapper
     def test_generic_wrapper_eager_model(self):
         a = Symbol("A", BOOL)
         b = Symbol("B", BOOL)
@@ -105,7 +94,7 @@ class TestGenericWrapper(TestCase):
             self.assertTrue(model.get_value(a).is_true())
 
 
-    @unittest.skipIf(NO_WRAPPERS_AVAILABLE, "No wrapper available")
+    @skipIfNoSMTWrapper
     def test_examples(self):
         for n in self.all_solvers:
             with Solver(name=n) as solver:
@@ -133,7 +122,7 @@ class TestGenericWrapper(TestCase):
                                            [QF_UFLIRA])
 
 
-    @unittest.skipIf(NO_WRAPPERS_AVAILABLE, "No wrapper available")
+    @skipIfNoSMTWrapper
     def test_reals(self):
         f = And(LT(Symbol("x", REAL), Real(2)), LE(Symbol("x", REAL), Real(3)))
 
@@ -144,7 +133,7 @@ class TestGenericWrapper(TestCase):
                 self.assertTrue(res)
 
 
-    @unittest.skipIf(NO_WRAPPERS_AVAILABLE, "No wrapper available")
+    @skipIfNoSMTWrapper
     def test_ints(self):
         f = And(LT(Symbol("x", INT), Int(2)), GT(Symbol("x", INT), Int(2)))
 
@@ -155,4 +144,4 @@ class TestGenericWrapper(TestCase):
                 self.assertFalse(res)
 
 if __name__ == "__main__":
-    unittest.main()
+    main()

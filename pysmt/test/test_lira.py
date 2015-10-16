@@ -17,7 +17,7 @@
 #
 from pysmt.shortcuts import *
 from pysmt.typing import INT, REAL, FunctionType
-from pysmt.test import TestCase
+from pysmt.test import TestCase, main
 from pysmt.logics import QF_UFLIRA, UFLIRA
 
 class TestLIRA(TestCase):
@@ -62,5 +62,4 @@ class TestLIRA(TestCase):
 
 
 if __name__ == '__main__':
-    import unittest
-    unittest.main()
+    main()

@@ -453,8 +453,8 @@ class PrenexNormalizer(DagWalker):
                 needs_rename = q_vars & reserved
                 if len(needs_rename) > 0:
                     # we need alpha-renaming: prepare the substitution map
-                    sub = {v : self.mgr.FreshSymbol(v.symbol_type())
-                           for v in needs_rename}
+                    sub = dict((v,self.mgr.FreshSymbol(v.symbol_type()))
+                               for v in needs_rename)
                     sub_matrix = sub_matrix.substitute(sub)
 
                     # The new variables for this quantifiers will be

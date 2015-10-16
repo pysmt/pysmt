@@ -23,6 +23,7 @@ from pysmt.shortcuts import (Real, Plus, Symbol, Equals, And, Bool, Or,
 from pysmt.shortcuts import Solver, get_env, qelim, get_model, TRUE, ExactlyOne
 from pysmt.typing import REAL, BOOL, INT, FunctionType
 from pysmt.test import TestCase, skipIfSolverNotAvailable, skipIfNoSolverForLogic
+from pysmt.test import main
 from pysmt.logics import QF_UFLIRA, QF_BOOL, LIA
 from pysmt.exceptions import ConvertExpressionError
 from pysmt.test.examples import get_example_formulae
@@ -263,5 +264,4 @@ class TestRegressions(TestCase):
 
 
 if __name__ == "__main__":
-    import unittest
-    unittest.main()
+    main()

@@ -15,14 +15,11 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import unittest
-
 from pysmt.shortcuts import *
-from pysmt.typing import REAL, BOOL, INT
-from pysmt.test import (TestCase, skipIfSolverNotAvailable)
-from pysmt.exceptions import (SolverReturnedUnknownResultError, \
-                              NoSolverAvailableError)
-from pysmt.logics import LRA, LIA, UFLIRA
+from pysmt.typing import REAL, INT
+from pysmt.test import TestCase, skipIfSolverNotAvailable, main
+from pysmt.exceptions import NoSolverAvailableError
+from pysmt.logics import UFLIRA
 
 
 class TestInterpolation(TestCase):
@@ -102,7 +99,7 @@ class TestInterpolation(TestCase):
             i = itp.binary_interpolant(a, b)
         else:
             i = itp.sequence_interpolant([a, b])
-            
+
         self.assertTrue(i is not None)
         if not binary:
             self.assertTrue(hasattr(i, '__len__'))
@@ -125,7 +122,7 @@ class TestInterpolation(TestCase):
             i = itp.binary_interpolant(a, b)
         else:
             i = itp.sequence_interpolant([a, b])
-            
+
         self.assertTrue(i is not None)
         if not binary:
             self.assertTrue(hasattr(i, '__len__'))
@@ -135,7 +132,7 @@ class TestInterpolation(TestCase):
         self.assertTrue(i.get_free_variables() == set([y]))
         self.assertValid(Implies(a, i))
         self.assertUnsat(And(i, b))
-        
+
 
 if __name__ == '__main__':
-    unittest.main()
+    main()

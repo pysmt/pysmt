@@ -15,14 +15,12 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import unittest
-
 from pysmt.shortcuts import Symbol, ForAll, Exists, And, Iff, GE, LT, Real, Int
 from pysmt.shortcuts import Minus, Equals, Plus, ToReal, Implies, LE, TRUE, Not
 from pysmt.shortcuts import QuantifierEliminator
 from pysmt.shortcuts import is_sat, is_valid
 from pysmt.typing import REAL, BOOL, INT
-from pysmt.test import TestCase
+from pysmt.test import TestCase, main
 from pysmt.test import (skipIfNoSolverForLogic, skipIfNoQEForLogic,
                         skipIfQENotAvailable)
 from pysmt.test.examples import get_example_formulae
@@ -209,4 +207,4 @@ class TestQE(TestCase):
             self.assertEqual(satisfiability, s, f)
 
 if __name__ == '__main__':
-    unittest.main()
+    main()

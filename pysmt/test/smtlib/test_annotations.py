@@ -16,13 +16,12 @@
 #   limitations under the License.
 #
 import os
-import unittest
 
 from pysmt.test.smtlib.parser_utils import SMTLIB_DIR
 from pysmt.smtlib.parser import SmtLibParser
 from pysmt.smtlib.annotations import Annotations
 from pysmt.shortcuts import reset_env, Symbol
-from pysmt.test import TestCase
+from pysmt.test import TestCase, main
 
 class TestBasic(TestCase):
 
@@ -145,4 +144,4 @@ class TestBasic(TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    main()

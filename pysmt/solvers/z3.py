@@ -220,7 +220,7 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
 
     def _named_assertions_map(self):
         if self.options.unsat_cores_mode is not None:
-            return {t[0] : (t[1],t[2]) for t in self.assertions}
+            return dict((t[0], (t[1],t[2])) for t in self.assertions)
         return None
 
     def get_named_unsat_core(self):
