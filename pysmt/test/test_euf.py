@@ -18,7 +18,7 @@
 from pysmt.shortcuts import *
 from pysmt.typing import INT, REAL, FunctionType
 from pysmt.logics import UFLRA, UFLIRA
-from pysmt.test import TestCase
+from pysmt.test import TestCase, main
 from pysmt.test import skipIfSolverNotAvailable, skipIfNoSolverForLogic
 
 
@@ -71,5 +71,4 @@ class TestEUF(TestCase):
                           f.simplify())
 
 if __name__ == '__main__':
-    import unittest
-    unittest.main()
+    main()

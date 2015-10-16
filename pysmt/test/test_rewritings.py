@@ -15,10 +15,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import unittest
-
 from pysmt.shortcuts import And, get_env, Iff, Or, is_valid, Symbol, Exists, Implies, ForAll, Not
-from pysmt.test import TestCase, skipIfNoSolverForLogic
+from pysmt.test import TestCase, skipIfNoSolverForLogic, main
 from pysmt.rewritings import prenex_normal_form, nnf, conjunctive_partition, aig
 from pysmt.rewritings import disjunctive_partition
 from pysmt.test.examples import get_example_formulae
@@ -119,4 +117,4 @@ class TestRewritings(TestCase):
                 self.assertTrue(ok, "Was: %s\n Got:%s" % (f, f_aig))
 
 if __name__ == "__main__":
-    unittest.main()
+    main()

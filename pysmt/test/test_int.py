@@ -17,7 +17,7 @@
 #
 from pysmt.shortcuts import *
 from pysmt.typing import INT, REAL
-from pysmt.test import TestCase, skipIfNoSolverForLogic
+from pysmt.test import TestCase, skipIfNoSolverForLogic, main
 from pysmt.logics import QF_LIA, QF_UFLIRA
 
 class TestLIA(TestCase):
@@ -51,5 +51,4 @@ class TestLIA(TestCase):
 
 
 if __name__ == '__main__':
-    import unittest
-    unittest.main()
+    main()

@@ -15,7 +15,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import unittest
 from six.moves import cStringIO
 from six.moves import xrange
 
@@ -26,7 +25,7 @@ from pysmt.shortcuts import Times, Minus, Equals, LE, LT, ToReal
 from pysmt.typing import REAL, INT, FunctionType
 from pysmt.smtlib.printers import SmtPrinter, SmtDagPrinter
 from pysmt.printers import smart_serialize
-from pysmt.test import TestCase
+from pysmt.test import TestCase, main
 from pysmt.test.examples import get_example_formulae
 
 
@@ -269,4 +268,4 @@ SERIALIZED_EXAMPLES = [
 
 
 if __name__ == '__main__':
-    unittest.main()
+    main()

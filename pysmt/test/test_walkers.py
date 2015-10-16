@@ -23,7 +23,7 @@ from pysmt.shortcuts import LT, GT, Plus, Minus, Equals
 from pysmt.shortcuts import get_env, substitute, TRUE
 from pysmt.typing import INT, BOOL, REAL, FunctionType
 from pysmt.walkers import TreeWalker, DagWalker, IdentityDagWalker
-from pysmt.test import TestCase
+from pysmt.test import TestCase, main
 from pysmt.formula import FormulaManager
 from pysmt.test.examples import get_example_formulae
 from pysmt.exceptions import UnsupportedOperatorError
@@ -195,5 +195,4 @@ class TestWalkers(TestCase):
 
 
 if __name__ == '__main__':
-    import unittest
-    unittest.main()
+    main()

@@ -15,9 +15,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import unittest
-
-from pysmt.test import TestCase, skipIfNoSolverForLogic
+from pysmt.test import TestCase, skipIfNoSolverForLogic, main
 from pysmt.shortcuts import Symbol, And, Symbol, Equals, TRUE
 from pysmt.shortcuts import get_env, is_sat, is_valid, get_model, is_unsat
 from pysmt.typing import BVType, BV32, BV128
@@ -238,4 +236,4 @@ class TestBV(TestCase):
         return
 
 if __name__ == "__main__":
-    unittest.main()
+    main()

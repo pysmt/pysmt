@@ -15,11 +15,9 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import unittest
-
 from pysmt.shortcuts import *
 from pysmt.oracles import SizeOracle
-from pysmt.test import TestCase
+from pysmt.test import TestCase, main
 from pysmt.test.examples import get_example_formulae
 
 class TestSize(TestCase):
@@ -73,4 +71,4 @@ class TestSize(TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    main()

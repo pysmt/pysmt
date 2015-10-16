@@ -15,13 +15,12 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import unittest
 from six.moves import cStringIO
 
 import pysmt.smtlib.commands as smtcmd
 from pysmt.shortcuts import And, Or, Symbol, GT, Real, Not
 from pysmt.typing import REAL
-from pysmt.test import TestCase
+from pysmt.test import TestCase, main
 from pysmt.smtlib.script import SmtLibScript, SmtLibCommand
 from pysmt.smtlib.script import smtlibscript_from_formula, evaluate_command
 from pysmt.smtlib.parser import get_formula_strict, get_formula
@@ -129,4 +128,4 @@ class TestSmtLibScript(TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    main()

@@ -17,7 +17,7 @@
 #
 from six.moves import xrange
 
-from pysmt.test import TestCase
+from pysmt.test import TestCase, main
 from pysmt.shortcuts import And, Or, FALSE, TRUE, FreshSymbol
 from pysmt.solvers.eager import EagerModel
 from pysmt.typing import REAL, INT
@@ -91,5 +91,4 @@ class TestEagerModel(TestCase):
         self.assertFalse(z in model)
 
 if __name__ == '__main__':
-    import unittest
-    unittest.main()
+    main()

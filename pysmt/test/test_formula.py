@@ -25,7 +25,7 @@ from pysmt.shortcuts import Symbol, is_sat, Not, Implies, GT, Plus, Int, Real
 from pysmt.shortcuts import Minus, Times, Xor, And, Or, TRUE
 from pysmt.shortcuts import get_env
 from pysmt.environment import Environment
-from pysmt.test import TestCase, skipIfNoSolverForLogic
+from pysmt.test import TestCase, skipIfNoSolverForLogic, main
 from pysmt.logics import QF_BOOL
 from pysmt.exceptions import NonLinearError
 from pysmt.formula import FormulaManager
@@ -269,7 +269,7 @@ class TestFormulaManager(TestCase):
         n = self.mgr.Div(self.s, self.rconst)
         self.assertIsNotNone(n)
 
-        inv = self.mgr.Real((1, self.rconst.constant_value()))
+        inv = self.mgr.Real(Fraction(1) / self.rconst.constant_value())
         self.assertEqual(n, self.mgr.Times(self.s, inv))
 
     def test_equals(self):
@@ -539,7 +539,7 @@ class TestFormulaManager(TestCase):
                                      "to be 1")
 
 
-        c = f.substitute({symbols[i]: self.mgr.Int(i) for i in xrange(many)})
+        c = f.substitute(dict((symbols[i],self.mgr.Int(i)) for i in xrange(many)))
         self.assertEqual(c.simplify(), self.mgr.Bool(True),
                          "AllDifferent should be tautological for a set " \
                          "of different values")
@@ -748,5 +748,4 @@ class TestShortcuts(TestCase):
 
 
 if __name__ == '__main__':
-    import unittest
-    unittest.main()
+    main()

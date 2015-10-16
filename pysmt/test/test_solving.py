@@ -15,7 +15,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import unittest
 from six.moves import xrange
 
 import pysmt.operators as op
@@ -25,6 +24,7 @@ from pysmt.shortcuts import Solver
 from pysmt.shortcuts import get_env, get_model, is_valid, is_sat, get_implicant
 from pysmt.typing import BOOL, REAL, FunctionType
 from pysmt.test import TestCase, skipIfSolverNotAvailable, skipIfNoSolverForLogic
+from pysmt.test import main
 from pysmt.test.examples import get_example_formulae
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               InternalSolverError, NoSolverAvailableError,
@@ -433,4 +433,4 @@ class TestBasic(TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    main()

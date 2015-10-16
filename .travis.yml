@@ -15,7 +15,7 @@ cache:
   - ${TRAVIS_BUILD_DIR}/.smt_solvers/yices-2.3.0
   - ${TRAVIS_BUILD_DIR}/.smt_solvers/yices_bin
   - ${TRAVIS_BUILD_DIR}/.smt_solvers/mathsat-5.3.8-linux-x86_64
-  - ${HOME}/.local/lib/python2.7/site-packages
+  - ${HOME}/.local/lib/python${TRAVIS_PYTHON_VERSION}/site-packages
   - $HOME/.cache/pip
 
 addons:
@@ -37,10 +37,11 @@ addons:
     - python3-dev
 
 python:
-  - 2.7
-  - 3.4
-  - pypy
-  - pypy3
+  - 2.6
+#  - 2.7
+#  - 3.4
+#  - pypy
+#  - pypy3
 
 
 # Multiple envs will cause multiple build across multiple python versions.
@@ -64,54 +65,71 @@ env:
 matrix:
   fast_finish: true
   exclude:
-    - python: 3.4
-      env: PYSMT_SOLVER="z3"
-    - python: 3.4
-      env: PYSMT_SOLVER="cvc4"
-    - python: 3.4
-      env: PYSMT_SOLVER="yices"
-    - python: 3.4
-      env: PYSMT_SOLVER="cudd"
-    - python: 3.4
-      env: PYSMT_SOLVER="all"
+    # - python: 3.4
+    #   env: PYSMT_SOLVER="z3"
+    # - python: 3.4
+    #   env: PYSMT_SOLVER="cvc4"
+    # - python: 3.4
+    #   env: PYSMT_SOLVER="yices"
+    # - python: 3.4
+    #   env: PYSMT_SOLVER="cudd"
+    # - python: 3.4
+    #   env: PYSMT_SOLVER="all"
 
-    - python: pypy
-      env: PYSMT_SOLVER="msat"
-    - python: pypy
-      env: PYSMT_SOLVER="z3"
-    - python: pypy
-      env: PYSMT_SOLVER="cvc4"
-    - python: pypy
-      env: PYSMT_SOLVER="yices"
-    - python: pypy
-      env: PYSMT_SOLVER="cudd"
-    - python: pypy
-      env: PYSMT_SOLVER="picosat"
-    - python: pypy
-      env: PYSMT_SOLVER="btor"
-    - python: pypy
-      env: PYSMT_SOLVER="all"
+    # - python: pypy
+    #   env: PYSMT_SOLVER="msat"
+    # - python: pypy
+    #   env: PYSMT_SOLVER="z3"
+    # - python: pypy
+    #   env: PYSMT_SOLVER="cvc4"
+    # - python: pypy
+    #   env: PYSMT_SOLVER="yices"
+    # - python: pypy
+    #   env: PYSMT_SOLVER="cudd"
+    # - python: pypy
+    #   env: PYSMT_SOLVER="picosat"
+    # - python: pypy
+    #   env: PYSMT_SOLVER="btor"
+    # - python: pypy
+    #   env: PYSMT_SOLVER="all"
 
-    - python: pypy3
-      env: PYSMT_SOLVER="msat"
-    - python: pypy3
-      env: PYSMT_SOLVER="z3"
-    - python: pypy3
-      env: PYSMT_SOLVER="cvc4"
-    - python: pypy3
-      env: PYSMT_SOLVER="yices"
-    - python: pypy3
-      env: PYSMT_SOLVER="cudd"
-    - python: pypy3
-      env: PYSMT_SOLVER="picosat"
-    - python: pypy3
+    # - python: pypy3
+    #   env: PYSMT_SOLVER="msat"
+    # - python: pypy3
+    #   env: PYSMT_SOLVER="z3"
+    # - python: pypy3
+    #   env: PYSMT_SOLVER="cvc4"
+    # - python: pypy3
+    #   env: PYSMT_SOLVER="yices"
+    # - python: pypy3
+    #   env: PYSMT_SOLVER="cudd"
+    # - python: pypy3
+    #   env: PYSMT_SOLVER="picosat"
+    # - python: pypy3
+    #   env: PYSMT_SOLVER="btor"
+    # - python: pypy3
+    #   env: PYSMT_SOLVER="all"
+
+    # - python: 2.6
+    #   env: PYSMT_SOLVER="z3"
+    # - python: 2.6
+    #   env: PYSMT_SOLVER="cvc4"
+    # - python: 2.6
+    #   env: PYSMT_SOLVER="yices"
+    # - python: 2.6
+    #   env: PYSMT_SOLVER="cudd"
+    # - python: 2.6
+    #   env: PYSMT_SOLVER="picosat"
+    # Btor uses the sysconfig module that is not present in Python 2.6
+    - python: 2.6
       env: PYSMT_SOLVER="btor"
-    - python: pypy3
+    - python: 2.6
       env: PYSMT_SOLVER="all"
 
 
 install:
   - pip install six
+  - if [ ${TRAVIS_PYTHON_VERSION} == "2.6" ]; then pip install unittest2; fi
   - source ./travis.sh
 
 

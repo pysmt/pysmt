@@ -16,7 +16,7 @@
 #   limitations under the License.
 #
 from nose.plugins.attrib import attr
-from pysmt.test import TestCase, skipIfSolverNotAvailable
+from pysmt.test import TestCase, skipIfSolverNotAvailable, main
 from pysmt.test.examples import get_example_formulae
 from pysmt.environment import get_env
 
@@ -53,5 +53,4 @@ class TestSimplify(TestCase):
 
 
 if __name__ == '__main__':
-    import unittest
-    unittest.main()
+    main()
