@@ -15,6 +15,12 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+import pysmt.logics
+
+from pysmt.walkers.identitydag import IdentityDagWalker
+from pysmt.utils import powerset
+from pysmt.oracles import get_logic
+
 
 class QuantifierEliminator(object):
 
@@ -42,3 +48,39 @@ class QuantifierEliminator(object):
         the associated resources.
         """
         del self
+
+
+class ShannonQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
+
+    LOGICS = [pysmt.logics.BOOL]
+
+    def __init__(self, environment, logic=None):
+        IdentityDagWalker.__init__(self, env=environment)
+        self.logic = logic
+
+    def eliminate_quantifiers(self, formula):
+        logic = get_logic(formula, self.env)
+        if not logic <= pysmt.logics.BOOL:
+            raise NotImplementedError("Shannon quantifier elimination only "\
+                                      "supports pure-boolean formulae."\
+                                      "(detected logic is: %s)" % str(logic))
+
+        return self.walk(formula)
+
+    def build_assignments(self, variables):
+        for s in powerset(variables):
+            yield dict((x, self.mgr.Bool(x in s)) for x in variables)
+
+    def walk_forall(self, formula, args, **kwargs):
+        conj = []
+        f = args[0]
+        for subs in self.build_assignments(formula.quantifier_vars()):
+            conj.append(f.substitute(subs))
+        return self.mgr.And(conj)
+
+    def walk_exists(self, formula, args, **kwargs):
+        disj = []
+        f = args[0]
+        for subs in self.build_assignments(formula.quantifier_vars()):
+            disj.append(f.substitute(subs))
+        return self.mgr.Or(disj)

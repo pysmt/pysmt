@@ -1,6 +1,11 @@
 import io
+import itertools
 from six import PY2
 from fractions import Fraction
+
+# powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)
+powerset = lambda x : itertools.chain.from_iterable(itertools.combinations(x, r)
+                                                    for r in range(len(x)+1))
 
 def is_python_integer(n):
     if PY2:
