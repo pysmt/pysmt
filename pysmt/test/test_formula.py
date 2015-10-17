@@ -410,6 +410,15 @@ class TestFormulaManager(TestCase):
         self.assertTrue(n.is_function_application())
         self.assertEqual(n.get_free_variables(), set([self.f, self.r, self.s]))
 
+    def test_0arity_function(self):
+        # Calling FunctionType on a 0-arity list of parameters returns
+        # the type itself.
+        t = FunctionType(REAL, [])
+        # After this call: t = REAL
+        # s1 is a symbol of type real
+        s1 = self.mgr.Symbol("s1", t)
+        s1b = self.mgr.Function(s1, [])
+        self.assertEqual(s1, s1b)
 
     def test_constant(self):
         n1 = self.mgr.Real(Fraction(100, 10))

@@ -169,6 +169,12 @@ class FormulaManager(object):
 
 
     def Function(self, vname, params):
+        """Returns the function application of vname to params.
+
+        Note: Applying a 0-arity function returns the function itself.
+        """
+        if len(params) == 0:
+            return vname
         assert len(params) == len(vname.symbol_type().param_types)
         n = self.create_node(node_type=op.FUNCTION,
                              args=tuple(params),

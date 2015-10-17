@@ -132,7 +132,7 @@ class TestPrinting(TestCase):
         f2_string = self.print_to_string(f2)
 
         self.assertEqual(f1_string, "(f1 p q)")
-        self.assertEqual(f2_string, "(f2)")
+        self.assertEqual(f2_string, "f2")
 
     def test_toreal(self):
         p = Symbol("p", INT)
@@ -173,7 +173,7 @@ class TestPrinting(TestCase):
     def test_examples(self):
         for i, (f, _, _, _) in enumerate(get_example_formulae()):
             self.assertTrue(len(str(f)) >= 1, str(f))
-            self.assertEquals(str(f), SERIALIZED_EXAMPLES[i])
+            self.assertEqual(str(f), SERIALIZED_EXAMPLES[i])
 
     def test_smart_serialize(self):
         x, y = Symbol("x"), Symbol("y")
@@ -181,13 +181,13 @@ class TestPrinting(TestCase):
         f = Implies(x, f1)
         substitutions = {f1: "f1"}  # Mapping FNode -> String
         res = smart_serialize(f, subs=substitutions)
-        self.assertEquals("(x -> f1)", res)
+        self.assertEqual("(x -> f1)", res)
 
         # If no smarties are provided, the printing is compatible
         # with standard one
         res = smart_serialize(f)
         self.assertIsNotNone(res)
-        self.assertEquals(str(f), res)
+        self.assertEqual(str(f), res)
 
         fvars = [Symbol("x%d" % i) for i in xrange(5)]
         ex = ExactlyOne(fvars)
@@ -195,7 +195,7 @@ class TestPrinting(TestCase):
         old_str = ex.serialize()
         smart_str = smart_serialize(ex, subs=substitutions)
         self.assertTrue(len(old_str) > len(smart_str))
-        self.assertEquals("ExactlyOne(x0,x1,x2,x3,x4)", smart_str)
+        self.assertEqual("ExactlyOne(x0,x1,x2,x3,x4)", smart_str)
 
 
 SERIALIZED_EXAMPLES = [
