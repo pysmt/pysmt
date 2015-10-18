@@ -15,7 +15,13 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import picosat
+from pysmt.exceptions import SolverAPINotFound
+
+try:
+    import picosat
+except ImportError:
+    raise SolverAPINotFound
+
 
 import pysmt.logics
 

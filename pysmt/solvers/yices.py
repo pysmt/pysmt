@@ -21,10 +21,16 @@ import ctypes
 from fractions import Fraction
 from six.moves import xrange
 
-import pyices.context
-import pyices.yices_lib as libyices
-import pyices.fix_env
-from pyices.yices_lib import String
+from pysmt.exceptions import SolverAPINotFound
+
+try:
+    import pyices.context
+    import pyices.yices_lib as libyices
+    import pyices.fix_env
+    from pyices.yices_lib import String
+except ImportError:
+    raise SolverAPINotFound
+
 
 from pysmt.solvers.eager import EagerModel
 from pysmt.solvers.solver import Solver, Converter

@@ -17,7 +17,13 @@
 #
 from math import log, ceil
 
-import boolector
+from pysmt.exceptions import SolverAPINotFound
+
+try:
+    import boolector
+except ImportError:
+    raise SolverAPINotFound
+
 
 from pysmt.solvers.solver import (IncrementalTrackingSolver, UnsatCoreSolver,
                                   Model, Converter)

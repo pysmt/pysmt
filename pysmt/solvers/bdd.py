@@ -17,7 +17,13 @@
 #
 from six.moves import xrange
 
-import repycudd
+from pysmt.exceptions import SolverAPINotFound
+
+try:
+    import repycudd
+except ImportError:
+    raise SolverAPINotFound
+
 
 import pysmt.logics
 

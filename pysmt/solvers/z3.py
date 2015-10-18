@@ -17,7 +17,12 @@
 #
 from __future__ import absolute_import
 
-import z3
+from pysmt.exceptions import SolverAPINotFound
+
+try:
+    import z3
+except ImportError:
+    raise SolverAPINotFound
 
 from fractions import Fraction
 from six.moves import xrange
