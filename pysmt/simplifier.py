@@ -236,7 +236,7 @@ class Simplifier(pysmt.walkers.DagWalker):
         is_int = any(x.is_int_constant() for x in args)
         assert not (is_real and is_int)
 
-        if all(x.is_constant() for x in args, **kwargs):
+        if all(x.is_constant() for x in args):
             res = sum(x.constant_value() for x in args)
             if is_real:
                 return self.manager.Real(res)
