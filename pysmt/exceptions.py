@@ -97,3 +97,8 @@ class UnsupportedOperatorError(Exception):
 
     def __str__(self):
         return self.message
+
+
+class SolverAPINotFound(Exception):
+    """The Python API of the selected solver cannot be found."""
+    pass

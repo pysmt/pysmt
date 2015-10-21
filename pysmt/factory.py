@@ -27,7 +27,8 @@ from functools import partial
 from six import iteritems
 
 from pysmt.exceptions import (NoSolverAvailableError, SolverRedefinitionError,
-                              NoLogicAvailableError)
+                              NoLogicAvailableError,
+                              SolverAPINotFound)
 from pysmt.logics import QF_UFLIRA, LRA, QF_UFLRA
 from pysmt.logics import AUTO as AUTO_LOGIC
 from pysmt.logics import most_generic_logic, get_closer_logic
@@ -218,43 +219,43 @@ class Factory(object):
         try:
             from pysmt.solvers.z3 import Z3Solver
             self._all_solvers['z3'] = Z3Solver
-        except ImportError:
+        except SolverAPINotFound:
             pass
 
         try:
             from pysmt.solvers.msat import MathSAT5Solver
             self._all_solvers['msat'] = MathSAT5Solver
-        except ImportError:
+        except SolverAPINotFound:
             pass
 
         try:
             from pysmt.solvers.cvc4 import CVC4Solver
             self._all_solvers['cvc4'] = CVC4Solver
-        except ImportError:
+        except SolverAPINotFound:
             pass
 
         try:
             from pysmt.solvers.yices import YicesSolver
             self._all_solvers['yices'] = YicesSolver
-        except ImportError:
+        except SolverAPINotFound:
             pass
 
         try:
             from pysmt.solvers.bdd import BddSolver
             self._all_solvers['bdd'] = BddSolver
-        except ImportError:
+        except SolverAPINotFound:
             pass
 
         try:
             from pysmt.solvers.pico import PicosatSolver
             self._all_solvers['picosat'] = PicosatSolver
-        except ImportError:
+        except SolverAPINotFound:
             pass
 
         try:
             from pysmt.solvers.btor import BoolectorSolver
             self._all_solvers['btor'] = BoolectorSolver
-        except ImportError:
+        except SolverAPINotFound:
             pass
 
         for k,s in iteritems(self._all_solvers):
@@ -271,7 +272,7 @@ class Factory(object):
         try:
             from pysmt.solvers.z3 import Z3QuantifierEliminator
             self._all_qelims['z3'] = Z3QuantifierEliminator
-        except ImportError:
+        except SolverAPINotFound:
             pass
 
         try:
@@ -279,13 +280,13 @@ class Factory(object):
                                             MSatLWQuantifierEliminator)
             self._all_qelims['msat_fm'] = MSatFMQuantifierEliminator
             self._all_qelims['msat_lw'] = MSatLWQuantifierEliminator
-        except ImportError:
+        except SolverAPINotFound:
             pass
 
         try:
             from pysmt.solvers.bdd import BddQuantifierEliminator
             self._all_qelims['bdd'] = BddQuantifierEliminator
-        except ImportError:
+        except SolverAPINotFound:
             pass
 
 
@@ -295,13 +296,13 @@ class Factory(object):
         try:
             from pysmt.solvers.z3 import Z3Interpolator
             self._all_interpolators['z3'] = Z3Interpolator
-        except ImportError:
+        except SolverAPINotFound:
             pass
 
         try:
             from pysmt.solvers.msat import MSatInterpolator
             self._all_interpolators['msat'] = MSatInterpolator
-        except ImportError:
+        except SolverAPINotFound:
             pass
 
 

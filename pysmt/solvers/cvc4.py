@@ -19,7 +19,12 @@ import warnings
 from fractions import Fraction
 from six.moves import xrange
 
-import CVC4
+from pysmt.exceptions import SolverAPINotFound
+
+try:
+    import CVC4
+except ImportError:
+    raise SolverAPINotFound
 
 from pysmt.logics import PYSMT_QF_LOGICS
 from pysmt.solvers.solver import Solver, Converter
