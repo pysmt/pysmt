@@ -22,7 +22,8 @@ from pysmt.shortcuts import get_env, Solver, is_valid, is_sat
 from pysmt.shortcuts import LE, LT, Real, GT, Int, Symbol, And, Not
 from pysmt.typing import BOOL, REAL, INT
 from pysmt.logics import QF_UFLIRA, QF_BOOL, QF_UFBV, get_closer_logic
-from pysmt.exceptions import SolverRedefinitionError, NoLogicAvailableError
+from pysmt.exceptions import (SolverRedefinitionError, NoSolverAvailableError,
+                              UnknownSolverAnswerError)
 
 from pysmt.test.examples import get_example_formulae
 
@@ -96,20 +97,22 @@ class TestGenericWrapper(TestCase):
 
     @skipIfNoSMTWrapper
     def test_examples(self):
-        for n in self.all_solvers:
-            with Solver(name=n) as solver:
-                for (f, validity, satisfiability, logic) in \
-                    get_example_formulae():
-                    try:
-                        get_closer_logic(solver.LOGICS, logic)
-                    except NoLogicAvailableError:
-                        continue
-                    v = is_valid(f, solver_name=n, logic=logic)
-                    s = is_sat(f, solver_name=n, logic=logic)
-
-                    self.assertEqual(validity, v, f)
-                    self.assertEqual(satisfiability, s, f)
-
+        for name in self.all_solvers:
+            for example in get_example_formulae():
+                f = example.expr
+                try:
+                    v = is_valid(f, solver_name=name)
+                    s = is_sat(f, solver_name=name)
+                    self.assertEqual(example.is_valid, v, f)
+                    self.assertEqual(example.is_sat, s, f)
+                except NoSolverAvailableError:
+                    # The solver does not support the specified logic
+                    continue
+                except UnknownSolverAnswerError:
+                    # MathSAT does not deal with UF with boolean args.
+                    # This is handled via the native API, but not via the
+                    # SMT-LIB Wrapper
+                    self.assertTrue(name == "mathsat.solver.sh", name)
 
     def test_redefinition(self):
         env = get_env()
