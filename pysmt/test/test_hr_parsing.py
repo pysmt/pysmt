@@ -18,12 +18,13 @@
 import unittest
 import tempfile, os
 
-from pysmt.parsing import HRParser
-from pysmt.shortcuts import is_valid, Iff, Symbol, And, Or, LE, Real, Plus, Minus
+from pysmt.parsing import HRParser, parse
+from pysmt.shortcuts import Iff, Symbol, And, Or, LE, Real, Plus, Minus
 from pysmt.test.examples import get_example_formulae
 from pysmt.exceptions import NoSolverAvailableError
 from pysmt.test import TestCase
 from pysmt.typing import REAL
+
 
 class TestHRParser(TestCase):
 
@@ -47,6 +48,8 @@ class TestHRParser(TestCase):
 
         for string, formula in tests:
             self.assertEqual(p.parse(string), formula)
+            self.assertEqual(parse(string), formula)
+
 
     def test_file_parsing(self):
         fname = None
@@ -80,10 +83,9 @@ class TestHRParser(TestCase):
             check = (res == f)
             if not check:
                 try:
-                    check = is_valid(Iff(res, f))
+                    self.assertValid(Iff(res, f))
                 except NoSolverAvailableError:
-                    check = True
-            self.assertTrue(check)
+                    pass
 
 
 if __name__ == '__main__':
