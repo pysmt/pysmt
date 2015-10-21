@@ -43,7 +43,7 @@ class SmtLibSolver(Solver):
         self.set_option(":print-success", "true")
         self.set_option(":produce-models", "true")
         # Redirect diagnostic output to stdout
-        self.set_option(":diagnostic-output-channel", "stdout")
+        self.set_option(":diagnostic-output-channel", '"stdout"')
         if self.options is not None:
             for o,v in iteritems(self.options):
                 self.set_option(o,v)

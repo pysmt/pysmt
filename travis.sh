@@ -118,5 +118,16 @@ then
     mv ${TRAVIS_BUILD_DIR}/pysmt/test/smtlib/bin/mathsat.solver.sh.template ${TRAVIS_BUILD_DIR}/pysmt/test/smtlib/bin/mathsat.solver.sh
 fi
 
+if [ "${PYSMT_SOLVER}" == "z3_wrap" ] || [ "${PYSMT_SOLVER}" == "all" ]
+then
+    if [ ! -f .smt_solvers/z3_bin/bin/z3 ]
+    then
+        python ./install.py --confirm-agreement --z3
+    fi
+    cp .smt_solvers/z3_bin/bin/z3 ${TRAVIS_BUILD_DIR}/pysmt/test/smtlib/bin
+    mv ${TRAVIS_BUILD_DIR}/pysmt/test/smtlib/bin/z3.solver.sh.template ${TRAVIS_BUILD_DIR}/pysmt/test/smtlib/bin/z3.solver.sh
+fi
+
+
 echo "All done for '${PYSMT_SOLVER}'..."
 echo "Exiting..."

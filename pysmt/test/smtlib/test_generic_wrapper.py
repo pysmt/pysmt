@@ -21,7 +21,7 @@ from pysmt.test import TestCase, main, skipIfNoSMTWrapper
 from pysmt.shortcuts import get_env, Solver, is_valid, is_sat
 from pysmt.shortcuts import LE, LT, Real, GT, Int, Symbol, And, Not
 from pysmt.typing import BOOL, REAL, INT
-from pysmt.logics import QF_UFLIRA, QF_BOOL, QF_UFBV, get_closer_logic
+from pysmt.logics import QF_UFLIRA, QF_UFLRA, QF_UFLIA, QF_BOOL, QF_UFBV
 from pysmt.exceptions import (SolverRedefinitionError, NoSolverAvailableError,
                               UnknownSolverAnswerError)
 
@@ -44,7 +44,8 @@ class TestGenericWrapper(TestCase):
                     path = os.path.join(BASE_DIR, "bin/" + f)
                     env.factory.add_generic_solver(name,
                                                    [path],
-                                                   [QF_UFLIRA,
+                                                   [QF_UFLRA,
+                                                    QF_UFLIA,
                                                     QF_UFBV])
                     self.all_solvers.append(f)
 
@@ -127,10 +128,10 @@ class TestGenericWrapper(TestCase):
 
     @skipIfNoSMTWrapper
     def test_reals(self):
-        f = And(LT(Symbol("x", REAL), Real(2)), LE(Symbol("x", REAL), Real(3)))
-
+        f = And(LT(Symbol("x", REAL), Real(2)),
+                LE(Symbol("x", REAL), Real(3)))
         for n in self.all_solvers:
-            with Solver(name=n) as s:
+            with Solver(name=n, logic=QF_UFLRA) as s:
                 s.add_assertion(f)
                 res = s.solve()
                 self.assertTrue(res)
@@ -138,10 +139,10 @@ class TestGenericWrapper(TestCase):
 
     @skipIfNoSMTWrapper
     def test_ints(self):
-        f = And(LT(Symbol("x", INT), Int(2)), GT(Symbol("x", INT), Int(2)))
-
+        f = And(LT(Symbol("x", INT), Int(2)),
+                GT(Symbol("x", INT), Int(2)))
         for n in self.all_solvers:
-            with Solver(name=n) as s:
+            with Solver(name=n, logic=QF_UFLIA) as s:
                 s.add_assertion(f)
                 res = s.solve()
                 self.assertFalse(res)
