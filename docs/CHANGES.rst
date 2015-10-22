@@ -1,6 +1,18 @@
 Change Log
 ==========
 
+0.4.3: XXX-XX-XX -- YYYYYY
+--------------------------
+
+Testing:
+
+* Introduced decorator pysmt.test.skipIfNoSMTWrapper
+
+* Tests do note explicitely depend anymore on unittest module.  All
+  tests that need to be executable only need to import
+  pysmt.test.main.
+
+
 0.4.2: 2015-10-12 -- Boolector
 -----------------------------------------
 
