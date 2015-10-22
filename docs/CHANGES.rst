@@ -4,6 +4,10 @@ Change Log
 0.4.3: XXX-XX-XX -- YYYYYY
 --------------------------
 
+General:
+
+* pysmt.parsing: Added parser for HR expressions
+
 Testing:
 
 * Introduced decorator pysmt.test.skipIfNoSMTWrapper
