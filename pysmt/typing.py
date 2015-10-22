@@ -186,14 +186,20 @@ class _BVType(PySMTType):
 
 # FunctionType is a Factory that returns a _FunctionType
 def FunctionType(return_type, param_types):
-    """Returns the singleton associated to the Function type with the given arguments.
+    """Returns the singleton of the Function type with the given arguments.
 
     This function takes care of building and registering the type
     whenever needed. To see the functions provided by the type look at
     _FunctionType
+
+    Note: If the list of parameters is empty, the function is
+    equivalent to the return type.
     """
     param_types = tuple(param_types)
     key = (return_type, param_types)
+    # 0-arity functions types are equivalent to the return type
+    if len(param_types) == 0:
+        return return_type
     if key in __CUSTOM_TYPES__:
         return  __CUSTOM_TYPES__[key]
 
