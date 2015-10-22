@@ -130,7 +130,7 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
 
     def _named_assertions_map(self):
         if self.options.unsat_cores_mode == "named":
-            return {t[0] : (t[1],t[2]) for t in self.assertions}
+            return dict((t[0], (t[1],t[2])) for t in self.assertions)
         return None
 
     @clear_pending_pop
@@ -224,7 +224,8 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
             return res
 
         else:
-            return {"_a%d" % i : f for i,f in enumerate(self.get_unsat_core())}
+            return dict(("_a%d" % i, f)
+                        for i,f in enumerate(self.get_unsat_core()))
 
     @clear_pending_pop
     def all_sat(self, important, callback):

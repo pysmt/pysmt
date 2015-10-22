@@ -15,11 +15,10 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import unittest
 from pysmt.shortcuts import FreshSymbol, GT, And, Plus, Real, Int, LE, Iff
 from pysmt.shortcuts import Solver
 from pysmt.typing import REAL, INT
-from pysmt.test import TestCase, skipIfSolverNotAvailable
+from pysmt.test import TestCase, skipIfSolverNotAvailable, main
 from pysmt.test.examples import get_example_formulae
 from pysmt.logics import QF_UFLIRA
 from pysmt.exceptions import NoSolverAvailableError
@@ -79,4 +78,4 @@ class TestBasic(TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    main()

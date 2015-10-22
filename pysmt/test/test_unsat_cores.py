@@ -15,10 +15,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import unittest
-
 from pysmt.test import (TestCase, skipIfSolverNotAvailable,
-                        skipIfNoUnsatCoreSolverForLogic)
+                        skipIfNoUnsatCoreSolverForLogic, main)
 from pysmt.shortcuts import (get_unsat_core, And, Not, Symbol, UnsatCoreSolver,
                              is_unsat)
 from pysmt.logics import QF_BOOL, QF_BV
@@ -149,4 +147,4 @@ class TestUnsatCores(TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    main()

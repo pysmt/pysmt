@@ -15,6 +15,7 @@
 from six.moves.urllib import request as urllib2
 from six.moves import input
 
+import subprocess
 import os
 import tarfile
 import sys
@@ -116,8 +117,9 @@ def untar(fname, directory=".", mode='r:gz'):
 
 def unzip(fname, directory="."):
     """Unzips the given archive into the given directory"""
-    with zipfile.ZipFile(fname, "r") as myzip:
-        myzip.extractall(directory)
+    myzip = zipfile.ZipFile(fname, "r")
+    myzip.extractall(directory)
+    myzip.close()
 
 def download_patch(name, target):
     SOURCE_URL="https://raw.githubusercontent.com/pysmt/solvers_patches/master/"
@@ -368,7 +370,14 @@ def install_pycudd(options):
 
     # Build the pycudd
     # NOTE: -j is not supported by this building system
-    os.system("make -C %s -f %s" % (dir_path, makefile))
+    command = ['python%s-config' % get_python_version(), '--prefix']
+    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=None)
+    prefix = p.stdout.read()
+
+    if not prefix or len(prefix) == 0:
+        prefix = "/usr"
+    os.system("make -C %s -f %s PYTHON_VER=python%s" \
+              " PYTHON_LOC=%s" % (dir_path, makefile, get_python_version(), prefix))
 
     # Save the paths
     PATHS.append(dir_path)

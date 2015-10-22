@@ -24,7 +24,7 @@ from pysmt.shortcuts import (Symbol, And, Plus, Minus, Times, Equals, Or, Iff,
                              LE, LT, Not, GE, GT, Ite, Bool, Int, Real, Div,
                              Function)
 from pysmt.environment import get_env
-from pysmt.test import TestCase
+from pysmt.test import TestCase, main
 from pysmt.test.examples import get_example_formulae
 from pysmt.decorators import typecheck_result
 
@@ -192,5 +192,4 @@ class TestSimpleTypeChecker(TestCase):
             self.assertIs(f.get_type(), BOOL)
 
 if __name__ == '__main__':
-    import unittest
-    unittest.main()
+    main()

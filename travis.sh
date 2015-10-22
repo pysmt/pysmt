@@ -5,7 +5,7 @@ export CVC4_PYTHONPATH="${TRAVIS_BUILD_DIR}/.smt_solvers/CVC4_bin/share/pyshared
 export PICOSAT_PYTHONPATH="${TRAVIS_BUILD_DIR}/.smt_solvers/picosat-960:${TRAVIS_BUILD_DIR}/.smt_solvers/picosat-960/build/lib.linux-x86_64-${TRAVIS_PYTHON_VERSION}"
 export CUDD_PYTHONPATH="${TRAVIS_BUILD_DIR}/.smt_solvers/repycudd-4861f4df8abc2ca205a6a09b30fdc8cfd29f6ebb"
 export BTOR_PYTHONPATH="${TRAVIS_BUILD_DIR}/.smt_solvers/boolector-2.1.1-with-lingeling-b85/boolector"
-export YICES_PYTHONPATH="${TRAVIS_BUILD_DIR}/.smt_solvers/pyices-aa0b91c39aa00c19c2160e83aad822dc468ce328/build/lib.linux-x86_64-${TRAVIS_PYTHON_VERSION}:${HOME}/.local/lib/python2.7/site-packages"
+export YICES_PYTHONPATH="${TRAVIS_BUILD_DIR}/.smt_solvers/pyices-aa0b91c39aa00c19c2160e83aad822dc468ce328/build/lib.linux-x86_64-${TRAVIS_PYTHON_VERSION}:${HOME}/.local/lib/python${TRAVIS_PYTHON_VERSION}/site-packages"
 export MSAT_PYTHONPATH="${TRAVIS_BUILD_DIR}/.smt_solvers/mathsat-5.3.8-linux-x86_64/python:${TRAVIS_BUILD_DIR}/.smt_solvers/mathsat-5.3.8-linux-x86_64/python/build/lib.linux-x86_64-${TRAVIS_PYTHON_VERSION}"
 
 

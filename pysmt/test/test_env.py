@@ -15,11 +15,9 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import unittest
-
 from pysmt.shortcuts import Symbol
 import pysmt.factory
-from pysmt.test import TestCase
+from pysmt.test import TestCase, main
 from pysmt.typing import REAL
 from pysmt.environment import Environment, pop_env, push_env, get_env
 from pysmt.exceptions import NoSolverAvailableError
@@ -113,4 +111,4 @@ class TestEnvironment(TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    main()

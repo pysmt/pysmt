@@ -16,9 +16,9 @@
 #   limitations under the License.
 #
 from pysmt.shortcuts import Solver, Symbol, And, Real, GT, LT, Implies, FALSE
-from pysmt.shortcuts import get_env, get_model
+from pysmt.shortcuts import get_env
 from pysmt.typing import BOOL, REAL
-from pysmt.test import TestCase, skipIfNoSolverForLogic
+from pysmt.test import TestCase, skipIfNoSolverForLogic, main
 from pysmt.logics import QF_UFLIRA, QF_LRA, QF_BOOL
 from pysmt.solvers.eager import EagerModel
 
@@ -74,5 +74,4 @@ class TestModels(TestCase):
 
 
 if __name__ == '__main__':
-    import unittest
-    unittest.main()
+    main()

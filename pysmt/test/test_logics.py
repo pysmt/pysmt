@@ -15,8 +15,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import unittest
-
 import pysmt.logics
 from pysmt.logics import get_logic_by_name, get_logic, most_generic_logic
 from pysmt.logics import PYSMT_LOGICS
@@ -24,9 +22,9 @@ from pysmt.logics import QF_LIA, LIA, UFLIRA, LRA, QF_UFLIRA, QF_BV
 from pysmt.exceptions import (UndefinedLogicError, NoSolverAvailableError,
                               NoLogicAvailableError)
 from pysmt.shortcuts import Solver, get_env
+from pysmt.test import TestCase, main
 
-
-class TestLogic(unittest.TestCase):
+class TestLogic(TestCase):
 
     def test_get_logic_by_name(self):
         for l in pysmt.logics.LOGICS:
@@ -135,4 +133,4 @@ class TestLogic(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    main()

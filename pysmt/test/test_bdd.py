@@ -15,12 +15,10 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import unittest
-
 import pysmt
 from pysmt.shortcuts import And, Not, Symbol, Bool, Exists, Solver
 from pysmt.shortcuts import get_env, qelim, Or
-from pysmt.test import TestCase, skipIfSolverNotAvailable
+from pysmt.test import TestCase, skipIfSolverNotAvailable, main
 from pysmt.test.examples import EXAMPLE_FORMULAS
 
 class TestBdd(TestCase):
@@ -177,4 +175,4 @@ class TestBdd(TestCase):
             self.assertNotEquals(s.ddmanager.ReorderingStatus()[1], 0)
 
 if __name__ == '__main__':
-    unittest.main()
+    main()

@@ -15,14 +15,13 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import unittest
 import os
 from nose.plugins.attrib import attr
 
 from pysmt.shortcuts import Implies, is_sat, is_valid, reset_env
 from pysmt.rewritings import CNFizer
 from pysmt.logics import QF_BOOL, QF_LRA, QF_LIA, QF_UFLIRA
-from pysmt.test import TestCase, skipIfNoSolverForLogic
+from pysmt.test import TestCase, skipIfNoSolverForLogic, main
 from pysmt.test.examples import EXAMPLE_FORMULAS
 from pysmt.test.smtlib.parser_utils import SMTLIB_TEST_FILES, SMTLIB_DIR
 from pysmt.smtlib.parser import get_formula_fname
@@ -92,4 +91,4 @@ class TestCnf(TestCase):
         self.assertEqual(res, res_is_sat)
 
 if __name__ == '__main__':
-    unittest.main()
+    main()

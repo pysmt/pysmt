@@ -15,12 +15,10 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import unittest
-
 from pysmt.shortcuts import get_env, get_free_variables
 from pysmt.shortcuts import Symbol, Implies, And, Not
 from pysmt.test.examples import EXAMPLE_FORMULAS
-from pysmt.test import TestCase
+from pysmt.test import TestCase, main
 from pysmt.oracles import get_logic
 from pysmt.typing import BOOL
 
@@ -68,4 +66,4 @@ class TestOracles(TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    main()

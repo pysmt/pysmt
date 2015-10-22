@@ -17,7 +17,7 @@
 #
 import os
 
-from pysmt.test import TestCase
+from pysmt.test import TestCase, main
 from pysmt.smtlib.parser import SmtLibParser
 
 class TestTypeError(TestCase):
@@ -32,5 +32,4 @@ class TestTypeError(TestCase):
 
 
 if __name__ == '__main__':
-    import unittest
-    unittest.main()
+    main()

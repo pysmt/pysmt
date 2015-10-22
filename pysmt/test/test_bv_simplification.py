@@ -15,15 +15,13 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import unittest
-
 from six.moves import xrange
 
 from pysmt.shortcuts import Solver, BVAnd, BVOr, BVXor, BVConcat, BVULT, BVUGT, \
     BVULE, BVUGE, BVAdd, BVSub, BVMul, BVUDiv, BVURem, BVLShl, BVLShr, BVNot, \
     BVNeg, BVZExt, BVSExt, BVRor, BVRol, BV, BVExtract, BVSLT, BVSLE, BVComp, \
     BVSDiv, BVSRem, BVAShr
-from pysmt.test import TestCase, skipIfSolverNotAvailable
+from pysmt.test import TestCase, skipIfSolverNotAvailable, main
 
 
 class TestBvSimplification(TestCase):
@@ -98,4 +96,4 @@ class TestBvSimplification(TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    main()

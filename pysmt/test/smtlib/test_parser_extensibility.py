@@ -18,7 +18,7 @@
 import collections
 from six.moves import cStringIO
 
-from pysmt.test import TestCase
+from pysmt.test import TestCase, main
 from pysmt.smtlib.parser import SmtLibParser
 from pysmt.exceptions import UnknownSmtLibCommandError
 
@@ -114,5 +114,4 @@ class TestParserExtensibility(TestCase):
 
 
 if __name__ == '__main__':
-    import unittest
-    unittest.main()
+    main()
