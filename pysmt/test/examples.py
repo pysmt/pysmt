@@ -509,6 +509,13 @@ def get_example_formulae(environment=None):
                     logic=pysmt.logics.LRA
                 ),
 
+            # exists x . ((x <-> (s > 5)) & (s < 3))
+            Example(expr=Exists([x], (And(Iff(x, GT(s, Real(5))),
+                                          LT(s, Real(3))))),
+                    is_valid=False,
+                    is_sat=True,
+                    logic=pysmt.logics.LRA),
+
             #
             # UFLIRA
             #

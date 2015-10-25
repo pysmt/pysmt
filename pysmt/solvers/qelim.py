@@ -15,6 +15,12 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+import pysmt.logics
+
+from pysmt.walkers.identitydag import IdentityDagWalker
+from pysmt.utils import all_assignments
+from pysmt.exceptions import InternalSolverError
+
 
 class QuantifierEliminator(object):
 
@@ -42,3 +48,40 @@ class QuantifierEliminator(object):
         the associated resources.
         """
         del self
+
+
+class ShannonQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
+    """Quantifier Elimination using Shannon Expansion."""
+
+    LOGICS = [pysmt.logics.BOOL]
+
+    def __init__(self, environment, logic=None):
+        IdentityDagWalker.__init__(self, env=environment)
+        self.logic = logic
+
+    def eliminate_quantifiers(self, formula):
+        return self.walk(formula)
+
+    def _assert_vars_boolean(self, var_set):
+        for v in var_set:
+            if not v.symbol_type().is_bool_type():
+                raise InternalSolverError(
+                    "Shannon Quantifier Elimination only supports "\
+                    "quantification over Boolean variables: "\
+                    "(%s is %s)" % (v, v.symbol_type()))
+
+    def _expand(self, formula, args):
+        """Returns the list of elements from the Shannon expansion."""
+        qvars = formula.quantifier_vars()
+        self._assert_vars_boolean(qvars)
+        res = []
+        f = args[0]
+        for subs in all_assignments(qvars, self.env):
+            res.append(f.substitute(subs))
+        return res
+
+    def walk_forall(self, formula, args, **kwargs):
+        return self.mgr.And(self._expand(formula, args))
+
+    def walk_exists(self, formula, args, **kwargs):
+        return self.mgr.Or(self._expand(formula, args))

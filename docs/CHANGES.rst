@@ -8,6 +8,12 @@ General:
 
 * pysmt.parsing: Added parser for HR expressions
 
+
+Solvers:
+
+* Shannon: Quantifier Elimination based on shannon expansion (shannon).
+
+
 Testing:
 
 * Introduced decorator pysmt.test.skipIfNoSMTWrapper
