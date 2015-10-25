@@ -21,8 +21,9 @@ from pysmt.test import TestCase, main, skipIfNoSMTWrapper
 from pysmt.shortcuts import get_env, Solver, is_valid, is_sat
 from pysmt.shortcuts import LE, LT, Real, GT, Int, Symbol, And, Not
 from pysmt.typing import BOOL, REAL, INT
-from pysmt.logics import QF_UFLIRA, QF_BOOL, QF_UFBV, get_closer_logic
-from pysmt.exceptions import SolverRedefinitionError, NoLogicAvailableError
+from pysmt.logics import QF_UFLIRA, QF_UFLRA, QF_UFLIA, QF_BOOL, QF_UFBV
+from pysmt.exceptions import (SolverRedefinitionError, NoSolverAvailableError,
+                              UnknownSolverAnswerError)
 
 from pysmt.test.examples import get_example_formulae
 
@@ -43,7 +44,8 @@ class TestGenericWrapper(TestCase):
                     path = os.path.join(BASE_DIR, "bin/" + f)
                     env.factory.add_generic_solver(name,
                                                    [path],
-                                                   [QF_UFLIRA,
+                                                   [QF_UFLRA,
+                                                    QF_UFLIA,
                                                     QF_UFBV])
                     self.all_solvers.append(f)
 
@@ -96,20 +98,22 @@ class TestGenericWrapper(TestCase):
 
     @skipIfNoSMTWrapper
     def test_examples(self):
-        for n in self.all_solvers:
-            with Solver(name=n) as solver:
-                for (f, validity, satisfiability, logic) in \
-                    get_example_formulae():
-                    try:
-                        get_closer_logic(solver.LOGICS, logic)
-                    except NoLogicAvailableError:
-                        continue
-                    v = is_valid(f, solver_name=n, logic=logic)
-                    s = is_sat(f, solver_name=n, logic=logic)
-
-                    self.assertEqual(validity, v, f)
-                    self.assertEqual(satisfiability, s, f)
-
+        for name in self.all_solvers:
+            for example in get_example_formulae():
+                f = example.expr
+                try:
+                    v = is_valid(f, solver_name=name)
+                    s = is_sat(f, solver_name=name)
+                    self.assertEqual(example.is_valid, v, f)
+                    self.assertEqual(example.is_sat, s, f)
+                except NoSolverAvailableError:
+                    # The solver does not support the specified logic
+                    continue
+                except UnknownSolverAnswerError:
+                    # MathSAT does not deal with UF with boolean args.
+                    # This is handled via the native API, but not via the
+                    # SMT-LIB Wrapper
+                    self.assertTrue(name == "mathsat.solver.sh", name)
 
     def test_redefinition(self):
         env = get_env()
@@ -124,10 +128,10 @@ class TestGenericWrapper(TestCase):
 
     @skipIfNoSMTWrapper
     def test_reals(self):
-        f = And(LT(Symbol("x", REAL), Real(2)), LE(Symbol("x", REAL), Real(3)))
-
+        f = And(LT(Symbol("x", REAL), Real(2)),
+                LE(Symbol("x", REAL), Real(3)))
         for n in self.all_solvers:
-            with Solver(name=n) as s:
+            with Solver(name=n, logic=QF_UFLRA) as s:
                 s.add_assertion(f)
                 res = s.solve()
                 self.assertTrue(res)
@@ -135,10 +139,10 @@ class TestGenericWrapper(TestCase):
 
     @skipIfNoSMTWrapper
     def test_ints(self):
-        f = And(LT(Symbol("x", INT), Int(2)), GT(Symbol("x", INT), Int(2)))
-
+        f = And(LT(Symbol("x", INT), Int(2)),
+                GT(Symbol("x", INT), Int(2)))
         for n in self.all_solvers:
-            with Solver(name=n) as s:
+            with Solver(name=n, logic=QF_UFLIA) as s:
                 s.add_assertion(f)
                 res = s.solve()
                 self.assertFalse(res)

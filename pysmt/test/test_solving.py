@@ -385,6 +385,41 @@ class TestBasic(TestCase):
                     solver.get_value(h)
                 self.assertIsNotNone(solver.get_value(h_0_0))
 
+    def test_get_value_of_function_bool(self):
+        """Proper handling of models with functions with bool args."""
+        hr = Symbol("hr", FunctionType(REAL, [BOOL, REAL, REAL]))
+        hb = Symbol("hb", FunctionType(BOOL, [BOOL, REAL, REAL]))
+
+        hr_0_1 = Function(hr, (TRUE(), Real(0), Real(1)))
+        hb_0_1 = Function(hb, (TRUE(), Real(0), Real(1)))
+        hbx = Function(hb, (Symbol("x"), Real(0), Real(1)))
+        f = GT(hr_0_1, Real(0))
+        g = hb_0_1
+
+        for sname in get_env().factory.all_solvers(logic=QF_UFLIRA):
+            with Solver(name=sname) as solver:
+                print(sname)
+                # First hr
+                solver.add_assertion(f)
+                res = solver.solve()
+                self.assertTrue(res)
+                v = solver.get_value(hr_0_1)
+                self.assertIsNotNone(solver.get_value(v))
+                # Now hb
+                solver.add_assertion(g)
+                res = solver.solve()
+                self.assertTrue(res)
+                v = solver.get_value(hb_0_1)
+                self.assertIsNotNone(v in [TRUE(), FALSE()])
+                # Hbx
+                solver.add_assertion(hbx)
+                res = solver.solve()
+                self.assertTrue(res)
+                v = solver.get_value(hbx)
+                self.assertIsNotNone(v in [TRUE(), FALSE()])
+                # Get model
+                model = solver.get_model()
+                self.assertIsNotNone(model)
 
     @skipIfSolverNotAvailable("msat")
     def test_msat_converter_on_msat_error(self):

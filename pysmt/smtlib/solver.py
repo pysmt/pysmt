@@ -24,6 +24,8 @@ class SmtLibSolver(Solver):
                         environment,
                         logic=logic,
                         user_options=user_options)
+        # Flag used to debug interaction with the solver
+        self.dbg = False
 
         if LOGICS is not None: self.LOGICS = LOGICS
         self.args = args
@@ -37,16 +39,15 @@ class SmtLibSolver(Solver):
             self.solver_stdin = TextIOWrapper(self.solver.stdin)
             self.solver_stdout = TextIOWrapper(self.solver.stdout)
 
-        self.dbg = False
-
         # Initialize solver
-        self._send_command(SmtLibCommand(smtcmd.SET_OPTION, [":print-success", "false"]))
-        self._send_command(SmtLibCommand(smtcmd.SET_OPTION, [":produce-models", "true"]))
-
+        self.set_option(":print-success", "true")
+        self.set_option(":produce-models", "true")
+        # Redirect diagnostic output to stdout
+        self.set_option(":diagnostic-output-channel", '"stdout"')
         if self.options is not None:
             for o,v in iteritems(self.options):
-                self._send_command(SmtLibCommand(smtcmd.SET_OPTION, [o, v]))
-        self._send_command(SmtLibCommand(smtcmd.SET_LOGIC, [logic]))
+                self.set_option(o,v)
+        self.set_logic(logic)
 
     def get_default_options(self, logic=None, user_options=None):
         res = {}
@@ -55,26 +56,46 @@ class SmtLibSolver(Solver):
                 res[o] = v
         return res
 
+    def set_option(self, name, value):
+        self._send_silent_command(SmtLibCommand(smtcmd.SET_OPTION,
+                                                [name, value]))
+
+    def set_logic(self, logic):
+        self._send_silent_command(SmtLibCommand(smtcmd.SET_LOGIC, [logic]))
+
     def _send_command(self, cmd):
+        """Sends a command to the STDIN pipe."""
         if self.dbg: print("Sending: " + cmd.serialize_to_string())
         cmd.serialize(self.solver_stdin, daggify=True)
         self.solver_stdin.write("\n")
         self.solver_stdin.flush()
 
+    def _send_silent_command(self, cmd):
+        """Sends a command to the STDIN pipe and awaits for acknowledgment."""
+        self._send_command(cmd)
+        self._check_success()
+
     def _get_answer(self):
+        """Reads a line from STDOUT pipe"""
         res = self.solver_stdout.readline().strip()
         if self.dbg: print("Read: " + str(res))
         return res
 
     def _get_value_answer(self):
+        """Reads and parses an assignment from the STDOUT pipe"""
         lst = self.parser.get_assignment_list(self.solver_stdout)
         if self.dbg: print("Read: " + str(lst))
         return lst
 
     def _declare_variable(self, symbol):
         cmd = SmtLibCommand(smtcmd.DECLARE_FUN, [symbol])
-        self._send_command(cmd)
+        self._send_silent_command(cmd)
         self.declared_vars.add(symbol)
+
+    def _check_success(self):
+        res = self._get_answer()
+        if res != "success":
+            raise UnknownSolverAnswerError("Solver returned: '%s'" % res)
 
     def solve(self, assumptions=None):
         assert assumptions is None
@@ -90,7 +111,7 @@ class SmtLibSolver(Solver):
             raise UnknownSolverAnswerError("Solver returned: " + ans)
 
     def reset_assertions(self):
-        self._send_command(SmtLibCommand(smtcmd.RESET_ASSERTIONS, []))
+        self._send_silent_command(SmtLibCommand(smtcmd.RESET_ASSERTIONS, []))
         return
 
     def add_assertion(self, formula, named=None):
@@ -98,13 +119,13 @@ class SmtLibSolver(Solver):
         for d in deps:
             if d not in self.declared_vars:
                 self._declare_variable(d)
-        self._send_command(SmtLibCommand(smtcmd.ASSERT, [formula]))
+        self._send_silent_command(SmtLibCommand(smtcmd.ASSERT, [formula]))
 
     def push(self, levels=1):
-        self._send_command(SmtLibCommand(smtcmd.PUSH, [levels]))
+        self._send_silent_command(SmtLibCommand(smtcmd.PUSH, [levels]))
 
     def pop(self, levels=1):
-        self._send_command(SmtLibCommand(smtcmd.POP, [levels]))
+        self._send_silent_command(SmtLibCommand(smtcmd.POP, [levels]))
 
     def get_value(self, item):
         self._send_command(SmtLibCommand(smtcmd.GET_VALUE, [item]))
@@ -127,10 +148,10 @@ class SmtLibSolver(Solver):
                 assignment[s] = v
         return EagerModel(assignment=assignment, environment=self.environment)
 
-
     def exit(self):
         self._send_command(SmtLibCommand(smtcmd.EXIT, []))
         self.solver_stdin.close()
         self.solver_stdout.close()
+        self.solver.stderr.close()
         self.solver.terminate()
         return
