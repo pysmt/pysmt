@@ -21,6 +21,7 @@ from pysmt.shortcuts import get_env, qelim, Or
 from pysmt.test import TestCase, skipIfSolverNotAvailable, main
 from pysmt.test.examples import EXAMPLE_FORMULAS
 
+
 class TestBdd(TestCase):
 
     @skipIfSolverNotAvailable("bdd")

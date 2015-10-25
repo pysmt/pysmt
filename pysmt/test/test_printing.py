@@ -259,6 +259,7 @@ SERIALIZED_EXAMPLES = [
     """(exists r . (forall s . (r < (r - s))))""",
     """(forall r . (exists s . (r < (r - s))))""",
     """(x & (forall r . ((r + s) = 5.0)))""",
+    """(exists x . ((x <-> (5.0 < s)) & (s < 3.0)))""",
     """((p < ih(r, q)) & (x -> y))""",
     """(((p - 3) = q) -> ((p < ih(r, (... + ...))) | (ih(r, p) <= p)))""",
     """(((ToReal((... - ...)) = r) & (ToReal(q) = r)) -> ((p < ih(ToReal(...), (... + ...))) | (ih(r, p) <= p)))""",

@@ -4,6 +4,11 @@ Change Log
 0.4.3: XXX-XX-XX -- YYYYYY
 --------------------------
 
+Solvers:
+
+* Shannon: Quantifier Elimination based on shannon expansion (shannon).
+
+
 Testing:
 
 * Introduced decorator pysmt.test.skipIfNoSMTWrapper

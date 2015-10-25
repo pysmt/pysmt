@@ -33,10 +33,11 @@ from pysmt.logics import QF_UFLIRA, LRA, QF_UFLRA
 from pysmt.logics import AUTO as AUTO_LOGIC
 from pysmt.logics import most_generic_logic, get_closer_logic
 from pysmt.oracles import get_logic
+from pysmt.solvers.qelim import ShannonQuantifierEliminator
 
 DEFAULT_SOLVER_PREFERENCE_LIST = ['msat', 'z3', 'cvc4', 'yices', 'btor',
                                   'picosat', 'bdd']
-DEFAULT_QELIM_PREFERENCE_LIST = ['z3', 'msat_fm', 'msat_lw']
+DEFAULT_QELIM_PREFERENCE_LIST = ['z3', 'msat_fm', 'msat_lw', 'bdd', 'shannon']
 DEFAULT_INTERPOLATION_PREFERENCE_LIST = ['msat', 'z3']
 DEFAULT_LOGIC = QF_UFLIRA
 DEFAULT_QE_LOGIC = LRA
@@ -288,6 +289,9 @@ class Factory(object):
             self._all_qelims['bdd'] = BddQuantifierEliminator
         except SolverAPINotFound:
             pass
+
+        # Pure-python always present
+        self._all_qelims['shannon'] = ShannonQuantifierEliminator
 
 
     def _get_available_interpolators(self):
