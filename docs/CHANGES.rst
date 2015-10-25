@@ -4,6 +4,11 @@ Change Log
 0.4.3: XXX-XX-XX -- YYYYYY
 --------------------------
 
+General:
+
+* pysmt.parsing: Added parser for HR expressions
+
+
 Solvers:
 
 * Shannon: Quantifier Elimination based on shannon expansion (shannon).

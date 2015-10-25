@@ -1,3 +1,4 @@
+import re
 import io
 import itertools
 from six import PY2
@@ -63,8 +64,33 @@ def BufferedTextReader(fname):
     else:
         return io.TextIOWrapper(open(fname, 'rb'))
 
+
 def interactive_char_iterator(handle):
     c = handle.read(1)
     while c:
         yield c
         c = handle.read(1)
+
+
+#
+# Symbol (un)quoting
+#
+_simple_symbol_prog = re.compile(r"^[~!@\$%\^&\*_\-+=<>\.\?\/A-Za-z][~!@\$%\^&\*_\-+=<>\.\?\/A-Za-z0-9]*$")
+
+def quote(name, style='|'):
+    if _simple_symbol_prog.match(name) is None:
+        name = name.replace("\\", "\\\\").replace("%s" % style, "\\%s" % style)
+        return "%s%s%s" % (style, name, style)
+    else:
+        return name
+
+
+def unquote(name, style='|'):
+    if name.startswith(style):
+        if name.endswith(style):
+            name = name.replace("%s" % style, "\\%s" % style).replace("\\\\", "\\")
+            return name[1:-1]
+        else:
+            raise ValueError("Malformed Name")
+    else:
+        return name
