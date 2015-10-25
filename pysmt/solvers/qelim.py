@@ -18,8 +18,8 @@
 import pysmt.logics
 
 from pysmt.walkers.identitydag import IdentityDagWalker
-from pysmt.utils import powerset
-from pysmt.oracles import get_logic
+from pysmt.utils import all_assignments
+from pysmt.exceptions import InternalSolverError
 
 
 class QuantifierEliminator(object):
@@ -51,6 +51,7 @@ class QuantifierEliminator(object):
 
 
 class ShannonQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
+    """Quantifier Elimination using Shannon Expansion."""
 
     LOGICS = [pysmt.logics.BOOL]
 
@@ -59,28 +60,28 @@ class ShannonQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
         self.logic = logic
 
     def eliminate_quantifiers(self, formula):
-        logic = get_logic(formula, self.env)
-        if not logic <= pysmt.logics.BOOL:
-            raise NotImplementedError("Shannon quantifier elimination only "\
-                                      "supports pure-boolean formulae."\
-                                      "(detected logic is: %s)" % str(logic))
-
         return self.walk(formula)
 
-    def build_assignments(self, variables):
-        for s in powerset(variables):
-            yield dict((x, self.mgr.Bool(x in s)) for x in variables)
+    def _assert_vars_boolean(self, var_set):
+        for v in var_set:
+            if not v.symbol_type().is_bool_type():
+                raise InternalSolverError(
+                    "Shannon Quantifier Elimination only supports "\
+                    "quantification over Boolean variables: "\
+                    "(%s is %s)" % (v, v.symbol_type()))
+
+    def _expand(self, formula, args):
+        """Returns the list of elements from the Shannon expansion."""
+        qvars = formula.quantifier_vars()
+        self._assert_vars_boolean(qvars)
+        res = []
+        f = args[0]
+        for subs in all_assignments(qvars, self.env):
+            res.append(f.substitute(subs))
+        return res
 
     def walk_forall(self, formula, args, **kwargs):
-        conj = []
-        f = args[0]
-        for subs in self.build_assignments(formula.quantifier_vars()):
-            conj.append(f.substitute(subs))
-        return self.mgr.And(conj)
+        return self.mgr.And(self._expand(formula, args))
 
     def walk_exists(self, formula, args, **kwargs):
-        disj = []
-        f = args[0]
-        for subs in self.build_assignments(formula.quantifier_vars()):
-            disj.append(f.substitute(subs))
-        return self.mgr.Or(disj)
+        return self.mgr.Or(self._expand(formula, args))

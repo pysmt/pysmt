@@ -15,14 +15,14 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import unittest
 
-
+import pysmt.logics
 from pysmt.shortcuts import And, Symbol, Exists, FALSE, ForAll, Or, TRUE
 from pysmt.shortcuts import qelim
-from pysmt.test import TestCase
+from pysmt.exceptions import InternalSolverError, NoSolverAvailableError
+from pysmt.test import TestCase, main
 from pysmt.test.examples import get_example_formulae
-import pysmt.logics
+
 
 class TestShannon(TestCase):
 
@@ -79,6 +79,18 @@ class TestShannon(TestCase):
                 self.assertTrue(g.is_false())
 
 
+    def test_w_theory(self):
+        for example in get_example_formulae():
+            f = example.expr
+            if example.logic.quantifier_free: continue
+            try:
+                res = qelim(f, solver_name="shannon")
+                self.assertIsNotNone(res, f)
+            except NoSolverAvailableError:
+                self.assertTrue(example.logic > pysmt.logics.BOOL, example)
+            except InternalSolverError:
+                self.assertTrue(example.logic > pysmt.logics.BOOL, example)
+
 
 if __name__ == '__main__':
-    unittest.main()
+    main()
