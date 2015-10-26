@@ -40,6 +40,8 @@ from pysmt.utils import is_python_integer
 from pysmt.fnode import FNode, FNodeContent
 from pysmt.exceptions import NonLinearError, UndefinedSymbolError
 from pysmt.walkers.identitydag import IdentityDagWalker
+from pysmt.sorting_networks import SortingNetwork
+
 
 class FormulaManager(object):
     """FormulaManager is responsible for the creation of all formulae."""
@@ -62,6 +64,7 @@ class FormulaManager(object):
         self.false_formula = self.create_node(node_type=op.BOOL_CONSTANT,
                                               args=tuple(),
                                               payload=False)
+        self._sn = SortingNetwork(mgr=self)
         return
 
     def _do_type_check_real(self, formula):
@@ -453,6 +456,29 @@ class FormulaManager(object):
         else:
             raise TypeError("Argument is of type %s, but INT was expected!\n" % t)
 
+    def AtLeastK(self, k, *args):
+        """At least k of the bool expressions can be true at anytime.
+
+        This is using the sorting networks
+        """
+        exprs = self._polymorph_args_to_tuple(args)
+        return self._sn.at_least_k(k, exprs)
+
+    def AtMostK(self, k, *args):
+        """ At most k of the bool expressions can be true at anytime.
+
+        This is using the sorting networks
+        """
+        exprs = self._polymorph_args_to_tuple(args)
+        return self._sn.at_most_k(k, exprs)
+
+    def ExactlyK(self, k, *args):
+        """ Encodes an exactly-k constraint on the boolean symbols.
+
+        This is using the sorting networks
+        """
+        exprs = self._polymorph_args_to_tuple(args)
+        return self._sn.exactly_k(k, exprs)
 
     def AtMostOne(self, *args):
         """ At most one of the bool expressions can be true at anytime.
