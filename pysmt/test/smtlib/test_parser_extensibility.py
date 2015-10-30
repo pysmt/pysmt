@@ -78,7 +78,6 @@ class TSSmtLibParser(SmtLibParser):
             return self.get_ts(script)
 
 
-
 class TestParserExtensibility(TestCase):
 
     def setUp(self):

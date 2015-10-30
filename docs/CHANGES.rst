@@ -28,6 +28,11 @@ Bugfix:
   Fixed incorrect handling of UF with bool arguments when using
   MathSAT. The converter now takes care of rewriting the formula.
 
+Examples:
+
+* parallel.py: Shows how to use multi-processing to perform parallel and asynchronous solving
+* smtlib.py: Demonstrates how to perform SMT-LIB parsing, dumping and extension
+
 
 0.4.2: 2015-10-12 -- Boolector
 -----------------------------------------

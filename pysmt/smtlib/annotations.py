@@ -15,7 +15,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-
 from six import iteritems
 
 class Annotations(object):
@@ -104,6 +103,7 @@ class Annotations(object):
         """Checks if formula has at least one annotation"""
         return formula in self._annotations
 
+
     def __str__(self):
         res = ["Annotations: {"]
         for t, m in iteritems(self._annotations):
@@ -114,6 +114,7 @@ class Annotations(object):
                     res.append(str(v) + ", ")
                 res.append("} ")
         return "".join(res + ["}"])
+
 
     def __getitem__(self, formula):
         return self.annotations(formula)
