@@ -904,8 +904,11 @@ if __name__ == "__main__":
     def main():
         """Simple testing script"""
         args = sys.argv
-        if len(args) != 2:
-            print("Usage %s <file.smt2>" % args[0])
+        out = None
+        if len(args) == 3:
+            out = args[2]
+        elif len(args) != 2:
+            print("Usage %s <file.smt2> [out.smt2]" % args[0])
             exit(1)
 
         fname = args[1]
@@ -914,5 +917,6 @@ if __name__ == "__main__":
         res = parser.get_script_fname(fname)
         assert res is not None
         print("Done")
-
+        if out is not None:
+            res.to_file(out, daggify=True)
     main()
