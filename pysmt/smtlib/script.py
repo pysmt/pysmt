@@ -15,8 +15,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from six.moves import cStringIO
 from collections import namedtuple
+from six.moves import cStringIO
 from six.moves import xrange
 
 import pysmt.smtlib.commands as smtcmd
@@ -25,6 +25,7 @@ from pysmt.shortcuts import And
 from pysmt.smtlib.printers import SmtPrinter, SmtDagPrinter, quote
 from pysmt.logics import UFLIRA
 from pysmt.utils import quote
+
 
 def check_sat_filter(log):
     """
@@ -95,11 +96,19 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
                                             type_str))
 
         elif self.name == smtcmd.DEFINE_FUN:
-            raise NotImplementedError
+            name = self.args[0]
+            params_list = self.args[1]
+            params = " ".join(["(%s %s)" % (v, v.symbol_type()) for v in params_list])
+            rtype = self.args[2]
+            expr = self.args[3]
+            outstream.write("(%s %s (%s) %s %s)" % (self.name,
+                                                    name,
+                                                    params,
+                                                    rtype,
+                                                    expr))
 
         elif self.name in [smtcmd.PUSH, smtcmd.POP]:
             outstream.write("(%s %d)" % (self.name, self.args[0]))
-
 
     def serialize_to_string(self):
         buf = cStringIO()

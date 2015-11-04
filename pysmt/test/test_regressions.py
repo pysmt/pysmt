@@ -30,6 +30,7 @@ from pysmt.exceptions import ConvertExpressionError
 from pysmt.test.examples import get_example_formulae
 from pysmt.environment import Environment
 from pysmt.rewritings import cnf_as_set
+from pysmt.smtlib.parser import SmtLibParser
 
 import pysmt.smtlib.commands as smtcmd
 from pysmt.smtlib.script import SmtLibCommand
@@ -273,6 +274,20 @@ class TestRegressions(TestCase):
         cmd.serialize(outstream)
         output = outstream.getvalue()
         self.assertEqual(output, "(set-info :source |This\nis\nmultiline!|)")
+
+    def test_parse_define_fun(self):
+        smtlib_input = "(declare-fun z () Bool)"\
+                       "(define-fun .def_1 ((z Bool)) Bool (and z z))"
+        parser = SmtLibParser()
+        buffer_ = cStringIO(smtlib_input)
+        parser.get_script(buffer_)
+
+    def test_parse_define_fun_bind(self):
+        smtlib_input = "(declare-fun y () Bool)"\
+                       "(define-fun .def_1 ((z Bool)) Bool (and z z))"
+        parser = SmtLibParser()
+        buffer_ = cStringIO(smtlib_input)
+        parser.get_script(buffer_)
 
 
 if __name__ == "__main__":
