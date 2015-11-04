@@ -98,7 +98,7 @@ Functions (EUF), Bit-Vectors (BV), and their combinations. The
 following solvers are supported through native APIs:
 
 * MathSAT (http://mathsat.fbk.eu/)
-* Z3 (http://z3.codeplex.com/releases)
+* Z3 (https://github.com/Z3Prover/z3/)
 * CVC4 (http://cvc4.cs.nyu.edu/web/)
 * Yices 2 (http://yices.csl.sri.com/)
 * CUDD (http://vlsi.colorado.edu/~fabio/CUDD/)
