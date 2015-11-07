@@ -146,12 +146,17 @@ class TestWalkers(TestCase):
     def test_substitution_complex(self):
         x, y = FreshSymbol(REAL), FreshSymbol(REAL)
 
-        # y = 0 /\ Forall x. x > 3 /\ y < 2
+        # y = 0 /\ (Forall x. x > 3 /\ y < 2)
         f = And(Equals(y, Real(0)),
                 ForAll([x], And(GT(x, Real(3)), LT(y, Real(2)))))
 
-        subs = {y: Real(0),
-                ForAll([x], And(GT(x, Real(3)), LT(Real(0), Real(2)))): TRUE()}
+        if "MSS" in str(self.env.SubstituterClass):
+            subs = {y: Real(0),
+                    ForAll([x], And(GT(x, Real(3)), LT(Real(0), Real(2)))): TRUE()}
+        else:
+            assert "MGS" in str(self.env.SubstituterClass)
+            subs = {y: Real(0),
+                    ForAll([x], And(GT(x, Real(3)), LT(y, Real(2)))): TRUE()}
         f_subs = substitute(f, subs).simplify()
         self.assertEqual(f_subs, TRUE())
 
