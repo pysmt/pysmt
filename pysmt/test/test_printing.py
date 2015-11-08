@@ -131,7 +131,7 @@ class TestPrinting(TestCase):
         f2_string = self.print_to_string(f2)
 
         self.assertEqual(f1_string, "(f1 p q)")
-        self.assertEqual(f2_string, "(f2)")
+        self.assertEqual(f2_string, "f2")
 
     def test_toreal(self):
         p = Symbol("p", INT)
@@ -172,7 +172,7 @@ class TestPrinting(TestCase):
     def test_examples(self):
         for i, (f, _, _, _) in enumerate(get_example_formulae()):
             self.assertTrue(len(str(f)) >= 1, str(f))
-            self.assertEquals(str(f), SERIALIZED_EXAMPLES[i])
+            self.assertEqual(str(f), SERIALIZED_EXAMPLES[i])
 
     def test_smart_serialize(self):
         x, y = Symbol("x"), Symbol("y")
@@ -180,13 +180,13 @@ class TestPrinting(TestCase):
         f = Implies(x, f1)
         substitutions = {f1: "f1"}  # Mapping FNode -> String
         res = smart_serialize(f, subs=substitutions)
-        self.assertEquals("(x -> f1)", res)
+        self.assertEqual("(x -> f1)", res)
 
         # If no smarties are provided, the printing is compatible
         # with standard one
         res = smart_serialize(f)
         self.assertIsNotNone(res)
-        self.assertEquals(str(f), res)
+        self.assertEqual(str(f), res)
 
         fvars = [Symbol("x%d" % i) for i in xrange(5)]
         ex = ExactlyOne(fvars)
@@ -194,7 +194,7 @@ class TestPrinting(TestCase):
         old_str = ex.serialize()
         smart_str = smart_serialize(ex, subs=substitutions)
         self.assertTrue(len(old_str) > len(smart_str))
-        self.assertEquals("ExactlyOne(x0,x1,x2,x3,x4)", smart_str)
+        self.assertEqual("ExactlyOne(x0,x1,x2,x3,x4)", smart_str)
 
 
 SERIALIZED_EXAMPLES = [
@@ -216,8 +216,7 @@ SERIALIZED_EXAMPLES = [
     """(! ((r * 2.0) < (s * 2.0)))""",
     """(! (r < (r - (5.0 - 2.0))))""",
     """((x ? 7.0 : ((s + -1.0) * 3.0)) = r)""",
-#    """(bf(x) <-> bg(x))""",
-    """(brf(r) -> brg(s))""",
+    """(bf(x) <-> bg(x))""",
     """(rf(5.0, rg(r)) = 0.0)""",
     """((rg(r) = (5.0 + 2.0)) <-> (rg(r) = 7.0))""",
     """((r = (s + 1.0)) & (rg(s) = 5.0) & (rg((r - 1.0)) = 7.0))""",
@@ -233,7 +232,7 @@ SERIALIZED_EXAMPLES = [
     """((((1_32 + (- ...)) << 1_32) >> 1_32) = 1_32)""",
     """((1_32 - 1_32) = 0_32)""",
     """(((1_32 ROL 1) ROR 1) = 1_32)""",
-    """(Zext(0_5, 11) = Sext(0_1, 15))""",
+    """((0_5 ZEXT 11) = (0_1 SEXT 15))""",
     """((bv2 - bv2) = 0_16)""",
     """((bv2 - bv2)[0:7] = bv1)""",
     """((bv2[0:7] bvcomp bv1) = 1_1)""",
@@ -259,11 +258,12 @@ SERIALIZED_EXAMPLES = [
     """(exists r . (forall s . (r < (r - s))))""",
     """(forall r . (exists s . (r < (r - s))))""",
     """(x & (forall r . ((r + s) = 5.0)))""",
+    """(exists x . ((x <-> (5.0 < s)) & (s < 3.0)))""",
     """((p < ih(r, q)) & (x -> y))""",
     """(((p - 3) = q) -> ((p < ih(r, (... + ...))) | (ih(r, p) <= p)))""",
     """(((ToReal((... - ...)) = r) & (ToReal(q) = r)) -> ((p < ih(ToReal(...), (... + ...))) | (ih(r, p) <= p)))""",
     """(! (((ToReal(...) = r) & (ToReal(...) = r)) -> ((p < ...(..., ...)) | (...(..., ...) <= p))))""",
-    """(Did you know that any string works? #yolo & 10 & |#somesolverskeepthe|| &  )""",
+    """("Did you know that any string works? #yolo" & "10" & "|#somesolverskeepthe||" & " ")""",
     ]
 
 

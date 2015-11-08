@@ -64,9 +64,6 @@ def get_example_formulae(environment=None):
         bf = Symbol("bf", FunctionType(BOOL, [BOOL]))
         bg = Symbol("bg", FunctionType(BOOL, [BOOL]))
 
-        brf = Symbol("brf", FunctionType(BOOL, [REAL]))
-        brg = Symbol("brg", FunctionType(BOOL, [REAL]))
-
         bv8 = Symbol("bv1", BV8)
         bv16 = Symbol("bv2", BV16)
 
@@ -207,18 +204,11 @@ def get_example_formulae(environment=None):
             # EUF
             #
 
-            # # f(x) = g(x)
-            # Example(expr=Iff(Function(bf, (x,)), Function(bg, (x,))),
-            #         is_valid=False,
-            #         is_sat=True,
-            #         logic=pysmt.logics.QF_UF
-            #     ),
-
-            # f(x) -> g(x)
-            Example(expr=Implies(Function(brf, (r,)), Function(brg, (s,))),
+            # f(x) = g(x)
+            Example(expr=Iff(Function(bf, (x,)), Function(bg, (x,))),
                     is_valid=False,
                     is_sat=True,
-                    logic=pysmt.logics.QF_UFLRA
+                    logic=pysmt.logics.QF_UF
                 ),
 
             # rf(5, rg(2)) = 0
@@ -508,6 +498,13 @@ def get_example_formulae(environment=None):
                     is_sat=False,
                     logic=pysmt.logics.LRA
                 ),
+
+            # exists x . ((x <-> (s > 5)) & (s < 3))
+            Example(expr=Exists([x], (And(Iff(x, GT(s, Real(5))),
+                                          LT(s, Real(3))))),
+                    is_valid=False,
+                    is_sat=True,
+                    logic=pysmt.logics.LRA),
 
             #
             # UFLIRA

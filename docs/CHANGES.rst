@@ -1,6 +1,34 @@
 Change Log
 ==========
 
+0.4.3: XXX-XX-XX -- YYYYYY
+--------------------------
+
+General:
+
+* pysmt.parsing: Added parser for HR expressions
+
+
+Solvers:
+
+* Shannon: Quantifier Elimination based on shannon expansion (shannon).
+
+
+Testing:
+
+* Introduced decorator pysmt.test.skipIfNoSMTWrapper
+
+* Tests do note explicitely depend anymore on unittest module.  All
+  tests that need to be executable only need to import
+  pysmt.test.main.
+
+Bugfix:
+
+* #184:  MathSAT: Handle UF with boolean args
+  Fixed incorrect handling of UF with bool arguments when using
+  MathSAT. The converter now takes care of rewriting the formula.
+
+
 0.4.2: 2015-10-12 -- Boolector
 -----------------------------------------
 

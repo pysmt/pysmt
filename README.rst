@@ -39,20 +39,21 @@ Usage
 
 .. code:: python
 
-  from pysmt.shortcuts import Symbol, And, Not, is_sat
+   >>> from pysmt.shortcuts import Symbol, And, Not, is_sat
+   >>>
+   >>> varA = Symbol("A") # Default type is Boolean
+   >>> varB = Symbol("B")
+   >>> f = And(varA, Not(varB))
+   >>> f
+   (A & (! B))
+   >>> is_sat(f)
+   True
+   >>> g = f.substitute({varB: varA})
+   >>> g
+   (A & (! A))
+   >>> is_sat(g)
+   False
 
-  varA = Symbol("A") # Default type is Boolean
-  varB = Symbol("B")
-  f = And([varA, Not(varB)])
-  g = f.substitute({varB:varA})
-
-  res = is_sat(f)
-  assert res # SAT
-  print("f := %s is SAT? %s" % (f, res))
-
-  res = is_sat(g)
-  print("g := %s is SAT? %s" % (g, res))
-  assert not res # UNSAT
 
 A More Complex Example
 ----------------------
@@ -97,7 +98,7 @@ Functions (EUF), Bit-Vectors (BV), and their combinations. The
 following solvers are supported through native APIs:
 
 * MathSAT (http://mathsat.fbk.eu/)
-* Z3 (http://z3.codeplex.com/releases)
+* Z3 (https://github.com/Z3Prover/z3/)
 * CVC4 (http://cvc4.cs.nyu.edu/web/)
 * Yices 2 (http://yices.csl.sri.com/)
 * CUDD (http://vlsi.colorado.edu/~fabio/CUDD/)

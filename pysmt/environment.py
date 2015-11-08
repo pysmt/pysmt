@@ -43,7 +43,8 @@ class Environment(object):
     TypeCheckerClass = pysmt.type_checker.SimpleTypeChecker
     FormulaManagerClass = pysmt.formula.FormulaManager
     SimplifierClass = pysmt.simplifier.Simplifier
-    SubstituterClass = pysmt.substituter.Substituter
+    SubstituterClass = pysmt.substituter.MSSubstituter
+    #SubstituterClass = pysmt.substituter.MGSubstituter
     HRSerializerClass = pysmt.printers.HRSerializer
     QuantifierOracleClass = pysmt.oracles.QuantifierOracle
     TheoryOracleClass = pysmt.oracles.TheoryOracle

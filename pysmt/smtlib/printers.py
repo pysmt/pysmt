@@ -16,19 +16,12 @@
 #   limitations under the License.
 #
 from functools import partial
-import re
 
+import pysmt.operators as op
 from pysmt.environment import get_env
 from pysmt.walkers import TreeWalker, DagWalker
-import pysmt.operators as op
+from pysmt.utils import quote
 
-_simple_symbol_prog = re.compile(r"^[~!@\$%\^&\*_\-+=<>\.\?\/A-Za-z][~!@\$%\^&\*_\-+=<>\.\?\/A-Za-z0-9]*$")
-def quote(name):
-    if _simple_symbol_prog.match(name) is None:
-        name = name.replace("\\", "\\\\").replace("|", "\\|")
-        return "|%s|" % name
-    else:
-        return name
 
 class SmtPrinter(TreeWalker):
 
