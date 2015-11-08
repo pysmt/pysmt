@@ -7,19 +7,20 @@ simple problem using it.
 Installation
 ------------
 
-To run pySMT you need the following software to be installed:
+To run pySMT you need python 2.7 or python 3.5+ installed.
+If no solver is installed, pySMT can still create and dump the SMT
+problem in SMT-LIB format. pySMT works with the following solvers:
 
-*  Python (http://www.python.org) >= 2.6
-*  MathSAT (http://mathsat.fbk.eu/) >= 5 (Optional)
-*  Z3 (http://z3.codeplex.com/releases) >= 4 (Optional)
-*  CVC4 (http://cvc4.cs.nyu.edu/web/) (Optional)
+* MathSAT (http://mathsat.fbk.eu/)
+* Z3 (https://github.com/Z3Prover/z3/)
+* CVC4 (http://cvc4.cs.nyu.edu/web/)
+* Yices 2 (http://yices.csl.sri.com/)
+* CUDD (http://vlsi.colorado.edu/~fabio/CUDD/)
+* PicoSAT (http://fmv.jku.at/picosat/)
+* Boolector (http://fmv.jku.at/boolector/)
 
 The python binding for the SMT Solvers must be installed and
 accessible from your PYTHONPATH.
-
-The current version supports MathSAT 5, Z3 4 and (starting from
-version 0.2.0) CVC4. The library can be used to build and dump SMT-LIB
-problems, without the need of any solver.
 
 
 Hello World

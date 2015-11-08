@@ -21,7 +21,7 @@ Supported Theories and Solvers
 pySMT provides methods to define a formula in Linear Real Arithmetic (LRA), Real Difference Logic (RDL), their combination (LIRA), Equalities and Uninterpreted Functions (EUF) and Bit-Vectors (BV). The following solvers are supported through native APIs:
 
 * MathSAT (http://mathsat.fbk.eu/)
-* Z3 (http://z3.codeplex.com/releases)
+* Z3 (https://github.com/Z3Prover/z3/)
 * CVC4 (http://cvc4.cs.nyu.edu/web/)
 * Yices 2 (http://yices.csl.sri.com/)
 * CUDD (http://vlsi.colorado.edu/~fabio/CUDD/)
