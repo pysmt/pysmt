@@ -24,6 +24,7 @@ from pysmt.exceptions import UnknownSmtLibCommandError
 from pysmt.shortcuts import And
 from pysmt.smtlib.printers import SmtPrinter, SmtDagPrinter, quote
 from pysmt.logics import UFLIRA
+from pysmt.utils import quote
 
 def check_sat_filter(log):
     """
@@ -60,8 +61,12 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
                    (outstream is None and printer is None), \
                    "Exactly one of outstream and printer must be set."
 
-        if self.name in [smtcmd.SET_OPTION,smtcmd.SET_INFO]:
+        if self.name == smtcmd.SET_OPTION:
             outstream.write("(%s %s %s)" % (self.name,self.args[0],self.args[1]))
+
+        elif self.name == smtcmd.SET_INFO:
+            outstream.write("(%s %s %s)" % (self.name,self.args[0],
+                                            quote(self.args[1])))
 
         elif self.name == smtcmd.ASSERT:
             outstream.write("(%s " % self.name)
@@ -170,9 +175,9 @@ class SmtLibScript(object):
 
         return _And(stack)
 
-    def to_file(self, fname):
+    def to_file(self, fname, daggify=False):
         with open(fname, "w") as outstream:
-            self.serialize(outstream)
+            self.serialize(outstream, daggify=daggify)
 
     def serialize(self, outstream, daggify=False):
         """Serializes the SmtLibScript expanding commands"""

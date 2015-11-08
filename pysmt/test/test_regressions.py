@@ -17,6 +17,7 @@
 #
 from fractions import Fraction
 from six.moves import xrange
+from six.moves import cStringIO
 
 from pysmt.shortcuts import (Real, Plus, Symbol, Equals, And, Bool, Or,
                              Div, LT, LE, Int, ToReal, Iff, Exists, Times)
@@ -29,6 +30,10 @@ from pysmt.exceptions import ConvertExpressionError
 from pysmt.test.examples import get_example_formulae
 from pysmt.environment import Environment
 from pysmt.rewritings import cnf_as_set
+
+import pysmt.smtlib.commands as smtcmd
+from pysmt.smtlib.script import SmtLibCommand
+
 
 class TestRegressions(TestCase):
 
@@ -261,6 +266,13 @@ class TestRegressions(TestCase):
     def test_empty_string_symbol(self):
         with self.assertRaises(ValueError):
             Symbol("")
+
+    def test_smtlib_info_quoting(self):
+        cmd = SmtLibCommand(smtcmd.SET_INFO, [":source", "This\nis\nmultiline!"])
+        outstream = cStringIO()
+        cmd.serialize(outstream)
+        output = outstream.getvalue()
+        self.assertEqual(output, "(set-info :source |This\nis\nmultiline!|)")
 
 
 if __name__ == "__main__":
