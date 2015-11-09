@@ -15,3 +15,4 @@ pySMT. Suggested order:
 9. `allsmt.py </examples/allsmt.py>`_ : How to detect the logic of a formula and perform model enumeration.
 10. `sudoku/ </examples/sudoku/>`_ : Solves sudoku problems using a simple encoding using either QF_LIA or QF_BV
 11. `parallel.py </examples/parallel.py>`_ : Shows how to use multi-processing to perform parallel and asynchronous solving
+12. `smtlib.py </examples/smtlib.py>`_ : Demonstrates how to perform SMT-LIB parsing, dumping and extension

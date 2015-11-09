@@ -16,11 +16,11 @@
 #   limitations under the License.
 #
 import functools
+import itertools
 from fractions import Fraction
 from warnings import warn
 from six import iteritems
 from six.moves import xrange
-import itertools
 
 import pysmt.smtlib.commands as smtcmd
 from pysmt.environment import get_env
@@ -30,6 +30,7 @@ from pysmt.exceptions import UnknownSmtLibCommandError
 from pysmt.smtlib.script import SmtLibCommand, SmtLibScript
 from pysmt.smtlib.annotations import Annotations
 from pysmt.utils import interactive_char_iterator
+
 
 def get_formula(script_stream, environment=None):
     """
@@ -375,8 +376,6 @@ class SmtLibParser(object):
         else:
             raise SyntaxError("Unexpected '_' expression '%s'" % args[0])
 
-
-
     def _equals_or_iff(self, left, right):
         """Utility function that treats = between booleans as <->"""
         mgr = self.env.formula_manager
@@ -393,7 +392,6 @@ class SmtLibParser(object):
             return mgr.Real(Fraction(left.constant_value()) / \
                             Fraction(right.constant_value()))
         return mgr.Div(left, right)
-
 
     def _get_basic_type(self, type_name, params=None):
         """
@@ -415,14 +413,11 @@ class SmtLibParser(object):
             pt = [self._get_basic_type(par) for par in params]
             return FunctionType(rt, pt)
 
-
     def _get_var(self, name, type_name, params=None):
         """Returns the PySMT variable corresponding to a declaration"""
         typename = self._get_basic_type(type_name, params)
         return self.env.formula_manager.Symbol(name=name,
                                                         typename=typename)
-
-
     def atom(self, token, mgr):
         """
         Given a token and a FormulaManager, returns the pysmt representation of
@@ -468,13 +463,11 @@ class SmtLibParser(object):
             self.cache.bind(token, res)
         return res
 
-
     def _exit_let(self, varlist, bdy):
         """ Cleans the execution environment when we exit the scope of a 'let' """
         for k in varlist:
             self.cache.unbind(k)
         return bdy
-
 
     def _exit_quantifier(self, fun, vrs, body):
         """
@@ -483,7 +476,6 @@ class SmtLibParser(object):
         for var in vrs:
             self.cache.unbind(var.symbol_name())
         return fun(vrs, body)
-
 
     def _exit_annotation(self, pyterm, *attrs):
         """
@@ -507,7 +499,6 @@ class SmtLibParser(object):
                 i += 1
 
         return pyterm
-
 
     def _enter_let(self, stack, tokens, key):
         """Handles a let expression by recurring on the expression and
@@ -725,12 +716,25 @@ class SmtLibParser(object):
         return var
 
     def parse_params(self, tokens, command):
-        """Parses a list of names form the tokens"""
+        """Parses a list of types from the tokens"""
         self.consume_opening(tokens, command)
         current = next(tokens)
         res = []
         while current != ")":
             res.append(self.parse_type(tokens, command,additional_token=current))
+            current = next(tokens)
+        return res
+
+    def parse_named_params(self, tokens, command):
+        """Parses a list of names and type from the tokens"""
+        self.consume_opening(tokens, command)
+        current = next(tokens)
+        res = []
+        while current != ")":
+            vname = self.parse_atom(tokens, command)
+            typename = self.parse_type(tokens, command)
+            res.append((vname, typename))
+            self.consume_closing(tokens, command)
             current = next(tokens)
         return res
 
@@ -851,7 +855,6 @@ class SmtLibParser(object):
 
     def _cmd_declare_const(self, current, tokens):
         elements = self.parse_atoms(tokens, current, 2)
-
         (var, typename) = elements
         v = self._get_var(var, typename)
         self.cache.bind(var, v)
@@ -877,25 +880,24 @@ class SmtLibParser(object):
         return SmtLibCommand(current, [v])
 
     def _cmd_define_fun(self, current, tokens):
-        var = self.parse_atom(tokens, current)
-        params = self.parse_params(tokens, current)
-        self.parse_type(tokens, current)
-        ebody = self.get_expression(tokens)
-        self.consume_closing(tokens, current)
-
         formal = []
-        for k in params:
-            (x,t) = k[0], k[1]
+        var = self.parse_atom(tokens, current)
+        namedparams = self.parse_named_params(tokens, current)
+        rtype = self.parse_type(tokens, current)
+
+        for (x,t) in namedparams:
             v = self._get_var(x, t)
             self.cache.bind(x, v)
             formal.append(v)
-
+        # Parse expression using also parameters
+        ebody = self.get_expression(tokens)
+        # Discard parameters
         for x in formal:
             self.cache.unbind(x.symbol_name())
-
+        # Finish Parsing
+        self.consume_closing(tokens, current)
         self.cache.define(var, formal, ebody)
-        return SmtLibCommand(current, [var, formal, ebody])
-
+        return SmtLibCommand(current, [var, formal, rtype, ebody])
 
 
 if __name__ == "__main__":
