@@ -282,10 +282,8 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
         r = self.converter.back(res)
         return r
 
-    def exit(self):
-        if not self._destroyed:
-            self._destroyed = True
-            del self.z3
+    def _exit(self):
+        del self.z3
 
 
 class Z3Converter(Converter, DagWalker):
@@ -677,10 +675,10 @@ class Z3QuantifierEliminator(QuantifierEliminator):
     LOGICS = [LIA, LRA]
 
     def __init__(self, environment, logic=None):
+        QuantifierEliminator.__init__(self)
         self.environment = environment
         self.logic = logic
         self.converter = Z3Converter(environment)
-
 
     def eliminate_quantifiers(self, formula):
         logic = get_logic(formula, self.environment)
@@ -693,7 +691,6 @@ class Z3QuantifierEliminator(QuantifierEliminator):
         eliminator = z3.Tactic('qe')
 
         f = self.converter.convert(formula)
-
         s = simplifier(f, elim_and=True,
                        pull_cheap_ite=True,
                        ite_extra_rules=True).as_expr()
@@ -715,16 +712,19 @@ class Z3QuantifierEliminator(QuantifierEliminator):
 
         return pysmt_res
 
+    def _exit(self):
+        pass
+
 
 class Z3Interpolator(Interpolator):
 
     LOGICS = [QF_UFLIA, QF_UFLRA]
 
     def __init__(self, environment, logic=None):
+        Interpolator.__init__(self)
         self.environment = environment
         self.logic = logic
         self.converter = Z3Converter(environment)
-
 
     def _check_logic(self, formulas):
         for f in formulas:
@@ -734,7 +734,6 @@ class Z3Interpolator(Interpolator):
                 raise NotImplementedError(
                     "Logic not supported by Z3 interpolation."
                     "(detected logic is: %s)" % str(logic))
-
 
     def binary_interpolant(self, a, b):
         self._check_logic([a, b])
@@ -750,12 +749,10 @@ class Z3Interpolator(Interpolator):
 
         return pysmt_res
 
-
     def sequence_interpolant(self, formulas):
         self._check_logic(formulas)
 
         zf = [self.converter.convert(f) for f in formulas]
-
         try:
             itp = z3.sequence_interpolant(zf)
             pysmt_res = [self.converter.back(f) for f in itp]
@@ -763,3 +760,6 @@ class Z3Interpolator(Interpolator):
             pysmt_res = None
 
         return pysmt_res
+
+    def _exit(self):
+        pass

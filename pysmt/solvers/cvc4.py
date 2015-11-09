@@ -128,10 +128,8 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
             res = self.environment.formula_manager.Real(Fraction(res.constant_value(), 1))
         return res
 
-    def exit(self):
-        if not self._destroyed:
-            self._destroyed = True
-            del self.cvc4
+    def _exit(self):
+        del self.cvc4
 
 
 class CVC4Converter(Converter, DagWalker):
