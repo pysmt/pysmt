@@ -47,36 +47,40 @@ from pysmt.solvers.interpolation import Interpolator
 from pysmt.walkers.identitydag import IdentityDagWalker
 
 
-class _MSatEnvWrapper(object):
-    "A simple wrapper for msat_env objects with explicit reference counting"
+class MSatEnv(object):
+    """A wrapper for the msat_env object.
 
-    __slots__ = ['msat_env', 'refs']
+    Objects within pySMT should only reference the msat_environment
+    through this object. When calling a function from the underlying
+    wrapper, the inner instance of msat_env needs to be used.
+    This is done using the __call__ method: e.g.,
+       env = MSatEnv()
+       mathsat.function(env())
+    """
+    __slots__ = ['msat_env']
 
-    def __init__(self, msat_env):
-        self.msat_env = msat_env
-        self.refs = 1
+    def __init__(self, msat_config=None):
+        if msat_config is None:
+            self.msat_env = mathsat.msat_create_env()
+        else:
+            self.msat_env = mathsat.msat_create_env(msat_config)
 
-    def ref(self):
-        self.refs += 1
-        return self
-
-    def unref(self):
-        assert self.refs > 0
-        self.refs -= 1
-        if not self.refs:
-            mathsat.msat_destroy_env(self.msat_env)
+    def __del__(self):
+        mathsat.msat_destroy_env(self.msat_env)
 
     def __call__(self):
         return self.msat_env
 
 
 class MathSAT5Model(Model):
+    """Stand-alone model"""
 
-    def __init__(self, environment, msat_env_wrapper):
+    def __init__(self, environment, msat_env):
         Model.__init__(self, environment)
-        self.msat_env = msat_env_wrapper
-        self.converter = MSatConverter(environment, self.msat_env())
+        self.msat_env = msat_env
+        self.converter = MSatConverter(environment, self.msat_env)
         self.msat_model = None
+
         msat_model = mathsat.msat_get_model(self.msat_env())
         if mathsat.MSAT_ERROR_MODEL(msat_model):
             msat_msg = mathsat.msat_last_error_message(self.msat_env())
@@ -86,7 +90,7 @@ class MathSAT5Model(Model):
     def __del__(self):
         if self.msat_model is not None:
             mathsat.msat_destroy_model(self.msat_model)
-        self.msat_env.unref()
+        del self.msat_env
 
     def get_value(self, formula, model_completion=True):
         titem = self.converter.convert(formula)
@@ -142,16 +146,15 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
 
         self.msat_config = mathsat.msat_create_default_config(str(logic))
         self._prepare_config(self.options, debugFile)
-        self.msat_env = mathsat.msat_create_env(self.msat_config)
-        self.msat_env_wrapper = _MSatEnvWrapper(self.msat_env)
+        self.msat_env = MSatEnv(self.msat_config)
+        mathsat.msat_destroy_config(self.msat_config)
 
-        self.realType = mathsat.msat_get_rational_type(self.msat_env)
-        self.intType = mathsat.msat_get_integer_type(self.msat_env)
-        self.boolType = mathsat.msat_get_bool_type(self.msat_env)
+        self.realType = mathsat.msat_get_rational_type(self.msat_env())
+        self.intType = mathsat.msat_get_integer_type(self.msat_env())
+        self.boolType = mathsat.msat_get_bool_type(self.msat_env())
 
         self.mgr = environment.formula_manager
         self.converter = MSatConverter(environment, self.msat_env)
-        return
 
     def _prepare_config(self, options, debugFile=None):
         """Sets the relevant options in self.msat_config"""
@@ -178,7 +181,7 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
 
     @clear_pending_pop
     def _reset_assertions(self):
-        mathsat.msat_reset_env(self.msat_env)
+        mathsat.msat_reset_env(self.msat_env())
 
     @clear_pending_pop
     def declare_variable(self, var):
@@ -197,10 +200,10 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
             formula = self.mgr.Implies(key, formula)
 
         term = self.converter.convert(formula)
-        res = mathsat.msat_assert_formula(self.msat_env, term)
+        res = mathsat.msat_assert_formula(self.msat_env(), term)
 
         if res != 0:
-            msat_msg = mathsat.msat_last_error_message(self.msat_env)
+            msat_msg = mathsat.msat_last_error_message(self.msat_env())
             raise InternalSolverError(msat_msg)
 
         return result
@@ -241,12 +244,12 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
                 self.pending_pop = True
 
             if len(bool_ass) > 0:
-                res = mathsat.msat_solve_with_assumptions(self.msat_env, bool_ass)
+                res = mathsat.msat_solve_with_assumptions(self.msat_env(), bool_ass)
             else:
-                res = mathsat.msat_solve(self.msat_env)
+                res = mathsat.msat_solve(self.msat_env())
 
         else:
-            res = mathsat.msat_solve(self.msat_env)
+            res = mathsat.msat_solve(self.msat_env())
 
         assert res in [mathsat.MSAT_UNKNOWN,mathsat.MSAT_SAT,mathsat.MSAT_UNSAT]
         if res == mathsat.MSAT_UNKNOWN:
@@ -273,10 +276,10 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
         if self.options.unsat_cores_mode == "all":
             self._check_unsat_core_config()
 
-            terms = mathsat.msat_get_unsat_core(self.msat_env)
+            terms = mathsat.msat_get_unsat_core(self.msat_env())
             if terms is None:
                 raise InternalSolverError(
-                    mathsat.msat_last_error_message(self.msat_env))
+                    mathsat.msat_last_error_message(self.msat_env()))
             return set(self.converter.back(t) for t in terms)
         else:
             return self.get_named_unsat_core().values()
@@ -287,7 +290,7 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
         if self.options.unsat_cores_mode == "named":
             self._check_unsat_core_config()
 
-            assumptions = mathsat.msat_get_unsat_assumptions(self.msat_env)
+            assumptions = mathsat.msat_get_unsat_assumptions(self.msat_env())
             pysmt_assumptions = set(self.converter.back(t) for t in assumptions)
 
             res = {}
@@ -309,7 +312,7 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
     @clear_pending_pop
     def all_sat(self, important, callback):
         self.push()
-        mathsat.msat_all_sat(self.msat_env,
+        mathsat.msat_all_sat(self.msat_env(),
                              [self._var2term(x) for x in important],
                              callback)
         self.pop()
@@ -317,21 +320,21 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
     @clear_pending_pop
     def _push(self, levels=1):
         for _ in xrange(levels):
-            mathsat.msat_push_backtrack_point(self.msat_env)
+            mathsat.msat_push_backtrack_point(self.msat_env())
 
     @clear_pending_pop
     def _pop(self, levels=1):
         for _ in xrange(levels):
-            mathsat.msat_pop_backtrack_point(self.msat_env)
+            mathsat.msat_pop_backtrack_point(self.msat_env())
 
     def _var2term(self, var):
-        decl = mathsat.msat_find_decl(self.msat_env, var.symbol_name())
-        titem = mathsat.msat_make_term(self.msat_env, decl, [])
+        decl = mathsat.msat_find_decl(self.msat_env(), var.symbol_name())
+        titem = mathsat.msat_make_term(self.msat_env(), decl, [])
         return titem
 
     def set_preferred_var(self, var):
         tvar = self.converter.convert(var)
-        mathsat.msat_add_preferred_for_branching(self.msat_env, tvar)
+        mathsat.msat_add_preferred_for_branching(self.msat_env(), tvar)
         return
 
     def print_model(self, name_filter=None):
@@ -346,7 +349,7 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
         self._assert_no_function_type(item)
 
         titem = self.converter.convert(item)
-        tval = mathsat.msat_get_model_value(self.msat_env, titem)
+        tval = mathsat.msat_get_model_value(self.msat_env(), titem)
         val = self.converter.back(tval)
         if self.environment.stc.get_type(item).is_real_type() and \
                val.is_int_constant():
@@ -354,11 +357,10 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
         return val
 
     def get_model(self):
-        return MathSAT5Model(self.environment, self.msat_env_wrapper.ref())
+        return MathSAT5Model(self.environment, self.msat_env)
 
     def _exit(self):
-        mathsat.msat_destroy_env(self.msat_env)
-        mathsat.msat_destroy_config(self.msat_config)
+        del self.msat_env
 
 
 class MSatConverter(Converter, DagWalker):
@@ -376,9 +378,9 @@ class MSatConverter(Converter, DagWalker):
         # Symbol
         self.decl_to_symbol = {}
 
-        self.boolType = mathsat.msat_get_bool_type(self.msat_env)
-        self.realType = mathsat.msat_get_rational_type(self.msat_env)
-        self.intType = mathsat.msat_get_integer_type(self.msat_env)
+        self.boolType = mathsat.msat_get_bool_type(self.msat_env())
+        self.realType = mathsat.msat_get_rational_type(self.msat_env())
+        self.intType = mathsat.msat_get_integer_type(self.msat_env())
 
         self.back_memoization = {}
 
@@ -408,116 +410,116 @@ class MSatConverter(Converter, DagWalker):
         """
         res = None
 
-        if mathsat.msat_term_is_true(self.msat_env, term) or \
-            mathsat.msat_term_is_false(self.msat_env, term) or \
-            mathsat.msat_term_is_boolean_constant(self.msat_env, term):
+        if mathsat.msat_term_is_true(self.msat_env(), term) or \
+            mathsat.msat_term_is_false(self.msat_env(), term) or \
+            mathsat.msat_term_is_boolean_constant(self.msat_env(), term):
             res = types.BOOL
 
-        elif mathsat.msat_term_is_number(self.msat_env, term):
+        elif mathsat.msat_term_is_number(self.msat_env(), term):
             ty = mathsat.msat_term_get_type(term)
-            if mathsat.msat_is_integer_type(self.msat_env, ty):
+            if mathsat.msat_is_integer_type(self.msat_env(), ty):
                 res = types.INT
-            elif mathsat.msat_is_rational_type(self.msat_env, ty):
+            elif mathsat.msat_is_rational_type(self.msat_env(), ty):
                 res = types.REAL
             else:
                 assert "_" in str(term), "Unrecognized type for '%s'" % str(term)
                 width = int(str(term).split("_")[1])
                 res = types.BVType(width)
 
-        elif mathsat.msat_term_is_and(self.msat_env, term) or \
-             mathsat.msat_term_is_or(self.msat_env, term) or \
-             mathsat.msat_term_is_iff(self.msat_env, term):
+        elif mathsat.msat_term_is_and(self.msat_env(), term) or \
+             mathsat.msat_term_is_or(self.msat_env(), term) or \
+             mathsat.msat_term_is_iff(self.msat_env(), term):
             res = types.FunctionType(types.BOOL, [types.BOOL, types.BOOL])
 
-        elif mathsat.msat_term_is_not(self.msat_env, term):
+        elif mathsat.msat_term_is_not(self.msat_env(), term):
             res = types.FunctionType(types.BOOL, [types.BOOL])
 
-        elif mathsat.msat_term_is_term_ite(self.msat_env, term):
+        elif mathsat.msat_term_is_term_ite(self.msat_env(), term):
             t1 = self.env.stc.get_type(args[1])
             t2 = self.env.stc.get_type(args[2])
             t = self._most_generic(t1, t2)
             res = types.FunctionType(t, [types.BOOL, t, t])
 
-        elif mathsat.msat_term_is_equal(self.msat_env, term) or \
-             mathsat.msat_term_is_leq(self.msat_env, term):
+        elif mathsat.msat_term_is_equal(self.msat_env(), term) or \
+             mathsat.msat_term_is_leq(self.msat_env(), term):
             t1 = self.env.stc.get_type(args[0])
             t2 = self.env.stc.get_type(args[1])
             t = self._most_generic(t1, t2)
             res = types.FunctionType(types.BOOL, [t, t])
 
-        elif mathsat.msat_term_is_plus(self.msat_env, term) or \
-             mathsat.msat_term_is_times(self.msat_env, term):
+        elif mathsat.msat_term_is_plus(self.msat_env(), term) or \
+             mathsat.msat_term_is_times(self.msat_env(), term):
             t1 = self.env.stc.get_type(args[0])
             t2 = self.env.stc.get_type(args[1])
             t = self._most_generic(t1, t2)
             res = types.FunctionType(t, [t, t])
 
-        elif mathsat.msat_term_is_constant(self.msat_env, term):
+        elif mathsat.msat_term_is_constant(self.msat_env(), term):
             ty = mathsat.msat_term_get_type(term)
-            if mathsat.msat_is_rational_type(self.msat_env, ty):
+            if mathsat.msat_is_rational_type(self.msat_env(), ty):
                 res = types.REAL
-            elif mathsat.msat_is_integer_type(self.msat_env, ty):
+            elif mathsat.msat_is_integer_type(self.msat_env(), ty):
                 res = types.INT
             else:
-                _, width = mathsat.msat_is_bv_type(self.msat_env, ty)
+                _, width = mathsat.msat_is_bv_type(self.msat_env(), ty)
                 assert width is not None, "Unsupported type for '%s'" % str(term)
                 res = types.BVType(width)
 
-        elif mathsat.msat_term_is_uf(self.msat_env, term):
+        elif mathsat.msat_term_is_uf(self.msat_env(), term):
             d = mathsat.msat_term_get_decl(term)
             fun = self.get_symbol_from_declaration(d)
             res = fun.symbol_type()
 
-        elif mathsat.msat_term_is_bv_times(self.msat_env, term) or \
-             mathsat.msat_term_is_bv_plus(self.msat_env, term) or \
-             mathsat.msat_term_is_bv_minus(self.msat_env, term) or \
-             mathsat.msat_term_is_bv_or(self.msat_env, term) or \
-             mathsat.msat_term_is_bv_and(self.msat_env, term) or \
-             mathsat.msat_term_is_bv_lshl(self.msat_env, term) or \
-             mathsat.msat_term_is_bv_lshr(self.msat_env, term) or \
-             mathsat.msat_term_is_bv_ashr(self.msat_env, term) or \
-             mathsat.msat_term_is_bv_xor(self.msat_env, term) or \
-             mathsat.msat_term_is_bv_urem(self.msat_env, term) or \
-             mathsat.msat_term_is_bv_udiv(self.msat_env, term) or \
-             mathsat.msat_term_is_bv_sdiv(self.msat_env, term) or \
-             mathsat.msat_term_is_bv_srem(self.msat_env, term) or \
-             mathsat.msat_term_is_bv_concat(self.msat_env, term):
+        elif mathsat.msat_term_is_bv_times(self.msat_env(), term) or \
+             mathsat.msat_term_is_bv_plus(self.msat_env(), term) or \
+             mathsat.msat_term_is_bv_minus(self.msat_env(), term) or \
+             mathsat.msat_term_is_bv_or(self.msat_env(), term) or \
+             mathsat.msat_term_is_bv_and(self.msat_env(), term) or \
+             mathsat.msat_term_is_bv_lshl(self.msat_env(), term) or \
+             mathsat.msat_term_is_bv_lshr(self.msat_env(), term) or \
+             mathsat.msat_term_is_bv_ashr(self.msat_env(), term) or \
+             mathsat.msat_term_is_bv_xor(self.msat_env(), term) or \
+             mathsat.msat_term_is_bv_urem(self.msat_env(), term) or \
+             mathsat.msat_term_is_bv_udiv(self.msat_env(), term) or \
+             mathsat.msat_term_is_bv_sdiv(self.msat_env(), term) or \
+             mathsat.msat_term_is_bv_srem(self.msat_env(), term) or \
+             mathsat.msat_term_is_bv_concat(self.msat_env(), term):
             t = self.env.stc.get_type(args[0])
             res = types.FunctionType(t, [t, t])
 
-        elif mathsat.msat_term_is_bv_not(self.msat_env, term) or \
-             mathsat.msat_term_is_bv_neg(self.msat_env, term):
+        elif mathsat.msat_term_is_bv_not(self.msat_env(), term) or \
+             mathsat.msat_term_is_bv_neg(self.msat_env(), term):
             t = self.env.stc.get_type(args[0])
             res = types.FunctionType(t, [t])
 
-        elif mathsat.msat_term_is_bv_ult(self.msat_env, term) or \
-             mathsat.msat_term_is_bv_slt(self.msat_env, term) or \
-             mathsat.msat_term_is_bv_uleq(self.msat_env, term) or \
-             mathsat.msat_term_is_bv_sleq(self.msat_env, term):
+        elif mathsat.msat_term_is_bv_ult(self.msat_env(), term) or \
+             mathsat.msat_term_is_bv_slt(self.msat_env(), term) or \
+             mathsat.msat_term_is_bv_uleq(self.msat_env(), term) or \
+             mathsat.msat_term_is_bv_sleq(self.msat_env(), term):
             t = self.env.stc.get_type(args[0])
             res = types.FunctionType(types.BOOL, [t, t])
 
-        elif mathsat.msat_term_is_bv_comp(self.msat_env, term):
+        elif mathsat.msat_term_is_bv_comp(self.msat_env(), term):
             t = self.env.stc.get_type(args[0])
             res = types.FunctionType(types.BVType(1), [t, t])
 
-        elif mathsat.msat_term_is_bv_rol(self.msat_env, term)[0] or \
-             mathsat.msat_term_is_bv_ror(self.msat_env, term)[0]:
+        elif mathsat.msat_term_is_bv_rol(self.msat_env(), term)[0] or \
+             mathsat.msat_term_is_bv_ror(self.msat_env(), term)[0]:
             t = self.env.stc.get_type(args[0])
             res = types.FunctionType(t, [t])
 
-        elif mathsat.msat_term_is_bv_sext(self.msat_env, term)[0]:
-            _, amount = mathsat.msat_term_is_bv_sext(self.msat_env, term)
+        elif mathsat.msat_term_is_bv_sext(self.msat_env(), term)[0]:
+            _, amount = mathsat.msat_term_is_bv_sext(self.msat_env(), term)
             t = self.env.stc.get_type(args[0])
             res = types.FunctionType(types.BVType(amount + t.width), [t])
 
-        elif mathsat.msat_term_is_bv_zext(self.msat_env, term)[0]:
-            _, amount = mathsat.msat_term_is_bv_zext(self.msat_env, term)
+        elif mathsat.msat_term_is_bv_zext(self.msat_env(), term)[0]:
+            _, amount = mathsat.msat_term_is_bv_zext(self.msat_env(), term)
             t = self.env.stc.get_type(args[0])
             res = types.FunctionType(types.BVType(amount + t.width), [t])
 
-        elif mathsat.msat_term_is_bv_extract(self.msat_env, term)[0]:
-            _, msb, lsb = mathsat.msat_term_is_bv_extract(self.msat_env, term)
+        elif mathsat.msat_term_is_bv_extract(self.msat_env(), term)[0]:
+            _, msb, lsb = mathsat.msat_term_is_bv_extract(self.msat_env(), term)
             t = self.env.stc.get_type(args[0])
             res = types.FunctionType(types.BVType(msb - lsb + 1), [t])
 
@@ -548,17 +550,17 @@ class MSatConverter(Converter, DagWalker):
         res = None
         arity = len(args)
 
-        if mathsat.msat_term_is_true(self.msat_env, term):
+        if mathsat.msat_term_is_true(self.msat_env(), term):
             res = mgr.TRUE()
 
-        elif mathsat.msat_term_is_false(self.msat_env, term):
+        elif mathsat.msat_term_is_false(self.msat_env(), term):
             res = mgr.FALSE()
 
-        elif mathsat.msat_term_is_number(self.msat_env, term):
+        elif mathsat.msat_term_is_number(self.msat_env(), term):
             ty = mathsat.msat_term_get_type(term)
-            if mathsat.msat_is_integer_type(self.msat_env, ty):
+            if mathsat.msat_is_integer_type(self.msat_env(), ty):
                 res = mgr.Int(int(mathsat.msat_term_repr(term)))
-            elif mathsat.msat_is_rational_type(self.msat_env, ty):
+            elif mathsat.msat_is_rational_type(self.msat_env(), ty):
                 res = mgr.Real(Fraction(mathsat.msat_term_repr(term)))
             else:
                 assert "_" in str(term), "Unsupported type for '%s'" % str(term)
@@ -567,172 +569,172 @@ class MSatConverter(Converter, DagWalker):
                 width = int(width)
                 res = mgr.BV(val, width)
 
-        elif mathsat.msat_term_is_and(self.msat_env, term):
+        elif mathsat.msat_term_is_and(self.msat_env(), term):
             res = mgr.And(args)
 
-        elif mathsat.msat_term_is_or(self.msat_env, term):
+        elif mathsat.msat_term_is_or(self.msat_env(), term):
             res = mgr.Or(args)
 
-        elif mathsat.msat_term_is_not(self.msat_env, term):
+        elif mathsat.msat_term_is_not(self.msat_env(), term):
             assert arity == 1
             res = mgr.Not(args[0])
 
-        elif mathsat.msat_term_is_iff(self.msat_env, term):
+        elif mathsat.msat_term_is_iff(self.msat_env(), term):
             assert arity == 2
             res = mgr.Iff(args[0], args[1])
 
-        elif mathsat.msat_term_is_term_ite(self.msat_env, term):
+        elif mathsat.msat_term_is_term_ite(self.msat_env(), term):
             assert arity == 3
             res = mgr.Ite(args[0], args[1], args[2])
 
-        elif mathsat.msat_term_is_equal(self.msat_env, term):
+        elif mathsat.msat_term_is_equal(self.msat_env(), term):
             assert arity == 2
             res = mgr.Equals(args[0], args[1])
 
-        elif mathsat.msat_term_is_leq(self.msat_env, term):
+        elif mathsat.msat_term_is_leq(self.msat_env(), term):
             assert arity == 2
             res = mgr.LE(args[0], args[1])
 
-        elif mathsat.msat_term_is_plus(self.msat_env, term):
+        elif mathsat.msat_term_is_plus(self.msat_env(), term):
             res = mgr.Plus(args)
 
-        elif mathsat.msat_term_is_times(self.msat_env, term):
+        elif mathsat.msat_term_is_times(self.msat_env(), term):
             assert arity == 2
             res = mgr.Times(args[0], args[1])
 
-        elif mathsat.msat_term_is_boolean_constant(self.msat_env, term):
+        elif mathsat.msat_term_is_boolean_constant(self.msat_env(), term):
             rep = mathsat.msat_term_repr(term)
             res = mgr.Symbol(rep, types.BOOL)
 
-        elif mathsat.msat_term_is_constant(self.msat_env, term):
+        elif mathsat.msat_term_is_constant(self.msat_env(), term):
             rep = mathsat.msat_term_repr(term)
 
             ty = mathsat.msat_term_get_type(term)
-            if mathsat.msat_is_rational_type(self.msat_env, ty):
+            if mathsat.msat_is_rational_type(self.msat_env(), ty):
                 res = mgr.Symbol(rep, types.REAL)
-            elif mathsat.msat_is_integer_type(self.msat_env, ty):
+            elif mathsat.msat_is_integer_type(self.msat_env(), ty):
                 res = mgr.Symbol(rep, types.INT)
             else:
-                _, width = mathsat.msat_is_bv_type(self.msat_env, ty)
+                _, width = mathsat.msat_is_bv_type(self.msat_env(), ty)
                 assert width is not None, "Unsupported variable type for '%s'"%str(term)
                 res = mgr.Symbol(rep, types.BVType(width))
 
-        elif mathsat.msat_term_is_uf(self.msat_env, term):
+        elif mathsat.msat_term_is_uf(self.msat_env(), term):
             d = mathsat.msat_term_get_decl(term)
             fun = self.get_symbol_from_declaration(d)
             res = mgr.Function(fun, args)
 
-        elif mathsat.msat_term_is_bv_times(self.msat_env, term):
+        elif mathsat.msat_term_is_bv_times(self.msat_env(), term):
             assert arity == 2
             res = mgr.BVMul(args[0], args[1])
 
-        elif mathsat.msat_term_is_bv_plus(self.msat_env, term):
+        elif mathsat.msat_term_is_bv_plus(self.msat_env(), term):
             assert arity == 2
             res = mgr.BVAdd(args[0], args[1])
 
-        elif mathsat.msat_term_is_bv_udiv(self.msat_env, term):
+        elif mathsat.msat_term_is_bv_udiv(self.msat_env(), term):
             assert arity == 2
             res = mgr.BVUDiv(args[0], args[1])
 
-        elif mathsat.msat_term_is_bv_urem(self.msat_env, term):
+        elif mathsat.msat_term_is_bv_urem(self.msat_env(), term):
             assert arity == 2
             res = mgr.BVURem(args[0], args[1])
 
-        elif mathsat.msat_term_is_bv_extract(self.msat_env, term)[0]:
+        elif mathsat.msat_term_is_bv_extract(self.msat_env(), term)[0]:
             assert arity == 1
-            res, msb, lsb = mathsat.msat_term_is_bv_extract(self.msat_env, term)
+            res, msb, lsb = mathsat.msat_term_is_bv_extract(self.msat_env(), term)
             assert res
             res = mgr.BVExtract(args[0], lsb, msb)
 
-        elif mathsat.msat_term_is_bv_concat(self.msat_env, term):
+        elif mathsat.msat_term_is_bv_concat(self.msat_env(), term):
             assert arity == 2
             res = mgr.BVConcat(args[0], args[1])
 
-        elif mathsat.msat_term_is_bv_or(self.msat_env, term):
+        elif mathsat.msat_term_is_bv_or(self.msat_env(), term):
             assert arity == 2
             res = mgr.BVOr(args[0], args[1])
 
-        elif mathsat.msat_term_is_bv_xor(self.msat_env, term):
+        elif mathsat.msat_term_is_bv_xor(self.msat_env(), term):
             assert arity == 2
             res = mgr.BVXor(args[0], args[1])
 
-        elif mathsat.msat_term_is_bv_and(self.msat_env, term):
+        elif mathsat.msat_term_is_bv_and(self.msat_env(), term):
             assert arity == 2
             res = mgr.BVAnd(args[0], args[1])
 
-        elif mathsat.msat_term_is_bv_not(self.msat_env, term):
+        elif mathsat.msat_term_is_bv_not(self.msat_env(), term):
             assert arity == 1
             res = mgr.BVNot(args[0])
 
-        elif mathsat.msat_term_is_bv_minus(self.msat_env, term):
+        elif mathsat.msat_term_is_bv_minus(self.msat_env(), term):
             assert arity == 2
             res = mgr.BVSub(args[0], args[1])
 
-        elif mathsat.msat_term_is_bv_neg(self.msat_env, term):
+        elif mathsat.msat_term_is_bv_neg(self.msat_env(), term):
             assert arity == 1
             res = mgr.BVSub(args[0])
 
-        elif mathsat.msat_term_is_bv_srem(self.msat_env, term):
+        elif mathsat.msat_term_is_bv_srem(self.msat_env(), term):
             assert arity == 2
             res = mgr.BVSRem(args[0], args[1])
 
-        elif mathsat.msat_term_is_bv_sdiv(self.msat_env, term):
+        elif mathsat.msat_term_is_bv_sdiv(self.msat_env(), term):
             assert arity == 2
             res = mgr.BVSDiv(args[0], args[1])
 
-        elif mathsat.msat_term_is_bv_ult(self.msat_env, term):
+        elif mathsat.msat_term_is_bv_ult(self.msat_env(), term):
             assert arity == 2
             res = mgr.BVULT(args[0], args[1])
 
-        elif mathsat.msat_term_is_bv_slt(self.msat_env, term):
+        elif mathsat.msat_term_is_bv_slt(self.msat_env(), term):
             assert arity == 2
             res = mgr.BVSLT(args[0], args[1])
 
-        elif mathsat.msat_term_is_bv_uleq(self.msat_env, term):
+        elif mathsat.msat_term_is_bv_uleq(self.msat_env(), term):
             assert arity == 2
             res = mgr.BVULE(args[0], args[1])
 
-        elif mathsat.msat_term_is_bv_sleq(self.msat_env, term):
+        elif mathsat.msat_term_is_bv_sleq(self.msat_env(), term):
             assert arity == 2
             res = mgr.BVSLE(args[0], args[1])
 
-        elif mathsat.msat_term_is_bv_lshl(self.msat_env, term):
+        elif mathsat.msat_term_is_bv_lshl(self.msat_env(), term):
             assert arity == 2
             res = mgr.BVLShl(args[0], args[1])
 
-        elif mathsat.msat_term_is_bv_lshr(self.msat_env, term):
+        elif mathsat.msat_term_is_bv_lshr(self.msat_env(), term):
             assert arity == 2
             res = mgr.BVLShr(args[0], args[1])
 
-        elif mathsat.msat_term_is_bv_ashr(self.msat_env, term):
+        elif mathsat.msat_term_is_bv_ashr(self.msat_env(), term):
             assert arity == 2
             res = mgr.BVAShr(args[0], args[1])
 
-        elif mathsat.msat_term_is_bv_comp(self.msat_env, term):
+        elif mathsat.msat_term_is_bv_comp(self.msat_env(), term):
             assert arity == 2
             res = mgr.BVComp(args[0], args[1])
 
-        elif mathsat.msat_term_is_bv_zext(self.msat_env, term)[0]:
+        elif mathsat.msat_term_is_bv_zext(self.msat_env(), term)[0]:
             assert arity == 2
-            res, amount = mathsat.msat_term_is_bv_zext(self.msat_env, term)
+            res, amount = mathsat.msat_term_is_bv_zext(self.msat_env(), term)
             assert res
             res = mgr.BVZExt(args[0], amount)
 
-        elif mathsat.msat_term_is_bv_sext(self.msat_env, term)[0]:
+        elif mathsat.msat_term_is_bv_sext(self.msat_env(), term)[0]:
             assert arity == 2
-            res, amount = mathsat.msat_term_is_bv_sext(self.msat_env, term)
+            res, amount = mathsat.msat_term_is_bv_sext(self.msat_env(), term)
             assert res
             res = mgr.BVSExt(args[0], amount)
 
-        elif mathsat.msat_term_is_bv_rol(self.msat_env, term)[0]:
+        elif mathsat.msat_term_is_bv_rol(self.msat_env(), term)[0]:
             assert arity == 2
-            res, amount = mathsat.msat_term_is_bv_ror(self.msat_env, term)
+            res, amount = mathsat.msat_term_is_bv_ror(self.msat_env(), term)
             assert res
             res = mgr.BVRol(args[0], amount)
 
-        elif mathsat.msat_term_is_bv_ror(self.msat_env, term)[0]:
+        elif mathsat.msat_term_is_bv_ror(self.msat_env(), term)[0]:
             assert arity == 2
-            res, amount = mathsat.msat_term_is_bv_ror(self.msat_env, term)
+            res, amount = mathsat.msat_term_is_bv_ror(self.msat_env(), term)
             assert res
             res = mgr.BVRor(args[0], amount)
 
@@ -785,39 +787,39 @@ class MSatConverter(Converter, DagWalker):
         rformula = self._ufrewriter.walk(formula)
         res = self.walk(rformula)
         if mathsat.MSAT_ERROR_TERM(res):
-            msat_msg = mathsat.msat_last_error_message(self.msat_env)
+            msat_msg = mathsat.msat_last_error_message(self.msat_env())
             raise InternalSolverError(msat_msg)
         if rformula != formula:
             warn("MathSAT convert(): UF with bool arguments have been translated")
         return res
 
     def walk_and(self, formula, args, **kwargs):
-        res = mathsat.msat_make_true(self.msat_env)
+        res = mathsat.msat_make_true(self.msat_env())
         for a in args:
-            res = mathsat.msat_make_and(self.msat_env, res, a)
+            res = mathsat.msat_make_and(self.msat_env(), res, a)
         return res
 
     def walk_or(self, formula, args, **kwargs):
-        res = mathsat.msat_make_false(self.msat_env)
+        res = mathsat.msat_make_false(self.msat_env())
         for a in args:
-            res = mathsat.msat_make_or(self.msat_env, res, a)
+            res = mathsat.msat_make_or(self.msat_env(), res, a)
         return res
 
     def walk_not(self, formula, args, **kwargs):
-        return mathsat.msat_make_not(self.msat_env, args[0])
+        return mathsat.msat_make_not(self.msat_env(), args[0])
 
     def walk_symbol(self, formula, **kwargs):
         if formula not in self.symbol_to_decl:
             self.declare_variable(formula)
         decl = self.symbol_to_decl[formula]
-        return mathsat.msat_make_constant(self.msat_env, decl)
+        return mathsat.msat_make_constant(self.msat_env(), decl)
 
     def walk_le(self, formula, args, **kwargs):
-        return mathsat.msat_make_leq(self.msat_env, args[0], args[1])
+        return mathsat.msat_make_leq(self.msat_env(), args[0], args[1])
 
     def walk_lt(self, formula, args, **kwargs):
-        leq = mathsat.msat_make_leq(self.msat_env, args[1], args[0])
-        return mathsat.msat_make_not(self.msat_env, leq)
+        leq = mathsat.msat_make_leq(self.msat_env(), args[1], args[0])
+        return mathsat.msat_make_not(self.msat_env(), leq)
 
     def walk_ite(self, formula, args, **kwargs):
         i = args[0]
@@ -830,173 +832,173 @@ class MSatConverter(Converter, DagWalker):
             nif = self.mgr.Not(formula.arg(1))
             ni = self.walk_not(nif, [i])
             el = self.walk_implies(self.mgr.Implies(nif, formula.arg(2)), [ni,e])
-            return mathsat.msat_make_and(self.msat_env, th, el)
+            return mathsat.msat_make_and(self.msat_env(), th, el)
         else:
-            return mathsat.msat_make_term_ite(self.msat_env, i, t, e)
+            return mathsat.msat_make_term_ite(self.msat_env(), i, t, e)
 
     def walk_real_constant(self, formula, **kwargs):
         assert type(formula.constant_value()) == Fraction
         frac = formula.constant_value()
         n,d = frac.numerator, frac.denominator
         rep = str(n) + "/" + str(d)
-        return mathsat.msat_make_number(self.msat_env, rep)
+        return mathsat.msat_make_number(self.msat_env(), rep)
 
     def walk_int_constant(self, formula, **kwargs):
         assert type(formula.constant_value()) == int or \
             type(formula.constant_value()) == long
         rep = str(formula.constant_value())
-        return mathsat.msat_make_number(self.msat_env, rep)
+        return mathsat.msat_make_number(self.msat_env(), rep)
 
     def walk_bool_constant(self, formula, **kwargs):
         if formula.constant_value():
-            return mathsat.msat_make_true(self.msat_env)
+            return mathsat.msat_make_true(self.msat_env())
         else:
-            return mathsat.msat_make_false(self.msat_env)
+            return mathsat.msat_make_false(self.msat_env())
 
     def walk_bv_constant(self, formula, **kwargs):
         rep = str(formula.constant_value())
         width = formula.bv_width()
-        return mathsat.msat_make_bv_number(self.msat_env,
+        return mathsat.msat_make_bv_number(self.msat_env(),
                                            rep, width, 10)
 
     def walk_bv_ult(self, formula, args, **kwargs):
-        return mathsat.msat_make_bv_ult(self.msat_env,
+        return mathsat.msat_make_bv_ult(self.msat_env(),
                                         args[0], args[1])
 
     def walk_bv_ule(self, formula, args, **kwargs):
-        return mathsat.msat_make_bv_uleq(self.msat_env,
+        return mathsat.msat_make_bv_uleq(self.msat_env(),
                                          args[0], args[1])
 
     def walk_bv_slt(self, formula, args, **kwargs):
-        return mathsat.msat_make_bv_slt(self.msat_env,
+        return mathsat.msat_make_bv_slt(self.msat_env(),
                                         args[0], args[1])
 
     def walk_bv_sle(self, formula, args, **kwargs):
-        return mathsat.msat_make_bv_sleq(self.msat_env,
+        return mathsat.msat_make_bv_sleq(self.msat_env(),
                                          args[0], args[1])
 
     def walk_bv_concat(self, formula, args, **kwargs):
-        return mathsat.msat_make_bv_concat(self.msat_env,
+        return mathsat.msat_make_bv_concat(self.msat_env(),
                                            args[0], args[1])
 
     def walk_bv_extract(self, formula, args, **kwargs):
-        return mathsat.msat_make_bv_extract(self.msat_env,
+        return mathsat.msat_make_bv_extract(self.msat_env(),
                                             formula.bv_extract_end(),
                                             formula.bv_extract_start(),
                                             args[0])
 
     def walk_bv_or(self, formula, args, **kwargs):
-        return mathsat.msat_make_bv_or(self.msat_env,
+        return mathsat.msat_make_bv_or(self.msat_env(),
                                        args[0], args[1])
 
     def walk_bv_not(self, formula, args, **kwargs):
-        return mathsat.msat_make_bv_not(self.msat_env, args[0])
+        return mathsat.msat_make_bv_not(self.msat_env(), args[0])
 
     def walk_bv_and(self, formula, args, **kwargs):
-        return mathsat.msat_make_bv_and(self.msat_env,
+        return mathsat.msat_make_bv_and(self.msat_env(),
                                         args[0], args[1])
 
     def walk_bv_xor(self, formula, args, **kwargs):
-        return mathsat.msat_make_bv_xor(self.msat_env,
+        return mathsat.msat_make_bv_xor(self.msat_env(),
                                         args[0], args[1])
 
     def walk_bv_add(self, formula, args, **kwargs):
-        return mathsat.msat_make_bv_plus(self.msat_env,
+        return mathsat.msat_make_bv_plus(self.msat_env(),
                                          args[0], args[1])
 
     def walk_bv_sub(self, formula, args, **kwargs):
-        return mathsat.msat_make_bv_minus(self.msat_env,
+        return mathsat.msat_make_bv_minus(self.msat_env(),
                                           args[0], args[1])
 
     def walk_bv_neg(self, formula, args, **kwargs):
-        return mathsat.msat_make_bv_neg(self.msat_env, args[0])
+        return mathsat.msat_make_bv_neg(self.msat_env(), args[0])
 
     def walk_bv_mul(self, formula, args, **kwargs):
-        return mathsat.msat_make_bv_times(self.msat_env,
+        return mathsat.msat_make_bv_times(self.msat_env(),
                                           args[0], args[1])
 
     def walk_bv_udiv(self, formula, args, **kwargs):
-        return mathsat.msat_make_bv_udiv(self.msat_env,
+        return mathsat.msat_make_bv_udiv(self.msat_env(),
                                          args[0], args[1])
 
     def walk_bv_urem(self, formula, args, **kwargs):
-        return mathsat.msat_make_bv_urem(self.msat_env,
+        return mathsat.msat_make_bv_urem(self.msat_env(),
                                          args[0], args[1])
 
     def walk_bv_lshl(self, formula, args, **kwargs):
-        return mathsat.msat_make_bv_lshl(self.msat_env,
+        return mathsat.msat_make_bv_lshl(self.msat_env(),
                                          args[0], args[1])
 
     def walk_bv_lshr(self, formula, args, **kwargs):
-        return mathsat.msat_make_bv_lshr(self.msat_env,
+        return mathsat.msat_make_bv_lshr(self.msat_env(),
                                          args[0], args[1])
 
     def walk_bv_rol(self, formula, args, **kwargs):
-        return mathsat.msat_make_bv_rol(self.msat_env,
+        return mathsat.msat_make_bv_rol(self.msat_env(),
                                         formula.bv_rotation_step(),
                                         args[0])
 
     def walk_bv_ror(self, formula, args, **kwargs):
-        return mathsat.msat_make_bv_ror(self.msat_env,
+        return mathsat.msat_make_bv_ror(self.msat_env(),
                                         formula.bv_rotation_step(),
                                         args[0])
 
     def walk_bv_zext(self, formula, args, **kwargs):
-        return mathsat.msat_make_bv_zext(self.msat_env,
+        return mathsat.msat_make_bv_zext(self.msat_env(),
                                          formula.bv_extend_step(),
                                          args[0])
 
     def walk_bv_sext(self, formula, args, **kwargs):
-        return mathsat.msat_make_bv_sext(self.msat_env,
+        return mathsat.msat_make_bv_sext(self.msat_env(),
                                          formula.bv_extend_step(),
                                          args[0])
 
     def walk_bv_comp(self, formula, args, **kwargs):
-        return mathsat.msat_make_bv_comp(self.msat_env,
+        return mathsat.msat_make_bv_comp(self.msat_env(),
                                          args[0], args[1])
 
     def walk_bv_sdiv(self, formula, args, **kwargs):
-        return mathsat.msat_make_bv_sdiv(self.msat_env,
+        return mathsat.msat_make_bv_sdiv(self.msat_env(),
                                          args[0], args[1])
 
     def walk_bv_srem(self, formula, args, **kwargs):
-        return mathsat.msat_make_bv_srem(self.msat_env,
+        return mathsat.msat_make_bv_srem(self.msat_env(),
                                          args[0], args[1])
 
     def walk_bv_ashr(self, formula, args, **kwargs):
-        return mathsat.msat_make_bv_ashr(self.msat_env,
+        return mathsat.msat_make_bv_ashr(self.msat_env(),
                                          args[0], args[1])
 
     def walk_plus(self, formula, args, **kwargs):
-        res = mathsat.msat_make_number(self.msat_env, "0")
+        res = mathsat.msat_make_number(self.msat_env(), "0")
         for a in args:
-            res = mathsat.msat_make_plus(self.msat_env, res, a)
+            res = mathsat.msat_make_plus(self.msat_env(), res, a)
         return res
 
     def walk_minus(self, formula, args, **kwargs):
-        n_one = mathsat.msat_make_number(self.msat_env, "-1")
-        n_s2 = mathsat.msat_make_times(self.msat_env, n_one, args[1])
-        return mathsat.msat_make_plus(self.msat_env, args[0], n_s2)
+        n_one = mathsat.msat_make_number(self.msat_env(), "-1")
+        n_s2 = mathsat.msat_make_times(self.msat_env(), n_one, args[1])
+        return mathsat.msat_make_plus(self.msat_env(), args[0], n_s2)
 
     def walk_equals(self, formula, args, **kwargs):
-        return mathsat.msat_make_equal(self.msat_env, args[0], args[1])
+        return mathsat.msat_make_equal(self.msat_env(), args[0], args[1])
 
     def walk_iff(self, formula, args, **kwargs):
-        return mathsat.msat_make_iff(self.msat_env, args[0], args[1])
+        return mathsat.msat_make_iff(self.msat_env(), args[0], args[1])
 
     def walk_implies(self, formula, args, **kwargs):
         neg = self.walk_not(self.mgr.Not(formula.arg(0)), [args[0]])
-        return mathsat.msat_make_or(self.msat_env, neg, args[1])
+        return mathsat.msat_make_or(self.msat_env(), neg, args[1])
 
     def walk_times(self, formula, args, **kwargs):
-        return mathsat.msat_make_times(self.msat_env, args[0], args[1])
+        return mathsat.msat_make_times(self.msat_env(), args[0], args[1])
 
     def walk_function(self, formula, args, **kwargs):
         name = formula.function_name()
         if name not in self.symbol_to_decl:
             self.declare_variable(name)
         decl = self.symbol_to_decl[name]
-        return mathsat.msat_make_uf(self.msat_env, decl, args)
+        return mathsat.msat_make_uf(self.msat_env(), decl, args)
 
     def walk_toreal(self, formula, args, **kwargs):
         # In mathsat toreal is implicit
@@ -1013,26 +1015,26 @@ class MSatConverter(Converter, DagWalker):
         elif tp.is_function_type():
             stps = [self._type_to_msat(x) for x in tp.param_types]
             rtp = self._type_to_msat(tp.return_type)
-            msat_type = mathsat.msat_get_function_type(self.msat_env,
+            msat_type = mathsat.msat_get_function_type(self.msat_env(),
                                                        stps,
                                                        rtp)
             if mathsat.MSAT_ERROR_TYPE(msat_type):
-                msat_msg = mathsat.msat_last_error_message(self.msat_env)
+                msat_msg = mathsat.msat_last_error_message(self.msat_env())
                 raise InternalSolverError(msat_msg)
             return msat_type
         else:
             assert tp.is_bv_type(), "Usupported type for '%s'" % tp
-            return mathsat.msat_get_bv_type(self.msat_env, tp.width)
+            return mathsat.msat_get_bv_type(self.msat_env(), tp.width)
 
     def declare_variable(self, var):
         if not var.is_symbol(): raise TypeError(var)
         if var.symbol_name() not in self.symbol_to_decl:
             tp = self._type_to_msat(var.symbol_type())
-            decl = mathsat.msat_declare_function(self.msat_env,
+            decl = mathsat.msat_declare_function(self.msat_env(),
                                                  var.symbol_name(),
                                                  tp)
             if mathsat.MSAT_ERROR_DECL(decl):
-                msat_msg = mathsat.msat_last_error_message(self.msat_env)
+                msat_msg = mathsat.msat_last_error_message(self.msat_env())
                 raise InternalSolverError(msat_msg)
             self.symbol_to_decl[var] = decl
             self.decl_to_symbol[mathsat.msat_decl_id(decl)] = var
@@ -1054,14 +1056,14 @@ if hasattr(mathsat, "MSAT_EXIST_ELIM_ALLSMT_FM"):
                 raise ValueError("Algorithm can be either 'fm' or 'lw'")
             QuantifierEliminator.__init__(self)
             IdentityDagWalker.__init__(self, env=environment)
+            self.msat_config = mathsat.msat_create_default_config("QF_LRA")
+            self.msat_env = MSatEnv(self.msat_config)
+            mathsat.msat_destroy_config(self.msat_config)
 
             self.set_function(self.walk_identity, op.SYMBOL, op.REAL_CONSTANT,
                               op.BOOL_CONSTANT, op.INT_CONSTANT)
             self.logic = logic
             self.algorithm = algorithm
-
-            self.msat_config = mathsat.msat_create_default_config("QF_LRA")
-            self.msat_env = mathsat.msat_create_env(self.msat_config)
             self.converter = MSatConverter(environment, self.msat_env)
 
         def eliminate_quantifiers(self, formula):
@@ -1082,7 +1084,7 @@ if hasattr(mathsat, "MSAT_EXIST_ELIM_ALLSMT_FM"):
             if self.algorithm == 'lw':
                 algo = mathsat.MSAT_EXIST_ELIM_VTS
 
-            res = mathsat.msat_exist_elim(self.msat_env, fterm, tvars, algo)
+            res = mathsat.msat_exist_elim(self.msat_env(), fterm, tvars, algo)
 
             return self.converter.back(res)
 
@@ -1101,9 +1103,7 @@ if hasattr(mathsat, "MSAT_EXIST_ELIM_ALLSMT_FM"):
             return self.exist_elim(variables, subf)
 
         def _exit(self):
-            mathsat.msat_destroy_env(self.msat_env)
-            mathsat.msat_destroy_config(self.msat_config)
-
+            del self.msat_env
 
     class MSatFMQuantifierEliminator(MSatQuantifierEliminator):
         def __init__(self, environment, logic=None):
@@ -1123,13 +1123,13 @@ class MSatInterpolator(Interpolator):
 
     def __init__(self, environment, logic=None):
         Interpolator.__init__(self)
-        self.msat_env = mathsat.msat_create_env()
+        self.msat_env = MSatEnv()
         self.converter = MSatConverter(environment, self.msat_env)
         self.environment = environment
         self.logic = logic
 
     def _exit(self):
-        mathsat.msat_destroy_env(self.msat_env)
+        del self.msat_env
 
     def _check_logic(self, formulas):
         for f in formulas:
@@ -1140,13 +1140,11 @@ class MSatInterpolator(Interpolator):
                     "Logic not supported by MathSAT interpolation."
                     "(detected logic is: %s)" % str(logic))
 
-
     def binary_interpolant(self, a, b):
         res = self.sequence_interpolant([a, b])
         if res is not None:
             res = res[0]
         return res
-
 
     def sequence_interpolant(self, formulas):
         cfg, env = None, None
@@ -1161,7 +1159,7 @@ class MSatInterpolator(Interpolator):
             if self.logic == QF_BV:
                 mathsat.msat_set_option(cfg, "theory.bv.eager", "false")
                 mathsat.msat_set_option(cfg, "theory.eq_propagaion", "false")
-            env = mathsat.msat_create_env(cfg, self.msat_env)
+            env = mathsat.msat_create_env(cfg, self.msat_env())
 
             groups = []
             for f in formulas:
