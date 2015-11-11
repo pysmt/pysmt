@@ -110,11 +110,17 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
         elif self.name in [smtcmd.PUSH, smtcmd.POP]:
             outstream.write("(%s %d)" % (self.name, self.args[0]))
 
+        elif self.name in smtcmd.ALL_COMMANDS:
+            raise NotImplementedError("'%s' is a valid SMT-LIB command "\
+                                      "but it is currently not supported. "\
+                                      "Please open a bug-report." % self.name)
+        else:
+            raise UnknownSmtLibCommandError(self.name)
+
     def serialize_to_string(self):
         buf = cStringIO()
         self.serialize(buf)
         return buf.getvalue()
-
 
 
 class SmtLibScript(object):
@@ -275,5 +281,9 @@ def evaluate_command(cmd, solver):
         (var, formals, typename, body) = cmd.args
         return solver.define_fun(var, formals, typename, body)
 
+    elif cmd.name in smtcmd.ALL_COMMANDS:
+        raise NotImplementedError("'%s' is a valid SMT-LIB command "\
+                                  "but it is currently not supported. "\
+                                  "Please open a bug-report." % cmd.name)
     else:
         raise UnknownSmtLibCommandError(cmd.name)

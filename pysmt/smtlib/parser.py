@@ -272,18 +272,35 @@ class SmtLibParser(object):
                             'bvsge':self._operator_adapter(mgr.BVSGE),}
 
         # Command tokens
-        self.commands = {smtcmd.SET_INFO : self._cmd_set_info,
-                         smtcmd.SET_OPTION : self._cmd_set_option,
-                         smtcmd.ASSERT : self._cmd_assert,
+        self.commands = {smtcmd.ASSERT : self._cmd_assert,
                          smtcmd.CHECK_SAT : self._cmd_check_sat,
-                         smtcmd.PUSH : self._cmd_push,
-                         smtcmd.POP : self._cmd_pop,
-                         smtcmd.EXIT : self._cmd_exit,
-                         smtcmd.SET_LOGIC : self._cmd_set_logic,
+                         smtcmd.CHECK_SAT_ASSUMING : self._cmd_check_sat_assuming,
                          smtcmd.DECLARE_CONST : self._cmd_declare_const,
-                         smtcmd.GET_VALUE : self._cmd_get_value,
                          smtcmd.DECLARE_FUN : self._cmd_declare_fun,
-                         smtcmd.DEFINE_FUN : self._cmd_define_fun,}
+                         smtcmd.DECLARE_SORT: self._cmd_declare_sort,
+                         smtcmd.DEFINE_FUN : self._cmd_define_fun,
+                         smtcmd.DEFINE_FUNS_REC : self._cmd_define_funs_rec,
+                         smtcmd.DEFINE_FUN_REC : self._cmd_define_fun_rec,
+                         smtcmd.DEFINE_SORT: self._cmd_define_sort,
+                         smtcmd.ECHO : self._cmd_echo,
+                         smtcmd.EXIT : self._cmd_exit,
+                         smtcmd.GET_ASSERTIONS: self._cmd_get_assertions,
+                         smtcmd.GET_ASSIGNMENT : self._cmd_get_assignment,
+                         smtcmd.GET_INFO: self._cmd_get_info,
+                         smtcmd.GET_MODEL: self._cmd_get_model,
+                         smtcmd.GET_OPTION: self._cmd_get_option,
+                         smtcmd.GET_PROOF: self._cmd_get_proof,
+                         smtcmd.GET_UNSAT_ASSUMPTIONS : self._cmd_get_unsat_assumptions,
+                         smtcmd.GET_UNSAT_CORE: self._cmd_get_unsat_core,
+                         smtcmd.GET_VALUE : self._cmd_get_value,
+                         smtcmd.POP : self._cmd_pop,
+                         smtcmd.PUSH : self._cmd_push,
+                         smtcmd.RESET : self._cmd_reset,
+                         smtcmd.RESET_ASSERTIONS : self._cmd_reset_assertions,
+                         smtcmd.SET_LOGIC : self._cmd_set_logic,
+                         smtcmd.SET_OPTION : self._cmd_set_option,
+                         smtcmd.SET_INFO : self._cmd_set_info,
+                     }
 
     def _reset(self):
         """Resets the parser to the initial state"""
@@ -763,11 +780,9 @@ class SmtLibParser(object):
             raise SyntaxError("Unexpected token '%s' in %s command. " \
                               "Expected ')'" % (p, command))
 
-
     def _function_call_helper(self, v, *args):
         """ Helper function for dealing with function calls """
         return self.env.formula_manager.Function(v, args)
-
 
     def get_assignment_list(self, script):
         """
@@ -791,10 +806,8 @@ class SmtLibParser(object):
         self.cache.unbind_all(symbols)
         return res
 
-
     def get_command(self, tokens):
         """Builds an SmtLibCommand instance out of a parsed term."""
-
         while True:
             self.consume_opening(tokens, "<main>")
             current = next(tokens)
@@ -804,46 +817,54 @@ class SmtLibParser(object):
             else:
                 raise UnknownSmtLibCommandError(current)
 
+    def _cmd_not_implemented(self, current, tokens):
+        raise NotImplementedError("'%s' has not been implemented yet" % current)
+
     def _cmd_set_info(self, current, tokens):
+        """(set-info <attribute>)"""
         elements = self.parse_atoms(tokens, current, 2)
         return SmtLibCommand(current, elements)
 
     def _cmd_set_option(self, current, tokens):
+        """(set-option <option>)"""
         elements = self.parse_atoms(tokens, current, 2)
         return SmtLibCommand(current, elements)
 
     def _cmd_assert(self, current, tokens):
+        """(assert <term>)"""
         expr = self.get_expression(tokens)
         self.consume_closing(tokens, current)
         return SmtLibCommand(current, [expr])
 
     def _cmd_check_sat(self, current, tokens):
+        """(check-sat)"""
         self.parse_atoms(tokens, current, 0)
         return SmtLibCommand(current, [])
 
     def _cmd_push(self, current, tokens):
+        """(push <numeral>)"""
         elements = self.parse_atoms(tokens, current, 0, 1)
-
         levels = 1
         if len(elements) > 0:
             levels = int(elements[0])
         return SmtLibCommand(current, [levels])
 
     def _cmd_pop(self, current, tokens):
+        """(pop <numeral>)"""
         elements = self.parse_atoms(tokens, current, 0, 1)
-
         levels = 1
         if len(elements) > 0:
             levels = int(elements[0])
         return SmtLibCommand(current, [levels])
 
     def _cmd_exit(self, current, tokens):
+        """(exit)"""
         self.parse_atoms(tokens, current, 0)
         return SmtLibCommand(current, [])
 
     def _cmd_set_logic(self, current, tokens):
+        """(set-logic <symbol>)"""
         elements = self.parse_atoms(tokens, current, 1)
-
         name = elements[0]
         try:
             self.logic = get_logic_by_name(name)
@@ -854,6 +875,7 @@ class SmtLibParser(object):
             return SmtLibCommand(current, [None])
 
     def _cmd_declare_const(self, current, tokens):
+        """(declare-const <symbol> <sort>)"""
         elements = self.parse_atoms(tokens, current, 2)
         (var, typename) = elements
         v = self._get_var(var, typename)
@@ -861,11 +883,13 @@ class SmtLibParser(object):
         return SmtLibCommand(current, [v])
 
     def _cmd_get_value(self, current, tokens):
+        """(get-value (<term>+)"""
         params = self.parse_expr_list(tokens, current)
         self.consume_closing(tokens, current)
         return SmtLibCommand(current, params)
 
     def _cmd_declare_fun(self, current, tokens):
+        """(declare-fun <symbol> (<sort>*) <sort>)"""
         var = self.parse_atom(tokens, current)
         params = self.parse_params(tokens, current)
         typename = self.parse_type(tokens, current)
@@ -880,6 +904,7 @@ class SmtLibParser(object):
         return SmtLibCommand(current, [v])
 
     def _cmd_define_fun(self, current, tokens):
+        """(define-fun <fun_def>)"""
         formal = []
         var = self.parse_atom(tokens, current)
         namedparams = self.parse_named_params(tokens, current)
@@ -898,6 +923,98 @@ class SmtLibParser(object):
         self.consume_closing(tokens, current)
         self.cache.define(var, formal, ebody)
         return SmtLibCommand(current, [var, formal, rtype, ebody])
+
+    def _cmd_declare_sort(self, current, tokens):
+        """(declare-sort <symbol> <numeral>)"""
+        return self._cmd_not_implemented(current, tokens)
+
+    def _cmd_define_sort(self, current, tokens):
+        """(define-sort <fun_def>)"""
+        return self._cmd_not_implemented(current, tokens)
+
+    def _cmd_get_assertions(self, current, tokens):
+        """(get_assertions)"""
+        self.parse_atoms(tokens, current, 0)
+        return SmtLibCommand(current, [])
+
+    def _cmd_get_info(self, current, tokens):
+        """(get-info <info_flag>)"""
+        keyword = self.parse_atoms(tokens, current, 1)
+        return SmtLibCommand(current, keyword)
+
+    def _cmd_get_model(self, current, tokens):
+        """(get-model)"""
+        self.parse_atoms(tokens, current, 0)
+        return SmtLibCommand(current, [])
+
+    def _cmd_get_option(self, current, tokens):
+        """(get-option <keyword>)"""
+        keyword = self.parse_atoms(tokens, current, 1)
+        return SmtLibCommand(current, keyword)
+
+    def _cmd_get_proof(self, current, tokens):
+        """(get-proof)"""
+        self.parse_atoms(tokens, current, 0)
+        return SmtLibCommand(current, [])
+
+    def _cmd_get_unsat_core(self, current, tokens):
+        """(get-unsat-core)"""
+        self.parse_atoms(tokens, current, 0)
+        return SmtLibCommand(current, [])
+
+    def _cmd_check_sat_assuming(self, current, tokens):
+        """(check-sat-assuming (<prop_literal>*) ) """
+        return self._cmd_not_implemented(current, tokens)
+
+    def _cmd_define_fun_rec(self, current, tokens):
+        """(define-fun-rec <fun_def>)"""
+        return self._cmd_not_implemented(current, tokens)
+
+    def _cmd_define_funs_rec(self, current, tokens):
+        """(define-funs-rec (<fun_dec>^{n+1}) (<term>^{n+1>))"""
+        return self._cmd_not_implemented(current, tokens)
+
+    def _cmd_echo(self, current, tokens):
+        """(echo <string>)"""
+        return self._cmd_not_implemented(current, tokens)
+
+    def _cmd_get_assignment(self, current, tokens):
+        """(get-assignment)"""
+        self.parse_atoms(tokens, current, 0)
+        return SmtLibCommand(current, [])
+
+    def _cmd_get_unsat_assumptions(self, current, tokens):
+        """(get-unsat-assumptions)"""
+        self.parse_atoms(tokens, current, 0)
+        return SmtLibCommand(current, [])
+
+    def _cmd_reset(self, current, tokens):
+        """(reset)"""
+        self.parse_atoms(tokens, current, 0)
+        return SmtLibCommand(current, [])
+
+    def _cmd_reset_assertions(self, current, tokens):
+        """(reset-assertions)"""
+        self.parse_atoms(tokens, current, 0)
+        return SmtLibCommand(current, [])
+
+
+class SmtLib20Parser(SmtLibParser):
+    """Parser for SMT-LIB 2.0."""
+
+    def __init__(self, environment=None, interactive=False):
+        SmtLibParser.__init__(self, environment, interactive)
+
+        # Remove commands that were introduced in SMT-LIB 2.5
+        del self.commands["check-sat-assuming"]
+        del self.commands["declare-const"]
+        del self.commands["define-fun-rec"]
+        del self.commands["define-funs-rec"]
+        del self.commands["echo"]
+        del self.commands["get-assignment"]
+        del self.commands["get-unsat-assumptions"]
+        del self.commands["reset"]
+        del self.commands["reset-assertions"]
 
 
 if __name__ == "__main__":
