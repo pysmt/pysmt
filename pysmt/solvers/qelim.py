@@ -24,6 +24,9 @@ from pysmt.exceptions import InternalSolverError
 
 class QuantifierEliminator(object):
 
+    def __init__(self):
+        self._destroyed = False
+
     def eliminate_quantifiers(self, formula):
         """
         Returns a quantifier-free equivalent formula of the given
@@ -40,14 +43,23 @@ class QuantifierEliminator(object):
         """ Manage entering a Context (i.e., with statement) """
         return self
 
-
     def __exit__(self, exc_type, exc_val, exc_tb):
         """ Manage exiting from Context (i.e., with statement)
 
         The default behaviour is to explicitely destroy the qelim to free
         the associated resources.
         """
-        del self
+        self.exit()
+
+    def exit(self):
+        """Destroys the solver and closes associated resources."""
+        if not self._destroyed:
+            self._exit()
+            self._destroyed = True
+
+    def _exit(self):
+        """Destroys the solver and closes associated resources."""
+        raise NotImplementedError
 
 
 class ShannonQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
@@ -57,6 +69,7 @@ class ShannonQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
 
     def __init__(self, environment, logic=None):
         IdentityDagWalker.__init__(self, env=environment)
+        QuantifierEliminator.__init__(self)
         self.logic = logic
 
     def eliminate_quantifiers(self, formula):
@@ -85,3 +98,6 @@ class ShannonQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
 
     def walk_exists(self, formula, args, **kwargs):
         return self.mgr.Or(self._expand(formula, args))
+
+    def _exit(self):
+        pass

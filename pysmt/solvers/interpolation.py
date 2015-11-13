@@ -18,31 +18,42 @@
 
 class Interpolator(object):
 
+    def __init__(self):
+        self._destroyed = False
+
     def binary_interpolant(self, a, b):
-        """
-        Returns a binary interpolant for the pair (a, b), if And(a, b) is
+        """Returns a binary interpolant for the pair (a, b), if And(a, b) is
         unsatisfaiable, or None if And(a, b) is satisfiable.
+
         """
         raise NotImplementedError
-
 
     def sequence_interpolant(self, formulas):
-        """
-        Returns a sequence interpolant for the conjunction of formulas,
-        or None if the problem is satisfiable.
+        """Returns a sequence interpolant for the conjunction of formulas, or
+        None if the problem is satisfiable.
+
         """
         raise NotImplementedError
 
-
     def __enter__(self):
-        """ Manage entering a Context (i.e., with statement) """
+        """Manage entering a Context (i.e., with statement)"""
         return self
 
-
     def __exit__(self, exc_type, exc_val, exc_tb):
-        """ Manage exiting from Context (i.e., with statement)
+        """Manage exiting from Context (i.e., with statement)
 
         The default behaviour is to explicitely destroy the interpolator to
         free the associated resources.
+
         """
-        del self
+        self.exit()
+
+    def exit(self):
+        """Destroys the solver and closes associated resources."""
+        if not self._destroyed:
+            self._exit()
+            self._destroyed = True
+
+    def _exit(self):
+        """Destroys the solver and closes associated resources."""
+        raise NotImplementedError

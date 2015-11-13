@@ -24,9 +24,7 @@ try:
 except ImportError:
     raise SolverAPINotFound
 
-
 import pysmt.logics
-
 from pysmt import typing as types
 from pysmt.solvers.solver import Solver, Converter, SolverOptions
 from pysmt.solvers.eager import EagerModel
@@ -34,6 +32,7 @@ from pysmt.walkers import DagWalker
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
 from pysmt.oracles import get_logic
 from pysmt.solvers.qelim import QuantifierEliminator
+
 
 class BddOptions(SolverOptions):
 
@@ -206,10 +205,8 @@ class BddSolver(Solver):
             l = self.backtrack.pop()
             self.assertions_stack = self.assertions_stack[:l]
 
-    def exit(self):
-        if not self._destroyed:
-            self._destroyed = True
-            del self.ddmanager
+    def _exit(self):
+        del self.ddmanager
 
 
 class BddConverter(Converter, DagWalker):
@@ -369,12 +366,12 @@ class BddQuantifierEliminator(QuantifierEliminator):
     LOGICS = [pysmt.logics.BOOL]
 
     def __init__(self, environment, logic=None):
+        QuantifierEliminator.__init__(self)
         self.environment = environment
         self.logic = logic
         self.ddmanager = repycudd.DdManager()
         self.converter = BddConverter(environment=environment,
                                       ddmanager=self.ddmanager)
-
 
     def eliminate_quantifiers(self, formula):
         logic = get_logic(formula, self.environment)
@@ -385,5 +382,7 @@ class BddQuantifierEliminator(QuantifierEliminator):
 
         bdd = self.converter.convert(formula)
         pysmt_res = self.converter.back(bdd)
-
         return pysmt_res
+
+    def _exit(self):
+        del self.ddmanager

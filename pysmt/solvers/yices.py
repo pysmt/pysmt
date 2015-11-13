@@ -59,8 +59,6 @@ init()
 def cleanup():
     libyices.yices_exit()
 
-
-
 # Yices constants
 STATUS_UNKNOWN = 2
 STATUS_SAT = 3
@@ -203,12 +201,8 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
             else:
                 raise NotImplementedError()
 
-
-    def exit(self):
-        if not self._destroyed:
-            libyices.yices_free_context(self.yices)
-            self._destroyed = True
-
+    def _exit(self):
+        libyices.yices_free_context(self.yices)
 
     def _get_yices_value(self, term, term_type, getter_func):
         status = getter_func(
@@ -229,7 +223,6 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
             ctypes.byref(d))
         assert status == 0, "Failed to read the variable from the model"
         return Fraction(n.value, d.value)
-
 
 
 class YicesConverter(Converter, DagWalker):
