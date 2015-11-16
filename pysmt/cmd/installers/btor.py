@@ -14,6 +14,7 @@ class BtorInstaller(SolverInstaller):
         native_link = "http://fmv.jku.at/boolector/{archive_name}"
         SolverInstaller.__init__(self, install_dir=install_dir,
                                  bindings_dir=bindings_dir,
+                                 solver_version=solver_version,
                                  archive_name=archive_name,
                                  native_link=native_link,
                                  mirror_link=mirror_link)
