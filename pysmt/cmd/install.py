@@ -17,6 +17,7 @@ from six.moves import input, xrange
 
 import os
 import argparse
+import sys
 
 from collections import namedtuple
 
@@ -90,7 +91,11 @@ def check_installed(required_solvers):
 
 
 def parse_options():
-    parser = argparse.ArgumentParser(description='Install SMT Solvers')
+    parser = argparse.ArgumentParser(description='Install SMT Solvers.\n\n'
+                                     'This script installs the solvers specified'
+                                     ' on the command line or in the environment'
+                                     ' variable PYSMT_SOLVER if not already '
+                                     'instaled on the system.')
 
     for i in INSTALLERS:
         name = i.InstallerClass.SOLVER
@@ -101,7 +106,7 @@ def parse_options():
                         default=False,
                         help='Install all the solvers')
 
-    parser.add_argument('--force-redo', dest='force_redo', action='store_true',
+    parser.add_argument('--force', dest='force_redo', action='store_true',
                         default=False,
                         help='Forcedly rebuild the solvers even if already found')
 
@@ -156,6 +161,8 @@ def main():
     # Address of a mirror website containing packages to avoid continuous
     # downloads from original websites in CI
     mirror_url = os.environ.get('PYSMT_INSTALL_MIRROR')
+    if mirror_url is not None:
+        mirror_url += "/{archive_name}"
 
     # Env variable controlling the solvers to be installed or checked
     requested_solvers = get_requested_solvers()
@@ -177,7 +184,14 @@ def main():
         print("export PYTHONPATH=\""+ bindings_dir + ":${PYTHONPATH}\"")
 
     else:
+        if len(solvers_to_install) == 0:
+            print("Nothing to do.\nTry with '%s --help'" % sys.argv[0])
+            exit(0)
+
         # Do the actual install
+        if not options.skip_intro:
+            print_welcome()
+
         # This should work on any platform
         install_dir= os.path.expanduser(options.install_path)
         if not os.path.exists(install_dir):
@@ -194,13 +208,7 @@ def main():
                                          solver_version=i.version,
                                          mirror_link=mirror_url,
                                          **i.extra_params)
-
-            if not installer.is_installed():
-                if not options.skip_intro:
-                    print_welcome()
-                    options.skip_intro = True
-
-                installer.install(force_redo=options.force_redo)
+            installer.install(force_redo=options.force_redo)
 
 
 if __name__ == "__main__":

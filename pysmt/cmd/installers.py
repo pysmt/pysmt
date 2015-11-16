@@ -20,11 +20,13 @@ def untar(fname, directory, mode='r:gz'):
     tfile = tarfile.open(fname, mode)
     tfile.extractall(directory)
 
+
 def unzip(fname, directory):
     """Unzips the given archive into the given directory"""
     myzip = zipfile.ZipFile(fname, "r")
     myzip.extractall(directory)
     myzip.close()
+
 
 @contextmanager
 def TemporaryPath(path):
@@ -38,67 +40,70 @@ def TemporaryPath(path):
 
 
 
-def get_architecture_bits():
-    """Returns the native word width of this architecture. E.g. 32 or 64"""
-    is_64bits = sys.maxsize > 2**32
-    if is_64bits:
-        return 64
-    else:
-        return 32
-
-
-def get_python_version():
-    """Returns the current python version as string E.g. '2.7'"""
-    return "%d.%d" % sys.version_info[0:2]
-
-
-def get_os():
-    """Returns the current OS name E.g. 'linux'"""
-    return platform.system().lower()
-
-
-def get_architecture():
-    """Returns the short name of the architecture in use. E.g. 'x86_64'"""
-    return platform.machine()
-
-
-
 class SolverInstaller(object):
 
     SOLVER = None
 
-    def __init__(self, install_dir, bindings_dir, solver_version, os_name=None,
-                 architecture=None, python_version=None, mirror_link=None):
+    def __init__(self, install_dir, bindings_dir, solver_version,
+                 archive_name=None, native_link=None, mirror_link=None):
         self.bindings_dir = bindings_dir
         self.install_dir = install_dir
         self.solver_version = solver_version
-        self.os_name = os_name if os_name else get_os()
-        self.architecture = architecture if architecture else get_architecture()
-        self.python_version = python_version if python_version else get_python_version()
         self.mirror_link = mirror_link
 
         self.trials_404 = 3
-        self.base_dir = None
-
-        self.download_links = []
-        self.archive_path = None
 
         self.base_dir = os.path.join(self.install_dir, self.SOLVER)
         if not os.path.exists(self.base_dir):
             os.mkdir(self.base_dir)
 
+        self.native_link = native_link
+        self.archive_name = archive_name
+        if self.archive_name is not None:
+            self.archive_path = os.path.join(self.base_dir, self.archive_name)
+            if self.archive_path.endswith(".tar.gz"):
+                self.extract_path = self.archive_path[:-7] # get rid of '.tar.gz'
+            elif self.archive_path.endswith(".tar.bz2"):
+                self.extract_path = self.archive_path[:-8] # get rid of '.tar.bz2'
+            elif self.archive_path.endswith(".zip"):
+                self.extract_path = self.archive_path[:-4] # get rid of '.zip'
+            else:
+                self.extract_path = None
+        else:
+            self.archive_path = None
+            self.extract_path = None
+
+    @property
+    def os_name(self):
+        return platform.system().lower()
+
+    @property
+    def architecture(self):
+        return platform.machine()
+
+    @property
+    def python_version(self):
+        return "%d.%d" % sys.version_info[0:2]
+
+    def download_links(self):
+        if self.mirror_link is not None:
+            yield self.mirror_link.format(archive_name=self.archive_name)
+        if self.native_link is not None:
+            yield self.native_link.format(archive_name=self.archive_name)
+
 
     def download(self):
         """Downloads the archive from one of the mirrors"""
         if not os.path.exists(self.archive_path):
-            for _ in xrange(self.trials_404):
-                for link in self.download_links:
+            for turn in xrange(self.trials_404):
+                for i, link in enumerate(self.download_links()):
                     try:
                         return self.do_download(link, self.archive_path)
                     except HTTPError as e:
-                        print(e)
                         if e.code != 404:
                             raise
+                        print("HTTP 404 while trying to get the archive using link" \
+                              " #%d (trial %d/%d)" % (i, turn+1, self.trials_404))
 
     def unpack(self):
         """Unpacks the archive"""
@@ -234,19 +239,19 @@ class MSatInstaller(SolverInstaller):
 
     SOLVER = "msat"
 
-    def __init__(self, install_dir, bindings_dir, solver_version, os_name=None,
-                 architecture=None, python_version=None, mirror_link=None):
-        SolverInstaller.__init__(self, install_dir, bindings_dir, solver_version,
-                                 os_name, architecture, python_version, mirror_link)
-        self.archive_name = "mathsat-%s-%s-%s.tar.gz" % (self.solver_version,
-                                                  self.os_name, self.architecture)
-        self.archive_path = os.path.join(self.base_dir, self.archive_name)
+    def __init__(self, install_dir, bindings_dir, solver_version,
+                 mirror_link=None):
+        archive_name = "mathsat-%s-%s-%s.tar.gz" % (solver_version,
+                                                    self.os_name,
+                                                    self.architecture)
+        native_link = "http://mathsat.fbk.eu/download.php?file={archive_name}"
+        SolverInstaller.__init__(self, install_dir=install_dir,
+                                 bindings_dir=bindings_dir,
+                                 solver_version=solver_version,
+                                 archive_name=archive_name,
+                                 native_link = native_link,
+                                 mirror_link=mirror_link)
 
-        if self.mirror_link is not None:
-            self.download_links.append("%s/%s" % (self.mirror_link, self.archive_name))
-        self.download_links.append( "http://mathsat.fbk.eu/download.php?file=%s"\
-                                    % (self.archive_name))
-        self.extract_path = self.archive_path[:-7] # get rid of '.tar.gz'
         self.python_bindings_dir = os.path.join(self.extract_path, "python")
 
 
@@ -286,28 +291,25 @@ class Z3Installer(SolverInstaller):
 
     SOLVER = "z3"
 
-    def __init__(self, install_dir, bindings_dir, solver_version, os_name=None,
-                 architecture=None, python_version=None, mirror_link=None):
-        SolverInstaller.__init__(self, install_dir, bindings_dir, solver_version,
-                                 os_name, architecture, python_version, mirror_link)
-
+    def __init__(self, install_dir, bindings_dir, solver_version,
+                 mirror_link=None):
         arch = self.architecture
-        if self.architecture == "x86_64":
+        if arch == "x86_64":
             arch = "x64"
 
         system = self.os_name
         if system == "linux":
             system = "ubuntu-14.04"
 
-        self.archive_name = "z3-%s-%s-%s.zip" % (self.solver_version,
-                                                 arch, system)
-        self.archive_path = os.path.join(self.base_dir, self.archive_name)
+        archive_name = "z3-%s-%s-%s.zip" % (solver_version, arch, system)
+        native_link = "https://github.com/Z3Prover/z3/releases/download/z3-4.4.1/{archive_name}"
 
-        if self.mirror_link is not None:
-            self.download_links.append("%s/%s" % (self.mirror_link, self.archive_name))
-        self.download_links.append("https://github.com/Z3Prover/z3/releases/download/z3-4.4.1/%s"\
-                                    % (self.archive_name))
-        self.extract_path = self.archive_path[:-4] # get rid of '.zip'
+        SolverInstaller.__init__(self, install_dir=install_dir,
+                                 bindings_dir=bindings_dir,
+                                 solver_version=solver_version,
+                                 archive_name=archive_name,
+                                 native_link=native_link,
+                                 mirror_link=mirror_link)
 
 
     def move(self):
@@ -343,20 +345,17 @@ class CVC4Installer(SolverInstaller):
 
     SOLVER = "cvc4"
 
-    def __init__(self, install_dir, bindings_dir, solver_version, os_name=None,
-                 architecture=None, python_version=None, mirror_link=None,
-                 git_version='HEAD'):
-        SolverInstaller.__init__(self, install_dir, bindings_dir, solver_version,
-                                 os_name, architecture, python_version, mirror_link)
+    def __init__(self, install_dir, bindings_dir, solver_version,
+                 mirror_link=None, git_version='HEAD'):
+        archive_name = "CVC4-%s.tar.gz" % git_version
+        native_link = "https://codeload.github.com/CVC4/CVC4/tar.gz/%s" % (git_version)
+        SolverInstaller.__init__(self, install_dir=install_dir,
+                                 bindings_dir=bindings_dir,
+                                 solver_version=solver_version,
+                                 archive_name=archive_name,
+                                 native_link=native_link,
+                                 mirror_link=mirror_link)
         self.git_version = git_version
-        self.archive_name = "CVC4-%s.tar.gz" % self.git_version
-        self.archive_path = os.path.join(self.base_dir, self.archive_name)
-
-        if self.mirror_link is not None:
-            self.download_links.append("%s/%s" % (self.mirror_link, self.archive_name))
-        self.download_links.append("https://codeload.github.com/CVC4/CVC4/tar.gz/%s"\
-                                    % (self.git_version))
-        self.extract_path = self.archive_path[:-7] # get rid of '.tar.gz'
         self.bin_path = os.path.join(self.base_dir, "CVC4_bin")
 
     def move(self):
@@ -409,22 +408,18 @@ class YicesInstaller(SolverInstaller):
 
     SOLVER = "yices"
 
-    def __init__(self, install_dir, bindings_dir, solver_version, os_name=None,
-                 architecture=None, python_version=None, mirror_link=None):
-        SolverInstaller.__init__(self, install_dir, bindings_dir, solver_version,
-                                 os_name, architecture, python_version, mirror_link)
-
-        assert self.os_name == "linux"
-        assert self.architecture == "x86_64"
+    def __init__(self, install_dir, bindings_dir, solver_version,
+                 mirror_link=None):
         pack = "x86_64-unknown-linux-gnu-static-gmp"
+        archive_name = "yices-%s-%s.tar.gz" % (solver_version, pack)
+        native_link = "http://yices.csl.sri.com/cgi-bin/yices2-newnewdownload.cgi?file={archive_name}&accept=I+Agree"
+        SolverInstaller.__init__(self, install_dir=install_dir,
+                                 bindings_dir=bindings_dir,
+                                 solver_version=solver_version,
+                                 archive_name=archive_name,
+                                 native_link=native_link,
+                                 mirror_link=mirror_link)
 
-        self.archive_name = "yices-%s-%s.tar.gz" % (self.solver_version, pack)
-        self.archive_path = os.path.join(self.base_dir, self.archive_name)
-
-        if self.mirror_link is not None:
-            self.download_links.append("%s/%s" % (self.mirror_link, self.archive_name))
-        self.download_links.append("http://yices.csl.sri.com/cgi-bin/yices2-newnewdownload.cgi?file=%s&accept=I+Agree"\
-                                    % (self.archive_name))
         self.extract_path = os.path.join(self.base_dir, "yices-%s" % self.solver_version)
         self.yices_path = os.path.join(self.bindings_dir, "yices_bin")
 
@@ -469,24 +464,25 @@ class YicesInstaller(SolverInstaller):
         with TemporaryPath([self.bindings_dir]):
             try:
                 import pyices
+                import pyices.yices_lib as libyices
+                import pyices.fix_env
+                return libyices.yices_version
             except ImportError:
                 if "pyices" in sys.modules:
                     del sys.modules["pyices"]
                 return None
-
-            import pyices.yices_lib as libyices
-            import pyices.fix_env
-            return libyices.yices_version
 
 
 class PicoSATInstaller(SolverInstaller):
 
     SOLVER = "picosat"
 
-    def __init__(self, install_dir, bindings_dir, solver_version, os_name=None,
-                 architecture=None, python_version=None, mirror_link=None):
-        SolverInstaller.__init__(self, install_dir, bindings_dir, solver_version,
-                                 os_name, architecture, python_version, mirror_link)
+    def __init__(self, install_dir, bindings_dir, solver_version,
+                 mirror_link=None):
+        SolverInstaller.__init__(self, install_dir=install_dir,
+                                 bindings_dir=bindings_dir,
+                                 solver_version=solver_version,
+                                 mirror_link=mirror_link)
 
     def download(self):
         pass # Nothing to download
@@ -495,7 +491,7 @@ class PicoSATInstaller(SolverInstaller):
         pass # Nothing to unpack
 
     def compile(self):
-        pip.main(['install', '--pre', '--target', self.bindings_dir, 'pypicosat'])
+        pip.main(['install', '--target', self.bindings_dir, 'pypicosat'])
 
     def get_installed_version(self):
         with TemporaryPath([self.bindings_dir]):
@@ -512,19 +508,16 @@ class BtorInstaller(SolverInstaller):
 
     SOLVER = "btor"
 
-    def __init__(self, install_dir, bindings_dir, solver_version, os_name=None,
-                 architecture=None, python_version=None, mirror_link=None):
-        SolverInstaller.__init__(self, install_dir, bindings_dir, solver_version,
-                                 os_name, architecture, python_version, mirror_link)
-
-        self.archive_name = "boolector-%s-with-lingeling-b85.tar.bz2" % self.solver_version
-        self.archive_path = os.path.join(self.base_dir, self.archive_name)
-
-        if self.mirror_link is not None:
-            self.download_links.append("%s/%s" % (self.mirror_link, self.archive_name))
-        self.download_links.append("http://fmv.jku.at/boolector/%s" \
-                                    % (self.archive_name))
-        self.extract_path = self.archive_path[:-8] # get rid of '.tar.bz2'
+    def __init__(self, install_dir, bindings_dir, solver_version,
+                 mirror_link=None):
+        archive_name = "boolector-%s-with-lingeling-b85.tar.bz2" % solver_version
+        native_link = "http://fmv.jku.at/boolector/{archive_name}"
+        SolverInstaller.__init__(self, install_dir=install_dir,
+                                 bindings_dir=bindings_dir,
+                                 python_version=python_version,
+                                 archive_name=archive_name,
+                                 native_link=native_link,
+                                 mirror_link=mirror_link)
 
 
     def compile(self):
@@ -571,21 +564,17 @@ class CuddInstaller(SolverInstaller):
 
     SOLVER = "bdd"
 
-    def __init__(self, install_dir, bindings_dir, solver_version, os_name=None,
-                 architecture=None, python_version=None, mirror_link=None,
-                 git_version='HEAD'):
-        SolverInstaller.__init__(self, install_dir, bindings_dir, solver_version,
-                                 os_name, architecture, python_version, mirror_link)
-
+    def __init__(self, install_dir, bindings_dir, solver_version,
+                 mirror_link=None, git_version='HEAD'):
+        archive_name = "repycudd-%s.tar.gz" % git_version
+        native_link = "https://codeload.github.com/pysmt/repycudd/tar.gz/%s" % git_version
+        SolverInstaller.__init__(self, install_dir=install_dir,
+                                 bindings_dir=bindings_dir,
+                                 solver_version=solver_version,
+                                 archive_name=archive_name,
+                                 native_link=native_link,
+                                 mirror_link=mirror_link)
         self.git_version = git_version
-        self.archive_name = "repycudd-%s.tar.gz" % self.git_version
-        self.archive_path = os.path.join(self.base_dir, self.archive_name)
-
-        if self.mirror_link is not None:
-            self.download_links.append("%s/%s" % (self.mirror_link, self.archive_name))
-        self.download_links.append("https://codeload.github.com/pysmt/repycudd/tar.gz/%s" \
-                                    % (self.git_version))
-        self.extract_path = self.archive_path[:-7] # get rid of '.tar.gz'
 
 
     def compile(self):
