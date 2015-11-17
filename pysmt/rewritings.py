@@ -141,8 +141,9 @@ class CNFizer(DagWalker):
         k = self._key_var(formula)
         not_a = self.mgr.Not(a).simplify()
         not_b = self.mgr.Not(b).simplify()
+        not_k = self.mgr.Not(k)
 
-        return k, (cnf_a | cnf_b | frozenset([frozenset([not_a, b, k]),
+        return k, (cnf_a | cnf_b | frozenset([frozenset([not_a, b, not_k]),
                                               frozenset([a, k]),
                                               frozenset([not_b, k])]))
 
