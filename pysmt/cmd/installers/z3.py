@@ -16,8 +16,7 @@ from __future__ import absolute_import
 import os
 import sys
 
-from pysmt.cmd.installers.base import SolverInstaller
-from pysmt.cmd.installers.utils import TemporaryPath
+from pysmt.cmd.installers.base import SolverInstaller, TemporaryPath
 
 
 class Z3Installer(SolverInstaller):

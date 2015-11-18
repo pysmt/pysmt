@@ -14,8 +14,7 @@
 import os
 import sys
 
-from pysmt.cmd.installers.base import SolverInstaller
-from pysmt.cmd.installers.utils import TemporaryPath
+from pysmt.cmd.installers.base import SolverInstaller, TemporaryPath
 
 
 class CVC4Installer(SolverInstaller):

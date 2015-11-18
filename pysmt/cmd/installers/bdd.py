@@ -16,8 +16,7 @@ import os
 import subprocess
 import re
 
-from pysmt.cmd.installers.base import SolverInstaller
-from pysmt.cmd.installers.utils import TemporaryPath
+from pysmt.cmd.installers.base import SolverInstaller, TemporaryPath
 
 
 class CuddInstaller(SolverInstaller):

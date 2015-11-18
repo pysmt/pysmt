@@ -15,12 +15,24 @@ import os
 import platform
 import sys
 import shutil
+import zipfile
+import tarfile
+
+from contextlib import contextmanager
 
 from six.moves import xrange
 from six.moves.urllib import request as urllib2
 from six.moves.urllib.error import HTTPError
 
-from pysmt.cmd.installers.utils import unzip, untar
+@contextmanager
+def TemporaryPath(path):
+    """Context that substitutes the system path to test for API presence or absence"""
+    old_path = list(sys.path)
+    try:
+        sys.path = path + sys.path
+        yield
+    finally:
+        sys.path = old_path
 
 
 class SolverInstaller(object):
@@ -92,11 +104,11 @@ class SolverInstaller(object):
         """Unpacks the archive"""
         path = self.archive_path
         if path.endswith(".zip"):
-            unzip(path, directory=self.base_dir)
+            SolverInstaller.unzip(path, directory=self.base_dir)
         elif path.endswith(".tar.bz2"):
-            untar(path, directory=self.base_dir, mode='r:bz2')
+            SolverInstaller.untar(path, directory=self.base_dir, mode='r:bz2')
         elif path.endswith(".tar.gz"):
-            untar(path, directory=self.base_dir)
+            SolverInstaller.untar(path, directory=self.base_dir)
         else:
             raise ValueError("Unsupported archive for extraction: %s" % path)
 
@@ -216,3 +228,16 @@ class SolverInstaller(object):
         if os.path.isfile(dest_file):
             os.unlink(dest_file)
         os.rename(source_file, dest_file)
+
+    @staticmethod
+    def untar(fname, directory, mode='r:gz'):
+        """Extracts the tarfile using the specified mode in the given directory."""
+        tfile = tarfile.open(fname, mode)
+        tfile.extractall(directory)
+
+    @staticmethod
+    def unzip(fname, directory):
+        """Unzips the given archive into the given directory"""
+        myzip = zipfile.ZipFile(fname, "r")
+        myzip.extractall(directory)
+        myzip.close()

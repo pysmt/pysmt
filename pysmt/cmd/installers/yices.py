@@ -14,8 +14,7 @@
 import os
 import sys
 
-from pysmt.cmd.installers.base import SolverInstaller
-from pysmt.cmd.installers.utils import TemporaryPath, untar
+from pysmt.cmd.installers.base import SolverInstaller, TemporaryPath
 
 
 class YicesInstaller(SolverInstaller):
@@ -51,7 +50,7 @@ class YicesInstaller(SolverInstaller):
 
         SolverInstaller.clean_dir(pyices_dir_path)
 
-        untar(pyices_archive, self.base_dir)
+        SolverInstaller.untar(pyices_archive, self.base_dir)
         # Build pyices
         SolverInstaller.run_python("setup.py install --prefix=%s" % self.install_dir,
                                    directory=pyices_dir_path,
