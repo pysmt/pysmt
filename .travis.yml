@@ -67,8 +67,6 @@ matrix:
 
   exclude:
     - python: 3.4
-      env: PYSMT_SOLVER="z3"
-    - python: 3.4
       env: PYSMT_SOLVER="cvc4"
     - python: 3.4
       env: PYSMT_SOLVER="yices"
