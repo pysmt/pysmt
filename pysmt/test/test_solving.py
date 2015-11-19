@@ -28,8 +28,9 @@ from pysmt.test import main
 from pysmt.test.examples import get_example_formulae
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               InternalSolverError, NoSolverAvailableError,
-                              ConvertExpressionError)
+                              ConvertExpressionError, UndefinedLogicError)
 from pysmt.logics import QF_UFLIRA, QF_BOOL, QF_LRA, AUTO
+from pysmt.logics import convert_logic_from_string
 
 class TestBasic(TestCase):
 
@@ -465,6 +466,20 @@ class TestBasic(TestCase):
         for sname in get_env().factory.all_solvers(logic=QF_BOOL):
             with self.assertRaises(ConvertExpressionError):
                 is_sat(invalid_node, solver_name=sname, logic=QF_BOOL)
+
+    @skipIfNoSolverForLogic(QF_LRA)
+    def test_logic_as_string(self):
+        self.assertEqual(convert_logic_from_string("QF_LRA"), QF_LRA)
+        with self.assertRaises(UndefinedLogicError):
+            convert_logic_from_string("PAPAYA")
+        self.assertIsNone(convert_logic_from_string(None))
+
+        x = Symbol("x")
+        self.assertTrue(is_sat(x, logic="QF_LRA"))
+        with self.assertRaises(UndefinedLogicError):
+            is_sat(x, logic="PAPAYA")
+        self.assertTrue(is_sat(x, logic=None))
+        self.assertTrue(is_sat(x))
 
 
 if __name__ == '__main__':
