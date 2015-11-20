@@ -19,8 +19,10 @@
 the SMTLIB and provides methods to compare and search for particular
 logics.
 """
+import six
 
 from pysmt.exceptions import UndefinedLogicError, NoLogicAvailableError
+
 
 class Theory(object):
     """Describes a theory similarly to the SMTLIB 2.0."""
@@ -594,10 +596,18 @@ PYSMT_QF_LOGICS = frozenset(_l for _l in PYSMT_LOGICS if _l.quantifier_free)
 
 def get_logic_by_name(name):
     """Returns the Logic that matches the provided name."""
-
     for logic in LOGICS:
-        if logic.name == name: return logic
+        if logic.name.lower() == name.lower(): return logic
     raise UndefinedLogicError(name)
+
+def convert_logic_from_string(name):
+    """Helper function to parse function arguments.
+
+    This takes a logic or a string or None, and returns a logic or None.
+    """
+    if name is not None and isinstance(name, six.string_types):
+        name = get_logic_by_name(name)
+    return name
 
 def get_logic_name(quantifier_free=False,
                    arrays=False,
