@@ -33,7 +33,7 @@ class EagerModel(Model):
             environment = get_env()
         Model.__init__(self, environment)
         self.environment = environment
-        self.assignment = assignment
+        self.assignment = dict(assignment)
         # Create a copy of the assignments to memoize completions
         self.completed_assignment = dict(self.assignment)
 
