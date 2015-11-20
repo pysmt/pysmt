@@ -32,7 +32,7 @@ class CVC4Installer(SolverInstaller):
                                  native_link=native_link,
                                  mirror_link=mirror_link)
         self.git_version = git_version
-        self.bin_path = os.path.join(self.base_dir, "CVC4_bin")
+        self.bin_path = os.path.join(self.bindings_dir, "CVC4_bin")
 
     def move(self):
         SolverInstaller.mv(os.path.join(self.bin_path, "share/pyshared/CVC4.py"),
