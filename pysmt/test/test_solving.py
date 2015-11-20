@@ -16,6 +16,7 @@
 #   limitations under the License.
 #
 from six.moves import xrange
+from six import PY2
 
 import pysmt.operators as op
 from pysmt.shortcuts import Symbol, FreshSymbol, And, Not, GT, Function, Plus
@@ -470,6 +471,9 @@ class TestBasic(TestCase):
     @skipIfNoSolverForLogic(QF_LRA)
     def test_logic_as_string(self):
         self.assertEqual(convert_logic_from_string("QF_LRA"), QF_LRA)
+        if PY2:
+            self.assertEqual(convert_logic_from_string(unicode("QF_LRA")),
+                             QF_LRA)
         with self.assertRaises(UndefinedLogicError):
             convert_logic_from_string("PAPAYA")
         self.assertIsNone(convert_logic_from_string(None))

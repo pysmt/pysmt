@@ -19,8 +19,10 @@
 the SMTLIB and provides methods to compare and search for particular
 logics.
 """
+import six
 
 from pysmt.exceptions import UndefinedLogicError, NoLogicAvailableError
+
 
 class Theory(object):
     """Describes a theory similarly to the SMTLIB 2.0."""
@@ -603,7 +605,7 @@ def convert_logic_from_string(name):
 
     This takes a logic or a string or None, and returns a logic or None.
     """
-    if name is not None and type(name) == str:
+    if name is not None and isinstance(name, six.string_types):
         name = get_logic_by_name(name)
     return name
 
