@@ -109,7 +109,6 @@ matrix:
     - python: pypy3
       env: PYSMT_SOLVER="all"
 
-
 install:
   # This is for btor that fails to find the python 3 library to link
   - "export LIBRARY_PATH=${LIBRARY_PATH}:/opt/python/3.4.2/lib"
@@ -122,6 +121,6 @@ install:
   - "eval `python install.py --env --bindings-path ${BINDINGS_FOLDER}`"
 
 script:
-  - "env"
+  - "echo ${PYTHONPATH}"
   - "python install.py --check"
   - "nosetests pysmt -v"
