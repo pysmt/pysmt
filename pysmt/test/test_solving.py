@@ -279,13 +279,13 @@ class TestBasic(TestCase):
 
     def test_examples_get_implicant(self):
         for (f, _, satisfiability, logic) in get_example_formulae():
-            if logic.quantifier_free and \
-               (len(get_env().factory.all_solvers(logic=logic)) > 0):
-                f_i = get_implicant(f, logic=logic)
-                if satisfiability:
-                    self.assertValid(Implies(f_i, f), logic=logic, msg=f)
-                else:
-                    self.assertIsNone(f_i)
+            if logic.quantifier_free:
+                for sname in get_env().factory.all_solvers(logic=logic):
+                    f_i = get_implicant(f, logic=logic, solver_name=sname)
+                    if satisfiability:
+                        self.assertValid(Implies(f_i, f), logic=logic, msg=f)
+                    else:
+                        self.assertIsNone(f_i)
 
     def test_solving_under_assumption(self):
         v1, v2 = [FreshSymbol() for _ in xrange(2)]

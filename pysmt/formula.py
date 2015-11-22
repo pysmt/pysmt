@@ -38,7 +38,7 @@ import pysmt.utils as utils
 
 from pysmt.utils import is_python_integer
 from pysmt.fnode import FNode, FNodeContent
-from pysmt.exceptions import NonLinearError
+from pysmt.exceptions import NonLinearError, UndefinedSymbolError
 from pysmt.walkers.identitydag import IdentityDagWalker
 
 class FormulaManager(object):
@@ -86,7 +86,6 @@ class FormulaManager(object):
     def _create_symbol(self, name, typename=types.BOOL):
         if len(name) == 0:
             raise ValueError("Empty string is not a valid name")
-        assert name not in self.symbols
         n = self.create_node(node_type=op.SYMBOL,
                              args=tuple(),
                              payload=(name, typename))
@@ -105,20 +104,20 @@ class FormulaManager(object):
         return v
 
     def get_symbol(self, name):
-        if name in self.symbols:
+        try:
             return self.symbols[name]
-        return None
+        except KeyError:
+            raise UndefinedSymbolError(name)
 
     def get_all_symbols(self):
         return self.symbols.values()
 
     def get_or_create_symbol(self, name, typename):
-        s = self.get_symbol(name)
+        s = self.symbols.get(name, None)
         if s is None:
-            s = self._create_symbol(name, typename)
-        else:
-            if not s.symbol_type() == typename:
-                raise TypeError("%s != %s" % (s.symbol_type(), typename))
+            return self._create_symbol(name, typename)
+        if not s.symbol_type() == typename:
+            raise TypeError("%s != %s" % (s.symbol_type(), typename))
         return s
 
     # Node definitions start here

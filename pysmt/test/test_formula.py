@@ -27,7 +27,7 @@ from pysmt.shortcuts import get_env
 from pysmt.environment import Environment
 from pysmt.test import TestCase, skipIfNoSolverForLogic, main
 from pysmt.logics import QF_BOOL
-from pysmt.exceptions import NonLinearError
+from pysmt.exceptions import NonLinearError, UndefinedSymbolError
 from pysmt.formula import FormulaManager
 
 
@@ -66,9 +66,8 @@ class TestFormulaManager(TestCase):
                           "Fresh variable doesn't have the desired prefix")
 
     def test_get_symbol(self):
-        a = self.mgr.get_symbol("a")
-        self.assertIsNone(a,
-            "Symbol returned from an empty symboltable")
+        with self.assertRaises(UndefinedSymbolError):
+            a = self.mgr.get_symbol("a")
 
         self.mgr.get_or_create_symbol("a", BOOL)
         a = self.mgr.get_symbol("a")
