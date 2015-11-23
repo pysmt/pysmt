@@ -1,6 +1,15 @@
 Change Log
 ==========
 
+0.5.0: XXXX-XX-XX -- Breaking Things
+------------------------------------
+
+Backwards Incompatible Changes:
+
+* MGSubstituter becomes the new default substituter.
+  See Pull-Request #207 for details
+
+
 0.4.4: 2016-05-07 -- Minor
 --------------------------
 
