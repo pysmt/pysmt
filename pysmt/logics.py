@@ -468,6 +468,12 @@ QF_UF = Logic(name="QF_UF",
               quantifier_free=True,
               uninterpreted=True)
 
+UF = Logic(name="UF",
+           description=\
+"""Quantified formulas built over a signature of uninterpreted
+(i.e., free) sort and function symbols.""",
+           uninterpreted=True)
+
 
 QF_UFBV = Logic(name="QF_UFBV",
                 description=\
@@ -688,4 +694,13 @@ def get_closer_logic(supported_logics, logic):
     return min(res)
 
 def get_closer_pysmt_logic(target_logic):
+    """Returns the closer logic supported by PYSMT."""
     return get_closer_logic(PYSMT_LOGICS, target_logic)
+
+def get_closer_smtlib_logic(target_logic):
+    """Returns the closer logic supported by SMT-LIB 2.0."""
+    if target_logic == QF_BOOL:
+        return QF_UF
+    if target_logic == BOOL:
+        return LRA
+    return get_closer_logic(SMTLIB2_LOGICS, target_logic)

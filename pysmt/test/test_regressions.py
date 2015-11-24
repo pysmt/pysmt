@@ -25,15 +25,16 @@ from pysmt.shortcuts import Solver, get_env, qelim, get_model, TRUE, ExactlyOne
 from pysmt.typing import REAL, BOOL, INT, FunctionType
 from pysmt.test import TestCase, skipIfSolverNotAvailable, skipIfNoSolverForLogic
 from pysmt.test import main
-from pysmt.logics import QF_UFLIRA, QF_BOOL, LIA
 from pysmt.exceptions import ConvertExpressionError
 from pysmt.test.examples import get_example_formulae
 from pysmt.environment import Environment
 from pysmt.rewritings import cnf_as_set
 from pysmt.smtlib.parser import SmtLibParser
 
+import pysmt.logics as logics
 import pysmt.smtlib.commands as smtcmd
 from pysmt.smtlib.script import SmtLibCommand
+from pysmt.logics import get_closer_smtlib_logic
 
 
 class TestRegressions(TestCase):
@@ -97,7 +98,7 @@ class TestRegressions(TestCase):
         new_type = get_type(f)
         self.assertEqual(new_type, old_type)
 
-    @skipIfNoSolverForLogic(QF_UFLIRA)
+    @skipIfNoSolverForLogic(logics.QF_UFLIRA)
     def test_nary_operators_in_solver_converter(self):
         """Conversion of n-ary operators was not handled correctly by converters."""
         x = Symbol("x")
@@ -112,13 +113,13 @@ class TestRegressions(TestCase):
         f_plus_many = LT(Plus(r,r,r,r,r,r,r,r,r,r,r), Real(0))
 
 
-        for name in get_env().factory.all_solvers(logic=QF_BOOL):
+        for name in get_env().factory.all_solvers(logic=logics.QF_BOOL):
             self.assertSat(f_and_one, solver_name=name)
             self.assertSat(f_or_one, solver_name=name)
             self.assertSat(f_and_many, solver_name=name)
             self.assertSat(f_or_many, solver_name=name)
 
-        for name in get_env().factory.all_solvers(logic=QF_UFLIRA):
+        for name in get_env().factory.all_solvers(logic=logics.QF_UFLIRA):
             self.assertSat(f_plus_one, solver_name=name)
             self.assertSat(f_plus_many, solver_name=name)
 
@@ -176,7 +177,7 @@ class TestRegressions(TestCase):
             s.exit()
             self.assertTrue(True)
 
-    @skipIfNoSolverForLogic(LIA)
+    @skipIfNoSolverForLogic(logics.LIA)
     def test_lia_qe_requiring_modulus(self):
         x = Symbol("x", INT)
         y = Symbol("y", INT)
@@ -300,6 +301,16 @@ class TestRegressions(TestCase):
             res = solver.solve()
             self.assertFalse(res)
             solver.pop()
+
+    def test_qf_bool_smt2(self):
+        # QF_BOOL does not exist in SMT-LIB
+        # This test is to enforce the consistent choice of QF_UF
+        close_l = get_closer_smtlib_logic(logics.QF_BOOL)
+        self.assertEqual(close_l, logics.QF_UF)
+        # For BOOL we use LRA
+        close_l = get_closer_smtlib_logic(logics.BOOL)
+        self.assertEqual(close_l, logics.LRA)
+
 
 if __name__ == "__main__":
     main()
