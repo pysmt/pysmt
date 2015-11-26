@@ -541,9 +541,17 @@ class FNode(object):
         return self._content.payload
 
     # Infix Notation
-    def _apply_infix(self, right, function):
+    def _apply_infix(self, right, function, bv_function=None):
         if _env().enable_infix_notation:
             mgr = _mgr()
+            # BVs
+            # Default bv_function to function
+            if bv_function is None: bv_function = function
+            if _is_bv(self):
+                if is_python_integer(right):
+                    right = mgr.BV(right, width=self.bv_width())
+                return bv_function(self, right)
+            # Boolean, Integer and Arithmetic
             if is_python_boolean(right):
                 right = mgr.Bool(right)
             elif is_python_integer(right):
@@ -576,64 +584,133 @@ class FNode(object):
     def Or(self, right):
         return self._apply_infix(right, _mgr().Or)
 
+    # BV
+    def BVSLT(self, right):
+        return self._apply_infix(right, _mgr().BVSLT)
+
+    def BVSLE(self, right):
+        return self._apply_infix(right, _mgr().BVSLE)
+
+    def BVComp(self, right):
+        return self._apply_infix(right, _mgr().BVComp)
+
+    def BVSDiv(self, right):
+        return self._apply_infix(right, _mgr().BVSDiv)
+
+    def BVSRem(self, right):
+        return self._apply_infix(right, _mgr().BVSRem)
+
+    def BVAShr(self, right):
+        return self._apply_infix(right, _mgr().BVAShr)
+
+    def BVNand(self, right):
+        return self._apply_infix(right, _mgr().BVNand)
+
+    def BVNor(self, right):
+        return self._apply_infix(right, _mgr().BVNor)
+
+    def BVXnor(self, right):
+        return self._apply_infix(right, _mgr().BVXnor)
+
+    def BVSGT(self, right):
+        return self._apply_infix(right, _mgr().BVSGT)
+
+    def BVSGE(self, right):
+        return self._apply_infix(right, _mgr().BVSGE)
+
+    def BVSMod(self, right):
+        return self._apply_infix(right, _mgr().BVSMod)
+
+    def BVRol(self, steps):
+        return _mgr().BVRol(self, steps)
+
+    def BVRor(self, steps):
+        return _mgr().BVRor(self, steps)
+
+    def BVZExt(self, increase):
+        return _mgr().BVZExt(self, increase)
+
+    def BVSExt(self, increase):
+        return _mgr().BVSExt(self, increase)
+
+    def BVRepeat(self, count):
+        return _mgr().BVRepeat(self, count)
+
+    #
+    # Infix operators
+    #
     def __add__(self, right):
-        return self._apply_infix(right, _mgr().Plus)
+        return self._apply_infix(right, _mgr().Plus, _mgr().BVAdd)
 
     def __radd__(self, right):
-        return self._apply_infix(right, _mgr().Plus)
+        return self._apply_infix(right, _mgr().Plus, _mgr().BVAdd)
 
     def __sub__(self, right):
-        return self._apply_infix(right, _mgr().Minus)
+        return self._apply_infix(right, _mgr().Minus, _mgr().BVSub)
 
-    def __rsub__(self, right):
+    def __rsub__(self, left):
+        # Swap operators to perform right-subtract
+        # For BVs we might need to build the BV constant
+        if _is_bv(self):
+            if is_python_integer(left):
+                left = _mgr().BV(left, width=self.bv_width())
+            return left._apply_infix(self, _mgr().BVSub)
+        # (x - y) = (-y + x)
         minus_self = -self
-        return minus_self._apply_infix(right, _mgr().Plus)
+        return minus_self._apply_infix(left, _mgr().Plus)
 
     def __mul__(self, right):
-        return self._apply_infix(right, _mgr().Times)
+        return self._apply_infix(right, _mgr().Times, _mgr().BVMul)
 
     def __rmul__(self, right):
-        return self._apply_infix(right, _mgr().Times)
+        return self._apply_infix(right, _mgr().Times, _mgr().BVMul)
 
     def __div__(self, right):
-        return self._apply_infix(right, _mgr().Div)
+        return self._apply_infix(right, _mgr().Div, _mgr().BVUDiv)
 
     def __truediv__(self, right):
         return self.__div__(right)
 
     def __gt__(self, right):
-        return self._apply_infix(right, _mgr().GT)
+        return self._apply_infix(right, _mgr().GT, _mgr().BVUGT)
 
     def __ge__(self, right):
-        return self._apply_infix(right, _mgr().GE)
+        return self._apply_infix(right, _mgr().GE, _mgr().BVUGE)
 
     def __lt__(self, right):
-        return self._apply_infix(right, _mgr().LT)
+        return self._apply_infix(right, _mgr().LT, _mgr().BVULT)
 
     def __le__(self, right):
-        return self._apply_infix(right, _mgr().LE)
+        return self._apply_infix(right, _mgr().LE, _mgr().BVULE)
 
     def __and__(self, other):
-        return self.And(other)
+        return self._apply_infix(other, _mgr().And, _mgr().BVAnd)
 
     def __rand__(self, other):
-        return self.And(other)
+        return self._apply_infix(other, _mgr().And, _mgr().BVAnd)
 
     def __or__(self, other):
-        return self.Or(other)
+        return self._apply_infix(other, _mgr().Or, _mgr().BVOr)
 
     def __ror__(self, other):
-        return self.Or(other)
+        return self._apply_infix(other, _mgr().Or, _mgr().BVOr)
 
     def __xor__(self, other):
-        return self._apply_infix(other, _mgr().Xor)
+        return self._apply_infix(other, _mgr().Xor, _mgr().BVXor)
+
+    def __rxor__(self, other):
+        return self._apply_infix(other, _mgr().Xor, _mgr().BVXor)
 
     def __neg__(self):
+        if _is_bv(self):
+            return _mgr().BVNeg(self)
         return self._apply_infix(-1, _mgr().Times)
 
     def __invert__(self):
         if not _env().enable_infix_notation:
             raise Exception("Cannot use infix notation")
+        if _is_bv(self):
+            return _mgr().BVNot(self)
         return _mgr().Not(self)
 
     def __int__(self):
@@ -651,6 +728,29 @@ class FNode(object):
             return float(self.constant_value())
         raise NotImplementedError("Cannot convert `%s` to float" % str(self))
 
+    def __getitem__(self, idx):
+        if not _env().enable_infix_notation:
+            raise Exception("Cannot use infix notation")
+        if isinstance(idx, slice):
+            end = idx.stop
+            start = idx.start
+            if start is None: start = 0
+        else:
+            # Single point [idx]
+            end = idx
+            start = idx
+        if _is_bv(self):
+            return _mgr().BVExtract(self, start=start, end=end)
+        raise NotImplementedError
+
+    def __lshift__(self, right):
+        return self._apply_infix(right, None, bv_function=_mgr().BVLShl)
+
+    def __rshift__(self, right):
+        return self._apply_infix(right, None, bv_function=_mgr().BVLShr)
+
+    def __mod__(self, right):
+        return self._apply_infix(right, None, bv_function=_mgr().BVURem)
 # EOC FNode
 
 def _env():
@@ -660,3 +760,8 @@ def _env():
 def _mgr():
     """Aux function to obtain the formula manager."""
     return pysmt.environment.get_env().formula_manager
+
+def _is_bv(node):
+    """Aux function to check if a fnode is a BV."""
+    return (node.is_symbol() and node.symbol_type().is_bv_type()) or \
+            node.node_type() in BV_OPERATORS
