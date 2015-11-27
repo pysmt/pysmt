@@ -24,7 +24,6 @@ from pysmt.exceptions import UnknownSmtLibCommandError
 from pysmt.shortcuts import And
 from pysmt.smtlib.printers import SmtPrinter, SmtDagPrinter, quote
 from pysmt.logics import UFLIRA
-from pysmt.utils import quote
 
 
 def check_sat_filter(log):

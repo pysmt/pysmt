@@ -21,7 +21,7 @@ from pysmt.test import TestCase, main
 from pysmt.shortcuts import And, Or, FALSE, TRUE, FreshSymbol, Solver
 from pysmt.solvers.eager import EagerModel
 from pysmt.typing import REAL, INT
-from pysmt.test import TestCase, skipIfSolverNotAvailable
+from pysmt.test import skipIfSolverNotAvailable
 
 
 class TestEagerModel(TestCase):
