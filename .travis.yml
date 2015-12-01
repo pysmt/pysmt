@@ -36,10 +36,6 @@ addons:
 
 python:
   - 2.6
-#  - 2.7
-#  - 3.4
-#  - pypy
-#  - pypy3
 
 
 # Multiple envs will cause multiple build across multiple python versions.
@@ -62,58 +58,10 @@ env:
 
 matrix:
   fast_finish: true
-  include:
-    - python: 2.7
-      env: PYSMT_SOLVER="z3_wrap"
-
-  exclude:
-    - python: 3.4
-      env: PYSMT_SOLVER="cvc4"
-    - python: 3.4
-      env: PYSMT_SOLVER="yices"
-    - python: 3.4
-      env: PYSMT_SOLVER="bdd"
-    - python: 3.4
-      env: PYSMT_SOLVER="all"
-
-    - python: pypy
-      env: PYSMT_SOLVER="msat"
-    - python: pypy
-      env: PYSMT_SOLVER="z3"
-    - python: pypy
-      env: PYSMT_SOLVER="cvc4"
-    - python: pypy
-      env: PYSMT_SOLVER="yices"
-    - python: pypy
-      env: PYSMT_SOLVER="bdd"
-    - python: pypy
-      env: PYSMT_SOLVER="picosat"
-    - python: pypy
-      env: PYSMT_SOLVER="btor"
-    - python: pypy
-      env: PYSMT_SOLVER="all"
-
-    - python: pypy3
-      env: PYSMT_SOLVER="msat"
-    - python: pypy3
-      env: PYSMT_SOLVER="z3"
-    - python: pypy3
-      env: PYSMT_SOLVER="cvc4"
-    - python: pypy3
-      env: PYSMT_SOLVER="yices"
-    - python: pypy3
-      env: PYSMT_SOLVER="bdd"
-    - python: pypy3
-      env: PYSMT_SOLVER="picosat"
-    - python: pypy3
-      env: PYSMT_SOLVER="btor"
-    - python: 2.6
-      env: PYSMT_SOLVER="all"
 
 install:
-  # This is for btor that fails to find the python 3 library to link
-  - "export LIBRARY_PATH=${LIBRARY_PATH}:/opt/python/3.4.2/lib"
   - "pip install six"
+  - "pip install unittest2"
   - if [ "${PYSMT_SOLVER}" == "all" ] || [ "${PYSMT_SOLVER}" == "btor" ]; then pip install cython; fi
   - "export BINDINGS_FOLDER=${HOME}/python_bindings/${PYSMT_SOLVER}"
   - "mkdir -p ${BINDINGS_FOLDER}"
