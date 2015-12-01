@@ -148,7 +148,7 @@ class SmtLibSolver(Solver):
                 assignment[s] = v
         return EagerModel(assignment=assignment, environment=self.environment)
 
-    def exit(self):
+    def _exit(self):
         self._send_command(SmtLibCommand(smtcmd.EXIT, []))
         self.solver_stdin.close()
         self.solver_stdout.close()

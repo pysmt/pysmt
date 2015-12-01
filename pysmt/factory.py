@@ -32,6 +32,7 @@ from pysmt.exceptions import (NoSolverAvailableError, SolverRedefinitionError,
 from pysmt.logics import QF_UFLIRA, LRA, QF_UFLRA
 from pysmt.logics import AUTO as AUTO_LOGIC
 from pysmt.logics import most_generic_logic, get_closer_logic
+from pysmt.logics import convert_logic_from_string
 from pysmt.oracles import get_logic
 from pysmt.solvers.qelim import ShannonQuantifierEliminator
 
@@ -132,13 +133,13 @@ class Factory(object):
                            logic=closer_logic)
 
     def get_interpolator(self, name=None, logic=None):
-        SolverClass, closer_logic = self._get_solver_class(
-            solver_list=self._all_interpolators,
-            solver_type="Interpolator",
-            preference_list=self.interpolation_preference_list,
-            default_logic=self._default_interpolation_logic,
-            name=name,
-            logic=logic)
+        SolverClass, closer_logic = \
+           self._get_solver_class(solver_list=self._all_interpolators,
+                                  solver_type="Interpolator",
+                                  preference_list=self.interpolation_preference_list,
+                                  default_logic=self._default_interpolation_logic,
+                                  name=name,
+                                  logic=logic)
 
         return SolverClass(environment=self.environment,
                            logic=closer_logic)
@@ -149,6 +150,7 @@ class Factory(object):
         if len(solver_list) == 0:
             raise NoSolverAvailableError("No %s is available" % solver_type)
 
+        logic = convert_logic_from_string(logic)
         if name is not None:
             if name not in solver_list:
                 raise NoSolverAvailableError("%s '%s' is not available" % \

@@ -59,8 +59,6 @@ init()
 def cleanup():
     libyices.yices_exit()
 
-
-
 # Yices constants
 STATUS_UNKNOWN = 2
 STATUS_SAT = 3
@@ -83,6 +81,7 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         self.converter = YicesConverter(environment)
         self.mgr = environment.formula_manager
         self.model = None
+        self.failed_pushes = 0
         return
 
     @clear_pending_pop
@@ -99,7 +98,10 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         self._assert_is_boolean(formula)
         term = self.converter.convert(formula)
         code = libyices.yices_assert_formula(self.yices, term)
-        assert code == 0, "Yices returned non-zero code (" + str(code) + "): " + str(formula)
+        if code != 0:
+            raise InternalSolverError("Yices returned non-zero code upon assert"\
+                                      ": %s (code: %s)" % \
+                                      (libyices.yices_error_string(), code))
 
     def get_model(self):
         assignment = {}
@@ -139,13 +141,28 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
     def push(self, levels=1):
         for _ in xrange(levels):
             c = libyices.yices_push(self.yices)
-            assert c == 0
+            if c != 0:
+                # 4 is STATUS_UNSAT
+                if libyices.yices_context_status(self.yices) == 4:
+                    # Yices fails to push if the context is in UNSAT state
+                    # (It makes no sense to conjoin formulae to False)
+                    # PySMT allows this and we support it by counting the
+                    # spurious push calls
+                    self.failed_pushes += 1
+                else:
+                    raise InternalSolverError("Error in push: %s" % \
+                                              libyices.yices_error_string())
 
     @clear_pending_pop
     def pop(self, levels=1):
         for _ in xrange(levels):
-            c = libyices.yices_pop(self.yices)
-            assert c == 0
+            if self.failed_pushes > 0:
+                self.failed_pushes -= 1
+            else:
+                c = libyices.yices_pop(self.yices)
+                if c != 0:
+                    raise InternalSolverError("Error in pop: %s" % \
+                                              libyices.yices_error_string())
 
     def print_model(self, name_filter=None):
         for var in self.declarations:
@@ -167,7 +184,10 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
             yval = libyices.yval_t()
             status = libyices.yices_get_value(self.model, titem,
                                               ctypes.byref(yval))
-            assert status == 0, "Failed to read the variable from the model"
+            if status != 0:
+                raise InternalSolverError("Failed to read the variable from " \
+                                          "the model: %s" % \
+                                          libyices.yices_error_string())
 
             if ty.is_int_type():
                 if libyices.yices_val_is_int64(self.model,
@@ -203,12 +223,8 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
             else:
                 raise NotImplementedError()
 
-
-    def exit(self):
-        if not self._destroyed:
-            libyices.yices_free_context(self.yices)
-            self._destroyed = True
-
+    def _exit(self):
+        libyices.yices_free_context(self.yices)
 
     def _get_yices_value(self, term, term_type, getter_func):
         status = getter_func(
@@ -216,7 +232,10 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
             term,
             ctypes.byref(term_type)
         )
-        assert status == 0, "Failed to read the variable from the model"
+        if status != 0:
+            raise InternalSolverError("Failed to read the variable from " \
+                                      "the model: %s" % \
+                                      libyices.yices_error_string())
         return term_type.value
 
     def _get_yices_rational_value(self, term):
@@ -227,9 +246,12 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
             term,
             ctypes.byref(n),
             ctypes.byref(d))
-        assert status == 0, "Failed to read the variable from the model"
-        return Fraction(n.value, d.value)
 
+        if status != 0:
+            raise InternalSolverError("Failed to read the variable from " \
+                                      "the model: %s" % \
+                                      libyices.yices_error_string())
+        return Fraction(n.value, d.value)
 
 
 class YicesConverter(Converter, DagWalker):

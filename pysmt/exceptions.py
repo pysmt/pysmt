@@ -102,3 +102,14 @@ class UnsupportedOperatorError(Exception):
 class SolverAPINotFound(Exception):
     """The Python API of the selected solver cannot be found."""
     pass
+
+
+class UndefinedSymbolError(Exception):
+    """The given Symbol is not in the FormulaManager."""
+
+    def __init__(self, name):
+        Exception.__init__(self)
+        self.name = name
+
+    def __str__(self):
+        return "'%s' is not defined!" % self.name

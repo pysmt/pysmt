@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # Copyright 2014 Andrea Micheli and Marco Gario
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,6 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import pysmt.cmd.install
 
-pysmt.cmd.install.main()
+#pylint: disable=unused-import
+from pysmt.cmd.installers.msat import MSatInstaller
+from pysmt.cmd.installers.z3 import Z3Installer
+from pysmt.cmd.installers.cvc4 import CVC4Installer
+from pysmt.cmd.installers.yices import YicesInstaller
+from pysmt.cmd.installers.btor import BtorInstaller
+from pysmt.cmd.installers.pico import PicoSATInstaller
+from pysmt.cmd.installers.bdd import CuddInstaller

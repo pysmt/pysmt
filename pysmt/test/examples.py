@@ -33,7 +33,7 @@ from pysmt.shortcuts import (Symbol, Function,
                              BVNeg, BVAdd, BVMul, BVUDiv, BVURem, BVSub,
                              BVLShl, BVLShr,BVRol, BVRor,
                              BVZExt, BVSExt, BVSub, BVComp, BVAShr, BVSLE,
-                             BVSLT, BVSDiv, BVSRem)
+                             BVSLT, BVSGT, BVSGE, BVSDiv, BVSRem)
 from pysmt.typing import REAL, BOOL, INT, FunctionType, BV8, BV16
 
 
@@ -364,6 +364,13 @@ def get_example_formulae(environment=None):
                     is_valid=False,
                     is_sat=True,
                     logic=pysmt.logics.QF_BV),
+
+            # (0_16 >s bv16 | bv16 >= 0_16)
+            Example(expr=Or(BVSGT(BVZero(16), bv16), BVSGE(bv16, BVZero(16))),
+                    is_valid=True,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_BV),
+
 
             # (bv16 u< bv16)
             Example(expr=BVULT(bv16, bv16),

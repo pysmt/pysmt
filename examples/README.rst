@@ -1,8 +1,7 @@
 Examples
 ========
 
-This directory contains examples to get you started using
-pySMT. Suggested order:
+This directory contains examples to get you started using pySMT. Suggested order:
 
 1. `basic.py </examples/basic.py>`_ : First example of the README
 2. `puzzle.py </examples/puzzle.py>`_ : Hello World word puzzle
@@ -15,3 +14,5 @@ pySMT. Suggested order:
 9. `allsmt.py </examples/allsmt.py>`_ : How to detect the logic of a formula and perform model enumeration.
 10. `sudoku/ </examples/sudoku/>`_ : Solves sudoku problems using a simple encoding using either QF_LIA or QF_BV
 11. `parallel.py </examples/parallel.py>`_ : Shows how to use multi-processing to perform parallel and asynchronous solving
+12. `smtlib.py </examples/smtlib.py>`_ : Demonstrates how to perform SMT-LIB parsing, dumping and extension
+13. `einstein.py </examples/einstein.py>`_ : Shows the use of UNSAT Core as debugging tools

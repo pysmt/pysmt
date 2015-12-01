@@ -123,10 +123,8 @@ class BoolectorSolver(IncrementalTrackingSolver,
         else:
             return self.mgr.Bool(bool(int(titem.assignment)))
 
-    def exit(self):
-        if not self._destroyed:
-            self._destroyed = True
-            del self.btor
+    def _exit(self):
+        del self.btor
 
 
 class BTORConverter(Converter, DagWalker):

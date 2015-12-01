@@ -5,18 +5,16 @@ sudo: false
 cache:
   apt: true
   directories:
-  - ${TRAVIS_BUILD_DIR}/.smt_solvers/z3_bin
-  - ${TRAVIS_BUILD_DIR}/.smt_solvers/z3
-  - ${TRAVIS_BUILD_DIR}/.smt_solvers/CVC4_bin
-  - ${TRAVIS_BUILD_DIR}/.smt_solvers/picosat-960
-  - ${TRAVIS_BUILD_DIR}/.smt_solvers/repycudd-4861f4df8abc2ca205a6a09b30fdc8cfd29f6ebb
-  - ${TRAVIS_BUILD_DIR}/.smt_solvers/boolector-2.1.1-with-lingeling-b85
-  - ${TRAVIS_BUILD_DIR}/.smt_solvers/pyices-aa0b91c39aa00c19c2160e83aad822dc468ce328
-  - ${TRAVIS_BUILD_DIR}/.smt_solvers/yices-2.3.0
-  - ${TRAVIS_BUILD_DIR}/.smt_solvers/yices_bin
-  - ${TRAVIS_BUILD_DIR}/.smt_solvers/mathsat-5.3.8-linux-x86_64
-  - ${HOME}/.local/lib/python${TRAVIS_PYTHON_VERSION}/site-packages
-  - $HOME/.cache/pip
+  - ${HOME}/.smt_solvers/btor
+  - ${HOME}/.cache/pip
+  - ${HOME}/python_bindings/all
+  - ${HOME}/python_bindings/msat
+  - ${HOME}/python_bindings/z3
+  - ${HOME}/python_bindings/cvc4
+  - ${HOME}/python_bindings/yices
+  - ${HOME}/python_bindings/bdd
+  - ${HOME}/python_bindings/picosat
+  - ${HOME}/python_bindings/btor
 
 addons:
   apt:
@@ -57,7 +55,7 @@ env:
     - PYSMT_SOLVER="z3"
     - PYSMT_SOLVER="cvc4"
     - PYSMT_SOLVER="yices"
-    - PYSMT_SOLVER="cudd"
+    - PYSMT_SOLVER="bdd"
     - PYSMT_SOLVER="picosat"
     - PYSMT_SOLVER="btor"
     - PYSMT_SOLVER="msat_wrap"
@@ -69,75 +67,60 @@ matrix:
       env: PYSMT_SOLVER="z3_wrap"
 
   exclude:
-    # - python: 3.4
-    #   env: PYSMT_SOLVER="z3"
-    # - python: 3.4
-    #   env: PYSMT_SOLVER="cvc4"
-    # - python: 3.4
-    #   env: PYSMT_SOLVER="yices"
-    # - python: 3.4
-    #   env: PYSMT_SOLVER="cudd"
-    # - python: 3.4
-    #   env: PYSMT_SOLVER="all"
+    - python: 3.4
+      env: PYSMT_SOLVER="cvc4"
+    - python: 3.4
+      env: PYSMT_SOLVER="yices"
+    - python: 3.4
+      env: PYSMT_SOLVER="bdd"
+    - python: 3.4
+      env: PYSMT_SOLVER="all"
 
-    # - python: pypy
-    #   env: PYSMT_SOLVER="msat"
-    # - python: pypy
-    #   env: PYSMT_SOLVER="z3"
-    # - python: pypy
-    #   env: PYSMT_SOLVER="cvc4"
-    # - python: pypy
-    #   env: PYSMT_SOLVER="yices"
-    # - python: pypy
-    #   env: PYSMT_SOLVER="cudd"
-    # - python: pypy
-    #   env: PYSMT_SOLVER="picosat"
-    # - python: pypy
-    #   env: PYSMT_SOLVER="btor"
-    # - python: pypy
-    #   env: PYSMT_SOLVER="all"
+    - python: pypy
+      env: PYSMT_SOLVER="msat"
+    - python: pypy
+      env: PYSMT_SOLVER="z3"
+    - python: pypy
+      env: PYSMT_SOLVER="cvc4"
+    - python: pypy
+      env: PYSMT_SOLVER="yices"
+    - python: pypy
+      env: PYSMT_SOLVER="bdd"
+    - python: pypy
+      env: PYSMT_SOLVER="picosat"
+    - python: pypy
+      env: PYSMT_SOLVER="btor"
+    - python: pypy
+      env: PYSMT_SOLVER="all"
 
-    # - python: pypy3
-    #   env: PYSMT_SOLVER="msat"
-    # - python: pypy3
-    #   env: PYSMT_SOLVER="z3"
-    # - python: pypy3
-    #   env: PYSMT_SOLVER="cvc4"
-    # - python: pypy3
-    #   env: PYSMT_SOLVER="yices"
-    # - python: pypy3
-    #   env: PYSMT_SOLVER="cudd"
-    # - python: pypy3
-    #   env: PYSMT_SOLVER="picosat"
-    # - python: pypy3
-    #   env: PYSMT_SOLVER="btor"
-    # - python: pypy3
-    #   env: PYSMT_SOLVER="all"
-
-    # - python: 2.6
-    #   env: PYSMT_SOLVER="z3"
-    # - python: 2.6
-    #   env: PYSMT_SOLVER="cvc4"
-    # - python: 2.6
-    #   env: PYSMT_SOLVER="yices"
-    # - python: 2.6
-    #   env: PYSMT_SOLVER="cudd"
-    # - python: 2.6
-    #   env: PYSMT_SOLVER="picosat"
-    # Btor uses the sysconfig module that is not present in Python 2.6
-    - python: 2.6
+    - python: pypy3
+      env: PYSMT_SOLVER="msat"
+    - python: pypy3
+      env: PYSMT_SOLVER="z3"
+    - python: pypy3
+      env: PYSMT_SOLVER="cvc4"
+    - python: pypy3
+      env: PYSMT_SOLVER="yices"
+    - python: pypy3
+      env: PYSMT_SOLVER="bdd"
+    - python: pypy3
+      env: PYSMT_SOLVER="picosat"
+    - python: pypy3
       env: PYSMT_SOLVER="btor"
     - python: 2.6
       env: PYSMT_SOLVER="all"
 
-
 install:
-  - pip install six
-  - if [ ${TRAVIS_PYTHON_VERSION} == "2.6" ]; then pip install unittest2; fi
-  - source ./travis.sh
-
+  # This is for btor that fails to find the python 3 library to link
+  - "export LIBRARY_PATH=${LIBRARY_PATH}:/opt/python/3.4.2/lib"
+  - "pip install six"
+  - if [ "${PYSMT_SOLVER}" == "all" ] || [ "${PYSMT_SOLVER}" == "btor" ]; then pip install cython; fi
+  - "export BINDINGS_FOLDER=${HOME}/python_bindings/${PYSMT_SOLVER}"
+  - "mkdir -p ${BINDINGS_FOLDER}"
+  - "python install.py --confirm-agreement --bindings-path ${BINDINGS_FOLDER}"
+  - "eval `python install.py --env --bindings-path ${BINDINGS_FOLDER}`"
 
 script:
-  - env
-  - python install.py --check
-  - nosetests pysmt -v
+  - "echo ${PYTHONPATH}"
+  - "python install.py --check"
+  - "nosetests pysmt -v"

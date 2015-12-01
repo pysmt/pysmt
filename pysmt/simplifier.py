@@ -32,6 +32,7 @@ class Simplifier(pysmt.walkers.DagWalker):
                           op.INT_CONSTANT, op.BOOL_CONSTANT, op.BV_CONSTANT)
 
         self._validate_simplifications = None
+        self.original_walk = self.walk
 
     @property
     def validate_simplifications(self):
@@ -43,7 +44,7 @@ class Simplifier(pysmt.walkers.DagWalker):
             self.walk = self.walk_debug
         else:
             # Restore original walk method
-            self.walk = type(Simplifier.walk)(Simplifier.walk, self, Simplifier)
+            self.walk = self.original_walk
 
         self._validate_simplifications = value
 

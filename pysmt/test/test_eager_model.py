@@ -18,9 +18,11 @@
 from six.moves import xrange
 
 from pysmt.test import TestCase, main
-from pysmt.shortcuts import And, Or, FALSE, TRUE, FreshSymbol
+from pysmt.shortcuts import And, Or, FALSE, TRUE, FreshSymbol, Solver
 from pysmt.solvers.eager import EagerModel
 from pysmt.typing import REAL, INT
+from pysmt.test import TestCase, skipIfSolverNotAvailable
+
 
 class TestEagerModel(TestCase):
 
@@ -89,6 +91,18 @@ class TestEagerModel(TestCase):
         model = EagerModel(assignment=d)
         self.assertTrue(x in model)
         self.assertFalse(z in model)
+
+    @skipIfSolverNotAvailable("z3")
+    def test_warp_solvermodel(self):
+        x, y, z = [FreshSymbol() for _ in xrange(3)]
+        with Solver(name='z3') as solver:
+            solver.add_assertion(And(x,y,z))
+            solver.solve()
+            z3_model = solver.get_model()
+            eager_model = EagerModel(z3_model)
+            for var, value  in eager_model:
+                self.assertIn(var, [x,y,z])
+                self.assertEquals(value, TRUE())
 
 if __name__ == '__main__':
     main()

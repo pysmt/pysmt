@@ -18,7 +18,7 @@
 import os
 from nose.plugins.attrib import attr
 
-from pysmt.shortcuts import Implies, is_sat, is_valid, reset_env
+from pysmt.shortcuts import Implies, is_sat, reset_env, Symbol, Iff
 from pysmt.rewritings import CNFizer
 from pysmt.logics import QF_BOOL, QF_LRA, QF_LIA, QF_UFLIRA
 from pysmt.test import TestCase, skipIfNoSolverForLogic, main
@@ -89,6 +89,16 @@ class TestCnf(TestCase):
 
         res = is_sat(cnf, logic=logic)
         self.assertEqual(res, res_is_sat)
+
+    @skipIfNoSolverForLogic(QF_BOOL)
+    def test_implies(self):
+        a,b,c,d = (Symbol(x) for x in "abcd")
+        f = Implies(Iff(a, b), Iff(c, d))
+
+        conv = CNFizer()
+        cnf = conv.convert_as_formula(f)
+
+        self.assertValid(Implies(cnf, f), logic=QF_BOOL)
 
 if __name__ == '__main__':
     main()

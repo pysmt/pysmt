@@ -71,7 +71,6 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
         self.converter = MSatConverter(environment, self.msat_env)
         return
 
-
     def _prepare_config(self, options, debugFile=None):
         """Sets the relevant options in self.msat_config"""
         if options.generate_models:
@@ -94,7 +93,6 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
 
         mathsat.msat_set_option(self.msat_config,
                                 "theory.bv.div_by_zero_mode", "0")
-
 
     @clear_pending_pop
     def _reset_assertions(self):
@@ -174,7 +172,6 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
 
         return (res == mathsat.MSAT_SAT)
 
-
     def _check_unsat_core_config(self):
         if self.options.unsat_cores_mode is None:
             raise SolverNotConfiguredForUnsatCoresError
@@ -187,7 +184,6 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
             raise SolverStatusError("The solver status has been modified by a" \
                                     " '%s' command after the last call to" \
                                     " solve()" % self.last_command)
-
 
     def get_unsat_core(self):
         """After a call to solve() yielding UNSAT, returns the unsat core as a
@@ -202,7 +198,6 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
             return set(self.converter.back(t) for t in terms)
         else:
             return self.get_named_unsat_core().values()
-
 
     def get_named_unsat_core(self):
         """After a call to solve() yielding UNSAT, returns the unsat core as a
@@ -252,12 +247,10 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
         titem = mathsat.msat_make_term(self.msat_env, decl, [])
         return titem
 
-
     def set_preferred_var(self, var):
         tvar = self.converter.convert(var)
         mathsat.msat_add_preferred_for_branching(self.msat_env, tvar)
         return
-
 
     def print_model(self, name_filter=None):
         if name_filter is not None:
@@ -310,12 +303,9 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
         mathsat.msat_destroy_model_iterator(msat_iterator)
         return EagerModel(assignment=assignment, environment=self.environment)
 
-
-    def exit(self):
-        if not self._destroyed:
-            self._destroyed = True
-            mathsat.msat_destroy_env(self.msat_env)
-            mathsat.msat_destroy_config(self.msat_config)
+    def _exit(self):
+        mathsat.msat_destroy_env(self.msat_env)
+        mathsat.msat_destroy_config(self.msat_config)
 
 
 class MSatConverter(Converter, DagWalker):
@@ -380,7 +370,6 @@ class MSatConverter(Converter, DagWalker):
                 assert "_" in str(term), "Unrecognized type for '%s'" % str(term)
                 width = int(str(term).split("_")[1])
                 res = types.BVType(width)
-
 
         elif mathsat.msat_term_is_and(self.msat_env, term) or \
              mathsat.msat_term_is_or(self.msat_env, term) or \
@@ -574,7 +563,6 @@ class MSatConverter(Converter, DagWalker):
                 _, width = mathsat.msat_is_bv_type(self.msat_env, ty)
                 assert width is not None, "Unsupported variable type for '%s'"%str(term)
                 res = mgr.Symbol(rep, types.BVType(width))
-
 
         elif mathsat.msat_term_is_uf(self.msat_env, term):
             d = mathsat.msat_term_get_decl(term)
@@ -1004,32 +992,28 @@ if hasattr(mathsat, "MSAT_EXIST_ELIM_ALLSMT_FM"):
         LOGICS = [LRA]
 
         def __init__(self, environment, logic=None, algorithm='fm'):
-            """Algorithm can be either 'fm' (for Fourier-Motzkin) or 'lw' (for
-               Loos-Weisspfenning)"""
+            """Initialize the Quantifier Eliminator using 'fm' or 'lw'.
 
+            fm: Fourier-Motzkin (default)
+            lw: Loos-Weisspfenning
+            """
+            if algorithm not in ['fm', 'lw']:
+                raise ValueError("Algorithm can be either 'fm' or 'lw'")
+            QuantifierEliminator.__init__(self)
             IdentityDagWalker.__init__(self, env=environment)
 
             self.set_function(self.walk_identity, op.SYMBOL, op.REAL_CONSTANT,
                               op.BOOL_CONSTANT, op.INT_CONSTANT)
-
             self.logic = logic
-
-            assert algorithm in ['fm', 'lw']
             self.algorithm = algorithm
 
             self.msat_config = mathsat.msat_create_default_config("QF_LRA")
             self.msat_env = mathsat.msat_create_env(self.msat_config)
             self.converter = MSatConverter(environment, self.msat_env)
-            self._destroyed = False
-
 
         def eliminate_quantifiers(self, formula):
-            """
-            Returns a quantifier-free equivalent formula of the given
-            formula
-            """
+            """Returns a quantifier-free equivalent formula of `formula`."""
             return self.walk(formula)
-
 
         def exist_elim(self, variables, formula):
             logic = get_logic(formula, self.env)
@@ -1063,11 +1047,9 @@ if hasattr(mathsat, "MSAT_EXIST_ELIM_ALLSMT_FM"):
             subf = args[0]
             return self.exist_elim(variables, subf)
 
-        def __del__(self):
-            if not self._destroyed:
-                self._destroyed = True
-                mathsat.msat_destroy_env(self.msat_env)
-                mathsat.msat_destroy_config(self.msat_config)
+        def _exit(self):
+            mathsat.msat_destroy_env(self.msat_env)
+            mathsat.msat_destroy_config(self.msat_config)
 
 
     class MSatFMQuantifierEliminator(MSatQuantifierEliminator):
@@ -1087,15 +1069,14 @@ class MSatInterpolator(Interpolator):
     LOGICS = [QF_UFLIA, QF_UFLRA, QF_BV]
 
     def __init__(self, environment, logic=None):
+        Interpolator.__init__(self)
         self.msat_env = mathsat.msat_create_env()
         self.converter = MSatConverter(environment, self.msat_env)
         self.environment = environment
         self.logic = logic
 
-
-    def __del__(self):
+    def _exit(self):
         mathsat.msat_destroy_env(self.msat_env)
-
 
     def _check_logic(self, formulas):
         for f in formulas:

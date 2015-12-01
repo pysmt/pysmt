@@ -22,9 +22,7 @@ try:
 except ImportError:
     raise SolverAPINotFound
 
-
 import pysmt.logics
-
 from pysmt import typing as types
 from pysmt.solvers.solver import Solver
 from pysmt.solvers.eager import EagerModel
@@ -33,6 +31,7 @@ from pysmt.decorators import clear_pending_pop, catch_conversion_error
 
 from six.moves import xrange
 from six import iteritems
+
 
 class PicosatSolver(Solver):
     """PicoSAT solver"""
@@ -163,7 +162,5 @@ class PicosatSolver(Solver):
         for _ in xrange(levels):
             picosat.picosat_pop(self.pico)
 
-    def exit(self):
-        if not self._destroyed:
-            self._destroyed = True
-            picosat.picosat_reset(self.pico)
+    def _exit(self):
+        picosat.picosat_reset(self.pico)
