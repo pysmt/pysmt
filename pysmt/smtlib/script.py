@@ -23,7 +23,8 @@ import pysmt.smtlib.commands as smtcmd
 from pysmt.exceptions import UnknownSmtLibCommandError
 from pysmt.shortcuts import And
 from pysmt.smtlib.printers import SmtPrinter, SmtDagPrinter, quote
-from pysmt.logics import UFLIRA
+from pysmt.oracles import get_logic
+from pysmt.logics import get_closer_smtlib_logic
 
 
 def check_sat_filter(log):
@@ -211,8 +212,11 @@ class SmtLibScript(object):
 def smtlibscript_from_formula(formula):
     script = SmtLibScript()
 
+    # Get the simplest SmtLib logic that contains the formula
+    f_logic = get_logic(formula)
+    smt_logic = get_closer_smtlib_logic(f_logic)
     script.add(name=smtcmd.SET_LOGIC,
-               args=[UFLIRA])
+               args=[smt_logic])
 
     deps = formula.get_free_variables()
     # Declare all variables
