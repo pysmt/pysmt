@@ -136,7 +136,7 @@ def tokenizer(handle, interactive=False):
     a SMT-Lib2-compliant solver
     """
     spaces = set([" ", "\n", "\t"])
-    separators = set(["(", ")", "|"])
+    separators = set(["(", ")", "|", "\""])
     specials = spaces | separators | set([";", ""])
 
     if not interactive:
@@ -168,9 +168,30 @@ def tokenizer(handle, interactive=False):
                     if not c:
                         raise SyntaxError("Expected '|'")
                     yield ("".join(s))
+                    c = next(reader)
+
+                elif c == "\"":
+                    # String literals
+                    s = []
+                    c = next(reader)
+                    while c:
+                        if c == "\"":
+                            c = next(reader)
+                            if c == "\"":
+                                s.append(c)
+                                c = next(reader)
+                            else:
+                                break
+                        else:
+                            s.append(c)
+                            c = next(reader)
+                    if not c:
+                        raise SyntaxError("Expected '|'")
+                    yield '"%s"' % ("".join(s)) # string literals maintain their quoting
+
                 else:
                     yield c
-                c = next(reader)
+                    c = next(reader)
 
             elif c == ";":
                 while c and c != "\n":
@@ -976,7 +997,8 @@ class SmtLibParser(object):
 
     def _cmd_echo(self, current, tokens):
         """(echo <string>)"""
-        return self._cmd_not_implemented(current, tokens)
+        elements = self.parse_atoms(tokens, current, 1)
+        return SmtLibCommand(current, elements)
 
     def _cmd_get_assignment(self, current, tokens):
         """(get-assignment)"""

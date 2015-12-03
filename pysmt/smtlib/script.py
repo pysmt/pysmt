@@ -281,6 +281,10 @@ def evaluate_command(cmd, solver):
         (var, formals, typename, body) = cmd.args
         return solver.define_fun(var, formals, typename, body)
 
+    elif cmd.name == smtcmd.ECHO:
+        print(cmd.args[0])
+        return None
+
     elif cmd.name in smtcmd.ALL_COMMANDS:
         raise NotImplementedError("'%s' is a valid SMT-LIB command "\
                                   "but it is currently not supported. "\

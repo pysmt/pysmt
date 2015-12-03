@@ -133,13 +133,11 @@ class TestSmtLibScript(TestCase):
         nie = 0
         for cmd in DEMO_SMTSCRIPT:
             try:
-                out = next(parser.get_command_generator(cStringIO(cmd)))
-                #print(out)
+                next(parser.get_command_generator(cStringIO(cmd)))
             except NotImplementedError:
-                #print(cmd)
                 nie += 1
-        # There are currently 10 not-implemented commands
-        self.assertEquals(nie, 9)
+        # There are currently 8 not-implemented commands
+        self.assertEquals(nie, 8)
 
 DEMO_SMTSCRIPT = [ "(declare-fun a () Bool)",
                    "(declare-fun b () Bool)",
@@ -163,7 +161,7 @@ DEMO_SMTSCRIPT = [ "(declare-fun a () Bool)",
                    """,
                    "(define-sort A () B)",
                    "(define-sort A (B C) (Array B C))",
-                   "(echo 'hello world')",
+                   "(echo \"hello world\")",
                    "(exit)",
                    "(get-assertions)",
                    "(get-assignment)",
