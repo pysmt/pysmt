@@ -285,6 +285,9 @@ def evaluate_command(cmd, solver):
         print(cmd.args[0])
         return None
 
+    elif cmd.name == smtcmd.CHECK_SAT_ASSUMING:
+        return solver.check_sat(cmd.args)
+
     elif cmd.name in smtcmd.ALL_COMMANDS:
         raise NotImplementedError("'%s' is a valid SMT-LIB command "\
                                   "but it is currently not supported. "\

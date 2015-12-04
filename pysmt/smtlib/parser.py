@@ -985,7 +985,9 @@ class SmtLibParser(object):
 
     def _cmd_check_sat_assuming(self, current, tokens):
         """(check-sat-assuming (<prop_literal>*) ) """
-        return self._cmd_not_implemented(current, tokens)
+        params = self.parse_expr_list(tokens, current)
+        self.consume_closing(tokens, current)
+        return SmtLibCommand(current, params)
 
     def _cmd_define_fun_rec(self, current, tokens):
         """(define-fun-rec <fun_def>)"""

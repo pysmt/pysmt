@@ -136,8 +136,8 @@ class TestSmtLibScript(TestCase):
                 next(parser.get_command_generator(cStringIO(cmd)))
             except NotImplementedError:
                 nie += 1
-        # There are currently 8 not-implemented commands
-        self.assertEquals(nie, 8)
+        # There are currently 6 not-implemented commands
+        self.assertEquals(nie, 6)
 
 DEMO_SMTSCRIPT = [ "(declare-fun a () Bool)",
                    "(declare-fun b () Bool)",
