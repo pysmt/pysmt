@@ -26,7 +26,7 @@ try:
 except ImportError:
     raise SolverAPINotFound
 
-from pysmt.logics import PYSMT_QF_LOGICS
+from pysmt.logics import PYSMT_LOGICS
 from pysmt.solvers.solver import Solver, Converter
 from pysmt.exceptions import SolverReturnedUnknownResultError
 from pysmt.walkers import DagWalker
@@ -36,7 +36,7 @@ from pysmt.decorators import catch_conversion_error
 
 
 class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
-    LOGICS = PYSMT_QF_LOGICS
+    LOGICS = PYSMT_LOGICS
 
     def __init__(self, environment, logic, user_options):
         Solver.__init__(self,
@@ -382,6 +382,6 @@ class CVC4Converter(Converter, DagWalker):
         new_var_list = [mkBoundVar(x.symbol_name(),
                                    self._type_to_cvc4(x.symbol_type())) \
                         for x in variables]
-        old_var_list = [self.walk_symbol(x, []) for x in variables]
+        old_var_list = [self.walk_symbol(x) for x in variables]
         new_formula = formula.substitute(old_var_list, new_var_list)
         return (new_formula, new_var_list)
