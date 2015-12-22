@@ -28,7 +28,7 @@ from pysmt.cmd.installers import CuddInstaller
 
 # Build a list of installers, one for each solver
 Installer = namedtuple("Installer", ["InstallerClass", "version", "extra_params"])
-INSTALLERS = [Installer(MSatInstaller,    "5.3.8", {}),
+INSTALLERS = [Installer(MSatInstaller,    "5.3.9", {}),
               Installer(Z3Installer,      "4.4.1", {}),
               Installer(CVC4Installer,    "1.5-prerelease", {"git_version" : "68f22235a62f5276b206e9a6692a85001beb8d42"}),
               Installer(YicesInstaller,   "2.3.0", {}),
