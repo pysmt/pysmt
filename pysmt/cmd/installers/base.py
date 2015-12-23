@@ -214,20 +214,26 @@ class SolverInstaller(object):
         os.mkdir(path)
 
     @staticmethod
-    def mv(source_file, dest):
+    def mv(source, dest):
         """Similarly to the UNIX mv command, moves / renames source_file in
         dest (if dest is a file name) otherwise moves source_file in
         the directory dest
         """
         if os.path.isdir(dest):
-            fname = os.path.basename(source_file)
-            dest_file = os.path.join(dest, fname)
-        else:
-            dest_file = dest
+            dest = os.path.join(dest, os.path.basename(source))
 
-        if os.path.isfile(dest_file):
-            os.unlink(dest_file)
-        os.rename(source_file, dest_file)
+        if os.path.isdir(source):
+            if os.path.exists(dest):
+                if os.path.isdir(dest):
+                    shutil.rmtree(dest, ignore_errors=True)
+                else:
+                    os.unlink(dest)
+            shutil.copytree(source, dest, symlinks=True)
+            shutil.rmtree(source, ignore_errors=True)
+        else:
+            shutil.copy(source, dest)
+            os.unlink(source)
+
 
     @staticmethod
     def untar(fname, directory, mode='r:gz'):
