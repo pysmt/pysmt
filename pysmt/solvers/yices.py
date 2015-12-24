@@ -216,7 +216,7 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
             elif ty.is_bv_type():
                 width = ty.width
                 res = (ctypes.c_int32 * width)()
-                libyices.yices_val_get_bv(self.model, ctypes.byref(yval), res)
+                libyices.yices_get_bv_value(self.model, titem, res)
                 str_val = "".join(str(x) for x in reversed(res))
                 return self.mgr.BV("#b" + str_val)
 
