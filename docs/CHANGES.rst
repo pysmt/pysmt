@@ -1,17 +1,31 @@
 Change Log
 ==========
 
-0.4.3: XXX-XX-XX -- YYYYYY
---------------------------
+0.4.3: 2015-12-28 -- Installers and HR Parsing
+----------------------------------------------
 
 General:
 
-* pysmt.parsing: Added parser for HR expressions
+* pysmt.parsing: Added parser for Human Readable expressions
+* pysmt-install: new installer engine
+* Most General Substitution: Introduced new Substituter, that performs
+top-down substitution. This will become the default in version 0.5.
+* Improved compliance with SMT-LIB 2 and 2.5
+* EagerModel can now take a solver model in input
+* Introduce new exception 'UndefinedSymbolError' when trying to access
+  a symbol that is not defined.
+* Logic names can now be passed to shortcuts methods (e.g., is_sat) as
+  a string
 
 
 Solvers:
 
+* MathSAT: Upgraded to version 5.3.9, including support for new
+  detachable model feature. Thanks to **Alberto Griggio** for
+  contributing this code.
 * Shannon: Quantifier Elimination based on shannon expansion (shannon).
+* Improved handling of Context ('with' statement), exit and __del__ in
+  Solvers.
 
 
 Testing:
@@ -22,16 +36,26 @@ Testing:
   tests that need to be executable only need to import
   pysmt.test.main.
 
+
 Bugfix:
 
 * #184:  MathSAT: Handle UF with boolean args
   Fixed incorrect handling of UF with bool arguments when using
   MathSAT. The converter now takes care of rewriting the formula.
+* #188: Auto-conversion of 0-ary functions to symbols
+* #204: Improved quoting in SMT-LIB output
+* Yices: Fixed a bug in push() method
+* Fixed bug in Logic name dumping for SMT-LIB
+* Fixed bug in Simplifier.walk_plus
+* Fixed bug in CNF Converter (Thanks to Sergio Mover for pointing this out)
+
 
 Examples:
 
 * parallel.py: Shows how to use multi-processing to perform parallel and asynchronous solving
 * smtlib.py: Demonstrates how to perform SMT-LIB parsing, dumping and extension
+* einstein.py: Einstein Puzzle with example of debugging using UNSAT-Cores.
+
 
 
 0.4.2: 2015-10-12 -- Boolector
