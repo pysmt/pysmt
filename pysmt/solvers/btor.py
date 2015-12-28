@@ -157,7 +157,6 @@ class BTORConverter(Converter, DagWalker):
         return decl
 
     def walk_and(self, formula, args, **kwargs):
-        #pylint: disable=star-args
         assert len(args) >= 2
         res = self._btor.And(args[0], args[1])
         for conj in args[2:]:
@@ -165,7 +164,6 @@ class BTORConverter(Converter, DagWalker):
         return res
 
     def walk_or(self, formula, args, **kwargs):
-        #pylint: disable=star-args
         assert len(args) >= 2
         res = self._btor.Or(args[0], args[1])
         for disj in args[2:]:
@@ -206,7 +204,6 @@ class BTORConverter(Converter, DagWalker):
         return self._btor.Eq(*args)
 
     def walk_function(self, formula, args, **kwargs):
-        #pylint: disable=star-args
         _uf = self.declare_function(formula)
         return _uf(*args)
 

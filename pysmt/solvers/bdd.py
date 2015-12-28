@@ -123,7 +123,6 @@ class BddSolver(Solver):
 
     def get_default_options(self, logic=None, user_options=None):
         if user_options is not None:
-            #pylint: disable=star-args
             return BddOptions(**user_options)
         else:
             return BddOptions()

@@ -265,7 +265,6 @@ class CVC4Converter(Converter, DagWalker):
         if name not in self.declared_vars:
             self.declare_variable(name)
         decl = self.declared_vars[name]
-        #pylint: disable=star-args
         return self.mkExpr(CVC4.APPLY_UF, decl, *args)
 
     def walk_bv_constant(self, formula, **kwargs):

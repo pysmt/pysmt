@@ -203,7 +203,6 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
                 self.push()
                 self.add_assertion(self.mgr.And(other_ass))
                 self.pending_pop = True
-            #pylint: disable=star-args
             res = self.z3.check(*bool_ass)
         else:
             res = self.z3.check()
@@ -477,11 +476,9 @@ class Z3Converter(Converter, DagWalker):
 
 
     def walk_and(self, formula, args, **kwargs):
-        #pylint: disable=star-args
         return z3.And(*args)
 
     def walk_or(self, formula, args, **kwargs):
-        #pylint: disable=star-args
         return z3.Or(*args)
 
     def walk_not(self, formula, args, **kwargs):
@@ -548,7 +545,6 @@ class Z3Converter(Converter, DagWalker):
                          args[0])
 
     def walk_plus(self, formula, args, **kwargs):
-        #pylint: disable=star-args
         return z3.Sum(*args)
 
     def walk_minus(self, formula, args, **kwargs):
@@ -564,7 +560,6 @@ class Z3Converter(Converter, DagWalker):
         return z3.ToReal(args[0])
 
     def walk_function(self, formula, args, **kwargs):
-        #pylint: disable=star-args
         f = formula.function_name()
         tp = f.symbol_type()
         sig = [self._type_to_z3(x) for x in tp.param_types]
