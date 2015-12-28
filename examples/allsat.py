@@ -31,7 +31,7 @@ msat.add_assertion(f) # This is still at pySMT level
 result = []
 # Directly invoke the mathsat API !!!
 # The second term is a list of "important variables"
-mathsat.msat_all_sat(msat.msat_env,
+mathsat.msat_all_sat(msat.msat_env(),
       [converter.convert(x)],      # Convert the pySMT term into a MathSAT term
       lambda model : callback(model, converter, result))
 
