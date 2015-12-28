@@ -23,6 +23,7 @@ Solvers:
 * MathSAT: Upgraded to version 5.3.9, including support for new
   detachable model feature. Thanks to **Alberto Griggio** for
   contributing this code.
+* Yices: Upgraded to version 2.4.1
 * Shannon: Quantifier Elimination based on shannon expansion (shannon).
 * Improved handling of Context ('with' statement), exit and __del__ in
   Solvers.
@@ -31,7 +32,6 @@ Solvers:
 Testing:
 
 * Introduced decorator pysmt.test.skipIfNoSMTWrapper
-
 * Tests do note explicitely depend anymore on unittest module.  All
   tests that need to be executable only need to import
   pysmt.test.main.
