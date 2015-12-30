@@ -272,7 +272,6 @@ class YicesConverter(Converter, DagWalker):
         return self.walk(formula)
 
     def _to_term_array(self, arr):
-        #pylint: disable=star-args
         return (libyices.term_t * len(arr))(*arr)
 
     def _check_term_result(self, res):
@@ -591,7 +590,6 @@ class YicesConverter(Converter, DagWalker):
         elif tp.is_function_type():
             stps = [self._type_to_yices(x) for x in tp.param_types]
             rtp = self._type_to_yices(tp.return_type)
-            #pylint: disable=star-args
             arr = (libyices.type_t * len(stps))(*stps)
             return libyices.yices_function_type(len(stps),
                                                 arr,

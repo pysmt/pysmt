@@ -261,7 +261,6 @@ class FreeVarsOracle(pysmt.walkers.DagWalker):
         # - Constants have no impact
         #
         self.set_function(self.walk_error, *op.ALL_TYPES)
-        #pylint: disable=star-args
         self.set_function(self.walk_simple_args, *DEPENDENCIES_SIMPLE_ARGS)
         self.set_function(self.walk_constant, *op.CONSTANTS)
         self.set_function(self.walk_quantifier, *op.QUANTIFIERS)
