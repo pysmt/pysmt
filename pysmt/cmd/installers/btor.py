@@ -22,8 +22,9 @@ class BtorInstaller(SolverInstaller):
     SOLVER = "btor"
 
     def __init__(self, install_dir, bindings_dir, solver_version,
-                 mirror_link=None):
-        archive_name = "boolector-%s-with-lingeling-b85.tar.bz2" % solver_version
+                 mirror_link=None, lingeling_version=None):
+        archive_name = "boolector-%s-with-lingeling-%s.tar.bz2" % \
+                       (solver_version, lingeling_version)
         native_link = "http://fmv.jku.at/boolector/{archive_name}"
         SolverInstaller.__init__(self, install_dir=install_dir,
                                  bindings_dir=bindings_dir,
