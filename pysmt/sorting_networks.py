@@ -25,6 +25,8 @@ from six.moves import range
 class SortingNetwork(object):
     """Provides an efficient encoding for counting elements. """
 
+    [MOD_OE, MOD_EE, MOD_EO, MOD_OO] = range(4)
+
     def __init__(self, mgr=None):
         if mgr is not None:
             self.mgr = mgr
@@ -82,8 +84,9 @@ class SortingNetwork(object):
         if key in self._cache:
             return self._cache[key]
         else:
-            return self._cache.setdefault(key, self._sorting_network(formulae))
-
+            output = self._sorting_network(formulae)
+            self._cache[key] = output
+            return output
 
     def _sorting_network(self, inputs):
         """Given a list of formualae it generates its sorting network circuitry. """
@@ -159,24 +162,24 @@ class SortingNetwork(object):
 
         first_output_odd = input_odd[0]
         output.append(first_output_odd)
-        if (mode == 0):
+        if (mode == self.MOD_OE):
             for i in range(len(input_odd)-1):
                 el_odd = input_odd[i+1]
                 el_even = input_even[i]
                 output += self.two_comparator(el_odd, el_even)
-        elif (mode == 1):
+        elif (mode == self.MOD_EE):
             for i in range(len(input_odd)-1):
                 el_odd = input_odd[i+1]
                 el_even = input_even[i]
                 output += self.two_comparator(el_odd, el_even)
             last_output_even = input_even[-1]
             output.append(last_output_even)
-        elif (mode == 2):
+        elif (mode == self.MOD_EO):
             for i in range(len(input_even)):
                 el_odd = input_odd[i+1]
                 el_even = input_even[i]
                 output += self.two_comparator(el_odd, el_even)
-        elif (mode == 3):
+        elif (mode == self.MOD_OO):
             for i in range(len(input_even)):
                 el_odd = input_odd[i+1]
                 el_even = input_even[i]
@@ -195,10 +198,10 @@ class SortingNetwork(object):
         is_input1_odd = not is_input1_even
         is_input2_odd = not is_input2_even
 
-        mode = 0 if (is_input1_odd and is_input2_even) else \
-               1 if (is_input1_even and is_input2_even) else \
-               2 if (is_input1_even and is_input2_odd) else \
-               3 if (is_input1_odd and is_input2_odd) else -1
+        mode = self.MOD_OE if (is_input1_odd and is_input2_even) else \
+               self.MOD_EE if (is_input1_even and is_input2_even) else \
+               self.MOD_EO if (is_input1_even and is_input2_odd) else \
+               self.MOD_OO if (is_input1_odd and is_input2_odd) else -1
 
         return mode
 
@@ -240,8 +243,8 @@ class SortingNetwork(object):
 
             mode = self._comp_mode(len(el1), len(el2))
 
-            if mode == 0:
-                mode = 2
+            if mode == self.MOD_OE:
+                mode = self.MOD_EO
                 (el1, el2) = (el2, el1)
 
             if (len(el1) > 0) and (len(el2) > 0):
@@ -277,8 +280,8 @@ class SortingNetwork(object):
         # Computing the top level mode
         mode = self._comp_mode(len(input1), len(input2))
 
-        if mode == 0:
-            mode = 2
+        if mode == self.MOD_OE:
+            mode = self.MOD_EO
             (input1, input2) = (input2, input1)
 
         # Reversing the call list
