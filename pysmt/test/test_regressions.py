@@ -311,6 +311,14 @@ class TestRegressions(TestCase):
         close_l = get_closer_smtlib_logic(logics.BOOL)
         self.assertEqual(close_l, logics.LRA)
 
+    def test_exactly_one_unpacking(self):
+        s1,s2 = Symbol("x"), Symbol("y")
+        f1 = ExactlyOne((s for s in [s1,s2]))
+        f2 = ExactlyOne([s1,s2])
+        f3 = ExactlyOne(s1,s2)
+
+        self.assertEqual(f1,f2)
+        self.assertEqual(f2,f3)
 
 if __name__ == "__main__":
     main()

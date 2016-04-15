@@ -494,6 +494,16 @@ class TestFormulaManager(TestCase):
         self.assertEqual(c, self.mgr.Bool(False),
                          "ExactlyOne should not allow 2 symbols to be True")
 
+        s1 = self.mgr.Symbol("x")
+        s2 = self.mgr.Symbol("x")
+        f1 = self.mgr.ExactlyOne((s for s in [s1,s2]))
+        f2 = self.mgr.ExactlyOne([s1,s2])
+        f3 = self.mgr.ExactlyOne(s1,s2)
+
+        self.assertEqual(f1,f2)
+        self.assertEqual(f2,f3)
+
+
     @skipIfNoSolverForLogic(QF_BOOL)
     def test_exactly_one_is_sat(self):
         symbols = [ self.mgr.Symbol("s%d"%i, BOOL) for i in range(5) ]
