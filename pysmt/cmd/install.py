@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from six.moves.urllib import request as urllib2
-from six.moves import input, xrange
+from six.moves import input
 
 import os
 import argparse
@@ -29,7 +28,7 @@ from pysmt.cmd.installers import CuddInstaller
 # Build a list of installers, one for each solver
 Installer = namedtuple("Installer", ["InstallerClass", "version", "extra_params"])
 INSTALLERS = [Installer(MSatInstaller,    "5.3.9", {}),
-              Installer(Z3Installer,      "4.4.1", {}),
+              Installer(Z3Installer,      "4.4.1", {"osx": "10.11"}),
               Installer(CVC4Installer,    "1.5-prerelease", {"git_version" : "c15ff43597b41ea457befecb1b0e2402e28cb523"}),
               Installer(YicesInstaller,   "2.4.1", {}),
               Installer(BtorInstaller,    "2.2.0", {"lingeling_version": "bal"}),
