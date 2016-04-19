@@ -65,6 +65,7 @@ class FNode(object):
     The node_id is an integer uniquely identifying the node within the
     FormulaManager it belongs.
     """
+    __slots__ = ["_content", "_node_id"]
 
     def __init__(self, content, node_id):
         self._content = content

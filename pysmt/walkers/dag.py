@@ -85,7 +85,7 @@ class DagWalker(Walker):
            is computed and memoized.
         """
 
-        while len(self.stack) > 0 :
+        while self.stack:
             (was_expanded, formula) = self.stack.pop()
             if was_expanded:
                 self._compute_node_result(formula, **kwargs)
@@ -110,7 +110,7 @@ class DagWalker(Walker):
         return res
 
     def _get_key(self, formula, **kwargs):
-        if len(kwargs) == 0:
+        if not kwargs:
             return formula
         raise NotImplementedError("DagWalker should redefine '_get_key'" +
                                   " when using keywords arguments")

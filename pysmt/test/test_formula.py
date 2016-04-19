@@ -610,7 +610,11 @@ class TestFormulaManager(TestCase):
 
         self.assertEqual(str(f), "(A & (! B))", str(f))
 
-        serialized = pickle.dumps(f)
+        # NOTE: We cannot use the textual format for pickle, because
+        # we are using slots. We can, however, use more advanced
+        # versions of pickle. Therefore, we specify here to use the
+        # latest protocol.
+        serialized = pickle.dumps(f, pickle.HIGHEST_PROTOCOL)
 
         f_new = pickle.loads(serialized)
         f_new = dst_mgr.normalize(f)
