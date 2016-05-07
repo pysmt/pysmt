@@ -67,6 +67,7 @@ class BddOptions(SolverOptions):
                  unsat_cores_mode=None,
                  static_ordering=None,
                  dynamic_reordering=False,
+                 incremental=True,
                  reordering_algorithm=CUDD_REORDER_SIFT):
 
         if unsat_cores_mode is not None:

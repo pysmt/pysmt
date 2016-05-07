@@ -41,7 +41,9 @@ class Solver(object):
     def get_default_options(self, logic=None, user_options=None):
         res = SolverOptions()
         if user_options is not None:
-            for k in ["generate_models", "unsat_cores_mode"]:
+            for k in ["generate_models",
+                      "unsat_cores_mode",
+                      "incremental"]:
                 if k in user_options:
                     setattr(res, k, user_options[k])
         return res
@@ -71,6 +73,7 @@ class Solver(object):
             self.add_assertion(formula)
             res = self.solve()
             self.pending_pop = True
+
         return res
 
     def is_valid(self, formula):
@@ -477,6 +480,8 @@ class Converter(object):
 
 class SolverOptions(object):
     """Abstract class to represent Solver Options."""
-    def __init__(self, generate_models=True, unsat_cores_mode=None):
+    def __init__(self, generate_models=True, unsat_cores_mode=None,
+                 incremental = False):
         self.generate_models = generate_models
         self.unsat_cores_mode = unsat_cores_mode
+        self.incremental = incremental

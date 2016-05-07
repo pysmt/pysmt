@@ -78,7 +78,7 @@ class Factory(object):
         self._get_available_interpolators()
 
 
-    def get_solver(self, quantified=False, name=None, logic=None):
+    def get_solver(self, quantified=False, name=None, logic=None, options=None):
         assert quantified is False or logic is None, \
             "Cannot specify both quantified and logic."
 
@@ -95,7 +95,7 @@ class Factory(object):
 
         return SolverClass(environment=self.environment,
                            logic=closer_logic,
-                           user_options={"generate_models" : True})
+                           user_options=options)
 
 
     def get_unsat_core_solver(self, quantified=False, name=None,
@@ -416,10 +416,14 @@ class Factory(object):
     ##
     ## Wrappers: These functions are exported in shortcuts
     ##
-    def Solver(self, quantified=False, name=None, logic=None):
+    def Solver(self, quantified=False, name=None, logic=None, options=None):
+        if options is None:
+            options={"generate_models" : True,
+                     "incremental" : True}
         return self.get_solver(quantified=quantified,
                                name=name,
-                               logic=logic)
+                               logic=logic,
+                               options=options)
 
     def UnsatCoreSolver(self, quantified=False, name=None, logic=None,
                         unsat_cores_mode="all"):
@@ -438,15 +442,19 @@ class Factory(object):
     def is_sat(self, formula, solver_name=None, logic=None):
         if logic is None or logic == AUTO_LOGIC:
             logic = get_logic(formula, self.environment)
-        with self.Solver(name=solver_name, logic=logic) \
+        options = {"generate_models" : False,
+                   "incremental" : False}
+        with self.Solver(name=solver_name, logic=logic, options=options) \
              as solver:
             return solver.is_sat(formula)
 
     def get_model(self, formula, solver_name=None, logic=None):
         if logic is None or logic == AUTO_LOGIC:
             logic = get_logic(formula, self.environment)
-        with self.Solver(name=solver_name, logic=logic) \
-             as solver:
+        options = {"generate_models" : True,
+                   "incremental" : False}
+        with self.Solver(name=solver_name, logic=logic,
+                         options=options) as solver:
             solver.add_assertion(formula)
             check = solver.solve()
             retval = None
@@ -497,15 +505,19 @@ class Factory(object):
     def is_valid(self, formula, solver_name=None, logic=None):
         if logic is None or logic == AUTO_LOGIC:
             logic = get_logic(formula, self.environment)
-        with self.Solver(name=solver_name, logic=logic) \
-             as solver:
+        options = {"generate_models" : False,
+                   "incremental" : False}
+        with self.Solver(name=solver_name, logic=logic,
+                         options=options) as solver:
             return solver.is_valid(formula)
 
     def is_unsat(self, formula, solver_name=None, logic=None):
         if logic is None or logic == AUTO_LOGIC:
             logic = get_logic(formula, self.environment)
-        with self.Solver(name=solver_name, logic=logic) \
-             as solver:
+        options = {"generate_models" : False,
+                   "incremental" : False}
+        with self.Solver(name=solver_name, logic=logic,
+                         options=options) as solver:
             return solver.is_unsat(formula)
 
     def qelim(self, formula, solver_name=None, logic=None):
@@ -519,8 +531,8 @@ class Factory(object):
     def binary_interpolant(self, formula_a, formula_b,
                            solver_name=None, logic=None):
         if logic is None or logic == AUTO_LOGIC:
-            logic = get_logic(
-                self.environment.formula_manager.And(formula_a, formula_b))
+            _And = self.environment.formula_manager.And
+            logic = get_logic(_And(formula_a, formula_b))
 
         with self.Interpolator(name=solver_name, logic=logic) as itp:
             return itp.binary_interpolant(formula_a, formula_b)
@@ -528,8 +540,8 @@ class Factory(object):
 
     def sequence_interpolant(self, formulas, solver_name=None, logic=None):
         if logic is None or logic == AUTO_LOGIC:
-            logic = get_logic(
-                self.environment.formula_manager.And(formulas))
+            _And = self.environment.formula_manager.And
+            logic = get_logic(_And(formulas))
 
         with self.Interpolator(name=solver_name, logic=logic) as itp:
             return itp.sequence_interpolant(formulas)
