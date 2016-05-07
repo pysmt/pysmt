@@ -1,6 +1,25 @@
 Change Log
 ==========
 
+0.4.4: 2016-05-07 -- Minor
+--------------------------
+
+General:
+
+* BitVectors: Added support for infix notation
+* Basic performance optimizations
+
+Solvers:
+
+* Boolector: Upgraded to version 2.2.0
+
+Bugfix:
+
+* Fixed bug in ExactlyOne args unpacking. Thanks to **Martin**
+  @hastyboomalert for reporting this.
+
+
+
 0.4.3: 2015-12-28 -- Installers and HR Parsing
 ----------------------------------------------
 

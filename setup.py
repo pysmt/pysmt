@@ -43,7 +43,7 @@ Visit http://www.pysmt.org
 
 setup(
     name='PySMT',
-    version='0.4.4dev1',
+    version='0.4.4',
     author='PySMT Team',
     author_email='info@pysmt.org',
     packages = find_packages(),
