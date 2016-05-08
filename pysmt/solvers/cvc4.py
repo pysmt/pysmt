@@ -44,27 +44,25 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
                         logic=logic,
                         user_options=user_options)
         self.em = CVC4.ExprManager()
-        self.cvc4 = CVC4.SmtEngine(self.em)
-        self.cvc4.setOption("produce-models", CVC4.SExpr("false"))
-        self.cvc4.setOption("incremental", CVC4.SExpr("false"))
-
-        if self.options.generate_models:
-            self.cvc4.setOption("produce-models", CVC4.SExpr("true"))
-        if self.options.incremental:
-            self.cvc4.setOption("incremental", CVC4.SExpr("true"))
-
+        self.cvc4 = None
+        self.declarations = None
         self.logic_name = str(logic)
         if self.logic_name == "QF_BOOL":
             self.logic_name = "QF_LRA"
-        self.cvc4.setLogic(self.logic_name)
+
+        self.reset_assertions()
         self.converter = CVC4Converter(environment, cvc4_exprMgr=self.em)
-        self.declarations = set()
         return
 
     def reset_assertions(self):
         del self.cvc4
         self.cvc4 = CVC4.SmtEngine(self.em)
-        self.cvc4.setOption("produce-models", CVC4.SExpr("true"))
+        self.cvc4.setOption("produce-models", CVC4.SExpr("false"))
+        self.cvc4.setOption("incremental", CVC4.SExpr("false"))
+        if self.options.generate_models:
+            self.cvc4.setOption("produce-models", CVC4.SExpr("true"))
+        if self.options.incremental:
+            self.cvc4.setOption("incremental", CVC4.SExpr("true"))
         self.declarations = set()
         self.cvc4.setLogic(self.logic_name)
 
