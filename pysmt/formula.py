@@ -36,7 +36,7 @@ import pysmt.typing as types
 import pysmt.operators as op
 import pysmt.utils as utils
 
-from pysmt.utils import is_python_integer
+from pysmt.utils import is_python_integer, is_python_string
 from pysmt.fnode import FNode, FNodeContent
 from pysmt.exceptions import NonLinearError, UndefinedSymbolError
 from pysmt.walkers.identitydag import IdentityDagWalker
@@ -56,6 +56,8 @@ class FormulaManager(object):
 
         self.int_constants = {}
         self.real_constants = {}
+        self.string_constants = {}
+        
         self.true_formula = self.create_node(node_type=op.BOOL_CONSTANT,
                                              args=tuple(),
                                              payload=True)
@@ -356,7 +358,21 @@ class FormulaManager(object):
         else:
             raise TypeError("Invalid type in constant. The type was:" + \
                             str(type(value)))
+    def String(self, value):
+        """Return a constant of type STRING."""
+        if value in self.string_constants:
+            return self.string_constants[value]
 
+        if is_python_string(value):
+            n = self.create_node(node_type=op.STRING_CONSTANT,
+                                 args=tuple(),
+                                 payload=value)
+            self.string_constants[value] = n
+            return n
+        else:
+            raise TypeError("Invalid type in constant. The type was:" + \
+                            str(type(value)))
+            
     def TRUE(self):
         """Return the boolean constant True."""
         return self.true_formula
@@ -882,7 +898,14 @@ class FormulaManager(object):
         for _ in xrange(count-1):
             res = self.BVConcat(res, formula)
         return res
-
+    
+    def Length(self, formula):
+        """ Creates an expression of the form:
+            Length formula
+        """
+        n = self.create_node(node_type=op.LENGTH, args=(formula,))
+        return n
+        
 
 
     def normalize(self, formula):

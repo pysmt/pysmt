@@ -279,6 +279,19 @@ class _FunctionType(PySMTType):
     def __hash__(self):
         return self._hash
 
+class StringType(PySMTType):
+    def __init__(self):
+        PySMTType.__init__(self, type_id = 5)
+    
+    def is_string_type(self):
+        return True
+    def as_smtlib(self, funstyle=True):
+        if funstyle:
+            return "() String"
+        else:
+            return "String"
+    def __str__(self):
+        return "String"
 
 # Singletons for the basic types
 BOOL = BooleanType()
@@ -286,5 +299,5 @@ REAL = RealType()
 INT = IntType()
 
 # Helper Constants
-PYSMT_TYPES = frozenset([BOOL, REAL, INT])
+PYSMT_TYPES = frozenset([BOOL, REAL, INT, STRING])
 BV1, BV8, BV16, BV32, BV64, BV128 = [BVType(i) for i in [1, 8, 16, 32, 64, 128]]

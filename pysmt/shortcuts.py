@@ -157,6 +157,10 @@ def Real(value):
     """Returns a Real constant with the given value."""
     return get_env().formula_manager.Real(value)
 
+def String(value):
+    """Returns a String constant with the given value."""
+    return get_env().formula_manager.String(value)
+
 def TRUE():
     """Returns the Boolean constant TRUE."""
     return get_env().formula_manager.TRUE()
@@ -218,6 +222,8 @@ def EqualsOrIff(left, right):
     """
     return get_env().formula_manager.EqualsOrIff(left, right)
 
+def Length(arg):
+    return get_env().formula_manager.Length(arg)
 # Bit Vectors
 def BV(value, width=None):
 

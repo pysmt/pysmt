@@ -42,6 +42,7 @@ class Walker(object):
         self.functions[op.REAL_CONSTANT] = self.walk_real_constant
         self.functions[op.BOOL_CONSTANT] = self.walk_bool_constant
         self.functions[op.INT_CONSTANT] = self.walk_int_constant
+        self.functions[op.STRING_CONSTANT] = self.walk_string_constant
         self.functions[op.PLUS] = self.walk_plus
         self.functions[op.MINUS] = self.walk_minus
         self.functions[op.TIMES] = self.walk_times
@@ -78,6 +79,7 @@ class Walker(object):
         self.functions[op.BV_SDIV] = self.walk_bv_sdiv
         self.functions[op.BV_SREM] = self.walk_bv_srem
         self.functions[op.BV_ASHR] = self.walk_bv_ashr
+        self.functions[op.LENGTH] = self.walk_string_length
 
         undefined_types = set(op.ALL_TYPES) - set(self.functions.keys())
         assert len(undefined_types) == 0, \
@@ -148,7 +150,10 @@ class Walker(object):
 
     def walk_int_constant(self, formula,  **kwargs):
         return self.walk_error(formula,  **kwargs)
-
+        
+    def walk_string_constant(self, formula,  **kwargs):
+        return self.walk_error(formula,  **kwargs)
+    
     def walk_plus(self, formula,  **kwargs):
         return self.walk_error(formula,  **kwargs)
 
@@ -253,3 +258,6 @@ class Walker(object):
 
     def walk_bv_ashr(self, formula, **kwargs):
         return self.walk_error(formula, **kwargs)
+    
+    def walk_string_length(self,formula, **kwargs):
+        return self.length(formula, **kwargs)

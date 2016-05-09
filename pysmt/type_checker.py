@@ -28,7 +28,7 @@ import pysmt.walkers as walkers
 import pysmt.operators as op
 import pysmt.shortcuts
 
-from pysmt.typing import BOOL, REAL, INT, BVType
+from pysmt.typing import BOOL, REAL, INT, BVType, STRING
 
 
 class SimpleTypeChecker(walkers.DagWalker):
@@ -44,6 +44,7 @@ class SimpleTypeChecker(walkers.DagWalker):
         self.set_function(self.walk_identity_bool, op.BOOL_CONSTANT)
         self.set_function(self.walk_identity_int, op.INT_CONSTANT)
         self.set_function(self.walk_quantifier, op.FORALL, op.EXISTS)
+        self.set_function(self.walk_identity_string, op.STRING_CONSTANT)
         self.set_function(self.walk_realint_to_realint, op.PLUS, op.MINUS,
                           op.TIMES)
         self.set_function(self.walk_ite, op.ITE)
@@ -60,6 +61,7 @@ class SimpleTypeChecker(walkers.DagWalker):
         self.set_function(self.walk_bv_rotate, op.BV_ROL, op.BV_ROR)
         self.set_function(self.walk_bv_extend, op.BV_ZEXT, op.BV_SEXT)
         self.set_function(self.walk_bv_comp, op.BV_COMP)
+        self.set_function(self.walk_string_length, op.LENGTH)
         self.be_nice = False
 
     def _get_key(self, formula, **kwargs):
@@ -182,6 +184,8 @@ class SimpleTypeChecker(walkers.DagWalker):
             return self.walk_type_to_type(formula, args, INT, BOOL)
         if args[0].is_bv_type():
             return self.walk_bv_to_bool(formula, args)
+        if args[0].is_string_type():
+            return self.walk_type_to_type(formula, args, STRING, BOOL)
         return None
 
     def walk_ite(self, formula, args, **kwargs):
@@ -208,7 +212,13 @@ class SimpleTypeChecker(walkers.DagWalker):
         assert formula is not None
         assert len(args) == 0
         return INT
-
+    
+    def walk_identity_string(self, formula, args, **kwargs):
+        #pylint: disable=unused-argument
+        assert formula is not None
+        assert len(args) == 0
+        return STRING
+    
     def walk_identity_bv(self, formula, args, **kwargs):
         #pylint: disable=unused-argument
         assert formula is not None
@@ -242,7 +252,13 @@ class SimpleTypeChecker(walkers.DagWalker):
                 return None
 
         return tp.return_type
-
+        
+    def walk_string_length(self, formula, args, **kwargs):
+        assert formula is not None
+        assert len(args) == 1
+        assert args[0] == STRING
+        return  INT
+        
 # EOC SimpleTypeChecker
 
 

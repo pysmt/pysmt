@@ -235,6 +235,15 @@ class HRPrinter(TreeWalker):
     walk_bv_sub = walk_minus
     walk_bv_mul = walk_times
 
+    def walk_string_constant(self, formula):
+        assert (type(formula.constant_value()) == str ),  "The type was " + str(type(formula.constant_value()))
+        self.write(formula.constant_value())
+        
+    def walk_string_length(self,formula):
+        self.write("( str.len " )
+        self.walk(formula.arg(0))
+        self.write(")")
+
     def walk_ite(self, formula):
         self.write("(")
         self.walk(formula.arg(0))
