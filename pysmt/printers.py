@@ -142,6 +142,22 @@ class HRPrinter(TreeWalker):
             self.write("True")
         else:
             self.write("False")
+            
+    def walk_store(self, formula):
+        self.write("(store ")
+        self.walk(formula.arg(0))
+        self.write(" ")
+        self.walk(formula.arg(1))
+        self.write(" ")
+        self.walk(formula.arg(2))
+        self.write(")")
+        
+    def walk_select(self, formula):
+        self.write("(select ")
+        self.walk(formula.arg(0))
+        self.write(" ")
+        self.walk(formula.arg(1))
+        self.write(")")
 
     def walk_bv_constant(self, formula):
         # This is the simplest SMT-LIB way of printing the value of a BV

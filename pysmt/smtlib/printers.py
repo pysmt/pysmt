@@ -45,6 +45,8 @@ class SmtPrinter(TreeWalker):
         self.set_function(partial(self._walk_nary, "<"), op.LT)
         self.set_function(partial(self._walk_nary, "ite"), op.ITE)
         self.set_function(partial(self._walk_nary, "to_real"), op.TOREAL)
+        self.set_function(partial(self._walk_nary, "store"), op.STORE)
+        self.set_function(partial(self._walk_nary, "select"), op.SELECT)
 
         self.set_function(partial(self._walk_nary, "bvand"), op.BV_AND)
         self.set_function(partial(self._walk_nary, "bvor"), op.BV_OR)
