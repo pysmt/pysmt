@@ -41,15 +41,6 @@ class CVC4Installer(SolverInstaller):
                                         self.bindings_dir)
 
     def compile(self):
-        # Patch the distribution to avoid a known problem
-        patch_name = "cvc4_wrapper.patch"
-        plink = "https://raw.githubusercontent.com/pysmt/solvers_patches/master/%s" % patch_name
-        SolverInstaller.do_download(plink, os.path.join(self.extract_path, patch_name))
-
-        # Apply patch
-        SolverInstaller.run("patch -p1 -i %s" % patch_name,
-                            directory=self.extract_path)
-
         # Prepare the building system
         SolverInstaller.run("bash autogen.sh", directory=self.extract_path)
 
