@@ -78,6 +78,9 @@ class Walker(object):
         self.functions[op.BV_SDIV] = self.walk_bv_sdiv
         self.functions[op.BV_SREM] = self.walk_bv_srem
         self.functions[op.BV_ASHR] = self.walk_bv_ashr
+        
+        self.functions[op.STORE] = self.walk_store
+        self.functions[op.SELECT] = self.walk_select
 
         undefined_types = set(op.ALL_TYPES) - set(self.functions.keys())
         assert len(undefined_types) == 0, \
@@ -252,4 +255,10 @@ class Walker(object):
         return self.walk_error(formula, **kwargs)
 
     def walk_bv_ashr(self, formula, **kwargs):
+        return self.walk_error(formula, **kwargs)
+    
+    def walk_store(self, formula, **kwargs):
+        return self.walk_error(formula, **kwargs)
+    
+    def walk_select(self, formula, **kwargs):
         return self.walk_error(formula, **kwargs)

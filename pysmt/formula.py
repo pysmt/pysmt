@@ -535,6 +535,14 @@ class FormulaManager(object):
             return self.Iff(left, right)
         else:
             return self.Equals(left, right)
+        
+    def Store(self, name, index, value):
+        """Returns the formula for array store"""
+        return self.create_node(node_type=op.STORE, args=(name, index, value))
+    
+    def Select(self, name, index):
+        """Returns the formula for array select"""
+        return self.create_node(node_type=op.SELECT, args=(name, index))
 
     # BitVectors
     def BV(self, value, width=None):

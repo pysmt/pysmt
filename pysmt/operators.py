@@ -24,7 +24,7 @@ these operators.
 from six.moves import xrange
 
 
-ALL_TYPES = list(xrange(0,47))
+ALL_TYPES = list(xrange(0,49))
 
 (
 FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF, # Boolean Logic (0-6)
@@ -53,6 +53,8 @@ BV_COMP,                                    # Returns 1_1 if the arguments are
                                             # equal otherwise it returns 0_1 (44)
 BV_SDIV, BV_SREM,                           # Signed Division and Reminder(45-46)
 BV_ASHR,                                    # Arithmetic shift right (47)
+
+STORE, SELECT
 ) = ALL_TYPES
 
 QUANTIFIERS = frozenset([FORALL, EXISTS])
@@ -72,9 +74,12 @@ BV_OPERATORS = frozenset([BV_CONSTANT, BV_NOT, BV_AND, BV_OR, BV_XOR,
                           BV_COMP, BV_SDIV, BV_SREM, BV_ASHR])
 
 LIRA_OPERATORS = frozenset([PLUS, MINUS, TIMES, TOREAL])
+
+ARRAY_OPERATORS = frozenset([STORE, SELECT])
+
 CUSTOM_NODE_TYPES = []
 
-THEORY_OPERATORS = LIRA_OPERATORS | BV_OPERATORS
+THEORY_OPERATORS = LIRA_OPERATORS | BV_OPERATORS | ARRAY_OPERATORS
 
 def new_node_type(new_node_id=None):
     """Adds a new node type to the list of custom node types and returns the ID."""
@@ -149,4 +154,6 @@ __OP_STR__ = {
     BV_SDIV : "BV_SDIV",
     BV_SREM : "BV_SREM",
     BV_ASHR : "BV_ASHR",
+    STORE  : "STORE",
+    SELECT : "SELECT",
 }

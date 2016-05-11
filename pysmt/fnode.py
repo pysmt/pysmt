@@ -36,10 +36,11 @@ from pysmt.operators import (FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF,
                              BV_SLT, BV_SLE,
                              BV_COMP,
                              BV_SDIV, BV_SREM,
-                             BV_ASHR)
+                             BV_ASHR,
+                             STORE, SELECT)
 from pysmt.operators import  (BOOL_OPERATORS, THEORY_OPERATORS,
                               BV_OPERATORS, LIRA_OPERATORS,
-                              RELATIONS, CONSTANTS)
+                              RELATIONS, CONSTANTS, ARRAY_OPERATORS)
 from pysmt.typing import BOOL, REAL, INT, BVType
 from pysmt.decorators import deprecated
 from pysmt.utils import is_python_integer, is_python_rational, is_python_boolean
@@ -312,6 +313,10 @@ class FNode(object):
     def is_bv_op(self):
         """Test whether the node is a BitVector operator."""
         return self.node_type() in BV_OPERATORS
+    
+    def is_array_op(self):
+        """Test whether the node is a array operator."""
+        return self.node_type() in ARRAY_OPERATORS
 
     def is_bv_not(self):
         """Test whether the node is the BVNot operator."""
@@ -412,6 +417,17 @@ class FNode(object):
     def is_bv_ashr(self):
         """Test whether the node is the BVAshr (arithmetic shift right) operator."""
         return self.node_type() == BV_ASHR
+    
+    #def is_array(self):
+    #    return self.node_type() == ARRAY
+    
+    def is_store(self):
+        """Test whether node is the store operator"""
+        return self.node_type() == STORE
+    
+    def is_select(self):
+        """Test whether node is the select operator"""
+        return self.node_type() == SELECT
 
     def bv_width(self):
         """Return the BV width of the formula."""

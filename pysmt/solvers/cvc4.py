@@ -248,6 +248,12 @@ class CVC4Converter(Converter, DagWalker):
         res = self.mkExpr(CVC4.PLUS, args)
         return res
 
+    def walk_store(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.STORE, args[0], args[1], args[2])
+    
+    def walk_select(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.SELECT, args[0], args[1])
+
     def walk_minus(self, formula, args, **kwargs):
         return self.mkExpr(CVC4.MINUS, args[0], args[1])
 
@@ -363,6 +369,12 @@ class CVC4Converter(Converter, DagWalker):
             return self.realType
         elif tp.is_int_type():
             return self.intType
+        elif tp.is_array_int_type():
+            return self.cvc4_exprMgr.mkArrayType(self.intType, self.intType)
+        elif tp.is_array_real_type():
+            return self.cvc4_exprMgr.mkArrayType(self.intType, self.realType)
+        elif tp.is_array_bool_type():
+            return self.cvc4_exprMgr.mkArrayType(self.intType, self.boolType)
         elif tp.is_function_type():
             stps = [self._type_to_cvc4(x) for x in tp.param_types]
             rtp = self._type_to_cvc4(tp.return_type)

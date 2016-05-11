@@ -218,6 +218,14 @@ def EqualsOrIff(left, right):
     """
     return get_env().formula_manager.EqualsOrIff(left, right)
 
+def Store(name, index=types.INT, value=types.INT):
+    """Stores value at index 'index' of array 'name' """
+    return get_env().formula_manager.Store(name, index, value)
+
+def Select(name, index=types.INT):
+    """Retrieves value stored at index 'index' of array 'name' """
+    return get_env().formula_manager.Select(name, index)
+
 # Bit Vectors
 def BV(value, width=None):
 
@@ -378,8 +386,6 @@ def BVAShr(left, right):
     """Returns the RIGHT arithmetic rotation of the left BV by the number
         of steps specified by the right BV."""
     return get_env().formula_manager.BVAShr(left, right)
-
-
 
 
 #### Shortcuts for Solvers Factory #####

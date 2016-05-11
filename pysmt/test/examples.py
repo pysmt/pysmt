@@ -33,8 +33,9 @@ from pysmt.shortcuts import (Symbol, Function,
                              BVNeg, BVAdd, BVMul, BVUDiv, BVURem, BVSub,
                              BVLShl, BVLShr,BVRol, BVRor,
                              BVZExt, BVSExt, BVSub, BVComp, BVAShr, BVSLE,
-                             BVSLT, BVSGT, BVSGE, BVSDiv, BVSRem)
-from pysmt.typing import REAL, BOOL, INT, FunctionType, BV8, BV16
+                             BVSLT, BVSGT, BVSGE, BVSDiv, BVSRem,
+                             Store)
+from pysmt.typing import REAL, BOOL, INT, FunctionType, BV8, BV16, ARRAY_INT
 
 
 Example = namedtuple('Example',
@@ -54,6 +55,7 @@ def get_example_formulae(environment=None):
         q = Symbol("q", INT)
         r = Symbol("r", REAL)
         s = Symbol("s", REAL)
+        a = Symbol("a", ARRAY_INT)
 
         rf = Symbol("rf", FunctionType(REAL, [REAL, REAL]))
         rg = Symbol("rg", FunctionType(REAL, [REAL]))
@@ -566,6 +568,12 @@ def get_example_formulae(environment=None):
                     is_valid=False,
                     is_sat=True,
                     logic=pysmt.logics.QF_BOOL
+                ),
+                  
+            Example(expr=Store(a, p, q),
+                    is_valid=False,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_ALIA
                 ),
 
         ]

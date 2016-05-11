@@ -52,6 +52,9 @@ class PySMTType(object):
 
     def is_bv_type(self):
         return False
+    
+    def is_array_type(self):
+        return False
 
     def is_function_type(self):
         return False
@@ -119,6 +122,39 @@ class IntType(PySMTType):
 
     def __str__(self):
         return "Int"
+    
+class ArrayType(PySMTType):
+    def __init__(self, arraytype):
+        PySMTType.__init__(self, type_id = 5)
+        if arraytype == INT:
+            self.type = IntType()
+        elif arraytype == REAL:
+            self.type = RealType()
+        elif arraytype == BOOL:
+            self.type = BooleanType()
+        else:
+            raise Exception("Unsupported array type %s" %(type))
+
+    def is_array_type(self):
+        return True
+    
+    def is_array_int_type(self):
+        return self.type == IntType()
+    
+    def is_array_real_type(self):
+        return self.type == RealType()
+    
+    def is_array_bool_type(self):
+        return self.type == BooleanType()
+
+    def as_smtlib(self, funstyle=True):
+        if funstyle:
+            return "() (_ Array Int %s)" %self.type.__str__() 
+        else:
+            return "(_ Array Int %s)" %self.type.__str__()
+
+    def __str__(self):
+        return "Array Int %s" %self.type.__str__()
 
 
 def BVType(width=32):
@@ -284,6 +320,9 @@ class _FunctionType(PySMTType):
 BOOL = BooleanType()
 REAL = RealType()
 INT = IntType()
+ARRAY_INT = ArrayType(INT)
+ARRAY_REAL = ArrayType(REAL)
+ARRAY_BOOL = ArrayType(BOOL)
 
 # Helper Constants
 PYSMT_TYPES = frozenset([BOOL, REAL, INT])

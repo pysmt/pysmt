@@ -28,7 +28,7 @@ import pysmt.walkers as walkers
 import pysmt.operators as op
 import pysmt.shortcuts
 
-from pysmt.typing import BOOL, REAL, INT, BVType
+from pysmt.typing import BOOL, REAL, INT, BVType, ARRAY_INT, ARRAY_BOOL, ARRAY_REAL
 
 
 class SimpleTypeChecker(walkers.DagWalker):
@@ -51,6 +51,8 @@ class SimpleTypeChecker(walkers.DagWalker):
         self.set_function(self.walk_function, op.FUNCTION)
 
         self.set_function(self.walk_identity_bv, op.BV_CONSTANT)
+        self.set_function(self.walk_array_store, op.STORE)
+        self.set_function(self.walk_array_select, op.SELECT)
         self.set_function(self.walk_bv_to_bool, op.BV_ULT, op.BV_ULE, op.BV_SLT,
                           op.BV_SLE)
         self.set_function(self.walk_bv_to_bv, op.BV_ADD, op.BV_SUB, op.BV_NOT,
@@ -214,6 +216,35 @@ class SimpleTypeChecker(walkers.DagWalker):
         assert formula is not None
         assert len(args) == 0
         return BVType(formula.bv_width())
+    
+    def walk_array_store(self, formula, args, **kwargs):
+        #pylint: disable=unused-argument
+        assert formula is not None
+        assert len(args) == 3
+        assert args[2] == INT or args[2] == REAL or args[2] == BOOL
+        assert args[1] == INT
+        if args[2] == INT:
+            assert args[0].is_array_int_type() is True
+            return ARRAY_INT
+        elif args[2] == REAL:
+            assert args[0].is_array_real_type() is True
+            return ARRAY_REAL
+        else:
+            assert args[0].is_array_bool_type()
+            return ARRAY_BOOL
+    
+    def walk_array_select(self, formula, args, **kwargs):
+        #pylint: disable=unused-argument
+        assert formula is not None
+        assert len(args) == 2
+        assert args[0].is_array_int_type() is True or args[0].is_array_real_type() is True or args[0].is_array_bool_type() is True
+        assert args[1] == INT
+        if args[0].is_array_int_type() is True:
+            return INT
+        elif args[0].is_array_real_type() is True:
+            return REAL
+        else:
+            return BOOL
 
     def walk_symbol(self, formula, args, **kwargs):
         assert formula is not None

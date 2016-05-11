@@ -467,6 +467,10 @@ class Z3Converter(Converter, DagWalker):
         elif z3.is_bv_zext(expr):
             amount = z3.get_payload(expr, 0)
             res = self.mgr.BVZExt(args[0], amount)
+        elif z3.is_select(expr):
+            res = self.mgr.Select(args[0], args[1])
+        elif z3.is_store(expr):
+            res = self.mgr.Store(args[0], args[1], args[2])
 
         if res is None:
             raise ConvertExpressionError(message=("Unsupported expression: %s" %
@@ -492,6 +496,12 @@ class Z3Converter(Converter, DagWalker):
             res = z3.Real(formula.symbol_name())
         elif symbol_type.is_int_type():
             res = z3.Int(formula.symbol_name())
+        elif symbol_type.is_array_int_type():
+            res = z3.Array(formula.symbol_name(), z3.IntSort(), z3.IntSort())
+        elif symbol_type.is_array_real_type():
+            res = z3.Array(formula.symbol_name(), z3.IntSort(), z3.RealSort())
+        elif symbol_type.is_array_bool_type():
+            res = z3.Array(formula.symbol_name(), z3.IntSort(), z3.BoolSort())
         else:
             assert symbol_type.is_bv_type()
             res = z3.BitVec(formula.symbol_name(),
@@ -653,6 +663,14 @@ class Z3Converter(Converter, DagWalker):
 
     def walk_bv_ashr (self, formula, args, **kwargs):
         return args[0] >> args[1]
+    
+    def walk_select (self, formula, args, **kwargs):
+        temp = z3.Select(args[0], args[1])
+        return temp
+    
+    def walk_store (self, formula, args, **kwargs):
+        temp = z3.Store(args[0], args[1], args[2])
+        return temp
 
     def _type_to_z3(self, tp):
         if tp.is_bool_type():
