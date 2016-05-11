@@ -1,3 +1,35 @@
+Running the Tests
+=================
+
+Tests in pySMT are developed using python's built-in testing framework
+```unittest```.  Each ```TestCase``` is stored into a separate file,
+and it should be possible to lunch it by calling the file directly,
+e.g.:
+
+```
+$ python test_formula.py
+```
+
+However, the preferred way is to use nosetests, e.g.:
+```
+$ nosetests pysmt/tests/test_formula.py
+```
+
+There are two utility scripts to simplify the testing of pysmt:
+```run_tests.sh``` and ```run_all_tests.sh```.  They both exploit
+additional options for nosetests, such as parallelism and
+timeouts. ```run_all_tests.sh``` includes all the tests that are
+marked as ```slow```, and therefore might take some time to complete.
+
+Finally, tests are run across a wide range of solvers, versions of
+python and operating systems using Travis CI.  This happens
+automatically when you open a PR. If you want to run this before
+submitting a PR, create a (free) Travis CI account, fork pySMT, and
+enable the testing from Travis webinterface.
+
+All tests should pass for a PR to be merged.
+
+
 How to add a new Theory within pySMT
 ====================================
 
