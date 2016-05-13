@@ -81,10 +81,12 @@ class SortingNetwork(object):
         """
         key = tuple(formulae)
 
+        output = self._sorting_network(list(formulae))
+
         if key in self._cache:
             return self._cache[key]
         else:
-            output = self._sorting_network(formulae)
+            output = self._sorting_network(list(formulae))
             self._cache[key] = output
             return output
 
@@ -157,35 +159,56 @@ class SortingNetwork(object):
             return input_odd
         if((len(input_odd) == 1) and (len(input_even) == 1)):
             return self.two_comparator(input_odd[0], input_even[0])        
+        output_odd = input_odd
+        output_even = input_even
 
         output = []
 
-        first_output_odd = input_odd[0]
-        output.append(first_output_odd)
-        if (mode == self.MOD_OE):
-            for i in range(len(input_odd)-1):
-                el_odd = input_odd[i+1]
-                el_even = input_even[i]
-                output += self.two_comparator(el_odd, el_even)
-        elif (mode == self.MOD_EE):
-            for i in range(len(input_odd)-1):
-                el_odd = input_odd[i+1]
-                el_even = input_even[i]
-                output += self.two_comparator(el_odd, el_even)
-            last_output_even = input_even[-1]
+        assert(mode != self.MOD_OE)
+
+        if (mode == self.MOD_EE):
+
+            first_output_odd = output_odd[0]
+            last_output_even = output_even[-1]
+
+            output.append(first_output_odd)
+
+            for i in range(len(output_odd)-1):
+                el_odd = output_odd[i+1]
+                el_even = output_even[i]
+                tp = self.two_comparator(el_odd, el_even)
+                output.append(tp[0])
+                output.append(tp[1])
             output.append(last_output_even)
-        elif (mode == self.MOD_EO):
-            for i in range(len(input_even)):
-                el_odd = input_odd[i+1]
-                el_even = input_even[i]
-                output += self.two_comparator(el_odd, el_even)
-        elif (mode == self.MOD_OO):
-            for i in range(len(input_even)):
-                el_odd = input_odd[i+1]
-                el_even = input_even[i]
-                output += self.two_comparator(el_odd, el_even)
-            last_output_odd = input_odd[-1]
+
+        if (mode == self.MOD_EO):
+
+            first_output_odd = output_odd[0]
+            output.append(first_output_odd)
+
+            for i in range(len(output_even)):
+                el_odd = output_odd[i+1]
+                el_even = output_even[i]
+                tp = self.two_comparator(el_odd, el_even)
+                output.append(tp[0])
+                output.append(tp[1])
+
+        if (mode == self.MOD_OO):
+
+            first_output_odd = output_odd[0]
+            last_output_odd = output_odd[-1]
+
+            output.append(first_output_odd)
+
+            for i in range(len(output_even)):
+                el_odd = output_odd[i+1]
+                el_even = output_even[i]
+                tp = self.two_comparator(el_odd, el_even)
+                output.append(tp[0])
+                output.append(tp[1])
+
             output.append(last_output_odd)
+
 
         return output
 
