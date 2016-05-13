@@ -110,6 +110,16 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
         elif self.name in [smtcmd.PUSH, smtcmd.POP]:
             outstream.write("(%s %d)" % (self.name, self.args[0]))
 
+        elif self.name == smtcmd.DEFINE_SORT:
+            name = self.args[0]
+            params_list = self.args[1]
+            params = " ".join(params_list)
+            rtype = self.args[2]
+            outstream.write("(%s %s (%s) %s)" % (self.name,
+                                                 name,
+                                                 params,
+                                                 rtype))
+            
         elif self.name in smtcmd.ALL_COMMANDS:
             raise NotImplementedError("'%s' is a valid SMT-LIB command "\
                                       "but it is currently not supported. "\

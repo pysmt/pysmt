@@ -446,6 +446,11 @@ class SmtLibParser(object):
             elif type_name.startswith("BV"):
                 size = int(type_name[2:])
                 return BVType(size)
+            else:
+                res = self.cache.get(type_name)
+                if res is not None:
+                    res = self._get_basic_type(res)
+                return res
         else:
             rt = self._get_basic_type(type_name)
             pt = [self._get_basic_type(par) for par in params]
@@ -951,7 +956,15 @@ class SmtLibParser(object):
 
     def _cmd_define_sort(self, current, tokens):
         """(define-sort <fun_def>)"""
-        return self._cmd_not_implemented(current, tokens)
+        name = self.parse_atom(tokens, current)
+        self.consume_opening(tokens, current)
+        cur = next(tokens)
+        if cur != ')':
+            return self._cmd_not_implemented(current, tokens)
+        rtype = self.parse_type(tokens, current)
+        self.consume_closing(tokens, current)
+        self.cache.define(name, [], rtype)
+        return SmtLibCommand(current, [name, [], rtype])
 
     def _cmd_get_assertions(self, current, tokens):
         """(get_assertions)"""
