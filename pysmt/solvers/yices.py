@@ -67,7 +67,7 @@ STATUS_UNSAT = 4
 
 class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
-    LOGICS = pysmt.logics.PYSMT_QF_LOGICS
+    LOGICS = pysmt.logics.PYSMT_QF_LOGICS - pysmt.logics.ARRAYS_LOGICS
 
     def __init__(self, environment, logic, **options):
         Solver.__init__(self,
@@ -105,8 +105,13 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
     def get_model(self):
         assignment = {}
+        # MG: This iteration is probelmatic, since it assumes that all
+        # defined symbols have a type that is compatible with this
+        # solver.  In this case, the problem occurs with Arrays and
+        # Strings that are not supported.
         for s in self.environment.formula_manager.get_all_symbols():
             if s.is_term():
+                if s.symbol_type().is_array_type(): continue
                 v = self.get_value(s)
                 assignment[s] = v
         return EagerModel(assignment=assignment, environment=self.environment)
@@ -597,7 +602,7 @@ class YicesConverter(Converter, DagWalker):
         elif tp.is_bv_type():
             return libyices.yices_bv_type(tp.width)
         else:
-            raise NotImplementedError
+            raise NotImplementedError(tp)
 
     def declare_variable(self, var):
         if not var.is_symbol(): raise TypeError

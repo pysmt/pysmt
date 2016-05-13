@@ -400,6 +400,8 @@ class PrenexNormalizer(DagWalker):
         self.set_function(self.walk_constant, *op.CONSTANTS)
         self.set_function(self.walk_theory_relation, *op.RELATIONS)
         self.set_function(self.walk_theory_op, *op.LIRA_OPERATORS)
+        self.set_function(self.walk_theory_op, *op.ARRAY_OPERATORS)
+
         self.set_function(self.walk_symbol, op.SYMBOL)
         self.set_function(self.walk_function, op.FUNCTION)
         self.set_function(self.walk_ite, op.ITE)

@@ -602,8 +602,13 @@ QF_LOGICS = frozenset(_l for _l in LOGICS if _l.quantifier_free)
 PYSMT_LOGICS = frozenset([QF_BOOL, QF_IDL, QF_LIA, QF_LRA, QF_RDL, QF_UF, QF_UFIDL,
                           QF_UFLIA, QF_UFLRA, QF_UFLIRA,
                           BOOL, LRA, LIA, UFLIRA, UFLRA,
-                          QF_BV, QF_UFBV])
+                          QF_BV, QF_UFBV,
+                          QF_ABV, QF_AUFBV, QF_AUFLIA, QF_ALIA
+                          #MG: QF_AX?
+                      ])
 BV_LOGICS = frozenset([QF_BV, QF_UFBV])
+ARRAYS_LOGICS = frozenset([QF_ABV, QF_AUFBV, QF_AUFLIA, QF_ALIA])
+
 
 PYSMT_QF_LOGICS = frozenset(_l for _l in PYSMT_LOGICS if _l.quantifier_free)
 

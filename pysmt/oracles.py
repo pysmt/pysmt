@@ -134,7 +134,7 @@ class TheoryOracle(pysmt.walkers.DagWalker):
 
         self.set_function(self.walk_combine, op.AND, op.OR, op.NOT, op.IMPLIES,
                           op.IFF, op.LE, op.LT, op.FORALL, op.EXISTS, op.MINUS,
-                          op.ITE)
+                          op.ITE, op.ARRAY_SELECT, op.ARRAY_STORE)
         # Just propagate BV
         self.set_function(self.walk_combine, *op.BV_OPERATORS)
 
@@ -146,8 +146,6 @@ class TheoryOracle(pysmt.walkers.DagWalker):
         self.set_function(self.walk_times, op.TIMES)
         self.set_function(self.walk_plus, op.PLUS)
         self.set_function(self.walk_equals, op.EQUALS)
-
-
 
     def walk_combine(self, formula, args, **kwargs):
         #pylint: disable=unused-argument
@@ -187,6 +185,8 @@ class TheoryOracle(pysmt.walkers.DagWalker):
             theory_out = Theory()
         elif f_type.is_bv_type():
             theory_out = Theory(bit_vectors=True)
+        elif f_type.is_array_type():
+            theory_out = Theory(arrays=True)
         else:
             assert f_type.is_function_type()
             theory_out = Theory(uninterpreted=True)
@@ -308,7 +308,7 @@ class AtomsOracle(pysmt.walkers.DagWalker):
     def __init__(self, env=None):
         pysmt.walkers.DagWalker.__init__(self, env=env)
 
-        # We have teh following categories for this walker.
+        # We have the following categories for this walker.
         #
         # - Boolean operators, e.g. and, or, not...
         # - Theory operators, e.g. +, -, bvshift
@@ -324,6 +324,7 @@ class AtomsOracle(pysmt.walkers.DagWalker):
         self.set_function(self.walk_theory_op, *op.BV_OPERATORS)
         self.set_function(self.walk_theory_op, *op.LIRA_OPERATORS)
         self.set_function(self.walk_theory_relation, *op.RELATIONS)
+        self.set_function(self.walk_theory_op, *op.ARRAY_OPERATORS)
 
         self.set_function(self.walk_symbol, op.SYMBOL)
         self.set_function(self.walk_function, op.FUNCTION)

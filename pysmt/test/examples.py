@@ -33,8 +33,10 @@ from pysmt.shortcuts import (Symbol, Function,
                              BVNeg, BVAdd, BVMul, BVUDiv, BVURem, BVSub,
                              BVLShl, BVLShr,BVRol, BVRor,
                              BVZExt, BVSExt, BVSub, BVComp, BVAShr, BVSLE,
-                             BVSLT, BVSGT, BVSGE, BVSDiv, BVSRem)
-from pysmt.typing import REAL, BOOL, INT, FunctionType, BV8, BV16
+                             BVSLT, BVSGT, BVSGE, BVSDiv, BVSRem,
+                             Store, Select)
+
+from pysmt.typing import REAL, BOOL, INT, FunctionType, BV8, BV16, ARRAY_INT_INT
 
 
 Example = namedtuple('Example',
@@ -54,6 +56,7 @@ def get_example_formulae(environment=None):
         q = Symbol("q", INT)
         r = Symbol("r", REAL)
         s = Symbol("s", REAL)
+        aii = Symbol("aii", ARRAY_INT_INT)
 
         rf = Symbol("rf", FunctionType(REAL, [REAL, REAL]))
         rg = Symbol("rg", FunctionType(REAL, [REAL]))
@@ -567,7 +570,20 @@ def get_example_formulae(environment=None):
                     is_sat=True,
                     logic=pysmt.logics.QF_BOOL
                 ),
-
+            # Arrays
+            # q=0 -> Store(aii, 0, p) = Store(aii, 0, q)
+            Example(expr=Implies(Equals(q, Int(0)),
+                                 Equals(Store(aii, Int(0), Int(0)),
+                                        Store(aii, Int(0), q))),
+                    is_valid=True,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_ALIA),
+            # Select(Store(aii, 0, 0), 0) = 0
+            Example(expr=Equals(Select(Store(aii, Int(0), Int(0)), Int(0)),
+                                Int(0)),
+                    is_valid=True,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_ALIA),
         ]
         return result
 

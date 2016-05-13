@@ -83,6 +83,8 @@ z3.is_bv_ext_rol = lambda x: z3.is_app_of(x, z3.Z3_OP_EXT_ROTATE_LEFT)
 z3.is_bv_ext_ror = lambda x: z3.is_app_of(x, z3.Z3_OP_EXT_ROTATE_RIGHT)
 z3.is_bv_zext = lambda x: z3.is_app_of(x, z3.Z3_OP_ZERO_EXT)
 z3.is_bv_sext = lambda x: z3.is_app_of(x, z3.Z3_OP_SIGN_EXT)
+z3.is_array_select = lambda x: z3.is_app_of(x, z3.Z3_OP_SELECT)
+z3.is_array_store = lambda x: z3.is_app_of(x, z3.Z3_OP_STORE)
 
 z3.get_payload = lambda node,i : z3.Z3_get_decl_int_parameter(node.ctx.ref(),
                                                               node.decl().ast, i)
@@ -467,6 +469,10 @@ class Z3Converter(Converter, DagWalker):
         elif z3.is_bv_zext(expr):
             amount = z3.get_payload(expr, 0)
             res = self.mgr.BVZExt(args[0], amount)
+        elif z3.is_array_select(expr):
+            res = self.mgr.Select(args[0], args[1])
+        elif z3.is_array_store(expr):
+            res = self.mgr.Store(args[0], args[1], args[2])
 
         if res is None:
             raise ConvertExpressionError(message=("Unsupported expression: %s" %
@@ -492,6 +498,10 @@ class Z3Converter(Converter, DagWalker):
             res = z3.Real(formula.symbol_name())
         elif symbol_type.is_int_type():
             res = z3.Int(formula.symbol_name())
+        elif symbol_type.is_array_type():
+            res = z3.Array(formula.symbol_name(),
+                           self._type_to_z3(symbol_type.index_type),
+                           self._type_to_z3(symbol_type.elem_type))
         else:
             assert symbol_type.is_bv_type()
             res = z3.BitVec(formula.symbol_name(),
@@ -654,6 +664,12 @@ class Z3Converter(Converter, DagWalker):
     def walk_bv_ashr (self, formula, args, **kwargs):
         return args[0] >> args[1]
 
+    def walk_array_select(self, formula, args, **kwargs):
+        return z3.Select(args[0], args[1])
+
+    def walk_array_store(self, formula, args, **kwargs):
+        return z3.Store(args[0], args[1], args[2])
+
     def _type_to_z3(self, tp):
         if tp.is_bool_type():
             return z3.BoolSort()
@@ -661,6 +677,9 @@ class Z3Converter(Converter, DagWalker):
             return z3.RealSort()
         elif tp.is_int_type():
             return z3.IntSort()
+        elif tp.is_array_type():
+            return z3.ArraySort(self._type_to_z3(tp.index_type),
+                                self._type_to_z3(tp.elem_type))
         else:
             assert tp.is_bv_type() , "Unsupported type '%s'" % tp
             return z3.BitVecSort(tp.width)

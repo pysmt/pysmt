@@ -523,6 +523,18 @@ class MSatConverter(Converter, DagWalker):
             t = self.env.stc.get_type(args[0])
             res = types.FunctionType(types.BVType(msb - lsb + 1), [t])
 
+        elif mathsat.msat_term_is_array_read(self.msat_env(), term):
+            t1 = self.env.stc.get_type(args[0])
+            t2 = self.env.stc.get_type(args[1])
+            t = t1.elem_type
+            res = types.FunctionType(t, [t1, t2])
+
+        elif mathsat.msat_term_is_array_write(self.msat_env(), term):
+            t1 = self.env.stc.get_type(args[0])
+            t2 = self.env.stc.get_type(args[1])
+            t3 = self.env.stc.get_type(args[2])
+            res = types.FunctionType(t1, [t1, t2, t3])
+
         else:
             raise TypeError("Unsupported expression:",
                             mathsat.msat_term_repr(term))
@@ -614,6 +626,8 @@ class MSatConverter(Converter, DagWalker):
                 res = mgr.Symbol(rep, types.REAL)
             elif mathsat.msat_is_integer_type(self.msat_env(), ty):
                 res = mgr.Symbol(rep, types.INT)
+            elif mathsat.msat_is_array_type(self.msat_env(), ty):
+                raise NotImplementedError("This depends on Array Constants being implemented")
             else:
                 _, width = mathsat.msat_is_bv_type(self.msat_env(), ty)
                 assert width is not None, "Unsupported variable type for '%s'"%str(term)
@@ -737,6 +751,14 @@ class MSatConverter(Converter, DagWalker):
             res, amount = mathsat.msat_term_is_bv_ror(self.msat_env(), term)
             assert res
             res = mgr.BVRor(args[0], amount)
+
+        elif mathsat.msat_term_is_array_read(self.msat_env(), term):
+            assert arity == 2
+            res = mgr.Select(args[0], args[1])
+
+        elif mathsat.msat_term_is_array_write(self.msat_env(), term):
+            assert arity == 3
+            res = mgr.Store(args[0], args[1], args[2])
 
         else:
             raise TypeError("Unsupported expression:",
@@ -1004,6 +1026,13 @@ class MSatConverter(Converter, DagWalker):
         # In mathsat toreal is implicit
         return args[0]
 
+    def walk_array_select(self, formula, args, **kwargs):
+        return mathsat.msat_make_array_read(self.msat_env(), args[0], args[1])
+
+    def walk_array_store(self, formula, args, **kwargs):
+        return mathsat.msat_make_array_write(self.msat_env(),
+                                             args[0], args[1], args[2])
+
     def _type_to_msat(self, tp):
         """Convert a pySMT type into a MathSAT type."""
         if tp.is_bool_type():
@@ -1018,6 +1047,14 @@ class MSatConverter(Converter, DagWalker):
             msat_type = mathsat.msat_get_function_type(self.msat_env(),
                                                        stps,
                                                        rtp)
+            if mathsat.MSAT_ERROR_TYPE(msat_type):
+                msat_msg = mathsat.msat_last_error_message(self.msat_env())
+                raise InternalSolverError(msat_msg)
+            return msat_type
+        elif tp.is_array_type():
+            i = self._type_to_msat(tp.index_type)
+            e = self._type_to_msat(tp.elem_type)
+            msat_type = mathsat.msat_get_array_type(self.msat_env(), i, e)
             if mathsat.MSAT_ERROR_TYPE(msat_type):
                 msat_msg = mathsat.msat_last_error_message(self.msat_env())
                 raise InternalSolverError(msat_msg)

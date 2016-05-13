@@ -255,6 +255,20 @@ class HRPrinter(TreeWalker):
         self.walk(formula.arg(0))
         self.write(")")
 
+    def walk_array_select(self, formula):
+        self.walk(formula.arg(0))
+        self.write("[")
+        self.walk(formula.arg(1))
+        self.write("]")
+
+    def walk_array_store(self, formula):
+        self.walk(formula.arg(0))
+        self.write("[")
+        self.walk(formula.arg(1))
+        self.write(" := ")
+        self.walk(formula.arg(2))
+        self.write("]")
+
 
 class HRSerializer(object):
     """Return the serialized version of the formula as a string."""

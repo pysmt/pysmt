@@ -23,6 +23,7 @@ In the current version these are:
  * Real
  * BVType
  * FunctionType
+ * ArrayType
 
 Types are represented by singletons. Basic types (Bool, Int and Real)
 are constructed here by default, while BVType and FunctionType relies
@@ -34,6 +35,7 @@ different instance of BVType.
 # Global dictionary of types, used to store the singletons
 __CUSTOM_TYPES__ = {}
 __BV_TYPES__ = {}
+__ARRAY_TYPES__ = {}
 
 class PySMTType(object):
     """Abstract class for representing a type within pySMT."""
@@ -54,6 +56,9 @@ class PySMTType(object):
         return False
 
     def is_function_type(self):
+        return False
+
+    def is_array_type(self):
         return False
 
     def __hash__(self):
@@ -179,7 +184,6 @@ class _BVType(PySMTType):
             return True
         return False
 
-        return True
     def __hash__(self):
         return hash(self.type_id + self.width)
 
@@ -280,6 +284,91 @@ class _FunctionType(PySMTType):
         return self._hash
 
 
+# ArrayType is a Factory that returns a _ArrayType
+def ArrayType(index_type, elem_type):
+    """Returns the singleton of the Array type with the given arguments.
+
+    This function takes care of building and registering the type
+    whenever needed. To see the functions provided by the type look at
+    _ArrayType
+    """
+    key = (index_type, elem_type)
+    if key in __ARRAY_TYPES__:
+        return  __ARRAY_TYPES__[key]
+
+    res = _ArrayType(index_type, elem_type)
+    __ARRAY_TYPES__[key] = res
+    return res
+
+
+class _ArrayType(PySMTType):
+    """Internal class used to represent an Array type.
+
+    This class should not be instantiated directly, but the factory
+    method ArrayType should be used instead.
+    """
+    def __init__(self, index_type, elem_type):
+        PySMTType.__init__(self, type_id = 5)
+        self._index_type = index_type
+        self._elem_type = elem_type
+        self._hash = hash(str(self))
+        return
+
+    @property
+    def elem_type(self):
+        """Returns the element type.
+
+        E.g.,  A: (Array Int Real)
+        Returns RealType.
+        """
+        return self._elem_type
+
+    @property
+    def index_type(self):
+        """Returns the index type.
+
+        E.g.,  A: (Array Int Real)
+        Returns IntType.
+        """
+        return self._index_type
+
+    def as_smtlib(self, funstyle=True):
+        itype = self.index_type.as_smtlib(False)
+        etype = self.elem_type.as_smtlib(False)
+
+        if funstyle:
+            return "() (Array %s %s)" % (itype, etype)
+        else:
+            return "(Array %s %s)" % (itype, etype)
+
+    def __str__(self):
+        return "ARR[%s -> %s]" % (self.index_type, self.elem_type)
+
+    def is_array_type(self):
+        return True
+
+    def __eq__(self, other):
+        if other is None:
+            return False
+        if self.type_id != other.type_id:
+            return False
+        if id(self) == id(other):
+            return True
+        return str(self) == str(other)
+
+    def __ne__(self, other):
+        if other is None:
+            return True
+        if self.type_id != other.type_id:
+            return True
+        if id(self) == id(other):
+            return False
+        return str(self) != str(other)
+
+    def __hash__(self):
+        return self._hash
+
+
 # Singletons for the basic types
 BOOL = BooleanType()
 REAL = RealType()
@@ -288,3 +377,4 @@ INT = IntType()
 # Helper Constants
 PYSMT_TYPES = frozenset([BOOL, REAL, INT])
 BV1, BV8, BV16, BV32, BV64, BV128 = [BVType(i) for i in [1, 8, 16, 32, 64, 128]]
+ARRAY_INT_INT = ArrayType(INT,INT)

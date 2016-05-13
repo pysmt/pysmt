@@ -883,7 +883,15 @@ class FormulaManager(object):
             res = self.BVConcat(res, formula)
         return res
 
+    def Select(self, arr, idx):
+        """Creates a node representing an array selection."""
+        n = self.create_node(node_type=op.ARRAY_SELECT, args=(arr, idx))
+        return n
 
+    def Store(self, arr, idx, val):
+        """Creates a node representing an array update."""
+        n = self.create_node(node_type=op.ARRAY_STORE, args=(arr, idx, val))
+        return n
 
     def normalize(self, formula):
         """ Returns the formula normalized to the current Formula Manager.

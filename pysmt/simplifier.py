@@ -30,6 +30,11 @@ class Simplifier(pysmt.walkers.DagWalker):
 
         self.set_function(self.walk_identity, op.SYMBOL, op.REAL_CONSTANT,
                           op.INT_CONSTANT, op.BOOL_CONSTANT, op.BV_CONSTANT)
+        # MG: By doing this, we are not walking inside the array's
+        # operators.  This is incorrect, but I am not sure what types
+        # of Simplifications can be done. Leaving this outstanding
+        # here, to be solved.
+        self.set_function(self.walk_identity, *op.ARRAY_OPERATORS)
 
         self._validate_simplifications = None
         self.original_walk = self.walk

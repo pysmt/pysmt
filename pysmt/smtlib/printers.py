@@ -73,6 +73,8 @@ class SmtPrinter(TreeWalker):
         self.set_function(self.walk_bv_extend, op.BV_ZEXT)
         self.set_function(self.walk_bv_extend, op.BV_SEXT)
 
+        self.set_function(partial(self._walk_nary, "select"), op.ARRAY_SELECT)
+        self.set_function(partial(self._walk_nary, "store"), op.ARRAY_STORE)
 
     def printer(self, f):
         self.walk(f)
@@ -225,6 +227,9 @@ class SmtDagPrinter(DagWalker):
         self.set_function(self.walk_bv_rotate, op.BV_ROL)
         self.set_function(self.walk_bv_extend, op.BV_SEXT)
         self.set_function(self.walk_bv_extend, op.BV_ZEXT)
+
+        self.set_function(partial(self._walk_nary, "select"), op.ARRAY_SELECT)
+        self.set_function(partial(self._walk_nary, "store"), op.ARRAY_STORE)
 
 
     def _push_with_children_to_stack(self, formula, **kwargs):

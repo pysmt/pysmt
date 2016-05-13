@@ -26,7 +26,8 @@ try:
 except ImportError:
     raise SolverAPINotFound
 
-from pysmt.logics import PYSMT_LOGICS
+
+from pysmt.logics import PYSMT_LOGICS, ARRAYS_LOGICS
 from pysmt.solvers.solver import Solver, Converter
 from pysmt.exceptions import SolverReturnedUnknownResultError
 from pysmt.walkers import DagWalker
@@ -36,7 +37,8 @@ from pysmt.decorators import catch_conversion_error
 
 
 class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
-    LOGICS = PYSMT_LOGICS
+
+    LOGICS = PYSMT_LOGICS - ARRAYS_LOGICS
 
     def __init__(self, environment, logic, **options):
         Solver.__init__(self,
@@ -82,6 +84,8 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         assignment = {}
         for s in self.environment.formula_manager.get_all_symbols():
             if s.is_term():
+                # MG: Remove this when Arrays have been implemented
+                if s.symbol_type().is_array_type(): continue
                 v = self.get_value(s)
                 assignment[s] = v
         return EagerModel(assignment=assignment, environment=self.environment)
