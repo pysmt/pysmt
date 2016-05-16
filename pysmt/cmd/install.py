@@ -30,7 +30,7 @@ from pysmt.cmd.installers import CuddInstaller
 Installer = namedtuple("Installer", ["InstallerClass", "version", "extra_params"])
 INSTALLERS = [Installer(MSatInstaller,    "5.3.9", {}),
               Installer(Z3Installer,      "4.4.1", {}),
-              Installer(CVC4Installer,    "1.5-prerelease", {"git_version" : "68f22235a62f5276b206e9a6692a85001beb8d42"}),
+              Installer(CVC4Installer,    "1.5-prerelease", {"git_version" : "c15ff43597b41ea457befecb1b0e2402e28cb523"}),
               Installer(YicesInstaller,   "2.4.1", {}),
               Installer(BtorInstaller,    "2.2.0", {"lingeling_version": "bal"}),
               Installer(PicoSATInstaller, "960", {}),
