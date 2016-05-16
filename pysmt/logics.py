@@ -35,7 +35,8 @@ class Theory(object):
                  integer_difference = False,
                  real_difference = False,
                  linear = True,
-                 uninterpreted = False):
+                 uninterpreted = False,
+                 strings=False):
         self.arrays = arrays
         self.bit_vectors = bit_vectors
         self.floating_point = floating_point
@@ -45,6 +46,7 @@ class Theory(object):
         self.real_difference = real_difference
         self.linear = linear
         self.uninterpreted = uninterpreted
+        self.strings = strings
 
         return
 
@@ -58,7 +60,11 @@ class Theory(object):
         res = self.copy()
         res.linear = value
         return res
-
+       
+    def set_string(self,value=True):
+        res = self.copy()
+        res.strings=value
+        
     def set_difference_logic(self, value=True):
         res = self.copy()
         if res.integer_arithmetic:
@@ -76,7 +82,8 @@ class Theory(object):
                             integer_difference = self.integer_difference,
                             real_difference = self.real_difference,
                             linear = self.linear,
-                            uninterpreted = self.uninterpreted)
+                            uninterpreted = self.uninterpreted,
+                            strings = self.strings)
 
         return new_theory
 
@@ -110,7 +117,8 @@ class Theory(object):
             integer_difference=integer_difference,
             real_difference=real_difference,
             linear=self.linear | other.linear,
-            uninterpreted=self.uninterpreted | other.uninterpreted)
+            uninterpreted=self.uninterpreted | other.uninterpreted,
+            strings=self.strings|other.strings)
 
     def __eq__(self, other):
         if other is None or (not isinstance(other, Theory)):
@@ -124,7 +132,8 @@ class Theory(object):
             self.integer_difference == other.integer_difference and \
             self.real_difference == other.real_difference and \
             self.linear == other.linear and \
-            self.uninterpreted == other.uninterpreted
+            self.uninterpreted == other.uninterpreted and \
+            self.strings == other.strings
 
     def __ne__(self, other):
         return not (self == other)
@@ -164,7 +173,8 @@ class Theory(object):
             "ID: %s, " % self.integer_difference +\
             "RD: %s, " % self.real_difference +\
             "Linear: %s, " % self.linear +\
-            "EUF: %s" % self.uninterpreted
+            "EUF: %s" % self.uninterpreted +\
+            "STRING:%s"% self.strings
 
     __repr__ = __str__
 
@@ -188,7 +198,8 @@ class Logic(object):
                  integer_difference=False,
                  real_difference=False,
                  linear=True,
-                 uninterpreted=False):
+                 uninterpreted=False,
+                 strings = False):
 
         self.name = name
         self.description = description
@@ -202,7 +213,8 @@ class Logic(object):
                                  integer_difference=integer_difference,
                                  real_difference=real_difference,
                                  linear=linear,
-                                 uninterpreted=uninterpreted)
+                                 uninterpreted=uninterpreted,
+                                 strings=strings)
         else:
             self.theory = theory
 
@@ -548,6 +560,14 @@ symbols.""",
               linear=False,
               uninterpreted=True)
 
+QF_SLIA = Logic(name="QF_SLIA",
+              description=\
+""" Don't know clearly what to write here //GL """,
+            strings=True,
+            integer_arithmetic=True,
+            quantifier_free=True,
+            uninterpreted=True)
+
 AUTO = Logic(name="Auto",
              description="Special logic used to indicate that the logic to be used depends on the formula.")
 
@@ -581,7 +601,8 @@ SMTLIB2_LOGICS = frozenset([ AUFLIA,
                              QF_UFLRA,
                              QF_UFNRA,
                              QF_UFNIA,
-                             QF_UFLIRA
+                             QF_UFLIRA,
+                             QF_SLIA
                          ])
 
 LOGICS = SMTLIB2_LOGICS | frozenset([ QF_BOOL, BOOL ])
@@ -594,7 +615,7 @@ QF_LOGICS = frozenset(_l for _l in LOGICS if _l.quantifier_free)
 PYSMT_LOGICS = frozenset([QF_BOOL, QF_IDL, QF_LIA, QF_LRA, QF_RDL, QF_UF, QF_UFIDL,
                           QF_UFLIA, QF_UFLRA, QF_UFLIRA,
                           BOOL, LRA, LIA, UFLIRA, UFLRA,
-                          QF_BV, QF_UFBV])
+                          QF_BV, QF_UFBV, QF_SLIA])
 BV_LOGICS = frozenset([QF_BV, QF_UFBV])
 
 PYSMT_QF_LOGICS = frozenset(_l for _l in PYSMT_LOGICS if _l.quantifier_free)

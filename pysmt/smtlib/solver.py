@@ -51,9 +51,10 @@ class SmtLibSolver(Solver):
 
     def get_default_options(self, logic=None, user_options=None):
         res = {}
-        for o,v in iteritems(user_options):
-            if o not in ["generate_models", "unsat_cores_mode"]:
-                res[o] = v
+        if (user_options != None ):
+            for o,v in iteritems(user_options):
+                if o not in ["generate_models", "unsat_cores_mode"]:
+                    res[o] = v
         return res
 
     def set_option(self, name, value):

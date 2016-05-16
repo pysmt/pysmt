@@ -20,6 +20,7 @@ from fractions import Fraction
 from six.moves import xrange
 
 from pysmt.exceptions import SolverAPINotFound
+from pysmt.shortcuts import String
 
 try:
     import CVC4
@@ -144,6 +145,7 @@ class CVC4Converter(Converter, DagWalker):
         self.realType = cvc4_exprMgr.realType()
         self.intType = cvc4_exprMgr.integerType()
         self.boolType = cvc4_exprMgr.booleanType()
+        self.stringType = cvc4_exprMgr.stringType()
 
         self.declared_vars = {}
         self.backconversion = {}
@@ -176,6 +178,9 @@ class CVC4Converter(Converter, DagWalker):
                 v = bv.getValue().toString()
                 width = bv.getSize()
                 res = self.mgr.BV(int(v), width)
+            elif expr.getType().isString():
+                v = expr.getConstString()
+                res = self.mgr.String(v.toString())
             else:
                 raise TypeError("Unsupported constant type:", expr.getType())
         else:
@@ -355,7 +360,14 @@ class CVC4Converter(Converter, DagWalker):
 
     def walk_bv_ashr (self, formula, args, **kwargs):
         return self.mkExpr(CVC4.BITVECTOR_ASHR, args[0], args[1])
-
+        
+    def walk_string_constant (self, formula, args, **kwargs):
+        assert type(formula.constant_value()) == str
+        return self.mkConst(CVC4.CVC4String(formula.constant_value()))
+    
+    def walk_string_length (self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.STRING_LENGTH , args[0])
+    
     def _type_to_cvc4(self, tp):
         if tp.is_bool_type():
             return self.boolType
@@ -369,6 +381,8 @@ class CVC4Converter(Converter, DagWalker):
             return self.cvc4_exprMgr.mkFunctionType(stps, rtp)
         elif tp.is_bv_type():
             return self.cvc4_exprMgr.mkBitVectorType(tp.width)
+        elif tp.is_string_type():
+            return self.stringType
         else:
             raise NotImplementedError("Unsupported type: %s" %tp)
 
