@@ -24,7 +24,7 @@ these operators.
 from six.moves import xrange
 
 
-ALL_TYPES = list(xrange(0,49))
+ALL_TYPES = list(xrange(0,50))
 
 (
 FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF, # Boolean Logic (0-6)
@@ -53,8 +53,9 @@ BV_COMP,                                    # Returns 1_1 if the arguments are
                                             # equal otherwise it returns 0_1 (44)
 BV_SDIV, BV_SREM,                           # Signed Division and Reminder(45-46)
 BV_ASHR,                                    # Arithmetic shift right (47)
-ARRAY_SELECT,                               # Array Select
-ARRAY_STORE,                                # Array Store
+ARRAY_SELECT,                               # Array Select (48)
+ARRAY_STORE,                                # Array Store (49)
+ARRAY_VALUE                                 # Array Value (50)
 ) = ALL_TYPES
 
 QUANTIFIERS = frozenset([FORALL, EXISTS])
@@ -75,7 +76,7 @@ BV_OPERATORS = frozenset([BV_CONSTANT, BV_NOT, BV_AND, BV_OR, BV_XOR,
 
 LIRA_OPERATORS = frozenset([PLUS, MINUS, TIMES, TOREAL])
 
-ARRAY_OPERATORS = frozenset([ARRAY_SELECT, ARRAY_STORE])
+ARRAY_OPERATORS = frozenset([ARRAY_SELECT, ARRAY_STORE, ARRAY_VALUE])
 
 CUSTOM_NODE_TYPES = []
 
@@ -154,4 +155,7 @@ __OP_STR__ = {
     BV_SDIV : "BV_SDIV",
     BV_SREM : "BV_SREM",
     BV_ASHR : "BV_ASHR",
+    ARRAY_SELECT : "ARRAY_SELECT",
+    ARRAY_STORE : "ARRAY_STORE",
+    ARRAY_VALUE : "ARRAY_VALUE",
 }

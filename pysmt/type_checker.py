@@ -28,7 +28,7 @@ import pysmt.walkers as walkers
 import pysmt.operators as op
 import pysmt.shortcuts
 
-from pysmt.typing import BOOL, REAL, INT, BVType
+from pysmt.typing import BOOL, REAL, INT, BVType, ArrayType
 
 
 class SimpleTypeChecker(walkers.DagWalker):
@@ -261,6 +261,19 @@ class SimpleTypeChecker(walkers.DagWalker):
             args[0].elem_type==args[2]):
             return args[0]
         return None
+
+    def walk_array_value(self, formula, args, **kwargs):
+        assert formula is not None
+        if None in args: return None
+
+        default_type = args[0]
+        idx_type = formula.array_value_index_type()
+        for i, c in enumerate(args[1:]):
+            if i % 2 == 0 and c != idx_type:
+                return None # Wrong index type
+            elif i % 2 == 1 and c != default_type:
+                return None
+        return ArrayType(idx_type, default_type)
 
 # EOC SimpleTypeChecker
 

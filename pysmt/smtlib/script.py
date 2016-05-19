@@ -230,7 +230,6 @@ def smtlibscript_from_formula(formula):
 
     # Get the simplest SmtLib logic that contains the formula
     f_logic = get_logic(formula)
-    print(f_logic)
     smt_logic = get_closer_smtlib_logic(f_logic)
     script.add(name=smtcmd.SET_LOGIC,
                args=[smt_logic])

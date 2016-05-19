@@ -33,6 +33,25 @@ class CNFizer(DagWalker):
 
     def __init__(self, environment=None):
         DagWalker.__init__(self, environment)
+
+        self.set_function(self.walk_error, *op.ALL_TYPES)
+        self.set_function(self.walk_quantifier, *op.QUANTIFIERS)
+        self.set_function(self.walk_constant, *op.CONSTANTS)
+        self.set_function(self.walk_theory_op, *op.BV_OPERATORS)
+        self.set_function(self.walk_theory_op, *op.LIRA_OPERATORS)
+        self.set_function(self.walk_theory_relation, *op.RELATIONS)
+        self.set_function(self.walk_theory_op, *op.ARRAY_OPERATORS)
+
+        self.set_function(self.walk_and, op.AND)
+        self.set_function(self.walk_or, op.OR)
+        self.set_function(self.walk_not, op.NOT)
+        self.set_function(self.walk_implies, op.IMPLIES)
+        self.set_function(self.walk_iff, op.IFF)
+
+        self.set_function(self.walk_symbol, op.SYMBOL)
+        self.set_function(self.walk_function, op.FUNCTION)
+        self.set_function(self.walk_ite, op.ITE)
+
         self.mgr = self.env.formula_manager
         self._introduced_variables = {}
         self._cnf_pieces = {}
@@ -91,12 +110,7 @@ class CNFizer(DagWalker):
         res = ["{"] + clauses + ["}"]
         return "".join(res)
 
-
-
-    def walk_forall(self, formula, args, **kwargs):
-        raise NotImplementedError("CNFizer does not support quantifiers")
-
-    def walk_exists(self, formula, args, **kwargs):
+    def walk_quantifier(self, formula, args, **kwargs):
         raise NotImplementedError("CNFizer does not support quantifiers")
 
     def walk_and(self, formula, args, **kwargs):
@@ -174,37 +188,22 @@ class CNFizer(DagWalker):
         else:
             return CNFizer.THEORY_PLACEHOLDER
 
-    def walk_real_constant(self, formula, **kwargs):
+    def walk_theory_op(self, formula, **kwargs):
+        #pylint: disable=unused-argument
         return CNFizer.THEORY_PLACEHOLDER
 
-    def walk_bool_constant(self, formula, **kwargs):
+    def walk_constant(self, formula, **kwargs):
+        #pylint: disable=unused-argument
         if formula.is_true():
             return formula, CNFizer.TRUE_CNF
-        else:
+        elif formula.is_false():
             return formula, CNFizer.TRUE_CNF
+        else:
+            return CNFizer.THEORY_PLACEHOLDER
 
-    def walk_int_constant(self, formula, **kwargs):
-        return CNFizer.THEORY_PLACEHOLDER
-
-    def walk_plus(self, formula, **kwargs):
-        return CNFizer.THEORY_PLACEHOLDER
-
-    def walk_minus(self, formula, **kwargs):
-        return CNFizer.THEORY_PLACEHOLDER
-
-    def walk_times(self, formula, **kwargs):
-        return CNFizer.THEORY_PLACEHOLDER
-
-    def walk_equals(self, formula, args, **kwargs):
+    def walk_theory_relation(self, formula, args, **kwargs):
+        #pylint: disable=unused-argument
         assert all(a == CNFizer.THEORY_PLACEHOLDER for a in args)
-        return formula, CNFizer.TRUE_CNF
-
-    def walk_le(self, formula, args, **kwargs):
-        assert all(a == CNFizer.THEORY_PLACEHOLDER for a in args)
-        return formula, CNFizer.TRUE_CNF
-
-    def walk_lt(self, formula, args, **kwargs):
-        assert all(a == CNFizer.THEORY_PLACEHOLDER for a in args), str(args)
         return formula, CNFizer.TRUE_CNF
 
     def walk_ite(self, formula, args, **kwargs):
@@ -223,9 +222,6 @@ class CNFizer(DagWalker):
                                   frozenset([not_i, t, not_k]),
                                   frozenset([i, not_e, k]),
                                   frozenset([i, e, not_k])]))
-
-    def walk_toreal(self, formula, **kwargs):
-        return CNFizer.THEORY_PLACEHOLDER
 
 
 class NNFizer(DagWalker):
@@ -255,7 +251,12 @@ class NNFizer(DagWalker):
     def __init__(self, environment=None):
         DagWalker.__init__(self, env=environment)
         self.mgr = self.env.formula_manager
+        self.set_function(self.walk_constant, *op.CONSTANTS)
+        self.set_function(self.walk_theory_op, *op.BV_OPERATORS)
+        self.set_function(self.walk_theory_op, *op.LIRA_OPERATORS)
         self.set_function(self.walk_theory_relation, *op.RELATIONS)
+        self.set_function(self.walk_theory_op, *op.ARRAY_OPERATORS)
+
 
     def convert(self, formula):
         """ Converts the given formula in NNF """
@@ -366,12 +367,17 @@ class NNFizer(DagWalker):
     def walk_function(self, formula, **kwargs):
         return formula
 
-    def walk_bool_constant(self, formula, **kwargs):
+    def walk_constant(self, formula, **kwargs):
+        #pylint: disable=unused-argument
         return formula
 
     def walk_theory_relation(self, formula, **kwargs):
         #pylint: disable=unused-argument
         return formula
+
+    def walk_theory_op(self, formula, **kwargs):
+        #pylint: disable=unused-argument
+        return None
 
 
 class PrenexNormalizer(DagWalker):
@@ -569,10 +575,12 @@ class AIGer(DagWalker):
 
     def walk_nop(self, formula, args, **kwargs):
         """We return the Theory subformulae without changes."""
+        #pylint: disable=unused-argument
         return formula
 
     def walk_quantifier(self, formula, args, **kwargs):
         """Recreate the quantifiers, with the rewritten subformula."""
+        #pylint: disable=unused-argument
         if formula.is_exists():
             return self.mgr.Exists(formula.quantifier_vars(),
                                    args[0])

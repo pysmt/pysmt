@@ -187,3 +187,11 @@ class IdentityDagWalker(DagWalker):
 
     def walk_array_store(self, formula, args, **kwargs):
         return self.mgr.Store(args[0], args[1], args[2])
+
+    def walk_array_value(self, formula, args, **kwargs):
+        assign = {}
+        for i,c in enumerate(args[1::2]):
+            assign[c] = args[i+1]
+        return self.mgr.Array(formula.array_value_index_type(),
+                              args[0],
+                              assign)

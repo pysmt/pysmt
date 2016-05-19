@@ -27,6 +27,7 @@ except ImportError:
 from fractions import Fraction
 from six.moves import xrange
 
+import pysmt.typing as types
 from pysmt.solvers.solver import (IncrementalTrackingSolver, UnsatCoreSolver,
                                   Model, Converter)
 from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
@@ -85,6 +86,7 @@ z3.is_bv_zext = lambda x: z3.is_app_of(x, z3.Z3_OP_ZERO_EXT)
 z3.is_bv_sext = lambda x: z3.is_app_of(x, z3.Z3_OP_SIGN_EXT)
 z3.is_array_select = lambda x: z3.is_app_of(x, z3.Z3_OP_SELECT)
 z3.is_array_store = lambda x: z3.is_app_of(x, z3.Z3_OP_STORE)
+z3.is_const_array = lambda x: z3.is_app_of(x, z3.Z3_OP_CONST_ARRAY)
 
 z3.get_payload = lambda node,i : z3.Z3_get_decl_int_parameter(node.ctx.ref(),
                                                               node.decl().ast, i)
@@ -114,7 +116,7 @@ class Z3Model(Model):
     def get_value(self, formula, model_completion=True):
         titem = self.converter.convert(formula)
         z3_res = self.z3_model.eval(titem, model_completion=model_completion)
-        return self.converter.back(z3_res)
+        return self.converter.back(z3_res, model=self.z3_model)
 
     def iterator_over(self, language):
         for x in language:
@@ -280,9 +282,8 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
         self._assert_no_function_type(item)
 
         titem = self.converter.convert(item)
-        res = self.z3.model().eval(titem, model_completion=True)
-        r = self.converter.back(res)
-        return r
+        z3_res = self.z3.model().eval(titem, model_completion=True)
+        return self.converter.back(z3_res, self.z3.model())
 
     def _exit(self):
         del self.z3
@@ -301,28 +302,28 @@ class Z3Converter(Converter, DagWalker):
     def convert(self, formula):
         return self.walk(formula)
 
-    def back(self, expr):
+    def back(self, expr, model=None):
         stack = [expr]
         while len(stack) > 0:
             current = stack.pop()
-            key = askey(current)
+            key = (askey(current), model)
             if key not in self._back_memoization:
                 self._back_memoization[key] = None
                 stack.append(current)
                 for child in current.children():
                     stack.append(child)
             elif self._back_memoization[key] is None:
-                args = [self._back_memoization[askey(c)]
+                args = [self._back_memoization[(askey(c), model)]
                         for c in current.children()]
-                res = self._back_single_term(current, args)
+                res = self._back_single_term(current, args, model)
                 self._back_memoization[key] = res
             else:
                 # we already visited the node, nothing else to do
                 pass
-        return self._back_memoization[askey(expr)]
+        return self._back_memoization[(askey(expr), model)]
 
 
-    def _back_single_term(self, expr, args):
+    def _back_single_term(self, expr, args, model=None):
         assert z3.is_expr(expr)
 
         if z3.is_quantifier(expr):
@@ -390,6 +391,24 @@ class Z3Converter(Converter, DagWalker):
                 n = expr.as_long()
                 w = expr.size()
                 res = self.mgr.BV(n, w)
+            elif z3.is_as_array(expr):
+                if model is None:
+                    raise NotImplementedError("As-array expressions cannot be" \
+                                              " handled as they are not " \
+                                              "self-contained")
+                else:
+                    interp_decl = z3.get_as_array_func(expr)
+                    interp = model[interp_decl]
+                    default = self.back(interp.else_value())
+                    assign = {}
+                    for i in xrange(interp.num_entries()):
+                        e = interp.entry(i)
+                        assert e.num_args() == 1
+                        idx = self.back(e.arg_value(0))
+                        val = self.back(e.value())
+                        assign[idx] = val
+                    arr_type = self._z3_to_type(expr.sort())
+                    res = self.mgr.Array(arr_type.index_type, default, assign)
             else:
                 # it must be a symbol
                 res = self.mgr.get_symbol(str(expr))
@@ -473,7 +492,10 @@ class Z3Converter(Converter, DagWalker):
             res = self.mgr.Select(args[0], args[1])
         elif z3.is_array_store(expr):
             res = self.mgr.Store(args[0], args[1], args[2])
-
+        elif z3.is_const_array(expr):
+            idx_ty = self._z3_to_type(expr.sort())
+            k = args[0]
+            res = self.mgr.Array(idx_ty, k)
         if res is None:
             raise ConvertExpressionError(message=("Unsupported expression: %s" %
                                                    str(expr)),
@@ -669,6 +691,29 @@ class Z3Converter(Converter, DagWalker):
 
     def walk_array_store(self, formula, args, **kwargs):
         return z3.Store(args[0], args[1], args[2])
+
+    def walk_array_value(self, formula, args, **kwargs):
+        idx_type = formula.array_value_index_type()
+        rval = z3.K(self._type_to_z3(idx_type), args[0])
+        for i,c in enumerate(args[1::2]):
+            rval = z3.Store(rval, c, args[i+1])
+        return rval
+
+    def _z3_to_type(self, sort):
+        if sort.kind() == z3.Z3_BOOL_SORT:
+            return types.BOOL
+        elif sort.kind() == z3.Z3_INT_SORT:
+            return types.INT
+        elif sort.kind() == z3.Z3_REAL_SORT:
+            return types.REAL
+        elif sort.kind() == z3.Z3_ARRAY_SORT:
+            return types.ArrayType(self._z3_to_type(sort.domain()),
+                                   self._z3_to_type(sort.range()))
+        elif sort.kind() == z3.Z3_BV_SORT:
+            return types.BVType(sort.size())
+        else:
+            raise NotImplementedError("Unsupported sort in conversion: %s" % sort)
+
 
     def _type_to_z3(self, tp):
         if tp.is_bool_type():

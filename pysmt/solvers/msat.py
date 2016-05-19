@@ -456,14 +456,7 @@ class MSatConverter(Converter, DagWalker):
 
         elif mathsat.msat_term_is_constant(self.msat_env(), term):
             ty = mathsat.msat_term_get_type(term)
-            if mathsat.msat_is_rational_type(self.msat_env(), ty):
-                res = types.REAL
-            elif mathsat.msat_is_integer_type(self.msat_env(), ty):
-                res = types.INT
-            else:
-                _, width = mathsat.msat_is_bv_type(self.msat_env(), ty)
-                assert width is not None, "Unsupported type for '%s'" % str(term)
-                res = types.BVType(width)
+            return self._msat_type_to_type(ty)
 
         elif mathsat.msat_term_is_uf(self.msat_env(), term):
             d = mathsat.msat_term_get_decl(term)
@@ -534,6 +527,11 @@ class MSatConverter(Converter, DagWalker):
             t2 = self.env.stc.get_type(args[1])
             t3 = self.env.stc.get_type(args[2])
             res = types.FunctionType(t1, [t1, t2, t3])
+
+        elif mathsat.msat_term_is_array_const(self.msat_env(), term):
+            ty = mathsat.msat_term_get_type(term)
+            pyty = self._msat_type_to_type(ty)
+            return types.FunctionType(pyty, [self.env.stc.get_type(args[0])])
 
         else:
             raise TypeError("Unsupported expression:",
@@ -626,12 +624,16 @@ class MSatConverter(Converter, DagWalker):
                 res = mgr.Symbol(rep, types.REAL)
             elif mathsat.msat_is_integer_type(self.msat_env(), ty):
                 res = mgr.Symbol(rep, types.INT)
-            elif mathsat.msat_is_array_type(self.msat_env(), ty):
-                raise NotImplementedError("This depends on Array Constants being implemented")
             else:
-                _, width = mathsat.msat_is_bv_type(self.msat_env(), ty)
-                assert width is not None, "Unsupported variable type for '%s'"%str(term)
-                res = mgr.Symbol(rep, types.BVType(width))
+                check_arr, idx_type, val_type = mathsat.msat_is_array_type(self.msat_env(), ty)
+                if check_arr:
+                    i = self._msat_type_to_type(idx_type)
+                    e = self._msat_type_to_type(val_type)
+                    res = mgr.Symbol(rep, types.ArrayType(i, e))
+                else:
+                    _, width = mathsat.msat_is_bv_type(self.msat_env(), ty)
+                    assert width is not None, "Unsupported variable type for '%s'"%str(term)
+                    res = mgr.Symbol(rep, types.BVType(width))
 
         elif mathsat.msat_term_is_uf(self.msat_env(), term):
             d = mathsat.msat_term_get_decl(term)
@@ -759,6 +761,11 @@ class MSatConverter(Converter, DagWalker):
         elif mathsat.msat_term_is_array_write(self.msat_env(), term):
             assert arity == 3
             res = mgr.Store(args[0], args[1], args[2])
+
+        elif mathsat.msat_term_is_array_const(self.msat_env(), term):
+            ty = mathsat.msat_term_get_type(term)
+            pyty = self._msat_type_to_type(ty)
+            res = mgr.Array(pyty.index_type, args[0])
 
         else:
             raise TypeError("Unsupported expression:",
@@ -1033,6 +1040,16 @@ class MSatConverter(Converter, DagWalker):
         return mathsat.msat_make_array_write(self.msat_env(),
                                              args[0], args[1], args[2])
 
+    def walk_array_value(self, formula, args, **kwargs):
+        idx_type = formula.array_value_index_type()
+        rval = mathsat.msat_make_array_const(self.msat_env(),
+                                             self._type_to_msat(idx_type),
+                                             args[0])
+        for i,c in enumerate(args[1::2]):
+            rval = mathsat.msat_make_array_write(self.msat_env(), rval,
+                                                 c, args[i+1])
+        return rval
+
     def _type_to_msat(self, tp):
         """Convert a pySMT type into a MathSAT type."""
         if tp.is_bool_type():
@@ -1062,6 +1079,30 @@ class MSatConverter(Converter, DagWalker):
         else:
             assert tp.is_bv_type(), "Usupported type for '%s'" % tp
             return mathsat.msat_get_bv_type(self.msat_env(), tp.width)
+
+    def _msat_type_to_type(self, tp):
+        """Converts a MathSAT type into a PySMT type."""
+        if mathsat.msat_is_bool_type(self.msat_env(), tp):
+            return types.BOOL
+        elif mathsat.msat_is_rational_type(self.msat_env(), tp):
+            return types.REAL
+        elif mathsat.msat_is_integer_type(self.msat_env(), tp):
+            return types.INT
+        else:
+            check_arr, idx_type, val_type = \
+                    mathsat.msat_is_array_type(self.msat_env(), tp)
+            if check_arr != 0:
+                i = self._msat_type_to_type(idx_type)
+                e = self._msat_type_to_type(val_type)
+                return types.ArrayType(i, e)
+
+            check_bv, bv_width = mathsat.msat_is_bv_type(self.msat_env(), tp)
+            if check_bv != 0:
+                return types.BVType(bv_width)
+
+            # It must be a function type, currently unsupported
+            raise NotImplementedError("Function types are unsupported")
+
 
     def declare_variable(self, var):
         if not var.is_symbol(): raise TypeError(var)

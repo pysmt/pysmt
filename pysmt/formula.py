@@ -893,6 +893,24 @@ class FormulaManager(object):
         n = self.create_node(node_type=op.ARRAY_STORE, args=(arr, idx, val))
         return n
 
+    def Array(self, idx_type, default, assigned_values=None):
+        """Creates a node representing an array having index type equal to
+           idx_type, initialized with default values.
+
+           If assigned_values is specified, then it must be a map from
+           constants of type idx_type to values of the same type as
+           default and the array is initialized correspondingly.
+        """
+        args = [default]
+        if assigned_values:
+            for k in assigned_values:
+                if not k.is_constant():
+                    raise ValueError("Array initialization indexes must be constants")
+                args.append(k, assigned_values[k])
+        n = self.create_node(node_type=op.ARRAY_VALUE, args=tuple(args),
+                             payload=idx_type)
+        return n
+
     def normalize(self, formula):
         """ Returns the formula normalized to the current Formula Manager.
 

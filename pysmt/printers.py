@@ -19,6 +19,7 @@ from fractions import Fraction
 
 from pysmt.walkers import TreeWalker
 from six.moves import cStringIO
+from six import iteritems
 from pysmt.utils import quote
 
 class HRPrinter(TreeWalker):
@@ -267,6 +268,21 @@ class HRPrinter(TreeWalker):
         self.walk(formula.arg(1))
         self.write(" := ")
         self.walk(formula.arg(2))
+        self.write("]")
+
+    def walk_array_value(self, formula):
+        self.write("Array{")
+        self.write(formula.array_value_index_type())
+        self.write("}")
+        assign = formula.array_value_assigned_values_map()
+        for k, v in iteritems(assign):
+            self.write("[")
+            self.walk(k)
+            self.write(" := ")
+            self.walk(v)
+            self.write("]")
+        self.write("[* := ")
+        self.walk(formula.array_value_default())
         self.write("]")
 
 

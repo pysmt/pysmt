@@ -155,6 +155,9 @@ class CloseBrak(GrammarSymbol):
 class ExprElse(GrammarSymbol):
     pass
 
+class ArrStore(GrammarSymbol):
+    pass
+
 class ExprComma(GrammarSymbol):
     pass
 

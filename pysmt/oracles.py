@@ -146,6 +146,7 @@ class TheoryOracle(pysmt.walkers.DagWalker):
         self.set_function(self.walk_times, op.TIMES)
         self.set_function(self.walk_plus, op.PLUS)
         self.set_function(self.walk_equals, op.EQUALS)
+        self.set_function(self.walk_array_value, op.ARRAY_VALUE)
 
     def walk_combine(self, formula, args, **kwargs):
         #pylint: disable=unused-argument
@@ -237,6 +238,31 @@ class TheoryOracle(pysmt.walkers.DagWalker):
 
     def walk_equals(self, formula, args, **kwargs):
         return self.walk_combine(formula, args)
+
+    def walk_array_value(self, formula, args, **kwargs):
+        # First, we combin all the theories of all the indexes and values
+        theory_out = self.walk_combine(formula, args)
+
+        # We combine the index-type theory
+        i_type = formula.array_value_index_type()
+        if i_type.is_real_type():
+            idx_theory = Theory(real_arithmetic=True, real_difference=True)
+        elif i_type.is_int_type():
+            idx_theory = Theory(integer_arithmetic=True, integer_difference=True)
+        elif i_type.is_bool_type():
+            idx_theory = Theory()
+        elif i_type.is_bv_type():
+            idx_theory = Theory(bit_vectors=True)
+        elif i_type.is_array_type():
+            idx_theory = Theory(arrays=True)
+        else:
+            assert i_type.is_function_type()
+            idx_theory = Theory(uninterpreted=True)
+        theory_out = theory_out.combine(idx_theory)
+
+        # Finally, we add the array theory
+        theory_out.arrays = True
+        return theory_out
 
     def get_theory(self, formula):
         """Returns the thoery for the formula."""

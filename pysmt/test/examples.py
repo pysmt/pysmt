@@ -571,7 +571,7 @@ def get_example_formulae(environment=None):
                     logic=pysmt.logics.QF_BOOL
                 ),
             # Arrays
-            # q=0 -> Store(aii, 0, p) = Store(aii, 0, q)
+            # q=0 -> Store(aii, 0, 0) = Store(aii, 0, q)
             Example(expr=Implies(Equals(q, Int(0)),
                                  Equals(Store(aii, Int(0), Int(0)),
                                         Store(aii, Int(0), q))),

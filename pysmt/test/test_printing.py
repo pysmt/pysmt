@@ -265,7 +265,9 @@ SERIALIZED_EXAMPLES = [
     """(((ToReal((... - ...)) = r) & (ToReal(q) = r)) -> ((p < ih(ToReal(...), (... + ...))) | (ih(r, p) <= p)))""",
     """(! (((ToReal(...) = r) & (ToReal(...) = r)) -> ((p < ...(..., ...)) | (...(..., ...) <= p))))""",
     """("Did you know that any string works? #yolo" & "10" & "|#somesolverskeepthe||" & " ")""",
-    ]
+    """((q = 0) -> (aii[0 := 0] = aii[0 := q]))""",
+    """(aii[0 := 0][0] = 0)"""
+]
 
 
 if __name__ == '__main__':

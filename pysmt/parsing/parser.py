@@ -20,7 +20,8 @@ from fractions import Fraction
 from pysmt.parsing.pratt import PrattParser, Lexer, Rule, GrammarSymbol
 from pysmt.parsing.pratt import (UnaryOpAdapter, InfixOpAdapter,
                                  InfixOrUnaryOpAdapter)
-from pysmt.parsing.pratt import ClosePar, CloseBrak, ExprElse, ExprComma, ExprDot
+from pysmt.parsing.pratt import ClosePar, CloseBrak, ExprElse, ExprComma
+from pysmt.parsing.pratt import ExprDot, ArrStore
 
 
 #
@@ -95,6 +96,7 @@ class HRLexer(Lexer):
             Rule(r"(s%)", InfixOpAdapter(self.mgr.BVSRem, 80), False),# srem
             Rule(r"(u%)", InfixOpAdapter(self.mgr.BVURem, 80), False),# urem
             Rule(r"(\?)", ExprIf(), False), # question
+            Rule(r"(:=)", ArrStore(), False),# ArrStore
             Rule(r"(::)", InfixOpAdapter(self.mgr.BVConcat, 90), False),# BVXor
             Rule(r"(:)", ExprElse(), False),# colon
             Rule(r"(False)", Constant(self.mgr.FALSE()), False), # False
@@ -261,19 +263,33 @@ class OpenBrak(GrammarSymbol):
         self.lbp = 300
 
     def led(self, parser, left):
-        # BVExtract
-        bv = left
-        start = parser.expression()
-        if type(parser.token) != ExprElse:
-            raise SyntaxError("Expected ':'")
-        parser.advance()
-        end = parser.expression()
-        if type(parser.token) != CloseBrak:
-            raise SyntaxError("Expected ']'")
-        parser.advance()
-        return parser.mgr.BVExtract(bv,
-                                    start.constant_value(),
-                                    end.constant_value())
+        # BVExtract, Select or Store
+        op = left
+        e1 = parser.expression()
+        if type(parser.token) == ExprElse:
+            #BVExtract
+            parser.advance()
+            end = parser.expression()
+            if type(parser.token) != CloseBrak:
+                raise SyntaxError("Expected ']'")
+            parser.advance()
+            return parser.mgr.BVExtract(op,
+                                        e1.constant_value(),
+                                        end.constant_value())
+        elif type(parser.token) == CloseBrak:
+            # Select
+            parser.advance()
+            return parser.mgr.Select(op, e1)
+        elif type(parser.token) == ArrStore:
+            #Store
+            parser.advance()
+            e2 = parser.expression()
+            if type(parser.token) != CloseBrak:
+                raise SyntaxError("Expected ']'")
+            parser.advance()
+            return parser.mgr.Store(op, e1, e2)
+        else:
+            raise SyntaxError("Unexpected token:" + str(parser.token))
 
 
 class Quantifier(GrammarSymbol):

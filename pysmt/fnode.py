@@ -37,7 +37,7 @@ from pysmt.operators import (FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF,
                              BV_COMP,
                              BV_SDIV, BV_SREM,
                              BV_ASHR,
-                             ARRAY_SELECT, ARRAY_STORE)
+                             ARRAY_SELECT, ARRAY_STORE, ARRAY_VALUE)
 from pysmt.operators import  (BOOL_OPERATORS, THEORY_OPERATORS,
                               BV_OPERATORS, LIRA_OPERATORS, ARRAY_OPERATORS,
                               RELATIONS, CONSTANTS)
@@ -143,6 +143,16 @@ class FNode(object):
         Optionally, check that the constant is of the given type and value.
         """
         if self.node_type() not in CONSTANTS:
+            if self.node_type() == ARRAY_VALUE:
+                # An array value can be a constant if all its children
+                # are constants
+                for c in self.args():
+                    if not c.is_constant():
+                        return False
+                if _type is not None or value is not None:
+                    raise ValueError("constant type and value checking is " \
+                                     "not available for array values")
+                return True
             return False
         if _type is not None:
             if _type.is_int_type() and self.node_type() != INT_CONSTANT:
@@ -430,6 +440,10 @@ class FNode(object):
         """Test whether the node is the STORE (array store) operator."""
         return self.node_type() == ARRAY_STORE
 
+    def is_array_value(self):
+        """Test whether the node is an array value operator."""
+        return self.node_type() == ARRAY_VALUE
+
     def bv_width(self):
         """Return the BV width of the formula."""
         if self.is_bv_constant():
@@ -549,6 +563,19 @@ class FNode(object):
         if reverse:
             bitstr = bitstr[::-1]
         return bitstr
+
+    def array_value_index_type(self):
+        return self._content.payload
+
+    def array_value_assigned_values_map(self):
+        res = {}
+        args = self.args()
+        for i,c in enumerate(args[1::2]):
+            res[c] = args[i+1]
+        return res
+
+    def array_value_default(self):
+        return self.args()[0]
 
     def function_name(self):
         """Return the Function name."""
