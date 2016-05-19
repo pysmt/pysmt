@@ -45,11 +45,11 @@ class BoolectorSolver(IncrementalTrackingSolver,
 
     LOGICS = [QF_BV, QF_UFBV]
 
-    def __init__(self, environment, logic, user_options):
+    def __init__(self, environment, logic, **options):
         IncrementalTrackingSolver.__init__(self,
                                            environment=environment,
                                            logic=logic,
-                                           user_options=user_options)
+                                           **options)
 
         self.btor = boolector.Boolector()
 

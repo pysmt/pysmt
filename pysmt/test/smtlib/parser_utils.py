@@ -104,8 +104,7 @@ def execute_script_fname(smtfile, logic, expected_result):
     parser = SmtLibParser()
     script = parser.get_script_fname(smtfile)
     try:
-        log = script.evaluate(Solver(logic=logic,
-                                     options={"incremental": False}))
+        log = script.evaluate(Solver(logic=logic, incremental=False))
     except NoSolverAvailableError:
         raise SkipTest("No solver for logic %s." % logic)
 

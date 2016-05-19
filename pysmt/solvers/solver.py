@@ -21,32 +21,45 @@ from pysmt.exceptions import SolverReturnedUnknownResultError
 from six.moves import xrange
 
 
+class SolverOptions(object):
+    """Solver Options shared by most solvers."""
+
+    VALID_OPTIONS = [("generate_models", True),
+                     ("unsat_cores_mode", None),
+                     ("incremental", True),
+    ]
+
+    def __init__(self, **kwargs):
+        for name, default in self.VALID_OPTIONS:
+            if name in kwargs:
+                setattr(self, name, kwargs[name])
+            else:
+                setattr(self, name, default)
+
+        for k in kwargs:
+            if k not in [n for (n, _) in self.VALID_OPTIONS]:
+                raise ValueError("Unrecognized option '%s'" % k)
+
+
 class Solver(object):
     """Represents a generic SMT Solver."""
 
     # Define the supported logics for the Solver
     LOGICS = []
 
-    def __init__(self, environment, logic, user_options=None):
+    # Class defining options for the Solver
+    OptionsClass = SolverOptions
+
+    def __init__(self, environment, logic, **options):
         if logic is None:
             raise ValueError("Cannot provide 'None' as logic")
 
         self.environment = environment
         self.pending_pop = False
         self.logic = logic
-        self.options = self.get_default_options(logic, user_options)
+        self.options = self.OptionsClass(**options)
         self._destroyed = False
         return
-
-    def get_default_options(self, logic=None, user_options=None):
-        res = SolverOptions()
-        if user_options is not None:
-            for k in ["generate_models",
-                      "unsat_cores_mode",
-                      "incremental"]:
-                if k in user_options:
-                    setattr(res, k, user_options[k])
-        return res
 
     def is_sat(self, formula):
         """Checks satisfiability of the formula w.r.t. the current state of
@@ -281,9 +294,9 @@ class IncrementalTrackingSolver(Solver):
     self.assertions list.
     """
 
-    def __init__(self, environment, logic, user_options=None):
+    def __init__(self, environment, logic, **options):
         """See py:func:`Solver.__init__()`."""
-        Solver.__init__(self, environment, logic, user_options=user_options)
+        Solver.__init__(self, environment, logic, **options)
 
         self._last_result = None
         self._last_command = None
@@ -476,12 +489,3 @@ class Converter(object):
     def back(self, expr):
         """Convert an expression of the Solver into a PySMT term."""
         raise NotImplementedError
-
-
-class SolverOptions(object):
-    """Abstract class to represent Solver Options."""
-    def __init__(self, generate_models=True, unsat_cores_mode=None,
-                 incremental = False):
-        self.generate_models = generate_models
-        self.unsat_cores_mode = unsat_cores_mode
-        self.incremental = incremental

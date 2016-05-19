@@ -38,11 +38,11 @@ from pysmt.decorators import catch_conversion_error
 class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
     LOGICS = PYSMT_QF_LOGICS
 
-    def __init__(self, environment, logic, user_options):
+    def __init__(self, environment, logic, **options):
         Solver.__init__(self,
                         environment=environment,
                         logic=logic,
-                        user_options=user_options)
+                        **options)
         self.em = CVC4.ExprManager()
         self.cvc4 = None
         self.declarations = None

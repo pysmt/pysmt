@@ -400,7 +400,6 @@ class TestBasic(TestCase):
 
         for sname in get_env().factory.all_solvers(logic=QF_UFLIRA):
             with Solver(name=sname) as solver:
-                print(sname)
                 # First hr
                 solver.add_assertion(f)
                 res = solver.solve()
@@ -485,6 +484,14 @@ class TestBasic(TestCase):
         self.assertTrue(is_sat(x, logic=None))
         self.assertTrue(is_sat(x))
 
+    @skipIfNoSolverForLogic(QF_BOOL)
+    def test_solver_options(self):
+        # Options are kwargs of the Solver() constructor.
+        solver = Solver(logic=QF_BOOL, incremental=True)
+        self.assertIsNotNone(solver)
+        # Options are enforced at construction time
+        with self.assertRaises(ValueError):
+            Solver(logic=QF_BOOL, invalid_option=False)
 
 if __name__ == '__main__':
     main()
