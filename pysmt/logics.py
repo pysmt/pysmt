@@ -102,15 +102,15 @@ class Theory(object):
             real_difference = False
 
         return Theory(
-            arrays=self.arrays | other.arrays,
-            bit_vectors=self.bit_vectors | other.bit_vectors,
-            floating_point=self.floating_point | other.floating_point,
-            integer_arithmetic=self.integer_arithmetic | other.integer_arithmetic,
-            real_arithmetic=self.real_arithmetic | other.real_arithmetic,
+            arrays=self.arrays or other.arrays,
+            bit_vectors=self.bit_vectors or other.bit_vectors,
+            floating_point=self.floating_point or other.floating_point,
+            integer_arithmetic=self.integer_arithmetic or other.integer_arithmetic,
+            real_arithmetic=self.real_arithmetic or other.real_arithmetic,
             integer_difference=integer_difference,
             real_difference=real_difference,
-            linear=self.linear | other.linear,
-            uninterpreted=self.uninterpreted | other.uninterpreted)
+            linear=self.linear and other.linear,
+            uninterpreted=self.uninterpreted or other.uninterpreted)
 
     def __eq__(self, other):
         if other is None or (not isinstance(other, Theory)):
@@ -145,6 +145,14 @@ class Theory(object):
         else:
             le_real_difference = False
 
+        if self.linear == other.linear:
+            le_linear = True
+        elif self.linear and not other.linear:
+            le_linear = True
+        else:
+            le_linear = False
+
+
         return (self.arrays <= other.arrays and
                 self.bit_vectors <= other.bit_vectors and
                 self.floating_point <= other.floating_point and
@@ -153,7 +161,7 @@ class Theory(object):
                 self.integer_arithmetic <= other.integer_arithmetic and
                 le_real_difference and
                 self.real_arithmetic <= other.real_arithmetic and
-                self.linear <= other.linear)
+                le_linear)
 
     def __str__(self):
         return "Arrays: %s, " % self.arrays +\
