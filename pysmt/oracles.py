@@ -138,15 +138,16 @@ class TheoryOracle(pysmt.walkers.DagWalker):
         # Just propagate BV
         self.set_function(self.walk_combine, *op.BV_OPERATORS)
 
-        self.set_function(self.walk_constant, op.REAL_CONSTANT, op.BOOL_CONSTANT,
-                          op.INT_CONSTANT, op.BV_CONSTANT)
+        self.set_function(self.walk_constant,
+                          op.REAL_CONSTANT, op.BOOL_CONSTANT,
+                          op.INT_CONSTANT, op.BV_CONSTANT,
+                          op.STRING_CONSTANT)
         self.set_function(self.walk_symbol, op.SYMBOL)
         self.set_function(self.walk_function, op.FUNCTION)
         self.set_function(self.walk_lira, op.TOREAL)
         self.set_function(self.walk_times, op.TIMES)
         self.set_function(self.walk_plus, op.PLUS)
         self.set_function(self.walk_equals, op.EQUALS)
-
 
 
     def walk_combine(self, formula, args, **kwargs):
@@ -169,6 +170,8 @@ class TheoryOracle(pysmt.walkers.DagWalker):
             theory_out = Theory(integer_arithmetic=True, integer_difference=True)
         elif formula.is_bv_constant():
             theory_out = Theory(bit_vectors=True)
+        elif formula.is_string_constant():
+            theory_out = Theory(strings=True)
         else:
             assert formula.is_bool_constant()
             theory_out = Theory()
@@ -187,6 +190,8 @@ class TheoryOracle(pysmt.walkers.DagWalker):
             theory_out = Theory()
         elif f_type.is_bv_type():
             theory_out = Theory(bit_vectors=True)
+        elif f_type.is_string_type():
+            theory_out = Theory(strings=True)
         else:
             assert f_type.is_function_type()
             theory_out = Theory(uninterpreted=True)
@@ -210,8 +215,7 @@ class TheoryOracle(pysmt.walkers.DagWalker):
     def walk_lira(self, formula, args, **kwargs):
         #pylint: disable=unused-argument
         """Extends the Theory with LIRA."""
-        theory_out = args[0].copy()
-        theory_out = theory_out.set_lira()
+        theory_out = args[0].set_lira() # This makes a copy of args[0]
         return theory_out
 
     def walk_times(self, formula, args, **kwargs):
@@ -237,6 +241,13 @@ class TheoryOracle(pysmt.walkers.DagWalker):
 
     def walk_equals(self, formula, args, **kwargs):
         return self.walk_combine(formula, args)
+
+    def walk_length(self, formula, args, **kwargs):
+        #pylint: disable=unused-argument
+        """Extends the Theory with Strings."""
+        theory_out = args[0].set_strings() # This makes a copy of args[0]
+        return theory_out
+
 
     def get_theory(self, formula):
         """Returns the thoery for the formula."""
@@ -323,6 +334,7 @@ class AtomsOracle(pysmt.walkers.DagWalker):
         self.set_function(self.walk_constant, *op.CONSTANTS)
         self.set_function(self.walk_theory_op, *op.BV_OPERATORS)
         self.set_function(self.walk_theory_op, *op.LIRA_OPERATORS)
+        self.set_function(self.walk_theory_op, *op.STRING_OPERATORS)
         self.set_function(self.walk_theory_relation, *op.RELATIONS)
 
         self.set_function(self.walk_symbol, op.SYMBOL)
@@ -370,7 +382,7 @@ class AtomsOracle(pysmt.walkers.DagWalker):
         else:
             return frozenset(x for a in args for x in a)
 
-
+#EOC AtomsOracle
 
 def get_logic(formula, env=None):
     if env is None:

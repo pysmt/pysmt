@@ -24,7 +24,7 @@ from six.moves import xrange
 
 import pysmt.smtlib.commands as smtcmd
 from pysmt.environment import get_env
-from pysmt.typing import BOOL, REAL, INT, FunctionType, BVType
+from pysmt.typing import BOOL, REAL, INT, FunctionType, BVType, STRING
 from pysmt.logics import get_logic_by_name, UndefinedLogicError
 from pysmt.exceptions import UnknownSmtLibCommandError
 from pysmt.smtlib.script import SmtLibCommand, SmtLibScript
@@ -290,7 +290,10 @@ class SmtLibParser(object):
                             'bvslt':self._operator_adapter(mgr.BVSLT),
                             'bvsle':self._operator_adapter(mgr.BVSLE),
                             'bvsgt':self._operator_adapter(mgr.BVSGT),
-                            'bvsge':self._operator_adapter(mgr.BVSGE),}
+                            'bvsge':self._operator_adapter(mgr.BVSGE),
+                            # Strings
+                            'str.len':self._operator_adapter(mgr.Length),
+        }
 
         # Command tokens
         self.commands = {smtcmd.ASSERT : self._cmd_assert,
@@ -443,6 +446,8 @@ class SmtLibParser(object):
                 return INT
             elif type_name == "Real":
                 return REAL
+            elif type_name == "String":
+                return STRING
             elif type_name.startswith("BV"):
                 size = int(type_name[2:])
                 return BVType(size)
@@ -477,6 +482,9 @@ class SmtLibParser(object):
                     width = (len(token) - 2) * 16
                     value = int("0" + token[1:], 16)
                 res = mgr.BV(value, width)
+            elif token[0] == '"':
+                # String constant
+                res = mgr.String(token.replace('"',''))
             else:
                 # it could be a number or a string
                 try:

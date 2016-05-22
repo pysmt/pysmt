@@ -61,6 +61,7 @@ class HRLexer(Lexer):
             Rule(r"(-?\d+\.\d+)", self.real_constant, True),# decimals
             Rule(r"(-?\d+_\d+)", self.bv_constant, True),# bv
             Rule(r"(-?\d+)", self.int_constant, True),# integer literals
+            Rule(r"\"(.*?)\"", self.string_constant, True), # String Constant
             Rule(r"(&)", InfixOpAdapter(self.AndOrBVAnd, 40), False),# conjunction
             Rule(r"(\|)", InfixOpAdapter(self.OrOrBVOr, 30), False),# disjunction
             Rule(r"(!)", UnaryOpAdapter(self.NotOrBVNot, 50), False),# negation
@@ -110,7 +111,8 @@ class HRLexer(Lexer):
             Rule(r"(forall)", Quantifier(self.mgr.ForAll, 20), False),# BVXor
             Rule(r"(exists)", Quantifier(self.mgr.Exists, 20), False),# BVXor
             Rule(r"(ToReal)", UnaryOpAdapter(self.mgr.ToReal, 100), False),# BVXor
-            Rule(r"\"(.*?)\"", self.identifier, True),# quoted identifiers
+            Rule(r"(len)", UnaryOpAdapter(self.mgr.Length, 100), False), # Length
+            Rule(r"'(.*?)'", self.identifier, True), # quoted identifiers
             Rule(r"([A-Za-z_][A-Za-z0-9_]*)", self.identifier, True),# identifiers
             Rule(r"(.)", self.lexing_error, True), # input error
         ]
@@ -128,6 +130,9 @@ class HRLexer(Lexer):
 
     def int_constant(self, read):
         return Constant(self.mgr.Int(int(read)))
+
+    def string_constant(self, read):
+        return Constant(self.mgr.String(read))
 
     def identifier(self, read):
         return Identifier(read, env=self.env)

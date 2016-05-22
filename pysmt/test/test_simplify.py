@@ -25,15 +25,17 @@ class TestSimplify(TestCase):
 
     @attr("slow")
     @skipIfSolverNotAvailable("z3")
+    @skipIfSolverNotAvailable("cvc4")
     def test_simplify_qf(self):
         simp = get_env().simplifier
         Iff = get_env().formula_manager.Iff
         for (f, _, _, logic) in get_example_formulae():
             if logic.is_quantified(): continue
-            simp.validate_simplifications = True
+            sname = "z3" if not logic.theory.strings else "cvc4"
+            simp.validate_simplifications = sname
             sf = f.simplify()
-            simp.validate_simplifications = False
-            self.assertValid(Iff(f, sf), solver_name='z3',
+            simp.validate_simplifications = None
+            self.assertValid(Iff(f, sf), solver_name=sname,
                              msg="Simplification did not provide equivalent "+
                                 "result:\n f= %s\n sf = %s" % (f, sf))
 
@@ -44,9 +46,9 @@ class TestSimplify(TestCase):
         Iff = get_env().formula_manager.Iff
         for (f, _, _, logic) in get_example_formulae():
             if logic.quantifier_free: continue
-            simp.validate_simplifications = True
+            simp.validate_simplifications = "z3"
             sf = f.simplify()
-            simp.validate_simplifications = False
+            simp.validate_simplifications = None
             self.assertValid(Iff(f, sf), solver_name='z3',
                              msg="Simplification did not provide equivalent "+
                             "result:\n f= %s\n sf = %s" % (f, sf))

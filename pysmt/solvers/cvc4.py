@@ -376,7 +376,7 @@ class CVC4Converter(Converter, DagWalker):
         #assert type(formula.constant_value()) == str
         return self.mkConst(CVC4.CVC4String(formula.constant_value()))
 
-    def walk_string_length(self, formula, args, **kwargs):
+    def walk_length(self, formula, args, **kwargs):
         return self.mkExpr(CVC4.STRING_LENGTH , args[0])
 
     def _type_to_cvc4(self, tp):

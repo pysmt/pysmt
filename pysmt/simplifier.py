@@ -29,7 +29,8 @@ class Simplifier(pysmt.walkers.DagWalker):
         self.manager = self.env.formula_manager
 
         self.set_function(self.walk_identity, op.SYMBOL, op.REAL_CONSTANT,
-                          op.INT_CONSTANT, op.BOOL_CONSTANT, op.BV_CONSTANT)
+                          op.INT_CONSTANT, op.BOOL_CONSTANT, op.BV_CONSTANT,
+                          op.STRING_CONSTANT)
 
         self._validate_simplifications = None
         self.original_walk = self.walk
@@ -40,7 +41,7 @@ class Simplifier(pysmt.walkers.DagWalker):
 
     @validate_simplifications.setter
     def validate_simplifications(self, value):
-        if value:
+        if value is not None:
             self.walk = self.walk_debug
         else:
             # Restore original walk method
@@ -69,7 +70,8 @@ class Simplifier(pysmt.walkers.DagWalker):
         ltype = get_type(formula)
         rtype = get_type(res)
         test = Equals(formula, res) if ltype != BOOL else Iff(formula, res)
-        assert (ltype == rtype) and is_valid(test, solver_name="z3"), \
+        assert (ltype == rtype) and is_valid(test,
+                                             solver_name=self.validate_simplifications), \
                ("Was: %s \n Obtained: %s\n" % (str(formula), str(res)))
         return res
 
@@ -590,5 +592,8 @@ class Simplifier(pysmt.walkers.DagWalker):
                 ret = self.manager.BV(n, width)
             return ret
         return self.manager.BVAShr(l, r)
+
+    def walk_length(self, formula, args, **kwargs):
+        return self.manager.Length(args[0])
 
 # EOC Simplifier

@@ -162,20 +162,23 @@ class TestBasic(TestCase):
     def test_examples_msat(self):
         for (f, validity, satisfiability, logic) in get_example_formulae():
             if not logic.quantifier_free: continue
-            v = is_valid(f, solver_name='msat', logic=logic)
-            s = is_sat(f, solver_name='msat', logic=logic)
-
-            self.assertEqual(validity, v, f)
-            self.assertEqual(satisfiability, s, f)
+            try:
+                v = is_valid(f, solver_name='msat', logic=logic)
+                s = is_sat(f, solver_name='msat', logic=logic)
+                self.assertEqual(validity, v, f)
+                self.assertEqual(satisfiability, s, f)
+            except NoSolverAvailableError:
+                # Trying to solve a logic that the solver does not support
+                theory = logic.theory
+                assert theory.strings
 
     @skipIfSolverNotAvailable("cvc4")
     def test_examples_cvc4(self):
         for (f, validity, satisfiability, logic) in get_example_formulae():
+            if not logic.quantifier_free: continue
             try:
-                if not logic.quantifier_free: continue
                 v = is_valid(f, solver_name='cvc4', logic=logic)
                 s = is_sat(f, solver_name='cvc4', logic=logic)
-
                 self.assertEqual(validity, v, f)
                 self.assertEqual(satisfiability, s, f)
 
@@ -187,11 +190,15 @@ class TestBasic(TestCase):
     def test_examples_yices(self):
         for (f, validity, satisfiability, logic) in get_example_formulae():
             if not logic.quantifier_free: continue
-            v = is_valid(f, solver_name='yices', logic=logic)
-            s = is_sat(f, solver_name='yices', logic=logic)
-
-            self.assertEqual(validity, v, f)
-            self.assertEqual(satisfiability, s, f)
+            try:
+                v = is_valid(f, solver_name='yices', logic=logic)
+                s = is_sat(f, solver_name='yices', logic=logic)
+                self.assertEqual(validity, v, f)
+                self.assertEqual(satisfiability, s, f)
+            except NoSolverAvailableError:
+                # Trying to solve a logic that the solver does not support
+                theory = logic.theory
+                assert theory.strings
 
     @skipIfSolverNotAvailable("btor")
     def test_examples_btor(self):
@@ -203,7 +210,11 @@ class TestBasic(TestCase):
                 self.assertEqual(validity, v, f)
                 self.assertEqual(satisfiability, s, f)
             except NoSolverAvailableError:
-                pass #Skip tests for unsupported logic
+                # Trying to solve a logic that the solver does not support
+                theory = logic.theory
+                assert theory.strings or \
+                    theory.integer_arithmetic or \
+                    theory.real_arithmetic
 
 
     def do_model(self, solver_name):
@@ -257,15 +268,19 @@ class TestBasic(TestCase):
     def test_model_picosat(self):
         self.do_model("picosat")
 
-
     @skipIfSolverNotAvailable("z3")
     def test_examples_z3(self):
         for (f, validity, satisfiability, logic) in get_example_formulae():
-            v = is_valid(f, solver_name='z3', logic=logic)
-            s = is_sat(f, solver_name='z3', logic=logic)
+            try:
+                v = is_valid(f, solver_name='z3', logic=logic)
+                s = is_sat(f, solver_name='z3', logic=logic)
 
-            self.assertEqual(validity, v, f)
-            self.assertEqual(satisfiability, s, f)
+                self.assertEqual(validity, v, f)
+                self.assertEqual(satisfiability, s, f)
+            except NoSolverAvailableError:
+                # Trying to solve a logic that mathsat does not support
+                theory = logic.theory
+                assert theory.strings
 
     def test_examples_by_logic(self):
         for (f, validity, satisfiability, logic) in get_example_formulae():

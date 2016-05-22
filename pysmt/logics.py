@@ -61,7 +61,7 @@ class Theory(object):
         res.linear = value
         return res
 
-    def set_string(self, value=True):
+    def set_strings(self, value=True):
         res = self.copy()
         res.strings = value
         return res

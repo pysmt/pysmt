@@ -67,7 +67,7 @@ STATUS_UNSAT = 4
 
 class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
-    LOGICS = pysmt.logics.PYSMT_QF_LOGICS
+    LOGICS = pysmt.logics.PYSMT_QF_LOGICS - frozenset([pysmt.logics.QF_SLIA])
 
     def __init__(self, environment, logic, **options):
         Solver.__init__(self,
@@ -106,6 +106,8 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
     def get_model(self):
         assignment = {}
         for s in self.environment.formula_manager.get_all_symbols():
+            if s.is_symbol() and s.symbol_type().is_string_type():
+                continue
             if s.is_term():
                 v = self.get_value(s)
                 assignment[s] = v

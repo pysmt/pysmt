@@ -40,7 +40,7 @@ from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               ConvertExpressionError,
                               UndefinedSymbolError)
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
-from pysmt.logics import LRA, LIA, QF_UFLIA, QF_UFLRA, PYSMT_LOGICS
+from pysmt.logics import LRA, LIA, QF_UFLIA, QF_UFLRA, PYSMT_LOGICS, QF_SLIA
 from pysmt.oracles import get_logic
 
 
@@ -140,7 +140,7 @@ class Z3Model(Model):
 class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
                SmtLibBasicSolver, SmtLibIgnoreMixin):
 
-    LOGICS = PYSMT_LOGICS
+    LOGICS = PYSMT_LOGICS - frozenset([QF_SLIA])
 
     def __init__(self, environment, logic, **options):
         IncrementalTrackingSolver.__init__(self,

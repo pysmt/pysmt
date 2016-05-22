@@ -92,7 +92,7 @@ class HRPrinter(TreeWalker):
         self.write(")")
 
     def walk_symbol(self, formula):
-        self.write(quote(formula.symbol_name(), style='"'))
+        self.write(quote(formula.symbol_name(), style="'"))
 
     def walk_times(self, formula):
         self.walk_binary(" * ", formula)
@@ -226,7 +226,6 @@ class HRPrinter(TreeWalker):
     def walk_bv_comp(self, formula):
         self.walk_binary(" bvcomp ", formula)
 
-
     # Recycling functions form LIRA
     walk_bv_not = walk_not
     walk_bv_and = walk_and
@@ -238,10 +237,10 @@ class HRPrinter(TreeWalker):
     def walk_string_constant(self, formula):
         assert (type(formula.constant_value()) == str ), \
             "The type was " + str(type(formula.constant_value()))
-        self.write(formula.constant_value())
+        self.write('"%s"' % formula.constant_value())
 
     def walk_string_length(self,formula):
-        self.write("( str.len " )
+        self.write("(str.len " )
         self.walk(formula.arg(0))
         self.write(")")
 
@@ -262,6 +261,11 @@ class HRPrinter(TreeWalker):
 
     def walk_toreal(self, formula):
         self.write("ToReal(")
+        self.walk(formula.arg(0))
+        self.write(")")
+
+    def walk_length(self, formula):
+        self.write("len(")
         self.walk(formula.arg(0))
         self.write(")")
 

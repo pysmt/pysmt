@@ -45,6 +45,9 @@ class IdentityDagWalker(DagWalker):
     def walk_bool_constant(self, formula, **kwargs):
         return self.mgr.Bool(formula.constant_value())
 
+    def walk_string_constant(self, formula, **kwargs):
+        return self.mgr.String(formula.constant_value())
+
     def walk_and(self, formula, args, **kwargs):
         return self.mgr.And(args)
 
@@ -181,3 +184,6 @@ class IdentityDagWalker(DagWalker):
 
     def walk_bv_srem(self, formula, args, **kwargs):
         return self.mgr.BVSRem(args[0], args[1])
+
+    def walk_length(self, formula, args, **kwargs):
+        return self.mgr.Length(args[0])

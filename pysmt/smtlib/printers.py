@@ -125,6 +125,9 @@ class SmtPrinter(TreeWalker):
     def walk_bv_constant(self, formula):
         self.write("#b" + formula.bv_bin_str())
 
+    def walk_string_constant(self, formula):
+        self.write('"' + formula.constant_value() + '"')
+
     def walk_forall(self, formula):
         self._walk_quantifier("forall", formula)
 
@@ -172,6 +175,10 @@ class SmtPrinter(TreeWalker):
         self.walk(formula.arg(0))
         self.write(")")
 
+    def walk_length(self, formula):
+        self.write("(str.len ")
+        self.walk(formula.arg(0))
+        self.write(")")
 
 class SmtDagPrinter(DagWalker):
 
@@ -314,6 +321,9 @@ class SmtDagPrinter(DagWalker):
         else:
             return "false"
 
+    def walk_string_constant(self, formula, **kwargs):
+        return '"' + formula.constant_value() + '"'
+
     def walk_forall(self, formula, args, **kwargs):
         return self._walk_quantifier("forall", formula, args)
 
@@ -388,3 +398,6 @@ class SmtDagPrinter(DagWalker):
             self.write(s)
         self.write("))) ")
         return sym
+
+    def walk_length(self, formula, args, **kwargs):
+        return "(str.len %s)" % args[0]
