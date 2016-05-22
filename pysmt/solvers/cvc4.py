@@ -49,6 +49,8 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         self.logic_name = str(logic)
         if self.logic_name == "QF_BOOL":
             self.logic_name = "QF_LRA"
+        elif self.logic_name == "BOOL":
+            self.logic_name = "LRA"
 
         self.reset_assertions()
         self.converter = CVC4Converter(environment, cvc4_exprMgr=self.em)
