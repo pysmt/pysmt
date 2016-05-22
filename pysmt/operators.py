@@ -24,35 +24,37 @@ these operators.
 from six.moves import xrange
 
 
-ALL_TYPES = list(xrange(0,47))
+ALL_TYPES = list(xrange(0,49))
 
 (
 FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF, # Boolean Logic (0-6)
 SYMBOL, FUNCTION,                           # Symbols and functions calls (7-8)
-REAL_CONSTANT, BOOL_CONSTANT, INT_CONSTANT, # Constants (9-11)
-PLUS, MINUS, TIMES,                         # LIA/LRA operators (12-14)
-LE, LT, EQUALS,                             # LIA/LRA relations (15-17)
-ITE,                                        # Term-ite (18)
-TOREAL,                                     # LIRA toreal() function (19)
+REAL_CONSTANT, BOOL_CONSTANT, INT_CONSTANT,STRING_CONSTANT, # Constants (9-12)
+PLUS, MINUS, TIMES,                         # LIA/LRA operators (13-15)
+LE, LT, EQUALS,                             # LIA/LRA relations (16-18)
+ITE,                                        # Term-ite (19)
+TOREAL,                                     # LIRA toreal() function (20)
 #
 # MG: FLOOR? INT_MOD_CONGR?
 #
 # BV
-BV_CONSTANT,                                # Bit-Vector constant (20)
-BV_NOT, BV_AND, BV_OR, BV_XOR,              # Logical Operators on Bit (21-24)
-BV_CONCAT,                                  # BV Concatenation (25)
-BV_EXTRACT,                                 # BV sub-vector extraction (26)
-BV_ULT, BV_ULE,                             # Unsigned Comparison (27-28)
-BV_NEG, BV_ADD, BV_SUB,                     # Basic arithmetic (29-31)
-BV_MUL, BV_UDIV, BV_UREM,                   # Division/Multiplication (32-34)
-BV_LSHL, BV_LSHR,                           # Shifts (35-36)
-BV_ROL, BV_ROR,                             # Rotation (37-38)
-BV_ZEXT, BV_SEXT,                           # Extension (39-40)
-BV_SLT, BV_SLE,                             # Signed Comparison (41-42)
+BV_CONSTANT,                                # Bit-Vector constant (21)
+BV_NOT, BV_AND, BV_OR, BV_XOR,              # Logical Operators on Bit (22-25)
+BV_CONCAT,                                  # BV Concatenation (26)
+BV_EXTRACT,                                 # BV sub-vector extraction (27)
+BV_ULT, BV_ULE,                             # Unsigned Comparison (28-29)
+BV_NEG, BV_ADD, BV_SUB,                     # Basic arithmetic (30-32)
+BV_MUL, BV_UDIV, BV_UREM,                   # Division/Multiplication (33-35)
+BV_LSHL, BV_LSHR,                           # Shifts (36-37)
+BV_ROL, BV_ROR,                             # Rotation (38-39)
+BV_ZEXT, BV_SEXT,                           # Extension (40-41)
+BV_SLT, BV_SLE,                             # Signed Comparison (42-43)
 BV_COMP,                                    # Returns 1_1 if the arguments are
                                             # equal otherwise it returns 0_1 (44)
 BV_SDIV, BV_SREM,                           # Signed Division and Reminder(45-46)
 BV_ASHR,                                    # Arithmetic shift right (47)
+#STRINGS
+LENGTH                                  #length(48)
 ) = ALL_TYPES
 
 QUANTIFIERS = frozenset([FORALL, EXISTS])
@@ -63,7 +65,8 @@ BOOL_OPERATORS = frozenset(QUANTIFIERS | BOOL_CONNECTIVES)
 
 RELATIONS = frozenset([LE, LT, EQUALS, BV_ULE, BV_ULT, BV_SLT, BV_SLE])
 
-CONSTANTS = frozenset([REAL_CONSTANT, BOOL_CONSTANT, INT_CONSTANT, BV_CONSTANT])
+CONSTANTS = frozenset([REAL_CONSTANT, BOOL_CONSTANT, INT_CONSTANT,
+                       BV_CONSTANT, STRING_CONSTANT])
 
 BV_OPERATORS = frozenset([BV_CONSTANT, BV_NOT, BV_AND, BV_OR, BV_XOR,
                           BV_CONCAT, BV_EXTRACT, BV_ULT, BV_ULE, BV_NEG, BV_ADD,
@@ -71,10 +74,12 @@ BV_OPERATORS = frozenset([BV_CONSTANT, BV_NOT, BV_AND, BV_OR, BV_XOR,
                           BV_ROL, BV_ROR, BV_ZEXT, BV_SEXT, BV_SLT, BV_SLE,
                           BV_COMP, BV_SDIV, BV_SREM, BV_ASHR])
 
+STRING_OPERATORS = frozenset([STRING_CONSTANT, LENGTH])
+
 LIRA_OPERATORS = frozenset([PLUS, MINUS, TIMES, TOREAL])
 CUSTOM_NODE_TYPES = []
 
-THEORY_OPERATORS = LIRA_OPERATORS | BV_OPERATORS
+THEORY_OPERATORS = LIRA_OPERATORS | BV_OPERATORS | STRING_OPERATORS
 
 def new_node_type(new_node_id=None):
     """Adds a new node type to the list of custom node types and returns the ID."""
@@ -114,6 +119,7 @@ __OP_STR__ = {
     REAL_CONSTANT : "REAL_CONSTANT",
     BOOL_CONSTANT : "BOOL_CONSTANT",
     INT_CONSTANT : "INT_CONSTANT",
+    STRING_CONSTANT : "STRING_CONSTANT",
     PLUS : "PLUS",
     MINUS : "MINUS",
     TIMES : "TIMES",
@@ -149,4 +155,5 @@ __OP_STR__ = {
     BV_SDIV : "BV_SDIV",
     BV_SREM : "BV_SREM",
     BV_ASHR : "BV_ASHR",
+    LENGTH: "LENGTH",
 }

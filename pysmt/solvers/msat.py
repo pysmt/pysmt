@@ -28,7 +28,7 @@ try:
 except ImportError:
     raise SolverAPINotFound
 
-from pysmt.logics import LRA, QF_UFLIA, QF_UFLRA, QF_BV, PYSMT_QF_LOGICS
+from pysmt.logics import LRA, QF_UFLIA, QF_UFLRA, QF_BV, PYSMT_QF_LOGICS, QF_SLIA
 from pysmt.oracles import get_logic
 
 import pysmt.operators as op
@@ -135,7 +135,7 @@ class MathSAT5Model(Model):
 class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
                      SmtLibBasicSolver, SmtLibIgnoreMixin):
 
-    LOGICS = PYSMT_QF_LOGICS
+    LOGICS = PYSMT_QF_LOGICS - frozenset([QF_SLIA])
 
     def __init__(self, environment, logic, debugFile=None, **options):
         # TODO: DebugFile should be an option

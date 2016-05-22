@@ -22,6 +22,7 @@ import pysmt.environment
 from pysmt.operators import (FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF,
                              SYMBOL, FUNCTION,
                              REAL_CONSTANT, BOOL_CONSTANT, INT_CONSTANT,
+                             STRING_CONSTANT,
                              PLUS, MINUS, TIMES,
                              LE, LT, EQUALS,
                              ITE,
@@ -36,11 +37,12 @@ from pysmt.operators import (FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF,
                              BV_SLT, BV_SLE,
                              BV_COMP,
                              BV_SDIV, BV_SREM,
-                             BV_ASHR)
+                             BV_ASHR,
+                             LENGTH)
 from pysmt.operators import  (BOOL_OPERATORS, THEORY_OPERATORS,
                               BV_OPERATORS, LIRA_OPERATORS,
-                              RELATIONS, CONSTANTS)
-from pysmt.typing import BOOL, REAL, INT, BVType
+                              RELATIONS, CONSTANTS, STRING_OPERATORS)
+from pysmt.typing import BOOL, REAL, INT, BVType, STRING
 from pysmt.decorators import deprecated
 from pysmt.utils import is_python_integer, is_python_rational, is_python_boolean
 from pysmt.utils import twos_complement
@@ -150,6 +152,8 @@ class FNode(object):
                 return False
             if _type.is_bool_type() and self.node_type() != BOOL_CONSTANT:
                 return False
+            if _type.is_string_type() and self.node_type() != STRING_CONSTANT:
+                return False
             if _type.is_bv_type():
                 if self.node_type() != BV_CONSTANT:
                     return False
@@ -194,6 +198,13 @@ class FNode(object):
         else:
             return self.is_constant(_type=BVType(width=width),
                                     value=value)
+
+    def is_string_constant(self, value=None):
+        """Test whether the formula is a String constant.
+
+        Optionally, check that the constant has the given value.
+        """
+        return self.is_constant(STRING, value)
 
     def is_symbol(self, type_=None):
         """Test whether the formula is a Symbol.
@@ -505,6 +516,8 @@ class FNode(object):
             return REAL
         elif self.node_type() == BOOL_CONSTANT:
             return BOOL
+        elif self.node_type() == STRING_CONSTANT:
+            return STRING
         else:
             assert self.node_type() == BV_CONSTANT,\
                 "Unsupported method constant_type '%s'" % self

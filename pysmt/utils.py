@@ -48,7 +48,9 @@ def is_python_integer(n):
         return type(n) == long or type(n) == int
     else:
         return type(n) == int
-
+    
+def is_python_string(str1):
+    return type(str1) == str
 
 def is_python_rational(n):
     return is_python_integer(n) or type(n) == float or type(n) == Fraction
