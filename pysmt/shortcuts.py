@@ -383,11 +383,12 @@ def BVAShr(left, right):
 
 
 #### Shortcuts for Solvers Factory #####
-def Solver(quantified=False, name=None, logic=None):
+def Solver(quantified=False, name=None, logic=None, **kwargs):
     """Returns a solver."""
     return get_env().factory.Solver(quantified=quantified,
                                     name=name,
-                                    logic=logic)
+                                    logic=logic,
+                                    **kwargs)
 
 def UnsatCoreSolver(quantified=False, name=None, logic=None,
                     unsat_cores_mode="all"):

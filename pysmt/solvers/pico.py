@@ -38,11 +38,11 @@ class PicosatSolver(Solver):
 
     LOGICS = [ pysmt.logics.QF_BOOL ]
 
-    def __init__(self, environment, logic, user_options):
+    def __init__(self, environment, logic, **options):
         Solver.__init__(self,
                         environment=environment,
                         logic=logic,
-                        user_options=user_options)
+                        **options)
 
         self.mgr = environment.formula_manager
         self.pico = picosat.picosat_init()

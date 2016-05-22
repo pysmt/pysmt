@@ -45,15 +45,20 @@ class BoolectorSolver(IncrementalTrackingSolver,
 
     LOGICS = [QF_BV, QF_UFBV]
 
-    def __init__(self, environment, logic, user_options):
+    def __init__(self, environment, logic, **options):
         IncrementalTrackingSolver.__init__(self,
                                            environment=environment,
                                            logic=logic,
-                                           user_options=user_options)
+                                           **options)
 
         self.btor = boolector.Boolector()
+
+        self.btor.Set_opt("model_gen", 0)
+        # Disabling Incremental usage is not allowed.
+        # This needs to be set to 1
         self.btor.Set_opt("incremental", 1)
-        self.btor.Set_opt("model_gen", 1)
+        if self.options.generate_models:
+            self.btor.Set_opt("model_gen", 1)
         self.converter = BTORConverter(environment, self.btor)
         self.mgr = environment.formula_manager
         self.declarations = {}

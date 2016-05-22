@@ -132,17 +132,17 @@ class MathSAT5Model(Model):
         """Returns whether the model contains a value for 'x'."""
         return x in (v for v, _ in self)
 
-
 class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
                      SmtLibBasicSolver, SmtLibIgnoreMixin):
 
     LOGICS = PYSMT_QF_LOGICS
 
-    def __init__(self, environment, logic, user_options=None, debugFile=None):
+    def __init__(self, environment, logic, debugFile=None, **options):
+        # TODO: DebugFile should be an option
         IncrementalTrackingSolver.__init__(self,
                                            environment=environment,
                                            logic=logic,
-                                           user_options=user_options)
+                                           **options)
 
         self.msat_config = mathsat.msat_create_default_config(str(logic))
         self._prepare_config(self.options, debugFile)

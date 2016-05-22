@@ -35,7 +35,6 @@ from pysmt.solvers.qelim import QuantifierEliminator
 
 
 class BddOptions(SolverOptions):
-
     ## CUDD Reordering algorithms
     CUDD_REORDER_SAME, \
     CUDD_REORDER_NONE, \
@@ -62,36 +61,46 @@ class BddOptions(SolverOptions):
 
     CUDD_ALL_REORDERING_ALGORITHMS = range(1, 22)
 
-    def __init__(self,
-                 generate_models=True,
-                 unsat_cores_mode=None,
-                 static_ordering=None,
-                 dynamic_reordering=False,
-                 reordering_algorithm=CUDD_REORDER_SIFT):
+    VALID_OPTIONS = SolverOptions.VALID_OPTIONS + \
+                    [("static_ordering", None),
+                     ("dynamic_reordering", False),
+                     ("reordering_algorithm", CUDD_REORDER_SIFT),
+                    ]
 
-        if unsat_cores_mode is not None:
+    def __init__(self, **kwargs):
+        SolverOptions.__init__(self, **kwargs)
+
+        if self.unsat_cores_mode is not None:
             # Check if, for some reason, unsat cores are
             # required. In case, raise an error.
+            #
+            # TODO: This should be within the Solver, here we should
+            # only check that options are set and non-contraddicting.
+            #
             raise NotImplementedError("BddSolver does not "\
                                       "support unsat cores")
 
-        SolverOptions.__init__(self,
-                               generate_models=generate_models,
-                               unsat_cores_mode=None)
+    # @classmethod
+    # def from_base_options(cls, base_options):
+    #     generate_models=base_options.generate_models
+    #     unsat_cores_mode=base_options.unsat_cores_mode
+    #     incremental=base_options.incremental
+    #     return BddOptions(generate_models=generate_models,
+    #                       unsat_cores_mode=unsat_cores_mode,
+    #                       incremental=incremental)
 
-        self.static_ordering = static_ordering
-        self.dynamic_reordering = dynamic_reordering
-        self.reordering_algorithm = reordering_algorithm
 
 
 class BddSolver(Solver):
     LOGICS = [ pysmt.logics.QF_BOOL, pysmt.logics.BOOL ]
 
-    def __init__(self, environment, logic, user_options):
+    OptionsClass = BddOptions
+
+    def __init__(self, environment, logic, **options):
         Solver.__init__(self,
                         environment=environment,
                         logic=logic,
-                        user_options=user_options)
+                        **options)
 
         self.mgr = environment.formula_manager
         self.ddmanager = repycudd.DdManager()
@@ -120,13 +129,6 @@ class BddSolver(Solver):
 
         self.backtrack = []
         self.latest_model = None
-
-    def get_default_options(self, logic=None, user_options=None):
-        if user_options is not None:
-            return BddOptions(**user_options)
-        else:
-            return BddOptions()
-
 
     @clear_pending_pop
     def reset_assertions(self):
