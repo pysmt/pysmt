@@ -35,6 +35,7 @@ from pysmt.logics import most_generic_logic, get_closer_logic
 from pysmt.logics import convert_logic_from_string
 from pysmt.oracles import get_logic
 from pysmt.solvers.qelim import ShannonQuantifierEliminator
+from pysmt.solvers.solver import SolverOptions
 
 DEFAULT_SOLVER_PREFERENCE_LIST = ['msat', 'z3', 'cvc4', 'yices', 'btor',
                                   'picosat', 'bdd']
@@ -78,7 +79,7 @@ class Factory(object):
         self._get_available_interpolators()
 
 
-    def get_solver(self, quantified=False, name=None, logic=None):
+    def get_solver(self, quantified=False, name=None, logic=None, **options):
         assert quantified is False or logic is None, \
             "Cannot specify both quantified and logic."
 
@@ -95,7 +96,7 @@ class Factory(object):
 
         return SolverClass(environment=self.environment,
                            logic=closer_logic,
-                           user_options={"generate_models" : True})
+                           **options)
 
 
     def get_unsat_core_solver(self, quantified=False, name=None,
@@ -113,11 +114,11 @@ class Factory(object):
                                   default_logic=self.default_logic,
                                   name=name,
                                   logic=logic)
-
         return SolverClass(environment=self.environment,
                            logic=closer_logic,
-                           user_options={"generate_models" : True,
-                                         "unsat_cores_mode" : unsat_cores_mode})
+                           generate_models=True,
+                           unsat_cores_mode=unsat_cores_mode)
+
 
 
     def get_quantifier_eliminator(self, name=None, logic=None):
@@ -416,10 +417,11 @@ class Factory(object):
     ##
     ## Wrappers: These functions are exported in shortcuts
     ##
-    def Solver(self, quantified=False, name=None, logic=None):
+    def Solver(self, quantified=False, name=None, logic=None, **options):
         return self.get_solver(quantified=quantified,
                                name=name,
-                               logic=logic)
+                               logic=logic,
+                               **options)
 
     def UnsatCoreSolver(self, quantified=False, name=None, logic=None,
                         unsat_cores_mode="all"):
@@ -438,21 +440,21 @@ class Factory(object):
     def is_sat(self, formula, solver_name=None, logic=None):
         if logic is None or logic == AUTO_LOGIC:
             logic = get_logic(formula, self.environment)
-        with self.Solver(name=solver_name, logic=logic) \
+        with self.Solver(name=solver_name, logic=logic,
+                         generate_models=False, incremental=False) \
              as solver:
             return solver.is_sat(formula)
 
     def get_model(self, formula, solver_name=None, logic=None):
         if logic is None or logic == AUTO_LOGIC:
             logic = get_logic(formula, self.environment)
-        with self.Solver(name=solver_name, logic=logic) \
-             as solver:
+        with self.Solver(name=solver_name, logic=logic,
+                         generate_models=True,
+                         incremental=False) as solver:
             solver.add_assertion(formula)
-            check = solver.solve()
-            retval = None
-            if check:
-                retval = solver.get_model()
-            return retval
+            if solver.solve():
+                return solver.get_model()
+            return None
 
     def get_implicant(self, formula, solver_name=None,
                       logic=None):
@@ -497,15 +499,17 @@ class Factory(object):
     def is_valid(self, formula, solver_name=None, logic=None):
         if logic is None or logic == AUTO_LOGIC:
             logic = get_logic(formula, self.environment)
-        with self.Solver(name=solver_name, logic=logic) \
-             as solver:
+        with self.Solver(name=solver_name, logic=logic,
+                         generate_models=False,
+                         incremental=False) as solver:
             return solver.is_valid(formula)
 
     def is_unsat(self, formula, solver_name=None, logic=None):
         if logic is None or logic == AUTO_LOGIC:
             logic = get_logic(formula, self.environment)
-        with self.Solver(name=solver_name, logic=logic) \
-             as solver:
+        with self.Solver(name=solver_name, logic=logic,
+                         generate_models=False,
+                         incremental=False) as solver:
             return solver.is_unsat(formula)
 
     def qelim(self, formula, solver_name=None, logic=None):
@@ -519,8 +523,8 @@ class Factory(object):
     def binary_interpolant(self, formula_a, formula_b,
                            solver_name=None, logic=None):
         if logic is None or logic == AUTO_LOGIC:
-            logic = get_logic(
-                self.environment.formula_manager.And(formula_a, formula_b))
+            _And = self.environment.formula_manager.And
+            logic = get_logic(_And(formula_a, formula_b))
 
         with self.Interpolator(name=solver_name, logic=logic) as itp:
             return itp.binary_interpolant(formula_a, formula_b)
@@ -528,8 +532,8 @@ class Factory(object):
 
     def sequence_interpolant(self, formulas, solver_name=None, logic=None):
         if logic is None or logic == AUTO_LOGIC:
-            logic = get_logic(
-                self.environment.formula_manager.And(formulas))
+            _And = self.environment.formula_manager.And
+            logic = get_logic(_And(formulas))
 
         with self.Interpolator(name=solver_name, logic=logic) as itp:
             return itp.sequence_interpolant(formulas)

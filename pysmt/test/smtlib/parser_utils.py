@@ -18,7 +18,7 @@
 import os
 
 from pysmt.test import SkipTest
-from pysmt.shortcuts import Solver, reset_env
+from pysmt.shortcuts import get_env, reset_env
 from pysmt.smtlib.parser import SmtLibParser
 from pysmt.smtlib.script import check_sat_filter
 from pysmt.logics import QF_LIA, QF_LRA, LRA, QF_UFLIRA, QF_UFBV, QF_BV
@@ -99,11 +99,12 @@ def execute_script_fname(smtfile, logic, expected_result):
     """Read and call a Solver to solve the instance"""
 
     reset_env()
+    Solver = get_env().factory.Solver
     assert os.path.exists(smtfile), smtfile
     parser = SmtLibParser()
     script = parser.get_script_fname(smtfile)
     try:
-        log = script.evaluate(Solver(logic=logic))
+        log = script.evaluate(Solver(logic=logic, incremental=False))
     except NoSolverAvailableError:
         raise SkipTest("No solver for logic %s." % logic)
 

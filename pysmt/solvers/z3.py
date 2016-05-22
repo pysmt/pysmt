@@ -142,11 +142,11 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
 
     LOGICS = PYSMT_LOGICS
 
-    def __init__(self, environment, logic, user_options):
+    def __init__(self, environment, logic, **options):
         IncrementalTrackingSolver.__init__(self,
                                            environment=environment,
                                            logic=logic,
-                                           user_options=user_options)
+                                           **options)
         # Here we could use:
         # self.z3 = z3.SolverFor(str(logic))
         # But it seems to have problems with quantified formulae

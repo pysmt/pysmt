@@ -41,20 +41,14 @@ class SmtLibSolver(Solver):
 
         # Initialize solver
         self.set_option(":print-success", "true")
-        self.set_option(":produce-models", "true")
+        if self.options.generate_models:
+            self.set_option(":produce-models", "true")
         # Redirect diagnostic output to stdout
         self.set_option(":diagnostic-output-channel", '"stdout"')
         if self.options is not None:
             for o,v in iteritems(self.options):
                 self.set_option(o,v)
         self.set_logic(logic)
-
-    def get_default_options(self, logic=None, user_options=None):
-        res = {}
-        for o,v in iteritems(user_options):
-            if o not in ["generate_models", "unsat_cores_mode"]:
-                res[o] = v
-        return res
 
     def set_option(self, name, value):
         self._send_silent_command(SmtLibCommand(smtcmd.SET_OPTION,

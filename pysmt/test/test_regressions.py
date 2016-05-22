@@ -112,7 +112,6 @@ class TestRegressions(TestCase):
         f_or_many = Or(ten_x)
         f_plus_many = LT(Plus(r,r,r,r,r,r,r,r,r,r,r), Real(0))
 
-
         for name in get_env().factory.all_solvers(logic=logics.QF_BOOL):
             self.assertSat(f_and_one, solver_name=name)
             self.assertSat(f_or_one, solver_name=name)
