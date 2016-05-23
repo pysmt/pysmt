@@ -594,11 +594,7 @@ class Simplifier(pysmt.walkers.DagWalker):
     def walk_array_select(self, formula, args, **kwargs):
         a, i = args
         if a.is_array_value() and i.is_constant():
-            assign = a.array_value_assigned_values_map()
-            if i in assign:
-                return assign[i]
-            else:
-                return a.array_value_default()
+            return a.array_value_get(i)
         return self.manager.Select(args[0], args[1])
 
     def walk_array_store(self, formula, args, **kwargs):

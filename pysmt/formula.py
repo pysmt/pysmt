@@ -903,7 +903,7 @@ class FormulaManager(object):
         """
         args = [default]
         if assigned_values:
-            for k in assigned_values:
+            for k in sorted(assigned_values):
                 if not k.is_constant():
                     raise ValueError("Array initialization indexes must be constants")
                 args.append(k, assigned_values[k])

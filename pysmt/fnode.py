@@ -567,6 +567,23 @@ class FNode(object):
     def array_value_index_type(self):
         return self._content.payload
 
+    def array_value_get(self, index):
+        assert index.is_constant()
+        idx = index.simplify()
+        args = self.args()
+        s = 0
+        e = (len(args) - 1) / 2
+        while e - s > 0:
+            p = (e - s) / 2
+            i = args[2 * p + 1]
+            if i == idx:
+                return args[i+1]
+            elif i < idx:
+                s = p
+            else:
+                e = p
+        return self.array_value_default()
+
     def array_value_assigned_values_map(self):
         res = {}
         args = self.args()
