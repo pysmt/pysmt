@@ -208,7 +208,8 @@ class CVC4Converter(Converter, DagWalker):
     def walk_not(self, formula, args, **kwargs):
         return self.mkExpr(CVC4.NOT, args[0])
 
-    def walk_symbol(self, formula, **kwargs):
+    def walk_symbol(self, formula, args, **kwargs):
+        #pylint: disable=unused-argument
         if formula not in self.declared_vars:
             self.declare_variable(formula)
         return self.declared_vars[formula]
@@ -394,6 +395,6 @@ class CVC4Converter(Converter, DagWalker):
         new_var_list = [mkBoundVar(x.symbol_name(),
                                    self._type_to_cvc4(x.symbol_type())) \
                         for x in variables]
-        old_var_list = [self.walk_symbol(x) for x in variables]
+        old_var_list = [self.walk_symbol(x, []) for x in variables]
         new_formula = formula.substitute(old_var_list, new_var_list)
         return (new_formula, new_var_list)
