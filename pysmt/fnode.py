@@ -459,6 +459,10 @@ class FNode(object):
             # (The right child has the same width if the node is well-formed)
             width_l = self.arg(1).bv_width()
             return width_l
+        elif self.is_select():
+            # This must be a select over an array with BV value type
+            ty = self.arg(0).get_type()
+            return ty.elem_type.width
         else:
             # BV Operator
             assert self.is_bv_op(), "Unsupported method bv_width on %s" % self

@@ -1041,13 +1041,14 @@ class MSatConverter(Converter, DagWalker):
                                              args[0], args[1], args[2])
 
     def walk_array_value(self, formula, args, **kwargs):
-        idx_type = formula.array_value_index_type()
+        arr_type = self.env.stc.get_type(formula)
         rval = mathsat.msat_make_array_const(self.msat_env(),
-                                             self._type_to_msat(idx_type),
+                                             self._type_to_msat(arr_type),
                                              args[0])
+        assert not mathsat.MSAT_ERROR_TERM(rval)
         for i,c in enumerate(args[1::2]):
             rval = mathsat.msat_make_array_write(self.msat_env(), rval,
-                                                 c, args[i+1])
+                                                 c, args[(i*2)+2])
         return rval
 
     def _type_to_msat(self, tp):

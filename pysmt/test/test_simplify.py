@@ -19,6 +19,9 @@ from nose.plugins.attrib import attr
 from pysmt.test import TestCase, skipIfSolverNotAvailable, main
 from pysmt.test.examples import get_example_formulae
 from pysmt.environment import get_env
+from pysmt.shortcuts import Array, Store, Int
+from pysmt.typing import INT
+
 
 
 class TestSimplify(TestCase):
@@ -50,6 +53,13 @@ class TestSimplify(TestCase):
             self.assertValid(Iff(f, sf), solver_name='z3',
                              msg="Simplification did not provide equivalent "+
                             "result:\n f= %s\n sf = %s" % (f, sf))
+
+
+    def test_array_value(self):
+        a1 = Array(INT, Int(0), {Int(12) : Int(10)})
+        a2 = Store(Array(INT, Int(0)), Int(12), Int(10))
+        self.assertEquals(a1, a2.simplify())
+
 
 
 if __name__ == '__main__':

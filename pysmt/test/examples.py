@@ -34,7 +34,7 @@ from pysmt.shortcuts import (Symbol, Function,
                              BVLShl, BVLShr,BVRol, BVRor,
                              BVZExt, BVSExt, BVSub, BVComp, BVAShr, BVSLE,
                              BVSLT, BVSGT, BVSGE, BVSDiv, BVSRem,
-                             Store, Select)
+                             Store, Select, Array)
 
 from pysmt.typing import REAL, BOOL, INT, FunctionType, BV8, BV16, ARRAY_INT_INT
 
@@ -584,6 +584,12 @@ def get_example_formulae(environment=None):
                     is_valid=True,
                     is_sat=True,
                     logic=pysmt.logics.QF_ALIA),
+            # Array<Int,Int>(0)[1 := 1] = aii & aii[1] = 0
+            Example(expr=And(Equals(Array(INT, Int(0), {Int(1) : Int(1)}), aii), Equals(Select(aii, Int(1)), Int(0))),
+                    is_valid=False,
+                    is_sat=False,
+                    logic=pysmt.logics.QF_ALIA),
+
         ]
         return result
 

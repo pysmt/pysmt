@@ -52,7 +52,7 @@ class PySMTType(object):
     def is_real_type(self):
         return False
 
-    def is_bv_type(self):
+    def is_bv_type(self, width=None):
         return False
 
     def is_function_type(self):
@@ -70,9 +70,7 @@ class PySMTType(object):
         return self.type_id == other.type_id
 
     def __ne__(self, other):
-        if other is None:
-            return True
-        return self.type_id != other.type_id
+        return not self.__eq__(other)
 
 
 class BooleanType(PySMTType):
@@ -164,7 +162,7 @@ class _BVType(PySMTType):
             return "(_ BitVec %d)" % self.width
 
     def __str__(self):
-        return "BV%d" % self.width
+        return "BV{%d}" % self.width
 
     def __eq__(self, other):
         if other is None:
@@ -176,13 +174,7 @@ class _BVType(PySMTType):
         return True
 
     def __ne__(self, other):
-        if other is None:
-            return True
-        if self.type_id != other.type_id:
-            return True
-        if self.width != other.width:
-            return True
-        return False
+        return not self.__eq__(other)
 
     def __hash__(self):
         return hash(self.type_id + self.width)
@@ -223,7 +215,7 @@ class _FunctionType(PySMTType):
         PySMTType.__init__(self, type_id = 4)
         self._return_type = return_type
         self._param_types = param_types
-        self._hash = hash(str(self))
+        self._hash = hash(return_type) + sum(hash(p) for p in param_types)
         return
 
     @property
@@ -269,16 +261,12 @@ class _FunctionType(PySMTType):
             return False
         if id(self) == id(other):
             return True
-        return str(self) == str(other)
+        if self.return_type != other.return_type:
+            return False
+        return self.param_types == other.param_types
 
     def __ne__(self, other):
-        if other is None:
-            return True
-        if self.type_id != other.type_id:
-            return True
-        if id(self) == id(other):
-            return False
-        return str(self) != str(other)
+        return not self.__eq__(other)
 
     def __hash__(self):
         return self._hash
@@ -311,7 +299,7 @@ class _ArrayType(PySMTType):
         PySMTType.__init__(self, type_id = 5)
         self._index_type = index_type
         self._elem_type = elem_type
-        self._hash = hash(str(self))
+        self._hash = hash(index_type) + hash(elem_type)
         return
 
     @property
@@ -342,7 +330,7 @@ class _ArrayType(PySMTType):
             return "(Array %s %s)" % (itype, etype)
 
     def __str__(self):
-        return "ARR[%s -> %s]" % (self.index_type, self.elem_type)
+        return "Array{%s, %s}" % (self.index_type, self.elem_type)
 
     def is_array_type(self):
         return True
@@ -354,16 +342,12 @@ class _ArrayType(PySMTType):
             return False
         if id(self) == id(other):
             return True
-        return str(self) == str(other)
+        if self.index_type != other.index_type:
+            return False
+        return self.elem_type == other.elem_type
 
     def __ne__(self, other):
-        if other is None:
-            return True
-        if self.type_id != other.type_id:
-            return True
-        if id(self) == id(other):
-            return False
-        return str(self) != str(other)
+        return not self.__eq__(other)
 
     def __hash__(self):
         return self._hash

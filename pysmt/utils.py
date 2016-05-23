@@ -76,9 +76,10 @@ def interactive_char_iterator(handle):
 # Symbol (un)quoting
 #
 _simple_symbol_prog = re.compile(r"^[~!@\$%\^&\*_\-+=<>\.\?\/A-Za-z][~!@\$%\^&\*_\-+=<>\.\?\/A-Za-z0-9]*$")
+_keywords = set(["Int", "Real", "Bool"])
 
 def quote(name, style='|'):
-    if _simple_symbol_prog.match(name) is None:
+    if name in _keywords or _simple_symbol_prog.match(name) is None:
         name = name.replace("\\", "\\\\").replace("%s" % style, "\\%s" % style)
         return "%s%s%s" % (style, name, style)
     else:

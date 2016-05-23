@@ -266,7 +266,8 @@ SERIALIZED_EXAMPLES = [
     """(! (((ToReal(...) = r) & (ToReal(...) = r)) -> ((p < ...(..., ...)) | (...(..., ...) <= p))))""",
     """("Did you know that any string works? #yolo" & "10" & "|#somesolverskeepthe||" & " ")""",
     """((q = 0) -> (aii[0 := 0] = aii[0 := q]))""",
-    """(aii[0 := 0][0] = 0)"""
+    """(aii[0 := 0][0] = 0)""",
+    """((Array{Int, Int}(0)[1 := 1] = aii) & (aii[1] = 0))"""
 ]
 
 

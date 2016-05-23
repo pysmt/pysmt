@@ -906,7 +906,10 @@ class FormulaManager(object):
             for k in sorted(assigned_values):
                 if not k.is_constant():
                     raise ValueError("Array initialization indexes must be constants")
-                args.append(k, assigned_values[k])
+                # It is useless to represent assignments equal to the default
+                if assigned_values[k] != default:
+                    args.append(k)
+                    args.append(assigned_values[k])
         n = self.create_node(node_type=op.ARRAY_VALUE, args=tuple(args),
                              payload=idx_type)
         return n

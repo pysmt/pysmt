@@ -28,8 +28,8 @@ class HRPrinter(TreeWalker):
     E.g., Implies(And(Symbol(x), Symbol(y)), Symbol(z))  ~>   '(x * y) -> z'
     """
 
-    def __init__(self, stream):
-        TreeWalker.__init__(self)
+    def __init__(self, stream, env=None):
+        TreeWalker.__init__(self, env=env)
         self.stream = stream
         self.write = self.stream.write
 
@@ -271,9 +271,10 @@ class HRPrinter(TreeWalker):
         self.write("]")
 
     def walk_array_value(self, formula):
-        self.write("Array{")
-        self.write(formula.array_value_index_type())
-        self.write("}")
+        self.write(str(self.env.stc.get_type(formula)))
+        self.write("(")
+        self.walk(formula.array_value_default())
+        self.write(")")
         assign = formula.array_value_assigned_values_map()
         for k, v in iteritems(assign):
             self.write("[")
@@ -281,9 +282,6 @@ class HRPrinter(TreeWalker):
             self.write(" := ")
             self.walk(v)
             self.write("]")
-        self.write("[* := ")
-        self.walk(formula.array_value_default())
-        self.write("]")
 
 
 class HRSerializer(object):

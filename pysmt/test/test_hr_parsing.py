@@ -78,6 +78,7 @@ class TestHRParser(TestCase):
 
         for (f, _, _, _) in get_example_formulae():
             s = f.serialize()
+            print s
             res = p.parse(s)
 
             check = (res == f)

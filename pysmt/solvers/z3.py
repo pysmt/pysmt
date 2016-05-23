@@ -493,9 +493,9 @@ class Z3Converter(Converter, DagWalker):
         elif z3.is_array_store(expr):
             res = self.mgr.Store(args[0], args[1], args[2])
         elif z3.is_const_array(expr):
-            idx_ty = self._z3_to_type(expr.sort())
+            arr_ty = self._z3_to_type(expr.sort())
             k = args[0]
-            res = self.mgr.Array(idx_ty, k)
+            res = self.mgr.Array(arr_ty.index_type, k)
         if res is None:
             raise ConvertExpressionError(message=("Unsupported expression: %s" %
                                                    str(expr)),
