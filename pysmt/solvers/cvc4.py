@@ -26,7 +26,7 @@ try:
 except ImportError:
     raise SolverAPINotFound
 
-from pysmt.logics import PYSMT_QF_LOGICS
+from pysmt.logics import PYSMT_LOGICS
 from pysmt.solvers.solver import Solver, Converter
 from pysmt.exceptions import SolverReturnedUnknownResultError
 from pysmt.walkers import DagWalker
@@ -36,7 +36,7 @@ from pysmt.decorators import catch_conversion_error
 
 
 class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
-    LOGICS = PYSMT_QF_LOGICS
+    LOGICS = PYSMT_LOGICS
 
     def __init__(self, environment, logic, **options):
         Solver.__init__(self,
@@ -49,6 +49,8 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         self.logic_name = str(logic)
         if self.logic_name == "QF_BOOL":
             self.logic_name = "QF_LRA"
+        elif self.logic_name == "BOOL":
+            self.logic_name = "LRA"
 
         self.reset_assertions()
         self.converter = CVC4Converter(environment, cvc4_exprMgr=self.em)
@@ -206,7 +208,8 @@ class CVC4Converter(Converter, DagWalker):
     def walk_not(self, formula, args, **kwargs):
         return self.mkExpr(CVC4.NOT, args[0])
 
-    def walk_symbol(self, formula, **kwargs):
+    def walk_symbol(self, formula, args, **kwargs):
+        #pylint: disable=unused-argument
         if formula not in self.declared_vars:
             self.declare_variable(formula)
         return self.declared_vars[formula]

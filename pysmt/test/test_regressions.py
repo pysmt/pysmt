@@ -23,7 +23,8 @@ from pysmt.shortcuts import (Real, Plus, Symbol, Equals, And, Bool, Or,
                              Div, LT, LE, Int, ToReal, Iff, Exists, Times, FALSE)
 from pysmt.shortcuts import Solver, get_env, qelim, get_model, TRUE, ExactlyOne
 from pysmt.typing import REAL, BOOL, INT, FunctionType
-from pysmt.test import TestCase, skipIfSolverNotAvailable, skipIfNoSolverForLogic
+from pysmt.test import (TestCase, skipIfSolverNotAvailable, skipIfNoSolverForLogic,
+                        skipIfNoQEForLogic)
 from pysmt.test import main
 from pysmt.exceptions import ConvertExpressionError
 from pysmt.test.examples import get_example_formulae
@@ -176,7 +177,7 @@ class TestRegressions(TestCase):
             s.exit()
             self.assertTrue(True)
 
-    @skipIfNoSolverForLogic(logics.LIA)
+    @skipIfNoQEForLogic(logics.LIA)
     def test_lia_qe_requiring_modulus(self):
         x = Symbol("x", INT)
         y = Symbol("y", INT)
