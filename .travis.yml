@@ -32,7 +32,7 @@ addons:
     - wget
     - curl
     - libboost-dev
-    - python3-dev
+    - python3-all-dev
 
 python:
   - 2.7
@@ -112,6 +112,9 @@ matrix:
 install:
   # This is for btor that fails to find the python 3 library to link
   - "export LIBRARY_PATH=${LIBRARY_PATH}:/opt/python/3.4.2/lib"
+  # For some reason, Travis CI cannot find the command python3.5-config.
+  # Therefore, we force the path here
+  - if [ "${TRAVIS_PYTHON_VERSION}" == "3.5" ]; then export PATH=${PATH}:/opt/python/3.5.0/bin/ ; fi
 
   - "pip install six"
   - if [ "${PYSMT_SOLVER}" == "all" ] || [ "${PYSMT_SOLVER}" == "btor" ]; then pip install cython; fi

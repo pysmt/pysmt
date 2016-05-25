@@ -17,6 +17,7 @@ import subprocess
 import re
 
 from pysmt.cmd.installers.base import SolverInstaller, TemporaryPath
+from six import PY2
 
 
 class CuddInstaller(SolverInstaller):
@@ -43,16 +44,20 @@ class CuddInstaller(SolverInstaller):
             makefile = "Makefile_64bit"
 
         # Build the pycudd
-        command = ['python%s-config' % self.python_version, '--prefix']
+        command = ['python%s-config' % self.python_version, '--includes']
         p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=None)
         prefix = p.stdout.read()
+        if PY2:
+            pass # Prefix is already a string
+        else:
+            # > PY3 Prefix is binary data
+            prefix = prefix.decode()
 
         if not prefix or len(prefix) == 0:
             prefix = "/usr"
 
-        SolverInstaller.run("make -C %s -f %s PYTHON_VER=python%s" \
-                            " PYTHON_LOC=%s" % (self.extract_path, makefile,
-                                                self.python_version, prefix))
+        SolverInstaller.run("make -C %s -f %s PYTHON_INCL=%s" %
+                            (self.extract_path, makefile, prefix))
 
 
     def move(self):
