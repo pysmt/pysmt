@@ -26,10 +26,11 @@ try:
 except ImportError:
     raise SolverAPINotFound
 
+import pysmt.typing as types
+from pysmt.logics import PYSMT_LOGICS
 
-from pysmt.logics import PYSMT_LOGICS, ARRAYS_LOGICS
 from pysmt.solvers.solver import Solver, Converter
-from pysmt.exceptions import SolverReturnedUnknownResultError
+from pysmt.exceptions import SolverReturnedUnknownResultError, InternalSolverError
 from pysmt.walkers import DagWalker
 from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 from pysmt.solvers.eager import EagerModel
@@ -37,8 +38,7 @@ from pysmt.decorators import catch_conversion_error
 
 
 class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
-
-    LOGICS = PYSMT_LOGICS - ARRAYS_LOGICS
+    LOGICS = PYSMT_LOGICS
 
     def __init__(self, environment, logic, **options):
         Solver.__init__(self,
@@ -84,8 +84,6 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         assignment = {}
         for s in self.environment.formula_manager.get_all_symbols():
             if s.is_term():
-                # MG: Remove this when Arrays have been implemented
-                if s.symbol_type().is_array_type(): continue
                 v = self.get_value(s)
                 assignment[s] = v
         return EagerModel(assignment=assignment, environment=self.environment)
@@ -96,7 +94,10 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
             cvc4_assumption = self.converter.convert(conj_assumptions)
             res = self.cvc4.checkSat(cvc4_assumption)
         else:
-            res = self.cvc4.checkSat()
+            try:
+                res = self.cvc4.checkSat()
+            except CVC4.LogicException as ex:
+                raise InternalSolverError(ex.toString())
 
         # Convert returned type
         res_type = res.isSat()
@@ -192,8 +193,15 @@ class CVC4Converter(Converter, DagWalker):
                 v = bv.getValue().toString()
                 width = bv.getSize()
                 res = self.mgr.BV(int(v), width)
+            elif expr.getType().isArray():
+                const_ = expr.getConstArrayStoreAll()
+                array_type = self._cvc4_type_to_type(const_.getType())
+                base_value = self.back(const_.getExpr())
+                res = self.mgr.Array(array_type.index_type,
+                                     base_value)
             else:
-                raise TypeError("Unsupported constant type:", expr.getType())
+                raise TypeError("Unsupported constant type:",
+                                expr.getType().toString())
         else:
             raise TypeError("Unsupported expression:", expr.toString())
 
@@ -265,6 +273,12 @@ class CVC4Converter(Converter, DagWalker):
         res = self.mkExpr(CVC4.PLUS, args)
         return res
 
+    def walk_array_store(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.STORE, args[0], args[1], args[2])
+
+    def walk_array_select(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.SELECT, args[0], args[1])
+
     def walk_minus(self, formula, args, **kwargs):
         return self.mkExpr(CVC4.MINUS, args[0], args[1])
 
@@ -282,7 +296,7 @@ class CVC4Converter(Converter, DagWalker):
         if name not in self.declared_vars:
             self.declare_variable(name)
         decl = self.declared_vars[name]
-        return self.mkExpr(CVC4.APPLY_UF, decl, *args)
+        return self.mkExpr(CVC4.APPLY_UF, decl, args)
 
     def walk_bv_constant(self, formula, **kwargs):
         value = formula.constant_value()
@@ -384,10 +398,42 @@ class CVC4Converter(Converter, DagWalker):
             stps = [self._type_to_cvc4(x) for x in tp.param_types]
             rtp = self._type_to_cvc4(tp.return_type)
             return self.cvc4_exprMgr.mkFunctionType(stps, rtp)
+        elif tp.is_array_type():
+            # Recursively convert the types of index and elem
+            idx_cvc_type = self._type_to_cvc4(tp.index_type)
+            elem_cvc_type = self._type_to_cvc4(tp.elem_type)
+            return self.cvc4_exprMgr.mkArrayType(idx_cvc_type, elem_cvc_type)
         elif tp.is_bv_type():
             return self.cvc4_exprMgr.mkBitVectorType(tp.width)
         else:
             raise NotImplementedError("Unsupported type: %s" %tp)
+
+    def _cvc4_type_to_type(self, type_):
+        if type_.isBoolean():
+            return types.BOOL
+        elif type_.isInteger():
+            return types.INT
+        elif type_.isReal():
+            return types.REAL
+        elif type_.isArray():
+            # Casting Type into ArrayType
+            type_ = CVC4.ArrayType(type_)
+            # Recursively convert the types of index and elem
+            idx_type = self._cvc4_type_to_type(type_.getIndexType())
+            elem_type = self._cvc4_type_to_type(type_.getConstituentType())
+            return types.ArrayType(idx_type, elem_type)
+        elif type_.isBitVector():
+            # Casting Type into BitVectorType
+            type_ = CVC4.BitVectorType(type_)
+            return types.BVType(type_.getSize())
+        elif type_.isFunction():
+            # Casting Type into FunctionType
+            type_ = CVC4.FunctionType(type_)
+            return_type = type_.getRangeType()
+            param_types = tuple(self._cvc4_type_to_type(ty) for ty in type_.getArgTypes())
+            return types.FunctionType(return_type, param_types)
+        else:
+            raise NotImplementedError("Unsupported type: %s" % type_)
 
     def _rename_bound_variables(self, formula, variables):
         """Bounds the variables in formula.

@@ -90,7 +90,7 @@ SMTLIB_TEST_FILES = [
     #
     # Arrays
     (QF_ABV, "small_set/QF_ABV/a268test0002.smt2", "sat"),
-    (QF_ABV, "small_set/QF_ABV/com.galois.ecc.P384ECC64.group_add6.short.smt2", "unsat"),
+#    (QF_ABV, "small_set/QF_ABV/com.galois.ecc.P384ECC64.group_add6.short.smt2", "unsat"),
 
     (QF_ALIA, "small_set/QF_ALIA/ios_t1_ios_np_sf_ai_00001_001.cvc.smt2", "unsat"),
     (QF_ALIA, "small_set/QF_ALIA/pointer-invalid-15.smt2", "sat"),
@@ -117,7 +117,8 @@ def execute_script_fname(smtfile, logic, expected_result):
     parser = SmtLibParser()
     script = parser.get_script_fname(smtfile)
     try:
-        log = script.evaluate(Solver(logic=logic, incremental=False))
+        log = script.evaluate(Solver(logic=logic, incremental=False,
+                                     generate_models=False))
     except NoSolverAvailableError:
         raise SkipTest("No solver for logic %s." % logic)
 

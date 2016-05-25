@@ -16,7 +16,6 @@
 #   limitations under the License.
 #
 import os
-from pysmt.logics import QF_LRA
 from pysmt.test.smtlib.parser_utils import execute_script_fname, SMTLIB_TEST_FILES, SMTLIB_DIR
 
 def test_generator():

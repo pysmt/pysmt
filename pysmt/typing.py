@@ -148,7 +148,11 @@ class _BVType(PySMTType):
     """
     def __init__(self, width=32):
         PySMTType.__init__(self, type_id = 3)
-        self.width = width
+        self._width = width
+
+    @property
+    def width(self):
+        return self._width
 
     def is_bv_type(self, width=None):
         if width:

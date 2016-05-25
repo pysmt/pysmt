@@ -901,6 +901,9 @@ class FormulaManager(object):
            constants of type idx_type to values of the same type as
            default and the array is initialized correspondingly.
         """
+        if not isinstance(idx_type, types.PySMTType):
+            raise TypeError("idx_type is not a valid type: '%s'" % idx_type)
+
         args = [default]
         if assigned_values:
             for k in sorted(assigned_values):

@@ -416,7 +416,7 @@ class SmtDagPrinter(DagWalker):
         self.openings += 1
         self.write("(let ((%s " % sym)
 
-        for _ in xrange((len(args) - 1) / 2):
+        for _ in xrange((len(args) - 1) // 2):
             self.write("(store ")
 
         self.write("((as const %s) " % formula.get_type().as_smtlib(False))

@@ -16,10 +16,15 @@
 #   limitations under the License.
 #
 
-from pysmt.test import TestCase, skipIfNoSolverForLogic, main
-from pysmt.logics import QF_AUFLIA
-from pysmt.typing import ARRAY_INT_INT, ArrayType, INT, REAL
-from pysmt.shortcuts import Symbol, Solver, Select, Store, Not, Equals, Int, And, get_type, Real
+from pysmt.test import TestCase, main
+from pysmt.test import skipIfNoSolverForLogic, skipIfSolverNotAvailable
+from pysmt.logics import QF_AUFLIA, QF_AUFBV
+from pysmt.typing import ARRAY_INT_INT, ArrayType, INT, REAL, BV8
+from pysmt.shortcuts import (Solver,
+                             Symbol, Not, Equals, Int, BV, Real, FreshSymbol,
+                             Select, Store, Array)
+from pysmt.exceptions import ConvertExpressionError
+
 
 class TestArray(TestCase):
 
@@ -54,6 +59,45 @@ class TestArray(TestCase):
         formula = Equals(Select(Store(a, Int(10), Int(100)), Int(10)),
                          Int(100))
         self.assertSat(formula, logic=QF_AUFLIA)
+
+    @skipIfNoSolverForLogic(QF_AUFBV)
+    def test_bv_array(self):
+        a = Symbol("a", ArrayType(BV8, BV8))
+        formula = Equals(Select(Store(a, BV(10, 8), BV(100, 8)), BV(10,8)),
+                         BV(100,8))
+        self.assertSat(formula, logic=QF_AUFBV)
+
+    @skipIfSolverNotAvailable("btor")
+    def test_btor_does_not_support_int_arrays(self):
+        a = Symbol("a", ARRAY_INT_INT)
+        formula = Equals(Select(Store(a, Int(10), Int(100)), Int(10)),
+                         Int(100))
+        btor = Solver(name="btor")
+        with self.assertRaises(ConvertExpressionError):
+            btor.add_assertion(formula)
+
+    @skipIfSolverNotAvailable("btor")
+    def test_btor_does_not_support_const_arryas(self):
+        with self.assertRaises(ConvertExpressionError):
+            btor = Solver(name="btor")
+            btor.add_assertion(Equals(Array(BV8, BV(0, 8)),
+                                      FreshSymbol(ArrayType(BV8, BV8))))
+
+    def test_complex_types(self):
+        with self.assertRaises(TypeError):
+            # Not(Store(Array<Real,BV8>(8d_0), 1.0, 8d_5) =
+            #     Store(Array<Int,BV8>(8d_0), 1, 8d_5))
+            Not(Equals(Store(Array(REAL, BV(0, 8)), Real(1), BV(5, 8)),
+                       Store(Array(INT,  BV(0, 8)), Int(1), BV(5, 8))))
+
+        nested_a = Symbol("a_arb_aii", ArrayType(ArrayType(REAL, BV8),
+                                                 ARRAY_INT_INT))
+        with self.assertRaises(TypeError):
+        # This is wrong, because the first elemnt of Array must be a Type
+            Equals(nested_a, Array(Array(REAL, BV(0,8)),
+                                   Array(INT, Int(7))))
+
+
 
 if __name__ == "__main__":
     main()

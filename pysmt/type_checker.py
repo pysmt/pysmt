@@ -175,7 +175,6 @@ class SimpleTypeChecker(walkers.DagWalker):
             return None
         return BVType(target_width)
 
-
     def walk_math_relation(self, formula, args, **kwargs):
         #pylint: disable=unused-argument
         if args[0].is_real_type():

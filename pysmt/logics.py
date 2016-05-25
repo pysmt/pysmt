@@ -556,6 +556,17 @@ symbols.""",
               linear=False,
               uninterpreted=True)
 
+QF_AUFBVLIRA = Logic(name="QF_AUFBVLIRA",
+                     description=\
+                     """Quantifier free Arrays, Bitvectors and LIRA""",
+                     linear=True,
+                     uninterpreted=True,
+                     quantifier_free=True,
+                     arrays=True,
+                     bit_vectors=True,
+                     integer_arithmetic=True,
+                     real_arithmetic=True)
+
 AUTO = Logic(name="Auto",
              description="Special logic used to indicate that the logic to be used depends on the formula.")
 
@@ -603,12 +614,12 @@ PYSMT_LOGICS = frozenset([QF_BOOL, QF_IDL, QF_LIA, QF_LRA, QF_RDL, QF_UF, QF_UFI
                           QF_UFLIA, QF_UFLRA, QF_UFLIRA,
                           BOOL, LRA, LIA, UFLIRA, UFLRA,
                           QF_BV, QF_UFBV,
-                          QF_ABV, QF_AUFBV, QF_AUFLIA, QF_ALIA
-                          #MG: QF_AX?
+                          QF_ABV, QF_AUFBV, QF_AUFLIA, QF_ALIA, QF_AX,
+                          QF_AUFBVLIRA
                       ])
-BV_LOGICS = frozenset([QF_BV, QF_UFBV])
-ARRAYS_LOGICS = frozenset([QF_ABV, QF_AUFBV, QF_AUFLIA, QF_ALIA])
 
+BV_LOGICS = frozenset(_l for _l in PYSMT_LOGICS if _l.theory.bit_vectors)
+ARRAYS_LOGICS = frozenset(_l for _l in PYSMT_LOGICS if _l.theory.arrays)
 
 PYSMT_QF_LOGICS = frozenset(_l for _l in PYSMT_LOGICS if _l.quantifier_free)
 
