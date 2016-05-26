@@ -1,4 +1,4 @@
-#
+ #
 # This file is part of pySMT.
 #
 #   Copyright 2014 Andrea Micheli and Marco Gario
@@ -111,7 +111,21 @@ class HRLexer(Lexer):
             Rule(r"(forall)", Quantifier(self.mgr.ForAll, 20), False),# BVXor
             Rule(r"(exists)", Quantifier(self.mgr.Exists, 20), False),# BVXor
             Rule(r"(ToReal)", UnaryOpAdapter(self.mgr.ToReal, 100), False),# BVXor
-            Rule(r"(len)", UnaryOpAdapter(self.mgr.Length, 100), False), # Length
+            Rule(r"(str\.len)", UnaryOpAdapter(self.mgr.str_length, 100), False), # str_length
+            Rule(r"(str\.\+\+)", InfixOpAdapter(self.mgr.str_concat, 100), False), # str_concat
+            Rule(r"(str\.at)", InfixOpAdapter(self.mgr.str_charat, 100), False), # str_charat
+            Rule(r"(str\.contains)", InfixOpAdapter(self.mgr.str_contains, 100), False), # str_contains
+            Rule(r"(str\.indexof)", InfixOpAdapter(self.mgr.str_indexof, 100), False), # str_indexof
+            Rule(r"(str\.replace)", InfixOpAdapter(self.mgr.str_replace, 100), False), # str_replace
+            Rule(r"(str\.substr)", InfixOpAdapter(self.mgr.str_substr, 100), False), # str_substr
+            Rule(r"(str\.prefixof)", InfixOpAdapter(self.mgr.str_prefixof, 100), False), # str_prefixof
+            Rule(r"(str\.suffixof)", InfixOpAdapter(self.mgr.str_suffixof, 100), False), # str_suffixof
+            Rule(r"(str\.to\.int)", UnaryOpAdapter(self.mgr.str_to_int, 100), False), # str_to_int
+            Rule(r"(int\.to\.str)", UnaryOpAdapter(self.mgr.int_to_str, 100), False), # int_to_str
+            Rule(r"(str\.to\.u16)", UnaryOpAdapter(self.mgr.str_to_uint16, 100), False), # str_to_uint16
+            Rule(r"(u16\.to\.str)", UnaryOpAdapter(self.mgr.uint16_to_str, 100), False), # uint16_to_str
+            Rule(r"(str\.to\.u32)", UnaryOpAdapter(self.mgr.str_to_uint32, 100), False), # str_to_uint32
+            Rule(r"(u32\.to\.str)", UnaryOpAdapter(self.mgr.uint32_to_str, 100), False), # uint32_to_str
             Rule(r"'(.*?)'", self.identifier, True), # quoted identifiers
             Rule(r"([A-Za-z_][A-Za-z0-9_]*)", self.identifier, True),# identifiers
             Rule(r"(.)", self.lexing_error, True), # input error

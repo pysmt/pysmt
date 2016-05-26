@@ -148,6 +148,7 @@ class TheoryOracle(pysmt.walkers.DagWalker):
         self.set_function(self.walk_times, op.TIMES)
         self.set_function(self.walk_plus, op.PLUS)
         self.set_function(self.walk_equals, op.EQUALS)
+        self.set_function(self.walk_strings, *op.STRING_OPERATORS)
 
 
     def walk_combine(self, formula, args, **kwargs):
@@ -242,10 +243,14 @@ class TheoryOracle(pysmt.walkers.DagWalker):
     def walk_equals(self, formula, args, **kwargs):
         return self.walk_combine(formula, args)
 
-    def walk_length(self, formula, args, **kwargs):
+    def walk_strings(self, formula, args, **kwargs):
         #pylint: disable=unused-argument
         """Extends the Theory with Strings."""
-        theory_out = args[0].set_strings() # This makes a copy of args[0]
+        print formula
+        if formula.is_string_constant():
+            theory_out = Theory(strings=True)
+        else:
+            theory_out = args[0].set_strings() # This makes a copy of args[0]
         return theory_out
 
 

@@ -897,14 +897,66 @@ class FormulaManager(object):
         for _ in xrange(count-1):
             res = self.BVConcat(res, formula)
         return res
-
-    def Length(self, formula):
-        """ Creates an expression of the form:
-            Length formula
+    
+    def str_length(self, formula):
+        """ Creates an expression of the form Length formula
         """
-        n = self.create_node(node_type=op.LENGTH, args=(formula,))
+        t = self.env.stc.get_type(formula)
+        if ( t != types.STRING):
+            raise TypeError("Cannot create a str_length other than STRING argument.")
+            
+        n = self.create_node(node_type=op.STR_LENGTH, args=(formula,))
         return n
+    
+    def str_concat(self, *args ):
+        tuple_args = self._polymorph_args_to_tuple(args)
 
+        if len(tuple_args) <= 1:
+            raise TypeError("Cannot create a Str_Concat without arguments.")
+        else:
+            n = self.create_node(node_type=op.STR_CONCAT, args=tuple_args)
+            return n
+    
+    def str_contains(self, s, t):
+        n = self.create_node(node_type=op.STR_CONTAINS, args=(s, t))
+        return n
+    def str_indexof(self, s, t, i):
+        n = self.create_node(node_type=op.STR_INDEXOF, args=(s, t, i))
+        return n
+    def str_replace(self, s, t1, t2):
+        n = self.create_node(node_type=op.STR_REPLACE, args=(s, t1, t2))
+        return n
+    def str_substr(self, s, i, j):
+        n = self.create_node(node_type=op.STR_SUBSTR, args=(s, i, j))
+        return n
+    def str_prefixof(self, s, t):
+        n = self.create_node(node_type=op.STR_PREFIXOF, args=(s, t))
+        return n
+    def str_suffixof(self, s, t):
+        n = self.create_node(node_type=op.STR_SUFFIXOF, args=(s, t))
+        return n
+    def str_to_int(self, x):
+        n = self.create_node(node_type=op.STRING_TO_INTEGER, args=(x,))
+        return n
+    def int_to_str(self, x):
+        n = self.create_node(node_type=op.INTEGER_TO_STRING, args=(x, ))
+        return n
+    def str_to_uint16(self, x):
+        n = self.create_node(node_type=op.STRING_TO_UINT16, args=(x, ))
+        return n
+    def uint16_to_str(self, x):
+        n = self.create_node(node_type=op.UINT16_TO_STRING, args=(x, ))
+        return n
+    def str_to_uint32(self, x):
+        n = self.create_node(node_type=op.STRING_TO_UINT32, args=(x, ))
+        return n
+    def uint32_to_str(self, x):
+        n = self.create_node(node_type=op.UINT32_TO_STRING, args=(x, ))
+        return n
+    def str_charat(self, s, i):
+        n = self.create_node(node_type=op.STR_CHARAT, args=(s, i))
+        return n
+        
 
 
     def normalize(self, formula):
