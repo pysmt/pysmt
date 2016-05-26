@@ -42,7 +42,7 @@ class TestSMTParseExamples(TestCase):
             parser = SmtLibParser()
             script_in = parser.get_script(buf_in)
             f_in = script_in.get_last_formula()
-            self.assertEqual(f_in, f_out)
+            self.assertEqual(f_in.simplify(), f_out.simplify())
 
 
     @skipIfNoSolverForLogic(logics.QF_BV)
@@ -80,11 +80,12 @@ class TestSMTParseExamples(TestCase):
             buf_out = cStringIO()
             script_out = smtlibscript_from_formula(f_out)
             script_out.serialize(outstream=buf_out, daggify=True)
+
             buf_in = cStringIO(buf_out.getvalue())
             parser = SmtLibParser()
             script_in = parser.get_script(buf_in)
             f_in = script_in.get_last_formula()
-            self.assertEqual(f_in, f_out)
+            self.assertEqual(f_in.simplify(), f_out.simplify())
 
     @skipIfNoSolverForLogic(logics.QF_BV)
     def test_parse_examples_daggified_bv(self):

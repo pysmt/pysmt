@@ -17,6 +17,8 @@
 #
 from functools import partial
 
+from six.moves import xrange
+
 import pysmt.operators as op
 from pysmt.environment import get_env
 from pysmt.walkers import TreeWalker, DagWalker
@@ -174,6 +176,21 @@ class SmtPrinter(TreeWalker):
         self.walk(formula.arg(0))
         self.write(")")
 
+    def walk_array_value(self, formula):
+        assign = formula.array_value_assigned_values_map()
+        for _ in xrange(len(assign)):
+            self.write("(store ")
+
+        self.write("((as const %s) " % formula.get_type().as_smtlib(False))
+        self.walk(formula.array_value_default())
+        self.write(")")
+
+        for k in sorted(assign):
+            self.write(" ")
+            self.walk(k)
+            self.write(" ")
+            self.walk(assign[k])
+            self.write(")")
 
 class SmtDagPrinter(DagWalker):
 
@@ -392,4 +409,25 @@ class SmtDagPrinter(DagWalker):
             self.write(" ")
             self.write(s)
         self.write("))) ")
+        return sym
+
+    def walk_array_value(self, formula, args, **kwargs):
+        sym = self._new_symbol()
+        self.openings += 1
+        self.write("(let ((%s " % sym)
+
+        for _ in xrange((len(args) - 1) / 2):
+            self.write("(store ")
+
+        self.write("((as const %s) " % formula.get_type().as_smtlib(False))
+        self.write(args[0])
+        self.write(")")
+
+        for i, k in enumerate(args[1::2]):
+            self.write(" ")
+            self.write(k)
+            self.write(" ")
+            self.write(args[2*i + 2])
+            self.write(")")
+        self.write("))")
         return sym

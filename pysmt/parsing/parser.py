@@ -61,7 +61,7 @@ class HRLexer(Lexer):
             Rule(r"(-?\d+\.\d+)", self.real_constant, True),# decimals
             Rule(r"(-?\d+_\d+)", self.bv_constant, True),# bv
             Rule(r"(-?\d+)", self.int_constant, True),# integer literals
-            Rule(r"(BV\{\d+\})", self.bv_type, False),# BV Type
+            Rule(r"BV\{(\d+)\}", self.bv_type, True),# BV Type
             Rule(r"(Array\{)", OpenArrayTypeTok(), False),# Array Type
             Rule(r"(Int)", IntTypeTok(), False),# Int Type
             Rule(r"(Real)", RealTypeTok(), False),# Real Type
@@ -285,13 +285,15 @@ class OpenArrayTypeTok(GrammarSymbol):
     def nud(self, parser):
         idx_type = parser.expression()
         parser.expect(ExprComma, ",")
-        parser.expression() # el_type
+        el_type = parser.expression()
         parser.expect(CloseBrace, "}")
-        parser.expect(OpenPar, "(")
-        default = parser.expression()
-        parser.expect(ClosePar, ")")
-        return parser.mgr.Array(idx_type, default)
-
+        if type(parser.token) == OpenPar:
+            parser.advance()
+            default = parser.expression()
+            parser.expect(ClosePar, ")")
+            return parser.mgr.Array(idx_type, default)
+        else:
+            return types.ArrayType(idx_type, el_type)
 
 
 class OpenPar(GrammarSymbol):

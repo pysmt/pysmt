@@ -592,7 +592,7 @@ SMTLIB2_LOGICS = frozenset([ AUFLIA,
                              QF_UFLIRA
                          ])
 
-LOGICS = SMTLIB2_LOGICS | frozenset([ QF_BOOL, BOOL ])
+LOGICS = SMTLIB2_LOGICS | frozenset([ QF_BOOL, BOOL, QF_AUFBVLIRA])
 
 QF_LOGICS = frozenset(_l for _l in LOGICS if _l.quantifier_free)
 

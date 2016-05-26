@@ -399,13 +399,13 @@ class Z3Converter(Converter, DagWalker):
                 else:
                     interp_decl = z3.get_as_array_func(expr)
                     interp = model[interp_decl]
-                    default = self.back(interp.else_value())
+                    default = self.back(interp.else_value(), model=model)
                     assign = {}
                     for i in xrange(interp.num_entries()):
                         e = interp.entry(i)
                         assert e.num_args() == 1
-                        idx = self.back(e.arg_value(0))
-                        val = self.back(e.value())
+                        idx = self.back(e.arg_value(0), model=model)
+                        val = self.back(e.value(), model=model)
                         assign[idx] = val
                     arr_type = self._z3_to_type(expr.sort())
                     res = self.mgr.Array(arr_type.index_type, default, assign)

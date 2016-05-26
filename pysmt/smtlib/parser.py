@@ -294,6 +294,7 @@ class SmtLibParser(object):
                             # arrays
                             'select':self._operator_adapter(mgr.Select),
                             'store':self._operator_adapter(mgr.Store),
+                            'as':self._enter_smtlib_as,
                             }
 
         # Command tokens
@@ -353,6 +354,22 @@ class SmtLibParser(object):
         else:
             assert len(args) == 2
             return mgr.Minus(args[0], args[1])
+
+
+    def _enter_smtlib_as(self, stack, tokens, key):
+        """Utility function that handles 'as' that is a special function in SMTLIB"""
+        #pylint: disable=unused-argument
+        const = self.parse_atom(tokens, "expression")
+        if const != "const":
+            raise SyntaxError("expected 'const' in expression after 'as'")
+        tyname = self.parse_type(tokens, "expression")
+        ty = self._get_basic_type(tyname)
+
+        def res(expr):
+            return self.env.formula_manager.Array(ty.index_type, expr)
+        def handler():
+            return res
+        stack[-1].append(handler)
 
 
     def _smtlib_underscore(self, *args):

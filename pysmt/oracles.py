@@ -148,6 +148,25 @@ class TheoryOracle(pysmt.walkers.DagWalker):
         self.set_function(self.walk_equals, op.EQUALS)
         self.set_function(self.walk_array_value, op.ARRAY_VALUE)
 
+    def _theory_from_type(self, ty):
+        theory = None
+        if ty.is_real_type():
+            theory = Theory(real_arithmetic=True, real_difference=True)
+        elif ty.is_int_type():
+            theory = Theory(integer_arithmetic=True, integer_difference=True)
+        elif ty.is_bool_type():
+            theory = Theory()
+        elif ty.is_bv_type():
+            theory = Theory(bit_vectors=True)
+        elif ty.is_array_type():
+            theory = Theory(arrays=True)
+            theory = theory.combine(self._theory_from_type(ty.index_type))
+            theory = theory.combine(self._theory_from_type(ty.elem_type))
+        else:
+            assert ty.is_function_type()
+            theory = Theory(uninterpreted=True)
+        return theory
+
     def walk_combine(self, formula, args, **kwargs):
         #pylint: disable=unused-argument
         """Combines the current theory value of the children"""
@@ -178,20 +197,7 @@ class TheoryOracle(pysmt.walkers.DagWalker):
         #pylint: disable=unused-argument
         """Returns a new theory object with the type of the symbol."""
         f_type = formula.symbol_type()
-        if f_type.is_real_type():
-            theory_out = Theory(real_arithmetic=True, real_difference=True)
-        elif f_type.is_int_type():
-            theory_out = Theory(integer_arithmetic=True, integer_difference=True)
-        elif f_type.is_bool_type():
-            theory_out = Theory()
-        elif f_type.is_bv_type():
-            theory_out = Theory(bit_vectors=True)
-        elif f_type.is_array_type():
-            theory_out = Theory(arrays=True)
-        else:
-            assert f_type.is_function_type()
-            theory_out = Theory(uninterpreted=True)
-
+        theory_out = self._theory_from_type(f_type)
         return theory_out
 
     def walk_function(self, formula, args, **kwargs):
@@ -245,19 +251,7 @@ class TheoryOracle(pysmt.walkers.DagWalker):
 
         # We combine the index-type theory
         i_type = formula.array_value_index_type()
-        if i_type.is_real_type():
-            idx_theory = Theory(real_arithmetic=True, real_difference=True)
-        elif i_type.is_int_type():
-            idx_theory = Theory(integer_arithmetic=True, integer_difference=True)
-        elif i_type.is_bool_type():
-            idx_theory = Theory()
-        elif i_type.is_bv_type():
-            idx_theory = Theory(bit_vectors=True)
-        elif i_type.is_array_type():
-            idx_theory = Theory(arrays=True)
-        else:
-            assert i_type.is_function_type()
-            idx_theory = Theory(uninterpreted=True)
+        idx_theory = self._theory_from_type(i_type)
         theory_out = theory_out.combine(idx_theory)
 
         # Finally, we add the array theory
