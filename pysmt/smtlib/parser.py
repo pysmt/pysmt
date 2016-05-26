@@ -292,7 +292,22 @@ class SmtLibParser(object):
                             'bvsgt':self._operator_adapter(mgr.BVSGT),
                             'bvsge':self._operator_adapter(mgr.BVSGE),
                             # Strings
-                            'str.len':self._operator_adapter(mgr.Length),
+                            'str.len':self._operator_adapter(mgr.str_length),
+                            'str.++':self._operator_adapter(mgr.str_concat),
+                            'str.contains':self._operator_adapter(mgr.str_contains),
+                            'str.indexof':self._operator_adapter(mgr.str_indexof),
+                            'str.replace':self._operator_adapter(mgr.str_replace),
+                            'str.substr':self._operator_adapter(mgr.str_substr),
+                            'str.prefixof':self._operator_adapter(mgr.str_prefixof),
+                            'str.suffixof':self._operator_adapter(mgr.str_suffixof),
+                            'str.str.to.int':self._operator_adapter(mgr.str_to_int),
+                            'str.int.to.str':self._operator_adapter(mgr.int_to_str),
+                            'str.str.to.uint16':self._operator_adapter(mgr.str_to_uint16),
+                            'str.uint16.to.str':self._operator_adapter(mgr.uint16_to_str),
+                            'str.str.to.uint32':self._operator_adapter(mgr.str_to_uint32),
+                            'str.uint32.to.str':self._operator_adapter(mgr.uint32_to_str),
+                            
+                            
         }
 
         # Command tokens

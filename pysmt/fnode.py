@@ -21,8 +21,7 @@ import collections
 import pysmt.environment
 from pysmt.operators import (FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF,
                              SYMBOL, FUNCTION,
-                             REAL_CONSTANT, BOOL_CONSTANT, INT_CONSTANT,
-                             STRING_CONSTANT,
+                             REAL_CONSTANT, BOOL_CONSTANT, INT_CONSTANT,STRING_CONSTANT,
                              PLUS, MINUS, TIMES,
                              LE, LT, EQUALS,
                              ITE,
@@ -38,7 +37,22 @@ from pysmt.operators import (FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF,
                              BV_COMP,
                              BV_SDIV, BV_SREM,
                              BV_ASHR,
-                             LENGTH)
+                             STR_LENGTH, 
+                             STR_CONCAT, 
+                             STR_CONTAINS, 
+                             STR_INDEXOF, 
+                             STR_REPLACE,
+                             STR_SUBSTR, 
+                             STR_PREFIXOF, 
+                             STR_SUFFIXOF, 
+                             STRING_TO_INTEGER, 
+                             INTEGER_TO_STRING,
+                             STRING_TO_UINT16, 
+                             UINT16_TO_STRING, 
+                             STRING_TO_UINT32, 
+                             UINT32_TO_STRING, 
+                             STR_CHARAT
+                             )
 from pysmt.operators import  (BOOL_OPERATORS, THEORY_OPERATORS,
                               BV_OPERATORS, LIRA_OPERATORS,
                               RELATIONS, CONSTANTS, STRING_OPERATORS)
@@ -463,7 +477,7 @@ class FNode(object):
         """Return the extension step for BVZext and BVSext."""
         assert self.is_bv_zext() or self.is_bv_sext()
         return self._content.payload[1]
-
+    
     def __str__(self):
         return self.serialize(threshold=5)
 

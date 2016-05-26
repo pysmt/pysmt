@@ -222,8 +222,6 @@ def EqualsOrIff(left, right):
     """
     return get_env().formula_manager.EqualsOrIff(left, right)
 
-def Length(arg):
-    return get_env().formula_manager.Length(arg)
 # Bit Vectors
 def BV(value, width=None):
 
@@ -384,6 +382,52 @@ def BVAShr(left, right):
     """Returns the RIGHT arithmetic rotation of the left BV by the number
         of steps specified by the right BV."""
     return get_env().formula_manager.BVAShr(left, right)
+
+# String API
+def str_length(s):
+    return get_env().formula_manager.str_length(s)
+
+def str_charat(s, i):
+    return get_env().formula_manager.str_charat(s, i)
+
+def str_concat(*args ):
+    return get_env().formula_manager.str_concat(*args)
+    
+def str_contains(s, t):
+    return get_env().formula_manager.str_contains(s, t)
+    
+def str_indexof(s, t, i):
+    return get_env().formula_manager.str_indexof(s, t, i)
+
+def str_replace(s, t1, t2):
+    return get_env().formula_manager.str_replace(s, t1, t2)
+
+def str_substr(s, i, j):
+    return get_env().formula_manager.str_substr(s, i, j)
+
+def str_prefixof(s, t):
+    return get_env().formula_manager.str_prefixof(s, t)
+
+def str_suffixof(s, t):
+    return get_env().formula_manager.str_suffixof(s, t)
+
+def str_to_int(x):
+    return get_env().formula_manager.str_to_int(x)
+
+def int_to_str(x):
+    return get_env().formula_manager.int_to_str(x)
+
+def str_to_uint16(x):
+    return get_env().formula_manager.str_to_uint16(x)
+
+def uint16_to_str(x):
+    return get_env().formula_manager.uint16_to_str(x)
+
+def str_to_uint32(x):
+    return get_env().formula_manager.str_to_uint32(x)
+
+def uint32_to_str(x):
+    return get_env().formula_manager.uint32_to_str(x)
 
 
 

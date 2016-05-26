@@ -79,7 +79,21 @@ class Walker(object):
         self.functions[op.BV_SDIV] = self.walk_bv_sdiv
         self.functions[op.BV_SREM] = self.walk_bv_srem
         self.functions[op.BV_ASHR] = self.walk_bv_ashr
-        self.functions[op.LENGTH] = self.walk_length
+        self.functions[op.STR_LENGTH] = self.walk_str_length
+        self.functions[op.STR_CONCAT] = self.walk_str_concat
+        self.functions[op.STR_CONTAINS] = self.walk_str_contains
+        self.functions[op.STR_INDEXOF] = self.walk_str_indexof
+        self.functions[op.STR_REPLACE] = self.walk_str_replace
+        self.functions[op.STR_SUBSTR] = self.walk_str_substr
+        self.functions[op.STR_PREFIXOF] = self.walk_str_prefixof
+        self.functions[op.STR_SUFFIXOF] = self.walk_str_suffixof
+        self.functions[op.STRING_TO_INTEGER] = self.walk_str_to_int
+        self.functions[op.INTEGER_TO_STRING] = self.walk_int_to_str
+        self.functions[op.STRING_TO_UINT16] = self.walk_str_to_unit16
+        self.functions[op.UINT16_TO_STRING] = self.walk_uint16_to_str
+        self.functions[op.STRING_TO_UINT32] = self.walk_str_to_uint32
+        self.functions[op.UINT32_TO_STRING] = self.walk_uint32_to_str
+        self.functions[op.STR_CHARAT] = self.walk_str_charat
 
         undefined_types = set(op.ALL_TYPES) - set(self.functions.keys())
         assert len(undefined_types) == 0, \
@@ -258,6 +272,48 @@ class Walker(object):
 
     def walk_bv_ashr(self, formula, **kwargs):
         return self.walk_error(formula, **kwargs)
-
-    def walk_length(self,formula, **kwargs):
+    
+    def walk_str_length(self,formula, **kwargs):
+        return self.walk_error(formula, **kwargs)
+    
+    def walk_str_concat(self,formula, **kwargs):
+        return self.walk_error(formula, **kwargs)
+    
+    def walk_str_contains(self,formula, **kwargs):
+        return self.walk_error(formula, **kwargs)
+    
+    def walk_str_indexof(self,formula, **kwargs):
+        return self.walk_error(formula, **kwargs)
+    
+    def walk_str_replace(self,formula, **kwargs):
+        return self.walk_error(formula, **kwargs)
+    
+    def walk_str_substr(self,formula, **kwargs):
+        return self.walk_error(formula, **kwargs)
+        
+    def walk_str_prefixof(self,formula, **kwargs):
+        return self.walk_error(formula, **kwargs)
+        
+    def walk_str_suffixof(self,formula, **kwargs):
+        return self.walk_error(formula, **kwargs)
+        
+    def walk_str_to_int(self,formula, **kwargs):
+        return self.walk_error(formula, **kwargs)
+        
+    def walk_int_to_str(self,formula, **kwargs):
+        return self.walk_error(formula, **kwargs)
+        
+    def walk_str_to_unit16(self,formula, **kwargs):
+        return self.walk_error(formula, **kwargs)
+        
+    def walk_uint16_to_str(self,formula, **kwargs):
+        return self.walk_error(formula, **kwargs)
+        
+    def walk_str_to_uint32(self,formula, **kwargs):
+        return self.walk_error(formula, **kwargs)
+        
+    def walk_uint32_to_str(self,formula, **kwargs):
+        return self.walk_error(formula, **kwargs)
+        
+    def walk_str_charat(self,formula, **kwargs):
         return self.walk_error(formula, **kwargs)

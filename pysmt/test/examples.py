@@ -34,7 +34,7 @@ from pysmt.shortcuts import (Symbol, Function,
                              BVLShl, BVLShr,BVRol, BVRor,
                              BVZExt, BVSExt, BVSub, BVComp, BVAShr, BVSLE,
                              BVSLT, BVSGT, BVSGE, BVSDiv, BVSRem,
-                             String, Length)
+                             String, str_length)
 from pysmt.typing import REAL, BOOL, INT, FunctionType, BV8, BV16, STRING
 
 
@@ -560,7 +560,6 @@ def get_example_formulae(environment=None):
                     is_sat=False,
                     logic=pysmt.logics.QF_UFLIRA
                 ),
-
             # ("mystr" == str1)
             Example(expr=Equals(String("mystr"), str1),
                     is_valid=False,
@@ -568,12 +567,11 @@ def get_example_formulae(environment=None):
                     logic=pysmt.logics.QF_SLIA),
 
             # ( 5 < len(s)  & "mystr" == str1)
-            Example(expr=And(LT(Int(5), Length(str1)),
+            Example(expr=And(LT(Int(5), str_length(str1)),
                              Equals(String("mystr"), str1)),
                     is_valid=False,
                     is_sat=False,
                     logic=pysmt.logics.QF_SLIA),
-
             # Test complex names
             Example(expr=And(Symbol("Did you know that any string works? #yolo"),
                              Symbol("10"),

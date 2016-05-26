@@ -39,8 +39,7 @@ class SolverOptions(object):
         for k in kwargs:
             if k not in [n for (n, _) in self.VALID_OPTIONS]:
                 raise ValueError("Unrecognized option '%s'" % k)
-
-
+            
 class Solver(object):
     """Represents a generic SMT Solver."""
 
@@ -239,6 +238,15 @@ class Solver(object):
 
         :param options: Options to be set
         :type options: Dictionary
+        """
+        raise NotImplementedError
+    
+    def set_option(self, name, value):
+        """Sets an option.
+
+        :param name and value: Option to be set
+        :type name: String
+        :type value: String
         """
         raise NotImplementedError
 

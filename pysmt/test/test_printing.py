@@ -265,7 +265,7 @@ SERIALIZED_EXAMPLES = [
     """(((ToReal((... - ...)) = r) & (ToReal(q) = r)) -> ((p < ih(ToReal(...), (... + ...))) | (ih(r, p) <= p)))""",
     """(! (((ToReal(...) = r) & (ToReal(...) = r)) -> ((p < ...(..., ...)) | (...(..., ...) <= p))))""",
     """("mystr" = str1)""",
-    """((5 < len(str1)) & ("mystr" = str1))""",
+    """((5 < (str.len str1)) & ("mystr" = str1))""",
     """('Did you know that any string works? #yolo' & '10' & '|#somesolverskeepthe||' & ' ')""",
     ]
 

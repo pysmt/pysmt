@@ -593,7 +593,7 @@ class Simplifier(pysmt.walkers.DagWalker):
             return ret
         return self.manager.BVAShr(l, r)
 
-    def walk_length(self, formula, args, **kwargs):
-        return self.manager.Length(args[0])
+    def walk_str_length(self, formula, args, **kwargs):
+        return self.manager.str_length(args[0])
 
 # EOC Simplifier
