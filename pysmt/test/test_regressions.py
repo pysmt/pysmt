@@ -20,9 +20,10 @@ from six.moves import xrange
 from six.moves import cStringIO
 
 from pysmt.shortcuts import (Real, Plus, Symbol, Equals, And, Bool, Or,
-                             Div, LT, LE, Int, ToReal, Iff, Exists, Times, FALSE)
+                             Div, LT, LE, Int, ToReal, Iff, Exists, Times, FALSE,
+                             BVLShr, BVLShl, BVAShr, BV)
 from pysmt.shortcuts import Solver, get_env, qelim, get_model, TRUE, ExactlyOne
-from pysmt.typing import REAL, BOOL, INT, FunctionType
+from pysmt.typing import REAL, BOOL, INT, BVType, FunctionType
 from pysmt.test import (TestCase, skipIfSolverNotAvailable, skipIfNoSolverForLogic,
                         skipIfNoQEForLogic)
 from pysmt.test import main
@@ -319,6 +320,26 @@ class TestRegressions(TestCase):
 
         self.assertEqual(f1,f2)
         self.assertEqual(f2,f3)
+
+    @skipIfSolverNotAvailable("btor")
+    def btor_bitwidth_bug_in_shift(self):
+        # (384, 384, 9)
+        # (x69 >> 1_384)
+        s = Solver(name="btor")
+        x69 = Symbol("x69", BVType(384))
+        # BVLShr
+        f = BVLShr(x69, BV(1, 384))
+        c = s.converter.convert(f)
+        self.assertIsNotNone(c)
+        # BVLShl
+        f = BVLShl(x69, BV(1, 384))
+        c = s.converter.convert(f)
+        self.assertIsNotNone(c)
+        # BVAShr
+        f = BVAShr(x69, BV(1, 384))
+        c = s.converter.convert(f)
+        self.assertIsNotNone(c)
+
 
 if __name__ == "__main__":
     main()
