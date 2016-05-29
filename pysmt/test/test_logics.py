@@ -19,6 +19,7 @@ import pysmt.logics
 from pysmt.logics import get_logic_by_name, get_logic, most_generic_logic
 from pysmt.logics import PYSMT_LOGICS
 from pysmt.logics import QF_LIA, LIA, UFLIRA, LRA, QF_UFLIRA, QF_BV, NRA
+from pysmt.logics import Theory
 from pysmt.exceptions import (UndefinedLogicError, NoSolverAvailableError,
                               NoLogicAvailableError)
 from pysmt.shortcuts import Solver, get_env
@@ -41,6 +42,7 @@ class TestLogic(TestCase):
         for l in pysmt.logics.LOGICS:
             l_out = get_logic(quantifier_free=l.quantifier_free,
                               arrays=l.theory.arrays,
+                              arrays_const=l.theory.arrays_const,
                               bit_vectors=l.theory.bit_vectors,
                               floating_point=l.theory.floating_point,
                               integer_arithmetic=l.theory.integer_arithmetic,
@@ -132,6 +134,10 @@ class TestLogic(TestCase):
         with self.assertRaises(NoLogicAvailableError):
             most_generic_logic(PYSMT_LOGICS)
 
+        t = Theory(arrays=True,
+                   arrays_const=True,
+                   integer_arithmetic=True)
+        self.assertIsNotNone(t)
 
 if __name__ == "__main__":
     main()

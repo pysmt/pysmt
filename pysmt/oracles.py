@@ -246,7 +246,7 @@ class TheoryOracle(pysmt.walkers.DagWalker):
         return self.walk_combine(formula, args)
 
     def walk_array_value(self, formula, args, **kwargs):
-        # First, we combin all the theories of all the indexes and values
+        # First, we combine all the theories of all the indexes and values
         theory_out = self.walk_combine(formula, args)
 
         # We combine the index-type theory
@@ -256,6 +256,7 @@ class TheoryOracle(pysmt.walkers.DagWalker):
 
         # Finally, we add the array theory
         theory_out.arrays = True
+        theory_out.arrays_const = True
         return theory_out
 
     def get_theory(self, formula):

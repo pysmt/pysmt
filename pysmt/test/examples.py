@@ -594,7 +594,7 @@ def get_example_formulae(environment=None):
             Example(expr=And(Equals(Array(INT, Int(0), {Int(1) : Int(1)}), aii), Equals(Select(aii, Int(1)), Int(0))),
                     is_valid=False,
                     is_sat=False,
-                    logic=pysmt.logics.QF_ALIA),
+                    logic=pysmt.logics.get_logic_by_name("QF_ALIA*")),
 
             # nested_a = Array<Array<Real,BV8>,Array<Int,Int>>(Array<Int,Int>(7))
             #  -> Select(Select(nested_a, arb), 42) = 7
@@ -604,7 +604,7 @@ def get_example_formulae(environment=None):
                                         Int(7))),
                     is_valid=True,
                     is_sat=True,
-                    logic=pysmt.logics.QF_AUFBVLIRA),
+                    logic=pysmt.logics.get_logic_by_name("QF_AUFBVLIRA*")),
 
             # Store(Store(a, x, y), x, z) = Store(a, x, z)
             Example(expr=Equals(Store(Store(abb, bv8, Symbol("y_", BV8)),

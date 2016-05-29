@@ -27,7 +27,7 @@ except ImportError:
     raise SolverAPINotFound
 
 import pysmt.typing as types
-from pysmt.logics import PYSMT_LOGICS
+from pysmt.logics import PYSMT_LOGICS, ARRAYS_CONST_LOGICS
 
 from pysmt.solvers.solver import Solver, Converter
 from pysmt.exceptions import SolverReturnedUnknownResultError, InternalSolverError
@@ -38,7 +38,7 @@ from pysmt.decorators import catch_conversion_error
 
 
 class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
-    LOGICS = PYSMT_LOGICS
+    LOGICS = PYSMT_LOGICS - ARRAYS_CONST_LOGICS
 
     def __init__(self, environment, logic, **options):
         Solver.__init__(self,
