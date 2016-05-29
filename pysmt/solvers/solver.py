@@ -15,7 +15,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import pysmt.shortcuts
 from pysmt.typing import BOOL
 from pysmt.exceptions import SolverReturnedUnknownResultError
 from six.moves import xrange
@@ -267,8 +266,7 @@ class Solver(object):
 
         Raises TypeError.
         """
-        t = pysmt.shortcuts.get_type(formula)
-        if t != BOOL:
+        if formula.get_type() != BOOL:
             raise TypeError("Argument must be boolean.")
 
 

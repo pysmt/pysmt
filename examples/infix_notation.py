@@ -8,8 +8,14 @@ from pysmt.shortcuts import get_env, Solver
 from pysmt.shortcuts import Symbol, And, Plus, Int
 from pysmt.typing import INT
 
-# Infix-Notation is disable by default
-get_env().enable_infix_notation = True
+# Infix-Notation is automatically enabled whenever you import pysmt.shortcuts.
+#
+# To enable it without using shortcuts, do:
+#
+#   get_env().enable_infix_notation = True
+#
+# Similarly, you can disable infix_notation to prevent its accidental use.
+#
 
 hello = [Symbol(s, INT) for s in "hello"]
 world = [Symbol(s, INT) for s in "world"]
