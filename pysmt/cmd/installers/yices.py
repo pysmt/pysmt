@@ -74,6 +74,7 @@ class YicesInstaller(SolverInstaller):
 
 
     def get_installed_version(self):
+        # MG: Update me!
         with TemporaryPath([self.bindings_dir]):
             try:
                 import pyices
