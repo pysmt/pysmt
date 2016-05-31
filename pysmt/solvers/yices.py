@@ -16,7 +16,6 @@
 #   limitations under the License.
 #
 import atexit
-import ctypes
 
 from fractions import Fraction
 from six.moves import xrange
@@ -96,7 +95,6 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         self._assert_is_boolean(formula)
         term = self.converter.convert(formula)
         code = yices3.yices_assert_formula(self.yices, term)
-        print(code)
         if code != 0:
             raise InternalSolverError("Yices returned non-zero code upon assert"\
                                       ": %s (code: %s)" % \
@@ -180,14 +178,11 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         titem = self.converter.convert(item)
         ty = self.environment.stc.get_type(item)
         if ty.is_bool_type():
-            res = self._get_yices_value(titem, ctypes.c_bool(),
-                                        yices3.yices_get_bool_value)
+            res = yices3.yices_get_bool_value(self.model, titem)
             return self.mgr.Bool(res)
 
         else:
-            yval = yices3.yval_t()
-            status = yices3.yices_get_value(self.model, titem,
-                                              ctypes.byref(yval))
+            status = yices3.yices_get_value(self.model, titem)
             if status != 0:
                 raise InternalSolverError("Failed to read the variable from " \
                                           "the model: %s" % \
@@ -195,14 +190,13 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
             if ty.is_int_type():
                 if yices3.yices_val_is_int64(self.model,
-                                               ctypes.byref(yval)) == 0:
+                                             ctypes.byref(yval)) == 0:
                     raise NotImplementedError("Yices wrapper currently uses "\
                                               "finite-precision integers! "\
                                               "Your query required a non-"\
                                               "representable integer.")
                 else:
-                    res = self._get_yices_value(titem, ctypes.c_int64(),
-                                                yices3.yices_get_int64_value)
+                    res = yices3.yices_get_int64_value(self.model, titem)
                     return self.mgr.Int(res)
 
             elif ty.is_real_type():
@@ -219,8 +213,7 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
             elif ty.is_bv_type():
                 width = ty.width
-                res = (ctypes.c_int32 * width)()
-                yices3.yices_get_bv_value(self.model, titem, res)
+                res = yices3.yices_get_bv_value(self.model, titem)
                 str_val = "".join(str(x) for x in reversed(res))
                 return self.mgr.BV("#b" + str_val)
 
@@ -276,7 +269,7 @@ class YicesConverter(Converter, DagWalker):
         return self.walk(formula)
 
     def _to_term_array(self, arr):
-        return (yices3.term_t * len(arr))(*arr)
+        return list(arr)
 
     def _check_term_result(self, res):
         if res == -1:
@@ -594,10 +587,10 @@ class YicesConverter(Converter, DagWalker):
         elif tp.is_function_type():
             stps = [self._type_to_yices(x) for x in tp.param_types]
             rtp = self._type_to_yices(tp.return_type)
-            arr = (yices3.type_t * len(stps))(*stps)
+            #arr = (yices3.type_t * len(stps))(*stps)
             return yices3.yices_function_type(len(stps),
-                                                arr,
-                                                rtp)
+                                              stps,
+                                              rtp)
         elif tp.is_bv_type():
             return yices3.yices_bv_type(tp.width)
         else:
