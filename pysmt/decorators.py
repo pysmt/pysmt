@@ -18,7 +18,6 @@
 from functools import wraps
 import warnings
 
-import pysmt.shortcuts
 import pysmt.exceptions
 
 class deprecated(object):
@@ -72,7 +71,7 @@ def typecheck_result(f):
     @wraps(f)
     def typecheck_result_wrap(*args, **kwargs):
         res = f(*args, **kwargs)
-        pysmt.shortcuts.get_type(res)
+        res.get_type() # This raises an exception if an invalid type is found
     return typecheck_result_wrap
 
 def catch_conversion_error(f):

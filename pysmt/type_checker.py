@@ -26,8 +26,6 @@ from six.moves import xrange
 
 import pysmt.walkers as walkers
 import pysmt.operators as op
-import pysmt.shortcuts
-
 from pysmt.typing import BOOL, REAL, INT, BVType, ArrayType
 
 
@@ -279,37 +277,33 @@ class SimpleTypeChecker(walkers.DagWalker):
 
 def assert_no_boolean_in_args(args):
     """ Enforces that the elements in args are not of BOOL type."""
-    get_type = pysmt.shortcuts.get_type
     for arg in args:
-        if (get_type(arg) == BOOL):
+        if (arg.get_type() == BOOL):
             raise TypeError("Boolean Expressions are not allowed in arguments")
 
 
 def assert_boolean_args(args):
     """ Enforces that the elements in args are of BOOL type. """
-    get_type = pysmt.shortcuts.get_type
     for arg in args:
-        t = get_type(arg)
+        t = arg.get_type()
         if (t != BOOL):
             raise TypeError("%s is not allowed in arguments" % t)
 
 
 def assert_same_type_args(args):
     """ Enforces that all elements in args have the same type. """
-    get_type = pysmt.shortcuts.get_type
-    ref_t = get_type(args[0])
+    ref_t = args[0].get_type()
     for arg in args[1:]:
-        t = get_type(arg)
+        t = arg.get_type()
         if (t != ref_t):
             raise TypeError("Arguments should be of the same type!\n" +
-                             str([str((a, get_type(a))) for a in args]))
+                             str([str((a, a.get_type())) for a in args]))
 
 
 def assert_args_type_in(args, allowed_types):
     """ Enforces that the type of the arguments is an allowed type """
-    get_type = pysmt.shortcuts.get_type
     for arg in args:
-        t = get_type(arg)
+        t = arg.get_type()
         if (t not in allowed_types):
             raise TypeError(
                 "Argument is of type %s, but one of %s was expected!\n" %

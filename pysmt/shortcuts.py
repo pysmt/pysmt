@@ -34,6 +34,7 @@ import pysmt.typing as types
 import pysmt.configuration as config
 import pysmt.environment
 
+
 def get_env():
     """Returns the global environment."""
     return pysmt.environment.get_env()
@@ -41,6 +42,9 @@ def get_env():
 def reset_env():
     """Resets the global environment, and returns the new one."""
     return pysmt.environment.reset_env()
+
+# Enable by default infix notation
+get_env().enable_infix_notation = True
 
 ##### Shortcuts for FormulaManager #####
 def get_type(formula):
@@ -301,7 +305,6 @@ def BVAdd(left, right):
 def BVSub(left, right):
     """Returns the difference of two BV."""
     return get_env().formula_manager.BVSub(left, right)
-
 
 def BVMul(left, right):
     """Returns the product of two BV."""
