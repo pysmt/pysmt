@@ -286,7 +286,7 @@ class HRPrinter(TreeWalker):
         self.write(")")
     
     def walk_str_contains(self,formula, **kwargs):
-        self.write("( str.contains " )
+        self.write("(str.contains " )
         self.walk(formula.arg(0))
         self.write(" ")
         self.walk(formula.arg(1))
@@ -315,6 +315,8 @@ class HRPrinter(TreeWalker):
         self.walk(formula.arg(0))
         self.write(" ")
         self.walk(formula.arg(1))
+        self.write(" ")
+        self.walk(formula.arg(2))
         self.write(")")
         
     def walk_str_prefixof(self,formula, **kwargs):
@@ -342,22 +344,22 @@ class HRPrinter(TreeWalker):
         self.write(")")
         
     def walk_str_to_unit16(self,formula, **kwargs):
-        self.write("( str.to.u16 " )
+        self.write("( str.to.uint16 " )
         self.walk(formula.arg(0))
         self.write(")")
         
     def walk_uint16_to_str(self,formula, **kwargs):
-        self.write("( u16.to.str " )
+        self.write("( uint16.to.str " )
         self.walk(formula.arg(0))
         self.write(")")
         
     def walk_str_to_uint32(self,formula, **kwargs):
-        self.write("( str.to.u32 " )
+        self.write("( str.to.uint32 " )
         self.walk(formula.arg(0))
         self.write(")")
         
     def walk_uint32_to_str(self,formula, **kwargs):
-        self.write("( u32.to.str " )
+        self.write("( uint32.to.str " )
         self.walk(formula.arg(0))
         self.write(")")
         

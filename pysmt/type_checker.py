@@ -62,22 +62,6 @@ class SimpleTypeChecker(walkers.DagWalker):
         self.set_function(self.walk_bv_comp, op.BV_COMP)
         
         self.set_function(self.walk_identity_string, op.STRING_CONSTANT)
-        self.set_function(self.walk_str_length, op.STR_LENGTH)
-        self.set_function(self.walk_str_concat, op.STR_CONCAT)
-        self.set_function(self.walk_str_contains, op.STR_CONTAINS)
-        self.set_function(self.walk_str_indexof, op.STR_INDEXOF)
-        self.set_function(self.walk_str_prefixof, op.STR_PREFIXOF)
-        self.set_function(self.walk_str_charat, op.STR_CHARAT)
-        self.set_function(self.walk_str_replace, op.STR_REPLACE)
-        self.set_function(self.walk_str_substr, op.STR_SUBSTR)
-        self.set_function(self.walk_str_suffixof, op.STR_SUFFIXOF)
-        self.set_function(self.walk_str_to_int, op.STRING_TO_INTEGER)
-        self.set_function(self.walk_int_to_str, op.INTEGER_TO_STRING)
-        self.set_function(self.walk_str_to_unit16, op.STRING_TO_UINT16)
-        self.set_function(self.walk_uint16_to_str, op.UINT16_TO_STRING)
-        self.set_function(self.walk_str_to_uint32, op.STRING_TO_UINT32)
-        self.set_function(self.walk_uint32_to_str, op.UINT32_TO_STRING)
-        
         
         self.be_nice = False
 

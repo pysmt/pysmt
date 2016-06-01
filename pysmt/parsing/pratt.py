@@ -53,6 +53,19 @@ class PrattParser(object):
             self.token = next(self.tokenizer)
             left = t.led(self, left)
         return left
+    
+    def params(self, rbp=0):
+        "Parses params of a function"
+        t = self.token
+        self.token = next(self.tokenizer)
+        params = list()
+        params.append(t.nud(self))
+        while type(self.token) != ClosePar:
+            t = self.token
+            self.token = next(self.tokenizer)
+            params.append(t.nud(self))
+        return params
+        
 
     def parse_fname(self, fname):
         """Parses the content of the given file name"""
@@ -219,3 +232,19 @@ class InfixOrUnaryOpAdapter(GrammarSymbol):
     def led(self, parser, left):
         right = parser.expression(self.lbp)
         return self.b_operator(left, right)
+    
+class FunctionCallAdapter(GrammarSymbol):
+    """Adapter for string function calls."""
+
+    def __init__(self, operator, funcName, lbp):
+        GrammarSymbol.__init__(self)
+        self.operator = operator
+        self.funcName = funcName
+        self.lbp = lbp
+
+    def nud(self, parser):
+        self.params = parser.params(self.lbp)
+        return self.operator(self)
+
+    def __repr__(self):
+        return repr(self.operator)

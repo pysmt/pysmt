@@ -224,6 +224,8 @@ class SmtPrinter(TreeWalker):
         self.walk(formula.arg(0))
         self.write(" ")
         self.walk(formula.arg(1))
+        self.write(" ")
+        self.walk(formula.arg(2))
         self.write(")")
         
     def walk_str_prefixof(self,formula, **kwargs):
@@ -251,22 +253,22 @@ class SmtPrinter(TreeWalker):
         self.write(")")
         
     def walk_str_to_unit16(self,formula, **kwargs):
-        self.write("( str.to.u16 " )
+        self.write("( str.to.uint16 " )
         self.walk(formula.arg(0))
         self.write(")")
         
     def walk_uint16_to_str(self,formula, **kwargs):
-        self.write("( u16.to.str " )
+        self.write("( uint16.to.str " )
         self.walk(formula.arg(0))
         self.write(")")
         
     def walk_str_to_uint32(self,formula, **kwargs):
-        self.write("( str.to.u32 " )
+        self.write("( str.to.uint32 " )
         self.walk(formula.arg(0))
         self.write(")")
         
     def walk_uint32_to_str(self,formula, **kwargs):
-        self.write("( u32.to.str " )
+        self.write("( uint32.to.str " )
         self.walk(formula.arg(0))
         self.write(")")
 
@@ -491,4 +493,54 @@ class SmtDagPrinter(DagWalker):
 
     def walk_str_length(self, formula, args, **kwargs):
         return "(str.len %s)" % args[0]
+    
+    def walk_str_charat(self,formula, args,**kwargs):
+        return "( str.at %s %s )" % (args[0], args[1])
+    
+    def walk_str_concat(self, formula, args, **kwargs):
+        sym = self._new_symbol()
+        self.openings += 1
+        self.write("(let ((%s (%s" % (sym, "str.++ " ))
+        for s in args:
+            self.write(" ")
+            self.write(s)
+        self.write("))) ")
+        return sym
+    
+    def walk_str_contains(self,formula, args, **kwargs):
+        return "( str.contains %s %s)" % (args[0], args[1])
+    
+    def walk_str_indexof(self,formula, args, **kwargs):
+        return "( str.indexof %s %s %s )" % (args[0], args[1], args[2])
+    
+    def walk_str_replace(self,formula, args, **kwargs):
+        return "( str.replace %s %s %s )" % (args[0], args[1], args[2])
+    
+    def walk_str_substr(self,formula, args,**kwargs):
+        return "( str.substr %s %s %s)" % (args[0], args[1], args[2])
+        
+    def walk_str_prefixof(self,formula, args,**kwargs):
+        return "( str.prefixof %s %s )" % (args[0], args[1])
+        
+    def walk_str_suffixof(self,formula, args, **kwargs):
+        return "( str.suffixof %s %s )" % (args[0], args[1])
+        
+    def walk_str_to_int(self,formula, args, **kwargs):
+        return "( str.to.int %s )" % args[0]
+        
+    def walk_int_to_str(self,formula, args, **kwargs):
+        return "( int.to.str %s )" % args[0]
+        
+    def walk_str_to_unit16(self,formula, args, **kwargs):
+        return "( str.to.uint16 %s )" % args[0]
+        
+    def walk_uint16_to_str(self,formula, args, **kwargs):
+        return "( uint16.to.str %s )" % args[0]
+        
+    def walk_str_to_uint32(self,formula, args, **kwargs):
+        return "( str.to.uint32 %s )" % args[0]
+        
+    def walk_uint32_to_str(self,formula, args, **kwargs):
+        return "( uint32.to.str %s )" % args[0]
+
 

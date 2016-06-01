@@ -186,46 +186,46 @@ class IdentityDagWalker(DagWalker):
         return self.mgr.BVSRem(args[0], args[1])
 
     def walk_str_length(self, formula, args, **kwargs):
-        return self.mgr.str_length(args[0])
+        return self.mgr.StrLength(args[0])
     
-    def str_concat(self, formula, args, **kwargs):
-        return self.mgr.str_concat(args)
+    def walk_str_concat(self, formula, args, **kwargs):
+        return self.mgr.StrConcat(args)
 
-    def str_contains(self, formula, args, **kwargs):
-        return self.mgr.str_contains(args[0], args[1])
+    def walk_str_contains(self, formula, args, **kwargs):
+        return self.mgr.StrContains(args[0], args[1])
     
-    def str_indexof(self, formula, args, **kwargs):
-        return self.mgr.str_indexof(args[0], args[1], args[2])
+    def walk_str_indexof(self, formula, args, **kwargs):
+        return self.mgr.StrIndexof(args[0], args[1], args[2])
     
-    def str_replace(self, formula, args, **kwargs):
-        return self.mgr.str_replace(args[0], args[1], args[2])
+    def walk_str_replace(self, formula, args, **kwargs):
+        return self.mgr.StrReplace(args[0], args[1], args[2])
     
-    def str_substr(self, formula, args, **kwargs):
-        return self.mgr.str_substr(args[0], args[1], args[2])
+    def walk_str_substr(self, formula, args, **kwargs):
+        return self.mgr.StrSubstr(args[0], args[1], args[2])
     
-    def str_prefixof(self, formula, args, **kwargs):
-        return self.mgr.str_prefixof(args[0], args[1])
+    def walk_str_prefixof(self, formula, args, **kwargs):
+        return self.mgr.StrPrefixof(args[0], args[1])
 
-    def str_suffixof(self, formula, args, **kwargs):
-        return self.mgr.str_suffixof(args[0], args[1])
+    def walk_str_suffixof(self, formula, args, **kwargs):
+        return self.mgr.StrSuffixof(args[0], args[1])
     
-    def str_to_int(self, formula, args, **kwargs):
-        return self.mgr.str_to_int(args[0])
+    def walk_str_to_int(self, formula, args, **kwargs):
+        return self.mgr.StrToInt(args[0])
     
-    def int_to_str(self, formula, args, **kwargs):
-        return self.mgr.int_to_str(args[0])
+    def walk_int_to_str(self, formula, args, **kwargs):
+        return self.mgr.IntToStr(args[0])
     
-    def str_to_uint16(self, formula, args, **kwargs):
-        return self.mgr.str_to_uint16(args[0])
+    def walk_str_to_unit16(self, formula, args, **kwargs):
+        return self.mgr.StrToUint16(args[0])
     
-    def uint16_to_str(self, formula, args, **kwargs):
-        return self.mgr.uint16_to_str(args[0])
+    def walk_uint16_to_str(self, formula, args, **kwargs):
+        return self.mgr.Uint16ToStr(args[0])
     
-    def str_to_uint32(self, formula, args, **kwargs):
-        return self.mgr.str_to_uint32(args[0])
+    def walk_str_to_uint32(self, formula, args, **kwargs):
+        return self.mgr.StrToUint32(args[0])
     
-    def uint32_to_str(self, formula, args, **kwargs):
-        return self.mgr.uint32_to_str(args[0])
+    def walk_uint32_to_str(self, formula, args, **kwargs):
+        return self.mgr.Uint32ToStr(args[0])
     
-    def str_charat(self, formula, args, **kwargs):
-        return self.mgr.str_charat(args[0],args[1])
+    def walk_str_charat(self, formula, args, **kwargs):
+        return self.mgr.StrCharat(args[0],args[1])

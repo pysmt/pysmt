@@ -60,13 +60,13 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         del self.cvc4
         self.cvc4 = CVC4.SmtEngine(self.em)
         if( self.logic_name == "QF_SLIA"):
-            self.cvc4.setOption("strings-exp", CVC4.SExpr("true"))
-        self.cvc4.setOption("produce-models", CVC4.SExpr("false"))
-        self.cvc4.setOption("incremental", CVC4.SExpr("false"))
+            self.set_option("strings-exp", "true")
+        self.set_option("produce-models", "false")
+        self.set_option("incremental", "false")
         if self.options.generate_models:
-            self.cvc4.setOption("produce-models", CVC4.SExpr("true"))
+            self.set_option("produce-models", "true")
         if self.options.incremental:
-            self.cvc4.setOption("incremental", CVC4.SExpr("true"))
+            self.set_option("incremental", "true")
         self.declarations = set()
         self.cvc4.setLogic(self.logic_name)
 

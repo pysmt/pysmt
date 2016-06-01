@@ -18,11 +18,12 @@
 from six.moves import cStringIO
 
 import pysmt.logics as logics
-from pysmt.test import TestCase, skipIfNoSolverForLogic
+from pysmt.test import TestCase, skipIfNoSolverForLogic, main
 from pysmt.test.examples import get_example_formulae
 from pysmt.smtlib.parser import SmtLibParser
 from pysmt.smtlib.script import smtlibscript_from_formula
 from pysmt.shortcuts import Iff
+
 
 
 class TestSMTParseExamples(TestCase):
@@ -128,3 +129,7 @@ class TestSMTParseExamples(TestCase):
             else: # Loops exited normally
                 print("-"*40)
                 print(script_in)
+                
+if __name__ == '__main__':
+    main()
+    

@@ -235,18 +235,8 @@ class Solver(object):
 
     def set_options(self, options):
         """Sets multiple options at once.
-
         :param options: Options to be set
         :type options: Dictionary
-        """
-        raise NotImplementedError
-    
-    def set_option(self, name, value):
-        """Sets an option.
-
-        :param name and value: Option to be set
-        :type name: String
-        :type value: String
         """
         raise NotImplementedError
 

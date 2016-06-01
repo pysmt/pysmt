@@ -30,13 +30,13 @@ class TestSTRING(TestCase):
         s2 = Symbol("s2",STRING)
         solver = Solver(logic=QF_SLIA)
         solver.add_assertion(  Not( Implies( Equals(s1,s2),
-                                             Equals(str_length(s2), str_length(s1))
+                                             Equals(StrLength(s2), StrLength(s1))
                                             )
                                    )
                              )
         res = solver.solve()
         if ( res):
-            print solver.get_model()
+            print( solver.get_model())
         assert not res, "Was expecting  FALSE" 
         return
     
@@ -48,19 +48,19 @@ class TestSTRING(TestCase):
         solver = Solver(logic=QF_SLIA)
         solver.add_assertion( Not (And (
                                    GE(
-                                      str_length(str_concat(s1,s2)), 
-                                      str_length(s1)
+                                      StrLength(StrConcat(s1,s2)), 
+                                      StrLength(s1)
                                     ), 
                                    GE(
-                                      str_length(str_concat(s1,s2)), 
-                                      str_length(s2)
+                                      StrLength(StrConcat(s1,s2)), 
+                                      StrLength(s2)
                                       )
                                    )
                                    )
                              )
         res = solver.solve()
         if ( res):
-            print solver.get_model()
+            print( solver.get_model())
         assert not res, "Was expecting  FALSE" 
         return
     
@@ -72,13 +72,13 @@ class TestSTRING(TestCase):
         solver = Solver(logic=QF_SLIA)
         solver.set_option('strings-exp','true')
         solver.add_assertion(  (
-                                   Not(Implies(And(str_contains(s1, s2) , str_contains(s2,s1)), Equals(s1, s2)))
+                                   Not(Implies(And(StrContains(s1, s2) , StrContains(s2,s1)), Equals(s1, s2)))
                                   )
                             )
 
         res = solver.solve()
         if ( res):
-            print solver.get_model()
+            print( solver.get_model())
         assert not res, "Was expecting  FALSE" 
         return
     
@@ -91,11 +91,11 @@ class TestSTRING(TestCase):
         solver.set_option('strings-exp','true')
         
         solver.add_assertion( 
-                               Not(Equals(str_indexof(s1, t1, Int(0)), Int(4)))    
+                               Not(Equals(StrIndexof(s1, t1, Int(0)), Int(4)))    
                             )
         res = solver.solve()
         if ( res):
-            print solver.get_model()
+            print( solver.get_model())
         assert not res, "Was expecting  FALSE" 
         return
     
@@ -109,19 +109,19 @@ class TestSTRING(TestCase):
         solver.set_option('strings-exp','true')
         
         
-        solver.add_assertion( GT(str_length(s1), Int(0)))
-        solver.add_assertion( GT(str_length(s2), Int(0)))
-        solver.add_assertion( GT(str_length(s3), Int(0)))
-        solver.add_assertion( Not(str_contains(s1, s2)))
-        solver.add_assertion( Not(str_contains(s1, s3)))
+        solver.add_assertion( GT(StrLength(s1), Int(0)))
+        solver.add_assertion( GT(StrLength(s2), Int(0)))
+        solver.add_assertion( GT(StrLength(s3), Int(0)))
+        solver.add_assertion( Not(StrContains(s1, s2)))
+        solver.add_assertion( Not(StrContains(s1, s3)))
         
         solver.add_assertion( Not (
-                                   Equals(str_replace(str_replace(s1, s2,s3), s3, s2), s1)
+                                   Equals(StrReplace(StrReplace(s1, s2,s3), s3, s2), s1)
                                   )
                             )
         res = solver.solve()
         if ( res):
-            print solver.get_model()
+            print (solver.get_model())
         assert not res, "Was expecting  FALSE" 
         return
     
@@ -134,22 +134,22 @@ class TestSTRING(TestCase):
         solver.set_option('strings-exp','true')
         
         solver.add_assertion(GT(i,Int(0)))
-        solver.add_assertion(GT(str_length(s1),Int(1)))
-        solver.add_assertion(LT(i,str_length(s1)))
+        solver.add_assertion(GT(StrLength(s1),Int(1)))
+        solver.add_assertion(LT(i,StrLength(s1)))
         
         
         solver.add_assertion( 
                                 Equals(
-                                      str_concat(
-                                                 str_substr(s1, Int(0), i),
-                                                 str_substr(s1, Plus(i,Int(1)), str_length(s1))
+                                      StrConcat(
+                                                 StrSubstr(s1, Int(0), i),
+                                                 StrSubstr(s1, Plus(i,Int(1)), StrLength(s1))
                                                  ), 
                                       s1
                                       )
                             )
         res = solver.solve()
         if ( res):
-            print solver.get_model()
+            print( solver.get_model())
         assert not res, "Was expecting  FALSE" 
         return
     
@@ -162,15 +162,15 @@ class TestSTRING(TestCase):
         solver = Solver(logic=QF_SLIA)
         solver.set_option('strings-exp','true')
         
-        solver.add_assertion(GT(str_length(s1), Int(2)))
-        solver.add_assertion(GT(str_length(s2), str_length(s1)))
+        solver.add_assertion(GT(StrLength(s1), Int(2)))
+        solver.add_assertion(GT(StrLength(s2), StrLength(s1)))
         
         solver.add_assertion( 
-                                And(str_prefixof(s2,s1 ), str_contains(s2, s1))
+                                And(StrPrefixof(s2,s1 ), StrContains(s2, s1))
                             )
         res = solver.solve()
         if ( res):
-            print solver.get_model()
+            print( solver.get_model())
         assert not res, "Was expecting  FALSE" 
         return
     
@@ -181,15 +181,15 @@ class TestSTRING(TestCase):
         solver = Solver(logic=QF_SLIA)
         solver.set_option('strings-exp','true')
         
-        solver.add_assertion(GT(str_length(s1), Int(2)))
-        solver.add_assertion(GT(str_length(s2), str_length(s1)))
+        solver.add_assertion(GT(StrLength(s1), Int(2)))
+        solver.add_assertion(GT(StrLength(s2), StrLength(s1)))
         
         solver.add_assertion( 
-                                And(str_suffixof(s2,s1 ), str_contains(s2, s1))
+                                And(StrSuffixof(s2,s1 ), StrContains(s2, s1))
                             )
         res = solver.solve()
         if ( res):
-            print solver.get_model()
+            print( solver.get_model())
         assert not res, "Was expecting  FALSE" 
         return
        
@@ -202,12 +202,12 @@ class TestSTRING(TestCase):
         solver.set_option('strings-exp','true')
         
         solver.add_assertion( 
-                               Not(Equals(str_to_int(s),Int(1)))
+                               Not(Equals(StrToInt(s),Int(1)))
                              )
 
         res = solver.solve()
         if ( res):
-            print solver.get_model()
+            print( solver.get_model())
         assert not res, "Was expecting  FALSE" 
         return
     
@@ -218,11 +218,11 @@ class TestSTRING(TestCase):
         solver.set_option('strings-exp','true')
         
         solver.add_assertion( 
-                               Not( Equals((int_to_str(Int(1))) , s))
+                               Not( Equals((IntToStr(Int(1))) , s))
                             )
         res = solver.solve()
         if ( res):
-            print solver.get_model()
+            print( solver.get_model())
         assert not res, "Was expecting  FALSE" 
         return
       
@@ -234,11 +234,11 @@ class TestSTRING(TestCase):
         solver.set_option('strings-exp','true')
         
         solver.add_assertion( 
-                               Not( Equals( str_to_uint16(s),Int(1)))
+                               Not( Equals( StrToUint16(s),Int(1)))
                              )
         res = solver.solve()
         if ( res):
-            print solver.get_model()
+            print( solver.get_model())
         assert not res, "Was expecting  FALSE" 
         return
     
@@ -250,11 +250,11 @@ class TestSTRING(TestCase):
         solver.set_option('strings-exp','true')
         
         solver.add_assertion( 
-                               Not( Equals((int_to_str(Int(1))) , s))
+                               Not( Equals((IntToStr(Int(1))) , s))
                             )
         res = solver.solve()
         if ( res):
-            print solver.get_model()
+            print( solver.get_model())
         assert not res, "Was expecting  FALSE" 
         return
         
@@ -266,11 +266,11 @@ class TestSTRING(TestCase):
         solver.set_option('strings-exp','true')
         
         solver.add_assertion( 
-                               Not( Equals( str_to_uint32(s),Int(1)))
+                               Not( Equals( StrToUint32(s),Int(1)))
                              )
         res = solver.solve()
         if ( res):
-            print solver.get_model()
+            print( solver.get_model())
         assert not res, "Was expecting  FALSE" 
         return
     
@@ -282,11 +282,11 @@ class TestSTRING(TestCase):
         solver.set_option('strings-exp','true')
         
         solver.add_assertion( 
-                               Not( Equals((int_to_str(Int(1))) , s))
+                               Not( Equals((IntToStr(Int(1))) , s))
                             )
         res = solver.solve()
         if ( res):
-            print solver.get_model()
+            print( solver.get_model())
         assert not res, "Was expecting  FALSE" 
         return
       
@@ -297,11 +297,11 @@ class TestSTRING(TestCase):
         solver.set_option('strings-exp','true')
         
         solver.add_assertion( 
-                                Not(Equals(str_charat(s1, Int(0)), String("H")))
+                                Not(Equals(StrCharat(s1, Int(0)), String("H")))
                             )
         res = solver.solve()
         if ( res):
-            print solver.get_model()
+            print( solver.get_model())
         assert not res, "Was expecting  FALSE" 
         return
 
