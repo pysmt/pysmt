@@ -118,6 +118,16 @@ class Simplifier(pysmt.walkers.DagWalker):
             l = sl.constant_value()
             r = sr.constant_value()
             return self.manager.Bool(l == r)
+        elif sl.is_bool_constant():
+            if sl.constant_value():
+                return sr
+            else:
+                return self.manager.Not(sr)
+        elif sr.is_bool_constant():
+            if sr.constant_value():
+                return sl
+            else:
+                return self.manager.Not(sl)
         elif sl == sr:
             return self.manager.TRUE()
         else:
