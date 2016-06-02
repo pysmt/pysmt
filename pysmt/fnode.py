@@ -507,6 +507,9 @@ class FNode(object):
         All nodes are terms, except for function definitions.
         """
         return not (self.is_symbol() and self.symbol_type().is_function_type())
+    
+    def is_string_op(self):
+        return self.node_type() in STRING_OPERATORS
 
     def symbol_type(self):
         """Return the type of the Symbol."""

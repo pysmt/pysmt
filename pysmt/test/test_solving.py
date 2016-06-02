@@ -287,7 +287,6 @@ class TestBasic(TestCase):
             if len(get_env().factory.all_solvers(logic=logic)) > 0:
                 v = is_valid(f, logic=logic)
                 s = is_sat(f, logic=logic)
-
                 self.assertEqual(validity, v, f.serialize())
                 self.assertEqual(satisfiability, s, f.serialize())
 
@@ -297,7 +296,7 @@ class TestBasic(TestCase):
             if logic.quantifier_free:
                 for sname in get_env().factory.all_solvers(logic=logic):
                     f_i = get_implicant(f, logic=logic, solver_name=sname)
-                    if satisfiability:
+                    if satisfiability and f_i is not None:
                         self.assertValid(Implies(f_i, f), logic=logic, msg=f)
                     else:
                         self.assertIsNone(f_i)

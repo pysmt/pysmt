@@ -472,14 +472,15 @@ class Factory(object):
                 model = solver.get_model()
                 atoms = formula.get_atoms()
                 res = []
-                for a in atoms:
-                    fv = a.get_free_variables()
-                    if any(v in model for v in fv):
-                        if solver.get_value(a).is_true():
-                            res.append(a)
-                        else:
-                            res.append(mgr.Not(a))
-                return mgr.And(res)
+                if ( atoms is not None):
+                    for a in atoms:
+                        fv = a.get_free_variables()
+                        if any(v in model for v in fv):
+                            if solver.get_value(a).is_true():
+                                res.append(a)
+                            else:
+                                res.append(mgr.Not(a))
+                    return mgr.And(res)
 
     def get_unsat_core(self, clauses, solver_name=None, logic=None):
         if logic is None or logic == AUTO_LOGIC:

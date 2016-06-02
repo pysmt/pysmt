@@ -256,6 +256,7 @@ class NNFizer(DagWalker):
         DagWalker.__init__(self, env=environment)
         self.mgr = self.env.formula_manager
         self.set_function(self.walk_theory_relation, *op.RELATIONS)
+        self.set_function(self.walk_theory_relation, *op.STRING_OPERATORS)
 
     def convert(self, formula):
         """ Converts the given formula in NNF """
@@ -304,7 +305,8 @@ class NNFizer(DagWalker):
             return [i, mgr.Not(i), t, e]
 
         else:
-            assert formula.is_symbol() or \
+            assert formula.is_string_op() or \
+                formula.is_symbol() or \
                 formula.is_function_application() or \
                 formula.is_bool_constant() or \
                 formula.is_theory_relation(), str(formula)
@@ -411,6 +413,7 @@ class PrenexNormalizer(DagWalker):
 
 
     def normalize(self, formula):
+        print formula
         quantifiers, matrix = self.walk(formula)
         res = matrix
         for Q, qvars in quantifiers:
@@ -425,13 +428,13 @@ class PrenexNormalizer(DagWalker):
     def walk_symbol(self, formula, **kwargs):
         if formula.symbol_type().is_bool_type():
             return [],formula
-        return None
+        return [],None
 
     def walk_constant(self, formula, **kwargs):
         #pylint: disable=unused-argument
         if formula.is_bool_constant():
             return [],formula
-        return None
+        return [],None
 
     def walk_conj_disj(self, formula, args, **kwargs):
         #pylint: disable=unused-argument
@@ -543,7 +546,7 @@ class PrenexNormalizer(DagWalker):
 
     def walk_theory_op(self, formula, **kwargs):
         #pylint: disable=unused-argument
-        return None
+        return [],None
 
     def walk_function(self, formula, **kwargs):
         if formula.function_name().symbol_type().return_type.is_bool_type():
