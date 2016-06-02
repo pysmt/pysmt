@@ -51,18 +51,19 @@ class TestOracles(TestCase):
         stc = get_env().stc
         for (f, _, _, _) in EXAMPLE_FORMULAS:
             atoms = oracle.get_atoms(f)
-            if len(f.get_free_variables()) > 0:
-                self.assertTrue(len(atoms) > 0)
+            if ( atoms is not None):
+                if len(f.get_free_variables()) > 0:
+                    self.assertTrue(len(atoms) > 0)
 
-            for a in atoms:
-                ty = stc.get_type(a)
-                self.assertEqual(ty, BOOL)
+                for a in atoms:
+                    ty = stc.get_type(a)
+                    self.assertEqual(ty, BOOL)
 
-                self.assertFalse(a.is_and())
-                self.assertFalse(a.is_or())
-                self.assertFalse(a.is_not())
-                self.assertFalse(a.is_iff())
-                self.assertFalse(a.is_quantifier())
+                    self.assertFalse(a.is_and())
+                    self.assertFalse(a.is_or())
+                    self.assertFalse(a.is_not())
+                    self.assertFalse(a.is_iff())
+                    self.assertFalse(a.is_quantifier())
 
 
 if __name__ == '__main__':

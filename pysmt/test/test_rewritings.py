@@ -70,11 +70,12 @@ class TestRewritings(TestCase):
         for (f, _, _, logic) in get_example_formulae():
             if get_env().factory.has_solvers(logic=logic):
                 prenex = prenex_normal_form(f)
-                try:
-                    ok = is_valid(Iff(f, prenex), logic=logic)
-                except SolverReturnedUnknownResultError:
-                    ok = not logic.quantifier_free
-                self.assertTrue(ok)
+                if ( prenex is not None):
+                    try:
+                        ok = is_valid(Iff(f, prenex), logic=logic)
+                    except SolverReturnedUnknownResultError:
+                        ok = not logic.quantifier_free
+                    self.assertTrue(ok)
 
     def test_nnf_examples(self):
         for (f, _, _, logic) in get_example_formulae():

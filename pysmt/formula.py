@@ -897,14 +897,116 @@ class FormulaManager(object):
         for _ in xrange(count-1):
             res = self.BVConcat(res, formula)
         return res
-
-    def Length(self, formula):
-        """ Creates an expression of the form:
-            Length formula
+    
+    def StrLength(self, formula):
+        """    
+            Returns the length of a formula resulting a string
         """
-        n = self.create_node(node_type=op.LENGTH, args=(formula,))
-        return n
-
+        return self.create_node(node_type=op.STR_LENGTH, args=(formula,))
+    
+    def StrConcat(self, *args ):
+        """ 
+            where s1, s2, ..., and sn are string terms. String concatenation takes at least 2 arguments.
+        """
+        tuple_args = self._polymorph_args_to_tuple(args)
+        if len(tuple_args) <= 1:
+            raise TypeError("Cannot create a Str_Concat without arguments.")
+        return self.create_node(node_type=op.STR_CONCAT, args=tuple_args)
+    
+    def StrContains(self, s, t):
+        """ 
+            where s and t are string terms. It returns true if the string s contains the string t. 
+            This function determines whether the string t can be found within the string s, 
+            returning true or false as appropriate
+        """
+        return self.create_node(node_type=op.STR_CONTAINS, args=(s, t))
+    
+    def StrIndexof(self, s, t, i):
+        """
+            s being a non empty string, t also being a non-empty string and i a non-negative integer. 
+            This function returns the position of the first occurrence of the specified value t in 
+            the string s after the index i. It returns -1 if the value to search for never occurs. 
+        """
+        return self.create_node(node_type=op.STR_INDEXOF, args=(s, t, i))
+    
+    def StrReplace(self, s, t1, t2):
+        """
+        where s, t1 and t2 are string terms, t1 is non-empty. This function searches the string s 
+        for the specified value t1, and returns a new string where the first occurrence of the specified 
+        value t1 is replaced by the string t2.
+        """
+        return self.create_node(node_type=op.STR_REPLACE, args=(s, t1, t2))
+    
+    def StrSubstr(self, s, i, j):
+        """
+        where s is a string term and i, j are integer terms. i is the starting position, and j is the offset.
+        """
+        return self.create_node(node_type=op.STR_SUBSTR, args=(s, i, j))
+    
+    def StrPrefixof(self, s, t):
+        """
+        where s and t are string terms. It returns true if the string s is a prefix of the string t.
+        """
+        
+        return self.create_node(node_type=op.STR_PREFIXOF, args=(s, t))
+    
+    def StrSuffixof(self, s, t):
+        """
+        where s and t are string terms. It returns true if the string s is a suffix of the string t.
+        """
+        
+        return self.create_node(node_type=op.STR_SUFFIXOF, args=(s, t))
+    
+    def StrToInt(self, s):
+        """
+        where s is a string term. It returns the corresponding natural number if s is valid; 
+        otherwise, it returns -1.
+        """
+        
+        return self.create_node(node_type=op.STRING_TO_INTEGER, args=(s,))
+    
+    def IntToStr(self, x):
+        """
+        where x is an integer term. It returns the corresponding string if x is a natural number; 
+        otherwise, it returns an empty string.
+        """
+        return self.create_node(node_type=op.INTEGER_TO_STRING, args=(x, ))
+    
+    def StrToUint16(self, s):
+        """
+        where s is a string term. It returns the corresponding natural number if s is valid; 
+        otherwise, it returns -1.
+        """
+        return self.create_node(node_type=op.STRING_TO_UINT16, args=(s, ))
+    
+    def Uint16ToStr(self, x):
+        """
+        where x is an integer term. It returns the corresponding string if x is a natural number; 
+        otherwise, it returns an empty string.
+        """
+        return self.create_node(node_type=op.UINT16_TO_STRING, args=(x, ))
+    
+    def StrToUint32(self, s):
+        """
+        where s is a string term. It returns the corresponding natural number if s is valid; 
+        otherwise, it returns -1.
+        """
+        return self.create_node(node_type=op.STRING_TO_UINT32, args=(s, ))
+    
+    def Uint32ToStr(self, x):
+        """
+        where x is an integer term. It returns the corresponding string if x is a natural number; 
+        otherwise, it returns an empty string.
+        """
+        return self.create_node(node_type=op.UINT32_TO_STRING, args=(x, ))
+    
+    def StrCharat(self, s, i):
+        """
+        s is a string term and i is an integer term. i is the position.
+        Returns a single character string at position i.
+        """
+        return self.create_node(node_type=op.STR_CHARAT, args=(s, i))
+        
 
 
     def normalize(self, formula):

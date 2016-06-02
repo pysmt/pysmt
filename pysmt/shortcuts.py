@@ -222,8 +222,6 @@ def EqualsOrIff(left, right):
     """
     return get_env().formula_manager.EqualsOrIff(left, right)
 
-def Length(arg):
-    return get_env().formula_manager.Length(arg)
 # Bit Vectors
 def BV(value, width=None):
 
@@ -384,6 +382,110 @@ def BVAShr(left, right):
     """Returns the RIGHT arithmetic rotation of the left BV by the number
         of steps specified by the right BV."""
     return get_env().formula_manager.BVAShr(left, right)
+
+# String API
+def StrLength(s):
+    """    
+        Returns the length of a formula resulting a string
+    """
+    return get_env().formula_manager.StrLength(s)
+
+def StrCharat(s, i):
+    """
+        s is a string term and i is an integer term. i is the position.
+        Returns a single character string at position i.
+    """
+    return get_env().formula_manager.StrCharat(s, i)
+
+def StrConcat(*args ):
+    """ 
+        where s1, s2, ..., and sn are string terms. String concatenation takes at least 2 arguments.
+    """
+    return get_env().formula_manager.StrConcat(*args)
+    
+def StrContains(s, t):
+    """ 
+        where s and t are string terms. It returns true if the string s contains the string t. 
+        This function determines whether the string t can be found within the string s, 
+        returning true or false as appropriate
+    """
+    return get_env().formula_manager.StrContains(s, t)
+    
+def StrIndexof(s, t, i):
+    """
+        s being a non empty string, t also being a non-empty string and i a non-negative integer. 
+        This function returns the position of the first occurrence of the specified value t in 
+        the string s after the index i. It returns -1 if the value to search for never occurs. 
+    """
+    return get_env().formula_manager.StrIndexof(s, t, i)
+
+def StrReplace(s, t1, t2):
+    """
+        where s, t1 and t2 are string terms, t1 is non-empty. This function searches the string s 
+        for the specified value t1, and returns a new string where the first occurrence of the specified 
+        value t1 is replaced by the string t2.
+    """
+    return get_env().formula_manager.StrReplace(s, t1, t2)
+
+def StrSubstr(s, i, j):
+    """
+        where s is a string term and i, j are integer terms. i is the starting position, and j is the offset.
+    """
+    return get_env().formula_manager.StrSubstr(s, i, j)
+
+def StrPrefixof(s, t):
+    """
+        where s and t are string terms. It returns true if the string s is a prefix of the string t.
+    """
+    return get_env().formula_manager.StrPrefixof(s, t)
+
+def StrSuffixof(s, t):
+    """
+        where s and t are string terms. It returns true if the string s is a suffix of the string t.
+    """
+    return get_env().formula_manager.StrSuffixof(s, t)
+
+def StrToInt(x):
+    """
+        where s is a string term. It returns the corresponding natural number if s is valid; 
+        otherwise, it returns -1.
+    """
+    return get_env().formula_manager.StrToInt(x)
+
+def IntToStr(x):
+    """
+        where x is an integer term. It returns the corresponding string if x is a natural number; 
+        otherwise, it returns an empty string.
+    """
+    return get_env().formula_manager.IntToStr(x)
+
+def StrToUint16(s):
+    """
+        where s is a string term. It returns the corresponding natural number if s is valid; 
+        otherwise, it returns -1.
+    """
+    return get_env().formula_manager.StrToUint16(s)
+
+def Uint16ToStr(x):
+    """
+        where x is an integer term. It returns the corresponding string if x is a natural number; 
+        otherwise, it returns an empty string.
+    """
+    return get_env().formula_manager.Uint16ToStr(x)
+
+def StrToUint32(s):
+    """
+        where s is a string term. It returns the corresponding natural number if s is valid; 
+        otherwise, it returns -1.
+    """
+    return get_env().formula_manager.StrToUint32(s)
+
+def Uint32ToStr(x):
+    """
+        where x is an integer term. It returns the corresponding string if x is a natural number; 
+        otherwise, it returns an empty string.
+    """
+    return get_env().formula_manager.Uint32ToStr(x)
 
 
 

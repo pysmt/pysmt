@@ -1,4 +1,4 @@
-#
+ #
 # This file is part of pySMT.
 #
 #   Copyright 2014 Andrea Micheli and Marco Gario
@@ -19,7 +19,7 @@ from fractions import Fraction
 
 from pysmt.parsing.pratt import PrattParser, Lexer, Rule, GrammarSymbol
 from pysmt.parsing.pratt import (UnaryOpAdapter, InfixOpAdapter,
-                                 InfixOrUnaryOpAdapter)
+                                 InfixOrUnaryOpAdapter, FunctionCallAdapter)
 from pysmt.parsing.pratt import ClosePar, CloseBrak, ExprElse, ExprComma, ExprDot
 
 
@@ -111,7 +111,21 @@ class HRLexer(Lexer):
             Rule(r"(forall)", Quantifier(self.mgr.ForAll, 20), False),# BVXor
             Rule(r"(exists)", Quantifier(self.mgr.Exists, 20), False),# BVXor
             Rule(r"(ToReal)", UnaryOpAdapter(self.mgr.ToReal, 100), False),# BVXor
-            Rule(r"(len)", UnaryOpAdapter(self.mgr.Length, 100), False), # Length
+            Rule(r"(str\.len)", FunctionCallAdapter(self.StrFunctions, self.mgr.StrLength, 100), False), # str_length
+            Rule(r"(str\.\+\+)", FunctionCallAdapter(self.StrFunctions, self.mgr.StrConcat, 100), False), # str_concat
+            Rule(r"(str\.at)", FunctionCallAdapter(self.StrFunctions, self.mgr.StrCharat, 100), False), # str_charat
+            Rule(r"(str\.contains)", FunctionCallAdapter(self.StrFunctions, self.mgr.StrContains, 100), False), # str_contains
+            Rule(r"(str\.indexof)", FunctionCallAdapter(self.StrFunctions, self.mgr.StrIndexof, 100), False), # str_indexof
+            Rule(r"(str\.replace)", FunctionCallAdapter(self.StrFunctions, self.mgr.StrReplace, 100), False), # str_replace
+            Rule(r"(str\.substr)", FunctionCallAdapter(self.StrFunctions, self.mgr.StrSubstr, 100), False), # str_substr
+            Rule(r"(str\.prefixof)", FunctionCallAdapter(self.StrFunctions, self.mgr.StrPrefixof, 100), False), # str_prefixof
+            Rule(r"(str\.suffixof)", FunctionCallAdapter(self.StrFunctions, self.mgr.StrSuffixof, 100), False), # str_suffixof
+            Rule(r"(str\.to\.int)", FunctionCallAdapter(self.StrFunctions, self.mgr.StrToInt, 100), False), # str_to_int
+            Rule(r"(int\.to\.str)", FunctionCallAdapter(self.StrFunctions, self.mgr.IntToStr, 100), False), # int_to_str
+            Rule(r"(str\.to\.uint16)", FunctionCallAdapter(self.StrFunctions, self.mgr.StrToUint16, 100), False), # str_to_uint16
+            Rule(r"(uint16\.to\.str)", FunctionCallAdapter(self.StrFunctions, self.mgr.Uint16ToStr, 100), False), # uint16_to_str
+            Rule(r"(str\.to\.uint32)", FunctionCallAdapter(self.StrFunctions, self.mgr.StrToUint32, 100), False), # str_to_uint32
+            Rule(r"(uint32\.to\.str)", FunctionCallAdapter(self.StrFunctions, self.mgr.Uint32ToStr, 100), False), # uint32_to_str
             Rule(r"'(.*?)'", self.identifier, True), # quoted identifiers
             Rule(r"([A-Za-z_][A-Za-z0-9_]*)", self.identifier, True),# identifiers
             Rule(r"(.)", self.lexing_error, True), # input error
@@ -190,6 +204,71 @@ class HRLexer(Lexer):
                 raise SyntaxError("Constant expected, got '%s'" % b)
         return _res
 
+    def StrFunctions(self, funcCallAdapter):
+        if (funcCallAdapter.funcName == self.mgr.StrLength ):
+            if(len(funcCallAdapter.params) != 1):
+                raise SyntaxError("str.len expects exactly one argument")
+            return self.mgr.StrLength(funcCallAdapter.params[0])
+        elif (funcCallAdapter.funcName == self.mgr.StrConcat ):
+            if(len(funcCallAdapter.params) < 2):
+                raise SyntaxError("str.++ expects atleast two arguments")
+            return self.mgr.StrConcat(funcCallAdapter.params)
+        elif (funcCallAdapter.funcName == self.mgr.StrCharat ):
+            if(len(funcCallAdapter.params) != 2):
+                raise SyntaxError("str.at expects exactly two arguments")
+            return self.mgr.StrCharat(funcCallAdapter.params[0],funcCallAdapter.params[1]) 
+        elif (funcCallAdapter.funcName == self.mgr.StrContains ):
+            if(len(funcCallAdapter.params) != 2):
+                raise SyntaxError("str_contains expects exactly two arguments")
+            return self.mgr.StrContains(funcCallAdapter.params[0],funcCallAdapter.params[1]) 
+        elif (funcCallAdapter.funcName == self.mgr.StrIndexof ):
+            if(len(funcCallAdapter.params) != 3):
+                raise SyntaxError("str.indexof expects exactly three arguments")
+            return self.mgr.StrIndexof(funcCallAdapter.params[0],funcCallAdapter.params[1],funcCallAdapter.params[2]) 
+        elif (funcCallAdapter.funcName == self.mgr.StrReplace ):
+            if(len(funcCallAdapter.params) != 3):
+                raise SyntaxError("str.replace expects exactly three arguments")
+            return self.mgr.StrReplace(funcCallAdapter.params[0],funcCallAdapter.params[1],funcCallAdapter.params[2]) 
+        elif (funcCallAdapter.funcName == self.mgr.StrSubstr ):
+            if(len(funcCallAdapter.params) != 3):
+                raise SyntaxError("str.substr expects exactly three arguments")
+            return self.mgr.StrSubstr(funcCallAdapter.params[0],funcCallAdapter.params[1],funcCallAdapter.params[2]) 
+        elif (funcCallAdapter.funcName == self.mgr.StrPrefixof ):
+            if(len(funcCallAdapter.params) != 2):
+                raise SyntaxError("str.prefixof expects exactly two arguments")
+            return self.mgr.StrPrefixof(funcCallAdapter.params[0],funcCallAdapter.params[1]) 
+        elif (funcCallAdapter.funcName == self.mgr.StrSuffixof ):
+            if(len(funcCallAdapter.params) != 2):
+                raise SyntaxError("str.suffixof expects exactly two arguments")
+            return self.mgr.StrSuffixof(funcCallAdapter.params[0],funcCallAdapter.params[1]) 
+        elif (funcCallAdapter.funcName == self.mgr.StrToInt ):
+            if(len(funcCallAdapter.params) != 1):
+                raise SyntaxError("str.to.int expects only one parameter")
+            return self.mgr.StrToInt(funcCallAdapter.params[0]) 
+        elif (funcCallAdapter.funcName == self.mgr.IntToStr ):
+            if(len(funcCallAdapter.params) != 1):
+                raise SyntaxError("int.to.str expects only one parameter")
+            return self.mgr.IntToStr(funcCallAdapter.params[0]) 
+        elif (funcCallAdapter.funcName == self.mgr.StrToUint16 ):
+            if(len(funcCallAdapter.params) != 1):
+                raise SyntaxError("str.to.uint16 expects only one parameter")
+            return self.mgr.StrToUint16(funcCallAdapter.params[0]) 
+        elif (funcCallAdapter.funcName == self.mgr.Uint16ToStr ):
+            if(len(funcCallAdapter.params) != 1):
+                raise SyntaxError("uint16.to.str expects only one parameter")
+            return self.mgr.Uint16ToStr(funcCallAdapter.params[0]) 
+        elif (funcCallAdapter.funcName == self.mgr.StrToUint32 ):
+            if(len(funcCallAdapter.params) != 1):
+                raise SyntaxError("str.to.uint32 expects only one parameter")
+            return self.mgr.StrToUint32(funcCallAdapter.params[0]) 
+        elif (funcCallAdapter.funcName == self.mgr.Uint32ToStr ):
+            if(len(funcCallAdapter.params) != 1):
+                raise SyntaxError("uint32.to.str expects only one parameter")
+            return self.mgr.Uint32ToStr(funcCallAdapter.params[0])
+        else:
+            raise SyntaxError("Unknown function")
+        
+            
 # EOC HRLexer
 
 #

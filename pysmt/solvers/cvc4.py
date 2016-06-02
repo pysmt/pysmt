@@ -59,12 +59,14 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
     def reset_assertions(self):
         del self.cvc4
         self.cvc4 = CVC4.SmtEngine(self.em)
-        self.cvc4.setOption("produce-models", CVC4.SExpr("false"))
-        self.cvc4.setOption("incremental", CVC4.SExpr("false"))
+        if( self.logic_name == "QF_SLIA"):
+            self.set_option("strings-exp", "true")
+        self.set_option("produce-models", "false")
+        self.set_option("incremental", "false")
         if self.options.generate_models:
-            self.cvc4.setOption("produce-models", CVC4.SExpr("true"))
+            self.set_option("produce-models", "true")
         if self.options.incremental:
-            self.cvc4.setOption("incremental", CVC4.SExpr("true"))
+            self.set_option("incremental", "true")
         self.declarations = set()
         self.cvc4.setLogic(self.logic_name)
 
@@ -142,6 +144,16 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
     def _exit(self):
         del self.cvc4
+    
+    def set_option(self, name, value):
+        """Sets an option.
+
+        :param name and value: Option to be set
+        :type name: String
+        :type value: String
+        """
+        self.cvc4.setOption(name, CVC4.SExpr(value))
+        
 
 
 class CVC4Converter(Converter, DagWalker):
@@ -375,10 +387,38 @@ class CVC4Converter(Converter, DagWalker):
     def walk_string_constant(self, formula, args, **kwargs):
         #assert type(formula.constant_value()) == str
         return self.mkConst(CVC4.CVC4String(formula.constant_value()))
-
-    def walk_length(self, formula, args, **kwargs):
+    
+    def walk_str_length (self, formula, args, **kwargs):
         return self.mkExpr(CVC4.STRING_LENGTH , args[0])
-
+    def walk_str_concat(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.STRING_CONCAT, args)
+    def walk_str_contains(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.STRING_STRCTN, args[0], args[1])
+    def walk_str_indexof(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.STRING_STRIDOF, args[0], args[1], args[2])
+    def walk_str_replace(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.STRING_STRREPL, args[0], args[1], args[2])
+    def walk_str_substr(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.STRING_SUBSTR, args[0], args[1], args[2])
+    def walk_str_prefixof(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.STRING_PREFIX, args[0], args[1])
+    def walk_str_suffixof(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.STRING_SUFFIX, args[0], args[1])
+    def walk_str_to_int(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.STRING_STOI, args[0])
+    def walk_int_to_str(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.STRING_ITOS, args[0])
+    def walk_str_to_unit16(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.STRING_STOU16, args[0])
+    def walk_uint16_to_str(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.STRING_U16TOS, args[0])
+    def walk_str_to_uint32(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.STRING_STOU32, args[0])
+    def walk_uint32_to_str(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.STRING_U32TOS, args[0])
+    def walk_str_charat(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.STRING_CHARAT, args[0], args[1])
+    
     def _type_to_cvc4(self, tp):
         if tp.is_bool_type():
             return self.boolType
@@ -407,6 +447,6 @@ class CVC4Converter(Converter, DagWalker):
         new_var_list = [mkBoundVar(x.symbol_name(),
                                    self._type_to_cvc4(x.symbol_type())) \
                         for x in variables]
-        old_var_list = [self.walk_symbol(x, []) for x in variables]
+        old_var_list = [self.walk_symbol(x) for x in variables]
         new_formula = formula.substitute(old_var_list, new_var_list)
         return (new_formula, new_var_list)

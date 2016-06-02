@@ -234,15 +234,7 @@ class HRPrinter(TreeWalker):
     walk_bv_sub = walk_minus
     walk_bv_mul = walk_times
 
-    def walk_string_constant(self, formula):
-        assert (type(formula.constant_value()) == str ), \
-            "The type was " + str(type(formula.constant_value()))
-        self.write('"%s"' % formula.constant_value())
 
-    def walk_string_length(self,formula):
-        self.write("(str.len " )
-        self.walk(formula.arg(0))
-        self.write(")")
 
     def walk_ite(self, formula):
         self.write("(")
@@ -268,7 +260,109 @@ class HRPrinter(TreeWalker):
         self.write("len(")
         self.walk(formula.arg(0))
         self.write(")")
+        
+    def walk_string_constant(self, formula):
+        assert (type(formula.constant_value()) == str ), \
+            "The type was " + str(type(formula.constant_value()))
+        self.write('"%s"' % formula.constant_value())
 
+    def walk_str_length(self,formula):
+        self.write("(str.len " )
+        self.walk(formula.arg(0))
+        self.write(")")
+
+    def walk_str_charat(self,formula, **kwargs):
+        self.write("( str.at " )
+        self.walk(formula.arg(0))
+        self.write(" ")
+        self.walk(formula.arg(1))
+        self.write(")")
+    
+    def walk_str_concat(self,formula, **kwargs):
+        self.write("( str.++ " )
+        for arg in formula.args():
+            self.walk(arg)
+            self.write(" ")
+        self.write(")")
+    
+    def walk_str_contains(self,formula, **kwargs):
+        self.write("(str.contains " )
+        self.walk(formula.arg(0))
+        self.write(" ")
+        self.walk(formula.arg(1))
+        self.write(")")
+    
+    def walk_str_indexof(self,formula, **kwargs):
+        self.write("( str.indexof " )
+        self.walk(formula.arg(0))
+        self.write(" ")
+        self.walk(formula.arg(1))
+        self.write(" ")
+        self.walk(formula.arg(2))
+        self.write(")")
+    
+    def walk_str_replace(self,formula, **kwargs):
+        self.write("( str.replace " )
+        self.walk(formula.arg(0))
+        self.write(" ")
+        self.walk(formula.arg(1))
+        self.write(" ")
+        self.walk(formula.arg(2))
+        self.write(")")
+    
+    def walk_str_substr(self,formula, **kwargs):
+        self.write("( str.substr " )
+        self.walk(formula.arg(0))
+        self.write(" ")
+        self.walk(formula.arg(1))
+        self.write(" ")
+        self.walk(formula.arg(2))
+        self.write(")")
+        
+    def walk_str_prefixof(self,formula, **kwargs):
+        self.write("( str.prefixof " )
+        self.walk(formula.arg(0))
+        self.write(" ")
+        self.walk(formula.arg(1))
+        self.write(")")
+        
+    def walk_str_suffixof(self,formula, **kwargs):
+        self.write("( str.suffixof " )
+        self.walk(formula.arg(0))
+        self.write(" ")
+        self.walk(formula.arg(1))
+        self.write(")")
+        
+    def walk_str_to_int(self,formula, **kwargs):
+        self.write("( str.to.int " )
+        self.walk(formula.arg(0))
+        self.write(")")
+        
+    def walk_int_to_str(self,formula, **kwargs):
+        self.write("( int.to.str " )
+        self.walk(formula.arg(0))
+        self.write(")")
+        
+    def walk_str_to_unit16(self,formula, **kwargs):
+        self.write("( str.to.uint16 " )
+        self.walk(formula.arg(0))
+        self.write(")")
+        
+    def walk_uint16_to_str(self,formula, **kwargs):
+        self.write("( uint16.to.str " )
+        self.walk(formula.arg(0))
+        self.write(")")
+        
+    def walk_str_to_uint32(self,formula, **kwargs):
+        self.write("( str.to.uint32 " )
+        self.walk(formula.arg(0))
+        self.write(")")
+        
+    def walk_uint32_to_str(self,formula, **kwargs):
+        self.write("( uint32.to.str " )
+        self.walk(formula.arg(0))
+        self.write(")")
+        
 
 class HRSerializer(object):
     """Return the serialized version of the formula as a string."""
