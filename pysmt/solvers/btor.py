@@ -217,6 +217,7 @@ class BTORConverter(Converter, DagWalker):
         return self._btor.Const(formula.constant_value())
 
     def walk_equals(self, formula, args, **kwargs):
+        args = self._extend_bv_equal_width(*args)
         return self._btor.Eq(*args)
 
     def walk_function(self, formula, args, **kwargs):
@@ -404,3 +405,15 @@ class BTORConverter(Converter, DagWalker):
             return self._btor.Sext(btor_formula, (target_w-w))
         else:
             return self._btor.Uext(btor_formula, (target_w-w))
+
+    def _extend_bv_equal_width(self, arg1, arg2):
+        if arg1.width == arg2.width:
+            return (arg1, arg2)
+        elif arg1.width > arg2.width:
+            ext = arg1.width - arg2.width
+            return (arg1,
+                    self._btor.Uext(arg2, ext))
+        elif arg1.width < arg2.width:
+            ext = arg2.width - arg1.width
+            return (self._btor.Uext(arg1, ext),
+                    arg2)
