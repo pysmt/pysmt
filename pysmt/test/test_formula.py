@@ -16,14 +16,13 @@
 #   limitations under the License.
 #
 from fractions import Fraction
-
 from six.moves import xrange
 
 import pysmt
 from pysmt.typing import BOOL, REAL, INT, FunctionType, BV8, BVType
 from pysmt.shortcuts import Symbol, is_sat, Not, Implies, GT, Plus, Int, Real
 from pysmt.shortcuts import Minus, Times, Xor, And, Or, TRUE
-from pysmt.shortcuts import get_env
+from pysmt.shortcuts import get_env, get_model
 from pysmt.environment import Environment
 from pysmt.test import TestCase, skipIfNoSolverForLogic, main
 from pysmt.logics import QF_BOOL
@@ -951,6 +950,79 @@ class TestFormulaManager(TestCase):
 
         self.assertTrue(self.ftype.is_function_type())
         self.assertFalse(self.ftype.is_int_type())
+
+    def test_sn_at_most_one(self):
+        symbols = [ self.mgr.Symbol("s%d"%i, BOOL) for i in range(5) ]
+        c = self.mgr.AtMostK(1, symbols)
+
+        t = self.mgr.TRUE()
+        c = c.substitute({symbols[0]: t,
+                          symbols[1]: t}).simplify()
+        self.assertEqual(c, self.mgr.FALSE(),
+                         "AtMostOne should not allow two symbols to be True")
+
+
+    def test_sn_sat(self):
+
+        for length in xrange(3, 13):
+            for k in range(4,length-1):
+
+                symbols = [self.mgr.FreshSymbol() for i in range(length)]
+
+                at_least_k1 = self.mgr.AtLeastK(k+1, symbols)
+                at_most_k = self.mgr.AtMostK(k, symbols)
+                exactly_k = self.mgr.ExactlyK(k, symbols)
+                exactly_k1 = self.mgr.ExactlyK(k+1, symbols)
+
+                unsat_k = And(at_least_k1, at_most_k)
+                self.assertUnsat(unsat_k)
+
+                unsat_k = And(at_least_k1, exactly_k)
+                self.assertUnsat(unsat_k)
+
+                unsat_k = And(exactly_k, exactly_k1)
+                self.assertUnsat(unsat_k)
+        
+
+    def test_sn(self):
+
+        for length in xrange(1, 50, 20):
+            for k in range(1,length-1):
+
+                symbols = [self.mgr.FreshSymbol() for i in range(length)]
+
+                rev_symbols = symbols
+                rev_symbols.reverse()
+
+                # Create the Expressions
+                at_least_k = self.mgr.AtLeastK(k, symbols)
+                at_most_k = self.mgr.AtMostK(k, symbols)
+                exactly_k = self.mgr.ExactlyK(k, symbols)
+
+                # Pick some symbols
+                pick_k  = rev_symbols[:k]
+                pick_k1 = rev_symbols[:k+1]
+                pick_1k = rev_symbols[:k-1]
+
+
+                # Create the assignments
+                a_k  = dict((s, self.mgr.Bool(s in pick_k))  for s in symbols)
+                a_k1 = dict((s, self.mgr.Bool(s in pick_k1)) for s in symbols)
+                a_1k = dict((s, self.mgr.Bool(s in pick_1k)) for s in symbols)
+
+                # Verifying the assumptions
+                self.assertEqual(at_least_k.substitute(a_k).simplify(), self.mgr.TRUE())
+                self.assertEqual(at_most_k.substitute(a_k).simplify(),  self.mgr.TRUE())
+                self.assertEqual(exactly_k.substitute(a_k).simplify(),  self.mgr.TRUE())
+
+                self.assertEqual(at_least_k.substitute(a_k1).simplify(), self.mgr.TRUE())
+                self.assertEqual(at_most_k.substitute(a_k1).simplify(),  self.mgr.FALSE())
+                self.assertEqual(exactly_k.substitute(a_k1).simplify(),  self.mgr.FALSE())
+
+                self.assertEqual(at_least_k.substitute(a_1k).simplify(), self.mgr.FALSE())
+                self.assertEqual(at_most_k.substitute(a_1k).simplify(),  self.mgr.TRUE())
+                self.assertEqual(exactly_k.substitute(a_1k).simplify(),  self.mgr.FALSE())
+
 
 class TestShortcuts(TestCase):
 
