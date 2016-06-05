@@ -16,6 +16,7 @@
 #   limitations under the License.
 #
 import os
+import warnings
 
 from pysmt.test import SkipTest
 from pysmt.shortcuts import get_env, reset_env
@@ -23,7 +24,7 @@ from pysmt.smtlib.parser import SmtLibParser
 from pysmt.smtlib.script import check_sat_filter
 from pysmt.logics import QF_LIA, QF_LRA, LRA, QF_UFLIRA, QF_UFBV, QF_BV
 from pysmt.logics import QF_ALIA, QF_ABV, QF_AUFLIA, QF_AUFBV
-from pysmt.exceptions import NoSolverAvailableError
+from pysmt.exceptions import NoSolverAvailableError, SolverReturnedUnknownResultError
 
 SMTLIB_DIR = "pysmt/test/smtlib"
 SMTLIB_TEST_FILES = [
@@ -113,7 +114,6 @@ def execute_script_fname(smtfile, logic, expected_result):
 
     reset_env()
     Solver = get_env().factory.Solver
-    assert os.path.exists(smtfile), smtfile
     parser = SmtLibParser()
     script = parser.get_script_fname(smtfile)
     try:
@@ -121,6 +121,11 @@ def execute_script_fname(smtfile, logic, expected_result):
                                      generate_models=False))
     except NoSolverAvailableError:
         raise SkipTest("No solver for logic %s." % logic)
+    except SolverReturnedUnknownResultError:
+        if not logic.quantifier_free:
+            warnings.warn("Test (%s, %s) could not be solver due to quantifiers." % (logic, smtfile))
+            return
+        raise
 
     res = check_sat_filter(log)
     if res:
