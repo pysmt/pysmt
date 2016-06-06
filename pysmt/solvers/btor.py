@@ -122,14 +122,24 @@ class BoolectorSolver(IncrementalTrackingSolver,
 
     def get_value(self, item):
         self._assert_no_function_type(item)
+        itype = item.get_type()
         titem = self.converter.convert(item)
-        if item.is_symbol() and item.symbol_type().is_bv_type():
+        if itype.is_bv_type():
             return self.mgr.BV(titem.assignment, item.bv_width())
-        elif item.is_symbol() and item.symbol_type().is_array_type():
-            # Array constant without a base value
-            return None
-        else:
+        elif itype.is_bool_type():
             return self.mgr.Bool(bool(int(titem.assignment)))
+        else:
+            assert itype.is_array_type()
+            assert itype.index_type.is_bv_type()
+            assert itype.elem_type.is_bv_type()
+
+            idx_width = itype.index_type.width
+            val_width = itype.elem_type.width
+            assign = {}
+            for (idx, val) in titem.assignment:
+                assign[self.mgr.BV(idx, idx_width)] = self.mgr.BV(val, val_width)
+            return self.mgr.Array(itype.index_type,
+                                  self.mgr.BV(0, val_width), assign)
 
     def _exit(self):
         del self.btor

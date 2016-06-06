@@ -21,9 +21,9 @@ from six.moves import cStringIO
 
 from pysmt.shortcuts import (Real, Plus, Symbol, Equals, And, Bool, Or,
                              Div, LT, LE, Int, ToReal, Iff, Exists, Times, FALSE,
-                             BVLShr, BVLShl, BVAShr, BV)
+                             BVLShr, BVLShl, BVAShr, BV, BVAdd, Select)
 from pysmt.shortcuts import Solver, get_env, qelim, get_model, TRUE, ExactlyOne
-from pysmt.typing import REAL, BOOL, INT, BVType, FunctionType
+from pysmt.typing import REAL, BOOL, INT, BVType, FunctionType, ArrayType
 from pysmt.test import (TestCase, skipIfSolverNotAvailable, skipIfNoSolverForLogic,
                         skipIfNoQEForLogic)
 from pysmt.test import main
@@ -322,7 +322,7 @@ class TestRegressions(TestCase):
         self.assertEqual(f2,f3)
 
     @skipIfSolverNotAvailable("btor")
-    def btor_bitwidth_bug_in_shift(self):
+    def test_btor_bitwidth_bug_in_shift(self):
         # (384, 384, 9)
         # (x69 >> 1_384)
         s = Solver(name="btor")
@@ -339,6 +339,25 @@ class TestRegressions(TestCase):
         f = BVAShr(x69, BV(1, 384))
         c = s.converter.convert(f)
         self.assertIsNotNone(c)
+
+    @skipIfSolverNotAvailable("btor")
+    def test_btor_get_non_bool_value(self):
+        with Solver(name="btor") as s:
+            x = Symbol("x", BVType(16))
+            s.add_assertion(Equals(x, BV(1, 16)))
+            self.assertTrue(s.solve())
+            self.assertEquals(s.get_value(Equals(x, BV(1, 16))), TRUE())
+            self.assertEquals(s.get_value(BVAdd(x, BV(1, 16))), BV(2, 16))
+
+    @skipIfSolverNotAvailable("btor")
+    def test_btor_get_array_element(self):
+        with Solver(name="btor") as s:
+            x = Symbol("a", ArrayType(BVType(16), BVType(16)))
+            s.add_assertion(Equals(Select(x, BV(1, 16)), BV(1, 16)))
+            s.add_assertion(Equals(Select(x, BV(2, 16)), BV(3, 16)))
+            self.assertTrue(s.solve())
+            self.assertEquals(s.get_value(Select(x, BV(1, 16))), BV(1, 16))
+            self.assertIsNotNone(s.get_value(x))
 
 
 if __name__ == "__main__":

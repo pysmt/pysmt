@@ -906,7 +906,7 @@ class FormulaManager(object):
 
         args = [default]
         if assigned_values:
-            for k in sorted(assigned_values):
+            for k in sorted(assigned_values, key=id):
                 if not k.is_constant():
                     raise ValueError("Array initialization indexes must be constants")
                 # It is useless to represent assignments equal to the default
