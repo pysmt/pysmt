@@ -382,6 +382,24 @@ def BVAShr(left, right):
         of steps specified by the right BV."""
     return get_env().formula_manager.BVAShr(left, right)
 
+# arrays
+def Select(arr, idx):
+    """ Returns a SELECT application on array 'arr' at index 'idx' """
+    return get_env().formula_manager.Select(arr, idx)
+
+def Store(arr, idx, elem):
+    """ Returns a STORE application on array 'arr' at index 'idx' with value 'elem' """
+    return get_env().formula_manager.Store(arr, idx, elem)
+
+def Array(idx_type, default, assigned_values=None):
+    """Creates a node representing an array having index type equal to
+    idx_type, initialized with default values.
+
+    If assigned_values is specified, then it must be a map from
+    constants of type idx_type to values of the same type as default
+    and the array is initialized correspondingly.
+    """
+    return get_env().formula_manager.Array(idx_type, default, assigned_values)
 
 #### Shortcuts for Solvers Factory #####
 def Solver(quantified=False, name=None, logic=None, **kwargs):

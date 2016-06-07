@@ -134,7 +134,7 @@ class TheoryOracle(pysmt.walkers.DagWalker):
 
         self.set_function(self.walk_combine, op.AND, op.OR, op.NOT, op.IMPLIES,
                           op.IFF, op.LE, op.LT, op.FORALL, op.EXISTS, op.MINUS,
-                          op.ITE)
+                          op.ITE, op.ARRAY_SELECT, op.ARRAY_STORE)
         # Just propagate BV
         self.set_function(self.walk_combine, *op.BV_OPERATORS)
 
@@ -146,8 +146,26 @@ class TheoryOracle(pysmt.walkers.DagWalker):
         self.set_function(self.walk_times, op.TIMES)
         self.set_function(self.walk_plus, op.PLUS)
         self.set_function(self.walk_equals, op.EQUALS)
+        self.set_function(self.walk_array_value, op.ARRAY_VALUE)
 
-
+    def _theory_from_type(self, ty):
+        theory = None
+        if ty.is_real_type():
+            theory = Theory(real_arithmetic=True, real_difference=True)
+        elif ty.is_int_type():
+            theory = Theory(integer_arithmetic=True, integer_difference=True)
+        elif ty.is_bool_type():
+            theory = Theory()
+        elif ty.is_bv_type():
+            theory = Theory(bit_vectors=True)
+        elif ty.is_array_type():
+            theory = Theory(arrays=True)
+            theory = theory.combine(self._theory_from_type(ty.index_type))
+            theory = theory.combine(self._theory_from_type(ty.elem_type))
+        else:
+            assert ty.is_function_type()
+            theory = Theory(uninterpreted=True)
+        return theory
 
     def walk_combine(self, formula, args, **kwargs):
         #pylint: disable=unused-argument
@@ -179,18 +197,7 @@ class TheoryOracle(pysmt.walkers.DagWalker):
         #pylint: disable=unused-argument
         """Returns a new theory object with the type of the symbol."""
         f_type = formula.symbol_type()
-        if f_type.is_real_type():
-            theory_out = Theory(real_arithmetic=True, real_difference=True)
-        elif f_type.is_int_type():
-            theory_out = Theory(integer_arithmetic=True, integer_difference=True)
-        elif f_type.is_bool_type():
-            theory_out = Theory()
-        elif f_type.is_bv_type():
-            theory_out = Theory(bit_vectors=True)
-        else:
-            assert f_type.is_function_type()
-            theory_out = Theory(uninterpreted=True)
-
+        theory_out = self._theory_from_type(f_type)
         return theory_out
 
     def walk_function(self, formula, args, **kwargs):
@@ -237,6 +244,20 @@ class TheoryOracle(pysmt.walkers.DagWalker):
 
     def walk_equals(self, formula, args, **kwargs):
         return self.walk_combine(formula, args)
+
+    def walk_array_value(self, formula, args, **kwargs):
+        # First, we combine all the theories of all the indexes and values
+        theory_out = self.walk_combine(formula, args)
+
+        # We combine the index-type theory
+        i_type = formula.array_value_index_type()
+        idx_theory = self._theory_from_type(i_type)
+        theory_out = theory_out.combine(idx_theory)
+
+        # Finally, we add the array theory
+        theory_out.arrays = True
+        theory_out.arrays_const = True
+        return theory_out
 
     def get_theory(self, formula):
         """Returns the thoery for the formula."""
@@ -308,7 +329,7 @@ class AtomsOracle(pysmt.walkers.DagWalker):
     def __init__(self, env=None):
         pysmt.walkers.DagWalker.__init__(self, env=env)
 
-        # We have teh following categories for this walker.
+        # We have the following categories for this walker.
         #
         # - Boolean operators, e.g. and, or, not...
         # - Theory operators, e.g. +, -, bvshift
@@ -324,6 +345,7 @@ class AtomsOracle(pysmt.walkers.DagWalker):
         self.set_function(self.walk_theory_op, *op.BV_OPERATORS)
         self.set_function(self.walk_theory_op, *op.LIRA_OPERATORS)
         self.set_function(self.walk_theory_relation, *op.RELATIONS)
+        self.set_function(self.walk_theory_op, *op.ARRAY_OPERATORS)
 
         self.set_function(self.walk_symbol, op.SYMBOL)
         self.set_function(self.walk_function, op.FUNCTION)

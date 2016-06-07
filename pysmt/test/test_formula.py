@@ -952,6 +952,13 @@ class TestFormulaManager(TestCase):
         self.assertTrue(self.ftype.is_function_type())
         self.assertFalse(self.ftype.is_int_type())
 
+    def test_array_value(self):
+        a1 = self.mgr.Array(INT, self.mgr.Int(0))
+        a2 = self.mgr.Array(INT, self.mgr.Int(0),
+                            {self.mgr.Int(12) : self.mgr.Int(0)})
+        self.assertEquals(a1, a2)
+
+
 class TestShortcuts(TestCase):
 
     def test_shortcut_is_using_global_env(self):

@@ -76,6 +76,16 @@ class PrattParser(object):
         """Advance reading of one token"""
         self.token = next(self.tokenizer)
 
+
+    def expect(self, token_class, token_repr):
+        """
+        Check that the next token is the specified one or fail with a
+        ParserError
+        """
+        if type(self.token) != token_class:
+            raise SyntaxError("Expected '%s'" % token_repr)
+        self.advance()
+
 # EOC PrattParser
 
 
@@ -141,31 +151,16 @@ class GrammarSymbol(object):
                           (parser.token, left))
 
 
-# Placeholder tokens
-
-class EndOfInput(GrammarSymbol):
-    pass
-
-class ClosePar(GrammarSymbol):
-    pass
-
-class CloseBrak(GrammarSymbol):
-    pass
-
-class ExprElse(GrammarSymbol):
-    pass
-
-class ExprComma(GrammarSymbol):
-    pass
-
-class ExprDot(GrammarSymbol):
-    pass
 
 #
 # Adapters
 #
 # These are adapters used to create tokens for various types of symbols
 #
+
+class EndOfInput(GrammarSymbol):
+    pass
+
 
 class UnaryOpAdapter(GrammarSymbol):
     """Adapter for unary operator."""

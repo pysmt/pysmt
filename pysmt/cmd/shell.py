@@ -97,14 +97,14 @@ class PysmtShell(object):
         name, _ = cmd
         if name == CHECK_SAT:
             if result == True:
-                print "sat"
+                print("sat")
             else:
-                print "unsat"
+                print("unsat")
         elif name == GET_VALUE:
-            print "("
+            print("(")
             for k, r in result.iteritems():
-                print ("  (%s %s)" % (k,r))
-            print ")"
+                print("  (%s %s)" % (k,r))
+            print(")")
 
 
     def smtlib_solver(self, stream):

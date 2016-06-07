@@ -883,7 +883,39 @@ class FormulaManager(object):
             res = self.BVConcat(res, formula)
         return res
 
+    def Select(self, arr, idx):
+        """Creates a node representing an array selection."""
+        n = self.create_node(node_type=op.ARRAY_SELECT, args=(arr, idx))
+        return n
 
+    def Store(self, arr, idx, val):
+        """Creates a node representing an array update."""
+        n = self.create_node(node_type=op.ARRAY_STORE, args=(arr, idx, val))
+        return n
+
+    def Array(self, idx_type, default, assigned_values=None):
+        """Creates a node representing an array having index type equal to
+           idx_type, initialized with default values.
+
+           If assigned_values is specified, then it must be a map from
+           constants of type idx_type to values of the same type as
+           default and the array is initialized correspondingly.
+        """
+        if not isinstance(idx_type, types.PySMTType):
+            raise TypeError("idx_type is not a valid type: '%s'" % idx_type)
+
+        args = [default]
+        if assigned_values:
+            for k in sorted(assigned_values, key=id):
+                if not k.is_constant():
+                    raise ValueError("Array initialization indexes must be constants")
+                # It is useless to represent assignments equal to the default
+                if assigned_values[k] != default:
+                    args.append(k)
+                    args.append(assigned_values[k])
+        n = self.create_node(node_type=op.ARRAY_VALUE, args=tuple(args),
+                             payload=idx_type)
+        return n
 
     def normalize(self, formula):
         """ Returns the formula normalized to the current Formula Manager.

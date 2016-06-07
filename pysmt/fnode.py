@@ -28,7 +28,7 @@ from pysmt.operators import (FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF,
                              TOREAL,
                              BV_CONSTANT, BV_NOT, BV_AND, BV_OR, BV_XOR,
                              BV_CONCAT, BV_EXTRACT,
-                             BV_ULT, BV_NEG, BV_ADD, BV_SUB,
+                             BV_ULT, BV_ULE, BV_NEG, BV_ADD, BV_SUB,
                              BV_MUL, BV_UDIV, BV_UREM,
                              BV_LSHL, BV_LSHR,
                              BV_ROL, BV_ROR,
@@ -36,9 +36,10 @@ from pysmt.operators import (FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF,
                              BV_SLT, BV_SLE,
                              BV_COMP,
                              BV_SDIV, BV_SREM,
-                             BV_ASHR)
+                             BV_ASHR,
+                             ARRAY_SELECT, ARRAY_STORE, ARRAY_VALUE)
 from pysmt.operators import  (BOOL_OPERATORS, THEORY_OPERATORS,
-                              BV_OPERATORS, LIRA_OPERATORS,
+                              BV_OPERATORS, LIRA_OPERATORS, ARRAY_OPERATORS,
                               RELATIONS, CONSTANTS)
 from pysmt.typing import BOOL, REAL, INT, BVType
 from pysmt.decorators import deprecated
@@ -142,6 +143,16 @@ class FNode(object):
         Optionally, check that the constant is of the given type and value.
         """
         if self.node_type() not in CONSTANTS:
+            if self.node_type() == ARRAY_VALUE:
+                # An array value can be a constant if all its children
+                # are constants
+                for c in self.args():
+                    if not c.is_constant():
+                        return False
+                if _type is not None or value is not None:
+                    raise ValueError("constant type and value checking is " \
+                                     "not available for array values")
+                return True
             return False
         if _type is not None:
             if _type.is_int_type() and self.node_type() != INT_CONSTANT:
@@ -313,6 +324,10 @@ class FNode(object):
         """Test whether the node is a BitVector operator."""
         return self.node_type() in BV_OPERATORS
 
+    def is_array_op(self):
+        """Test whether the node is an array operator."""
+        return self.node_type() in ARRAY_OPERATORS
+
     def is_bv_not(self):
         """Test whether the node is the BVNot operator."""
         return self.node_type() == BV_NOT
@@ -340,6 +355,10 @@ class FNode(object):
     def is_bv_ult(self):
         """Test whether the node is the BVULT (unsigned less than) relation."""
         return self.node_type() == BV_ULT
+
+    def is_bv_ule(self):
+        """Test whether the node is the BVULE (unsigned less than) relation."""
+        return self.node_type() == BV_ULE
 
     def is_bv_neg(self):
         """Test whether the node is the BVNeg operator."""
@@ -413,6 +432,18 @@ class FNode(object):
         """Test whether the node is the BVAshr (arithmetic shift right) operator."""
         return self.node_type() == BV_ASHR
 
+    def is_select(self):
+        """Test whether the node is the SELECT (array select) operator."""
+        return self.node_type() == ARRAY_SELECT
+
+    def is_store(self):
+        """Test whether the node is the STORE (array store) operator."""
+        return self.node_type() == ARRAY_STORE
+
+    def is_array_value(self):
+        """Test whether the node is an array value operator."""
+        return self.node_type() == ARRAY_VALUE
+
     def bv_width(self):
         """Return the BV width of the formula."""
         if self.is_bv_constant():
@@ -428,6 +459,10 @@ class FNode(object):
             # (The right child has the same width if the node is well-formed)
             width_l = self.arg(1).bv_width()
             return width_l
+        elif self.is_select():
+            # This must be a select over an array with BV value type
+            ty = self.arg(0).get_type()
+            return ty.elem_type.width
         else:
             # BV Operator
             assert self.is_bv_op(), "Unsupported method bv_width on %s" % self
@@ -532,6 +567,36 @@ class FNode(object):
         if reverse:
             bitstr = bitstr[::-1]
         return bitstr
+
+    def array_value_index_type(self):
+        return self._content.payload
+
+    def array_value_get(self, index):
+        assert index.is_constant()
+        idx = index.simplify()
+        args = self.args()
+        s = 0
+        e = (len(args) - 1) / 2
+        while e - s > 0:
+            p = (e - s) / 2
+            i = args[2 * p + 1]
+            if i == idx:
+                return args[i+1]
+            elif i < idx:
+                s = p
+            else:
+                e = p
+        return self.array_value_default()
+
+    def array_value_assigned_values_map(self):
+        res = {}
+        args = self.args()
+        for i,c in enumerate(args[1::2]):
+            res[c] = args[i+1]
+        return res
+
+    def array_value_default(self):
+        return self.args()[0]
 
     def function_name(self):
         """Return the Function name."""

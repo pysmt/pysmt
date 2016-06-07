@@ -601,4 +601,28 @@ class Simplifier(pysmt.walkers.DagWalker):
             return ret
         return self.manager.BVAShr(l, r)
 
+    def walk_array_select(self, formula, args, **kwargs):
+        a, i = args
+        if a.is_array_value() and i.is_constant():
+            return a.array_value_get(i)
+        return self.manager.Select(args[0], args[1])
+
+    def walk_array_store(self, formula, args, **kwargs):
+        a, i, v = args
+        if a.is_array_value() and i.is_constant():
+            assign = a.array_value_assigned_values_map()
+            assign[i] = v # Add / Overwrite assignment at index i
+            return self.manager.Array(a.array_value_index_type(),
+                                      a.array_value_default(),
+                                      assign)
+        return self.manager.Store(a, i, v)
+
+    def walk_array_value(self, formula, args, **kwargs):
+        assign = {}
+        for i,c in enumerate(args[1::2]):
+            assign[c] = args[i+1]
+        return self.manager.Array(formula.array_value_index_type(),
+                                  args[0],
+                                  assign)
+
 # EOC Simplifier

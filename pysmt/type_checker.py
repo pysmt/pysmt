@@ -26,7 +26,7 @@ from six.moves import xrange
 
 import pysmt.walkers as walkers
 import pysmt.operators as op
-from pysmt.typing import BOOL, REAL, INT, BVType
+from pysmt.typing import BOOL, REAL, INT, BVType, ArrayType
 
 
 class SimpleTypeChecker(walkers.DagWalker):
@@ -58,6 +58,8 @@ class SimpleTypeChecker(walkers.DagWalker):
         self.set_function(self.walk_bv_rotate, op.BV_ROL, op.BV_ROR)
         self.set_function(self.walk_bv_extend, op.BV_ZEXT, op.BV_SEXT)
         self.set_function(self.walk_bv_comp, op.BV_COMP)
+        self.set_function(self.walk_array_select, op.ARRAY_SELECT)
+        self.set_function(self.walk_array_store, op.ARRAY_STORE)
         self.be_nice = False
 
     def _get_key(self, formula, **kwargs):
@@ -171,7 +173,6 @@ class SimpleTypeChecker(walkers.DagWalker):
             return None
         return BVType(target_width)
 
-
     def walk_math_relation(self, formula, args, **kwargs):
         #pylint: disable=unused-argument
         if args[0].is_real_type():
@@ -180,6 +181,8 @@ class SimpleTypeChecker(walkers.DagWalker):
             return self.walk_type_to_type(formula, args, INT, BOOL)
         if args[0].is_bv_type():
             return self.walk_bv_to_bool(formula, args)
+        if args[0].is_array_type():
+            return self.walk_type_to_type(formula, args, args[0], BOOL)
         return None
 
     def walk_ite(self, formula, args, **kwargs):
@@ -240,6 +243,34 @@ class SimpleTypeChecker(walkers.DagWalker):
                 return None
 
         return tp.return_type
+
+    def walk_array_select(self, formula, args, **kwargs):
+        assert formula is not None
+        if None in args: return None
+        if (args[0].is_array_type() and args[0].index_type==args[1]):
+            return args[0].elem_type
+        return None
+
+    def walk_array_store(self, formula, args, **kwargs):
+        assert formula is not None
+        if None in args: return None
+        if (args[0].is_array_type() and args[0].index_type==args[1] and
+            args[0].elem_type==args[2]):
+            return args[0]
+        return None
+
+    def walk_array_value(self, formula, args, **kwargs):
+        assert formula is not None
+        if None in args: return None
+
+        default_type = args[0]
+        idx_type = formula.array_value_index_type()
+        for i, c in enumerate(args[1:]):
+            if i % 2 == 0 and c != idx_type:
+                return None # Wrong index type
+            elif i % 2 == 1 and c != default_type:
+                return None
+        return ArrayType(idx_type, default_type)
 
 # EOC SimpleTypeChecker
 

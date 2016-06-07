@@ -15,12 +15,14 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+
+import warnings
 from collections import namedtuple
 from six.moves import cStringIO
 from six.moves import xrange
 
 import pysmt.smtlib.commands as smtcmd
-from pysmt.exceptions import UnknownSmtLibCommandError
+from pysmt.exceptions import UnknownSmtLibCommandError, NoLogicAvailableError
 from pysmt.shortcuts import And
 from pysmt.smtlib.printers import SmtPrinter, SmtDagPrinter, quote
 from pysmt.oracles import get_logic
@@ -109,6 +111,16 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
 
         elif self.name in [smtcmd.PUSH, smtcmd.POP]:
             outstream.write("(%s %d)" % (self.name, self.args[0]))
+
+        elif self.name == smtcmd.DEFINE_SORT:
+            name = self.args[0]
+            params_list = self.args[1]
+            params = " ".join(params_list)
+            rtype = self.args[2]
+            outstream.write("(%s %s (%s) %s)" % (self.name,
+                                                 name,
+                                                 params,
+                                                 rtype))
 
         elif self.name in smtcmd.ALL_COMMANDS:
             raise NotImplementedError("'%s' is a valid SMT-LIB command "\
@@ -220,7 +232,16 @@ def smtlibscript_from_formula(formula):
 
     # Get the simplest SmtLib logic that contains the formula
     f_logic = get_logic(formula)
-    smt_logic = get_closer_smtlib_logic(f_logic)
+
+    smt_logic = None
+    try:
+        smt_logic = get_closer_smtlib_logic(f_logic)
+    except NoLogicAvailableError:
+        warnings.warn("The logic %s is not reducible to any SMTLib2 " \
+                      "standard logic. Proceeding with non-standard " \
+                      "logic '%s'" % (f_logic, f_logic))
+        smt_logic = f_logic
+
     script.add(name=smtcmd.SET_LOGIC,
                args=[smt_logic])
 

@@ -16,13 +16,15 @@
 #   limitations under the License.
 #
 import os
+import warnings
 
 from pysmt.test import SkipTest
 from pysmt.shortcuts import get_env, reset_env
 from pysmt.smtlib.parser import SmtLibParser
 from pysmt.smtlib.script import check_sat_filter
 from pysmt.logics import QF_LIA, QF_LRA, LRA, QF_UFLIRA, QF_UFBV, QF_BV
-from pysmt.exceptions import NoSolverAvailableError
+from pysmt.logics import QF_ALIA, QF_ABV, QF_AUFLIA, QF_AUFBV
+from pysmt.exceptions import NoSolverAvailableError, SolverReturnedUnknownResultError
 
 SMTLIB_DIR = "pysmt/test/smtlib"
 SMTLIB_TEST_FILES = [
@@ -86,6 +88,18 @@ SMTLIB_TEST_FILES = [
     (QF_BV, "small_set/QF_BV/bench_4631_simp.smt2", "sat"),
     (QF_BV, "small_set/QF_BV/bench_5200.smt2", "unsat"),
     (QF_BV, "small_set/QF_BV/bench_9457_simp.smt2", "sat"),
+    #
+    # Arrays
+    (QF_ABV, "small_set/QF_ABV/a268test0002.smt2", "sat"),
+#    (QF_ABV, "small_set/QF_ABV/com.galois.ecc.P384ECC64.group_add6.short.smt2", "unsat"),
+
+    (QF_ALIA, "small_set/QF_ALIA/ios_t1_ios_np_sf_ai_00001_001.cvc.smt2", "unsat"),
+    (QF_ALIA, "small_set/QF_ALIA/pointer-invalid-15.smt2", "sat"),
+
+    (QF_AUFBV, "small_set/QF_AUFBV/com.galois.ecc.P384ECC64.mod_div10.short.smt2", "unsat"),
+
+    (QF_AUFLIA, "small_set/QF_AUFLIA/array_incompleteness1.smt2", "unsat"),
+    (QF_AUFLIA, "small_set/QF_AUFLIA/swap_invalid_t1_pp_nf_ai_00002_002.cvc.smt2", "sat"),
 ]
 
 # We use test generation in order to be able to obtain a separate
@@ -100,13 +114,18 @@ def execute_script_fname(smtfile, logic, expected_result):
 
     reset_env()
     Solver = get_env().factory.Solver
-    assert os.path.exists(smtfile), smtfile
     parser = SmtLibParser()
     script = parser.get_script_fname(smtfile)
     try:
-        log = script.evaluate(Solver(logic=logic, incremental=False))
+        log = script.evaluate(Solver(logic=logic, incremental=False,
+                                     generate_models=False))
     except NoSolverAvailableError:
         raise SkipTest("No solver for logic %s." % logic)
+    except SolverReturnedUnknownResultError:
+        if not logic.quantifier_free:
+            warnings.warn("Test (%s, %s) could not be solver due to quantifiers." % (logic, smtfile))
+            return
+        raise
 
     res = check_sat_filter(log)
     if res:

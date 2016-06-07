@@ -28,6 +28,7 @@ class Theory(object):
     """Describes a theory similarly to the SMTLIB 2.0."""
     def __init__(self,
                  arrays = False,
+                 arrays_const = False,
                  bit_vectors = False,
                  floating_point = False,
                  integer_arithmetic = False,
@@ -37,6 +38,7 @@ class Theory(object):
                  linear = True,
                  uninterpreted = False):
         self.arrays = arrays
+        self.arrays_const = arrays_const
         self.bit_vectors = bit_vectors
         self.floating_point = floating_point
         self.integer_arithmetic = integer_arithmetic
@@ -45,6 +47,7 @@ class Theory(object):
         self.real_difference = real_difference
         self.linear = linear
         self.uninterpreted = uninterpreted
+        assert not arrays_const or arrays, "Cannot set arrays_const w/o arrays"
 
         return
 
@@ -67,8 +70,22 @@ class Theory(object):
             res.real_difference = value
         return res
 
+    def set_arrays(self, value=True):
+        res = self.copy()
+        res.arrays = value
+        return res
+
+    def set_arrays_const(self, value=True):
+        if not self.arrays and value:
+            res = self.set_arrays()
+        else:
+            res = self.copy()
+        res.arrays_const = value
+        return res
+
     def copy(self):
         new_theory = Theory(arrays = self.arrays,
+                            arrays_const = self.arrays_const,
                             bit_vectors = self.bit_vectors,
                             floating_point = self.floating_point,
                             integer_arithmetic = self.integer_arithmetic,
@@ -77,7 +94,6 @@ class Theory(object):
                             real_difference = self.real_difference,
                             linear = self.linear,
                             uninterpreted = self.uninterpreted)
-
         return new_theory
 
     def combine(self, other):
@@ -103,6 +119,7 @@ class Theory(object):
 
         return Theory(
             arrays=self.arrays or other.arrays,
+            arrays_const=self.arrays_const or other.arrays_const,
             bit_vectors=self.bit_vectors or other.bit_vectors,
             floating_point=self.floating_point or other.floating_point,
             integer_arithmetic=self.integer_arithmetic or other.integer_arithmetic,
@@ -117,6 +134,7 @@ class Theory(object):
             return False
 
         return self.arrays == other.arrays and \
+            self.arrays_const == other.arrays_const and \
             self.bit_vectors == other.bit_vectors and \
             self.floating_point == other.floating_point and \
             self.integer_arithmetic == other.integer_arithmetic and \
@@ -152,8 +170,8 @@ class Theory(object):
         else:
             le_linear = False
 
-
         return (self.arrays <= other.arrays and
+                self.arrays_const <= other.arrays_const and
                 self.bit_vectors <= other.bit_vectors and
                 self.floating_point <= other.floating_point and
                 self.uninterpreted <= other.uninterpreted and
@@ -165,6 +183,7 @@ class Theory(object):
 
     def __str__(self):
         return "Arrays: %s, " % self.arrays +\
+            "ArraysConst: %s, " % self.arrays_const +\
             "BV: %s, " % self.bit_vectors +\
             "FP: %s, " % self.floating_point +\
             "IA: %s, " % self.integer_arithmetic +\
@@ -189,6 +208,7 @@ class Logic(object):
                  quantifier_free = False,
                  theory=None,
                  arrays=False,
+                 arrays_const=False,
                  bit_vectors=False,
                  floating_point=False,
                  integer_arithmetic=False,
@@ -203,6 +223,7 @@ class Logic(object):
         self.quantifier_free = quantifier_free
         if theory is None:
             self.theory = Theory(arrays=arrays,
+                                 arrays_const=arrays_const,
                                  bit_vectors=bit_vectors,
                                  floating_point=floating_point,
                                  integer_arithmetic=integer_arithmetic,
@@ -556,6 +577,17 @@ symbols.""",
               linear=False,
               uninterpreted=True)
 
+QF_AUFBVLIRA = Logic(name="QF_AUFBVLIRA",
+                     description=\
+                     """Quantifier free Arrays, Bitvectors and LIRA""",
+                     linear=True,
+                     uninterpreted=True,
+                     quantifier_free=True,
+                     arrays=True,
+                     bit_vectors=True,
+                     integer_arithmetic=True,
+                     real_arithmetic=True)
+
 AUTO = Logic(name="Auto",
              description="Special logic used to indicate that the logic to be used depends on the formula.")
 
@@ -592,7 +624,7 @@ SMTLIB2_LOGICS = frozenset([ AUFLIA,
                              QF_UFLIRA
                          ])
 
-LOGICS = SMTLIB2_LOGICS | frozenset([ QF_BOOL, BOOL ])
+LOGICS = SMTLIB2_LOGICS | frozenset([ QF_BOOL, BOOL, QF_AUFBVLIRA])
 
 QF_LOGICS = frozenset(_l for _l in LOGICS if _l.quantifier_free)
 
@@ -602,10 +634,34 @@ QF_LOGICS = frozenset(_l for _l in LOGICS if _l.quantifier_free)
 PYSMT_LOGICS = frozenset([QF_BOOL, QF_IDL, QF_LIA, QF_LRA, QF_RDL, QF_UF, QF_UFIDL,
                           QF_UFLIA, QF_UFLRA, QF_UFLIRA,
                           BOOL, LRA, LIA, UFLIRA, UFLRA,
-                          QF_BV, QF_UFBV])
-BV_LOGICS = frozenset([QF_BV, QF_UFBV])
+                          QF_BV, QF_UFBV,
+                          QF_ABV, QF_AUFBV, QF_AUFLIA, QF_ALIA, QF_AX,
+                          QF_AUFBVLIRA
+                      ])
+
+# PySMT Supports constant arrays: We auto-generate these logics
+#     QF_AUFBV  becomes QF_AUFBV*
+#
+ext_logics = set()
+for l in PYSMT_LOGICS:
+    if l.theory.arrays:
+        new_theory = l.theory.copy()
+        new_theory.arrays_const = True
+        nl = Logic(name=l.name+"*",
+                   description=l.description+" (Extended with Const Arrays)",
+                   quantifier_free=l.quantifier_free,
+                   theory=new_theory)
+        ext_logics.add(nl)
+
+LOGICS = LOGICS | frozenset(ext_logics)
+PYSMT_LOGICS = PYSMT_LOGICS | frozenset(ext_logics)
 
 PYSMT_QF_LOGICS = frozenset(_l for _l in PYSMT_LOGICS if _l.quantifier_free)
+
+BV_LOGICS = frozenset(_l for _l in PYSMT_LOGICS if _l.theory.bit_vectors)
+ARRAYS_LOGICS = frozenset(_l for _l in PYSMT_LOGICS if _l.theory.arrays)
+ARRAYS_CONST_LOGICS = frozenset(_l for _l in PYSMT_LOGICS \
+                                if _l.theory.arrays_const)
 
 
 def get_logic_by_name(name):
@@ -613,6 +669,7 @@ def get_logic_by_name(name):
     for logic in LOGICS:
         if logic.name.lower() == name.lower(): return logic
     raise UndefinedLogicError(name)
+
 
 def convert_logic_from_string(name):
     """Helper function to parse function arguments.
@@ -625,6 +682,7 @@ def convert_logic_from_string(name):
 
 def get_logic_name(quantifier_free=False,
                    arrays=False,
+                   arrays_const=False,
                    bit_vectors=False,
                    floating_point=False,
                    integer_arithmetic=False,
@@ -637,6 +695,7 @@ def get_logic_name(quantifier_free=False,
 
     return get_logic(quantifier_free,
                      arrays,
+                     arrays_const,
                      bit_vectors,
                      floating_point,
                      integer_arithmetic,
@@ -648,6 +707,7 @@ def get_logic_name(quantifier_free=False,
 
 def get_logic(quantifier_free=False,
               arrays=False,
+              arrays_const=False,
               bit_vectors=False,
               floating_point=False,
               integer_arithmetic=False,
@@ -664,6 +724,7 @@ def get_logic(quantifier_free=False,
     for logic in LOGICS:
         if (  logic.quantifier_free == quantifier_free and
               logic.theory.arrays == arrays and \
+              logic.theory.arrays_const == arrays_const and \
               logic.theory.bit_vectors == bit_vectors and \
               logic.theory.floating_point == floating_point and \
               logic.theory.integer_arithmetic == integer_arithmetic and \
@@ -701,9 +762,11 @@ def get_closer_logic(supported_logics, logic):
         raise NoLogicAvailableError("Logic %s is not supported" % logic)
     return min(res)
 
+
 def get_closer_pysmt_logic(target_logic):
     """Returns the closer logic supported by PYSMT."""
     return get_closer_logic(PYSMT_LOGICS, target_logic)
+
 
 def get_closer_smtlib_logic(target_logic):
     """Returns the closer logic supported by SMT-LIB 2.0."""

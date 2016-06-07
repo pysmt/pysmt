@@ -19,6 +19,7 @@ from fractions import Fraction
 
 from pysmt.walkers import TreeWalker
 from six.moves import cStringIO
+from six import iteritems
 from pysmt.utils import quote
 
 class HRPrinter(TreeWalker):
@@ -27,8 +28,8 @@ class HRPrinter(TreeWalker):
     E.g., Implies(And(Symbol(x), Symbol(y)), Symbol(z))  ~>   '(x * y) -> z'
     """
 
-    def __init__(self, stream):
-        TreeWalker.__init__(self)
+    def __init__(self, stream, env=None):
+        TreeWalker.__init__(self, env=env)
         self.stream = stream
         self.write = self.stream.write
 
@@ -254,6 +255,33 @@ class HRPrinter(TreeWalker):
         self.write("ToReal(")
         self.walk(formula.arg(0))
         self.write(")")
+
+    def walk_array_select(self, formula):
+        self.walk(formula.arg(0))
+        self.write("[")
+        self.walk(formula.arg(1))
+        self.write("]")
+
+    def walk_array_store(self, formula):
+        self.walk(formula.arg(0))
+        self.write("[")
+        self.walk(formula.arg(1))
+        self.write(" := ")
+        self.walk(formula.arg(2))
+        self.write("]")
+
+    def walk_array_value(self, formula):
+        self.write(str(self.env.stc.get_type(formula)))
+        self.write("(")
+        self.walk(formula.array_value_default())
+        self.write(")")
+        assign = formula.array_value_assigned_values_map()
+        for k, v in iteritems(assign):
+            self.write("[")
+            self.walk(k)
+            self.write(" := ")
+            self.walk(v)
+            self.write("]")
 
 
 class HRSerializer(object):

@@ -35,7 +35,7 @@ from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               SolverStatusError,
                               ConvertExpressionError)
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
-from pysmt.logics import QF_BV, QF_UFBV
+from pysmt.logics import QF_BV, QF_UFBV, QF_ABV, QF_AUFBV, QF_AX
 from pysmt.oracles import get_logic
 
 
@@ -43,7 +43,7 @@ from pysmt.oracles import get_logic
 class BoolectorSolver(IncrementalTrackingSolver,
                       SmtLibBasicSolver, SmtLibIgnoreMixin):
 
-    LOGICS = [QF_BV, QF_UFBV]
+    LOGICS = [QF_BV, QF_UFBV, QF_ABV, QF_AUFBV, QF_AX]
 
     def __init__(self, environment, logic, **options):
         IncrementalTrackingSolver.__init__(self,
@@ -122,11 +122,24 @@ class BoolectorSolver(IncrementalTrackingSolver,
 
     def get_value(self, item):
         self._assert_no_function_type(item)
+        itype = item.get_type()
         titem = self.converter.convert(item)
-        if item.is_symbol() and item.symbol_type().is_bv_type():
+        if itype.is_bv_type():
             return self.mgr.BV(titem.assignment, item.bv_width())
-        else:
+        elif itype.is_bool_type():
             return self.mgr.Bool(bool(int(titem.assignment)))
+        else:
+            assert itype.is_array_type()
+            assert itype.index_type.is_bv_type()
+            assert itype.elem_type.is_bv_type()
+
+            idx_width = itype.index_type.width
+            val_width = itype.elem_type.width
+            assign = {}
+            for (idx, val) in titem.assignment:
+                assign[self.mgr.BV(idx, idx_width)] = self.mgr.BV(val, val_width)
+            return self.mgr.Array(itype.index_type,
+                                  self.mgr.BV(0, val_width), assign)
 
     def _exit(self):
         del self.btor
@@ -186,6 +199,14 @@ class BTORConverter(Converter, DagWalker):
             raise ConvertExpressionError
         elif symbol_type.is_int_type():
             raise ConvertExpressionError
+        elif symbol_type.is_array_type():
+            # BTOR supports only Arrays of Type (BV, BV)
+            index_type = symbol_type.index_type
+            elem_type = symbol_type.elem_type
+            if not (index_type.is_bv_type() and elem_type.is_bv_type()):
+                raise ConvertExpressionError("BTOR supports only Array(BV,BV). "\
+                                             "Type '%s' was given." % str(symbol_type))
+            res = self._btor.Array(elem_type.width, index_type.width)
         else:
             assert symbol_type.is_bv_type()
             res = self._btor.Var(formula.bv_width(),
@@ -206,6 +227,7 @@ class BTORConverter(Converter, DagWalker):
         return self._btor.Const(formula.constant_value())
 
     def walk_equals(self, formula, args, **kwargs):
+        args = self._extend_bv_equal_width(*args)
         return self._btor.Eq(*args)
 
     def walk_function(self, formula, args, **kwargs):
@@ -316,22 +338,22 @@ class BTORConverter(Converter, DagWalker):
     def walk_bv_zext(self, formula, args, **kwargs):
         return self._btor.Uext(args[0], formula.bv_extend_step())
 
-    def walk_bv_sext (self, formula, args, **kwargs):
+    def walk_bv_sext(self, formula, args, **kwargs):
         return self._btor.Sext(args[0], formula.bv_extend_step())
 
     def walk_bv_slt(self, formula, args, **kwargs):
         return self._btor.Slt(args[0], args[1])
 
-    def walk_bv_sle (self, formula, args, **kwargs):
+    def walk_bv_sle(self, formula, args, **kwargs):
         return self._btor.Slte(args[0], args[1])
 
-    def walk_bv_comp (self, formula, args, **kwargs):
+    def walk_bv_comp(self, formula, args, **kwargs):
         return self._btor.Eq(args[0], args[1])
 
-    def walk_bv_sdiv (self, formula, args, **kwargs):
+    def walk_bv_sdiv(self, formula, args, **kwargs):
         return self._btor.Sdiv(args[0], args[1])
 
-    def walk_bv_srem (self, formula, args, **kwargs):
+    def walk_bv_srem(self, formula, args, **kwargs):
         return self._btor.Srem(args[0], args[1])
 
     def walk_bv_ashr (self, formula, args, **kwargs):
@@ -356,6 +378,15 @@ class BTORConverter(Converter, DagWalker):
                                                        rescaled,
                                                        max_small))
 
+    def walk_array_store(self, formula, args, **kwargs):
+        return self._btor.Write(args[0], args[1], args[2])
+
+    def walk_array_select(self, formula, args, **kwargs):
+        return self._btor.Read(args[0], args[1])
+
+    def walk_array_value(self, formula, args, **kwargs):
+        raise ConvertExpressionError("btor does not support constant arrays")
+
     def _type_to_btor(self, tp):
         if tp.is_bool_type():
             return self._btor.BoolSort()
@@ -365,6 +396,8 @@ class BTORConverter(Converter, DagWalker):
             raise ConvertExpressionError
         elif tp.is_bv_type():
             return self._btor.BitVecSort(tp.width)
+        elif tp.is_array_type():
+            raise ConvertExpressionError("Unsupported Array Type")
         else:
             assert tp.is_function_type() , "Unsupported type '%s'" % tp
             stps = [self._type_to_btor(x) for x in tp.param_types]
@@ -382,3 +415,15 @@ class BTORConverter(Converter, DagWalker):
             return self._btor.Sext(btor_formula, (target_w-w))
         else:
             return self._btor.Uext(btor_formula, (target_w-w))
+
+    def _extend_bv_equal_width(self, arg1, arg2):
+        if arg1.width == arg2.width:
+            return (arg1, arg2)
+        elif arg1.width > arg2.width:
+            ext = arg1.width - arg2.width
+            return (arg1,
+                    self._btor.Uext(arg2, ext))
+        elif arg1.width < arg2.width:
+            ext = arg2.width - arg1.width
+            return (self._btor.Uext(arg1, ext),
+                    arg2)

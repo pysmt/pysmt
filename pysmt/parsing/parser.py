@@ -17,10 +17,10 @@
 #
 from fractions import Fraction
 
+import pysmt.typing as types
 from pysmt.parsing.pratt import PrattParser, Lexer, Rule, GrammarSymbol
 from pysmt.parsing.pratt import (UnaryOpAdapter, InfixOpAdapter,
                                  InfixOrUnaryOpAdapter)
-from pysmt.parsing.pratt import ClosePar, CloseBrak, ExprElse, ExprComma, ExprDot
 
 
 #
@@ -61,6 +61,11 @@ class HRLexer(Lexer):
             Rule(r"(-?\d+\.\d+)", self.real_constant, True),# decimals
             Rule(r"(-?\d+_\d+)", self.bv_constant, True),# bv
             Rule(r"(-?\d+)", self.int_constant, True),# integer literals
+            Rule(r"BV\{(\d+)\}", self.bv_type, True),# BV Type
+            Rule(r"(Array\{)", OpenArrayTypeTok(), False),# Array Type
+            Rule(r"(Int)", IntTypeTok(), False),# Int Type
+            Rule(r"(Real)", RealTypeTok(), False),# Real Type
+            Rule(r"(Bool)", BoolTypeTok(), False),# Bool Type
             Rule(r"(&)", InfixOpAdapter(self.AndOrBVAnd, 40), False),# conjunction
             Rule(r"(\|)", InfixOpAdapter(self.OrOrBVOr, 30), False),# disjunction
             Rule(r"(!)", UnaryOpAdapter(self.NotOrBVNot, 50), False),# negation
@@ -68,6 +73,7 @@ class HRLexer(Lexer):
             Rule(r"(\))", ClosePar(), False),# closed parenthesis
             Rule(r"(\[)", OpenBrak(), False),# open parenthesis
             Rule(r"(\])", CloseBrak(), False),# closed parenthesis
+            Rule(r"(\})", CloseBrace(), False),# closed parenthesis
             Rule(r"(<<)", InfixOpAdapter(self.mgr.BVLShl, 90), False),# Shl
             Rule(r"(>>)", InfixOpAdapter(self.mgr.BVLShr, 90), False),# Shr
             Rule(r"(a>>)", InfixOpAdapter(self.mgr.BVAShr, 90), False),# AShr
@@ -95,6 +101,7 @@ class HRLexer(Lexer):
             Rule(r"(s%)", InfixOpAdapter(self.mgr.BVSRem, 80), False),# srem
             Rule(r"(u%)", InfixOpAdapter(self.mgr.BVURem, 80), False),# urem
             Rule(r"(\?)", ExprIf(), False), # question
+            Rule(r"(:=)", ArrStore(), False),# ArrStore
             Rule(r"(::)", InfixOpAdapter(self.mgr.BVConcat, 90), False),# BVXor
             Rule(r"(:)", ExprElse(), False),# colon
             Rule(r"(False)", Constant(self.mgr.FALSE()), False), # False
@@ -118,6 +125,9 @@ class HRLexer(Lexer):
         self.rules += hr_rules
 
         self.compile()
+
+    def bv_type(self, read):
+        return BVTypeTok(int(read))
 
     def real_constant(self, read):
         return Constant(self.mgr.Real(Fraction(read)))
@@ -191,6 +201,49 @@ class HRLexer(Lexer):
 # Grammar tokens
 #
 
+# Placeholder tokens
+
+class ClosePar(GrammarSymbol):
+    pass
+
+class CloseBrak(GrammarSymbol):
+    pass
+
+class CloseBrace(GrammarSymbol):
+    pass
+
+class ExprElse(GrammarSymbol):
+    pass
+
+class ArrStore(GrammarSymbol):
+    pass
+
+class ExprComma(GrammarSymbol):
+    pass
+
+class ExprDot(GrammarSymbol):
+    pass
+
+class BVTypeTok(GrammarSymbol):
+    def __init__(self, width):
+        GrammarSymbol.__init__(self)
+        self.width = width
+
+    def nud(self, parser):
+        return types.BVType(self.width)
+
+class IntTypeTok(GrammarSymbol):
+    def nud(self, parser):
+        return types.INT
+
+class RealTypeTok(GrammarSymbol):
+    def nud(self, parser):
+        return types.REAL
+
+class BoolTypeTok(GrammarSymbol):
+    def nud(self, parser):
+        return types.BOOL
+
 class Constant(GrammarSymbol):
     def __init__(self, value):
         GrammarSymbol.__init__(self)
@@ -219,11 +272,28 @@ class ExprIf(GrammarSymbol):
     def led(self, parser, left):
         cond_ = left
         then_ = parser.expression(self.lbp)
-        if type(parser.token) != ExprElse:
-            raise SyntaxError("Expected ':'")
-        parser.advance()
+        parser.expect(ExprElse, ':')
         else_ = parser.expression(self.lbp)
         return parser.mgr.Ite(cond_, then_, else_)
+
+
+class OpenArrayTypeTok(GrammarSymbol):
+    def __init__(self):
+        GrammarSymbol.__init__(self)
+        self.lbp = 5
+
+    def nud(self, parser):
+        idx_type = parser.expression()
+        parser.expect(ExprComma, ",")
+        el_type = parser.expression()
+        parser.expect(CloseBrace, "}")
+        if type(parser.token) == OpenPar:
+            parser.advance()
+            default = parser.expression()
+            parser.expect(ClosePar, ")")
+            return parser.mgr.Array(idx_type, default)
+        else:
+            return types.ArrayType(idx_type, el_type)
 
 
 class OpenPar(GrammarSymbol):
@@ -233,9 +303,7 @@ class OpenPar(GrammarSymbol):
 
     def nud(self, parser):
         r = parser.expression()
-        if type(parser.token) != ClosePar:
-            raise SyntaxError("Expected ')', got '%s'" )
-        parser.advance()
+        parser.expect(ClosePar, ")")
         return r
 
     def led(self, parser, left):
@@ -249,9 +317,7 @@ class OpenPar(GrammarSymbol):
                 if type(parser.token) != ExprComma:
                     break
                 parser.advance()
-        if type(parser.token) != ClosePar:
-            raise SyntaxError("Expected ')'")
-        parser.advance()
+        parser.expect(ClosePar, ")")
         return parser.mgr.Function(fun, params)
 
 
@@ -261,19 +327,29 @@ class OpenBrak(GrammarSymbol):
         self.lbp = 300
 
     def led(self, parser, left):
-        # BVExtract
-        bv = left
-        start = parser.expression()
-        if type(parser.token) != ExprElse:
-            raise SyntaxError("Expected ':'")
-        parser.advance()
-        end = parser.expression()
-        if type(parser.token) != CloseBrak:
-            raise SyntaxError("Expected ']'")
-        parser.advance()
-        return parser.mgr.BVExtract(bv,
-                                    start.constant_value(),
-                                    end.constant_value())
+        # BVExtract, Select or Store
+        op = left
+        e1 = parser.expression()
+        if type(parser.token) == ExprElse:
+            #BVExtract
+            parser.advance()
+            end = parser.expression()
+            parser.expect(CloseBrak, "]")
+            return parser.mgr.BVExtract(op,
+                                        e1.constant_value(),
+                                        end.constant_value())
+        elif type(parser.token) == CloseBrak:
+            # Select
+            parser.advance()
+            return parser.mgr.Select(op, e1)
+        elif type(parser.token) == ArrStore:
+            #Store
+            parser.advance()
+            e2 = parser.expression()
+            parser.expect(CloseBrak, "]")
+            return parser.mgr.Store(op, e1, e2)
+        else:
+            raise SyntaxError("Unexpected token:" + str(parser.token))
 
 
 class Quantifier(GrammarSymbol):
@@ -291,8 +367,6 @@ class Quantifier(GrammarSymbol):
                 if type(parser.token) != ExprComma:
                     break
                 parser.advance()
-        if type(parser.token) != ExprDot:
-            raise SyntaxError("Expected '.'")
-        parser.advance()
+        parser.expect(ExprDot, ".")
         matrix = parser.expression(self.lbp)
         return self.operator(qvars, matrix)
