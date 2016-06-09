@@ -90,8 +90,8 @@ Supported Theories and Solvers
 
 pySMT provides methods to define a formula in Linear Real Arithmetic
 (LRA), Real Difference Logic (RDL), Equalities and Uninterpreted
-Functions (EUF), Bit-Vectors (BV), and their combinations. The
-following solvers are supported through native APIs:
+Functions (EUF), Bit-Vectors (BV), Arrays (A) and their
+combinations. The following solvers are supported through native APIs:
 
 * MathSAT (http://mathsat.fbk.eu/)
 * Z3 (https://github.com/Z3Prover/z3/)
@@ -104,7 +104,7 @@ following solvers are supported through native APIs:
 Additionally, you can use any SMT-LIB 2 compliant solver.
 
 PySMT assumes that the python bindings for the SMT Solver are
-installed and accessible from your ``PYTHONPATH``. 
+installed and accessible from your ``PYTHONPATH``.
 
 pySMT works on both Python 2 and Python 3. Some solvers support both
 versions (e.g., MathSAT) but in general, many solvers still support
@@ -154,21 +154,21 @@ each of the available solvers.
  +------------------+------------+----------------------+------------+
  | Solver           | pySMT name |  Supported Theories  | Quantifiers|
  +==================+============+======================+============+
- | MathSAT          |   msat     | UF, LIA, LRA, BV, AX |  No        |         
+ | MathSAT          |   msat     | UF, LIA, LRA, BV, AX |  No        |
  +------------------+------------+----------------------+------------+
- | Z3               |   z3       | UF, LIA, LRA, BV, AX |  Yes       | 
+ | Z3               |   z3       | UF, LIA, LRA, BV, AX |  Yes       |
  +------------------+------------+----------------------+------------+
  | CVC4             |   cvc4     | UF, LIA, LRA, BV, AX |  Yes       |
  +------------------+------------+----------------------+------------+
- | Yices            |   yices    | UF, LIA, LRA, BV     |  No        | 
+ | Yices            |   yices    | UF, LIA, LRA, BV     |  No        |
  +------------------+------------+----------------------+------------+
- | SMT-Lib Interface|   <custom> | UF, LIA, LRA, BV, AX |  Yes       | 
+ | SMT-Lib Interface|   <custom> | UF, LIA, LRA, BV, AX |  Yes       |
  +------------------+------------+----------------------+------------+
- | PicoSAT          |   picosat  | [None]               |  No        | 
+ | PicoSAT          |   picosat  | [None]               |  No        |
  +------------------+------------+----------------------+------------+
- | Boolector        |   btor     | UF, BV, AX           |  No        | 
+ | Boolector        |   btor     | UF, BV, AX           |  No        |
  +------------------+------------+----------------------+------------+
- | BDD (CUDD)       |   bdd      | [None]               |  Yes       | 
+ | BDD (CUDD)       |   bdd      | [None]               |  Yes       |
  +------------------+------------+----------------------+------------+
 
 

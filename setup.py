@@ -50,7 +50,7 @@ Visit http://www.pysmt.org
 
 setup(
     name='PySMT',
-    version='0.5.0',
+    version='0.5.1dev1',
     author='PySMT Team',
     author_email='info@pysmt.org',
     packages = find_packages(),
