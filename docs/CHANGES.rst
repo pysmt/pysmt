@@ -1,13 +1,73 @@
 Change Log
 ==========
 
-0.5.0: XXXX-XX-XX -- Breaking Things
-------------------------------------
+0.5.0: 2016-06-09 -- Arrays
+---------------------------
 
-Backwards Incompatible Changes:
+BACKWARDS INCOMPATIBLE CHANGES:
 
-* MGSubstituter becomes the new default substituter.
-  See Pull-Request #207 for details
+* MGSubstituter becomes the new default substitution method (PR #253)
+
+  When performing substitution with a mapping like ```{a: b, Not(a),
+  c}```, ```Not(a)``` is considered before ```a```. The previous
+  behavior (MSSubstituter) would have substituted ```a``` first, and
+  then the rule for ```Not(a)``` would not have been applied.
+
+* Removed argument ```user_options``` from Solver()
+
+Theories:
+
+* Added support for the Theory of Arrays.
+
+  In addition to the SMT-LIB definition, we introduce the concept of
+  Constant Array as supported by MathSAT and Z3. The theory is
+  currently implemented for MathSAT, Z3, Boolector, CVC4.
+
+  Thanks to **Alberto Griggio**, **Satya Uppalapati** and **Ahmed
+  Irfan** for contributing through code and discussion to this
+  feature.
+
+General:
+
+* Simplifier: Enable simplification if IFF with constant:
+  e.g., (a <-> False) into !a
+
+* Automatically enable Infix Notation by importing shortcuts.py (PR #267)
+
+* SMT-LIB: support for define-sort commands without arguments
+
+* Improved default options for shortcuts:
+
+  * Factory.is_* sets model generation and incrementality to False;
+  * Factory.get_model() sets model generation to True, and
+    incrementality to False.
+  * Factory.Solver() sets model generation and incrementality to True;
+
+* Improved handling of options in Solvers (PR #250):
+
+  Solver() takes **options as free keyword arguments. These options
+  are checked by the class SolverOptions, in order to validate that
+  these are meaningful options and perform a preliminary validation to
+  catch typos etc. by raising a ValueError exception if the option is
+  unknown.
+
+  It is now possible to do: ```Solver(name="bdd", dynamic_reordering=True)```
+
+
+Solvers:
+
+* rePyCUDD: Upgrade to 75fe055 (PR #262)
+* CVC4: Upgrade to c15ff4 (PR #251)
+* CVC4: Enabled Quantified logic (PR #252)
+
+
+Bugfixes:
+
+* Fixed bug in Non-linear theories comparison
+* Fixed bug in reset behavior of CVC4
+* Fixed bug in BTOR handling of bitwidth in shifts
+* Fixed bug in BTOR's get_value function
+* Fixed bug in BTOR, when operands did not have the same width after rewriting.
 
 
 0.4.4: 2016-05-07 -- Minor
