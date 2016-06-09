@@ -18,7 +18,10 @@ Among others, you can:
 
 Supported Theories and Solvers
 ==============================
-pySMT provides methods to define a formula in Linear Real Arithmetic (LRA), Real Difference Logic (RDL), their combination (LIRA), Equalities and Uninterpreted Functions (EUF) and Bit-Vectors (BV). The following solvers are supported through native APIs:
+pySMT provides methods to define a formula in Linear Real Arithmetic (LRA),
+Real Difference Logic (RDL), their combination (LIRA),
+Equalities and Uninterpreted Functions (EUF), Bit-Vectors (BV), and Arrays (A).
+The following solvers are supported through native APIs:
 
 * MathSAT (http://mathsat.fbk.eu/)
 * Z3 (https://github.com/Z3Prover/z3/)
@@ -30,9 +33,13 @@ pySMT provides methods to define a formula in Linear Real Arithmetic (LRA), Real
 
 Additionally, you can use any SMT-LIB 2 compliant solver.
 
-PySMT assumes that the python bindings for the SMT Solver are installed and accessible from your PYTHONPATH. For Yices 2 we rely on pyices (https://github.com/cheshire/pyices). For CUDD we use repycudd (https://github.com/pysmt/repycudd).
+PySMT assumes that the python bindings for the SMT Solver are installed and
+accessible from your PYTHONPATH.
 
-pySMT works on both Python 2 and Python 3. Some solvers support both versions (e.g., MathSAT) but in general, many solvers still support only Python 2.
+pySMT works on both Python 2 and Python 3. Some solvers support both
+versions (e.g., MathSAT) but in general, many solvers still support
+only Python 2.
+
 
 Wanna know more?
 ================
@@ -43,7 +50,7 @@ Visit http://www.pysmt.org
 
 setup(
     name='PySMT',
-    version='0.5.0dev1',
+    version='0.5.0',
     author='PySMT Team',
     author_email='info@pysmt.org',
     packages = find_packages(),
