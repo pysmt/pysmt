@@ -283,6 +283,12 @@ class HRPrinter(TreeWalker):
             self.walk(v)
             self.write("]")
 
+    def walk_div(self, formula):
+        self.write("(")
+        self.walk(formula.arg(0))
+        self.write(" / ")
+        self.walk(formula.arg(1))
+        self.write(")")
 
 class HRSerializer(object):
     """Return the serialized version of the formula as a string."""

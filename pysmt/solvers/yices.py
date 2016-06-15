@@ -63,7 +63,8 @@ STATUS_UNSAT = 4
 
 class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
-    LOGICS = pysmt.logics.PYSMT_QF_LOGICS - pysmt.logics.ARRAYS_LOGICS
+    LOGICS = pysmt.logics.PYSMT_QF_LOGICS - pysmt.logics.ARRAYS_LOGICS -\
+             set(l for l in pysmt.logics.PYSMT_QF_LOGICS if not l.theory.linear)
 
     def __init__(self, environment, logic, **options):
         Solver.__init__(self,

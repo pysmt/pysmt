@@ -88,6 +88,7 @@ z3.is_array_select = lambda x: z3.is_app_of(x, z3.Z3_OP_SELECT)
 z3.is_array_store = lambda x: z3.is_app_of(x, z3.Z3_OP_STORE)
 z3.is_const_array = lambda x: z3.is_app_of(x, z3.Z3_OP_CONST_ARRAY)
 
+z3.is_root_obj = lambda node: str(node.decl()) == "RootObject"
 z3.get_payload = lambda node,i : z3.Z3_get_decl_int_parameter(node.ctx.ref(),
                                                               node.decl().ast, i)
 
@@ -409,6 +410,17 @@ class Z3Converter(Converter, DagWalker):
                         assign[idx] = val
                     arr_type = self._z3_to_type(expr.sort())
                     res = self.mgr.Array(arr_type.index_type, default, assign)
+            elif z3.is_algebraic_value(expr):
+                # Algebraic value
+                assert z3.is_root_obj(expr)
+                # TODO: Parse this and create a richer object:
+                # res = expr.sexpr()
+                # From Z3 documentation
+                #   The result `r` is such that |r - self| <= 1/10^precision
+                approx = expr.approx(10)
+                n = approx.numerator_as_long()
+                d = approx.denominator_as_long()
+                return self.mgr.Real(Fraction(n,d))
             else:
                 # it must be a symbol
                 res = self.mgr.get_symbol(str(expr))
@@ -699,6 +711,9 @@ class Z3Converter(Converter, DagWalker):
             c = args[i]
             rval = z3.Store(rval, c, args[i+1])
         return rval
+
+    def walk_div(self, formula, args, **kwargs):
+        return args[0] / args[1]
 
     def _z3_to_type(self, sort):
         if sort.kind() == z3.Z3_BOOL_SORT:

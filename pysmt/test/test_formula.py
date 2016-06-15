@@ -250,14 +250,6 @@ class TestFormulaManager(TestCase):
         n = self.mgr.Times(self.iconst, self.q)
         self.assertIsNotNone(n)
 
-
-    def test_div_non_linear(self):
-        with self.assertRaises(NonLinearError):
-            self.mgr.Div(self.r, self.s)
-
-        with self.assertRaises(NonLinearError):
-            self.mgr.Div(self.rconst, self.s)
-
     def test_div_node(self):
         n = self.mgr.Div(self.real_expr, self.rconst)
         self.assertIsNotNone(n)

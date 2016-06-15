@@ -625,4 +625,27 @@ class Simplifier(pysmt.walkers.DagWalker):
                                   args[0],
                                   assign)
 
+    def walk_div(self, formula, args, **kwargs):
+        sl = args[0]
+        sr = args[1]
+
+        if sl.is_constant() and sr.is_constant():
+            l = sl.constant_value()
+            r = sr.constant_value()
+            if sl.is_real_constant():
+                return self.manager.Real(l / r)
+            else:
+                assert sl.is_int_constant()
+                return self.manager.Int(l / r)
+
+        if sl.is_constant():
+            if sl.is_zero():
+                return sl
+
+        if sr.is_constant():
+            if sr.is_one():
+                return sl
+
+        return self.manager.Div(sl, sr)
+
 # EOC Simplifier

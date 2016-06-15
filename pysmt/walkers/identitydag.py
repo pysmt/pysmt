@@ -195,3 +195,6 @@ class IdentityDagWalker(DagWalker):
         return self.mgr.Array(formula.array_value_index_type(),
                               args[0],
                               assign)
+
+    def walk_div(self, formula, args, **kwargs):
+        return self.mgr.Div(args[0], args[1])

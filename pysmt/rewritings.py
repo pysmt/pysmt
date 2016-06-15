@@ -41,6 +41,7 @@ class CNFizer(DagWalker):
         self.set_function(self.walk_theory_op, *op.LIRA_OPERATORS)
         self.set_function(self.walk_theory_relation, *op.RELATIONS)
         self.set_function(self.walk_theory_op, *op.ARRAY_OPERATORS)
+        self.set_function(self.walk_theory_op, op.DIV)
 
         self.set_function(self.walk_and, op.AND)
         self.set_function(self.walk_or, op.OR)
@@ -256,7 +257,7 @@ class NNFizer(DagWalker):
         self.set_function(self.walk_theory_op, *op.LIRA_OPERATORS)
         self.set_function(self.walk_theory_relation, *op.RELATIONS)
         self.set_function(self.walk_theory_op, *op.ARRAY_OPERATORS)
-
+        self.set_function(self.walk_theory_op, op.DIV)
 
     def convert(self, formula):
         """ Converts the given formula in NNF """
@@ -402,11 +403,9 @@ class PrenexNormalizer(DagWalker):
         #    res = Q(vars, res)
         self.set_function(self.walk_error, *op.ALL_TYPES)
         self.set_function(self.walk_quantifier, *op.QUANTIFIERS)
-        self.set_function(self.walk_theory_op, *op.BV_OPERATORS)
+        self.set_function(self.walk_theory_op, *op.THEORY_OPERATORS)
         self.set_function(self.walk_constant, *op.CONSTANTS)
         self.set_function(self.walk_theory_relation, *op.RELATIONS)
-        self.set_function(self.walk_theory_op, *op.LIRA_OPERATORS)
-        self.set_function(self.walk_theory_op, *op.ARRAY_OPERATORS)
 
         self.set_function(self.walk_symbol, op.SYMBOL)
         self.set_function(self.walk_function, op.FUNCTION)

@@ -236,22 +236,22 @@ class FormulaManager(object):
 
 
     def Div(self, left, right):
-        """ Creates an expression of the form:
-            left / right
+        """ Creates an expression of the form: left / right """
+        if right.is_constant(types.REAL):
+            # If right is a constant we rewrite as left * 1/right
+            inverse = Fraction(1) / right.constant_value()
+            return self.Times(left, self.Real(inverse))
+        elif right.is_constant(types.INT):
+            raise NotImplementedError
 
-        Restriction:
-          - Left and Right must be both REAL type
-          - Right is a constant
-        """
-        if not right.is_constant(types.REAL):
-            raise NonLinearError
-        inverse = Fraction(1) / right.constant_value()
-        return self.Times(left, self.Real(inverse))
+        # This is a non-linear expression
+        n = self.create_node(node_type=op.DIV,
+                             args=(left, right))
+        return n
 
 
     def Equals(self, left, right):
-        """ Creates an expression of the form:
-            left = right
+        """ Creates an expression of the form: left = right
 
         Restriction: Left and Right must be both REAL or INT type
         """

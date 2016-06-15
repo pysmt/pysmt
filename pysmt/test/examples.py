@@ -613,6 +613,12 @@ def get_example_formulae(environment=None):
                     is_valid=True,
                     is_sat=True,
                     logic=pysmt.logics.QF_ABV),
+
+            # (r/s) = (r*s)
+            Example(expr=Equals(Div(r, s), Times(r,s)),
+                    is_valid=False,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_NRA),
         ]
         return result
 

@@ -269,7 +269,8 @@ SERIALIZED_EXAMPLES = [
     """(aii[0 := 0][0] = 0)""",
     """((Array{Int, Int}(0)[1 := 1] = aii) & (aii[1] = 0))""",
     """((a_arb_aii = Array{Array{Real, BV{8}}, Array{Int, Int}}(Array{Int, Int}(7))) -> (a_arb_aii[arb][42] = 7))""",
-    """(abb[bv1 := y_][bv1 := z_] = abb[bv1 := z_])"""
+    """(abb[bv1 := y_][bv1 := z_] = abb[bv1 := z_])""",
+    """((r / s) = (r * s))""",
 ]
 
 

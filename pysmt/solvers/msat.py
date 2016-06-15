@@ -135,7 +135,7 @@ class MathSAT5Model(Model):
 class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
                      SmtLibBasicSolver, SmtLibIgnoreMixin):
 
-    LOGICS = PYSMT_QF_LOGICS
+    LOGICS = PYSMT_QF_LOGICS - set(l for l in PYSMT_QF_LOGICS if not l.theory.linear)
 
     def __init__(self, environment, logic, debugFile=None, **options):
         # TODO: DebugFile should be an option

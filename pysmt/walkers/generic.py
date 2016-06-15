@@ -83,6 +83,8 @@ class Walker(object):
         self.functions[op.ARRAY_STORE] = self.walk_array_store
         self.functions[op.ARRAY_VALUE] = self.walk_array_value
 
+        self.functions[op.DIV] = self.walk_div
+
         undefined_types = set(op.ALL_TYPES) - set(self.functions.keys())
         assert len(undefined_types) == 0, \
             "The following types are not defined in the generic walker: {%s}" % \
@@ -265,4 +267,7 @@ class Walker(object):
         return self.walk_error(formula, **kwargs)
 
     def walk_array_value(self, formula, **kwargs):
+        return self.walk_error(formula, **kwargs)
+
+    def walk_div(self, formula, **kwargs):
         return self.walk_error(formula, **kwargs)
