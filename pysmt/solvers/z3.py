@@ -695,7 +695,8 @@ class Z3Converter(Converter, DagWalker):
     def walk_array_value(self, formula, args, **kwargs):
         idx_type = formula.array_value_index_type()
         rval = z3.K(self._type_to_z3(idx_type), args[0])
-        for i,c in enumerate(args[1::2]):
+        for i in xrange(1, len(args), 2):
+            c = args[i]
             rval = z3.Store(rval, c, args[i+1])
         return rval
 
