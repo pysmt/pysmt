@@ -13,6 +13,8 @@
 # limitations under the License.
 import os
 import sys
+import pip
+import glob
 
 from pysmt.cmd.installers.base import SolverInstaller, TemporaryPath
 
@@ -37,24 +39,25 @@ class YicesInstaller(SolverInstaller):
         self.yices_path = os.path.join(self.bindings_dir, "yices_bin")
 
 
-    def install_pyices(self):
-        pyices_git = "aa0b91c39aa00c19c2160e83aad822dc468ce328"
-        pyices_base_name =  "pyices-%s" % pyices_git
-        pyices_archive_name = "%s.tar.gz" % pyices_base_name
-        pyices_archive = os.path.join(self.base_dir, pyices_archive_name)
-        pyices_dir_path = os.path.join(self.base_dir, pyices_base_name)
+    def install_yicespy(self):
+        yicespy_base_name =  "yicespy"
+        yicespy_archive_name = "%s.zip" % yicespy_base_name
+        yicespy_archive = os.path.join(self.base_dir, yicespy_archive_name)
+        yicespy_dir_path = os.path.join(self.base_dir, yicespy_base_name + "-master")
 
-        pyices_download_link = \
-            "https://codeload.github.com/cheshire/pyices/tar.gz/%s" % pyices_git
-        SolverInstaller.do_download(pyices_download_link, pyices_archive)
+        yicespy_download_link = "https://github.com/pysmt/yicespy/archive/master.zip"
+        SolverInstaller.do_download(yicespy_download_link, yicespy_archive)
 
-        SolverInstaller.clean_dir(pyices_dir_path)
+        SolverInstaller.clean_dir(yicespy_dir_path)
 
-        SolverInstaller.untar(pyices_archive, self.base_dir)
-        # Build pyices
-        SolverInstaller.run_python("setup.py install --prefix=%s" % self.install_dir,
-                                   directory=pyices_dir_path,
-                                   env_variables={"YICES_PATH" : self.yices_path})
+        SolverInstaller.unzip(yicespy_archive, self.base_dir)
+        # Build yicespy
+        SolverInstaller.run_python("setup.py --yices-dir=%s -- build_ext bdist_wheel --dist-dir=%s " % (self.yices_path, self.base_dir),
+                                   directory=yicespy_dir_path)
+        wheel_file = glob.glob(os.path.join(self.base_dir, "yicespy") + "*.whl")[0]
+        SolverInstaller.unzip(wheel_file, self.bindings_dir)
+
+
 
 
     def compile(self):
@@ -64,24 +67,19 @@ class YicesInstaller(SolverInstaller):
         SolverInstaller.run("bash ./install-yices %s" % self.yices_path,
                             directory=self.extract_path)
 
-        self.install_pyices()
-
-
-    def move(self):
-        sub = "lib/python%s/site-packages/pyices" % self.python_version
-        SolverInstaller.mv(os.path.join(self.install_dir, sub),
-                           self.bindings_dir)
+        self.install_yicespy()
 
 
     def get_installed_version(self):
-        # MG: Update me!
         with TemporaryPath([self.bindings_dir]):
             try:
-                import pyices
-                import pyices.yices_lib as libyices
-                import pyices.fix_env
-                return libyices.yices_version
+                import yicespy
+                v = yicespy.__dict__['__YICES_VERSION']
+                m = yicespy.__dict__['__YICES_VERSION_MAJOR']
+                p = yicespy.__dict__['__YICES_VERSION_PATCHLEVEL']
+                return "%d.%d.%d" % (v, m, p)
             except ImportError:
-                if "pyices" in sys.modules:
-                    del sys.modules["pyices"]
+                if "yicespy" in sys.modules:
+                    del sys.modules["yicespy"]
                 return None
+        return None

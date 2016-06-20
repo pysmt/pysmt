@@ -17,13 +17,12 @@
 #
 import atexit
 
-from fractions import Fraction
 from six.moves import xrange
 
 from pysmt.exceptions import SolverAPINotFound
 
 try:
-    import yices3
+    import yicespy
 except ImportError:
     raise SolverAPINotFound
 
@@ -43,17 +42,17 @@ import pysmt.logics
 # Initialization
 def init():
     if not getattr(init, 'initialized', False):
-        yices3.yices_init()
+        yicespy.yices_init()
     init.initialized = True
 
 def reset_yices():
-    yices3.yices_reset()
+    yicespy.yices_reset()
 
 init()
 
 @atexit.register
 def cleanup():
-    yices3.yices_exit()
+    yicespy.yices_exit()
 
 # Yices constants
 STATUS_UNKNOWN = 2
@@ -73,7 +72,7 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
         self.declarations = set()
 
-        self.yices = yices3.yices_new_context(None)
+        self.yices = yicespy.yices_new_context(None)
         # MG: TODO: Set options!!!
         self.converter = YicesConverter(environment)
         self.mgr = environment.formula_manager
@@ -94,11 +93,11 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
     def add_assertion(self, formula, named=None):
         self._assert_is_boolean(formula)
         term = self.converter.convert(formula)
-        code = yices3.yices_assert_formula(self.yices, term)
+        code = yicespy.yices_assert_formula(self.yices, term)
         if code != 0:
             raise InternalSolverError("Yices returned non-zero code upon assert"\
                                       ": %s (code: %s)" % \
-                                      (yices3.yices_error_string(), code))
+                                      (yicespy.yices_error_string(), code))
 
     def get_model(self):
         assignment = {}
@@ -120,17 +119,17 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
             self.add_assertion(self.mgr.And(assumptions))
             self.pending_pop = True
 
-        out = yices3.yices_check_context(self.yices, None)
+        out = yicespy.yices_check_context(self.yices, None)
 
         if self.model is not None:
-            yices3.yices_free_model(self.model)
+            yicespy.yices_free_model(self.model)
             self.model = None
 
         assert out in [STATUS_SAT, STATUS_UNSAT, STATUS_UNKNOWN]
         if out == STATUS_UNKNOWN:
             raise SolverReturnedUnknownResultError()
         elif out == STATUS_SAT:
-            self.model = yices3.yices_get_model(self.yices, 1)
+            self.model = yicespy.yices_get_model(self.yices, 1)
             return True
         else:
             return False
@@ -142,10 +141,10 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
     @clear_pending_pop
     def push(self, levels=1):
         for _ in xrange(levels):
-            c = yices3.yices_push(self.yices)
+            c = yicespy.yices_push(self.yices)
             if c != 0:
                 # 4 is STATUS_UNSAT
-                if yices3.yices_context_status(self.yices) == 4:
+                if yicespy.yices_context_status(self.yices) == 4:
                     # Yices fails to push if the context is in UNSAT state
                     # (It makes no sense to conjoin formulae to False)
                     # PySMT allows this and we support it by counting the
@@ -153,7 +152,7 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
                     self.failed_pushes += 1
                 else:
                     raise InternalSolverError("Error in push: %s" % \
-                                              yices3.yices_error_string())
+                                              yicespy.yices_error_string())
 
     @clear_pending_pop
     def pop(self, levels=1):
@@ -161,10 +160,10 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
             if self.failed_pushes > 0:
                 self.failed_pushes -= 1
             else:
-                c = yices3.yices_pop(self.yices)
+                c = yicespy.yices_pop(self.yices)
                 if c != 0:
                     raise InternalSolverError("Error in pop: %s" % \
-                                              yices3.yices_error_string())
+                                              yicespy.yices_error_string())
 
     def print_model(self, name_filter=None):
         for var in self.declarations:
@@ -172,83 +171,38 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
                 print("%s = %s", (var.symbol_name(), self.get_value(var)))
 
 
+    def _check_error(self, res):
+        if res != 0:
+            err = yicespy.yices_error_string()
+            raise InternalSolverError("Yices returned an error: " + err)
+
     def get_value(self, item):
         self._assert_no_function_type(item)
 
         titem = self.converter.convert(item)
         ty = self.environment.stc.get_type(item)
         if ty.is_bool_type():
-            res = yices3.yices_get_bool_value(self.model, titem)
+            status, res = yicespy.yices_get_bool_value(self.model, titem)
+            self._check_error(status)
             return self.mgr.Bool(res)
-
+        elif ty.is_int_type():
+            status, res = yicespy.yices_get_int64_value(self.model, titem)
+            self._check_error(status)
+            return self.mgr.Int(res)
+        elif ty.is_real_type():
+            status, num, den = yicespy.yices_get_rational64_value(self.model, titem)
+            self._check_error(status)
+            return self.mgr.Real((num, den))
+        elif ty.is_bv_type():
+            status, res = yicespy.yices_get_bv_value(self.model, titem)
+            self._check_error(status)
+            str_val = "".join(str(x) for x in reversed(res))
+            return self.mgr.BV("#b" + str_val)
         else:
-            status = yices3.yices_get_value(self.model, titem)
-            if status != 0:
-                raise InternalSolverError("Failed to read the variable from " \
-                                          "the model: %s" % \
-                                          yices3.yices_error_string())
-
-            if ty.is_int_type():
-                if yices3.yices_val_is_int64(self.model,
-                                             ctypes.byref(yval)) == 0:
-                    raise NotImplementedError("Yices wrapper currently uses "\
-                                              "finite-precision integers! "\
-                                              "Your query required a non-"\
-                                              "representable integer.")
-                else:
-                    res = yices3.yices_get_int64_value(self.model, titem)
-                    return self.mgr.Int(res)
-
-            elif ty.is_real_type():
-                if yices3.yices_val_is_rational64(self.model,
-                                                    ctypes.byref(yval)) == 0:
-                    raise NotImplementedError("Yices wrapper currently uses "\
-                                              "finite-precision rationals! "\
-                                              "Your query required a non-"\
-                                              "representable rational.")
-
-                else:
-                    res = self._get_yices_rational_value(titem)
-                    return self.mgr.Real(res)
-
-            elif ty.is_bv_type():
-                width = ty.width
-                res = yices3.yices_get_bv_value(self.model, titem)
-                str_val = "".join(str(x) for x in reversed(res))
-                return self.mgr.BV("#b" + str_val)
-
-            else:
-                raise NotImplementedError()
+            raise NotImplementedError()
 
     def _exit(self):
-        yices3.yices_free_context(self.yices)
-
-    def _get_yices_value(self, term, term_type, getter_func):
-        status = getter_func(
-            self.model,
-            term,
-            ctypes.byref(term_type)
-        )
-        if status != 0:
-            raise InternalSolverError("Failed to read the variable from " \
-                                      "the model: %s" % \
-                                      yices3.yices_error_string())
-        return term_type.value
-
-    def _get_yices_rational_value(self, term):
-        n = ctypes.c_int64()
-        d = ctypes.c_uint64()
-        status = yices3.yices_get_rational64_value(
-            self.model,
-            term,
-            ctypes.byref(n),
-            ctypes.byref(d))
-
-        if status != 0:
-            raise InternalSolverError("Failed to read the variable from " \
-                                      "the model: %s" % \
-                                      yices3.yices_error_string())
-        return Fraction(n.value, d.value)
+        yicespy.yices_free_context(self.yices)
 
 
 class YicesConverter(Converter, DagWalker):
@@ -268,76 +222,72 @@ class YicesConverter(Converter, DagWalker):
     def convert(self, formula):
         return self.walk(formula)
 
-    def _to_term_array(self, arr):
-        return list(arr)
-
     def _check_term_result(self, res):
         if res == -1:
-            err = str(yices3.yices_error_string())
+            err = yicespy.yices_error_string()
             raise InternalSolverError("Yices returned an error: " + err)
 
     def walk_and(self, formula, args, **kwargs):
-        res = yices3.yices_and(len(args), self._to_term_array(args))
+        res = yicespy.yices_and(len(args), args)
         self._check_term_result(res)
         return res
 
     def walk_or(self, formula, args, **kwargs):
-        res = yices3.yices_or(len(args),  self._to_term_array(args))
+        res = yicespy.yices_or(len(args), args)
         self._check_term_result(res)
         return res
 
     def walk_not(self, formula, args, **kwargs):
-        res = yices3.yices_not(args[0])
+        res = yicespy.yices_not(args[0])
         self._check_term_result(res)
         return res
 
     def walk_symbol(self, formula, **kwargs):
         symbol_type = formula.symbol_type()
         var_type = self._type_to_yices(symbol_type)
-        term = yices3.yices_new_uninterpreted_term(var_type)
-        yices3.yices_set_term_name(term, formula.symbol_name())
+        term = yicespy.yices_new_uninterpreted_term(var_type)
+        yicespy.yices_set_term_name(term, formula.symbol_name())
         self._check_term_result(term)
         return term
 
     def _bound_symbol(self, var):
         symbol_type = var.symbol_type()
         var_type = self._type_to_yices(symbol_type)
-        term = yices3.yices_new_variable(var_type)
-        yices3.yices_set_term_name(term, var.symbol_name())
+        term = yicespy.yices_new_variable(var_type)
+        yicespy.yices_set_term_name(term, var.symbol_name())
         return term
 
     def walk_iff(self, formula, args, **kwargs):
-        res = yices3.yices_iff(args[0], args[1])
+        res = yicespy.yices_iff(args[0], args[1])
         self._check_term_result(res)
         return res
 
     def walk_implies(self, formula, args, **kwargs):
-        res = yices3.yices_implies(args[0], args[1])
+        res = yicespy.yices_implies(args[0], args[1])
         self._check_term_result(res)
         return res
 
     def walk_le(self, formula, args, **kwargs):
-        res = yices3.yices_arith_leq_atom(args[0], args[1])
+        res = yicespy.yices_arith_leq_atom(args[0], args[1])
         self._check_term_result(res)
         return res
 
     def walk_lt(self, formula, args, **kwargs):
-        res = yices3.yices_arith_lt_atom(args[0], args[1])
+        res = yicespy.yices_arith_lt_atom(args[0], args[1])
         self._check_term_result(res)
         return res
 
     def walk_ite(self, formula, args, **kwargs):
         i, t, e = args
-        res = yices3.yices_ite(i, t, e)
+        res = yicespy.yices_ite(i, t, e)
         self._check_term_result(res)
         return res
 
     def walk_real_constant(self, formula, **kwargs):
-        assert type(formula.constant_value()) == Fraction
         frac = formula.constant_value()
         n,d = frac.numerator, frac.denominator
         rep = str(n) + "/" + str(d)
-        res = yices3.yices_parse_rational(rep)
+        res = yicespy.yices_parse_rational(rep)
         self._check_term_result(res)
         return res
 
@@ -345,29 +295,27 @@ class YicesConverter(Converter, DagWalker):
         assert type(formula.constant_value()) == int or \
             type(formula.constant_value()) == long
         rep = str(formula.constant_value())
-        res = yices3.yices_parse_rational(rep)
+        res = yicespy.yices_parse_rational(rep)
         self._check_term_result(res)
         return res
 
     def walk_bool_constant(self, formula, **kwargs):
         if formula.constant_value():
-            return yices3.yices_true()
+            return yicespy.yices_true()
         else:
-            return yices3.yices_false()
+            return yicespy.yices_false()
 
     def walk_exists(self, formula, args, **kwargs):
         (bound_formula, var_list) = \
                  self._rename_bound_variables(args[0], formula.quantifier_vars())
-        arr = self._to_term_array(var_list)
-        res = yices3.yices_exists(len(var_list), arr, bound_formula)
+        res = yicespy.yices_exists(len(var_list), var_list, bound_formula)
         self._check_term_result(res)
         return res
 
     def walk_forall(self, formula, args, **kwargs):
         (bound_formula, var_list) = \
                  self._rename_bound_variables(args[0], formula.quantifier_vars())
-        arr = self._to_term_array(var_list)
-        res = yices3.yices_forall(len(var_list), arr, bound_formula)
+        res = yicespy.yices_forall(len(var_list), var_list, bound_formula)
         self._check_term_result(res)
         return res
 
@@ -379,20 +327,18 @@ class YicesConverter(Converter, DagWalker):
         """
         new_vars = [self._bound_symbol(x) for x in variables]
         old_vars = [self.walk_symbol(x, []) for x in variables]
-        arr_new = self._to_term_array(new_vars)
-        arr_old = self._to_term_array(old_vars)
-        new_formula = yices3.yices_subst_term(len(variables), arr_new,
-                                                arr_old, formula)
+        new_formula = yicespy.yices_subst_term(len(variables), new_vars,
+                                                old_vars, formula)
         return (new_formula, new_vars)
 
 
     def walk_plus(self, formula, args, **kwargs):
-        res = yices3.yices_sum(len(args), self._to_term_array(args))
+        res = yicespy.yices_sum(len(args), args)
         self._check_term_result(res)
         return res
 
     def walk_minus(self, formula, args, **kwargs):
-        res = yices3.yices_sub(args[0], args[1])
+        res = yicespy.yices_sub(args[0], args[1])
         self._check_term_result(res)
         return res
 
@@ -400,15 +346,15 @@ class YicesConverter(Converter, DagWalker):
         tp = self._get_type(formula.arg(0))
         res = None
         if tp.is_bv_type():
-            res = yices3.yices_bveq_atom(args[0], args[1])
+            res = yicespy.yices_bveq_atom(args[0], args[1])
         else:
             assert tp.is_int_type() or tp.is_real_type()
-            res = yices3.yices_arith_eq_atom(args[0], args[1])
+            res = yicespy.yices_arith_eq_atom(args[0], args[1])
         self._check_term_result(res)
         return res
 
     def walk_times(self, formula, args, **kwargs):
-        res = yices3.yices_mul(args[0], args[1])
+        res = yicespy.yices_mul(args[0], args[1])
         self._check_term_result(res)
         return res
 
@@ -420,8 +366,7 @@ class YicesConverter(Converter, DagWalker):
         if name not in self.symbol_to_decl:
             self.declare_variable(name)
         decl = self.symbol_to_decl[name]
-        res = yices3.yices_application(decl, len(args),
-                                         self._to_term_array(args))
+        res = yicespy.yices_application(decl, len(args), args)
         self._check_term_result(res)
         return res
 
@@ -432,167 +377,167 @@ class YicesConverter(Converter, DagWalker):
         if width <= 64:
             # we can use the numberical representation
             value = formula.constant_value()
-            res = yices3.yices_bvconst_uint64(width, value)
+            res = yicespy.yices_bvconst_uint64(width, value)
         else:
             # we must resort to strings to communicate the result to yices
-            res = yices3.yices_parse_bvbin(formula.bv_bin_str())
+            res = yicespy.yices_parse_bvbin(formula.bv_bin_str())
         self._check_term_result(res)
         return res
 
     def walk_bv_ult(self, formula, args, **kwargs):
-        res = yices3.yices_bvlt_atom(args[0], args[1])
+        res = yicespy.yices_bvlt_atom(args[0], args[1])
         self._check_term_result(res)
         return res
 
     def walk_bv_ule(self, formula, args, **kwargs):
-        res = yices3.yices_bvle_atom(args[0], args[1])
+        res = yicespy.yices_bvle_atom(args[0], args[1])
         self._check_term_result(res)
         return res
 
     def walk_bv_concat(self, formula, args, **kwargs):
-        res = yices3.yices_bvconcat2(args[0], args[1])
+        res = yicespy.yices_bvconcat2(args[0], args[1])
         self._check_term_result(res)
         return res
 
     def walk_bv_extract(self, formula, args, **kwargs):
-        res = yices3.yices_bvextract(args[0],
+        res = yicespy.yices_bvextract(args[0],
                                        formula.bv_extract_start(),
                                        formula.bv_extract_end())
         self._check_term_result(res)
         return res
 
     def walk_bv_or(self, formula, args, **kwargs):
-        res = yices3.yices_bvor2(args[0], args[1])
+        res = yicespy.yices_bvor2(args[0], args[1])
         self._check_term_result(res)
         return res
 
     def walk_bv_not(self, formula, args, **kwargs):
-        res = yices3.yices_bvnot(args[0])
+        res = yicespy.yices_bvnot(args[0])
         self._check_term_result(res)
         return res
 
     def walk_bv_and(self, formula, args, **kwargs):
-        res = yices3.yices_bvand2(args[0], args[1])
+        res = yicespy.yices_bvand2(args[0], args[1])
         self._check_term_result(res)
         return res
 
     def walk_bv_xor(self, formula, args, **kwargs):
-        res = yices3.yices_bvxor2(args[0], args[1])
+        res = yicespy.yices_bvxor2(args[0], args[1])
         self._check_term_result(res)
         return res
 
     def walk_bv_add(self, formula, args, **kwargs):
-        res = yices3.yices_bvadd(args[0], args[1])
+        res = yicespy.yices_bvadd(args[0], args[1])
         self._check_term_result(res)
         return res
 
     def walk_bv_sub(self, formula, args, **kwargs):
-        res = yices3.yices_bvsub(args[0], args[1])
+        res = yicespy.yices_bvsub(args[0], args[1])
         self._check_term_result(res)
         return res
 
     def walk_bv_neg(self, formula, args, **kwargs):
-        res = yices3.yices_bvneg(args[0])
+        res = yicespy.yices_bvneg(args[0])
         self._check_term_result(res)
         return res
 
     def walk_bv_mul(self, formula, args, **kwargs):
-        res = yices3.yices_bvmul(args[0], args[1])
+        res = yicespy.yices_bvmul(args[0], args[1])
         self._check_term_result(res)
         return res
 
     def walk_bv_udiv(self, formula, args, **kwargs):
-        res = yices3.yices_bvdiv(args[0], args[1])
+        res = yicespy.yices_bvdiv(args[0], args[1])
         self._check_term_result(res)
         return res
 
     def walk_bv_urem(self, formula, args, **kwargs):
-        res = yices3.yices_bvrem(args[0], args[1])
+        res = yicespy.yices_bvrem(args[0], args[1])
         self._check_term_result(res)
         return res
 
     def walk_bv_lshl(self, formula, args, **kwargs):
-        res = yices3.yices_bvshl(args[0], args[1])
+        res = yicespy.yices_bvshl(args[0], args[1])
         self._check_term_result(res)
         return res
 
     def walk_bv_lshr(self, formula, args, **kwargs):
-        res = yices3.yices_bvlshr(args[0], args[1])
+        res = yicespy.yices_bvlshr(args[0], args[1])
         self._check_term_result(res)
         return res
 
     def walk_bv_rol(self, formula, args, **kwargs):
-        res = yices3.yices_rotate_left(args[0], formula.bv_rotation_step())
+        res = yicespy.yices_rotate_left(args[0], formula.bv_rotation_step())
         self._check_term_result(res)
         return res
 
     def walk_bv_ror(self, formula, args, **kwargs):
-        res = yices3.yices_rotate_right(args[0], formula.bv_rotation_step())
+        res = yicespy.yices_rotate_right(args[0], formula.bv_rotation_step())
         self._check_term_result(res)
         return res
 
     def walk_bv_zext(self, formula, args, **kwargs):
-        res = yices3.yices_zero_extend(args[0], formula.bv_extend_step())
+        res = yicespy.yices_zero_extend(args[0], formula.bv_extend_step())
         self._check_term_result(res)
         return res
 
     def walk_bv_sext (self, formula, args, **kwargs):
-        res = yices3.yices_sign_extend(args[0], formula.bv_extend_step())
+        res = yicespy.yices_sign_extend(args[0], formula.bv_extend_step())
         self._check_term_result(res)
         return res
 
     def walk_bv_slt(self, formula, args, **kwargs):
-        res = yices3.yices_bvslt_atom(args[0], args[1])
+        res = yicespy.yices_bvslt_atom(args[0], args[1])
         self._check_term_result(res)
         return res
 
     def walk_bv_sle (self, formula, args, **kwargs):
-        res = yices3.yices_bvsle_atom(args[0], args[1])
+        res = yicespy.yices_bvsle_atom(args[0], args[1])
         self._check_term_result(res)
         return res
 
     def walk_bv_comp (self, formula, args, **kwargs):
         a,b = args
-        eq = yices3.yices_bveq_atom(a, b)
+        eq = yicespy.yices_bveq_atom(a, b)
         self._check_term_result(eq)
-        one = yices3.yices_bvconst_int32(1, 1)
-        zero = yices3.yices_bvconst_int32(1, 0)
-        res = yices3.yices_ite(eq, one, zero)
+        one = yicespy.yices_bvconst_int32(1, 1)
+        zero = yicespy.yices_bvconst_int32(1, 0)
+        res = yicespy.yices_ite(eq, one, zero)
         self._check_term_result(res)
         return res
 
     def walk_bv_sdiv (self, formula, args, **kwargs):
-        res = yices3.yices_bvsdiv(args[0], args[1])
+        res = yicespy.yices_bvsdiv(args[0], args[1])
         self._check_term_result(res)
         return res
 
     def walk_bv_srem (self, formula, args, **kwargs):
-        res = yices3.yices_bvsrem(args[0], args[1])
+        res = yicespy.yices_bvsrem(args[0], args[1])
         self._check_term_result(res)
         return res
 
     def walk_bv_ashr (self, formula, args, **kwargs):
-        res = yices3.yices_bvashr(args[0], args[1])
+        res = yicespy.yices_bvashr(args[0], args[1])
         self._check_term_result(res)
         return res
 
 
     def _type_to_yices(self, tp):
         if tp.is_bool_type():
-            return yices3.yices_bool_type()
+            return yicespy.yices_bool_type()
         elif tp.is_real_type():
-            return yices3.yices_real_type()
+            return yicespy.yices_real_type()
         elif tp.is_int_type():
-            return yices3.yices_int_type()
+            return yicespy.yices_int_type()
         elif tp.is_function_type():
             stps = [self._type_to_yices(x) for x in tp.param_types]
             rtp = self._type_to_yices(tp.return_type)
-            #arr = (yices3.type_t * len(stps))(*stps)
-            return yices3.yices_function_type(len(stps),
+            #arr = (yicespy.type_t * len(stps))(*stps)
+            return yicespy.yices_function_type(len(stps),
                                               stps,
                                               rtp)
         elif tp.is_bv_type():
-            return yices3.yices_bv_type(tp.width)
+            return yicespy.yices_bv_type(tp.width)
         else:
             raise NotImplementedError(tp)
 
@@ -600,7 +545,7 @@ class YicesConverter(Converter, DagWalker):
         if not var.is_symbol(): raise TypeError
         if var.symbol_name() not in self.symbol_to_decl:
             tp = self._type_to_yices(var.symbol_type())
-            decl = yices3.yices_new_uninterpreted_term(tp)
-            yices3.yices_set_term_name(decl, var.symbol_name())
+            decl = yicespy.yices_new_uninterpreted_term(tp)
+            yicespy.yices_set_term_name(decl, var.symbol_name())
             self.symbol_to_decl[var] = decl
             self.decl_to_symbol[decl] = var

@@ -37,7 +37,7 @@ from pysmt.oracles import get_logic
 from pysmt.solvers.qelim import ShannonQuantifierEliminator
 from pysmt.solvers.solver import SolverOptions
 
-DEFAULT_SOLVER_PREFERENCE_LIST = ['msat', 'z3', 'cvc4', 'yices', 'btor',
+DEFAULT_SOLVER_PREFERENCE_LIST = ['yices', 'msat', 'z3', 'cvc4', 'btor',
                                   'picosat', 'bdd']
 DEFAULT_QELIM_PREFERENCE_LIST = ['z3', 'msat_fm', 'msat_lw', 'bdd', 'shannon']
 DEFAULT_INTERPOLATION_PREFERENCE_LIST = ['msat', 'z3']
