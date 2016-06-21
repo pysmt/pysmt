@@ -64,7 +64,8 @@ class TestBasic(TestCase):
                     s = Solver(name=solver_name, logic=logic)
                     term = s.converter.convert(formula)
                     res = s.converter.back(term)
-                    self.assertValid(Iff(formula, res), logic=logic)
+                    self.assertValid(Iff(formula, res), logic=logic,
+                                     solver_name=solver_name)
                 except NoSolverAvailableError:
                     pass
 

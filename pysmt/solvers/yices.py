@@ -184,7 +184,7 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         if ty.is_bool_type():
             status, res = yicespy.yices_get_bool_value(self.model, titem)
             self._check_error(status)
-            return self.mgr.Bool(res)
+            return self.mgr.Bool(bool(res))
         elif ty.is_int_type():
             status, res = yicespy.yices_get_int64_value(self.model, titem)
             self._check_error(status)
@@ -194,7 +194,7 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
             self._check_error(status)
             return self.mgr.Real((num, den))
         elif ty.is_bv_type():
-            status, res = yicespy.yices_get_bv_value(self.model, titem)
+            status, res = yicespy.yices_get_bv_value(self.model, titem,  ty.width)
             self._check_error(status)
             str_val = "".join(str(x) for x in reversed(res))
             return self.mgr.BV("#b" + str_val)
