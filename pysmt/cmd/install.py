@@ -37,7 +37,8 @@ INSTALLERS = [Installer(MSatInstaller,    "5.3.9", {}),
               Installer(CuddInstaller,    "2.0.3", {"git_version" : "75fe055c2a736a3ac3e971c1ade108b815edc96c"})]
 
 # The keys for the Solver(name=key) in pySMT
-PYSMT_SOLVER_NAMES = ['msat', 'z3', 'cvc4', 'yices', 'bdd', 'picosat', 'btor']
+PYSMT_SOLVER_NAMES = ['msat', 'z3', 'cvc4', 'yices', 'bdd',
+                      'picosat', 'btor', 'osmt']
 
 # The keys for the QuantifierEliminator(name=key) in pySMT
 PYSMT_QE_NAMES = ['msat_fm', 'msat_lw', 'z3', 'bdd']
@@ -60,17 +61,19 @@ def get_requested_solvers():
 def check_installed(required_solvers):
     """Checks which solvers are visible to pySMT."""
 
-    from pysmt.shortcuts import Solver, QuantifierEliminator
+    from pysmt.shortcuts import Solver, QuantifierEliminator, get_env
     from pysmt.exceptions import NoSolverAvailableError
 
     print("Solvers:")
+    all_solvers = get_env().factory.all_solvers().keys()
     for solver in PYSMT_SOLVER_NAMES:
-        is_installed = False
-        try:
-            Solver(name=solver)
-            is_installed = True
-        except NoSolverAvailableError:
-            is_installed = False
+        is_installed = solver in all_solvers
+
+        # try:
+        #     Solver(name=solver)
+        #     is_installed = True
+        # except NoSolverAvailableError:
+        #     is_installed = False
         print("  %s%s" % (solver.ljust(10), is_installed))
 
         if solver in required_solvers and not is_installed:

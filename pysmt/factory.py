@@ -38,7 +38,7 @@ from pysmt.solvers.qelim import ShannonQuantifierEliminator
 from pysmt.solvers.solver import SolverOptions
 
 DEFAULT_SOLVER_PREFERENCE_LIST = ['msat', 'z3', 'cvc4', 'yices', 'btor',
-                                  'picosat', 'bdd']
+                                  'picosat', 'bdd', 'osmt']
 DEFAULT_QELIM_PREFERENCE_LIST = ['z3', 'msat_fm', 'msat_lw', 'bdd', 'shannon']
 DEFAULT_INTERPOLATION_PREFERENCE_LIST = ['msat', 'z3']
 DEFAULT_LOGIC = QF_UFLIRA
@@ -191,14 +191,12 @@ class Factory(object):
             raise NoSolverAvailableError("No %s is available for logic %s" %
                                          (solver_type, logic))
 
-
     def _pick_favorite(self, preference_list, solver_list, solvers):
         for candidate in preference_list:
             if candidate in solvers:
                 return solver_list[candidate]
         raise NoSolverAvailableError(
             "Cannot find a matching solver in the preference list: %s " % solvers)
-
 
     def add_generic_solver(self, name, args, logics, unsat_core_support=False):
         from pysmt.smtlib.solver import SmtLibSolver
@@ -259,6 +257,12 @@ class Factory(object):
         try:
             from pysmt.solvers.btor import BoolectorSolver
             self._all_solvers['btor'] = BoolectorSolver
+        except SolverAPINotFound:
+            pass
+
+        try:
+            from pysmt.solvers.osmt import OpenSMT2Solver
+            self._all_solvers['osmt'] = OpenSMT2Solver
         except SolverAPINotFound:
             pass
 
