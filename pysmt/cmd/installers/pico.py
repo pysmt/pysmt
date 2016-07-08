@@ -39,10 +39,11 @@ class PicoSATInstaller(SolverInstaller):
 
     def get_installed_version(self):
         with TemporaryPath([self.bindings_dir]):
+            version = None
             try:
                 import picosat
-                return picosat.picosat_version()
-            except ImportError:
+                version = picosat.picosat_version()
+            finally:
                 if "picosat" in sys.modules:
                     del sys.modules["picosat"]
-                return None
+                return version

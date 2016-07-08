@@ -69,15 +69,14 @@ class CuddInstaller(SolverInstaller):
 
     def get_installed_version(self):
         with TemporaryPath([self.bindings_dir]):
+            version = None
             try:
                 import repycudd
                 doc = repycudd.DOCSTRING
                 m = re.match(r"^PyCUDD (\d+\.\d+\.\d+).*", doc)
-                if m is None:
-                    return None
-                return m.group(1)
-            except ImportError:
+                if m is not None:
+                    version = m.group(1)
+            finally:
                 if "repycudd" in sys.modules:
                     del sys.modules["repycudd"]
-                return None
-        return None
+                return version
