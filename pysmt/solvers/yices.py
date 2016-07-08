@@ -18,6 +18,7 @@
 import atexit
 
 from six.moves import xrange
+from fractions import Fraction
 
 from pysmt.exceptions import SolverAPINotFound
 
@@ -186,13 +187,12 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
             self._check_error(status)
             return self.mgr.Bool(bool(res))
         elif ty.is_int_type():
-            status, res = yicespy.yices_get_int64_value(self.model, titem)
-            self._check_error(status)
+            res = yicespy.yices_get_integer_value(self.model, titem)
             return self.mgr.Int(res)
         elif ty.is_real_type():
-            status, num, den = yicespy.yices_get_rational64_value(self.model, titem)
+            status, val = yicespy.yices_get_rational_value(self.model, titem)
             self._check_error(status)
-            return self.mgr.Real((num, den))
+            return self.mgr.Real(Fraction(val))
         elif ty.is_bv_type():
             status, res = yicespy.yices_get_bv_value(self.model, titem,  ty.width)
             self._check_error(status)
