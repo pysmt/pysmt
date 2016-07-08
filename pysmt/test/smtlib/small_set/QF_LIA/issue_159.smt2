@@ -1,6 +1,0 @@
-(set-logic QF_LIA)
-(declare-fun x () Int)
-(assert (let ((a x)
-              (b (+ a x)))
-          (> b a)))
-(check-sat)

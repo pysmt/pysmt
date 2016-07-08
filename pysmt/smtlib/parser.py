@@ -17,9 +17,10 @@
 #
 import functools
 import itertools
+import bz2
 from fractions import Fraction
 from warnings import warn
-from six import iteritems
+from six import iteritems, PY2
 from six.moves import xrange
 
 import pysmt.smtlib.commands as smtcmd
@@ -31,6 +32,15 @@ from pysmt.smtlib.script import SmtLibCommand, SmtLibScript
 from pysmt.smtlib.annotations import Annotations
 from pysmt.utils import interactive_char_iterator
 
+
+def open_(fname):
+    """Transparently handle .bz2 files."""
+    if fname.endswith(".bz2"):
+        if PY2:
+            return bz2.BZ2File(fname, "r")
+        else:
+            return bz2.open(fname, "rt")
+    return open(fname)
 
 def get_formula(script_stream, environment=None):
     """
@@ -66,7 +76,7 @@ def get_formula_strict(script_stream, environment=None):
 
 def get_formula_fname(script_fname, environment=None, strict=True):
     """Returns the formula asserted at the end of the given script."""
-    with open(script_fname) as script:
+    with open_(script_fname) as script:
         if strict:
             return get_formula_strict(script, environment)
         else:
@@ -711,7 +721,7 @@ class SmtLibParser(object):
 
     def get_script_fname(self, script_fname):
         """Given a filename and a Solver, executes the solver on the file."""
-        with open(script_fname) as script:
+        with open_(script_fname) as script:
             return self.get_script(script)
 
     def parse_atoms(self, tokens, command, min_size, max_size=None):
