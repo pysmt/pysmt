@@ -23,7 +23,7 @@ class YicesInstaller(SolverInstaller):
     SOLVER = "yices"
 
     def __init__(self, install_dir, bindings_dir, solver_version,
-                 mirror_link=None):
+                 mirror_link=None, yicespy_version='HEAD'):
         pack = "x86_64-unknown-linux-gnu-static-gmp"
         archive_name = "yices-%s-%s.tar.gz" % (solver_version, pack)
         native_link = "http://yices.csl.sri.com/cgi-bin/yices2-newnewdownload.cgi?file={archive_name}&accept=I+Agree"
@@ -36,10 +36,10 @@ class YicesInstaller(SolverInstaller):
 
         self.extract_path = os.path.join(self.base_dir, "yices-%s" % self.solver_version)
         self.yices_path = os.path.join(self.bindings_dir, "yices_bin")
-
+        self.yicespy_git_version = yicespy_version
 
     def install_yicespy(self):
-        yicespy_git_version = "07ea096ddab0641b74d3127ea062e4e77a71f75d"
+        yicespy_git_version = self.yicespy_git_version
         yicespy_base_name =  "yicespy"
         yicespy_archive_name = "%s.tar.gz" % yicespy_base_name
         yicespy_archive = os.path.join(self.base_dir, yicespy_archive_name)
