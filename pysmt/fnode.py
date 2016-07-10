@@ -17,6 +17,7 @@
 #
 """FNode are the building blocks of formulae."""
 import collections
+from fractions import Fraction
 
 import pysmt.environment
 from pysmt.operators import (FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF,
@@ -37,14 +38,16 @@ from pysmt.operators import (FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF,
                              BV_COMP,
                              BV_SDIV, BV_SREM,
                              BV_ASHR,
-                             ARRAY_SELECT, ARRAY_STORE, ARRAY_VALUE)
+                             ARRAY_SELECT, ARRAY_STORE, ARRAY_VALUE,
+                             ALGEBRAIC_CONSTANT)
 from pysmt.operators import  (BOOL_OPERATORS, THEORY_OPERATORS,
-                              BV_OPERATORS, LIRA_OPERATORS, ARRAY_OPERATORS,
+                              BV_OPERATORS, IRA_OPERATORS, ARRAY_OPERATORS,
                               RELATIONS, CONSTANTS)
 from pysmt.typing import BOOL, REAL, INT, BVType
 from pysmt.decorators import deprecated
 from pysmt.utils import is_python_integer, is_python_rational, is_python_boolean
 from pysmt.utils import twos_complement
+
 
 FNodeContent = collections.namedtuple("FNodeContent",
                                       ["node_type", "args", "payload"])
@@ -205,6 +208,10 @@ class FNode(object):
         else:
             return self.is_constant(_type=BVType(width=width),
                                     value=value)
+
+    def is_algebraic_constant(self):
+        """Test whether the formula is an Algebraic Constant"""
+        return self.node_type() == ALGEBRAIC_CONSTANT
 
     def is_symbol(self, type_=None):
         """Test whether the formula is a Symbol.
@@ -605,6 +612,13 @@ class FNode(object):
     def quantifier_vars(self):
         """Return the list of quantified variables."""
         return self._content.payload
+
+    def algebraic_approx_value(self, precision=10):
+        value = self.constant_value()
+        approx = value.approx(precision)
+        n = approx.numerator().as_long()
+        d = approx.denominator().as_long()
+        return Fraction(n,d)
 
     # Infix Notation
     def _apply_infix(self, right, function, bv_function=None):

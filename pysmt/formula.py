@@ -917,6 +917,13 @@ class FormulaManager(object):
                              payload=idx_type)
         return n
 
+    def _Algebraic(self, val):
+        """Returns the algebraic number val."""
+        n = self.create_node(node_type=op.ALGEBRAIC_CONSTANT,
+                             args=tuple(),
+                             payload=val)
+        return n
+
     def normalize(self, formula):
         """ Returns the formula normalized to the current Formula Manager.
 

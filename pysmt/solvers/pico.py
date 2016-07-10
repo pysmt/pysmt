@@ -22,15 +22,16 @@ try:
 except ImportError:
     raise SolverAPINotFound
 
+from six.moves import xrange
+from six import iteritems
+
 import pysmt.logics
 from pysmt import typing as types
 from pysmt.solvers.solver import Solver
 from pysmt.solvers.eager import EagerModel
 from pysmt.rewritings import CNFizer
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
-
-from six.moves import xrange
-from six import iteritems
+from pysmt.exceptions import ConvertExpressionError
 
 
 class PicosatSolver(Solver):
@@ -54,7 +55,7 @@ class PicosatSolver(Solver):
 
     def _get_var_id(self, symbol):
         if not symbol.is_symbol(types.BOOL):
-            raise NotImplementedError("No theory terms are supported in PicoSAT")
+            raise ConvertExpressionError("No theory terms are supported in PicoSAT")
 
         if symbol in self._var_ids:
             return self._var_ids[symbol]

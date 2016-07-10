@@ -360,11 +360,8 @@ class AtomsOracle(pysmt.walkers.DagWalker):
         self.set_function(self.walk_bool_op, *op.BOOL_CONNECTIVES)
         self.set_function(self.walk_bool_op, *op.QUANTIFIERS)
         self.set_function(self.walk_constant, *op.CONSTANTS)
-        self.set_function(self.walk_theory_op, *op.BV_OPERATORS)
-        self.set_function(self.walk_theory_op, *op.LIRA_OPERATORS)
+        self.set_function(self.walk_theory_op, *op.THEORY_OPERATORS)
         self.set_function(self.walk_theory_relation, *op.RELATIONS)
-        self.set_function(self.walk_theory_op, *op.ARRAY_OPERATORS)
-        self.set_function(self.walk_theory_op, op.DIV)
 
         self.set_function(self.walk_symbol, op.SYMBOL)
         self.set_function(self.walk_function, op.FUNCTION)

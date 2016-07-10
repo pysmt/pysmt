@@ -77,7 +77,6 @@ class HRPrinter(TreeWalker):
         else:
             self.walk(formula.arg(0))
 
-
     def walk_and(self, formula):
         self.walk_nary(" & ", formula)
 
@@ -150,6 +149,9 @@ class HRPrinter(TreeWalker):
         #                             formula.constant_value()))
         self.write("%d_%d" % (formula.constant_value(),
                               formula.bv_width()))
+
+    def walk_algebraic_constant(self, formula):
+        self.write(str(formula.constant_value()))
 
     def walk_bv_xor(self, formula):
         self.walk_binary(" xor ", formula)
@@ -289,6 +291,7 @@ class HRPrinter(TreeWalker):
         self.write(" / ")
         self.walk(formula.arg(1))
         self.write(")")
+
 
 class HRSerializer(object):
     """Return the serialized version of the formula as a string."""

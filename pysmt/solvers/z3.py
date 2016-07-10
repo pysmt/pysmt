@@ -28,6 +28,7 @@ from fractions import Fraction
 from six.moves import xrange
 
 import pysmt.typing as types
+import pysmt.operators as op
 from pysmt.solvers.solver import (IncrementalTrackingSolver, UnsatCoreSolver,
                                   Model, Converter)
 from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
@@ -43,6 +44,7 @@ from pysmt.exceptions import (SolverReturnedUnknownResultError,
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
 from pysmt.logics import LRA, LIA, QF_UFLIA, QF_UFLRA, PYSMT_LOGICS
 from pysmt.oracles import get_logic
+from pysmt.numeral import Numeral
 
 
 # patch z3api
@@ -88,9 +90,10 @@ z3.is_array_select = lambda x: z3.is_app_of(x, z3.Z3_OP_SELECT)
 z3.is_array_store = lambda x: z3.is_app_of(x, z3.Z3_OP_STORE)
 z3.is_const_array = lambda x: z3.is_app_of(x, z3.Z3_OP_CONST_ARRAY)
 
-z3.is_root_obj = lambda node: str(node.decl()) == "RootObject"
 z3.get_payload = lambda node,i : z3.Z3_get_decl_int_parameter(node.ctx.ref(),
                                                               node.decl().ast, i)
+#z3.AlgebraicNumRef.__hash__ = z3.AlgebraicNumRef.hash
+#z3.is_root_obj = lambda node: str(node.decl()) == "RootObject"
 
 
 class AstRefKey:
@@ -412,15 +415,7 @@ class Z3Converter(Converter, DagWalker):
                     res = self.mgr.Array(arr_type.index_type, default, assign)
             elif z3.is_algebraic_value(expr):
                 # Algebraic value
-                assert z3.is_root_obj(expr)
-                # TODO: Parse this and create a richer object:
-                # res = expr.sexpr()
-                # From Z3 documentation
-                #   The result `r` is such that |r - self| <= 1/10^precision
-                approx = expr.approx(10)
-                n = approx.numerator_as_long()
-                d = approx.denominator_as_long()
-                return self.mgr.Real(Fraction(n,d))
+                return self.mgr._Algebraic(Numeral(expr))
             else:
                 # it must be a symbol
                 res = self.mgr.get_symbol(str(expr))

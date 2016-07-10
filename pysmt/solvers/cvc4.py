@@ -40,6 +40,7 @@ from pysmt.decorators import catch_conversion_error
 class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
     LOGICS = PYSMT_LOGICS - ARRAYS_CONST_LOGICS -\
              set(l for l in PYSMT_LOGICS if not l.theory.linear)
+
     def __init__(self, environment, logic, **options):
         Solver.__init__(self,
                         environment=environment,

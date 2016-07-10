@@ -39,6 +39,7 @@ class SimpleTypeChecker(walkers.DagWalker):
         self.set_function(self.walk_symbol, op.SYMBOL)
         self.set_function(self.walk_math_relation, op.EQUALS, op.LE, op.LT)
         self.set_function(self.walk_identity_real, op.REAL_CONSTANT)
+        self.set_function(self.walk_identity_real, op.ALGEBRAIC_CONSTANT)
         self.set_function(self.walk_identity_bool, op.BOOL_CONSTANT)
         self.set_function(self.walk_identity_int, op.INT_CONSTANT)
         self.set_function(self.walk_quantifier, op.FORALL, op.EXISTS)

@@ -29,7 +29,8 @@ class Simplifier(pysmt.walkers.DagWalker):
         self.manager = self.env.formula_manager
 
         self.set_function(self.walk_identity, op.SYMBOL, op.REAL_CONSTANT,
-                          op.INT_CONSTANT, op.BOOL_CONSTANT, op.BV_CONSTANT)
+                          op.INT_CONSTANT, op.BOOL_CONSTANT, op.BV_CONSTANT,
+                          op.ALGEBRAIC_CONSTANT)
 
         self._validate_simplifications = None
         self.original_walk = self.walk
@@ -296,9 +297,12 @@ class Simplifier(pysmt.walkers.DagWalker):
             r = sr.constant_value()
             if sl.is_real_constant():
                 return self.manager.Real(l * r)
-            else:
-                assert sl.is_int_constant()
+            elif sl.is_int_constant():
                 return self.manager.Int(l * r)
+            else:
+                assert sl.is_algebraic_constant()
+                from pysmt.numeral import Numeral
+                return self.manager._Algebraic(Numeral(l * r))
 
         if sl.is_constant():
             if sl.is_one():

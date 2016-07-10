@@ -619,6 +619,13 @@ def get_example_formulae(environment=None):
                     is_valid=False,
                     is_sat=True,
                     logic=pysmt.logics.QF_NRA),
+
+            # (r*r) = 2
+            Example(expr=Equals(Real(2), Times(r,r)),
+                    is_valid=False,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_NRA),
+
         ]
         return result
 

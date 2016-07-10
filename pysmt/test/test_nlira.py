@@ -24,7 +24,10 @@ from pysmt.oracles import get_logic
 from pysmt.shortcuts import FreshSymbol, Times, Equals, Div, Real
 from pysmt.shortcuts import Solver
 from pysmt.typing import REAL
-from pysmt.exceptions import SolverReturnedUnknownResultError
+from pysmt.exceptions import (SolverReturnedUnknownResultError,
+                              ConvertExpressionError,
+                              InternalSolverError)
+from pysmt.logics import QF_NRA
 
 
 class TestNonLinear(TestCase):
@@ -50,8 +53,10 @@ class TestNonLinear(TestCase):
         with Solver(name="z3") as s:
             self.assertTrue(s.is_sat(f))
             model = s.get_model()
+            xval = model[x]
+            self.assertTrue(xval.is_algebraic_constant())
             approx = Fraction(-3109888511975, 2199023255552)
-            self.assertEqual(model[x], Real(approx))
+            self.assertEqual(xval.algebraic_approx_value(), approx)
 
     def test_oracle(self):
         x = FreshSymbol(REAL)
@@ -66,6 +71,27 @@ class TestNonLinear(TestCase):
         with Solver(name="msat") as s:
             with self.assertRaises(SolverReturnedUnknownResultError):
                 s.is_sat(f)
+
+    def test_unknownresult(self):
+        x = FreshSymbol(REAL)
+        f = Equals(Times(x, x), Real(2))
+        for sname in self.env.factory.all_solvers():
+            with Solver(name=sname) as s:
+                try:
+                    res = s.is_sat(f)
+                    self.assertTrue(res, sname)
+                    self.assertIn(QF_NRA, s.LOGICS, sname)
+                except SolverReturnedUnknownResultError as ex:
+                    assert sname == "msat"
+                    # print(sname, ex)
+                    self.assertNotIn(QF_NRA, s.LOGICS, sname)
+                except ConvertExpressionError as ex:
+                    assert sname in ["bdd", "picosat", "btor"]
+                    # print(sname, ex)
+                    self.assertNotIn(QF_NRA, s.LOGICS, sname)
+                except InternalSolverError as ex:
+                    assert sname in ["yices", "cvc4"]
+                    # print(sname, ex)
 
 
 if __name__ == "__main__":

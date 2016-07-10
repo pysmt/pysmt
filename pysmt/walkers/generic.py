@@ -84,6 +84,8 @@ class Walker(object):
         self.functions[op.ARRAY_VALUE] = self.walk_array_value
 
         self.functions[op.DIV] = self.walk_div
+        self.functions[op.POW] = self.walk_pow
+        self.functions[op.ALGEBRAIC_CONSTANT] = self.walk_algebraic_constant
 
         undefined_types = set(op.ALL_TYPES) - set(self.functions.keys())
         assert len(undefined_types) == 0, \
@@ -270,4 +272,10 @@ class Walker(object):
         return self.walk_error(formula, **kwargs)
 
     def walk_div(self, formula, **kwargs):
+        return self.walk_error(formula, **kwargs)
+
+    def walk_pow(self, formula, **kwargs):
+        return self.walk_error(formula, **kwargs)
+
+    def walk_algebraic_constant(self, formula, **kwargs):
         return self.walk_error(formula, **kwargs)
