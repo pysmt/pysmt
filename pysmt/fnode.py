@@ -616,8 +616,13 @@ class FNode(object):
     def algebraic_approx_value(self, precision=10):
         value = self.constant_value()
         approx = value.approx(precision)
-        n = approx.numerator().as_long()
-        d = approx.denominator().as_long()
+        # MG: This is a workaround python 3 since Z3 mixes int and long.
+        #     The bug was fixed in master of Z3, but no official relase
+        #     has been done containing it.
+        # In the most recent version of z3, this can be done with:
+        #   return approx.as_fraction()
+        n = int(str(approx.numerator()))
+        d = int(str(approx.denominator()))
         return Fraction(n,d)
 
     # Infix Notation
