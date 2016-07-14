@@ -25,6 +25,7 @@ from pysmt.cmd.installers import MSatInstaller, Z3Installer, PicoSATInstaller
 from pysmt.cmd.installers import CVC4Installer, YicesInstaller, BtorInstaller
 from pysmt.cmd.installers import CuddInstaller
 
+from pysmt.environment import get_env
 
 # Build a list of installers, one for each solver
 Installer = namedtuple("Installer", ["InstallerClass", "version", "extra_params"])
@@ -35,13 +36,6 @@ INSTALLERS = [Installer(MSatInstaller,    "5.3.9", {}),
               Installer(BtorInstaller,    "2.2.0", {"lingeling_version": "bal"}),
               Installer(PicoSATInstaller, "960", {}),
               Installer(CuddInstaller,    "2.0.3", {"git_version" : "75fe055c2a736a3ac3e971c1ade108b815edc96c"})]
-
-# The keys for the Solver(name=key) in pySMT
-PYSMT_SOLVER_NAMES = ['msat', 'z3', 'cvc4', 'yices', 'bdd', 'picosat', 'btor']
-
-# The keys for the QuantifierEliminator(name=key) in pySMT
-PYSMT_QE_NAMES = ['msat_fm', 'msat_lw', 'z3', 'bdd']
-
 
 
 def get_requested_solvers():
@@ -57,37 +51,51 @@ def get_requested_solvers():
     return requested_solvers
 
 
-def check_installed(required_solvers):
+def check_installed(required_solvers, install_dir, bindings_dir, mirror_link):
     """Checks which solvers are visible to pySMT."""
 
-    from pysmt.shortcuts import Solver, QuantifierEliminator
-    from pysmt.exceptions import NoSolverAvailableError
+    global_solvers_status = []
+    print("Installed Solvers:")
+    for i in INSTALLERS:
+        installer_ = i.InstallerClass(install_dir=install_dir,
+                                      bindings_dir=bindings_dir,
+                                      solver_version=i.version,
+                                      mirror_link=mirror_link,
+                                      **i.extra_params)
+        solver = installer_.SOLVER
+        version = installer_.get_installed_version()
+        is_installed = (version is not None)
+        global_solvers_status.append((solver, is_installed, version))
+        del installer_
 
-    print("Solvers:")
-    for solver in PYSMT_SOLVER_NAMES:
-        is_installed = False
-        try:
-            Solver(name=solver)
-            is_installed = True
-        except NoSolverAvailableError:
-            is_installed = False
-        print("  %s%s" % (solver.ljust(10), is_installed))
-
-        if solver in required_solvers and not is_installed:
+    # Check which solvers are accessible from the Factory
+    pypath_solvers = get_env().factory.all_solvers()
+    for solver in required_solvers:
+        if solver not in pypath_solvers:
             raise Exception("Was expecting to find %s installed" % solver)
 
-    print("\nQuantifier Eliminators:")
-    for solver in PYSMT_QE_NAMES:
-        is_installed = False
-        try:
-            QuantifierEliminator(name=solver)
-            is_installed = True
-        except NoSolverAvailableError:
-            is_installed = False
-        print("  %s%s" % (solver.ljust(10), is_installed))
+    #
+    # Output information
+    #
+    for (solver, is_installed, version) in global_solvers_status:
+        msg = "  %s%s " % (solver.ljust(10), is_installed)
+        msg += ("(%s)" % version).ljust(20)
+        if solver not in pypath_solvers:
+            msg += "Not in Python's path!"
+        print(msg)
+    print("")
 
-        if solver in required_solvers and not is_installed:
-            raise Exception("Was expecting to find %s installed" % solver)
+
+    print("Solvers: %s" % ", ".join(name for name in pypath_solvers))
+    qes = get_env().factory.all_quantifier_eliminators()
+    print("Quantifier Eliminators: %s" % ", ".join(name for name in qes))
+
+    ucs = get_env().factory.all_unsat_core_solvers()
+    print("UNSAT-Cores: %s" % ", ".join(name for name in ucs))
+
+    interps = get_env().factory.all_interpolators()
+    print("Interpolators: %s" % ", ".join(name for name in interps))
+
 
 
 def parse_options():
@@ -167,6 +175,15 @@ def main():
     # Env variable controlling the solvers to be installed or checked
     requested_solvers = get_requested_solvers()
 
+    # This should work on any platform
+    install_dir= os.path.expanduser(options.install_path)
+    if not os.path.exists(install_dir):
+        os.mkdir(install_dir)
+
+    # This should work on any platform
+    bindings_dir= os.path.expanduser(options.bindings_path)
+    if not os.path.exists(bindings_dir):
+        os.mkdir(bindings_dir)
 
     solvers_to_install = []
     all_solvers = options.all_solvers
@@ -176,7 +193,10 @@ def main():
             solvers_to_install.append(i)
 
     if options.check:
-        check_installed([x.InstallerClass.SOLVER for x in solvers_to_install])
+        check_installed([x.InstallerClass.SOLVER for x in solvers_to_install],
+                        install_dir=install_dir,
+                        bindings_dir=bindings_dir,
+                        mirror_link=mirror_url)
         exit(0)
 
     elif options.env:
@@ -191,16 +211,6 @@ def main():
         # Do the actual install
         if not options.skip_intro:
             print_welcome()
-
-        # This should work on any platform
-        install_dir= os.path.expanduser(options.install_path)
-        if not os.path.exists(install_dir):
-            os.mkdir(install_dir)
-
-        # This should work on any platform
-        bindings_dir= os.path.expanduser(options.bindings_path)
-        if not os.path.exists(bindings_dir):
-            os.mkdir(bindings_dir)
 
         for i in solvers_to_install:
             installer = i.InstallerClass(install_dir=install_dir,

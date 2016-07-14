@@ -412,6 +412,19 @@ class Factory(object):
         """
         return self._filter_solvers(self._all_unsat_core_solvers, logic=logic)
 
+    def all_interpolators(self, logic=None):
+        """
+        Returns a dict <solver_name, solver_class> including all and only
+        the solvers supporting interpolation and directly or
+        indirectly supporting the given logic.  A solver supports a
+        logic if either the given logic is declared in the LOGICS
+        class field or if a logic subsuming the given logic is
+        declared in the LOGICS class field.
+
+        If logic is None, the map will contain all the known solvers
+        """
+        return self._filter_solvers(self._all_interpolators, logic=logic)
+
 
 
     ##

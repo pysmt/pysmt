@@ -58,17 +58,13 @@ class BtorInstaller(SolverInstaller):
 
     def get_installed_version(self):
         with TemporaryPath([self.bindings_dir]):
+            version = None
+            vfile = os.path.join(self.extract_path, "boolector", "VERSION")
             try:
                 import boolector
-
-                with open(os.path.join(self.extract_path, "boolector", "VERSION")) as f:
-                    return f.read().strip()
-
-            except ImportError:
+                with open(vfile) as f:
+                    version = f.read().strip()
+            finally:
                 if "boolector" in sys.modules:
                     del sys.modules["boolector"]
-                return None
-            except IOError:
-                return None
-
-        return None
+                return version

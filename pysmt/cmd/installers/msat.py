@@ -58,14 +58,14 @@ class MSatInstaller(SolverInstaller):
 
     def get_installed_version(self):
         with TemporaryPath([self.bindings_dir]):
+            version = None
             try:
                 import mathsat
                 version_str = mathsat.msat_get_version()
                 m = re.match(r"^MathSAT5 version (\d+\.\d+\.\d+) .*$", version_str)
-                if m is None:
-                    return None
-                return m.group(1)
-            except ImportError:
+                if m is not None:
+                    version = m.group(1)
+            finally:
                 if "mathsat" in sys.modules:
                     del sys.modules["mathsat"]
-                return None
+                return version

@@ -62,10 +62,11 @@ class CVC4Installer(SolverInstaller):
 
     def get_installed_version(self):
         with TemporaryPath([self.bindings_dir]):
+            version = None
             try:
                 import CVC4
-                return CVC4.Configuration_getVersionString()
-            except ImportError:
+                version = CVC4.Configuration_getVersionString()
+            finally:
                 if "CVC4" in sys.modules:
                     del sys.modules["CVC4"]
-                return None
+                return version
