@@ -24,7 +24,7 @@ class TestTypeError(TestCase):
 
     def test_wrong(self):
         d = os.path.dirname(os.path.realpath(__file__))
-        smtfile = d + "/small_set/negative/wrong1.smt2"
+        smtfile = d + "/small_set/negative/wrong1.smt2.bz2"
         parser = SmtLibParser()
         with self.assertRaises(TypeError):
             parser.get_script_fname(smtfile)
