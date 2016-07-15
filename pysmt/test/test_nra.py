@@ -24,9 +24,9 @@ from pysmt.oracles import get_logic
 from pysmt.shortcuts import FreshSymbol, Times, Equals, Div, Real
 from pysmt.shortcuts import Solver
 from pysmt.typing import REAL
-from pysmt.exceptions import (SolverReturnedUnknownResultError,
-                              ConvertExpressionError,
-                              InternalSolverError)
+from pysmt.exceptions import (ConvertExpressionError,
+                              NonLinearError,
+                              SolverReturnedUnknownResultError)
 from pysmt.logics import QF_NRA
 
 
@@ -64,34 +64,21 @@ class TestNonLinear(TestCase):
         logic = get_logic(f)
         self.assertFalse(logic.theory.linear)
 
-    @skipIfSolverNotAvailable("msat")
-    def test_msat(self):
-        x = FreshSymbol(REAL)
-        f = Equals(Times(x, x), Real(2))
-        with Solver(name="msat") as s:
-            with self.assertRaises(SolverReturnedUnknownResultError):
-                s.is_sat(f)
-
     def test_unknownresult(self):
         x = FreshSymbol(REAL)
         f = Equals(Times(x, x), Real(2))
         for sname in self.env.factory.all_solvers():
             with Solver(name=sname) as s:
-                try:
+                if sname in  ["bdd", "picosat", "btor"]:
+                    with self.assertRaises(ConvertExpressionError):
+                        s.is_sat(f)
+                elif sname in ["yices", "cvc4", "msat"]:
+                    with self.assertRaises(NonLinearError):
+                        s.is_sat(f)
+                else:
                     res = s.is_sat(f)
                     self.assertTrue(res, sname)
                     self.assertIn(QF_NRA, s.LOGICS, sname)
-                except SolverReturnedUnknownResultError as ex:
-                    assert sname == "msat"
-                    # print(sname, ex)
-                    self.assertNotIn(QF_NRA, s.LOGICS, sname)
-                except ConvertExpressionError as ex:
-                    assert sname in ["bdd", "picosat", "btor"]
-                    # print(sname, ex)
-                    self.assertNotIn(QF_NRA, s.LOGICS, sname)
-                except InternalSolverError as ex:
-                    assert sname in ["yices", "cvc4"]
-                    # print(sname, ex)
 
 
 if __name__ == "__main__":

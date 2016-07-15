@@ -34,7 +34,7 @@ from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 
 from pysmt.walkers import DagWalker
 from pysmt.exceptions import SolverReturnedUnknownResultError
-from pysmt.exceptions import InternalSolverError
+from pysmt.exceptions import InternalSolverError, NonLinearError
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
 
 import pysmt.logics
@@ -97,9 +97,12 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         term = self.converter.convert(formula)
         code = yicespy.yices_assert_formula(self.yices, term)
         if code != 0:
+            msg = yicespy.yices_error_string()
+            if code == -1 and "non-linear arithmetic" in msg:
+                raise NonLinearError(formula)
             raise InternalSolverError("Yices returned non-zero code upon assert"\
                                       ": %s (code: %s)" % \
-                                      (yicespy.yices_error_string(), code))
+                                      (msg, code))
 
     def get_model(self):
         assignment = {}
