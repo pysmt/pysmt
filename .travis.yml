@@ -38,7 +38,6 @@ python:
   - 2.7
   - 3.4
   - pypy
-  - pypy3
 
 
 # Multiple envs will cause multiple build across multiple python versions.
@@ -90,23 +89,6 @@ matrix:
     - python: pypy
       env: PYSMT_SOLVER="btor"
     - python: pypy
-      env: PYSMT_SOLVER="all"
-
-    - python: pypy3
-      env: PYSMT_SOLVER="msat"
-    - python: pypy3
-      env: PYSMT_SOLVER="z3"
-    - python: pypy3
-      env: PYSMT_SOLVER="cvc4"
-    - python: pypy3
-      env: PYSMT_SOLVER="yices"
-    - python: pypy3
-      env: PYSMT_SOLVER="bdd"
-    - python: pypy3
-      env: PYSMT_SOLVER="picosat"
-    - python: pypy3
-      env: PYSMT_SOLVER="btor"
-    - python: pypy3
       env: PYSMT_SOLVER="all"
 
 install:
