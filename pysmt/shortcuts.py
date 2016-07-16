@@ -117,6 +117,10 @@ def Times(left, right):
     r""".. math:: l * r"""
     return get_env().formula_manager.Times(left, right)
 
+def Pow(left, right):
+    r""".. math:: l ^ r"""
+    return get_env().formula_manager.Pow(left, right)
+
 def Div(left, right):
     r""".. math:: \frac{l}{r}"""
     return get_env().formula_manager.Div(left, right)

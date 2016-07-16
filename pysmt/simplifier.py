@@ -326,6 +326,17 @@ class Simplifier(pysmt.walkers.DagWalker):
 
         return self.manager.Times(sl, sr)
 
+    def walk_pow(self, formula, args, **kwargs):
+        if args[0].is_real_constant():
+            l = args[0].constant_value()
+            r = args[1].constant_value()
+            return self.manager.Real(l**r)
+        elif args[0].is_int_constant():
+            l = args[0].constant_value()
+            r = args[1].constant_value()
+            return self.manager.Int(l**r)
+        return self.manager.Pow(args[0], args[1])
+
     def walk_minus(self, formula, args, **kwargs):
         assert len(args) == 2
 

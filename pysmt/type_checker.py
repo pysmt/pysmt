@@ -273,6 +273,14 @@ class SimpleTypeChecker(walkers.DagWalker):
                 return None
         return ArrayType(idx_type, default_type)
 
+    def walk_pow(self, formula, args, **kwargs):
+        if args[0] != args[1]:
+            return None
+        # Exponent must be positive for INT
+        if args[0].is_int_type() and formula.arg(1).constant_value() < 0 :
+            return None
+        return args[0]
+
 # EOC SimpleTypeChecker
 
 

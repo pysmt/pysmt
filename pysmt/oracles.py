@@ -236,6 +236,9 @@ class TheoryOracle(pysmt.walkers.DagWalker):
         theory_out = theory_out.set_difference_logic(False)
         return theory_out
 
+    def walk_pow(self, formula, args, **kwargs):
+        return args[0].set_linear(False)
+
     def walk_plus(self, formula, args, **kwargs):
         theory_out = args[0]
         for t in args[1:]:

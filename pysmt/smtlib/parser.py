@@ -257,6 +257,7 @@ class SmtLibParser(object):
                             '-':self._operator_adapter(self._minus_or_uminus),
                             '*':self._operator_adapter(mgr.Times),
                             '/':self._operator_adapter(self._division),
+                            'pow':self._operator_adapter(mgr.Pow),
                             '>':self._operator_adapter(mgr.GT),
                             '<':self._operator_adapter(mgr.LT),
                             '>=':self._operator_adapter(mgr.GE),

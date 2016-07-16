@@ -86,6 +86,7 @@ z3.is_bv_ext_rol = lambda x: z3.is_app_of(x, z3.Z3_OP_EXT_ROTATE_LEFT)
 z3.is_bv_ext_ror = lambda x: z3.is_app_of(x, z3.Z3_OP_EXT_ROTATE_RIGHT)
 z3.is_bv_zext = lambda x: z3.is_app_of(x, z3.Z3_OP_ZERO_EXT)
 z3.is_bv_sext = lambda x: z3.is_app_of(x, z3.Z3_OP_SIGN_EXT)
+z3.is_power = lambda x: z3.is_app_of(x, z3.Z3_OP_POWER)
 z3.is_array_select = lambda x: z3.is_app_of(x, z3.Z3_OP_SELECT)
 z3.is_array_store = lambda x: z3.is_app_of(x, z3.Z3_OP_STORE)
 z3.is_const_array = lambda x: z3.is_app_of(x, z3.Z3_OP_CONST_ARRAY)
@@ -503,6 +504,8 @@ class Z3Converter(Converter, DagWalker):
             arr_ty = self._z3_to_type(expr.sort())
             k = args[0]
             res = self.mgr.Array(arr_ty.index_type, k)
+        elif z3.is_power(expr):
+            res = self.mgr.Pow(args[0], args[1])
         if res is None:
             raise ConvertExpressionError(message=("Unsupported expression: %s" %
                                                    str(expr)),
@@ -594,6 +597,9 @@ class Z3Converter(Converter, DagWalker):
 
     def walk_times(self, formula, args, **kwargs):
         return (args[0] * args[1])
+
+    def walk_pow(self, formula, args, **kwargs):
+        return args[0]**args[1]
 
     def walk_toreal(self, formula, args, **kwargs):
         return z3.ToReal(args[0])
