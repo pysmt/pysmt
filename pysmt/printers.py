@@ -63,6 +63,7 @@ class HRPrinter(TreeWalker):
         self.set_function(partial(self._walk_nary, " >> "), op.BV_LSHR)
         self.set_function(partial(self._walk_nary, " a>> "), op.BV_ASHR)
         self.set_function(partial(self._walk_nary, " bvcomp "), op.BV_COMP)
+        self.set_function(self.walk_not, op.BV_NOT)
 
     def printer(self, f, threshold=None):
         """Performs the serialization of 'f'.
@@ -105,9 +106,6 @@ class HRPrinter(TreeWalker):
         self.write("(! ")
         self.walk(formula.arg(0))
         self.write(")")
-
-    # Use the same function for BV_NOT
-    walk_bv_not = walk_not
 
     def walk_symbol(self, formula):
         self.write(quote(formula.symbol_name(), style='"'))
@@ -160,7 +158,6 @@ class HRPrinter(TreeWalker):
         self.walk(formula.arg(0))
         self.write(")")
 
-
     def walk_bv_ror(self, formula):
         self.write("(")
         self.walk(formula.arg(0))
@@ -184,9 +181,6 @@ class HRPrinter(TreeWalker):
         self.walk(formula.arg(0))
         self.write(" SEXT ")
         self.write("%d)" % formula.bv_extend_step())
-
-
-    # Recycling functions form LIRA
 
     def walk_ite(self, formula):
         self.write("(")

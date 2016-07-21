@@ -21,9 +21,9 @@ from pysmt.test import TestCase, main
 from pysmt.test import skipIfSolverNotAvailable
 
 from pysmt.oracles import get_logic
-from pysmt.shortcuts import FreshSymbol, Times, Equals, Div, Real
-from pysmt.shortcuts import Solver
-from pysmt.typing import REAL
+from pysmt.shortcuts import FreshSymbol, Times, Equals, Div, Real, Int, Pow
+from pysmt.shortcuts import Solver, is_sat
+from pysmt.typing import REAL, INT
 from pysmt.exceptions import (ConvertExpressionError,
                               NonLinearError,
                               SolverReturnedUnknownResultError)
@@ -79,6 +79,32 @@ class TestNonLinear(TestCase):
                     res = s.is_sat(f)
                     self.assertTrue(res, sname)
                     self.assertIn(QF_NRA, s.LOGICS, sname)
+
+    @skipIfSolverNotAvailable("z3")
+    def test_integer(self):
+        x = FreshSymbol(INT)
+        f = Equals(Times(x, x), Int(2))
+        with Solver(name="z3") as s:
+            self.assertFalse(s.is_sat(f))
+
+        # f = Equals(Times(Int(4), Pow(x, Int(-1))), Int(2))
+        # self.assertTrue(is_sat(f, solver_name="z3"))
+
+        f = Equals(Div(Int(4), x), Int(2))
+        self.assertTrue(is_sat(f, solver_name="z3"))
+        f = Equals(Times(x, x), Int(16))
+        self.assertTrue(is_sat(f))
+
+    @skipIfSolverNotAvailable("z3")
+    def test_div_pow(self):
+        x = FreshSymbol(REAL)
+        f = Equals(Times(Real(4), Pow(x, Real(-1))), Real(2))
+        self.assertTrue(is_sat(f))
+
+        f = Equals(Div(Real(4), x), Real(2))
+        self.assertTrue(is_sat(f, solver_name="z3"))
+        f = Equals(Times(x, x), Real(16))
+        self.assertTrue(is_sat(f))
 
 
 if __name__ == "__main__":

@@ -17,5 +17,5 @@ else:
     class Numeral(object):
         """Represents a Number (Algebraic)"""
         def __init__(self, obj):
-            self.obj = obj
-            warnings.warn("Z3 is not installed. We currently do not support stand-alone algebraic numbers. This might lead to unexpected results")
+            raise NotImplementedError("Z3 is not installed. "\
+                "We currently do not support stand-alone algebraic numbers.")
