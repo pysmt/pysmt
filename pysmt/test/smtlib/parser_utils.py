@@ -23,7 +23,7 @@ from pysmt.shortcuts import get_env, reset_env
 from pysmt.smtlib.parser import SmtLibParser
 from pysmt.smtlib.script import check_sat_filter
 from pysmt.logics import QF_LIA, QF_LRA, LRA, QF_UFLIRA, QF_UFBV, QF_BV
-from pysmt.logics import QF_ALIA, QF_ABV, QF_AUFLIA, QF_AUFBV
+from pysmt.logics import QF_ALIA, QF_ABV, QF_AUFLIA, QF_AUFBV, QF_NRA, QF_NIA
 from pysmt.exceptions import NoSolverAvailableError, SolverReturnedUnknownResultError
 
 SMTLIB_DIR = "pysmt/test/smtlib"
@@ -100,6 +100,18 @@ SMTLIB_TEST_FILES = [
 
     (QF_AUFLIA, "small_set/QF_AUFLIA/array_incompleteness1.smt2.bz2", "unsat"),
     (QF_AUFLIA, "small_set/QF_AUFLIA/swap_invalid_t1_pp_nf_ai_00002_002.cvc.smt2.bz2", "sat"),
+    #
+    # QF_NRA
+    #
+    (QF_NRA, "small_set/QF_NRA/ball_count_2d_hill_simple.05.redlog_global_6.smt2.bz2", "unsat"),
+    (QF_NRA, "small_set/QF_NRA/cos-problem-12-chunk-0004.smt2.bz2", "sat"),
+    (QF_NRA, "small_set/QF_NRA/simple_ballistics_reach.01.seq_lazy_linear_enc_global_10.smt2.bz2", "unsat"),
+    #
+    # QF_NIA
+    #
+    (QF_NIA, "small_set/QF_NIA/aproveSMT3509292547826641386.smt2.bz2", "sat"),
+    (QF_NIA, "small_set/QF_NIA/problem-000158.cvc.2.smt2.bz2", "unsat"),
+    (QF_NIA, "small_set/QF_NIA/term-DtOD2C.smt2.bz2", "sat"),
 ]
 
 # We use test generation in order to be able to obtain a separate
