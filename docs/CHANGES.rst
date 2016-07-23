@@ -1,6 +1,13 @@
 Change Log
 ==========
 
+GIT-master: XXXX-XX-XX -- ??
+----------------------------
+* Added support for non-linear, polynomial arithmetic. This fature si
+  currently supported only by Z3. For this reason we rely on z3 to
+  represent algebraic solutions (e.g., sqrt(2)).
+
+
 0.5.0: 2016-06-09 -- Arrays
 ---------------------------
 
