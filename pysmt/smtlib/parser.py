@@ -257,6 +257,7 @@ class SmtLibParser(object):
                             '-':self._operator_adapter(self._minus_or_uminus),
                             '*':self._operator_adapter(mgr.Times),
                             '/':self._operator_adapter(self._division),
+                            'pow':self._operator_adapter(mgr.Pow),
                             '>':self._operator_adapter(mgr.GT),
                             '<':self._operator_adapter(mgr.LT),
                             '>=':self._operator_adapter(mgr.GE),
@@ -305,6 +306,7 @@ class SmtLibParser(object):
                             'select':self._operator_adapter(mgr.Select),
                             'store':self._operator_adapter(mgr.Store),
                             'as':self._enter_smtlib_as,
+                            '/':self._operator_adapter(mgr.Div),
                             }
 
         # Command tokens

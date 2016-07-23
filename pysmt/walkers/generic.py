@@ -45,6 +45,7 @@ class Walker(object):
         self.functions[op.PLUS] = self.walk_plus
         self.functions[op.MINUS] = self.walk_minus
         self.functions[op.TIMES] = self.walk_times
+        self.functions[op.POW] = self.walk_pow
         self.functions[op.EQUALS] = self.walk_equals
         self.functions[op.LE] = self.walk_le
         self.functions[op.LT] = self.walk_lt
@@ -82,6 +83,9 @@ class Walker(object):
         self.functions[op.ARRAY_SELECT] = self.walk_array_select
         self.functions[op.ARRAY_STORE] = self.walk_array_store
         self.functions[op.ARRAY_VALUE] = self.walk_array_value
+
+        self.functions[op.DIV] = self.walk_div
+        self.functions[op.ALGEBRAIC_CONSTANT] = self.walk_algebraic_constant
 
         undefined_types = set(op.ALL_TYPES) - set(self.functions.keys())
         assert len(undefined_types) == 0, \
@@ -160,6 +164,9 @@ class Walker(object):
         return self.walk_error(formula,  **kwargs)
 
     def walk_times(self, formula,  **kwargs):
+        return self.walk_error(formula,  **kwargs)
+
+    def walk_pow(self, formula,  **kwargs):
         return self.walk_error(formula,  **kwargs)
 
     def walk_equals(self, formula, **kwargs):
@@ -265,4 +272,10 @@ class Walker(object):
         return self.walk_error(formula, **kwargs)
 
     def walk_array_value(self, formula, **kwargs):
+        return self.walk_error(formula, **kwargs)
+
+    def walk_div(self, formula, **kwargs):
+        return self.walk_error(formula, **kwargs)
+
+    def walk_algebraic_constant(self, formula, **kwargs):
         return self.walk_error(formula, **kwargs)

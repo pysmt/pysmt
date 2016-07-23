@@ -95,6 +95,7 @@ class HRLexer(Lexer):
             Rule(r"(\+)", InfixOpAdapter(self.PlusOrBVAdd, 70), False),# plus
             Rule(r"(-)", InfixOrUnaryOpAdapter(self.MinusOrBVSub, self.UMinusOrBvNeg, 70, 100), False),# minus
             Rule(r"(\*)", InfixOpAdapter(self.TimesOrBVMul, 80), False),# times
+            Rule(r"(\^)", InfixOpAdapter(self.mgr.Pow, 80), False),# pow
             Rule(r"(u/)", InfixOpAdapter(self.mgr.BVUDiv, 80), False),# udiv
             Rule(r"(s/)", InfixOpAdapter(self.mgr.BVSDiv, 80), False),# sdiv
             Rule(r"(/)", InfixOpAdapter(self.mgr.Div, 80), False),# div

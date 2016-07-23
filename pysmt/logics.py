@@ -147,7 +147,6 @@ class Theory(object):
     def __ne__(self, other):
         return not (self == other)
 
-
     def __le__(self, other):
         if self.integer_difference == other.integer_difference:
             le_integer_difference = True
@@ -636,7 +635,8 @@ PYSMT_LOGICS = frozenset([QF_BOOL, QF_IDL, QF_LIA, QF_LRA, QF_RDL, QF_UF, QF_UFI
                           BOOL, LRA, LIA, UFLIRA, UFLRA,
                           QF_BV, QF_UFBV,
                           QF_ABV, QF_AUFBV, QF_AUFLIA, QF_ALIA, QF_AX,
-                          QF_AUFBVLIRA
+                          QF_AUFBVLIRA,
+                          QF_NRA, QF_NIA,
                       ])
 
 # PySMT Supports constant arrays: We auto-generate these logics
@@ -743,7 +743,6 @@ def most_generic_logic(logics):
     If a unique most generic logic does not exists, throw an error.
     """
     res = [ l for l in logics if all(l >= x for x in logics)]
-
     if len(res) != 1:
         raise NoLogicAvailableError("Could not find the most generic "
                                     "logic for %s." % str(logics))

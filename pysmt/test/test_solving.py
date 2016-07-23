@@ -162,6 +162,7 @@ class TestBasic(TestCase):
     def test_examples_msat(self):
         for (f, validity, satisfiability, logic) in get_example_formulae():
             if not logic.quantifier_free: continue
+            if not logic.theory.linear: continue
             v = is_valid(f, solver_name='msat', logic=logic)
             s = is_sat(f, solver_name='msat', logic=logic)
 
@@ -173,6 +174,7 @@ class TestBasic(TestCase):
         for (f, validity, satisfiability, logic) in get_example_formulae():
             try:
                 if not logic.quantifier_free: continue
+                if not logic.theory.linear: continue
                 v = is_valid(f, solver_name='cvc4', logic=logic)
                 s = is_sat(f, solver_name='cvc4', logic=logic)
 
@@ -189,6 +191,7 @@ class TestBasic(TestCase):
     def test_examples_yices(self):
         for (f, validity, satisfiability, logic) in get_example_formulae():
             if not logic.quantifier_free: continue
+            if not logic.theory.linear: continue
             if logic.theory.arrays: continue
             v = is_valid(f, solver_name='yices', logic=logic)
             s = is_sat(f, solver_name='yices', logic=logic)

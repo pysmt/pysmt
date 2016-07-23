@@ -69,7 +69,6 @@ class TestSMTParseExamples(TestCase):
 
             self.assertValid(Iff(f_in, f_out))
 
-
     def test_parse_examples_daggified(self):
         fs = get_example_formulae()
 
@@ -80,7 +79,6 @@ class TestSMTParseExamples(TestCase):
             buf_out = cStringIO()
             script_out = smtlibscript_from_formula(f_out)
             script_out.serialize(outstream=buf_out, daggify=True)
-
             buf_in = cStringIO(buf_out.getvalue())
             parser = SmtLibParser()
             script_in = parser.get_script(buf_in)

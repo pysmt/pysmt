@@ -24,7 +24,7 @@ from pysmt.shortcuts import (Symbol, Function,
                              Int, Real, FALSE, TRUE,
                              And, Iff, Or, Not, Implies, Ite,
                              LT, LE, GT, GE,
-                             Times, Equals, Plus, Minus, Div, ToReal,
+                             Times, Pow, Equals, Plus, Minus, Div, ToReal,
                              ForAll, Exists,
                              BV, SBV, BVOne, BVZero,
                              BVNot, BVAnd, BVOr, BVXor,
@@ -613,6 +613,31 @@ def get_example_formulae(environment=None):
                     is_valid=True,
                     is_sat=True,
                     logic=pysmt.logics.QF_ABV),
+
+            # (r/s) = (r*s)
+            Example(expr=Equals(Div(r, s), Times(r,s)),
+                    is_valid=False,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_NRA),
+
+            # (r*r) = 2
+            Example(expr=Equals(Real(2), Times(r,r)),
+                    is_valid=False,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_NRA),
+
+            # p**2 = 0
+            Example(expr=Equals(Pow(p, Int(2)), Int(0)),
+                    is_valid=False,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_NIA),
+
+            # r**2 = 25
+            Example(expr=Equals(Pow(r, Real(2)), Real(0)),
+                    is_valid=False,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_NRA),
+
         ]
         return result
 

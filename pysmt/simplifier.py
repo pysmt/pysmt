@@ -29,7 +29,8 @@ class Simplifier(pysmt.walkers.DagWalker):
         self.manager = self.env.formula_manager
 
         self.set_function(self.walk_identity, op.SYMBOL, op.REAL_CONSTANT,
-                          op.INT_CONSTANT, op.BOOL_CONSTANT, op.BV_CONSTANT)
+                          op.INT_CONSTANT, op.BOOL_CONSTANT, op.BV_CONSTANT,
+                          op.ALGEBRAIC_CONSTANT)
 
         self._validate_simplifications = None
         self.original_walk = self.walk
@@ -296,9 +297,12 @@ class Simplifier(pysmt.walkers.DagWalker):
             r = sr.constant_value()
             if sl.is_real_constant():
                 return self.manager.Real(l * r)
-            else:
-                assert sl.is_int_constant()
+            elif sl.is_int_constant():
                 return self.manager.Int(l * r)
+            else:
+                assert sl.is_algebraic_constant()
+                from pysmt.numeral import Numeral
+                return self.manager._Algebraic(Numeral(l * r))
 
         if sl.is_constant():
             if sl.is_one():
@@ -321,6 +325,17 @@ class Simplifier(pysmt.walkers.DagWalker):
                     return self.manager.Int(0)
 
         return self.manager.Times(sl, sr)
+
+    def walk_pow(self, formula, args, **kwargs):
+        if args[0].is_real_constant():
+            l = args[0].constant_value()
+            r = args[1].constant_value()
+            return self.manager.Real(l**r)
+        elif args[0].is_int_constant():
+            l = args[0].constant_value()
+            r = args[1].constant_value()
+            return self.manager.Int(l**r)
+        return self.manager.Pow(args[0], args[1])
 
     def walk_minus(self, formula, args, **kwargs):
         assert len(args) == 2
@@ -624,5 +639,28 @@ class Simplifier(pysmt.walkers.DagWalker):
         return self.manager.Array(formula.array_value_index_type(),
                                   args[0],
                                   assign)
+
+    def walk_div(self, formula, args, **kwargs):
+        sl = args[0]
+        sr = args[1]
+
+        if sl.is_constant() and sr.is_constant():
+            l = sl.constant_value()
+            r = sr.constant_value()
+            if sl.is_real_constant():
+                return self.manager.Real(l / r)
+            else:
+                assert sl.is_int_constant()
+                return self.manager.Int(l / r)
+
+        if sl.is_constant():
+            if sl.is_zero():
+                return sl
+
+        if sr.is_constant():
+            if sr.is_one():
+                return sl
+
+        return self.manager.Div(sl, sr)
 
 # EOC Simplifier

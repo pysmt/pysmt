@@ -28,6 +28,7 @@ from fractions import Fraction
 from six.moves import xrange
 
 import pysmt.typing as types
+import pysmt.operators as op
 from pysmt.solvers.solver import (IncrementalTrackingSolver, UnsatCoreSolver,
                                   Model, Converter)
 from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
@@ -43,6 +44,7 @@ from pysmt.exceptions import (SolverReturnedUnknownResultError,
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
 from pysmt.logics import LRA, LIA, QF_UFLIA, QF_UFLRA, PYSMT_LOGICS
 from pysmt.oracles import get_logic
+from pysmt.numeral import Numeral
 
 
 # patch z3api
@@ -84,12 +86,15 @@ z3.is_bv_ext_rol = lambda x: z3.is_app_of(x, z3.Z3_OP_EXT_ROTATE_LEFT)
 z3.is_bv_ext_ror = lambda x: z3.is_app_of(x, z3.Z3_OP_EXT_ROTATE_RIGHT)
 z3.is_bv_zext = lambda x: z3.is_app_of(x, z3.Z3_OP_ZERO_EXT)
 z3.is_bv_sext = lambda x: z3.is_app_of(x, z3.Z3_OP_SIGN_EXT)
+z3.is_power = lambda x: z3.is_app_of(x, z3.Z3_OP_POWER)
 z3.is_array_select = lambda x: z3.is_app_of(x, z3.Z3_OP_SELECT)
 z3.is_array_store = lambda x: z3.is_app_of(x, z3.Z3_OP_STORE)
 z3.is_const_array = lambda x: z3.is_app_of(x, z3.Z3_OP_CONST_ARRAY)
 
 z3.get_payload = lambda node,i : z3.Z3_get_decl_int_parameter(node.ctx.ref(),
                                                               node.decl().ast, i)
+#z3.AlgebraicNumRef.__hash__ = z3.AlgebraicNumRef.hash
+#z3.is_root_obj = lambda node: str(node.decl()) == "RootObject"
 
 
 class AstRefKey:
@@ -409,6 +414,9 @@ class Z3Converter(Converter, DagWalker):
                         assign[idx] = val
                     arr_type = self._z3_to_type(expr.sort())
                     res = self.mgr.Array(arr_type.index_type, default, assign)
+            elif z3.is_algebraic_value(expr):
+                # Algebraic value
+                return self.mgr._Algebraic(Numeral(expr))
             else:
                 # it must be a symbol
                 res = self.mgr.get_symbol(str(expr))
@@ -496,6 +504,8 @@ class Z3Converter(Converter, DagWalker):
             arr_ty = self._z3_to_type(expr.sort())
             k = args[0]
             res = self.mgr.Array(arr_ty.index_type, k)
+        elif z3.is_power(expr):
+            res = self.mgr.Pow(args[0], args[1])
         if res is None:
             raise ConvertExpressionError(message=("Unsupported expression: %s" %
                                                    str(expr)),
@@ -587,6 +597,9 @@ class Z3Converter(Converter, DagWalker):
 
     def walk_times(self, formula, args, **kwargs):
         return (args[0] * args[1])
+
+    def walk_pow(self, formula, args, **kwargs):
+        return args[0]**args[1]
 
     def walk_toreal(self, formula, args, **kwargs):
         return z3.ToReal(args[0])
@@ -699,6 +712,9 @@ class Z3Converter(Converter, DagWalker):
             c = args[i]
             rval = z3.Store(rval, c, args[i+1])
         return rval
+
+    def walk_div(self, formula, args, **kwargs):
+        return args[0] / args[1]
 
     def _z3_to_type(self, sort):
         if sort.kind() == z3.Z3_BOOL_SORT:

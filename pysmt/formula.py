@@ -123,15 +123,12 @@ class FormulaManager(object):
     # Node definitions start here
 
     def Symbol(self, name, typename=types.BOOL):
-        v = self.get_or_create_symbol(name, typename)
-        return v
+        return self.get_or_create_symbol(name, typename)
 
     def FreshSymbol(self, typename=types.BOOL, template=None):
         if template is None:
             return self.new_fresh_symbol(typename)
-        else:
-            return self.new_fresh_symbol(typename, template)
-
+        return self.new_fresh_symbol(typename, template)
 
     def ForAll(self, variables, formula):
         """ Creates an expression of the form:
@@ -141,14 +138,11 @@ class FormulaManager(object):
          - Formula must be of boolean type
          - Variables must be BOOL, REAL or INT
         """
-        if len(variables) > 0:
-            n = self.create_node(node_type=op.FORALL,
-                                 args=(formula,),
-                                 payload=tuple(variables))
-            return n
-        else:
+        if len(variables) == 0:
             return formula
-
+        return self.create_node(node_type=op.FORALL,
+                                args=(formula,),
+                                payload=tuple(variables))
 
     def Exists(self, variables, formula):
         """ Creates an expression of the form:
@@ -158,14 +152,11 @@ class FormulaManager(object):
          - Formula must be of boolean type
          - Variables must be BOOL, REAL or INT
         """
-        if len(variables) > 0:
-            n = self.create_node(node_type=op.EXISTS,
-                                 args=(formula,),
-                                 payload=tuple(variables))
-            return n
-        else:
+        if len(variables) == 0:
             return formula
-
+        return self.create_node(node_type=op.EXISTS,
+                                args=(formula,),
+                                payload=tuple(variables))
 
     def Function(self, vname, params):
         """Returns the function application of vname to params.
@@ -175,11 +166,9 @@ class FormulaManager(object):
         if len(params) == 0:
             return vname
         assert len(params) == len(vname.symbol_type().param_types)
-        n = self.create_node(node_type=op.FUNCTION,
-                             args=tuple(params),
-                             payload=vname)
-        return n
-
+        return self.create_node(node_type=op.FUNCTION,
+                                args=tuple(params),
+                                payload=vname)
 
     def Not(self, formula):
         """ Creates an expression of the form:
@@ -189,9 +178,7 @@ class FormulaManager(object):
         """
         if formula.is_not():
             return formula.arg(0)
-        n = self.create_node(node_type=op.NOT, args=(formula,))
-        return n
-
+        return self.create_node(node_type=op.NOT, args=(formula,))
 
     def Implies(self, left, right):
         """ Creates an expression of the form:
@@ -199,9 +186,7 @@ class FormulaManager(object):
 
         Restriction: Left and Right must be of boolean type
         """
-        n = self.create_node(node_type=op.IMPLIES, args=(left, right))
-        return n
-
+        return self.create_node(node_type=op.IMPLIES, args=(left, right))
 
     def Iff(self, left, right):
         """ Creates an expression of the form:
@@ -209,9 +194,7 @@ class FormulaManager(object):
 
         Restriction: Left and Right must be of boolean type
         """
-        n = self.create_node(node_type=op.IFF, args=(left, right))
-        return n
-
+        return self.create_node(node_type=op.IFF, args=(left, right))
 
     def Minus(self, left, right):
         """ Creates an expression of the form:
@@ -219,9 +202,7 @@ class FormulaManager(object):
 
         Restriction: Left and Right must be both INT or REAL type
         """
-        n = self.create_node(node_type=op.MINUS, args=(left, right))
-        return n
-
+        return self.create_node(node_type=op.MINUS, args=(left, right))
 
     def Times(self, left, right):
         """ Creates an expression of the form:
@@ -231,34 +212,45 @@ class FormulaManager(object):
           - Left and Right must be both INT or REAL type
           - Only linear expressions are allowed
         """
-        n = self.create_node(node_type=op.TIMES, args=(left, right))
-        return n
+        return self.create_node(node_type=op.TIMES, args=(left, right))
 
+    def Pow(self, base, exponent):
+        """ Creates the n-th power of the base.
+
+        The exponent must be a constant.
+        """
+        if not exponent.is_constant():
+            raise ValueError("The exponent of POW must be a constant.", exponent)
+
+        if base.is_constant():
+            val = base.constant_value() ** exponent.constant_value()
+            if base.is_constant(types.REAL):
+                return self.Real(val)
+            else:
+                assert base.is_constant(types.INT)
+                return self.Int(val)
+        return self.create_node(node_type=op.POW, args=(base, exponent))
 
     def Div(self, left, right):
-        """ Creates an expression of the form:
-            left / right
+        """ Creates an expression of the form: left / right """
+        if right.is_constant(types.REAL):
+            # If right is a constant we rewrite as left * 1/right
+            inverse = Fraction(1) / right.constant_value()
+            return self.Times(left, self.Real(inverse))
+        elif right.is_constant(types.INT):
+            raise NotImplementedError
 
-        Restriction:
-          - Left and Right must be both REAL type
-          - Right is a constant
-        """
-        if not right.is_constant(types.REAL):
-            raise NonLinearError
-        inverse = Fraction(1) / right.constant_value()
-        return self.Times(left, self.Real(inverse))
-
+        # This is a non-linear expression
+        return self.create_node(node_type=op.DIV,
+                                args=(left, right))
 
     def Equals(self, left, right):
-        """ Creates an expression of the form:
-            left = right
+        """ Creates an expression of the form: left = right
 
         Restriction: Left and Right must be both REAL or INT type
         """
-        n = self.create_node(node_type=op.EQUALS,
-                             args=(left, right))
-        return n
-
+        return self.create_node(node_type=op.EQUALS,
+                                args=(left, right))
 
     def GE(self, left, right):
         """ Creates an expression of the form:
@@ -266,9 +258,7 @@ class FormulaManager(object):
 
         Restriction: Left and Right must be both REAL or INT type
         """
-        n = self.create_node(node_type=op.LE, args=(right, left))
-        return n
-
+        return self.create_node(node_type=op.LE, args=(right, left))
 
     def GT(self, left, right):
         """ Creates an expression of the form:
@@ -276,9 +266,7 @@ class FormulaManager(object):
 
         Restriction: Left and Right must be both REAL or INT type
         """
-        n = self.create_node(node_type=op.LT, args=(right, left))
-        return n
-
+        return self.create_node(node_type=op.LT, args=(right, left))
 
     def LE(self, left, right):
         """ Creates an expression of the form:
@@ -286,9 +274,7 @@ class FormulaManager(object):
 
         Restriction: Left and Right must be both REAL or INT type
         """
-        n = self.create_node(node_type=op.LE, args=(left, right))
-        return n
-
+        return self.create_node(node_type=op.LE, args=(left, right))
 
     def LT(self, left, right):
         """ Creates an expression of the form:
@@ -296,9 +282,7 @@ class FormulaManager(object):
 
         Restriction: Left and Right must be both REAL or INT type
         """
-        n = self.create_node(node_type=op.LT, args=(left, right))
-        return n
-
+        return self.create_node(node_type=op.LT, args=(left, right))
 
     def Ite(self, iff, left, right):
         """ Creates an expression of the form:
@@ -308,9 +292,7 @@ class FormulaManager(object):
           - Iff must be BOOL
           - Left and Right must be both of the same type
         """
-        n = self.create_node(node_type=op.ITE, args=(iff, left, right))
-        return n
-
+        return self.create_node(node_type=op.ITE, args=(iff, left, right))
 
     def Real(self, value):
         """ Returns a Real-type constant of the given value.
@@ -374,7 +356,6 @@ class FormulaManager(object):
         else:
             return self.false_formula
 
-
     def And(self, *args):
         """ Returns a conjunction of terms.
 
@@ -387,14 +368,12 @@ class FormulaManager(object):
         tuple_args = self._polymorph_args_to_tuple(args)
 
         if len(tuple_args) == 0:
-            n = self.TRUE()
+            return self.TRUE()
         elif len(tuple_args) == 1:
-            n = tuple_args[0]
+            return tuple_args[0]
         else:
-            n = self.create_node(node_type=op.AND,
-                                 args=tuple_args)
-        return n
-
+            return self.create_node(node_type=op.AND,
+                                    args=tuple_args)
 
     def Or(self, *args):
         """ Returns an disjunction of terms.
@@ -408,14 +387,12 @@ class FormulaManager(object):
         tuple_args = self._polymorph_args_to_tuple(args)
 
         if len(tuple_args) == 0:
-            n = self.FALSE()
+            return self.FALSE()
         elif len(tuple_args) == 1:
-            n = tuple_args[0]
+            return tuple_args[0]
         else:
-            n = self.create_node(node_type=op.OR,
-                                 args=tuple_args)
-        return n
-
+            return self.create_node(node_type=op.OR,
+                                    args=tuple_args)
 
     def Plus(self, *args):
         """ Returns an sum of terms.
@@ -433,11 +410,10 @@ class FormulaManager(object):
             raise TypeError("Cannot create a Plus without arguments.")
 
         if len(tuple_args) == 1:
-            n = tuple_args[0]
+            return tuple_args[0]
         else:
-            n = self.create_node(node_type=op.PLUS,
-                                 args=tuple_args)
-        return n
+            return self.create_node(node_type=op.PLUS,
+                                    args=tuple_args)
 
     def ToReal(self, formula):
         """ Cast a formula to real type. """
@@ -452,7 +428,6 @@ class FormulaManager(object):
                                     args=(formula,))
         else:
             raise TypeError("Argument is of type %s, but INT was expected!\n" % t)
-
 
     def AtMostOne(self, *args):
         """ At most one of the bool expressions can be true at anytime.
@@ -574,10 +549,10 @@ class FormulaManager(object):
             if value >= 2**width:
                 raise ValueError("Cannot express %d in %d bits" % (value, width))
 
-            n = self.create_node(node_type=op.BV_CONSTANT,
-                                 args=tuple(),
-                                 payload=(value, width))
-            return n
+            return self.create_node(node_type=op.BV_CONSTANT,
+                                    args=tuple(),
+                                    payload=(value, width))
+
         else:
             raise TypeError("Invalid type in constant. The type was:" + \
                             str(type(value)))
@@ -885,13 +860,11 @@ class FormulaManager(object):
 
     def Select(self, arr, idx):
         """Creates a node representing an array selection."""
-        n = self.create_node(node_type=op.ARRAY_SELECT, args=(arr, idx))
-        return n
+        return self.create_node(node_type=op.ARRAY_SELECT, args=(arr, idx))
 
     def Store(self, arr, idx, val):
         """Creates a node representing an array update."""
-        n = self.create_node(node_type=op.ARRAY_STORE, args=(arr, idx, val))
-        return n
+        return self.create_node(node_type=op.ARRAY_STORE, args=(arr, idx, val))
 
     def Array(self, idx_type, default, assigned_values=None):
         """Creates a node representing an array having index type equal to
@@ -913,10 +886,18 @@ class FormulaManager(object):
                 if assigned_values[k] != default:
                     args.append(k)
                     args.append(assigned_values[k])
-        n = self.create_node(node_type=op.ARRAY_VALUE, args=tuple(args),
-                             payload=idx_type)
-        return n
+        return self.create_node(node_type=op.ARRAY_VALUE, args=tuple(args),
+                                payload=idx_type)
 
+    def _Algebraic(self, val):
+        """Returns the algebraic number val."""
+        return self.create_node(node_type=op.ALGEBRAIC_CONSTANT,
+                                args=tuple(),
+                                payload=val)
+
+    #
+    # Helper functions
+    #
     def normalize(self, formula):
         """ Returns the formula normalized to the current Formula Manager.
 

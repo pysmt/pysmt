@@ -86,6 +86,9 @@ class IdentityDagWalker(DagWalker):
     def walk_times(self, formula, args, **kwargs):
         return self.mgr.Times(args[0], args[1])
 
+    def walk_pow(self, formula, args, **kwargs):
+        return self.mgr.Pow(args[0], args[1])
+
     def walk_minus(self, formula, args, **kwargs):
         return self.mgr.Minus(args[0], args[1])
 
@@ -195,3 +198,6 @@ class IdentityDagWalker(DagWalker):
         return self.mgr.Array(formula.array_value_index_type(),
                               args[0],
                               assign)
+
+    def walk_div(self, formula, args, **kwargs):
+        return self.mgr.Div(args[0], args[1])

@@ -223,15 +223,21 @@ class TheoryOracle(pysmt.walkers.DagWalker):
 
     def walk_times(self, formula, args, **kwargs):
         """Extends the Theory with Non-Linear, if needed."""
-        if len(args) == 1:
-            theory_out = args[0].copy()
-        else:
-            theory_out = args[0]
-            for t in args[1:]:
-                theory_out = theory_out.combine(t)
-        # Check for non linear?
+        assert len(args) == 2
+        theory_out = args[0]
+        for t in args[1:]:
+            theory_out = theory_out.combine(t)
+        # Check for non-linear
+        left, right = formula.args()
+        if len(left.get_free_variables()) != 0 and \
+           len(right.get_free_variables()) != 0:
+            theory_out = theory_out.set_linear(False)
+        # This is  not in DL anymore
         theory_out = theory_out.set_difference_logic(False)
         return theory_out
+
+    def walk_pow(self, formula, args, **kwargs):
+        return args[0].set_linear(False)
 
     def walk_plus(self, formula, args, **kwargs):
         theory_out = args[0]
@@ -257,6 +263,21 @@ class TheoryOracle(pysmt.walkers.DagWalker):
         # Finally, we add the array theory
         theory_out.arrays = True
         theory_out.arrays_const = True
+        return theory_out
+
+    def walk_div(self, formula, args, **kwargs):
+        """Extends the Theory with Non-Linear, if needed."""
+        assert len(args) == 2
+        theory_out = args[0]
+        for t in args[1:]:
+            theory_out = theory_out.combine(t)
+        # Check for non-linear
+        left, right = formula.args()
+        if len(left.get_free_variables()) != 0 and \
+           len(right.get_free_variables()) != 0:
+            theory_out = theory_out.set_linear(False)
+        # This is  not in DL anymore
+        theory_out = theory_out.set_difference_logic(False)
         return theory_out
 
     def get_theory(self, formula):
@@ -342,10 +363,8 @@ class AtomsOracle(pysmt.walkers.DagWalker):
         self.set_function(self.walk_bool_op, *op.BOOL_CONNECTIVES)
         self.set_function(self.walk_bool_op, *op.QUANTIFIERS)
         self.set_function(self.walk_constant, *op.CONSTANTS)
-        self.set_function(self.walk_theory_op, *op.BV_OPERATORS)
-        self.set_function(self.walk_theory_op, *op.LIRA_OPERATORS)
+        self.set_function(self.walk_theory_op, *op.THEORY_OPERATORS)
         self.set_function(self.walk_theory_relation, *op.RELATIONS)
-        self.set_function(self.walk_theory_op, *op.ARRAY_OPERATORS)
 
         self.set_function(self.walk_symbol, op.SYMBOL)
         self.set_function(self.walk_function, op.FUNCTION)

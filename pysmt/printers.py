@@ -16,11 +16,14 @@
 #   limitations under the License.
 #
 from fractions import Fraction
-
-from pysmt.walkers import TreeWalker
+from functools import partial
 from six.moves import cStringIO
 from six import iteritems
+
+import pysmt.operators as op
+from pysmt.walkers import TreeWalker
 from pysmt.utils import quote
+
 
 class HRPrinter(TreeWalker):
     """Performs serialization of a formula in a human-readable way.
@@ -32,6 +35,35 @@ class HRPrinter(TreeWalker):
         TreeWalker.__init__(self, env=env)
         self.stream = stream
         self.write = self.stream.write
+
+        self.set_function(partial(self._walk_nary, " & "), op.AND, op.BV_AND)
+        self.set_function(partial(self._walk_nary, " | "), op.OR, op.BV_OR)
+        self.set_function(partial(self._walk_nary, " + "), op.PLUS, op.BV_ADD)
+        self.set_function(partial(self._walk_nary, " * "), op.TIMES, op.BV_MUL)
+        self.set_function(partial(self._walk_nary, " / "), op.DIV)
+        self.set_function(partial(self._walk_nary, " ^ "), op.POW)
+        self.set_function(partial(self._walk_nary, " <-> "), op.IFF)
+        self.set_function(partial(self._walk_nary, " -> "), op.IMPLIES)
+        self.set_function(partial(self._walk_nary, " - "), op.MINUS, op.BV_SUB)
+        self.set_function(partial(self._walk_nary, " = "), op.EQUALS)
+        self.set_function(partial(self._walk_nary, " <= "), op.LE)
+        self.set_function(partial(self._walk_nary, " < "), op.LT)
+
+        self.set_function(partial(self._walk_nary, " xor "), op.BV_XOR)
+        self.set_function(partial(self._walk_nary, "::"), op.BV_CONCAT)
+        self.set_function(partial(self._walk_nary, " u/ "), op.BV_UDIV)
+        self.set_function(partial(self._walk_nary, " u% "), op.BV_UREM)
+        self.set_function(partial(self._walk_nary, " s/ "), op.BV_SDIV)
+        self.set_function(partial(self._walk_nary, " s% "), op.BV_SREM)
+        self.set_function(partial(self._walk_nary, " s<= "), op.BV_SLE)
+        self.set_function(partial(self._walk_nary, " s< "), op.BV_SLT)
+        self.set_function(partial(self._walk_nary, " u<= "), op.BV_ULE)
+        self.set_function(partial(self._walk_nary, " u< "), op.BV_ULT)
+        self.set_function(partial(self._walk_nary, " << "), op.BV_LSHL)
+        self.set_function(partial(self._walk_nary, " >> "), op.BV_LSHR)
+        self.set_function(partial(self._walk_nary, " a>> "), op.BV_ASHR)
+        self.set_function(partial(self._walk_nary, " bvcomp "), op.BV_COMP)
+        self.set_function(self.walk_not, op.BV_NOT)
 
     def printer(self, f, threshold=None):
         """Performs the serialization of 'f'.
@@ -47,20 +79,13 @@ class HRPrinter(TreeWalker):
     def walk_threshold(self, formula):
         self.write("...")
 
-    def walk_nary(self, op_symbol, formula):
+    def _walk_nary(self, op_symbol, formula):
         self.write("(")
         args = formula.args()
         for s in args[:-1]:
             self.walk(s)
             self.write(op_symbol)
         self.walk(args[-1])
-        self.write(")")
-
-    def walk_binary(self, op_symbol, formula):
-        self.write("(")
-        self.walk(formula.arg(0))
-        self.write(op_symbol)
-        self.walk(formula.arg(1))
         self.write(")")
 
     def walk_quantifier(self, op_symbol, var_sep, sep, formula):
@@ -77,16 +102,6 @@ class HRPrinter(TreeWalker):
         else:
             self.walk(formula.arg(0))
 
-
-    def walk_and(self, formula):
-        self.walk_nary(" & ", formula)
-
-    def walk_or(self, formula):
-        self.walk_nary(" | ", formula)
-
-    def walk_plus(self, formula):
-        self.walk_nary(" + ", formula)
-
     def walk_not(self, formula):
         self.write("(! ")
         self.walk(formula.arg(0))
@@ -94,27 +109,6 @@ class HRPrinter(TreeWalker):
 
     def walk_symbol(self, formula):
         self.write(quote(formula.symbol_name(), style='"'))
-
-    def walk_times(self, formula):
-        self.walk_binary(" * ", formula)
-
-    def walk_iff(self, formula):
-        self.walk_binary(" <-> ", formula)
-
-    def walk_implies(self, formula):
-        self.walk_binary(" -> ", formula)
-
-    def walk_minus(self, formula):
-        self.walk_binary(" - ", formula)
-
-    def walk_equals(self, formula):
-        self.walk_binary(" = ", formula)
-
-    def walk_le(self, formula):
-        self.walk_binary(" <= ", formula)
-
-    def walk_lt(self, formula):
-        self.walk_binary(" < ", formula)
 
     def walk_function(self, formula):
         self.walk(formula.function_name())
@@ -151,11 +145,8 @@ class HRPrinter(TreeWalker):
         self.write("%d_%d" % (formula.constant_value(),
                               formula.bv_width()))
 
-    def walk_bv_xor(self, formula):
-        self.walk_binary(" xor ", formula)
-
-    def walk_bv_concat(self, formula):
-        self.walk_binary("::", formula)
+    def walk_algebraic_constant(self, formula):
+        self.write(str(formula.constant_value()))
 
     def walk_bv_extract(self, formula):
         self.walk(formula.arg(0))
@@ -166,39 +157,6 @@ class HRPrinter(TreeWalker):
         self.write("(- ")
         self.walk(formula.arg(0))
         self.write(")")
-
-    def walk_bv_udiv(self, formula):
-        self.walk_binary(" u/ ", formula)
-
-    def walk_bv_urem(self, formula):
-        self.walk_binary(" u% ", formula)
-
-    def walk_bv_sdiv(self, formula):
-        self.walk_binary(" s/ ", formula)
-
-    def walk_bv_srem(self, formula):
-        self.walk_binary(" s% ", formula)
-
-    def walk_bv_sle(self, formula):
-        self.walk_binary(" s<= ", formula)
-
-    def walk_bv_slt(self, formula):
-        self.walk_binary(" s< ", formula)
-
-    def walk_bv_ule(self, formula):
-        self.walk_binary(" u<= ", formula)
-
-    def walk_bv_ult(self, formula):
-        self.walk_binary(" u< ", formula)
-
-    def walk_bv_lshl(self, formula):
-        self.walk_binary(" << ", formula)
-
-    def walk_bv_lshr(self, formula):
-        self.walk_binary(" >> ", formula)
-
-    def walk_bv_ashr(self, formula):
-        self.walk_binary(" a>> ", formula)
 
     def walk_bv_ror(self, formula):
         self.write("(")
@@ -223,18 +181,6 @@ class HRPrinter(TreeWalker):
         self.walk(formula.arg(0))
         self.write(" SEXT ")
         self.write("%d)" % formula.bv_extend_step())
-
-    def walk_bv_comp(self, formula):
-        self.walk_binary(" bvcomp ", formula)
-
-
-    # Recycling functions form LIRA
-    walk_bv_not = walk_not
-    walk_bv_and = walk_and
-    walk_bv_or = walk_or
-    walk_bv_add = walk_plus
-    walk_bv_sub = walk_minus
-    walk_bv_mul = walk_times
 
     def walk_ite(self, formula):
         self.write("(")
@@ -282,6 +228,7 @@ class HRPrinter(TreeWalker):
             self.write(" := ")
             self.walk(v)
             self.write("]")
+
 
 
 class HRSerializer(object):

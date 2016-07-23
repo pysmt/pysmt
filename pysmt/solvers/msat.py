@@ -40,7 +40,8 @@ from pysmt.walkers import DagWalker
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               SolverNotConfiguredForUnsatCoresError,
                               SolverStatusError,
-                              InternalSolverError)
+                              InternalSolverError,
+                              NonLinearError)
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
 from pysmt.solvers.qelim import QuantifierEliminator
 from pysmt.solvers.interpolation import Interpolator
@@ -135,7 +136,7 @@ class MathSAT5Model(Model):
 class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
                      SmtLibBasicSolver, SmtLibIgnoreMixin):
 
-    LOGICS = PYSMT_QF_LOGICS
+    LOGICS = PYSMT_QF_LOGICS - set(l for l in PYSMT_QF_LOGICS if not l.theory.linear)
 
     def __init__(self, environment, logic, debugFile=None, **options):
         # TODO: DebugFile should be an option
@@ -1020,6 +1021,9 @@ class MSatConverter(Converter, DagWalker):
         return mathsat.msat_make_or(self.msat_env(), neg, args[1])
 
     def walk_times(self, formula, args, **kwargs):
+        if not mathsat.msat_term_is_number(self.msat_env(), args[0]) and \
+           not mathsat.msat_term_is_number(self.msat_env(), args[1]):
+            raise NonLinearError(formula)
         return mathsat.msat_make_times(self.msat_env(), args[0], args[1])
 
     def walk_function(self, formula, args, **kwargs):

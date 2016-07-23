@@ -37,11 +37,12 @@ class SimpleTypeChecker(walkers.DagWalker):
         self.set_function(self.walk_symbol, op.SYMBOL)
         self.set_function(self.walk_math_relation, op.EQUALS, op.LE, op.LT)
         self.set_function(self.walk_identity_real, op.REAL_CONSTANT)
+        self.set_function(self.walk_identity_real, op.ALGEBRAIC_CONSTANT)
         self.set_function(self.walk_identity_bool, op.BOOL_CONSTANT)
         self.set_function(self.walk_identity_int, op.INT_CONSTANT)
         self.set_function(self.walk_quantifier, op.FORALL, op.EXISTS)
         self.set_function(self.walk_realint_to_realint, op.PLUS, op.MINUS,
-                          op.TIMES)
+                          op.TIMES, op.DIV)
         self.set_function(self.walk_ite, op.ITE)
         self.set_function(self.walk_int_to_real, op.TOREAL)
         self.set_function(self.walk_function, op.FUNCTION)
@@ -269,6 +270,14 @@ class SimpleTypeChecker(walkers.DagWalker):
             elif i % 2 == 1 and c != default_type:
                 return None
         return ArrayType(idx_type, default_type)
+
+    def walk_pow(self, formula, args, **kwargs):
+        if args[0] != args[1]:
+            return None
+        # Exponent must be positive for INT
+        if args[0].is_int_type() and formula.arg(1).constant_value() < 0 :
+            return None
+        return args[0]
 
 # EOC SimpleTypeChecker
 

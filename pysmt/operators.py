@@ -24,7 +24,7 @@ these operators.
 from six.moves import xrange
 
 
-ALL_TYPES = list(xrange(0,50))
+ALL_TYPES = list(xrange(0,53))
 
 (
 FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF, # Boolean Logic (0-6)
@@ -55,7 +55,11 @@ BV_SDIV, BV_SREM,                           # Signed Division and Reminder(45-46
 BV_ASHR,                                    # Arithmetic shift right (47)
 ARRAY_SELECT,                               # Array Select (48)
 ARRAY_STORE,                                # Array Store (49)
-ARRAY_VALUE                                 # Array Value (50)
+ARRAY_VALUE,                                # Array Value (50)
+
+DIV,                                        # Arithmetic Division (51)
+POW,                                        # Arithmetic Power (52)
+ALGEBRAIC_CONSTANT,                         # Algebraic Number (53)
 ) = ALL_TYPES
 
 QUANTIFIERS = frozenset([FORALL, EXISTS])
@@ -66,7 +70,8 @@ BOOL_OPERATORS = frozenset(QUANTIFIERS | BOOL_CONNECTIVES)
 
 RELATIONS = frozenset([LE, LT, EQUALS, BV_ULE, BV_ULT, BV_SLT, BV_SLE])
 
-CONSTANTS = frozenset([REAL_CONSTANT, BOOL_CONSTANT, INT_CONSTANT, BV_CONSTANT])
+CONSTANTS = frozenset([REAL_CONSTANT, BOOL_CONSTANT, INT_CONSTANT,
+                       BV_CONSTANT, ALGEBRAIC_CONSTANT])
 
 BV_OPERATORS = frozenset([BV_CONSTANT, BV_NOT, BV_AND, BV_OR, BV_XOR,
                           BV_CONCAT, BV_EXTRACT, BV_ULT, BV_ULE, BV_NEG, BV_ADD,
@@ -74,13 +79,13 @@ BV_OPERATORS = frozenset([BV_CONSTANT, BV_NOT, BV_AND, BV_OR, BV_XOR,
                           BV_ROL, BV_ROR, BV_ZEXT, BV_SEXT, BV_SLT, BV_SLE,
                           BV_COMP, BV_SDIV, BV_SREM, BV_ASHR])
 
-LIRA_OPERATORS = frozenset([PLUS, MINUS, TIMES, TOREAL])
+IRA_OPERATORS = frozenset([PLUS, MINUS, TIMES, TOREAL, DIV, POW])
 
 ARRAY_OPERATORS = frozenset([ARRAY_SELECT, ARRAY_STORE, ARRAY_VALUE])
 
 CUSTOM_NODE_TYPES = []
 
-THEORY_OPERATORS = LIRA_OPERATORS | BV_OPERATORS | ARRAY_OPERATORS
+THEORY_OPERATORS = IRA_OPERATORS | BV_OPERATORS | ARRAY_OPERATORS
 
 def new_node_type(new_node_id=None):
     """Adds a new node type to the list of custom node types and returns the ID."""
@@ -158,4 +163,7 @@ __OP_STR__ = {
     ARRAY_SELECT : "ARRAY_SELECT",
     ARRAY_STORE : "ARRAY_STORE",
     ARRAY_VALUE : "ARRAY_VALUE",
+    DIV: "DIV",
+    POW: "POW",
+    ALGEBRAIC_CONSTANT: "ALGEBRAIC_CONSTANT",
 }

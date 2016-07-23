@@ -33,7 +33,6 @@ class SmtPrinter(TreeWalker):
         self.write = self.stream.write
         self.mgr = get_env().formula_manager
 
-
         self.set_function(partial(self._walk_nary, "and"), op.AND)
         self.set_function(partial(self._walk_nary, "or"), op.OR)
         self.set_function(partial(self._walk_nary, "not"), op.NOT)
@@ -47,6 +46,8 @@ class SmtPrinter(TreeWalker):
         self.set_function(partial(self._walk_nary, "<"), op.LT)
         self.set_function(partial(self._walk_nary, "ite"), op.ITE)
         self.set_function(partial(self._walk_nary, "to_real"), op.TOREAL)
+        self.set_function(partial(self._walk_nary, "/"), op.DIV)
+        self.set_function(partial(self._walk_nary, "pow"), op.POW)
 
         self.set_function(partial(self._walk_nary, "bvand"), op.BV_AND)
         self.set_function(partial(self._walk_nary, "bvor"), op.BV_OR)
@@ -212,11 +213,13 @@ class SmtDagPrinter(DagWalker):
         self.set_function(partial(self._walk_nary, "+"), op.PLUS)
         self.set_function(partial(self._walk_nary, "-"), op.MINUS)
         self.set_function(partial(self._walk_nary, "*"), op.TIMES)
+        self.set_function(partial(self._walk_nary, "pow"), op.POW)
         self.set_function(partial(self._walk_nary, "="), op.EQUALS)
         self.set_function(partial(self._walk_nary, "<="), op.LE)
         self.set_function(partial(self._walk_nary, "<"), op.LT)
         self.set_function(partial(self._walk_nary, "ite"), op.ITE)
         self.set_function(partial(self._walk_nary, "to_real"), op.TOREAL)
+        self.set_function(partial(self._walk_nary, "/"), op.DIV)
 
         self.set_function(partial(self._walk_nary, "bvand"), op.BV_AND)
         self.set_function(partial(self._walk_nary, "bvor"), op.BV_OR)
@@ -248,7 +251,6 @@ class SmtDagPrinter(DagWalker):
         self.set_function(partial(self._walk_nary, "select"), op.ARRAY_SELECT)
         self.set_function(partial(self._walk_nary, "store"), op.ARRAY_STORE)
 
-
     def _push_with_children_to_stack(self, formula, **kwargs):
         """Add children to the stack."""
 
@@ -263,9 +265,7 @@ class SmtDagPrinter(DagWalker):
             key = self._get_key(formula, **kwargs)
             self.memoization[key] = res
         else:
-            DagWalker._push_with_children_to_stack(self,
-                                                   formula,
-                                                   **kwargs)
+            DagWalker._push_with_children_to_stack(self, formula, **kwargs)
 
     def printer(self, f):
         self.openings = 0
@@ -275,7 +275,6 @@ class SmtDagPrinter(DagWalker):
         key = self.walk(f)
         self.write(key)
         self.write(")" * self.openings)
-
 
     def _new_symbol(self):
         while (self.template % self.name_seed) in self.names:
