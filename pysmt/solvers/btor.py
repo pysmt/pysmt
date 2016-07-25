@@ -145,10 +145,10 @@ class BoolectorSolver(IncrementalTrackingSolver,
         del self.btor
 
 
-class BTORConverter(Converter, DagWalker):
+class BTORConverter(Converter):
 
     def __init__(self, environment, btor):
-        DagWalker.__init__(self, environment)
+        Converter.__init__(self, environment)
         self.mgr = environment.formula_manager
         self._get_type = environment.stc.get_type
         self._back_memoization = {}

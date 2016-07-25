@@ -294,10 +294,10 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
         del self.z3
 
 
-class Z3Converter(Converter, DagWalker):
+class Z3Converter(Converter):
 
     def __init__(self, environment):
-        DagWalker.__init__(self, environment)
+        Converter.__init__(self, environment)
         self.mgr = environment.formula_manager
         self._get_type = environment.stc.get_type
         self._back_memoization = {}

@@ -183,9 +183,8 @@ class SimpleTypeChecker(walkers.DagWalker):
             return self.walk_bv_to_bool(formula, args)
         if args[0].is_array_type():
             return self.walk_type_to_type(formula, args, args[0], BOOL)
-        if args[0].is_enum_type():
-            if args[0] == args[1]:
-                return BOOL
+        if args[0].is_enum_type() and args[0] == args[1] and formula.is_equals():
+            return BOOL
         return None
 
     def walk_ite(self, formula, args, **kwargs):

@@ -17,6 +17,7 @@
 #
 from pysmt.typing import BOOL
 from pysmt.exceptions import SolverReturnedUnknownResultError
+from pysmt.walkers import DagWalker
 from six.moves import xrange
 
 
@@ -472,7 +473,7 @@ class Model(object):
         return "\n".join([ "%s := %s" % (var, value) for (var, value) in self])
 
 
-class Converter(object):
+class Converter(DagWalker):
     """A Converter implements functionalities to convert expressions.
 
     There are two key methods: convert() and back().
@@ -480,10 +481,25 @@ class Converter(object):
     the second performs the backwards conversion (Solver API -> pySMT)
     """
 
+    ENCODERS = []
+
+    def __init__(self, environment):
+        DagWalker.__init__(self, environment)
+        self._encoders = []
+        for E in self.ENCODERS:
+            self._encoders.append(E(self.env))
+
     def convert(self, formula):
         """Convert a PySMT formula into a Solver term."""
         raise NotImplementedError
 
     def back(self, expr):
-        """Convert an expression of the Solver into a PySMT term."""
+        """Convert an expression of the Solver into a pySMT term."""
         raise NotImplementedError
+
+    def _run_encoders(self, formula):
+        """Calls the encoders (in order) on the given formula."""
+        res = formula
+        for e in self._encoders:
+            res = e.encode(res)
+        return res

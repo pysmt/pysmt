@@ -23,6 +23,7 @@ from pysmt.test.examples import get_example_formulae
 from pysmt.exceptions import SolverReturnedUnknownResultError
 from pysmt.logics import BOOL
 
+
 class TestRewritings(TestCase):
 
     def test_prenex_basic(self):

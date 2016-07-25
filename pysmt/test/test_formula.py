@@ -955,6 +955,7 @@ class TestFormulaManager(TestCase):
         x = self.mgr.Symbol("lucky-color", colors_enum)
         red = self.mgr.Const("red", colors_enum)
         f = self.mgr.Equals(x, red)
+        self.assertIsNotNone(f)
 
 
 class TestShortcuts(TestCase):

@@ -209,10 +209,10 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         yicespy.yices_free_context(self.yices)
 
 
-class YicesConverter(Converter, DagWalker):
+class YicesConverter(Converter):
 
     def __init__(self, environment):
-        DagWalker.__init__(self, environment)
+        Converter.__init__(self, environment)
         self.backconversion = {}
         self.mgr = environment.formula_manager
         self._get_type = environment.stc.get_type

@@ -210,13 +210,12 @@ class BddSolver(Solver):
         del self.ddmanager
 
 
-class BddConverter(Converter, DagWalker):
+class BddConverter(Converter):
 
     def __init__(self, environment, ddmanager):
-        DagWalker.__init__(self)
+        Converter.__init__(self, environment)
 
-        self.environment = environment
-        self.fmgr = self.environment.formula_manager
+        self.fmgr = self.env.formula_manager
         self.ddmanager = ddmanager
         # Note: Nodes in repycudd are not shared, but they overload all
         # methods to perform comparison. This means that for two

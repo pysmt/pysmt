@@ -385,14 +385,24 @@ class _EnumType(PySMTType):
     """
     def __init__(self, domain):
         PySMTType.__init__(self, type_id = 5)
-        self.domain = domain
+        self._domain = domain
         self._hash = hash(str(self))
         return
 
+    @property
+    def domain(self):
+        """Returns the domain of the EnumType"""
+        return list(self._domain)
+
+    def bit_count(self):
+        from math import log, ceil
+        return int(ceil(log(len(self._domain), 2)))
+
     def as_smtlib(self, funstyle=True):
         raise NotImplementedError
+
     def __str__(self):
-        return "{%s}" % ",".join([str(d) for d in self.domain])
+        return "{%s}" % ",".join([str(d) for d in self._domain])
 
     def is_enum_type(self):
         return True
