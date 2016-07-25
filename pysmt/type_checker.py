@@ -40,6 +40,7 @@ class SimpleTypeChecker(walkers.DagWalker):
         self.set_function(self.walk_identity_real, op.ALGEBRAIC_CONSTANT)
         self.set_function(self.walk_identity_bool, op.BOOL_CONSTANT)
         self.set_function(self.walk_identity_int, op.INT_CONSTANT)
+        self.set_function(self.walk_identity_enum, op.ENUM_CONSTANT)
         self.set_function(self.walk_quantifier, op.FORALL, op.EXISTS)
         self.set_function(self.walk_realint_to_realint, op.PLUS, op.MINUS,
                           op.TIMES, op.DIV)
@@ -182,6 +183,9 @@ class SimpleTypeChecker(walkers.DagWalker):
             return self.walk_bv_to_bool(formula, args)
         if args[0].is_array_type():
             return self.walk_type_to_type(formula, args, args[0], BOOL)
+        if args[0].is_enum_type():
+            if args[0] == args[1]:
+                return BOOL
         return None
 
     def walk_ite(self, formula, args, **kwargs):
@@ -214,6 +218,12 @@ class SimpleTypeChecker(walkers.DagWalker):
         assert formula is not None
         assert len(args) == 0
         return BVType(formula.bv_width())
+
+    def walk_identity_enum(self, formula, args, **kwargs):
+        #pylint: disable=unused-argument
+        assert formula is not None
+        assert len(args) == 0
+        return formula.constant_type()
 
     def walk_symbol(self, formula, args, **kwargs):
         assert formula is not None

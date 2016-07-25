@@ -23,6 +23,7 @@ import pysmt.environment
 from pysmt.operators import (FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF,
                              SYMBOL, FUNCTION,
                              REAL_CONSTANT, BOOL_CONSTANT, INT_CONSTANT,
+                             ENUM_CONSTANT,
                              PLUS, MINUS, TIMES,
                              LE, LT, EQUALS,
                              ITE,
@@ -535,7 +536,7 @@ class FNode(object):
 
     def constant_value(self):
         """Return the value of the Constant."""
-        if self.node_type() == BV_CONSTANT:
+        if self.node_type() in [BV_CONSTANT, ENUM_CONSTANT]:
             return self._content.payload[0]
         return self._content.payload
 
@@ -547,10 +548,12 @@ class FNode(object):
             return REAL
         elif self.node_type() == BOOL_CONSTANT:
             return BOOL
-        else:
-            assert self.node_type() == BV_CONSTANT,\
-                "Unsupported method constant_type '%s'" % self
+        elif self.node_type() == BV_CONSTANT:
             return BVType(width=self.bv_width())
+        else:
+            assert self.node_type() == ENUM_CONSTANT, \
+                "Unsupported method constant_type '%s'" % self
+            return self._content.payload[1]
 
     def bv2nat(self):
         """Return the unsigned value encoded by the BitVector."""

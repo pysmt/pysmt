@@ -148,6 +148,9 @@ class HRPrinter(TreeWalker):
     def walk_algebraic_constant(self, formula):
         self.write(str(formula.constant_value()))
 
+    def walk_enum_constant(self, formula):
+        self.write("`%s`" % formula.constant_value())
+
     def walk_bv_extract(self, formula):
         self.walk(formula.arg(0))
         self.write("[%d:%d]" % (formula.bv_extract_start(),

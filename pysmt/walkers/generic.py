@@ -86,6 +86,7 @@ class Walker(object):
 
         self.functions[op.DIV] = self.walk_div
         self.functions[op.ALGEBRAIC_CONSTANT] = self.walk_algebraic_constant
+        self.functions[op.ENUM_CONSTANT] = self.walk_enum_constant
 
         undefined_types = set(op.ALL_TYPES) - set(self.functions.keys())
         assert len(undefined_types) == 0, \
@@ -279,3 +280,6 @@ class Walker(object):
 
     def walk_algebraic_constant(self, formula, **kwargs):
         return self.walk_error(formula, **kwargs)
+
+    def walk_enum_constant(self, formula,  **kwargs):
+        return self.walk_error(formula,  **kwargs)
