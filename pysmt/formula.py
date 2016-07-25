@@ -41,6 +41,7 @@ from pysmt.fnode import FNode, FNodeContent
 from pysmt.exceptions import NonLinearError, UndefinedSymbolError
 from pysmt.walkers.identitydag import IdentityDagWalker
 
+
 class FormulaManager(object):
     """FormulaManager is responsible for the creation of all formulae."""
 

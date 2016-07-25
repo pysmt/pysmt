@@ -29,7 +29,7 @@ import pysmt.logics
 from pysmt import typing as types
 from pysmt.solvers.solver import Solver
 from pysmt.solvers.eager import EagerModel
-from pysmt.rewritings import CNFizer
+from pysmt.rewritings.cnf import CNFizer
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
 from pysmt.exceptions import ConvertExpressionError
 
