@@ -67,6 +67,16 @@ class TestSimplify(TestCase):
                 fprime = s.simplify(f)
                 self.assertValid(Iff(fprime, f))
 
+        s = BddSimplifier()
+        try:
+            s.validate_simplifications = True
+        except ValueError:
+            self.assertTrue(len(self.env.factory.all_solvers())==1)
+        for (f, _, _, logic) in get_example_formulae():
+            if logic == QF_BOOL:
+                fprime = s.simplify(f)
+                self.assertValid(Iff(fprime, f))
+
 
 if __name__ == '__main__':
     main()

@@ -677,8 +677,30 @@ class BddSimplifier(Simplifier):
             self.s = Solver(name="bdd", dynamic_reordering=True)
         self.convert = self.s.converter.convert
         self.back = self.s.converter.back
+        self._validation_sname = None
+
+    @property
+    def validate_simplifications(self):
+        return self._validate_simplifications
+
+    @validate_simplifications.setter
+    def validate_simplifications(self, value):
+        possible_solvers = [sname for sname in self.env.factory.all_solvers()\
+                            if sname!="bdd"]
+        if len(possible_solvers) == 0:
+            raise ValueError("To validate at least another solver must be available!")
+        self._validation_sname = possible_solvers[0]
+        self._validate_simplifications = value
 
     def simplify(self, formula):
-        return self.back(self.convert(formula))
+        res = self.back(self.convert(formula))
+        if self.validate_simplifications:
+            Iff = self.env.formula_manager.Iff
+            is_valid = self.env.factory.is_valid
+            sname = self._validation_sname
+            assert is_valid(Iff(formula, res), solver_name=sname ), \
+              "Was: %s \n Obtained: %s\n" % (str(formula), str(res))
+        return res
+
 
 #EOC BddSimplifier
