@@ -22,6 +22,7 @@ import pysmt.operators as op
 import pysmt.typing as types
 from pysmt.utils import set_bit
 
+
 class Simplifier(pysmt.walkers.DagWalker):
 
     def __init__(self, env=None):
@@ -664,3 +665,20 @@ class Simplifier(pysmt.walkers.DagWalker):
         return self.manager.Div(sl, sr)
 
 # EOC Simplifier
+
+
+class BddSimplifier(Simplifier):
+    def __init__(self, env=None, static_ordering=None):
+        Simplifier.__init__(self, env=env)
+        Solver = self.env.factory.Solver
+        if static_ordering is not None:
+            self.s = Solver(name="bdd", static_ordering=static_ordering)
+        else:
+            self.s = Solver(name="bdd", dynamic_reordering=True)
+        self.convert = self.s.converter.convert
+        self.back = self.s.converter.back
+
+    def simplify(self, formula):
+        return self.back(self.convert(formula))
+
+#EOC BddSimplifier

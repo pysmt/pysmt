@@ -19,9 +19,10 @@ from nose.plugins.attrib import attr
 from pysmt.test import TestCase, skipIfSolverNotAvailable, main
 from pysmt.test.examples import get_example_formulae
 from pysmt.environment import get_env
-from pysmt.shortcuts import Array, Store, Int
+from pysmt.shortcuts import Array, Store, Int, Iff
 from pysmt.typing import INT
-
+from pysmt.simplifier import BddSimplifier
+from pysmt.logics import QF_BOOL
 
 
 class TestSimplify(TestCase):
@@ -30,7 +31,6 @@ class TestSimplify(TestCase):
     @skipIfSolverNotAvailable("z3")
     def test_simplify_qf(self):
         simp = get_env().simplifier
-        Iff = get_env().formula_manager.Iff
         for (f, _, _, logic) in get_example_formulae():
             if logic.is_quantified(): continue
             simp.validate_simplifications = True
@@ -44,7 +44,6 @@ class TestSimplify(TestCase):
     @skipIfSolverNotAvailable("z3")
     def test_simplify_q(self):
         simp = get_env().simplifier
-        Iff = get_env().formula_manager.Iff
         for (f, _, _, logic) in get_example_formulae():
             if logic.quantifier_free: continue
             simp.validate_simplifications = True
@@ -60,6 +59,13 @@ class TestSimplify(TestCase):
         a2 = Store(Array(INT, Int(0)), Int(12), Int(10))
         self.assertEquals(a1, a2.simplify())
 
+    @skipIfSolverNotAvailable("bdd")
+    def test_bdd_simplify(self):
+        s = BddSimplifier()
+        for (f, _, _, logic) in get_example_formulae():
+            if logic == QF_BOOL:
+                fprime = s.simplify(f)
+                self.assertValid(Iff(fprime, f))
 
 
 if __name__ == '__main__':
