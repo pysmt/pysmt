@@ -30,6 +30,7 @@ from pysmt.solvers.solver import Solver, Converter, SolverOptions
 from pysmt.solvers.eager import EagerModel
 from pysmt.walkers import DagWalker
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
+from pysmt.exceptions import ConvertExpressionError
 from pysmt.oracles import get_logic
 from pysmt.solvers.qelim import QuantifierEliminator
 
@@ -164,7 +165,6 @@ class BddSolver(Solver):
         self.latest_model = None
         return res
 
-
     def get_value(self, item):
         if self.latest_model is None:
             self.get_model()
@@ -277,7 +277,8 @@ class BddConverter(Converter, DagWalker):
         return self.ddmanager.Not(args[0])
 
     def walk_symbol(self, formula, **kwargs):
-        if not formula.is_symbol(types.BOOL): raise TypeError
+        if not formula.is_symbol(types.BOOL):
+            raise ConvertExpressionError("Cannot handle given type: %s" % str(formula))
         if formula not in self.var2node:
             self.declare_variable(formula)
         res = self.var2node[formula]
@@ -310,7 +311,6 @@ class BddConverter(Converter, DagWalker):
             return self.ddmanager.One()
         else:
             return self.ddmanager.Zero()
-
 
     def _walk_back(self, bdd, mgr):
         stack = [bdd]

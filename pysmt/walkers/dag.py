@@ -70,8 +70,11 @@ class DagWalker(Walker):
             except KeyError:
                 f = self.walk_error
 
-            args = [self.memoization[self._get_key(s, **kwargs)] \
-                    for s in self._get_children(formula)]
+            try:
+                args = [self.memoization[self._get_key(s, **kwargs)] \
+                        for s in self._get_children(formula)]
+            except KeyError as ex:
+                raise KeyError(ex.message, formula, self._get_key(s, **kwargs))
             self.memoization[key] = f(formula, args=args, **kwargs)
         else:
             pass

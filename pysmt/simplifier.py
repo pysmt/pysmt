@@ -21,6 +21,7 @@ import pysmt.walkers
 import pysmt.operators as op
 import pysmt.typing as types
 from pysmt.utils import set_bit
+from pysmt.exceptions import ConvertExpressionError
 
 
 class Simplifier(pysmt.walkers.DagWalker):
@@ -668,8 +669,10 @@ class Simplifier(pysmt.walkers.DagWalker):
 
 
 class BddSimplifier(Simplifier):
-    def __init__(self, env=None, static_ordering=None):
+    def __init__(self, env=None, static_ordering=None, bool_abstraction=False):
         Simplifier.__init__(self, env=env)
+        self._validation_sname = None
+
         Solver = self.env.factory.Solver
         if static_ordering is not None:
             self.s = Solver(name="bdd", static_ordering=static_ordering)
@@ -677,7 +680,13 @@ class BddSimplifier(Simplifier):
             self.s = Solver(name="bdd", dynamic_reordering=True)
         self.convert = self.s.converter.convert
         self.back = self.s.converter.back
-        self._validation_sname = None
+        # Set methods for boolean_abstraction
+        self.bool_abstraction = bool_abstraction
+        self.set_function(self.walk_abstract, *op.RELATIONS)
+        self.set_function(self.walk_abstract, op.FUNCTION)
+        self.ba_map = {}
+        self.get_type = self.env.stc.get_type
+        self.FreshSymbol = self.env.formula_manager.FreshSymbol
 
     @property
     def validate_simplifications(self):
@@ -693,14 +702,37 @@ class BddSimplifier(Simplifier):
         self._validate_simplifications = value
 
     def simplify(self, formula):
-        res = self.back(self.convert(formula))
+        from pysmt.oracles import get_logic
+        from pysmt.logics import BOOL, QF_BOOL
+        if self.bool_abstraction:
+            logic = get_logic(formula)
+            if logic > QF_BOOL and logic != BOOL:
+                res = self.abstract_and_simplify(formula)
+            else:
+                res = self.back(self.convert(formula))
+        else:
+            res = self.back(self.convert(formula))
+        self._validate(formula, res)
+        return res
+
+    def _validate(self, old, new):
         if self.validate_simplifications:
             Iff = self.env.formula_manager.Iff
             is_valid = self.env.factory.is_valid
             sname = self._validation_sname
-            assert is_valid(Iff(formula, res), solver_name=sname ), \
-              "Was: %s \n Obtained: %s\n" % (str(formula), str(res))
+            assert is_valid(Iff(old, new), solver_name=sname ), \
+              "Was: %s \n Obtained: %s\n" % (str(old), str(new))
+
+    def abstract_and_simplify(self, formula):
+        abs_formula = self.walk(formula)
+        abs_res = self.back(self.convert(abs_formula))
+        res = abs_res.substitute(self.ba_map)
         return res
 
+    def walk_abstract(self, formula, args, **kwargs):
+        type_ = self.get_type(formula)
+        new_var = self.FreshSymbol(type_)
+        self.ba_map[new_var] = formula
+        return new_var
 
 #EOC BddSimplifier

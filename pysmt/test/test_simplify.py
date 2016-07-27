@@ -23,6 +23,7 @@ from pysmt.shortcuts import Array, Store, Int, Iff
 from pysmt.typing import INT
 from pysmt.simplifier import BddSimplifier
 from pysmt.logics import QF_BOOL
+from pysmt.exceptions import ConvertExpressionError
 
 
 class TestSimplify(TestCase):
@@ -77,6 +78,21 @@ class TestSimplify(TestCase):
                 fprime = s.simplify(f)
                 self.assertValid(Iff(fprime, f))
 
+    @skipIfSolverNotAvailable("bdd")
+    @skipIfSolverNotAvailable("z3")
+    def test_bdd_simplify_bool_abs(self):
+        s = BddSimplifier()
+        for (f, _, _, logic) in get_example_formulae():
+            if not logic.theory.linear: continue
+            if logic != QF_BOOL:
+                with self.assertRaises(ConvertExpressionError):
+                    s.simplify(f)
+
+        s = BddSimplifier(bool_abstraction=True)
+        for (f, _, _, logic) in get_example_formulae():
+            if logic.quantifier_free:
+                fprime = s.simplify(f)
+                self.assertValid(Iff(fprime, f))
 
 if __name__ == '__main__':
     main()
