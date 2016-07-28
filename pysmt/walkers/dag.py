@@ -74,6 +74,8 @@ class DagWalker(Walker):
                 args = [self.memoization[self._get_key(s, **kwargs)] \
                         for s in self._get_children(formula)]
             except KeyError as ex:
+                # This should never happen in nominal execution.
+                # We catch the exception to simplify debugging
                 raise KeyError(ex.message, formula, self._get_key(s, **kwargs))
             self.memoization[key] = f(formula, args=args, **kwargs)
         else:

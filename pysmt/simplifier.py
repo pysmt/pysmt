@@ -671,6 +671,7 @@ class Simplifier(pysmt.walkers.DagWalker):
 class BddSimplifier(Simplifier):
     def __init__(self, env=None, static_ordering=None, bool_abstraction=False):
         Simplifier.__init__(self, env=env)
+        self.super_functions = dict(self.functions)
         self._validation_sname = None
 
         Solver = self.env.factory.Solver
@@ -682,8 +683,8 @@ class BddSimplifier(Simplifier):
         self.back = self.s.converter.back
         # Set methods for boolean_abstraction
         self.bool_abstraction = bool_abstraction
-        self.set_function(self.walk_abstract, *op.RELATIONS)
-        self.set_function(self.walk_abstract, op.FUNCTION)
+        self.set_function(self.walk_simplify_and_abstract, *op.RELATIONS)
+        self.set_function(self.walk_abstract_function, op.FUNCTION)
         self.ba_map = {}
         self.get_type = self.env.stc.get_type
         self.FreshSymbol = self.env.formula_manager.FreshSymbol
@@ -726,13 +727,27 @@ class BddSimplifier(Simplifier):
     def abstract_and_simplify(self, formula):
         abs_formula = self.walk(formula)
         abs_res = self.back(self.convert(abs_formula))
+        print(formula, abs_formula, abs_res)
         res = abs_res.substitute(self.ba_map)
         return res
 
-    def walk_abstract(self, formula, args, **kwargs):
-        type_ = self.get_type(formula)
-        new_var = self.FreshSymbol(type_)
-        self.ba_map[new_var] = formula
+    def walk_simplify_and_abstract(self, formula, args, **kwargs):
+        super_rewriter = self.super_functions[formula.node_type()]
+        rewritten = super_rewriter(formula, args, **kwargs)
+        print(rewritten)
+        if rewritten.is_bool_constant():
+            return rewritten
+        new_var = self.FreshSymbol()
+        self.ba_map[new_var] = rewritten
         return new_var
+
+    def walk_abstract_function(self, formula, args, **kwargs):
+        super_rewriter = self.super_functions[formula.node_type()]
+        rewritten = super_rewriter(formula, args, **kwargs)
+        if rewritten.function_name().symbol_type().return_type.is_bool_type():
+            new_var = self.FreshSymbol()
+            self.ba_map[new_var] = rewritten
+            return new_var
+        return rewritten
 
 #EOC BddSimplifier
