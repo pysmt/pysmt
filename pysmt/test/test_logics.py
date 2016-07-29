@@ -18,7 +18,7 @@
 import pysmt.logics
 from pysmt.logics import get_logic_by_name, get_logic, most_generic_logic
 from pysmt.logics import PYSMT_LOGICS
-from pysmt.logics import QF_LIA, LIA, UFLIRA, LRA, QF_UFLIRA, QF_BV, NRA
+from pysmt.logics import QF_LIA, LIA, UFLIRA, LRA, QF_UFLIRA, QF_BV, NRA, QF_IDL, QF_BOOL
 from pysmt.logics import Theory
 from pysmt.exceptions import (UndefinedLogicError, NoSolverAvailableError,
                               NoLogicAvailableError)
@@ -131,6 +131,7 @@ class TestLogic(TestCase):
         self.assertFalse(QF_BV >= QF_UFLIRA)
         self.assertFalse(QF_BV <= QF_UFLIRA)
         self.assertTrue(NRA > LRA)
+        self.assertTrue(QF_BOOL < QF_IDL)
         with self.assertRaises(NoLogicAvailableError):
             most_generic_logic(PYSMT_LOGICS)
 

@@ -21,6 +21,8 @@ import pysmt.walkers
 import pysmt.operators as op
 import pysmt.typing as types
 from pysmt.utils import set_bit
+from pysmt.exceptions import ConvertExpressionError
+
 
 class Simplifier(pysmt.walkers.DagWalker):
 
@@ -664,3 +666,88 @@ class Simplifier(pysmt.walkers.DagWalker):
         return self.manager.Div(sl, sr)
 
 # EOC Simplifier
+
+
+class BddSimplifier(Simplifier):
+    def __init__(self, env=None, static_ordering=None, bool_abstraction=False):
+        Simplifier.__init__(self, env=env)
+        self.super_functions = dict(self.functions)
+        self._validation_sname = None
+
+        Solver = self.env.factory.Solver
+        if static_ordering is not None:
+            self.s = Solver(name="bdd", static_ordering=static_ordering)
+        else:
+            self.s = Solver(name="bdd", dynamic_reordering=True)
+        self.convert = self.s.converter.convert
+        self.back = self.s.converter.back
+        # Set methods for boolean_abstraction
+        self.bool_abstraction = bool_abstraction
+        self.set_function(self.walk_simplify_and_abstract, *op.RELATIONS)
+        self.set_function(self.walk_abstract_function, op.FUNCTION)
+        self.ba_map = {}
+        self.get_type = self.env.stc.get_type
+        self.FreshSymbol = self.env.formula_manager.FreshSymbol
+
+    @property
+    def validate_simplifications(self):
+        return self._validate_simplifications
+
+    @validate_simplifications.setter
+    def validate_simplifications(self, value):
+        possible_solvers = [sname for sname in self.env.factory.all_solvers()\
+                            if sname!="bdd"]
+        if len(possible_solvers) == 0:
+            raise ValueError("To validate at least another solver must be available!")
+        self._validation_sname = possible_solvers[0]
+        self._validate_simplifications = value
+
+    def simplify(self, formula):
+        from pysmt.oracles import get_logic
+        from pysmt.logics import BOOL, QF_BOOL
+        if self.bool_abstraction:
+            logic = get_logic(formula)
+            if logic > QF_BOOL and logic != BOOL:
+                res = self.abstract_and_simplify(formula)
+            else:
+                res = self.back(self.convert(formula))
+        else:
+            res = self.back(self.convert(formula))
+        self._validate(formula, res)
+        return res
+
+    def _validate(self, old, new):
+        if self.validate_simplifications:
+            Iff = self.env.formula_manager.Iff
+            is_valid = self.env.factory.is_valid
+            sname = self._validation_sname
+            assert is_valid(Iff(old, new), solver_name=sname ), \
+              "Was: %s \n Obtained: %s\n" % (str(old), str(new))
+
+    def abstract_and_simplify(self, formula):
+        abs_formula = self.walk(formula)
+        abs_res = self.back(self.convert(abs_formula))
+        print(formula, abs_formula, abs_res)
+        res = abs_res.substitute(self.ba_map)
+        return res
+
+    def walk_simplify_and_abstract(self, formula, args, **kwargs):
+        super_rewriter = self.super_functions[formula.node_type()]
+        rewritten = super_rewriter(formula, args, **kwargs)
+        print(rewritten)
+        if rewritten.is_bool_constant():
+            return rewritten
+        new_var = self.FreshSymbol()
+        self.ba_map[new_var] = rewritten
+        return new_var
+
+    def walk_abstract_function(self, formula, args, **kwargs):
+        super_rewriter = self.super_functions[formula.node_type()]
+        rewritten = super_rewriter(formula, args, **kwargs)
+        if rewritten.function_name().symbol_type().return_type.is_bool_type():
+            new_var = self.FreshSymbol()
+            self.ba_map[new_var] = rewritten
+            return new_var
+        return rewritten
+
+#EOC BddSimplifier

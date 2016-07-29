@@ -152,12 +152,16 @@ class Theory(object):
             le_integer_difference = True
         elif self.integer_difference and other.integer_arithmetic:
             le_integer_difference = True
+        elif not self.integer_arithmetic and other.integer_arithmetic:
+            le_integer_difference = True
         else:
             le_integer_difference = False
 
         if self.real_difference == other.real_difference:
             le_real_difference = True
         elif self.real_difference and other.real_arithmetic:
+            le_real_difference = True
+        elif not self.real_arithmetic and other.real_arithmetic:
             le_real_difference = True
         else:
             le_real_difference = False
