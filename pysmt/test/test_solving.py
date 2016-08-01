@@ -83,7 +83,7 @@ class TestBasic(TestCase):
         factory = get_env().factory
         factory.default_logic = QF_BOOL
 
-        self.assertEquals(factory.default_logic, QF_BOOL)
+        self.assertEqual(factory.default_logic, QF_BOOL)
         varA = Symbol("A", BOOL)
         varB = Symbol("B", BOOL)
 
