@@ -85,6 +85,8 @@ class Simplifier(pysmt.walkers.DagWalker):
         else:
             if any(x.is_false() for x in args):
                 return self.manager.FALSE()
+        if len(args) == 2 and args[0] == args[1]:
+            return args[0]
 
         return self.manager.And(args)
 
@@ -97,6 +99,8 @@ class Simplifier(pysmt.walkers.DagWalker):
         else:
             if any(x.is_true() for x in args):
                 return self.manager.TRUE()
+        if len(args) == 2 and args[0] == args[1]:
+            return args[0]
 
         return self.manager.Or(args)
 

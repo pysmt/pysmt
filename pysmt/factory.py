@@ -34,12 +34,14 @@ from pysmt.logics import AUTO as AUTO_LOGIC
 from pysmt.logics import most_generic_logic, get_closer_logic
 from pysmt.logics import convert_logic_from_string
 from pysmt.oracles import get_logic
-from pysmt.solvers.qelim import ShannonQuantifierEliminator
+from pysmt.solvers.qelim import (ShannonQuantifierEliminator,
+                                 SelfSubstitutionQuantifierEliminator)
 from pysmt.solvers.solver import SolverOptions
 
 DEFAULT_SOLVER_PREFERENCE_LIST = ['msat', 'z3', 'cvc4', 'yices', 'btor',
                                   'picosat', 'bdd']
-DEFAULT_QELIM_PREFERENCE_LIST = ['z3', 'msat_fm', 'msat_lw', 'bdd', 'shannon']
+DEFAULT_QELIM_PREFERENCE_LIST = ['z3', 'msat_fm', 'msat_lw', 'bdd',
+                                 'shannon', 'selfsub']
 DEFAULT_INTERPOLATION_PREFERENCE_LIST = ['msat', 'z3']
 DEFAULT_LOGIC = QF_UFLIRA
 DEFAULT_QE_LOGIC = LRA
@@ -295,7 +297,7 @@ class Factory(object):
 
         # Pure-python always present
         self._all_qelims['shannon'] = ShannonQuantifierEliminator
-
+        self._all_qelims['selfsub'] = SelfSubstitutionQuantifierEliminator
 
     def _get_available_interpolators(self):
         self._all_interpolators = {}
