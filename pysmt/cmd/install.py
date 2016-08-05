@@ -135,8 +135,9 @@ def parse_options():
                         type=str, default="~/.smt_solvers",
                         help='The folder to use for the installation')
 
+    py_bindings = "~/.smt_solvers/python-bindings-%d.%d" % sys.version_info[0:2]
     parser.add_argument('--bindings-path', dest='bindings_path',
-                        type=str, default="~/.smt_solvers/python_bindings",
+                        type=str, default=py_bindings,
                         help='The folder to use for the bindings')
 
     options = parser.parse_args()
