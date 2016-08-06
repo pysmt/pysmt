@@ -29,6 +29,8 @@ import pysmt.oracles
 import pysmt.formula
 import pysmt.factory
 import pysmt.decorators
+import pysmt.native_nodes.msat
+
 
 
 class Environment(object):
@@ -154,6 +156,10 @@ class Environment(object):
 
 # EOC Environment
 
+class MsatNativeEnvironment(Environment):
+    FormulaManagerClass = pysmt.native_nodes.msat.MsatFormulaManager
+
+
 #### GLOBAL ENVIRONMENTS STACKS ####
 ENVIRONMENTS_STACK = []
 
@@ -176,6 +182,7 @@ def reset_env():
     pop_env()
     push_env()
     return get_env()
+
 
 # Create the default environment
 push_env()

@@ -24,8 +24,9 @@ from fractions import Fraction
 import mathsat
 
 
-import pysmt.shortcuts as shortcuts
-from pysmt.operators import ALL_TYPES, QUANTIFIERS, CONSTANTS
+import pysmt.shortcuts
+import pysmt.formula
+from pysmt.operators import QUANTIFIERS, CONSTANTS
 from pysmt.operators import (FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF,
                              SYMBOL, FUNCTION,
                              REAL_CONSTANT, BOOL_CONSTANT, INT_CONSTANT,
@@ -35,12 +36,56 @@ from pysmt.operators import (FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF,
                              TOREAL)
 from pysmt.typing import BOOL, REAL, INT, PYSMT_TYPES
 
-FNodeContent = collections.namedtuple("FNodeContent",
-                                      ["node_type", "args", "payload"])
-
 # Operators for which Args is an FNode (used by compute_dependencies
-DEPENDENCIES_SIMPLE_ARGS = (set(ALL_TYPES) - \
-                            (set([SYMBOL, FUNCTION]) | QUANTIFIERS | CONSTANTS))
+from pysmt.fnode import DEPENDENCIES_SIMPLE_ARGS
+
+import pysmt.solvers.msat
+
+
+def msat_type_to_type(msat_env, mt):
+    if mathsat.msat_is_bool_type(msat_env, mt):
+        return BOOL
+    elif mathsat.msat_is_rational_type(msat_env, mt):
+        return REAL
+    elif mathsat.msat_is_integer_type(msat_env, mt):
+        return INT
+    else:
+        raise NotImplementedError
+
+
+def term_to_node_type(term, manager):
+    if mathsat.msat_term_is_true(manager.msat_env, term):
+        return BOOL_CONSTANT
+    if mathsat.msat_term_is_false(manager.msat_env, term):
+        return BOOL_CONSTANT
+    if mathsat.msat_term_is_boolean_constant(manager.msat_env, term):
+        return SYMBOL
+    if mathsat.msat_term_is_number(manager.msat_env, term):
+        return REAL_CONSTANT
+    if mathsat.msat_term_is_and(manager.msat_env, term):
+        return AND
+    if mathsat.msat_term_is_or(manager.msat_env, term):
+        return OR
+    if mathsat.msat_term_is_not(manager.msat_env, term):
+        return NOT
+    if mathsat.msat_term_is_iff(manager.msat_env, term):
+        return IFF
+    if mathsat.msat_term_is_term_ite(manager.msat_env, term):
+        return ITE
+    if mathsat.msat_term_is_constant(manager.msat_env, term):
+        return SYMBOL
+    if mathsat.msat_term_is_uf(manager.msat_env, term):
+        return FUNCTION
+    if mathsat.msat_term_is_equal(manager.msat_env, term):
+        return EQUALS
+    if mathsat.msat_term_is_leq(manager.msat_env, term):
+        return LE
+    if mathsat.msat_term_is_plus(manager.msat_env, term):
+        return PLUS
+    if mathsat.msat_term_is_times(manager.msat_env, term):
+        return TIMES
+    raise NotImplementedError
+
 
 
 class MsatFNode(object):
@@ -58,57 +103,32 @@ class MsatFNode(object):
     constant, the payload might be the python value 1).
     """
 
-    def __init__(self, manager, msat_env, msat_term):
+    def __init__(self, manager, msat_term):
         self.manager = manager
-        self._env = msat_env
-        self._term = msat_term
+        self._content = msat_term
         self._dependencies = None
+        self._sons = None
         return
 
-    # __eq__ and __hash__ are left as default
-    # This is because we always have shared FNode's
+    def __eq__(self, other):
+        return isinstance(other, MsatFNode) and \
+            self._content == other._content and \
+            self.manager == other.manager
+
+    def __hash__(self):
+        return hash(self._content)
 
     def node_type(self):
-        if mathsat.msat_term_is_true(self._env, self._term):
-            return BOOL_CONSTANT
-        if mathsat.msat_term_is_false(self._env, self._term):
-            return BOOL_CONSTANT
-        if mathsat.msat_term_is_boolean_constant(self._env, self._term):
-            return SYMBOL
-        if mathsat.msat_term_is_number(self._env, self._term):
-            return REAL_CONSTANT
-        if mathsat.msat_term_is_and(self._env, self._term):
-            return AND
-        if mathsat.msat_term_is_or(self._env, self._term):
-            return OR
-        if mathsat.msat_term_is_not(self._env, self._term):
-            return NOT
-        if mathsat.msat_term_is_iff(self._env, self._term):
-            return IFF
-        if mathsat.msat_term_is_term_ite(self._env, self._term):
-            return ITE
-        if mathsat.msat_term_is_constant(self._env, self._term):
-            return SYMBOL
-        if mathsat.msat_term_is_uf(self._env, self._term):
-            return FUNCTION
-        if mathsat.msat_term_is_equal(self._env, self._term):
-            return EQUALS
-        if mathsat.msat_term_is_leq(self._env, self._term):
-            return LE
-        if mathsat.msat_term_is_plus(self._env, self._term):
-            return PLUS
-        if mathsat.msat_term_is_times(self._env, self._term):
-            return TIMES
-        raise NotImplementedError
+        return term_to_node_type(self._content, self.manager)
 
     def args(self):
-        arity = mathsat.msat_term_arity(self._term)
-        return [self.manager.new_node(mathsat.msat_term_get_arg(self._term, i))
-                for i in xrange(arity)]
-
+        if self._sons is None:
+            self._sons = [MsatFNode(self.manager, mathsat.msat_term_get_arg(self._content, i))
+                          for i in xrange(mathsat.msat_term_arity(self._content))]
+        return self._sons
 
     def arg(self, idx):
-        return self.manager.new_node(mathsat.msat_term_get_arg(self._term, idx))
+        return MsatFNode(self.manager, mathsat.msat_term_get_arg(self._content, idx))
 
 
     def get_dependencies(self):
@@ -152,7 +172,7 @@ class MsatFNode(object):
         return self
 
     def substitute(self, subs):
-        return shortcuts.substitute(self, subs=subs)
+        return pysmt.shortcuts.substitute(self, subs=subs)
 
     def is_constant(self, _type=None, value=None):
         if self.node_type() not in CONSTANTS:
@@ -258,7 +278,7 @@ class MsatFNode(object):
         return str(self)
 
     def serialize(self, threshold=None):
-        return shortcuts.serialize(self, threshold=threshold)
+        return pysmt.shortcuts.serialize(self, threshold=threshold)
 
     def is_quantifier(self):
         return self.is_exists() or self.is_forall()
@@ -280,95 +300,213 @@ class MsatFNode(object):
         else:
             return True
 
-    def _msat_type_to_type(self, mt):
-        if mathsat.msat_is_bool_type(self._env, mt):
-            return BOOL
-        elif mathsat.msat_is_rational_type(self._env, mt):
-            return REAL
-        elif mathsat.msat_is_integer_type(self._env, mt):
-            return INT
-        else:
-            raise NotImplementedError
-
-
     def symbol_type(self):
-        msat_type = mathsat.msat_term_get_type(self._term)
-        return self._msat_type_to_type(msat_type)
+        if type(self._content) == tuple:
+            return self._content[2]
+        msat_type = mathsat.msat_term_get_type(self._content)
+        return msat_type_to_type(self.manager.msat_env, msat_type)
 
     def symbol_name(self):
-        decl = mathsat.msat_term_get_decl(self._term)
+        if type(self._content) == tuple:
+            return self._content[1]
+        decl = mathsat.msat_term_get_decl(self._content)
         return mathsat.msat_decl_get_name(decl)
 
     def constant_value(self):
         if self.is_bool_constant():
-            if mathsat.msat_term_is_true(self._env, self._term):
+            if mathsat.msat_term_is_true(self.manager.msat_env, self._content):
                 return True
             return False
         else:
             # it is a number
-            rep = mathsat.msat_term_repr(self._term)
+            rep = mathsat.msat_term_repr(self._content)
             match = re.match(r"(-?\d+)/(\d+)", rep)
             assert match is not None
             return Fraction((int(match.group(1)), int(match.group(2))))
 
 
     def function_name(self):
-        decl = mathsat.msat_term_get_decl(self._term)
-        return mathsat.msat_decl_get_name(decl)
+        decl = mathsat.msat_term_get_decl(self._content)
+        return self.manager.function_name(decl)
 
     def quantifier_vars(self):
         raise NotImplementedError
 
     # Infix Notation
     def _apply_infix(self, right, function):
-        if shortcuts.get_env().enable_infix_notation:
+        if pysmt.shortcuts.get_env().enable_infix_notation:
             return function(self, right)
         else:
             raise Exception("Cannot use infix notation")
 
     def Implies(self, right):
-        return self._apply_infix(right, shortcuts.Implies)
+        return self._apply_infix(right, pysmt.shortcuts.Implies)
 
     def Iff(self, right):
-        return self._apply_infix(right, shortcuts.Iff)
+        return self._apply_infix(right, pysmt.shortcuts.Iff)
 
     def Equals(self, right):
-        return self._apply_infix(right, shortcuts.Equals)
+        return self._apply_infix(right, pysmt.shortcuts.Equals)
 
     def Ite(self, right):
-        return self._apply_infix(right, shortcuts.Ite)
+        return self._apply_infix(right, pysmt.shortcuts.Ite)
 
     def And(self, right):
-        return self._apply_infix(right, shortcuts.And)
+        return self._apply_infix(right, pysmt.shortcuts.And)
 
     def Or(self, right):
-        return self._apply_infix(right, shortcuts.Or)
+        return self._apply_infix(right, pysmt.shortcuts.Or)
 
     def __add__(self, right):
-        return self._apply_infix(right, shortcuts.Plus)
+        return self._apply_infix(right, pysmt.shortcuts.Plus)
 
     def __sub__(self, right):
-        return self._apply_infix(right, shortcuts.Minus)
+        return self._apply_infix(right, pysmt.shortcuts.Minus)
 
     def __mul__(self, right):
-        return self._apply_infix(right, shortcuts.Times)
+        return self._apply_infix(right, pysmt.shortcuts.Times)
 
     def __div__(self, right):
-        return self._apply_infix(right, shortcuts.Div)
+        return self._apply_infix(right, pysmt.shortcuts.Div)
 
     def __truediv__(self, right):
         return self.__div__(right)
 
     def __gt__(self, right):
-        return self._apply_infix(right, shortcuts.GT)
+        return self._apply_infix(right, pysmt.shortcuts.GT)
 
     def __ge__(self, right):
-        return self._apply_infix(right, shortcuts.GE)
+        return self._apply_infix(right, pysmt.shortcuts.GE)
 
     def __lt__(self, right):
-        return self._apply_infix(right, shortcuts.LT)
+        return self._apply_infix(right, pysmt.shortcuts.LT)
 
     def __le__(self, right):
-        return self._apply_infix(right, shortcuts.GE)
+        return self._apply_infix(right, pysmt.shortcuts.GE)
 
 # EOC FNode
+
+
+class MsatFormulaManager(pysmt.formula.FormulaManager):
+    """FormulaManager is responsible for the creation of all formulae."""
+
+    def __init__(self, env=None, msat_env=None):
+        if env is None:
+            env = pysmt.shortcuts.get_env()
+        self.env = env
+        if msat_env is None:
+            config = mathsat.msat_create_config()
+            check = mathsat.msat_set_option(config, "model_generation", "true")
+            assert check == 0
+            msat_env = mathsat.msat_create_env(config)
+        self.msat_env = msat_env
+
+        pysmt.formula.FormulaManager.__init__(self, env)
+
+        self._converter = None
+        self.declarations = {}
+        self.rdeclarations = {}
+        return
+
+    def converter(self):
+        if self._converter is None:
+            self._converter = pysmt.solvers.msat.MSatConverter(self.env,
+                                                               self.msat_env)
+        return self._converter
+
+    def function_name(self, declaration):
+        declid = mathsat.msat_decl_id(declaration)
+        return self.rdeclarations[declid]
+
+
+    def create_node(self, node_type, args, payload=None):
+        term = None
+
+        print "creating", node_type, payload
+        if node_type == SYMBOL:
+            name, typename = payload
+            if name not in self.declarations:
+                msat_type = self.converter().type_to_msat(typename)
+                decl = mathsat.msat_declare_function(self.msat_env,
+                                                     name,
+                                                     msat_type)
+                self.declarations[name] = decl
+                declid = mathsat.msat_decl_id(decl)
+                self.rdeclarations[declid] = name
+            decl = self.declarations[name]
+            if typename.is_function_type():
+                content = pysmt.fnode.FNodeContent(SYMBOL, args, payload)
+                if content in self.formulae:
+                    return self.formulae[content]
+                else:
+                    res = pysmt.fnode.FNode(content)
+                    self.formulae[content] = res
+                    return res
+            else:
+                term = mathsat.msat_make_constant(self.msat_env, decl)
+
+        elif node_type == REAL_CONSTANT:
+            n,d = payload.numerator, payload.denominator
+            rep = str(n) + "/" + str(d)
+            term =  mathsat.msat_make_number(self.msat_env, rep)
+
+        elif node_type == INT_CONSTANT:
+            rep = str(payload)
+            term =  mathsat.msat_make_number(self.msat_env, rep)
+
+        elif node_type == BOOL_CONSTANT:
+            if payload:
+                term = mathsat.msat_make_true(self.msat_env)
+            else:
+                term = mathsat.msat_make_false(self.msat_env)
+
+        elif node_type == FUNCTION:
+            name = payload.symbol_name()
+            typename = payload.symbol_type()
+            if name not in self.declarations:
+                msat_type = self.converter().type_to_msat(typename)
+                decl = mathsat.msat_declare_function(self.msat_env,
+                                                     name,
+                                                     msat_type)
+                self.declarations[name] = decl
+                declid = mathsat.msat_decl_id(decl)
+                self.rdeclarations[declid] = name
+            decl = self.declarations[name]
+            term = mathsat.msat_make_uf(self.msat_env, decl, [a._content for a in args])
+
+        elif node_type == IFF:
+            assert len(args) == 2
+            term = mathsat.msat_make_iff(self.msat_env, args[0]._content, args[1]._content)
+
+        elif node_type == IMPLIES:
+            assert len(args) == 2
+            term = mathsat.msat_make_or(self.msat_env,
+                                        mathsat.msat_make_not(self.msat_env, args[0]._content),
+                                        args[1]._content)
+
+        else:
+            fun = self.converter().functions[node_type]
+            term = fun(None, [a._content for a in args])
+
+        if mathsat.MSAT_ERROR_TERM(term):
+            raise TypeError()
+
+        return MsatFNode(self, term)
+
+
+    def __contains__(self, node):
+        """Checks whether the given node belongs to this formula manager.
+
+        This overloads the 'in' operator, making it possible to write:
+
+           E.g., if x in formula_manager: ...
+        """
+        if isinstance(node, MsatFNode):
+            return node.manager == self
+
+        if node._content in self.formulae:
+            return self.formulae[node._content] == node
+        else:
+            return False
+
+#EOC FormulaManager

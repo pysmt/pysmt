@@ -15,6 +15,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+
 from pysmt.typing import BOOL
 from pysmt.exceptions import SolverReturnedUnknownResultError
 from six.moves import xrange

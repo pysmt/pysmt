@@ -30,7 +30,7 @@ class EagerModel(Model):
 
     def __init__(self, assignment, environment=None):
         if environment is None:
-            environment = get_env()
+            environment = pysmt.shortcuts.get_env()
         Model.__init__(self, environment)
         self.environment = environment
         self.assignment = dict(assignment)

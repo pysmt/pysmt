@@ -46,6 +46,7 @@ from pysmt.decorators import clear_pending_pop, catch_conversion_error
 from pysmt.solvers.qelim import QuantifierEliminator
 from pysmt.solvers.interpolation import Interpolator
 from pysmt.walkers.identitydag import IdentityDagWalker
+from pysmt.utils.generic_number import GenericNumber, disambiguate
 
 
 class MSatEnv(object):
