@@ -35,10 +35,6 @@ from pysmt.operators import (FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF,
                              ITE,
                              TOREAL)
 from pysmt.typing import BOOL, REAL, INT, PYSMT_TYPES
-
-# Operators for which Args is an FNode (used by compute_dependencies
-from pysmt.fnode import DEPENDENCIES_SIMPLE_ARGS
-
 import pysmt.solvers.msat
 
 
@@ -422,7 +418,9 @@ class MsatFormulaManager(pysmt.formula.FormulaManager):
     def create_node(self, node_type, args, payload=None):
         term = None
 
-        print "creating", node_type, payload
+        print("creating", node_type, payload)
+        # MG: Isn't this part of code already implemented by the Converter?
+        #     why can't we reuse that?
         if node_type == SYMBOL:
             name, typename = payload
             if name not in self.declarations:

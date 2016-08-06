@@ -29,8 +29,6 @@ import pysmt.oracles
 import pysmt.formula
 import pysmt.factory
 import pysmt.decorators
-import pysmt.native_nodes.msat
-
 
 
 class Environment(object):
@@ -156,8 +154,15 @@ class Environment(object):
 
 # EOC Environment
 
-class MsatNativeEnvironment(Environment):
-    FormulaManagerClass = pysmt.native_nodes.msat.MsatFormulaManager
+try:
+    has_msat = True
+    import pysmt.native_nodes.msat
+except ImportError:
+    has_msat = False
+
+if has_msat:
+    class MsatNativeEnvironment(Environment):
+        FormulaManagerClass = pysmt.native_nodes.msat.MsatFormulaManager
 
 
 #### GLOBAL ENVIRONMENTS STACKS ####
