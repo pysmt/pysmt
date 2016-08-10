@@ -29,7 +29,7 @@ from pysmt.environment import get_env
 
 # Build a list of installers, one for each solver
 Installer = namedtuple("Installer", ["InstallerClass", "version", "extra_params"])
-INSTALLERS = [Installer(MSatInstaller,    "5.3.9", {}),
+INSTALLERS = [Installer(MSatInstaller,    "5.3.12", {}),
               Installer(Z3Installer,      "4.4.1", {}),
               Installer(CVC4Installer,    "1.5-prerelease", {"git_version" : "c15ff43597b41ea457befecb1b0e2402e28cb523"}),
               Installer(YicesInstaller,   "2.4.2", {"yicespy_version": "22b94419522ba772a1cc1e72dbe84e01b8adc16d"}),
