@@ -102,7 +102,7 @@ class TestEagerModel(TestCase):
             eager_model = EagerModel(z3_model)
             for var, value  in eager_model:
                 self.assertIn(var, [x,y,z])
-                self.assertEquals(value, TRUE())
+                self.assertEqual(value, TRUE())
 
 if __name__ == '__main__':
     main()

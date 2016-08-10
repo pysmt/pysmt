@@ -133,7 +133,7 @@ class TestBdd(TestCase):
                         reordering_algorithm=algo) as s:
                 s.add_assertion(self.big_tree)
                 self.assertTrue(s.solve())
-                self.assertEquals(algo, s.ddmanager.ReorderingStatus()[1])
+                self.assertEqual(algo, s.ddmanager.ReorderingStatus()[1])
 
     @skipIfSolverNotAvailable("bdd")
     def test_fixed_ordering(self):

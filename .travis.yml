@@ -36,7 +36,7 @@ addons:
 
 python:
   - 2.7
-  - 3.4
+  - 3.5
   - pypy
 
 
@@ -65,15 +65,6 @@ matrix:
       env: PYSMT_SOLVER="z3_wrap"
 
   exclude:
-    - python: 3.4
-      env: PYSMT_SOLVER="cvc4"
-    - python: 3.4
-      env: PYSMT_SOLVER="yices"
-    - python: 3.4
-      env: PYSMT_SOLVER="bdd"
-    - python: 3.4
-      env: PYSMT_SOLVER="all"
-
     - python: pypy
       env: PYSMT_SOLVER="msat"
     - python: pypy
@@ -94,10 +85,10 @@ matrix:
 install:
   # This is for btor that fails to find the python 3 library to link
   - "export LIBRARY_PATH=${LIBRARY_PATH}:/opt/python/3.4.2/lib"
+  - "export LIBRARY_PATH=${LIBRARY_PATH}:/opt/python/3.5.2/lib"
   # For some reason, Travis CI cannot find the command python3.5-config.
   # Therefore, we force the path here
-  - if [ "${TRAVIS_PYTHON_VERSION}" == "3.5" ]; then export PATH=${PATH}:/opt/python/3.5.0/bin/ ; fi
-
+  - if [ "${TRAVIS_PYTHON_VERSION}" == "3.5" ]; then export PATH=${PATH}:/opt/python/3.5.2/bin/ ; fi
   - "pip install six"
   - if [ "${PYSMT_SOLVER}" == "all" ] || [ "${PYSMT_SOLVER}" == "btor" ]; then pip install cython; fi
   - "export BINDINGS_FOLDER=${HOME}/python_bindings/${PYSMT_SOLVER}"
