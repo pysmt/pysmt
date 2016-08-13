@@ -18,12 +18,11 @@ class SmtLibSolver(Solver):
     the executable. Interaction with the solver occurs via pipe.
     """
 
-    def __init__(self, args, environment, logic, user_options=None,
-                 LOGICS=None):
+    def __init__(self, args, environment, logic, LOGICS=None, **options):
         Solver.__init__(self,
                         environment,
-                        logic=logic,
-                        user_options=user_options)
+                        logic=logic)
+
         # Flag used to debug interaction with the solver
         self.dbg = False
 
@@ -45,9 +44,6 @@ class SmtLibSolver(Solver):
             self.set_option(":produce-models", "true")
         # Redirect diagnostic output to stdout
         self.set_option(":diagnostic-output-channel", '"stdout"')
-        if self.options is not None:
-            for o,v in iteritems(self.options):
-                self.set_option(o,v)
         self.set_logic(logic)
 
     def set_option(self, name, value):

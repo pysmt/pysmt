@@ -158,23 +158,6 @@ class skipIfNoQEForLogic(object):
         return wrapper
 
 
-def skipIfNoSMTWrapper(test_fun):
-    """Skip a test if there is no quantifier eliminator for the given logic."""
-    msg = "No SMT-Lib solver is available"
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    cond = any(f.endswith(".solver.sh")
-               for _, _, fnames in os.walk(BASE_DIR)
-               for f in fnames)
-
-    @unittest.skipIf(cond, msg)
-    @wraps(test_fun)
-    def wrapper(*args, **kwargs):
-        return test_fun(*args, **kwargs)
-    return wrapper
-
-
-
-
 # Export a main function
 main = unittest.main
 
