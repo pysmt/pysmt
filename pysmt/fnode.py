@@ -323,9 +323,14 @@ class FNode(object):
         """Test whether the node is a theory operator."""
         return self.node_type() in THEORY_OPERATORS
 
+    def is_ira_op(self):
+        """Test whether the node is an Int or Real Arithmetic operator."""
+        return self.node_type() in IRA_OPERATORS
+
+    @deprecated("is_isa_op")
     def is_lira_op(self):
-        """Test whether the node is a LIRA operator."""
-        return self.node_type() in LIRA_OPERATORS
+        """Test whether the node is a IRA operator."""
+        return self.node_type() in IRA_OPERATORS
 
     def is_bv_op(self):
         """Test whether the node is a BitVector operator."""
