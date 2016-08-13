@@ -35,6 +35,8 @@ warnings.simplefilter('default')
 import pysmt.typing as types
 import pysmt.configuration as config
 import pysmt.environment
+import pysmt.smtlib.parser
+import pysmt.smtlib.script
 
 
 def get_env():
@@ -554,14 +556,6 @@ def sequence_interpolant(formulas, solver_name=None, logic=None):
                                             solver_name=solver_name,
                                             logic=logic)
 
-def read(fname):
-    """Reads the SMT formula from the given file."""
-    raise NotImplementedError
-
-def write(fname):
-    """Writes the SMT formula to the given file."""
-    raise NotImplementedError
-
 def read_configuration(config_filename, environment=None):
     """
     Reads the pysmt configuration of the given file path and applies
@@ -579,3 +573,16 @@ def write_configuration(config_filename, environment=None):
     if environment is None:
         environment = get_env()
     config.write_environment_configuration(config_filename, environment)
+
+def read_smtlib(fname):
+    """Reads the SMT formula from the given file.
+
+    This supports compressed files, if the fname ends in .bz2 .
+    """
+    return pysmt.smtlib.parser.get_formula_fname(fname)
+
+def write_smtlib(formula, fname):
+    """Reads the SMT formula from the given file."""
+    with open(fname, "w") as fout:
+        script = pysmt.smtlib.script.smtlibscript_from_formula(formula)
+        script.serialize(fout)

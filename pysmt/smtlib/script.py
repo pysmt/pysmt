@@ -23,10 +23,10 @@ from six.moves import xrange
 
 import pysmt.smtlib.commands as smtcmd
 from pysmt.exceptions import UnknownSmtLibCommandError, NoLogicAvailableError
-from pysmt.shortcuts import And
 from pysmt.smtlib.printers import SmtPrinter, SmtDagPrinter, quote
 from pysmt.oracles import get_logic
 from pysmt.logics import get_closer_smtlib_logic
+from pysmt.environment import get_env
 
 
 def check_sat_filter(log):
@@ -170,7 +170,7 @@ class SmtLibScript(object):
            self.contains_command(smtcmd.POP):
             raise Exception("Was not expecting push-pop commands")
         assert self.count_command_occurrences(smtcmd.CHECK_SAT) == 1
-        _And = mgr.And if mgr else And
+        _And = mgr.And if mgr else get_env().formula_manager.And
 
         assertions = [cmd.args[0]
                       for cmd in self.filter_by_command_name([smtcmd.ASSERT])]
@@ -184,7 +184,7 @@ class SmtLibScript(object):
         """
         stack = []
         backtrack = []
-        _And = mgr.And if mgr else And
+        _And = mgr.And if mgr else get_env().formula_manager.And
 
         for cmd in self.commands:
             if cmd.name == smtcmd.ASSERT:
