@@ -27,7 +27,7 @@
 # only when using multiprocessing.
 # To disable the warning see the python module warnings.
 #
-from multiprocessing import Pool
+from multiprocessing import Pool, TimeoutError
 from time import sleep
 
 from pysmt.test.examples import get_example_formulae
@@ -92,7 +92,9 @@ else:
 
 # Create a formula
 big_f = And(f.expr for f in get_example_formulae() \
-            if not f.logic.theory.bit_vectors)
+            if not f.logic.theory.bit_vectors and \
+               not f.logic.theory.arrays and \
+                   f.logic.theory.linear)
 
 # Create keyword arguments for the function call.
 # This is the simplest way to pass multiple arguments to apply_async.
@@ -107,5 +109,9 @@ print("This is non-blocking...")
 # Get the result with a deadline.
 # See multiprocessing.pool.AsyncResult for more options
 sat_res = future_res_sat.get(10)  # Get result after 10 seconds or kill
-unsat_res = future_res_unsat.get(0) # No wait
+try:
+    unsat_res = future_res_unsat.get(0) # No wait
+except TimeoutError:
+    print("UNSAT result was not ready!")
+    unsat_res = None
 print(sat_res, unsat_res)

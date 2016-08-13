@@ -8,6 +8,8 @@
 #
 # [2] ...
 #
+from six.moves import xrange
+
 from pysmt.shortcuts import Symbol, Not, Equals, And, Times, Int, Plus, LE
 from pysmt.shortcuts import is_sat, is_unsat
 from pysmt.typing import INT
