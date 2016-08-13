@@ -86,6 +86,13 @@ class TestUnsatCores(TestCase):
         self.assertIn(x, core)
         self.assertIn(Not(x), core)
 
+    @skipIfNoUnsatCoreSolverForLogic(QF_BOOL)
+    def test_generators_in_shortcuts(self):
+        flist = [Symbol("x"), Not(Symbol("x"))]
+        gen_f = (x for x in flist)
+        ucore = get_unsat_core(gen_f)
+        self.assertEqual(len(ucore), 2)
+
 
     @skipIfNoUnsatCoreSolverForLogic(QF_BOOL)
     def test_basic_named(self):
