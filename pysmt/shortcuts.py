@@ -33,6 +33,8 @@ warnings.simplefilter('default')
 import pysmt.typing as types
 import pysmt.configuration as config
 import pysmt.environment
+import pysmt.smtlib.parser
+import pysmt.smtlib.script
 
 
 def get_env():
@@ -568,3 +570,16 @@ def write_configuration(config_filename, environment=None):
     if environment is None:
         environment = get_env()
     config.write_environment_configuration(config_filename, environment)
+
+def read(fname):
+    """Reads the SMT formula from the given file.
+
+    This supports compressed files, if the fname ends in .bz2 .
+    """
+    return pysmt.smtlib.parser.get_formula_fname(fname)
+
+def write(formula, fname):
+    """Reads the SMT formula from the given file."""
+    with open(fname, "w") as fout:
+        script = pysmt.smtlib.script.smtlibscript_from_formula(formula)
+        script.serialize(fout)
