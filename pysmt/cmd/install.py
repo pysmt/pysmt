@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from six.moves.urllib import request as urllib2
-from six.moves import input, xrange
+from six.moves import input
 
 import os
 import argparse

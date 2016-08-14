@@ -22,7 +22,7 @@ This module defines some rewritings for pySMT formulae.
 from pysmt.walkers.dag import DagWalker
 import pysmt.typing as types
 import pysmt.operators as op
-import pysmt.environment
+
 
 class CNFizer(DagWalker):
 

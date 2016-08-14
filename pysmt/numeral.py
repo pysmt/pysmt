@@ -1,5 +1,3 @@
-import warnings
-
 use_z3 = False
 try:
     import z3num

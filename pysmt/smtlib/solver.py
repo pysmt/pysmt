@@ -1,7 +1,7 @@
 from io import TextIOWrapper
 from subprocess import Popen, PIPE
 
-from six import iteritems, PY2
+from six import PY2
 
 import pysmt.smtlib.commands as smtcmd
 from pysmt.solvers.eager import EagerModel

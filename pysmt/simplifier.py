@@ -21,7 +21,6 @@ import pysmt.walkers
 import pysmt.operators as op
 import pysmt.typing as types
 from pysmt.utils import set_bit
-from pysmt.exceptions import ConvertExpressionError
 
 
 class Simplifier(pysmt.walkers.DagWalker):

@@ -4,14 +4,15 @@
 # 1. Enable and use infix notation
 # 2. Use a solver context
 #
-from pysmt.shortcuts import get_env, Solver
 from pysmt.shortcuts import Symbol, And, Plus, Int
+from pysmt.shortcuts import Solver
 from pysmt.typing import INT
 
 # Infix-Notation is automatically enabled whenever you import pysmt.shortcuts.
 #
 # To enable it without using shortcuts, do:
 #
+#   from pysmt.environment import get_env
 #   get_env().enable_infix_notation = True
 #
 # Similarly, you can disable infix_notation to prevent its accidental use.
