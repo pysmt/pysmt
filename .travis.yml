@@ -6,6 +6,7 @@ cache:
   apt: true
   directories:
   - ${HOME}/.smt_solvers/btor
+  - ${HOME}/.smt_solvers/bdd
   - ${HOME}/.cache/pip
   - ${HOME}/python_bindings/all
   - ${HOME}/python_bindings/msat
