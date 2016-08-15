@@ -172,9 +172,6 @@ def main():
     if mirror_url is not None:
         mirror_url += "/{archive_name}"
 
-    # Env variable controlling the solvers to be installed or checked
-    requested_solvers = get_requested_solvers()
-
     # This should work on any platform
     install_dir= os.path.expanduser(options.install_path)
     if not os.path.exists(install_dir):
@@ -189,8 +186,20 @@ def main():
     all_solvers = options.all_solvers
     for i in INSTALLERS:
         name = i.InstallerClass.SOLVER
-        if all_solvers or getattr(options, name) or name in requested_solvers:
+        if all_solvers or getattr(options, name):
             solvers_to_install.append(i)
+
+    # Env variable controlling the solvers to be installed or checked
+    requested_solvers = get_requested_solvers()
+    if len(solvers_to_install) != 0 and len(requested_solvers) != 0:
+        print("Warning: Solvers specified on the command line, "
+              "ignoring env variable 'PYSMT_SOLVER'")
+    if len(solvers_to_install) == 0:
+        # No solver requested from cmd-line, checking ENV
+        for i in INSTALLERS:
+            name = i.InstallerClass.SOLVER
+            if name in requested_solvers:
+                solvers_to_install.append(i)
 
     if options.check:
         check_installed([x.InstallerClass.SOLVER for x in solvers_to_install],
