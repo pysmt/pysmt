@@ -79,4 +79,6 @@ class CuddInstaller(SolverInstaller):
             finally:
                 if "repycudd" in sys.modules:
                     del sys.modules["repycudd"]
+                # Return None, without raising an exception
+                # pylint: disable=lost-exception
                 return version

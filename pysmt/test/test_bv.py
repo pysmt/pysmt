@@ -86,6 +86,7 @@ class TestBV(TestCase):
         zero_xor_one = mgr.BVXor(zero, one)
 
         zero_xor_one.simplify()
+        self.assertTrue(zero_xor_one.is_bv_op())
         # print(zero_and_one)
         # print(zero_or_one)
         # print(zero_xor_one)

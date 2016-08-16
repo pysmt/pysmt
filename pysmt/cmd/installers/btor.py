@@ -61,10 +61,15 @@ class BtorInstaller(SolverInstaller):
             version = None
             vfile = os.path.join(self.extract_path, "boolector", "VERSION")
             try:
+                # The version is read from a file, but we first check
+                # if the module is installed
+                # pylint: disable=unused-import
                 import boolector
                 with open(vfile) as f:
                     version = f.read().strip()
             finally:
                 if "boolector" in sys.modules:
                     del sys.modules["boolector"]
+                # Return None, without raising an exception
+                # pylint: disable=lost-exception
                 return version

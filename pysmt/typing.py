@@ -53,6 +53,7 @@ class PySMTType(object):
         return False
 
     def is_bv_type(self, width=None):
+        #pylint: disable=unused-argument
         return False
 
     def is_function_type(self):

@@ -25,19 +25,14 @@ except ImportError:
     raise SolverAPINotFound
 
 
-from pysmt.solvers.solver import (IncrementalTrackingSolver, UnsatCoreSolver,
-                                  Model, Converter)
+from pysmt.solvers.solver import IncrementalTrackingSolver, Converter
 from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 from pysmt.solvers.eager import EagerModel
 from pysmt.walkers import DagWalker
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
-                              SolverNotConfiguredForUnsatCoresError,
-                              SolverStatusError,
                               ConvertExpressionError)
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
 from pysmt.logics import QF_BV, QF_UFBV, QF_ABV, QF_AUFBV, QF_AX
-from pysmt.oracles import get_logic
-
 
 
 class BoolectorSolver(IncrementalTrackingSolver,

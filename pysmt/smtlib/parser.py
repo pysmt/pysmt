@@ -306,7 +306,6 @@ class SmtLibParser(object):
                             'select':self._operator_adapter(mgr.Select),
                             'store':self._operator_adapter(mgr.Store),
                             'as':self._enter_smtlib_as,
-                            '/':self._operator_adapter(mgr.Div),
                             }
 
         # Command tokens

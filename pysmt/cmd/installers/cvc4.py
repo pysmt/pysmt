@@ -69,4 +69,6 @@ class CVC4Installer(SolverInstaller):
             finally:
                 if "CVC4" in sys.modules:
                     del sys.modules["CVC4"]
+                # Return None, without raising an exception
+                # pylint: disable=lost-exception
                 return version

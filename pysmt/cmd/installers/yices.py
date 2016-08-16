@@ -83,4 +83,6 @@ class YicesInstaller(SolverInstaller):
             finally:
                 if "yicespy" in sys.modules:
                     del sys.modules["yicespy"]
+                # Return None, without raising an exception
+                # pylint: disable=lost-exception
                 return version

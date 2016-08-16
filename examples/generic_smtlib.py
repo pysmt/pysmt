@@ -32,7 +32,7 @@ logics = [QF_UFLRA, QF_UFIDL] # Some of the supported logics
 env = get_env()
 
 # Add the solver to the environment
-env.factory.add_generic_solver(name, path,logics)
+env.factory.add_generic_solver(name, path, logics)
 
 r, s = Symbol("r", REAL), Symbol("s", REAL)
 p, q = Symbol("p", INT), Symbol("q", INT)

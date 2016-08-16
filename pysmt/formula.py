@@ -34,12 +34,12 @@ from six.moves import xrange
 
 import pysmt.typing as types
 import pysmt.operators as op
-import pysmt.utils as utils
 
 from pysmt.utils import is_python_integer
 from pysmt.fnode import FNode, FNodeContent
-from pysmt.exceptions import NonLinearError, UndefinedSymbolError
+from pysmt.exceptions import UndefinedSymbolError
 from pysmt.walkers.identitydag import IdentityDagWalker
+
 
 class FormulaManager(object):
     """FormulaManager is responsible for the creation of all formulae."""

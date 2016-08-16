@@ -36,8 +36,8 @@
 #
 # The question is: who owns the fish?
 
-from pysmt.shortcuts import Symbol, ExactlyOne, Implies, Or, And, FALSE, Iff
-from pysmt.shortcuts import get_model, get_unsat_core, is_sat
+from pysmt.shortcuts import Symbol, ExactlyOne, Or, And, FALSE, Iff
+from pysmt.shortcuts import get_model, get_unsat_core, is_sat, is_unsat
 
 #
 # Lets start by expliciting all values for all dimensions
@@ -163,6 +163,7 @@ if model is None:
     # are satisfiable in isolation.
     assert is_sat(facts)
     assert is_sat(domain)
+    assert is_unsat(problem)
 
     # In isolation they are both fine, rules from both are probably
     # interacting.

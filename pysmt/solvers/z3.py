@@ -28,7 +28,6 @@ from fractions import Fraction
 from six.moves import xrange
 
 import pysmt.typing as types
-import pysmt.operators as op
 from pysmt.solvers.solver import (IncrementalTrackingSolver, UnsatCoreSolver,
                                   Model, Converter)
 from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
