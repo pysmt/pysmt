@@ -44,7 +44,8 @@ class SmtLibSolver(Solver):
         if LOGICS is not None: self.LOGICS = LOGICS
         self.args = args
         self.declared_vars = set()
-        self.solver = Popen(args, stdout=PIPE, stderr=PIPE, stdin=PIPE)
+        self.solver = Popen(args, stdout=PIPE, stderr=PIPE, stdin=PIPE,
+                            bufsize=-1)
         # Give time to the process to start-up
         time.sleep(0.01)
         self.parser = SmtLibParser(interactive=True)

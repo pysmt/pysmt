@@ -106,10 +106,7 @@ Additionally, you can use any SMT-LIB 2 compliant solver.
 PySMT assumes that the python bindings for the SMT Solver are
 installed and accessible from your ``PYTHONPATH``.
 
-pySMT works on both Python 2 and Python 3. Some solvers support both
-versions (e.g., MathSAT) but in general, many solvers still support
-only Python 2.
-
+pySMT works on both Python 3.5 and Python 2.7.
 
 Installation
 ============
@@ -141,7 +138,7 @@ it with its python bindings. Nevertheless, we try to keep
 
 For Yices, picosat, and CUDD, we use external wrappers:
 
-- pyices (https://github.com/cheshire/pyices)
+- yicespy (https://github.com/pysmt/yicespy)
 - repycudd (https://github.com/pysmt/repycudd)
 - pyPicoSAT (https://github.com/pysmt/pyPicoSAT)
 
