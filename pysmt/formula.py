@@ -910,13 +910,14 @@ class FormulaManager(object):
     # Helper functions
     #
     def normalize(self, formula):
-        """ Returns the formula normalized to the current Formula Manager.
+        """Returns the formula normalized to the current Formula Manager.
 
         This method is useful to contextualize a formula coming from another
         formula manager.
-        E.g., f_a is defined with the FormulaManager a, and we want to obtain f_b
-              that is the formula f_a expressed on the FormulaManager b :
-               f_b = b.normalize(f_a)
+
+        E.g., f_a is defined with the FormulaManager a, and we want to
+              obtain f_b that is the formula f_a expressed on the
+              FormulaManager b : f_b = b.normalize(f_a)
         """
         # TODO: name clash with formula normalization
         # TODO: Move this out of the manager and into ad-hoc function

@@ -4,10 +4,12 @@
 API Reference
 =============
 
+.. contents::
+   :local:
+
 Shortcuts
 =========
 .. automodule:: pysmt.shortcuts
-
 
 Solver, Model, QuantifierEliminator, Interpolator, and UnsatCoreSolver
 ======================================================================
@@ -52,7 +54,8 @@ Oracles
 
 Parsing
 =======
-.. automodule:: pysmt.parsing
+.. autofunction:: pysmt.parsing.parse
+.. autofunction:: pysmt.parsing.HRParser
 
 Printers
 ========
