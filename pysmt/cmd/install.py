@@ -25,6 +25,7 @@ from pysmt.cmd.installers import CVC4Installer, YicesInstaller, BtorInstaller
 from pysmt.cmd.installers import CuddInstaller
 
 from pysmt.environment import get_env
+from pysmt import git_version
 
 # Build a list of installers, one for each solver
 Installer = namedtuple("Installer", ["InstallerClass", "version", "extra_params"])
@@ -103,6 +104,8 @@ def parse_options():
                                      ' on the command line or in the environment'
                                      ' variable PYSMT_SOLVER if not already '
                                      'instaled on the system.')
+    parser.add_argument('--version', action='version',
+                        version='%(prog)s {version}'.format(version=git_version()))
 
     for i in INSTALLERS:
         name = i.InstallerClass.SOLVER
