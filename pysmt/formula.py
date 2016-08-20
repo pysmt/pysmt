@@ -204,15 +204,26 @@ class FormulaManager(object):
         """
         return self.create_node(node_type=op.MINUS, args=(left, right))
 
-    def Times(self, left, right):
-        """ Creates an expression of the form:
-            left * right
+    def Times(self, *args):
+        """ Creates a multiplication of terms
+
+        This function has polimorphic n-arguments:
+          - Times(a,b,c)
+          - Times([a,b,c])
 
         Restriction:
-          - Left and Right must be both INT or REAL type
-          - Only linear expressions are allowed
+         - Arguments must be all of the same type
+         - Arguments must be INT or REAL
         """
-        return self.create_node(node_type=op.TIMES, args=(left, right))
+        tuple_args = self._polymorph_args_to_tuple(args)
+        if len(tuple_args) == 0:
+            raise TypeError("Cannot create a Times without arguments.")
+
+        if len(tuple_args) == 1:
+            return tuple_args[0]
+        else:
+            return self.create_node(node_type=op.TIMES,
+                                    args=tuple_args)
 
     def Pow(self, base, exponent):
         """ Creates the n-th power of the base.

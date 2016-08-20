@@ -1019,10 +1019,16 @@ class MSatConverter(Converter, DagWalker):
         return mathsat.msat_make_or(self.msat_env(), neg, args[1])
 
     def walk_times(self, formula, args, **kwargs):
-        if not mathsat.msat_term_is_number(self.msat_env(), args[0]) and \
-           not mathsat.msat_term_is_number(self.msat_env(), args[1]):
-            raise NonLinearError(formula)
-        return mathsat.msat_make_times(self.msat_env(), args[0], args[1])
+        res = args[0]
+        nl_count = 0 if mathsat.msat_term_is_number(self.msat_env(), res) else 1
+        for x in args[1:]:
+            if not mathsat.msat_term_is_number(self.msat_env(), x):
+                nl_count += 1
+            if nl_count >= 2:
+                raise NonLinearError(formula)
+            else:
+                res = mathsat.msat_make_times(self.msat_env(), res, x)
+        return res
 
     def walk_function(self, formula, args, **kwargs):
         name = formula.function_name()

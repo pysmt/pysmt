@@ -358,8 +358,10 @@ class YicesConverter(Converter, DagWalker):
         return res
 
     def walk_times(self, formula, args, **kwargs):
-        res = yicespy.yices_mul(args[0], args[1])
-        self._check_term_result(res)
+        res = args[0]
+        for x in args[1:]:
+            res = yicespy.yices_mul(res, x)
+            self._check_term_result(res)
         return res
 
     def walk_toreal(self, formula, args, **kwargs):

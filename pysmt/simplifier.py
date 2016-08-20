@@ -288,44 +288,37 @@ class Simplifier(pysmt.walkers.DagWalker):
         return self.manager.Plus(ns)
 
     def walk_times(self, formula, args, **kwargs):
-        assert len(args) == 2
-
-        sl = args[0]
-        sr = args[1]
-
-        if sl.is_constant() and sr.is_constant():
-            l = sl.constant_value()
-            r = sr.constant_value()
-            if sl.is_real_constant():
-                return self.manager.Real(l * r)
-            elif sl.is_int_constant():
-                return self.manager.Int(l * r)
+        if all(x.is_constant() for x in args):
+            mul = args[0].constant_value()
+            for x in args[1:]:
+                mul *= x.constant_value()
+            if args[0].is_real_constant():
+                return self.manager.Real(mul)
+            elif args[0].is_int_constant():
+                return self.manager.Int(mul)
             else:
-                assert sl.is_algebraic_constant()
+                assert args[0].is_algebraic_constant()
                 from pysmt.numeral import Numeral
-                return self.manager._Algebraic(Numeral(l * r))
+                return self.manager._Algebraic(Numeral(mul))
 
-        if sl.is_constant():
-            if sl.is_one():
-                return sr
-            elif sl.is_zero():
-                if sl.is_real_constant():
-                    return self.manager.Real(0)
-                else:
-                    assert sl.is_int_constant()
-                    return self.manager.Int(0)
+        new_args = []
+        for x in args:
+            if x.is_constant():
+                if x.is_zero():
+                    if x.is_real_constant():
+                        return self.manager.Real(0)
+                    else:
+                        assert x.is_int_constant()
+                        return self.manager.Int(0)
+                elif not x.is_one():
+                    new_args.append(x)
+            elif x.is_times():
+                for y in x.args():
+                    new_args.append(y)
+            else:
+                new_args.append(x)
 
-        if sr.is_constant():
-            if sr.is_one():
-                return sl
-            elif sr.is_zero():
-                if sr.is_real_constant():
-                    return self.manager.Real(0)
-                else:
-                    assert sr.is_int_constant()
-                    return self.manager.Int(0)
-
-        return self.manager.Times(sl, sr)
+        return self.manager.Times(new_args)
 
     def walk_pow(self, formula, args, **kwargs):
         if args[0].is_real_constant():
