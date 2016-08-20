@@ -18,7 +18,7 @@ but specific).
 .. _Satisfiability Modulo Theory: https://en.wikipedia.org/wiki/Satisfiability_modulo_theories
 .. _SMT-LIB: http://smt-lib.org
 
-Among others, you can [[TODO: Add links to each example]]
+Among others, you can:
 
 * Define formulae in a solver independent way
 * Run the same code using multiple solvers
@@ -33,12 +33,11 @@ an issue on `github`_ or by writing to pysmt@googlegroups.com .
 
 Where to go from here:
 
-* Getting Started: :ref:`Installation <gs-installation>` and :ref:`Hello
+* Getting Started: :ref:`Installation <getting-started>` and :ref:`Hello
   World <gs-hello-world>`;
 
 
-* Tutorials: Simple examples showing how to perform common operations using pySMT.
-  [[TODO: Add one page per example]]
+* :doc:`Tutorials <tutorials>`: Simple examples showing how to perform common operations using pySMT.
 
 * Full :ref:`API Reference <api-ref>`
 
