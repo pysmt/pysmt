@@ -41,12 +41,14 @@ of tests with:
 Writing Tests
 -------------
 
-TestCase should inherit from :class:`pysmt.test.TestCase`. This class
-extends the basic TestCase class in two ways. First, it provides
-additional assertions [[TODO: Document assertIsSAT etc]].
-Second, it provides a default SetUp for running tests in which the
-global environment is reset after each test is executed. This is
-necessary to avoid interaction between tests.
+TestCase should inherit from :class:`pysmt.test.TestCase`.  This
+provides a default :py:meth:`~pysmt.test.TestCase.SetUp` for running
+tests in which the global environment is reset after each test is
+executed. This is necessary to avoid interaction between
+tests. Moreover, the class provides some additional assertions:
+
+.. autoclass:: pysmt.test.TestCase
+
 
 
 Distributing PySMT
