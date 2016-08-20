@@ -638,6 +638,31 @@ def get_example_formulae(environment=None):
                     is_sat=True,
                     logic=pysmt.logics.QF_NRA),
 
+            # (r*r*r) = 25
+            Example(expr=Equals(Times(r, r, r), Real(25)),
+                    is_valid=False,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_NRA),
+
+            # (5*r*5) = 25
+            Example(expr=Equals(Times(Real(5), r, Real(5)), Real(25)),
+                    is_valid=False,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_LRA),
+
+            # (p*p*p) = 25
+            Example(expr=Equals(Times(p, p, p), Int(25)),
+                    is_valid=False,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_NIA),
+
+            # (5*p*5) = 25
+            Example(expr=Equals(Times(Int(5), p, Int(5)), Real(25)),
+                    is_valid=False,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_LIA),
+
+
         ]
         return result
 
