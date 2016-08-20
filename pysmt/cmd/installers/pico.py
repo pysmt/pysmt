@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import sys
-import pip
 
 from pysmt.cmd.installers.base import SolverInstaller, TemporaryPath
 
@@ -35,6 +34,11 @@ class PicoSATInstaller(SolverInstaller):
         pass # Nothing to unpack
 
     def compile(self):
+        try:
+            import pip
+        except ImportError:
+            print("Error: pip is required to install Picosat.")
+            exit(-1)
         pip.main(['install', '--target', self.bindings_dir, 'pypicosat'])
 
     def get_installed_version(self):
