@@ -269,14 +269,14 @@ class Simplifier(pysmt.walkers.DagWalker):
             minus_one = self.manager.Real(-1) if is_real else \
                         self.manager.Int(-1)
             # (+ (* -1 X) Y) => (- Y X)
-            if ns[0].is_times():
+            if ns[0].is_times() and len(ns[0].args()) == 2:
                 t = ns[0]
                 if t.arg(0) == minus_one:
                     return self.manager.Minus(ns[1], t.arg(1))
                 if t.arg(1) == minus_one:
                     return self.manager.Minus(ns[1], t.arg(0))
             # (+ Y (* -1 X)) => (- Y X)
-            if ns[1].is_times():
+            if ns[1].is_times() and len(ns[0].args()) == 2:
                 t = ns[1]
                 if t.arg(0) == minus_one:
                     return self.manager.Minus(ns[0], t.arg(1))
