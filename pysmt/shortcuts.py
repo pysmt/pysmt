@@ -113,9 +113,9 @@ def Minus(left, right):
     r""".. math:: l - r """
     return get_env().formula_manager.Minus(left, right)
 
-def Times(left, right):
-    r""".. math:: l * r"""
-    return get_env().formula_manager.Times(left, right)
+def Times(*args):
+    r""".. math:: x_1 \times x_2 \cdots \times x_n"""
+    return get_env().formula_manager.Times(*args)
 
 def Pow(left, right):
     r""".. math:: l ^ r"""

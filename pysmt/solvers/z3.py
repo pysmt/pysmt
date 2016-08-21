@@ -595,7 +595,10 @@ class Z3Converter(Converter, DagWalker):
         return (args[0] == args[1])
 
     def walk_times(self, formula, args, **kwargs):
-        return (args[0] * args[1])
+        res = args[0]
+        for x in args[1:]:
+            res *= x
+        return res
 
     def walk_pow(self, formula, args, **kwargs):
         return args[0]**args[1]

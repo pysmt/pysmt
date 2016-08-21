@@ -269,14 +269,14 @@ class Simplifier(pysmt.walkers.DagWalker):
             minus_one = self.manager.Real(-1) if is_real else \
                         self.manager.Int(-1)
             # (+ (* -1 X) Y) => (- Y X)
-            if ns[0].is_times():
+            if ns[0].is_times() and len(ns[0].args()) == 2:
                 t = ns[0]
                 if t.arg(0) == minus_one:
                     return self.manager.Minus(ns[1], t.arg(1))
                 if t.arg(1) == minus_one:
                     return self.manager.Minus(ns[1], t.arg(0))
             # (+ Y (* -1 X)) => (- Y X)
-            if ns[1].is_times():
+            if ns[1].is_times() and len(ns[0].args()) == 2:
                 t = ns[1]
                 if t.arg(0) == minus_one:
                     return self.manager.Minus(ns[0], t.arg(1))
@@ -288,44 +288,51 @@ class Simplifier(pysmt.walkers.DagWalker):
         return self.manager.Plus(ns)
 
     def walk_times(self, formula, args, **kwargs):
-        assert len(args) == 2
+        new_args = []
+        constant_mul = 1
+        stack = list(args)
+        is_int = True
+        is_algebraic = False
+        while len(stack) > 0:
+            x = stack.pop()
+            if x.is_constant():
+                if x.is_real_constant():
+                    is_int = False
+                    is_algebraic = False
+                elif x.is_int_constant():
+                    is_int = True
+                    is_algebraic = False
+                else:
+                    assert x.is_algebraic_constant()
+                    is_int = False
+                    is_algebraic = True
 
-        sl = args[0]
-        sr = args[1]
-
-        if sl.is_constant() and sr.is_constant():
-            l = sl.constant_value()
-            r = sr.constant_value()
-            if sl.is_real_constant():
-                return self.manager.Real(l * r)
-            elif sl.is_int_constant():
-                return self.manager.Int(l * r)
+                if x.is_zero():
+                    constant_mul = 0
+                    break
+                else:
+                    constant_mul *= x.constant_value()
+            elif x.is_times():
+                stack += x.args()
             else:
-                assert sl.is_algebraic_constant()
+                new_args.append(x)
+
+        if constant_mul != 1:
+            const = None
+            if is_int:
+                const = self.manager.Int(constant_mul)
+            elif is_algebraic:
                 from pysmt.numeral import Numeral
-                return self.manager._Algebraic(Numeral(l * r))
+                const = self.manager._Algebraic(Numeral(constant_mul))
+            else:
+                const = self.manager.Real(constant_mul)
 
-        if sl.is_constant():
-            if sl.is_one():
-                return sr
-            elif sl.is_zero():
-                if sl.is_real_constant():
-                    return self.manager.Real(0)
-                else:
-                    assert sl.is_int_constant()
-                    return self.manager.Int(0)
+            if const.is_zero():
+                return const
+            else:
+                new_args.append(const)
+        return self.manager.Times(new_args)
 
-        if sr.is_constant():
-            if sr.is_one():
-                return sl
-            elif sr.is_zero():
-                if sr.is_real_constant():
-                    return self.manager.Real(0)
-                else:
-                    assert sr.is_int_constant()
-                    return self.manager.Int(0)
-
-        return self.manager.Times(sl, sr)
 
     def walk_pow(self, formula, args, **kwargs):
         if args[0].is_real_constant():

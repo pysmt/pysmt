@@ -241,6 +241,15 @@ class TestFormulaManager(TestCase):
         n = self.mgr.Times(self.rconst, self.rconst)
         self.assertIsNotNone(n)
 
+        n = self.mgr.Times(self.r, self.s, self.rconst)
+        self.assertIsNotNone(n)
+
+        n = self.mgr.Times([self.r, self.s, self.rconst])
+        self.assertIsNotNone(n)
+
+        n = self.mgr.Times(x for x in [self.r, self.s, self.rconst])
+        self.assertIsNotNone(n)
+
         n = self.mgr.Times(self.rconst, self.s)
         self.assertIsNotNone(n)
         args = n.args()
