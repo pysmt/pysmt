@@ -662,6 +662,13 @@ def get_example_formulae(environment=None):
                     is_sat=True,
                     logic=pysmt.logics.QF_LIA),
 
+            # ((1-1)*p*1) = 0
+            Example(expr=Equals(Times(Minus(Int(1), Int(1)), p, Int(1)),
+                                Int(0)),
+                    is_valid=True,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_LIA),
+
 
         ]
         return result
