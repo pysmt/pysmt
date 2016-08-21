@@ -228,7 +228,7 @@ class TheoryOracle(pysmt.walkers.DagWalker):
             theory_out = theory_out.combine(t)
         # Check for non-linear counting the arguments having at least
         # one free variable
-        if sum(1 for x in formula.args() if len(x.get_free_variables()) != 0) > 1:
+        if sum(1 for x in formula.args() if x.get_free_variables()) > 1:
             theory_out = theory_out.set_linear(False)
         # This is  not in DL anymore
         theory_out = theory_out.set_difference_logic(False)

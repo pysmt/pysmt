@@ -288,15 +288,11 @@ class CVC4Converter(Converter, DagWalker):
         return self.mkExpr(CVC4.EQUAL, args[0], args[1])
 
     def walk_times(self, formula, args, **kwargs):
+        if sum(1 for x in formula.args() if x.get_free_variables()) > 1:
+            raise NonLinearError(formula)
         res = args[0]
-        nl_count = 0 if res.isConst() else 1
         for x in args[1:]:
-            if not x.isConst():
-                nl_count += 1
-            if nl_count >= 2:
-                raise NonLinearError(formula)
-            else:
-                res = self.mkExpr(CVC4.MULT, res, x)
+            res = self.mkExpr(CVC4.MULT, res, x)
         return res
 
     def walk_toreal(self, formula, args, **kwargs):
