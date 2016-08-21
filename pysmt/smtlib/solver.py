@@ -123,6 +123,9 @@ class SmtLibSolver(Solver):
         return
 
     def add_assertion(self, formula, named=None):
+        # This is needed because Z3 (and possibly other solvers) incorrectly
+        # recognize N * M * x as a non-linear term
+        formula = formula.simplify()
         deps = formula.get_free_variables()
         for d in deps:
             if d not in self.declared_vars:

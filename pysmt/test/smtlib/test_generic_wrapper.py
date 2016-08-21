@@ -22,7 +22,7 @@ from pysmt.test import TestCase, main
 from pysmt.shortcuts import get_env, Solver, is_valid, is_sat
 from pysmt.shortcuts import LE, LT, Real, GT, Int, Symbol, And, Not
 from pysmt.typing import BOOL, REAL, INT
-from pysmt.logics import QF_UFLIRA, QF_UFLRA, QF_UFLIA, QF_BOOL, QF_UFBV, QF_NIA
+from pysmt.logics import QF_UFLIRA, QF_UFLRA, QF_UFLIA, QF_BOOL, QF_UFBV
 from pysmt.exceptions import (SolverRedefinitionError, NoSolverAvailableError,
                               UnknownSolverAnswerError)
 
@@ -114,10 +114,7 @@ class TestGenericWrapper(TestCase):
                     # MathSAT does not deal with UF with boolean args.
                     # This is handled via the native API, but not via the
                     # SMT-LIB Wrapper
-                    # QF_NIA is in general undecidable
-                    self.assertTrue(name == "mathsat.solver.sh" or \
-                                    example.logic == QF_NIA,
-                                    "%s - %s" % (name, f))
+                    self.assertTrue(name == "mathsat.solver.sh", name)
 
     def test_redefinition(self):
         env = get_env()
