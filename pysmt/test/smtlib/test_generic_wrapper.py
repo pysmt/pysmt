@@ -115,7 +115,8 @@ class TestGenericWrapper(TestCase):
                     # This is handled via the native API, but not via the
                     # SMT-LIB Wrapper
                     # QF_NIA is in general undecidable
-                    self.assertTrue(name == "mathsat.solver.sh" or f.logic == QF_NIA,
+                    self.assertTrue(name == "mathsat.solver.sh" or \
+                                    example.logic == QF_NIA,
                                     "%s - %s" % (name, f))
 
     def test_redefinition(self):
