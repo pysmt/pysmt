@@ -316,7 +316,7 @@ class Simplifier(pysmt.walkers.DagWalker):
 
         const = None
         if is_algebraic:
-            from pysmt.numeral import Numeral
+            from pysmt.constants import Numeral
             const = self.manager._Algebraic(Numeral(constant_mul))
         elif ttype.is_real_type():
             const = self.manager.Real(constant_mul)

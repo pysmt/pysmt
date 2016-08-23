@@ -33,6 +33,7 @@ addons:
     - curl
     - libboost-dev
     - python3-all-dev
+    - libmpc-dev
 
 python:
   - 2.7
@@ -47,38 +48,47 @@ python:
 #
 env:
   matrix:
-    - PYSMT_SOLVER="all"
-    - PYSMT_SOLVER="None"
-    - PYSMT_SOLVER="msat"
-    - PYSMT_SOLVER="z3"
-    - PYSMT_SOLVER="cvc4"
-    - PYSMT_SOLVER="yices"
-    - PYSMT_SOLVER="bdd"
-    - PYSMT_SOLVER="picosat"
-    - PYSMT_SOLVER="btor"
-    - PYSMT_SOLVER="msat_wrap"
-    - PYSMT_SOLVER="z3_wrap"
+    - PYSMT_SOLVER="all"   PYSMT_GMPY="TRUE"
+    - PYSMT_SOLVER="all"   PYSMT_GMPY="FALSE"
+    - PYSMT_SOLVER="None"  PYSMT_GMPY="FALSE"
+    - PYSMT_SOLVER="msat"  PYSMT_GMPY="FALSE"
+    - PYSMT_SOLVER="z3"    PYSMT_GMPY="FALSE"
+    - PYSMT_SOLVER="cvc4"  PYSMT_GMPY="FALSE"
+    - PYSMT_SOLVER="yices" PYSMT_GMPY="FALSE"
+    - PYSMT_SOLVER="bdd"   PYSMT_GMPY="FALSE"
+    - PYSMT_SOLVER="picosat" PYSMT_GMPY="FALSE"
+    - PYSMT_SOLVER="btor"  PYSMT_GMPY="FALSE"
+    - PYSMT_SOLVER="msat_wrap" PYSMT_GMPY="FALSE"
+    - PYSMT_SOLVER="z3_wrap"   PYSMT_GMPY="FALSE"
 
 matrix:
   fast_finish: true
 
   exclude:
     - python: pypy
-      env: PYSMT_SOLVER="msat"
+      env: PYSMT_SOLVER="all"   PYSMT_GMPY="TRUE"
     - python: pypy
-      env: PYSMT_SOLVER="z3"
+      env: PYSMT_SOLVER="all"   PYSMT_GMPY="FALSE"
     - python: pypy
-      env: PYSMT_SOLVER="cvc4"
+      env: PYSMT_SOLVER="None"  PYSMT_GMPY="FALSE"
     - python: pypy
-      env: PYSMT_SOLVER="yices"
+      env: PYSMT_SOLVER="msat"  PYSMT_GMPY="FALSE"
     - python: pypy
-      env: PYSMT_SOLVER="bdd"
+      env: PYSMT_SOLVER="z3"    PYSMT_GMPY="FALSE"
     - python: pypy
-      env: PYSMT_SOLVER="picosat"
+      env: PYSMT_SOLVER="cvc4"  PYSMT_GMPY="FALSE"
     - python: pypy
-      env: PYSMT_SOLVER="btor"
+      env: PYSMT_SOLVER="yices" PYSMT_GMPY="FALSE"
     - python: pypy
-      env: PYSMT_SOLVER="all"
+      env: PYSMT_SOLVER="bdd"   PYSMT_GMPY="FALSE"
+    - python: pypy
+      env: PYSMT_SOLVER="picosat" PYSMT_GMPY="FALSE"
+    - python: pypy
+      env: PYSMT_SOLVER="btor"  PYSMT_GMPY="FALSE"
+    - python: pypy
+      env: PYSMT_SOLVER="msat_wrap" PYSMT_GMPY="FALSE"
+    - python: pypy
+      env: PYSMT_SOLVER="z3_wrap"   PYSMT_GMPY="FALSE"
 
 install:
   # This is for btor that fails to find the python 3 library to link
@@ -87,6 +97,7 @@ install:
   # Therefore, we force the path here
   - if [ "${TRAVIS_PYTHON_VERSION}" == "3.5" ]; then export PATH=${PATH}:/opt/python/3.5.0/bin/ ; fi
   - "pip install six"
+  - if [ "${PYSMT_GMPY}" == "TRUE" ]; then pip install gmpy2; fi
   - if [ "${PYSMT_SOLVER}" == "all" ] || [ "${PYSMT_SOLVER}" == "btor" ]; then pip install cython; fi
   - "export BINDINGS_FOLDER=${HOME}/python_bindings/${PYSMT_SOLVER}"
   - "mkdir -p ${BINDINGS_FOLDER}"
