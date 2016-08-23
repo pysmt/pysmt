@@ -15,6 +15,7 @@ from __future__ import absolute_import
 
 import os
 import sys
+import platform
 
 from pysmt.cmd.installers.base import SolverInstaller, TemporaryPath
 
@@ -24,7 +25,7 @@ class Z3Installer(SolverInstaller):
     SOLVER = "z3"
 
     def __init__(self, install_dir, bindings_dir, solver_version,
-                 mirror_link=None):
+                 mirror_link=None, osx=None):
         arch = self.architecture
         if arch == "x86_64":
             arch = "x64"
@@ -32,6 +33,8 @@ class Z3Installer(SolverInstaller):
         system = self.os_name
         if system == "linux":
             system = "ubuntu-14.04"
+        elif system == "darwin":
+            system = "osx-%s" % osx
 
         archive_name = "z3-%s-%s-%s.zip" % (solver_version, arch, system)
         native_link = "https://github.com/Z3Prover/z3/releases/download/z3-4.4.1/{archive_name}"
@@ -43,11 +46,9 @@ class Z3Installer(SolverInstaller):
                                  native_link=native_link,
                                  mirror_link=mirror_link)
 
-
     def move(self):
         bpath = os.path.join(self.extract_path, "bin")
-        files = ["libz3.so",
-                 "z3consts.py",
+        files = ["z3consts.py",
                  "z3core.py",
                  "z3num.py",
                  "z3poly.py",
@@ -57,6 +58,10 @@ class Z3Installer(SolverInstaller):
                  "z3test.py",
                  "z3types.py",
                  "z3util.py"]
+        if self.os_name == "linux":
+            files += [ "libz3.so" ]
+        elif self.os_name == "darwin":
+            files += [ "libz3.a", "libz3.dylib" ]
         for f in files:
             SolverInstaller.mv(os.path.join(bpath, f), self.bindings_dir)
 

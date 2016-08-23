@@ -21,9 +21,9 @@ import six
 
 from contextlib import contextmanager
 
+import six.moves
 from six.moves import xrange
-from six.moves.urllib import request as urllib2
-from six.moves.urllib.error import HTTPError
+from six.moves.urllib.error import HTTPError, URLError
 
 @contextmanager
 def TemporaryPath(path):
@@ -100,6 +100,9 @@ class SolverInstaller(object):
                             raise
                         print("HTTP 404 while trying to get the archive using link" \
                               " #%d (trial %d/%d)" % (i, turn+1, self.trials_404))
+                    except URLError as e:
+                        print("Error while trying to get the archive using link" \
+                              " #%d (trial %d/%d)" % (i, turn+1, self.trials_404))
 
     def unpack(self):
         """Unpacks the archive"""
@@ -152,7 +155,7 @@ class SolverInstaller(object):
     @staticmethod
     def do_download(url, file_name):
         """Downloads the given url into the given file name"""
-        u = urllib2.urlopen(url)
+        u = six.moves.urllib.request.urlopen(url)
         f = open(file_name, 'wb')
         meta = u.info()
         if meta.get("Content-Length") and len(meta.get("Content-Length")) > 0:

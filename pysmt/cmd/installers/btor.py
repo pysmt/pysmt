@@ -33,7 +33,6 @@ class BtorInstaller(SolverInstaller):
                                  native_link=native_link,
                                  mirror_link=mirror_link)
 
-
     def compile(self):
         # First build
         SolverInstaller.run("make", directory=self.extract_path)
