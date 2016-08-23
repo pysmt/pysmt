@@ -16,8 +16,9 @@
 #   limitations under the License.
 #
 import os
+from unittest import skipIf
 
-from pysmt.test import TestCase, main, skipIfNoSMTWrapper
+from pysmt.test import TestCase, main
 from pysmt.shortcuts import get_env, Solver, is_valid, is_sat
 from pysmt.shortcuts import LE, LT, Real, GT, Int, Symbol, And, Not
 from pysmt.typing import BOOL, REAL, INT
@@ -28,6 +29,15 @@ from pysmt.exceptions import (SolverRedefinitionError, NoSolverAvailableError,
 from pysmt.test.examples import get_example_formulae
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ALL_WRAPPERS = []
+
+for _, _, fnames in os.walk(BASE_DIR):
+    for f in fnames:
+        if f.endswith(".solver.sh"):
+            name = os.path.basename(f)
+            path = os.path.join(BASE_DIR, "bin/" + f)
+            ALL_WRAPPERS.append((name, path))
+
 
 class TestGenericWrapper(TestCase):
 
@@ -35,22 +45,16 @@ class TestGenericWrapper(TestCase):
         TestCase.setUp(self)
 
         self.all_solvers = []
-
-        env = get_env()
-        for _, _, fnames in os.walk(BASE_DIR):
-            for f in fnames:
-                if f.endswith(".solver.sh"):
-                    name = os.path.basename(f)
-                    path = os.path.join(BASE_DIR, "bin/" + f)
-                    env.factory.add_generic_solver(name,
-                                                   [path],
-                                                   [QF_UFLRA,
-                                                    QF_UFLIA,
-                                                    QF_UFBV])
-                    self.all_solvers.append(f)
+        for (name, path) in ALL_WRAPPERS:
+            self.env.factory.add_generic_solver(name,
+                                           [path],
+                                           [QF_UFLRA,
+                                            QF_UFLIA,
+                                            QF_UFBV])
+            self.all_solvers.append(name)
 
 
-    @skipIfNoSMTWrapper
+    @skipIf(len(ALL_WRAPPERS) == 0, "No wrapper available")
     def test_generic_wrapper_basic(self):
         a = Symbol("A", BOOL)
         f = And(a, Not(a))
@@ -61,8 +65,7 @@ class TestGenericWrapper(TestCase):
                 res = s.solve()
                 self.assertFalse(res)
 
-
-    @skipIfNoSMTWrapper
+    @skipIf(len(ALL_WRAPPERS) == 0, "No wrapper available")
     def test_generic_wrapper_model(self):
         a = Symbol("A", BOOL)
         b = Symbol("B", BOOL)
@@ -77,8 +80,7 @@ class TestGenericWrapper(TestCase):
                 self.assertFalse(s.get_py_value(b))
                 self.assertTrue(s.get_py_value(a))
 
-
-    @skipIfNoSMTWrapper
+    @skipIf(len(ALL_WRAPPERS) == 0, "No wrapper available")
     def test_generic_wrapper_eager_model(self):
         a = Symbol("A", BOOL)
         b = Symbol("B", BOOL)
@@ -95,8 +97,7 @@ class TestGenericWrapper(TestCase):
             self.assertFalse(model.get_value(b).is_true())
             self.assertTrue(model.get_value(a).is_true())
 
-
-    @skipIfNoSMTWrapper
+    @skipIf(len(ALL_WRAPPERS) == 0, "No wrapper available")
     def test_examples(self):
         for name in self.all_solvers:
             for example in get_example_formulae():
@@ -125,8 +126,7 @@ class TestGenericWrapper(TestCase):
                                            ["/tmp/nonexistent"],
                                            [QF_UFLIRA])
 
-
-    @skipIfNoSMTWrapper
+    @skipIf(len(ALL_WRAPPERS) == 0, "No wrapper available")
     def test_reals(self):
         f = And(LT(Symbol("x", REAL), Real(2)),
                 LE(Symbol("x", REAL), Real(3)))
@@ -136,8 +136,7 @@ class TestGenericWrapper(TestCase):
                 res = s.solve()
                 self.assertTrue(res)
 
-
-    @skipIfNoSMTWrapper
+    @skipIf(len(ALL_WRAPPERS) == 0, "No wrapper available")
     def test_ints(self):
         f = And(LT(Symbol("x", INT), Int(2)),
                 GT(Symbol("x", INT), Int(2)))
@@ -146,6 +145,7 @@ class TestGenericWrapper(TestCase):
                 s.add_assertion(f)
                 res = s.solve()
                 self.assertFalse(res)
+
 
 if __name__ == "__main__":
     main()

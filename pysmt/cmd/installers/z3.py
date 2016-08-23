@@ -75,4 +75,6 @@ class Z3Installer(SolverInstaller):
             finally:
                 if "z3" in sys.modules:
                     del sys.modules["z3"]
+                # Return None, without raising an exception
+                # pylint: disable=lost-exception
                 return version

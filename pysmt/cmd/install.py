@@ -25,10 +25,11 @@ from pysmt.cmd.installers import CVC4Installer, YicesInstaller, BtorInstaller
 from pysmt.cmd.installers import CuddInstaller
 
 from pysmt.environment import get_env
+from pysmt import git_version
 
 # Build a list of installers, one for each solver
 Installer = namedtuple("Installer", ["InstallerClass", "version", "extra_params"])
-INSTALLERS = [Installer(MSatInstaller,    "5.3.9", {}),
+INSTALLERS = [Installer(MSatInstaller,    "5.3.13", {}),
               Installer(Z3Installer,      "4.4.1", {"osx": "10.11"}),
               Installer(CVC4Installer,    "1.5-prerelease", {"git_version" : "c15ff43597b41ea457befecb1b0e2402e28cb523"}),
               Installer(YicesInstaller,   "2.4.2", {"yicespy_version": "22b94419522ba772a1cc1e72dbe84e01b8adc16d"}),
@@ -103,6 +104,8 @@ def parse_options():
                                      ' on the command line or in the environment'
                                      ' variable PYSMT_SOLVER if not already '
                                      'instaled on the system.')
+    parser.add_argument('--version', action='version',
+                        version='%(prog)s {version}'.format(version=git_version()))
 
     for i in INSTALLERS:
         name = i.InstallerClass.SOLVER
@@ -134,8 +137,9 @@ def parse_options():
                         type=str, default="~/.smt_solvers",
                         help='The folder to use for the installation')
 
+    py_bindings = "~/.smt_solvers/python-bindings-%d.%d" % sys.version_info[0:2]
     parser.add_argument('--bindings-path', dest='bindings_path',
-                        type=str, default="~/.smt_solvers/python_bindings",
+                        type=str, default=py_bindings,
                         help='The folder to use for the bindings')
 
     options = parser.parse_args()
@@ -171,9 +175,6 @@ def main():
     if mirror_url is not None:
         mirror_url += "/{archive_name}"
 
-    # Env variable controlling the solvers to be installed or checked
-    requested_solvers = get_requested_solvers()
-
     # This should work on any platform
     install_dir= os.path.expanduser(options.install_path)
     if not os.path.exists(install_dir):
@@ -188,8 +189,20 @@ def main():
     all_solvers = options.all_solvers
     for i in INSTALLERS:
         name = i.InstallerClass.SOLVER
-        if all_solvers or getattr(options, name) or name in requested_solvers:
+        if all_solvers or getattr(options, name):
             solvers_to_install.append(i)
+
+    # Env variable controlling the solvers to be installed or checked
+    requested_solvers = get_requested_solvers()
+    if len(solvers_to_install) != 0 and len(requested_solvers) != 0:
+        print("Warning: Solvers specified on the command line, "
+              "ignoring env variable 'PYSMT_SOLVER'")
+    if len(solvers_to_install) == 0:
+        # No solver requested from cmd-line, checking ENV
+        for i in INSTALLERS:
+            name = i.InstallerClass.SOLVER
+            if name in requested_solvers:
+                solvers_to_install.append(i)
 
     if options.check:
         check_installed([x.InstallerClass.SOLVER for x in solvers_to_install],

@@ -15,8 +15,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import re
-
 from warnings import warn
 from fractions import Fraction
 from six.moves import xrange

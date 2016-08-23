@@ -480,6 +480,7 @@ def get_unsat_core(clauses, solver_name=None, logic=None):
     """Similar to :py:func:`get_model` but returns the unsat core of the
     conjunction of the input clauses"""
     env = get_env()
+    clauses = list(clauses)
     if any(c not in env.formula_manager for c in clauses):
         warnings.warn("Warning: Contextualizing formula during get_model")
         clauses = [env.formula_manager.normalize(c) for c in clauses]

@@ -1,7 +1,22 @@
+# Copyright 2014 Andrea Micheli and Marco Gario
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import time
 from io import TextIOWrapper
 from subprocess import Popen, PIPE
 
-from six import iteritems, PY2
+from six import PY2
 
 import pysmt.smtlib.commands as smtcmd
 from pysmt.solvers.eager import EagerModel
@@ -18,19 +33,21 @@ class SmtLibSolver(Solver):
     the executable. Interaction with the solver occurs via pipe.
     """
 
-    def __init__(self, args, environment, logic, user_options=None,
-                 LOGICS=None):
+    def __init__(self, args, environment, logic, LOGICS=None, **options):
         Solver.__init__(self,
                         environment,
-                        logic=logic,
-                        user_options=user_options)
+                        logic=logic)
+
         # Flag used to debug interaction with the solver
         self.dbg = False
 
         if LOGICS is not None: self.LOGICS = LOGICS
         self.args = args
         self.declared_vars = set()
-        self.solver = Popen(args, stdout=PIPE, stderr=PIPE, stdin=PIPE)
+        self.solver = Popen(args, stdout=PIPE, stderr=PIPE, stdin=PIPE,
+                            bufsize=-1)
+        # Give time to the process to start-up
+        time.sleep(0.01)
         self.parser = SmtLibParser(interactive=True)
         if PY2:
             self.solver_stdin = self.solver.stdin
@@ -45,9 +62,6 @@ class SmtLibSolver(Solver):
             self.set_option(":produce-models", "true")
         # Redirect diagnostic output to stdout
         self.set_option(":diagnostic-output-channel", '"stdout"')
-        if self.options is not None:
-            for o,v in iteritems(self.options):
-                self.set_option(o,v)
         self.set_logic(logic)
 
     def set_option(self, name, value):

@@ -97,6 +97,12 @@ class TestArray(TestCase):
             Equals(nested_a, Array(Array(REAL, BV(0,8)),
                                    Array(INT, Int(7))))
 
+    def test_is_array_op(self):
+        a = Symbol("a", ARRAY_INT_INT)
+        store_ = Store(a, Int(10), Int(100))
+        select_ = Select(store_, Int(100))
+        self.assertTrue(store_.is_array_op())
+        self.assertTrue(select_.is_array_op())
 
 
 if __name__ == "__main__":

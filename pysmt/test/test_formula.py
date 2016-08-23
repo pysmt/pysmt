@@ -109,6 +109,7 @@ class TestFormulaManager(TestCase):
         one = self.mgr.And(self.x)
         self.assertEqual(one, self.x)
 
+        self.assertTrue(n.is_bool_op())
 
     def test_or_node(self):
         n = self.mgr.Or(self.x, self.y)
@@ -130,6 +131,7 @@ class TestFormulaManager(TestCase):
         one = self.mgr.Or(self.x)
         self.assertEqual(one, self.x)
 
+        self.assertTrue(n.is_bool_op())
 
     def test_not_node(self):
         n = self.mgr.Not(self.x)
@@ -143,6 +145,7 @@ class TestFormulaManager(TestCase):
         self.assertEqual(len(args), 1)
 
         self.assertEqual(self.mgr.Not(n), self.x)
+        self.assertTrue(n.is_bool_op())
 
     def test_implies_node(self):
         n = self.mgr.Implies(self.x, self.y)
@@ -155,6 +158,7 @@ class TestFormulaManager(TestCase):
         self.assertEqual(self.x, args[0])
         self.assertEqual(self.y, args[1])
         self.assertEqual(len(args), 2)
+        self.assertTrue(n.is_bool_op())
 
     def test_iff_node(self):
         n = self.mgr.Iff(self.x, self.y)
@@ -167,7 +171,7 @@ class TestFormulaManager(TestCase):
         self.assertIn(self.x, args)
         self.assertIn(self.y, args)
         self.assertEqual(len(args), 2)
-
+        self.assertTrue(n.is_bool_op())
 
     def test_ge_node_type(self):
         with self.assertRaises(TypeError):
@@ -198,6 +202,8 @@ class TestFormulaManager(TestCase):
 
         n = self.mgr.GE(self.p, self.q)
         self.assertIsNotNone(n)
+        self.assertFalse(n.is_bool_op())
+        self.assertTrue(n.is_theory_relation())
 
     def test_minus_node(self):
         n = self.mgr.Minus(self.real_expr, self.real_expr)
@@ -222,10 +228,10 @@ class TestFormulaManager(TestCase):
 
         self.assertTrue(n.is_minus())
         self.assertEqual(n.get_free_variables(), set([self.p, self.q]))
+        self.assertTrue(n.is_theory_op())
 
         with self.assertRaises(TypeError):
             n = self.mgr.Minus(self.r, self.q)
-
 
     def test_times_node(self):
         n = self.mgr.Times(self.real_expr, self.rconst)
@@ -249,6 +255,7 @@ class TestFormulaManager(TestCase):
 
         n = self.mgr.Times(self.iconst, self.q)
         self.assertIsNotNone(n)
+        self.assertTrue(n.is_lira_op())
 
     def test_div_node(self):
         n = self.mgr.Div(self.real_expr, self.rconst)
@@ -279,6 +286,7 @@ class TestFormulaManager(TestCase):
 
         self.assertTrue(n.is_equals())
         self.assertEqual(n.get_free_variables(), set([self.p, self.q]))
+        self.assertTrue(n.is_theory_relation())
 
         with self.assertRaises(TypeError):
             n = self.mgr.Equals(self.p, self.r)
@@ -312,6 +320,7 @@ class TestFormulaManager(TestCase):
 
         n = self.mgr.GT(self.p, self.q)
         self.assertIsNotNone(n)
+        self.assertTrue(n.is_theory_relation())
 
     def test_le_node_type(self):
         with self.assertRaises(TypeError):
@@ -339,6 +348,7 @@ class TestFormulaManager(TestCase):
         self.assertIn(self.r, args)
         self.assertIn(self.s, args)
         self.assertEqual(len(args), 2)
+        self.assertTrue(n.is_theory_relation())
 
     def test_lt_node_type(self):
         with self.assertRaises(TypeError):
@@ -366,6 +376,7 @@ class TestFormulaManager(TestCase):
         self.assertIn(self.r, args)
         self.assertIn(self.s, args)
         self.assertEqual(len(args), 2)
+        self.assertTrue(n.is_theory_relation())
 
     def test_ite(self):
         n = self.mgr.Ite(self.x, self.y, self.x)
@@ -387,7 +398,6 @@ class TestFormulaManager(TestCase):
 
         with self.assertRaises(TypeError):
             self.mgr.Ite(self.x, self.p, self.r)
-
 
     def test_function(self):
         n = self.mgr.Function(self.f, [self.r, self.s])
@@ -460,7 +470,6 @@ class TestFormulaManager(TestCase):
 
         with self.assertRaises(TypeError):
             self.mgr.Plus()
-
 
         n1 = self.mgr.Plus([self.r, self.s])
         n2 = self.mgr.Plus(self.r, self.s)
@@ -948,7 +957,7 @@ class TestFormulaManager(TestCase):
         a1 = self.mgr.Array(INT, self.mgr.Int(0))
         a2 = self.mgr.Array(INT, self.mgr.Int(0),
                             {self.mgr.Int(12) : self.mgr.Int(0)})
-        self.assertEquals(a1, a2)
+        self.assertEqual(a1, a2)
 
 
 class TestShortcuts(TestCase):

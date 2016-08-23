@@ -221,7 +221,7 @@ class TestRegressions(TestCase):
         f1 = ExactlyOne(elems)
         f2 = ExactlyOne(e for e in elems)
 
-        self.assertEquals(f1, f2)
+        self.assertEqual(f1, f2)
 
     def test_determinism(self):
         def get_set(env):
@@ -247,7 +247,7 @@ class TestRegressions(TestCase):
                 # The ordering of the sets should be the same...
                 for i,f in enumerate(l1):
                     nf = new_env.formula_manager.normalize(f)
-                    self.assertEquals(nf, l_test[i])
+                    self.assertEqual(nf, l_test[i])
 
     def test_is_one(self):
         self.assertTrue(Int(1).is_one())
@@ -346,8 +346,8 @@ class TestRegressions(TestCase):
             x = Symbol("x", BVType(16))
             s.add_assertion(Equals(x, BV(1, 16)))
             self.assertTrue(s.solve())
-            self.assertEquals(s.get_value(Equals(x, BV(1, 16))), TRUE())
-            self.assertEquals(s.get_value(BVAdd(x, BV(1, 16))), BV(2, 16))
+            self.assertEqual(s.get_value(Equals(x, BV(1, 16))), TRUE())
+            self.assertEqual(s.get_value(BVAdd(x, BV(1, 16))), BV(2, 16))
 
     @skipIfSolverNotAvailable("btor")
     def test_btor_get_array_element(self):
@@ -356,7 +356,7 @@ class TestRegressions(TestCase):
             s.add_assertion(Equals(Select(x, BV(1, 16)), BV(1, 16)))
             s.add_assertion(Equals(Select(x, BV(2, 16)), BV(3, 16)))
             self.assertTrue(s.solve())
-            self.assertEquals(s.get_value(Select(x, BV(1, 16))), BV(1, 16))
+            self.assertEqual(s.get_value(Select(x, BV(1, 16))), BV(1, 16))
             self.assertIsNotNone(s.get_value(x))
 
 

@@ -1,5 +1,7 @@
 from setuptools import setup, find_packages
 
+import pysmt
+
 long_description=\
 """============================================================
  pySMT: A library for SMT formulae manipulation and solving
@@ -50,7 +52,7 @@ Visit http://www.pysmt.org
 
 setup(
     name='PySMT',
-    version='0.5.1dev1',
+    version=pysmt.__version__,
     author='PySMT Team',
     author_email='info@pysmt.org',
     packages = find_packages(),

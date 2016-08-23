@@ -58,7 +58,7 @@ class TestSimplify(TestCase):
     def test_array_value(self):
         a1 = Array(INT, Int(0), {Int(12) : Int(10)})
         a2 = Store(Array(INT, Int(0)), Int(12), Int(10))
-        self.assertEquals(a1, a2.simplify())
+        self.assertEqual(a1, a2.simplify())
 
     @skipIfSolverNotAvailable("bdd")
     def test_bdd_simplify(self):

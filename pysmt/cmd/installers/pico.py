@@ -46,4 +46,6 @@ class PicoSATInstaller(SolverInstaller):
             finally:
                 if "picosat" in sys.modules:
                     del sys.modules["picosat"]
+                # Return None, without raising an exception
+                # pylint: disable=lost-exception
                 return version

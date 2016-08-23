@@ -17,6 +17,7 @@ import sys
 import shutil
 import zipfile
 import tarfile
+import six
 
 from contextlib import contextmanager
 
@@ -203,7 +204,7 @@ class SolverInstaller(object):
             cmd = '{program}'
 
         if env_variables is not None:
-            for k,v in env_variables.iteritems():
+            for k,v in six.iteritems(env_variables):
                 cmd = "export %s='%s'; %s" % (k, v, cmd)
 
         os.system(cmd.format(directory=directory,

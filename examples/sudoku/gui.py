@@ -48,7 +48,7 @@ class GridWindow(Gtk.Window):
         self.clear_button.connect("clicked", self.clear)
 
 
-    def clear(self, c):
+    def clear(self, c): # pylint: disable=unused-argument
         """Reset the view emptying all cells"""
         for lst in self.table:
             for entry in lst:

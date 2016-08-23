@@ -72,4 +72,6 @@ class MSatInstaller(SolverInstaller):
             finally:
                 if "mathsat" in sys.modules:
                     del sys.modules["mathsat"]
+                # Return None, without raising an exception
+                # pylint: disable=lost-exception
                 return version
