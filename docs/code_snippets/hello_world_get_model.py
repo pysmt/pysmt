@@ -20,8 +20,5 @@ problem = And(Equals(sum_hello, sum_world),
 
 formula = And(domains, problem)
 
-print("Serialization of the formula:")
-print(formula)
-
-print("Checking Satisfiability:")
-print(is_sat(formula))
+print("Printing model:")
+print(get_model(formula))

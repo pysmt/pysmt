@@ -76,12 +76,12 @@ BACKWARDS INCOMPATIBLE CHANGES:
 
 * MGSubstituter becomes the new default substitution method (PR #253)
 
-  When performing substitution with a mapping like ```{a: b, Not(a),
-  c}```, ```Not(a)``` is considered before ```a```. The previous
-  behavior (MSSubstituter) would have substituted ```a``` first, and
-  then the rule for ```Not(a)``` would not have been applied.
+  When performing substitution with a mapping like ``{a: b, Not(a),
+  c}``, ``Not(a)`` is considered before ``a``. The previous
+  behavior (MSSubstituter) would have substituted ``a`` first, and
+  then the rule for ``Not(a)`` would not have been applied.
 
-* Removed argument ```user_options``` from Solver()
+* Removed argument ``user_options`` from Solver()
 
 Theories:
 
@@ -119,7 +119,7 @@ General:
   catch typos etc. by raising a ValueError exception if the option is
   unknown.
 
-  It is now possible to do: ```Solver(name="bdd", dynamic_reordering=True)```
+  It is now possible to do: ``Solver(name="bdd", dynamic_reordering=True)``
 
 
 Solvers:
@@ -165,7 +165,7 @@ General:
 * pysmt.parsing: Added parser for Human Readable expressions
 * pysmt-install: new installer engine
 * Most General Substitution: Introduced new Substituter, that performs
-top-down substitution. This will become the default in version 0.5.
+  top-down substitution. This will become the default in version 0.5.
 * Improved compliance with SMT-LIB 2 and 2.5
 * EagerModel can now take a solver model in input
 * Introduce new exception 'UndefinedSymbolError' when trying to access

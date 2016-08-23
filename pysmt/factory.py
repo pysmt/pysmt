@@ -46,7 +46,13 @@ DEFAULT_QE_LOGIC = LRA
 DEFAULT_INTERPOLATION_LOGIC = QF_UFLRA
 
 class Factory(object):
+    """Factory used to build Solver, QuantifierEliminators, Interpolators etc.
 
+    This class contains the logic to magically select the correct
+    solver. Moreover, this is the class providing the shortcuts
+    is_sat, is_unsat etc.
+
+    """
     def __init__(self, environment,
                  solver_preference_list=None,
                  qelim_preference_list=None,

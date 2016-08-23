@@ -7,7 +7,7 @@ pySMT: a Python API for SMT
            :alt: Build Status
 
 .. image:: https://readthedocs.org/projects/pysmt/badge/?version=latest
-           :target: https://readthedocs.org/projects/pysmt/?badge=latest
+           :target: https://pysmt.readthedocs.io/en/latest/
            :alt: Documentation Status
 
 .. image:: https://img.shields.io/pypi/v/pysmt.svg
@@ -198,4 +198,4 @@ License
 pySMT is release under the APACHE 2.0 License.
 
 For further questions, feel free to open an issue, or write to
-info@pysmt.org
+pysmt@googlegroups.com .

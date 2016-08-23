@@ -117,7 +117,7 @@ class Environment(object):
 
     @property
     def sizeo(self):
-        """ Get the FreeVars Oracle """
+        """ Get the Size Oracle """
         return self._sizeo
 
     def add_dynamic_walker_function(self, nodetype, walker, function):
@@ -128,7 +128,8 @@ class Environment(object):
         function to a given walker, so that the walker will be able to
         handle the new nodetype.
 
-        See Walker.walk_error for more information.
+        See :py:meth:`pysmt.walkers.generic.Walker.walk_error` for
+        more information.
         """
         # self.dwf is a map of maps: {nodetype, {walker: function}}
         if nodetype not in self.dwf:

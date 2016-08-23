@@ -20,12 +20,14 @@
 This module defines a global environment, so that most methods can be
 called without the need to specify an environment or a FormulaManager.
 Functions trying to access the global environment should use the
-method get_global_env(). Keep in mind that the global state of the
+method get_env(). Keep in mind that the global state of the
 environment might lead to inconsistency and unexpected bugs. This is
 particularly true for tests. For tests it is recommended to perform an
 environment reset in the setUp phase, to be guaranteed that a fresh
-environment is used.
+environment is used (this is the default behavior of
+:py:class:`pysmt.test.TestCase` ).
 """
+
 # Enable default deprecation warnings!
 import warnings
 warnings.simplefilter('default')
@@ -551,6 +553,14 @@ def sequence_interpolant(formulas, solver_name=None, logic=None):
     return env.factory.sequence_interpolant(formulas,
                                             solver_name=solver_name,
                                             logic=logic)
+
+def read(fname):
+    """Reads the SMT formula from the given file."""
+    raise NotImplementedError
+
+def write(fname):
+    """Writes the SMT formula to the given file."""
+    raise NotImplementedError
 
 def read_configuration(config_filename, environment=None):
     """
