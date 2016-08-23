@@ -40,12 +40,6 @@ class MSatInstaller(SolverInstaller):
 
 
     def compile(self):
-        # Download patched mathsat wrapper using SWIG3
-        # #255: This should be removed once PY3 compatibility is restore upstream
-        mathsat_wrap = "https://raw.githubusercontent.com/pysmt/solvers_patches/e1418d046a2f2f5ebb243e7167a6290e8e8b9b15/mathsat_python_wrap.c"
-        self.do_download(mathsat_wrap,
-                         os.path.join(self.python_bindings_dir, "mathsat_python_wrap.c"))
-        # End #255
         SolverInstaller.run_python("./setup.py build", self.python_bindings_dir)
 
 
@@ -60,12 +54,6 @@ class MSatInstaller(SolverInstaller):
             if f.endswith(".so"):
                 SolverInstaller.mv(os.path.join(sodir, f), self.bindings_dir)
         SolverInstaller.mv(os.path.join(pdir, "mathsat.py"), self.bindings_dir)
-
-        # Overwrite mathsat.py with PY3 compatible version
-        # #255: This should be removed once PY3 compatibility is restore upstream
-        mathsat_wrap = "https://raw.githubusercontent.com/pysmt/solvers_patches/e1418d046a2f2f5ebb243e7167a6290e8e8b9b15/mathsat.py"
-        self.do_download(mathsat_wrap,
-                         os.path.join(self.bindings_dir, "mathsat.py"))
 
 
     def get_installed_version(self):
