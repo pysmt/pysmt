@@ -15,7 +15,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from fractions import Fraction
 from six.moves import xrange
 
 from pysmt.exceptions import SolverAPINotFound
@@ -36,6 +35,7 @@ from pysmt.walkers import DagWalker
 from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 from pysmt.solvers.eager import EagerModel
 from pysmt.decorators import catch_conversion_error
+from pysmt.constants import Fraction
 
 
 class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
@@ -245,7 +245,7 @@ class CVC4Converter(Converter, DagWalker):
 
     def walk_real_constant(self, formula, **kwargs):
         frac = formula.constant_value()
-        n,d = frac.numerator, frac.denominator
+        n,d = int(frac.numerator), int(frac.denominator)
         return self.mkConst(CVC4.Rational(n, d))
 
     def walk_int_constant(self, formula, **kwargs):

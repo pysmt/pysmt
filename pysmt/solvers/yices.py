@@ -18,7 +18,6 @@
 import atexit
 
 from six.moves import xrange
-from fractions import Fraction
 
 from pysmt.exceptions import SolverAPINotFound
 
@@ -36,6 +35,7 @@ from pysmt.walkers import DagWalker
 from pysmt.exceptions import SolverReturnedUnknownResultError
 from pysmt.exceptions import InternalSolverError, NonLinearError
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
+from pysmt.constants import Fraction
 
 import pysmt.logics
 
