@@ -22,7 +22,7 @@ from six import iteritems
 import pysmt.operators as op
 from pysmt.walkers import TreeWalker
 from pysmt.utils import quote
-from pysmt.constants import Fraction, is_fraction
+from pysmt.constants import Fraction, is_pysmt_fraction, is_pysmt_integer
 
 
 class HRPrinter(TreeWalker):
@@ -120,15 +120,14 @@ class HRPrinter(TreeWalker):
         self.write(")")
 
     def walk_real_constant(self, formula):
-        assert is_fraction(formula.constant_value()), \
+        assert is_pysmt_fraction(formula.constant_value()), \
             "The type was " + str(type(formula.constant_value()))
         self.write(str(formula.constant_value()))
         if formula.constant_value().denominator == 1:
             self.write(".0")
 
     def walk_int_constant(self, formula):
-        assert (type(formula.constant_value()) == int or
-                type(formula.constant_value()) == long) , \
+        assert is_pysmt_integer(formula.constant_value()), \
             "The type was " + str(type(formula.constant_value()))
         self.write(str(formula.constant_value()))
 

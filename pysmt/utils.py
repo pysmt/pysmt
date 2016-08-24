@@ -2,7 +2,6 @@ import re
 import io
 import itertools
 from six import PY2
-from pysmt.constants import is_fraction
 
 
 def all_assignments(bool_variables, env):
@@ -43,19 +42,6 @@ def twos_complement(val, bits):
 #
 # Python Compatibility Functions
 #
-def is_python_integer(n):
-    if PY2:
-        return type(n) == long or type(n) == int
-    else:
-        return type(n) == int
-
-
-def is_python_rational(n):
-    return is_python_integer(n) or type(n) == float or is_fraction(n)
-
-
-def is_python_boolean(n):
-    return n is True or n is False
 
 
 def BufferedTextReader(fname):

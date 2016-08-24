@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import os
+from six import PY2
 # The environment variable can be used to force the configuration
 # of the Fraction class.
 #
@@ -31,39 +32,149 @@ ENV_USE_GMPY = os.environ.get("PYSMT_GMPY")
 if ENV_USE_GMPY is not None:
     ENV_USE_GMPY = ENV_USE_GMPY.lower() in ["true", "1"]
 
+HAS_GMPY = False
+try:
+    from gmpy2 import mpq, mpz
+    HAS_GMPY = True
+except ImportError as ex:
+    if ENV_USE_GMPY is True:
+        raise ex
+
+if ENV_USE_GMPY is False:
+    # Explicitely disable GMPY
+    USE_GMPY = False
+elif ENV_USE_GMPY is True:
+    # Explicitely enable GMPY
+    USE_GMPY = True
+else:
+    # Enable GMPY if they are available
+    USE_GMPY = HAS_GMPY
+
 #
 # Fractions using GMPY2
 #
 
-if ENV_USE_GMPY is False:
-    from fractions import Fraction
+from fractions import Fraction as pyFraction
+mpq_type = None
+if USE_GMPY:
+    Fraction = mpq
+    mpq_type = type(mpq(1,2))
 else:
-    try:
-        from gmpy2 import mpq
-        Fraction = mpq
-        FractionClass = type(Fraction(1,2))
-    except ImportError as ex:
-        if ENV_USE_GMPY is True:
-            raise ex
-        else:
-            from fractions import Fraction
-
+    Fraction = pyFraction
 FractionClass = type(Fraction(1,2))
 
-def is_fraction(var):
+
+def is_pysmt_fraction(var):
     """Tests whether var is a Fraction.
 
-    This takes into account which library we are using to represent
-    fractions, i.e., python standard library or gmpy2.
+    This takes into account the class being used to represent the Fraction.
     """
-    # print(type(var), FractionClass, type(var) == FractionClass)
     return type(var) == FractionClass
 
+#
+# Integers using GMPY2
+#
+mpz_type = None
+if USE_GMPY:
+    Integer = mpz
+    mpz_type = type(mpz(1))
+else:
+    if PY2:
+        Integer = long
+    else:
+        Integer = int
+IntegerClass = type(Integer(1))
+
+
+def is_pysmt_integer(var):
+    """Tests whether var is an Integer.
+
+    This takes into account the class being used to represent the Integer.
+    """
+    return type(var) == IntegerClass
+
+
+def is_python_integer(var):
+    """Checks whether var is Python Integer.
+
+    This accounts for: long, int and mpz (if available).
+    """
+    if type(var) == mpz_type:
+        return True
+    if PY2 and type(var) == long:
+        return True
+    if type(var) == int:
+        return True
+    return False
+
+
+def is_python_rational(var):
+    """Tests whether var is a Rational.
+
+    This accounts for: long, int, float, Fraction, mpz, mpq (if available).
+    """
+    if type(var) == mpz_type or type(var) == mpq_type:
+        return True
+    if type(var) == pyFraction:
+        return True
+    if PY2 and type(var) == long:
+        return True
+    if type(var) == int:
+        return True
+    if type(var) == float:
+        return True
+    return False
+
+
+def is_python_boolean(var):
+    """Tests whether var is a Boolean."""
+    return var is True or var is False
+
+
+def pysmt_integer_from_integer(value):
+    """Return a pysmt Integer for the given value."""
+    if type(value) == IntegerClass:
+        # Nothing to do
+        return value
+    return Integer(value)
+
+
+if PY2:
+    def to_python_integer(value):
+        """Return the python integer value."""
+        return long(value)
+else:
+    def to_python_integer(value):
+        """Return the python integer value."""
+        return int(value)
+
+
+if USE_GMPY:
+    def pysmt_fraction_from_rational(value):
+        """Return a pysmt Fraction for the rational value."""
+        if type(value) == FractionClass:
+            # Nothing to do
+            return value
+        return Fraction(value)
+else:
+    def pysmt_fraction_from_rational(value):
+        """Return a pysmt Fraction for the rational value."""
+        if type(value) == FractionClass:
+            # Nothing to do
+            return value
+        # Python's Fraction is a bit picky, need to
+        # construct the object in different ways
+        if type(value) == mpq_type:
+            n = Integer(value.numerator())
+            d = Integer(value.denominator())
+            return Fraction(n, d)
+        elif type(value) == mpz_type:
+            return Fraction(Integer(value))
+        else:
+            return Fraction(value)
 
 #
 # Algebraic Numbers Using Z3
-#
-# TODO: Check if this can be represented in gmpy2
 #
 
 use_z3 = False

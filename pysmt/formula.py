@@ -34,11 +34,15 @@ from six.moves import xrange
 import pysmt.typing as types
 import pysmt.operators as op
 
-from pysmt.utils import is_python_integer
 from pysmt.fnode import FNode, FNodeContent
 from pysmt.exceptions import UndefinedSymbolError
 from pysmt.walkers.identitydag import IdentityDagWalker
-from pysmt.constants import Fraction, is_fraction
+from pysmt.constants import Fraction
+from pysmt.constants import (is_pysmt_fraction, is_python_rational,
+                             pysmt_fraction_from_rational)
+from pysmt.constants import (is_pysmt_integer,
+                             is_python_integer,
+                             pysmt_integer_from_integer)
 
 
 class FormulaManager(object):
@@ -313,18 +317,17 @@ class FormulaManager(object):
           - A tuple (n,d)
           - A long or int n
           - A float
+          - (Optionally) a mpq or mpz object
         """
         if value in self.real_constants:
             return self.real_constants[value]
 
-        if is_fraction(value):
+        if is_pysmt_fraction(value):
             val = value
         elif type(value) == tuple:
             val = Fraction(value[0], value[1])
-        elif is_python_integer(value):
-            val = Fraction(value, 1)
-        elif type(value) == float:
-            val = Fraction(value)
+        elif is_python_rational(value):
+            val = pysmt_fraction_from_rational(value)
         else:
             raise TypeError("Invalid type in constant. The type was:" + \
                             str(type(value)))
@@ -340,15 +343,18 @@ class FormulaManager(object):
         if value in self.int_constants:
             return self.int_constants[value]
 
-        if is_python_integer(value):
-            n = self.create_node(node_type=op.INT_CONSTANT,
-                                 args=tuple(),
-                                 payload=value)
-            self.int_constants[value] = n
-            return n
+        if is_pysmt_integer(value):
+            val = value
+        elif is_python_integer(value):
+            val = pysmt_integer_from_integer(value)
         else:
             raise TypeError("Invalid type in constant. The type was:" + \
                             str(type(value)))
+        n = self.create_node(node_type=op.INT_CONSTANT,
+                             args=tuple(),
+                             payload=val)
+        self.int_constants[value] = n
+        return n
 
     def TRUE(self):
         """Return the boolean constant True."""

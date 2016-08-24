@@ -35,7 +35,7 @@ from pysmt.walkers import DagWalker
 from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 from pysmt.solvers.eager import EagerModel
 from pysmt.decorators import catch_conversion_error
-from pysmt.constants import Fraction
+from pysmt.constants import Fraction, is_pysmt_integer, to_python_integer
 
 
 class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
@@ -245,12 +245,14 @@ class CVC4Converter(Converter, DagWalker):
 
     def walk_real_constant(self, formula, **kwargs):
         frac = formula.constant_value()
-        n,d = int(frac.numerator), int(frac.denominator)
+        n = to_python_integer(frac.numerator)
+        d = to_python_integer(frac.denominator)
         return self.mkConst(CVC4.Rational(n, d))
 
     def walk_int_constant(self, formula, **kwargs):
-        assert type(formula.constant_value()) == int
-        return self.mkConst(CVC4.Rational(formula.constant_value()))
+        assert is_pysmt_integer(formula.constant_value())
+        v = to_python_integer(formula.constant_value())
+        return self.mkConst(CVC4.Rational(v))
 
     def walk_bool_constant(self, formula, **kwargs):
         return self.cvc4_exprMgr.mkBoolConst(formula.constant_value())

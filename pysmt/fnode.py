@@ -44,9 +44,9 @@ from pysmt.operators import  (BOOL_OPERATORS, THEORY_OPERATORS,
                               RELATIONS, CONSTANTS)
 from pysmt.typing import BOOL, REAL, INT, BVType
 from pysmt.decorators import deprecated
-from pysmt.utils import is_python_integer, is_python_rational, is_python_boolean
 from pysmt.utils import twos_complement
-from pysmt.constants import Fraction
+from pysmt.constants import (Fraction, is_python_integer,
+                             is_python_rational, is_python_boolean)
 
 
 FNodeContent = collections.namedtuple("FNodeContent",
