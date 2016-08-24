@@ -28,7 +28,7 @@ from pysmt.test import TestCase, skipIfNoSolverForLogic, main
 from pysmt.logics import QF_BOOL
 from pysmt.exceptions import NonLinearError, UndefinedSymbolError
 from pysmt.formula import FormulaManager
-from pysmt.constants import Fraction
+from pysmt.constants import Fraction, Integer
 
 
 class TestFormulaManager(TestCase):
@@ -1013,6 +1013,56 @@ class TestFormulaManager(TestCase):
         a2 = self.mgr.Array(INT, self.mgr.Int(0),
                             {self.mgr.Int(12) : self.mgr.Int(0)})
         self.assertEqual(a1, a2)
+
+    def test_real(self):
+        from fractions import Fraction as pyFraction
+        from pysmt.constants import HAS_GMPY
+
+        v1 = (1,2)
+        v2 = 0.5
+        v3 = pyFraction(1,2)
+        v4 = Fraction(1,2)
+
+        c1 = self.mgr.Real(v1)
+        c2 = self.mgr.Real(v2)
+        c3 = self.mgr.Real(v3)
+        c4 = self.mgr.Real(v4)
+
+        self.assertIs(c1, c2)
+        self.assertIs(c2, c3)
+        self.assertIs(c3, c4)
+
+        if HAS_GMPY:
+            from gmpy2 import mpq, mpz
+            v5 = (mpz(1), mpz(2))
+            v6 = mpq(1,2)
+
+            c5 = self.mgr.Real(v5)
+            c6 = self.mgr.Real(v6)
+            self.assertIs(c4, c5)
+            self.assertIs(c5, c6)
+
+    def test_integer(self):
+        from pysmt.constants import HAS_GMPY
+        from six import PY2
+
+        v_base = Integer(1)
+        c_base = self.mgr.Int(v_base)
+
+        v_int = int(1)
+        c_int = self.mgr.Int(v_int)
+        self.assertIs(c_base, c_int)
+
+        if PY2:
+            v_long = long(1)
+            c_long = self.mgr.Int(v_long)
+            self.assertIs(c_int, c_long)
+
+        if HAS_GMPY:
+            from gmpy2 import mpz
+            v_mpz = mpz(1)
+            c_mpz = self.mgr.Int(v_mpz)
+            self.assertIs(c_mpz, c_mpz)
 
 
 class TestShortcuts(TestCase):
