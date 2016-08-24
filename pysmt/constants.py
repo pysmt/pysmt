@@ -177,14 +177,14 @@ else:
 # Algebraic Numbers Using Z3
 #
 
-use_z3 = False
+USE_Z3 = False
 try:
     import z3num
-    use_z3 = True
-except:
+    USE_Z3 = True
+except ImportError:
     pass
 
-if use_z3:
+if USE_Z3:
     class Numeral(z3num.Numeral):
         """Represents a Number (Algebraic)"""
         def __hash__(self):

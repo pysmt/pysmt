@@ -22,7 +22,7 @@ from six import iteritems
 import pysmt.operators as op
 from pysmt.walkers import TreeWalker
 from pysmt.utils import quote
-from pysmt.constants import Fraction, is_pysmt_fraction, is_pysmt_integer
+from pysmt.constants import is_pysmt_fraction, is_pysmt_integer
 
 
 class HRPrinter(TreeWalker):
