@@ -532,14 +532,17 @@ class FNode(object):
 
     def symbol_type(self):
         """Return the type of the Symbol."""
+        assert self.is_symbol()
         return self._content.payload[1]
 
     def symbol_name(self):
         """Return the name of the Symbol."""
+        assert self.is_symbol()
         return self._content.payload[0]
 
     def constant_value(self):
         """Return the value of the Constant."""
+        assert self.is_constant()
         if self.node_type() == BV_CONSTANT:
             return self._content.payload[0]
         return self._content.payload
@@ -581,6 +584,7 @@ class FNode(object):
         return bitstr
 
     def array_value_index_type(self):
+        assert self.is_array_value()
         return self._content.payload
 
     def array_value_get(self, index):
@@ -612,10 +616,12 @@ class FNode(object):
 
     def function_name(self):
         """Return the Function name."""
+        assert self.is_function_application()
         return self._content.payload
 
     def quantifier_vars(self):
         """Return the list of quantified variables."""
+        assert self.is_quantifier()
         return self._content.payload
 
     def algebraic_approx_value(self, precision=10):
