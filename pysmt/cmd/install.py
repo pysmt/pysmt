@@ -33,7 +33,7 @@ INSTALLERS = [Installer(MSatInstaller,    "5.3.9", {}),
               Installer(CVC4Installer,    "1.5-prerelease", {"git_version" : "c15ff43597b41ea457befecb1b0e2402e28cb523"}),
               Installer(YicesInstaller,   "2.4.2", {"yicespy_version": "22b94419522ba772a1cc1e72dbe84e01b8adc16d"}),
               Installer(BtorInstaller,    "2.2.0", {"lingeling_version": "bal"}),
-              Installer(PicoSATInstaller, "960", {}),
+              Installer(PicoSATInstaller, "960", {"pypicosat_minor_version" : "151030"}),
               Installer(CuddInstaller,    "2.0.3", {"git_version" : "75fe055c2a736a3ac3e971c1ade108b815edc96c"})]
 
 

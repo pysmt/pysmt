@@ -11,7 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import sys
+import sys, os
+import json
+from six.moves.urllib import request as urllib2
 
 from pysmt.cmd.installers.base import SolverInstaller, TemporaryPath
 
@@ -21,25 +23,40 @@ class PicoSATInstaller(SolverInstaller):
     SOLVER = "picosat"
 
     def __init__(self, install_dir, bindings_dir, solver_version,
-                 mirror_link=None):
+                 pypicosat_minor_version, mirror_link=None):
+
+        self.complete_version = "%s.%s" % (solver_version, pypicosat_minor_version)
+        pypi_link = "http://pypi.python.org/pypi/pyPicoSAT/%s/json" % self.complete_version
+        pypi_json = json.load(urllib2.urlopen(pypi_link))
+
+        pypicosat_download_link = pypi_json["urls"][0]["url"]
+        archive_name = pypi_json["urls"][0]["filename"]
         SolverInstaller.__init__(self, install_dir=install_dir,
                                  bindings_dir=bindings_dir,
                                  solver_version=solver_version,
-                                 mirror_link=mirror_link)
-
-    def download(self):
-        pass # Nothing to download
-
-    def unpack(self):
-        pass # Nothing to unpack
+                                 mirror_link=mirror_link,
+                                 native_link=pypicosat_download_link,
+                                 archive_name=archive_name)
+        self.extract_path = os.path.join(self.base_dir, archive_name[:-7])
 
     def compile(self):
-        try:
-            import pip
-        except ImportError:
-            print("Error: pip is required to install Picosat.")
-            exit(-1)
-        pip.main(['install', '--target', self.bindings_dir, 'pypicosat'])
+        picosat_dir = os.path.join(self.extract_path, "picosat-%s" % self.solver_version)
+        SolverInstaller.run('bash configure', directory=picosat_dir,
+                            env_variables={"CFLAGS": " -fPIC"})
+        SolverInstaller.run('make', directory=picosat_dir,
+                            env_variables={"CFLAGS": " -fPIC"})
+        SolverInstaller.run_python("setup.py build", directory=self.extract_path)
+
+    def move(self):
+        libdir = "lib.%s-%s-%s" % (self.os_name, self.architecture,
+                                   self.python_version)
+        bdir = os.path.join(self.extract_path, "build")
+        sodir = os.path.join(bdir, libdir)
+
+        for f in os.listdir(sodir):
+            if f.endswith(".so"):
+                SolverInstaller.mv(os.path.join(sodir, f), self.bindings_dir)
+        SolverInstaller.mv(os.path.join(self.extract_path, "picosat.py"), self.bindings_dir)
 
     def get_installed_version(self):
         with TemporaryPath([self.bindings_dir]):
