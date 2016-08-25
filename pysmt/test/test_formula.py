@@ -90,6 +90,45 @@ class TestFormulaManager(TestCase):
         c = self.mgr.Symbol("c")
         self.assertEqual(c.symbol_type(), BOOL, "Default Symbol Type is not BOOL")
 
+
+    def test_payload_assertions(self):
+        s = self.mgr.Symbol("x")
+        c = self.mgr.Int(0)
+
+        with self.assertRaises(AssertionError):
+            c.symbol_name()
+
+        with self.assertRaises(AssertionError):
+            c.symbol_type()
+
+        with self.assertRaises(AssertionError):
+            s.bv_width()
+
+        with self.assertRaises(AssertionError):
+            s.bv_extract_start()
+
+        with self.assertRaises(AssertionError):
+            s.bv_extract_end()
+
+        with self.assertRaises(AssertionError):
+            s.bv_rotation_step()
+
+        with self.assertRaises(AssertionError):
+            s.bv_extend_step()
+
+        with self.assertRaises(AssertionError):
+            s.bv_extract_end()
+
+        with self.assertRaises(AssertionError):
+            s.constant_value()
+
+        with self.assertRaises(AssertionError):
+            s.array_value_index_type()
+
+        with self.assertRaises(AssertionError):
+            s.function_name()
+
+
     def test_and_node(self):
         n = self.mgr.And(self.x, self.y)
         self.assertIsNotNone(n)
