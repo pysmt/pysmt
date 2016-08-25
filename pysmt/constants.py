@@ -50,15 +50,20 @@ else:
     # Enable GMPY if they are available
     USE_GMPY = HAS_GMPY
 
+if HAS_GMPY:
+    mpq_type = type(mpq(1,2))
+    mpz_type = type(mpz(1))
+else:
+    mpq_type = None
+    mpz_type = None
+
 #
 # Fractions using GMPY2
 #
 
 from fractions import Fraction as pyFraction
-mpq_type = None
 if USE_GMPY:
     Fraction = mpq
-    mpq_type = type(mpq(1,2))
 else:
     Fraction = pyFraction
 FractionClass = type(Fraction(1,2))
@@ -74,10 +79,8 @@ def is_pysmt_fraction(var):
 #
 # Integers using GMPY2
 #
-mpz_type = None
 if USE_GMPY:
     Integer = mpz
-    mpz_type = type(mpz(1))
 else:
     if PY2:
         Integer = long
