@@ -245,14 +245,14 @@ class CVC4Converter(Converter, DagWalker):
 
     def walk_real_constant(self, formula, **kwargs):
         frac = formula.constant_value()
-        n = to_python_integer(frac.numerator)
-        d = to_python_integer(frac.denominator)
-        return self.mkConst(CVC4.Rational(n, d))
+        n,d = frac.numerator, frac.denominator
+        rep = str(n) + "/" + str(d)
+        return self.mkConst(CVC4.Rational(rep))
 
     def walk_int_constant(self, formula, **kwargs):
         assert is_pysmt_integer(formula.constant_value())
-        v = to_python_integer(formula.constant_value())
-        return self.mkConst(CVC4.Rational(v))
+        rep = str(formula.constant_value())
+        return self.mkConst(CVC4.Integer(rep))
 
     def walk_bool_constant(self, formula, **kwargs):
         return self.cvc4_exprMgr.mkBoolConst(formula.constant_value())
@@ -308,9 +308,9 @@ class CVC4Converter(Converter, DagWalker):
         return self.mkExpr(CVC4.APPLY_UF, decl, args)
 
     def walk_bv_constant(self, formula, **kwargs):
-        value = formula.constant_value()
+        vrepr = str(formula.constant_value())
         width = formula.bv_width()
-        return self.mkConst(CVC4.BitVector(width, value))
+        return self.mkConst(CVC4.BitVector(width, CVC4.Integer(vrepr)))
 
     def walk_bv_ult(self, formula, args, **kwargs):
         return self.mkExpr(CVC4.BITVECTOR_ULT, args[0], args[1])

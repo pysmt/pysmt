@@ -669,6 +669,12 @@ def get_example_formulae(environment=None):
                     is_sat=True,
                     logic=pysmt.logics.QF_LIA),
 
+            # Huge Fractions:
+            Example(expr=Equals(Times(r, Real(Fraction(2**200,7))),
+                                Real(-200**11)),
+                    is_valid=False,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_LRA)
 
         ]
         return result
