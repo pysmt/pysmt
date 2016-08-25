@@ -532,7 +532,7 @@ class SmtLibParser(object):
                             if "." in token:
                                 res = mgr.Real(frac)
                             else:
-                                res = mgr.Int(int(frac.numerator)) #MG: Shall we use MPZ for ints?
+                                res = mgr.Int(frac.numerator)
                         else:
                             res = mgr.Real(frac)
                     else:
