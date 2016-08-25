@@ -252,7 +252,7 @@ class CVC4Converter(Converter, DagWalker):
     def walk_int_constant(self, formula, **kwargs):
         assert is_pysmt_integer(formula.constant_value())
         rep = str(formula.constant_value())
-        return self.mkConst(CVC4.Integer(rep))
+        return self.mkConst(CVC4.Rational(rep))
 
     def walk_bool_constant(self, formula, **kwargs):
         return self.cvc4_exprMgr.mkBoolConst(formula.constant_value())
