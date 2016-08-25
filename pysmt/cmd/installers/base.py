@@ -138,7 +138,7 @@ class SolverInstaller(object):
         self.compile()
         self.move()
 
-        return self.is_installed()
+        return
 
     def is_installed(self):
         """Checks if the solver is installed and usable"""
