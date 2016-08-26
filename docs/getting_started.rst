@@ -50,6 +50,23 @@ customize its behavior.
 
 .. _gs-hello-world:
 
+GMPY2
+"""""
+
+PySMT supports the use of the
+`gmpy2 <https://gmpy2.readthedocs.io/en/latest/>`_ library (version
+2.0.8 or later)
+to handle multi-precision numbers. This provides an efficient way to
+perform operations on big numbers, especially when fractions are
+involved. The gmpy library is used by default if it is installed,
+otherwise the ``fractions`` module from Python's standard library is
+used. The use of the gmpy library can be controlled by setting the
+system environment variables ``PYSMT_GMPY2`` to ``True`` or
+``False``. If this is set to true and the gmpy library cannot be
+imported, an exception will be thrown.
+
+
+
 Hello World
 -----------
 
@@ -192,7 +209,7 @@ Here is the complete example for reference using the logic QF_LIA:
 What's Next?
 ------------
 
-This simlpe example provides the basic ideas of how to work with
+This simple example provides the basic ideas of how to work with
 pySMT. The best place to understand more about pySMT is the
 :py:mod:`pysmt.shortcuts` module. All the important functionalities are exported
 there with a simple to use interface.
