@@ -156,12 +156,16 @@ class TestRewritings(TestCase):
         fp = td.walk(f)
         self.assertValid(Equals(f, fp), (f, fp))
 
-        # (r + 1) * (s-1) = r*s -1*r + 1*s - 1*1
+        # (r + 1) * (s-1) = r*s + (-r) + s - 1
         f = Times(Plus(r, Real(1)), Minus(s, Real(1)))
-        fp = td.walk(f)
-        target = Plus(Minus(Times(r,s), Times(r, Real(1))),
-                      Minus(Times(Real(1), s), Times(Real(1),Real(1))))
-        self.assertEqual(fp, target)
+        fp = td.walk(f).simplify()
+        target = Plus(Times(r, s),
+                      Times(r, Real(-1)),
+                      s,
+                      Real(-1))
+        self.assertValid(Equals(fp, target), fp)
+        self.assertTrue(fp.is_plus(), fp)
+
 
 
     @skipIfNoSolverForLogic(QF_NRA)
