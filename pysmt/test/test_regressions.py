@@ -291,6 +291,11 @@ class TestRegressions(TestCase):
         buffer_ = cStringIO(smtlib_input)
         parser.get_script(buffer_)
 
+    def test_simplify_times(self):
+        a,b = Real(5), Real((1,5))
+        f = Times(a,b).simplify()
+        self.assertEqual(f.constant_value(), 1)
+
     @skipIfSolverNotAvailable("yices")
     def test_yices_push(self):
         with Solver(name="yices") as solver:
