@@ -342,7 +342,7 @@ class IncrementalTrackingSolver(Solver):
         :returns: The asserted formula
         :rtype: :py:class:
         """
-        raise NotImplementbedError
+        raise NotImplementedError
 
     def add_assertion(self, formula, named=None):
         tracked = self._add_assertion(formula, named=named)
