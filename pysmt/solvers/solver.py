@@ -113,19 +113,21 @@ class Solver(object):
         """
         return not self.is_sat(formula)
 
-    def get_values(self, exprs):
+    def get_values(self, formulae):
         """Returns the value of the expressions if a model was found.
 
-        Restrictions: Requires option :produce-models to be set to true and can
-                      be called only after check-sat returned sat or unknown,
-                      if no change to the assertion set occurred.
+        Restrictions: Requires option generate_models to be set to
+                      true and can be called only after
+                      :py:func:`solve` returned sat or unknown, if
+                      no change to the assertion set occurred.
 
-        :type exprs: List of FNodes
+        :type formulae: Iterable of FNodes
         :returns: A dictionary associating to each expr a value
         :rtype: dict
+
         """
         res = {}
-        for f in exprs:
+        for f in formulae:
             v = self.get_value(f)
             res[f] = v
         return res
@@ -166,10 +168,7 @@ class Solver(object):
         raise NotImplementedError
 
     def add_assertion(self, formula, named=None):
-        """Add assertion to the solver.
-
-        This is a wrapper to :py:func:`assert_`, for better naming.
-        """
+        """Add assertion to the solver."""
         raise NotImplementedError
 
 
@@ -334,6 +333,15 @@ class IncrementalTrackingSolver(Solver):
         self._last_command = "reset_assertions"
 
     def _add_assertion(self, formula, named=None):
+        """Assert the formula in the solver.
+
+        This must return the asserted formula (as an FNode) exactly as
+        it was asserted in the solver, thus accounting for rewritings,
+        simplifications, etc.
+
+        :returns: The asserted formula
+        :rtype: :py:class:
+        """
         raise NotImplementedError
 
     def add_assertion(self, formula, named=None):

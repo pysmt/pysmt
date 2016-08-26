@@ -20,12 +20,14 @@
 This module defines a global environment, so that most methods can be
 called without the need to specify an environment or a FormulaManager.
 Functions trying to access the global environment should use the
-method get_global_env(). Keep in mind that the global state of the
+method get_env(). Keep in mind that the global state of the
 environment might lead to inconsistency and unexpected bugs. This is
 particularly true for tests. For tests it is recommended to perform an
 environment reset in the setUp phase, to be guaranteed that a fresh
-environment is used.
+environment is used (this is the default behavior of
+:py:class:`pysmt.test.TestCase` ).
 """
+
 # Enable default deprecation warnings!
 import warnings
 warnings.simplefilter('default')
@@ -33,6 +35,8 @@ warnings.simplefilter('default')
 import pysmt.typing as types
 import pysmt.configuration as config
 import pysmt.environment
+import pysmt.smtlib.parser
+import pysmt.smtlib.script
 
 
 def get_env():
@@ -569,3 +573,16 @@ def write_configuration(config_filename, environment=None):
     if environment is None:
         environment = get_env()
     config.write_environment_configuration(config_filename, environment)
+
+def read_smtlib(fname):
+    """Reads the SMT formula from the given file.
+
+    This supports compressed files, if the fname ends in .bz2 .
+    """
+    return pysmt.smtlib.parser.get_formula_fname(fname)
+
+def write_smtlib(formula, fname):
+    """Reads the SMT formula from the given file."""
+    with open(fname, "w") as fout:
+        script = pysmt.smtlib.script.smtlibscript_from_formula(formula)
+        script.serialize(fout)
