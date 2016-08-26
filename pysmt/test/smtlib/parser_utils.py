@@ -20,7 +20,7 @@ import warnings
 
 from pysmt.test import SkipTest
 from pysmt.shortcuts import get_env, reset_env
-from pysmt.smtlib.parser import SmtLibParser
+from pysmt.smtlib.parser import SmtLibParser, get_formula_fname
 from pysmt.smtlib.script import check_sat_filter
 from pysmt.logics import QF_LIA, QF_LRA, LRA, QF_UFLIRA, QF_UFBV, QF_BV
 from pysmt.logics import QF_ALIA, QF_ABV, QF_AUFLIA, QF_AUFBV, QF_NRA, QF_NIA
@@ -144,3 +144,17 @@ def execute_script_fname(smtfile, logic, expected_result):
         assert expected_result == "sat"
     else:
         assert expected_result == "unsat"
+
+
+def formulas_from_smtlib_test_set(logics=None):
+    """Returns a generator over the test-set of SMT-LIB files.
+
+    Note: This resets the Environment at each call.
+    """
+    for (logic, fname, expected_result) in SMTLIB_TEST_FILES:
+        if logics is not None and logic not in logics:
+            continue
+        reset_env()
+        smtfile = os.path.join(SMTLIB_DIR, fname)
+        formula = get_formula_fname(smtfile)
+        yield (logic, fname, formula, expected_result)

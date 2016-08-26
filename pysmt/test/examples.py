@@ -669,6 +669,13 @@ def get_example_formulae(environment=None):
                     is_sat=True,
                     logic=pysmt.logics.QF_LIA),
 
+            # (r+5+s)*(s+2+r) = 0
+            Example(expr=Equals(Times(Plus(r, Real(5), s),
+                                      Plus(s, Real(2), r)),
+                                Real(0)),
+                    is_valid=False,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_NRA),
 
         ]
         return result
