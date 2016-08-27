@@ -297,22 +297,13 @@ class Simplifier(pysmt.walkers.DagWalker):
         new_args = []
         constant_mul = 1
         stack = list(args)
-        is_int = True
+        ttype = self.env.stc.get_type(args[0])
         is_algebraic = False
         while len(stack) > 0:
             x = stack.pop()
             if x.is_constant():
-                if x.is_real_constant():
-                    is_int = False
-                    is_algebraic = False
-                elif x.is_int_constant():
-                    is_int = True
-                    is_algebraic = False
-                else:
-                    assert x.is_algebraic_constant()
-                    is_int = False
+                if x.is_algebraic_constant():
                     is_algebraic = True
-
                 if x.is_zero():
                     constant_mul = 0
                     break
@@ -323,20 +314,23 @@ class Simplifier(pysmt.walkers.DagWalker):
             else:
                 new_args.append(x)
 
-        if constant_mul != 1:
-            const = None
-            if is_int:
-                const = self.manager.Int(constant_mul)
-            elif is_algebraic:
-                from pysmt.numeral import Numeral
-                const = self.manager._Algebraic(Numeral(constant_mul))
-            else:
-                const = self.manager.Real(constant_mul)
+        const = None
+        if is_algebraic:
+            from pysmt.numeral import Numeral
+            const = self.manager._Algebraic(Numeral(constant_mul))
+        elif ttype.is_real_type():
+            const = self.manager.Real(constant_mul)
+        else:
+            assert ttype.is_int_type()
+            const = self.manager.Int(constant_mul)
 
-            if const.is_zero():
+        if const.is_zero():
+            return const
+        else:
+            if len(new_args) == 0:
                 return const
-            else:
-                new_args.append(const)
+            new_args.append(const)
+
         return self.manager.Times(new_args)
 
 
