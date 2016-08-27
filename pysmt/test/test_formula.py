@@ -1015,6 +1015,7 @@ class TestFormulaManager(TestCase):
         self.assertEqual(a1, a2)
 
     def test_real(self):
+        """Create Real using different constant types."""
         from fractions import Fraction as pyFraction
         from pysmt.constants import HAS_GMPY
 
@@ -1043,6 +1044,7 @@ class TestFormulaManager(TestCase):
             self.assertIs(c5, c6)
 
     def test_integer(self):
+        """Create Int using different constant types."""
         from pysmt.constants import HAS_GMPY
         from six import PY2
 
@@ -1056,13 +1058,13 @@ class TestFormulaManager(TestCase):
         if PY2:
             v_long = long(1)
             c_long = self.mgr.Int(v_long)
-            self.assertIs(c_int, c_long)
+            self.assertIs(c_base, c_long)
 
         if HAS_GMPY:
             from gmpy2 import mpz
             v_mpz = mpz(1)
             c_mpz = self.mgr.Int(v_mpz)
-            self.assertIs(c_mpz, c_mpz)
+            self.assertIs(c_base, c_mpz)
 
 
 class TestShortcuts(TestCase):
