@@ -632,11 +632,12 @@ class TimesDistributor(IdentityDagWalker):
         self.Plus = self.env.formula_manager.Plus
         self.rminus_one = self.env.formula_manager.Real(-1)
         self.iminus_one = self.env.formula_manager.Int(-1)
+        self.get_type = self.env.stc.get_type
 
     def walk_times(self, formula, args, **kwargs):
         """
            From (x + 1) * (y - 1) * p * (m + (7 - p))
-           Create [[x, 1], [y, -1*1], [p], [m, -7, -1*p]]
+           Create [[x, 1], [y, -1*1], [p], [m, 7, -1*p]]
            Compute the cartesian product (itertools.product)
 
         """
@@ -667,7 +668,12 @@ class TimesDistributor(IdentityDagWalker):
         return self.Plus(new_args)
 
     def walk_minus(self, formula, args, **kwargs):
-        minus_one = self.rminus_one
+        expr_type = self.get_type(formula)
+        if expr_type.is_real_type():
+            minus_one = self.rminus_one
+        else:
+            assert expr_type.is_int_type()
+            minus_one = self.iminus_one
         Times = self.Times
         lhs, rhs = args
         if not rhs.is_plus():

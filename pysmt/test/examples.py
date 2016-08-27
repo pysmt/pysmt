@@ -677,6 +677,17 @@ def get_example_formulae(environment=None):
                     is_sat=True,
                     logic=pysmt.logics.QF_NRA),
 
+            # (p+5+q)*(p-(q-5)) = pp+10p+25+(-1 * q * q)
+            Example(expr=Equals(Times(Plus(p, Int(5), q),
+                                      Minus(p, Minus(q, Int(5)))),
+                                Plus(Times(p, p),
+                                     Times(Int(10), p),
+                                     Int(25),
+                                     Times(Int(-1), q, q))),
+                    is_valid=True,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_NIA),
+
         ]
         return result
 
