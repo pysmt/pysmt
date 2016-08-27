@@ -15,7 +15,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from fractions import Fraction
 
 from six.moves import xrange
 
@@ -29,6 +28,7 @@ from pysmt.test import TestCase, skipIfNoSolverForLogic, main
 from pysmt.logics import QF_BOOL
 from pysmt.exceptions import NonLinearError, UndefinedSymbolError
 from pysmt.formula import FormulaManager
+from pysmt.constants import Fraction
 
 
 class TestFormulaManager(TestCase):
@@ -303,7 +303,7 @@ class TestFormulaManager(TestCase):
 
         n = self.mgr.Times(self.iconst, self.q)
         self.assertIsNotNone(n)
-        self.assertTrue(n.is_lira_op())
+        self.assertTrue(n.is_ira_op())
 
     def test_div_node(self):
         n = self.mgr.Div(self.real_expr, self.rconst)
@@ -495,6 +495,13 @@ class TestFormulaManager(TestCase):
         self.assertIsNotNone(nd)
         self.assertTrue(nd.is_constant())
         self.assertTrue(nd.is_int_constant())
+
+        # Memoization of constants
+        a = self.mgr.Real(Fraction(1,2))
+        b = self.mgr.Real((1,2))
+        c = self.mgr.Real(1.0/2.0)
+        self.assertEqual(a,b)
+        self.assertEqual(b,c)
 
     def test_bconstant(self):
         n = self.mgr.Bool(True)

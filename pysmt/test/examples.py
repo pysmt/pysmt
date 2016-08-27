@@ -16,7 +16,6 @@
 #   limitations under the License.
 #
 from collections import namedtuple
-from fractions import Fraction
 
 import pysmt.logics
 from pysmt.environment import get_env
@@ -35,6 +34,7 @@ from pysmt.shortcuts import (Symbol, Function,
                              BVZExt, BVSExt, BVSub, BVComp, BVAShr, BVSLE,
                              BVSLT, BVSGT, BVSGE, BVSDiv, BVSRem,
                              Store, Select, Array)
+from pysmt.constants import Fraction
 
 from pysmt.typing import REAL, BOOL, INT, BV8, BV16, ARRAY_INT_INT
 from pysmt.typing import FunctionType, ArrayType

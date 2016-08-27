@@ -16,11 +16,11 @@
 #   limitations under the License.
 #
 import re
-from fractions import Fraction
 from collections import namedtuple
 
 import pysmt.typing as types
 from pysmt.environment import get_env
+from pysmt.constants import Fraction
 
 
 def HRParser(env=None):

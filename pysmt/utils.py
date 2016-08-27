@@ -2,7 +2,7 @@ import re
 import io
 import itertools
 from six import PY2
-from fractions import Fraction
+from pysmt.constants import is_fraction
 
 
 def all_assignments(bool_variables, env):
@@ -51,7 +51,7 @@ def is_python_integer(n):
 
 
 def is_python_rational(n):
-    return is_python_integer(n) or type(n) == float or type(n) == Fraction
+    return is_python_integer(n) or type(n) == float or is_fraction(n)
 
 
 def is_python_boolean(n):

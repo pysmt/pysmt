@@ -24,7 +24,6 @@ try:
 except ImportError:
     raise SolverAPINotFound
 
-from fractions import Fraction
 from six.moves import xrange
 
 import pysmt.typing as types
@@ -43,7 +42,7 @@ from pysmt.exceptions import (SolverReturnedUnknownResultError,
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
 from pysmt.logics import LRA, LIA, QF_UFLIA, QF_UFLRA, PYSMT_LOGICS
 from pysmt.oracles import get_logic
-from pysmt.numeral import Numeral
+from pysmt.constants import Fraction, Numeral
 
 
 # patch z3api

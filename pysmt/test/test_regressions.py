@@ -15,7 +15,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from fractions import Fraction
 from six.moves import xrange
 from six.moves import cStringIO
 
@@ -37,6 +36,7 @@ import pysmt.logics as logics
 import pysmt.smtlib.commands as smtcmd
 from pysmt.smtlib.script import SmtLibCommand
 from pysmt.logics import get_closer_smtlib_logic
+from pysmt.constants import Fraction
 
 
 class TestRegressions(TestCase):

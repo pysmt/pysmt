@@ -17,7 +17,6 @@
 #
 """FNode are the building blocks of formulae."""
 import collections
-from fractions import Fraction
 
 import pysmt.environment
 from pysmt.operators import (FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF,
@@ -47,6 +46,7 @@ from pysmt.typing import BOOL, REAL, INT, BVType
 from pysmt.decorators import deprecated
 from pysmt.utils import is_python_integer, is_python_rational, is_python_boolean
 from pysmt.utils import twos_complement
+from pysmt.constants import Fraction
 
 
 FNodeContent = collections.namedtuple("FNodeContent",

@@ -29,7 +29,6 @@ its definition.
 
 import collections
 
-from fractions import Fraction
 from six.moves import xrange
 
 import pysmt.typing as types
@@ -39,6 +38,7 @@ from pysmt.utils import is_python_integer
 from pysmt.fnode import FNode, FNodeContent
 from pysmt.exceptions import UndefinedSymbolError
 from pysmt.walkers.identitydag import IdentityDagWalker
+from pysmt.constants import Fraction, is_fraction
 
 
 class FormulaManager(object):
@@ -317,14 +317,14 @@ class FormulaManager(object):
         if value in self.real_constants:
             return self.real_constants[value]
 
-        if type(value) == Fraction:
+        if is_fraction(value):
             val = value
         elif type(value) == tuple:
             val = Fraction(value[0], value[1])
         elif is_python_integer(value):
             val = Fraction(value, 1)
         elif type(value) == float:
-            val = Fraction.from_float(value)
+            val = Fraction(value)
         else:
             raise TypeError("Invalid type in constant. The type was:" + \
                             str(type(value)))
