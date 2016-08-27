@@ -272,9 +272,7 @@ class TestRegressions(TestCase):
 
     def test_smtlib_info_quoting(self):
         cmd = SmtLibCommand(smtcmd.SET_INFO, [":source", "This\nis\nmultiline!"])
-        outstream = cStringIO()
-        cmd.serialize(outstream)
-        output = outstream.getvalue()
+        output = cmd.serialize_to_string()
         self.assertEqual(output, "(set-info :source |This\nis\nmultiline!|)")
 
     def test_parse_define_fun(self):
@@ -358,6 +356,16 @@ class TestRegressions(TestCase):
             self.assertTrue(s.solve())
             self.assertEqual(s.get_value(Select(x, BV(1, 16))), BV(1, 16))
             self.assertIsNotNone(s.get_value(x))
+
+
+    def test_smtlib_define_fun_serialization(self):
+        smtlib_input = "(define-fun init ((x Bool)) Bool (and x (and x (and x (and x (and x (and x x)))))))"
+        parser = SmtLibParser()
+        buffer_ = cStringIO(smtlib_input)
+        s = parser.get_script(buffer_)
+        for c in s:
+            res = c.serialize_to_string()
+        self.assertEqual(res, smtlib_input)
 
 
 if __name__ == "__main__":
