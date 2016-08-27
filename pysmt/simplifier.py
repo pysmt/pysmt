@@ -24,6 +24,7 @@ from pysmt.utils import set_bit
 
 
 class Simplifier(pysmt.walkers.DagWalker):
+    """Perform basic simplifications of the input formula."""
 
     def __init__(self, env=None):
         pysmt.walkers.DagWalker.__init__(self, env=env)
@@ -42,6 +43,11 @@ class Simplifier(pysmt.walkers.DagWalker):
 
     @validate_simplifications.setter
     def validate_simplifications(self, value):
+        """If set to true: checks for equivalence after each simplification.
+
+        NOTE: This can be very expensive, and should be used for debug
+        and testing only.
+        """
         if value:
             self.walk = self.walk_debug
         else:
@@ -675,6 +681,24 @@ class Simplifier(pysmt.walkers.DagWalker):
 
 
 class BddSimplifier(Simplifier):
+    """A simplifier relying on BDDs.
+
+    The formula is translated into a BDD and then translated back into
+    a pySMT formula. This is a much more expensive simplification
+    process, and might not work with formulas with thousands of
+    boolean variables.
+
+    The option ``static_ordering`` can be used to provide a variable
+    ordering for the underlying bdd.
+
+    The option ``bool_abstraction`` controls how to behave if the
+    input formula contains Theory terms (i.e., is not purely boolean).
+    If this option is False (default) an exception will be thrown when
+    a Theory atom is found. If it is set to True, the Theory part is
+    abstracted, and the simplification is performed only on the
+    boolean structure of the formula.
+    """
+
     def __init__(self, env=None, static_ordering=None, bool_abstraction=False):
         Simplifier.__init__(self, env=env)
         self.super_functions = dict(self.functions)

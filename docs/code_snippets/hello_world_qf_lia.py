@@ -20,7 +20,7 @@ formula = And(domains, problem)
 print("Serialization of the formula:")
 print(formula)
 
-with Solver(name="z3") as solver:
+with Solver(logic="QF_LIA") as solver:
     solver.add_assertion(domains)
     if not solver.solve():
         print("Domain is not SAT!!!")

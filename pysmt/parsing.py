@@ -29,7 +29,7 @@ def HRParser(env=None):
 
 
 def parse(string):
-    """Parse a hr-string."""
+    """Parse an hr-string."""
     return HRParser().parse(string)
 
 
