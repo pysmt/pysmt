@@ -14,6 +14,10 @@ if [ "${TRAVIS_PULL_REQUEST}" == "false" ]; then
         echo "Skipping Python PyPy"
         exit 0
     fi
+    if [ "${PYSMT_SOLVER}" == "all" ]; then
+        echo "Skipping 'all' configuration"
+        exit 0
+    fi
 fi
 
 
