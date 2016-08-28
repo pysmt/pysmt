@@ -1,5 +1,7 @@
 language: python
 dist: trusty
+git:
+  depth: 10
 
 cache:
   apt: true
