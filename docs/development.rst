@@ -49,6 +49,18 @@ tests. Moreover, the class provides some additional assertions:
 
 .. autoclass:: pysmt.test.TestCase
 
+PYSMT_SOLVER
+~~~~~~~~~~~~
+
+The system environment variable ``PYSMT_SOLVER`` controls which
+solvers are actually available to pySMT. When developing it is common
+to have multiple solvers installed, but wanting to only test on few of
+them. For this reason ``PYSMT_SOLVER`` can be set to a list of
+solvers, e.g., ``PYSMT_SOLVER="msat, z3"`` will provide access to
+pySMT only to msat and z3, independently of which other solvers are
+installed. If the variable is unset or set to ``all``, it does not
+have any effect.
+
 
 
 Distributing PySMT

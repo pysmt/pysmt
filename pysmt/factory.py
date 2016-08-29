@@ -35,7 +35,6 @@ from pysmt.logics import most_generic_logic, get_closer_logic
 from pysmt.logics import convert_logic_from_string
 from pysmt.oracles import get_logic
 from pysmt.solvers.qelim import ShannonQuantifierEliminator
-from pysmt.solvers.solver import SolverOptions
 
 DEFAULT_SOLVER_PREFERENCE_LIST = ['msat', 'z3', 'cvc4', 'yices', 'btor',
                                   'picosat', 'bdd']
@@ -44,6 +43,7 @@ DEFAULT_INTERPOLATION_PREFERENCE_LIST = ['msat', 'z3']
 DEFAULT_LOGIC = QF_UFLIRA
 DEFAULT_QE_LOGIC = LRA
 DEFAULT_INTERPOLATION_LOGIC = QF_UFLRA
+
 
 class Factory(object):
     """Factory used to build Solver, QuantifierEliminators, Interpolators etc.
@@ -64,18 +64,17 @@ class Factory(object):
         self._all_interpolators = None
         self._generic_solvers = {}
 
+        #
         if solver_preference_list is None:
             solver_preference_list = DEFAULT_SOLVER_PREFERENCE_LIST
         self.solver_preference_list = solver_preference_list
-
         if qelim_preference_list is None:
             qelim_preference_list = DEFAULT_QELIM_PREFERENCE_LIST
-
-        if interpolation_preference_list is None:
-            interpolation_preference_list = \
-                                          DEFAULT_INTERPOLATION_PREFERENCE_LIST
         self.qelim_preference_list = qelim_preference_list
+        if interpolation_preference_list is None:
+            interpolation_preference_list = DEFAULT_INTERPOLATION_PREFERENCE_LIST
         self.interpolation_preference_list = interpolation_preference_list
+        #
         self._default_logic = DEFAULT_LOGIC
         self._default_qe_logic = DEFAULT_QE_LOGIC
         self._default_interpolation_logic = DEFAULT_INTERPOLATION_LOGIC
@@ -215,6 +214,8 @@ class Factory(object):
         solver.LOGICS = logics
         solver.UNSAT_CORE_SUPPORT = unsat_core_support
         self._all_solvers[name] = solver
+        # Extend preference list accordingly
+        self.solver_preference_list.append(name)
 
     def is_generic_solver(self, name):
         return name in self._generic_solvers
@@ -223,50 +224,63 @@ class Factory(object):
         return self._generic_solvers[name]
 
     def _get_available_solvers(self):
+        installed_solvers = {}
         self._all_solvers = {}
         self._all_unsat_core_solvers = {}
 
         try:
             from pysmt.solvers.z3 import Z3Solver
-            self._all_solvers['z3'] = Z3Solver
+            installed_solvers['z3'] = Z3Solver
         except SolverAPINotFound:
             pass
 
         try:
             from pysmt.solvers.msat import MathSAT5Solver
-            self._all_solvers['msat'] = MathSAT5Solver
+            installed_solvers['msat'] = MathSAT5Solver
         except SolverAPINotFound:
             pass
 
         try:
             from pysmt.solvers.cvc4 import CVC4Solver
-            self._all_solvers['cvc4'] = CVC4Solver
+            installed_solvers['cvc4'] = CVC4Solver
         except SolverAPINotFound:
             pass
 
         try:
             from pysmt.solvers.yices import YicesSolver
-            self._all_solvers['yices'] = YicesSolver
+            installed_solvers['yices'] = YicesSolver
         except SolverAPINotFound:
             pass
 
         try:
             from pysmt.solvers.bdd import BddSolver
-            self._all_solvers['bdd'] = BddSolver
+            installed_solvers['bdd'] = BddSolver
         except SolverAPINotFound:
             pass
 
         try:
             from pysmt.solvers.pico import PicosatSolver
-            self._all_solvers['picosat'] = PicosatSolver
+            installed_solvers['picosat'] = PicosatSolver
         except SolverAPINotFound:
             pass
 
         try:
             from pysmt.solvers.btor import BoolectorSolver
-            self._all_solvers['btor'] = BoolectorSolver
+            installed_solvers['btor'] = BoolectorSolver
         except SolverAPINotFound:
             pass
+
+        # If ENV_SOLVER_LIST is set, only a subset of the installed
+        # solvers will be available.
+        if ENV_SOLVER_LIST is not None:
+            for s in ENV_SOLVER_LIST:
+                try:
+                    v = installed_solvers[s]
+                    self._all_solvers[s] = v
+                except KeyError:
+                    pass
+        else:
+            self._all_solvers = installed_solvers
 
         for k,s in iteritems(self._all_solvers):
             try:
@@ -573,3 +587,27 @@ class Factory(object):
     @default_qe_logic.setter
     def default_qe_logic(self, value):
         self._default_qe_logic = value
+
+# EOC Factory
+
+# Check if we have a restriction on which solvers to make available in
+# the current System Environment
+#
+# If PYSMT_SOLVER is "all" or unset, keep the Default preference list
+#
+# If PYSMT_SOLVER is "None" (literal None), the preference list will be empty
+#
+# Otherwise PYSMT_SOLVER is treated as  a comma-separated list: e.g.
+#   "msat, z3, cvc4"
+#
+import os
+ENV_SOLVER_LIST = os.environ.get("PYSMT_SOLVER")
+if ENV_SOLVER_LIST is not None:
+    if ENV_SOLVER_LIST.lower() == "all":
+        ENV_SOLVER_LIST = None
+    elif ENV_SOLVER_LIST.lower() == "none":
+        ENV_SOLVER_LIST = []
+    else:
+        # E.g. "msat, z3"
+        ENV_SOLVER_LIST = [s.strip() \
+                           for s in ENV_SOLVER_LIST.lower().split(",")]
