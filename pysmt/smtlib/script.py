@@ -103,11 +103,12 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
             params = " ".join(["(%s %s)" % (v, v.symbol_type()) for v in params_list])
             rtype = self.args[2]
             expr = self.args[3]
-            outstream.write("(%s %s (%s) %s %s)" % (self.name,
-                                                    name,
-                                                    params,
-                                                    rtype,
-                                                    expr))
+            outstream.write("(%s %s (%s) %s " % (self.name,
+                                                name,
+                                                params,
+                                                rtype))
+            printer.printer(expr)
+            outstream.write(")")
 
         elif self.name in [smtcmd.PUSH, smtcmd.POP]:
             outstream.write("(%s %d)" % (self.name, self.args[0]))
