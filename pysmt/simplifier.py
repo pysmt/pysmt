@@ -329,7 +329,8 @@ class Simplifier(pysmt.walkers.DagWalker):
         else:
             if len(new_args) == 0:
                 return const
-            new_args.append(const)
+            elif not const.is_one():
+                new_args.append(const)
 
         return self.manager.Times(new_args)
 
