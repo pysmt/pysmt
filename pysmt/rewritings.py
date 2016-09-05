@@ -19,7 +19,7 @@
 This module defines some rewritings for pySMT formulae.
 """
 
-from pysmt.walkers.dag import DagWalker
+from pysmt.walkers import DagWalker, IdentityDagWalker
 import pysmt.typing as types
 import pysmt.operators as op
 
@@ -618,25 +618,97 @@ class AIGer(DagWalker):
         else:
             return formula
 
+from itertools import product
+
+class TimesDistributor(IdentityDagWalker):
+    """Normalize the use of multiplication by pushing it into the leafs.
+
+    E.g., (x+1)*3 -> (x*3) + 3
+    """
+    def __init__(self, env=None, invalidate_memoization=None):
+        IdentityDagWalker.__init__(self, env=env,
+                                   invalidate_memoization=invalidate_memoization)
+        self.Times = self.env.formula_manager.Times
+        self.Plus = self.env.formula_manager.Plus
+        self.rminus_one = self.env.formula_manager.Real(-1)
+        self.iminus_one = self.env.formula_manager.Int(-1)
+        self.get_type = self.env.stc.get_type
+
+    def walk_times(self, formula, args, **kwargs):
+        """
+           From (x + 1) * (y - 1) * p * (m + (7 - p))
+           Create [[x, 1], [y, -1*1], [p], [m, 7, -1*p]]
+           Compute the cartesian product (itertools.product)
+
+        """
+        # Check if there is at least one Plus to distribute over,
+        # otherwise we are done. Note that walk_minus rewrites the
+        # minus as a plus
+        if not any(x.is_plus() for x in args):
+            return self.Times(*args)
+
+        # Create list of additions
+        flat_args = []
+        for a in args:
+            # Flattening
+            if a.is_plus():
+                flat_args.append(a.args())
+            else:
+                flat_args.append([a])
+        res = self.Plus(self.Times(p) for p in product(*flat_args))
+        return res
+
+    def walk_plus(self, formula, args, **kwargs):
+        new_args = []
+        for a in args:
+            if a.is_plus():
+                new_args += a.args()
+            else:
+                new_args.append(a)
+        return self.Plus(new_args)
+
+    def walk_minus(self, formula, args, **kwargs):
+        expr_type = self.get_type(formula)
+        if expr_type.is_real_type():
+            minus_one = self.rminus_one
+        else:
+            assert expr_type.is_int_type()
+            minus_one = self.iminus_one
+        Times = self.Times
+        lhs, rhs = args
+        if not rhs.is_plus():
+            return self.Plus(lhs, Times(minus_one, rhs))
+        new_args = [lhs]
+        for r in rhs.args():
+            new_args.append(Times(minus_one, r))
+            return self.Plus(new_args)
+
+# EOC TimesDistributivity
+
+
 def nnf(formula, environment=None):
     """Converts the given formula in NNF"""
     nnfizer = NNFizer(environment)
     return nnfizer.convert(formula)
+
 
 def cnf(formula, environment=None):
     """Converts the given formula in CNF represented as a formula"""
     cnfizer = CNFizer(environment)
     return cnfizer.convert_as_formula(formula)
 
+
 def cnf_as_set(formula, environment=None):
     """Converts the given formula in CNF represented as a set of sets"""
     cnfizer = CNFizer(environment)
     return cnfizer.convert(formula)
 
+
 def prenex_normal_form(formula, environment=None):
-    """Converts the given formula in NNF"""
+    """Converts the given formula in Prenex Normal Form"""
     normalizer = PrenexNormalizer(environment)
     return normalizer.normalize(formula)
+
 
 def aig(formula, environment=None):
     """Converts the given formula in AIG"""
@@ -660,6 +732,7 @@ def conjunctive_partition(formula):
                 to_process += cur.args()
             else:
                 yield cur
+
 
 def disjunctive_partition(formula):
     """ Returns a generator over the top-level disjuncts of the given formula

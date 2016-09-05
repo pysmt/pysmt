@@ -674,7 +674,26 @@ def get_example_formulae(environment=None):
                                 Real(-200**11)),
                     is_valid=False,
                     is_sat=True,
-                    logic=pysmt.logics.QF_LRA)
+                    logic=pysmt.logics.QF_LRA),
+
+            # (r+5+s)*(s+2+r) = 0
+            Example(expr=Equals(Times(Plus(r, Real(5), s),
+                                      Plus(s, Real(2), r)),
+                                Real(0)),
+                    is_valid=False,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_NRA),
+
+            # (p+5+q)*(p-(q-5)) = pp+10p+25+(-1 * q * q)
+            Example(expr=Equals(Times(Plus(p, Int(5), q),
+                                      Minus(p, Minus(q, Int(5)))),
+                                Plus(Times(p, p),
+                                     Times(Int(10), p),
+                                     Int(25),
+                                     Times(Int(-1), q, q))),
+                    is_valid=True,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_NIA),
 
         ]
         return result
