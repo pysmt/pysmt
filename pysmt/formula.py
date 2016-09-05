@@ -117,7 +117,9 @@ class FormulaManager(object):
         if s is None:
             return self._create_symbol(name, typename)
         if not s.symbol_type() == typename:
-            raise TypeError("%s != %s" % (s.symbol_type(), typename))
+            raise TypeError("Trying to redefine symbol '%s' with a new type. "
+                            "Previous type was '%s' new type is '%s'" %
+                            (name, s.symbol_type(), typename))
         return s
 
     # Node definitions start here

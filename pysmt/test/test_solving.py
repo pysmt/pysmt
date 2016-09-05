@@ -283,7 +283,7 @@ class TestBasic(TestCase):
                     self.assertEqual(satisfiability, s, f.serialize())
                 except SolverReturnedUnknownResultError:
                     s = Solver(logic=logic)
-                    print(s, logic, f)
+                    print(s, logic, f.serialize())
                     self.assertFalse(logic.quantifier_free,
                                      "Unkown result are accepted only on "\
                                      "Quantified formulae")
