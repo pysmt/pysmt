@@ -423,7 +423,15 @@ class Z3Converter(Converter, DagWalker):
                 return self.mgr._Algebraic(Numeral(expr))
             else:
                 # it must be a symbol
-                res = self.mgr.get_symbol(str(expr))
+                try:
+                    res = self.mgr.get_symbol(str(expr))
+                except UndefinedSymbolError:
+                    import warnings
+                    symb_type = self._z3_to_type(expr.sort())
+                    res = self.mgr.FreshSymbol(symb_type,
+                                               template="__z3_%d")
+                    warnings.warn("Defining new symbol: %s" % str(res))
+
         elif z3.is_ite(expr):
             res = self.mgr.Ite(args[0], args[1], args[2])
         elif z3.is_function(expr):
