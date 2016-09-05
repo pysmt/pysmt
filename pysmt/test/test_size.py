@@ -15,7 +15,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from pysmt.shortcuts import *
+from pysmt.shortcuts import Symbol, Int, And, Or, Not, GT
+from pysmt.typing import INT
 from pysmt.oracles import SizeOracle
 from pysmt.test import TestCase, main
 from pysmt.test.examples import get_example_formulae
@@ -51,6 +52,13 @@ class TestSize(TestCase):
         self.assertEqual(f.size(SizeOracle.MEASURE_DEPTH), 3)
         self.assertEqual(f.size(SizeOracle.MEASURE_SYMBOLS), 1)
 
+    def test_bool_dag(self):
+        p = Symbol("p", INT)
+        x = Symbol("x")
+        f = Or(x, GT(p, Int(0)), And(x, x))
+        bool_dag = f.size(SizeOracle.MEASURE_BOOL_DAG)
+        self.assertEqual(bool_dag, 4)
+
     def test_examples(self):
         for (f, _, _, _) in get_example_formulae():
             tree_size = f.size(SizeOracle.MEASURE_TREE_NODES)
@@ -58,11 +66,12 @@ class TestSize(TestCase):
             leaves = f.size(SizeOracle.MEASURE_LEAVES)
             depth = f.size(SizeOracle.MEASURE_DEPTH)
             symbols = f.size(SizeOracle.MEASURE_SYMBOLS)
-
+            bool_dag = f.size(SizeOracle.MEASURE_BOOL_DAG)
             self.assertTrue(tree_size >= dag_size)
             self.assertTrue(dag_size >= depth)
             self.assertTrue(dag_size >= leaves)
             self.assertTrue(leaves >= symbols)
+            self.assertTrue(dag_size >= bool_dag)
 
     def test_error(self):
         varA = Symbol("A")
