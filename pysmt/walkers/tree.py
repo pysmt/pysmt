@@ -26,27 +26,39 @@ class TreeWalker(Walker):
 
     def __init__(self, env=None):
         Walker.__init__(self, env)
-        self.threshold_cnt = -1
         return
 
+    def _call_walk(self, function, formula):
+        return function(formula)
 
-    def walk(self, formula):
-        """ Generic walk method, will apply the function defined by the map
+    def walk(self, formula, threshold=None):
+        """Generic walk method, will apply the function defined by the map
         self.functions.
+
+        If threshold parameter is specified, the walk_threshold
+        function will be called for all nodes with depth >= threshold.
         """
-        if self.threshold_cnt == 0:
-            self.walk_threshold(formula)
-            return
-        if self.threshold_cnt >= 0: self.threshold_cnt -= 1
 
         try:
             f = self.functions[formula.node_type()]
         except KeyError:
             f = self.walk_error
 
-        f(formula) # Apply the function to the formula
-
-        if self.threshold_cnt >= 0: self.threshold_cnt += 1
+        stack = [self._call_walk(f, formula)]
+        while stack:
+            f = stack[-1]
+            try:
+                child = next(f)
+                if threshold and len(stack) >= threshold:
+                    stack.append(self.walk_threshold(child))
+                else:
+                    try:
+                        cf = self.functions[child.node_type()]
+                    except KeyError:
+                        cf = self.walk_error
+                    stack.append(self._call_walk(cf, child))
+            except StopIteration:
+                stack.pop()
         return
 
     def walk_threshold(self, formula):
@@ -55,7 +67,7 @@ class TreeWalker(Walker):
     def walk_skip(self, formula):
         """ Default function to skip a node and process the children """
         for s in formula.args():
-            self.walk(s)
+            yield (s)
         return
 
 

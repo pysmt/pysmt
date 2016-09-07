@@ -72,20 +72,19 @@ class HRPrinter(TreeWalker):
         go. After reaching the thresholded value, "..." will be
         printed instead. This is mainly used for debugging.
         """
-        if threshold is not None:
-            self.threshold_cnt = threshold
-        self.walk(f)
+        self.walk(f, threshold=threshold)
 
     def walk_threshold(self, formula):
         self.write("...")
+        return iter(())
 
     def _walk_nary(self, op_symbol, formula):
         self.write("(")
         args = formula.args()
         for s in args[:-1]:
-            self.walk(s)
+            yield (s)
             self.write(op_symbol)
-        self.walk(args[-1])
+        yield (args[-1])
         self.write(")")
 
     def walk_quantifier(self, op_symbol, var_sep, sep, formula):
@@ -93,30 +92,31 @@ class HRPrinter(TreeWalker):
             self.write("(")
             self.write(op_symbol)
             for s in formula.quantifier_vars()[:-1]:
-                self.walk(s)
+                yield (s)
                 self.write(var_sep)
-            self.walk(formula.quantifier_vars()[-1])
+            yield (formula.quantifier_vars()[-1])
             self.write(sep)
-            self.walk(formula.arg(0))
+            yield (formula.arg(0))
             self.write(")")
         else:
-            self.walk(formula.arg(0))
+            yield (formula.arg(0))
 
     def walk_not(self, formula):
         self.write("(! ")
-        self.walk(formula.arg(0))
+        yield (formula.arg(0))
         self.write(")")
 
     def walk_symbol(self, formula):
         self.write(quote(formula.symbol_name(), style='"'))
+        return iter(())
 
     def walk_function(self, formula):
-        self.walk(formula.function_name())
+        yield (formula.function_name())
         self.write("(")
         for p in formula.args()[:-1]:
-            self.walk(p)
+            yield (p)
             self.write(", ")
-        self.walk(formula.args()[-1])
+        yield (formula.args()[-1])
         self.write(")")
 
     def walk_real_constant(self, formula):
@@ -129,17 +129,20 @@ class HRPrinter(TreeWalker):
             self.write("%s.0" % n)
         else:
             self.write("%s/%s" % (n, d))
+        return iter(())
 
     def walk_int_constant(self, formula):
         assert is_pysmt_integer(formula.constant_value()), \
             "The type was " + str(type(formula.constant_value()))
         self.write(str(formula.constant_value()))
+        return iter(())
 
     def walk_bool_constant(self, formula):
         if formula.constant_value():
             self.write("True")
         else:
             self.write("False")
+        return iter(())
 
     def walk_bv_constant(self, formula):
         # This is the simplest SMT-LIB way of printing the value of a BV
@@ -147,89 +150,93 @@ class HRPrinter(TreeWalker):
         #                             formula.constant_value()))
         self.write("%d_%d" % (formula.constant_value(),
                               formula.bv_width()))
+        return iter(())
 
     def walk_algebraic_constant(self, formula):
         self.write(str(formula.constant_value()))
+        return iter(())
 
     def walk_bv_extract(self, formula):
-        self.walk(formula.arg(0))
+        yield (formula.arg(0))
         self.write("[%d:%d]" % (formula.bv_extract_start(),
                                        formula.bv_extract_end()))
 
     def walk_bv_neg(self, formula):
         self.write("(- ")
-        self.walk(formula.arg(0))
+        yield (formula.arg(0))
         self.write(")")
 
     def walk_bv_ror(self, formula):
         self.write("(")
-        self.walk(formula.arg(0))
+        yield (formula.arg(0))
         self.write(" ROR ")
         self.write("%d)" % formula.bv_rotation_step())
 
     def walk_bv_rol(self, formula):
         self.write("(")
-        self.walk(formula.arg(0))
+        yield (formula.arg(0))
         self.write(" ROL ")
         self.write("%d)" % formula.bv_rotation_step())
 
     def walk_bv_zext(self, formula):
         self.write("(")
-        self.walk(formula.arg(0))
+        yield (formula.arg(0))
         self.write(" ZEXT ")
         self.write("%d)" % formula.bv_extend_step())
 
     def walk_bv_sext(self, formula):
         self.write("(")
-        self.walk(formula.arg(0))
+        yield (formula.arg(0))
         self.write(" SEXT ")
         self.write("%d)" % formula.bv_extend_step())
 
     def walk_ite(self, formula):
         self.write("(")
-        self.walk(formula.arg(0))
+        yield (formula.arg(0))
         self.write(" ? ")
-        self.walk(formula.arg(1))
+        yield (formula.arg(1))
         self.write(" : ")
-        self.walk(formula.arg(2))
+        yield (formula.arg(2))
         self.write(")")
 
     def walk_forall(self, formula):
-        self.walk_quantifier("forall ", ", ", " . ", formula)
+        for x in self.walk_quantifier("forall ", ", ", " . ", formula):
+            yield x
 
     def walk_exists(self, formula):
-        self.walk_quantifier("exists ", ", ", " . ", formula)
+        for x in self.walk_quantifier("exists ", ", ", " . ", formula):
+            yield x
 
     def walk_toreal(self, formula):
         self.write("ToReal(")
-        self.walk(formula.arg(0))
+        yield (formula.arg(0))
         self.write(")")
 
     def walk_array_select(self, formula):
-        self.walk(formula.arg(0))
+        yield (formula.arg(0))
         self.write("[")
-        self.walk(formula.arg(1))
+        yield (formula.arg(1))
         self.write("]")
 
     def walk_array_store(self, formula):
-        self.walk(formula.arg(0))
+        yield (formula.arg(0))
         self.write("[")
-        self.walk(formula.arg(1))
+        yield (formula.arg(1))
         self.write(" := ")
-        self.walk(formula.arg(2))
+        yield (formula.arg(2))
         self.write("]")
 
     def walk_array_value(self, formula):
         self.write(str(self.env.stc.get_type(formula)))
         self.write("(")
-        self.walk(formula.array_value_default())
+        yield (formula.array_value_default())
         self.write(")")
         assign = formula.array_value_assigned_values_map()
         for k, v in iteritems(assign):
             self.write("[")
-            self.walk(k)
+            yield (k)
             self.write(" := ")
-            self.walk(v)
+            yield (v)
             self.write("]")
 
 
@@ -280,40 +287,18 @@ class SmartPrinter(HRPrinter):
             self.subs = subs
 
     def printer(self, f, threshold=None):
-        oldvalues = (self.threshold_cnt, self.subs)
+        self.walk(f, threshold=threshold)
 
-        if threshold is not None:
-            self.threshold_cnt = threshold
-        self.walk(f)
-        self.threshold_cnt, self.subs = oldvalues
-
-    def walk(self, formula):
-        if self.smart_walk(formula):
-            return
-
-        if self.threshold_cnt == 0:
-            self.walk_threshold(formula)
-            return
-        if self.threshold_cnt >= 0: self.threshold_cnt -= 1
-
-        try:
-            f = self.functions[formula.node_type()]
-        except KeyError:
-            f = self.walk_error
-
-        f(formula) # Apply the function to the formula
-
-        if self.threshold_cnt >= 0: self.threshold_cnt += 1
-        return
+    def _call_walk(self, function, formula):
+        if formula in self.subs:
+            return self.smart_walk(formula)
+        return function(formula)
 
     def smart_walk(self, formula):
-        if formula not in self.subs:
-            return False
-        else:
-            # Smarties contains a string.
-            # In the future, we could allow for arbitrary function calls
-            self.write(self.subs[formula])
-            return True
+        # Smarties contains a string.
+        # In the future, we could allow for arbitrary function calls
+        self.write(self.subs[formula])
+        return iter(())
 
 
 def smart_serialize(formula, subs=None, threshold=None):

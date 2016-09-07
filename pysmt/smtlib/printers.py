@@ -90,21 +90,24 @@ class SmtPrinter(TreeWalker):
         self.write("(%s" % operator)
         for s in formula.args():
             self.write(" ")
-            self.walk(s)
+            yield (s)
         self.write(")")
 
 
     def walk_symbol(self, formula):
         self.write(quote(formula.symbol_name()))
+        return iter(())
 
     def walk_function(self, formula):
-        return self._walk_nary(formula.function_name(), formula)
+        for x in self._walk_nary(formula.function_name(), formula):
+            yield x
 
     def walk_int_constant(self, formula):
         if formula.constant_value() < 0:
             self.write("(- " + str(-formula.constant_value()) + ")")
         else:
             self.write(str(formula.constant_value()))
+        return iter(())
 
     def walk_real_constant(self, formula):
         if formula.constant_value() < 0:
@@ -120,21 +123,26 @@ class SmtPrinter(TreeWalker):
             res = template % (str(n) + ".0")
 
         self.write(res)
+        return iter(())
 
     def walk_bool_constant(self, formula):
         if formula.constant_value():
             self.write("true")
         else:
             self.write("false")
+        return iter(())
 
     def walk_bv_constant(self, formula):
         self.write("#b" + formula.bv_bin_str())
+        return iter(())
 
     def walk_forall(self, formula):
-        self._walk_quantifier("forall", formula)
+        for x in self._walk_quantifier("forall", formula):
+            yield x
 
     def walk_exists(self, formula):
-        self._walk_quantifier("exists", formula)
+        for x in self._walk_quantifier("exists", formula):
+            yield x
 
     def _walk_quantifier(self, operator, formula):
         assert len(formula.quantifier_vars()) > 0
@@ -142,17 +150,17 @@ class SmtPrinter(TreeWalker):
 
         for s in formula.quantifier_vars():
             self.write("(")
-            self.walk(s)
+            yield (s)
             self.write(" %s)" % s.symbol_type().as_smtlib(False))
 
         self.write(") ")
-        self.walk(formula.arg(0))
+        yield (formula.arg(0))
         self.write(")")
 
     def walk_bv_extract(self, formula):
         self.write("((_ extract %d %d) " % (formula.bv_extract_end(),
                                             formula.bv_extract_start()))
-        self.walk(formula.arg(0))
+        yield (formula.arg(0))
         self.write(")")
 
     def walk_bv_rotate(self, formula):
@@ -163,7 +171,7 @@ class SmtPrinter(TreeWalker):
             rotate_type = "rotate_left"
         self.write("((_ %s %d ) " % (rotate_type,
                                      formula.bv_rotation_step()))
-        self.walk(formula.arg(0))
+        yield (formula.arg(0))
         self.write(")")
 
     def walk_bv_extend(self, formula):
@@ -174,7 +182,7 @@ class SmtPrinter(TreeWalker):
             extend_type = "sign_extend"
         self.write("((_ %s %d ) " % (extend_type,
                                      formula.bv_extend_step()))
-        self.walk(formula.arg(0))
+        yield (formula.arg(0))
         self.write(")")
 
     def walk_array_value(self, formula):
@@ -183,14 +191,14 @@ class SmtPrinter(TreeWalker):
             self.write("(store ")
 
         self.write("((as const %s) " % formula.get_type().as_smtlib(False))
-        self.walk(formula.array_value_default())
+        yield (formula.array_value_default())
         self.write(")")
 
         for k in sorted(assign):
             self.write(" ")
-            self.walk(k)
+            yield (k)
             self.write(" ")
-            self.walk(assign[k])
+            yield (assign[k])
             self.write(")")
 
 class SmtDagPrinter(DagWalker):
