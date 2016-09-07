@@ -372,6 +372,21 @@ class TestRegressions(TestCase):
             res = c.serialize_to_string()
         self.assertEqual(res, smtlib_input)
 
+    @skipIfSolverNotAvailable("z3")
+    def test_z3_nary_back(self):
+        from z3 import Tactic
+        r = Symbol("r", REAL)
+        s = Symbol("s", REAL)
+        t = Symbol("t", REAL)
+        f = Equals(Times(r,s,t), Real(0))
+
+        with Solver(name="z3") as solver:
+            z3_f = solver.converter.convert(f)
+            z3_f = Tactic('simplify')(z3_f).as_expr()
+            fp = solver.converter.back(z3_f)
+            self.assertValid(Iff(f, fp), (f, fp))
+
+
 
 if __name__ == "__main__":
     main()

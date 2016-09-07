@@ -333,6 +333,12 @@ class Z3Converter(Converter, DagWalker):
             raise NotImplementedError(
                 "Quantified back conversion is currently not supported")
 
+        assert not len(args) > 2 or \
+            (z3.is_and(expr) or z3.is_or(expr) or
+             z3.is_add(expr) or z3.is_mul(expr) or
+             (len(args) == 3 and (z3.is_ite(expr) or z3.is_array_store(expr)))),\
+            "Unexpected n-ary term: %s" % expr
+
         res = None
         if z3.is_and(expr):
             res = self.mgr.And(args)
@@ -340,6 +346,8 @@ class Z3Converter(Converter, DagWalker):
             res = self.mgr.Or(args)
         elif z3.is_add(expr):
             res = self.mgr.Plus(args)
+        elif z3.is_mul(expr):
+            res = self.mgr.Times(args)
         elif z3.is_div(expr):
             res = self.mgr.Div(args[0], args[1])
         elif z3.is_eq(expr):
@@ -363,8 +371,6 @@ class Z3Converter(Converter, DagWalker):
             res = self.mgr.LT(args[0], args[1])
         elif z3.is_le(expr):
             res = self.mgr.LE(args[0], args[1])
-        elif z3.is_mul(expr):
-            res = self.mgr.Times(args[0], args[1])
         elif z3.is_uminus(expr):
             tp = self._get_type(args[0])
             if tp.is_real_type():
