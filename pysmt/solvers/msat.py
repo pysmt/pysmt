@@ -16,10 +16,10 @@
 #   limitations under the License.
 #
 from warnings import warn
-from fractions import Fraction
 from six.moves import xrange
 
 from pysmt.exceptions import SolverAPINotFound
+from pysmt.constants import Fraction, is_pysmt_fraction, is_pysmt_integer
 
 try:
     import mathsat
@@ -865,15 +865,14 @@ class MSatConverter(Converter, DagWalker):
             return mathsat.msat_make_term_ite(self.msat_env(), i, t, e)
 
     def walk_real_constant(self, formula, **kwargs):
-        assert type(formula.constant_value()) == Fraction
+        assert is_pysmt_fraction(formula.constant_value())
         frac = formula.constant_value()
         n,d = frac.numerator, frac.denominator
         rep = str(n) + "/" + str(d)
         return mathsat.msat_make_number(self.msat_env(), rep)
 
     def walk_int_constant(self, formula, **kwargs):
-        assert type(formula.constant_value()) == int or \
-            type(formula.constant_value()) == long
+        assert is_pysmt_integer(formula.constant_value())
         rep = str(formula.constant_value())
         return mathsat.msat_make_number(self.msat_env(), rep)
 

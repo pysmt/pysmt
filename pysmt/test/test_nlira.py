@@ -15,7 +15,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from fractions import Fraction
 
 from pysmt.test import TestCase, main
 from pysmt.test import skipIfSolverNotAvailable
@@ -28,6 +27,7 @@ from pysmt.exceptions import (ConvertExpressionError,
                               NonLinearError,
                               SolverReturnedUnknownResultError)
 from pysmt.logics import QF_NRA
+from pysmt.constants import Fraction
 
 
 class TestNonLinear(TestCase):

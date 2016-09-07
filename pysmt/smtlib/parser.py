@@ -18,7 +18,6 @@
 import functools
 import itertools
 import bz2
-from fractions import Fraction
 from warnings import warn
 from six import iteritems, PY2
 from six.moves import xrange
@@ -31,6 +30,7 @@ from pysmt.exceptions import UnknownSmtLibCommandError
 from pysmt.smtlib.script import SmtLibCommand, SmtLibScript
 from pysmt.smtlib.annotations import Annotations
 from pysmt.utils import interactive_char_iterator
+from pysmt.constants import Fraction
 
 
 def open_(fname):

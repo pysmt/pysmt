@@ -16,7 +16,6 @@
 #   limitations under the License.
 #
 from collections import namedtuple
-from fractions import Fraction
 
 import pysmt.logics
 from pysmt.environment import get_env
@@ -35,6 +34,7 @@ from pysmt.shortcuts import (Symbol, Function,
                              BVZExt, BVSExt, BVSub, BVComp, BVAShr, BVSLE,
                              BVSLT, BVSGT, BVSGE, BVSDiv, BVSRem,
                              Store, Select, Array)
+from pysmt.constants import Fraction
 
 from pysmt.typing import REAL, BOOL, INT, BV8, BV16, ARRAY_INT_INT
 from pysmt.typing import FunctionType, ArrayType
@@ -668,6 +668,13 @@ def get_example_formulae(environment=None):
                     is_valid=True,
                     is_sat=True,
                     logic=pysmt.logics.QF_LIA),
+
+            # Huge Fractions:
+            Example(expr=Equals(Times(r, Real(Fraction(2**200,7))),
+                                Real(-200**11)),
+                    is_valid=False,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_LRA),
 
             # (r+5+s)*(s+2+r) = 0
             Example(expr=Equals(Times(Plus(r, Real(5), s),

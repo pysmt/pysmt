@@ -19,8 +19,9 @@ from nose.plugins.attrib import attr
 from pysmt.test import TestCase, skipIfSolverNotAvailable, main
 from pysmt.test.examples import get_example_formulae
 from pysmt.environment import get_env
-from pysmt.shortcuts import Array, Store, Int, Iff, Symbol, Plus, Equals, And
-from pysmt.typing import INT
+from pysmt.shortcuts import (Array, Store, Int, Iff, Symbol, Plus, Equals, And,
+                             Real, Times)
+from pysmt.typing import INT, REAL
 from pysmt.simplifier import BddSimplifier
 from pysmt.logics import QF_BOOL
 from pysmt.exceptions import ConvertExpressionError
@@ -101,6 +102,12 @@ class TestSimplify(TestCase):
         fs = s.simplify(f)
         self.assertEqual(fs, Symbol("x"))
 
+
+    def test_times_one(self):
+        r = Symbol("r", REAL)
+        f = Times(r, r, Real(1))
+        f = f.simplify()
+        self.assertNotIn(Real(1), f.args())
 
 if __name__ == '__main__':
     main()

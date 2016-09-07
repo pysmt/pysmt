@@ -38,6 +38,12 @@ then
     pip install cython;
 fi
 
+if [ "${PYSMT_GMPY}" == "TRUE" ];
+then
+    pip install gmpy2;
+fi
+
+
 #
 # Install Solvers
 #

@@ -15,7 +15,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from fractions import Fraction
 from functools import partial
 from six.moves import cStringIO
 from six import iteritems
@@ -23,6 +22,7 @@ from six import iteritems
 import pysmt.operators as op
 from pysmt.walkers import TreeWalker
 from pysmt.utils import quote
+from pysmt.constants import is_pysmt_fraction, is_pysmt_integer
 
 
 class HRPrinter(TreeWalker):
@@ -120,15 +120,18 @@ class HRPrinter(TreeWalker):
         self.write(")")
 
     def walk_real_constant(self, formula):
-        assert type(formula.constant_value()) == Fraction, \
+        assert is_pysmt_fraction(formula.constant_value()), \
             "The type was " + str(type(formula.constant_value()))
-        self.write(str(formula.constant_value()))
+        # TODO: Remove this once issue 113 in gmpy2 is solved
+        v = formula.constant_value()
+        n,d = v.numerator, v.denominator
         if formula.constant_value().denominator == 1:
-            self.write(".0")
+            self.write("%s.0" % n)
+        else:
+            self.write("%s/%s" % (n, d))
 
     def walk_int_constant(self, formula):
-        assert (type(formula.constant_value()) == int or
-                type(formula.constant_value()) == long) , \
+        assert is_pysmt_integer(formula.constant_value()), \
             "The type was " + str(type(formula.constant_value()))
         self.write(str(formula.constant_value()))
 

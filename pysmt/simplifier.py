@@ -316,7 +316,7 @@ class Simplifier(pysmt.walkers.DagWalker):
 
         const = None
         if is_algebraic:
-            from pysmt.numeral import Numeral
+            from pysmt.constants import Numeral
             const = self.manager._Algebraic(Numeral(constant_mul))
         elif ttype.is_real_type():
             const = self.manager.Real(constant_mul)
@@ -329,7 +329,8 @@ class Simplifier(pysmt.walkers.DagWalker):
         else:
             if len(new_args) == 0:
                 return const
-            new_args.append(const)
+            elif not const.is_one():
+                new_args.append(const)
 
         return self.manager.Times(new_args)
 

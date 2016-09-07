@@ -91,7 +91,7 @@ SMTLIB_TEST_FILES = [
     #
     # Arrays
     (QF_ABV, "small_set/QF_ABV/a268test0002.smt2.bz2", "sat"),
-#    (QF_ABV, "small_set/QF_ABV/com.galois.ecc.P384ECC64.group_add6.short.smt2.bz2", "unsat"),
+    (QF_ABV, "small_set/QF_ABV/com.galois.ecc.P384ECC64.group_add6.short.smt2.bz2", "unsat"),
 
     (QF_ALIA, "small_set/QF_ALIA/ios_t1_ios_np_sf_ai_00001_001.cvc.smt2.bz2", "unsat"),
     (QF_ALIA, "small_set/QF_ALIA/pointer-invalid-15.smt2.bz2", "sat"),
