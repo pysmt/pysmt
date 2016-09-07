@@ -193,8 +193,6 @@ class TestPrinting(TestCase):
         substitutions = {ex: "ExactlyOne(%s)" % ",".join(str(v) for v in fvars)}
         old_str = ex.serialize()
         smart_str = smart_serialize(ex, subs=substitutions)
-        print old_str
-        print smart_str
         self.assertTrue(len(old_str) > len(smart_str))
         self.assertEqual("ExactlyOne(x0,x1,x2,x3,x4)", smart_str)
 
