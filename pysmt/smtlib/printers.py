@@ -96,7 +96,6 @@ class SmtPrinter(TreeWalker):
 
     def walk_symbol(self, formula):
         self.write(quote(formula.symbol_name()))
-        return iter(())
 
     def walk_function(self, formula):
         for x in self._walk_nary(formula.function_name(), formula):
@@ -107,7 +106,6 @@ class SmtPrinter(TreeWalker):
             self.write("(- " + str(-formula.constant_value()) + ")")
         else:
             self.write(str(formula.constant_value()))
-        return iter(())
 
     def walk_real_constant(self, formula):
         if formula.constant_value() < 0:
@@ -123,18 +121,15 @@ class SmtPrinter(TreeWalker):
             res = template % (str(n) + ".0")
 
         self.write(res)
-        return iter(())
 
     def walk_bool_constant(self, formula):
         if formula.constant_value():
             self.write("true")
         else:
             self.write("false")
-        return iter(())
 
     def walk_bv_constant(self, formula):
         self.write("#b" + formula.bv_bin_str())
-        return iter(())
 
     def walk_forall(self, formula):
         for x in self._walk_quantifier("forall", formula):

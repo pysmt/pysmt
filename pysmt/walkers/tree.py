@@ -44,19 +44,27 @@ class TreeWalker(Walker):
         except KeyError:
             f = self.walk_error
 
-        stack = [self._call_walk(f, formula)]
+        iterator = self._call_walk(f, formula)
+        if iterator is None:
+            return
+
+        stack = [iterator]
         while stack:
             f = stack[-1]
             try:
                 child = next(f)
                 if threshold and len(stack) >= threshold:
-                    stack.append(self.walk_threshold(child))
+                    iterator = self.walk_threshold(child)
+                    if iterator is not None:
+                        stack.append(iterator)
                 else:
                     try:
                         cf = self.functions[child.node_type()]
                     except KeyError:
                         cf = self.walk_error
-                    stack.append(self._call_walk(cf, child))
+                    iterator = self._call_walk(cf, child)
+                    if iterator is not None:
+                        stack.append(iterator)
             except StopIteration:
                 stack.pop()
         return
