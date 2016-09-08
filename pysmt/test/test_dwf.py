@@ -40,9 +40,9 @@ class TestDwf(TestCase):
         # Ad-hoc method to handle printing of the new node
         def hrprinter_walk_XOR(self, formula):
             self.stream.write("(")
-            yield (formula.arg(0))
+            yield formula.arg(0)
             self.stream.write(" *+* ")
-            yield (formula.arg(1))
+            yield formula.arg(1)
             self.stream.write(")")
 
         # Shortcuts for function in env

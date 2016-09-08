@@ -28,9 +28,6 @@ class TreeWalker(Walker):
         Walker.__init__(self, env)
         return
 
-    def _call_walk(self, function, formula):
-        return function(formula)
-
     def walk(self, formula, threshold=None):
         """Generic walk method, will apply the function defined by the map
         self.functions.
@@ -44,7 +41,7 @@ class TreeWalker(Walker):
         except KeyError:
             f = self.walk_error
 
-        iterator = self._call_walk(f, formula)
+        iterator = f(formula)
         if iterator is None:
             return
 
@@ -62,7 +59,7 @@ class TreeWalker(Walker):
                         cf = self.functions[child.node_type()]
                     except KeyError:
                         cf = self.walk_error
-                    iterator = self._call_walk(cf, child)
+                    iterator = cf(child)
                     if iterator is not None:
                         stack.append(iterator)
             except StopIteration:
@@ -75,7 +72,7 @@ class TreeWalker(Walker):
     def walk_skip(self, formula):
         """ Default function to skip a node and process the children """
         for s in formula.args():
-            yield (s)
+            yield s
         return
 
 
