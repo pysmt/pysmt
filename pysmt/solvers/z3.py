@@ -302,8 +302,6 @@ class Z3Converter(Converter, DagWalker):
             z3.Z3_OP_BSUB : lambda args, expr: self.mgr.BVSub(args[0], args[1]),
             z3.Z3_OP_EXT_ROTATE_LEFT : lambda args, expr: self.mgr.BVRol(args[0], args[1].bv_unsigned_value()),
             z3.Z3_OP_EXT_ROTATE_RIGHT: lambda args, expr: self.mgr.BVRor(args[0], args[1].bv_unsigned_value()),
-
-
             z3.Z3_OP_POWER : lambda args, expr: self.mgr.Pow(args[0], args[1]),
             z3.Z3_OP_SELECT : lambda args, expr: self.mgr.Select(args[0], args[1]),
             z3.Z3_OP_STORE : lambda args, expr: self.mgr.Store(args[0], args[1], args[2]),
@@ -328,6 +326,12 @@ class Z3Converter(Converter, DagWalker):
         return self.walk(formula)
 
     def back(self, expr, model=None):
+        """Convert a Z3 expression back into a pySMT expression.
+
+        This is done using the Z3 API. For very big expressions, it is
+        sometimes faster to go through the SMT-LIB format. In those
+        cases, consider using the method back_via_smtlib.
+        """
         stack = [expr]
         while len(stack) > 0:
             current = stack.pop()
@@ -443,6 +447,24 @@ class Z3Converter(Converter, DagWalker):
         arr_ty = self._z3_to_type(expr.sort())
         return self.mgr.Array(arr_ty.index_type, args[0])
 
+    def back_via_smtlib(self, expr):
+        """Back convert a Z3 Expression by translation to SMT-LIB."""
+        from six import StringIO
+        from pysmt.smtlib.parser import SmtLibParser
+        parser = SmtLibParser(self.env)
+        # Z3 prints Pow as "^"
+        parser.interpreted["^"] = parser.interpreted["pow"]
+
+        s = z3.Z3_benchmark_to_smtlib_string(expr.ctx.ref(),
+                                             None, None,
+                                             None, None,
+                                             0, None,
+                                             expr.ast)
+        stream_in = StringIO(s)
+        r = parser.get_script(stream_in).get_last_formula(self.mgr)
+        key = (askey(expr), None)
+        self._back_memoization[key] = r
+        return r
 
     def walk_and(self, formula, args, **kwargs):
         return z3.And(*args)
