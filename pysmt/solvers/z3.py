@@ -47,53 +47,10 @@ from pysmt.constants import Fraction, Numeral, is_pysmt_integer, to_python_integ
 
 # patch z3api
 z3.is_ite = lambda x: z3.is_app_of(x, z3.Z3_OP_ITE)
-z3.is_implies = lambda x: z3.is_app_of(x, z3.Z3_OP_IMPLIES)
 z3.is_function = lambda x: z3.is_app_of(x, z3.Z3_OP_UNINTERPRETED)
-z3.is_iff = lambda x: z3.is_app_of(x, z3.Z3_OP_IFF)
-z3.is_uminus = lambda x: z3.is_app_of(x, z3.Z3_OP_UMINUS)
-z3.is_xor = lambda x: z3.is_app_of(x, z3.Z3_OP_XOR)
-
-z3.is_bv_and = lambda x: z3.is_app_of(x, z3.Z3_OP_BAND)
-z3.is_bv_or = lambda x: z3.is_app_of(x, z3.Z3_OP_BOR)
-z3.is_bv_xor = lambda x: z3.is_app_of(x, z3.Z3_OP_BXOR)
-z3.is_bv_neg = lambda x: z3.is_app_of(x, z3.Z3_OP_BNEG)
-z3.is_bv_not = lambda x: z3.is_app_of(x, z3.Z3_OP_BNOT)
-z3.is_bv_concat = lambda x: z3.is_app_of(x, z3.Z3_OP_CONCAT)
-z3.is_bv_slt = lambda x: z3.is_app_of(x, z3.Z3_OP_SLT)
-z3.is_bv_sleq = lambda x: z3.is_app_of(x, z3.Z3_OP_SLEQ)
-z3.is_bv_ult = lambda x: z3.is_app_of(x, z3.Z3_OP_ULT)
-z3.is_bv_uleq = lambda x: z3.is_app_of(x, z3.Z3_OP_ULEQ)
-z3.is_bv_sgt = lambda x: z3.is_app_of(x, z3.Z3_OP_SGT)
-z3.is_bv_sgeq = lambda x: z3.is_app_of(x, z3.Z3_OP_SGEQ)
-z3.is_bv_ugt = lambda x: z3.is_app_of(x, z3.Z3_OP_UGT)
-z3.is_bv_ugeq = lambda x: z3.is_app_of(x, z3.Z3_OP_UGEQ)
-z3.is_bv_extract = lambda x: z3.is_app_of(x, z3.Z3_OP_EXTRACT)
-z3.is_bv_add = lambda x: z3.is_app_of(x, z3.Z3_OP_BADD)
-z3.is_bv_mul = lambda x: z3.is_app_of(x, z3.Z3_OP_BMUL)
-z3.is_bv_udiv = lambda x: z3.is_app_of(x, z3.Z3_OP_BUDIV)
-z3.is_bv_sdiv = lambda x: z3.is_app_of(x, z3.Z3_OP_BSDIV)
-z3.is_bv_urem = lambda x: z3.is_app_of(x, z3.Z3_OP_BUREM)
-z3.is_bv_srem = lambda x: z3.is_app_of(x, z3.Z3_OP_BSREM)
-z3.is_bv_lshl = lambda x: z3.is_app_of(x, z3.Z3_OP_BSHL)
-z3.is_bv_lshr = lambda x: z3.is_app_of(x, z3.Z3_OP_BLSHR)
-z3.is_bv_ashr = lambda x: z3.is_app_of(x, z3.Z3_OP_BASHR)
-z3.is_bv_sub = lambda x: z3.is_app_of(x, z3.Z3_OP_BSUB)
-z3.is_bv_rol = lambda x: z3.is_app_of(x, z3.Z3_OP_ROTATE_LEFT)
-z3.is_bv_ror = lambda x: z3.is_app_of(x, z3.Z3_OP_ROTATE_RIGHT)
-z3.is_bv_ext_rol = lambda x: z3.is_app_of(x, z3.Z3_OP_EXT_ROTATE_LEFT)
-z3.is_bv_ext_ror = lambda x: z3.is_app_of(x, z3.Z3_OP_EXT_ROTATE_RIGHT)
-z3.is_bv_zext = lambda x: z3.is_app_of(x, z3.Z3_OP_ZERO_EXT)
-z3.is_bv_sext = lambda x: z3.is_app_of(x, z3.Z3_OP_SIGN_EXT)
-z3.is_power = lambda x: z3.is_app_of(x, z3.Z3_OP_POWER)
-z3.is_array_select = lambda x: z3.is_app_of(x, z3.Z3_OP_SELECT)
 z3.is_array_store = lambda x: z3.is_app_of(x, z3.Z3_OP_STORE)
-z3.is_const_array = lambda x: z3.is_app_of(x, z3.Z3_OP_CONST_ARRAY)
-
 z3.get_payload = lambda node,i : z3.Z3_get_decl_int_parameter(node.ctx.ref(),
                                                               node.decl().ast, i)
-#z3.AlgebraicNumRef.__hash__ = z3.AlgebraicNumRef.hash
-#z3.is_root_obj = lambda node: str(node.decl()) == "RootObject"
-
 
 class AstRefKey:
     def __init__(self, n):
