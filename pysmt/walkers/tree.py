@@ -20,8 +20,16 @@ from pysmt.walkers.generic import Walker
 class TreeWalker(Walker):
     """TreeWalker treats the formula as a Tree and does not perform memoization.
 
-    This should be used when applying a the function to the same formula is
-    expected to yield different results, for example, serialization.
+    This should be used when applying a the function to the same
+    formula is expected to yield different results, for example,
+    serialization. If the operations are functions, consider using the
+    DagWalker instead.
+
+    The recursion within walk_ methods is obtained by using the
+    'yield' keyword. In practice, each walk_ method is a generator
+    that yields its arguments.
+    If the generator returns None, no recursion will be performed.
+
     """
 
     def __init__(self, env=None):
