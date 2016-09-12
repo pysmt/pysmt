@@ -21,7 +21,7 @@ from six.moves import xrange
 from pysmt.shortcuts import Or, And, Not, Plus, Iff, Implies
 from pysmt.shortcuts import Exists, ForAll, Ite, ExactlyOne
 from pysmt.shortcuts import Bool, Real, Int, Symbol, Function
-from pysmt.shortcuts import Times, Minus, Equals, LE, LT, ToReal
+from pysmt.shortcuts import Times, Minus, Equals, LE, LT, ToReal, FreshSymbol
 from pysmt.typing import REAL, INT, FunctionType
 from pysmt.smtlib.printers import SmtPrinter, SmtDagPrinter
 from pysmt.printers import smart_serialize
@@ -195,6 +195,17 @@ class TestPrinting(TestCase):
         smart_str = smart_serialize(ex, subs=substitutions)
         self.assertTrue(len(old_str) > len(smart_str))
         self.assertEqual("ExactlyOne(x0,x1,x2,x3,x4)", smart_str)
+
+    def test_stack_recursion(self):
+        import sys
+        limit = sys.getrecursionlimit()
+        f = FreshSymbol()
+        p = FreshSymbol()
+        for _ in xrange(limit):
+            f = Or(p, And(f, p))
+        self.assertTrue(f.size() >= limit)
+        s = f.serialize()
+        self.assertIsNotNone(s)
 
 
 SERIALIZED_EXAMPLES = [

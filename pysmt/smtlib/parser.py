@@ -177,7 +177,7 @@ def tokenizer(handle, interactive=False):
                         c = next(reader)
                     if not c:
                         raise SyntaxError("Expected '|'")
-                    yield ("".join(s))
+                    yield "".join(s)
                     c = next(reader)
 
                 elif c == "\"":
