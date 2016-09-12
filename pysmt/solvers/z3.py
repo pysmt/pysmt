@@ -251,6 +251,11 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
         del self.z3
 
 
+BOOLREF_SET = op.BOOL_OPERATORS | op.RELATIONS
+ARITHREF_SET = op.IRA_OPERATORS
+BITVECREF_SET = op.BV_OPERATORS
+
+
 class Z3Converter(Converter, DagWalker):
 
     def __init__(self, environment, z3_ctx):
@@ -260,35 +265,36 @@ class Z3Converter(Converter, DagWalker):
         self._back_memoization = {}
         self.ctx = z3_ctx
         # Forward conversion
-        self.set_function(p_(self.walk_nary, z3.Z3_mk_and, z3.BoolRef), op.AND)
-        self.set_function(p_(self.walk_nary, z3.Z3_mk_or, z3.BoolRef), op.OR)
-        self.set_function(p_(self.walk_nary, z3.Z3_mk_add, z3.ArithRef), op.PLUS)
-        self.set_function(p_(self.walk_nary, z3.Z3_mk_mul, z3.ArithRef), op.TIMES)
-        self.set_function(p_(self.walk_nary, z3.Z3_mk_sub, z3.ArithRef), op.MINUS)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_implies, z3.BoolRef), op.IMPLIES)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_le, z3.BoolRef), op.LE)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_lt, z3.BoolRef), op.LT)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_eq, z3.BoolRef), op.EQUALS, op.IFF)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_power, z3.ArithRef), op.POW)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_div, z3.ArithRef), op.DIV)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvult, z3.BoolRef), op.BV_ULT)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvule, z3.BoolRef), op.BV_ULE)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvslt, z3.BoolRef), op.BV_SLT)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvsle, z3.BoolRef), op.BV_SLE)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_concat, z3.BitVecRef), op.BV_CONCAT)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvor, z3.BitVecRef), op.BV_OR)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvand, z3.BitVecRef), op.BV_AND)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvxor, z3.BitVecRef), op.BV_XOR)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvadd, z3.BitVecRef), op.BV_ADD)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvsub, z3.BitVecRef), op.BV_SUB)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvmul, z3.BitVecRef), op.BV_MUL)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvudiv, z3.BitVecRef), op.BV_UDIV)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvurem, z3.BitVecRef), op.BV_UREM)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvshl, z3.BitVecRef), op.BV_LSHL)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvlshr, z3.BitVecRef), op.BV_LSHR)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvsdiv, z3.BitVecRef), op.BV_SDIV)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvsrem, z3.BitVecRef), op.BV_SREM)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvashr, z3.BitVecRef), op.BV_ASHR)
+        self.set_function(p_(self.walk_nary, z3.Z3_mk_and), op.AND)
+        self.set_function(p_(self.walk_nary, z3.Z3_mk_or), op.OR)
+        self.set_function(p_(self.walk_nary, z3.Z3_mk_add), op.PLUS)
+        self.set_function(p_(self.walk_nary, z3.Z3_mk_mul), op.TIMES)
+        self.set_function(p_(self.walk_nary, z3.Z3_mk_sub), op.MINUS)
+        self.set_function(p_(self.walk_binary, z3.Z3_mk_implies), op.IMPLIES)
+        self.set_function(p_(self.walk_binary, z3.Z3_mk_le), op.LE)
+        self.set_function(p_(self.walk_binary, z3.Z3_mk_lt), op.LT)
+        self.set_function(p_(self.walk_binary, z3.Z3_mk_eq), op.EQUALS, op.IFF)
+        self.set_function(p_(self.walk_binary, z3.Z3_mk_power), op.POW)
+        self.set_function(p_(self.walk_binary, z3.Z3_mk_div), op.DIV)
+        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvult), op.BV_ULT)
+        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvule), op.BV_ULE)
+        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvslt), op.BV_SLT)
+        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvsle), op.BV_SLE)
+        self.set_function(p_(self.walk_binary, z3.Z3_mk_concat), op.BV_CONCAT)
+        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvor), op.BV_OR)
+        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvand), op.BV_AND)
+        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvxor), op.BV_XOR)
+        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvadd), op.BV_ADD)
+        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvsub), op.BV_SUB)
+        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvmul), op.BV_MUL)
+        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvudiv), op.BV_UDIV)
+        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvurem), op.BV_UREM)
+        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvshl), op.BV_LSHL)
+        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvlshr), op.BV_LSHR)
+        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvsdiv), op.BV_SDIV)
+        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvsrem), op.BV_SREM)
+        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvashr), op.BV_ASHR)
+        self.set_function(self.walk_quantifier, *op.QUANTIFIERS)
 
         # Back Conversion
         self._back_fun = {
@@ -354,15 +360,67 @@ class Z3Converter(Converter, DagWalker):
         }
         # Unique reference to Sorts
         self.z3RealSort = z3.RealSort(self.ctx)
-        self.z3BoolSort  = z3.BoolSort(self.ctx)
+        self.z3BoolSort = z3.BoolSort(self.ctx)
         self.z3IntSort  = z3.IntSort(self.ctx)
         self.z3ArraySorts = {}
-        self.z3BitVecSorts = {}
+        self._z3BitVecSorts = {}
+        # Unique reference to Function Declaration
+        self._z3_func_decl_cache = {}
         return
+
+    def z3BitVecSort(self, width):
+        """Return the z3 BitVecSort for the given width."""
+        try:
+            bvsort = self._z3BitVecSorts[width]
+        except KeyError:
+            bvsort = z3.BitVecSort(width)
+            self._z3BitVecSorts[width] = bvsort
+        return bvsort
 
     @catch_conversion_error
     def convert(self, formula):
-        return self.walk(formula)
+        z3term = self.walk(formula)
+
+        if formula.node_type in op.QUANTIFIERS:
+            return z3.QuantifierRef(z3term, self.ctx)
+        elif formula.node_type() in BOOLREF_SET:
+            return z3.BoolRef(z3term, self.ctx)
+        elif formula.node_type() in ARITHREF_SET:
+            return z3.ArithRef(z3term, self.ctx)
+        elif formula.node_type() in BITVECREF_SET:
+            return z3.BitVecRef(z3term, self.ctx)
+        elif formula.is_symbol() or formula.is_function_application():
+            if formula.is_function_application():
+                type_ = formula.function_name().symbol_type()
+                type_ = type_.return_type
+            else:
+                type_ = formula.symbol_type()
+
+            if type_.is_bool_type():
+                return z3.BoolRef(z3term, self.ctx)
+            elif type_.is_real_type() or type_.is_int_type():
+                return z3.ArithRef(z3term, self.ctx)
+            elif type_.is_array_type():
+                return z3.ArrayRef(z3term, self.ctx)
+            elif type_.is_bv_type():
+                return z3.BitVecRef(z3term, self.ctx)
+            else:
+                raise NotImplementedError(formula)
+        elif formula.node_type() in op.ARRAY_OPERATORS:
+            return z3.ArrayRef(z3term, self.ctx)
+        else:
+            assert formula.is_constant(), formula
+            type_ = formula.constant_type()
+            if type_.is_bool_type():
+                return z3.BoolRef(z3term, self.ctx)
+            elif type_.is_real_type() or type_.is_int_type():
+                return z3.ArithRef(z3term, self.ctx)
+            elif type_.is_array_type():
+                return z3.ArrayRef(z3term, self.ctx)
+            elif type_.is_bv_type():
+                return z3.BitVecRef(z3term, self.ctx)
+            else:
+                raise NotImplementedError(formula)
 
     def back(self, expr, model=None):
         """Convert a Z3 expression back into a pySMT expression.
@@ -506,21 +564,29 @@ class Z3Converter(Converter, DagWalker):
         return r
 
     # Fwd Conversion
-    #
-    # TODO: Define this in __init__ using set_function and partial function
-    #
-    def walk_nary(self, func, ref, formula, args, **kwargs):
-        _args, sz = z3._to_ast_array(args)
-        return ref(func(self.ctx.ref(), sz, _args), self.ctx)
+    def _to_ast_array(self, args):
+        """Convert a list of arguments into an z3.AST vector."""
+        sz = len(args)
+        _args = (z3.Ast * sz)()
+        for i, arg in enumerate(args):
+            _args[i] = arg
+        return _args, sz
 
-    def walk_binary(self, func, ref, formula, args, **kwargs):
-        return ref(func(self.ctx.ref(), args[0].as_ast(), args[1].as_ast()),
-                   self.ctx)
+    def walk_nary(self, func, formula, args, **kwargs):
+        _args, sz = self._to_ast_array(args)
+        z3term = func(self.ctx.ref(), sz, _args)
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
+        return z3term
+
+    def walk_binary(self, func, formula, args, **kwargs):
+        z3term = func(self.ctx.ref(), args[0], args[1])
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
+        return z3term
 
     def walk_not(self, formula, args, **kwargs):
-        return z3.BoolRef(z3.Z3_mk_not(self.ctx.ref(),
-                                       args[0].as_ast()),
-                          self.ctx)
+        z3term = z3.Z3_mk_not(self.ctx.ref(), args[0])
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
+        return z3term
 
     def walk_symbol(self, formula, **kwargs):
         symbol_type = formula.symbol_type()
@@ -528,23 +594,19 @@ class Z3Converter(Converter, DagWalker):
         z3_sname = z3.Z3_mk_string_symbol(self.ctx.ref(), sname)
         if symbol_type.is_bool_type():
             sort_ast = self.z3BoolSort.ast
-            ref = z3.BoolRef
         elif symbol_type.is_real_type():
             sort_ast = self.z3RealSort.ast
-            ref = z3.ArithRef
         elif symbol_type.is_int_type():
             sort_ast = self.z3IntSort.ast
-            ref = z3.ArithRef
         elif symbol_type.is_array_type():
             sort_ast = self._type_to_z3(symbol_type).ast
-            ref = z3.ArrayRef
         else:
             assert symbol_type.is_bv_type()
             sort_ast = self._type_to_z3(symbol_type).ast
-            ref = z3.BitVecRef
         # Create const with given sort
         res = z3.Z3_mk_const(self.ctx.ref(), z3_sname, sort_ast)
-        return ref(res, self.ctx)
+        z3.Z3_inc_ref(self.ctx.ref(), res)
+        return res
 
     def walk_ite(self, formula, args, **kwargs):
         i = args[0]
@@ -554,118 +616,185 @@ class Z3Converter(Converter, DagWalker):
 
         if self._get_type(formula).is_bool_type():
             # Rewrite as (!i \/ t) & (i \/ e)
-            _args, sz = z3._to_ast_array((ni, t))
-            or1 = z3.BoolRef(z3.Z3_mk_or(self.ctx.ref(), sz, _args), self.ctx)
-            _args, sz = z3._to_ast_array((i, e))
-            or2 = z3.BoolRef(z3.Z3_mk_or(self.ctx.ref(), sz, _args), self.ctx)
-            _args, sz = z3._to_ast_array((or1, or2))
-            res = z3.BoolRef(z3.Z3_mk_and(self.ctx.ref(), sz, _args), self.ctx)
-            return res
-        return z3._to_expr_ref(z3.Z3_mk_ite(self.ctx.ref(),
-                                            i.as_ast(),
-                                            t.as_ast(),
-                                            e.as_ast()),
-                               self.ctx)
+            _args, sz = self._to_ast_array((ni, t))
+            or1 = z3.Z3_mk_or(self.ctx.ref(), sz, _args)
+            z3.Z3_inc_ref(self.ctx.ref(), or1)
+            _args, sz = self._to_ast_array((i, e))
+            or2 = z3.Z3_mk_or(self.ctx.ref(), sz, _args)
+            z3.Z3_inc_ref(self.ctx.ref(), or2)
+            _args, sz = self._to_ast_array((or1, or2))
+            z3term = z3.Z3_mk_and(self.ctx.ref(), sz, _args)
+            z3.Z3_inc_ref(self.ctx.ref(), z3term)
+            z3.Z3_dec_ref(self.ctx.ref(), or1)
+            z3.Z3_dec_ref(self.ctx.ref(), or2)
+            return z3term
+        z3term = z3.Z3_mk_ite(self.ctx.ref(), i, t, e)
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
+        return z3term
 
     def walk_real_constant(self, formula, **kwargs):
         frac = formula.constant_value()
         n,d = frac.numerator, frac.denominator
         rep = str(n) + "/" + str(d)
-        return z3.RatNumRef(z3.Z3_mk_numeral(self.ctx.ref(),
-                                             rep,
-                                             self.z3RealSort.ast),
-                            self.ctx)
+        z3term = z3.Z3_mk_numeral(self.ctx.ref(),
+                                  rep,
+                                  self.z3RealSort.ast)
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
+        return z3term
 
     def walk_int_constant(self, formula, **kwargs):
         assert is_pysmt_integer(formula.constant_value())
         const = str(formula.constant_value())
-        return z3.IntNumRef(z3.Z3_mk_numeral(self.ctx.ref(),
-                                             const,
-                                             self.z3IntSort.ast),
-                            self.ctx)
+        z3term = z3.Z3_mk_numeral(self.ctx.ref(),
+                                  const,
+                                  self.z3IntSort.ast)
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
+        return z3term
 
     def walk_bool_constant(self, formula, **kwargs):
-        return z3.BoolVal(formula.constant_value(), ctx=self.ctx)
+        _t = z3.BoolVal(formula.constant_value(), ctx=self.ctx)
+        z3term = _t.as_ast()
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
+        return z3term
 
-    def walk_exists(self, formula, args, **kwargs):
-        return z3.Exists([self.walk_symbol(x)
-                          for x in formula.quantifier_vars()],
-                         args[0])
-
-    def walk_forall(self, formula, args, **kwargs):
-        return z3.ForAll([self.walk_symbol(x)
-                          for x in formula.quantifier_vars()],
-                         args[0])
+    def walk_quantifier(self, formula, args, **kwargs):
+        qvars = formula.quantifier_vars()
+        qvars, qvars_sz = self._to_ast_array([self.walk_symbol(x)\
+                                              for x in qvars])
+        empty_str = z3.Z3_mk_string_symbol(self.ctx.ref(), "")
+        z3term = z3.Z3_mk_quantifier_const_ex(self.ctx.ref(),
+                                              formula.is_forall(),
+                                              1, empty_str, empty_str,
+                                              qvars_sz, qvars,
+                                              0, None, 0, None,
+                                              args[0])
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
+        return z3term
 
     def walk_toreal(self, formula, args, **kwargs):
-        return z3.ToReal(args[0])
+        z3term = z3.Z3_mk_int2real(self.ctx.ref(), args[0])
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
+        return z3term
+
+    def _z3_func_decl(self, func_name):
+        """Create a Z3 Function Declaration for the given function."""
+        try:
+            return self._z3_func_decl_cache[func_name]
+        except KeyError:
+            tp = func_name.symbol_type()
+            arity = len(tp.param_types)
+            z3dom = (z3.Sort * arity)()
+            for i, t in enumerate(tp.param_types):
+                z3dom[i] = self._type_to_z3(t).ast
+            z3ret = self._type_to_z3(tp.return_type).ast
+            z3name = z3.Z3_mk_string_symbol(self.ctx.ref(),
+                                            func_name.symbol_name())
+            z3func = z3.Z3_mk_func_decl(self.ctx.ref(), z3name,
+                                        arity, z3dom, z3ret)
+            self._z3_func_decl_cache[func_name] = z3func
+            return z3func
 
     def walk_function(self, formula, args, **kwargs):
-        f = formula.function_name()
-        tp = f.symbol_type()
-        sig = [self._type_to_z3(x) for x in tp.param_types]
-        sig.append(self._type_to_z3(tp.return_type))
-        z3_f = z3.Function(f.symbol_name(), *sig)
-        return z3_f(*args)
+        z3func = self._z3_func_decl(formula.function_name())
+        _args, sz = self._to_ast_array(args)
+        z3term = z3.Z3_mk_app(self.ctx.ref(), z3func, sz, _args)
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
+        return z3term
 
     def walk_bv_constant(self, formula, **kwargs):
         value = formula.constant_value()
-        width = formula.bv_width()
-        return z3.BitVecVal(value, width, ctx=self.ctx)
-
+        z3term = z3.Z3_mk_numeral(self.ctx.ref(),
+                                  str(value),
+                                  self.z3BitVecSort(formula.bv_width()).ast)
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
+        return z3term
 
     def walk_bv_extract(self, formula, args, **kwargs):
-        return z3.BitVecRef(z3.Z3_mk_extract(self.ctx.ref(),
-                                             formula.bv_extract_end(),
-                                             formula.bv_extract_start(),
-                                             args[0].as_ast()),
-                            self.ctx)
+        z3term = z3.Z3_mk_extract(self.ctx.ref(),
+                                  formula.bv_extract_end(),
+                                  formula.bv_extract_start(),
+                                  args[0])
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
+        return z3term
 
     def walk_bv_not(self, formula, args, **kwargs):
-        return z3.BitVecRef(z3.Z3_mk_bvnot(self.ctx.ref(), args[0].as_ast()),
-                            self.ctx)
+        z3term = z3.Z3_mk_bvnot(self.ctx.ref(), args[0])
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
+        return z3term
 
     def walk_bv_neg(self, formula, args, **kwargs):
-        return z3.BitVecRef(z3.Z3_mk_bvneg(self.ctx.ref(),
-                                           args[0].as_ast()),
-                            self.ctx)
+        z3term = z3.Z3_mk_bvneg(self.ctx.ref(), args[0])
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
+        return z3term
 
     def walk_bv_rol(self, formula, args, **kwargs):
-        return z3.RotateLeft(args[0],
-                             formula.bv_rotation_step())
+        bvsort = self.z3BitVecSort(formula.bv_width())
+        step = z3.Z3_mk_numeral(self.ctx.ref(),
+                                str(formula.bv_rotation_step()),
+                                bvsort.ast)
+        z3term = z3.Z3_mk_ext_rotate_left(self.ctx.ref(),
+                                          args[0], step)
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
+        return z3term
 
     def walk_bv_ror(self, formula, args, **kwargs):
-        return z3.RotateRight(args[0],
-                             formula.bv_rotation_step())
+        bvsort = self.z3BitVecSort(formula.bv_width())
+        step = z3.Z3_mk_numeral(self.ctx.ref(),
+                                str(formula.bv_rotation_step()),
+                                bvsort.ast)
+        z3term = z3.Z3_mk_ext_rotate_right(self.ctx.ref(),
+                                          args[0], step)
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
+        return z3term
 
     def walk_bv_zext(self, formula, args, **kwargs):
-        return z3.ZeroExt(formula.bv_extend_step(), args[0])
+        z3term = z3.Z3_mk_zero_ext(self.ctx.ref(),
+                                   formula.bv_extend_step(), args[0])
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
+        return z3term
 
     def walk_bv_sext (self, formula, args, **kwargs):
-        return z3.SignExt(formula.bv_extend_step(), args[0])
+        z3term = z3.Z3_mk_sign_ext(self.ctx.ref(),
+                                   formula.bv_extend_step(), args[0])
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
+        return z3term
 
     def walk_bv_comp (self, formula, args, **kwargs):
-        return z3.If(args[0] == args[1], z3.BitVecVal(1, 1), z3.BitVecVal(0, 1))
+        cond = z3.Z3_mk_eq(self.ctx.ref(), args[0], args[1])
+        z3.Z3_inc_ref(self.ctx.ref(), cond)
+        then_ = z3.Z3_mk_numeral(self.ctx.ref(), "1", self.z3BitVecSort(1).ast)
+        z3.Z3_inc_ref(self.ctx.ref(), then_)
+        else_ = z3.Z3_mk_numeral(self.ctx.ref(), "0", self.z3BitVecSort(1).ast)
+        z3.Z3_inc_ref(self.ctx.ref(), else_)
+        z3term = z3.Z3_mk_ite(self.ctx.ref(), cond, then_, else_)
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
+        # De-Ref since this is handled internally by Z3
+        z3.Z3_dec_ref(self.ctx.ref(), cond)
+        z3.Z3_dec_ref(self.ctx.ref(), then_)
+        z3.Z3_dec_ref(self.ctx.ref(), else_)
+        return z3term
 
     def walk_array_select(self, formula, args, **kwargs):
-        return z3._to_expr_ref(z3.Z3_mk_select(self.ctx.ref(),
-                                               args[0].as_ast(), args[1].as_ast()),
-                               self.ctx)
+        z3term = z3.Z3_mk_select(self.ctx.ref(), args[0], args[1])
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
+        return z3term
 
     def walk_array_store(self, formula, args, **kwargs):
-        return z3._to_expr_ref(z3.Z3_mk_store(self.ctx.ref(),
-                                              args[0].as_ast(),
-                                              args[1].as_ast(),
-                                              args[2].as_ast()),
-                               self.ctx)
+        z3term = z3.Z3_mk_store(self.ctx.ref(), args[0], args[1], args[2])
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
+        return z3term
 
     def walk_array_value(self, formula, args, **kwargs):
         idx_type = formula.array_value_index_type()
-        rval = z3.K(self._type_to_z3(idx_type), args[0])
+        arraysort = self._type_to_z3(idx_type).ast
+        z3term = z3.Z3_mk_const_array(self.ctx.ref(), arraysort, args[0])
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
+
         for i in xrange(1, len(args), 2):
             c = args[i]
-            rval = z3.Store(rval, c, args[i+1])
-        return rval
+            z3term = self.walk_array_store(None, (z3term, c, args[i+1]))
+            z3.Z3_inc_ref(self.ctx.ref(), z3term)
+        return z3term
 
     def _z3_to_type(self, sort):
         if sort.kind() == z3.Z3_BOOL_SORT:
@@ -703,14 +832,15 @@ class Z3Converter(Converter, DagWalker):
                 return sort
         else:
             assert tp.is_bv_type() , "Unsupported type '%s'" % tp
-            try:
-                return self.z3BitVecSorts[tp.width]
-            except KeyError:
-                sort = z3.BitVecSort(tp.width)
-                self.z3BitVecSorts[tp.width] = sort
-                return sort
+            return self.z3BitVecSort(tp.width)
         raise NotImplementedError("Unsupported type in conversion: %s" % tp)
 
+    def __del__(self):
+        # Cleaning-up Z3Converter requires dec-ref'ing the terms in the cache
+        for t in self.memoization.items():
+            z3.Z3_dec_ref(self.ctx.ref(), t)
+
+# EOC Z3Converter
 
 class Z3QuantifierEliminator(QuantifierEliminator):
 
