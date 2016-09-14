@@ -15,6 +15,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+from six.moves import xrange
+
 from pysmt.smtlib.parser import open_
 from pysmt.shortcuts import FreshSymbol, Or, And, Not
 
@@ -65,6 +67,19 @@ def read_dimacs(fname):
     return vars_cnt, clauses, comments
 
 
+def write_dimacs(cnf, fname):
+    """Write the CNF (represented as list of lists) into DIMACS file."""
+    clause_cnt = len(cnf)
+    max_var = max(abs(l) for clause in cnf for l in clause)
+
+    with open(fname, "w") as fout:
+        fout.write("p cnf %d %d\n" % (max_var, clause_cnt))
+        for clause in cnf:
+            fout.write(" ".join(str(l) for l in clause))
+            fout.write(" 0\n")
+    return
+
+
 def dimacs_to_pysmt(vars_cnt, clauses, comments):
     """Convert a DIMACS structure into a pySMT formula.
 
@@ -85,9 +100,19 @@ def dimacs_to_pysmt(vars_cnt, clauses, comments):
 
 
 if __name__ == "__main__":
+    # Read a DIMACS file, print some stats and create new file that
+    # contains 75% of the original clauses randomly selected.
     import sys
+    import random
 
     dimacs = read_dimacs(sys.argv[1])
-    f, st = dimacs_to_pysmt(*dimacs)
+    print(dimacs[0], len(dimacs[1]))
+    print("".join(dimacs[2]))
+    f, _ = dimacs_to_pysmt(*dimacs)
     print(f.size())
-    print(dimacs[0], dimacs[1], "".join(dimacs[2]))
+    clauses = dimacs[1]
+    clauses_cnt = len(clauses)
+    random.shuffle(clauses)
+    new_clauses_cnt = int(0.75*clauses_cnt)
+    new_clauses = clauses[:new_clauses_cnt]
+    write_dimacs(new_clauses, sys.argv[1]+".reduced")
