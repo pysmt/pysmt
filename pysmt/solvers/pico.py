@@ -17,10 +17,21 @@
 #
 from pysmt.exceptions import SolverAPINotFound
 
-try:
-    import picosat
-except ImportError:
-    raise SolverAPINotFound
+USE_CFFI = True
+
+if USE_CFFI:
+    try:
+        from picosat_cffi import picosat
+        if __debug__: print("Picosat: Using CFFI")
+    except:
+        USE_CFFI = False
+        if __debug__: print("Picosat: Failed to import CFFI")
+
+if not USE_CFFI:
+    try:
+        import picosat
+    except ImportError:
+        raise SolverAPINotFound
 
 from six.moves import xrange
 from six import iteritems
