@@ -21,10 +21,21 @@ from six.moves import xrange
 from pysmt.exceptions import SolverAPINotFound
 from pysmt.constants import Fraction, is_pysmt_fraction, is_pysmt_integer
 
-try:
-    import mathsat
-except ImportError:
-    raise SolverAPINotFound
+USE_CFFI = True
+
+if USE_CFFI:
+    try:
+        from mathsat_cffi import mathsat
+        if __debug__: print("Mathsat: Using CFFI")
+    except:
+        USE_CFFI = False
+        if __debug__: print("Mathsat: Failed to import CFFI")
+
+if not USE_CFFI:
+    try:
+        import mathsat
+    except ImportError:
+        raise SolverAPINotFound
 
 from pysmt.logics import LRA, QF_UFLIA, QF_UFLRA, QF_BV, PYSMT_QF_LOGICS
 from pysmt.oracles import get_logic
@@ -44,6 +55,24 @@ from pysmt.decorators import clear_pending_pop, catch_conversion_error
 from pysmt.solvers.qelim import QuantifierEliminator
 from pysmt.solvers.interpolation import Interpolator
 from pysmt.walkers.identitydag import IdentityDagWalker
+
+# Utils for msat API
+term2str = lambda term: mathsat.msat_term_repr(term)
+
+class MSatTerm(object):
+    def __init__(self, obj):
+        self.obj = obj
+        self.idx = mathsat.msat_term_id(obj)
+    def __hash__(self):
+        return self.idx
+    def __eq__(self, other):
+        return isinstance(other, MSatTerm) and  self.idx == other.idx
+    def __neq__(self, other):
+        return not self == other
+    def __str__(self):
+        return term2str(obj)
+
+# EOC MSatTerm
 
 
 class MSatEnv(object):
@@ -421,8 +450,10 @@ class MSatConverter(Converter, DagWalker):
             elif mathsat.msat_is_rational_type(self.msat_env(), ty):
                 res = types.REAL
             else:
-                assert "_" in str(term), "Unrecognized type for '%s'" % str(term)
-                width = int(str(term).split("_")[1])
+                termstr = term2str(term)
+                assert "_" in termstr, \
+                    "Unrecognized type for '%s'" % termstr
+                width = int(termstr.split("_")[1])
                 res = types.BVType(width)
 
         elif mathsat.msat_term_is_and(self.msat_env(), term) or \
@@ -572,8 +603,9 @@ class MSatConverter(Converter, DagWalker):
             elif mathsat.msat_is_rational_type(self.msat_env(), ty):
                 res = mgr.Real(Fraction(mathsat.msat_term_repr(term)))
             else:
-                assert "_" in str(term), "Unsupported type for '%s'" % str(term)
-                val, width = str(term).split("_")
+                termstr = term2str(term)
+                assert "_" in termstr, "Unsupported type for '%s'" % termstr
+                val, width = termstr.split("_")
                 val = int(val)
                 width = int(width)
                 res = mgr.BV(val, width)
@@ -631,7 +663,7 @@ class MSatConverter(Converter, DagWalker):
                     res = mgr.Symbol(rep, types.ArrayType(i, e))
                 else:
                     _, width = mathsat.msat_is_bv_type(self.msat_env(), ty)
-                    assert width is not None, "Unsupported variable type for '%s'"%str(term)
+                    assert width is not None, "Unsupported variable type for '%s'"% term2str(term)
                     res = mgr.Symbol(rep, types.BVType(width))
 
         elif mathsat.msat_term_is_uf(self.msat_env(), term):
@@ -775,34 +807,34 @@ class MSatConverter(Converter, DagWalker):
         return self.decl_to_symbol[mathsat.msat_decl_id(decl)]
 
     def _walk_back(self, term, mgr):
-        stack = [term]
+        stack = [MSatTerm(term)]
 
         while len(stack) > 0:
             current = stack.pop()
-            arity = mathsat.msat_term_arity(current)
+            arity = mathsat.msat_term_arity(current.obj)
             if current not in self.back_memoization:
                 self.back_memoization[current] = None
                 stack.append(current)
                 for i in xrange(arity):
-                    son = mathsat.msat_term_get_arg(current, i)
+                    son = MSatTerm(mathsat.msat_term_get_arg(current.obj, i))
                     stack.append(son)
             elif self.back_memoization[current] is None:
-                args=[self.back_memoization[mathsat.msat_term_get_arg(current,i)]
+                args=[self.back_memoization[MSatTerm(mathsat.msat_term_get_arg(current.obj,i))]
                       for i in xrange(arity)]
 
-                signature = self._get_signature(current, args)
+                signature = self._get_signature(current.obj, args)
                 new_args = []
                 for i, a in enumerate(args):
                     t = self.env.stc.get_type(a)
                     if t != signature.param_types[i]:
                         a = mgr.ToReal(a)
                     new_args.append(a)
-                res = self._back_single_term(current, mgr, new_args)
+                res = self._back_single_term(current.obj, mgr, new_args)
                 self.back_memoization[current] = res
             else:
-                # we already visited the node, nothing else to do
+                # We already visited the node, nothing else to do
                 pass
-        return self.back_memoization[term]
+        return self.back_memoization[MSatTerm(term)]
 
     @catch_conversion_error
     def convert(self, formula):
