@@ -17,7 +17,7 @@
 #
 from pysmt.shortcuts import get_env, get_free_variables
 from pysmt.shortcuts import Symbol, Implies, And, Not
-from pysmt.test.examples import EXAMPLE_FORMULAS
+from pysmt.test.examples import get_example_formulae
 from pysmt.test import TestCase, main
 from pysmt.oracles import get_logic
 from pysmt.typing import BOOL
@@ -27,12 +27,12 @@ class TestOracles(TestCase):
 
     def test_quantifier_oracle(self):
         oracle = get_env().qfo
-        for (f, _, _, logic) in EXAMPLE_FORMULAS:
+        for (f, _, _, logic) in get_example_formulae():
             is_qf = oracle.is_qf(f)
             self.assertEqual(is_qf, logic.quantifier_free, f)
 
     def test_get_logic(self):
-        for example in EXAMPLE_FORMULAS:
+        for example in get_example_formulae():
             target_logic = example.logic
             res = get_logic(example.expr)
             self.assertEqual(res, target_logic, "%s - %s != %s" % \
@@ -49,7 +49,7 @@ class TestOracles(TestCase):
     def test_atoms_oracle(self):
         oracle = get_env().ao
         stc = get_env().stc
-        for (f, _, _, _) in EXAMPLE_FORMULAS:
+        for (f, _, _, _) in get_example_formulae():
             atoms = oracle.get_atoms(f)
             if len(f.get_free_variables()) > 0:
                 self.assertTrue(len(atoms) > 0)

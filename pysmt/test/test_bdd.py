@@ -18,7 +18,7 @@
 from pysmt.shortcuts import And, Not, Symbol, Bool, Exists, Solver
 from pysmt.shortcuts import get_env, qelim, Or
 from pysmt.test import TestCase, skipIfSolverNotAvailable, main
-from pysmt.test.examples import EXAMPLE_FORMULAS
+from pysmt.test.examples import get_example_formulae
 from pysmt.logics import BOOL
 
 class TestBdd(TestCase):
@@ -65,7 +65,7 @@ class TestBdd(TestCase):
     @skipIfSolverNotAvailable("bdd")
     def test_examples_conversion(self):
         convert = self.bdd_converter.convert
-        for example in EXAMPLE_FORMULAS:
+        for example in get_example_formulae():
             if example.logic != BOOL:
                 continue
             expr = convert(example.expr)
@@ -73,7 +73,7 @@ class TestBdd(TestCase):
 
     @skipIfSolverNotAvailable("bdd")
     def test_examples_solving(self):
-        for example in EXAMPLE_FORMULAS:
+        for example in get_example_formulae():
             if example.logic != BOOL:
                 continue
             solver = Solver(logic=BOOL,
