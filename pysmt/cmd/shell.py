@@ -54,7 +54,6 @@ Happy Solving!
 """
 
 
-
 class PysmtShell(object):
 
     def __init__(self, argv):

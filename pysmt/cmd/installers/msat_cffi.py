@@ -50,7 +50,8 @@ class MSatCFFIInstaller(SolverInstaller):
                             "-lgmp -lgmpxx -lstdc++ "\
                             "-o libmathsat.so",
                             self.libmathsat_dir)
-        self.do_download("https://raw.githubusercontent.com/pysmt/mathsat-cffi/b6172f3d7759799f1194c8e169103b894f668451/mathsat_cffi.py",
+        revision = "ec7b8425a701b59e469b3e46c2437faa51d2be69"
+        self.do_download("https://raw.githubusercontent.com/pysmt/mathsat-cffi/%s/mathsat_cffi.py" % revision,
                          os.path.join(self.libmathsat_dir, "mathsat_cffi.py"))
 
     def move(self):
