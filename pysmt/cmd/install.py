@@ -23,6 +23,7 @@ from collections import namedtuple
 from pysmt.cmd.installers import MSatInstaller, Z3Installer, PicoSATInstaller
 from pysmt.cmd.installers import CVC4Installer, YicesInstaller, BtorInstaller
 from pysmt.cmd.installers import CuddInstaller
+from pysmt.cmd.installers import MSatCFFIInstaller
 
 from pysmt.environment import get_env
 from pysmt import git_version
@@ -30,6 +31,7 @@ from pysmt import git_version
 # Build a list of installers, one for each solver
 Installer = namedtuple("Installer", ["InstallerClass", "version", "extra_params"])
 INSTALLERS = [Installer(MSatInstaller,    "5.3.13", {}),
+              Installer(MSatCFFIInstaller, "5.3.13", {}),
               Installer(Z3Installer,      "4.4.1", {"osx": "10.11"}),
               Installer(CVC4Installer,    "1.5-prerelease", {"git_version" : "c15ff43597b41ea457befecb1b0e2402e28cb523"}),
               Installer(YicesInstaller,   "2.5.1", {"yicespy_version": "07439670a54d08a76cfb931194e1eaf07ea026a1"}),
@@ -81,7 +83,10 @@ def check_installed(required_solvers, install_dir, bindings_dir, mirror_link):
         msg = "  %s%s " % (solver.ljust(10), is_installed)
         msg += ("(%s)" % version).ljust(20)
         if solver not in pypath_solvers:
-            msg += "Not in Python's path!"
+            if solver.endswith("-cffi") and solver[:-5] in pypath_solvers:
+                pass
+            else:
+                msg += "Not in Python's path!"
         print(msg)
     print("")
 
