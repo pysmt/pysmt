@@ -22,7 +22,7 @@ from pysmt.cmd.installers.base import SolverInstaller, TemporaryPath
 
 class MSatCFFIInstaller(SolverInstaller):
 
-    SOLVER = "msat-cffi"
+    SOLVER = "msat"
 
     def __init__(self, install_dir, bindings_dir, solver_version,
                  mirror_link=None):

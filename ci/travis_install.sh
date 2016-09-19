@@ -43,11 +43,6 @@ then
     pip install gmpy2;
 fi
 
-if [ "${PYSMT_SOLVER}" == "msat-cffi" ];
-then
-    pip install cffi;
-fi
-
 
 #
 # Install Solvers

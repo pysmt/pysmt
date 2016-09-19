@@ -53,7 +53,7 @@ env:
     # - PYSMT_SOLVER="all"   PYSMT_GMPY="TRUE"
     # - PYSMT_SOLVER="all"   PYSMT_GMPY="FALSE"
     # - PYSMT_SOLVER="None"  PYSMT_GMPY="FALSE"
-    # - PYSMT_SOLVER="msat"  PYSMT_GMPY="FALSE"
+    - PYSMT_SOLVER="msat"  PYSMT_GMPY="FALSE"
     # - PYSMT_SOLVER="z3"    PYSMT_GMPY="FALSE"
     # - PYSMT_SOLVER="cvc4"  PYSMT_GMPY="FALSE"
     # - PYSMT_SOLVER="yices" PYSMT_GMPY="FALSE"
@@ -62,7 +62,7 @@ env:
     # - PYSMT_SOLVER="btor"  PYSMT_GMPY="FALSE"
     # - PYSMT_SOLVER="msat_wrap" PYSMT_GMPY="FALSE"
     # - PYSMT_SOLVER="z3_wrap"   PYSMT_GMPY="FALSE"
-    - PYSMT_SOLVER="msat-cffi" PYSMT_GMPY="FALSE"
+
 
 matrix:
   fast_finish: true

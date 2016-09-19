@@ -25,13 +25,6 @@ fi
 export BINDINGS_FOLDER=${HOME}/python_bindings/${PYSMT_SOLVER}
 eval `python install.py --env --bindings-path ${BINDINGS_FOLDER}`
 echo ${PYTHONPATH}
-if [ "${PYSMT_SOLVER}" == "msat-cffi" ];
-then
-    #python install.py --check --msat
-    echo ""
-else
-    python install.py --check
-fi;
 
 #
 # Run the test suite
