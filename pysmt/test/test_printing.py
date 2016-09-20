@@ -26,7 +26,7 @@ from pysmt.typing import REAL, INT, FunctionType
 from pysmt.smtlib.printers import SmtPrinter, SmtDagPrinter
 from pysmt.printers import smart_serialize
 from pysmt.test import TestCase, main
-from pysmt.test.examples import get_example_formulae
+from pysmt.test.examples import get_str_example_formulae
 
 
 class TestPrinting(TestCase):
@@ -166,13 +166,12 @@ class TestPrinting(TestCase):
 
         short_f_str = dag_buf.getvalue()
         long_f_str = tree_buf.getvalue()
-
         self.assertTrue(len(short_f_str) < len(long_f_str))
 
     def test_examples(self):
-        for i, (f, _, _, _) in enumerate(get_example_formulae()):
+        for s, f, logic in get_str_example_formulae(environment=None):
             self.assertTrue(len(str(f)) >= 1, str(f))
-            self.assertEqual(str(f), SERIALIZED_EXAMPLES[i])
+            self.assertEqual(str(f), s)
 
     def test_smart_serialize(self):
         x, y = Symbol("x"), Symbol("y")
@@ -206,94 +205,6 @@ class TestPrinting(TestCase):
         self.assertTrue(f.size() >= limit)
         s = f.serialize()
         self.assertIsNotNone(s)
-
-
-SERIALIZED_EXAMPLES = [
-    """(x & y)""",
-    """(x <-> y)""",
-    """((x | y) & (! (x | y)))""",
-    """(x & (! y))""",
-    """(False -> True)""",
-    """((q < p) & (x -> y))""",
-    """(((p + q) = 5) & (q < p))""",
-    """((q <= p) | (p <= q))""",
-    """(! (p < (q * 2)))""",
-    """(p < (p - (5 - 2)))""",
-    """((x ? 7 : ((p + -1) * 3)) = q)""",
-    """(p < (q + 1))""",
-    """((s < r) & (x -> y))""",
-    """(((r + s) = 28/5) & (s < r))""",
-    """((s <= r) | (r <= s))""",
-    """(! ((r * 2.0) < (s * 2.0)))""",
-    """(! (r < (r - (5.0 - 2.0))))""",
-    """((x ? 7.0 : ((s + -1.0) * 3.0)) = r)""",
-    """(bf(x) <-> bg(x))""",
-    """(rf(5.0, rg(r)) = 0.0)""",
-    """((rg(r) = (5.0 + 2.0)) <-> (rg(r) = 7.0))""",
-    """((r = (s + 1.0)) & (rg(s) = 5.0) & (rg((r - 1.0)) = 7.0))""",
-    """((1_32 & 0_32) = 0_32)""",
-    """((! 2_3) = 5_3)""",
-    """((7_3 xor 0_3) = 0_3)""",
-    """((bv1::bv1) u< 0_16)""",
-    """(1_32[0:7] = 1_8)""",
-    """(0_8 u< (((bv1 + 1_8) * 5_8) u/ 5_8))""",
-    """(0_16 u<= bv2)""",
-    """(0_16 s<= bv2)""",
-    """((0_32 u< (5_32 u% 2_32)) & ((5_32 u% 2_32) u<= 1_32))""",
-    """((((1_32 + (- ...)) << 1_32) >> 1_32) = 1_32)""",
-    """((1_32 - 1_32) = 0_32)""",
-    """(((1_32 ROL 1) ROR 1) = 1_32)""",
-    """((0_5 ZEXT 11) = (0_1 SEXT 15))""",
-    """((bv2 - bv2) = 0_16)""",
-    """((bv2 - bv2)[0:7] = bv1)""",
-    """((bv2[0:7] bvcomp bv1) = 1_1)""",
-    """((bv2 bvcomp bv2) = 0_1)""",
-    """(bv2 s< bv2)""",
-    """(bv2 s< 0_16)""",
-    """((bv2 s< 0_16) | (0_16 s<= bv2))""",
-    """(bv2 u< bv2)""",
-    """(bv2 u< 0_16)""",
-    """((bv2 | 0_16) = bv2)""",
-    """((bv2 & 0_16) = 0_16)""",
-    """((0_16 s< bv2) & ((bv2 s/ 65535_16) s< 0_16))""",
-    """((0_16 s< bv2) & ((bv2 s% 1_16) s< 0_16))""",
-    """((bv2 u% 1_16) = 0_16)""",
-    """((bv2 s% 1_16) = 0_16)""",
-    """((bv2 s% (- 1_16)) = 0_16)""",
-    """((bv2 a>> 0_16) = bv2)""",
-    """((0_16 s<= bv2) & ((bv2 a>> 1_16) = (bv2 >> 1_16)))""",
-    """(forall y . (x -> y))""",
-    """(forall p, q . ((p + q) = 0))""",
-    """(forall r, s . (((0.0 < r) & (0.0 < s)) -> ((r - s) < r)))""",
-    """(exists x, y . (x -> y))""",
-    """(exists p, q . ((p + q) = 0))""",
-    """(exists r . (forall s . (r < (r - s))))""",
-    """(forall r . (exists s . (r < (r - s))))""",
-    """(x & (forall r . ((r + s) = 5.0)))""",
-    """(exists x . ((x <-> (5.0 < s)) & (s < 3.0)))""",
-    """((p < ih(r, q)) & (x -> y))""",
-    """(((p - 3) = q) -> ((p < ih(r, (... + ...))) | (ih(r, p) <= p)))""",
-    """(((ToReal((... - ...)) = r) & (ToReal(q) = r)) -> ((p < ih(ToReal(...), (... + ...))) | (ih(r, p) <= p)))""",
-    """(! (((ToReal(...) = r) & (ToReal(...) = r)) -> ((p < ...(..., ...)) | (...(..., ...) <= p))))""",
-    """("Did you know that any string works? #yolo" & "10" & "|#somesolverskeepthe||" & " ")""",
-    """((q = 0) -> (aii[0 := 0] = aii[0 := q]))""",
-    """(aii[0 := 0][0] = 0)""",
-    """((Array{Int, Int}(0)[1 := 1] = aii) & (aii[1] = 0))""",
-    """((a_arb_aii = Array{Array{Real, BV{8}}, Array{Int, Int}}(Array{Int, Int}(7))) -> (a_arb_aii[arb][42] = 7))""",
-    """(abb[bv1 := y_][bv1 := z_] = abb[bv1 := z_])""",
-    """((r / s) = (r * s))""",
-    """(2.0 = (r * r))""",
-    """((p ^ 2) = 0)""",
-    """((r ^ 2.0) = 0.0)""",
-    """((r * r * r) = 25.0)""",
-    """((5.0 * r * 5.0) = 25.0)""",
-    """((p * p * p) = 25)""",
-    """((5 * p * 5) = 25)""",
-    """(((1 - 1) * p * 1) = 0)""",
-    """((r * 1606938044258990275541962092341162602522202993782792835301376/7) = -20480000000000000000000000.0)""",
-    """(((r + 5.0 + s) * (s + 2.0 + r)) = 0.0)""",
-    """(((p + 5 + q) * (p - (q - 5))) = ((p * p) + (10 * p) + 25 + (-1 * q * q)))""",
-]
 
 
 if __name__ == '__main__':
