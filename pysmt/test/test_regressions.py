@@ -289,6 +289,16 @@ class TestRegressions(TestCase):
         buffer_ = cStringIO(smtlib_input)
         parser.get_script(buffer_)
 
+    def test_parse_bvx_var(self):
+        smtlib_input = """
+        (declare-fun bv1 () (_ BitVec 8))
+        (assert (bvult (_ bv0 8) (bvudiv (bvmul (bvadd bv1 (_ bv1 8)) (_ bv5 8)) (_ bv5 8))))
+        (check-sat)"""
+        parser = SmtLibParser()
+        buffer_ = cStringIO(smtlib_input)
+        parser.get_script(buffer_)
+
+
     def test_simplify_times(self):
         a,b = Real(5), Real((1,5))
         f = Times(a,b).simplify()
