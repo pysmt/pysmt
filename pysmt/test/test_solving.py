@@ -263,6 +263,27 @@ class TestBasic(TestCase):
     def test_model_picosat(self):
         self.do_model("picosat")
 
+    @skipIfSolverNotAvailable("z3")
+    def test_tactics_z3(self):
+        from z3 import Tactic, Then
+        from pysmt.shortcuts import Iff
+
+        my_tactic = Then(Tactic('simplify'), Tactic('propagate-values'),
+                         Tactic('elim-uncnstr'))
+
+        for (f, validity, satisfiability, logic) in get_example_formulae():
+            if not logic.theory.linear: continue
+            if not logic.quantifier_free: continue
+            if logic.theory.bit_vectors: continue
+            s = Solver(name='z3')
+            z3_f = s.converter.convert(f)
+            simp_z3_f = my_tactic(z3_f)
+            simp_f = s.converter.back(simp_z3_f.as_expr())
+            v = is_valid(simp_f)
+            s = is_sat(simp_f)
+            self.assertEqual(v, validity, (f, simp_f))
+            self.assertEqual(s, satisfiability, (f, simp_f))
+
 
     @skipIfSolverNotAvailable("z3")
     def test_examples_z3(self):

@@ -57,13 +57,20 @@ class TestBasic(TestCase):
         self.assertFalse(f == res)
 
 
-    def do_back(self, solver_name):
+    def do_back(self, solver_name, z3_string_buffer=False):
         for formula, _, _, logic in get_example_formulae():
             if logic.quantifier_free:
                 try:
                     s = Solver(name=solver_name, logic=logic)
                     term = s.converter.convert(formula)
-                    res = s.converter.back(term)
+                    if solver_name == "z3" and z3_string_buffer:
+                        if logic.theory.bit_vectors: continue
+                        if z3_string_buffer:
+                            res = s.converter.back_via_smtlib(term)
+                        else:
+                            res = s.converter.back(term)
+                    else:
+                        res = s.converter.back(term)
                     self.assertValid(Iff(formula, res), logic=logic,
                                      solver_name=solver_name)
                 except NoSolverAvailableError:
@@ -75,7 +82,8 @@ class TestBasic(TestCase):
 
     @skipIfSolverNotAvailable("z3")
     def test_z3_back_formulae(self):
-        self.do_back("z3")
+        self.do_back("z3", z3_string_buffer=False)
+        self.do_back("z3", z3_string_buffer=True)
 
 
 if __name__ == '__main__':
