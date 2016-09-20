@@ -20,7 +20,8 @@ from pysmt.cmd.installers.btor import BtorInstaller
 from pysmt.cmd.installers.pico import PicoSATInstaller
 from pysmt.cmd.installers.bdd import CuddInstaller
 from pysmt.cmd.installers.msat_cffi import MSatCFFIInstaller
+from pysmt.cmd.installers.pico_cffi import PicoSATCFFIInstaller
 
 assert MSatInstaller and Z3Installer and CVC4Installer and YicesInstaller
 assert BtorInstaller and PicoSATInstaller and CuddInstaller
-assert MSatCFFIInstaller
+assert MSatCFFIInstaller and PicoSATCFFIInstaller

@@ -23,7 +23,7 @@ from collections import namedtuple
 from pysmt.cmd.installers import MSatInstaller, Z3Installer, PicoSATInstaller
 from pysmt.cmd.installers import CVC4Installer, YicesInstaller, BtorInstaller
 from pysmt.cmd.installers import CuddInstaller
-from pysmt.cmd.installers import MSatCFFIInstaller
+from pysmt.cmd.installers import MSatCFFIInstaller, PicoSATCFFIInstaller
 
 from pysmt.environment import get_env
 from pysmt import git_version
@@ -37,6 +37,7 @@ INSTALLERS = [Installer(MSatInstaller,    "5.3.13", {}),
               Installer(YicesInstaller,   "2.5.1", {"yicespy_version": "07439670a54d08a76cfb931194e1eaf07ea026a1"}),
               Installer(BtorInstaller,    "2.2.0", {"lingeling_version": "bal"}),
               Installer(PicoSATInstaller, "960", {"pypicosat_minor_version" : "151030"}),
+              Installer(PicoSATCFFIInstaller, "960", {"pypicosat_minor_version" : "151030"}),
               Installer(CuddInstaller,    "2.0.3", {"git_version" : "75fe055c2a736a3ac3e971c1ade108b815edc96c"})]
 
 
