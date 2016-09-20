@@ -30,7 +30,7 @@ from pysmt import git_version
 
 # Build a list of installers, one for each solver
 Installer = namedtuple("Installer", ["InstallerClass", "version", "extra_params"])
-INSTALLERS = [#Installer(MSatInstaller,    "5.3.13", {}),
+INSTALLERS = [Installer(MSatInstaller,    "5.3.13", {}),
               Installer(MSatCFFIInstaller, "5.3.13", {}),
               Installer(Z3Installer,      "4.4.1", {"osx": "10.11"}),
               Installer(CVC4Installer,    "1.5-prerelease", {"git_version" : "c15ff43597b41ea457befecb1b0e2402e28cb523"}),
@@ -114,6 +114,7 @@ def parse_options():
 
     for i in INSTALLERS:
         name = i.InstallerClass.SOLVER
+        if name.endswith("-cffi"): continue
         parser.add_argument('--%s' % name, dest=name, action='store_true',
                             default=False, help='Install %s' % name)
 
@@ -146,6 +147,10 @@ def parse_options():
     parser.add_argument('--bindings-path', dest='bindings_path',
                         type=str, default=py_bindings,
                         help='The folder to use for the bindings')
+
+    parser.add_argument('--cffi', dest='cffi', action='store_true',
+                        default=False,
+                        help='Use CFFI wrapper if available')
 
     options = parser.parse_args()
     return options
@@ -194,8 +199,23 @@ def main():
     all_solvers = options.all_solvers
     for i in INSTALLERS:
         name = i.InstallerClass.SOLVER
-        if all_solvers or getattr(options, name):
+        if all_solvers:
             solvers_to_install.append(i)
+        elif hasattr(options, name) and getattr(options, name):
+            if options.cffi:
+                if name.endswith("-cffi"):
+                    solvers_to_install.append(i)
+                else:
+                    found = False
+                    for j in INSTALLERS:
+                        if j.InstallerClass.SOLVER == name + "-cffi":
+                            solvers_to_install.append(j)
+                            found = True
+                            break
+                    if not found:
+                        print("CFFI Installer not available for %s" % name)
+            else:
+                solvers_to_install.append(i)
 
     # Env variable controlling the solvers to be installed or checked
     requested_solvers = get_requested_solvers()

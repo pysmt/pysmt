@@ -53,7 +53,8 @@ env:
     # - PYSMT_SOLVER="all"   PYSMT_GMPY="TRUE"
     # - PYSMT_SOLVER="all"   PYSMT_GMPY="FALSE"
     # - PYSMT_SOLVER="None"  PYSMT_GMPY="FALSE"
-    - PYSMT_SOLVER="msat"  PYSMT_GMPY="FALSE"
+    - PYSMT_SOLVER="msat"  PYSMT_GMPY="FALSE" USE_CFFI="TRUE"
+    - PYSMT_SOLVER="msat"  PYSMT_GMPY="FALSE" USE_CFFI="FALSE"
     # - PYSMT_SOLVER="z3"    PYSMT_GMPY="FALSE"
     # - PYSMT_SOLVER="cvc4"  PYSMT_GMPY="FALSE"
     # - PYSMT_SOLVER="yices" PYSMT_GMPY="FALSE"
@@ -74,8 +75,6 @@ matrix:
       env: PYSMT_SOLVER="all"   PYSMT_GMPY="FALSE"
     - python: pypy
       env: PYSMT_SOLVER="None"  PYSMT_GMPY="FALSE"
-    - python: pypy
-      env: PYSMT_SOLVER="msat"  PYSMT_GMPY="FALSE"
     - python: pypy
       env: PYSMT_SOLVER="z3"    PYSMT_GMPY="FALSE"
     - python: pypy

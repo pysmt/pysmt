@@ -49,7 +49,13 @@ fi
 #
 export BINDINGS_FOLDER=${HOME}/python_bindings/${PYSMT_SOLVER}
 mkdir -p ${BINDINGS_FOLDER}
-python install.py --confirm-agreement --bindings-path ${BINDINGS_FOLDER}
+if [ "${USE_CFFI}" == "TRUE" ];
+then
+   CFFI_OPT="--cffi"
+else
+   CFFI_OPT=""
+fi
+python install.py --confirm-agreement --bindings-path ${BINDINGS_FOLDER} ${CFFI_OPT}
 eval `python install.py --env --bindings-path ${BINDINGS_FOLDER}`
 
 if [ "${PYSMT_SOLVER}" == "all" ] || [ "${PYSMT_SOLVER}" == "z3_wrap" ]; then

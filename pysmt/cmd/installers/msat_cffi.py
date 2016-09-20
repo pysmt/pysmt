@@ -22,13 +22,14 @@ from pysmt.cmd.installers.base import SolverInstaller, TemporaryPath
 
 class MSatCFFIInstaller(SolverInstaller):
 
-    SOLVER = "msat"
+    SOLVER = "msat-cffi"
 
     def __init__(self, install_dir, bindings_dir, solver_version,
                  mirror_link=None):
         archive_name = "mathsat-%s-%s-%s.tar.gz" % (solver_version,
                                                     self.os_name,
                                                     self.architecture)
+
         if self.os_name == "darwin":
             raise ValueError("CFFI is currently supported on linux only")
         native_link = "http://mathsat.fbk.eu/download.php?file={archive_name}"
