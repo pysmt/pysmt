@@ -836,7 +836,7 @@ class Z3Converter(Converter, DagWalker):
 
     def __del__(self):
         # Cleaning-up Z3Converter requires dec-ref'ing the terms in the cache
-        for t in self.memoization.items():
+        for t in self.memoization.values():
             z3.Z3_dec_ref(self.ctx.ref(), t)
 
 # EOC Z3Converter
