@@ -1114,6 +1114,26 @@ class SmtLib20Parser(SmtLibParser):
         del self.commands["reset-assertions"]
 
 
+class SmtLibZ3Parser(SmtLibParser):
+    """
+    Parses extended Z3 SmtLib Syntax
+    """
+    def __init__(self, environment=None, interactive=False):
+        SmtLibParser.__init__(self, environment, interactive)
+
+        # Z3 prints Pow as "^"
+        self.interpreted["^"] = self.interpreted["pow"]
+        self.interpreted["ext_rotate_left"] = self._operator_adapter(self._ext_rotate_left)
+        self.interpreted["ext_rotate_right"] = self._operator_adapter(self._ext_rotate_right)
+
+    def _ext_rotate_left(self, x, y):
+        return self.env.formula_manager.BVRol(x, y.simplify().constant_value())
+
+    def _ext_rotate_right(self, x, y):
+        return self.env.formula_manager.BVRor(x, y.simplify().constant_value())
+
+
+
 if __name__ == "__main__":
     import sys
 
