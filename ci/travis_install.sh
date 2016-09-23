@@ -4,8 +4,8 @@ set -ev
 #
 # Skip Install if Python 2.7 or PyPy and not a PR
 #
-if [ "${TRAVIS_PULL_REQUEST}" == "false" ]; then
-    echo "Regular Push (Not-PR):"
+if [ "${TRAVIS_PULL_REQUEST}" == "false" ] && [ "${TRAVIS_BRANCH}" != "master" ]; then
+    echo "Regular Push (not PR) on non-master branch:"
     if [ "${TRAVIS_PYTHON_VERSION}" == "2.7" ]; then
         echo "Skipping Python 2.7"
         exit 0
