@@ -17,7 +17,7 @@
 #
 import functools
 import itertools
-import bz2
+
 from warnings import warn
 from six import iteritems, PY2
 from six.moves import xrange
@@ -36,6 +36,7 @@ from pysmt.constants import Fraction
 def open_(fname):
     """Transparently handle .bz2 files."""
     if fname.endswith(".bz2"):
+        import bz2
         if PY2:
             return bz2.BZ2File(fname, "r")
         else:
@@ -285,7 +286,7 @@ class SmtLibParser(object):
                             'bvsub':self._operator_adapter(mgr.BVSub),
                             'bvult':self._operator_adapter(mgr.BVULT),
                             'bvxor':self._operator_adapter(mgr.BVXor),
-                            '_':self._operator_adapter(self._smtlib_underscore),
+                            '_':self._smtlib_underscore,
                             # Extended Functions
                             'bvnand':self._operator_adapter(mgr.BVNand),
                             'bvnor':self._operator_adapter(mgr.BVNor),
@@ -383,68 +384,82 @@ class SmtLibParser(object):
         stack[-1].append(handler)
 
 
-    def _smtlib_underscore(self, *args):
+    def _smtlib_underscore(self, stack, tokens, key):
+        #pylint: disable=unused-argument
         """Utility function that handles _ special function in SMTLIB"""
         mgr = self.env.formula_manager
-        if args[0] == "extract":
-            send, sstart = args[1:]
+
+        op = self.parse_atom(tokens, "expression")
+
+        fun = None
+        if op == "extract":
+            send = self.parse_atom(tokens, "expression")
+            sstart = self.parse_atom(tokens, "expression")
             try:
-                start = int(sstart.constant_value())
-                end = int(send.constant_value())
+                start = int(sstart)
+                end = int(send)
             except ValueError:
                 raise SyntaxError("Expected number in '_ extract' expression")
-            return lambda x : mgr.BVExtract(x, start, end)
+            fun = lambda x : mgr.BVExtract(x, start, end)
 
-        elif args[0] == "zero_extend":
-            swidth = args[1]
+        elif op == "zero_extend":
+            swidth = self.parse_atom(tokens, "expression")
             try:
-                width = int(swidth.constant_value())
+                width = int(swidth)
             except ValueError:
                 raise SyntaxError("Expected number in '_ zero_extend' expression")
-            return lambda x: mgr.BVZExt(x, width)
+            fun = lambda x: mgr.BVZExt(x, width)
 
-        elif args[0] == "repeat":
-            scount = args[1]
+        elif op == "repeat":
+            scount = self.parse_atom(tokens, "expression")
             try:
-                count = int(scount.constant_value())
+                count = int(scount)
             except ValueError:
                 raise SyntaxError("Expected number in '_ repeat' expression")
-            return lambda x: mgr.BVRepeat(x, count)
+            fun = lambda x: mgr.BVRepeat(x, count)
 
-        elif args[0] == "rotate_left":
-            sstep = args[1]
+        elif op == "rotate_left":
+            sstep = self.parse_atom(tokens, "expression")
             try:
-                step = int(sstep.constant_value())
+                step = int(sstep)
             except ValueError:
                 raise SyntaxError("Expected number in '_ rotate_left' expression")
-            return lambda x: mgr.BVRol(x, step)
+            fun = lambda x: mgr.BVRol(x, step)
 
-        elif args[0] == "rotate_right":
-            sstep = args[1]
+        elif op == "rotate_right":
+            sstep = self.parse_atom(tokens, "expression")
             try:
-                step = int(sstep.constant_value())
+                step = int(sstep)
             except ValueError:
                 raise SyntaxError("Expected number in '_ rotate_left' expression")
-            return lambda x: mgr.BVRor(x, step)
+            fun = lambda x: mgr.BVRor(x, step)
 
-        elif args[0] == "sign_extend":
-            swidth = args[1]
+        elif op == "sign_extend":
+            swidth = self.parse_atom(tokens, "expression")
             try:
-                width = int(swidth.constant_value())
+                width = int(swidth)
             except ValueError:
                 raise SyntaxError("Expected number in '(_ sign_extend) expression'")
-            return lambda x: mgr.BVSExt(x, width)
+            fun = lambda x: mgr.BVSExt(x, width)
 
-        elif args[0].startswith("bv"):
+        elif op.startswith("bv"):
             try:
-                v = int(args[0][2:])
-                l = int(args[1].constant_value())
+                v = int(op[2:])
+                width = int(self.parse_atom(tokens, "expression"))
             except ValueError:
-                raise SyntaxError("Expected number in '_ bv' expression: '%s'" % args)
-            return mgr.BV(v, l)
+                raise SyntaxError("Expected number in '_ bv' expression: '%s'" % op)
+            fun = mgr.BV(v, width)
 
         else:
-            raise SyntaxError("Unexpected '_' expression '%s'" % args[0])
+            raise SyntaxError("Unexpected '_' expression '%s'" % op)
+
+        # Consume the closed parenthesis of the (_ ...) term and add the
+        # resulting function to the correct level in the stack
+        self.consume_closing(tokens, "expression")
+        stack.pop()
+        stack[-1].append(fun)
+
+
 
     def _equals_or_iff(self, left, right):
         """Utility function that treats = between booleans as <->"""
@@ -1097,6 +1112,26 @@ class SmtLib20Parser(SmtLibParser):
         del self.commands["get-unsat-assumptions"]
         del self.commands["reset"]
         del self.commands["reset-assertions"]
+
+
+class SmtLibZ3Parser(SmtLibParser):
+    """
+    Parses extended Z3 SmtLib Syntax
+    """
+    def __init__(self, environment=None, interactive=False):
+        SmtLibParser.__init__(self, environment, interactive)
+
+        # Z3 prints Pow as "^"
+        self.interpreted["^"] = self.interpreted["pow"]
+        self.interpreted["ext_rotate_left"] = self._operator_adapter(self._ext_rotate_left)
+        self.interpreted["ext_rotate_right"] = self._operator_adapter(self._ext_rotate_right)
+
+    def _ext_rotate_left(self, x, y):
+        return self.env.formula_manager.BVRol(x, y.simplify().constant_value())
+
+    def _ext_rotate_right(self, x, y):
+        return self.env.formula_manager.BVRor(x, y.simplify().constant_value())
+
 
 
 if __name__ == "__main__":

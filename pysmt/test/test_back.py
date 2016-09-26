@@ -64,7 +64,6 @@ class TestBasic(TestCase):
                     s = Solver(name=solver_name, logic=logic)
                     term = s.converter.convert(formula)
                     if solver_name == "z3" and z3_string_buffer:
-                        if logic.theory.bit_vectors: continue
                         if z3_string_buffer:
                             res = s.converter.back_via_smtlib(term)
                         else:

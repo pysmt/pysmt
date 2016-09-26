@@ -547,11 +547,10 @@ class Z3Converter(Converter, DagWalker):
     def back_via_smtlib(self, expr):
         """Back convert a Z3 Expression by translation to SMT-LIB."""
         from six import StringIO
-        from pysmt.smtlib.parser import SmtLibParser
-        parser = SmtLibParser(self.env)
-        # Z3 prints Pow as "^"
-        parser.interpreted["^"] = parser.interpreted["pow"]
+        from pysmt.smtlib.parser import SmtLibZ3Parser
+        parser = SmtLibZ3Parser(self.env)
 
+        z3.Z3_set_ast_print_mode(expr.ctx.ref(), z3.Z3_PRINT_SMTLIB2_COMPLIANT)
         s = z3.Z3_benchmark_to_smtlib_string(expr.ctx.ref(),
                                              None, None,
                                              None, None,
@@ -837,7 +836,7 @@ class Z3Converter(Converter, DagWalker):
 
     def __del__(self):
         # Cleaning-up Z3Converter requires dec-ref'ing the terms in the cache
-        for t in self.memoization.items():
+        for t in self.memoization.values():
             z3.Z3_dec_ref(self.ctx.ref(), t)
 
 # EOC Z3Converter
