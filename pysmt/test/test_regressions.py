@@ -277,18 +277,42 @@ class TestRegressions(TestCase):
         self.assertEqual(output, "(set-info :source |This\nis\nmultiline!|)")
 
     def test_parse_define_fun(self):
+        """Variable name in define-fun scope do not clash with existing names."""
         smtlib_input = "(declare-fun z () Bool)"\
                        "(define-fun .def_1 ((z Bool)) Bool (and z z))"
         parser = SmtLibParser()
         buffer_ = cStringIO(smtlib_input)
-        parser.get_script(buffer_)
+        script = parser.get_script(buffer_)
+        # Test parsed result
+        iscript = iter(script)
+        cmd = next(iscript)
+        self.assertEqual(cmd.name, DECLARE_FUN)
+        zvar = cmd.args[0]
+        cmd = next(iscript)
+        self.assertEqual(cmd.name, DEFINE_FUN)
+        def_1 = cmd.args # This is not interpreted
+        def_1_z = def_1[1][0]
+        self.assertTrue(def_1_z.symbol_name(), "z")
+        self.assertNotEqual(zvar, def_1_z)
 
     def test_parse_define_fun_bind(self):
+        """Identifiers within define-fun do not *need* to exist beforehand."""
         smtlib_input = "(declare-fun y () Bool)"\
                        "(define-fun .def_1 ((z Bool)) Bool (and z z))"
         parser = SmtLibParser()
         buffer_ = cStringIO(smtlib_input)
-        parser.get_script(buffer_)
+        script = parser.get_script(buffer_)
+        # Test parsed result
+        iscript = iter(script)
+        cmd = next(iscript)
+        self.assertEqual(cmd.name, DECLARE_FUN)
+        cmd = next(iscript)
+        self.assertEqual(cmd.name, DEFINE_FUN)
+        def_1 = cmd.args # This is not interpreted
+        def_1_z = def_1[1][0]
+        print(def_1_z)
+        self.assertEqual(def_1_z.symbol_name(), "z")
+        self.assertTrue(def_1_z.symbol_type().is_bool_type())
 
     def test_parse_bvx_var(self):
         """bvX is a valid identifier."""
