@@ -83,7 +83,7 @@ Is there a value for each letter (between 1 and 9) so that H+E+L+L+O = W+O+R+L+D
     print("No solution found")
 
 Check out more examples in the `examples/ directory
-</examples>`_.
+</examples>`_ and the `documentation on ReadTheDocs <http://pysmt.readthedocs.io>`_
 
 Supported Theories and Solvers
 ==============================
