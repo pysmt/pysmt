@@ -167,10 +167,6 @@ class MSSubstituter(Substituter):
         self.set_function(self.walk_replace, *op.all_types())
 
     def substitute(self, formula, subs):
-        warnings.warn("MSSSubstituter will be deprecated in version 0.5\n"+\
-                      "You should test your code with pysmt.substituter.MGSSubstituter.",
-                      category=DeprecationWarning,
-                      stacklevel=2)
         return Substituter.substitute(self, formula, subs)
 
     def _substitute(self, formula):
