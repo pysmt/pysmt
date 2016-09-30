@@ -18,9 +18,10 @@
 from pysmt.test import (TestCase, skipIfSolverNotAvailable,
                         skipIfNoUnsatCoreSolverForLogic, main)
 from pysmt.shortcuts import (get_unsat_core, And, Not, Symbol, UnsatCoreSolver,
-                             is_unsat)
+                             Solver, is_unsat)
 from pysmt.logics import QF_BOOL, QF_BV
-from pysmt.exceptions import SolverStatusError, SolverReturnedUnknownResultError
+from pysmt.exceptions import (SolverStatusError, SolverReturnedUnknownResultError,
+                              SolverNotConfiguredForUnsatCoresError)
 from pysmt.test.examples import get_example_formulae
 
 class TestUnsatCores(TestCase):
@@ -151,6 +152,18 @@ class TestUnsatCores(TestCase):
     @skipIfSolverNotAvailable("z3")
     def test_examples_z3(self):
         self._helper_check_examples("z3")
+
+
+    @skipIfSolverNotAvailable("msat")
+    def test_unsat_core_on_regular_solver(self):
+        x = Symbol("x")
+        with Solver(name="msat") as s:
+            s.add_assertion(x)
+            s.add_assertion(Not(x))
+            r = s.solve()
+            self.assertFalse(r)
+            with self.assertRaises(SolverNotConfiguredForUnsatCoresError):
+                s.get_unsat_core()
 
 
 if __name__ == '__main__':

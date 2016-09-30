@@ -131,6 +131,9 @@ class MathSAT5Model(Model):
         """Returns whether the model contains a value for 'x'."""
         return x in (v for v, _ in self)
 
+# EOC MathSAT5Model
+
+
 class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
                      SmtLibBasicSolver, SmtLibIgnoreMixin):
 
@@ -272,8 +275,8 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
     def get_unsat_core(self):
         """After a call to solve() yielding UNSAT, returns the unsat core as a
         set of formulae"""
+        self._check_unsat_core_config()
         if self.options.unsat_cores_mode == "all":
-            self._check_unsat_core_config()
 
             terms = mathsat.msat_get_unsat_core(self.msat_env())
             if terms is None:
@@ -286,8 +289,8 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
     def get_named_unsat_core(self):
         """After a call to solve() yielding UNSAT, returns the unsat core as a
         dict of names to formulae"""
+        self._check_unsat_core_config()
         if self.options.unsat_cores_mode == "named":
-            self._check_unsat_core_config()
 
             assumptions = mathsat.msat_get_unsat_assumptions(self.msat_env())
             pysmt_assumptions = set(self.converter.back(t) for t in assumptions)
