@@ -15,6 +15,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+from nose.plugins.attrib import attr
 from pysmt.shortcuts import (And, Iff, Or, Symbol, Implies, Not,
                              Exists, ForAll,
                              Times, Plus, Minus, Equals, Real,
@@ -166,27 +167,11 @@ class TestRewritings(TestCase):
         self.assertValid(Equals(fp, target), fp)
         self.assertTrue(fp.is_plus(), fp)
 
-
-    @skipIfNoSolverForLogic(QF_NIA)
-    def test_times_distributivity_smtlib_nia(self):
-        from pysmt.test.smtlib.parser_utils import formulas_from_smtlib_test_set
-        test_set = formulas_from_smtlib_test_set(logics=[QF_LIA, QF_NIA])
-        for (logic, fname, f, ex_res) in test_set:
-            print(fname)
-            td = TimesDistributor()
-            _ = td.walk(f)
-            for (old, new) in td.memoization.items():
-                if not old.is_times(): continue
-                if old is new: continue # Nothing changed
-                self.assertValid(Equals(old, new),
-                                 (old, new), solver_name="z3")
-
     @skipIfNoSolverForLogic(QF_NRA)
     def test_times_distributivity_smtlib_nra(self):
         from pysmt.test.smtlib.parser_utils import formulas_from_smtlib_test_set
         test_set = formulas_from_smtlib_test_set(logics=[QF_LRA, QF_NRA])
-        for (logic, fname, f, ex_res) in test_set:
-            print(fname)
+        for (_, fname, f, _) in test_set:
             td = TimesDistributor()
             _ = td.walk(f)
             for (old, new) in td.memoization.items():
