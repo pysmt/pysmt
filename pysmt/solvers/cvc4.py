@@ -49,10 +49,7 @@ class CVC4Options(SolverOptions):
 
     @staticmethod
     def _set_option(cvc4, name, value):
-        try:
-            cvc4.setOption(name, CVC4.SExpr(value))
-        except CVC4.OptionException:
-            raise ValueError("Error setting the option '%s=%s'" % (name,value))
+        cvc4.setOption(name, CVC4.SExpr(value))
 
     def __call__(self, solver):
         self._set_option(solver.cvc4,
