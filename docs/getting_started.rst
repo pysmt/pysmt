@@ -70,7 +70,7 @@ imported, an exception will be thrown.
 Hello World
 -----------
 
-Any decent tutorial starts with an *Hello World* example. We will
+Any decent tutorial starts with a *Hello World* example. We will
 encode a problem as an SMT problem, and then invoke a solver to solve
 it. After digesting this example, you will be able to perform the most
 common operations using pySMT.
