@@ -12,7 +12,7 @@ Welcome to pySMT's documentation!
 
 pySMT makes working with `Satisfiability Modulo Theory`_ simple.
 pySMT provides an intermediate step between the `SMT-LIB`_ (that is
-unversal but not programmable) and solvers API (that are programmable,
+universal but not programmable) and solvers API (that are programmable,
 but specific).
 
 .. _Satisfiability Modulo Theory: https://en.wikipedia.org/wiki/Satisfiability_modulo_theories
