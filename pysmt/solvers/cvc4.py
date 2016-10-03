@@ -49,7 +49,10 @@ class CVC4Options(SolverOptions):
 
     @staticmethod
     def _set_option(cvc4, name, value):
-        cvc4.setOption(name, CVC4.SExpr(value))
+        try:
+            cvc4.setOption(name, CVC4.SExpr(value))
+        except:
+            raise ValueError("Error setting the option '%s=%s'" % (name,value))
 
     def __call__(self, solver):
         self._set_option(solver.cvc4,
@@ -122,7 +125,7 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         else:
             try:
                 res = self.cvc4.checkSat()
-            except CVC4.LogicException as ex:
+            except:
                 raise InternalSolverError(ex.toString())
 
         # Convert returned type
