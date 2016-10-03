@@ -24,7 +24,6 @@ except ImportError:
     import unittest
 
 from pysmt.environment import get_env, reset_env
-from pysmt.decorators import deprecated
 
 
 class TestCase(unittest.TestCase):
@@ -64,19 +63,6 @@ class TestCase(unittest.TestCase):
                                                   solver_name=solver_name,
                                                   logic=logic),
                         msg=msg)
-
-
-@deprecated("skipIfNoSolverForLogic (be specific about expectations!)")
-def skipIfNoSolverAvailable(test_fun):
-    """Skip the test if no solver is available."""
-
-    msg = "No solver available"
-    cond = len(get_env().factory.all_solvers()) == 0
-    @unittest.skipIf(cond, msg)
-    @wraps(test_fun)
-    def wrapper(self, *args, **kwargs):
-        return test_fun(self, *args, **kwargs)
-    return wrapper
 
 
 class skipIfSolverNotAvailable(object):

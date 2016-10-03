@@ -98,10 +98,6 @@ class FNode(object):
         """Return the given subformula at the given position."""
         return self._content.args[idx]
 
-    @deprecated("get_free_variables")
-    def get_dependencies(self):
-        return self.get_free_variables()
-
     def get_free_variables(self):
         """Return the set of Symbols that are free in the formula."""
         return _env().fvo.get_free_variables(self)
@@ -109,10 +105,6 @@ class FNode(object):
     def get_atoms(self):
         """Return the set of atoms appearing in the formula."""
         return _env().ao.get_atoms(self)
-
-    @deprecated("args")
-    def get_sons(self):
-        return self.args()
 
     def simplify(self):
         """Return a simplified version of the formula."""
@@ -518,10 +510,6 @@ class FNode(object):
     def is_function_application(self):
         """Test whether the node is a Function application."""
         return self.node_type() == FUNCTION
-
-    @deprecated("is_bool_op")
-    def is_boolean_operator(self):
-        return self.is_bool_op()
 
     def is_term(self):
         """Test whether the node is a term.
