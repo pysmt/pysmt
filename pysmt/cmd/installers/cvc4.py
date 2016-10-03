@@ -54,7 +54,10 @@ class CVC4Installer(SolverInstaller):
                               --with-antlr-dir={dir_path}/antlr-3.4 ANTLR={dir_path}/antlr-3.4/bin/antlr3;\
                   make; \
                   make install ".format(bin_path=self.bin_path, dir_path=self.extract_path)
-        SolverInstaller.run(config, directory=self.extract_path)
+        pyconfig = {"PYTHON_CONFIG": sys.executable+"-config"}
+        SolverInstaller.run(config,
+                            directory=self.extract_path,
+                            env_variables=pyconfig)
 
         # Fix the paths of the bindings
         SolverInstaller.run("cp CVC4.so.3.0.0 _CVC4.so",
