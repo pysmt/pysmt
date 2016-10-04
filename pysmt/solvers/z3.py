@@ -32,7 +32,7 @@ from six.moves import xrange
 import pysmt.typing as types
 import pysmt.operators as op
 from pysmt.solvers.solver import (IncrementalTrackingSolver, UnsatCoreSolver,
-                                  Model, Converter)
+                                  Model, Converter, SolverOptions)
 from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 from pysmt.solvers.qelim import QuantifierEliminator
 from pysmt.solvers.interpolation import Interpolator
@@ -103,26 +103,47 @@ class Z3Model(Model):
         """Returns whether the model contains a value for 'x'."""
         return x in (v for v, _ in self)
 
+# EOC Z3Model
+
+
+class Z3Options(SolverOptions):
+
+    @staticmethod
+    def _set_option(z3solver, name, value):
+        try:
+            z3solver.set(name, value)
+        except z3.Z3Exception:
+            raise ValueError("Error setting the option '%s=%s'" % (name, value))
+
+    def __call__(self, solver):
+        self._set_option(solver.z3, 'model', self.generate_models)
+
+        if self.unsat_cores_mode is not None:
+            self._set_option(solver.z3, 'unsat_core', True)
+        if self.random_seed is not None:
+            self._set_option(solver.z3, 'random_seed', self.random_seed)
+        for k,v in self.solver_options:
+            try:
+                self._set_option(solver.z3, str(k), v)
+            except z3.Z3Exception:
+                raise ValueError("Error setting the option '%s=%s'" % (k,v))
+
+# EOC Z3Options
 
 
 class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
                SmtLibBasicSolver, SmtLibIgnoreMixin):
 
     LOGICS = PYSMT_LOGICS
+    OptionsClass = Z3Options
 
     def __init__(self, environment, logic, **options):
         IncrementalTrackingSolver.__init__(self,
                                            environment=environment,
                                            logic=logic,
                                            **options)
-        # Here we could use:
-        # self.z3 = z3.SolverFor(str(logic))
-        # But it seems to have problems with quantified formulae
-        self.z3 = z3.Solver()
-
-        if self.options.unsat_cores_mode is not None:
-            self.z3.set(unsat_core=True)
-
+        self.z3 = z3.SolverFor(str(logic))
+        self.options(self)
         self.declarations = set()
         self.converter = Z3Converter(environment, z3_ctx=self.z3.ctx)
         self.mgr = environment.formula_manager
@@ -133,6 +154,7 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
     @clear_pending_pop
     def _reset_assertions(self):
         self.z3.reset()
+        self.options(self)
 
     @clear_pending_pop
     def declare_variable(self, var):
@@ -145,6 +167,8 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
         term = self.converter.convert(formula)
 
         if self.options.unsat_cores_mode is not None:
+            # TODO: IF unsat_cores_mode is all, then we add this fresh variable.
+            # Otherwise, we should track this only if it is named.
             key = self.mgr.FreshSymbol(template="_assertion_%d")
             tkey = self.converter.convert(key)
             self.z3.assert_and_track(term, tkey)

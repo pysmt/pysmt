@@ -27,7 +27,7 @@ except ImportError:
 import pysmt.typing as types
 from pysmt.logics import PYSMT_LOGICS, ARRAYS_CONST_LOGICS
 
-from pysmt.solvers.solver import Solver, Converter
+from pysmt.solvers.solver import Solver, Converter, SolverOptions
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               InternalSolverError,
                               NonLinearError)
@@ -38,9 +38,41 @@ from pysmt.decorators import catch_conversion_error
 from pysmt.constants import Fraction, is_pysmt_integer, to_python_integer
 
 
+class CVC4Options(SolverOptions):
+
+    def __init__(self, **base_options):
+        SolverOptions.__init__(self, **base_options)
+        # TODO: CVC4 Supports UnsatCore extraction
+        # but we did not wrapped it yet.
+        if self.unsat_cores_mode is not None:
+            raise ValueError("'unsat_cores_mode' option not supported.")
+
+    @staticmethod
+    def _set_option(cvc4, name, value):
+        try:
+            cvc4.setOption(name, CVC4.SExpr(value))
+        except CVC4.OptionException:
+            raise ValueError("Error setting the option '%s=%s'" % (name,value))
+
+    def __call__(self, solver):
+        self._set_option(solver.cvc4,
+                         "produce-models", str(self.generate_models).lower())
+        self._set_option(solver.cvc4,
+                         "incremental", str(self.incremental).lower())
+        if self.random_seed is not None:
+            self._set_option(solver.cvc4,
+                             "random-seed", str(self.random_seed))
+
+        for k,v in self.solver_options.items():
+            self._set_option(solver.cvc4, str(k), str(v))
+
+# EOC CVC4Options
+
+
 class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
     LOGICS = PYSMT_LOGICS - ARRAYS_CONST_LOGICS -\
              set(l for l in PYSMT_LOGICS if not l.theory.linear)
+    OptionsClass = CVC4Options
 
     def __init__(self, environment, logic, **options):
         Solver.__init__(self,
@@ -63,12 +95,7 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
     def reset_assertions(self):
         del self.cvc4
         self.cvc4 = CVC4.SmtEngine(self.em)
-        self.cvc4.setOption("produce-models", CVC4.SExpr("false"))
-        self.cvc4.setOption("incremental", CVC4.SExpr("false"))
-        if self.options.generate_models:
-            self.cvc4.setOption("produce-models", CVC4.SExpr("true"))
-        if self.options.incremental:
-            self.cvc4.setOption("incremental", CVC4.SExpr("true"))
+        self.options(self)
         self.declarations = set()
         self.cvc4.setLogic(self.logic_name)
 

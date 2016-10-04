@@ -701,9 +701,10 @@ class BddSimplifier(Simplifier):
 
         Solver = self.env.factory.Solver
         if static_ordering is not None:
-            self.s = Solver(name="bdd", static_ordering=static_ordering)
+            solver_options={'static_ordering': static_ordering}
         else:
-            self.s = Solver(name="bdd", dynamic_reordering=True)
+            solver_options={'dynamic_reordering': True}
+        self.s = Solver(name="bdd", solver_options=solver_options)
         self.convert = self.s.converter.convert
         self.back = self.s.converter.back
         # Set methods for boolean_abstraction

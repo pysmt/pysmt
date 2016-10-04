@@ -28,7 +28,7 @@ except ImportError:
 
 
 from pysmt.solvers.eager import EagerModel
-from pysmt.solvers.solver import Solver, Converter
+from pysmt.solvers.solver import Solver, Converter, SolverOptions
 from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 
 from pysmt.walkers import DagWalker
@@ -61,10 +61,68 @@ STATUS_SAT = 3
 STATUS_UNSAT = 4
 
 
+class YicesOptions(SolverOptions):
+    def __init__(self, **base_options):
+        SolverOptions.__init__(self, **base_options)
+        # TODO: Yices Supports UnsatCore extraction
+        # but we did not wrapped it yet.
+        if self.unsat_cores_mode is not None:
+            raise ValueError("'unsat_cores_mode' option not supported.")
+
+    @staticmethod
+    def _set_option(cfg, name, value):
+        rv = yicespy.yices_set_config(cfg, name, value)
+        if rv != 0:
+            # This might be a parameter to be set later (see set_params)
+            # We raise the exception only if the parameter exists but the value
+            # provided to the parameter is invalid.
+            err = yicespy.yices_error_code()
+            if err == yicespy.CTX_INVALID_PARAMETER_VALUE:
+                raise ValueError("Error setting the option '%s=%s'" % (name,value))
+
+    def __call__(self, solver):
+        if self.generate_models:
+            # Yices always generates models
+            pass
+        if self.incremental:
+            self._set_option(solver.yices_config, "mode", "push-pop")
+        else:
+            self._set_option(solver.yices_config, "mode", "one-shot")
+
+        if self.random_seed is not None:
+            self._set_option(solver.yices_config,
+                             "random-seed", str(self.random_seed))
+
+        for k,v in self.solver_options.items():
+            self._set_option(solver.yices_config, str(k), str(v))
+
+    def set_params(self, solver):
+        """Set Search Parameters.
+
+        Yices makes a distinction between configuratin and search
+        parameters.  The first are fixed for the lifetime of a
+        context, while the latter can be different for every call to
+        check_context.
+
+        A list of available parameters is available at:
+        http://yices.csl.sri.com/doc/parameters.html
+        """
+        params = yicespy.yices_new_param_record()
+        yicespy.yices_default_params_for_context(solver.yices, params)
+        for k,v in self.solver_options.items():
+            rv = yicespy.yices_set_param(params, k, v)
+            if rv != 0:
+                raise ValueError("Error setting the option '%s=%s'" % (k,v))
+        solver.yices_params = params
+
+# EOC YicesOptions
+
+
 class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
     LOGICS = pysmt.logics.PYSMT_QF_LOGICS - pysmt.logics.ARRAYS_LOGICS -\
              set(l for l in pysmt.logics.PYSMT_QF_LOGICS if not l.theory.linear)
+    OptionsClass = YicesOptions
 
     def __init__(self, environment, logic, **options):
         Solver.__init__(self,
@@ -73,18 +131,29 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
                         **options)
 
         self.declarations = set()
-
-        self.yices = yicespy.yices_new_context(None)
-        # MG: TODO: Set options!!!
+        self.yices_config = yicespy.yices_new_config()
+        self.yices = None
+        self.yices_params = None
+        self._create_yices_context()
         self.converter = YicesConverter(environment)
         self.mgr = environment.formula_manager
         self.model = None
         self.failed_pushes = 0
         return
 
+    def _create_yices_context(self):
+        yices_logic = str(self.logic)
+        if yices_logic == "QF_BOOL": yices_logic = "NONE"
+        if yicespy.yices_default_config_for_logic(self.yices_config, str(yices_logic)) != 0:
+            print("Error setting config for logic %s" % str(yices_logic))
+        self.options(self)
+        self.yices = yicespy.yices_new_context(self.yices_config)
+        self.options.set_params(self)
+        yicespy.yices_free_config(self.yices_config)
+
     @clear_pending_pop
     def reset_assertions(self):
-        raise NotImplementedError
+        yicespy.yices_reset_context(self.yices)
 
     @clear_pending_pop
     def declare_variable(self, var):
@@ -124,7 +193,7 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
             self.add_assertion(self.mgr.And(assumptions))
             self.pending_pop = True
 
-        out = yicespy.yices_check_context(self.yices, None)
+        out = yicespy.yices_check_context(self.yices, self.yices_params)
 
         if self.model is not None:
             yicespy.yices_free_model(self.model)
@@ -207,6 +276,9 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
     def _exit(self):
         yicespy.yices_free_context(self.yices)
+        yicespy.yices_free_param_record(self.yices_params)
+
+# EOC YicesSolver
 
 
 class YicesConverter(Converter, DagWalker):

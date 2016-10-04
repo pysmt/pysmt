@@ -529,8 +529,41 @@ class TestBasic(TestCase):
         solver = Solver(logic=QF_BOOL, incremental=True)
         self.assertIsNotNone(solver)
         # Options are enforced at construction time
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             Solver(logic=QF_BOOL, invalid_option=False)
+        with self.assertRaises(ValueError):
+            Solver(logic=QF_BOOL, solver_options={'invalid': None})
+
+    @skipIfNoSolverForLogic(QF_BOOL)
+    def test_options_random_seed(self):
+        for sname in get_env().factory.all_solvers(logic=QF_BOOL):
+            if sname in ["btor", "bdd"]:
+                with self.assertRaises(ValueError):
+                    Solver(name=sname, random_seed=42)
+            else:
+                s = Solver(name=sname, random_seed=42)
+                self.assertIsNotNone(s)
+
+    @skipIfSolverNotAvailable("picosat")
+    def test_picosat_options(self):
+        from pysmt.solvers.pico import PicosatOptions
+        from tempfile import TemporaryFile
+        x, y = Symbol("x"), Symbol("y")
+        fout = TemporaryFile()
+        solver_options = {'preprocessing': False,
+                          'enable_trace_generation': False,
+                          'output': fout,
+                          'global_default_phase': PicosatOptions.GLOBAL_DEFAULT_PHASE_FALSE,
+                          'more_important_lit': [x],
+                          'less_important_lit': [y],
+                          'propagation_limit': 100,
+                          'verbosity': 1,
+                      }
+        with Solver(name='picosat', solver_options=solver_options) as s:
+            s.add_assertion(And(x,y))
+            s.solve()
+        fout.close()
+
 
 if __name__ == '__main__':
     main()

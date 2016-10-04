@@ -32,7 +32,7 @@ from pysmt.oracles import get_logic
 import pysmt.operators as op
 from pysmt import typing as types
 from pysmt.solvers.solver import (IncrementalTrackingSolver, UnsatCoreSolver,
-                                  Model, Converter)
+                                  Model, Converter, SolverOptions)
 from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 from pysmt.walkers import DagWalker
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
@@ -134,52 +134,64 @@ class MathSAT5Model(Model):
 # EOC MathSAT5Model
 
 
+class MathSATOptions(SolverOptions):
+
+    def __init__(self, **base_options):
+        SolverOptions.__init__(self, **base_options)
+
+    @staticmethod
+    def _set_option(msat_config, name, value):
+        """Sets the given option. Might raise a ValueError."""
+        check = mathsat.msat_set_option(msat_config, name, value)
+        if check != 0:
+            raise ValueError("Error setting the option '%s=%s'" % (name,value))
+
+    def __call__(self, solver):
+        if self.generate_models:
+            self._set_option(solver.msat_config, "model_generation", "true")
+
+        if self.unsat_cores_mode is not None:
+            self._set_option(solver.msat_config, "unsat_core_generation", "1")
+
+        if self.random_seed is not None:
+            self._set_option(solver.msat_config,
+                             "random_seed", str(self.random_seed))
+
+        for k,v in self.solver_options.items():
+            self._set_option(solver.msat_config, str(k), str(v))
+
+        if "debug.api_call_trace_filename" in self.solver_options:
+            self._set_option(solver.msat_config, "debug.api_call_trace", "1")
+
+        # Force semantics of division by 0
+        self._set_option(solver.msat_config, "theory.bv.div_by_zero_mode", "0")
+
+# EOC MathSATOptions
+
+
 class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
                      SmtLibBasicSolver, SmtLibIgnoreMixin):
 
     LOGICS = PYSMT_QF_LOGICS - set(l for l in PYSMT_QF_LOGICS if not l.theory.linear)
+    OptionsClass = MathSATOptions
 
-    def __init__(self, environment, logic, debugFile=None, **options):
-        # TODO: DebugFile should be an option
+    def __init__(self, environment, logic, **options):
         IncrementalTrackingSolver.__init__(self,
                                            environment=environment,
                                            logic=logic,
                                            **options)
 
         self.msat_config = mathsat.msat_create_default_config(str(logic))
-        self._prepare_config(self.options, debugFile)
+        self.options(self)
         self.msat_env = MSatEnv(self.msat_config)
         mathsat.msat_destroy_config(self.msat_config)
+        self.converter = MSatConverter(environment, self.msat_env)
 
+        # Shortcuts
         self.realType = mathsat.msat_get_rational_type(self.msat_env())
         self.intType = mathsat.msat_get_integer_type(self.msat_env())
         self.boolType = mathsat.msat_get_bool_type(self.msat_env())
-
         self.mgr = environment.formula_manager
-        self.converter = MSatConverter(environment, self.msat_env)
-
-    def _prepare_config(self, options, debugFile=None):
-        """Sets the relevant options in self.msat_config"""
-        if options.generate_models:
-            check = mathsat.msat_set_option(self.msat_config, "model_generation",
-                                            "true")
-            assert check == 0
-
-        if options.unsat_cores_mode is not None:
-            check = mathsat.msat_set_option(self.msat_config,
-                                            "unsat_core_generation",
-                                            "1")
-            assert check == 0
-
-        if debugFile is not None:
-            mathsat.msat_set_option(self.msat_config,
-                                    "debug.api_call_trace", "1")
-            mathsat.msat_set_option(self.msat_config,
-                                    "debug.api_call_trace_filename",
-                                    debugFile)
-
-        mathsat.msat_set_option(self.msat_config,
-                                "theory.bv.div_by_zero_mode", "0")
 
     @clear_pending_pop
     def _reset_assertions(self):

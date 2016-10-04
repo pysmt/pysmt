@@ -22,9 +22,46 @@ import pysmt.smtlib.commands as smtcmd
 from pysmt.solvers.eager import EagerModel
 from pysmt.smtlib.parser import SmtLibParser
 from pysmt.smtlib.script import SmtLibCommand
-from pysmt.solvers.solver import Solver
+from pysmt.solvers.solver import Solver, SolverOptions
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               UnknownSolverAnswerError)
+
+
+class SmtLibOptions(SolverOptions):
+    """Options for the SmtLib Solver.
+
+    * debug_interaction: True, False
+      Print the communication between pySMT and the wrapped executable
+    """
+    def __init__(self, **base_options):
+        SolverOptions.__init__(self, **base_options)
+        if self.unsat_cores_mode is not None:
+            raise ValueError("'unsat_cores_mode' option not supported.")
+        self.debug_interaction = False
+
+        if 'debug_interaction' in self.solver_options:
+            self.debug_interaction = self.solver_options
+
+    def __call__(self, solver):
+        # These options are needed for the wrapper to work
+        solver.set_option(":print-success", "true")
+        solver.set_option(":diagnostic-output-channel", '"stdout"')
+
+        if self.generate_models:
+            solver.set_option(":produce-models", "true")
+        else:
+            solver.set_option(":produce-models", "false")
+
+        if self.random_seed is not None:
+            solver.set_option(":random-seed", str(self.random_seed))
+
+        for k,v in self.solver_options.items():
+            if k in (':print-success', 'diagnostic-output-channel'):
+                raise ValueError("Cannot override %s." % k)
+            solver.set_option(k, str(v))
+
+# EOC SmtLibOptions
+
 
 class SmtLibSolver(Solver):
     """Wrapper for using a solver via textual SMT-LIB interface.
@@ -33,13 +70,13 @@ class SmtLibSolver(Solver):
     the executable. Interaction with the solver occurs via pipe.
     """
 
+    OptionsClass = SmtLibOptions
+
     def __init__(self, args, environment, logic, LOGICS=None, **options):
         Solver.__init__(self,
                         environment,
-                        logic=logic)
-
-        # Flag used to debug interaction with the solver
-        self.dbg = False
+                        logic=logic,
+                        **options)
 
         if LOGICS is not None: self.LOGICS = LOGICS
         self.args = args
@@ -57,11 +94,7 @@ class SmtLibSolver(Solver):
             self.solver_stdout = TextIOWrapper(self.solver.stdout)
 
         # Initialize solver
-        self.set_option(":print-success", "true")
-        if self.options.generate_models:
-            self.set_option(":produce-models", "true")
-        # Redirect diagnostic output to stdout
-        self.set_option(":diagnostic-output-channel", '"stdout"')
+        self.options(self)
         self.set_logic(logic)
 
     def set_option(self, name, value):
@@ -71,9 +104,13 @@ class SmtLibSolver(Solver):
     def set_logic(self, logic):
         self._send_silent_command(SmtLibCommand(smtcmd.SET_LOGIC, [logic]))
 
+    def _debug(self, msg):
+        if self.options.debug_interaction:
+            print(msg)
+
     def _send_command(self, cmd):
         """Sends a command to the STDIN pipe."""
-        if self.dbg: print("Sending: " + cmd.serialize_to_string())
+        self._debug("Sending: " + cmd.serialize_to_string())
         cmd.serialize(self.solver_stdin, daggify=True)
         self.solver_stdin.write("\n")
         self.solver_stdin.flush()
@@ -86,13 +123,13 @@ class SmtLibSolver(Solver):
     def _get_answer(self):
         """Reads a line from STDOUT pipe"""
         res = self.solver_stdout.readline().strip()
-        if self.dbg: print("Read: " + str(res))
+        if self.options.debug_interaction: print("Read: " + str(res))
         return res
 
     def _get_value_answer(self):
         """Reads and parses an assignment from the STDOUT pipe"""
         lst = self.parser.get_assignment_list(self.solver_stdout)
-        if self.dbg: print("Read: " + str(lst))
+        if self.options.debug_interaction: print("Read: " + str(lst))
         return lst
 
     def _declare_variable(self, symbol):

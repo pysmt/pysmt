@@ -27,17 +27,153 @@ from six import iteritems
 
 import pysmt.logics
 from pysmt import typing as types
-from pysmt.solvers.solver import Solver
+from pysmt.solvers.solver import Solver, SolverOptions
 from pysmt.solvers.eager import EagerModel
 from pysmt.rewritings import CNFizer
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
 from pysmt.exceptions import ConvertExpressionError
+from pysmt.constants import is_python_integer
+
+
+class PicosatOptions(SolverOptions):
+    """Options for Picosat Solver.
+
+    * preprocessing: True, False
+      Enable pre-processing
+
+    * enable_trace_generation: True, False
+      Enable trace generations (needed for UNSAT-cores)
+
+    * output: None, Filename
+      Define where to print output (default: None = stdout)
+
+    * global_default_phase: None, ALL_GLOBAL_DEFAULT_PHASE
+      Default phase for new decision literals.
+
+    * more_important_lit: None, list of Symbols
+      Increase the priority of the literals on which to make decisions
+
+    * less_important_lit: None, list of Symbols
+      Decrease the priority of the literals on which to make decisions
+
+    * propagation_limit: None, long
+      Limit the search to at most this many propagations.
+
+    * verbosity: Integer
+      Verbosity level. Set to 1 if output is defined.
+    """
+    ALL_GLOBAL_DEFAULT_PHASE = range(4)
+    GLOBAL_DEFAULT_PHASE_FALSE, \
+    GLOBAL_DEFAULT_PHASE_TRUE, \
+    GLOBAL_DEFAULT_PHASE_JEROSLOW_WANG, \
+    GLOBAL_DEFAULT_PHASE_RANDOM = ALL_GLOBAL_DEFAULT_PHASE
+
+    def __init__(self, **base_options):
+        SolverOptions.__init__(self, **base_options)
+        if self.unsat_cores_mode is not None:
+            raise ValueError("'unsat_cores_mode' option not supported.")
+
+        # Set Defaults
+        self.preprocessing = True
+        self.propagation_limit = None
+        self.more_important_lit = None
+        self.less_important_lit = None
+        self.global_default_phase = None
+        self.enable_trace_generation = False
+        self.output = None
+        self.verbosity = 0
+
+        for k,v in self.solver_options.items():
+            if k == "enable_trace_generation":
+                if v not in (True, False):
+                    raise ValueError("Invalid value for %s: %s" % \
+                                     (str(k),str(v)))
+            elif k == "output":
+                if v is not None and type(v) is not file:
+                    raise ValueError("Invalid value for %s: %s" % \
+                                     (str(k),str(v)))
+
+            elif k == "global_default_phase":
+                if v is not None and v not in PicosatOptions.ALL_GLOBAL_DEFAULT_PHASE:
+                    raise ValueError("Invalid value for %s: %s" % \
+                                     (str(k),str(v)))
+            elif k == "preprocessing":
+                if v not in (True, False):
+                    raise ValueError("Invalid value for %s: %s" % \
+                                     (str(k),str(v)))
+            elif k == "verbosity":
+                if not is_python_integer(v):
+                    raise ValueError("Invalid value for %s: %s" % \
+                                     (str(k),str(v)))
+            elif k == "propagation_limit":
+                if not is_python_integer(v):
+                    raise ValueError("Invalid value for %s: %s" % \
+                                     (str(k),str(v)))
+            elif k in ("more_important_lit", "less_important_lit"):
+                if v is not None:
+                    try:
+                        valid = all(x.is_symbol(types.BOOL) for x in v)
+                    except:
+                        valid = False
+                    if not valid:
+                        raise ValueError("'more_important_lit' and 'less_important_lit' require a "
+                                         "list of Boolean variables")
+            else:
+                raise ValueError("Unrecognized option '%s'." % k)
+            # Store option
+            setattr(self, k, v)
+
+        # Consistency
+        if self.output is not None and self.verbosity == 0:
+            self.verbosity = 1
+
+    def __call__(self, solver):
+        """Handle Options"""
+        pico = solver.pico
+        if self.random_seed is not None:
+            picosat.picosat_set_seed(pico, self.random_seed)
+
+        if self.preprocessing is True:
+            picosat.picosat_set_plain(pico, 0)
+        else:
+            picosat.picosat_set_plain(pico, 1)
+
+        if self.propagation_limit is not None:
+            picosat.picosat_set_propagation_limit(pico,
+                                                  self.propagation_limit)
+
+        if self.more_important_lit is not None:
+            for x in self.more_important_lit:
+                lit = solver._get_var_id(x) #pylint: disable=protected-access
+                picosat.picosat_set_more_important_lit(pico, lit)
+
+        if self.less_important_lit is not None:
+            for x in self.less_important_lit:
+                lit = solver._get_var_id(x) #pylint: disable=protected-access
+                picosat.picosat_set_less_important_lit(pico, lit)
+
+        if self.global_default_phase is not None:
+            picosat.picosat_set_global_default_phase(pico,
+                                                     self.global_default_phase)
+
+        if self.output is not None:
+            picosat.picosat_set_output(pico, self.output)
+
+        if self.enable_trace_generation:
+            rv = picosat.picosat_enable_trace_generation(pico)
+            if rv == 0: raise ValueError("Picosat: Cannot enable Trace Generation")
+
+        if self.verbosity > 0:
+            picosat.picosat_set_verbosity(pico, self.verbosity)
+
+# EOC PicosatOptions
 
 
 class PicosatSolver(Solver):
     """PicoSAT solver"""
 
     LOGICS = [ pysmt.logics.QF_BOOL ]
+    OptionsClass = PicosatOptions
 
     def __init__(self, environment, logic, **options):
         Solver.__init__(self,
@@ -51,7 +187,8 @@ class PicosatSolver(Solver):
         self.cnfizer = CNFizer(environment=environment)
         self.latest_model = None
         self._var_ids = {}
-
+        # Initialize
+        self.options(self)
 
     def _get_var_id(self, symbol):
         if not symbol.is_symbol(types.BOOL):
@@ -69,6 +206,7 @@ class PicosatSolver(Solver):
     def reset_assertions(self):
         picosat.picosat_reset(self.pico)
         self.pico = picosat.picosat_init()
+        self.options(self)
 
     @clear_pending_pop
     def declare_variable(self, var):
