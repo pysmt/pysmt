@@ -549,20 +549,19 @@ class TestBasic(TestCase):
         from pysmt.solvers.pico import PicosatOptions
         from tempfile import TemporaryFile
         x, y = Symbol("x"), Symbol("y")
-        fout = TemporaryFile()
-        solver_options = {'preprocessing': False,
-                          'enable_trace_generation': False,
-                          'output': fout,
-                          'global_default_phase': PicosatOptions.GLOBAL_DEFAULT_PHASE_FALSE,
-                          'more_important_lit': [x],
-                          'less_important_lit': [y],
-                          'propagation_limit': 100,
-                          'verbosity': 1,
-                      }
-        with Solver(name='picosat', solver_options=solver_options) as s:
-            s.add_assertion(And(x,y))
-            s.solve()
-        fout.close()
+        with TemporaryFile() as fout:
+            solver_options = {'preprocessing': False,
+                              'enable_trace_generation': False,
+                              'output': fout,
+                              'global_default_phase': PicosatOptions.GLOBAL_DEFAULT_PHASE_FALSE,
+                              'more_important_lit': [x],
+                              'less_important_lit': [y],
+                              'propagation_limit': 100,
+                              'verbosity': 1,
+                          }
+            with Solver(name='picosat', solver_options=solver_options) as s:
+                s.add_assertion(And(x,y))
+                s.solve()
 
 
 if __name__ == '__main__':

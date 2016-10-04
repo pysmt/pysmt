@@ -89,7 +89,7 @@ class PicosatOptions(SolverOptions):
                     raise ValueError("Invalid value for %s: %s" % \
                                      (str(k),str(v)))
             elif k == "output":
-                if v is not None and type(v) is not file:
+                if v is not None and not hasattr(v, "fileno"):
                     raise ValueError("Invalid value for %s: %s" % \
                                      (str(k),str(v)))
 
@@ -157,7 +157,7 @@ class PicosatOptions(SolverOptions):
                                                      self.global_default_phase)
 
         if self.output is not None:
-            picosat.picosat_set_output(pico, self.output)
+            self._log_file_handler = picosat.picosat_set_output(pico, self.output)
 
         if self.enable_trace_generation:
             rv = picosat.picosat_enable_trace_generation(pico)
@@ -187,6 +187,7 @@ class PicosatSolver(Solver):
         self.cnfizer = CNFizer(environment=environment)
         self.latest_model = None
         self._var_ids = {}
+        self._log_file_handler = None
         # Initialize
         self.options(self)
 
@@ -204,6 +205,7 @@ class PicosatSolver(Solver):
 
     @clear_pending_pop
     def reset_assertions(self):
+        picosat.picosat_flushout(self._log_file_handler)
         picosat.picosat_reset(self.pico)
         self.pico = picosat.picosat_init()
         self.options(self)
@@ -302,4 +304,5 @@ class PicosatSolver(Solver):
             picosat.picosat_pop(self.pico)
 
     def _exit(self):
+        picosat.picosat_flushout(self._log_file_handler)
         picosat.picosat_reset(self.pico)
