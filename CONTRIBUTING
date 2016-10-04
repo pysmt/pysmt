@@ -1,7 +1,5 @@
-"We welcome any type of contribution. Have a look at our additional information, 
+We welcome any type of contribution. Have a look at our additional information, 
 and please open an issue before starting any major activity, so that we can discuss 
-the details."
+the details.
 
-.. image:: https://readthedocs.org/projects/pysmt/badge/?version=latest
-           :target: https://pysmt.readthedocs.io/en/latest/
-           :alt: Documentation Status
+https://readthedocs.org/projects/pysmt/badge/?version=latest
