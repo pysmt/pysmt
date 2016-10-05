@@ -592,9 +592,9 @@ class FNode(object):
         assert index.is_constant()
         args = self.args()
         start = 0
-        end = (len(args) - 1) / 2
+        end = (len(args) - 1) // 2
         while end - start > 0:
-            pivot = (end - start) / 2
+            pivot = (end - start) // 2
             i = args[2 * pivot + 1]
             if id(i) == id(index):
                 return args[2 * pivot + 2]
