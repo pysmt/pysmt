@@ -644,7 +644,7 @@ class Simplifier(pysmt.walkers.DagWalker):
     def walk_array_value(self, formula, args, **kwargs):
         assign = {}
         for i,c in enumerate(args[1::2]):
-            assign[c] = args[i+1]
+            assign[c] = args[2*i+2]
         return self.manager.Array(formula.array_value_index_type(),
                                   args[0],
                                   assign)

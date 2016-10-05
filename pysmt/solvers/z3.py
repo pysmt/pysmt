@@ -245,7 +245,10 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
 
         titem = self.converter.convert(item)
         z3_res = self.z3.model().eval(titem, model_completion=True)
-        return self.converter.back(z3_res, self.z3.model())
+        res = self.converter.back(z3_res, self.z3.model())
+        if not res.is_constant():
+            return res.simplify()
+        return res
 
     def _exit(self):
         del self.z3

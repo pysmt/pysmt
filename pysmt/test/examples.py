@@ -633,7 +633,7 @@ def get_full_example_formulae(environment=None):
                 ),
 
             Example(hr="((Array{Int, Int}(0)[1 := 3] = aii) & (aii[1] = 3))",
-                    expr=And(Equals(Array(INT, Int(0), {Int(1) : Int(1)}), aii), Equals(Select(aii, Int(1)), Int(0))),
+                    expr=And(Equals(Array(INT, Int(0), {Int(1) : Int(3)}), aii), Equals(Select(aii, Int(1)), Int(3))),
                     is_valid=False,
                     is_sat=True,
                     logic=pysmt.logics.get_logic_by_name("QF_ALIA*")

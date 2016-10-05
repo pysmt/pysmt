@@ -410,7 +410,7 @@ class TestRegressions(TestCase):
             self.assertValid(Iff(f, fp), (f, fp))
 
     def test_array_initialization_printing(self):
-        self.assertEqual(Array(INT, Int(0), {Int(1):Int(2)}), "Array{Int, Int}(0)[1 := 2]")
+        self.assertEqual(str(Array(INT, Int(0), {Int(1):Int(2)})), "Array{Int, Int}(0)[1 := 2]")
 
 
 
