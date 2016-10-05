@@ -23,7 +23,7 @@ import pysmt.smtlib.commands as smtcmd
 from pysmt.shortcuts import (Real, Plus, Symbol, Equals, And, Bool, Or,
                              Div, LT, LE, Int, ToReal, Iff, Exists, Times, FALSE,
                              BVLShr, BVLShl, BVAShr, BV, BVAdd, BVULT, BVMul,
-                             Select)
+                             Select, Array)
 from pysmt.shortcuts import Solver, get_env, qelim, get_model, TRUE, ExactlyOne
 from pysmt.typing import REAL, BOOL, INT, BVType, FunctionType, ArrayType
 from pysmt.test import (TestCase, skipIfSolverNotAvailable, skipIfNoSolverForLogic,
@@ -408,6 +408,9 @@ class TestRegressions(TestCase):
             z3_f = Tactic('simplify')(z3_f).as_expr()
             fp = solver.converter.back(z3_f)
             self.assertValid(Iff(f, fp), (f, fp))
+
+    def test_array_initialization_printing(self):
+        self.assertEqual(Array(INT, Int(0), {Int(1):Int(2)}), "Array{Int, Int}(0)[1 := 2]")
 
 
 
