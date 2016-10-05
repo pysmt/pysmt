@@ -594,9 +594,10 @@ class FNode(object):
 
     def array_value_assigned_values_map(self):
         res = {}
-        args = self.args()
-        for i,c in enumerate(args[1::2]):
-            res[c] = args[i+1]
+        args_a = self.args()[1:-1:2]
+        args_b = self.args()[2::2]
+        for i in range(len(args_a)):
+            res[args_a[i]] = args_b[i]
         return res
 
     def array_value_default(self):
