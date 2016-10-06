@@ -17,6 +17,10 @@ pySMT: a Python API for SMT
 .. image:: https://img.shields.io/pypi/l/pysmt.svg
            :target: /LICENSE
            :alt: Apache License
+           
+.. image:: https://travis-ci.org/pysmt/pysmt.svg?branch=master
+           :target: https://groups.google.com/d/forum/pysmt
+           :alt: Google Groups
 
 
 pySMT makes working with **Satisfiability Modulo Theory** simple:
