@@ -30,8 +30,13 @@ python install.py --check
 
 #
 # Run the test suite
-#
-nosetests pysmt -v
+#  * Coverage is enabled only on master / all
+if [ "${TRAVIS_BRANCH}" == "master" ] && [ "${PYSMT_SOLVER}" == "all" ];
+then
+  nosetests pysmt -v --with-coverage --cover-package=pysmt
+else
+  nosetests pysmt -v
+fi
 
 #
 # Test examples in examples/ folder

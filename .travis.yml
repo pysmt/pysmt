@@ -97,3 +97,7 @@ install:
 
 script:
   - "./ci/travis_script.sh"
+
+success:
+  - coveralls
+#

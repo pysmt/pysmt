@@ -36,6 +36,7 @@ pip install six
 if [ "${PYSMT_SOLVER}" == "all" ] || [ "${PYSMT_SOLVER}" == "btor" ];
 then
     pip install cython;
+    pip install python-coveralls;
 fi
 
 if [ "${PYSMT_GMPY}" == "TRUE" ];
