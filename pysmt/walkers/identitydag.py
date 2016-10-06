@@ -192,9 +192,7 @@ class IdentityDagWalker(DagWalker):
         return self.mgr.Store(args[0], args[1], args[2])
 
     def walk_array_value(self, formula, args, **kwargs):
-        assign = {}
-        for i,c in enumerate(args[1::2]):
-            assign[c] = args[2*i+2]
+        assign = dict(zip(args[1::2], args[2::2]))
         return self.mgr.Array(formula.array_value_index_type(),
                               args[0],
                               assign)

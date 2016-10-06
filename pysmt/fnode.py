@@ -579,7 +579,7 @@ class FNode(object):
         """Returns the value of this Array Value at the given index. The
         index must be a constant of the correct type.
 
-        This function is equivalent (but possibly faster) than teh
+        This function is equivalent (but possibly faster) than the
         following code::
 
           m = self.array_value_assigned_values_map()
@@ -606,11 +606,8 @@ class FNode(object):
 
 
     def array_value_assigned_values_map(self):
-        res = {}
         args = self.args()
-        for i,c in enumerate(args[1::2]):
-            res[c] = args[2*i+2]
-        return res
+        return dict(zip(args[1::2], args[2::2]))
 
     def array_value_default(self):
         return self.args()[0]

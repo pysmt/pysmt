@@ -61,6 +61,7 @@ def get_full_example_formulae(environment=None):
         r = Symbol("r", REAL)
         s = Symbol("s", REAL)
         aii = Symbol("aii", ARRAY_INT_INT)
+        ari = Symbol("ari", ArrayType(REAL, INT))
         arb = Symbol("arb", ArrayType(REAL, BV8))
         abb = Symbol("abb", ArrayType(BV8, BV8))
         nested_a = Symbol("a_arb_aii", ArrayType(ArrayType(REAL, BV8),
@@ -323,7 +324,7 @@ def get_full_example_formulae(environment=None):
                     logic=pysmt.logics.QF_BV
                 ),
 
-            Example(hr="((((1_32 + (- ...)) << 1_32) >> 1_32) = 1_32)",
+            Example(hr="((((1_32 + (- 1_32)) << 1_32) >> 1_32) = 1_32)",
                     expr=Equals(BVLShr(BVLShl(BVAdd(BVOne(32),
                                                     BVNeg(BVOne(32))),
                                               1), 1),
@@ -564,7 +565,7 @@ def get_full_example_formulae(environment=None):
                     logic=pysmt.logics.QF_UFLIRA
                 ),
 
-            Example(hr="(((p - 3) = q) -> ((p < ih(r, (... + ...))) | (ih(r, p) <= p)))",
+            Example(hr="(((p - 3) = q) -> ((p < ih(r, (q + 3))) | (ih(r, p) <= p)))",
                     expr=Implies(Equals(Minus(p, Int(3)), q),
                                  Or(GT(Function(ih, (r, Plus(q, Int(3)))), p),
                                     LE(Function(ih, (r, p)), p))),
@@ -573,7 +574,7 @@ def get_full_example_formulae(environment=None):
                     logic=pysmt.logics.QF_UFLIRA
                 ),
 
-            Example(hr="(((ToReal((... - ...)) = r) & (ToReal(q) = r)) -> ((p < ih(ToReal(...), (... + ...))) | (ih(r, p) <= p)))",
+            Example(hr="(((ToReal((p - 3)) = r) & (ToReal(q) = r)) -> ((p < ih(ToReal((p - 3)), (q + 3))) | (ih(r, p) <= p)))",
                     expr=Implies(And(Equals(ToReal(Minus(p, Int(3))), r),
                                      Equals(ToReal(q), r)),
                                  Or(GT(Function(ih, (ToReal(Minus(p, Int(3))),
@@ -584,7 +585,7 @@ def get_full_example_formulae(environment=None):
                     logic=pysmt.logics.QF_UFLIRA
                 ),
 
-            Example(hr="(! (((ToReal(...) = r) & (ToReal(...) = r)) -> ((p < ...(..., ...)) | (...(..., ...) <= p))))",
+            Example(hr="(! (((ToReal((p - 3)) = r) & (ToReal(q) = r)) -> ((p < ih(ToReal((p - 3)), (q + 3))) | (ih(r, p) <= p))))",
                     expr=Not(Implies(And(Equals(ToReal(Minus(p, Int(3))), r),
                                          Equals(ToReal(q), r)),
                                      Or(GT(Function(ih, (ToReal(Minus(p, Int(3))),
@@ -638,6 +639,39 @@ def get_full_example_formulae(environment=None):
                     is_sat=True,
                     logic=pysmt.logics.get_logic_by_name("QF_ALIA*")
                 ),
+
+            Example(hr="((Array{Real, Int}(10) = ari) & (ari[6/5] = 0))",
+                    expr=And(Equals(Array(REAL, Int(10)), ari), Equals(Select(ari, Real((6, 5))), Int(0))),
+                    is_valid=False,
+                    is_sat=False,
+                    logic=pysmt.logics.get_logic_by_name("QF_ALIA*")
+                ),
+
+            Example(hr="((Array{Real, Int}(0)[1.0 := 10][2.0 := 20][3.0 := 30][4.0 := 40] = ari) & (! ((ari[0.0] = 0) & (ari[1.0] = 10) & (ari[2.0] = 20) & (ari[3.0] = 30) & (ari[4.0] = 40))))",
+                    expr=And(Equals(Array(REAL, Int(0), {Real(1) : Int(10), Real(2) : Int(20), Real(3) : Int(30), Real(4) : Int(40)}), ari),
+                             Not(And(Equals(Select(ari, Real(0)), Int(0)),
+                                     Equals(Select(ari, Real(1)), Int(10)),
+                                     Equals(Select(ari, Real(2)), Int(20)),
+                                     Equals(Select(ari, Real(3)), Int(30)),
+                                     Equals(Select(ari, Real(4)), Int(40))))),
+                    is_valid=False,
+                    is_sat=False,
+                    logic=pysmt.logics.get_logic_by_name("QF_ALIA*")
+                ),
+
+            Example(hr="((Array{Real, Int}(0)[1.0 := 10][2.0 := 20][3.0 := 30][4.0 := 40][5.0 := 50] = ari) & (! ((ari[0.0] = 0) & (ari[1.0] = 10) & (ari[2.0] = 20) & (ari[3.0] = 30) & (ari[4.0] = 40) & (ari[5.0] = 50))))",
+                    expr=And(Equals(Array(REAL, Int(0), {Real(1) : Int(10), Real(2) : Int(20), Real(3) : Int(30), Real(4) : Int(40), Real(5) : Int(50)}), ari),
+                             Not(And(Equals(Select(ari, Real(0)), Int(0)),
+                                     Equals(Select(ari, Real(1)), Int(10)),
+                                     Equals(Select(ari, Real(2)), Int(20)),
+                                     Equals(Select(ari, Real(3)), Int(30)),
+                                     Equals(Select(ari, Real(4)), Int(40)),
+                                     Equals(Select(ari, Real(5)), Int(50))))),
+                    is_valid=False,
+                    is_sat=False,
+                    logic=pysmt.logics.get_logic_by_name("QF_ALIA*")
+                ),
+
 
             Example(hr="((a_arb_aii = Array{Array{Real, BV{8}}, Array{Int, Int}}(Array{Int, Int}(7))) -> (a_arb_aii[arb][42] = 7))",
                     expr=Implies(Equals(nested_a, Array(ArrayType(REAL, BV8),
