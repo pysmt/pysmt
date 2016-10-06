@@ -201,6 +201,6 @@ License
 pySMT is release under the APACHE 2.0 License.
 
 For further questions, feel free to open an issue, or write to
-pysmt@googlegroups.com .
+pysmt@googlegroups.com . `Browse the Archive <https://groups.google.com/d/forum/pysmt>`_
 
-To Browse the Archive https://groups.google.com/d/forum/pysmt
+
