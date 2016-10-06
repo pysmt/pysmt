@@ -317,7 +317,7 @@ class TestBasic(TestCase):
                     try:
                         f_i = get_implicant(f, logic=logic, solver_name=sname)
                         if satisfiability:
-                            self.assertValid(Implies(f_i, f), logic=logic, msg=f)
+                            self.assertValid(Implies(f_i, f), logic=logic, msg=(f_i, f))
                         else:
                             self.assertIsNone(f_i)
                     except ConvertExpressionError as ex:

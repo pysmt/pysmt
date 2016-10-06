@@ -223,11 +223,13 @@ class HRPrinter(TreeWalker):
         yield formula.array_value_default()
         self.write(")")
         assign = formula.array_value_assigned_values_map()
-        for k, v in iteritems(assign):
+        # We sort the array value assigments in lexicographic order
+        # for deterministic printing
+        for k in sorted(assign, key=str):
             self.write("[")
             yield k
             self.write(" := ")
-            yield v
+            yield assign[k]
             self.write("]")
 
 

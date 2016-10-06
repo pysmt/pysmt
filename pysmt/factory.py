@@ -511,6 +511,7 @@ class Factory(object):
                         if solver.get_value(a).is_true():
                             res.append(a)
                         else:
+                            assert solver.get_value(a).is_false()
                             res.append(mgr.Not(a))
                 return mgr.And(res)
 

@@ -170,8 +170,9 @@ class TestPrinting(TestCase):
 
     def test_examples(self):
         for s, f, logic in get_str_example_formulae(environment=None):
-            self.assertTrue(len(str(f)) >= 1, str(f))
-            self.assertEqual(str(f), s)
+            str_f = f.serialize()
+            self.assertTrue(len(str_f) >= 1, str_f)
+            self.assertEqual(str_f, s)
 
     def test_smart_serialize(self):
         x, y = Symbol("x"), Symbol("y")
