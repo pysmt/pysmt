@@ -644,7 +644,7 @@ def get_full_example_formulae(environment=None):
                     expr=And(Equals(Array(REAL, Int(10)), ari), Equals(Select(ari, Real((6, 5))), Int(0))),
                     is_valid=False,
                     is_sat=False,
-                    logic=pysmt.logics.get_logic_by_name("QF_ALIA*")
+                    logic=pysmt.logics.get_logic_by_name("QF_AUFBVLIRA*")
                 ),
 
             Example(hr="((Array{Real, Int}(0)[1.0 := 10][2.0 := 20][3.0 := 30][4.0 := 40] = ari) & (! ((ari[0.0] = 0) & (ari[1.0] = 10) & (ari[2.0] = 20) & (ari[3.0] = 30) & (ari[4.0] = 40))))",
@@ -656,7 +656,7 @@ def get_full_example_formulae(environment=None):
                                      Equals(Select(ari, Real(4)), Int(40))))),
                     is_valid=False,
                     is_sat=False,
-                    logic=pysmt.logics.get_logic_by_name("QF_ALIA*")
+                    logic=pysmt.logics.get_logic_by_name("QF_AUFBVLIRA*")
                 ),
 
             Example(hr="((Array{Real, Int}(0)[1.0 := 10][2.0 := 20][3.0 := 30][4.0 := 40][5.0 := 50] = ari) & (! ((ari[0.0] = 0) & (ari[1.0] = 10) & (ari[2.0] = 20) & (ari[3.0] = 30) & (ari[4.0] = 40) & (ari[5.0] = 50))))",
@@ -669,7 +669,7 @@ def get_full_example_formulae(environment=None):
                                      Equals(Select(ari, Real(5)), Int(50))))),
                     is_valid=False,
                     is_sat=False,
-                    logic=pysmt.logics.get_logic_by_name("QF_ALIA*")
+                    logic=pysmt.logics.get_logic_by_name("QF_AUFBVLIRA*")
                 ),
 
 

@@ -520,15 +520,12 @@ class MSatConverter(Converter, DagWalker):
 
         elif mathsat.msat_term_is_array_read(self.msat_env(), term):
             t1 = self.env.stc.get_type(args[0])
-            t2 = self.env.stc.get_type(args[1])
             t = t1.elem_type
-            res = types.FunctionType(t, [t1, t2])
+            res = types.FunctionType(t, [t1, t1.index_type])
 
         elif mathsat.msat_term_is_array_write(self.msat_env(), term):
-            t1 = self.env.stc.get_type(args[0])
-            t2 = self.env.stc.get_type(args[1])
-            t3 = self.env.stc.get_type(args[2])
-            res = types.FunctionType(t1, [t1, t2, t3])
+            at = self.env.stc.get_type(args[0])
+            res = types.FunctionType(at, [at, at.index_type, at.elem_type])
 
         elif mathsat.msat_term_is_array_const(self.msat_env(), term):
             ty = mathsat.msat_term_get_type(term)

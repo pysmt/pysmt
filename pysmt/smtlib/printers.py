@@ -186,7 +186,7 @@ class SmtPrinter(TreeWalker):
         yield formula.array_value_default()
         self.write(")")
 
-        for k in sorted(assign):
+        for k in sorted(assign, key=str):
             self.write(" ")
             yield k
             self.write(" ")
