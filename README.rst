@@ -17,8 +17,8 @@ pySMT: a Python API for SMT
 .. image:: https://img.shields.io/pypi/l/pysmt.svg
            :target: /LICENSE
            :alt: Apache License
-.. image:: pysmt@googlegroups.com
-           :target: pysmt@googlegroups.com
+.. image:: https://groups.google.com/d/forum/pysmt
+           :target: https://groups.google.com/d/forum/pysmt
            :alt: Browse to Archive
 
 
@@ -203,4 +203,4 @@ pySMT is release under the APACHE 2.0 License.
 For further questions, feel free to open an issue, or write to
 pysmt@googlegroups.com .
 
-To Browse the Archive pysmt@googlegroups.com
+To Browse the Archive https://groups.google.com/d/forum/pysmt
