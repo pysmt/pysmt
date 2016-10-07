@@ -6,6 +6,10 @@ pySMT: a Python API for SMT
            :target: https://travis-ci.org/pysmt/pysmt
            :alt: Build Status
 
+.. image:: https://coveralls.io/repos/github/pysmt/pysmt/badge.svg
+           :target: https://coveralls.io/github/pysmt/pysmt
+           :alt: Coverage
+
 .. image:: https://readthedocs.org/projects/pysmt/badge/?version=latest
            :target: https://pysmt.readthedocs.io/en/latest/
            :alt: Documentation Status
