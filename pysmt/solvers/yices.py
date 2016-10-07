@@ -16,6 +16,7 @@
 #   limitations under the License.
 #
 import atexit
+from warnings import warn
 
 from six.moves import xrange
 
@@ -59,6 +60,13 @@ def cleanup():
 STATUS_UNKNOWN = 2
 STATUS_SAT = 3
 STATUS_UNSAT = 4
+
+def yices_logic(pysmt_logic):
+    """Return a Yices String representing the given pySMT logic."""
+    ylogic = str(pysmt_logic)
+    if ylogic == "QF_BOOL":
+        ylogic = "NONE"
+    return ylogic
 
 
 class YicesOptions(SolverOptions):
@@ -132,24 +140,18 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
         self.declarations = set()
         self.yices_config = yicespy.yices_new_config()
-        self.yices = None
-        self.yices_params = None
-        self._create_yices_context()
+        if yicespy.yices_default_config_for_logic(self.yices_config,
+                                                  yices_logic(logic)) != 0:
+            warn("Error setting config for logic %s" % logic)
+        self.options(self)
+        self.yices = yicespy.yices_new_context(self.yices_config)
+        self.options.set_params(self)
+        yicespy.yices_free_config(self.yices_config)
         self.converter = YicesConverter(environment)
         self.mgr = environment.formula_manager
         self.model = None
         self.failed_pushes = 0
         return
-
-    def _create_yices_context(self):
-        yices_logic = str(self.logic)
-        if yices_logic == "QF_BOOL": yices_logic = "NONE"
-        if yicespy.yices_default_config_for_logic(self.yices_config, str(yices_logic)) != 0:
-            print("Error setting config for logic %s" % str(yices_logic))
-        self.options(self)
-        self.yices = yicespy.yices_new_context(self.yices_config)
-        self.options.set_params(self)
-        yicespy.yices_free_config(self.yices_config)
 
     @clear_pending_pop
     def reset_assertions(self):
