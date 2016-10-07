@@ -15,7 +15,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from nose.plugins.attrib import attr
 from pysmt.shortcuts import (And, Iff, Or, Symbol, Implies, Not,
                              Exists, ForAll,
                              Times, Plus, Minus, Equals, Real,
@@ -26,7 +25,7 @@ from pysmt.rewritings import disjunctive_partition
 from pysmt.rewritings import TimesDistributor
 from pysmt.test.examples import get_example_formulae
 from pysmt.exceptions import SolverReturnedUnknownResultError
-from pysmt.logics import BOOL, QF_NRA, QF_LRA, QF_LIA, QF_NIA
+from pysmt.logics import BOOL, QF_NRA, QF_LRA, QF_LIA
 from pysmt.typing import REAL
 
 

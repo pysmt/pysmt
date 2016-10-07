@@ -43,7 +43,7 @@ class CVC4Options(SolverOptions):
     def __init__(self, **base_options):
         SolverOptions.__init__(self, **base_options)
         # TODO: CVC4 Supports UnsatCore extraction
-        # but we did not wrapped it yet.
+        # but we did not wrapped it yet. (See #349)
         if self.unsat_cores_mode is not None:
             raise ValueError("'unsat_cores_mode' option not supported.")
 
@@ -126,7 +126,7 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
             try:
                 res = self.cvc4.checkSat()
             except:
-                raise InternalSolverError(ex.toString())
+                raise InternalSolverError()
 
         # Convert returned type
         res_type = res.isSat()
