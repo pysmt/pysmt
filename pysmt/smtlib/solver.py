@@ -41,6 +41,7 @@ class SmtLibOptions(SolverOptions):
 
         if 'debug_interaction' in self.solver_options:
             self.debug_interaction = self.solver_options
+            del self.solver_options['debug_interaction']
 
     def __call__(self, solver):
         # These options are needed for the wrapper to work
@@ -104,13 +105,13 @@ class SmtLibSolver(Solver):
     def set_logic(self, logic):
         self._send_silent_command(SmtLibCommand(smtcmd.SET_LOGIC, [logic]))
 
-    def _debug(self, msg):
+    def _debug(self, msg, *format_args):
         if self.options.debug_interaction:
-            print(msg)
+            print(msg % format_args)
 
     def _send_command(self, cmd):
         """Sends a command to the STDIN pipe."""
-        self._debug("Sending: " + cmd.serialize_to_string())
+        self._debug("Sending: %s", cmd.serialize_to_string())
         cmd.serialize(self.solver_stdin, daggify=True)
         self.solver_stdin.write("\n")
         self.solver_stdin.flush()
@@ -123,13 +124,13 @@ class SmtLibSolver(Solver):
     def _get_answer(self):
         """Reads a line from STDOUT pipe"""
         res = self.solver_stdout.readline().strip()
-        if self.options.debug_interaction: print("Read: " + str(res))
+        self._debug("Read: %s", res)
         return res
 
     def _get_value_answer(self):
         """Reads and parses an assignment from the STDOUT pipe"""
         lst = self.parser.get_assignment_list(self.solver_stdout)
-        if self.options.debug_interaction: print("Read: " + str(lst))
+        self._debug("Read: %s", lst)
         return lst
 
     def _declare_variable(self, symbol):
