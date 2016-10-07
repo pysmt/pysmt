@@ -98,6 +98,6 @@ install:
 script:
   - "./ci/travis_script.sh"
 
-success:
+after_success:
   - coveralls
 #
