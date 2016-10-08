@@ -66,6 +66,19 @@ class TestGenericWrapper(TestCase):
                 self.assertFalse(res)
 
     @skipIf(len(ALL_WRAPPERS) == 0, "No wrapper available")
+    def test_generic_wrapper_enable_debug(self):
+        a = Symbol("A", BOOL)
+        f = And(a, Not(a))
+
+        for n in self.all_solvers:
+            with Solver(name=n, logic=QF_BOOL,
+                        solver_options={'debug_interaction':True}) as s:
+                s.add_assertion(f)
+                res = s.solve()
+                self.assertFalse(res)
+
+
+    @skipIf(len(ALL_WRAPPERS) == 0, "No wrapper available")
     def test_generic_wrapper_model(self):
         a = Symbol("A", BOOL)
         b = Symbol("B", BOOL)

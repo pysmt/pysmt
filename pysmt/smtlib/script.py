@@ -240,7 +240,8 @@ def smtlibscript_from_formula(formula):
     except NoLogicAvailableError:
         warnings.warn("The logic %s is not reducible to any SMTLib2 " \
                       "standard logic. Proceeding with non-standard " \
-                      "logic '%s'" % (f_logic, f_logic))
+                      "logic '%s'" % (f_logic, f_logic),
+                      stacklevel=3)
         smt_logic = f_logic
 
     script.add(name=smtcmd.SET_LOGIC,

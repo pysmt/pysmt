@@ -120,7 +120,7 @@ class TestBdd(TestCase):
     @skipIfSolverNotAvailable("bdd")
     def test_reordering(self):
         with Solver(name="bdd", logic=BOOL,
-                    dynamic_reordering=True) as s:
+                    solver_options={'dynamic_reordering': True}) as s:
             s.add_assertion(self.big_tree)
             self.assertTrue(s.solve())
 
@@ -129,8 +129,8 @@ class TestBdd(TestCase):
         from pysmt.solvers.bdd import BddOptions
         for algo in BddOptions.CUDD_ALL_REORDERING_ALGORITHMS:
             with Solver(name="bdd", logic=BOOL,
-                        dynamic_reordering=True,
-                        reordering_algorithm=algo) as s:
+                        solver_options={'dynamic_reordering': True,
+                                        'reordering_algorithm': algo}) as s:
                 s.add_assertion(self.big_tree)
                 self.assertTrue(s.solve())
                 self.assertEqual(algo, s.ddmanager.ReorderingStatus()[1])
@@ -142,7 +142,7 @@ class TestBdd(TestCase):
 
         for order in [f_order, r_order]:
             with Solver(name="bdd", logic=BOOL,
-                        static_ordering=order) as s:
+                        solver_options={'static_ordering': order}) as s:
                 s.add_assertion(self.big_tree)
                 self.assertTrue(s.solve())
 
@@ -156,13 +156,14 @@ class TestBdd(TestCase):
     def test_invalid_ordering(self):
         with self.assertRaises(ValueError):
             Solver(name="bdd", logic=BOOL,
-                   static_ordering=[And(self.x, self.y), self.y])
+                   solver_options={'static_ordering':
+                                   [And(self.x, self.y), self.y]})
 
     @skipIfSolverNotAvailable("bdd")
     def test_initial_ordering(self):
         with Solver(name="bdd", logic=BOOL,
-                       static_ordering=[self.x, self.y],
-                       dynamic_reordering=True) as s:
+                    solver_options={'static_ordering':[self.x, self.y],
+                                    'dynamic_reordering':True}) as s:
             s.add_assertion(self.big_tree)
             self.assertTrue(s.solve())
             self.assertNotEquals(s.ddmanager.ReorderingStatus()[1], 0)

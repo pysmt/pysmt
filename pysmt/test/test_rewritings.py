@@ -25,7 +25,7 @@ from pysmt.rewritings import disjunctive_partition
 from pysmt.rewritings import TimesDistributor
 from pysmt.test.examples import get_example_formulae
 from pysmt.exceptions import SolverReturnedUnknownResultError
-from pysmt.logics import BOOL, QF_NRA, QF_LRA, QF_LIA, QF_NIA
+from pysmt.logics import BOOL, QF_NRA, QF_LRA, QF_LIA
 from pysmt.typing import REAL
 
 
@@ -166,27 +166,11 @@ class TestRewritings(TestCase):
         self.assertValid(Equals(fp, target), fp)
         self.assertTrue(fp.is_plus(), fp)
 
-
-    @skipIfNoSolverForLogic(QF_NIA)
-    def test_times_distributivity_smtlib_nia(self):
-        from pysmt.test.smtlib.parser_utils import formulas_from_smtlib_test_set
-        test_set = formulas_from_smtlib_test_set(logics=[QF_LIA, QF_NIA])
-        for (logic, fname, f, ex_res) in test_set:
-            print(fname)
-            td = TimesDistributor()
-            _ = td.walk(f)
-            for (old, new) in td.memoization.items():
-                if not old.is_times(): continue
-                if old is new: continue # Nothing changed
-                self.assertValid(Equals(old, new),
-                                 (old, new), solver_name="z3")
-
     @skipIfNoSolverForLogic(QF_NRA)
     def test_times_distributivity_smtlib_nra(self):
         from pysmt.test.smtlib.parser_utils import formulas_from_smtlib_test_set
         test_set = formulas_from_smtlib_test_set(logics=[QF_LRA, QF_NRA])
-        for (logic, fname, f, ex_res) in test_set:
-            print(fname)
+        for (_, fname, f, _) in test_set:
             td = TimesDistributor()
             _ = td.walk(f)
             for (old, new) in td.memoization.items():

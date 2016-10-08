@@ -25,7 +25,8 @@ except ImportError:
     raise SolverAPINotFound
 
 
-from pysmt.solvers.solver import IncrementalTrackingSolver, Converter
+from pysmt.solvers.solver import (IncrementalTrackingSolver,
+                                  Converter, SolverOptions)
 from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 from pysmt.solvers.eager import EagerModel
 from pysmt.walkers import DagWalker
@@ -35,25 +36,53 @@ from pysmt.decorators import clear_pending_pop, catch_conversion_error
 from pysmt.logics import QF_BV, QF_UFBV, QF_ABV, QF_AUFBV, QF_AX
 
 
+class BoolectorOptions(SolverOptions):
+    def __init__(self, **base_options):
+        SolverOptions.__init__(self, **base_options)
+        if self.random_seed is not None:
+            raise ValueError("BTOR Does not support Random Seed setting.")
+
+        # Disabling Incremental usage is not allowed.
+        # This needs to be set to 1
+        self.incrementality = True
+
+    @staticmethod
+    def _set_option(btor, name, value):
+        try:
+            btor.Set_opt(name, value)
+        except TypeError:
+            raise ValueError("Error setting the option '%s=%s'" % (name,value))
+        except boolector.BoolectorException:
+            raise ValueError("Error setting the option '%s=%s'" % (name,value))
+
+    def __call__(self, solver):
+        if self.generate_models:
+            self._set_option(solver.btor, "model_gen", 1)
+        else:
+            self._set_option(solver.btor, "model_gen", 0)
+        if self.incrementality:
+            self._set_option(solver.btor, "incremental", 1)
+
+        for k,v in self.solver_options.items():
+            # Note: Options values in btor are mostly integers
+            self._set_option(solver.btor, str(k), v)
+
+# EOC BoolectorOptions
+
+
 class BoolectorSolver(IncrementalTrackingSolver,
                       SmtLibBasicSolver, SmtLibIgnoreMixin):
 
     LOGICS = [QF_BV, QF_UFBV, QF_ABV, QF_AUFBV, QF_AX]
+    OptionsClass = BoolectorOptions
 
     def __init__(self, environment, logic, **options):
         IncrementalTrackingSolver.__init__(self,
                                            environment=environment,
                                            logic=logic,
                                            **options)
-
         self.btor = boolector.Boolector()
-
-        self.btor.Set_opt("model_gen", 0)
-        # Disabling Incremental usage is not allowed.
-        # This needs to be set to 1
-        self.btor.Set_opt("incremental", 1)
-        if self.options.generate_models:
-            self.btor.Set_opt("model_gen", 1)
+        self.options(self)
         self.converter = BTORConverter(environment, self.btor)
         self.mgr = environment.formula_manager
         self.declarations = {}

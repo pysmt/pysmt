@@ -33,7 +33,6 @@ class SmtLibSolver(object):
         """
         raise NotImplementedError
 
-
     def declare_fun(self, symbol):
         """ Declare a function symbol.
 
@@ -73,7 +72,6 @@ class SmtLibSolver(object):
         """
         raise NotImplementedError
 
-
     def declare_sort(self, name, cardinality):
         """ Declares a new sort with the given name and cardinality.
 
@@ -83,7 +81,6 @@ class SmtLibSolver(object):
         """
         raise NotImplementedError
 
-
     def define_sort(self, name, args, sort_expr):
         """ Declares a symbol as an abreviation for a sort-expression.
 
@@ -91,7 +88,6 @@ class SmtLibSolver(object):
         :returns: None - might raise exception
         """
         raise NotImplementedError
-
 
     def assert_(self, expr, named=None):
         """ Assert the given expression.
@@ -103,14 +99,12 @@ class SmtLibSolver(object):
         """
         raise NotImplementedError
 
-
     def get_assertions(self):
         """ Returns a list of asserted expressions.
 
         Restrictions: Only after set-logic.
         """
         raise NotImplementedError
-
 
     def check_sat(self):
         """ Checks the satisfiability of the formula.
@@ -120,7 +114,6 @@ class SmtLibSolver(object):
         :returns: SAT, UNSAT, Unknown
         """
         raise NotImplementedError
-
 
     def get_proof(self):
         """ Returns a proof of unsatisfiability.
@@ -134,7 +127,6 @@ class SmtLibSolver(object):
         """
         raise NotImplementedError
 
-
     def get_unsat_core(self):
         """ Returns the unsat cores.
 
@@ -145,7 +137,6 @@ class SmtLibSolver(object):
         Note: Requires elements to be named.
         """
         raise NotImplementedError
-
 
     def get_values(self, exprs):
         """ Returns the value of the expressions if a model was found.
@@ -171,14 +162,12 @@ class SmtLibSolver(object):
         """
         raise NotImplementedError
 
-
     def push(self, levels=1):
         """ Push the current context of the given number of levels.
 
         Restrictions: after set-logic
         """
         raise NotImplementedError
-
 
     def pop(self, levels=1):
         """ Pop the context of the given number of levels.
@@ -187,11 +176,9 @@ class SmtLibSolver(object):
         """
         raise NotImplementedError
 
-
     def get_option(self, name):
         """ Gets the value of the given option from the solver."""
         raise NotImplementedError
-
 
     def set_option(self, name, value):
         """ Sets the given value for the option in the solver.
@@ -216,11 +203,9 @@ class SmtLibSolver(object):
         """
         raise NotImplementedError
 
-
     def get_info(self, name):
         """ Gets the value of a given information. """
         raise NotImplementedError
-
 
     def set_info(self, name, value):
         """ Sets the value for a given information.
@@ -235,7 +220,6 @@ class SmtLibSolver(object):
         * :all-statistics
         """
         raise NotImplementedError
-
 
     def exit(self):
         """Destroys the solver."""

@@ -70,7 +70,8 @@ def configure_environment(config_filename, environment):
 
         logics_string = config.get(s, "logics")
         if logics_string is None:
-            warn("Missing 'logics' value in definition of '%s' solver" % name)
+            warn("Missing 'logics' value in definition of '%s' solver" % name,
+                 stacklevel=2)
             continue
 
         logics = [get_logic_by_name(l) for l in logics_string.split()]
@@ -87,18 +88,21 @@ def configure_environment(config_filename, environment):
             elif infix.lower() == "false":
                 environment.enable_infix_notation = True
             else:
-                warn("Unknown value for 'use_infix_notation': %s" % infix)
+                warn("Unknown value for 'use_infix_notation': %s" % infix,
+                     stacklevel=2)
 
         if pref_list is not None:
             prefs = pref_list.split()
             for s in prefs:
                 if s not in factory.all_solvers():
-                    warn("Unknown solver '%s' in solver_preference_list" % s)
+                    warn("Unknown solver '%s' in solver_preference_list" % s,
+                         stacklevel=2)
 
             for s in factory.all_solvers():
                 if s not in prefs:
                     warn("Solver '%s' is not in the preference list, "\
-                         "and will be disabled." % s)
+                         "and will be disabled." % s,
+                         stacklevel=2)
 
             factory.set_solver_preference_list(prefs)
 

@@ -15,29 +15,74 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+import abc
+
 from pysmt.typing import BOOL
 from pysmt.exceptions import SolverReturnedUnknownResultError
 from six.moves import xrange
 
 
 class SolverOptions(object):
-    """Solver Options shared by most solvers."""
+    """Solver Options shared by most solvers.
 
-    VALID_OPTIONS = [("generate_models", True),
-                     ("unsat_cores_mode", None),
-                     ("incremental", True),
-    ]
+    * generate_models : True, False
+      Enable model generation. Needed for get_value, get_model etc.
 
-    def __init__(self, **kwargs):
-        for name, default in self.VALID_OPTIONS:
-            if name in kwargs:
-                setattr(self, name, kwargs[name])
-            else:
-                setattr(self, name, default)
+    * incremental: True, False
+      Enable incremental interface (push, pop)
 
-        for k in kwargs:
-            if k not in [n for (n, _) in self.VALID_OPTIONS]:
-                raise ValueError("Unrecognized option '%s'" % k)
+    * unsat_cores_mode: None, "named", "all"
+      Enable UNSAT core extraction using "named" or "all" strategy.
+
+    * random_seed: None, integer
+      Sets the random seed for the solver
+
+    * solver_options: dictionary
+      Provides solver specific options
+
+    """
+    __metaclass__ = abc.ABCMeta
+
+    def __init__(self, generate_models=True, incremental=True,
+                 unsat_cores_mode=None, random_seed=None,
+                 solver_options=None):
+
+        if generate_models not in (True, False):
+            raise ValueError("Invalid value %s for 'generate_models'" \
+                             % generate_models)
+        self.generate_models = generate_models
+
+        if incremental not in (True, False):
+            raise ValueError("Invalid value %s for 'incremental'" \
+                             % incremental)
+        self.incremental = incremental
+
+        if unsat_cores_mode not in (None, "named", "all"):
+            raise ValueError("Invalid value %s for 'unsat_cores_mode'" \
+                             % unsat_cores_mode)
+        self.unsat_cores_mode = unsat_cores_mode
+
+        if random_seed is not None and type(random_seed) != int:
+            raise ValueError("Invalid value %s for 'random_seed'" \
+                             % random_seed)
+        self.random_seed = random_seed
+
+        if solver_options is not None:
+            try:
+                solver_options = dict(solver_options)
+            except:
+                raise ValueError("Invalid value %s for 'solver_options'" \
+                                 % solver_options)
+        else:
+            solver_options = dict()
+        self.solver_options = solver_options
+
+    @abc.abstractmethod
+    def __call__(self, solver):
+        """Handle the setting options within solver"""
+        raise NotImplementedError
+
+# EOC SolverOptions
 
 
 class Solver(object):
@@ -73,6 +118,13 @@ class Solver(object):
         assert formula in self.environment.formula_manager, \
                "Formula does not belong to the current Formula Manager"
 
+        if not self.options.incremental:
+            # If not incremental, we only need to assert and solve
+            self.add_assertion(formula)
+            return self.solve()
+
+        # Try to be incremental using push/pop but fallback to
+        # solving under assumption if push/pop is not implemented
         use_solving_under_assumption = False
         try:
             self.push()
