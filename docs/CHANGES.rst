@@ -1,8 +1,196 @@
 Change Log
 ==========
 
-HEAD: XXXX-XX-XX -- YYYYYYYYYYYY
---------------------------------
+
+0.6.0: 2016-10-06 -- GMPY2 and Goodbye Recursion
+------------------------------------------------
+
+BACKWARDS INCOMPATIBLE CHANGES:
+
+* Integer, Fraction and Numerals are now defined in pysmt.constants
+  (see below for details). The breaking changes are:
+
+  * Users should use pysmt.constants.Fraction, if they want to
+    guarantee that the same type is being used (different types are
+    automatically converted);
+  * Methods from pysmt.utils moved to pysmt.constants;
+  * Numerals class was moved from pysmt.numeral (that does not exist
+    anymore).
+
+
+* Non-Recursive TreeWalker (PR #322)
+
+  Modified TreeWalker to be non-recursive. The algorithm works by
+  keeping an explicit stack of the walking functions **that are now
+  required to be generators**. See pysmt.printer.HRPrinter for an
+  example. This removes the last piece of recursion in pySMT !
+
+
+* Times is now an n-ary operator (Issue #297 / PR #304)
+
+  Functions operating on the args of Times (e.g., rewritings) should
+  be adjusted accordingly.
+
+
+* Simplified module pysmt.parsing into a unique file (PR #301)
+
+  The pysmt.parsing module was originally divided in two files:
+  pratt.py and parser.py. These files were removed and the parser
+  combined into a unique parsing.py file. Code importing those modules
+  directly needs to be updated.
+
+
+* Use solver_options to specify solver-dependent options (PR #338):
+
+  * MathSAT5Solver option 'debugFile' has been removed. Use the
+    solver option: "debug_api_call_trace_filename".
+
+  * BddSolver used to have the options as keyword
+    arguments (static_ordering, dynamic_reordering etc). This is not
+    supported anymore.
+
+
+* Removed deprecated methods (PR #332):
+
+  * FNode.get_dependencies (use FNode.get_free_variables)
+  * FNode.get_sons (use FNode.get_args)
+  * FNode.is_boolean_operator (use FNode.is_bool_op)
+  * pysmt.test.skipIfNoSolverAvailable
+  * pysmt.randomizer (not used and broken)
+
+
+
+General:
+
+* Support for GMPY2 to represent Fractions (PR #309).
+
+  Usage of GMPY2 can be controlled by setting the env variable
+  PYSMT_GMPY to True or False. By default, pySMT tries to use GMPY2 if
+  installed, and fallbacks on Python's Fraction otherwise.
+
+
+* Constants module: pysmt.constants (PR #309)
+
+  This module provides an abstraction for constants Integer and
+  Fraction, supporting different ways of representing them
+  internally. Additionally, this module provides several utility
+  methods:
+
+    * is_pysmt_fraction
+    * is_pysmt_integer
+    * is_python_integer
+    * is_python_rational
+    * is_python_boolean
+
+  Conversion can be achieved via:
+
+    * pysmt_fraction_from_rational
+    * pysmt_integer_from_integer
+    * to_python_integer (handle long/int py2/py3 mismatch)
+
+
+* Add Version information (Issue #299 / PR #303)
+
+  * pysmt.VERSION : A tuple containing the version information
+  * pysmt.__version__ : String representation of VERSION (following PEP 440)
+  * pysmt.git_version : A simple function that returns the version including git information.
+
+  install.py (pysmt-install) and shell.py gain a new --version option that
+  uses git_version to display the version information.
+
+
+* Shortcuts: read_smtlib() and write_smtlib()
+
+* Docs: Completely Revised the documentation (PR #294)
+
+* Rewritings: TimesDistributor (PR #302)
+
+  Perform distributivity on an N-ary Times across addition and
+  subtraction.
+
+
+* SizeOracle: Add MEASURE_BOOL_DAG measure (PR #319)
+
+  Measure the Boolean size of the formula. This is equivalent to
+  replacing every theory expression with a fresh boolean variable, and
+  measuring the DAG size of the formula. This can be used to estimate
+  the Boolean complexity of the SMT formula.
+
+
+* PYSMT_SOLVERS controls available solvers (Issue #266 / PR #316):
+
+  Using the PYSMT_SOLVER system environment option, it is possible to
+  restrict the set of installed solvers that are actually accessible
+  to pySMT. For example, setting PYSMT_SOLVER="msat,z3" will limit the
+  accessible solvers to msat and z3.
+
+
+* Protect FNodeContent.payload access (Issue #291 / PR 310)
+
+  All methods in FNode that access the payload now check that the
+  FNode instance is of the correct type, e.g.:
+
+  FNode.symbol_name() checks that FNode.is_symbol()
+
+  This prevents from accessing the payload in a spurious way. Since
+  this has an impact on every access to the payload, it has been
+  implemented as an assertion, and can be disabled by running the
+  interpreter with -O.
+
+
+Solvers:
+
+* Z3 Converter Improvements (PR #321):
+
+  * Optimized Conversion to Z3 Solver Forward conversion is 4x faster,
+    and 20% more memory efficient, because we work at a lower level
+    of the Z3 Python API and do not create intermediate AstRef objects
+    anymore.  Back conversion is 2x faster because we use a direct
+    dispatching method based on the Z3 OP type, instead of the
+    big conditional that we were using previously.
+
+  * Add back-conversion via SMT-LIB string buffer.
+    Z3Converter.back_via_smtlib() performs back conversion by printing the
+    formula as an SMT-LIB string, and parsing it back. For formulas of
+    significant size, this can be drastically faster than using the API.
+
+  * Extend back conversion to create new Symbols, if needed. This
+    always raise a warning alerting the user that a new symbol is being
+    implicitly defined.
+
+* OSX: Z3 and MathSAT can be installed with pysmt-install (PR #244)
+
+* MathSAT: Upgrade to 5.3.13 (PR #305)
+
+* Yices: Upgrade to 2.5.1
+
+* Better handling of solver options (PR  #338):
+
+  Solver constructor takes the optional dictionary ``solver_options``
+  of options that are solver dependent. It is thus possible to
+  directly pass options to the underlying solver.
+
+
+Bugfix:
+
+* Fixed: Times back conversion in Z3 was binary not n-ary. Thanks to
+  **Ahmed Irfan** for submitting the patch (PR #340, PR #341)
+
+* Fixed: Bug in ``array_value_assigned_values_map``, returning the
+  incorrect values for an Array constant value. Thanks to
+  **Daniel Ricardo dos Santos** for pointing this out and submitting
+  the patch.
+
+* Fixed: SMT-LIB define-fun serialization (PR #315)
+
+* Issue #323: Parsing of variables named bvX (PR #326)
+
+* Issue #292: Installers: Make dependency from pip optional (PR #300)
+
+* Fixed: Bug in MathSAT's ``get_unsat_core`` (PR #331), that could
+  lead to an unbounded mutual recursion. Thanks to **Ahmed Irfan** for
+  reporting this (PR #331)
+
 
 0.5.1: 2016-08-17 -- NIRA and Python 3.5
 ----------------------------------------

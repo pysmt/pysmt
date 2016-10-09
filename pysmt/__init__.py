@@ -16,10 +16,11 @@
 #   limitations under the License.
 #
 
-VERSION = (0, 5, 1, 'dev', 1)
+VERSION = (0, 6, 0)
 
 # PEP440 Format
-__version__ = "%d.%d.%d%s%d" % VERSION
+__version__ = "%d.%d.%d%s%d" % VERSION if len(VERSION) == 5 else \
+              "%d.%d.%d" % VERSION
 
 
 def git_version():
