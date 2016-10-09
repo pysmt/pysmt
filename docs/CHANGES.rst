@@ -1,8 +1,11 @@
 Change Log
 ==========
 
+HEAD: XXXX-XX-XX -- YYYY
+------------------------
 
-0.6.0: 2016-10-06 -- GMPY2 and Goodbye Recursion
+
+0.6.0: 2016-10-09 -- GMPY2 and Goodbye Recursion
 ------------------------------------------------
 
 BACKWARDS INCOMPATIBLE CHANGES:
