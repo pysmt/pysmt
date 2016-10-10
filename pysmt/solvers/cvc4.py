@@ -378,10 +378,43 @@ class CVC4Converter(Converter, DagWalker):
         return self.mkExpr(CVC4.BITVECTOR_MULT, args[0], args[1])
 
     def walk_bv_udiv(self, formula, args, **kwargs):
-        return self.mkExpr(CVC4.BITVECTOR_UDIV, args[0], args[1])
+        # Force deterministic semantics of division by 0
+        # If the denominator is bv0, then the result is ~0
+        n,d = args
+        if d.isConst():
+            bv = d.getConstBitVector()
+            v = bv.getValue().toString()
+            if v == "0":
+                return self.mkExpr(CVC4.BITVECTOR_NOT, d)
+            else:
+                return self.mkExpr(CVC4.BITVECTOR_UDIV, n, d)
+        else:
+            # (d == 0) ? ~0 : n bvudiv d
+            base = self.mkExpr(CVC4.BITVECTOR_UDIV, n, d)
+            zero = self.mkConst(CVC4.BitVector(formula.bv_width(),
+                                               CVC4.Integer("0")))
+            notzero = self.mkExpr(CVC4.BITVECTOR_NOT, zero)
+            test = self.mkExpr(CVC4.EQUAL, d, zero)
+            return self.mkExpr(CVC4.ITE, test, notzero, base)
 
     def walk_bv_urem(self, formula, args, **kwargs):
-        return self.mkExpr(CVC4.BITVECTOR_UREM, args[0], args[1])
+        # Force deterministic semantics of reminder by 0
+        # If the denominator is bv0, then the result is the numerator
+        n,d = args
+        if d.isConst():
+            bv = d.getConstBitVector()
+            v = bv.getValue().toString()
+            if v == "0":
+                return n
+            else:
+                return self.mkExpr(CVC4.BITVECTOR_UREM, n, d)
+        else:
+            # (d == 0) ? n : n bvurem d
+            base = self.mkExpr(CVC4.BITVECTOR_UREM, n, d)
+            zero = self.mkConst(CVC4.BitVector(formula.bv_width(),
+                                               CVC4.Integer("0")))
+            test = self.mkExpr(CVC4.EQUAL, d, zero)
+            return self.mkExpr(CVC4.ITE, test, n, base)
 
     def walk_bv_lshl(self, formula, args, **kwargs):
         return self.mkExpr(CVC4.BITVECTOR_SHL, args[0], args[1])
@@ -415,10 +448,48 @@ class CVC4Converter(Converter, DagWalker):
         return self.mkExpr(CVC4.BITVECTOR_COMP, args[0], args[1])
 
     def walk_bv_sdiv (self, formula, args, **kwargs):
-        return self.mkExpr(CVC4.BITVECTOR_SDIV, args[0], args[1])
+        # Force deterministic semantics of division by 0
+        # If the denominator is bv0, then the result is:
+        #   * ~0 (if the numerator is signed >= 0)
+        #   * 1 (if the numerator is signed < 0)
+        n,d = args
+        # sign_expr : ( 0 s<= n ) ? ~0 : 1 )
+        zero = self.mkConst(CVC4.BitVector(formula.bv_width(),
+                                           CVC4.Integer("0")))
+        notzero = self.mkExpr(CVC4.BITVECTOR_NOT, zero)
+        one = self.mkConst(CVC4.BitVector(formula.bv_width(),
+                                          CVC4.Integer("1")))
+        is_gt_zero = self.mkExpr(CVC4.BITVECTOR_SLE, zero, n)
+        sign_expr = self.mkExpr(CVC4.ITE, is_gt_zero, notzero, one)
+        base = self.mkExpr(CVC4.BITVECTOR_SDIV, n, d)
+        if d.isConst():
+            v = d.getConstBitVector().getValue().toString()
+            if v == "0":
+                return sign_expr
+            else:
+                return base
+        else:
+            # (d == 0) ? sign_expr : base
+            is_zero = self.mkExpr(CVC4.EQUAL, d, zero)
+            return self.mkExpr(CVC4.ITE, is_zero, sign_expr, base)
 
     def walk_bv_srem (self, formula, args, **kwargs):
-        return self.mkExpr(CVC4.BITVECTOR_SREM, args[0], args[1])
+        # Force deterministic semantics of reminder by 0
+        # If the denominator is bv0, then the result is the numerator
+        n,d = args
+        if d.isConst():
+            v = d.getConstBitVector().getValue().toString()
+            if v == "0":
+                return n
+            else:
+                return self.mkExpr(CVC4.BITVECTOR_SREM, n, d)
+        else:
+            # (d == 0) ? n : n bvurem d
+            base = self.mkExpr(CVC4.BITVECTOR_SREM, n, d)
+            zero = self.mkConst(CVC4.BitVector(formula.bv_width(),
+                                               CVC4.Integer("0")))
+            test = self.mkExpr(CVC4.EQUAL, d, zero)
+            return self.mkExpr(CVC4.ITE, test, n, base)
 
     def walk_bv_ashr (self, formula, args, **kwargs):
         return self.mkExpr(CVC4.BITVECTOR_ASHR, args[0], args[1])
