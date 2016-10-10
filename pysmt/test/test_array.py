@@ -103,6 +103,22 @@ class TestArray(TestCase):
         select_ = Select(store_, Int(100))
         self.assertTrue(store_.is_array_op())
         self.assertTrue(select_.is_array_op())
+        self.assertTrue(store_.is_store())
+        self.assertTrue(select_.is_select())
+        self.assertFalse(select_.is_store())
+        self.assertFalse(store_.is_select())
+
+    def test_array_value_get(self):
+        ax = Array(REAL, Real(0),
+                   {Real(1): Real(2),
+                    Real(2): Real(3),
+                    Real(3): Real(4),
+                    Real(4): Real(5),
+                })
+        self.assertEqual(ax.array_value_get(Real(1)), Real(2))
+        self.assertEqual(ax.array_value_get(Real(2)), Real(3))
+        self.assertEqual(ax.array_value_get(Real(3)), Real(4))
+        self.assertEqual(ax.array_value_get(Real(4)), Real(5))
 
 
 if __name__ == "__main__":

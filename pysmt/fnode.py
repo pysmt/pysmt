@@ -578,32 +578,12 @@ class FNode(object):
     def array_value_get(self, index):
         """Returns the value of this Array Value at the given index. The
         index must be a constant of the correct type.
-
-        This function is equivalent (but possibly faster) than the
-        following code::
-
-          m = self.array_value_assigned_values_map()
-          try:
-              return m[index]
-          except KeyError:
-              return self.array_value_default()
-
         """
-        assert index.is_constant()
-        args = self.args()
-        start = 0
-        end = (len(args) - 1) // 2
-        while end - start > 0:
-            pivot = (end - start) // 2
-            i = args[2 * pivot + 1]
-            if id(i) == id(index):
-                return args[2 * pivot + 2]
-            elif id(i) < id(index):
-                end = pivot
-            else:
-                start = pivot + 1
-        return self.array_value_default()
-
+        m = self.array_value_assigned_values_map()
+        try:
+            return m[index]
+        except KeyError:
+            return self.array_value_default()
 
     def array_value_assigned_values_map(self):
         args = self.args()
