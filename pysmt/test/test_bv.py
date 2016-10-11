@@ -17,7 +17,7 @@
 #
 from pysmt.test import TestCase, skipIfNoSolverForLogic, main
 from pysmt.shortcuts import Symbol, And, Symbol, Equals, TRUE
-from pysmt.shortcuts import get_env, is_sat, is_valid, get_model, is_unsat
+from pysmt.shortcuts import is_sat, is_valid, get_model, is_unsat
 from pysmt.typing import BVType, BV32, BV128
 from pysmt.logics import QF_BV
 
@@ -26,7 +26,7 @@ class TestBV(TestCase):
 
     @skipIfNoSolverForLogic(QF_BV)
     def test_bv(self):
-        mgr = get_env().formula_manager
+        mgr = self.env.formula_manager
         BV = mgr.BV
 
         # Constants
@@ -59,25 +59,18 @@ class TestBV(TestCase):
         b128 = Symbol("b", BV128) # BV1, BV8 etc. are defined in pysmt.typing
         b32 = Symbol("b32", BV32)
         hexample = BV(0x10, 32)
-        #s_one = BV(-1, 32)
         bcustom = Symbol("bc", BVType(42))
 
         self.assertIsNotNone(hexample)
         self.assertIsNotNone(bcustom)
-        #self.assertIsNotNone(s_one)
         self.assertEqual(bcustom.bv_width(), 42)
         self.assertEqual(hexample.constant_value(), 16)
-        #self.assertEqual(str(s_one), "-1_32")
 
         not_zero32 = mgr.BVNot(zero)
         not_b128 = mgr.BVNot(b128)
 
         f1 = Equals(not_zero32, b32)
         f2 = Equals(not_b128, big)
-
-        #print(f1)
-        #print(f2)
-
         self.assertTrue(is_sat(f1, logic=QF_BV))
         self.assertTrue(is_sat(f2, logic=QF_BV))
 
@@ -87,9 +80,6 @@ class TestBV(TestCase):
 
         zero_xor_one.simplify()
         self.assertTrue(zero_xor_one.is_bv_op())
-        # print(zero_and_one)
-        # print(zero_or_one)
-        # print(zero_xor_one)
 
         f1 = Equals(zero_and_one, b32)
         f2 = Equals(zero_or_one, b32)
@@ -125,16 +115,12 @@ class TestBV(TestCase):
         # This is confusing and we should address this.
         extraction = mgr.BVExtract(zero_one_64, 32, 63)
         self.assertTrue(is_valid(Equals(extraction, zero)))
-        #print(extraction)
 
         ult = mgr.BVULT(zero, one)
         neg = mgr.BVNeg(one)
         self.assertTrue(is_valid(ult, logic=QF_BV), ult)
         test_eq = Equals(neg, one)
         self.assertTrue(is_unsat(test_eq, logic=QF_BV))
-
-        # print(ult)
-        # print(neg)
 
         f = zero
         addition = mgr.BVAdd(f, one)
@@ -144,10 +130,6 @@ class TestBV(TestCase):
         self.assertTrue(is_valid(Equals(addition, one), logic=QF_BV), addition)
         self.assertTrue(is_valid(Equals(multiplication, zero), logic=QF_BV), multiplication)
         self.assertTrue(is_valid(Equals(udiv, zero), logic=QF_BV), udiv)
-
-        # print(addition)
-        # print(multiplication)
-        # print(udiv)
 
         three = mgr.BV(3, 32)
         two = mgr.BV(2, 32)
@@ -159,9 +141,6 @@ class TestBV(TestCase):
         self.assertTrue(is_valid(Equals(reminder, one)), reminder)
         self.assertEqual(shift_l_a, shift_l_b)
         self.assertTrue(is_valid(Equals(shift_l_a, two)))
-        # print(reminder)
-        # print(shift_l_a)
-        # print(shift_l_b)
 
         shift_r_a = mgr.BVLShr(one, one)
         shift_r_b = mgr.BVLShr(one, 1)
@@ -172,18 +151,12 @@ class TestBV(TestCase):
         rotate_r = mgr.BVRor(rotate_l, 3)
         self.assertTrue(is_valid(Equals(one, rotate_r)))
 
-        # print(rotate_l)
-        # print(rotate_r)
-
         zero_ext = mgr.BVZExt(one, 64)
         signed_ext = mgr.BVSExt(one, 64)
         signed_ext2 = mgr.BVSExt(mgr.BVNeg(one), 64)
 
         self.assertNotEqual(signed_ext2, signed_ext)
         self.assertTrue(is_valid(Equals(zero_ext, signed_ext), logic=QF_BV))
-
-        # print(zero_ext)
-        # print(signed_ext)
 
         x = Symbol("x")
         g = And(x, mgr.BVULT(zero, one))
@@ -235,6 +208,54 @@ class TestBV(TestCase):
         self.assertEqual(mgr.SBV(10, 16), mgr.BV(10, 16))
 
         return
+
+    @skipIfNoSolverForLogic(QF_BV)
+    def test_bv_div_by_zero(self):
+        mgr = self.env.formula_manager
+        bvx = mgr.Symbol("bv", BVType(8))
+        bvy = mgr.Symbol("dividend", BVType(8))
+
+        fudiv = mgr.Equals(mgr.BVUDiv(bvx, mgr.BV(0, 8)),
+                           mgr.BV(255, 8))
+        self.assertValid(fudiv)
+
+        fsdiv = mgr.Equals(mgr.BVSDiv(bvx, mgr.BV(0, 8)),
+                           mgr.Ite(mgr.BVSGE(bvx, mgr.BV(0, 8)),
+                                   mgr.BV(255, 8),
+                                   mgr.BV(1, 8)))
+        self.assertValid(fsdiv)
+
+        furem = mgr.Equals(mgr.BVURem(bvx, mgr.BV(0, 8)),
+                           bvx)
+        self.assertValid(furem)
+
+        fsrem = mgr.Equals(mgr.BVSRem(bvx, mgr.BV(0, 8)),
+                           bvx)
+        self.assertValid(fsrem)
+
+        # Repeat tests with symbolic dividend
+        fudiv = mgr.Implies(mgr.Equals(bvy, mgr.BV(0, 8)),
+                            mgr.Equals(mgr.BVUDiv(bvx, bvy),
+                                       mgr.BV(255, 8)))
+        self.assertValid(fudiv)
+
+        fsdiv = mgr.Implies(mgr.Equals(bvy, mgr.BV(0, 8)),
+                            mgr.Equals(mgr.BVSDiv(bvx, mgr.BV(0, 8)),
+                                       mgr.Ite(mgr.BVSGE(bvx, mgr.BV(0, 8)),
+                                               mgr.BV(255, 8),
+                                               mgr.BV(1, 8))))
+        self.assertValid(fsdiv)
+
+        furem = mgr.Implies(mgr.Equals(bvy, mgr.BV(0, 8)),
+                            mgr.Equals(mgr.BVURem(bvx, mgr.BV(0, 8)),
+                                       bvx))
+        self.assertValid(furem)
+
+        fsrem = mgr.Implies(mgr.Equals(bvy, mgr.BV(0, 8)),
+                            mgr.Equals(mgr.BVSRem(bvx, mgr.BV(0, 8)),
+                                       bvx))
+        self.assertValid(fsrem)
+
 
 if __name__ == "__main__":
     main()

@@ -700,7 +700,7 @@ class MSatConverter(Converter, DagWalker):
 
         elif mathsat.msat_term_is_bv_neg(self.msat_env(), term):
             assert arity == 1
-            res = mgr.BVSub(args[0])
+            res = mgr.BVNeg(args[0])
 
         elif mathsat.msat_term_is_bv_srem(self.msat_env(), term):
             assert arity == 2
@@ -743,25 +743,25 @@ class MSatConverter(Converter, DagWalker):
             res = mgr.BVComp(args[0], args[1])
 
         elif mathsat.msat_term_is_bv_zext(self.msat_env(), term)[0]:
-            assert arity == 2
+            assert arity == 1
             res, amount = mathsat.msat_term_is_bv_zext(self.msat_env(), term)
             assert res
             res = mgr.BVZExt(args[0], amount)
 
         elif mathsat.msat_term_is_bv_sext(self.msat_env(), term)[0]:
-            assert arity == 2
+            assert arity == 1
             res, amount = mathsat.msat_term_is_bv_sext(self.msat_env(), term)
             assert res
             res = mgr.BVSExt(args[0], amount)
 
         elif mathsat.msat_term_is_bv_rol(self.msat_env(), term)[0]:
-            assert arity == 2
-            res, amount = mathsat.msat_term_is_bv_ror(self.msat_env(), term)
+            assert arity == 1
+            res, amount = mathsat.msat_term_is_bv_rol(self.msat_env(), term)
             assert res
             res = mgr.BVRol(args[0], amount)
 
         elif mathsat.msat_term_is_bv_ror(self.msat_env(), term)[0]:
-            assert arity == 2
+            assert arity == 1
             res, amount = mathsat.msat_term_is_bv_ror(self.msat_env(), term)
             assert res
             res = mgr.BVRor(args[0], amount)
