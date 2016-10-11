@@ -119,6 +119,8 @@ class TestArray(TestCase):
         self.assertEqual(ax.array_value_get(Real(2)), Real(3))
         self.assertEqual(ax.array_value_get(Real(3)), Real(4))
         self.assertEqual(ax.array_value_get(Real(4)), Real(5))
+        self.assertEqual(ax.array_value_get(Real(-1)), Real(0))
+        self.assertEqual(ax.array_value_get(Real(5)), Real(0))
 
     def test_array_value_is_constant(self):
         r = Symbol("r", REAL)
