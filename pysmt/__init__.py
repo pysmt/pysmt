@@ -38,6 +38,6 @@ def git_version():
         import subprocess
         git_version = subprocess.check_output(["git", "describe", "--dirty=-wip"],
                                               stderr=subprocess.STDOUT)
-        return git_version.strip()
+        return git_version.strip().decode('ascii')
     except subprocess.CalledProcessError:
         return __version__ # pragma: no cover
