@@ -40,4 +40,4 @@ def git_version():
                                               stderr=subprocess.STDOUT)
         return git_version.strip()
     except subprocess.CalledProcessError:
-        return __version__
+        return __version__ # pragma: no cover
