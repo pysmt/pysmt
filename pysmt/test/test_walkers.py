@@ -91,7 +91,6 @@ class TestWalkers(TestCase):
         with self.assertRaises(UnsupportedOperatorError):
             tree_walker.walk(varA)
 
-
     def test_walker_is_complete(self):
         op.ALL_TYPES.append(-1)
         with self.assertRaises(AssertionError):
@@ -160,7 +159,6 @@ class TestWalkers(TestCase):
         f_subs = substitute(f, subs).simplify()
         self.assertEqual(f_subs, TRUE())
 
-
     def test_substitution_term(self):
         x, y = FreshSymbol(REAL), FreshSymbol(REAL)
 
@@ -172,7 +170,6 @@ class TestWalkers(TestCase):
         # Since 'x' is quantified, we cannot replace the term
         # therefore the substitution does not yield any result.
         self.assertEqual(f_subs, f)
-
 
     def test_substitution_on_functions(self):
         i, r = FreshSymbol(INT), FreshSymbol(REAL)
@@ -189,7 +186,6 @@ class TestWalkers(TestCase):
         phi_sub = substitute(phi, {r: Real(0), i: Int(0)}).simplify()
         self.assertEqual(phi_sub, Function(f, [Int(1), Real(-2)]))
 
-
     def test_iterative_get_free_variables(self):
         f = Symbol("x")
         for _ in xrange(1000):
@@ -197,6 +193,16 @@ class TestWalkers(TestCase):
 
         cone = f.get_free_variables()
         self.assertEqual(cone, set([Symbol("x")]))
+
+    def test_walk_error(self):
+        """All walk methods by default call walk_error."""
+        from pysmt.walkers import DagWalker
+
+        x = Symbol("x")
+        w = DagWalker()
+        for o in op.ALL_TYPES:
+            with self.assertRaises(UnsupportedOperatorError):
+                w.functions[o](x)
 
 
 if __name__ == '__main__':
