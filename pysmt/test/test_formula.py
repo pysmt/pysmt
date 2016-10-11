@@ -706,13 +706,17 @@ class TestFormulaManager(TestCase):
             ~x
         with self.assertRaises(Exception):
             x[1]
+        with self.assertRaises(Exception):
+            x.Ite(x,y)
 
         get_env().enable_infix_notation = True
         self.assertEqual(Implies(x,y), x.Implies(y))
 
         self.assertEqual(p + p, Plus(p,p))
         self.assertEqual(p > p, GT(p,p))
-        get_env().enable_infix_notation = False
+
+        with self.assertRaises(NotImplementedError):
+            x[1]
 
     def test_infix_extended(self):
         p, r, x, y = self.p, self.r, self.x, self.y
@@ -752,10 +756,14 @@ class TestFormulaManager(TestCase):
         self.assertEqual(And(x, TRUE()), True & x)
 
         self.assertEqual(Iff(x, y), x.Iff(y))
-        self.assertEqual(Ite(x, TRUE(), FALSE()),
-                         x.Ite(True, False))
         self.assertEqual(And(x,y), x.And(y))
         self.assertEqual(Or(x,y), x.Or(y))
+
+        self.assertEqual(Ite(x, TRUE(), FALSE()), x.Ite(TRUE(), FALSE()))
+        with self.assertRaises(Exception):
+            x.Ite(1,2)
+
+        self.assertEqual(6 - r, Plus(Times(r, Real(-1)), Real(6)))
 
         # BVs
 
@@ -951,11 +959,6 @@ class TestFormulaManager(TestCase):
         #BVRepeat,
         self.assertEqual(self.mgr.BVRepeat(bv8, count=5),
                          bv8.BVRepeat(5))
-
-        # Constant conversion
-        i = self.mgr.Int(5)
-        self.assertEqual(int(i), 5)
-        self.assertEqual(float(i), 5.0)
 
 
     def test_toReal(self):

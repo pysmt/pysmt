@@ -120,6 +120,21 @@ class TestArray(TestCase):
         self.assertEqual(ax.array_value_get(Real(3)), Real(4))
         self.assertEqual(ax.array_value_get(Real(4)), Real(5))
 
+    def test_array_value_is_constant(self):
+        r = Symbol("r", REAL)
+        ax1 = Array(REAL, Real(0), {Real(1): r})
+        ax2 = Array(REAL, r, {Real(1): Real(2)})
+        ax3 = Array(REAL, Real(0), {Real(1): Real(2)})
+        self.assertFalse(ax1.is_constant())
+        self.assertFalse(ax2.is_constant())
+        self.assertTrue(ax3.is_constant())
+
+        with self.assertRaises(ValueError):
+            self.assertTrue(ax3.is_constant(_type=REAL))
+
+        with self.assertRaises(ValueError):
+            self.assertTrue(ax3.is_constant(value=Real(2)))
+
 
 if __name__ == "__main__":
     main()
