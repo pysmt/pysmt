@@ -68,6 +68,7 @@ class TestBV(TestCase):
 
         not_zero32 = mgr.BVNot(zero)
         not_b128 = mgr.BVNot(b128)
+        self.assertTrue(not_b128.is_bv_not())
 
         f1 = Equals(not_zero32, b32)
         f2 = Equals(not_b128, big)
@@ -75,8 +76,11 @@ class TestBV(TestCase):
         self.assertTrue(is_sat(f2, logic=QF_BV))
 
         zero_and_one = mgr.BVAnd(zero, one)
+        self.assertTrue(zero_and_one.is_bv_and())
         zero_or_one = mgr.BVOr(zero, one)
+        self.assertTrue(zero_or_one.is_bv_or())
         zero_xor_one = mgr.BVXor(zero, one)
+        self.assertTrue(zero_xor_one.is_bv_xor())
 
         zero_xor_one.simplify()
         self.assertTrue(zero_xor_one.is_bv_op())
@@ -104,6 +108,8 @@ class TestBV(TestCase):
         zero_one_64 = mgr.BVConcat(zero, one)
         one_zero_64 = mgr.BVConcat(one, zero)
         one_one_64  = mgr.BVConcat(one, one)
+        self.assertTrue(one_one_64.is_bv_concat())
+        self.assertFalse(one_one_64.is_bv_and())
 
         self.assertTrue(zero_one_64.bv_width() == 64)
         f1 = Equals(mgr.BVXor(one_zero_64, zero_one_64),
@@ -117,15 +123,20 @@ class TestBV(TestCase):
         self.assertTrue(is_valid(Equals(extraction, zero)))
 
         ult = mgr.BVULT(zero, one)
+        self.assertTrue(ult.is_bv_ult())
         neg = mgr.BVNeg(one)
+        self.assertTrue(neg.is_bv_neg())
         self.assertTrue(is_valid(ult, logic=QF_BV), ult)
         test_eq = Equals(neg, one)
         self.assertTrue(is_unsat(test_eq, logic=QF_BV))
 
         f = zero
         addition = mgr.BVAdd(f, one)
+        self.assertTrue(addition.is_bv_add())
         multiplication = mgr.BVMul(f, one)
+        self.assertTrue(multiplication.is_bv_mul())
         udiv = mgr.BVUDiv(f, one)
+        self.assertTrue(udiv.is_bv_udiv())
 
         self.assertTrue(is_valid(Equals(addition, one), logic=QF_BV), addition)
         self.assertTrue(is_valid(Equals(multiplication, zero), logic=QF_BV), multiplication)
@@ -133,9 +144,12 @@ class TestBV(TestCase):
 
         three = mgr.BV(3, 32)
         two = mgr.BV(2, 32)
+        self.assertEqual(3, three.bv2nat())
 
         reminder = mgr.BVURem(three, two)
+        self.assertTrue(reminder.is_bv_urem())
         shift_l_a = mgr.BVLShl(one, one)
+        self.assertTrue(shift_l_a.is_bv_lshl())
         shift_l_b = mgr.BVLShl(one, 1)
 
         self.assertTrue(is_valid(Equals(reminder, one)), reminder)
@@ -143,16 +157,26 @@ class TestBV(TestCase):
         self.assertTrue(is_valid(Equals(shift_l_a, two)))
 
         shift_r_a = mgr.BVLShr(one, one)
+        self.assertTrue(shift_r_a.is_bv_lshr())
         shift_r_b = mgr.BVLShr(one, 1)
         self.assertEqual(shift_r_a, shift_r_b)
         self.assertTrue(is_valid(Equals(shift_r_a, zero)))
 
+        ashift_r_a = mgr.BVAShr(one, one)
+        ashift_r_b = mgr.BVAShr(one, 1)
+        self.assertEqual(ashift_r_a, ashift_r_b)
+        self.assertTrue(ashift_r_a.is_bv_ashr())
+
         rotate_l = mgr.BVRol(one, 3)
+        self.assertTrue(rotate_l.is_bv_rol())
         rotate_r = mgr.BVRor(rotate_l, 3)
+        self.assertTrue(rotate_r.is_bv_ror())
         self.assertTrue(is_valid(Equals(one, rotate_r)))
 
         zero_ext = mgr.BVZExt(one, 64)
+        self.assertTrue(zero_ext.is_bv_zext())
         signed_ext = mgr.BVSExt(one, 64)
+        self.assertTrue(signed_ext.is_bv_sext())
         signed_ext2 = mgr.BVSExt(mgr.BVNeg(one), 64)
 
         self.assertNotEqual(signed_ext2, signed_ext)
@@ -207,7 +231,22 @@ class TestBV(TestCase):
         # SBV should behave as BV for positive numbers
         self.assertEqual(mgr.SBV(10, 16), mgr.BV(10, 16))
 
-        return
+        # Additional is_bv_* tests
+        f = mgr.BVSub(one, one)
+        self.assertTrue(f.is_bv_sub())
+
+        f = mgr.BVSLT(one, one)
+        self.assertTrue(f.is_bv_slt())
+        f = mgr.BVSLE(one, one)
+        self.assertTrue(f.is_bv_sle())
+        f = mgr.BVComp(one, one)
+        self.assertTrue(f.is_bv_comp())
+        f = mgr.BVSDiv(one, one)
+        self.assertTrue(f.is_bv_sdiv())
+        f = mgr.BVSRem(one, one)
+        self.assertTrue(f.is_bv_srem())
+        f = mgr.BVULE(one, one)
+        self.assertTrue(f.is_bv_ule())
 
     @skipIfNoSolverForLogic(QF_BV)
     def test_bv_div_by_zero(self):
@@ -256,6 +295,17 @@ class TestBV(TestCase):
                                        bvx))
         self.assertValid(fsrem)
 
+    def test_is_bv_constant(self):
+        mgr = self.env.formula_manager
+        bvconst = mgr.BV(4, 8)
+        self.assertTrue(bvconst.is_bv_constant())
+        self.assertTrue(bvconst.is_bv_constant(value=4))
+        self.assertTrue(bvconst.is_bv_constant(width=8))
+        self.assertTrue(bvconst.is_bv_constant(value=4, width=8))
+        self.assertFalse(bvconst.is_bv_constant(value=4, width=9))
+        self.assertFalse(bvconst.is_bv_constant(value=5, width=8))
+        self.assertFalse(bvconst.is_bv_constant(3,9))
+        self.assertFalse(bvconst.is_bv_constant(3))
 
 if __name__ == "__main__":
     main()

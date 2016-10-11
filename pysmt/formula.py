@@ -800,6 +800,8 @@ class FormulaManager(object):
     def BVAShr(self, left, right):
         """Returns the RIGHT arithmetic rotation of the left BV by the number
         of steps specified by the right BV."""
+        if is_python_integer(right):
+            right = self.BV(right, left.bv_width())
         return self.create_node(node_type=op.BV_ASHR,
                                 args=(left, right),
                                 payload=(left.bv_width(),))

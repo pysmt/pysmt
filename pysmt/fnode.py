@@ -578,32 +578,12 @@ class FNode(object):
     def array_value_get(self, index):
         """Returns the value of this Array Value at the given index. The
         index must be a constant of the correct type.
-
-        This function is equivalent (but possibly faster) than the
-        following code::
-
-          m = self.array_value_assigned_values_map()
-          try:
-              return m[index]
-          except KeyError:
-              return self.array_value_default()
-
         """
-        assert index.is_constant()
-        args = self.args()
-        start = 0
-        end = (len(args) - 1) // 2
-        while end - start > 0:
-            pivot = (end - start) // 2
-            i = args[2 * pivot + 1]
-            if id(i) == id(index):
-                return args[2 * pivot + 2]
-            elif id(i) < id(index):
-                end = pivot
-            else:
-                start = pivot + 1
-        return self.array_value_default()
-
+        m = self.array_value_assigned_values_map()
+        try:
+            return m[index]
+        except KeyError:
+            return self.array_value_default()
 
     def array_value_assigned_values_map(self):
         args = self.args()
@@ -669,8 +649,14 @@ class FNode(object):
     def Equals(self, right):
         return self._apply_infix(right, _mgr().Equals)
 
-    def Ite(self, right):
-        return self._apply_infix(right, _mgr().Ite)
+    def Ite(self, then_, else_):
+        if _env().enable_infix_notation:
+            if isinstance(then_, FNode) and isinstance(else_, FNode):
+                return _mgr().Ite(self, then_, else_)
+            else:
+                raise Exception("Cannot infix ITE with implicit argument types.")
+        else:
+            raise Exception("Cannot use infix notation")
 
     def And(self, right):
         return self._apply_infix(right, _mgr().And)
@@ -806,21 +792,6 @@ class FNode(object):
         if _is_bv(self):
             return _mgr().BVNot(self)
         return _mgr().Not(self)
-
-    def __int__(self):
-        if self.is_int_constant():
-            return self.constant_value()
-        raise NotImplementedError("Cannot convert `%s` to integer" % str(self))
-
-    def __long__(self):
-        if self.is_int_constant():
-            return self.constant_value()
-        raise NotImplementedError("Cannot convert `%s` to integer" % str(self))
-
-    def __float__(self):
-        if self.is_int_constant() or self.is_real_constant():
-            return float(self.constant_value())
-        raise NotImplementedError("Cannot convert `%s` to float" % str(self))
 
     def __getitem__(self, idx):
         if not _env().enable_infix_notation:

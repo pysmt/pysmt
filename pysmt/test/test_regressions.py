@@ -62,7 +62,6 @@ class TestRegressions(TestCase):
         self.assertValid(Equals(p1, p2), solver_name='z3')
         self.assertValid(Equals(p1, p2), solver_name='msat')
 
-
     def test_substitute_memoization(self):
         a = Symbol("A", BOOL)
         b = Symbol("B", BOOL)
@@ -412,6 +411,12 @@ class TestRegressions(TestCase):
     def test_array_initialization_printing(self):
         self.assertEqual(str(Array(INT, Int(0), {Int(1):Int(2)})), "Array{Int, Int}(0)[1 := 2]")
 
+    def test_git_version(self):
+        from pysmt import git_version
+        v = git_version()
+        self.assertIsNotNone(v)
+        parts = v.split(b"-")
+        self.assertTrue(len(parts) , 4)
 
 
 if __name__ == "__main__":
