@@ -19,58 +19,63 @@
 
 import pysmt.operators as op
 
-class UnknownSmtLibCommandError(Exception):
+
+class SmtException(Exception):
+    """Base class for all custom exceptions of pySMT"""
+    pass
+
+class UnknownSmtLibCommandError(SmtException):
     """Raised when the parser finds an unknown command."""
     pass
 
-class SolverReturnedUnknownResultError(Exception):
+class SolverReturnedUnknownResultError(SmtException):
     """This exception is raised if a solver returns 'unknown' as a result"""
     pass
 
-class UnknownSolverAnswerError(Exception):
+class UnknownSolverAnswerError(SmtException):
     """Raised when the a solver returns an invalid response."""
     pass
 
-class NoSolverAvailableError(Exception):
+class NoSolverAvailableError(SmtException):
     """No solver is available for the selected Logic."""
     pass
 
-class NonLinearError(Exception):
+class NonLinearError(SmtException):
     """The provided expression is not linear."""
     pass
 
-class UndefinedLogicError(Exception):
+class UndefinedLogicError(SmtException):
     """This exception is raised if an undefined Logic is attempted to be used."""
     pass
 
-class InternalSolverError(Exception):
+class InternalSolverError(SmtException):
     """Generic exception to capture errors provided by a solver."""
     pass
 
-class NoLogicAvailableError(Exception):
+class NoLogicAvailableError(SmtException):
     """Generic exception to capture errors caused by missing support for logics."""
     pass
 
-class SolverRedefinitionError(Exception):
+class SolverRedefinitionError(SmtException):
     """Exception representing errors caused by multiple defintion of solvers
        having the same name."""
     pass
 
-class SolverNotConfiguredForUnsatCoresError(Exception):
+class SolverNotConfiguredForUnsatCoresError(SmtException):
     """
     Exception raised if a solver not configured for generating unsat
     cores is required to produce a core.
     """
     pass
 
-class SolverStatusError(Exception):
+class SolverStatusError(SmtException):
     """
     Exception raised if a method requiring a specific solver status is
     incorrectly called in the wrong status.
     """
     pass
 
-class ConvertExpressionError(Exception):
+class ConvertExpressionError(SmtException):
     """Exception raised if the converter cannot convert an expression."""
 
     def __init__(self, message=None, expression=None):
@@ -81,7 +86,7 @@ class ConvertExpressionError(Exception):
     def __str__(self):
         return self.message
 
-class UnsupportedOperatorError(Exception):
+class UnsupportedOperatorError(SmtException):
     """The expression contains an operator that is not supported.
 
     The argument node_type contains the unsupported operator id.
@@ -99,12 +104,12 @@ class UnsupportedOperatorError(Exception):
         return self.message
 
 
-class SolverAPINotFound(Exception):
+class SolverAPINotFound(SmtException):
     """The Python API of the selected solver cannot be found."""
     pass
 
 
-class UndefinedSymbolError(Exception):
+class UndefinedSymbolError(SmtException):
     """The given Symbol is not in the FormulaManager."""
 
     def __init__(self, name):
