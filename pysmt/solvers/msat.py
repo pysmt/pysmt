@@ -267,7 +267,8 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
 
         assert res in [mathsat.MSAT_UNKNOWN,mathsat.MSAT_SAT,mathsat.MSAT_UNSAT]
         if res == mathsat.MSAT_UNKNOWN:
-            raise SolverReturnedUnknownResultError
+            msat_msg = mathsat.msat_last_error_message(self.msat_env())
+            raise SolverReturnedUnknownResultError(msat_msg)
 
         return (res == mathsat.MSAT_SAT)
 
