@@ -9,4 +9,4 @@ exclude_lines =
     raise NotImplementedError
 
     # Skip main methods
-    if __name__ == .__main__.:
+    main()
