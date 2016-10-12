@@ -116,7 +116,7 @@ def get_free_variables(formula):
     return get_env().fvo.get_free_variables(formula)
 
 def get_atoms(formula):
-    """*Returns the set of atoms of the formula.
+    """Returns the set of atoms of the formula.
 
     :param formula: The target formula
     :type  formula: FNode
@@ -125,7 +125,8 @@ def get_atoms(formula):
     return get_env().ao.get_atoms(formula)
 
 def get_formula_size(formula, measure=None):
-    """*Returns the size of the formula as measured by the given counting type.
+    """Returns the size of the formula as measured by the given counting type.
+
     See pysmt.oracles.SizeOracle for details.
 
     :param formula: The target formula
@@ -203,7 +204,7 @@ def Ite(iff, left, right):
     return get_env().formula_manager.Ite(iff, left, right)
 
 def Symbol(name, typename=types.BOOL):
-    """*Returns a symbol with the given name and type.
+    """Returns a symbol with the given name and type.
 
     :param name: Specify the name
     :param typename: Specify the typename
@@ -212,7 +213,7 @@ def Symbol(name, typename=types.BOOL):
     return get_env().formula_manager.Symbol(name, typename)
 
 def FreshSymbol(typename=types.BOOL, template=None):
-    """*Returns a symbol with a fresh name and given type.
+    """Returns a symbol with a fresh name and given type.
 
     :param typename: Specify the typename
     :param template: Specify the template
