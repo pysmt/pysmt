@@ -1,4 +1,4 @@
-.. \_development:
+.. _development:
 
 ===================
 Developing in pySMT
@@ -11,39 +11,39 @@ pySMT is distributed under the APACHE License (see LICENSE file). By
 submitting a contribution, you automatically accept the conditions
 described in LICENSE. Additionally, we ask you to certify that you have
 the right to submit such contributions. We adopt the “Developer
-Certificate of Origin” approach as done by the Linux kernel.
+Certificate of Origin” approach as done by the Linux kernel. ::
 
-``Developer Certificate of Origin Version 1.1``
+  Developer Certificate of Origin Version 1.1
 
-``Copyright (C) 2004, 2006 The Linux Foundation and its contributors. 660``
-``York Street, Suite 102, San Francisco, CA 94110 USA``
+  Copyright (C) 2004, 2006 The Linux Foundation and its contributors. 660
+  York Street, Suite 102, San Francisco, CA 94110 USA
 
-``Everyone is permitted to copy and distribute verbatim copies of this``
-``license document, but changing it is not allowed.``
+  Everyone is permitted to copy and distribute verbatim copies of this
+  license document, but changing it is not allowed.
 
-``Developer’s Certificate of Origin 1.1``
+  Developer’s Certificate of Origin 1.1
 
-``By making a contribution to this project, I certify that:``
+  By making a contribution to this project, I certify that:
 
-``(a) The contribution was created in whole or in part by me and I have``
-    ``the right to submit it under the open source license indicated in``
-    ``the file; or``
+  (a) The contribution was created in whole or in part by me and I have
+      the right to submit it under the open source license indicated in
+      the file; or
 
-``(b) The contribution is based upon previous work that, to the best of my``
-    ``knowledge, is covered under an appropriate open source license and I``
-    ``have the right under that license to submit that work with``
-    ``modifications, whether created in whole or in part by me, under the``
-    ``same open source license (unless I am permitted to submit under a``
-    ``different license), as indicated in the file; or``
+  (b) The contribution is based upon previous work that, to the best of my
+      knowledge, is covered under an appropriate open source license and I
+      have the right under that license to submit that work with
+      modifications, whether created in whole or in part by me, under the
+      same open source license (unless I am permitted to submit under a
+      different license), as indicated in the file; or
 
-``(c) The contribution was provided directly to me by some other person``
-    ``who certified (a), (b) or (c) and I have not modified it.``
+  (c) The contribution was provided directly to me by some other person
+      who certified (a), (b) or (c) and I have not modified it.
 
-``(d) I understand and agree that this project and the contribution are``
-    ``public and that a record of the contribution (including all personal``
-    ``information I submit with it, including my sign-off) is maintained``
-    ``indefinitely and may be redistributed consistent with this project``
-    ``or the open source license(s) involved.``
+  (d) I understand and agree that this project and the contribution are
+      public and that a record of the contribution (including all personal
+      information I submit with it, including my sign-off) is maintained
+      indefinitely and may be redistributed consistent with this project
+      or the open source license(s) involved.
 
 During a Pull-Request you will be asked to complete the form at CLAHub:
 https://www.clahub.com/agreements/pysmt/pysmt . You will only have to
@@ -141,63 +141,37 @@ handled.
 
 Adding a Theory to the codebase is done by following these steps:
 
-1. Tests: Add a test file ``pysmt/test/test_<theory>.py``, to
-    demonstrate the use for the theory (e.g., ``pysmt/test/test_bv.py``).
+1. Tests: Add a test file ``pysmt/test/test_<theory>.py``, to demonstrate the use for the theory (e.g., ``pysmt/test/test_bv.py``).
 
-2. Operators: Add the (basic) operators in ``pysmt/operators.py``,
-    create a constant for each operator, and extend the relevant
-    structures.
+2. Operators: Add the (basic) operators in ``pysmt/operators.py``, create a constant for each operator, and extend the relevant structures.
 
-3. Typing: Extend ``pysmt/typing.py`` to include the types (sorts)
-    of the new theory.
+3. Typing: Extend ``pysmt/typing.py`` to include the types (sorts) of the new theory.
 
-4. Walker: Extend ``pysmt/walkers/generic.py`` to include one
-    ``walk_`` function for each of the basic operators.
+4. Walker: Extend ``pysmt/walkers/generic.py`` to include one ``walk_`` function for each of the basic operators.
 
-5. FNode: Extend ``is_*`` methods in
-    ``pysmt/fnode.py:FNode``. This makes it possible to check the type
-    of an expression, obtaining additional elements (e.g., width of a
-    bitvector constant).
+5. FNode: Extend ``is_*`` methods in :py:class:`pysmt/fnode.py:FNode`. This makes it possible to check the type of an expression, obtaining additional elements (e.g., width of a bitvector constant).
 
-6. Typechecker: Extend ``pysmt/type_checker.py:SimpleTypeChecker``
-    to include type-checking rules.
+6. Typechecker: Extend :py:class:`pysmt/type_checker.py:SimpleTypeChecker` to include type-checking rules.
 
-7. FormulaManager: Create constructor for all operators, including
-    syntactic sugar, in ``pysmt/formula.py:FormulaManager``.
+7. FormulaManager: Create constructor for all operators, including syntactic sugar, in :py:class:`pysmt/formula.py:FormulaManager`.
 
 At this point you are able to build expressions in the new
 theory. This is a good time to start running your tests.
 
-8. Printers: Extend ``pysmt/printers.py:HRPrinter`` to be able to
-    print expressions in the new theory (you might need to do this
-    earlier, if you need to debug your tests output).
+8. Printers: Extend :py:class:`pysmt/printers.py:HRPrinter` to be able to print expressions in the new theory (you might need to do this earlier, if you need to debug your tests output).
 
-9. Examples: Extend ``pysmt/test/examples.py`` with at least one
-    example formula for each new operator defined in FormulaManager. These
-    examples are used in many tests, and will help you identify parts of
-    the system that still need to be extended (e.g., Simplifier).
+9. Examples: Extend ``pysmt/test/examples.py`` with at least one example formula for each new operator defined in FormulaManager. These examples are used in many tests, and will help you identify parts of the system that still need to be extended (e.g., Simplifier).
 
-10. Theories and Logics: Extend ``pysmt/logics.py`` to include the
-    new Theory and possible logics that derive from this Theory. In
-    particular, define logics for each theory combination that makes
-    sense.
+10. Theories and Logics: Extend ``pysmt/logics.py`` to include the new Theory and possible logics that derive from this Theory. In particular, define logics for each theory combination that makes sense.
 
-11. SMT-LIB: Extend ``pysmt/smtlib/parser.py:SmtLibParser`` and
-    ``pysmt/smtlib/printers.py`` to support the new
-    operators.
+11. SMT-LIB: Extend :py:class:`pysmt/smtlib/parser.py:SmtLibParser` and ``pysmt/smtlib/printers.py`` to support the new operators.
 
-12. Shortcuts: All methods that were added in FormulaManager need to
-    be available in ``pysmt/shortcuts.py``.
+12. Shortcuts: All methods that were added in FormulaManager need to be available in ``pysmt/shortcuts.py``.
 
 At this point all pySMT tests should pass. This might require
 extending other walkers to support the new operators.
 
-13. Solver: Extend at least one solver to support the Logic. This is
-    done by extending the associated Converter (e.g.,
-    ``pysmt/solvers/msat.py:MSatConverter``) and adding at least one
-    logic to its ``LOGICS`` field. As a bare-minimum, this will require
-    a way of converting solvers-constants back into pySMT constants
-    (``Converter.back()``).
+13. Solver: Extend at least one solver to support the Logic. This is done by extending the associated Converter (e.g., :py:class:`pysmt/solvers/msat.py:MSatConverter`) and adding at least one logic to its ``LOGICS`` field. As a bare-minimum, this will require a way of converting solvers-constants back into pySMT constants (``Converter.back()``).
 
 Packaging and Distributing PySMT
 ================================
