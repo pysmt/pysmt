@@ -21,7 +21,7 @@ from six.moves import xrange
 import pysmt
 from pysmt.typing import BOOL, REAL, INT, FunctionType, BV8, BVType
 from pysmt.shortcuts import Symbol, is_sat, Not, Implies, GT, Plus, Int, Real
-from pysmt.shortcuts import Minus, Times, Xor, And, Or, TRUE
+from pysmt.shortcuts import Minus, Times, Xor, And, Or, TRUE, Iff, FALSE, Ite
 from pysmt.shortcuts import get_env
 from pysmt.environment import Environment
 from pysmt.test import TestCase, skipIfNoSolverForLogic, main
@@ -127,7 +127,6 @@ class TestFormulaManager(TestCase):
 
         with self.assertRaises(AssertionError):
             s.function_name()
-
 
     def test_and_node(self):
         n = self.mgr.And(self.x, self.y)
@@ -503,6 +502,16 @@ class TestFormulaManager(TestCase):
         self.assertEqual(a,b)
         self.assertEqual(b,c)
 
+        # Constant's Type
+        b = self.mgr.Bool(True)
+        i = self.mgr.Int(1)
+        r = self.mgr.Real(1)
+        bv8 = self.mgr.BV(1, 8)
+        self.assertEqual(i.constant_type(), INT)
+        self.assertEqual(r.constant_type(), REAL)
+        self.assertEqual(bv8.constant_type(), BV8)
+        self.assertEqual(b.constant_type(), BOOL)
+
     def test_bconstant(self):
         n = self.mgr.Bool(True)
         m = self.mgr.Bool(False)
@@ -559,7 +568,6 @@ class TestFormulaManager(TestCase):
         self.assertEqual(f1,f2)
         self.assertEqual(f2,f3)
 
-
     @skipIfNoSolverForLogic(QF_BOOL)
     def test_exactly_one_is_sat(self):
         symbols = [ self.mgr.Symbol("s%d"%i, BOOL) for i in range(5) ]
@@ -569,7 +577,6 @@ class TestFormulaManager(TestCase):
         test_zero = self.mgr.And(c, all_zero)
         self.assertFalse(is_sat(test_zero, logic=QF_BOOL),
                          "ExactlyOne should not allow all symbols to be False")
-
 
     def test_at_most_one(self):
         symbols = [ self.mgr.Symbol("s%d"%i, BOOL) for i in range(5) ]
@@ -618,7 +625,6 @@ class TestFormulaManager(TestCase):
                          "AllDifferent should be tautological for a set " \
                          "of different values")
 
-
     def test_min(self):
         min1 = self.mgr.Min(self.p, Plus(self.q, self.mgr.Int(1)))
         self.assertIsNotNone(min1)
@@ -634,7 +640,6 @@ class TestFormulaManager(TestCase):
         self.assertEqual(min_real.simplify(), self.mgr.Real(1),
                          "The minimum of 1.0, 2.0 and 3.0 should be 1.0")
 
-
     def test_max(self):
         max1 = self.mgr.Max(self.p, Plus(self.q, self.mgr.Int(1)))
         self.assertIsNotNone(max1)
@@ -649,8 +654,6 @@ class TestFormulaManager(TestCase):
         max_real = self.mgr.Max(self.mgr.Real(1), self.mgr.Real(2), self.mgr.Real(3))
         self.assertEqual(max_real.simplify(), self.mgr.Real(3),
                          "The maximum of 1.0, 2.0 and 3.0 should be 3.0")
-
-
 
     def test_pickling(self):
         import pickle
@@ -699,12 +702,21 @@ class TestFormulaManager(TestCase):
 
         with self.assertRaises(Exception):
             x.Implies(y)
+        with self.assertRaises(Exception):
+            ~x
+        with self.assertRaises(Exception):
+            x[1]
+        with self.assertRaises(Exception):
+            x.Ite(x,y)
+
         get_env().enable_infix_notation = True
         self.assertEqual(Implies(x,y), x.Implies(y))
 
         self.assertEqual(p + p, Plus(p,p))
         self.assertEqual(p > p, GT(p,p))
-        get_env().enable_infix_notation = False
+
+        with self.assertRaises(NotImplementedError):
+            x[1]
 
     def test_infix_extended(self):
         p, r, x, y = self.p, self.r, self.x, self.y
@@ -742,6 +754,16 @@ class TestFormulaManager(TestCase):
 
         self.assertEqual(And(x, TRUE()), x & True)
         self.assertEqual(And(x, TRUE()), True & x)
+
+        self.assertEqual(Iff(x, y), x.Iff(y))
+        self.assertEqual(And(x,y), x.And(y))
+        self.assertEqual(Or(x,y), x.Or(y))
+
+        self.assertEqual(Ite(x, TRUE(), FALSE()), x.Ite(TRUE(), FALSE()))
+        with self.assertRaises(Exception):
+            x.Ite(1,2)
+
+        self.assertEqual(6 - r, Plus(Times(r, Real(-1)), Real(6)))
 
         # BVs
 
@@ -819,7 +841,6 @@ class TestFormulaManager(TestCase):
                          self.mgr.BVMul(bv8, const1_8))
         self.assertEqual(const1 * bv8,
                          self.mgr.BVMul(bv8, const1_8))
-
 
         # BV_NOT:
         # !!!WARNING!!! Cannot be applied to python constants!!
@@ -939,8 +960,6 @@ class TestFormulaManager(TestCase):
         self.assertEqual(self.mgr.BVRepeat(bv8, count=5),
                          bv8.BVRepeat(5))
 
-        # Reset Env
-        get_env().enable_infix_notation = False
 
     def test_toReal(self):
         f = self.mgr.Equals(self.rconst, self.mgr.ToReal(self.p))
@@ -1065,6 +1084,13 @@ class TestFormulaManager(TestCase):
             v_mpz = mpz(1)
             c_mpz = self.mgr.Int(v_mpz)
             self.assertIs(c_base, c_mpz)
+
+    def test_node_id(self):
+        x = Symbol("x")
+        y = Symbol("y")
+        xx = Symbol("x")
+        self.assertEqual(x.node_id(), xx.node_id())
+        self.assertNotEqual(x.node_id(), y.node_id())
 
 
 class TestShortcuts(TestCase):
