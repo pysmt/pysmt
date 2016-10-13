@@ -32,6 +32,10 @@ multiple information can be extracted from the formula by navigating
 it only once.
 
 """
+
+__all__ = ["DagWalker", "TreeWalker", "IdentityDagWalker"]
+
+
 from pysmt.walkers.dag import DagWalker
 assert DagWalker
 

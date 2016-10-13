@@ -34,7 +34,7 @@ from pysmt.test.examples import get_example_formulae
 from pysmt.environment import Environment
 from pysmt.rewritings import cnf_as_set
 from pysmt.smtlib.parser import SmtLibParser
-from pysmt.smtlib.commands import DECLARE_FUN, DEFINE_FUN
+from pysmt.smtlib.commands import DECLARE_FUN
 from pysmt.smtlib.script import SmtLibCommand
 from pysmt.logics import get_closer_smtlib_logic
 from pysmt.constants import Fraction
@@ -415,7 +415,7 @@ class TestRegressions(TestCase):
         from pysmt import git_version
         v = git_version()
         self.assertIsNotNone(v)
-        parts = v.split(b"-")
+        parts = v.split("-")
         self.assertTrue(len(parts) , 4)
 
 

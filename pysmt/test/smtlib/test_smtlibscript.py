@@ -26,6 +26,7 @@ from pysmt.smtlib.script import smtlibscript_from_formula, evaluate_command
 from pysmt.smtlib.parser import get_formula_strict, get_formula, SmtLibParser
 from pysmt.solvers.smtlib import SmtLibIgnoreMixin
 
+
 class TestSmtLibScript(TestCase):
 
     def test_basic_operations(self):
@@ -125,6 +126,33 @@ class TestSmtLibScript(TestCase):
                                        [None, None, None, None]),
                          solver=mock)
 
+
+    def test_smtlibignore_mixin(self):
+        """In SmtLibIgnoreMixin, all SMT-LIB methods return None."""
+        class SmtLibIgnore(SmtLibIgnoreMixin):
+            pass
+
+        solver = SmtLibIgnore()
+        self.assertIsNone(solver.set_logic(None))
+        self.assertIsNone(solver.declare_fun(None))
+        self.assertIsNone(solver.declare_const(None))
+        self.assertIsNone(solver.define_fun(None, None, None, None))
+        self.assertIsNone(solver.declare_sort(None, None))
+        self.assertIsNone(solver.define_sort(None, None, None))
+        self.assertIsNone(solver.assert_(None))
+        self.assertIsNone(solver.get_assertions())
+        self.assertIsNone(solver.check_sat())
+        self.assertIsNone(solver.get_proof())
+        self.assertIsNone(solver.get_unsat_core())
+        self.assertIsNone(solver.get_values(None))
+        self.assertIsNone(solver.get_assignment())
+        self.assertIsNone(solver.push())
+        self.assertIsNone(solver.pop())
+        self.assertIsNone(solver.get_option(None))
+        self.assertIsNone(solver.set_option(None, None))
+        self.assertIsNone(solver.get_info(None))
+        self.assertIsNone(solver.set_info(None, None))
+        self.assertIsNone(solver.exit())
 
     def test_all_parsing(self):
         # Create a small file that tests all commands of smt-lib 2

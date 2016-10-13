@@ -19,7 +19,6 @@ from pysmt.test import TestCase, main, skipIfSolverNotAvailable
 from pysmt.shortcuts import Symbol, ForAll, Solver, LT, Real, Int, Implies
 from pysmt.typing import REAL, INT
 from pysmt.logics import LRA, LIA
-from pysmt.exceptions import SolverReturnedUnknownResultError
 
 
 class TestCVC4Quantifiers(TestCase):
@@ -30,11 +29,8 @@ class TestCVC4Quantifiers(TestCase):
         f = ForAll([x], Implies(x,y))
         with Solver(name='cvc4', logic=LIA) as s:
             s.add_assertion(f)
-            try:
-                res = s.solve()
-                self.assertTrue(res)
-            except SolverReturnedUnknownResultError:
-                pass
+            res = s.solve()
+            self.assertTrue(res)
 
     @skipIfSolverNotAvailable('cvc4')
     def test_int(self):
@@ -42,11 +38,8 @@ class TestCVC4Quantifiers(TestCase):
         f = ForAll([p], Implies(LT(Int(0), p), LT(q, p)))
         with Solver(name='cvc4', logic=LIA) as s:
             s.add_assertion(f)
-            try:
-                res = s.solve()
-                self.assertTrue(res)
-            except SolverReturnedUnknownResultError:
-                pass
+            res = s.solve()
+            self.assertTrue(res)
 
     @skipIfSolverNotAvailable('cvc4')
     def test_real(self):
@@ -54,11 +47,8 @@ class TestCVC4Quantifiers(TestCase):
         f = ForAll([r], Implies(LT(Real(0), r), LT(s, r)))
         with Solver(name='cvc4', logic=LRA) as s:
             s.add_assertion(f)
-            try:
-                res = s.solve()
-                self.assertTrue(res)
-            except SolverReturnedUnknownResultError:
-                pass
+            res = s.solve()
+            self.assertTrue(res)
 
 
 if __name__ == '__main__':

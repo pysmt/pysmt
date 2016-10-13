@@ -15,7 +15,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from pysmt.shortcuts import *
+from pysmt.shortcuts import (Symbol, And, Iff, Equals, LT, GT, Minus,
+                             Plus, Real, Int, ToReal)
 from pysmt.typing import INT, REAL
 from pysmt.test import TestCase, skipIfNoSolverForLogic, main
 from pysmt.logics import QF_LIA, QF_UFLIRA
@@ -40,13 +41,16 @@ class TestLIA(TestCase):
         varB = Symbol("B", INT)
 
         with self.assertRaises(TypeError):
-            f = And(LT(varA, Plus(varB, Real(1))),
-                    GT(varA, Minus(varB, Real(1))))
-            g = Equals(varB, Int(0))
+            f = And(LT(varA, Plus(varA, Real(1))),
+                    GT(varA, Minus(varB, Int(1))))
 
-            self.assertUnsat(And(f, g, Equals(varA, Real(1.2))),
-                             "Formula was expected to be unsat",
-                             logic=QF_UFLIRA)
+        f = And(LT(varA, Plus(varA, Real(1))),
+                GT(varA, ToReal(Minus(varB, Int(1)))))
+        g = Equals(varA, ToReal(varB))
+
+        self.assertUnsat(And(f, g, Equals(varA, Real(1.2))),
+                         "Formula was expected to be unsat",
+                         logic=QF_UFLIRA)
 
 
 
