@@ -304,7 +304,7 @@ General:
 
 * Improved handling of options in Solvers (PR #250):
 
-  Solver() takes **options as free keyword arguments. These options
+  Solver() takes ``**options`` as free keyword arguments. These options
   are checked by the class SolverOptions, in order to validate that
   these are meaningful options and perform a preliminary validation to
   catch typos etc. by raising a ValueError exception if the option is

@@ -182,14 +182,15 @@ The setup.py script can be used to create packages. The command
 
 will produce a tar.gz file inside the ``dist/`` directory.
 
-For convenience the script *make_distrib.sh* is provided, this builds
+For convenience the script ``make_distrib.sh`` is provided, this builds
 both the binary and source distributions within ``dist/``.
 
 Building Documentation
 ======================
 
-pySMT uses `Sphinx <http://www.sphinx-doc.org/en/stable/index.html/>`_ for documentation. To build the documentation you
-will need `Sphinx <http://www.sphinx-doc.org/en/stable/index.html/>`_ installed, this can be done via pip.
+pySMT uses `Sphinx <http://www.sphinx-doc.org/en/stable/index.html/>`_
+for documentation. To build the documentation you will need Sphinx
+installed, this can be done via pip.
 
 A Makefile in the ``docs/`` directory allows to build the documentation in
 many formats. Among them, we usually consider html and latex.
