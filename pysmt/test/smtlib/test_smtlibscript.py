@@ -25,6 +25,9 @@ from pysmt.smtlib.script import SmtLibScript, SmtLibCommand
 from pysmt.smtlib.script import smtlibscript_from_formula, evaluate_command
 from pysmt.smtlib.parser import get_formula_strict, get_formula, SmtLibParser
 from pysmt.solvers.smtlib import SmtLibIgnoreMixin
+from pysmt.logics import QF_UFLIRA
+from pysmt.exceptions import UndefinedLogicError
+
 
 
 class TestSmtLibScript(TestCase):
@@ -65,6 +68,24 @@ class TestSmtLibScript(TestCase):
         self.assertIn("(declare-fun x () Bool)", output)
         self.assertIn("(declare-fun y () Bool)", output)
         self.assertIn("(check-sat)", output)
+
+        # Use custom logic (as str)
+        script2 = smtlibscript_from_formula(f, logic="BOOL")
+        outstream = cStringIO()
+        script2.serialize(outstream)
+        output = outstream.getvalue()
+        self.assertIn("(set-logic BOOL)", output)
+
+        # Use custom logic (as Logic obj)
+        script3 = smtlibscript_from_formula(f, logic=QF_UFLIRA)
+        outstream = cStringIO()
+        script3.serialize(outstream)
+        output = outstream.getvalue()
+        self.assertIn("(set-logic QF_UFLIRA)", output)
+
+        # Custom logic must be a Logic or Str
+        with self.assertRaises(UndefinedLogicError):
+            smtlibscript_from_formula(f, logic=4)
 
 
     def test_get_strict_formula(self):

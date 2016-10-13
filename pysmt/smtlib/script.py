@@ -22,10 +22,11 @@ from six.moves import cStringIO
 from six.moves import xrange
 
 import pysmt.smtlib.commands as smtcmd
-from pysmt.exceptions import UnknownSmtLibCommandError, NoLogicAvailableError
+from pysmt.exceptions import (UnknownSmtLibCommandError, NoLogicAvailableError,
+                              UndefinedLogicError)
 from pysmt.smtlib.printers import SmtPrinter, SmtDagPrinter, quote
 from pysmt.oracles import get_logic
-from pysmt.logics import get_closer_smtlib_logic
+from pysmt.logics import get_closer_smtlib_logic, Logic, SMTLIB2_LOGICS
 from pysmt.environment import get_env
 
 
@@ -228,21 +229,31 @@ class SmtLibScript(object):
         return "\n".join((str(cmd) for cmd in self.commands))
 
 
-def smtlibscript_from_formula(formula):
+def smtlibscript_from_formula(formula, logic=None):
     script = SmtLibScript()
 
-    # Get the simplest SmtLib logic that contains the formula
-    f_logic = get_logic(formula)
+    if logic is None:
+        # Get the simplest SmtLib logic that contains the formula
+        f_logic = get_logic(formula)
 
-    smt_logic = None
-    try:
-        smt_logic = get_closer_smtlib_logic(f_logic)
-    except NoLogicAvailableError:
-        warnings.warn("The logic %s is not reducible to any SMTLib2 " \
-                      "standard logic. Proceeding with non-standard " \
-                      "logic '%s'" % (f_logic, f_logic),
-                      stacklevel=3)
-        smt_logic = f_logic
+        smt_logic = None
+        try:
+            smt_logic = get_closer_smtlib_logic(f_logic)
+        except NoLogicAvailableError:
+            warnings.warn("The logic %s is not reducible to any SMTLib2 " \
+                          "standard logic. Proceeding with non-standard " \
+                          "logic '%s'" % (f_logic, f_logic),
+                          stacklevel=3)
+            smt_logic = f_logic
+    elif not (isinstance(logic, Logic) or isinstance(logic, str)):
+        raise UndefinedLogicError(str(logic))
+    else:
+        if logic not in SMTLIB2_LOGICS:
+            warnings.warn("The logic %s is not reducible to any SMTLib2 " \
+                          "standard logic. Proceeding with non-standard " \
+                          "logic '%s'" % (logic, logic),
+                          stacklevel=3)
+        smt_logic = logic
 
     script.add(name=smtcmd.SET_LOGIC,
                args=[smt_logic])
