@@ -16,6 +16,7 @@
 
 import os
 from six import PY2
+from pysmt.exceptions import PysmtImportError
 # The environment variable can be used to force the configuration
 # of the Fraction class.
 #
@@ -38,7 +39,7 @@ try:
     HAS_GMPY = True
 except ImportError as ex:
     if ENV_USE_GMPY is True:
-        raise ex
+        raise PysmtImportError(str(ex))
 
 if ENV_USE_GMPY is False:
     # Explicitely disable GMPY

@@ -25,6 +25,7 @@ from pysmt.cmd.installers import CVC4Installer, YicesInstaller, BtorInstaller
 from pysmt.cmd.installers import CuddInstaller
 
 from pysmt.environment import get_env
+from pysmt.exceptions import PysmtException
 from pysmt import git_version
 
 # Build a list of installers, one for each solver
@@ -72,7 +73,7 @@ def check_installed(required_solvers, install_dir, bindings_dir, mirror_link):
     pypath_solvers = get_env().factory.all_solvers()
     for solver in required_solvers:
         if solver not in pypath_solvers:
-            raise Exception("Was expecting to find %s installed" % solver)
+            raise PysmtException("Was expecting to find %s installed" % solver)
 
     #
     # Output information

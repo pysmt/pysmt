@@ -118,3 +118,23 @@ class UndefinedSymbolError(PysmtException):
 
     def __str__(self):
         return "'%s' is not defined!" % self.name
+
+class PysmtModeError(PysmtException):
+    """The current mode is not supported for this operation"""
+    pass
+
+
+class PysmtImportError(PysmtException, ImportError):
+    pass
+
+class PysmtValueError(PysmtException, ValueError):
+    pass
+
+class PysmtTypeError(PysmtException, TypeError):
+    pass
+
+class PysmtSyntaxError(PysmtException, SyntaxError):
+    pass
+
+class PysmtIOError(PysmtException, IOError):
+    pass

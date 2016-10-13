@@ -31,7 +31,7 @@ from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 from pysmt.solvers.eager import EagerModel
 from pysmt.walkers import DagWalker
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
-                              ConvertExpressionError)
+                              ConvertExpressionError, PysmtValueError)
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
 from pysmt.logics import QF_BV, QF_UFBV, QF_ABV, QF_AUFBV, QF_AX
 
@@ -40,7 +40,7 @@ class BoolectorOptions(SolverOptions):
     def __init__(self, **base_options):
         SolverOptions.__init__(self, **base_options)
         if self.random_seed is not None:
-            raise ValueError("BTOR Does not support Random Seed setting.")
+            raise PysmtValueError("BTOR Does not support Random Seed setting.")
 
         # Disabling Incremental usage is not allowed.
         # This needs to be set to 1
@@ -51,9 +51,11 @@ class BoolectorOptions(SolverOptions):
         try:
             btor.Set_opt(name, value)
         except TypeError:
-            raise ValueError("Error setting the option '%s=%s'" % (name,value))
+            raise PysmtValueError("Error setting the option '%s=%s'" \
+                                  % (name,value))
         except boolector.BoolectorException:
-            raise ValueError("Error setting the option '%s=%s'" % (name,value))
+            raise PysmtValueError("Error setting the option '%s=%s'" \
+                                  % (name,value))
 
     def __call__(self, solver):
         if self.generate_models:

@@ -43,6 +43,7 @@ import six.moves.configparser as cp
 from warnings import warn
 
 from pysmt.logics import get_logic_by_name
+from pysmt.exceptions import PysmtIOError
 
 def configure_environment(config_filename, environment):
     """
@@ -52,7 +53,7 @@ def configure_environment(config_filename, environment):
     factory = environment.factory
 
     if not os.path.exists(config_filename):
-        raise IOError("File '%s' does not exists." % config_filename)
+        raise PysmtIOError("File '%s' does not exists." % config_filename)
 
     # We do not use variable inside the config file
     config = cp.RawConfigParser()

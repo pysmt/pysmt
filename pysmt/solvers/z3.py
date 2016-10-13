@@ -42,7 +42,7 @@ from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               SolverNotConfiguredForUnsatCoresError,
                               SolverStatusError,
                               ConvertExpressionError,
-                              UndefinedSymbolError)
+                              UndefinedSymbolError, PysmtValueError)
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
 from pysmt.logics import LRA, LIA, QF_UFLIA, QF_UFLRA, PYSMT_LOGICS
 from pysmt.oracles import get_logic
@@ -113,7 +113,8 @@ class Z3Options(SolverOptions):
         try:
             z3solver.set(name, value)
         except z3.Z3Exception:
-            raise ValueError("Error setting the option '%s=%s'" % (name, value))
+            raise PysmtValueError("Error setting the option '%s=%s'" \
+                                  % (name, value))
 
     def __call__(self, solver):
         self._set_option(solver.z3, 'model', self.generate_models)
@@ -126,7 +127,7 @@ class Z3Options(SolverOptions):
             try:
                 self._set_option(solver.z3, str(k), v)
             except z3.Z3Exception:
-                raise ValueError("Error setting the option '%s=%s'" % (k,v))
+                raise PysmtValueError("Error setting the option '%s=%s'" % (k,v))
 
 # EOC Z3Options
 
