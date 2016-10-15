@@ -15,8 +15,9 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import pysmt.operators as op
+from six.moves import xrange
 
+import pysmt.operators as op
 from pysmt.shortcuts import FreshSymbol, Symbol, Int, Bool, ForAll
 from pysmt.shortcuts import And, Or, Iff, Not, Function, Real
 from pysmt.shortcuts import LT, GT, Plus, Minus, Equals
@@ -27,8 +28,7 @@ from pysmt.test import TestCase, main
 from pysmt.formula import FormulaManager
 from pysmt.test.examples import get_example_formulae
 from pysmt.exceptions import UnsupportedOperatorError
-
-from six.moves import xrange
+from pysmt.substituter import MSSubstituter
 
 
 class TestWalkers(TestCase):
@@ -144,19 +144,23 @@ class TestWalkers(TestCase):
 
     def test_substitution_complex(self):
         x, y = FreshSymbol(REAL), FreshSymbol(REAL)
-
         # y = 0 /\ (Forall x. x > 3 /\ y < 2)
         f = And(Equals(y, Real(0)),
                 ForAll([x], And(GT(x, Real(3)), LT(y, Real(2)))))
 
-        if "MSS" in str(self.env.SubstituterClass):
-            subs = {y: Real(0),
-                    ForAll([x], And(GT(x, Real(3)), LT(Real(0), Real(2)))): TRUE()}
-        else:
-            assert "MGS" in str(self.env.SubstituterClass)
-            subs = {y: Real(0),
-                    ForAll([x], And(GT(x, Real(3)), LT(y, Real(2)))): TRUE()}
+        subs = {y: Real(0),
+                ForAll([x], And(GT(x, Real(3)), LT(y, Real(2)))): TRUE()}
         f_subs = substitute(f, subs).simplify()
+        self.assertEqual(f_subs, TRUE())
+
+    def test_substitution_complex_mss(self):
+        x, y = FreshSymbol(REAL), FreshSymbol(REAL)
+        # y = 0 /\ (Forall x. x > 3 /\ y < 2)
+        f = And(Equals(y, Real(0)),
+                ForAll([x], And(GT(x, Real(3)), LT(y, Real(2)))))
+        subs = {y: Real(0),
+                ForAll([x], And(GT(x, Real(3)), LT(Real(0), Real(2)))): TRUE()}
+        f_subs = MSSubstituter(env=self.env).substitute(f, subs).simplify()
         self.assertEqual(f_subs, TRUE())
 
     def test_substitution_term(self):
