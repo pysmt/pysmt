@@ -67,7 +67,7 @@ class SimpleTypeChecker(walkers.DagWalker):
     def get_type(self, formula):
         """ Returns the pysmt.types type of the formula """
         res = self.walk(formula)
-        if not self.be_nice and  res is None:
+        if not self.be_nice and res is None:
             raise TypeError("The formula '%s' is not well-formed" % str(formula))
         return res
 
