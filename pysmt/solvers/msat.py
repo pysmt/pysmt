@@ -199,7 +199,7 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
 
     @clear_pending_pop
     def declare_variable(self, var):
-        self.converter.declare_variable(var)
+        raise NotImplementedError
 
     @clear_pending_pop
     def _add_assertion(self, formula, named=None):

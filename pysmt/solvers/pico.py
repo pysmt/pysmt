@@ -202,7 +202,6 @@ class PicosatSolver(Solver):
             self._var_ids[symbol] = vid
             return vid
 
-
     @clear_pending_pop
     def reset_assertions(self):
         picosat.picosat_flushout(self._log_file_handler)
@@ -212,8 +211,7 @@ class PicosatSolver(Solver):
 
     @clear_pending_pop
     def declare_variable(self, var):
-        # no need to declare variables
-        pass
+        raise NotImplementedError
 
     def _get_pico_lit(self, lit):
         mult = 1
@@ -224,7 +222,6 @@ class PicosatSolver(Solver):
 
         vid = self._get_var_id(var)
         return vid * mult
-
 
     @clear_pending_pop
     @catch_conversion_error

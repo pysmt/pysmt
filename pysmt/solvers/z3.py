@@ -158,8 +158,7 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
 
     @clear_pending_pop
     def declare_variable(self, var):
-        self.declarations.add(var)
-        return
+        raise NotImplementedError
 
     @clear_pending_pop
     def _add_assertion(self, formula, named=None):

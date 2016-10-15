@@ -19,6 +19,7 @@ import abc
 
 from pysmt.typing import BOOL
 from pysmt.exceptions import SolverReturnedUnknownResultError
+from pysmt.decorators import deprecated
 from six.moves import xrange
 
 
@@ -210,13 +211,6 @@ class Solver(object):
 
     def reset_assertions(self):
         """Removes all defined assertions."""
-        raise NotImplementedError
-
-    def declare_variable(self, var):
-        """Declare a variable in the solver.
-
-        :type var: FNode
-        """
         raise NotImplementedError
 
     def add_assertion(self, formula, named=None):
