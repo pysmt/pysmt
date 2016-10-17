@@ -123,7 +123,7 @@ class Z3Options(SolverOptions):
             self._set_option(solver.z3, 'unsat_core', True)
         if self.random_seed is not None:
             self._set_option(solver.z3, 'random_seed', self.random_seed)
-        for k,v in self.solver_options:
+        for k,v in self.solver_options.items():
             try:
                 self._set_option(solver.z3, str(k), v)
             except z3.Z3Exception:
