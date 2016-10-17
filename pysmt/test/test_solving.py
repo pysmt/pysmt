@@ -563,6 +563,14 @@ class TestBasic(TestCase):
                 s.add_assertion(And(x,y))
                 s.solve()
 
+    @skipIfNoSolverForLogic(QF_BOOL)
+    def test_incremental_is_sat(self):
+        from pysmt.exceptions import SolverStatusError
+        with Solver(incremental=False, logic=QF_BOOL) as s:
+            self.assertTrue(s.is_sat(Symbol("x")))
+            with self.assertRaises(SolverStatusError):
+                s.is_sat(Not(Symbol("x")))
+
 
 if __name__ == '__main__':
     main()
