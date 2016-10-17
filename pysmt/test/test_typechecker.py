@@ -170,16 +170,16 @@ class TestSimpleTypeChecker(TestCase):
 
 
     def test_decorator_typecheck_result(self):
+        from pysmt.fnode import FNode, FNodeContent
+        from pysmt.operators import AND
         @typecheck_result
         def good_function():
             return self.x
 
         @typecheck_result
         def super_bad_function():
-            sb = And(self.x, self.y)
-            # !!! This hurts so badly  !!!
-            # !!! Do not try this at home !!!
-            sb._content.args[0] = self.p
+            sb = FNode(FNodeContent(node_type=AND, args=(self.p, self.p),
+                                    payload=None), -1)
             return sb
 
         good_function()
