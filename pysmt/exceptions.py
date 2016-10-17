@@ -79,7 +79,7 @@ class ConvertExpressionError(PysmtException):
     """Exception raised if the converter cannot convert an expression."""
 
     def __init__(self, message=None, expression=None):
-        Exception.__init__(self)
+        PysmtException.__init__(self)
         self.message = message
         self.expression=expression
 
@@ -95,7 +95,7 @@ class UnsupportedOperatorError(PysmtException):
     def __init__(self, message=None, node_type=None, expression=None):
         if message is None:
             message = "Unsupported operator '%s' (node_type: %d)" % (op.op_to_str(node_type), node_type)
-        Exception.__init__(self)
+        PysmtException.__init__(self)
         self.message = message
         self.expression = expression
         self.node_type = node_type
@@ -113,7 +113,7 @@ class UndefinedSymbolError(PysmtException):
     """The given Symbol is not in the FormulaManager."""
 
     def __init__(self, name):
-        Exception.__init__(self)
+        PysmtException.__init__(self)
         self.name = name
 
     def __str__(self):

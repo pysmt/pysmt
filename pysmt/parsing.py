@@ -20,7 +20,7 @@ from collections import namedtuple
 
 import pysmt.typing as types
 from pysmt.environment import get_env
-from pysmt.exceptions import PysmtSyntaxError
+from pysmt.exceptions import PysmtSyntaxError, UndefinedSymbolError
 from pysmt.constants import Fraction
 
 
@@ -321,7 +321,7 @@ class Identifier(GrammarSymbol):
         GrammarSymbol.__init__(self)
         self.value = env.formula_manager.get_symbol(name)
         if self.value is None:
-            raise ValueError("Undefined symbol: '%s'" % name)
+            raise UndefinedSymbolError(name)
 
     def nud(self, parser):
         return self.value
