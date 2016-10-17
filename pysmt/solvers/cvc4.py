@@ -100,8 +100,7 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         self.cvc4.setLogic(self.logic_name)
 
     def declare_variable(self, var):
-        self.converter.declare_variable(var)
-        return
+        raise NotImplementedError
 
     def add_assertion(self, formula, named=None):
         self._assert_is_boolean(formula)
