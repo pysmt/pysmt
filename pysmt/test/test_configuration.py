@@ -23,6 +23,7 @@ from pysmt.shortcuts import get_env
 from pysmt.configuration import (configure_environment,
                                  write_environment_configuration)
 from pysmt.environment import Environment
+from pysmt.exceptions import PysmtIOError
 
 from pysmt.test import TestCase, main
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -99,7 +100,7 @@ class TestConfiguration(TestCase):
         self.assertTrue("z3-smt" in new_env.factory.all_solvers())
 
     def test_nonexistent_conf(self):
-        with self.assertRaises(IOError):
+        with self.assertRaises(PysmtIOError):
             read_configuration("/tmp/nonexistent")
 
     def test_bad_conf(self):

@@ -23,7 +23,7 @@ from pysmt.typing import ARRAY_INT_INT, ArrayType, INT, REAL, BV8
 from pysmt.shortcuts import (Solver,
                              Symbol, Not, Equals, Int, BV, Real, FreshSymbol,
                              Select, Store, Array)
-from pysmt.exceptions import ConvertExpressionError
+from pysmt.exceptions import ConvertExpressionError, PysmtTypeError, PysmtValueError
 
 
 class TestArray(TestCase):
@@ -84,7 +84,7 @@ class TestArray(TestCase):
                                       FreshSymbol(ArrayType(BV8, BV8))))
 
     def test_complex_types(self):
-        with self.assertRaises(TypeError):
+        with self.assertRaises(PysmtTypeError):
             # Not(Store(Array<Real,BV8>(8d_0), 1.0, 8d_5) =
             #     Store(Array<Int,BV8>(8d_0), 1, 8d_5))
             Not(Equals(Store(Array(REAL, BV(0, 8)), Real(1), BV(5, 8)),
@@ -92,7 +92,7 @@ class TestArray(TestCase):
 
         nested_a = Symbol("a_arb_aii", ArrayType(ArrayType(REAL, BV8),
                                                  ARRAY_INT_INT))
-        with self.assertRaises(TypeError):
+        with self.assertRaises(PysmtTypeError):
         # This is wrong, because the first elemnt of Array must be a Type
             Equals(nested_a, Array(Array(REAL, BV(0,8)),
                                    Array(INT, Int(7))))
@@ -131,10 +131,10 @@ class TestArray(TestCase):
         self.assertFalse(ax2.is_constant())
         self.assertTrue(ax3.is_constant())
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(PysmtValueError):
             self.assertTrue(ax3.is_constant(_type=REAL))
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(PysmtValueError):
             self.assertTrue(ax3.is_constant(value=Real(2)))
 
 

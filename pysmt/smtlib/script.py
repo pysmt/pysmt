@@ -171,7 +171,8 @@ class SmtLibScript(object):
         if self.contains_command(smtcmd.PUSH) or \
            self.contains_command(smtcmd.POP):
             raise PysmtValueError("Was not expecting push-pop commands")
-        assert self.count_command_occurrences(smtcmd.CHECK_SAT) == 1
+        if self.count_command_occurrences(smtcmd.CHECK_SAT) != 1:
+            raise PysmtValueError("Was expecting exactly one check-sat command")
         _And = mgr.And if mgr else get_env().formula_manager.And
 
         assertions = [cmd.args[0]

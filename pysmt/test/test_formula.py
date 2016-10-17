@@ -26,7 +26,8 @@ from pysmt.shortcuts import get_env
 from pysmt.environment import Environment
 from pysmt.test import TestCase, skipIfNoSolverForLogic, main
 from pysmt.logics import QF_BOOL
-from pysmt.exceptions import NonLinearError, UndefinedSymbolError
+from pysmt.exceptions import (UndefinedSymbolError, PysmtTypeError,
+                              PysmtModeError, PysmtValueError)
 from pysmt.formula import FormulaManager
 from pysmt.constants import Fraction, Integer
 
@@ -78,7 +79,7 @@ class TestFormulaManager(TestCase):
         self.assertIsNotNone(a, "Symbol was not created")
         a2 = self.mgr.get_or_create_symbol("a", REAL)
         self.assertEqual(a, a2, "Symbol was not memoized")
-        with self.assertRaises(TypeError):
+        with self.assertRaises(PysmtTypeError):
             self.mgr.get_or_create_symbol("a", BOOL)
 
     def test_symbol(self):
@@ -212,13 +213,13 @@ class TestFormulaManager(TestCase):
         self.assertTrue(n.is_bool_op())
 
     def test_ge_node_type(self):
-        with self.assertRaises(TypeError):
+        with self.assertRaises(PysmtTypeError):
             self.mgr.GE(self.x, self.r)
 
-        with self.assertRaises(TypeError):
+        with self.assertRaises(PysmtTypeError):
             self.mgr.GE(self.r, self.x)
 
-        with self.assertRaises(TypeError):
+        with self.assertRaises(PysmtTypeError):
             self.mgr.GE(self.p, self.r)
 
     def test_ge_node(self):
@@ -268,7 +269,7 @@ class TestFormulaManager(TestCase):
         self.assertEqual(n.get_free_variables(), set([self.p, self.q]))
         self.assertTrue(n.is_theory_op())
 
-        with self.assertRaises(TypeError):
+        with self.assertRaises(PysmtTypeError):
             n = self.mgr.Minus(self.r, self.q)
 
     def test_times_node(self):
@@ -335,17 +336,17 @@ class TestFormulaManager(TestCase):
         self.assertEqual(n.get_free_variables(), set([self.p, self.q]))
         self.assertTrue(n.is_theory_relation())
 
-        with self.assertRaises(TypeError):
+        with self.assertRaises(PysmtTypeError):
             n = self.mgr.Equals(self.p, self.r)
 
     def test_gt_node_type(self):
-        with self.assertRaises(TypeError):
+        with self.assertRaises(PysmtTypeError):
             self.mgr.GT(self.x, self.r)
 
-        with self.assertRaises(TypeError):
+        with self.assertRaises(PysmtTypeError):
             self.mgr.GT(self.r, self.x)
 
-        with self.assertRaises(TypeError):
+        with self.assertRaises(PysmtTypeError):
             self.mgr.GT(self.r, self.p)
 
     def test_gt_node(self):
@@ -370,10 +371,10 @@ class TestFormulaManager(TestCase):
         self.assertTrue(n.is_theory_relation())
 
     def test_le_node_type(self):
-        with self.assertRaises(TypeError):
+        with self.assertRaises(PysmtTypeError):
             self.mgr.LE(self.x, self.r)
 
-        with self.assertRaises(TypeError):
+        with self.assertRaises(PysmtTypeError):
             self.mgr.LE(self.r, self.x)
 
     def test_le_node(self):
@@ -398,10 +399,10 @@ class TestFormulaManager(TestCase):
         self.assertTrue(n.is_theory_relation())
 
     def test_lt_node_type(self):
-        with self.assertRaises(TypeError):
+        with self.assertRaises(PysmtTypeError):
             self.mgr.LT(self.x, self.r)
 
-        with self.assertRaises(TypeError):
+        with self.assertRaises(PysmtTypeError):
             self.mgr.LT(self.r, self.x)
 
     def test_lt_node(self):
@@ -443,7 +444,7 @@ class TestFormulaManager(TestCase):
         self.assertTrue(n.is_ite())
         self.assertEqual(n.get_free_variables(), set([self.x, self.p, self.q]))
 
-        with self.assertRaises(TypeError):
+        with self.assertRaises(PysmtTypeError):
             self.mgr.Ite(self.x, self.p, self.r)
 
     def test_function(self):
@@ -487,7 +488,7 @@ class TestFormulaManager(TestCase):
         nd = self.mgr.Real(Fraction(100,1))
         self.assertNotEqual(nd, n1)
 
-        with self.assertRaises(TypeError):
+        with self.assertRaises(PysmtTypeError):
             self.mgr.Real(True)
 
         nd = self.mgr.Int(10)
@@ -522,17 +523,17 @@ class TestFormulaManager(TestCase):
         self.assertTrue(n.is_constant())
         self.assertTrue(n.is_bool_constant())
 
-        with self.assertRaises(TypeError):
+        with self.assertRaises(PysmtTypeError):
             self.mgr.Bool(42)
 
     def test_plus_node(self):
-        with self.assertRaises(TypeError):
+        with self.assertRaises(PysmtTypeError):
             self.mgr.Plus([self.x, self.r])
 
-        with self.assertRaises(TypeError):
+        with self.assertRaises(PysmtTypeError):
             self.mgr.Plus([self.p, self.r])
 
-        with self.assertRaises(TypeError):
+        with self.assertRaises(PysmtTypeError):
             self.mgr.Plus()
 
         n1 = self.mgr.Plus([self.r, self.s])
@@ -593,7 +594,7 @@ class TestFormulaManager(TestCase):
         xor1 = self.mgr.Xor(self.x, self.y)
         self.assertIsNotNone(xor1)
 
-        with self.assertRaises(TypeError):
+        with self.assertRaises(PysmtTypeError):
             self.mgr.Xor(self.p, self.q)
 
         xor_false = self.mgr.Xor(self.mgr.TRUE(), self.mgr.TRUE()).simplify()
@@ -629,7 +630,7 @@ class TestFormulaManager(TestCase):
         min1 = self.mgr.Min(self.p, Plus(self.q, self.mgr.Int(1)))
         self.assertIsNotNone(min1)
 
-        with self.assertRaises(TypeError):
+        with self.assertRaises(PysmtTypeError):
             self.mgr.Min(self.p, self.r)
 
         min_int = self.mgr.Min(self.mgr.Int(1), self.mgr.Int(2), self.mgr.Int(3))
@@ -644,7 +645,7 @@ class TestFormulaManager(TestCase):
         max1 = self.mgr.Max(self.p, Plus(self.q, self.mgr.Int(1)))
         self.assertIsNotNone(max1)
 
-        with self.assertRaises(TypeError):
+        with self.assertRaises(PysmtTypeError):
             self.mgr.Max(self.p, self.r)
 
         max_int = self.mgr.Max(self.mgr.Int(1), self.mgr.Int(2), self.mgr.Int(3))
@@ -700,13 +701,13 @@ class TestFormulaManager(TestCase):
     def test_infix(self):
         x, y, p = self.x, self.y, self.p
 
-        with self.assertRaises(Exception):
+        with self.assertRaises(PysmtModeError):
             x.Implies(y)
-        with self.assertRaises(Exception):
+        with self.assertRaises(PysmtModeError):
             ~x
-        with self.assertRaises(Exception):
+        with self.assertRaises(PysmtModeError):
             x[1]
-        with self.assertRaises(Exception):
+        with self.assertRaises(PysmtModeError):
             x.Ite(x,y)
 
         get_env().enable_infix_notation = True
@@ -737,7 +738,7 @@ class TestFormulaManager(TestCase):
         self.assertEqual(Plus(r, Real(1.5)), 1.5 + r)
         self.assertEqual(Times(r, Real(1.5)), 1.5 * r)
 
-        with self.assertRaises(TypeError):
+        with self.assertRaises(PysmtTypeError):
             foo = p + 1.5
 
         self.assertEqual(Not(x), ~x)
@@ -845,7 +846,7 @@ class TestFormulaManager(TestCase):
         # BV_NOT:
         # !!!WARNING!!! Cannot be applied to python constants!!
         # This results in a negative number
-        with self.assertRaises(ValueError):
+        with self.assertRaises(PysmtValueError):
             _8bv(~const1)
 
         # For symbols and expressions this works as expected
@@ -965,7 +966,7 @@ class TestFormulaManager(TestCase):
         f = self.mgr.Equals(self.rconst, self.mgr.ToReal(self.p))
         self.assertIsNotNone(f)
 
-        with self.assertRaises(TypeError):
+        with self.assertRaises(PysmtTypeError):
             self.mgr.ToReal(self.x)
 
         f1 = self.mgr.ToReal(self.p)
@@ -976,7 +977,7 @@ class TestFormulaManager(TestCase):
         self.assertEqual(set([self.p]), f1.get_free_variables())
 
         f3 = self.mgr.Equals(self.iconst, self.p)
-        with self.assertRaises(TypeError):
+        with self.assertRaises(PysmtTypeError):
             self.mgr.ToReal(f3)
 
         f4 = self.mgr.Plus(self.rconst, self.r)

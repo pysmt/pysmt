@@ -26,7 +26,7 @@ from pysmt.smtlib.script import smtlibscript_from_formula, evaluate_command
 from pysmt.smtlib.parser import get_formula_strict, get_formula, SmtLibParser
 from pysmt.solvers.smtlib import SmtLibIgnoreMixin
 from pysmt.logics import QF_UFLIRA
-from pysmt.exceptions import UndefinedLogicError
+from pysmt.exceptions import UndefinedLogicError, PysmtValueError
 
 
 
@@ -118,7 +118,7 @@ class TestSmtLibScript(TestCase):
         self.assertEqual(f, target_two)
 
         stream_in = cStringIO(smtlib_double)
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(PysmtValueError):
             f = get_formula_strict(stream_in)
 
 

@@ -20,6 +20,7 @@ from pysmt.shortcuts import get_env, qelim, Or
 from pysmt.test import TestCase, skipIfSolverNotAvailable, main
 from pysmt.test.examples import get_example_formulae
 from pysmt.logics import BOOL
+from pysmt.exceptions import PysmtValueError
 
 class TestBdd(TestCase):
 
@@ -154,7 +155,7 @@ class TestBdd(TestCase):
 
     @skipIfSolverNotAvailable("bdd")
     def test_invalid_ordering(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(PysmtValueError):
             Solver(name="bdd", logic=BOOL,
                    solver_options={'static_ordering':
                                    [And(self.x, self.y), self.y]})

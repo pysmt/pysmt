@@ -29,7 +29,8 @@ from pysmt.test import main
 from pysmt.test.examples import get_example_formulae
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               InternalSolverError, NoSolverAvailableError,
-                              ConvertExpressionError, UndefinedLogicError)
+                              ConvertExpressionError, UndefinedLogicError,
+                              PysmtTypeError, PysmtValueError)
 from pysmt.logics import QF_UFLIRA, QF_BOOL, QF_LRA, AUTO
 from pysmt.logics import convert_logic_from_string
 
@@ -407,7 +408,7 @@ class TestBasic(TestCase):
 
         for sname in get_env().factory.all_solvers(logic=QF_LRA):
             with Solver(name=sname) as solver:
-                with self.assertRaises(TypeError):
+                with self.assertRaises(PysmtTypeError):
                     solver.add_assertion(f1)
                 self.assertIsNone(solver.add_assertion(f2))
 
@@ -422,7 +423,7 @@ class TestBasic(TestCase):
                 solver.add_assertion(f)
                 res = solver.solve()
                 self.assertTrue(res)
-                with self.assertRaises(TypeError):
+                with self.assertRaises(PysmtTypeError):
                     solver.get_value(h)
                 self.assertIsNotNone(solver.get_value(h_0_0))
 
@@ -531,14 +532,14 @@ class TestBasic(TestCase):
         # Options are enforced at construction time
         with self.assertRaises(TypeError):
             Solver(logic=QF_BOOL, invalid_option=False)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(PysmtValueError):
             Solver(logic=QF_BOOL, solver_options={'invalid': None})
 
     @skipIfNoSolverForLogic(QF_BOOL)
     def test_options_random_seed(self):
         for sname in get_env().factory.all_solvers(logic=QF_BOOL):
             if sname in ["btor", "bdd"]:
-                with self.assertRaises(ValueError):
+                with self.assertRaises(PysmtValueError):
                     Solver(name=sname, random_seed=42)
             else:
                 s = Solver(name=sname, random_seed=42)
