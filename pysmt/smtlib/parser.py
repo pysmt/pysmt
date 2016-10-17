@@ -138,7 +138,7 @@ class SmtLibExecutionCache(object):
 
 
 
-def tokenizer(handle, interactive=False):
+def tokenizer_generator(handle, interactive=False):
     """Takes a file-like object and produces a stream of tokens following
     the LISP rules.
 
@@ -221,6 +221,27 @@ def tokenizer(handle, interactive=False):
                 c = next(reader)
             yield "".join(tk)
 
+
+class Tokenizer(object):
+
+    def __init__(self, handle, interactive=False):
+        self.generator = tokenizer_generator(handle, interactive)
+        self.extra_queue = []
+        self.consume = self.consume_token
+
+    def add_extra_token(self, token):
+        self.extra_queue.append(token)
+        self.consume = self.consume_token_queue
+
+    def consume_token_queue(self):
+        if len(self.extra_queue):
+            return self.extra_queue.pop(0)
+        else:
+            self.consume = self.consume_token
+        return next(self.generator)
+
+    def consume_token(self):
+        return next(self.generator)
 
 
 class SmtLibParser(object):
@@ -582,31 +603,6 @@ class SmtLibParser(object):
             self.cache.unbind(var.symbol_name())
         return fun(vrs, body)
 
-    def _exit_annotation(self, pyterm, *attrs):
-        """
-        This method is invoked when we finish parsing an annotated expression
-        """
-
-        # Iterate on elements.
-        i = 0
-        while i < len(attrs):
-            if i+1 < len(attrs) and str(attrs[i+1])[0] != ":" :
-                key, value = str(attrs[i]), str(attrs[i+1])
-                if key[0] != ":":
-                    raise PysmtSyntaxError("Annotations keys should start "
-                                           "with colon")
-                self.cache.annotations.add(pyterm, key[1:], value)
-                i += 2
-            else:
-                key = str(attrs[i])
-                if key[0] != ":":
-                    raise PysmtSyntaxError("Annotations keys should start "
-                                           "with colon")
-                self.cache.annotations.add(pyterm, key[1:])
-                i += 1
-
-        return pyterm
-
     def _enter_let(self, stack, tokens, key):
         """Handles a let expression by recurring on the expression and
         updating the cache
@@ -624,7 +620,7 @@ class SmtLibParser(object):
             newvals[vname] = expr
             self.cache.bind(vname, expr)
             self.consume_closing(tokens, "expression")
-            current = next(tokens)
+            current = tokens.consume()
 
         stack[-1].append(self._exit_let)
         stack[-1].append(newvals.keys())
@@ -656,7 +652,7 @@ class SmtLibParser(object):
             vrs.append(var)
 
             self.consume_closing(tokens, "expression")
-            current = next(tokens)
+            current = tokens.consume()
 
         quant = None
         if key == 'forall':
@@ -672,7 +668,41 @@ class SmtLibParser(object):
     def _enter_annotation(self, stack, tokens, key):
         """Deals with annotations"""
         #pylint: disable=unused-argument
-        stack[-1].append(self._exit_annotation)
+
+        term = self.get_expression(tokens)
+
+        tk = tokens.consume()
+        while tk != ")":
+            if not tk.startswith(":"):
+                raise PysmtSyntaxError("Annotations keyword should start with"
+                                       " colon! Offending token: '%s'" % tk)
+            keyword = tk[1:]
+            tk = tokens.consume()
+            if not tk.startswith(":"):
+                value = None
+                if tk == "(":
+                    counter = 1
+                    buff = [tk]
+                    while counter != 0:
+                        tk = tokens.consume()
+                        if tk == "(":
+                            counter += 1
+                        elif tk == ")":
+                            counter -= 1
+                        buff.append(tk)
+                    value = " ".join(buff)
+                else:
+                    value = tk
+                tk = tokens.consume()
+                self.cache.annotations.add(term, keyword, value)
+            else:
+                self.cache.annotations.add(term, keyword)
+
+        assert len(stack[-1]) == 0
+        # re-add the ")" to the tokenizer because we consumed it, but
+        # get_expression needs it
+        tokens.add_extra_token(")")
+        stack[-1].append(lambda : term)
 
 
     def get_expression(self, tokens):
@@ -683,12 +713,12 @@ class SmtLibParser(object):
         stack = []
 
         while True:
-            tk = next(tokens)
+            tk = tokens.consume()
 
             if tk == "(":
                 while tk == "(":
                     stack.append([])
-                    tk = next(tokens)
+                    tk = tokens.consume()
 
                 if tk in self.interpreted:
                     fun = self.interpreted[tk]
@@ -743,7 +773,7 @@ class SmtLibParser(object):
         whole command is read from the script.
 
         """
-        tokens = tokenizer(script, interactive=self.interactive)
+        tokens = Tokenizer(script, interactive=self.interactive)
         for cmd in self.get_command(tokens):
             yield cmd
 
@@ -763,7 +793,7 @@ class SmtLibParser(object):
         res = []
         current = None
         for _ in xrange(min_size):
-            current = next(tokens)
+            current = tokens.consume()
             if current == ")":
                 raise PysmtSyntaxError("Expected at least %d arguments in "
                                        "%s command." %\
@@ -774,7 +804,7 @@ class SmtLibParser(object):
             res.append(current)
 
         for _ in xrange(min_size, max_size + 1):
-            current = next(tokens)
+            current = tokens.consume()
             if current == ")":
                 return res
             if current == "(":
@@ -791,9 +821,9 @@ class SmtLibParser(object):
         if additional_token is not None:
             var = additional_token
         else:
-            var = next(tokens)
+            var = tokens.consume()
         if var == "(":
-            op = next(tokens)
+            op = tokens.consume()
 
             if op == "Array":
                 idxtype = self.parse_type(tokens, command)
@@ -804,13 +834,13 @@ class SmtLibParser(object):
             if op != "_":
                 raise PysmtSyntaxError("Unexpected token '%s' in %s command." % \
                                   (op, command))
-            ts = next(tokens)
+            ts = tokens.consume()
             if ts != "BitVec":
                 raise PysmtSyntaxError("Unexpected token '%s' in %s command." % \
                                   (ts, command))
 
             size = 0
-            dim = next(tokens)
+            dim = tokens.consume()
             try:
                 size = int(dim)
             except ValueError:
@@ -828,7 +858,7 @@ class SmtLibParser(object):
 
     def parse_atom(self, tokens, command):
         """Parses a single name from the tokens"""
-        var = next(tokens)
+        var = tokens.consume()
         if var == "(" or var == ")":
             raise PysmtSyntaxError("Unexpected token '%s' in %s command." % \
                               (var, command))
@@ -837,24 +867,24 @@ class SmtLibParser(object):
     def parse_params(self, tokens, command):
         """Parses a list of types from the tokens"""
         self.consume_opening(tokens, command)
-        current = next(tokens)
+        current = tokens.consume()
         res = []
         while current != ")":
             res.append(self.parse_type(tokens, command,additional_token=current))
-            current = next(tokens)
+            current = tokens.consume()
         return res
 
     def parse_named_params(self, tokens, command):
         """Parses a list of names and type from the tokens"""
         self.consume_opening(tokens, command)
-        current = next(tokens)
+        current = tokens.consume()
         res = []
         while current != ")":
             vname = self.parse_atom(tokens, command)
             typename = self.parse_type(tokens, command)
             res.append((vname, typename))
             self.consume_closing(tokens, command)
-            current = next(tokens)
+            current = tokens.consume()
         return res
 
     def parse_expr_list(self, tokens, command):
@@ -870,14 +900,14 @@ class SmtLibParser(object):
 
     def consume_opening(self, tokens, command):
         """ Consumes a single '(' """
-        p = next(tokens)
+        p = tokens.consume()
         if p != "(":
             raise PysmtSyntaxError("Unexpected token '%s' in %s command. " \
                               "Expected '('" % (p, command))
 
     def consume_closing(self, tokens, command):
         """ Consumes a single ')' """
-        p = next(tokens)
+        p = tokens.consume()
         if p != ")":
             raise PysmtSyntaxError("Unexpected token '%s' in %s command. " \
                               "Expected ')'" % (p, command))
@@ -893,10 +923,10 @@ class SmtLibParser(object):
         """
         symbols = self.env.formula_manager.symbols
         self.cache.update(symbols)
-        tokens = tokenizer(script, interactive=self.interactive)
+        tokens = Tokenizer(script, interactive=self.interactive)
         res = []
         self.consume_opening(tokens, "<main>")
-        current = next(tokens)
+        current = tokens.consume()
         while current != ")":
             if current != "(":
                 raise PysmtSyntaxError("'(' expected")
@@ -904,7 +934,7 @@ class SmtLibParser(object):
             expr = self.get_expression(tokens)
             self.consume_closing(tokens, current)
             res.append((vname, expr))
-            current = next(tokens)
+            current = tokens.consume()
         self.cache.unbind_all(symbols)
         return res
 
@@ -912,7 +942,7 @@ class SmtLibParser(object):
         """Builds an SmtLibCommand instance out of a parsed term."""
         while True:
             self.consume_opening(tokens, "<main>")
-            current = next(tokens)
+            current = tokens.consume()
             if current in self.commands:
                 fun = self.commands[current]
                 yield fun(current, tokens)
@@ -1034,7 +1064,7 @@ class SmtLibParser(object):
         """(define-sort <fun_def>)"""
         name = self.parse_atom(tokens, current)
         self.consume_opening(tokens, current)
-        cur = next(tokens)
+        cur = tokens.consume()
         if cur != ')':
             return self._cmd_not_implemented(current, tokens)
         rtype = self.parse_type(tokens, current)
