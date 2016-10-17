@@ -18,7 +18,8 @@
 import abc
 
 from pysmt.typing import BOOL
-from pysmt.exceptions import SolverReturnedUnknownResultError
+from pysmt.exceptions import (SolverReturnedUnknownResultError,
+                              SolverStatusError)
 from pysmt.decorators import deprecated
 from six.moves import xrange
 
@@ -106,6 +107,46 @@ class Solver(object):
         self._destroyed = False
         return
 
+    def solve(self, assumptions=None):
+        """Returns the satisfiability value of the asserted formulas.
+
+        Assumptions is a list of Boolean variables or negations of
+        boolean variables. If assumptions is specified, the
+        satisfiability result is computed assuming that all the
+        specified literals are True.
+
+        A call to solve([a1, ..., an]) is functionally equivalent to::
+
+          push()
+          add_assertion(And(a1, ..., an))
+          res = solve()
+          pop()
+          return res
+
+        but is in general more efficient.
+
+        Other convenience methods (is_sat, is_unsat, is_valid) are
+        wrappers around this function.
+
+        :returns: Whether the assertion stack is satisfiable
+                  w.r.t. the given assumptions (if given)
+        :rtype: bool
+        """
+        raise NotImplementedError
+
+    def get_model(self):
+        """Returns an instance of Model that survives the solver instance.
+
+        Restrictions: Requires option generate_models to be set to
+                      true (default) and can be called only after
+                      :py:func:`solve` (or one of the derived methods)
+                      returned sat or unknown, if no change to the
+                      assertion set occurred.
+
+        """
+        raise NotImplementedError
+
+
     def is_sat(self, formula):
         """Checks satisfiability of the formula w.r.t. the current state of
         the solver.
@@ -120,9 +161,15 @@ class Solver(object):
                "Formula does not belong to the current Formula Manager"
 
         if not self.options.incremental:
-            # If not incremental, we only need to assert and solve
+            # If not incremental, we only need to assert and solve.
             self.add_assertion(formula)
-            return self.solve()
+            # We do not allow two calls to solve()
+            def solve_error(*args, **kwargs):
+                raise SolverStatusError("Cannot call is_sat twice when incrementality is disable")
+            res = self.solve()
+            self.solve = solve_error
+            self.is_sat = solve_error
+            return res
 
         # Try to be incremental using push/pop but fallback to
         # solving under assumption if push/pop is not implemented
@@ -169,10 +216,10 @@ class Solver(object):
     def get_values(self, formulae):
         """Returns the value of the expressions if a model was found.
 
-        Restrictions: Requires option generate_models to be set to
-                      true and can be called only after
-                      :py:func:`solve` returned sat or unknown, if
-                      no change to the assertion set occurred.
+        Requires option generate_models to be set to true (default)
+        and can be called only after :py:func:`solve` (or to one of
+        the derived methods) returned sat or unknown, if no change to
+        the assertion set occurred.
 
         :type formulae: Iterable of FNodes
         :returns: A dictionary associating to each expr a value
@@ -217,27 +264,6 @@ class Solver(object):
         """Add assertion to the solver."""
         raise NotImplementedError
 
-
-    def solve(self, assumptions=None):
-        """Returns the satisfiability value of the asserted formulas.
-
-        Assumptions is a list of Boolean variables or negations of
-        boolean variables. If assumptions is specified, the
-        satisfiability result is computed assuming that all the
-        specified literals are True.
-
-        A call to solve([a1, ..., an]) is functionally equivalent to:
-
-        push()
-        add_assertion(And(a1, ..., an))
-        res = solve()
-        pop()
-        return res
-
-        but is in general more efficient.
-        """
-        raise NotImplementedError
-
     def print_model(self, name_filter=None):
         """Prints the model (if one exists).
 
@@ -273,10 +299,6 @@ class Solver(object):
             v = self.get_py_value(f)
             res[f] = v
         return res
-
-    def get_model(self):
-        """Returns an instance of Model that survives the solver instance."""
-        raise NotImplementedError
 
     def set_options(self, options):
         """Sets multiple options at once.
