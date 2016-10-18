@@ -138,7 +138,7 @@ class SmtLibExecutionCache(object):
 
 
 
-def tokenizer_generator(handle, interactive=False):
+def tokenizer_generator(reader):
     """Takes a file-like object and produces a stream of tokens following
     the LISP rules.
 
@@ -150,10 +150,6 @@ def tokenizer_generator(handle, interactive=False):
     separators = set(["(", ")", "|", "\""])
     specials = spaces | separators | set([";", ""])
 
-    if not interactive:
-        reader = itertools.chain.from_iterable(handle) # reads char-by-char
-    else:
-        reader = interactive_char_iterator(handle)
     c = next(reader)
 
     eof = False
@@ -225,7 +221,12 @@ def tokenizer_generator(handle, interactive=False):
 class Tokenizer(object):
 
     def __init__(self, handle, interactive=False):
-        self.generator = tokenizer_generator(handle, interactive)
+        if not interactive:
+            # reads char-by-char
+            self.reader = itertools.chain.from_iterable(handle)
+        else:
+            self.reader = interactive_char_iterator(handle)
+        self.generator = tokenizer_generator(self.reader)
         self.extra_queue = []
         self.consume = self.consume_token
 
@@ -242,6 +243,9 @@ class Tokenizer(object):
 
     def consume_token(self):
         return next(self.generator)
+
+    def raw_read(self):
+        return next(self.reader)
 
 
 class SmtLibParser(object):
@@ -678,25 +682,22 @@ class SmtLibParser(object):
                                        " colon! Offending token: '%s'" % tk)
             keyword = tk[1:]
             tk = tokens.consume()
-            if not tk.startswith(":"):
-                value = None
-                if tk == "(":
-                    counter = 1
-                    buff = [tk]
-                    while counter != 0:
-                        tk = tokens.consume()
-                        if tk == "(":
-                            counter += 1
-                        elif tk == ")":
-                            counter -= 1
-                        buff.append(tk)
-                    value = " ".join(buff)
-                else:
-                    value = tk
-                tk = tokens.consume()
-                self.cache.annotations.add(term, keyword, value)
+            value = None
+            if tk == "(":
+                counter = 1
+                buff = [tk]
+                while counter != 0:
+                    tk = tokens.raw_read()
+                    if tk == "(":
+                        counter += 1
+                    elif tk == ")":
+                        counter -= 1
+                    buff.append(tk)
+                value = "".join(buff)
             else:
-                self.cache.annotations.add(term, keyword)
+                value = tk
+            tk = tokens.consume()
+            self.cache.annotations.add(term, keyword, value)
 
         assert len(stack[-1]) == 0
         # re-add the ")" to the tokenizer because we consumed it, but

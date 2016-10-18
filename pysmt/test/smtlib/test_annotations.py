@@ -142,10 +142,10 @@ class TestBasic(TestCase):
         self.assertEquals(v1_str, '"v__AT1"')
 
 
-    def test_interpreting_annotations(self):
+    def test_complex_annotations_values(self):
         source ="""\
 (declare-fun |"v__AT0"| () Bool)
-(define-fun .def_1 () Bool (! |"v__AT0"| :next (+ 1 meaningless)))
+(define-fun .def_1 () Bool (! |"v__AT0"| :next (+ 1     meaningless)))
 """
         buf = StringIO(source)
         parser = SmtLibParser()
@@ -153,7 +153,21 @@ class TestBasic(TestCase):
         ann = script.annotations
         v0 = self.env.formula_manager.get_symbol('"v__AT0"')
         v1_str = next(iter(ann[v0]["next"]))
-        self.assertEquals(v1_str, "( + 1 meaningless )")
+        self.assertEquals(v1_str, "(+ 1     meaningless)")
+
+
+    def test_annotations_colon_values(self):
+        source ="""\
+(declare-fun |"v__AT0"| () Bool)
+(define-fun .def_1 () Bool (! |"v__AT0"| :next :this_is_considered_a_value))
+"""
+        buf = StringIO(source)
+        parser = SmtLibParser()
+        script = parser.get_script(buf)
+        ann = script.annotations
+        v0 = self.env.formula_manager.get_symbol('"v__AT0"')
+        v1_str = next(iter(ann[v0]["next"]))
+        self.assertEquals(v1_str, ":this_is_considered_a_value")
 
 
 if __name__ == '__main__':
