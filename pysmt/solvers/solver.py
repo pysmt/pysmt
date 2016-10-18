@@ -18,9 +18,8 @@
 import abc
 
 from pysmt.typing import BOOL
-from pysmt.exceptions import (SolverReturnedUnknownResultError,
-                              SolverStatusError)
-from pysmt.decorators import deprecated
+from pysmt.exceptions import (SolverReturnedUnknownResultError, PysmtValueError,
+                              PysmtTypeError, SolverStatusError)
 from six.moves import xrange
 
 
@@ -50,31 +49,31 @@ class SolverOptions(object):
                  solver_options=None):
 
         if generate_models not in (True, False):
-            raise ValueError("Invalid value %s for 'generate_models'" \
-                             % generate_models)
+            raise PysmtValueError("Invalid value %s for 'generate_models'" \
+                                  % generate_models)
         self.generate_models = generate_models
 
         if incremental not in (True, False):
-            raise ValueError("Invalid value %s for 'incremental'" \
-                             % incremental)
+            raise PysmtValueError("Invalid value %s for 'incremental'" \
+                                  % incremental)
         self.incremental = incremental
 
         if unsat_cores_mode not in (None, "named", "all"):
-            raise ValueError("Invalid value %s for 'unsat_cores_mode'" \
-                             % unsat_cores_mode)
+            raise PysmtValueError("Invalid value %s for 'unsat_cores_mode'" \
+                                  % unsat_cores_mode)
         self.unsat_cores_mode = unsat_cores_mode
 
         if random_seed is not None and type(random_seed) != int:
-            raise ValueError("Invalid value %s for 'random_seed'" \
-                             % random_seed)
+            raise PysmtValueError("Invalid value %s for 'random_seed'" \
+                                  % random_seed)
         self.random_seed = random_seed
 
         if solver_options is not None:
             try:
                 solver_options = dict(solver_options)
             except:
-                raise ValueError("Invalid value %s for 'solver_options'" \
-                                 % solver_options)
+                raise PysmtValueError("Invalid value %s for 'solver_options'" \
+                                      % solver_options)
         else:
             solver_options = dict()
         self.solver_options = solver_options
@@ -98,7 +97,7 @@ class Solver(object):
 
     def __init__(self, environment, logic, **options):
         if logic is None:
-            raise ValueError("Cannot provide 'None' as logic")
+            raise PysmtValueError("Cannot provide 'None' as logic")
 
         self.environment = environment
         self.pending_pop = False
@@ -326,7 +325,7 @@ class Solver(object):
         Raises TypeError.
         """
         if item.is_symbol() and item.symbol_type().is_function_type():
-            raise TypeError("Cannot call get_value() on a FunctionType")
+            raise PysmtTypeError("Cannot call get_value() on a FunctionType")
 
     def _assert_is_boolean(self, formula):
         """Enforces that argument 'formula' is of type Boolean.
@@ -334,7 +333,7 @@ class Solver(object):
         Raises TypeError.
         """
         if formula.get_type() != BOOL:
-            raise TypeError("Argument must be boolean.")
+            raise PysmtTypeError("Argument must be boolean.")
 
 
 class IncrementalTrackingSolver(Solver):

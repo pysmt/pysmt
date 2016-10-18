@@ -30,7 +30,8 @@ from pysmt.solvers.solver import Solver, Converter, SolverOptions
 from pysmt.solvers.eager import EagerModel
 from pysmt.walkers import DagWalker
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
-from pysmt.exceptions import ConvertExpressionError
+from pysmt.exceptions import (ConvertExpressionError, PysmtValueError,
+                              PysmtTypeError)
 from pysmt.oracles import get_logic
 from pysmt.solvers.qelim import QuantifierEliminator
 
@@ -79,9 +80,9 @@ class BddOptions(SolverOptions):
         SolverOptions.__init__(self, **base_options)
 
         if self.random_seed is not None:
-            raise ValueError("'random_seed' option not supported.")
+            raise PysmtValueError("'random_seed' option not supported.")
         if self.unsat_cores_mode is not None:
-            raise ValueError("'unsat_cores_mode' option not supported.")
+            raise PysmtValueError("'unsat_cores_mode' option not supported.")
 
         for k,v in self.solver_options.items():
             if k == "static_ordering":
@@ -91,18 +92,18 @@ class BddOptions(SolverOptions):
                     except:
                         valid = False
                     if not valid:
-                        raise ValueError("The BDD static ordering must be a " \
-                                         "list of Boolean variables")
+                        raise PysmtValueError("The BDD static ordering must be" \
+                                              " a list of Boolean variables")
             elif k == "dynamic_reordering":
                 if v not in (True, False):
-                    raise ValueError("Invalid value %s for '%s'" % \
-                                     (str(k),str(v)))
+                    raise PysmtValueError("Invalid value %s for '%s'" % \
+                                          (str(k),str(v)))
             elif k == "reordering_algorithm":
                 if v not in BddOptions.CUDD_ALL_REORDERING_ALGORITHMS:
-                    raise ValueError("Invalid value %s for '%s'" % \
-                                     (str(k),str(v)))
+                    raise PysmtValueError("Invalid value %s for '%s'" % \
+                                          (str(k),str(v)))
             else:
-                raise ValueError("Unrecognized option '%s'." % k)
+                raise PysmtValueError("Unrecognized option '%s'." % k)
             # Store option
             setattr(self, k, v)
 
@@ -119,7 +120,8 @@ class BddOptions(SolverOptions):
 
         # Consistency check
         if not self.dynamic_reordering and self.reordering_algorithm is not None:
-            raise ValueError("reordering_algorithm requires dynamic_reordering.")
+            raise PysmtValueError("reordering_algorithm requires "
+                                  "dynamic_reordering.")
 
     def __call__(self, solver):
         # Impose initial ordering
@@ -285,7 +287,9 @@ class BddConverter(Converter, DagWalker):
         return cube
 
     def declare_variable(self, var):
-        if not var.is_symbol(type_=types.BOOL): raise TypeError
+        if not var.is_symbol(type_=types.BOOL):
+            raise PysmtTypeError("Trying to declare as a variable something "
+                                 "that is not a symbol: %s" % var)
         if var not in self.var2node:
             node = self.ddmanager.NewVar()
             self.idx2var[node.NodeReadIndex()] = var

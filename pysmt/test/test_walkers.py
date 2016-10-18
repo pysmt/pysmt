@@ -27,7 +27,7 @@ from pysmt.walkers import TreeWalker, DagWalker, IdentityDagWalker
 from pysmt.test import TestCase, main
 from pysmt.formula import FormulaManager
 from pysmt.test.examples import get_example_formulae
-from pysmt.exceptions import UnsupportedOperatorError
+from pysmt.exceptions import UnsupportedOperatorError, PysmtTypeError
 from pysmt.substituter import MSSubstituter
 
 
@@ -61,7 +61,7 @@ class TestWalkers(TestCase):
         args_bad = {x:f}
 
         substitute(and_x_x, args_good)
-        with self.assertRaisesRegex(TypeError, " substitutions"):
+        with self.assertRaisesRegex(PysmtTypeError, " substitutions"):
             substitute(and_x_x, args_bad)
 
         # 2. All arguments belong to the manager of the substituter.
@@ -71,13 +71,13 @@ class TestWalkers(TestCase):
         args_1 = {x: new_x}
         args_2 = {new_x: new_x}
 
-        with self.assertRaisesRegex(TypeError, "Formula Manager" ):
+        with self.assertRaisesRegex(PysmtTypeError, "Formula Manager" ):
             substitute(and_x_x, args_1)
 
-        with self.assertRaisesRegex(TypeError, "Formula Manager."):
+        with self.assertRaisesRegex(PysmtTypeError, "Formula Manager."):
             substitute(and_x_x, args_2)
 
-        with self.assertRaisesRegex(TypeError, "substitute()"):
+        with self.assertRaisesRegex(PysmtTypeError, "substitute()"):
             substitute(f, {x:x})
 
     def test_undefined_node(self):

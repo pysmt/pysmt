@@ -35,7 +35,7 @@ import pysmt.typing as types
 import pysmt.operators as op
 
 from pysmt.fnode import FNode, FNodeContent
-from pysmt.exceptions import UndefinedSymbolError
+from pysmt.exceptions import UndefinedSymbolError, PysmtValueError,PysmtTypeError
 from pysmt.walkers.identitydag import IdentityDagWalker
 from pysmt.constants import Fraction
 from pysmt.constants import (is_pysmt_fraction, is_python_rational,
@@ -89,7 +89,7 @@ class FormulaManager(object):
 
     def _create_symbol(self, name, typename=types.BOOL):
         if len(name) == 0:
-            raise ValueError("Empty string is not a valid name")
+            raise PysmtValueError("Empty string is not a valid name")
         n = self.create_node(node_type=op.SYMBOL,
                              args=tuple(),
                              payload=(name, typename))
@@ -121,9 +121,9 @@ class FormulaManager(object):
         if s is None:
             return self._create_symbol(name, typename)
         if not s.symbol_type() == typename:
-            raise TypeError("Trying to redefine symbol '%s' with a new type. "
-                            "Previous type was '%s' new type is '%s'" %
-                            (name, s.symbol_type(), typename))
+            raise PysmtTypeError("Trying to redefine symbol '%s' with a new type"
+                                 ". Previous type was '%s' new type is '%s'" %
+                                 (name, s.symbol_type(), typename))
         return s
 
     # Node definitions start here
@@ -223,7 +223,7 @@ class FormulaManager(object):
         """
         tuple_args = self._polymorph_args_to_tuple(args)
         if len(tuple_args) == 0:
-            raise TypeError("Cannot create a Times without arguments.")
+            raise PysmtTypeError("Cannot create a Times without arguments.")
 
         if len(tuple_args) == 1:
             return tuple_args[0]
@@ -237,7 +237,7 @@ class FormulaManager(object):
         The exponent must be a constant.
         """
         if not exponent.is_constant():
-            raise ValueError("The exponent of POW must be a constant.", exponent)
+            raise PysmtValueError("The exponent of POW must be a constant.", exponent)
 
         if base.is_constant():
             val = base.constant_value() ** exponent.constant_value()
@@ -331,8 +331,8 @@ class FormulaManager(object):
         elif is_python_rational(value):
             val = pysmt_fraction_from_rational(value)
         else:
-            raise TypeError("Invalid type in constant. The type was:" + \
-                            str(type(value)))
+            raise PysmtTypeError("Invalid type in constant. The type was:" + \
+                                 str(type(value)))
 
         n = self.create_node(node_type=op.REAL_CONSTANT,
                              args=tuple(),
@@ -350,8 +350,8 @@ class FormulaManager(object):
         elif is_python_integer(value):
             val = pysmt_integer_from_integer(value)
         else:
-            raise TypeError("Invalid type in constant. The type was:" + \
-                            str(type(value)))
+            raise PysmtTypeError("Invalid type in constant. The type was:" + \
+                                 str(type(value)))
         n = self.create_node(node_type=op.INT_CONSTANT,
                              args=tuple(),
                              payload=val)
@@ -368,7 +368,7 @@ class FormulaManager(object):
 
     def Bool(self, value):
         if type(value) != bool:
-            raise TypeError("Expecting bool, got %s" % type(value))
+            raise PysmtTypeError("Expecting bool, got %s" % type(value))
 
         if value:
             return self.true_formula
@@ -426,7 +426,7 @@ class FormulaManager(object):
         """
         tuple_args = self._polymorph_args_to_tuple(args)
         if len(tuple_args) == 0:
-            raise TypeError("Cannot create a Plus without arguments.")
+            raise PysmtTypeError("Cannot create a Plus without arguments.")
 
         if len(tuple_args) == 1:
             return tuple_args[0]
@@ -446,7 +446,8 @@ class FormulaManager(object):
             return self.create_node(node_type=op.TOREAL,
                                     args=(formula,))
         else:
-            raise TypeError("Argument is of type %s, but INT was expected!\n" % t)
+            raise PysmtTypeError("Argument is of type %s, but INT was "
+                                 "expected!\n" % t)
 
     def AtMostOne(self, *args):
         """ At most one of the bool expressions can be true at anytime.
@@ -551,30 +552,32 @@ class FormulaManager(object):
                 str_width = len(value)
                 value = int(value, 2)
             else:
-                raise ValueError("Expecting binary value as string, got %s" \
-                                 " instead." % value)
+                raise PysmtValueError("Expecting binary value as string, got " \
+                                      "%s instead." % value)
 
             if width is not None and width != str_width:
-                raise ValueError("Specified width does not match string width" \
-                                 " (%d != %d)" % (width, str_width))
+                raise PysmtValueError("Specified width does not match string " \
+                                      "width (%d != %d)" % (width, str_width))
             width = str_width
 
         if width is None:
-            raise ValueError("Need to specify a width for the constant")
+            raise PysmtValueError("Need to specify a width for the constant")
 
         if is_python_integer(value):
             if value < 0:
-                raise ValueError("Cannot specify a negative value: %d" % value)
+                raise PysmtValueError("Cannot specify a negative value: %d" \
+                                      % value)
             if value >= 2**width:
-                raise ValueError("Cannot express %d in %d bits" % (value, width))
+                raise PysmtValueError("Cannot express %d in %d bits" \
+                                      % (value, width))
 
             return self.create_node(node_type=op.BV_CONSTANT,
                                     args=tuple(),
                                     payload=(value, width))
 
         else:
-            raise TypeError("Invalid type in constant. The type was:" + \
-                            str(type(value)))
+            raise PysmtTypeError("Invalid type in constant. The type was:" + \
+                                 str(type(value)))
 
     def SBV(self, value, width=None):
         """Returns a constant of type BitVector interpreting the sign.
@@ -585,16 +588,18 @@ class FormulaManager(object):
         """
         if is_python_integer(value):
             if width is None:
-                raise ValueError("Need to specify a width for the constant")
+                raise PysmtValueError("Need to specify a width for the constant")
 
             min_val = -(2**(width-1))
             max_val = (2**(width-1)) - 1
             if value < min_val:
-                raise ValueError("Cannot represent a value (%d) lower than %d" \
-                                 " in %d bits" % (value, min_val, width))
+                raise PysmtValueError("Cannot represent a value (%d) lower " \
+                                      "than %d in %d bits" % (value, min_val,
+                                                              width))
             if value > max_val:
-                raise ValueError("Cannot represent a value (%d) greater than " \
-                                 "%d in %d bits" % (value, max_val, width))
+                raise PysmtValueError("Cannot represent a value (%d) greater " \
+                                      "than %d in %d bits" % (value, max_val,
+                                                              width))
 
             if value >= 0:
                 return self.BV(value, width)
@@ -731,7 +736,8 @@ class FormulaManager(object):
     def BVRol(self, formula, steps):
         """Returns the LEFT rotation of the BV by the number of steps."""
         if not is_python_integer(steps):
-            raise TypeError("BVRol: 'steps' should be an integer. Got %s" % steps)
+            raise PysmtTypeError("BVRol: 'steps' should be an integer. Got %s" \
+                                 % steps)
         return self.create_node(node_type=op.BV_ROL,
                                 args=(formula,),
                                 payload=(formula.bv_width(), steps))
@@ -739,7 +745,8 @@ class FormulaManager(object):
     def BVRor(self, formula, steps):
         """Returns the RIGHT rotation of the BV by the number of steps."""
         if not is_python_integer(steps):
-            raise TypeError("BVRor: 'steps' should be an integer. Got %s" % steps)
+            raise PysmtTypeError("BVRor: 'steps' should be an integer. Got %s" \
+                                 % steps)
         return self.create_node(node_type=op.BV_ROR,
                                 args=(formula,),
                                 payload=(formula.bv_width(), steps))
@@ -750,7 +757,8 @@ class FormulaManager(object):
         New bits are set to zero.
         """
         if not is_python_integer(increase):
-            raise TypeError("BVZext: 'increase' should be an integer. Got %s" % increase)
+            raise PysmtTypeError("BVZext: 'increase' should be an integer. "
+                                 "Got %s" % increase)
         return self.create_node(node_type=op.BV_ZEXT,
                                 args=(formula,),
                                 payload=(formula.bv_width()+increase,
@@ -762,7 +770,8 @@ class FormulaManager(object):
         New bits are set according to the most-significant-bit.
         """
         if not is_python_integer(increase):
-            raise TypeError("BVSext: 'increase' should be an integer. Got %s" % increase)
+            raise PysmtTypeError("BVSext: 'increase' should be an integer. "
+                                 "Got %s" % increase)
         return self.create_node(node_type=op.BV_SEXT,
                                 args=(formula,),
                                 payload=(formula.bv_width()+increase,
@@ -896,13 +905,14 @@ class FormulaManager(object):
            default and the array is initialized correspondingly.
         """
         if not isinstance(idx_type, types.PySMTType):
-            raise TypeError("idx_type is not a valid type: '%s'" % idx_type)
+            raise PysmtTypeError("idx_type is not a valid type: '%s'" % idx_type)
 
         args = [default]
         if assigned_values:
             for k in sorted(assigned_values, key=id):
                 if not k.is_constant():
-                    raise ValueError("Array initialization indexes must be constants")
+                    raise PysmtValueError("Array initialization indexes must "
+                                          "be constants")
                 # It is useless to represent assignments equal to the default
                 if assigned_values[k] != default:
                     args.append(k)

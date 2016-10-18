@@ -20,6 +20,7 @@ from pysmt.shortcuts import (Symbol, And, Iff, Equals, LT, GT, Minus,
 from pysmt.typing import INT, REAL
 from pysmt.test import TestCase, skipIfNoSolverForLogic, main
 from pysmt.logics import QF_LIA, QF_UFLIRA
+from pysmt.exceptions import PysmtTypeError
 
 class TestLIA(TestCase):
 
@@ -40,7 +41,7 @@ class TestLIA(TestCase):
         varA = Symbol("A", REAL)
         varB = Symbol("B", INT)
 
-        with self.assertRaises(TypeError):
+        with self.assertRaises(PysmtTypeError):
             f = And(LT(varA, Plus(varA, Real(1))),
                     GT(varA, Minus(varB, Int(1))))
 

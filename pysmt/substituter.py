@@ -21,6 +21,7 @@ from six import iteritems
 
 import pysmt.walkers
 import pysmt.operators as op
+from pysmt.exceptions import PysmtTypeError
 
 
 class Substituter(pysmt.walkers.DagWalker):
@@ -104,25 +105,25 @@ class Substituter(pysmt.walkers.DagWalker):
 
         # Check that formula is a term
         if not formula.is_term():
-            raise TypeError("substitute() can only be used on terms.")
+            raise PysmtTypeError("substitute() can only be used on terms.")
 
         for (i, k) in enumerate(subs):
             v = subs[k]
             # Check that substitutions are terms
             if not k.is_term():
-                raise TypeError(
+                raise PysmtTypeError(
                     "Only terms should be provided as substitutions." +
                     " Non-term '%s' found." % k)
             if not v.is_term():
-                raise TypeError(
+                raise PysmtTypeError(
                     "Only terms should be provided as substitutions." +
                     " Non-term '%s' found." % v)
             # Check that substitutions belong to the current formula manager
             if k not in self.manager:
-                raise TypeError(
+                raise PysmtTypeError(
                     "Key %d does not belong to the Formula Manager." % i)
             if v not in self.manager:
-                raise TypeError(
+                raise PysmtTypeError(
                     "Value %d does not belong to the Formula Manager." % i)
 
         self.orig_subs = subs

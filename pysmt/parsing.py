@@ -20,6 +20,7 @@ from collections import namedtuple
 
 import pysmt.typing as types
 from pysmt.environment import get_env
+from pysmt.exceptions import PysmtSyntaxError, UndefinedSymbolError
 from pysmt.constants import Fraction
 
 
@@ -59,7 +60,7 @@ class Lexer(object):
         self.scanner = re.compile("|".join(rule.regex for rule in self.rules),
                                   re.DOTALL | re.VERBOSE)
     def lexing_error(self, read):
-        raise SyntaxError("Unexpected input: %s" % read)
+        raise PysmtSyntaxError("Unexpected input: %s" % read)
 
     def tokenize(self, data):
         """The token generator for the given string"""
@@ -88,10 +89,10 @@ class GrammarSymbol(object):
         self.payload = payload
 
     def nud(self, parser):
-        raise SyntaxError("Syntax error at token '%s'." % parser.token)
+        raise PysmtSyntaxError("Syntax error at token '%s'." % parser.token)
 
     def led(self, parser, left):
-        raise SyntaxError("Syntax error at token '%s' (Read: '%s')." % \
+        raise PysmtSyntaxError("Syntax error at token '%s' (Read: '%s')." % \
                           (parser.token, left))
 
 #
@@ -254,7 +255,7 @@ class HRLexer(Lexer):
             if b.is_constant():
                 return op(a, b.constant_value())
             else:
-                raise SyntaxError("Constant expected, got '%s'" % b)
+                raise PysmtSyntaxError("Constant expected, got '%s'" % b)
         return _res
 
 # EOC HRLexer
@@ -320,7 +321,7 @@ class Identifier(GrammarSymbol):
         GrammarSymbol.__init__(self)
         self.value = env.formula_manager.get_symbol(name)
         if self.value is None:
-            raise ValueError("Undefined symbol: '%s'" % name)
+            raise UndefinedSymbolError(name)
 
     def nud(self, parser):
         return self.value
@@ -411,7 +412,7 @@ class OpenBrak(GrammarSymbol):
             parser.expect(CloseBrak, "]")
             return parser.mgr.Store(op, e1, e2)
         else:
-            raise SyntaxError("Unexpected token:" + str(parser.token))
+            raise PysmtSyntaxError("Unexpected token:" + str(parser.token))
 
 
 class Quantifier(GrammarSymbol):
@@ -479,8 +480,8 @@ class PrattParser(object):
         result = self.expression()
         try:
             bd = next(self.tokenizer)
-            raise SyntaxError("Bogus data after expression: '%s' (Partial: %s)" \
-                              % (bd, result))
+            raise PysmtSyntaxError("Bogus data after expression: '%s' "
+                                   "(Partial: %s)" % (bd, result))
         except StopIteration:
             return result
 
@@ -495,7 +496,7 @@ class PrattParser(object):
         ParserError
         """
         if type(self.token) != token_class:
-            raise SyntaxError("Expected '%s'" % token_repr)
+            raise PysmtSyntaxError("Expected '%s'" % token_repr)
         self.advance()
 
 # EOC PrattParser
