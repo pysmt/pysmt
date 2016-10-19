@@ -31,26 +31,39 @@ on a factory service. Each BitVector width is represented by a
 different instance of BVType.
 
 """
+from pysmt.exceptions import PysmtValueError
 
-# Global dictionary of types, used to store the singletons
-__CUSTOM_TYPES__ = {}
-__BV_TYPES__ = {}
-__ARRAY_TYPES__ = {}
 
 class PySMTType(object):
-    """Abstract class for representing a type within pySMT."""
+    """Class for representing a type within pySMT.
 
-    def __init__(self, type_id=-1):
+    Instances of this class are used to represent sorts.
+    The subclass FunctionType is used to represent function declarations.
+    """
+
+    __MAX_ID = -1
+
+    def __init__(self, type_id=None, name=None, args=None):
+        assert type_id is None or isinstance(type_id, int)
+        if type_id is None:
+            type_id = PySMTType.__MAX_ID + 1
+            PySMTType.__MAX_ID = type_id
+        else:
+            assert type_id > PySMTType.__MAX_ID
+            PySMTType.__MAX_ID = type_id
         self.type_id = type_id
+        self.name = name
+        self.args = args
+        self.arity = len(args) if args else 0
 
     def is_bool_type(self):
-        return False
-
-    def is_int_type(self):
-        return False
+        return self.type_id == 0
 
     def is_real_type(self):
-        return False
+        return self.type_id == 1
+
+    def is_int_type(self):
+        return self.type_id == 2
 
     def is_bv_type(self, width=None):
         #pylint: disable=unused-argument
@@ -74,58 +87,27 @@ class PySMTType(object):
         return not self.__eq__(other)
 
     def __repr__(self):
-        return self.__class__.__name__
-
-
-class BooleanType(PySMTType):
-    def __init__(self):
-        PySMTType.__init__(self, type_id = 0)
-
-    def is_bool_type(self):
-        return True
+        if self.name is None:
+            return self.__class__.__name__
+        return self.name
 
     def as_smtlib(self, funstyle=True):
+        name = self.name
+        if self.args:
+            args = " ".join([arg.as_smtlib(funstyle=False) \
+                             for arg in self.args])
+            name = "(" + self.name + " " + args + ")"
         if funstyle:
-            return "() Bool"
+            return "() %s" % name
         else:
-            return "Bool"
+            return name
 
     def __str__(self):
-        return "Bool"
-
-
-class RealType(PySMTType):
-    def __init__(self):
-        PySMTType.__init__(self, type_id = 1)
-
-    def is_real_type(self):
-        return True
-
-    def as_smtlib(self, funstyle=True):
-        if funstyle:
-            return "() Real"
+        if self.args:
+            args = "(%s)" % ", ".join(str(a) for a in self.args)
         else:
-            return "Real"
-
-    def __str__(self):
-        return "Real"
-
-
-class IntType(PySMTType):
-    def __init__(self):
-        PySMTType.__init__(self, type_id = 2)
-
-    def is_int_type(self):
-        return True
-
-    def as_smtlib(self, funstyle=True):
-        if funstyle:
-            return "() Int"
-        else:
-            return "Int"
-
-    def __str__(self):
-        return "Int"
+            args = ""
+        return self.name + args
 
 
 def BVType(width=32):
@@ -135,13 +117,12 @@ def BVType(width=32):
     whenever needed. To see the functions provided by the type look at
     _BVType.
     """
-    key = width
-    if key in __BV_TYPES__:
-        return  __BV_TYPES__[key]
-
-    res = _BVType(width=width)
-    __BV_TYPES__[key] = res
-    return res
+    try:
+        ty = _BVType._instances[width]
+    except KeyError:
+        ty = _BVType(width=width)
+        _BVType._instances[width] = ty
+    return ty
 
 
 class _BVType(PySMTType):
@@ -150,8 +131,11 @@ class _BVType(PySMTType):
     This class should not be instantiated directly, but the factory
     method BVType should be used instead.
     """
+
+    _instances = {}
+
     def __init__(self, width=32):
-        PySMTType.__init__(self, type_id = 3)
+        PySMTType.__init__(self)
         self._width = width
 
     @property
@@ -204,13 +188,13 @@ def FunctionType(return_type, param_types):
     # 0-arity functions types are equivalent to the return type
     if len(param_types) == 0:
         return return_type
-    if key in __CUSTOM_TYPES__:
-        return  __CUSTOM_TYPES__[key]
-
-    res = _FunctionType(return_type=return_type,
-                        param_types=param_types)
-    __CUSTOM_TYPES__[key] = res
-    return res
+    try:
+        ty = _FunctionType._instances[key]
+    except KeyError:
+        ty = _FunctionType(return_type=return_type,
+                           param_types=param_types)
+        _FunctionType._instances[key] = ty
+    return ty
 
 
 class _FunctionType(PySMTType):
@@ -219,8 +203,11 @@ class _FunctionType(PySMTType):
     This class should not be instantiated directly, but the factory
     method FunctionType should be used instead.
     """
+
+    _instances = {}
+
     def __init__(self, return_type, param_types):
-        PySMTType.__init__(self, type_id = 4)
+        PySMTType.__init__(self)
         self._return_type = return_type
         self._param_types = param_types
         self._hash = hash(return_type) + sum(hash(p) for p in param_types)
@@ -289,12 +276,12 @@ def ArrayType(index_type, elem_type):
     _ArrayType
     """
     key = (index_type, elem_type)
-    if key in __ARRAY_TYPES__:
-        return  __ARRAY_TYPES__[key]
-
-    res = _ArrayType(index_type, elem_type)
-    __ARRAY_TYPES__[key] = res
-    return res
+    try:
+        ty = _ArrayType._instances[key]
+    except KeyError:
+        ty = _ArrayType(index_type, elem_type)
+        _ArrayType._instances[key] = ty
+    return ty
 
 
 class _ArrayType(PySMTType):
@@ -303,8 +290,11 @@ class _ArrayType(PySMTType):
     This class should not be instantiated directly, but the factory
     method ArrayType should be used instead.
     """
+
+    _instances = {}
+
     def __init__(self, index_type, elem_type):
-        PySMTType.__init__(self, type_id = 5)
+        PySMTType.__init__(self)
         self._index_type = index_type
         self._elem_type = elem_type
         self._hash = hash(index_type) + hash(elem_type)
@@ -360,11 +350,87 @@ class _ArrayType(PySMTType):
     def __hash__(self):
         return self._hash
 
+# Custom Type (sorts declaration)
+def Type(name, arity=0):
+    """Creates a new Type Declaration (sort declaration).
+
+    This is equivalent to the SMT-LIB command "declare-sort".  For
+    sorts of arity 0, we return a PySMTType, all other sorts need to
+    be instantiated.
+
+    See class _Type.
+    """
+
+    if arity == 0:
+        # Automatically instantiate 0-arity types
+        return _TypeDecl(name, arity)()
+    return _TypeDecl(name, arity)
+
+
+class _TypeDecl(object):
+    """Create a new Type Declaration (sort).
+
+    This is equivalent to the SMT-LIB command "declare-sort".
+    NOTE: This object is **not** a Type, but a Type Declaration.
+    """
+
+    # Maintain a unique instance of _Type and _PySMTType for each
+    # type declaration and type instance.
+    _names = {}
+    _instances = {}
+
+    def __new__(cls, name, arity):
+        try:
+            ty = _TypeDecl._names[name]
+            if ty.arity != arity:
+                raise PysmtValueError("Type %s previously declared with arity "\
+                                      " %d." % (name, ty.arity))
+        except KeyError:
+            ty = object.__new__(cls)
+            _TypeDecl._names[name] = ty
+        return ty
+
+    def __init__(self, name, arity):
+        self.name = name
+        self.arity = arity
+
+    def __call__(self, *args):
+        if self.arity == 0:
+            subkey = None
+        else:
+            assert len(args) == self.arity
+            assert all(isinstance(t, PySMTType) for t in args)
+            subkey = tuple(args)
+        try:
+            ty = _TypeDecl._instances[self.name][subkey]
+        except KeyError:
+            ty = PySMTType(name=self.name, args=args)
+            if self.name not in _TypeDecl._instances:
+                _TypeDecl._instances[self.name] = dict()
+            _TypeDecl._instances[self.name][subkey] = ty
+        return ty
+
+
+class PartialType(object):
+    """PartialType allows to delay the definition of a Type.
+
+    A partial type is equivalent to SMT-LIB "define-sort" command.
+    """
+    def __init__(self, name, definition):
+        self.name = name
+        self.definition = definition
+
+    def __str__(self):
+        return "PartialType(%s)" % (self.name)
+
+    def __call__(self, *args):
+        return self.definition(*args)
+
 
 # Singletons for the basic types
-BOOL = BooleanType()
-REAL = RealType()
-INT = IntType()
+BOOL = PySMTType(type_id=0, name="Bool")
+REAL = PySMTType(type_id=1, name="Real")
+INT = PySMTType(type_id=2, name="Int")
 
 # Helper Constants
 PYSMT_TYPES = frozenset([BOOL, REAL, INT])

@@ -90,6 +90,8 @@ class FormulaManager(object):
     def _create_symbol(self, name, typename=types.BOOL):
         if len(name) == 0:
             raise PysmtValueError("Empty string is not a valid name")
+        if not isinstance(typename, types.PySMTType):
+            raise PysmtValueError("typename must be a PySMTType.")
         n = self.create_node(node_type=op.SYMBOL,
                              args=tuple(),
                              payload=(name, typename))
