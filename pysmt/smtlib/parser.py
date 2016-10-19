@@ -43,6 +43,7 @@ def open_(fname):
             return bz2.open(fname, "rt")
     return open(fname)
 
+
 def get_formula(script_stream, environment=None):
     """
     Returns the formula asserted at the end of the given script
@@ -136,89 +137,22 @@ class SmtLibExecutionCache(object):
         for k in values:
             self.unbind(k)
 
+# EOC SmtLibExecutionCache
 
 
-def tokenizer_generator(reader):
+class Tokenizer(object):
     """Takes a file-like object and produces a stream of tokens following
     the LISP rules.
 
     If interative is True, the file reading proceeds char-by-char with
     no buffering. This is useful for interactive use for example with
     a SMT-Lib2-compliant solver
+
+    The method add_extra_token allows to "push-back" a token, so that
+    it will be returned by the next call to consume_token, instead of
+    reading from the actual generator.
+
     """
-    spaces = set([" ", "\n", "\t"])
-    separators = set(["(", ")", "|", "\""])
-    specials = spaces | separators | set([";", ""])
-
-    c = next(reader)
-
-    eof = False
-    while not eof:
-        if c in specials:
-            # consume the spaces
-            if c in spaces:
-                c = next(reader)
-
-            elif c in separators:
-                if c == "|":
-                    s = []
-                    c = next(reader)
-                    while c and c != "|":
-                        if c == "\\": # This is a single '\'
-                            c = next(reader)
-                            if c != "|" and c != "\\":
-                                # Only \| and \\ are supported escapings
-                                raise PysmtSyntaxError("Unknown escaping in " \
-                                                       "quoted symbol: "
-                                                       "'\\%s'" % c)
-                        s.append(c)
-                        c = next(reader)
-                    if not c:
-                        raise PysmtSyntaxError("Expected '|'")
-                    yield "".join(s)
-                    c = next(reader)
-
-                elif c == "\"":
-                    # String literals
-                    s = []
-                    c = next(reader)
-                    while c:
-                        if c == "\"":
-                            c = next(reader)
-                            if c == "\"":
-                                s.append(c)
-                                c = next(reader)
-                            else:
-                                break
-                        else:
-                            s.append(c)
-                            c = next(reader)
-                    if not c:
-                        raise PysmtSyntaxError("Expected '|'")
-                    yield '"%s"' % ("".join(s)) # string literals maintain their quoting
-
-                else:
-                    yield c
-                    c = next(reader)
-
-            elif c == ";":
-                while c and c != "\n":
-                    c = next(reader)
-                c = next(reader)
-
-            else:
-                # EOF
-                eof = True
-                assert len(c) == 0
-        else:
-            tk = []
-            while c not in specials:
-                tk.append(c)
-                c = next(reader)
-            yield "".join(tk)
-
-
-class Tokenizer(object):
 
     def __init__(self, handle, interactive=False):
         if not interactive:
@@ -226,7 +160,7 @@ class Tokenizer(object):
             self.reader = itertools.chain.from_iterable(handle)
         else:
             self.reader = interactive_char_iterator(handle)
-        self.generator = tokenizer_generator(self.reader)
+        self.generator = self.create_generator(self.reader)
         self.extra_queue = []
         self.consume = self.consume_token
 
@@ -235,7 +169,7 @@ class Tokenizer(object):
         self.consume = self.consume_token_queue
 
     def consume_token_queue(self):
-        if len(self.extra_queue):
+        if self.extra_queue:
             return self.extra_queue.pop(0)
         else:
             self.consume = self.consume_token
@@ -246,6 +180,86 @@ class Tokenizer(object):
 
     def raw_read(self):
         return next(self.reader)
+
+    @staticmethod
+    def create_generator(reader):
+        """Takes a file-like object and produces a stream of tokens following
+        the LISP rules.
+
+        This is the method doing the heavy-lifting of tokenization.
+        """
+        spaces = set([" ", "\n", "\t"])
+        separators = set(["(", ")", "|", "\""])
+        specials = spaces | separators | set([";", ""])
+
+        c = next(reader)
+
+        eof = False
+        while not eof:
+            if c in specials:
+                # consume the spaces
+                if c in spaces:
+                    c = next(reader)
+
+                elif c in separators:
+                    if c == "|":
+                        s = []
+                        c = next(reader)
+                        while c and c != "|":
+                            if c == "\\": # This is a single '\'
+                                c = next(reader)
+                                if c != "|" and c != "\\":
+                                    # Only \| and \\ are supported escapings
+                                    raise PysmtSyntaxError("Unknown escaping in " \
+                                                           "quoted symbol: "
+                                                           "'\\%s'" % c)
+                            s.append(c)
+                            c = next(reader)
+                        if not c:
+                            raise PysmtSyntaxError("Expected '|'")
+                        yield "".join(s)
+                        c = next(reader)
+
+                    elif c == "\"":
+                        # String literals
+                        s = []
+                        c = next(reader)
+                        while c:
+                            if c == "\"":
+                                c = next(reader)
+                                if c == "\"":
+                                    s.append(c)
+                                    c = next(reader)
+                                else:
+                                    break
+                            else:
+                                s.append(c)
+                                c = next(reader)
+                        if not c:
+                            raise PysmtSyntaxError("Expected '|'")
+                        yield '"%s"' % ("".join(s)) # string literals maintain their quoting
+
+                    else:
+                        yield c
+                        c = next(reader)
+
+                elif c == ";":
+                    while c and c != "\n":
+                        c = next(reader)
+                    c = next(reader)
+
+                else:
+                    # EOF
+                    eof = True
+                    assert len(c) == 0
+            else:
+                tk = []
+                while c not in specials:
+                    tk.append(c)
+                    c = next(reader)
+                yield "".join(tk)
+
+# EOC Tokenizer
 
 
 class SmtLibParser(object):
@@ -373,7 +387,6 @@ class SmtLibParser(object):
         mgr = self.env.formula_manager
         self.cache.update({'false':mgr.FALSE(), 'true':mgr.TRUE()})
 
-
     def _minus_or_uminus(self, *args):
         """Utility function that handles both unary and binary minus"""
         mgr = self.env.formula_manager
@@ -393,7 +406,6 @@ class SmtLibParser(object):
             assert len(args) == 2
             return mgr.Minus(args[0], args[1])
 
-
     def _enter_smtlib_as(self, stack, tokens, key):
         """Utility function that handles 'as' that is a special function in SMTLIB"""
         #pylint: disable=unused-argument
@@ -408,7 +420,6 @@ class SmtLibParser(object):
         def handler():
             return res
         stack[-1].append(handler)
-
 
     def _smtlib_underscore(self, stack, tokens, key):
         #pylint: disable=unused-argument
@@ -491,8 +502,6 @@ class SmtLibParser(object):
         self.consume_closing(tokens, "expression")
         stack.pop()
         stack[-1].append(fun)
-
-
 
     def _equals_or_iff(self, left, right):
         """Utility function that treats = between booleans as <->"""
@@ -668,7 +677,6 @@ class SmtLibParser(object):
         stack[-1].append(quant)
         stack[-1].append(vrs)
 
-
     def _enter_annotation(self, stack, tokens, key):
         """Deals with annotations"""
         #pylint: disable=unused-argument
@@ -704,7 +712,6 @@ class SmtLibParser(object):
         # get_expression needs it
         tokens.add_extra_token(")")
         stack[-1].append(lambda : term)
-
 
     def get_expression(self, tokens):
         """
@@ -751,8 +758,6 @@ class SmtLibParser(object):
                     stack[-1].append(self.atom(tk, mgr))
                 except IndexError:
                     return self.atom(tk, mgr)
-
-
 
     def get_script(self, script):
         """
@@ -815,7 +820,6 @@ class SmtLibParser(object):
         raise PysmtSyntaxError("Unexpected token '%s' in %s command. Expected " \
                                "at most %d arguments." % (current, command,
                                                           max_size))
-
 
     def parse_type(self, tokens, command, additional_token=None):
         """Parses a single type name from the tokens"""
@@ -1142,6 +1146,8 @@ class SmtLibParser(object):
         self.parse_atoms(tokens, current, 0)
         return SmtLibCommand(current, [])
 
+# EOC SmtLibParser
+
 
 class SmtLib20Parser(SmtLibParser):
     """Parser for SMT-LIB 2.0."""
@@ -1159,6 +1165,8 @@ class SmtLib20Parser(SmtLibParser):
         del self.commands["get-unsat-assumptions"]
         del self.commands["reset"]
         del self.commands["reset-assertions"]
+
+# EOC SmtLib20Parser
 
 
 class SmtLibZ3Parser(SmtLibParser):
@@ -1181,6 +1189,7 @@ class SmtLibZ3Parser(SmtLibParser):
     def _ext_rotate_right(self, x, y):
         return self.env.formula_manager.BVRor(x, y.simplify().constant_value())
 
+# EOC SmtLibZ3Parser
 
 
 if __name__ == "__main__":
