@@ -26,7 +26,7 @@ import pysmt.smtlib.commands as smtcmd
 from pysmt.environment import get_env
 from pysmt.typing import BOOL, REAL, INT, FunctionType, BVType, ArrayType
 from pysmt.logics import get_logic_by_name, UndefinedLogicError
-from pysmt.exceptions import UnknownSmtLibCommandError, PysmtSyntaxError
+from pysmt.exceptions import UnknownSmtLibCommandError, PysmtSyntaxError, PysmtTypeError
 from pysmt.smtlib.script import SmtLibCommand, SmtLibScript
 from pysmt.smtlib.annotations import Annotations
 from pysmt.utils import interactive_char_iterator
@@ -285,24 +285,59 @@ class SmtLibParser(object):
         self.logic = None
         self._reset()
 
+        mgr = self.env.formula_manager
+
+        # Fixing the issue with integer/real numbers on arithmetic
+        # operators.
+        #
+        # We try to apply the operator as it is, in case of failure,
+        # we try to interpret as reals the constant operands that are
+        # integers
+        def fix_real(op, *args):
+            try:
+                return op(*args)
+            except PysmtTypeError:
+                new_args = []
+                for x in args:
+                    if self.env.stc.get_type(x).is_int_type() and \
+                       len(x.get_free_variables()) == 0:
+                        new_args.append(mgr.ToReal(x))
+                    else:
+                        new_args.append(x)
+                if args == new_args:
+                    raise
+                return op(*new_args)
+
+        self.LT = lambda *args: fix_real(mgr.LT, *args)
+        self.GT = lambda *args: fix_real(mgr.GT, *args)
+        self.LE = lambda *args: fix_real(mgr.LE, *args)
+        self.GE = lambda *args: fix_real(mgr.GE, *args)
+        self.Equals = lambda *args: fix_real(mgr.Equals, *args)
+        self.EqualsOrIff = lambda *args: fix_real(mgr.EqualsOrIff, *args)
+        self.Plus = lambda *args: fix_real(mgr.Plus, *args)
+        self.Minus = lambda *args: fix_real(mgr.Minus, *args)
+        self.Times = lambda *args: fix_real(mgr.Times, *args)
+        self.Div = lambda *args: fix_real(mgr.Div, *args)
+        self.Ite = lambda *args: fix_real(mgr.Ite, *args)
+        self.AllDifferent = lambda *args: fix_real(mgr.AllDifferent, *args)
+
         # Tokens representing interpreted functions appearing in expressions
         # Each token is handled by a dedicated function that takes the
         # recursion stack, the token stream and the parsed token
         # Common tokens are handled in the _reset function
-        mgr = self.env.formula_manager
         self.interpreted = {"let" : self._enter_let,
                             "!" : self._enter_annotation,
                             "exists" : self._enter_quantifier,
                             "forall" : self._enter_quantifier,
-                            '+':self._operator_adapter(mgr.Plus),
+                            '+':self._operator_adapter(self.Plus),
                             '-':self._operator_adapter(self._minus_or_uminus),
-                            '*':self._operator_adapter(mgr.Times),
+                            '*':self._operator_adapter(self.Times),
                             '/':self._operator_adapter(self._division),
                             'pow':self._operator_adapter(mgr.Pow),
-                            '>':self._operator_adapter(mgr.GT),
-                            '<':self._operator_adapter(mgr.LT),
-                            '>=':self._operator_adapter(mgr.GE),
-                            '<=':self._operator_adapter(mgr.LE),
+                            '>':self._operator_adapter(self.GT),
+                            '<':self._operator_adapter(self.LT),
+                            '>=':self._operator_adapter(self.GE),
+                            '<=':self._operator_adapter(self.LE),
                             '=':self._operator_adapter(self._equals_or_iff),
                             'not':self._operator_adapter(mgr.Not),
                             'and':self._operator_adapter(mgr.And),
@@ -310,8 +345,8 @@ class SmtLibParser(object):
                             'xor':self._operator_adapter(mgr.Xor),
                             '=>':self._operator_adapter(mgr.Implies),
                             '<->':self._operator_adapter(mgr.Iff),
-                            'ite':self._operator_adapter(mgr.Ite),
-                            'distinct':self._operator_adapter(mgr.AllDifferent),
+                            'ite':self._operator_adapter(self.Ite),
+                            'distinct':self._operator_adapter(self.AllDifferent),
                             'to_real':self._operator_adapter(mgr.ToReal),
                             'concat':self._operator_adapter(mgr.BVConcat),
                             'bvnot':self._operator_adapter(mgr.BVNot),
@@ -405,7 +440,7 @@ class SmtLibParser(object):
             return mgr.Times(mult, args[0])
         else:
             assert len(args) == 2
-            return mgr.Minus(args[0], args[1])
+            return self.Minus(args[0], args[1])
 
     def _enter_smtlib_as(self, stack, tokens, key):
         """Utility function that handles 'as' that is a special function in SMTLIB"""
@@ -507,7 +542,7 @@ class SmtLibParser(object):
         if lty == BOOL:
             return mgr.Iff(left, right)
         else:
-            return mgr.Equals(left, right)
+            return self.Equals(left, right)
 
     def _division(self, left, right):
         """Utility function that builds a division"""
@@ -515,7 +550,7 @@ class SmtLibParser(object):
         if left.is_constant() and right.is_constant():
             return mgr.Real(Fraction(left.constant_value()) / \
                             Fraction(right.constant_value()))
-        return mgr.Div(left, right)
+        return self.Div(left, right)
 
     def _get_basic_type(self, type_name, params=None):
         """
