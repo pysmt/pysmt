@@ -17,8 +17,9 @@
 #
 from six import StringIO
 
-from pysmt.typing import PartialType, Type, ArrayType
-from pysmt.typing import INT, BOOL
+from pysmt.typing import INT, BOOL, REAL
+from pysmt.typing import Type, ArrayType, FunctionType, BVType
+from pysmt.typing import PartialType
 from pysmt.test import TestCase, main
 from pysmt.smtlib.parser import SmtLibParser
 from pysmt.shortcuts import FreshSymbol, EqualsOrIff, Select, TRUE, FALSE
@@ -40,19 +41,43 @@ SMTLIB_SRC="""\
 
 class TestSorts(TestCase):
 
-    # def test_smtlib_sort(self):
-    #     parser = SmtLibParser()
-    #     buf = StringIO(SMTLIB_SRC)
-    #     script = parser.get_script(buf)
-    #     pass
+    def test_smtlib_sort(self):
+        # parser = SmtLibParser()
+        # buf = StringIO(SMTLIB_SRC)
+        # script = parser.get_script(buf)
+        pass
 
+    def test_basic_types(self):
+        self.assertTrue(BOOL.is_bool_type())
+        self.assertFalse(BOOL.is_function_type())
+
+        self.assertTrue(REAL.is_real_type())
+        self.assertFalse(REAL.is_bool_type())
+
+        self.assertTrue(INT.is_int_type())
+        self.assertFalse(INT.is_real_type())
+
+        ftype = FunctionType(REAL, [REAL, REAL])
+        self.assertTrue(ftype.is_function_type())
+        self.assertFalse(ftype.is_int_type())
+
+        self.assertNotEqual(BOOL, INT)
+        self.assertEqual(REAL, REAL)
+
+        AAIBR = ArrayType(ArrayType(INT, BOOL), REAL)
+        self.assertEqual(str(AAIBR), "Array{Array{Int, Bool}, Real}")
+
+        bt1 = BVType(4)
+        bt2 = BVType(4)
+        self.assertEqual(bt1, bt2)
+        self.assertEqual(bt1.width, 4)
 
     def test_fake_arrays(self):
         FakeArrayType = Type("FakeArray", 2)
         with self.assertRaises(PysmtValueError):
             FreshSymbol(FakeArrayType)
         FakeArrayII = FakeArrayType(INT, INT)
-        self.assertEqual(str(FakeArrayII), "FakeArray(Int, Int)")
+        self.assertEqual(str(FakeArrayII), "FakeArray{Int, Int}")
         self.assertEqual(FakeArrayII.as_smtlib(False), "(FakeArray Int Int)")
         s = FreshSymbol(FakeArrayII)
         self.assertIsNotNone(s)
@@ -111,17 +136,9 @@ class TestSorts(TestCase):
         self.assertIsNotNone(FreshSymbol(ty))
 
         pty = PartialType("pty", lambda S,T: S(S(S(S(S(T))))))
-        self.assertEqual(pty(C,A), ty, (pty(C,A).type_id, ty.type_id))
-
-
-
-
-
-
+        self.assertEqual(pty(C,A), ty)
 
     def test_solving_with_custom_sorts(self):
-        # TODO: Move this to solving test
-        # self.assertSAT(And(f1, f2))
         pass
 
 

@@ -1015,19 +1015,6 @@ class TestFormulaManager(TestCase):
         self.assertTrue(and_x_x in self.mgr)
         self.assertFalse(and_y_y in self.mgr)
 
-    def test_typing(self):
-        self.assertTrue(BOOL.is_bool_type())
-        self.assertFalse(BOOL.is_function_type())
-
-        self.assertTrue(REAL.is_real_type())
-        self.assertFalse(REAL.is_bool_type())
-
-        self.assertTrue(INT.is_int_type())
-        self.assertFalse(INT.is_real_type())
-
-        self.assertTrue(self.ftype.is_function_type())
-        self.assertFalse(self.ftype.is_int_type())
-
     def test_array_value(self):
         a1 = self.mgr.Array(INT, self.mgr.Int(0))
         a2 = self.mgr.Array(INT, self.mgr.Int(0),

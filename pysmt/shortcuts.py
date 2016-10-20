@@ -32,9 +32,9 @@ environment is used (this is the default behavior of
 import warnings
 warnings.simplefilter('default')
 
-import pysmt.typing as types
 import pysmt.configuration as config
 import pysmt.environment
+import pysmt.typing as types
 import pysmt.smtlib.parser
 import pysmt.smtlib.script
 

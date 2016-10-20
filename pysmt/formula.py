@@ -941,9 +941,23 @@ class FormulaManager(object):
               obtain f_b that is the formula f_a expressed on the
               FormulaManager b : f_b = b.normalize(f_a)
         """
-        # TODO: name clash with formula normalization
-        # TODO: Move this out of the manager and into ad-hoc function
-        normalizer = IdentityDagWalker(self.env)
+        # TODO: Move this to environment.py
+        class FormulaContextualizer(IdentityDagWalker):
+            def walk_symbol(self, formula, **kwargs):
+                # Recreate the Symbol taking into account the type information
+                ty = formula.symbol_type()
+                tmgr = self.env.type_manager
+                if ty.is_bool_type() or ty.is_int_type() or ty.is_real_type():
+                    myty = formula.symbol_type()
+                elif ty.is_bv_type():
+                    myty = tmgr.BVType(ty.width)
+                elif ty.is_array_type():
+                    myty = tmgr.ArrayType(ty.index_type, ty.elem_type)
+                else:
+                    typedecl = tmgr.Type(ty.basename, ty.arity)
+                    myty = tmgr.get_type_instance(typedecl, ty.args)
+                return self.mgr.Symbol(formula.symbol_name(), myty)
+        normalizer = FormulaContextualizer(self.env)
         return normalizer.walk(formula)
 
     def _polymorph_args_to_tuple(self, args):
