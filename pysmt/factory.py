@@ -84,13 +84,7 @@ class Factory(object):
         self._get_available_interpolators()
 
 
-    def get_solver(self, quantified=False, name=None, logic=None, **options):
-        assert quantified is False or logic is None, \
-            "Cannot specify both quantified and logic."
-
-        if quantified is True:
-            logic = self.default_logic.get_quantified_version
-
+    def get_solver(self, name=None, logic=None, **options):
         SolverClass, closer_logic = \
            self._get_solver_class(solver_list=self._all_solvers,
                                   solver_type="Solver",
@@ -104,14 +98,8 @@ class Factory(object):
                            **options)
 
 
-    def get_unsat_core_solver(self, quantified=False, name=None,
-                              logic=None, unsat_cores_mode="all"):
-        assert quantified is False or logic is None, \
-            "Cannot specify both quantified and logic."
-
-        if quantified is True:
-            logic = self.default_logic.get_quantified_version
-
+    def get_unsat_core_solver(self, name=None, logic=None,
+                              unsat_cores_mode="all"):
         SolverClass, closer_logic = \
            self._get_solver_class(solver_list=self._all_unsat_core_solvers,
                                   solver_type="Solver supporting Unsat Cores",
@@ -123,8 +111,6 @@ class Factory(object):
                            logic=closer_logic,
                            generate_models=True,
                            unsat_cores_mode=unsat_cores_mode)
-
-
 
     def get_quantifier_eliminator(self, name=None, logic=None):
         SolverClass, closer_logic = \
@@ -450,19 +436,16 @@ class Factory(object):
     ##
     ## Wrappers: These functions are exported in shortcuts
     ##
-    def Solver(self, quantified=False, name=None, logic=None, **options):
-        return self.get_solver(quantified=quantified,
-                               name=name,
+    def Solver(self, name=None, logic=None, **options):
+        return self.get_solver(name=name,
                                logic=logic,
                                **options)
 
-    def UnsatCoreSolver(self, quantified=False, name=None, logic=None,
+    def UnsatCoreSolver(self, name=None, logic=None,
                         unsat_cores_mode="all"):
-        return self.get_unsat_core_solver(quantified=quantified,
-                                          name=name,
+        return self.get_unsat_core_solver(name=name,
                                           logic=logic,
                                           unsat_cores_mode=unsat_cores_mode)
-
 
     def QuantifierEliminator(self, name=None, logic=None):
         return self.get_quantifier_eliminator(name=name, logic=logic)
