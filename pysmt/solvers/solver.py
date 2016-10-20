@@ -299,14 +299,6 @@ class Solver(object):
             res[f] = v
         return res
 
-    def set_options(self, options):
-        """Sets multiple options at once.
-
-        :param options: Options to be set
-        :type options: Dictionary
-        """
-        raise NotImplementedError
-
     def __enter__(self):
         """Manages entering a Context (i.e., with statement)"""
         return self
