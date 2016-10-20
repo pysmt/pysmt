@@ -311,6 +311,7 @@ class SmtLibParser(object):
                             '=>':self._operator_adapter(mgr.Implies),
                             '<->':self._operator_adapter(mgr.Iff),
                             'ite':self._operator_adapter(mgr.Ite),
+                            'distinct':self._operator_adapter(mgr.AllDifferent),
                             'to_real':self._operator_adapter(mgr.ToReal),
                             'concat':self._operator_adapter(mgr.BVConcat),
                             'bvnot':self._operator_adapter(mgr.BVNot),
@@ -497,11 +498,7 @@ class SmtLibParser(object):
         else:
             raise PysmtSyntaxError("Unexpected '_' expression '%s'" % op)
 
-        # Consume the closed parenthesis of the (_ ...) term and add the
-        # resulting function to the correct level in the stack
-        self.consume_closing(tokens, "expression")
-        stack.pop()
-        stack[-1].append(fun)
+        stack[-1].append(lambda : fun)
 
     def _equals_or_iff(self, left, right):
         """Utility function that treats = between booleans as <->"""
