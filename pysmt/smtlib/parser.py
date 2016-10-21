@@ -297,10 +297,12 @@ class SmtLibParser(object):
             try:
                 return op(*args)
             except PysmtTypeError:
+                get_type = self.env.stc.get_type
+                get_free_variables = self.env.fvo.get_free_variables
                 new_args = []
                 for x in args:
-                    if self.env.stc.get_type(x).is_int_type() and \
-                       len(x.get_free_variables()) == 0:
+                    if get_type(x).is_int_type() and\
+                       len(get_free_variables(x)) == 0:
                         new_args.append(mgr.ToReal(x))
                     else:
                         new_args.append(x)
@@ -308,18 +310,18 @@ class SmtLibParser(object):
                     raise
                 return op(*new_args)
 
-        self.LT = lambda *args: fix_real(mgr.LT, *args)
-        self.GT = lambda *args: fix_real(mgr.GT, *args)
-        self.LE = lambda *args: fix_real(mgr.LE, *args)
-        self.GE = lambda *args: fix_real(mgr.GE, *args)
-        self.Equals = lambda *args: fix_real(mgr.Equals, *args)
-        self.EqualsOrIff = lambda *args: fix_real(mgr.EqualsOrIff, *args)
-        self.Plus = lambda *args: fix_real(mgr.Plus, *args)
-        self.Minus = lambda *args: fix_real(mgr.Minus, *args)
-        self.Times = lambda *args: fix_real(mgr.Times, *args)
-        self.Div = lambda *args: fix_real(mgr.Div, *args)
-        self.Ite = lambda *args: fix_real(mgr.Ite, *args)
-        self.AllDifferent = lambda *args: fix_real(mgr.AllDifferent, *args)
+        self.LT = functools.partial(fix_real, mgr.LT)
+        self.GT = functools.partial(fix_real, mgr.GT)
+        self.LE = functools.partial(fix_real, mgr.LE)
+        self.GE = functools.partial(fix_real, mgr.GE)
+        self.Equals = functools.partial(fix_real, mgr.Equals)
+        self.EqualsOrIff = functools.partial(fix_real, mgr.EqualsOrIff)
+        self.Plus = functools.partial(fix_real, mgr.Plus)
+        self.Minus = functools.partial(fix_real, mgr.Minus)
+        self.Times = functools.partial(fix_real, mgr.Times)
+        self.Div = functools.partial(fix_real, mgr.Div)
+        self.Ite = functools.partial(fix_real, mgr.Ite)
+        self.AllDifferent = functools.partial(fix_real, mgr.AllDifferent)
 
         # Tokens representing interpreted functions appearing in expressions
         # Each token is handled by a dedicated function that takes the
