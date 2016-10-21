@@ -22,7 +22,7 @@ from pysmt.typing import Type, ArrayType, FunctionType, BVType
 from pysmt.typing import PartialType
 from pysmt.test import TestCase, main
 from pysmt.smtlib.parser import SmtLibParser
-from pysmt.shortcuts import FreshSymbol, EqualsOrIff, Select, TRUE, FALSE
+from pysmt.shortcuts import FreshSymbol, EqualsOrIff, Select, TRUE, FALSE, Function
 from pysmt.exceptions import PysmtValueError, PysmtTypeError
 
 
@@ -137,6 +137,29 @@ class TestSorts(TestCase):
 
         pty = PartialType("pty", lambda S,T: S(S(S(S(S(T))))))
         self.assertEqual(pty(C,A), ty)
+
+    def test_normalization(self):
+        from pysmt.environment import Environment
+
+        ty = ArrayType(BOOL, REAL)
+        x = FreshSymbol(ty)
+        fty = FunctionType(BOOL, (ty,))
+        f = FreshSymbol(fty)
+        g = Function(f, (x,))
+        self.assertIsNotNone(g)
+        env2 = Environment()
+        mgr2 = env2.formula_manager
+        self.assertNotIn(g, mgr2)
+        g2 = mgr2.normalize(g)
+        self.assertIn(g2, mgr2)
+        # Since the types are from two different environments, they
+        # should be different.
+        x2 = g2.arg(0)
+        ty2 = x2.symbol_type()
+        self.assertFalse(ty2 is ty, ty)
+        fname = g2.function_name()
+        fty2 = fname.symbol_type()
+        self.assertFalse(fty2 is fty, fty)
 
     def test_solving_with_custom_sorts(self):
         pass

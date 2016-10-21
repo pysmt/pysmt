@@ -95,8 +95,7 @@ class IdentityDagWalker(DagWalker):
     def walk_function(self, formula, args, **kwargs):
         # We re-create the symbol name
         old_name = formula.function_name()
-        new_name = self.mgr.Symbol(old_name.symbol_name(),
-                                   old_name.symbol_type())
+        new_name = self.walk_symbol(old_name)
         return self.mgr.Function(new_name, args)
 
     def walk_toreal(self, formula, args, **kwargs):

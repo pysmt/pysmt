@@ -226,8 +226,15 @@ class _FunctionType(PySMTType):
     def __init__(self, return_type, param_types):
         PySMTType.__init__(self)
         self._return_type = return_type
-        self._param_types = param_types
+        self._param_types = tuple(param_types)
         self._hash = hash(return_type) + sum(hash(p) for p in param_types)
+        # Note:
+        # To simplify handling of types, we need to treat FunctionType
+        # in a special way. We do so by setting its arity to a
+        # negative value and creating an args that is the concatenation of
+        # return_type and param_types. In this way, we can iterate on args.
+        self.arity = -1
+        self.args = (self._return_type,) + self.param_types
         return
 
     @property
@@ -437,6 +444,47 @@ class TypeManager(object):
             ty = PySMTType(basename=type_decl.name, args=args)
             self._custom_types[key] = ty
         return ty
+
+    def normalize(self, type_):
+        """Recursively recreate the given type within the manager.
+
+        This proceeds iteratively on the structure of the type tree.
+        """
+        stack = [type_]
+        typemap = {}
+        while stack:
+            ty = stack.pop()
+            if ty.arity == 0:
+                if ty.is_bool_type() or ty.is_int_type() or ty.is_real_type():
+                    myty = ty
+                elif ty.is_bv_type():
+                    myty = self.BVType(ty.width)
+                else:
+                    myty = self.Type(ty.basename, arity=0)
+                typemap[ty] = myty
+            else:
+                missing = [subtype for subtype in ty.args\
+                           if subtype not in typemap]
+                if missing:
+                    # At least one type still needs to be converted
+                    stack.append(ty)
+                    stack += missing
+                else:
+                    if ty.is_array_type():
+                        index_type = typemap[ty.index_type]
+                        elem_type = typemap[ty.elem_type]
+                        myty = self.ArrayType(index_type, elem_type)
+                    elif ty.is_function_type():
+                        param_types = (typemap[a] for a in ty.param_types)
+                        return_type = typemap[ty.return_type]
+                        myty = self.FunctionType(return_type, param_types)
+                    else:
+                        # Custom Type
+                        typedecl = self.Type(type_.basename, type_.arity)
+                        new_args = (typemap[a] for a in type_.args)
+                        myty = self.get_type_instance(typedecl, new_args)
+                    typemap[ty] = myty
+        return typemap[type_]
 
 # EOC TypeManager
 
