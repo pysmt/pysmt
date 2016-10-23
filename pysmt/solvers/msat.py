@@ -448,6 +448,56 @@ class MSatConverter(Converter, DagWalker):
         # Handling of UF bool args
         self._ufrewriter = MSatBoolUFRewriter(environment)
 
+        # Signature Computation
+        self.term_sig = {
+            mathsat.MSAT_TAG_TRUE: lambda term, args: types.BOOL,
+            mathsat.MSAT_TAG_FALSE: lambda term, args: types.BOOL,
+            mathsat.MSAT_TAG_AND: lambda term, args:\
+                types.FunctionType(types.BOOL, [types.BOOL, types.BOOL]),
+            mathsat.MSAT_TAG_OR: lambda term, args:\
+                types.FunctionType(types.BOOL, [types.BOOL, types.BOOL]),
+            mathsat.MSAT_TAG_NOT: lambda term, args:\
+                types.FunctionType(types.BOOL, [types.BOOL]),
+            mathsat.MSAT_TAG_IFF: lambda term, args:\
+                types.FunctionType(types.BOOL, [types.BOOL, types.BOOL]),
+            mathsat.MSAT_TAG_ITE: self._sig_ite,
+            mathsat.MSAT_TAG_EQ: self._sig_most_generic_bool_binary,
+            mathsat.MSAT_TAG_LEQ: self._sig_most_generic_bool_binary,
+            mathsat.MSAT_TAG_PLUS:  self._sig_most_generic_bool_binary,
+            mathsat.MSAT_TAG_TIMES: self._sig_most_generic_bool_binary,
+            mathsat.MSAT_TAG_BV_MUL: self._sig_binary,
+            mathsat.MSAT_TAG_BV_ADD: self._sig_binary,
+            mathsat.MSAT_TAG_BV_UDIV:self._sig_binary,
+            mathsat.MSAT_TAG_BV_UREM:self._sig_binary,
+            mathsat.MSAT_TAG_BV_CONCAT: self._sig_binary,
+            mathsat.MSAT_TAG_BV_OR:  self._sig_binary,
+            mathsat.MSAT_TAG_BV_XOR: self._sig_binary,
+            mathsat.MSAT_TAG_BV_AND: self._sig_binary,
+            mathsat.MSAT_TAG_BV_NOT:  self._sig_unary,
+            mathsat.MSAT_TAG_BV_SUB: self._sig_binary,
+            mathsat.MSAT_TAG_BV_NEG:  self._sig_unary,
+            mathsat.MSAT_TAG_BV_SREM: self._sig_binary,
+            mathsat.MSAT_TAG_BV_SDIV: self._sig_binary,
+            mathsat.MSAT_TAG_BV_ULT:  self._sig_bool_binary,
+            mathsat.MSAT_TAG_BV_SLT:  self._sig_bool_binary,
+            mathsat.MSAT_TAG_BV_ULE:  self._sig_bool_binary,
+            mathsat.MSAT_TAG_BV_SLE:  self._sig_bool_binary,
+            mathsat.MSAT_TAG_BV_LSHL: self._sig_binary,
+            mathsat.MSAT_TAG_BV_LSHR: self._sig_binary,
+            mathsat.MSAT_TAG_BV_ASHR: self._sig_binary,
+            mathsat.MSAT_TAG_BV_ROL: self._sig_binary,
+            mathsat.MSAT_TAG_BV_ROR:  self._sig_binary,
+            mathsat.MSAT_TAG_BV_EXTRACT: self._sig_bv_extract,
+            mathsat.MSAT_TAG_BV_ZEXT: self._sig_bv_zext,
+            mathsat.MSAT_TAG_BV_SEXT: self._sig_bv_sext,
+            mathsat.MSAT_TAG_BV_COMP: self._sig_bv_comp,
+            mathsat.MSAT_TAG_ARRAY_READ: self._sig_array_read,
+            mathsat.MSAT_TAG_ARRAY_WRITE: self._sig_array_write,
+            mathsat.MSAT_TAG_ARRAY_CONST: self._sig_array_const,
+            ## Symbols, Constants and UFs have TAG_UNKNOWN
+            mathsat.MSAT_TAG_UNKNOWN: self._sig_unknown,
+        }
+
         return
 
     def back(self, expr):
@@ -469,13 +519,78 @@ class MSatConverter(Converter, DagWalker):
         - a term 14 returns Int
         - a term x ? 13 : 15.0 returns Bool -> Real -> Real -> Real
         """
-        res = None
+        decl = mathsat.msat_term_get_decl(term)
+        tag = mathsat.msat_decl_get_tag(self.msat_env(), decl)
+        try:
+            return self.term_sig[tag](term, args)
+        except KeyError:
+            raise PysmtTypeError("Unsupported expression:",
+                                 mathsat.msat_term_repr(term))
 
-        if mathsat.msat_term_is_true(self.msat_env(), term) or \
-            mathsat.msat_term_is_false(self.msat_env(), term) or \
-            mathsat.msat_term_is_boolean_constant(self.msat_env(), term):
-            res = types.BOOL
+    def _sig_binary(self, term, args):
+        t = self.env.stc.get_type(args[0])
+        return types.FunctionType(t, [t, t])
 
+    def _sig_binary(self, term, args):
+        t = self.env.stc.get_type(args[0])
+        return types.FunctionType(t, [t, t])
+
+    def _sig_bool_binary(self, term, args):
+        t = self.env.stc.get_type(args[0])
+        return types.FunctionType(types.BOOL, [t, t])
+
+    def _sig_most_generic_bool_binary(self, term, args):
+        t1 = self.env.stc.get_type(args[0])
+        t2 = self.env.stc.get_type(args[1])
+        t = self._most_generic(t1, t2)
+        return types.FunctionType(types.BOOL, [t, t])
+
+    def _sig_unary(self, term, args):
+        t = self.env.stc.get_type(args[0])
+        return types.FunctionType(t, [t])
+
+    def _sig_ite(self, term, args):
+        t1 = self.env.stc.get_type(args[1])
+        t2 = self.env.stc.get_type(args[2])
+        t = self._most_generic(t1, t2)
+        return types.FunctionType(t, [types.BOOL, t, t])
+
+    def _sig_bv_comp(self, term,  args):
+        t = self.env.stc.get_type(args[0])
+        return types.FunctionType(types.BVType(1), [t, t])
+
+    def _sig_bv_sext(self, term, args):
+        _, amount = mathsat.msat_term_is_bv_sext(self.msat_env(), term)
+        t = self.env.stc.get_type(args[0])
+        return types.FunctionType(types.BVType(amount + t.width), [t])
+
+    def _sig_bv_zext(self, term, args):
+        _, amount = mathsat.msat_term_is_bv_zext(self.msat_env(), term)
+        t = self.env.stc.get_type(args[0])
+        return types.FunctionType(types.BVType(amount + t.width), [t])
+
+    def _sig_bv_extract(self, term, args):
+        _, msb, lsb = mathsat.msat_term_is_bv_extract(self.msat_env(), term)
+        t = self.env.stc.get_type(args[0])
+        return types.FunctionType(types.BVType(msb - lsb + 1), [t])
+
+    def _sig_array_read(self, term, args):
+        t1 = self.env.stc.get_type(args[0])
+        t = t1.elem_type
+        return types.FunctionType(t, [t1, t1.index_type])
+
+    def _sig_array_write(self, term, args):
+        at = self.env.stc.get_type(args[0])
+        return types.FunctionType(at, [at, at.index_type, at.elem_type])
+
+    def _sig_array_const(self, term,  args):
+        ty = mathsat.msat_term_get_type(term)
+        pyty = self._msat_type_to_type(ty)
+        return types.FunctionType(pyty, [self.env.stc.get_type(args[0])])
+
+    def _sig_unknown(self, term, args):
+        if mathsat.msat_term_is_boolean_constant(self.msat_env(), term):
+            return types.BOOL
         elif mathsat.msat_term_is_number(self.msat_env(), term):
             ty = mathsat.msat_term_get_type(term)
             if mathsat.msat_is_integer_type(self.msat_env(), ty):
@@ -486,115 +601,16 @@ class MSatConverter(Converter, DagWalker):
                 assert "_" in str(term), "Unrecognized type for '%s'" % str(term)
                 width = int(str(term).split("_")[1])
                 res = types.BVType(width)
-
-        elif mathsat.msat_term_is_and(self.msat_env(), term) or \
-             mathsat.msat_term_is_or(self.msat_env(), term) or \
-             mathsat.msat_term_is_iff(self.msat_env(), term):
-            res = types.FunctionType(types.BOOL, [types.BOOL, types.BOOL])
-
-        elif mathsat.msat_term_is_not(self.msat_env(), term):
-            res = types.FunctionType(types.BOOL, [types.BOOL])
-
-        elif mathsat.msat_term_is_term_ite(self.msat_env(), term):
-            t1 = self.env.stc.get_type(args[1])
-            t2 = self.env.stc.get_type(args[2])
-            t = self._most_generic(t1, t2)
-            res = types.FunctionType(t, [types.BOOL, t, t])
-
-        elif mathsat.msat_term_is_equal(self.msat_env(), term) or \
-             mathsat.msat_term_is_leq(self.msat_env(), term):
-            t1 = self.env.stc.get_type(args[0])
-            t2 = self.env.stc.get_type(args[1])
-            t = self._most_generic(t1, t2)
-            res = types.FunctionType(types.BOOL, [t, t])
-
-        elif mathsat.msat_term_is_plus(self.msat_env(), term) or \
-             mathsat.msat_term_is_times(self.msat_env(), term):
-            t1 = self.env.stc.get_type(args[0])
-            t2 = self.env.stc.get_type(args[1])
-            t = self._most_generic(t1, t2)
-            res = types.FunctionType(t, [t, t])
-
+            return res
         elif mathsat.msat_term_is_constant(self.msat_env(), term):
             ty = mathsat.msat_term_get_type(term)
             return self._msat_type_to_type(ty)
-
         elif mathsat.msat_term_is_uf(self.msat_env(), term):
             d = mathsat.msat_term_get_decl(term)
             fun = self.get_symbol_from_declaration(d)
-            res = fun.symbol_type()
-
-        elif mathsat.msat_term_is_bv_times(self.msat_env(), term) or \
-             mathsat.msat_term_is_bv_plus(self.msat_env(), term) or \
-             mathsat.msat_term_is_bv_minus(self.msat_env(), term) or \
-             mathsat.msat_term_is_bv_or(self.msat_env(), term) or \
-             mathsat.msat_term_is_bv_and(self.msat_env(), term) or \
-             mathsat.msat_term_is_bv_lshl(self.msat_env(), term) or \
-             mathsat.msat_term_is_bv_lshr(self.msat_env(), term) or \
-             mathsat.msat_term_is_bv_ashr(self.msat_env(), term) or \
-             mathsat.msat_term_is_bv_xor(self.msat_env(), term) or \
-             mathsat.msat_term_is_bv_urem(self.msat_env(), term) or \
-             mathsat.msat_term_is_bv_udiv(self.msat_env(), term) or \
-             mathsat.msat_term_is_bv_sdiv(self.msat_env(), term) or \
-             mathsat.msat_term_is_bv_srem(self.msat_env(), term) or \
-             mathsat.msat_term_is_bv_concat(self.msat_env(), term):
-            t = self.env.stc.get_type(args[0])
-            res = types.FunctionType(t, [t, t])
-
-        elif mathsat.msat_term_is_bv_not(self.msat_env(), term) or \
-             mathsat.msat_term_is_bv_neg(self.msat_env(), term):
-            t = self.env.stc.get_type(args[0])
-            res = types.FunctionType(t, [t])
-
-        elif mathsat.msat_term_is_bv_ult(self.msat_env(), term) or \
-             mathsat.msat_term_is_bv_slt(self.msat_env(), term) or \
-             mathsat.msat_term_is_bv_uleq(self.msat_env(), term) or \
-             mathsat.msat_term_is_bv_sleq(self.msat_env(), term):
-            t = self.env.stc.get_type(args[0])
-            res = types.FunctionType(types.BOOL, [t, t])
-
-        elif mathsat.msat_term_is_bv_comp(self.msat_env(), term):
-            t = self.env.stc.get_type(args[0])
-            res = types.FunctionType(types.BVType(1), [t, t])
-
-        elif mathsat.msat_term_is_bv_rol(self.msat_env(), term)[0] or \
-             mathsat.msat_term_is_bv_ror(self.msat_env(), term)[0]:
-            t = self.env.stc.get_type(args[0])
-            res = types.FunctionType(t, [t])
-
-        elif mathsat.msat_term_is_bv_sext(self.msat_env(), term)[0]:
-            _, amount = mathsat.msat_term_is_bv_sext(self.msat_env(), term)
-            t = self.env.stc.get_type(args[0])
-            res = types.FunctionType(types.BVType(amount + t.width), [t])
-
-        elif mathsat.msat_term_is_bv_zext(self.msat_env(), term)[0]:
-            _, amount = mathsat.msat_term_is_bv_zext(self.msat_env(), term)
-            t = self.env.stc.get_type(args[0])
-            res = types.FunctionType(types.BVType(amount + t.width), [t])
-
-        elif mathsat.msat_term_is_bv_extract(self.msat_env(), term)[0]:
-            _, msb, lsb = mathsat.msat_term_is_bv_extract(self.msat_env(), term)
-            t = self.env.stc.get_type(args[0])
-            res = types.FunctionType(types.BVType(msb - lsb + 1), [t])
-
-        elif mathsat.msat_term_is_array_read(self.msat_env(), term):
-            t1 = self.env.stc.get_type(args[0])
-            t = t1.elem_type
-            res = types.FunctionType(t, [t1, t1.index_type])
-
-        elif mathsat.msat_term_is_array_write(self.msat_env(), term):
-            at = self.env.stc.get_type(args[0])
-            res = types.FunctionType(at, [at, at.index_type, at.elem_type])
-
-        elif mathsat.msat_term_is_array_const(self.msat_env(), term):
-            ty = mathsat.msat_term_get_type(term)
-            pyty = self._msat_type_to_type(ty)
-            return types.FunctionType(pyty, [self.env.stc.get_type(args[0])])
-
-        else:
-            raise PysmtTypeError("Unsupported expression:",
-                                 mathsat.msat_term_repr(term))
-        return res
+            return fun.symbol_type()
+        raise PysmtTypeError("Unsupported expression:",
+                             mathsat.msat_term_repr(term))
 
     def _back_single_term(self, term, mgr, args):
         """Builds the pysmt formula given a term and the list of formulae
