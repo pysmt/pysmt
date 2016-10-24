@@ -315,10 +315,12 @@ class TestBasic(TestCase):
         for (f, _, satisfiability, logic) in get_example_formulae():
             if logic.quantifier_free:
                 for sname in get_env().factory.all_solvers(logic=logic):
+                    if sname == "dreal": continue
                     try:
                         f_i = get_implicant(f, logic=logic, solver_name=sname)
                         if satisfiability:
-                            self.assertValid(Implies(f_i, f), logic=logic, msg=(f_i, f))
+                            self.assertValid(Implies(f_i, f), logic=logic, msg=f,
+                                             solver_name=sname)
                         else:
                             self.assertIsNone(f_i)
                     except ConvertExpressionError as ex:

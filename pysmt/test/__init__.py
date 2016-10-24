@@ -64,6 +64,19 @@ class TestCase(unittest.TestCase):
                                                   logic=logic),
                         msg=msg)
 
+    def assertDeltaSat(self, formula, msg=None, solver_name=None, logic=None):
+        """Assert that formula is delta-SAT.
+
+        Note: A SAT Formula is also delta-SAT.
+        """
+        from pysmt.exceptions import DeltaSATError
+        try:
+            res = self.env.factory.is_sat(formula=formula,
+                                          solver_name=solver_name,
+                                          logic=logic),
+        except DeltaSATError:
+            res = True
+        self.assertTrue(res, msg=msg)
 
 class skipIfSolverNotAvailable(object):
     """Skip a test if the given solver is not available."""

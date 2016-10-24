@@ -116,7 +116,6 @@ class SolverInstaller(object):
         else:
             raise ValueError("Unsupported archive for extraction: %s" % path)
 
-
     def compile(self):
         """Performs the compilation if needed"""
         pass

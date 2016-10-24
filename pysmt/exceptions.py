@@ -119,6 +119,7 @@ class UndefinedSymbolError(PysmtException):
     def __str__(self):
         return "'%s' is not defined!" % self.name
 
+
 class PysmtModeError(PysmtException):
     """The current mode is not supported for this operation"""
     pass
@@ -137,4 +138,8 @@ class PysmtSyntaxError(PysmtException, SyntaxError):
     pass
 
 class PysmtIOError(PysmtException, IOError):
+    pass
+
+class DeltaSATError(PysmtException):
+    """The problem has been shown SAT for the given delta."""
     pass

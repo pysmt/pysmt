@@ -22,7 +22,7 @@ from collections import namedtuple
 
 from pysmt.cmd.installers import MSatInstaller, Z3Installer, PicoSATInstaller
 from pysmt.cmd.installers import CVC4Installer, YicesInstaller, BtorInstaller
-from pysmt.cmd.installers import CuddInstaller
+from pysmt.cmd.installers import CuddInstaller, DRealInstaller
 
 from pysmt.environment import get_env
 from pysmt.exceptions import PysmtException
@@ -36,7 +36,9 @@ INSTALLERS = [Installer(MSatInstaller,    "5.3.13", {}),
               Installer(YicesInstaller,   "2.5.1", {"yicespy_version": "07439670a54d08a76cfb931194e1eaf07ea026a1"}),
               Installer(BtorInstaller,    "2.2.0", {"lingeling_version": "bal"}),
               Installer(PicoSATInstaller, "960", {"pypicosat_minor_version" : "1610040816"}),
-              Installer(CuddInstaller,    "2.0.3", {"git_version" : "75fe055c2a736a3ac3e971c1ade108b815edc96c"})]
+              Installer(CuddInstaller,    "2.0.3", {"git_version" : "75fe055c2a736a3ac3e971c1ade108b815edc96c"}),
+              Installer(DRealInstaller,   "3.16.08", {"git_version" : "94587a280983cb99a5c34f77de763fe427447d7f"}),
+]
 
 
 def get_requested_solvers():

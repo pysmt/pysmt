@@ -36,12 +36,12 @@ addons:
     - libboost-dev
     - python3-all-dev
     - libmpc-dev
+    - cmake
 
 python:
   - 3.5
   - 2.7
   - pypy
-
 
 # Multiple envs will cause multiple build across multiple python versions.
 # We test the following:
@@ -50,18 +50,19 @@ python:
 #
 env:
   matrix:
-    - PYSMT_SOLVER="all"   PYSMT_GMPY="TRUE"
-    - PYSMT_SOLVER="all"   PYSMT_GMPY="FALSE"
-    - PYSMT_SOLVER="None"  PYSMT_GMPY="FALSE"
-    - PYSMT_SOLVER="msat"  PYSMT_GMPY="FALSE"
-    - PYSMT_SOLVER="z3"    PYSMT_GMPY="FALSE"
-    - PYSMT_SOLVER="cvc4"  PYSMT_GMPY="FALSE"
-    - PYSMT_SOLVER="yices" PYSMT_GMPY="FALSE"
-    - PYSMT_SOLVER="bdd"   PYSMT_GMPY="FALSE"
-    - PYSMT_SOLVER="picosat" PYSMT_GMPY="FALSE"
-    - PYSMT_SOLVER="btor"  PYSMT_GMPY="FALSE"
-    - PYSMT_SOLVER="msat_wrap" PYSMT_GMPY="FALSE"
-    - PYSMT_SOLVER="z3_wrap"   PYSMT_GMPY="FALSE"
+    # - PYSMT_SOLVER="all"   PYSMT_GMPY="TRUE"
+    # - PYSMT_SOLVER="all"   PYSMT_GMPY="FALSE"
+    # - PYSMT_SOLVER="None"  PYSMT_GMPY="FALSE"
+    # - PYSMT_SOLVER="msat"  PYSMT_GMPY="FALSE"
+    # - PYSMT_SOLVER="z3"    PYSMT_GMPY="FALSE"
+    # - PYSMT_SOLVER="cvc4"  PYSMT_GMPY="FALSE"
+    # - PYSMT_SOLVER="yices" PYSMT_GMPY="FALSE"
+    # - PYSMT_SOLVER="bdd"   PYSMT_GMPY="FALSE"
+    # - PYSMT_SOLVER="picosat" PYSMT_GMPY="FALSE"
+    # - PYSMT_SOLVER="btor"  PYSMT_GMPY="FALSE"
+    # - PYSMT_SOLVER="msat_wrap" PYSMT_GMPY="FALSE"
+    # - PYSMT_SOLVER="z3_wrap"   PYSMT_GMPY="FALSE"
+    - PYSMT_SOLVER="dreal" PYSMT_GMPY="FALSE"
 
 matrix:
   fast_finish: true
