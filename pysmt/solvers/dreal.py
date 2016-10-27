@@ -18,7 +18,6 @@
 import re
 
 from warnings import warn
-from fractions import Fraction
 from six.moves import xrange
 
 from pysmt.exceptions import SolverAPINotFound
@@ -42,6 +41,7 @@ from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               InternalSolverError,
                               DeltaSATError)
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
+from pysmt.constants import is_pysmt_fraction, is_pysmt_integer
 
 
 class DRealContext(object):
@@ -67,9 +67,45 @@ class DRealContext(object):
     def __call__(self):
         return self.ctx
 
+class DRealOptions(SolverOptions):
+    """ TODO: DESCRIBE OPTION SET_PRECISION """
+
+    def __init__(self, **base_options):
+        SolverOptions.__init__(self, **base_options)
+        self.precision = 10**(-3)
+        for k,v in self.solver_options.items():
+            if k == "precision":
+                self.precision = float(v)
+                del self.solver_options[k]
+
+    @staticmethod
+    def _set_option(dreal_ctx, name, value):
+        """Sets the given option. Might raise a ValueError."""
+        drealpy.dreal_set_option(dreal_ctx, name, value)
+
+    def __call__(self, solver):
+        if self.generate_models:
+            self._set_option(solver.dreal_ctx(), "model_generation", "true")
+
+        if self.unsat_cores_mode is not None:
+            self._set_option(solver.dreal_ctx(), "unsat_core_generation", "1")
+
+        if self.random_seed is not None:
+            self._set_option(solver.dreal_ctx(),
+                             "random_seed", str(self.random_seed))
+
+        drealpy.dreal_set_precision(solver.dreal_ctx(), self.precision)
+
+        for k,v in self.solver_options.items():
+            self._set_option(solver.dreal_ctx(), str(k), str(v))
+
+# EOC DRealOptions
+
+
 class DRealSolver(IncrementalTrackingSolver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
     LOGICS = [QF_NRA]
+    OptionsClass = DRealOptions
 
     def __init__(self, environment, logic, **options):
         # TODO: Options should be custom and include delta value
@@ -79,8 +115,7 @@ class DRealSolver(IncrementalTrackingSolver, SmtLibBasicSolver, SmtLibIgnoreMixi
 
         # TODO: Check logic
         self.dreal_ctx = DRealContext(drealpy.qf_nra)
-        self._precision = 10**(-3)
-        drealpy.dreal_set_precision(self.dreal_ctx(), self._precision)
+        self.options(self)
         self.mgr = self.environment.formula_manager
         self.converter = DRealConverter(environment, self.dreal_ctx)
 
@@ -141,7 +176,8 @@ class DRealSolver(IncrementalTrackingSolver, SmtLibBasicSolver, SmtLibIgnoreMixi
             formula = self.mgr.And(self._assertion_stack)
             model = self.get_model()
             if not model.get_py_value(formula):
-                raise DeltaSATError("Delta-SAT with precision %s" % str(self._precision))
+                raise DeltaSATError("Delta-SAT with precision %s"\
+                                    % str(self.options.precision))
             return True
 
     @clear_pending_pop
@@ -272,15 +308,14 @@ class DRealConverter(Converter, DagWalker):
         return drealpy.dreal_mk_ite(self.dreal_ctx(), i, t, e)
 
     def walk_real_constant(self, formula, **kwargs):
-        assert type(formula.constant_value()) == Fraction
+        assert is_pysmt_fraction(formula.constant_value()), type(formula.constant_value())
         frac = formula.constant_value()
         n,d = frac.numerator, frac.denominator
         rep = str(n) + "/" + str(d)
         return drealpy.dreal_mk_num_from_string(self.dreal_ctx(), rep)
 
     def walk_int_constant(self, formula, **kwargs):
-        assert type(formula.constant_value()) == int or \
-            type(formula.constant_value()) == long
+        assert is_pysmt_integer(formula.constant_value()), type(formula.constant_value())
         rep = str(formula.constant_value())
         return drealpy.dreal_mk_num_from_string(self.dreal_ctx(), rep)
 

@@ -37,7 +37,7 @@ INSTALLERS = [Installer(MSatInstaller,    "5.3.13", {}),
               Installer(BtorInstaller,    "2.2.0", {"lingeling_version": "bal"}),
               Installer(PicoSATInstaller, "960", {"pypicosat_minor_version" : "1610040816"}),
               Installer(CuddInstaller,    "2.0.3", {"git_version" : "75fe055c2a736a3ac3e971c1ade108b815edc96c"}),
-              Installer(DRealInstaller,   "3.16.08", {"git_version" : "00f876aae7799bf6ef5e4b9d290f9a241493a6c2"}),
+              Installer(DRealInstaller,   "3.16.08", {"git_version" : "f58eb036b6fe3546c247b0a48fbe77ffe28c4d41"}),
 ]
 
 
