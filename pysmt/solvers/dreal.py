@@ -33,17 +33,15 @@ from pysmt.oracles import get_logic
 
 import pysmt.operators as op
 from pysmt import typing as types
-from pysmt.solvers.solver import IncrementalTrackingSolver, Model, Converter
+from pysmt.solvers.solver import (IncrementalTrackingSolver, Converter,
+                                  SolverOptions)
 from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 from pysmt.solvers.eager import EagerModel
 from pysmt.walkers import DagWalker
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
-                              SolverNotConfiguredForUnsatCoresError,
                               InternalSolverError,
                               DeltaSATError)
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
-#from pysmt.solvers.interpolation import Interpolator # MG: Is this available in dreal?
-from pysmt.walkers.identitydag import IdentityDagWalker
 
 
 class DRealContext(object):
