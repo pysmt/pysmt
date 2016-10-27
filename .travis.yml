@@ -55,6 +55,9 @@ python:
 # 2. PySMT with one solver at the time
 #
 env:
+  global:
+    - "CXX=/usr/bin/g++-5"
+    - "CC=/usr/bin/gcc-5"
   matrix:
     # - PYSMT_SOLVER="all"   PYSMT_GMPY="TRUE"
     # - PYSMT_SOLVER="all"   PYSMT_GMPY="FALSE"
