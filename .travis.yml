@@ -101,6 +101,8 @@ matrix:
       env: PYSMT_SOLVER="msat_wrap" PYSMT_GMPY="FALSE"
     - python: pypy
       env: PYSMT_SOLVER="z3_wrap"   PYSMT_GMPY="FALSE"
+    - python: 3.5
+      env: PYSMT_SOLVER="dreal" PYSMT_GMPY="FALSE"
 
 install:
   - "./ci/travis_install.sh"

@@ -83,7 +83,6 @@ class DRealInstaller(SolverInstaller):
                     "-DCMAKE_INSTALL_PREFIX=%s " % self.bin_path +\
                     "../src"
 
-        # Do we need these?
         build_path = os.path.join(self.extract_path, "build")
         SolverInstaller.clean_dir(build_path)
 
