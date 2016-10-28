@@ -117,22 +117,22 @@ pySMT works on both Python 3.5 and Python 2.7.
 
 Installation
 ============
-You can install the latest stable release of pySMT from PyPI:
+You can install the latest stable release of pySMT from PyPI::
 
   # pip install pysmt
 
 this will additionally install the *pysmt-install* command, that can
-be used to install the solvers: e.g.,
+be used to install the solvers: e.g., ::
 
   $ pysmt-install --check
 
 will show you which solvers have been found in your ``PYTHONPATH``.
 PySMT does not depend directly on any solver, but if you want to
 perform solving, you need to have at least one solver installed. This
-can be used by PySMT via its native API, or passing through an SMT-LIB
+can be used by pySMT via its native API, or passing through an SMT-LIB
 file.
 
-The script *pysmt-install* can be used to simplify the installation of the solvers:
+The script *pysmt-install* can be used to simplify the installation of the solvers::
 
  $ pysmt-install --msat
 
@@ -220,6 +220,6 @@ License
 pySMT is release under the APACHE 2.0 License.
 
 For further questions, feel free to open an issue, or write to
-pysmt@googlegroups.com . `Browse the Archive <https://groups.google.com/d/forum/pysmt>`_
+pysmt@googlegroups.com (`Browse the Archive <https://groups.google.com/d/forum/pysmt>`_).
 
 
