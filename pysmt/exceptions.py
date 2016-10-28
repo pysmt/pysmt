@@ -125,6 +125,12 @@ class PysmtModeError(PysmtException):
     pass
 
 
+class DeltaSATError(PysmtException):
+    """The problem has been shown SAT for the given delta."""
+    pass
+
+
+# Exceptions from Standard Library
 class PysmtImportError(PysmtException, ImportError):
     pass
 
@@ -140,6 +146,5 @@ class PysmtSyntaxError(PysmtException, SyntaxError):
 class PysmtIOError(PysmtException, IOError):
     pass
 
-class DeltaSATError(PysmtException):
-    """The problem has been shown SAT for the given delta."""
+class PysmtZeroDivisionError(PysmtException, ZeroDivisionError):
     pass

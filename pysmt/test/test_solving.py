@@ -30,7 +30,8 @@ from pysmt.test.examples import get_example_formulae
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               InternalSolverError, NoSolverAvailableError,
                               ConvertExpressionError, UndefinedLogicError,
-                              PysmtTypeError, PysmtValueError)
+                              PysmtTypeError, PysmtValueError,
+                              DeltaSATError)
 from pysmt.logics import QF_UFLIRA, QF_BOOL, QF_LRA, AUTO
 from pysmt.logics import convert_logic_from_string
 
@@ -309,6 +310,8 @@ class TestBasic(TestCase):
                     self.assertFalse(logic.quantifier_free,
                                      "Unkown result are accepted only on "\
                                      "Quantified formulae")
+                except DeltaSATError:
+                    print(logic, f.serialize())
 
 
     def test_examples_get_implicant(self):

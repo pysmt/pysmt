@@ -17,7 +17,7 @@
 #
 from pysmt.solvers.solver import Model
 from pysmt.environment import get_env
-from pysmt.exceptions import PysmtTypeError
+from pysmt.exceptions import PysmtTypeError, PysmtZeroDivisionError
 
 
 class EagerModel(Model):
@@ -39,13 +39,15 @@ class EagerModel(Model):
         self.completed_assignment = dict(self.assignment)
 
     def get_value(self, formula, model_completion=True):
+        lang = self.assignment
         if model_completion:
             syms = formula.get_free_variables()
             self._complete_model(syms)
-            r = formula.substitute(self.completed_assignment)
-        else:
-            r = formula.substitute(self.assignment)
-
+            lang = self.completed_assignment
+        try:
+            r = formula.substitute(lang)
+        except ZeroDivisionError as ex:
+            raise PysmtZeroDivisionError(ex)
         res = r.simplify()
         if not res.is_constant():
             raise PysmtTypeError("Was expecting a constant but got %s" % res)

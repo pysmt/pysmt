@@ -39,7 +39,9 @@ from pysmt.solvers.eager import EagerModel
 from pysmt.walkers import DagWalker
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               InternalSolverError,
-                              DeltaSATError)
+                              DeltaSATError,
+                              PysmtValueError,
+                              PysmtZeroDivisionError)
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
 from pysmt.constants import is_pysmt_fraction, is_pysmt_integer
 
@@ -72,27 +74,26 @@ class DRealOptions(SolverOptions):
 
     def __init__(self, **base_options):
         SolverOptions.__init__(self, **base_options)
+        if self.unsat_cores_mode is not None:
+            raise PysmtValueError("'unsat_cores_mode' option not supported.")
+        if self.random_seed is not None:
+            warn("'random_seed' option not supported.", stacklevel=2)
         self.precision = 10**(-3)
         for k,v in self.solver_options.items():
-            if k == "precision":
+            if k in ("precision", ":precision"):
                 self.precision = float(v)
                 del self.solver_options[k]
 
     @staticmethod
     def _set_option(dreal_ctx, name, value):
         """Sets the given option. Might raise a ValueError."""
+        if name not in (":produce-proofs", ":produce-models", ":precision"):
+            raise PysmtValueError("Error setting the option '%s=%s'" % (name, value))
         drealpy.dreal_set_option(dreal_ctx, name, value)
 
     def __call__(self, solver):
         if self.generate_models:
-            self._set_option(solver.dreal_ctx(), "model_generation", "true")
-
-        if self.unsat_cores_mode is not None:
-            self._set_option(solver.dreal_ctx(), "unsat_core_generation", "1")
-
-        if self.random_seed is not None:
-            self._set_option(solver.dreal_ctx(),
-                             "random_seed", str(self.random_seed))
+            self._set_option(solver.dreal_ctx(), ":produce-models", "true")
 
         drealpy.dreal_set_precision(solver.dreal_ctx(), self.precision)
 
@@ -175,9 +176,17 @@ class DRealSolver(IncrementalTrackingSolver, SmtLibBasicSolver, SmtLibIgnoreMixi
             # l_true means delta-SAT
             formula = self.mgr.And(self._assertion_stack)
             model = self.get_model()
-            if not model.get_py_value(formula):
+            try:
+                res = model.get_py_value(formula)
+            except PysmtZeroDivisionError:
                 raise DeltaSATError("Delta-SAT with precision %s"\
                                     % str(self.options.precision))
+            if not res:
+                raise DeltaSATError("Delta-SAT with precision %s"\
+                                    % str(self.options.precision))
+            # The given model was checked and it is indeed a model.
+            # Therefore the formula is SAT (and we can ignore the
+            # Delta-SAT behavior)
             return True
 
     @clear_pending_pop
