@@ -136,12 +136,22 @@ The script *pysmt-install* can be used to simplify the installation of the solve
 
  $ pysmt-install --msat
 
-will install MathSAT 5. This script does not install required
+will install MathSAT 5. Once the installation is complete, you
+can use the option ``--env`` to obtain a string to update your
+``PYTHONPATH``::
+
+  $ pysmt-install --env
+  export PYTHONPATH="/home/pysmt/.smt_solvers/python-bindings-2.7:${PYTHONPATH}"
+
+By default the solvers are installed in your home directory in the
+folder ``.smt_solvers``. ``pysmt-install`` has many options to
+customize its behavior.
+
+*Note:* This script does not install required
 dependencies for building the solver (e.g., make or gcc) and has been
 tested mainly on Linux Debian/Ubuntu systems. We suggest that you
 refer to the documentation of each solver to understand how to install
-it with its python bindings. Nevertheless, we try to keep
-*pysmt/cmd/install.py* as readable and documented as possible.
+it with its python bindings. 
 
 For Yices, picosat, and CUDD, we use external wrappers:
 
@@ -151,6 +161,11 @@ For Yices, picosat, and CUDD, we use external wrappers:
 
 For instruction on how to use any SMT-LIB complaint solver with pySMT
 see `examples/generic_smtlib.py </examples/generic_smtlib.py>`_
+
+For more information, refer to online `documentation on ReadTheDocs <http://pysmt.readthedocs.io>`_
+
+Solvers Support
+---------------
 
 The following table summarizes the features supported via pySMT for
 each of the available solvers.
