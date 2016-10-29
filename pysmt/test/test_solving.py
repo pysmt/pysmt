@@ -366,11 +366,20 @@ class TestBasic(TestCase):
         for name in get_env().factory.all_solvers(logic=QF_LRA):
             with Solver(name=name) as solver:
                 solver.add_assertion(xor)
-                res1 = solver.solve(assumptions=[v1, Not(v2)])
+                try:
+                    res1 = solver.solve(assumptions=[v1, Not(v2)])
+                except DeltaSATError:
+                    res1 = True
                 model1 = solver.get_model()
-                res2 = solver.solve(assumptions=[Not(v1), v2])
+                try:
+                    res2 = solver.solve(assumptions=[Not(v1), v2])
+                except DeltaSATError:
+                    res2 = True
                 model2 = solver.get_model()
-                res3 = solver.solve(assumptions=[v1, v2])
+                try:
+                    res3 = solver.solve(assumptions=[v1, v2])
+                except DeltaSATError:
+                    res3 = True
                 self.assertTrue(res1)
                 self.assertTrue(res2)
                 self.assertFalse(res3)

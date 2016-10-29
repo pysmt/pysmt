@@ -136,35 +136,10 @@ class DRealSolver(IncrementalTrackingSolver, SmtLibBasicSolver, SmtLibIgnoreMixi
         res = None
 
         if assumptions is not None:
-            raise NotImplementedError("dReal method check_assump is buggy!")
-            bool_ass = []
-            other_ass = []
-            for x in assumptions:
-                if x.is_literal():
-                    bool_ass.append(self.converter.convert(x))
-                else:
-                    other_ass.append(x)
-
-            if len(other_ass) > 0:
-                self.push()
-                self.add_assertion(self.mgr.And(other_ass))
-                self.pending_pop = True
-
-            if len(bool_ass) > 0:
-                # TODO: Refactor this
-                if len(bool_ass) == 1:
-                    ass_ = bool_ass[0]
-                else:
-                    ass_ = drealpy.dreal_mk_and_2(self.dreal_ctx(),
-                                                bool_ass[0], bool_ass[1])
-                    for a in bool_ass[2:]:
-                        ass_ = drealpy.dreal_mk_and_2(self.dreal_ctx(),
-                                                    ass_, a)
-                res = drealpy.dreal_check_assump(self.dreal_ctx(), ass_)
-            else:
-                res = drealpy.dreal_check(self.dreal_ctx())
-        else:
-            res = drealpy.dreal_check(self.dreal_ctx())
+            self.push()
+            self.add_assertion(self.mgr.And(assumptions))
+            self.pending_pop = True
+        res = drealpy.dreal_check(self.dreal_ctx())
 
         assert res in [drealpy.l_undef, drealpy.l_true, drealpy.l_false]
         # Convert res into a valid value for pySMT
