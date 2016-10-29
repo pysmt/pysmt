@@ -16,11 +16,12 @@
 #   limitations under the License.
 #
 import os
+from six import StringIO
 
 from pysmt.test.smtlib.parser_utils import SMTLIB_DIR
 from pysmt.smtlib.parser import SmtLibParser
 from pysmt.smtlib.annotations import Annotations
-from pysmt.shortcuts import reset_env, Symbol
+from pysmt.shortcuts import Symbol
 from pysmt.test import TestCase, main
 
 class TestBasic(TestCase):
@@ -37,17 +38,13 @@ class TestBasic(TestCase):
         ann.add(a, "related", init_a)
 
         self.assertIn(a, ann)
-
         self.assertEqual(set([next_a]), ann.annotations(a)["next"])
         self.assertEqual(set([init_a]), ann.annotations(a)["init"])
         self.assertEqual(set([init_a, next_a]), ann.annotations(a)["related"])
-
         self.assertEqual(set([a]), ann.all_annotated_formulae("next"))
         self.assertEqual(set([a]), ann.all_annotated_formulae("init"))
         self.assertEqual(set([a]), ann.all_annotated_formulae("related"))
-
         self.assertEqual(set(), ann.all_annotated_formulae("non-existent"))
-
 
     def test_remove(self):
         ann = Annotations()
@@ -61,19 +58,14 @@ class TestBasic(TestCase):
         ann.add(a, "related", init_a)
 
         self.assertIn(a, ann)
-
         ann.remove(a)
-
         self.assertNotIn(a, ann)
 
         self.assertEqual(None, ann.annotations(a))
-
         self.assertEqual(set([]), ann.all_annotated_formulae("next"))
         self.assertEqual(set([]), ann.all_annotated_formulae("init"))
         self.assertEqual(set([]), ann.all_annotated_formulae("related"))
-
         self.assertEqual(set(), ann.all_annotated_formulae("non-existent"))
-
 
     def test_remove_annotation(self):
         ann = Annotations()
@@ -91,13 +83,10 @@ class TestBasic(TestCase):
         self.assertNotIn("next", ann.annotations(a))
         self.assertEqual(set([init_a]), ann.annotations(a)["init"])
         self.assertEqual(set([init_a, next_a]), ann.annotations(a)["related"])
-
         self.assertEqual(set([]), ann.all_annotated_formulae("next"))
         self.assertEqual(set([a]), ann.all_annotated_formulae("init"))
         self.assertEqual(set([a]), ann.all_annotated_formulae("related"))
-
         self.assertEqual(set(), ann.all_annotated_formulae("non-existent"))
-
 
     def test_remove_value(self):
         ann = Annotations()
@@ -111,14 +100,10 @@ class TestBasic(TestCase):
         ann.add(a, "related", init_a)
 
         self.assertNotEqual(ann.annotations(a)["init"], ann.annotations(a)["related"])
-
         ann.remove_value(a, "related", next_a)
-
         self.assertEqual(ann.annotations(a)["related"], ann.annotations(a)["init"])
 
-
     def test_vmt(self):
-        reset_env()
         parser = SmtLibParser()
         fname = os.path.join(SMTLIB_DIR, "small_set/vmt/c432_0f.vmt")
         script = parser.get_script_fname(fname)
@@ -141,6 +126,48 @@ class TestBasic(TestCase):
         curr_a1 = ann.all_annotated_formulae("next", "A_1__AT1")
         self.assertEqual(curr_a1, set([a1]))
 
+    def test_interpreting_annotations(self):
+        source ="""\
+(declare-fun |"v__AT0"| () Bool)
+(declare-fun |"v__AT1"| () Bool)
+(define-fun .def_1 () Bool (! |"v__AT0"| :next |"v__AT1"|))
+"""
+        buf = StringIO(source)
+        parser = SmtLibParser()
+        script = parser.get_script(buf)
+        ann = script.annotations
+        v0 = self.env.formula_manager.get_symbol('"v__AT0"')
+        v1_str = next(iter(ann[v0]["next"]))
+        self.env.formula_manager.get_symbol(v1_str)
+        self.assertEquals(v1_str, '"v__AT1"')
+
+
+    def test_complex_annotations_values(self):
+        source ="""\
+(declare-fun |"v__AT0"| () Bool)
+(define-fun .def_1 () Bool (! |"v__AT0"| :next (+ 1     meaningless)))
+"""
+        buf = StringIO(source)
+        parser = SmtLibParser()
+        script = parser.get_script(buf)
+        ann = script.annotations
+        v0 = self.env.formula_manager.get_symbol('"v__AT0"')
+        v1_str = next(iter(ann[v0]["next"]))
+        self.assertEquals(v1_str, "(+ 1     meaningless)")
+
+
+    def test_annotations_colon_values(self):
+        source ="""\
+(declare-fun |"v__AT0"| () Bool)
+(define-fun .def_1 () Bool (! |"v__AT0"| :next :this_is_considered_a_value))
+"""
+        buf = StringIO(source)
+        parser = SmtLibParser()
+        script = parser.get_script(buf)
+        ann = script.annotations
+        v0 = self.env.formula_manager.get_symbol('"v__AT0"')
+        v1_str = next(iter(ann[v0]["next"]))
+        self.assertEquals(v1_str, ":this_is_considered_a_value")
 
 
 if __name__ == '__main__':

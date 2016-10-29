@@ -25,7 +25,7 @@ reasoning about the type of formulae.
 import pysmt.walkers as walkers
 import pysmt.operators as op
 from pysmt.typing import BOOL, REAL, INT, BVType, ArrayType
-
+from pysmt.exceptions import PysmtTypeError
 
 class SimpleTypeChecker(walkers.DagWalker):
 
@@ -67,8 +67,9 @@ class SimpleTypeChecker(walkers.DagWalker):
     def get_type(self, formula):
         """ Returns the pysmt.types type of the formula """
         res = self.walk(formula)
-        if not self.be_nice and  res is None:
-            raise TypeError("The formula '%s' is not well-formed" % str(formula))
+        if not self.be_nice and res is None:
+            raise PysmtTypeError("The formula '%s' is not well-formed" \
+                                 % str(formula))
         return res
 
     def walk_type_to_type(self, formula, args, type_in, type_out):
@@ -286,7 +287,8 @@ def assert_no_boolean_in_args(args):
     """ Enforces that the elements in args are not of BOOL type."""
     for arg in args:
         if (arg.get_type() == BOOL):
-            raise TypeError("Boolean Expressions are not allowed in arguments")
+            raise PysmtTypeError("Boolean Expressions are not allowed "
+                                 "in arguments")
 
 
 def assert_boolean_args(args):
@@ -294,7 +296,7 @@ def assert_boolean_args(args):
     for arg in args:
         t = arg.get_type()
         if (t != BOOL):
-            raise TypeError("%s is not allowed in arguments" % t)
+            raise PysmtTypeError("%s is not allowed in arguments" % t)
 
 
 def assert_same_type_args(args):
@@ -303,7 +305,7 @@ def assert_same_type_args(args):
     for arg in args[1:]:
         t = arg.get_type()
         if (t != ref_t):
-            raise TypeError("Arguments should be of the same type!\n" +
+            raise PysmtTypeError("Arguments should be of the same type!\n" +
                              str([str((a, a.get_type())) for a in args]))
 
 
@@ -312,6 +314,6 @@ def assert_args_type_in(args, allowed_types):
     for arg in args:
         t = arg.get_type()
         if (t not in allowed_types):
-            raise TypeError(
+            raise PysmtTypeError(
                 "Argument is of type %s, but one of %s was expected!\n" %
                 (t, str(allowed_types)))

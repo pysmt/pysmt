@@ -39,7 +39,7 @@ from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               SolverNotConfiguredForUnsatCoresError,
                               SolverStatusError,
                               InternalSolverError,
-                              NonLinearError)
+                              NonLinearError, PysmtValueError, PysmtTypeError)
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
 from pysmt.solvers.qelim import QuantifierEliminator
 from pysmt.solvers.interpolation import Interpolator
@@ -144,7 +144,7 @@ class MathSATOptions(SolverOptions):
         """Sets the given option. Might raise a ValueError."""
         check = mathsat.msat_set_option(msat_config, name, value)
         if check != 0:
-            raise ValueError("Error setting the option '%s=%s'" % (name,value))
+            raise PysmtValueError("Error setting the option '%s=%s'" % (name,value))
 
     def __call__(self, solver):
         if self.generate_models:
@@ -199,7 +199,7 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
 
     @clear_pending_pop
     def declare_variable(self, var):
-        self.converter.declare_variable(var)
+        raise NotImplementedError
 
     @clear_pending_pop
     def _add_assertion(self, formula, named=None):
@@ -546,8 +546,8 @@ class MSatConverter(Converter, DagWalker):
             return types.FunctionType(pyty, [self.env.stc.get_type(args[0])])
 
         else:
-            raise TypeError("Unsupported expression:",
-                            mathsat.msat_term_repr(term))
+            raise PysmtTypeError("Unsupported expression:",
+                                 mathsat.msat_term_repr(term))
         return res
 
     def _back_single_term(self, term, mgr, args):
@@ -780,8 +780,8 @@ class MSatConverter(Converter, DagWalker):
             res = mgr.Array(pyty.index_type, args[0])
 
         else:
-            raise TypeError("Unsupported expression:",
-                            mathsat.msat_term_repr(term))
+            raise PysmtTypeError("Unsupported expression:",
+                                 mathsat.msat_term_repr(term))
         return res
 
     def get_symbol_from_declaration(self, decl):
@@ -1126,7 +1126,9 @@ class MSatConverter(Converter, DagWalker):
 
 
     def declare_variable(self, var):
-        if not var.is_symbol(): raise TypeError(var)
+        if not var.is_symbol():
+            raise PysmtTypeError("Trying to declare as a variable something "
+                                 "that is not a symbol: %s" % var)
         if var.symbol_name() not in self.symbol_to_decl:
             tp = self._type_to_msat(var.symbol_type())
             decl = mathsat.msat_declare_function(self.msat_env(),
@@ -1152,7 +1154,7 @@ if hasattr(mathsat, "MSAT_EXIST_ELIM_ALLSMT_FM"):
             lw: Loos-Weisspfenning
             """
             if algorithm not in ['fm', 'lw']:
-                raise ValueError("Algorithm can be either 'fm' or 'lw'")
+                raise PysmtValueError("Algorithm can be either 'fm' or 'lw'")
             QuantifierEliminator.__init__(self)
             IdentityDagWalker.__init__(self, env=environment)
             self.msat_config = mathsat.msat_create_default_config("QF_LRA")
@@ -1251,7 +1253,7 @@ class MSatInterpolator(Interpolator):
             self._check_logic(formulas)
 
             if len(formulas) < 2:
-                raise Exception("interpolation needs at least 2 formulae")
+                raise PysmtValueError("interpolation needs at least 2 formulae")
 
             cfg = mathsat.msat_create_config()
             mathsat.msat_set_option(cfg, "interpolation", "true")
@@ -1270,8 +1272,8 @@ class MSatInterpolator(Interpolator):
 
             res = mathsat.msat_solve(env)
             if res == mathsat.MSAT_UNKNOWN:
-                raise Exception("error in mathsat interpolation: %s" %
-                                mathsat.msat_last_error_message(env))
+                raise InternalSolverError("Error in mathsat interpolation: %s" %
+                                          mathsat.msat_last_error_message(env))
 
             if res == mathsat.MSAT_SAT:
                 return None

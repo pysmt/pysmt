@@ -20,7 +20,7 @@ from pysmt.shortcuts import Symbol, And, Symbol, Equals, TRUE
 from pysmt.shortcuts import is_sat, is_valid, get_model, is_unsat
 from pysmt.typing import BVType, BV32, BV128
 from pysmt.logics import QF_BV
-
+from pysmt.exceptions import PysmtValueError, PysmtTypeError
 
 class TestBV(TestCase):
 
@@ -48,10 +48,10 @@ class TestBV(TestCase):
         self.assertFalse(BV32 == BV128)
         self.assertTrue(BV32 == BV32)
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(PysmtValueError):
             # Negative numbers are not supported
             BV(-1, 10)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(PysmtValueError):
             # Number should fit in the width
             BV(10, 2)
 
@@ -95,7 +95,7 @@ class TestBV(TestCase):
         self.assertTrue(is_sat(f3, logic=QF_BV), f3)
         self.assertTrue(is_valid(f4, logic=QF_BV), f4)
 
-        with self.assertRaises(TypeError):
+        with self.assertRaises(PysmtTypeError):
             mgr.BVAnd(b128, zero)
 
         f = mgr.BVAnd(b32, zero)
@@ -211,9 +211,9 @@ class TestBV(TestCase):
         mgr.SBV(1, 2)
 
         # Overflow and Underflow
-        with self.assertRaises(ValueError):
+        with self.assertRaises(PysmtValueError):
             mgr.SBV(2, 2)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(PysmtValueError):
             mgr.SBV(-3, 2)
 
         # These should work without exceptions
@@ -222,10 +222,10 @@ class TestBV(TestCase):
         mgr.BV(2, 2)
         mgr.BV(3, 2)
         # Overflow
-        with self.assertRaises(ValueError):
+        with self.assertRaises(PysmtValueError):
             mgr.BV(4, 2)
         # No negative number allowed
-        with self.assertRaises(ValueError):
+        with self.assertRaises(PysmtValueError):
             mgr.BV(-1, 2)
 
         # SBV should behave as BV for positive numbers

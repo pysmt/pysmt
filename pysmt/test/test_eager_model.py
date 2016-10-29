@@ -22,6 +22,7 @@ from pysmt.shortcuts import And, Or, FALSE, TRUE, FreshSymbol, Solver
 from pysmt.solvers.eager import EagerModel
 from pysmt.typing import REAL, INT
 from pysmt.test import skipIfSolverNotAvailable
+from pysmt.exceptions import PysmtTypeError
 
 
 class TestEagerModel(TestCase):
@@ -54,12 +55,12 @@ class TestEagerModel(TestCase):
         d = {x:TRUE()}
 
         model = EagerModel(assignment=d)
-        with self.assertRaises(TypeError):
+        with self.assertRaises(PysmtTypeError):
             model.get_value(And(x,y), model_completion=False)
 
         d2 = {x:TRUE(), y:x}
         model = EagerModel(assignment=d2)
-        with self.assertRaises(TypeError):
+        with self.assertRaises(PysmtTypeError):
             model.get_value(And(x,y))
 
     def test_complete_model(self):
@@ -77,11 +78,11 @@ class TestEagerModel(TestCase):
         self.assertTrue(model.get_value(r).is_constant(REAL))
 
         self.assertEqual(model.get_value(x, model_completion=False), TRUE())
-        with self.assertRaises(TypeError):
+        with self.assertRaises(PysmtTypeError):
             model.get_value(And(x,y), model_completion=False)
-        with self.assertRaises(TypeError):
+        with self.assertRaises(PysmtTypeError):
             model.get_value(p, model_completion=False)
-        with self.assertRaises(TypeError):
+        with self.assertRaises(PysmtTypeError):
             model.get_value(r, model_completion=False)
 
 

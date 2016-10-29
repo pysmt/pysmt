@@ -20,7 +20,7 @@ from six.moves import cStringIO
 
 from pysmt.test import TestCase, main
 from pysmt.smtlib.parser import SmtLibParser
-from pysmt.exceptions import UnknownSmtLibCommandError
+from pysmt.exceptions import UnknownSmtLibCommandError, PysmtValueError
 
 TS = collections.namedtuple('TS', ['init', 'trans'])
 TSFormula = collections.namedtuple('TSFormula', ['formula', "is_init"])
@@ -57,7 +57,7 @@ class TSSmtLibParser(SmtLibParser):
             ty = symbol.symbol_type()
             return self.env.formula_manager.Symbol("next_" + name, ty)
         else:
-            raise ValueError("'next' operator can be applied only to symbols")
+            raise PysmtValueError("'next' operator can be applied only to symbols")
 
     def get_ts(self, script):
         init = self.env.formula_manager.TRUE()

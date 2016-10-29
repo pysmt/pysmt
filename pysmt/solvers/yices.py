@@ -34,7 +34,8 @@ from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 
 from pysmt.walkers import DagWalker
 from pysmt.exceptions import SolverReturnedUnknownResultError
-from pysmt.exceptions import InternalSolverError, NonLinearError
+from pysmt.exceptions import (InternalSolverError, NonLinearError,
+                              PysmtValueError, PysmtTypeError)
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
 from pysmt.constants import Fraction, is_pysmt_integer
 
@@ -75,7 +76,7 @@ class YicesOptions(SolverOptions):
         # TODO: Yices Supports UnsatCore extraction
         # but we did not wrapped it yet.
         if self.unsat_cores_mode is not None:
-            raise ValueError("'unsat_cores_mode' option not supported.")
+            raise PysmtValueError("'unsat_cores_mode' option not supported.")
 
     @staticmethod
     def _set_option(cfg, name, value):
@@ -86,7 +87,8 @@ class YicesOptions(SolverOptions):
             # provided to the parameter is invalid.
             err = yicespy.yices_error_code()
             if err == yicespy.CTX_INVALID_PARAMETER_VALUE:
-                raise ValueError("Error setting the option '%s=%s'" % (name,value))
+                raise PysmtValueError("Error setting the option "
+                                      "'%s=%s'" % (name,value))
 
     def __call__(self, solver):
         if self.generate_models:
@@ -120,7 +122,7 @@ class YicesOptions(SolverOptions):
         for k,v in self.solver_options.items():
             rv = yicespy.yices_set_param(params, k, v)
             if rv != 0:
-                raise ValueError("Error setting the option '%s=%s'" % (k,v))
+                raise PysmtValueError("Error setting the option '%s=%s'" % (k,v))
         solver.yices_params = params
 
 # EOC YicesOptions
@@ -159,8 +161,7 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
     @clear_pending_pop
     def declare_variable(self, var):
-        self.declarations.add(var)
-        return
+        raise NotImplementedError
 
     @clear_pending_pop
     def add_assertion(self, formula, named=None):
@@ -621,7 +622,9 @@ class YicesConverter(Converter, DagWalker):
             raise NotImplementedError(tp)
 
     def declare_variable(self, var):
-        if not var.is_symbol(): raise TypeError
+        if not var.is_symbol():
+            raise PysmtTypeError("Trying to declare as a variable something "
+                                 "that is not a symbol: %s" % var)
         if var.symbol_name() not in self.symbol_to_decl:
             tp = self._type_to_yices(var.symbol_type())
             decl = yicespy.yices_new_uninterpreted_term(tp)

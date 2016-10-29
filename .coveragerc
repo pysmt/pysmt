@@ -1,5 +1,6 @@
 [run]
 omit = pysmt/cmd/*
+       pysmt/test/*
 
 [report]
 exclude_lines =

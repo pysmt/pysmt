@@ -30,7 +30,8 @@ from pysmt.logics import PYSMT_LOGICS, ARRAYS_CONST_LOGICS
 from pysmt.solvers.solver import Solver, Converter, SolverOptions
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               InternalSolverError,
-                              NonLinearError)
+                              NonLinearError, PysmtValueError,
+                              PysmtTypeError)
 from pysmt.walkers import DagWalker
 from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 from pysmt.solvers.eager import EagerModel
@@ -45,14 +46,14 @@ class CVC4Options(SolverOptions):
         # TODO: CVC4 Supports UnsatCore extraction
         # but we did not wrapped it yet. (See #349)
         if self.unsat_cores_mode is not None:
-            raise ValueError("'unsat_cores_mode' option not supported.")
+            raise PysmtValueError("'unsat_cores_mode' option not supported.")
 
     @staticmethod
     def _set_option(cvc4, name, value):
         try:
             cvc4.setOption(name, CVC4.SExpr(value))
         except:
-            raise ValueError("Error setting the option '%s=%s'" % (name,value))
+            raise PysmtValueError("Error setting the option '%s=%s'" % (name,value))
 
     def __call__(self, solver):
         self._set_option(solver.cvc4,
@@ -100,8 +101,7 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         self.cvc4.setLogic(self.logic_name)
 
     def declare_variable(self, var):
-        self.converter.declare_variable(var)
-        return
+        raise NotImplementedError
 
     def add_assertion(self, formula, named=None):
         self._assert_is_boolean(formula)
@@ -199,7 +199,8 @@ class CVC4Converter(Converter, DagWalker):
 
     def declare_variable(self, var):
         if not var.is_symbol():
-            raise TypeError
+            raise PysmtTypeError("Trying to declare as a variable something "
+                                 "that is not a symbol: %s" % var)
         if var.symbol_name() not in self.declared_vars:
             cvc4_type = self._type_to_cvc4(var.symbol_type())
             decl = self.mkVar(var.symbol_name(), cvc4_type)
@@ -229,10 +230,10 @@ class CVC4Converter(Converter, DagWalker):
                 res = self.mgr.Array(array_type.index_type,
                                      base_value)
             else:
-                raise TypeError("Unsupported constant type:",
-                                expr.getType().toString())
+                raise PysmtTypeError("Unsupported constant type:",
+                                     expr.getType().toString())
         else:
-            raise TypeError("Unsupported expression:", expr.toString())
+            raise PysmtTypeError("Unsupported expression:", expr.toString())
 
         return res
 

@@ -19,6 +19,7 @@ import os
 
 from pysmt.test import TestCase, main
 from pysmt.smtlib.parser import SmtLibParser
+from pysmt.exceptions import PysmtTypeError
 
 class TestTypeError(TestCase):
 
@@ -26,7 +27,7 @@ class TestTypeError(TestCase):
         d = os.path.dirname(os.path.realpath(__file__))
         smtfile = d + "/small_set/negative/wrong1.smt2.bz2"
         parser = SmtLibParser()
-        with self.assertRaises(TypeError):
+        with self.assertRaises(PysmtTypeError):
             parser.get_script_fname(smtfile)
 
 

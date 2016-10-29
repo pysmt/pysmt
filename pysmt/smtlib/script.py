@@ -23,7 +23,7 @@ from six.moves import xrange
 
 import pysmt.smtlib.commands as smtcmd
 from pysmt.exceptions import (UnknownSmtLibCommandError, NoLogicAvailableError,
-                              UndefinedLogicError)
+                              UndefinedLogicError, PysmtValueError)
 from pysmt.smtlib.printers import SmtPrinter, SmtDagPrinter, quote
 from pysmt.oracles import get_logic
 from pysmt.logics import get_closer_smtlib_logic, Logic, SMTLIB2_LOGICS
@@ -170,8 +170,9 @@ class SmtLibScript(object):
     def get_strict_formula(self, mgr=None):
         if self.contains_command(smtcmd.PUSH) or \
            self.contains_command(smtcmd.POP):
-            raise Exception("Was not expecting push-pop commands")
-        assert self.count_command_occurrences(smtcmd.CHECK_SAT) == 1
+            raise PysmtValueError("Was not expecting push-pop commands")
+        if self.count_command_occurrences(smtcmd.CHECK_SAT) != 1:
+            raise PysmtValueError("Was expecting exactly one check-sat command")
         _And = mgr.And if mgr else get_env().formula_manager.And
 
         assertions = [cmd.args[0]

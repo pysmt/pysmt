@@ -117,6 +117,13 @@ def get_full_example_formulae(environment=None):
                     logic=pysmt.logics.QF_BOOL
                 ),
 
+            Example(hr="((x | y) & (! (x | y)))",
+                    expr=And(Or(x, y), Not(Or(x, y))),
+                    is_valid=False,
+                    is_sat=False,
+                    logic=pysmt.logics.QF_BOOL
+                ),
+
             #
             #  LIA
             #

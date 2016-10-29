@@ -31,7 +31,7 @@ from pysmt.solvers.solver import Solver, SolverOptions
 from pysmt.solvers.eager import EagerModel
 from pysmt.rewritings import CNFizer
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
-from pysmt.exceptions import ConvertExpressionError
+from pysmt.exceptions import ConvertExpressionError, PysmtValueError
 from pysmt.constants import is_python_integer
 
 
@@ -71,7 +71,7 @@ class PicosatOptions(SolverOptions):
     def __init__(self, **base_options):
         SolverOptions.__init__(self, **base_options)
         if self.unsat_cores_mode is not None:
-            raise ValueError("'unsat_cores_mode' option not supported.")
+            raise PysmtValueError("'unsat_cores_mode' option not supported.")
 
         # Set Defaults
         self.preprocessing = True
@@ -86,28 +86,28 @@ class PicosatOptions(SolverOptions):
         for k,v in self.solver_options.items():
             if k == "enable_trace_generation":
                 if v not in (True, False):
-                    raise ValueError("Invalid value for %s: %s" % \
+                    raise PysmtValueError("Invalid value for %s: %s" % \
                                      (str(k),str(v)))
             elif k == "output":
                 if v is not None and not hasattr(v, "fileno"):
-                    raise ValueError("Invalid value for %s: %s" % \
+                    raise PysmtValueError("Invalid value for %s: %s" % \
                                      (str(k),str(v)))
 
             elif k == "global_default_phase":
                 if v is not None and v not in PicosatOptions.ALL_GLOBAL_DEFAULT_PHASE:
-                    raise ValueError("Invalid value for %s: %s" % \
+                    raise PysmtValueError("Invalid value for %s: %s" % \
                                      (str(k),str(v)))
             elif k == "preprocessing":
                 if v not in (True, False):
-                    raise ValueError("Invalid value for %s: %s" % \
+                    raise PysmtValueError("Invalid value for %s: %s" % \
                                      (str(k),str(v)))
             elif k == "verbosity":
                 if not is_python_integer(v):
-                    raise ValueError("Invalid value for %s: %s" % \
+                    raise PysmtValueError("Invalid value for %s: %s" % \
                                      (str(k),str(v)))
             elif k == "propagation_limit":
                 if not is_python_integer(v):
-                    raise ValueError("Invalid value for %s: %s" % \
+                    raise PysmtValueError("Invalid value for %s: %s" % \
                                      (str(k),str(v)))
             elif k in ("more_important_lit", "less_important_lit"):
                 if v is not None:
@@ -116,10 +116,11 @@ class PicosatOptions(SolverOptions):
                     except:
                         valid = False
                     if not valid:
-                        raise ValueError("'more_important_lit' and 'less_important_lit' require a "
-                                         "list of Boolean variables")
+                        raise PysmtValueError("'more_important_lit' and "
+                                              "'less_important_lit' require a "
+                                              "list of Boolean variables")
             else:
-                raise ValueError("Unrecognized option '%s'." % k)
+                raise PysmtValueError("Unrecognized option '%s'." % k)
             # Store option
             setattr(self, k, v)
 
@@ -161,7 +162,8 @@ class PicosatOptions(SolverOptions):
 
         if self.enable_trace_generation:
             rv = picosat.picosat_enable_trace_generation(pico)
-            if rv == 0: raise ValueError("Picosat: Cannot enable Trace Generation")
+            if rv == 0: raise PysmtValueError("Picosat: Cannot enable Trace"
+                                              " Generation")
 
         if self.verbosity > 0:
             picosat.picosat_set_verbosity(pico, self.verbosity)
@@ -202,7 +204,6 @@ class PicosatSolver(Solver):
             self._var_ids[symbol] = vid
             return vid
 
-
     @clear_pending_pop
     def reset_assertions(self):
         picosat.picosat_flushout(self._log_file_handler)
@@ -212,8 +213,7 @@ class PicosatSolver(Solver):
 
     @clear_pending_pop
     def declare_variable(self, var):
-        # no need to declare variables
-        pass
+        raise NotImplementedError
 
     def _get_pico_lit(self, lit):
         mult = 1
@@ -224,7 +224,6 @@ class PicosatSolver(Solver):
 
         vid = self._get_var_id(var)
         return vid * mult
-
 
     @clear_pending_pop
     @catch_conversion_error

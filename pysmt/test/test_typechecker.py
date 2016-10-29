@@ -24,6 +24,7 @@ from pysmt.shortcuts import (Symbol, And, Plus, Minus, Times, Equals, Or, Iff,
                              LE, LT, Not, GE, GT, Ite, Bool, Int, Real, Div,
                              Function)
 from pysmt.environment import get_env
+from pysmt.exceptions import PysmtTypeError
 from pysmt.test import TestCase, main
 from pysmt.test.examples import get_example_formulae
 from pysmt.decorators import typecheck_result
@@ -74,10 +75,10 @@ class TestSimpleTypeChecker(TestCase):
         self.assertEqual(tc.walk(LE(Plus(vi, Function(f, [Real(4)])), Int(8))), BOOL)
         self.assertEqual(tc.walk(LE(Plus(vr, Function(g, [Int(4)])), Real(8))), BOOL)
 
-        with self.assertRaises(TypeError):
+        with self.assertRaises(PysmtTypeError):
             LE(Plus(vr, Function(g, [Real(4)])), Real(8))
 
-        with self.assertRaises(TypeError):
+        with self.assertRaises(PysmtTypeError):
             LE(Plus(vi, Function(f, [Int(4)])), Int(8))
 
 
@@ -151,40 +152,40 @@ class TestSimpleTypeChecker(TestCase):
 
     def test_assert_args(self):
         assert_no_boolean_in_args([self.r, self.p])
-        with self.assertRaises(TypeError):
+        with self.assertRaises(PysmtTypeError):
             assert_no_boolean_in_args([self.x, self.y])
 
         assert_boolean_args([self.x, self.y])
-        with self.assertRaises(TypeError):
+        with self.assertRaises(PysmtTypeError):
             assert_boolean_args([self.r, self.p])
 
         assert_same_type_args([self.x, self.y])
-        with self.assertRaises(TypeError):
+        with self.assertRaises(PysmtTypeError):
             assert_same_type_args([self.r, self.p])
 
         assert_args_type_in([self.x, self.p],
                             allowed_types=[INT, BOOL])
-        with self.assertRaises(TypeError):
+        with self.assertRaises(PysmtTypeError):
             assert_args_type_in([self.x, self.p],
                                 allowed_types=[REAL, BOOL])
 
 
     def test_decorator_typecheck_result(self):
+        from pysmt.fnode import FNode, FNodeContent
+        from pysmt.operators import AND
         @typecheck_result
         def good_function():
             return self.x
 
         @typecheck_result
         def super_bad_function():
-            sb = And(self.x, self.y)
-            # !!! This hurts so badly  !!!
-            # !!! Do not try this at home !!!
-            sb._content.args[0] = self.p
+            sb = FNode(FNodeContent(node_type=AND, args=(self.p, self.p),
+                                    payload=None), -1)
             return sb
 
         good_function()
 
-        with self.assertRaises(TypeError):
+        with self.assertRaises(PysmtTypeError):
             super_bad_function()
 
     def test_examples(self):
