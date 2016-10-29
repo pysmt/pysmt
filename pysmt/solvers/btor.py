@@ -76,8 +76,6 @@ class BoolectorSolver(IncrementalTrackingSolver,
     LOGICS = [QF_BV, QF_UFBV, QF_ABV, QF_AUFBV, QF_AX]
     OptionsClass = BoolectorOptions
 
-    OptionsClass = BoolectorOptions
-
     def __init__(self, environment, logic, **options):
         IncrementalTrackingSolver.__init__(self,
                                            environment=environment,
@@ -89,24 +87,6 @@ class BoolectorSolver(IncrementalTrackingSolver,
         self.mgr = environment.formula_manager
         self.declarations = {}
         return
-
-    def _prepare_config(self, options):
-        options = self.options
-        if options.generate_models:
-            self.btor.Set_opt("model_gen", 1)
-        else:
-            self.btor.Set_opt("model_gen", 0)
-
-        # Disabling Incremental usage is not allowed.
-        # This needs to be set to 1
-        self.btor.Set_opt("incremental", 1)
-
-        if options.rewrite_level is not None:
-            self.btor.Set_opt("rewrite_level", options.rewrite_level)
-        if options.dual_prop is not None:
-            self.btor.Set_opt("dual_prop", options.dual_prop)
-        if options.eliminate_slices is not None:
-            self.btor.Set_opt("eliminate_slices", options.eliminate_slices)
 
 # EOC BoolectorOptions
 
