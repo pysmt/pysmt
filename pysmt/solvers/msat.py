@@ -531,10 +531,6 @@ class MSatConverter(Converter, DagWalker):
         t = self.env.stc.get_type(args[0])
         return types.FunctionType(t, [t, t])
 
-    def _sig_binary(self, term, args):
-        t = self.env.stc.get_type(args[0])
-        return types.FunctionType(t, [t, t])
-
     def _sig_bool_binary(self, term, args):
         t = self.env.stc.get_type(args[0])
         return types.FunctionType(types.BOOL, [t, t])
