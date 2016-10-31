@@ -96,6 +96,7 @@ class DRealOptions(SolverOptions):
             self._set_option(solver.dreal_ctx(), ":produce-models", "true")
 
         drealpy.dreal_set_precision(solver.dreal_ctx(), self.precision)
+        #drealpy.dreal_set_verbosity(self.dreal_ctx(), 1)
 
         for k,v in self.solver_options.items():
             self._set_option(solver.dreal_ctx(), str(k), str(v))
@@ -109,8 +110,6 @@ class DRealSolver(IncrementalTrackingSolver, SmtLibBasicSolver, SmtLibIgnoreMixi
     OptionsClass = DRealOptions
 
     def __init__(self, environment, logic, **options):
-        # TODO: Options should be custom and include delta value
-        # for delta-sat
         IncrementalTrackingSolver.__init__(self, environment=environment,
                                            logic=logic, **options)
 
