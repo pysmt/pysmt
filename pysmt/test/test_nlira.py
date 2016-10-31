@@ -93,11 +93,22 @@ class TestNonLinear(TestCase):
         f = Equals(Times(x, x), Int(16))
         self.assertTrue(is_sat(f))
 
+    def test_pow(self):
+        f = Pow(Real(5), Real(2.2))
+        self.assertNotEqual(f, Real(25))
+
+        f = Pow(Real(5), Real(2))
+        self.assertEqual(f, Real(25))
+
+        f = Pow(Int(5), Int(2))
+        self.assertEqual(f, Int(25))
+
+
     @skipIfNoSolverForLogic(QF_NRA)
     def test_div_pow(self):
         x = FreshSymbol(REAL)
-        f = Equals(Times(Real(4), Pow(x, Real(-1))), Real(2))
         for sname in self.env.factory.all_solvers(logic=QF_NRA):
+            f = Equals(Times(Real(4), Pow(x, Real(-1))), Real(2))
             self.assertDeltaSat(f, solver_name=sname)
             f = Equals(Div(Real(4), x), Real(2))
             self.assertDeltaSat(f, solver_name=sname)

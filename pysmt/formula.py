@@ -240,12 +240,14 @@ class FormulaManager(object):
             raise PysmtValueError("The exponent of POW must be a constant.", exponent)
 
         if base.is_constant():
-            val = base.constant_value() ** exponent.constant_value()
-            if base.is_constant(types.REAL):
-                return self.Real(val)
-            else:
-                assert base.is_constant(types.INT)
-                return self.Int(val)
+            int_exp = pysmt_integer_from_integer(exponent.constant_value())
+            if exponent.constant_value() == int_exp:
+                val = base.constant_value() ** int_exp
+                if base.is_constant(types.REAL):
+                    return self.Real(val)
+                else:
+                    assert base.is_constant(types.INT)
+                    return self.Int(val)
         return self.create_node(node_type=op.POW, args=(base, exponent))
 
     def Div(self, left, right):
