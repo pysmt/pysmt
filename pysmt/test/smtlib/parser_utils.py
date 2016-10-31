@@ -24,7 +24,9 @@ from pysmt.smtlib.parser import SmtLibParser, get_formula_fname
 from pysmt.smtlib.script import check_sat_filter
 from pysmt.logics import QF_LIA, QF_LRA, LRA, QF_UFLIRA, QF_UFBV, QF_BV
 from pysmt.logics import QF_ALIA, QF_ABV, QF_AUFLIA, QF_AUFBV, QF_NRA, QF_NIA
-from pysmt.exceptions import NoSolverAvailableError, SolverReturnedUnknownResultError
+from pysmt.exceptions import (NoSolverAvailableError,
+                              SolverReturnedUnknownResultError,
+                              DeltaSATError)
 
 SMTLIB_DIR = "pysmt/test/smtlib"
 SMTLIB_TEST_FILES = [
@@ -83,7 +85,7 @@ SMTLIB_TEST_FILES = [
     #
     # QF_UFBV
     #
-    #(QF_UFBV, "small_set/QF_UFBV/btfnt_atlas_out.smt2.bz2", "unsat"),
+    (QF_UFBV, "small_set/QF_UFBV/btfnt_atlas_out.smt2.bz2", "unsat"),
     (QF_UFBV, "small_set/QF_UFBV/calc2_sec2_bmc10.smt2.bz2", "unsat"),
     (QF_BV, "small_set/QF_BV/bench_4631_simp.smt2.bz2", "sat"),
     (QF_BV, "small_set/QF_BV/bench_5200.smt2.bz2", "unsat"),
@@ -128,16 +130,26 @@ def execute_script_fname(smtfile, logic, expected_result):
     Solver = get_env().factory.Solver
     parser = SmtLibParser()
     script = parser.get_script_fname(smtfile)
+    res = None
     try:
-        log = script.evaluate(Solver(logic=logic, incremental=False,
-                                     generate_models=False))
+        solver = Solver(logic=logic, incremental=False,
+                        generate_models=False)
+        if str(logic) == "QF_LRA":
+            from pysmt.solvers.dreal import DRealSolver
+            if isinstance(solver, DRealSolver):
+                raise SkipTest("Skip QF_LRA for dReal.")
+        log = script.evaluate(solver)
     except NoSolverAvailableError:
         raise SkipTest("No solver for logic %s." % logic)
     except SolverReturnedUnknownResultError:
         if not logic.quantifier_free:
-            warnings.warn("Test (%s, %s) could not be solver due to quantifiers." % (logic, smtfile))
+            warnings.warn("Test (%s, %s) could not be solved due to quantifiers." % (logic, smtfile))
             return
         raise
+    except DeltaSATError:
+        assert expected_result == "sat"
+        return
+
 
     res = check_sat_filter(log)
     if res:

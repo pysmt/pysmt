@@ -45,7 +45,7 @@ class TestSMTParseExamples(TestCase):
             parser = SmtLibParser()
             script_in = parser.get_script(buf_in)
             f_in = script_in.get_last_formula()
-            self.assertEqual(f_in.simplify(), f_out.simplify())
+            self.assertEqual(f_in.simplify(), f_out.simplify(), (f_in, f_out))
 
 
     @skipIfNoSolverForLogic(logics.QF_BV)

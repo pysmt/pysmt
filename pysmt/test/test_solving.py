@@ -30,7 +30,8 @@ from pysmt.test.examples import get_example_formulae
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               InternalSolverError, NoSolverAvailableError,
                               ConvertExpressionError, UndefinedLogicError,
-                              PysmtTypeError, PysmtValueError)
+                              PysmtTypeError, PysmtValueError,
+                              DeltaSATError)
 from pysmt.logics import QF_UFLIRA, QF_BOOL, QF_LRA, AUTO
 from pysmt.logics import convert_logic_from_string
 
@@ -309,16 +310,20 @@ class TestBasic(TestCase):
                     self.assertFalse(logic.quantifier_free,
                                      "Unkown result are accepted only on "\
                                      "Quantified formulae")
+                except DeltaSATError:
+                    print(logic, f.serialize())
 
 
     def test_examples_get_implicant(self):
         for (f, _, satisfiability, logic) in get_example_formulae():
             if logic.quantifier_free:
                 for sname in get_env().factory.all_solvers(logic=logic):
+                    if sname == "dreal": continue
                     try:
                         f_i = get_implicant(f, logic=logic, solver_name=sname)
                         if satisfiability:
-                            self.assertValid(Implies(f_i, f), logic=logic, msg=(f_i, f))
+                            self.assertValid(Implies(f_i, f), logic=logic, msg=f,
+                                             solver_name=sname)
                         else:
                             self.assertIsNone(f_i)
                     except ConvertExpressionError as ex:
@@ -361,11 +366,20 @@ class TestBasic(TestCase):
         for name in get_env().factory.all_solvers(logic=QF_LRA):
             with Solver(name=name) as solver:
                 solver.add_assertion(xor)
-                res1 = solver.solve(assumptions=[v1, Not(v2)])
+                try:
+                    res1 = solver.solve(assumptions=[v1, Not(v2)])
+                except DeltaSATError:
+                    res1 = True
                 model1 = solver.get_model()
-                res2 = solver.solve(assumptions=[Not(v1), v2])
+                try:
+                    res2 = solver.solve(assumptions=[Not(v1), v2])
+                except DeltaSATError:
+                    res2 = True
                 model2 = solver.get_model()
-                res3 = solver.solve(assumptions=[v1, v2])
+                try:
+                    res3 = solver.solve(assumptions=[v1, v2])
+                except DeltaSATError:
+                    res3 = True
                 self.assertTrue(res1)
                 self.assertTrue(res2)
                 self.assertFalse(res3)

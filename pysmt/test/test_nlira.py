@@ -17,7 +17,7 @@
 #
 
 from pysmt.test import TestCase, main
-from pysmt.test import skipIfSolverNotAvailable
+from pysmt.test import skipIfSolverNotAvailable, skipIfNoSolverForLogic
 
 from pysmt.oracles import get_logic
 from pysmt.shortcuts import FreshSymbol, Times, Equals, Div, Real, Int, Pow
@@ -25,8 +25,9 @@ from pysmt.shortcuts import Solver, is_sat
 from pysmt.typing import REAL, INT
 from pysmt.exceptions import (ConvertExpressionError,
                               NonLinearError,
-                              SolverReturnedUnknownResultError)
-from pysmt.logics import QF_NRA
+                              SolverReturnedUnknownResultError,
+                              DeltaSATError)
+from pysmt.logics import QF_NRA, QF_NIA
 from pysmt.constants import Fraction
 
 
@@ -36,15 +37,13 @@ class TestNonLinear(TestCase):
     def test_times(self):
         x = FreshSymbol(REAL)
         f = Equals(Times(x, x), x)
-        with Solver(name="z3") as s:
-            self.assertTrue(s.is_sat(f))
+        self.assertDeltaSat(f)
 
-    @skipIfSolverNotAvailable("z3")
+    @skipIfNoSolverForLogic(QF_NRA)
     def test_div(self):
         x = FreshSymbol(REAL)
         f = Equals(Div(x, x), x)
-        with Solver(name="z3") as s:
-            self.assertTrue(s.is_sat(f))
+        self.assertDeltaSat(f)
 
     @skipIfSolverNotAvailable("z3")
     def test_irrational(self):
@@ -75,36 +74,47 @@ class TestNonLinear(TestCase):
                 elif sname in ["yices", "cvc4", "msat"]:
                     with self.assertRaises(NonLinearError):
                         s.is_sat(f)
+                elif sname == "dreal":
+                    with self.assertRaises(DeltaSATError):
+                        s.is_sat(f)
                 else:
                     res = s.is_sat(f)
                     self.assertTrue(res, sname)
                     self.assertIn(QF_NRA, s.LOGICS, sname)
 
-    @skipIfSolverNotAvailable("z3")
+    @skipIfNoSolverForLogic(QF_NIA)
     def test_integer(self):
         x = FreshSymbol(INT)
         f = Equals(Times(x, x), Int(2))
-        with Solver(name="z3") as s:
+        with Solver(logic=QF_NIA) as s:
             self.assertFalse(s.is_sat(f))
-
-        # f = Equals(Times(Int(4), Pow(x, Int(-1))), Int(2))
-        # self.assertTrue(is_sat(f, solver_name="z3"))
-
         f = Equals(Div(Int(4), x), Int(2))
-        self.assertTrue(is_sat(f, solver_name="z3"))
+        self.assertTrue(is_sat(f, logic=QF_NIA))
         f = Equals(Times(x, x), Int(16))
         self.assertTrue(is_sat(f))
 
-    @skipIfSolverNotAvailable("z3")
+    def test_pow(self):
+        f = Pow(Real(5), Real(2.2))
+        self.assertNotEqual(f, Real(25))
+
+        f = Pow(Real(5), Real(2))
+        self.assertEqual(f, Real(25))
+
+        f = Pow(Int(5), Int(2))
+        self.assertEqual(f, Int(25))
+
+
+    @skipIfNoSolverForLogic(QF_NRA)
     def test_div_pow(self):
         x = FreshSymbol(REAL)
-        f = Equals(Times(Real(4), Pow(x, Real(-1))), Real(2))
-        self.assertTrue(is_sat(f))
+        for sname in self.env.factory.all_solvers(logic=QF_NRA):
+            f = Equals(Times(Real(4), Pow(x, Real(-1))), Real(2))
+            self.assertDeltaSat(f, solver_name=sname)
+            f = Equals(Div(Real(4), x), Real(2))
+            self.assertDeltaSat(f, solver_name=sname)
+            f = Equals(Times(x, x), Real(16))
+            self.assertDeltaSat(f, solver_name=sname)
 
-        f = Equals(Div(Real(4), x), Real(2))
-        self.assertTrue(is_sat(f, solver_name="z3"))
-        f = Equals(Times(x, x), Real(16))
-        self.assertTrue(is_sat(f))
 
 
 if __name__ == "__main__":

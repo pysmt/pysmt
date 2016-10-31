@@ -24,6 +24,7 @@ except ImportError:
     import unittest
 
 from pysmt.environment import get_env, reset_env
+from pysmt.exceptions import DeltaSATError
 
 
 class TestCase(unittest.TestCase):
@@ -45,25 +46,47 @@ class TestCase(unittest.TestCase):
 
     def assertValid(self, formula, msg=None, solver_name=None, logic=None):
         """Assert that formula is VALID."""
-        self.assertTrue(self.env.factory.is_valid(formula=formula,
-                                                  solver_name=solver_name,
-                                                  logic=logic),
-                        msg=msg)
+        try:
+            self.assertTrue(self.env.factory.is_valid(formula=formula,
+                                                      solver_name=solver_name,
+                                                      logic=logic),
+                            msg=msg)
+        except DeltaSATError:
+            raise unittest.SkipTest("Solver returned DeltaSAT, ignoring.")
+
 
     def assertSat(self, formula, msg=None, solver_name=None, logic=None):
         """Assert that formula is SAT."""
-        self.assertTrue(self.env.factory.is_sat(formula=formula,
-                                                solver_name=solver_name,
-                                                logic=logic),
-                        msg=msg)
+        try:
+            self.assertTrue(self.env.factory.is_sat(formula=formula,
+                                                    solver_name=solver_name,
+                                                    logic=logic),
+                            msg=msg)
+        except DeltaSATError:
+            raise unittest.SkipTest("Solver returned DeltaSAT, ignoring.")
 
     def assertUnsat(self, formula, msg=None, solver_name=None, logic=None):
         """Assert that formula is UNSAT."""
-        self.assertTrue(self.env.factory.is_unsat(formula=formula,
-                                                  solver_name=solver_name,
-                                                  logic=logic),
-                        msg=msg)
+        try:
+            self.assertTrue(self.env.factory.is_unsat(formula=formula,
+                                                      solver_name=solver_name,
+                                                      logic=logic),
+                            msg=msg)
+        except DeltaSATError:
+            raise unittest.SkipTest("Solver returned DeltaSAT, ignoring.")
 
+    def assertDeltaSat(self, formula, msg=None, solver_name=None, logic=None):
+        """Assert that formula is delta-SAT.
+
+        Note: A SAT Formula is also delta-SAT.
+        """
+        try:
+            res = self.env.factory.is_sat(formula=formula,
+                                          solver_name=solver_name,
+                                          logic=logic),
+        except DeltaSATError:
+            res = True
+        self.assertTrue(res, msg=msg)
 
 class skipIfSolverNotAvailable(object):
     """Skip a test if the given solver is not available."""

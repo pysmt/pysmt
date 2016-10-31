@@ -20,6 +20,10 @@ cache:
 
 addons:
   apt:
+    sources: # Extra sources for dReal
+    - ubuntu-toolchain-r-test
+    - llvm-toolchain-precise-3.8
+    - george-edison55-precise-backports # cmake 3.2.3 / doxygen 1.8.3
     packages:
     - python-setuptools
     - python-nose
@@ -36,12 +40,14 @@ addons:
     - libboost-dev
     - python3-all-dev
     - libmpc-dev
+    - cmake
+    # dReal deps
+    - g++-5
 
 python:
   - 3.5
   - 2.7
   - pypy
-
 
 # Multiple envs will cause multiple build across multiple python versions.
 # We test the following:
@@ -49,19 +55,23 @@ python:
 # 2. PySMT with one solver at the time
 #
 env:
+  global:
+    - "CXX=/usr/bin/g++-5"
+    - "CC=/usr/bin/gcc-5"
   matrix:
-    - PYSMT_SOLVER="all"   PYSMT_GMPY="TRUE"
-    - PYSMT_SOLVER="all"   PYSMT_GMPY="FALSE"
-    - PYSMT_SOLVER="None"  PYSMT_GMPY="FALSE"
-    - PYSMT_SOLVER="msat"  PYSMT_GMPY="FALSE"
-    - PYSMT_SOLVER="z3"    PYSMT_GMPY="FALSE"
-    - PYSMT_SOLVER="cvc4"  PYSMT_GMPY="FALSE"
-    - PYSMT_SOLVER="yices" PYSMT_GMPY="FALSE"
-    - PYSMT_SOLVER="bdd"   PYSMT_GMPY="FALSE"
-    - PYSMT_SOLVER="picosat" PYSMT_GMPY="FALSE"
-    - PYSMT_SOLVER="btor"  PYSMT_GMPY="FALSE"
-    - PYSMT_SOLVER="msat_wrap" PYSMT_GMPY="FALSE"
-    - PYSMT_SOLVER="z3_wrap"   PYSMT_GMPY="FALSE"
+    # - PYSMT_SOLVER="all"   PYSMT_GMPY="TRUE"
+    # - PYSMT_SOLVER="all"   PYSMT_GMPY="FALSE"
+    # - PYSMT_SOLVER="None"  PYSMT_GMPY="FALSE"
+    # - PYSMT_SOLVER="msat"  PYSMT_GMPY="FALSE"
+    # - PYSMT_SOLVER="z3"    PYSMT_GMPY="FALSE"
+    # - PYSMT_SOLVER="cvc4"  PYSMT_GMPY="FALSE"
+    # - PYSMT_SOLVER="yices" PYSMT_GMPY="FALSE"
+    # - PYSMT_SOLVER="bdd"   PYSMT_GMPY="FALSE"
+    # - PYSMT_SOLVER="picosat" PYSMT_GMPY="FALSE"
+    # - PYSMT_SOLVER="btor"  PYSMT_GMPY="FALSE"
+    # - PYSMT_SOLVER="msat_wrap" PYSMT_GMPY="FALSE"
+    # - PYSMT_SOLVER="z3_wrap"   PYSMT_GMPY="FALSE"
+    - PYSMT_SOLVER="dreal" PYSMT_GMPY="FALSE"
 
 matrix:
   fast_finish: true
@@ -91,6 +101,8 @@ matrix:
       env: PYSMT_SOLVER="msat_wrap" PYSMT_GMPY="FALSE"
     - python: pypy
       env: PYSMT_SOLVER="z3_wrap"   PYSMT_GMPY="FALSE"
+    - python: 3.5
+      env: PYSMT_SOLVER="dreal" PYSMT_GMPY="FALSE"
 
 install:
   - "./ci/travis_install.sh"

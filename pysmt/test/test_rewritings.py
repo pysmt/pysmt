@@ -19,13 +19,14 @@ from pysmt.shortcuts import (And, Iff, Or, Symbol, Implies, Not,
                              Exists, ForAll,
                              Times, Plus, Minus, Equals, Real,
                              is_valid)
-from pysmt.test import TestCase, skipIfNoSolverForLogic, main
+from pysmt.test import (TestCase, main,
+                        skipIfNoSolverForLogic, skipIfSolverNotAvailable)
 from pysmt.rewritings import prenex_normal_form, nnf, conjunctive_partition, aig
 from pysmt.rewritings import disjunctive_partition
 from pysmt.rewritings import TimesDistributor
 from pysmt.test.examples import get_example_formulae
 from pysmt.exceptions import SolverReturnedUnknownResultError
-from pysmt.logics import BOOL, QF_NRA, QF_LRA, QF_LIA
+from pysmt.logics import BOOL, QF_NRA, QF_LRA
 from pysmt.typing import REAL
 
 
@@ -166,11 +167,11 @@ class TestRewritings(TestCase):
         self.assertValid(Equals(fp, target), fp)
         self.assertTrue(fp.is_plus(), fp)
 
-    @skipIfNoSolverForLogic(QF_NRA)
+    @skipIfSolverNotAvailable("z3")
     def test_times_distributivity_smtlib_nra(self):
         from pysmt.test.smtlib.parser_utils import formulas_from_smtlib_test_set
         test_set = formulas_from_smtlib_test_set(logics=[QF_LRA, QF_NRA])
-        for (_, fname, f, _) in test_set:
+        for (_, _, f, _) in test_set:
             td = TimesDistributor()
             _ = td.walk(f)
             for (old, new) in td.memoization.items():

@@ -22,6 +22,7 @@ import pysmt.operators as op
 import pysmt.typing as types
 from pysmt.utils import set_bit
 from pysmt.exceptions import PysmtValueError
+from pysmt.constants import Numeral, pysmt_integer_from_integer
 
 
 class Simplifier(pysmt.walkers.DagWalker):
@@ -317,7 +318,6 @@ class Simplifier(pysmt.walkers.DagWalker):
 
         const = None
         if is_algebraic:
-            from pysmt.constants import Numeral
             const = self.manager._Algebraic(Numeral(constant_mul))
         elif ttype.is_real_type():
             const = self.manager.Real(constant_mul)
@@ -337,14 +337,20 @@ class Simplifier(pysmt.walkers.DagWalker):
 
 
     def walk_pow(self, formula, args, **kwargs):
-        if args[0].is_real_constant():
-            l = args[0].constant_value()
-            r = args[1].constant_value()
-            return self.manager.Real(l**r)
-        elif args[0].is_int_constant():
-            l = args[0].constant_value()
-            r = args[1].constant_value()
-            return self.manager.Int(l**r)
+        if args[0].is_constant():
+            base = args[0].constant_value()
+            exp = args[1].constant_value()
+            int_exp = pysmt_integer_from_integer(exp)
+            if exp.constant_value() == int_exp:
+                # If the exponent cannot be represented as an integer,
+                # we do not perform simplification.
+                # A more accurate analysis would be to check wheter
+                # base ** exp is a rational number.
+                exp = int_exp
+                if args[0].is_real_constant():
+                    return self.manager.Real(base**exp)
+                elif args[0].is_int_constant():
+                    return self.manager.Int(base**exp)
         return self.manager.Pow(args[0], args[1])
 
     def walk_minus(self, formula, args, **kwargs):
