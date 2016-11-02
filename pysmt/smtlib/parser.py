@@ -26,7 +26,7 @@ import pysmt.smtlib.commands as smtcmd
 from pysmt.environment import get_env
 from pysmt.typing import BOOL, REAL, INT, FunctionType, BVType, ArrayType
 from pysmt.logics import get_logic_by_name, UndefinedLogicError
-from pysmt.exceptions import UnknownSmtLibCommandError, PysmtSyntaxError
+from pysmt.exceptions import UnknownSmtLibCommandError, PysmtSyntaxError, PysmtTypeError
 from pysmt.smtlib.script import SmtLibCommand, SmtLibScript
 from pysmt.smtlib.annotations import Annotations
 from pysmt.utils import interactive_char_iterator
@@ -285,24 +285,61 @@ class SmtLibParser(object):
         self.logic = None
         self._reset()
 
+        mgr = self.env.formula_manager
+
+        # Fixing the issue with integer/real numbers on arithmetic
+        # operators.
+        #
+        # We try to apply the operator as it is, in case of failure,
+        # we try to interpret as reals the constant operands that are
+        # integers
+        def fix_real(op, *args):
+            try:
+                return op(*args)
+            except PysmtTypeError:
+                get_type = self.env.stc.get_type
+                get_free_variables = self.env.fvo.get_free_variables
+                new_args = []
+                for x in args:
+                    if get_type(x).is_int_type() and\
+                       len(get_free_variables(x)) == 0:
+                        new_args.append(mgr.ToReal(x))
+                    else:
+                        new_args.append(x)
+                if args == new_args:
+                    raise
+                return op(*new_args)
+
+        self.LT = functools.partial(fix_real, mgr.LT)
+        self.GT = functools.partial(fix_real, mgr.GT)
+        self.LE = functools.partial(fix_real, mgr.LE)
+        self.GE = functools.partial(fix_real, mgr.GE)
+        self.Equals = functools.partial(fix_real, mgr.Equals)
+        self.EqualsOrIff = functools.partial(fix_real, mgr.EqualsOrIff)
+        self.Plus = functools.partial(fix_real, mgr.Plus)
+        self.Minus = functools.partial(fix_real, mgr.Minus)
+        self.Times = functools.partial(fix_real, mgr.Times)
+        self.Div = functools.partial(fix_real, mgr.Div)
+        self.Ite = functools.partial(fix_real, mgr.Ite)
+        self.AllDifferent = functools.partial(fix_real, mgr.AllDifferent)
+
         # Tokens representing interpreted functions appearing in expressions
         # Each token is handled by a dedicated function that takes the
         # recursion stack, the token stream and the parsed token
         # Common tokens are handled in the _reset function
-        mgr = self.env.formula_manager
         self.interpreted = {"let" : self._enter_let,
                             "!" : self._enter_annotation,
                             "exists" : self._enter_quantifier,
                             "forall" : self._enter_quantifier,
-                            '+':self._operator_adapter(mgr.Plus),
+                            '+':self._operator_adapter(self.Plus),
                             '-':self._operator_adapter(self._minus_or_uminus),
-                            '*':self._operator_adapter(mgr.Times),
+                            '*':self._operator_adapter(self.Times),
                             '/':self._operator_adapter(self._division),
                             'pow':self._operator_adapter(mgr.Pow),
-                            '>':self._operator_adapter(mgr.GT),
-                            '<':self._operator_adapter(mgr.LT),
-                            '>=':self._operator_adapter(mgr.GE),
-                            '<=':self._operator_adapter(mgr.LE),
+                            '>':self._operator_adapter(self.GT),
+                            '<':self._operator_adapter(self.LT),
+                            '>=':self._operator_adapter(self.GE),
+                            '<=':self._operator_adapter(self.LE),
                             '=':self._operator_adapter(self._equals_or_iff),
                             'not':self._operator_adapter(mgr.Not),
                             'and':self._operator_adapter(mgr.And),
@@ -310,7 +347,8 @@ class SmtLibParser(object):
                             'xor':self._operator_adapter(mgr.Xor),
                             '=>':self._operator_adapter(mgr.Implies),
                             '<->':self._operator_adapter(mgr.Iff),
-                            'ite':self._operator_adapter(mgr.Ite),
+                            'ite':self._operator_adapter(self.Ite),
+                            'distinct':self._operator_adapter(self.AllDifferent),
                             'to_real':self._operator_adapter(mgr.ToReal),
                             'concat':self._operator_adapter(mgr.BVConcat),
                             'bvnot':self._operator_adapter(mgr.BVNot),
@@ -404,7 +442,7 @@ class SmtLibParser(object):
             return mgr.Times(mult, args[0])
         else:
             assert len(args) == 2
-            return mgr.Minus(args[0], args[1])
+            return self.Minus(args[0], args[1])
 
     def _enter_smtlib_as(self, stack, tokens, key):
         """Utility function that handles 'as' that is a special function in SMTLIB"""
@@ -497,11 +535,7 @@ class SmtLibParser(object):
         else:
             raise PysmtSyntaxError("Unexpected '_' expression '%s'" % op)
 
-        # Consume the closed parenthesis of the (_ ...) term and add the
-        # resulting function to the correct level in the stack
-        self.consume_closing(tokens, "expression")
-        stack.pop()
-        stack[-1].append(fun)
+        stack[-1].append(lambda : fun)
 
     def _equals_or_iff(self, left, right):
         """Utility function that treats = between booleans as <->"""
@@ -510,7 +544,7 @@ class SmtLibParser(object):
         if lty == BOOL:
             return mgr.Iff(left, right)
         else:
-            return mgr.Equals(left, right)
+            return self.Equals(left, right)
 
     def _division(self, left, right):
         """Utility function that builds a division"""
@@ -518,7 +552,7 @@ class SmtLibParser(object):
         if left.is_constant() and right.is_constant():
             return mgr.Real(Fraction(left.constant_value()) / \
                             Fraction(right.constant_value()))
-        return mgr.Div(left, right)
+        return self.Div(left, right)
 
     def _get_basic_type(self, type_name, params=None):
         """
