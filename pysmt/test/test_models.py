@@ -22,7 +22,6 @@ from pysmt.test import TestCase, skipIfNoSolverForLogic, main
 from pysmt.logics import QF_UFLIRA, QF_LRA, QF_BOOL
 from pysmt.solvers.eager import EagerModel
 
-
 class TestModels(TestCase):
 
     @skipIfNoSolverForLogic(QF_LRA)
@@ -71,7 +70,16 @@ class TestModels(TestCase):
         for (k,_) in m:
             self.assertFalse(k == z)
 
+    @skipIfNoSolverForLogic(QF_BOOL)
+    def test_pickle_eager_model(self):
+        import pickle
 
+        x, y = Symbol("x"), Symbol("y")
+        with Solver(logic=QF_BOOL) as s:
+            s.add_assertion(And(x,y))
+            assert s.solve()
+            model = list(s.get_model())
+            self.assertIsNotNone(pickle.dumps(model, -1))
 
 if __name__ == '__main__':
     main()

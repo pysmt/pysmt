@@ -1293,3 +1293,5 @@ class MSatBoolUFRewriter(IdentityDagWalker):
             stack = tmp
         res = stack[0]
         return res
+
+# EOC MSatBoolUFRewriter

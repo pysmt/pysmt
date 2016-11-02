@@ -71,6 +71,7 @@ def get_type(formula):
     """
     return get_env().stc.get_type(formula)
 
+
 def simplify(formula):
     """Returns the simplified version of the formula.
 
@@ -80,6 +81,7 @@ def simplify(formula):
     :rtype: Fnode
     """
     return get_env().simplifier.simplify(formula)
+
 
 def substitute(formula, subs):
     """Applies the substitutions defined in the dictionary to the formula.
@@ -92,6 +94,7 @@ def substitute(formula, subs):
     :rtype: Fnode
     """
     return get_env().substituter.substitute(formula, subs)
+
 
 def serialize(formula, threshold=None):
     """Provides a string representing the formula.
@@ -115,6 +118,7 @@ def get_free_variables(formula):
     """
     return get_env().fvo.get_free_variables(formula)
 
+
 def get_atoms(formula):
     """Returns the set of atoms of the formula.
 
@@ -123,6 +127,7 @@ def get_atoms(formula):
     :returns: the set of atoms of the formula
     """
     return get_env().ao.get_atoms(formula)
+
 
 def get_formula_size(formula, measure=None):
     """Returns the size of the formula as measured by the given counting type.
@@ -143,65 +148,81 @@ def ForAll(variables, formula):
     r""".. math:: \forall v_1, \cdots, v_n . \varphi(v_1, \cdots, v_n)"""
     return get_env().formula_manager.ForAll(variables, formula)
 
+
 def Exists(variables, formula):
     r""".. math:: \exists v_1, \cdots, v_n . \varphi(v_1, \cdots, v_n)"""
     return get_env().formula_manager.Exists(variables, formula)
+
 
 def Function(vname, params):
     r""".. math:: vname(p_1, \cdots, p_n)"""
     return get_env().formula_manager.Function(vname, params)
 
+
 def Not(formula):
     r""".. math:: \lnot \varphi"""
     return get_env().formula_manager.Not(formula)
+
 
 def Implies(left, right):
     r""".. math:: l \rightarrow r"""
     return get_env().formula_manager.Implies(left, right)
 
+
 def Iff(left, right):
     r""".. math:: l \leftrightarrow r """
     return get_env().formula_manager.Iff(left, right)
+
 
 def GE(left, right):
     r""".. math:: l \ge r"""
     return get_env().formula_manager.GE(left, right)
 
+
 def Minus(left, right):
     r""".. math:: l - r """
     return get_env().formula_manager.Minus(left, right)
+
 
 def Times(*args):
     r""".. math:: x_1 \times x_2 \cdots \times x_n"""
     return get_env().formula_manager.Times(*args)
 
+
 def Pow(left, right):
     r""".. math:: l ^ r"""
     return get_env().formula_manager.Pow(left, right)
+
 
 def Div(left, right):
     r""".. math:: \frac{l}{r}"""
     return get_env().formula_manager.Div(left, right)
 
+
 def Equals(left, right):
     r""".. math:: l = r"""
     return get_env().formula_manager.Equals(left, right)
+
 
 def GT(left, right):
     r""".. math:: l > r"""
     return get_env().formula_manager.GT(left, right)
 
+
 def LE(left, right):
     r""".. math:: l \le r"""
     return get_env().formula_manager.LE(left, right)
+
 
 def LT(left, right):
     r""".. math:: l < r"""
     return get_env().formula_manager.LT(left, right)
 
+
 def Ite(iff, left, right):
     r""".. math:: \text{ If } i \text{ Then } l \text{ Else } r"""
     return get_env().formula_manager.Ite(iff, left, right)
+
 
 def Symbol(name, typename=types.BOOL):
     """Returns a symbol with the given name and type.
@@ -212,6 +233,7 @@ def Symbol(name, typename=types.BOOL):
     """
     return get_env().formula_manager.Symbol(name, typename)
 
+
 def FreshSymbol(typename=types.BOOL, template=None):
     """Returns a symbol with a fresh name and given type.
 
@@ -221,6 +243,7 @@ def FreshSymbol(typename=types.BOOL, template=None):
     """
     return get_env().formula_manager.FreshSymbol(typename, template)
 
+
 def Int(value):
     """Returns an Integer constant with the given value.
 
@@ -228,6 +251,7 @@ def Int(value):
     :returns: An Integer constant with the given value
     """
     return get_env().formula_manager.Int(value)
+
 
 def Bool(value):
     """Returns a Boolean constant with the given value.
@@ -237,6 +261,7 @@ def Bool(value):
     """
     return get_env().formula_manager.Bool(value)
 
+
 def Real(value):
     """Returns a Real constant with the given value.
 
@@ -245,12 +270,14 @@ def Real(value):
     """
     return get_env().formula_manager.Real(value)
 
+
 def TRUE():
     """Returns the Boolean constant TRUE.
 
     returns: The Boolean constant TRUE
     """
     return get_env().formula_manager.TRUE()
+
 
 def FALSE():
     """Returns the Boolean constant FALSE.
@@ -259,21 +286,26 @@ def FALSE():
     """
     return get_env().formula_manager.FALSE()
 
+
 def And(*args):
     r""".. math:: \varphi_0 \land \cdots \land \varphi_n """
     return get_env().formula_manager.And(*args)
+
 
 def Or(*args):
     r""".. math:: \varphi_0 \lor \cdots \lor \varphi_n """
     return get_env().formula_manager.Or(*args)
 
+
 def Plus(*args):
     r""".. math:: \varphi_0 + \cdots + \varphi_n """
     return get_env().formula_manager.Plus(*args)
 
+
 def ToReal(formula):
     """Explicit cast of a term into a Real term."""
     return get_env().formula_manager.ToReal(formula)
+
 
 def AtMostOne(*args):
     """At most one can be true at anytime.
@@ -282,15 +314,18 @@ def AtMostOne(*args):
     """
     return get_env().formula_manager.AtMostOne(*args)
 
+
 def ExactlyOne(*args):
     """Given a set of boolean expressions requires that exactly one holds."""
     return get_env().formula_manager.ExactlyOne(*args)
+
 
 def AllDifferent(*args):
     """Given a set of non-boolean expressions, requires that each of them
     has value different from all the others
     """
     return get_env().formula_manager.AllDifferent(*args)
+
 
 def Xor(left, right):
     """Returns the XOR of left and right
@@ -303,13 +338,16 @@ def Xor(left, right):
     """
     return get_env().formula_manager.Xor(left, right)
 
+
 def Min(*args):
     """Minimum over a set of real or integer terms."""
     return get_env().formula_manager.Min(*args)
 
+
 def Max(*args):
     """Maximum over a set of real or integer terms"""
     return get_env().formula_manager.Max(*args)
+
 
 def EqualsOrIff(left, right):
     """Returns Equals() or Iff() depending on the type of the arguments.
@@ -318,6 +356,7 @@ def EqualsOrIff(left, right):
     dealing with both Theory and Boolean atoms.
     """
     return get_env().formula_manager.EqualsOrIff(left, right)
+
 
 #
 # Bit Vectors
@@ -340,6 +379,7 @@ def BV(value, width=None):
     """
     return get_env().formula_manager.BV(value, width)
 
+
 def SBV(value, width=None):
     """Returns a constant of type BitVector interpreting the sign.
 
@@ -354,6 +394,7 @@ def SBV(value, width=None):
     """
     return get_env().formula_manager.SBV(value, width)
 
+
 def BVOne(width=None):
     """Returns the unsigned one constant BitVector.
 
@@ -362,6 +403,7 @@ def BVOne(width=None):
     :rtype: FNode
     """
     return get_env().formula_manager.BVOne(width)
+
 
 def BVZero(width=None):
     """Returns the zero constant BitVector.
@@ -372,6 +414,7 @@ def BVZero(width=None):
     """
     return get_env().formula_manager.BVZero(width)
 
+
 def BVNot(formula):
     """Returns the bitwise negation of the bitvector
 
@@ -380,6 +423,7 @@ def BVNot(formula):
     :rtype: FNode
     """
     return get_env().formula_manager.BVNot(formula)
+
 
 def BVAnd(left, right):
     """Returns the Bit-wise AND of two bitvectors of the same size.
@@ -391,6 +435,7 @@ def BVAnd(left, right):
     """
     return get_env().formula_manager.BVAnd(left, right)
 
+
 def BVOr(left, right):
     """Returns the Bit-wise OR of two bitvectors of the same size.
 
@@ -400,6 +445,7 @@ def BVOr(left, right):
     :rtype: FNode
     """
     return get_env().formula_manager.BVOr(left, right)
+
 
 def BVXor(left, right):
     """Returns the Bit-wise XOR of two bitvectors of the same size.
@@ -411,6 +457,7 @@ def BVXor(left, right):
     """
     return get_env().formula_manager.BVXor(left, right)
 
+
 def BVConcat(left, right):
     """Returns the Concatenation of the two BVs
 
@@ -420,6 +467,7 @@ def BVConcat(left, right):
     :rtype: FNode
     """
     return get_env().formula_manager.BVConcat(left, right)
+
 
 def BVExtract(formula, start=0, end=None):
     """Returns the slice of formula from start to end (inclusive).
@@ -432,6 +480,7 @@ def BVExtract(formula, start=0, end=None):
     """
     return get_env().formula_manager.BVExtract(formula, start=start, end=end)
 
+
 def BVULT(left, right):
     """Returns the Unsigned Less-Than comparison of the two BVs.
 
@@ -441,6 +490,7 @@ def BVULT(left, right):
     :rtype: FNode
     """
     return get_env().formula_manager.BVULT(left, right)
+
 
 def BVUGT(left, right):
     """Returns the Unsigned Greater-Than comparison of the two BVs.
@@ -452,6 +502,7 @@ def BVUGT(left, right):
     """
     return get_env().formula_manager.BVUGT(left, right)
 
+
 def BVULE(left, right):
     """Returns the Unsigned Less-Equal comparison of the two BVs.
 
@@ -461,6 +512,7 @@ def BVULE(left, right):
     :rtype: FNode
     """
     return get_env().formula_manager.BVULE(left, right)
+
 
 def BVUGE(left, right):
     """Returns the Unsigned Greater-Equal comparison of the two BVs.
@@ -472,6 +524,7 @@ def BVUGE(left, right):
     """
     return get_env().formula_manager.BVUGE(left, right)
 
+
 def BVNeg(formula):
     """Returns the arithmetic negation of the BV.
 
@@ -480,6 +533,7 @@ def BVNeg(formula):
     :rtype: FNode
     """
     return get_env().formula_manager.BVNeg(formula)
+
 
 def BVAdd(left, right):
     """Returns the sum of two BV.
@@ -491,6 +545,7 @@ def BVAdd(left, right):
     """
     return get_env().formula_manager.BVAdd(left, right)
 
+
 def BVSub(left, right):
     """Returns the difference of two BV.
 
@@ -500,6 +555,7 @@ def BVSub(left, right):
     :rtype: FNode
     """
     return get_env().formula_manager.BVSub(left, right)
+
 
 def BVMul(left, right):
     """Returns the product of two BV.
@@ -511,6 +567,7 @@ def BVMul(left, right):
     """
     return get_env().formula_manager.BVMul(left, right)
 
+
 def BVUDiv(left, right):
     """Returns the Unsigned division of the two BV.
 
@@ -520,6 +577,7 @@ def BVUDiv(left, right):
     :rtype: FNode
     """
     return get_env().formula_manager.BVUDiv(left, right)
+
 
 def BVURem(left, right):
     """Returns the Unsigned remainder of the two BV.
@@ -531,6 +589,7 @@ def BVURem(left, right):
     """
     return get_env().formula_manager.BVURem(left, right)
 
+
 def BVLShl(left, right):
     """Returns the logical left shift the BV.
 
@@ -541,6 +600,7 @@ def BVLShl(left, right):
     """
     return get_env().formula_manager.BVLShl(left, right)
 
+
 def BVLShr(left, right):
     """Returns the logical right shift the BV.
 
@@ -550,6 +610,7 @@ def BVLShr(left, right):
     :rtype: FNode
     """
     return get_env().formula_manager.BVLShr(left, right)
+
 
 def BVAShr(left, right):
     """Returns the RIGHT arithmetic rotation of the left BV by the number
@@ -563,6 +624,7 @@ def BVAShr(left, right):
     """
     return get_env().formula_manager.BVAShr(left, right)
 
+
 def BVRol(formula, steps):
     """Returns the LEFT rotation of the BV by the number of steps.
 
@@ -573,6 +635,7 @@ def BVRol(formula, steps):
     """
     return get_env().formula_manager.BVRol(formula, steps)
 
+
 def BVRor(formula, steps):
     """Returns the RIGHT rotation of the BV by the number of steps.
 
@@ -582,6 +645,7 @@ def BVRor(formula, steps):
     :rtype: FNode
     """
     return get_env().formula_manager.BVRor(formula, steps)
+
 
 def BVZExt(formula, increase):
     """Returns the zero-extension of the BV.
@@ -595,6 +659,7 @@ def BVZExt(formula, increase):
     """
     return get_env().formula_manager.BVZExt(formula, increase)
 
+
 def BVSExt(formula, increase):
     """Returns the signed-extension of the BV.
 
@@ -607,6 +672,7 @@ def BVSExt(formula, increase):
     """
     return get_env().formula_manager.BVSExt(formula, increase)
 
+
 def BVSLT(left, right):
     """Returns the Signed Less-Than comparison of the two BVs.
 
@@ -616,6 +682,7 @@ def BVSLT(left, right):
     :rtype: FNode
     """
     return get_env().formula_manager.BVSLT(left, right)
+
 
 def BVSLE(left, right):
     """Returns the Signed Less-Equal comparison of the two BVs.
@@ -627,6 +694,7 @@ def BVSLE(left, right):
     """
     return get_env().formula_manager.BVSLE(left, right)
 
+
 def BVSGT(left, right):
     """Returns the Signed Greater-Than comparison of the two BVs.
 
@@ -636,6 +704,7 @@ def BVSGT(left, right):
     :rtype: FNode
     """
     return get_env().formula_manager.BVSGT(left, right)
+
 
 def BVSGE(left, right):
     """Returns the Signed Greater-Equal comparison of the two BVs.
@@ -647,6 +716,7 @@ def BVSGE(left, right):
     """
     return get_env().formula_manager.BVSGE(left, right)
 
+
 def BVSDiv(left, right):
     """Returns the Signed division of the two BVs.
 
@@ -657,6 +727,7 @@ def BVSDiv(left, right):
     """
     return get_env().formula_manager.BVSDiv(left, right)
 
+
 def BVSRem(left, right):
     """Returns the Signed remainder of the two BVs
 
@@ -666,6 +737,7 @@ def BVSRem(left, right):
     :rtype: FNode
     """
     return get_env().formula_manager.BVSRem(left, right)
+
 
 def BVComp(left, right):
     """Returns a BV of size 1 equal to 0 if left is equal to right,
@@ -678,6 +750,7 @@ def BVComp(left, right):
     :rtype: FNode
     """
     return get_env().formula_manager.BVComp(left, right)
+
 
 #
 # Arrays
@@ -692,6 +765,7 @@ def Select(array, index):
     """
     return get_env().formula_manager.Select(array, index)
 
+
 def Store(array, index, value):
     """Returns a STORE application with given value on array at the given index
 
@@ -701,6 +775,7 @@ def Store(array, index, value):
     :rtype: FNode
     """
     return get_env().formula_manager.Store(array, index, value)
+
 
 def Array(idx_type, default, assigned_values=None):
     """Returns an Array with the given index type and initialization.
@@ -721,6 +796,7 @@ def Array(idx_type, default, assigned_values=None):
     """
     return get_env().formula_manager.Array(idx_type, default, assigned_values)
 
+
 ##
 ## Shortcuts for Solvers Factory
 ##
@@ -738,6 +814,7 @@ def Solver(quantified=False, name=None, logic=None, **kwargs):
                                     logic=logic,
                                     **kwargs)
 
+
 def UnsatCoreSolver(quantified=False, name=None, logic=None,
                     unsat_cores_mode="all"):
     """Returns a solver supporting unsat core extraction.
@@ -754,6 +831,7 @@ def UnsatCoreSolver(quantified=False, name=None, logic=None,
                                              logic=logic,
                                              unsat_cores_mode=unsat_cores_mode)
 
+
 def QuantifierEliminator(name=None, logic=None):
     """Returns a quantifier eliminator.
 
@@ -765,6 +843,7 @@ def QuantifierEliminator(name=None, logic=None):
     """
     return get_env().factory.QuantifierEliminator(name=name, logic=logic)
 
+
 def Interpolator(name=None, logic=None):
     """Returns an interpolator
 
@@ -775,14 +854,18 @@ def Interpolator(name=None, logic=None):
     """
     return get_env().factory.Interpolator(name=name, logic=logic)
 
-def is_sat(formula, solver_name=None, logic=None):
+
+def is_sat(formula, solver_name=None, logic=None, portfolio=None):
     """ Returns whether a formula is satisfiable.
 
     :param formula: The formula to check satisfiability
     :type  formula: FNode
     :param solver_name: Specify the name of the solver to be used
+    :type  solver_name: string
     :param logic: Specify the logic that is going to be used
-    :returns: Whether the formula is SAT or UNSAT
+    :param portfolio: A list of solver names to perform portfolio solving.
+    :type  portfolio: An iterable of solver names
+    :returns: Whether the formula is SAT or UNSAT.
     :rtype: bool
     """
     env = get_env()
@@ -792,7 +875,9 @@ def is_sat(formula, solver_name=None, logic=None):
 
     return env.factory.is_sat(formula,
                               solver_name=solver_name,
-                              logic=logic)
+                              logic=logic,
+                              portfolio=portfolio)
+
 
 def get_model(formula, solver_name=None, logic=None):
     """ Similar to :py:func:`is_sat` but returns a model if the formula is
@@ -812,6 +897,7 @@ def get_model(formula, solver_name=None, logic=None):
     return env.factory.get_model(formula,
                                  solver_name=solver_name,
                                  logic=logic)
+
 
 def get_implicant(formula, solver_name=None, logic=None):
     """Returns a formula f_i such that Implies(f_i, formula) is valid or None
@@ -835,6 +921,7 @@ def get_implicant(formula, solver_name=None, logic=None):
                                      solver_name=solver_name,
                                      logic=logic)
 
+
 def get_unsat_core(clauses, solver_name=None, logic=None):
     """Similar to :py:func:`get_model` but returns the unsat core of the
     conjunction of the input clauses
@@ -854,13 +941,15 @@ def get_unsat_core(clauses, solver_name=None, logic=None):
                                       solver_name=solver_name,
                                       logic=logic)
 
-def is_valid(formula, solver_name=None, logic=None):
+
+def is_valid(formula, solver_name=None, logic=None, portfolio=None):
     """Similar to :py:func:`is_sat` but checks validity.
 
     :param formula: The target formula
     :type  formula: FNode
     :param solver_name: Specify the name of the solver to be used
     :param logic: Specify the logic that is going to be used
+    :param portfolio: A list of solver names to perform portfolio solving.
     :returns: Whether the formula is SAT or UNSAT but checks validity
     :rtype: bool
     """
@@ -871,15 +960,18 @@ def is_valid(formula, solver_name=None, logic=None):
 
     return env.factory.is_valid(formula,
                                 solver_name=solver_name,
-                                logic=logic)
+                                logic=logic,
+                                portfolio=portfolio)
 
-def is_unsat(formula, solver_name=None, logic=None):
+
+def is_unsat(formula, solver_name=None, logic=None, portfolio=None):
     """Similar to :py:func:`is_sat` but checks unsatisfiability.
 
     :param formula: The target formula
     :type  formula: FNode
     :param solver_name: Specify the name of the solver to be used
     :param logic: Specify the logic that is going to be used
+    :param portfolio: A list of solver names to perform portfolio solving.
     :returns: Whether the formula is UNSAT or not
     :rtype: bool
     """
@@ -890,7 +982,9 @@ def is_unsat(formula, solver_name=None, logic=None):
 
     return env.factory.is_unsat(formula,
                                 solver_name=solver_name,
-                                logic=logic)
+                                logic=logic,
+                                portfolio=portfolio)
+
 
 def qelim(formula, solver_name=None, logic=None):
     """Performs quantifier elimination of the given formula.
@@ -909,6 +1003,7 @@ def qelim(formula, solver_name=None, logic=None):
     return env.factory.qelim(formula,
                              solver_name=solver_name,
                              logic=logic)
+
 
 def binary_interpolant(formula_a, formula_b, solver_name=None, logic=None):
     """Computes an interpolant of (formula_a, formula_b).
@@ -935,6 +1030,7 @@ def binary_interpolant(formula_a, formula_b, solver_name=None, logic=None):
                                           solver_name=solver_name,
                                           logic=logic)
 
+
 def sequence_interpolant(formulas, solver_name=None, logic=None):
     """Computes a sequence interpolant of the formulas.
 
@@ -959,6 +1055,7 @@ def sequence_interpolant(formulas, solver_name=None, logic=None):
                                             solver_name=solver_name,
                                             logic=logic)
 
+
 def read_configuration(config_filename, environment=None):
     """Reads the pysmt configuration of the given file path and applies
     it on the specified environment. If no environment is specified,
@@ -971,6 +1068,7 @@ def read_configuration(config_filename, environment=None):
         environment = get_env()
     config.configure_environment(config_filename, environment)
 
+
 def write_configuration(config_filename, environment=None):
     """Dumps the current pysmt configuration to the specified file path
 
@@ -980,6 +1078,7 @@ def write_configuration(config_filename, environment=None):
     if environment is None:
         environment = get_env()
     config.write_environment_configuration(config_filename, environment)
+
 
 def read_smtlib(fname):
     """Reads the SMT formula from the given file.
@@ -991,6 +1090,7 @@ def read_smtlib(fname):
     :rtype: FNode
     """
     return pysmt.smtlib.parser.get_formula_fname(fname)
+
 
 def write_smtlib(formula, fname):
     """Reads the SMT formula from the given file.
