@@ -218,7 +218,7 @@ def main():
     elif options.env:
         bindings_dir= os.path.expanduser(options.bindings_path)
         if platform.system().lower() == "windows":
-            print("set PYTHONPATH=" + bindings_dir + ":%{PYTHONPATH}%")
+            print("set PYTHONPATH=" + bindings_dir + ";%PYTHONPATH%")
         else:
             print("export PYTHONPATH=\"" + bindings_dir + ":${PYTHONPATH}\"")
 
