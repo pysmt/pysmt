@@ -17,6 +17,7 @@ from six.moves import input
 import os
 import argparse
 import sys
+import platform
 
 from collections import namedtuple
 
@@ -133,12 +134,14 @@ def parse_options():
                         action='store_true', default=False,
                         help='Confirm that you agree with the licenses of the\
                         solvers and skip the interactive question')
-
+    
+    install_path_default = os.path.join("~", ".smt_solvers")
     parser.add_argument('--install-path', dest='install_path',
-                        type=str, default="~/.smt_solvers",
+                        type=str, default=install_path_default,
                         help='The folder to use for the installation')
 
-    py_bindings = "~/.smt_solvers/python-bindings-%d.%d" % sys.version_info[0:2]
+    py_bindings = os.path.join(install_path_default, 
+                               "python-bindings-%d.%d" % sys.version_info[0:2])
     parser.add_argument('--bindings-path', dest='bindings_path',
                         type=str, default=py_bindings,
                         help='The folder to use for the bindings')
@@ -214,7 +217,10 @@ def main():
 
     elif options.env:
         bindings_dir= os.path.expanduser(options.bindings_path)
-        print("export PYTHONPATH=\""+ bindings_dir + ":${PYTHONPATH}\"")
+        if platform.system().lower() == "windows":
+            print("set PYTHONPATH=" + bindings_dir + ":%{PYTHONPATH}%")
+        else:
+            print("export PYTHONPATH=\"" + bindings_dir + ":${PYTHONPATH}\"")
 
     else:
         if len(solvers_to_install) == 0:
