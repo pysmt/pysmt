@@ -83,4 +83,3 @@ class Z3Installer(SolverInstaller):
                 # Return None, without raising an exception
                 # pylint: disable=lost-exception
                 return version
-
