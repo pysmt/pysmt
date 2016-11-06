@@ -74,7 +74,7 @@ class Z3Installer(SolverInstaller):
         with TemporaryPath([self.bindings_dir]):
             version = None
             try:
-                import z3        
+                import z3  
                 (major, minor, ver, _) = z3.get_version()
                 version = "%d.%d.%d" % (major, minor, ver)
             finally:
