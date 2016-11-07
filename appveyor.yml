@@ -9,18 +9,44 @@ environment:
     - PYTHON: "C:\\Python27"
       PYTHON_VERSION: "2.7.8"
       PYTHON_ARCH: "32"
+      PYSMT_SOLVERS: "None"
 
-    # - PYTHON: "C:\\Python27-x64"
-    #   PYTHON_VERSION: "2.7.8"
-    #   PYTHON_ARCH: "64"
+    - PYTHON: "C:\\Python27-x64"
+      PYTHON_VERSION: "2.7.8"
+      PYTHON_ARCH: "64"
+      PYSMT_SOLVERS: "None"
 
-    # - PYTHON: "C:\\Python34"
-    #   PYTHON_VERSION: "3.4.1"
-    #   PYTHON_ARCH: "32"
+    - PYTHON: "C:\\Python34"
+      PYTHON_VERSION: "3.4.1"
+      PYTHON_ARCH: "32"
+      PYSMT_SOLVERS: "None"
 
     - PYTHON: "C:\\Python34-x64"
       PYTHON_VERSION: "3.4.1"
       PYTHON_ARCH: "64"
+      PYSMT_SOLVERS: "None"
+
+
+    - PYTHON: "C:\\Python27"
+      PYTHON_VERSION: "2.7.8"
+      PYTHON_ARCH: "32"
+      PYSMT_SOLVERS: "z3"
+
+    - PYTHON: "C:\\Python27-x64"
+      PYTHON_VERSION: "2.7.8"
+      PYTHON_ARCH: "64"
+      PYSMT_SOLVERS: "z3"
+
+    - PYTHON: "C:\\Python34"
+      PYTHON_VERSION: "3.4.1"
+      PYTHON_ARCH: "32"
+      PYSMT_SOLVERS: "z3"
+
+    - PYTHON: "C:\\Python34-x64"
+      PYTHON_VERSION: "3.4.1"
+      PYTHON_ARCH: "64"
+      PYSMT_SOLVERS: "z3"
+
 
 install:
   - ECHO "Filesystem root:"
@@ -43,12 +69,14 @@ install:
   - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
 
   - "%CMD_IN_ENV% pip install -r dev-requirements.txt"
+  - "%CMD_IN_ENV% python setup.py"
 
 # MG: Build is where we probably want to build the solvers
 build: false  # Not a C# project, build stuff at the test step instead.
 
 test_script:
   # Build the compiled extension and run the project tests
+  - "%CMD_IN_ENV% python setup.py --check"
   - "%CMD_IN_ENV% nosetests -v "
 
 # after_test:
