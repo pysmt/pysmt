@@ -27,7 +27,7 @@ class Z3Installer(SolverInstaller):
     def __init__(self, install_dir, bindings_dir, solver_version,
                  mirror_link=None, osx=None):
         arch = self.architecture
-        if arch == "x86_64" or arch == "AMD64":
+        if arch == "x86_64":
             arch = "x64"
 
         system = self.os_name
