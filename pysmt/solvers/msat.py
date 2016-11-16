@@ -39,7 +39,8 @@ from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               SolverNotConfiguredForUnsatCoresError,
                               SolverStatusError,
                               InternalSolverError,
-                              NonLinearError, PysmtValueError, PysmtTypeError)
+                              NonLinearError, PysmtValueError, PysmtTypeError,
+                              ConvertExpressionError)
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
 from pysmt.solvers.qelim import QuantifierEliminator
 from pysmt.solvers.interpolation import Interpolator
@@ -524,8 +525,8 @@ class MSatConverter(Converter, DagWalker):
         try:
             return self.term_sig[tag](term, args)
         except KeyError:
-            raise PysmtTypeError("Unsupported expression:",
-                                 mathsat.msat_term_repr(term))
+            raise ConvertExpressionError("Unsupported expression:",
+                                         mathsat.msat_term_repr(term))
 
     def _sig_binary(self, term, args):
         t = self.env.stc.get_type(args[0])
@@ -605,8 +606,8 @@ class MSatConverter(Converter, DagWalker):
             d = mathsat.msat_term_get_decl(term)
             fun = self.get_symbol_from_declaration(d)
             return fun.symbol_type()
-        raise PysmtTypeError("Unsupported expression:",
-                             mathsat.msat_term_repr(term))
+        raise ConvertExpressionError("Unsupported expression:",
+                                     mathsat.msat_term_repr(term))
 
     def _back_single_term(self, term, mgr, args):
         """Builds the pysmt formula given a term and the list of formulae
@@ -633,8 +634,8 @@ class MSatConverter(Converter, DagWalker):
         try:
             return self.back_fun[tag](term, args)
         except KeyError:
-            raise PysmtTypeError("Unsupported expression:",
-                                 mathsat.msat_term_repr(term))
+            raise ConvertExpressionError("Unsupported expression:",
+                                         mathsat.msat_term_repr(term))
 
     def _back_adapter(self, op):
         """Create a function that for the given op.
@@ -717,8 +718,8 @@ class MSatConverter(Converter, DagWalker):
             fun = self.get_symbol_from_declaration(d)
             res = self.mgr.Function(fun, args)
         else:
-            raise PysmtTypeError("Unsupported expression:",
-                                 mathsat.msat_term_repr(term))
+            raise ConvertExpressionError("Unsupported expression:",
+                                         mathsat.msat_term_repr(term))
         return res
 
     def get_symbol_from_declaration(self, decl):
@@ -1114,6 +1115,7 @@ if hasattr(mathsat, "MSAT_EXIST_ELIM_ALLSMT_FM"):
             """Returns a quantifier-free equivalent formula of `formula`."""
             return self.walk(formula)
 
+
         def exist_elim(self, variables, formula):
             logic = get_logic(formula, self.env)
             if not (logic <= LRA or logic <= LIA):
@@ -1135,7 +1137,18 @@ if hasattr(mathsat, "MSAT_EXIST_ELIM_ALLSMT_FM"):
 
             res = mathsat.msat_exist_elim(self.msat_env(), fterm, tvars, algo)
 
-            return self.converter.back(res)
+            try:
+                return self.converter.back(res)
+            except ConvertExpressionError:
+                if logic <= LRA:
+                    raise
+                raise ConvertExpressionError(message=("Unable to represent" \
+                      "expression %s in pySMT: the quantifier elimination for " \
+                      "LIA is incomplete as it requires the modulus. You can " \
+                      "find the MathSAT term representing the quantifier " \
+                      "elimination as the attribute 'expression' of this " \
+                      "exception object" % str(res)), expression=res)
+
 
         def walk_forall(self, formula, args, **kwargs):
             assert formula.is_forall()
