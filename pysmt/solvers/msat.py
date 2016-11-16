@@ -26,7 +26,7 @@ try:
 except ImportError:
     raise SolverAPINotFound
 
-from pysmt.logics import LRA, QF_UFLIA, QF_UFLRA, QF_BV, PYSMT_QF_LOGICS
+from pysmt.logics import LRA, LIA, QF_UFLIA, QF_UFLRA, QF_BV, PYSMT_QF_LOGICS
 from pysmt.oracles import get_logic
 
 import pysmt.operators as op
@@ -1082,9 +1082,9 @@ class MSatConverter(Converter, DagWalker):
 if hasattr(mathsat, "MSAT_EXIST_ELIM_ALLSMT_FM"):
     class MSatQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
 
-        LOGICS = [LRA]
+        LOGICS = [LRA, LIA]
 
-        def __init__(self, environment, logic=None, algorithm='fm'):
+        def __init__(self, environment, logic=None, algorithm='lw'):
             """Initialize the Quantifier Eliminator using 'fm' or 'lw'.
 
             fm: Fourier-Motzkin (default)
@@ -1092,6 +1092,11 @@ if hasattr(mathsat, "MSAT_EXIST_ELIM_ALLSMT_FM"):
             """
             if algorithm not in ['fm', 'lw']:
                 raise PysmtValueError("Algorithm can be either 'fm' or 'lw'")
+
+            if logic is not None and (not logic <= LRA and algorithm != "lw"):
+                raise NotImplementedError("MathSAT quantifier elimination for LIA"\
+                                          " only works with 'lw' algorithm")
+
             QuantifierEliminator.__init__(self)
             IdentityDagWalker.__init__(self, env=environment)
             self.msat_config = mathsat.msat_create_default_config("QF_LRA")
@@ -1101,6 +1106,7 @@ if hasattr(mathsat, "MSAT_EXIST_ELIM_ALLSMT_FM"):
             self.set_function(self.walk_identity, op.SYMBOL, op.REAL_CONSTANT,
                               op.BOOL_CONSTANT, op.INT_CONSTANT)
             self.logic = logic
+
             self.algorithm = algorithm
             self.converter = MSatConverter(environment, self.msat_env)
 
@@ -1110,10 +1116,15 @@ if hasattr(mathsat, "MSAT_EXIST_ELIM_ALLSMT_FM"):
 
         def exist_elim(self, variables, formula):
             logic = get_logic(formula, self.env)
-            if not logic <= LRA:
+            if not (logic <= LRA or logic <= LIA):
                 raise NotImplementedError("MathSAT quantifier elimination only"\
                                           " supports LRA (detected logic " \
                                           "is: %s)" % str(logic))
+
+            if not logic <= LRA and self.algorithm != "lw":
+                raise NotImplementedError("MathSAT quantifier elimination for LIA"\
+                                          " only works with 'lw' algorithm")
+
 
             fterm = self.converter.convert(formula)
             tvars = [self.converter.convert(x) for x in variables]

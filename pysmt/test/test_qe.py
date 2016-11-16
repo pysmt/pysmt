@@ -61,9 +61,6 @@ class TestQE(TestCase):
         with self.assertRaises(NoSolverAvailableError):
             QuantifierEliminator(name="nonexistent")
 
-        # MathSAT QE does not support LIA
-        with self.assertRaises(NoSolverAvailableError):
-            QuantifierEliminator(name="msat", logic=LIA)
 
     @skipIfNoQEForLogic(LRA)
     def test_selection_lra(self):
@@ -122,12 +119,8 @@ class TestQE(TestCase):
         self._real_example(qe)
         self._alternation_bool_example(qe)
         self._alternation_real_example(qe)
-
-        with self.assertRaises(NotImplementedError):
-            self._int_example(qe)
-
-        with self.assertRaises(NotImplementedError):
-            self._alternation_int_example(qe)
+        self._int_example(qe)
+        self._alternation_int_example(qe)
 
         # Additional test for raising error on back conversion of
         # quantified formulae
