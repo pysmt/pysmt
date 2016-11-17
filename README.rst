@@ -151,7 +151,7 @@ customize its behavior.
 dependencies for building the solver (e.g., make or gcc) and has been
 tested mainly on Linux Debian/Ubuntu systems. We suggest that you
 refer to the documentation of each solver to understand how to install
-it with its python bindings. 
+it with its python bindings.
 
 For Yices, picosat, and CUDD, we use external wrappers:
 
@@ -198,7 +198,7 @@ each of the available quantifier eliminators
   Quantifier Eliminator   pySMT name   Supported Logics
   =====================   ==========   ================
   MathSAT FM              msat-fm      LRA
-  MathSAT LW              msat-lw      LRA
+  MathSAT LW              msat-lw      LRA, LIA
   Z3                      z3           LRA, LIA
   BDD (CUDD)              bdd          BOOL
   =====================   ==========   ================
@@ -221,5 +221,3 @@ pySMT is release under the APACHE 2.0 License.
 
 For further questions, feel free to open an issue, or write to
 pysmt@googlegroups.com (`Browse the Archive <https://groups.google.com/d/forum/pysmt>`_).
-
-
