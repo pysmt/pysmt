@@ -40,7 +40,7 @@ from pysmt.solvers.portfolio import Portfolio
 
 DEFAULT_SOLVER_PREFERENCE_LIST = ['msat', 'z3', 'cvc4', 'yices', 'btor',
                                   'picosat', 'bdd']
-DEFAULT_QELIM_PREFERENCE_LIST = ['z3', 'msat_fm', 'msat_lw', 'bdd', 'shannon']
+DEFAULT_QELIM_PREFERENCE_LIST = ['z3', 'msat_lw', 'msat_fm', 'bdd', 'shannon']
 DEFAULT_INTERPOLATION_PREFERENCE_LIST = ['msat', 'z3']
 DEFAULT_LOGIC = QF_UFLIRA
 DEFAULT_QE_LOGIC = LRA

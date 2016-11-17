@@ -26,7 +26,7 @@ try:
 except ImportError:
     raise SolverAPINotFound
 
-from pysmt.logics import LRA, QF_UFLIA, QF_UFLRA, QF_BV, PYSMT_QF_LOGICS
+from pysmt.logics import LRA, LIA, QF_UFLIA, QF_UFLRA, QF_BV, PYSMT_QF_LOGICS
 from pysmt.oracles import get_logic
 
 import pysmt.operators as op
@@ -39,7 +39,8 @@ from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               SolverNotConfiguredForUnsatCoresError,
                               SolverStatusError,
                               InternalSolverError,
-                              NonLinearError, PysmtValueError, PysmtTypeError)
+                              NonLinearError, PysmtValueError, PysmtTypeError,
+                              ConvertExpressionError)
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
 from pysmt.solvers.qelim import QuantifierEliminator
 from pysmt.solvers.interpolation import Interpolator
@@ -524,8 +525,8 @@ class MSatConverter(Converter, DagWalker):
         try:
             return self.term_sig[tag](term, args)
         except KeyError:
-            raise PysmtTypeError("Unsupported expression:",
-                                 mathsat.msat_term_repr(term))
+            raise ConvertExpressionError("Unsupported expression:",
+                                         mathsat.msat_term_repr(term))
 
     def _sig_binary(self, term, args):
         t = self.env.stc.get_type(args[0])
@@ -605,8 +606,8 @@ class MSatConverter(Converter, DagWalker):
             d = mathsat.msat_term_get_decl(term)
             fun = self.get_symbol_from_declaration(d)
             return fun.symbol_type()
-        raise PysmtTypeError("Unsupported expression:",
-                             mathsat.msat_term_repr(term))
+        raise ConvertExpressionError("Unsupported expression:",
+                                     mathsat.msat_term_repr(term))
 
     def _back_single_term(self, term, mgr, args):
         """Builds the pysmt formula given a term and the list of formulae
@@ -633,8 +634,8 @@ class MSatConverter(Converter, DagWalker):
         try:
             return self.back_fun[tag](term, args)
         except KeyError:
-            raise PysmtTypeError("Unsupported expression:",
-                                 mathsat.msat_term_repr(term))
+            raise ConvertExpressionError("Unsupported expression:",
+                                         mathsat.msat_term_repr(term))
 
     def _back_adapter(self, op):
         """Create a function that for the given op.
@@ -717,8 +718,8 @@ class MSatConverter(Converter, DagWalker):
             fun = self.get_symbol_from_declaration(d)
             res = self.mgr.Function(fun, args)
         else:
-            raise PysmtTypeError("Unsupported expression:",
-                                 mathsat.msat_term_repr(term))
+            raise ConvertExpressionError("Unsupported expression:",
+                                         mathsat.msat_term_repr(term))
         return res
 
     def get_symbol_from_declaration(self, decl):
@@ -1082,9 +1083,9 @@ class MSatConverter(Converter, DagWalker):
 if hasattr(mathsat, "MSAT_EXIST_ELIM_ALLSMT_FM"):
     class MSatQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
 
-        LOGICS = [LRA]
+        LOGICS = [LRA, LIA]
 
-        def __init__(self, environment, logic=None, algorithm='fm'):
+        def __init__(self, environment, logic=None, algorithm='lw'):
             """Initialize the Quantifier Eliminator using 'fm' or 'lw'.
 
             fm: Fourier-Motzkin (default)
@@ -1092,6 +1093,11 @@ if hasattr(mathsat, "MSAT_EXIST_ELIM_ALLSMT_FM"):
             """
             if algorithm not in ['fm', 'lw']:
                 raise PysmtValueError("Algorithm can be either 'fm' or 'lw'")
+
+            if logic is not None and (not logic <= LRA and algorithm != "lw"):
+                raise PysmtValueError("MathSAT quantifier elimination for LIA"\
+                                      " only works with 'lw' algorithm")
+
             QuantifierEliminator.__init__(self)
             IdentityDagWalker.__init__(self, env=environment)
             self.msat_config = mathsat.msat_create_default_config("QF_LRA")
@@ -1101,6 +1107,7 @@ if hasattr(mathsat, "MSAT_EXIST_ELIM_ALLSMT_FM"):
             self.set_function(self.walk_identity, op.SYMBOL, op.REAL_CONSTANT,
                               op.BOOL_CONSTANT, op.INT_CONSTANT)
             self.logic = logic
+
             self.algorithm = algorithm
             self.converter = MSatConverter(environment, self.msat_env)
 
@@ -1108,12 +1115,18 @@ if hasattr(mathsat, "MSAT_EXIST_ELIM_ALLSMT_FM"):
             """Returns a quantifier-free equivalent formula of `formula`."""
             return self.walk(formula)
 
+
         def exist_elim(self, variables, formula):
             logic = get_logic(formula, self.env)
-            if not logic <= LRA:
-                raise NotImplementedError("MathSAT quantifier elimination only"\
-                                          " supports LRA (detected logic " \
-                                          "is: %s)" % str(logic))
+            if not (logic <= LRA or logic <= LIA):
+                raise PysmtValueError("MathSAT quantifier elimination only"\
+                                      " supports LRA or LIA (detected logic " \
+                                      "is: %s)" % str(logic))
+
+            if not logic <= LRA and self.algorithm != "lw":
+                raise PysmtValueError("MathSAT quantifier elimination for LIA"\
+                                      " only works with 'lw' algorithm")
+
 
             fterm = self.converter.convert(formula)
             tvars = [self.converter.convert(x) for x in variables]
@@ -1124,7 +1137,18 @@ if hasattr(mathsat, "MSAT_EXIST_ELIM_ALLSMT_FM"):
 
             res = mathsat.msat_exist_elim(self.msat_env(), fterm, tvars, algo)
 
-            return self.converter.back(res)
+            try:
+                return self.converter.back(res)
+            except ConvertExpressionError:
+                if logic <= LRA:
+                    raise
+                raise ConvertExpressionError(message=("Unable to represent" \
+                      "expression %s in pySMT: the quantifier elimination for " \
+                      "LIA is incomplete as it requires the modulus. You can " \
+                      "find the MathSAT term representing the quantifier " \
+                      "elimination as the attribute 'expression' of this " \
+                      "exception object" % str(res)), expression=res)
+
 
         def walk_forall(self, formula, args, **kwargs):
             assert formula.is_forall()
@@ -1174,9 +1198,9 @@ class MSatInterpolator(Interpolator):
             logic = get_logic(f, self.environment)
             ok = any(logic <= l for l in self.LOGICS)
             if not ok:
-                raise NotImplementedError(
-                    "Logic not supported by MathSAT interpolation."
-                    "(detected logic is: %s)" % str(logic))
+                raise PysmtValueError("Logic not supported by MathSAT "
+                                      "interpolation. (detected logic is: %s)" \
+                                      % str(logic))
 
     def binary_interpolant(self, a, b):
         res = self.sequence_interpolant([a, b])
