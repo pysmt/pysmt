@@ -24,7 +24,7 @@ from pysmt.test import TestCase, main
 from pysmt.test import (skipIfNoSolverForLogic, skipIfNoQEForLogic,
                         skipIfQENotAvailable)
 from pysmt.test.examples import get_example_formulae
-from pysmt.exceptions import (SolverReturnedUnknownResultError,
+from pysmt.exceptions import (SolverReturnedUnknownResultError, PysmtValueError,
                               NoSolverAvailableError, ConvertExpressionError)
 from pysmt.logics import LRA, LIA, UFLIRA
 
@@ -77,7 +77,6 @@ class TestQE(TestCase):
         self._alternation_int_example(qe)
         self._std_examples(qe, LRA)
         self._std_examples(qe, LIA)
-
         self._modular_congruence(qe)
 
         # Additional test for raising error on back conversion of
@@ -86,7 +85,7 @@ class TestQE(TestCase):
 
         f = ForAll([p], Exists([q], Equals(ToReal(p),
                                            Plus(ToReal(q), ToReal(Int(1))))))
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(PysmtValueError):
             qe.eliminate_quantifiers(f).simplify()
 
 
@@ -99,10 +98,10 @@ class TestQE(TestCase):
         self._alternation_real_example(qe)
         self._std_examples(qe, LRA)
 
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(PysmtValueError):
             self._int_example(qe)
 
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(PysmtValueError):
             self._alternation_int_example(qe)
 
         # Additional test for raising error on back conversion of
@@ -111,7 +110,7 @@ class TestQE(TestCase):
 
         f = ForAll([p], Exists([q], Equals(ToReal(p),
                                            Plus(ToReal(q), ToReal(Int(1))))))
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(PysmtValueError):
             qe.eliminate_quantifiers(f).simplify()
 
 
@@ -134,7 +133,7 @@ class TestQE(TestCase):
 
         f = ForAll([p], Exists([q], Equals(ToReal(p),
                                            Plus(ToReal(q), ToReal(Int(1))))))
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(PysmtValueError):
             qe.eliminate_quantifiers(f).simplify()
 
     def _modular_congruence(self, qe):

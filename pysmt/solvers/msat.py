@@ -1095,8 +1095,8 @@ if hasattr(mathsat, "MSAT_EXIST_ELIM_ALLSMT_FM"):
                 raise PysmtValueError("Algorithm can be either 'fm' or 'lw'")
 
             if logic is not None and (not logic <= LRA and algorithm != "lw"):
-                raise NotImplementedError("MathSAT quantifier elimination for LIA"\
-                                          " only works with 'lw' algorithm")
+                raise PysmtValueError("MathSAT quantifier elimination for LIA"\
+                                      " only works with 'lw' algorithm")
 
             QuantifierEliminator.__init__(self)
             IdentityDagWalker.__init__(self, env=environment)
@@ -1119,13 +1119,13 @@ if hasattr(mathsat, "MSAT_EXIST_ELIM_ALLSMT_FM"):
         def exist_elim(self, variables, formula):
             logic = get_logic(formula, self.env)
             if not (logic <= LRA or logic <= LIA):
-                raise NotImplementedError("MathSAT quantifier elimination only"\
-                                          " supports LRA (detected logic " \
-                                          "is: %s)" % str(logic))
+                raise PysmtValueError("MathSAT quantifier elimination only"\
+                                      " supports LRA or LIA (detected logic " \
+                                      "is: %s)" % str(logic))
 
             if not logic <= LRA and self.algorithm != "lw":
-                raise NotImplementedError("MathSAT quantifier elimination for LIA"\
-                                          " only works with 'lw' algorithm")
+                raise PysmtValueError("MathSAT quantifier elimination for LIA"\
+                                      " only works with 'lw' algorithm")
 
 
             fterm = self.converter.convert(formula)
@@ -1198,9 +1198,9 @@ class MSatInterpolator(Interpolator):
             logic = get_logic(f, self.environment)
             ok = any(logic <= l for l in self.LOGICS)
             if not ok:
-                raise NotImplementedError(
-                    "Logic not supported by MathSAT interpolation."
-                    "(detected logic is: %s)" % str(logic))
+                raise PysmtValueError("Logic not supported by MathSAT "
+                                      "interpolation. (detected logic is: %s)" \
+                                      % str(logic))
 
     def binary_interpolant(self, a, b):
         res = self.sequence_interpolant([a, b])
