@@ -41,3 +41,5 @@ def git_version():
         return git_version.strip().decode('ascii')
     except subprocess.CalledProcessError:
         return __version__ # pragma: no cover
+    except OSError:
+        return __version__ # pragma: no cover
