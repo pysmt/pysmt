@@ -16,7 +16,7 @@
 #   limitations under the License.
 #
 
-VERSION = (0, 6, 1)
+VERSION = (0, 6, 2, "dev", 1)
 
 # PEP440 Format
 __version__ = "%d.%d.%d%s%d" % VERSION if len(VERSION) == 5 else \
