@@ -22,13 +22,13 @@ fi
 
 
 # This is for btor that fails to find the python 3 library to link
-export LIBRARY_PATH=${LIBRARY_PATH}:/opt/python/3.5.0/lib
+export LIBRARY_PATH=${LIBRARY_PATH}:/opt/python/3.5.2/lib
 
 # For some reason, Travis CI cannot find the command python3.5-config.
 # Therefore, we force the path here
 if [ "${TRAVIS_PYTHON_VERSION}" == "3.5" ];
 then
-    export PATH=${PATH}:/opt/python/3.5.0/bin/ ;
+    export PATH=${PATH}:/opt/python/3.5.2/bin/ ;
 fi
 
 pip install six
