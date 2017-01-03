@@ -20,7 +20,7 @@ from six.moves import cStringIO
 
 import pysmt.logics as logics
 import pysmt.smtlib.commands as smtcmd
-from pysmt.shortcuts import (Real, Plus, Symbol, Equals, And, Bool, Or,
+from pysmt.shortcuts import (Real, Plus, Symbol, Equals, And, Bool, Or, Not,
                              Div, LT, LE, Int, ToReal, Iff, Exists, Times, FALSE,
                              BVLShr, BVLShl, BVAShr, BV, BVAdd, BVULT, BVMul,
                              Select, Array)
@@ -419,6 +419,17 @@ class TestRegressions(TestCase):
         parts = v.split("-")
         self.assertTrue(len(parts) , 4)
 
+    @skipIfSolverNotAvailable("btor")
+    def test_boolector_assumptions(self):
+        with Solver(name='btor') as solver:
+            x = Symbol('x')
+            y = Symbol('y')
+            solver.add_assertion(Or(x, y))
+            solver.solve([Not(x), Not(y)])
+            btor_notx = solver.converter.convert(Not(x))
+            btor_noty = solver.converter.convert(Not(y))
+            self.assertEqual(solver.btor.Failed(btor_notx, btor_noty),
+                             [True, True])
 
 if __name__ == "__main__":
     main()
