@@ -117,10 +117,8 @@ class BoolectorSolver(IncrementalTrackingSolver,
     @clear_pending_pop
     def _solve(self, assumptions=None):
         if assumptions is not None:
-            assumption = self.mgr.And(assumptions)
-            self._assert_is_boolean(assumption)
-            btor_assumption =  self.converter.convert(assumption)
-            self.btor.Assume(btor_assumption)
+            btor_assumptions = [self.converter.convert(a) for a in assumptions]
+            self.btor.Assume(*btor_assumptions)
 
         res = self.btor.Sat()
         if res == self.btor.SAT:
