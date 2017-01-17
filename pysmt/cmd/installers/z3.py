@@ -35,6 +35,8 @@ class Z3Installer(SolverInstaller):
             system = "ubuntu-14.04"
         elif system == "darwin":
             system = "osx-%s" % osx
+        elif system == "windows":
+            system = "win"
 
         archive_name = "z3-%s-%s-%s.zip" % (solver_version, arch, system)
         native_link = "https://github.com/Z3Prover/z3/releases/download/z3-4.4.1/{archive_name}"
@@ -62,6 +64,9 @@ class Z3Installer(SolverInstaller):
             files += [ "libz3.so" ]
         elif self.os_name == "darwin":
             files += [ "libz3.a", "libz3.dylib" ]
+        elif self.os_name == "windows":
+            files += [ "libz3.dll", "libz3.lib" ]
+
         for f in files:
             SolverInstaller.mv(os.path.join(bpath, f), self.bindings_dir)
 

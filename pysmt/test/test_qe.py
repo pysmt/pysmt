@@ -17,15 +17,15 @@
 #
 from pysmt.shortcuts import Symbol, ForAll, Exists, And, Iff, GE, LT, Real, Int
 from pysmt.shortcuts import Minus, Equals, Plus, ToReal, Implies, LE, TRUE, Not
-from pysmt.shortcuts import QuantifierEliminator
+from pysmt.shortcuts import Times, QuantifierEliminator
 from pysmt.shortcuts import is_sat, is_valid
 from pysmt.typing import REAL, BOOL, INT
 from pysmt.test import TestCase, main
 from pysmt.test import (skipIfNoSolverForLogic, skipIfNoQEForLogic,
                         skipIfQENotAvailable)
 from pysmt.test.examples import get_example_formulae
-from pysmt.exceptions import (SolverReturnedUnknownResultError,
-                              NoSolverAvailableError)
+from pysmt.exceptions import (SolverReturnedUnknownResultError, PysmtValueError,
+                              NoSolverAvailableError, ConvertExpressionError)
 from pysmt.logics import LRA, LIA, UFLIRA
 
 
@@ -61,9 +61,6 @@ class TestQE(TestCase):
         with self.assertRaises(NoSolverAvailableError):
             QuantifierEliminator(name="nonexistent")
 
-        # MathSAT QE does not support LIA
-        with self.assertRaises(NoSolverAvailableError):
-            QuantifierEliminator(name="msat", logic=LIA)
 
     @skipIfNoQEForLogic(LRA)
     def test_selection_lra(self):
@@ -80,13 +77,15 @@ class TestQE(TestCase):
         self._alternation_int_example(qe)
         self._std_examples(qe, LRA)
         self._std_examples(qe, LIA)
+        self._modular_congruence(qe)
+
         # Additional test for raising error on back conversion of
         # quantified formulae
         p, q = Symbol("p", INT), Symbol("q", INT)
 
         f = ForAll([p], Exists([q], Equals(ToReal(p),
                                            Plus(ToReal(q), ToReal(Int(1))))))
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(PysmtValueError):
             qe.eliminate_quantifiers(f).simplify()
 
 
@@ -99,10 +98,10 @@ class TestQE(TestCase):
         self._alternation_real_example(qe)
         self._std_examples(qe, LRA)
 
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(PysmtValueError):
             self._int_example(qe)
 
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(PysmtValueError):
             self._alternation_int_example(qe)
 
         # Additional test for raising error on back conversion of
@@ -111,7 +110,7 @@ class TestQE(TestCase):
 
         f = ForAll([p], Exists([q], Equals(ToReal(p),
                                            Plus(ToReal(q), ToReal(Int(1))))))
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(PysmtValueError):
             qe.eliminate_quantifiers(f).simplify()
 
 
@@ -122,12 +121,11 @@ class TestQE(TestCase):
         self._real_example(qe)
         self._alternation_bool_example(qe)
         self._alternation_real_example(qe)
+        self._int_example(qe)
+        self._alternation_int_example(qe)
+        self._std_examples(qe, LIA)
 
-        with self.assertRaises(NotImplementedError):
-            self._int_example(qe)
-
-        with self.assertRaises(NotImplementedError):
-            self._alternation_int_example(qe)
+        self._modular_congruence(qe)
 
         # Additional test for raising error on back conversion of
         # quantified formulae
@@ -135,8 +133,14 @@ class TestQE(TestCase):
 
         f = ForAll([p], Exists([q], Equals(ToReal(p),
                                            Plus(ToReal(q), ToReal(Int(1))))))
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(PysmtValueError):
             qe.eliminate_quantifiers(f).simplify()
+
+    def _modular_congruence(self, qe):
+        p, q = (Symbol(n, INT) for n in "pq")
+        f = Exists([q], Equals(Times(q, Int(2)), p))
+        with self.assertRaises(ConvertExpressionError):
+            qe.eliminate_quantifiers(f)
 
 
     def _bool_example(self, qe):

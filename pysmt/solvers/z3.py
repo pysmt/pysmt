@@ -881,9 +881,9 @@ class Z3QuantifierEliminator(QuantifierEliminator):
     def eliminate_quantifiers(self, formula):
         logic = get_logic(formula, self.environment)
         if not logic <= LRA and not logic <= LIA:
-            raise NotImplementedError("Z3 quantifier elimination only "\
-                                      "supports LRA or LIA without combination."\
-                                      "(detected logic is: %s)" % str(logic))
+            raise PysmtValueError("Z3 quantifier elimination only "\
+                                  "supports LRA or LIA without combination."\
+                                  "(detected logic is: %s)" % str(logic))
 
         simplifier = z3.Tactic('simplify')
         eliminator = z3.Tactic('qe')
@@ -929,9 +929,8 @@ class Z3Interpolator(Interpolator):
             logic = get_logic(f, self.environment)
             ok = any(logic <= l for l in self.LOGICS)
             if not ok:
-                raise NotImplementedError(
-                    "Logic not supported by Z3 interpolation."
-                    "(detected logic is: %s)" % str(logic))
+                raise PysmtValueError("Logic not supported by Z3 interpolation."
+                                      "(detected logic is: %s)" % str(logic))
 
     def binary_interpolant(self, a, b):
         self._check_logic([a, b])

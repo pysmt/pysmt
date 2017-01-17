@@ -21,6 +21,9 @@ pySMT: a Python API for SMT
 .. image:: https://img.shields.io/pypi/l/pysmt.svg
            :target: /LICENSE
            :alt: Apache License
+.. image:: https://img.shields.io/badge/Browse%20the%20Archive-Google%20groups-orange.svg
+           :target: https://groups.google.com/d/forum/pysmt
+           :alt: Google groups
 
 
 pySMT makes working with **Satisfiability Modulo Theory** simple:
@@ -114,31 +117,41 @@ pySMT works on both Python 3.5 and Python 2.7.
 
 Installation
 ============
-You can install the latest stable release of pySMT from PyPI:
+You can install the latest stable release of pySMT from PyPI::
 
   # pip install pysmt
 
 this will additionally install the *pysmt-install* command, that can
-be used to install the solvers: e.g.,
+be used to install the solvers: e.g., ::
 
   $ pysmt-install --check
 
 will show you which solvers have been found in your ``PYTHONPATH``.
 PySMT does not depend directly on any solver, but if you want to
 perform solving, you need to have at least one solver installed. This
-can be used by PySMT via its native API, or passing through an SMT-LIB
+can be used by pySMT via its native API, or passing through an SMT-LIB
 file.
 
-The script *pysmt-install* can be used to simplify the installation of the solvers:
+The script *pysmt-install* can be used to simplify the installation of the solvers::
 
  $ pysmt-install --msat
 
-will install MathSAT 5. This script does not install required
+will install MathSAT 5. Once the installation is complete, you
+can use the option ``--env`` to obtain a string to update your
+``PYTHONPATH``::
+
+  $ pysmt-install --env
+  export PYTHONPATH="/home/pysmt/.smt_solvers/python-bindings-2.7:${PYTHONPATH}"
+
+By default the solvers are installed in your home directory in the
+folder ``.smt_solvers``. ``pysmt-install`` has many options to
+customize its behavior.
+
+*Note:* This script does not install required
 dependencies for building the solver (e.g., make or gcc) and has been
 tested mainly on Linux Debian/Ubuntu systems. We suggest that you
 refer to the documentation of each solver to understand how to install
-it with its python bindings. Nevertheless, we try to keep
-*pysmt/cmd/install.py* as readable and documented as possible.
+it with its python bindings.
 
 For Yices, picosat, and CUDD, we use external wrappers:
 
@@ -148,6 +161,11 @@ For Yices, picosat, and CUDD, we use external wrappers:
 
 For instruction on how to use any SMT-LIB complaint solver with pySMT
 see `examples/generic_smtlib.py </examples/generic_smtlib.py>`_
+
+For more information, refer to online `documentation on ReadTheDocs <http://pysmt.readthedocs.io>`_
+
+Solvers Support
+---------------
 
 The following table summarizes the features supported via pySMT for
 each of the available solvers.
@@ -180,7 +198,7 @@ each of the available quantifier eliminators
   Quantifier Eliminator   pySMT name   Supported Logics
   =====================   ==========   ================
   MathSAT FM              msat-fm      LRA
-  MathSAT LW              msat-lw      LRA
+  MathSAT LW              msat-lw      LRA, LIA
   Z3                      z3           LRA, LIA
   BDD (CUDD)              bdd          BOOL
   =====================   ==========   ================
@@ -202,4 +220,4 @@ License
 pySMT is release under the APACHE 2.0 License.
 
 For further questions, feel free to open an issue, or write to
-pysmt@googlegroups.com .
+pysmt@googlegroups.com (`Browse the Archive <https://groups.google.com/d/forum/pysmt>`_).

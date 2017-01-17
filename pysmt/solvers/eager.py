@@ -51,7 +51,6 @@ class EagerModel(Model):
             raise PysmtTypeError("Was expecting a constant but got %s" % res)
         return res
 
-
     def _complete_model(self, symbols):
         undefined_symbols = (s for s in symbols
                              if s not in self.completed_assignment)

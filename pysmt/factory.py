@@ -35,10 +35,12 @@ from pysmt.logics import most_generic_logic, get_closer_logic
 from pysmt.logics import convert_logic_from_string
 from pysmt.oracles import get_logic
 from pysmt.solvers.qelim import ShannonQuantifierEliminator
+from pysmt.solvers.solver import SolverOptions
+from pysmt.solvers.portfolio import Portfolio
 
 DEFAULT_SOLVER_PREFERENCE_LIST = ['msat', 'z3', 'cvc4', 'yices', 'btor',
                                   'picosat', 'bdd']
-DEFAULT_QELIM_PREFERENCE_LIST = ['z3', 'msat_fm', 'msat_lw', 'bdd', 'shannon']
+DEFAULT_QELIM_PREFERENCE_LIST = ['z3', 'msat_lw', 'msat_fm', 'bdd', 'shannon']
 DEFAULT_INTERPOLATION_PREFERENCE_LIST = ['msat', 'z3']
 DEFAULT_LOGIC = QF_UFLIRA
 DEFAULT_QE_LOGIC = LRA
@@ -463,19 +465,24 @@ class Factory(object):
                                           logic=logic,
                                           unsat_cores_mode=unsat_cores_mode)
 
-
     def QuantifierEliminator(self, name=None, logic=None):
         return self.get_quantifier_eliminator(name=name, logic=logic)
 
     def Interpolator(self, name=None, logic=None):
         return self.get_interpolator(name=name, logic=logic)
 
-    def is_sat(self, formula, solver_name=None, logic=None):
+    def is_sat(self, formula, solver_name=None, logic=None, portfolio=None):
         if logic is None or logic == AUTO_LOGIC:
             logic = get_logic(formula, self.environment)
-        with self.Solver(name=solver_name, logic=logic,
-                         generate_models=False, incremental=False) \
-             as solver:
+        if portfolio is not None:
+            solver = Portfolio(solvers_set=portfolio,
+                               environment=self.environment,
+                               logic=logic,
+                               generate_models=False, incremental=False)
+        else:
+            solver = self.Solver(name=solver_name, logic=logic,
+                                 generate_models=False, incremental=False)
+        with solver:
             return solver.is_sat(formula)
 
     def get_model(self, formula, solver_name=None, logic=None):
@@ -530,20 +537,30 @@ class Factory(object):
 
             return solver.get_unsat_core()
 
-    def is_valid(self, formula, solver_name=None, logic=None):
+    def is_valid(self, formula, solver_name=None, logic=None, portfolio=None):
         if logic is None or logic == AUTO_LOGIC:
             logic = get_logic(formula, self.environment)
-        with self.Solver(name=solver_name, logic=logic,
-                         generate_models=False,
-                         incremental=False) as solver:
+        if portfolio is not None:
+            solver = Portfolio(solvers_set=portfolio,
+                               environment=self.environment,
+                               logic=logic,
+                               generate_models=False, incremental=False)
+        else:
+            solver = self.Solver(name=solver_name, logic=logic,
+                                 generate_models=False, incremental=False)
+        with solver:
             return solver.is_valid(formula)
 
-    def is_unsat(self, formula, solver_name=None, logic=None):
-        if logic is None or logic == AUTO_LOGIC:
-            logic = get_logic(formula, self.environment)
-        with self.Solver(name=solver_name, logic=logic,
-                         generate_models=False,
-                         incremental=False) as solver:
+    def is_unsat(self, formula, solver_name=None, logic=None, portfolio=None):
+        if portfolio is not None:
+            solver = Portfolio(solvers_set=portfolio,
+                               environment=self.environment,
+                               logic=logic,
+                               generate_models=False, incremental=False)
+        else:
+            solver = self.Solver(name=solver_name, logic=logic,
+                                 generate_models=False, incremental=False)
+        with solver:
             return solver.is_unsat(formula)
 
     def qelim(self, formula, solver_name=None, logic=None):

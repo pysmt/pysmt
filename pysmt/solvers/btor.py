@@ -90,6 +90,10 @@ class BoolectorSolver(IncrementalTrackingSolver,
         self.declarations = {}
         return
 
+# EOC BoolectorOptions
+
+        pass
+
     @clear_pending_pop
     def _reset_assertions(self):
         raise NotImplementedError

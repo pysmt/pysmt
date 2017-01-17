@@ -18,6 +18,7 @@ import shutil
 import zipfile
 import tarfile
 import six
+import struct
 
 from contextlib import contextmanager
 
@@ -75,7 +76,11 @@ class SolverInstaller(object):
 
     @property
     def architecture(self):
-        return platform.machine()
+        bits = 8 * struct.calcsize("P")
+        if bits == 64:
+            return "x86_64"
+        else:
+            return "x86"
 
     @property
     def python_version(self):

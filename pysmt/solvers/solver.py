@@ -15,75 +15,12 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import abc
-
-from pysmt.typing import BOOL
-from pysmt.exceptions import (SolverReturnedUnknownResultError, PysmtValueError,
-                              PysmtTypeError, SolverStatusError)
 from six.moves import xrange
 
-
-class SolverOptions(object):
-    """Solver Options shared by most solvers.
-
-    * generate_models : True, False
-      Enable model generation. Needed for get_value, get_model etc.
-
-    * incremental: True, False
-      Enable incremental interface (push, pop)
-
-    * unsat_cores_mode: None, "named", "all"
-      Enable UNSAT core extraction using "named" or "all" strategy.
-
-    * random_seed: None, integer
-      Sets the random seed for the solver
-
-    * solver_options: dictionary
-      Provides solver specific options
-
-    """
-    __metaclass__ = abc.ABCMeta
-
-    def __init__(self, generate_models=True, incremental=True,
-                 unsat_cores_mode=None, random_seed=None,
-                 solver_options=None):
-
-        if generate_models not in (True, False):
-            raise PysmtValueError("Invalid value %s for 'generate_models'" \
-                                  % generate_models)
-        self.generate_models = generate_models
-
-        if incremental not in (True, False):
-            raise PysmtValueError("Invalid value %s for 'incremental'" \
-                                  % incremental)
-        self.incremental = incremental
-
-        if unsat_cores_mode not in (None, "named", "all"):
-            raise PysmtValueError("Invalid value %s for 'unsat_cores_mode'" \
-                                  % unsat_cores_mode)
-        self.unsat_cores_mode = unsat_cores_mode
-
-        if random_seed is not None and type(random_seed) != int:
-            raise PysmtValueError("Invalid value %s for 'random_seed'" \
-                                  % random_seed)
-        self.random_seed = random_seed
-
-        if solver_options is not None:
-            try:
-                solver_options = dict(solver_options)
-            except:
-                raise PysmtValueError("Invalid value %s for 'solver_options'" \
-                                      % solver_options)
-        else:
-            solver_options = dict()
-        self.solver_options = solver_options
-
-    @abc.abstractmethod
-    def __call__(self, solver):
-        """Handle the setting options within solver"""
-        raise NotImplementedError
-
-# EOC SolverOptions
+from pysmt.typing import BOOL
+from pysmt.solvers.options import SolverOptions
+from pysmt.exceptions import (SolverReturnedUnknownResultError, PysmtValueError,
+                              PysmtTypeError, SolverStatusError)
 
 
 class Solver(object):
@@ -261,6 +198,26 @@ class Solver(object):
 
     def add_assertion(self, formula, named=None):
         """Add assertion to the solver."""
+        raise NotImplementedError
+
+    def solve(self, assumptions=None):
+        """Returns the satisfiability value of the asserted formulas.
+
+        Assumptions is a list of Boolean variables or negations of
+        boolean variables. If assumptions is specified, the
+        satisfiability result is computed assuming that all the
+        specified literals are True.
+
+        A call to solve([a1, ..., an]) is functionally equivalent to:
+
+        push()
+        add_assertion(And(a1, ..., an))
+        res = solve()
+        pop()
+        return res
+
+        but is in general more efficient.
+        """
         raise NotImplementedError
 
     def print_model(self, name_filter=None):

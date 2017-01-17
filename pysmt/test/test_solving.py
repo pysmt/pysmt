@@ -31,8 +31,9 @@ from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               InternalSolverError, NoSolverAvailableError,
                               ConvertExpressionError, UndefinedLogicError,
                               PysmtTypeError, PysmtValueError)
-from pysmt.logics import QF_UFLIRA, QF_BOOL, QF_LRA, AUTO
+from pysmt.logics import QF_UFLIRA, QF_BOOL, QF_LRA, AUTO, QF_BV
 from pysmt.logics import convert_logic_from_string
+
 
 class TestBasic(TestCase):
 
@@ -572,6 +573,18 @@ class TestBasic(TestCase):
             with self.assertRaises(SolverStatusError):
                 s.is_sat(Not(Symbol("x")))
 
+
+    @skipIfSolverNotAvailable("btor")
+    def test_btor_options(self):
+        for (f, _, sat, logic) in get_example_formulae():
+            if logic == QF_BV:
+                solver = Solver(name="btor",
+                                solver_options={"rewrite_level":0,
+                                                "dual_prop":1,
+                                                "eliminate_slices":1})
+                solver.add_assertion(f)
+                res = solver.solve()
+                self.assertTrue(res == sat)
 
 if __name__ == '__main__':
     main()
