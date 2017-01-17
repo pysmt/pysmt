@@ -190,7 +190,8 @@ class TestRegressions(TestCase):
             qelim(f)
         except ConvertExpressionError as ex:
             # The modulus operator must be there
-            self.assertIn("%2", str(ex.expression))
+            self.assertTrue("%2" in str(ex.expression) or \
+                            "int_mod_congr" in str(ex.expression))
 
     @skipIfSolverNotAvailable("msat")
     def test_msat_partial_model(self):

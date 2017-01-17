@@ -26,22 +26,29 @@ class PicoSATInstaller(SolverInstaller):
 
     def __init__(self, install_dir, bindings_dir, solver_version,
                  pypicosat_minor_version, mirror_link=None):
+        self.pypicosat_minor_version = pypicosat_minor_version
+        self.complete_version = None
+        SolverInstaller.__init__(self, install_dir=install_dir,
+                                 bindings_dir=bindings_dir,
+                                 solver_version=solver_version,
+                                 mirror_link=mirror_link,
+                                 native_link=None,
+                                 archive_name=None)
 
-        self.complete_version = "%s.%s" % (solver_version, pypicosat_minor_version)
+    def download(self):
+        self.complete_version = "%s.%s" % (self.solver_version,
+                                           self.pypicosat_minor_version)
         pypi_link = "http://pypi.python.org/pypi/pyPicoSAT/%s/json" % self.complete_version
         response = urllib2.urlopen(pypi_link)
         reader = codecs.getreader("utf-8")
         pypi_json = json.load(reader(response))
 
-        pypicosat_download_link = pypi_json["urls"][0]["url"]
-        archive_name = pypi_json["urls"][0]["filename"]
-        SolverInstaller.__init__(self, install_dir=install_dir,
-                                 bindings_dir=bindings_dir,
-                                 solver_version=solver_version,
-                                 mirror_link=mirror_link,
-                                 native_link=pypicosat_download_link,
-                                 archive_name=archive_name)
-        self.extract_path = os.path.join(self.base_dir, archive_name[:-7])
+        self.native_link = pypi_json["urls"][0]["url"]
+        self.archive_name = pypi_json["urls"][0]["filename"]
+        self.archive_path = os.path.join(self.base_dir, self.archive_name)
+        self.extract_path = os.path.join(self.base_dir, self.archive_name[:-7])
+
+        SolverInstaller.download(self)
 
     def compile(self):
         picosat_dir = os.path.join(self.extract_path, "picosat-%s" % self.solver_version)

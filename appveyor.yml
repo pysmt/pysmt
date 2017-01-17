@@ -9,18 +9,45 @@ environment:
     - PYTHON: "C:\\Python27"
       PYTHON_VERSION: "2.7.8"
       PYTHON_ARCH: "32"
+      PYSMT_SOLVER: "None"
 
-    # - PYTHON: "C:\\Python27-x64"
-    #   PYTHON_VERSION: "2.7.8"
-    #   PYTHON_ARCH: "64"
-
-    # - PYTHON: "C:\\Python34"
-    #   PYTHON_VERSION: "3.4.1"
-    #   PYTHON_ARCH: "32"
-
-    - PYTHON: "C:\\Python34-x64"
-      PYTHON_VERSION: "3.4.1"
+    - PYTHON: "C:\\Python27-x64"
+      PYTHON_VERSION: "2.7.8"
       PYTHON_ARCH: "64"
+      PYSMT_SOLVER: "None"
+
+    - PYTHON: "C:\\Python35"
+      PYTHON_VERSION: "3.5.2"
+      PYTHON_ARCH: "32"
+      PYSMT_SOLVER: "None"
+
+    - PYTHON: "C:\\Python35-x64"
+      PYTHON_VERSION: "3.5.2"
+      PYTHON_ARCH: "64"
+      PYSMT_SOLVER: "None"
+
+
+    - PYTHON: "C:\\Python27"
+      PYTHON_VERSION: "2.7.8"
+      PYTHON_ARCH: "32"
+      PYSMT_SOLVER: "z3"
+
+    - PYTHON: "C:\\Python27-x64"
+      PYTHON_VERSION: "2.7.8"
+      PYTHON_ARCH: "64"
+      PYSMT_SOLVER: "z3"
+
+    - PYTHON: "C:\\Python35"
+      PYTHON_VERSION: "3.5.2"
+      PYTHON_ARCH: "32"
+      PYSMT_SOLVER: "z3"
+
+    - PYTHON: "C:\\Python35-x64"
+      PYTHON_VERSION: "3.5.2"
+      PYTHON_ARCH: "64"
+      PYSMT_SOLVER: "z3"
+
+
 
 install:
   - ECHO "Filesystem root:"
@@ -44,11 +71,19 @@ install:
 
   - "%CMD_IN_ENV% pip install -r dev-requirements.txt"
 
-# MG: Build is where we probably want to build the solvers
-build: false  # Not a C# project, build stuff at the test step instead.
+  # Install the solvers
+  - "%CMD_IN_ENV% python install.py --confirm-agreement"
+
+  # Set the pythonpath
+  - "python install.py --env > bindings_path.txt"
+  - "SET /p BINDINGS_CMD=<bindings_path.txt"
+  - "%BINDINGS_CMD%"
+  - ECHO "PythonPath=%PYTHONPATH%"
+
+build: false
 
 test_script:
-  # Build the compiled extension and run the project tests
+  - "%CMD_IN_ENV% python install.py --check"
   - "%CMD_IN_ENV% nosetests -v "
 
 # after_test:

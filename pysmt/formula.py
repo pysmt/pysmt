@@ -486,7 +486,7 @@ class FormulaManager(object):
         res = []
         for i, a in enumerate(exprs):
             for b in exprs[i+1:]:
-                res.append(self.Not(self.Equals(a, b)))
+                res.append(self.Not(self.EqualsOrIff(a, b)))
         return self.And(res)
 
     def Xor(self, left, right):
