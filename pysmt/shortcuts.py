@@ -1101,3 +1101,16 @@ def write_smtlib(formula, fname):
     with open(fname, "w") as fout:
         script = pysmt.smtlib.script.smtlibscript_from_formula(formula)
         script.serialize(fout)
+
+
+def smtlib_serialize(formula, daggify=True):
+    """Returns a Smt-Lib string representation of the formula.
+
+    The daggify parameter can be used to switch from a linear-size
+    representation that uses 'let' operators to represnt the
+    formula as a dag or a simpler (but possibly exponential)
+    representation that expalnds the formula as a tree.
+
+    See :py:class:`SmtPrinter`
+    """
+    return formula.smtlib_serialize(daggify=daggify)

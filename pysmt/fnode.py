@@ -48,6 +48,8 @@ from pysmt.utils import twos_complement
 from pysmt.constants import (Fraction, is_python_integer,
                              is_python_rational, is_python_boolean)
 from pysmt.exceptions import PysmtValueError, PysmtModeError
+from pysmt.smtlib.printers import SmtPrinter, SmtDagPrinter
+from six.moves import cStringIO
 
 
 FNodeContent = collections.namedtuple("FNodeContent",
@@ -507,6 +509,28 @@ class FNode(object):
         See :py:class:`HRSerializer`
         """
         return _env().serializer.serialize(self, threshold=threshold)
+
+
+    def smtlib_serialize(self, daggify=True):
+        """Returns a Smt-Lib string representation of the formula.
+
+        The daggify parameter can be used to switch from a linear-size
+        representation that uses 'let' operators to represnt the
+        formula as a dag or a simpler (but possibly exponential)
+        representation that expalnds the formula as a tree.
+
+        See :py:class:`SmtPrinter`
+        """
+        buf = cStringIO()
+        p = None
+        if daggify:
+            p = SmtDagPrinter(buf)
+        else:
+            p = SmtPrinter(buf)
+        p.printer(f)
+        res = buf.getvalue()
+        buf.close()
+        return res
 
     def is_function_application(self):
         """Test whether the node is a Function application."""
