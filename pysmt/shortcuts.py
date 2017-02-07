@@ -37,6 +37,7 @@ import pysmt.configuration as config
 import pysmt.environment
 import pysmt.smtlib.parser
 import pysmt.smtlib.script
+import pysmt.smtlib.printers
 
 
 def get_env():
@@ -1113,4 +1114,4 @@ def smtlib_serialize(formula, daggify=True):
 
     See :py:class:`SmtPrinter`
     """
-    return formula.smtlib_serialize(daggify=daggify)
+    return pysmt.smtlib.printers.smtlib_serialize(formula, daggify=daggify)

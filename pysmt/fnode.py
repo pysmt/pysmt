@@ -48,9 +48,7 @@ from pysmt.utils import twos_complement
 from pysmt.constants import (Fraction, is_python_integer,
                              is_python_rational, is_python_boolean)
 from pysmt.exceptions import PysmtValueError, PysmtModeError
-from pysmt.smtlib.printers import SmtPrinter, SmtDagPrinter
-from six.moves import cStringIO
-
+import pysmt.smtlib
 
 FNodeContent = collections.namedtuple("FNodeContent",
                                       ["node_type", "args", "payload"])
@@ -510,7 +508,6 @@ class FNode(object):
         """
         return _env().serializer.serialize(self, threshold=threshold)
 
-
     def smtlib_serialize(self, daggify=True):
         """Returns a Smt-Lib string representation of the formula.
 
@@ -521,16 +518,7 @@ class FNode(object):
 
         See :py:class:`SmtPrinter`
         """
-        buf = cStringIO()
-        p = None
-        if daggify:
-            p = SmtDagPrinter(buf)
-        else:
-            p = SmtPrinter(buf)
-        p.printer(f)
-        res = buf.getvalue()
-        buf.close()
-        return res
+        return pysmt.smtlib.printers.smtlib_serialize(self, daggify=daggify)
 
     def is_function_application(self):
         """Test whether the node is a Function application."""
