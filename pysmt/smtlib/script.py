@@ -131,9 +131,9 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
         else:
             raise UnknownSmtLibCommandError(self.name)
 
-    def serialize_to_string(self):
+    def serialize_to_string(self, daggify=True):
         buf = cStringIO()
-        self.serialize(buf)
+        self.serialize(buf, daggify=daggify)
         return buf.getvalue()
 
 
