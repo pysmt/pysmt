@@ -155,6 +155,27 @@ class Environment(object):
 
 # EOC Environment
 
+class SuspendTypeChecking(object):
+    '''Context class that suspends the type-checking during formula
+    creation. This could be useful to avoid costly type-checking when
+    creating huge formulae that are guaranteed to be correct.
+    '''
+
+    def __init__(self, env=None):
+        if env is None:
+            env = get_env()
+        self.env = env
+        self.fm = env.formula_manager
+
+    def __enter__(self):
+        """Entering a Context """
+        self.fm._do_type_check = lambda x : x
+        return self.env
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Remove environment from global stack."""
+        self.fm._do_type_check = self.fm._do_type_check_real
+
 #### GLOBAL ENVIRONMENTS STACKS ####
 ENVIRONMENTS_STACK = []
 

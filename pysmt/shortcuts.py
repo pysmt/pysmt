@@ -38,7 +38,6 @@ import pysmt.environment
 import pysmt.smtlib.parser
 import pysmt.smtlib.script
 
-
 def get_env():
     """Returns the global environment.
 
