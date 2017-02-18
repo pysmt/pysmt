@@ -323,3 +323,107 @@ Announcement
 
 * Mailing list: https://groups.google.com/forum/#!forum/pysmt
 * Make sure the Github Release has been created
+
+
+Performance Tricks
+==================
+
+It is our experience that in many cases the performance limitations
+come from the solvers or from a sub-optimal encoding of the problem,
+and that pySMT performs well for most use-cases. Nevertheless,
+sometimes you just want to squeeze a bit more performance from the
+library, and there are a few things that you might want to try. As
+always, you should make sure that your code is correct before starting
+to optimize it.
+
+Disable Assertions
+------------------
+
+Run the python interpreter with the ``-O`` option. Many functions in
+pySMT have assertions to help you discover problems early on. By using
+the `command line option
+<https://docs.python.org/3/using/cmdline.html?highlight=#cmdoption-O>`_
+``-O`` all assertions are disabled
+
+
+Avoid Infix Notation and shortcuts
+----------------------------------
+
+Infix notation and shortcuts assume that you are operating on the
+global environment. The expression ``a & b`` needs:
+
+* Resolve the implicit operator (i.e., translate ``&`` into ``And``)
+* Access the global environment
+* Access corresponding formula manager
+* Check if the right-hand-side is already an FNode
+* Call ``FormulaManager.And`` on the two elements.
+
+Using a shortcut is similar in complexity, although you skip step 1
+and 4. Therefore, within loop intensive code, make sure that you
+obtain a reference to the current formula manager or even better to
+the actual function call that you want to perform: e.g., ::
+
+  Real = get_env().formula_manager.Real
+  for x in very_large_set:
+      Real(x)
+
+This will save dereferencing those objects over-and-over again.
+
+
+Disabling Type-Checking
+-----------------------
+
+If you really want to squeeze that extra bit of performance, you might
+consider disabling the type-checker. In pySMT all expressions are
+checked at creation time in order to guarantee that they are
+well-formed and well-typed. However, this also means that on very big
+expressions, you will call many times the type-checker (see discussion
+in `#400 <https://github.com/pysmt/pysmt/pull/400>`_). Although, all
+calls to the type-checker are memoized, the cost of doing so can add
+up. If you are 100% sure that your expressions will be well-typed,
+then you can use the following code to create a context that disables
+temporarily the type-checker. WARNING: If you create an expression
+that is not well-typed while the type-checker is disabled,, there is no
+way to detect it later on. ::
+
+  class SuspendTypeChecking(object):
+      """Context to disable type-checking during formula creation."""
+
+      def __init__(self, env=None):
+          if env is None:
+              env = get_env()
+          self.env = env
+          self.mgr = env.formula_manager
+
+      def __enter__(self):
+          """Entering a Context: Disable type-checking."""
+          self.mgr._do_type_check = lambda x : x
+          return self.env
+
+      def __exit__(self, exc_type, exc_val, exc_tb):
+          """Exiting the Context: Re-enable type-checking."""
+          self.mgr._do_type_check = self.mgr._do_type_check_real
+
+This can be used as follows: ::
+
+
+  with SuspendTypeChecking():
+      r = And(Real(0), Real(1))
+
+
+PyPy
+----
+
+pySMT is compatible with `pypy <http://pypy.org>`_. Unfortunately, we
+cannot run most of the solvers due to the way the bindings are created
+today. However, if are interfacing through the SMT-LIB interface, or
+are not using a solver, you can run pySMT using pypy. This can
+drastically improve the performances of code in which most of the time
+is spent in simple loops. A typical example is parsing, modifying, and
+dumping an SMT-LIB: this flow can significantly improve by using pypy.
+
+Some work has been done in order to use `CFFI
+<http://cffi.readthedocs.io/en/latest/>`_ in order to interface more
+solvers with pypy (see `mathsat-cffi
+<https://github.com/pysmt/mathsat-cffi>`_ repo). If you are interested
+in this activity, please `get in touch <https://groups.google.com/forum/#!forum/pysmt>`_.
