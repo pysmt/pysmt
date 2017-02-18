@@ -229,12 +229,21 @@ class _FunctionType(PySMTType):
         self._param_types = tuple(param_types)
         self._hash = hash(return_type) + sum(hash(p) for p in param_types)
         # Note:
-        # To simplify handling of types, we need to treat FunctionType
-        # in a special way. We do so by setting its arity to a
-        # negative value and creating an args that is the concatenation of
-        # return_type and param_types. In this way, we can iterate on args.
-        self.arity = -1
+
+        # An underlying assumption of this module is that
+        # PySMTType.args can be used as key to identify a given type
+        # instance. This means that all subtypes are accessible
+        # through args (similarly as how we do FNode.args).
+        #
+        # This means that
+        #  - Hashing can use args as a key
+        #  - Navigating the type tree (e.g., during normalization)
+        #    only works on args.
+        #
+        # In order to make this possible, we need to combine the
+        # return typ and param_types for FunctionType.
         self.args = (self._return_type,) + self.param_types
+        self.arity = len(self.args)
         return
 
     @property
