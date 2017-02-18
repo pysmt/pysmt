@@ -17,12 +17,13 @@
 #
 from six import StringIO
 
+from pysmt.shortcuts import FreshSymbol, EqualsOrIff, Select, TRUE, FALSE, Function
+from pysmt.shortcuts import Array, BV
 from pysmt.typing import INT, BOOL, REAL
 from pysmt.typing import Type, ArrayType, FunctionType, BVType
 from pysmt.typing import PartialType
 from pysmt.test import TestCase, main
 from pysmt.smtlib.parser import SmtLibParser
-from pysmt.shortcuts import FreshSymbol, EqualsOrIff, Select, TRUE, FALSE, Function
 from pysmt.exceptions import PysmtValueError, PysmtTypeError
 
 
@@ -141,14 +142,15 @@ class TestSorts(TestCase):
     def test_normalization(self):
         from pysmt.environment import Environment
 
+        env2 = Environment()
+        mgr2 = env2.formula_manager
+
         ty = ArrayType(BOOL, REAL)
         x = FreshSymbol(ty)
         fty = FunctionType(BOOL, (ty,))
         f = FreshSymbol(fty)
         g = Function(f, (x,))
         self.assertIsNotNone(g)
-        env2 = Environment()
-        mgr2 = env2.formula_manager
         self.assertNotIn(g, mgr2)
         g2 = mgr2.normalize(g)
         self.assertIn(g2, mgr2)
@@ -161,8 +163,13 @@ class TestSorts(TestCase):
         fty2 = fname.symbol_type()
         self.assertFalse(fty2 is fty, fty)
 
-    def test_solving_with_custom_sorts(self):
-        pass
+        # Test ArrayValue
+        h = Array(BVType(4), BV(0, 4))
+        h2 = mgr2.normalize(h)
+        self.assertEqual(h.array_value_index_type(),
+                         h2.array_value_index_type())
+        self.assertFalse(h.array_value_index_type() is \
+                         h2.array_value_index_type())
 
 
 if __name__ == '__main__':
