@@ -175,15 +175,9 @@ class SimpleTypeChecker(walkers.DagWalker):
 
     def walk_math_relation(self, formula, args, **kwargs):
         #pylint: disable=unused-argument
-        if args[0].is_real_type():
-            return self.walk_type_to_type(formula, args, REAL, BOOL)
-        if args[0].is_int_type():
-            return self.walk_type_to_type(formula, args, INT, BOOL)
         if args[0].is_bv_type():
             return self.walk_bv_to_bool(formula, args)
-        if args[0].is_array_type():
-            return self.walk_type_to_type(formula, args, args[0], BOOL)
-        return None
+        return self.walk_type_to_type(formula, args, args[0], BOOL)
 
     def walk_ite(self, formula, args, **kwargs):
         assert formula is not None

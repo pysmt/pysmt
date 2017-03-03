@@ -90,6 +90,8 @@ class FormulaManager(object):
     def _create_symbol(self, name, typename=types.BOOL):
         if len(name) == 0:
             raise PysmtValueError("Empty string is not a valid name")
+        if not isinstance(typename, types.PySMTType):
+            raise PysmtValueError("typename must be a PySMTType.")
         n = self.create_node(node_type=op.SYMBOL,
                              args=tuple(),
                              payload=(name, typename))
@@ -939,9 +941,7 @@ class FormulaManager(object):
               obtain f_b that is the formula f_a expressed on the
               FormulaManager b : f_b = b.normalize(f_a)
         """
-        # TODO: name clash with formula normalization
-        # TODO: Move this out of the manager and into ad-hoc function
-        normalizer = IdentityDagWalker(self.env)
+        normalizer = FormulaContextualizer(self.env)
         return normalizer.walk(formula)
 
     def _polymorph_args_to_tuple(self, args):
@@ -969,3 +969,23 @@ class FormulaManager(object):
             return False
 
 #EOC FormulaManager
+
+
+class FormulaContextualizer(IdentityDagWalker):
+    """Helper class to recreate a formula within a new environment."""
+
+    def __init__(self, env=None):
+        IdentityDagWalker.__init__(self, env=env)
+        self.type_normalize = self.env.type_manager.normalize
+
+    def walk_symbol(self, formula, **kwargs):
+        # Recreate the Symbol taking into account the type information
+        ty = formula.symbol_type()
+        newty = self.type_normalize(ty)
+        return self.mgr.Symbol(formula.symbol_name(), newty)
+
+    def walk_array_value(self, formula, args, **kwargs):
+        # Recreate the ArrayValue taking into account the type information
+        assign = dict(zip(args[1::2], args[2::2]))
+        ty = self.type_normalize(formula.array_value_index_type())
+        return self.mgr.Array(ty, args[0], assign)

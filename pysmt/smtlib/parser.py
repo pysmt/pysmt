@@ -1112,7 +1112,7 @@ class SmtLibParser(object):
         return SmtLibCommand(current, [name, [], rtype])
 
     def _cmd_get_assertions(self, current, tokens):
-        """(get_assertions)"""
+        """(get-assertions)"""
         self.parse_atoms(tokens, current, 0)
         return SmtLibCommand(current, [])
 

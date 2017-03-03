@@ -32,11 +32,15 @@ environment is used (this is the default behavior of
 import warnings
 warnings.simplefilter('default')
 
-import pysmt.typing as types
 import pysmt.configuration as config
 import pysmt.environment
+import pysmt.typing as types
 import pysmt.smtlib.parser
 import pysmt.smtlib.script
+
+# Import types from shortcuts
+from pysmt.typing import INT, BOOL, REAL, BVType, FunctionType, ArrayType, Type
+assert INT or BOOL or REAL or BVType or FunctionType or ArrayType or Type
 
 
 def get_env():

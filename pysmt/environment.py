@@ -29,6 +29,7 @@ import pysmt.oracles
 import pysmt.formula
 import pysmt.factory
 import pysmt.decorators
+import pysmt.typing
 
 
 class Environment(object):
@@ -42,6 +43,7 @@ class Environment(object):
     """
     TypeCheckerClass = pysmt.type_checker.SimpleTypeChecker
     FormulaManagerClass = pysmt.formula.FormulaManager
+    TypeManagerClass = pysmt.typing.TypeManager
     SimplifierClass = pysmt.simplifier.Simplifier
     #SubstituterClass = pysmt.substituter.MSSubstituter
     SubstituterClass = pysmt.substituter.MGSubstituter
@@ -51,6 +53,7 @@ class Environment(object):
     FreeVarsOracleClass= pysmt.oracles.FreeVarsOracle
     SizeOracleClass = pysmt.oracles.SizeOracle
     AtomsOracleClass = pysmt.oracles.AtomsOracle
+
 
     def __init__(self):
         self._stc = self.TypeCheckerClass(self)
@@ -65,6 +68,7 @@ class Environment(object):
         self._fvo = self.FreeVarsOracleClass(self)
         self._sizeo = self.SizeOracleClass(self)
         self._ao = self.AtomsOracleClass(self)
+        self._type_manager = self.TypeManagerClass(self)
 
         self._factory = None
         # Configurations
@@ -77,6 +81,10 @@ class Environment(object):
     @property
     def formula_manager(self):
         return self._formula_manager
+
+    @property
+    def type_manager(self):
+        return self._type_manager
 
     @property
     def simplifier(self):
