@@ -17,7 +17,7 @@
 #
 from functools import partial
 
-from six.moves import xrange
+from six.moves import xrange, cStringIO
 
 import pysmt.operators as op
 from pysmt.environment import get_env
@@ -430,3 +430,25 @@ class SmtDagPrinter(DagWalker):
             self.write(")")
         self.write("))")
         return sym
+
+
+def to_smtlib(formula, daggify=True):
+    """Returns a Smt-Lib string representation of the formula.
+
+    The daggify parameter can be used to switch from a linear-size
+    representation that uses 'let' operators to represent the
+    formula as a dag or a simpler (but possibly exponential)
+    representation that expands the formula as a tree.
+
+    See :py:class:`SmtPrinter`
+    """
+    buf = cStringIO()
+    p = None
+    if daggify:
+        p = SmtDagPrinter(buf)
+    else:
+        p = SmtPrinter(buf)
+    p.printer(formula)
+    res = buf.getvalue()
+    buf.close()
+    return res

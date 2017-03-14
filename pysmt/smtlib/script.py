@@ -42,7 +42,7 @@ def check_sat_filter(log):
 
 
 class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
-    def serialize(self, outstream=None, printer=None, daggify=False):
+    def serialize(self, outstream=None, printer=None, daggify=True):
         """Serializes the SmtLibCommand into outstream using the given printer.
 
         Exactly one of outstream or printer must be specified. When
@@ -131,9 +131,9 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
         else:
             raise UnknownSmtLibCommandError(self.name)
 
-    def serialize_to_string(self):
+    def serialize_to_string(self, daggify=True):
         buf = cStringIO()
-        self.serialize(buf)
+        self.serialize(buf, daggify=daggify)
         return buf.getvalue()
 
 

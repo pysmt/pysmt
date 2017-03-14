@@ -392,7 +392,7 @@ class TestRegressions(TestCase):
         buffer_ = cStringIO(smtlib_input)
         s = parser.get_script(buffer_)
         for c in s:
-            res = c.serialize_to_string()
+            res = c.serialize_to_string(daggify=False)
         self.assertEqual(res, smtlib_input)
 
     @skipIfSolverNotAvailable("z3")

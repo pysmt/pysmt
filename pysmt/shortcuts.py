@@ -37,6 +37,7 @@ import pysmt.environment
 import pysmt.typing as types
 import pysmt.smtlib.parser
 import pysmt.smtlib.script
+import pysmt.smtlib.printers
 
 # Import types from shortcuts
 from pysmt.typing import INT, BOOL, REAL, BVType, FunctionType, ArrayType, Type
@@ -1098,3 +1099,16 @@ def write_smtlib(formula, fname):
     with open(fname, "w") as fout:
         script = pysmt.smtlib.script.smtlibscript_from_formula(formula)
         script.serialize(fout)
+
+
+def to_smtlib(formula, daggify=True):
+    """Returns a Smt-Lib string representation of the formula.
+
+    The daggify parameter can be used to switch from a linear-size
+    representation that uses 'let' operators to represent the
+    formula as a dag or a simpler (but possibly exponential)
+    representation that expands the formula as a tree.
+
+    See :py:class:`SmtPrinter`
+    """
+    return pysmt.smtlib.printers.to_smtlib(formula, daggify=daggify)
