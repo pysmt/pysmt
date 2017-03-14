@@ -31,60 +31,59 @@ from pysmt.test.examples import get_str_example_formulae
 
 class TestPrinting(TestCase):
     def print_to_string(self, formula):
-        buf = cStringIO()
-        printer = SmtPrinter(buf)
-        printer.printer(formula)
-
-        return buf.getvalue()
+        return formula.to_smtlib(daggify=False)
 
     def test_real(self):
         f = Plus([ Real(1),
                    Symbol("x", REAL),
                    Symbol("y", REAL)])
 
-        f_string = self.print_to_string(f)
-        self.assertEqual(f_string, "(+ 1.0 x y)")
+        self.assertEqual(f.to_smtlib(daggify=False), "(+ 1.0 x y)")
+        self.assertEqual(f.to_smtlib(daggify=True), "(let ((.def_0 (+ 1.0 x y))) .def_0)")
 
     def test_boolean(self):
         x, y, z = Symbol("x"), Symbol("y"), Symbol("z")
         f = Or(And(Not(x), Iff(x, y)), Implies(x, z))
 
-        f_string = self.print_to_string(f)
-        self.assertEqual(f_string,
+        self.assertEqual(f.to_smtlib(daggify=False),
                           "(or (and (not x) (= x y)) (=> x z))")
+        self.assertEqual(f.to_smtlib(daggify=True),
+                          "(let ((.def_0 (=> x z))) (let ((.def_1 (= x y))) (let ((.def_2 (not x))) (let ((.def_3 (and .def_2 .def_1))) (let ((.def_4 (or .def_3 .def_0))) .def_4)))))")
 
     def test_int(self):
         p, q = Symbol("p", INT), Symbol("q", INT)
         f = Or(Equals(Times(p, Int(5)), Minus(p,q)),
                LT(p,q), LE(Int(6), Int(1)))
 
-        f_string = self.print_to_string(f)
-        self.assertEqual(f_string,
+        self.assertEqual(f.to_smtlib(daggify=False),
                           "(or (= (* p 5) (- p q)) (< p q) (<= 6 1))")
+        self.assertEqual(f.to_smtlib(daggify=True),
+                          "(let ((.def_0 (<= 6 1))) (let ((.def_1 (< p q))) (let ((.def_2 (- p q))) (let ((.def_3 (* p 5))) (let ((.def_4 (= .def_3 .def_2))) (let ((.def_5 (or .def_4 .def_1 .def_0))) .def_5))))))")
 
     def test_ite(self):
         x = Symbol("x")
         p, q = Symbol("p", INT), Symbol("q", INT)
 
         f = Ite(x, p, q)
-        f_string = self.print_to_string(f)
 
-        self.assertEqual(f_string,
-                          "(ite x p q)")
+        self.assertEqual(f.to_smtlib(daggify=False),
+                         "(ite x p q)")
+        self.assertEqual(f.to_smtlib(daggify=True),
+                         "(let ((.def_0 (ite x p q))) .def_0)")
 
     def test_quantifiers(self):
         x = Symbol("x")
         fa = ForAll([x], And(x, Not(x)))
         fe = Exists([x], And(x, Not(x)))
 
-        fa_string = self.print_to_string(fa)
-        fe_string = self.print_to_string(fe)
-
-        self.assertEqual(fa_string,
-                          "(forall ((x Bool)) (and x (not x)))")
-
-        self.assertEqual(fe_string,
-                          "(exists ((x Bool)) (and x (not x)))")
+        self.assertEqual(fa.to_smtlib(daggify=False),
+                         "(forall ((x Bool)) (and x (not x)))")
+        self.assertEqual(fe.to_smtlib(daggify=False),
+                         "(exists ((x Bool)) (and x (not x)))")
+        self.assertEqual(fa.to_smtlib(daggify=True),
+                         "(let ((.def_0 (forall ((x Bool)) (let ((.def_0 (not x))) (let ((.def_1 (and x .def_0))) .def_1))))).def_0)")
+        self.assertEqual(fe.to_smtlib(daggify=True),
+                         "(let ((.def_0 (exists ((x Bool)) (let ((.def_0 (not x))) (let ((.def_1 (and x .def_0))) .def_1))))).def_0)")
 
 
     def test_constant(self):
@@ -96,25 +95,25 @@ class TestPrinting(TestCase):
         i1 = Int(4)
         i2 = Int(-4)
 
-        b1_string = self.print_to_string(b1)
-        b2_string = self.print_to_string(b2)
+        self.assertEqual(b1.to_smtlib(daggify=True), "true")
+        self.assertEqual(b2.to_smtlib(daggify=True), "false")
 
-        self.assertEqual(b1_string, "true")
-        self.assertEqual(b2_string, "false")
+        self.assertEqual(r1.to_smtlib(daggify=True), "(/ 11 2)")
+        self.assertEqual(r2.to_smtlib(daggify=True), "5.0")
+        self.assertEqual(r3.to_smtlib(daggify=True), "(- (/ 11 2))")
 
-        r1_string = self.print_to_string(r1)
-        r2_string = self.print_to_string(r2)
-        r3_string = self.print_to_string(r3)
+        self.assertEqual(i1.to_smtlib(daggify=True), "4")
+        self.assertEqual(i2.to_smtlib(daggify=True), "(- 4)")
 
-        self.assertEqual(r1_string, "(/ 11 2)")
-        self.assertEqual(r2_string, "5.0")
-        self.assertEqual(r3_string, "(- (/ 11 2))")
+        self.assertEqual(b1.to_smtlib(daggify=False), "true")
+        self.assertEqual(b2.to_smtlib(daggify=False), "false")
 
-        i1_string = self.print_to_string(i1)
-        i2_string = self.print_to_string(i2)
+        self.assertEqual(r1.to_smtlib(daggify=False), "(/ 11 2)")
+        self.assertEqual(r2.to_smtlib(daggify=False), "5.0")
+        self.assertEqual(r3.to_smtlib(daggify=False), "(- (/ 11 2))")
 
-        self.assertEqual(i1_string, "4")
-        self.assertEqual(i2_string, "(- 4)")
+        self.assertEqual(i1.to_smtlib(daggify=False), "4")
+        self.assertEqual(i2.to_smtlib(daggify=False), "(- 4)")
 
     def test_function(self):
         f1_type = FunctionType(REAL, [REAL, REAL])
@@ -127,18 +126,18 @@ class TestPrinting(TestCase):
         f1 = Function(f1_symbol, [p,q])
         f2 = Function(f2_symbol, [])
 
-        f1_string = self.print_to_string(f1)
-        f2_string = self.print_to_string(f2)
+        self.assertEqual(f1.to_smtlib(daggify=False), "(f1 p q)")
+        self.assertEqual(f2.to_smtlib(daggify=False), "f2")
 
-        self.assertEqual(f1_string, "(f1 p q)")
-        self.assertEqual(f2_string, "f2")
+        self.assertEqual(f1.to_smtlib(daggify=True), "(let ((.def_0 (f1 p q))) .def_0)")
+        self.assertEqual(f2.to_smtlib(daggify=True), "f2")
 
     def test_toreal(self):
         p = Symbol("p", INT)
         rp = ToReal(p)
 
-        rp_string = self.print_to_string(rp)
-        self.assertEqual(rp_string, "(to_real p)")
+        self.assertEqual(rp.to_smtlib(daggify=False), "(to_real p)")
+        self.assertEqual(rp.to_smtlib(daggify=True), "(let ((.def_0 (to_real p))) .def_0)")
 
     def test_threshold_printing(self):
         x = Symbol("x")

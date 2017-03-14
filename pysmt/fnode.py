@@ -17,8 +17,8 @@
 #
 """FNode are the building blocks of formulae."""
 import collections
-
 import pysmt.environment
+import pysmt.smtlib
 from pysmt.operators import (FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF,
                              SYMBOL, FUNCTION,
                              REAL_CONSTANT, BOOL_CONSTANT, INT_CONSTANT,
@@ -48,7 +48,7 @@ from pysmt.utils import twos_complement
 from pysmt.constants import (Fraction, is_python_integer,
                              is_python_rational, is_python_boolean)
 from pysmt.exceptions import PysmtValueError, PysmtModeError
-import pysmt.smtlib
+
 
 FNodeContent = collections.namedtuple("FNodeContent",
                                       ["node_type", "args", "payload"])
@@ -508,17 +508,17 @@ class FNode(object):
         """
         return _env().serializer.serialize(self, threshold=threshold)
 
-    def smtlib_serialize(self, daggify=True):
+    def to_smtlib(self, daggify=True):
         """Returns a Smt-Lib string representation of the formula.
 
         The daggify parameter can be used to switch from a linear-size
-        representation that uses 'let' operators to represnt the
+        representation that uses 'let' operators to represent the
         formula as a dag or a simpler (but possibly exponential)
-        representation that expalnds the formula as a tree.
+        representation that expands the formula as a tree.
 
         See :py:class:`SmtPrinter`
         """
-        return pysmt.smtlib.printers.smtlib_serialize(self, daggify=daggify)
+        return pysmt.smtlib.printers.to_smtlib(self, daggify=daggify)
 
     def is_function_application(self):
         """Test whether the node is a Function application."""
