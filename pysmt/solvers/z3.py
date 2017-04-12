@@ -540,7 +540,7 @@ class Z3Converter(Converter, DagWalker):
                 except UndefinedSymbolError:
                     import warnings
                     symb_type = self._z3_to_type(expr.sort())
-                    warnings.warn("Defining new symbol: %s" % str(res))
+                    warnings.warn("Defining new symbol: %s" % str(expr))
                     return self.mgr.FreshSymbol(symb_type,
                                                 template="__z3_%d")
         elif z3.is_function(expr):
