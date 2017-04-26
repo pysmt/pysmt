@@ -439,6 +439,13 @@ bitvectors.""",
               quantifier_free=True,
               bit_vectors=True)
 
+BV = Logic(name="BV",
+           description=\
+"""Closed formulas over the theory of fixed-size
+bitvectors.""",
+           quantifier_free=False,
+           bit_vectors=True)
+
 
 QF_IDL = Logic(name="QF_IDL",
                description=\
@@ -640,7 +647,7 @@ PYSMT_LOGICS = frozenset([QF_BOOL, QF_IDL, QF_LIA, QF_LRA, QF_RDL, QF_UF, QF_UFI
                           QF_BV, QF_UFBV,
                           QF_ABV, QF_AUFBV, QF_AUFLIA, QF_ALIA, QF_AX,
                           QF_AUFBVLIRA,
-                          QF_NRA, QF_NIA,
+                          QF_NRA, QF_NIA, BV,
                       ])
 
 # PySMT Supports constant arrays: We auto-generate these logics
