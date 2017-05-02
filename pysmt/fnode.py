@@ -17,7 +17,6 @@
 #
 """FNode are the building blocks of formulae."""
 import collections
-import pysmt.environment
 import pysmt.smtlib
 from pysmt.operators import (FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF,
                              SYMBOL, FUNCTION,
@@ -852,10 +851,12 @@ class FNode(object):
 
 def _env():
     """Aux function to obtain the environment."""
+    import pysmt.environment
     return pysmt.environment.get_env()
 
 def _mgr():
     """Aux function to obtain the formula manager."""
+    import pysmt.environment
     return pysmt.environment.get_env().formula_manager
 
 def _is_bv(node):

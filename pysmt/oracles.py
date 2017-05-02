@@ -25,7 +25,6 @@ properties of formulae.
 
 import pysmt.walkers
 import pysmt.operators as op
-import pysmt.environment
 
 from pysmt import typing as types
 
@@ -424,6 +423,7 @@ class AtomsOracle(pysmt.walkers.DagWalker):
 
 def get_logic(formula, env=None):
     if env is None:
+        import pysmt.environment
         env = pysmt.environment.get_env()
     # Get Quantifier Information
     qf = env.qfo.is_qf(formula)
