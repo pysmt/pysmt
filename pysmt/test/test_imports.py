@@ -35,10 +35,9 @@ class TestImports(TestCase):
             module_name, module_path = stack.pop()
             for _, name, ispkg in pkgutil.iter_modules(module_path):
                 fullname = "%s.%s" % (module_name, name)
-                command = "%s -c 'import %s'" % (sys.executable, fullname)
-                process = subprocess.Popen(command, shell=True)
-                process.communicate()
-                self.assertEqual(process.returncode, 0)
+                command = [sys.executable, '-c', 'import %s' % fullname]
+                returncode = subprocess.call(command)
+                self.assertEqual(returncode, 0, msg="Failed to import %s module" % fullname)
                 if ispkg and fullname not in TestImports.EXCLUSION_LIST:
                     stack.append((fullname, [os.path.join(p, name) for p in module_path]))
 
