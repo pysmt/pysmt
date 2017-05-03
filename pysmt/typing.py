@@ -32,7 +32,6 @@ different instance of BVType.
 
 """
 import pysmt
-import pysmt.walkers
 from pysmt.exceptions import PysmtValueError
 
 

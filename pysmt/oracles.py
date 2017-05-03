@@ -24,6 +24,7 @@ properties of formulae.
 """
 
 import pysmt
+import pysmt.walkers
 import pysmt.operators as op
 
 from pysmt import typing as types
