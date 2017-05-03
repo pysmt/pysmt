@@ -23,7 +23,7 @@ properties of formulae.
  * FreeVarsOracle says which variables are free in the formula
 """
 
-import pysmt.walkers
+import pysmt
 import pysmt.operators as op
 
 from pysmt import typing as types
@@ -423,7 +423,6 @@ class AtomsOracle(pysmt.walkers.DagWalker):
 
 def get_logic(formula, env=None):
     if env is None:
-        import pysmt.environment
         env = pysmt.environment.get_env()
     # Get Quantifier Information
     qf = env.qfo.is_qf(formula)

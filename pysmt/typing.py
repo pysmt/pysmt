@@ -31,6 +31,8 @@ on a factory service. Each BitVector width is represented by a
 different instance of BVType.
 
 """
+import pysmt
+import pysmt.walkers
 from pysmt.exceptions import PysmtValueError
 
 
@@ -500,24 +502,20 @@ class TypeManager(object):
 
 def BVType(width=32):
     """Returns the BV type for the given width."""
-    import pysmt.environment
     mgr = pysmt.environment.get_env().type_manager
     return mgr.BVType(width=width)
 
 def FunctionType(return_type, param_types):
     """Returns Function Type with the given arguments."""
-    import pysmt.environment
     mgr = pysmt.environment.get_env().type_manager
     return mgr.FunctionType(return_type=return_type, param_types=param_types)
 
 def ArrayType(index_type, elem_type):
     """Returns the Array type with the given arguments."""
-    import pysmt.environment
     mgr = pysmt.environment.get_env().type_manager
     return mgr.ArrayType(index_type=index_type, elem_type=elem_type)
 
 def Type(name, arity=0):
     """Returns the Type Declaration with the given name (sort declaration)."""
-    import pysmt.environment
     mgr = pysmt.environment.get_env().type_manager
     return mgr.Type(name=name, arity=arity)
