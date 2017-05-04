@@ -17,7 +17,7 @@
 #
 """FNode are the building blocks of formulae."""
 import collections
-import pysmt.environment
+import pysmt
 import pysmt.smtlib
 from pysmt.operators import (FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF,
                              SYMBOL, FUNCTION,

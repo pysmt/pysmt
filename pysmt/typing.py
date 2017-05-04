@@ -31,6 +31,7 @@ on a factory service. Each BitVector width is represented by a
 different instance of BVType.
 
 """
+import pysmt
 from pysmt.exceptions import PysmtValueError
 
 
@@ -496,8 +497,6 @@ class TypeManager(object):
         return typemap[type_]
 
 # EOC TypeManager
-
-import pysmt.environment
 
 
 def BVType(width=32):

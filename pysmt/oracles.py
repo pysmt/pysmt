@@ -23,9 +23,9 @@ properties of formulae.
  * FreeVarsOracle says which variables are free in the formula
 """
 
+import pysmt
 import pysmt.walkers
 import pysmt.operators as op
-import pysmt.environment
 
 from pysmt import typing as types
 
