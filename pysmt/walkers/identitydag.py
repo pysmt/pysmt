@@ -34,7 +34,7 @@ class IdentityDagWalker(DagWalker):
 
     def walk_symbol(self, formula, args, **kwargs):
         return self.mgr.Symbol(formula.symbol_name(),
-                                               formula.symbol_type())
+                               formula.symbol_type())
 
     def walk_real_constant(self, formula, args, **kwargs):
         return self.mgr.Real(formula.constant_value())
@@ -97,7 +97,7 @@ class IdentityDagWalker(DagWalker):
     def walk_function(self, formula, args, **kwargs):
         # We re-create the symbol name
         old_name = formula.function_name()
-        new_name = self.walk_symbol(old_name)
+        new_name = IdentityDagWalker.walk_symbol(self, old_name, None)
         return self.mgr.Function(new_name, args)
 
     def walk_toreal(self, formula, args, **kwargs):
