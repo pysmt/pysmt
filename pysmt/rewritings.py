@@ -81,11 +81,6 @@ class CNFizer(DagWalker):
             conj.append(self.mgr.Or(clause))
         return self.mgr.And(conj)
 
-    @deprecated("No Alternative")
-    def printer(self, _cnf):
-        print(self.serialize(_cnf))
-        return
-
     def serialize(self, _cnf):
         clauses = []
         for clause in _cnf:
