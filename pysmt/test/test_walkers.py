@@ -256,6 +256,10 @@ class TestWalkers(TestCase):
         res = wc.walk(Symbol("x"))
         self.assertEqual(res, "CBAx")
 
+    def test_substituter_instance(self):
+        from pysmt.substituter import Substituter
+        with self.assertRaises(NotImplementedError):
+            Substituter(env=self.env)
 
 if __name__ == '__main__':
     main()

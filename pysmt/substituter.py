@@ -57,6 +57,10 @@ class Substituter(pysmt.walkers.IdentityDagWalker):
     def __init__(self, env):
         pysmt.walkers.IdentityDagWalker.__init__(self, env=env, invalidate_memoization=True)
         self.manager = self.env.formula_manager
+        if self.__class__ == Substituter:
+            raise NotImplementedError(
+                "Cannot instantiate abstract Substituter class directly. "
+                "Use MSSubstituter or MGSubstituter instead.")
 
     def _get_key(self, formula, **kwargs):
         return formula
