@@ -48,7 +48,6 @@ class DagWalker(Walker):
     def _get_children(self, formula):
         return formula.args()
 
-
     def _push_with_children_to_stack(self, formula, **kwargs):
         """Add children to the stack."""
         self.stack.append((True, formula))

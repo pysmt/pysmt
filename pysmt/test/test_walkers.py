@@ -91,11 +91,24 @@ class TestWalkers(TestCase):
         with self.assertRaises(UnsupportedOperatorError):
             tree_walker.walk(varA)
 
-    def test_walker_is_complete(self):
-        op.ALL_TYPES.append(-1)
-        with self.assertRaises(AssertionError):
-            TreeWalker()
-        op.ALL_TYPES.remove(-1)
+    def test_walker_new_operators_complete(self):
+        walkerA = IdentityDagWalker(env=self.env)
+        idx = op.new_node_type(node_str="fancy_new_node")
+        walkerB = IdentityDagWalker(env=self.env)
+        with self.assertRaises(KeyError):
+            walkerA.functions[idx]
+        self.assertEqual(walkerB.functions[idx], walkerB.walk_error)
+
+        # Use a mixin to handle the node type
+        class FancyNewNodeWalkerMixin(object):
+            def walk_fancy_new_node(self, args, **kwargs):
+                raise UnsupportedOperatorError
+
+        class IdentityDagWalker2(IdentityDagWalker, FancyNewNodeWalkerMixin):
+            pass
+        walkerC = IdentityDagWalker2(env=self.env)
+        self.assertEqual(walkerC.functions[idx],
+                         walkerC.walk_fancy_new_node)
 
     def test_identity_walker_simple(self):
 
@@ -207,6 +220,32 @@ class TestWalkers(TestCase):
         for o in op.ALL_TYPES:
             with self.assertRaises(UnsupportedOperatorError):
                 w.functions[o](x)
+
+    def test_walker_super(self):
+        from pysmt.walkers import DagWalker
+        class WalkA(DagWalker):
+            def __init__(self):
+                DagWalker.__init__(self)
+            def walk_symbol(self, formula, args, **kwargs):
+                return "A" + str(formula)
+
+        class WalkB(WalkA):
+            def __init__(self):
+                WalkA.__init__(self)
+            def walk_symbol(self, formula, args, **kwargs):
+                s = WalkA.super(self, formula, args, **kwargs)
+                return "B" + str(s)
+
+        class WalkC(WalkB):
+            def __init__(self):
+                WalkB.__init__(self)
+            def walk_symbol(self, formula, args, **kwargs):
+                s = WalkB.walk_symbol(self, formula, args, **kwargs)
+                return "C" + str(s)
+
+        wc = WalkC()
+        res = wc.walk(Symbol("x"))
+        self.assertEqual(res, "CBAx")
 
 
 if __name__ == '__main__':
