@@ -24,7 +24,7 @@ properties of formulae.
 """
 
 import pysmt
-import pysmt.walkers
+import pysmt.walkers as walkers
 import pysmt.operators as op
 
 from pysmt import typing as types
@@ -215,8 +215,7 @@ class TheoryOracle(walkers.DagWalker):
         theory_out.uninterpreted = True
         return theory_out
 
-    @walkers.handles(op.TOREAL)
-    def walk_lira(self, formula, args, **kwargs):
+    def walk_toreal(self, formula, args, **kwargs):
         #pylint: disable=unused-argument
         """Extends the Theory with LIRA."""
         theory_out = args[0].copy()

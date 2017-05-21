@@ -33,9 +33,6 @@ it only once.
 
 """
 
-__all__ = ["DagWalker", "TreeWalker", "IdentityDagWalker", "handles"]
-
-
 from pysmt.walkers.dag import DagWalker
 assert DagWalker
 
