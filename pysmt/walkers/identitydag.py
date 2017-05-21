@@ -73,12 +73,12 @@ class IdentityDagWalker(DagWalker):
         return self.mgr.LT(args[0], args[1])
 
     def walk_forall(self, formula, args, **kwargs):
-        qvars = [IdentityDagWalker.walk_symbol(self, v, None)
+        qvars = [self.walk_symbol(v, args, **kwargs)
                  for v in formula.quantifier_vars()]
         return self.mgr.ForAll(qvars, args[0])
 
     def walk_exists(self, formula, args, **kwargs):
-        qvars = [IdentityDagWalker.walk_symbol(self, v, None)
+        qvars = [self.walk_symbol(v, args, **kwargs)
                  for v in formula.quantifier_vars()]
         return self.mgr.Exists(qvars, args[0])
 
@@ -97,7 +97,7 @@ class IdentityDagWalker(DagWalker):
     def walk_function(self, formula, args, **kwargs):
         # We re-create the symbol name
         old_name = formula.function_name()
-        new_name = IdentityDagWalker.walk_symbol(self, old_name, None)
+        new_name = self.walk_symbol(old_name, args, **kwargs)
         return self.mgr.Function(new_name, args)
 
     def walk_toreal(self, formula, args, **kwargs):

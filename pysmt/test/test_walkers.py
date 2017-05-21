@@ -28,7 +28,7 @@ from pysmt.test import TestCase, main
 from pysmt.formula import FormulaManager
 from pysmt.test.examples import get_example_formulae
 from pysmt.exceptions import UnsupportedOperatorError, PysmtTypeError
-from pysmt.substituter import MSSubstituter
+from pysmt.substituter import MSSubstituter, MGSubstituter
 
 
 class TestWalkers(TestCase):
@@ -147,16 +147,18 @@ class TestWalkers(TestCase):
         # y /\ Forall x. x /\ y.
         f = And(y, ForAll([x], And(x, y)))
 
-        subs = {y: Bool(True)}
+        # Symbols within the quantified formula are not free symbols
+        # and should not be substituted.
+        subs = {y: TRUE()}
         f_subs = substitute(f, subs).simplify()
         self.assertEqual(f_subs, ForAll([x], x))
 
-        subs = {x: Bool(True)}
+        subs = {x: TRUE()}
         f_subs = substitute(f, subs).simplify()
         self.assertEqual(f_subs, f)
 
     def test_substitution_complex(self):
-        x, y = FreshSymbol(REAL), FreshSymbol(REAL)
+        x, y = Symbol("x", REAL), Symbol("y", REAL)
         # y = 0 /\ (Forall x. x > 3 /\ y < 2)
         f = And(Equals(y, Real(0)),
                 ForAll([x], And(GT(x, Real(3)), LT(y, Real(2)))))
@@ -164,7 +166,14 @@ class TestWalkers(TestCase):
         subs = {y: Real(0),
                 ForAll([x], And(GT(x, Real(3)), LT(y, Real(2)))): TRUE()}
         f_subs = substitute(f, subs).simplify()
-        self.assertEqual(f_subs, TRUE())
+        if self.env.SubstituterClass == MGSubstituter:
+            self.assertEqual(f_subs, TRUE())
+        else:
+            # In the MSS the y=0 substitution is performed first,
+            # therefore, the overall quantified expression does not
+            # match the one defined in the substitution map.
+            # See test_substitution_complex_mss for a positive example.
+            self.assertEqual(f_subs, ForAll([x], GT(x, Real(3))))
 
     def test_substitution_complex_mss(self):
         x, y = FreshSymbol(REAL), FreshSymbol(REAL)
