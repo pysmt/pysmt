@@ -18,8 +18,10 @@
 from pysmt.test import TestCase, skipIfNoOptimizerForLogic
 from pysmt.test import main
 
-from pysmt.shortcuts import Optimizer, GE, Int, Symbol, INT
-from pysmt.logics import QF_LIA
+from pysmt.shortcuts import Optimizer, GE, Int, Symbol, INT, LE, GT, REAL, Real
+from pysmt.logics import QF_LIA, QF_LRA
+
+from pysmt.exceptions import PysmtUnboundedOptimizationError
 
 class TestOptimization(TestCase):
 
@@ -31,6 +33,25 @@ class TestOptimization(TestCase):
             opt.add_assertion(formula)
             model = opt.optimize(x)
             self.assertEqual(model[x], Int(10))
+
+    @skipIfNoOptimizerForLogic(QF_LIA)
+    def test_unbounded(self):
+        x = Symbol("x", INT)
+        formula = LE(x, Int(10))
+        with Optimizer(logic=QF_LIA) as opt:
+            opt.add_assertion(formula)
+            with self.assertRaises(PysmtUnboundedOptimizationError):
+                opt.optimize(x)
+
+    @skipIfNoOptimizerForLogic(QF_LRA)
+    def test_infinitesimal(self):
+        x = Symbol("x", REAL)
+        formula = GT(x, Real(10))
+        with Optimizer(logic=QF_LRA) as opt:
+            opt.add_assertion(formula)
+            with self.assertRaises(PysmtUnboundedOptimizationError):
+                opt.optimize(x)
+
 
 if __name__ == '__main__':
     main()

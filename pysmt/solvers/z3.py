@@ -45,7 +45,9 @@ from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               SolverNotConfiguredForUnsatCoresError,
                               SolverStatusError,
                               ConvertExpressionError,
-                              UndefinedSymbolError, PysmtValueError)
+                              UndefinedSymbolError, PysmtValueError,
+                              PysmtInfinityError, PysmtInfinitesimalError,
+                              PysmtUnboundedOptimizationError)
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
 from pysmt.logics import LRA, LIA, QF_UFLRA, PYSMT_LOGICS
 from pysmt.oracles import get_logic
@@ -56,6 +58,8 @@ from pysmt.constants import Fraction, Numeral, is_pysmt_integer
 z3.is_ite = lambda x: z3.is_app_of(x, z3.Z3_OP_ITE)
 z3.is_function = lambda x: z3.is_app_of(x, z3.Z3_OP_UNINTERPRETED)
 z3.is_array_store = lambda x: z3.is_app_of(x, z3.Z3_OP_STORE)
+z3.is_infinite = lambda x: z3.is_const(x) and str(x.decl()) == "oo"
+z3.is_epsilon = lambda x: z3.is_const(x) and str(x.decl()) == "epsilon"
 z3.get_payload = lambda node,i : z3.Z3_get_decl_int_parameter(node.ctx.ref(),
                                                               node.decl().ast, i)
 
@@ -545,6 +549,10 @@ class Z3Converter(Converter, DagWalker):
             elif z3.is_algebraic_value(expr):
                 # Algebraic value
                 return self.mgr._Algebraic(Numeral(expr))
+            elif z3.is_infinite(expr):
+                raise PysmtInfinityError("Found an expression representing an infinite value")
+            elif z3.is_epsilon(expr):
+                raise PysmtInfinitesimalError("Found an expression representing an infinitesimal value")
             else:
                 # it must be a symbol
                 try:
@@ -1047,12 +1055,19 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
         if initial_cost is not None:
             self.add_assertion(self._le(cost_function, initial_cost))
         obj = self.converter.convert(cost_function)
-        self.z3.minimize(obj)
+        h = self.z3.minimize(obj)
 
         res = self.z3.check()
         if res == z3.sat:
-            model = Z3Model(self.environment, self.z3.model())
-            return model
+            opt_value = self.z3.lower(h)
+            try:
+                self.converter.back(opt_value)
+                model = Z3Model(self.environment, self.z3.model())
+                return model
+            except PysmtInfinityError:
+                raise PysmtUnboundedOptimizationError("The optimal value is unbounded")
+            except PysmtInfinitesimalError:
+                raise PysmtUnboundedOptimizationError("The optimal value is infinitesimal")
         else:
             return None
 
