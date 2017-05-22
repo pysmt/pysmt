@@ -138,3 +138,15 @@ class PysmtSyntaxError(PysmtException, SyntaxError):
 
 class PysmtIOError(PysmtException, IOError):
     pass
+
+class PysmtInfinityError(PysmtException):
+    """Infinite value in expressions."""
+    pass
+
+class PysmtInfinitesimalError(PysmtException):
+    """Infinite value in expressions."""
+    pass
+
+class PysmtUnboundedOptimizationError(PysmtException):
+    """Infinite optimal value in optimization."""
+    pass
