@@ -77,5 +77,24 @@ class TestOptimization(TestCase):
                 except NotImplementedError:
                     pass # OptiMathSAT wrapping of pareto is incomplete
 
+    @skipIfNoOptimizerForLogic(QF_LIA)
+    def test_unbounded(self):
+        x = Symbol("x", INT)
+        formula = LE(x, Int(10))
+        with Optimizer(logic=QF_LIA) as opt:
+            opt.add_assertion(formula)
+            with self.assertRaises(PysmtUnboundedOptimizationError):
+                opt.optimize(x)
+
+    @skipIfNoOptimizerForLogic(QF_LRA)
+    def test_infinitesimal(self):
+        x = Symbol("x", REAL)
+        formula = GT(x, Real(10))
+        with Optimizer(logic=QF_LRA) as opt:
+            opt.add_assertion(formula)
+            with self.assertRaises(PysmtUnboundedOptimizationError):
+                opt.optimize(x)
+
+
 if __name__ == '__main__':
     main()
