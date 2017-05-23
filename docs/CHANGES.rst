@@ -1,6 +1,88 @@
 Change Log
 ==========
 
+0.7.0: 2017-XX-XX -- Class Based Walkers and Sorts
+--------------------------------------------------
+
+BACKWARDS INCOMPATIBLE CHANGES:
+
+* Removed option "quantified" in Solver (PR #377)
+
+* Removed deprecated CNFizer.printer method (PR #359)
+
+
+
+General:
+
+* Class-Based Walkers (PR #359):
+
+  Walkers behavior is now defined in the class definition.  Processing
+  an AND node always calls walk_and. This makes it possible to
+  subclass and override methods, but at the same time call the
+  implementation of a super class, e.g.
+
+     def walk_and(...):
+          return ParentWalker.walk_and(self, ....)
+
+  The utility method Walker.super is provided to automatically handle the
+  dispatch of a node to the correct walk_* function, e.g.,:
+
+    def walk_bool_to_bool(...):
+        return ParentWalker._super(self, ....)
+
+  The method Walker.set_functions is deprecated, but kept for
+  compatibility with old-style walkers. Using set_functions has the same
+  effect as before. However, you cannot modify a subclass of a walker
+  using set_functions. *You should not be using set_functions anymore!*
+
+  The method Walker.set_handler is used to perform the same operation of
+  set_function at the class level. The associated decorator @handles can
+  be used to associate methods with nodetypes.
+
+  These changes make it possible to extend the walkers from outside
+  pySMT, without relying on hacks like the Dynamic Walker Factory
+  (DWF). See examples/ltl.py for a detailed example.
+
+* Introduce the support for custom sorts (PySMTTypes) (PR #375)
+
+  Two new classes are introduced: _Type and PartialType
+
+    PartialType is conceptually a partial function, that is used to
+    represent the concept of SMT-LIB "define-sort". Binding to the
+    actual sort is post-poned, by using a lambda expression,
+    internally.  The class _TypeDecl is used to represents a Type
+    declaration, and as such cannot be used directly to instantiate a
+    Symbol. This capture the semantics of declare-sort. A wrapper
+    Type() is given to simplify its use, and making 0-arity sorts a
+    special case.
+
+    The following three statements are equivalent:
+
+      Type("Colors")
+      Type("Colors", 0)
+      _TypeDecl("Colors", 0)()
+
+    In particular, the last case shows that instantiating a
+    TypeDeclaration returns a PySMTType:
+
+    Type(Pair, 2)(Int, Int)
+
+    Type declarations and Type instances are memoized in the
+    environment, and suitable shortucts have been introduced.
+
+* Add shortcuts.to_smtlib() to easily dump an SMT-LIB formula
+
+Bugfix:
+
+* Fixed assumption handling in the Boolector wrapper. Thanks to
+  **Alexey Ignatiev** for contributing with this patch!
+
+* Fix cyclic imports (PR #406).  Thanks to **@rene-rex** for reporting
+  this.
+
+
+
+
 0.6.1: 2016-12-02 -- Portfolio and Coverage
 -------------------------------------------
 
