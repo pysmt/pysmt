@@ -19,13 +19,13 @@ General:
   Walkers behavior is now defined in the class definition.  Processing
   an AND node always calls walk_and. This makes it possible to
   subclass and override methods, but at the same time call the
-  implementation of a super class, e.g.
+  implementation of a super class, e.g.::
 
      def walk_and(...):
           return ParentWalker.walk_and(self, ....)
 
   The utility method Walker.super is provided to automatically handle the
-  dispatch of a node to the correct walk_* function, e.g.,:
+  dispatch of a node to the correct walk_* function, e.g.,::
 
     def walk_bool_to_bool(...):
         return ParentWalker._super(self, ....)
@@ -47,28 +47,24 @@ General:
 
   Two new classes are introduced: _Type and PartialType
 
-    PartialType is conceptually a partial function, that is used to
-    represent the concept of SMT-LIB "define-sort". Binding to the
-    actual sort is post-poned, by using a lambda expression,
-    internally.  The class _TypeDecl is used to represents a Type
-    declaration, and as such cannot be used directly to instantiate a
-    Symbol. This capture the semantics of declare-sort. A wrapper
-    Type() is given to simplify its use, and making 0-arity sorts a
-    special case.
-
-    The following three statements are equivalent:
-
-      Type("Colors")
-      Type("Colors", 0)
-      _TypeDecl("Colors", 0)()
-
-    In particular, the last case shows that instantiating a
-    TypeDeclaration returns a PySMTType:
+  PartialType is used to represent the concept of SMT-LIB "define-sort". 
+  The class _TypeDecl is used to represents a Type declaration, and 
+  as such cannot be used directly to instantiate a
+  Symbol. This capture the semantics of declare-sort. A wrapper
+  Type() is given to simplify its use, and making 0-arity sorts a
+  special case. The following three statements are equivalent::
+  
+    Type("Colors")
+    Type("Colors", 0)
+    _TypeDecl("Colors", 0)()
+  
+  In particular, the last case shows that instantiating a
+  TypeDeclaration returns a PySMTType::
 
     Type(Pair, 2)(Int, Int)
 
-    Type declarations and Type instances are memoized in the
-    environment, and suitable shortucts have been introduced.
+  Type declarations and Type instances are memoized in the
+  environment, and suitable shortucts have been introduced.
 
 * Add shortcuts.to_smtlib() to easily dump an SMT-LIB formula
 
@@ -95,9 +91,9 @@ General:
   SAT query. Other artifacts (unsat-core, interpolants) are not
   supported.
   Factory.is_* methods have been extended to include `portfolio`
-  key-word, and exported as is_* shortcuts. The syntax becomes:
+  key-word, and exported as is_* shortcuts. The syntax becomes::
 
-      is_sat(f, portfolio=["s1", "s2"])
+    is_sat(f, portfolio=["s1", "s2"])
 
 * Coverage has been significantly improved, thus giving raise to some
   clean-up of the tests and minor bug fixes. Thanks to Coveralls.io
@@ -133,12 +129,11 @@ General:
 
 Solvers:
 
-  * MathSAT: Improve back-conversion performance by using MSAT_TAGS (PR #379)
+* MathSAT: Improve back-conversion performance by using MSAT_TAGS (PR #379)
 
-  * MathSAT: Add LIA support for Quantifier Elimination
+* MathSAT: Add LIA support for Quantifier Elimination
 
-  * Removed: Solver.declare_variable and Solver.set_options (PR #369,
-    PR #378)
+* Removed: Solver.declare_variable and Solver.set_options (PR #369, PR #378)
 
 Bugfix:
 
@@ -170,7 +165,7 @@ Bugfix:
   * Fixed annotations parsing according to SMTLib rules (PR #374)
 
 * pysmt-install: Gracefully fail if GIT is not installed (PR #390)
-   Thanks to **Alberto Griggio** for reporting this.
+  Thanks to **Alberto Griggio** for reporting this.
 
 * Removed dependency from internet connections when checking picosat
   version (PR #386)
