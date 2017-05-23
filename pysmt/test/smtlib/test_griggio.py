@@ -29,9 +29,6 @@ class TestSmtLibParserGriggio(TestCase):
         for fname in ("test%d.smt2.bz2" %d for d in range(1,7)):
             try:
                 self.parse(os.path.join(SMTLIB_DIR, fname))
-            except NotImplementedError as ex:
-                print("Ignoring not implemented SMT command error: %s"\
-                      % str(ex))
             except Exception as ex:
                 failed.append((fname, ex))
         if len(failed) != 0:

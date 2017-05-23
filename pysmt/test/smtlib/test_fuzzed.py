@@ -29,9 +29,6 @@ class TestSmtLibParserFuzzer(TestCase):
         for fname in FUZZED_FILES:
             try:
                 self.parse(os.path.join(SMTLIB_DIR, fname))
-            except NotImplementedError as ex:
-                print("Ignoring not implemented SMT command error: %s"\
-                      % str(ex))
             except Exception as ex:
                 failed.append((fname, ex))
         if len(failed) != 0:

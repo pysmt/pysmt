@@ -358,6 +358,10 @@ class TypeManager(object):
         self._array_types = {}
         self._custom_types = {}
         self._custom_types_decl = {}
+        self._bool = None
+        self._real = None
+        self._int = None
+        #
         self.load_global_types()
         self.environment = environment
 
@@ -366,6 +370,18 @@ class TypeManager(object):
         for bvtype in (BV1, BV8, BV16, BV32, BV64, BV128):
             self._bv_types[bvtype.width] = bvtype
         self._array_types[(INT, INT)] = ARRAY_INT_INT
+        self._bool = BOOL
+        self._real = REAL
+        self._int = INT
+
+    def BOOL(self):
+        return self._bool
+
+    def REAL(self):
+        return self._real
+
+    def INT(self):
+        return self._int
 
     def BVType(self, width=32):
         """Returns the singleton associated to the BV type for the given width.

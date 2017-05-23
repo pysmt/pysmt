@@ -24,7 +24,6 @@ from six.moves import xrange
 
 import pysmt.smtlib.commands as smtcmd
 from pysmt.environment import get_env
-from pysmt.typing import BOOL, REAL, INT, FunctionType, BVType, ArrayType
 from pysmt.logics import get_logic_by_name, UndefinedLogicError
 from pysmt.exceptions import UnknownSmtLibCommandError, PysmtSyntaxError, PysmtTypeError
 from pysmt.smtlib.script import SmtLibCommand, SmtLibScript
@@ -431,7 +430,7 @@ class SmtLibParser(object):
         if len(args) == 1:
             lty = self.env.stc.get_type(args[0])
             mult = None
-            if lty == INT:
+            if lty == self.env.type_manager.INT():
                 if args[0].is_int_constant():
                     return mgr.Int(-1 * args[0].constant_value())
                 mult = mgr.Int(-1)
@@ -541,7 +540,7 @@ class SmtLibParser(object):
         """Utility function that treats = between booleans as <->"""
         mgr = self.env.formula_manager
         lty = self.env.stc.get_type(left)
-        if lty == BOOL:
+        if lty == self.env.type_manager.BOOL():
             return mgr.Iff(left, right)
         else:
             return self.Equals(left, right)
@@ -559,37 +558,48 @@ class SmtLibParser(object):
         Returns the pysmt type representation for the given type name.
         If params is specified, the type is interpreted as a function type.
         """
+        from pysmt.typing import _TypeDecl
+
+        if isinstance(type_name, _TypeDecl):
+            if params is None:
+                return type_name()
+            else:
+                return self.env.type_manager.get_type_instance(type_name, *params)
+
         if params is None or len(params) == 0:
             if isinstance(type_name, tuple):
                 assert len(type_name) == 3
                 assert type_name[0] == "Array"
-                return ArrayType(self._get_basic_type(type_name[1]),
-                                 self._get_basic_type(type_name[2]))
+                return self.env.type_manager.ArrayType(self._get_basic_type(type_name[1]),
+                                                       self._get_basic_type(type_name[2]))
 
             if type_name == "Bool":
-                return BOOL
+                return self.env.type_manager.BOOL()
             elif type_name == "Int":
-                return INT
+                return self.env.type_manager.INT()
             elif type_name == "Real":
-                return REAL
+                return self.env.type_manager.REAL()
             elif type_name.startswith("BV"):
                 size = int(type_name[2:])
-                return BVType(size)
+                return self.env.type_manager.BVType(size)
             else:
                 res = self.cache.get(type_name)
                 if res is not None:
+                    # TODO: This seems to be an hack to replace definitions.
+                    # It could be done in a better/cleaner way.
                     res = self._get_basic_type(res)
                 return res
         else:
             rt = self._get_basic_type(type_name)
             pt = [self._get_basic_type(par) for par in params]
-            return FunctionType(rt, pt)
+            return self.env.type_manager.FunctionType(rt, pt)
 
     def _get_var(self, name, type_name, params=None):
         """Returns the PySMT variable corresponding to a declaration"""
         typename = self._get_basic_type(type_name, params)
         return self.env.formula_manager.Symbol(name=name,
-                                                        typename=typename)
+                                               typename=typename)
+
     def atom(self, token, mgr):
         """
         Given a token and a FormulaManager, returns the pysmt representation of
@@ -1097,14 +1107,18 @@ class SmtLibParser(object):
 
     def _cmd_declare_sort(self, current, tokens):
         """(declare-sort <symbol> <numeral>)"""
-        return self._cmd_not_implemented(current, tokens)
+        (typename, arity) = self.parse_atoms(tokens, current, 2)
+        type_ = self.env.type_manager.Type(typename, arity)
+        self.cache.bind(typename, type_)
+        return SmtLibCommand(current, [type_])
 
     def _cmd_define_sort(self, current, tokens):
-        """(define-sort <fun_def>)"""
+        """(define-sort <name> <args> <fun_def>)"""
         name = self.parse_atom(tokens, current)
         self.consume_opening(tokens, current)
         cur = tokens.consume()
         if cur != ')':
+            # TODO: This should be supported
             return self._cmd_not_implemented(current, tokens)
         rtype = self.parse_type(tokens, current)
         self.consume_closing(tokens, current)
