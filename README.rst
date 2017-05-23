@@ -216,6 +216,9 @@ The following table summarizes the features supported via pySMT for each of the 
 
 License
 =======
+.. image:: https://www.apache.org/img/asf_logo.png
+           :target: https://www.apache.org/licenses/LICENSE-2.0
+           :alt: Apache 2.0 License
 
 pySMT is release under the APACHE 2.0 License.
 
