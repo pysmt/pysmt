@@ -23,7 +23,7 @@ from pysmt.type_checker import (assert_no_boolean_in_args,
 from pysmt.shortcuts import (Symbol, And, Plus, Minus, Times, Equals, Or, Iff,
                              LE, LT, Not, GE, GT, Ite, Bool, Int, Real, Div,
                              Function)
-from pysmt.environment import get_env
+from pysmt.environment import get_env, SuspendTypeChecking
 from pysmt.exceptions import PysmtTypeError
 from pysmt.test import TestCase, main
 from pysmt.test.examples import get_example_formulae
@@ -191,6 +191,17 @@ class TestSimpleTypeChecker(TestCase):
     def test_examples(self):
         for (f, _, _, _) in get_example_formulae():
             self.assertIs(f.get_type(), BOOL)
+
+    def test_suspend(self):
+        with self.assertRaises(PysmtTypeError):
+            And(self.x, self.r)
+
+        r = None
+        with SuspendTypeChecking():
+            r = And(self.x, self.r)
+
+        self.assertTrue(r.is_and())
+        self.assertEquals(list(r.args()), [self.x, self.r])
 
 if __name__ == '__main__':
     main()
