@@ -45,7 +45,6 @@ class TestOracles(TestCase):
         s = get_free_variables(f)
         self.assertEqual(set([x,y]), s)
 
-
     def test_atoms_oracle(self):
         oracle = get_env().ao
         stc = get_env().stc
@@ -57,7 +56,6 @@ class TestOracles(TestCase):
             for a in atoms:
                 ty = stc.get_type(a)
                 self.assertEqual(ty, BOOL)
-
                 self.assertFalse(a.is_and())
                 self.assertFalse(a.is_or())
                 self.assertFalse(a.is_not())

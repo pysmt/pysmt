@@ -16,12 +16,56 @@
 #   limitations under the License.
 #
 from functools import partial
+from six import with_metaclass
+import collections
 
 import pysmt.operators as op
 import pysmt.exceptions
 
+# NodeType to Function Name
+def nt_to_fun(o):
+    """Returns the name of the walk function for the given nodetype."""
+    return "walk_%s" % op.op_to_str(o).lower()
 
-class Walker(object):
+class handles(object):
+    """Decorator for walker functions.
+
+    Use it by specifying the nodetypes that need to be handled by the
+    given function. It is possible to use groupd (e.g., op.RELATIONS)
+    directly. ::
+
+      @handles(op.NODE, ...)
+      def walk_special(...):
+         ...
+
+    """
+    def __init__(self, *nodetypes):
+        if len(nodetypes) == 1 and isinstance(nodetypes[0], collections.Iterable):
+            nodetypes = nodetypes[0]
+        self.nodetypes = list(nodetypes)
+
+    def __call__(self, func):
+        nodetypes = self.nodetypes
+        if hasattr(func, "nodetypes"):
+            nodetypes = func.nodetypes + nodetypes
+        func.nodetypes = nodetypes
+        return func
+
+class MetaNodeTypeHandler(type):
+    """Metaclass used to intepret the nodehandler decorator. """
+    def __new__(cls, name, bases, dct):
+        obj = type.__new__(cls, name, bases, dct)
+        for k,v in dct.items():
+            if hasattr(v, "nodetypes"):
+                obj.set_handler(v, *v.nodetypes)
+        return obj
+
+
+class Walker(with_metaclass(MetaNodeTypeHandler)):
+    """Base Abstract Walker class.
+
+    Do not subclass directly, use DagWalker or TreeWalker, instead.
+    """
 
     def __init__(self, env=None):
         if env is None:
@@ -30,80 +74,44 @@ class Walker(object):
         self.env = env
 
         self.functions = {}
-        self.functions[op.FORALL] = self.walk_forall
-        self.functions[op.EXISTS] = self.walk_exists
-        self.functions[op.AND] = self.walk_and
-        self.functions[op.OR] = self.walk_or
-        self.functions[op.NOT] = self.walk_not
-        self.functions[op.IMPLIES] = self.walk_implies
-        self.functions[op.IFF] = self.walk_iff
-        self.functions[op.SYMBOL] = self.walk_symbol
-        self.functions[op.FUNCTION] = self.walk_function
-        self.functions[op.REAL_CONSTANT] = self.walk_real_constant
-        self.functions[op.BOOL_CONSTANT] = self.walk_bool_constant
-        self.functions[op.INT_CONSTANT] = self.walk_int_constant
-        self.functions[op.PLUS] = self.walk_plus
-        self.functions[op.MINUS] = self.walk_minus
-        self.functions[op.TIMES] = self.walk_times
-        self.functions[op.POW] = self.walk_pow
-        self.functions[op.EQUALS] = self.walk_equals
-        self.functions[op.LE] = self.walk_le
-        self.functions[op.LT] = self.walk_lt
-        self.functions[op.ITE] = self.walk_ite
-        self.functions[op.TOREAL] = self.walk_toreal
-
-        self.functions[op.BV_CONSTANT] = self.walk_bv_constant
-        self.functions[op.BV_CONCAT] = self.walk_bv_concat
-        self.functions[op.BV_EXTRACT] = self.walk_bv_extract
-        self.functions[op.BV_NOT] = self.walk_bv_not
-        self.functions[op.BV_AND] = self.walk_bv_and
-        self.functions[op.BV_OR] = self.walk_bv_or
-        self.functions[op.BV_XOR] = self.walk_bv_xor
-        self.functions[op.BV_ULT] = self.walk_bv_ult
-        self.functions[op.BV_ULE] = self.walk_bv_ule
-        self.functions[op.BV_NEG] = self.walk_bv_neg
-        self.functions[op.BV_ADD] = self.walk_bv_add
-        self.functions[op.BV_SUB] = self.walk_bv_sub
-        self.functions[op.BV_MUL] = self.walk_bv_mul
-        self.functions[op.BV_UDIV] = self.walk_bv_udiv
-        self.functions[op.BV_UREM] = self.walk_bv_urem
-        self.functions[op.BV_LSHL] = self.walk_bv_lshl
-        self.functions[op.BV_LSHR] = self.walk_bv_lshr
-        self.functions[op.BV_ROL] = self.walk_bv_rol
-        self.functions[op.BV_ROR] = self.walk_bv_ror
-        self.functions[op.BV_ZEXT] = self.walk_bv_zext
-        self.functions[op.BV_SEXT] = self.walk_bv_sext
-        self.functions[op.BV_SLT] = self.walk_bv_slt
-        self.functions[op.BV_SLE] = self.walk_bv_sle
-        self.functions[op.BV_COMP] = self.walk_bv_comp
-        self.functions[op.BV_SDIV] = self.walk_bv_sdiv
-        self.functions[op.BV_SREM] = self.walk_bv_srem
-        self.functions[op.BV_ASHR] = self.walk_bv_ashr
-
-        self.functions[op.ARRAY_SELECT] = self.walk_array_select
-        self.functions[op.ARRAY_STORE] = self.walk_array_store
-        self.functions[op.ARRAY_VALUE] = self.walk_array_value
-
-        self.functions[op.DIV] = self.walk_div
-        self.functions[op.ALGEBRAIC_CONSTANT] = self.walk_algebraic_constant
-
-        undefined_types = set(op.ALL_TYPES) - set(self.functions.keys())
-        assert len(undefined_types) == 0, \
-            "The following types are not defined in the generic walker: {%s}" % \
-            (", ".join(op.op_to_str(u) for u in undefined_types))
-
+        for o in op.all_types():
+            try:
+                # getattr will raise an AttributeError exception if a
+                # method does not exist
+                self.functions[o] = getattr(self, nt_to_fun(o))
+            except AttributeError:
+                self.functions[o] = self.walk_error
 
     def set_function(self, function, *node_types):
         """Overrides the default walking function for each of the specified
         node_types with the given function
         """
+        from warnings import warn
+        warn("Instance-based walkers (<=0.6.0) walkers are deprecated. "
+             "You should use new-style/class based walkers", stacklevel=2)
         for nt in node_types:
             self.functions[nt] = function
 
+    @classmethod
+    def set_handler(cls, function, *node_types):
+        """Associate in cls the given function to the given node_types."""
+        for nt in node_types:
+            setattr(cls, nt_to_fun(nt), function)
 
+    @classmethod
+    def super(cls, self, formula, *args, **kwargs):
+        """Call the correct walk_* function of cls for the given formula."""
+        f = getattr(cls, nt_to_fun(formula.node_type()))
+        return f(self, formula, *args, **kwargs)
+
+    @handles(op.ALL_TYPES)
     def walk_error(self, formula, **kwargs):
-        """ Default function for a node that is not handled by the Walker, by
-        raising a NotImplementedError.
+        """Default function for a node that is not handled by the Walker.
+
+        This tries to handle the node using the Dynamic Walker
+        Function information from the environment. If this fails, then
+        an UnsupportedOperatorError exception is given.
+
         """
         node_type = formula.node_type()
         if node_type in self.env.dwf:
@@ -117,165 +125,4 @@ class Walker(object):
         raise pysmt.exceptions.UnsupportedOperatorError(node_type=node_type,
                                                         expression=formula)
 
-
-    # Methods to be overwritten:
-    # Formula will be provided in the key-word formula
-    # Additional arguments are passed in the kwargs
-    def walk_forall(self, formula, **kwargs):
-        return self.walk_error(formula, **kwargs)
-
-    def walk_exists(self, formula, **kwargs):
-        return self.walk_error(formula, **kwargs)
-
-    def walk_and(self, formula, **kwargs):
-        return self.walk_error(formula, **kwargs)
-
-    def walk_or(self, formula, **kwargs):
-        return self.walk_error(formula, **kwargs)
-
-    def walk_not(self, formula,  **kwargs):
-        return self.walk_error(formula,  **kwargs)
-
-    def walk_implies(self, formula,  **kwargs):
-        return self.walk_error(formula,  **kwargs)
-
-    def walk_iff(self, formula,  **kwargs):
-        return self.walk_error(formula,  **kwargs)
-
-    def walk_symbol(self, formula,  **kwargs):
-        return self.walk_error(formula,  **kwargs)
-
-    def walk_function(self, formula,  **kwargs):
-        return self.walk_error(formula,  **kwargs)
-
-    def walk_real_constant(self, formula,  **kwargs):
-        return self.walk_error(formula,  **kwargs)
-
-    def walk_bool_constant(self, formula,  **kwargs):
-        return self.walk_error(formula,  **kwargs)
-
-    def walk_int_constant(self, formula,  **kwargs):
-        return self.walk_error(formula,  **kwargs)
-
-    def walk_plus(self, formula,  **kwargs):
-        return self.walk_error(formula,  **kwargs)
-
-    def walk_minus(self, formula,  **kwargs):
-        return self.walk_error(formula,  **kwargs)
-
-    def walk_times(self, formula,  **kwargs):
-        return self.walk_error(formula,  **kwargs)
-
-    def walk_pow(self, formula,  **kwargs):
-        return self.walk_error(formula,  **kwargs)
-
-    def walk_equals(self, formula, **kwargs):
-        return self.walk_error(formula, **kwargs)
-
-    def walk_le(self, formula, **kwargs):
-        return self.walk_error(formula, **kwargs)
-
-    def walk_lt(self, formula, **kwargs):
-        return self.walk_error(formula, **kwargs)
-
-    def walk_ite(self, formula, **kwargs):
-        return self.walk_error(formula, **kwargs)
-
-    def walk_toreal(self, formula, **kwargs):
-        return self.walk_error(formula, **kwargs)
-
-    def walk_bv_constant(self, formula, **kwargs):
-        return self.walk_error(formula, **kwargs)
-
-    def walk_bv_concat(self, formula, **kwargs):
-        return self.walk_error(formula, **kwargs)
-
-    def walk_bv_extract(self, formula, **kwargs):
-        return self.walk_error(formula, **kwargs)
-
-    def walk_bv_not(self, formula, **kwargs):
-        return self.walk_error(formula, **kwargs)
-
-    def walk_bv_and(self, formula, **kwargs):
-        return self.walk_error(formula, **kwargs)
-
-    def walk_bv_or(self, formula, **kwargs):
-        return self.walk_error(formula, **kwargs)
-
-    def walk_bv_xor(self, formula, **kwargs):
-        return self.walk_error(formula, **kwargs)
-
-    def walk_bv_ult(self, formula, **kwargs):
-        return self.walk_error(formula, **kwargs)
-
-    def walk_bv_ule(self, formula, **kwargs):
-        return self.walk_error(formula, **kwargs)
-
-    def walk_bv_comp(self, formula, **kwargs):
-        return self.walk_error(formula, **kwargs)
-
-    def walk_bv_neg(self, formula, **kwargs):
-        return self.walk_error(formula, **kwargs)
-
-    def walk_bv_add(self, formula, **kwargs):
-        return self.walk_error(formula, **kwargs)
-
-    def walk_bv_sub(self, formula, **kwargs):
-        return self.walk_error(formula, **kwargs)
-
-    def walk_bv_mul(self, formula, **kwargs):
-        return self.walk_error(formula, **kwargs)
-
-    def walk_bv_udiv(self, formula, **kwargs):
-        return self.walk_error(formula, **kwargs)
-
-    def walk_bv_urem(self, formula, **kwargs):
-        return self.walk_error(formula, **kwargs)
-
-    def walk_bv_lshl(self, formula, **kwargs):
-        return self.walk_error(formula, **kwargs)
-
-    def walk_bv_lshr(self, formula, **kwargs):
-        return self.walk_error(formula, **kwargs)
-
-    def walk_bv_rol(self, formula, **kwargs):
-        return self.walk_error(formula, **kwargs)
-
-    def walk_bv_ror(self, formula, **kwargs):
-        return self.walk_error(formula, **kwargs)
-
-    def walk_bv_zext(self, formula, **kwargs):
-        return self.walk_error(formula, **kwargs)
-
-    def walk_bv_sext(self, formula, **kwargs):
-        return self.walk_error(formula, **kwargs)
-
-    def walk_bv_slt(self, formula, **kwargs):
-        return self.walk_error(formula, **kwargs)
-
-    def walk_bv_sle(self, formula, **kwargs):
-        return self.walk_error(formula, **kwargs)
-
-    def walk_bv_sdiv(self, formula, **kwargs):
-        return self.walk_error(formula, **kwargs)
-
-    def walk_bv_srem(self, formula, **kwargs):
-        return self.walk_error(formula, **kwargs)
-
-    def walk_bv_ashr(self, formula, **kwargs):
-        return self.walk_error(formula, **kwargs)
-
-    def walk_array_select(self, formula, **kwargs):
-        return self.walk_error(formula, **kwargs)
-
-    def walk_array_store(self, formula, **kwargs):
-        return self.walk_error(formula, **kwargs)
-
-    def walk_array_value(self, formula, **kwargs):
-        return self.walk_error(formula, **kwargs)
-
-    def walk_div(self, formula, **kwargs):
-        return self.walk_error(formula, **kwargs)
-
-    def walk_algebraic_constant(self, formula, **kwargs):
-        return self.walk_error(formula, **kwargs)
+# EOC Walker

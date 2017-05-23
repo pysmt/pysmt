@@ -15,12 +15,11 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from functools import partial
 from six.moves import cStringIO
-from six import iteritems
 
 import pysmt.operators as op
 from pysmt.walkers import TreeWalker
+from pysmt.walkers.generic import handles
 from pysmt.utils import quote
 from pysmt.constants import is_pysmt_fraction, is_pysmt_integer
 
@@ -36,35 +35,6 @@ class HRPrinter(TreeWalker):
         self.stream = stream
         self.write = self.stream.write
 
-        self.set_function(partial(self._walk_nary, " & "), op.AND, op.BV_AND)
-        self.set_function(partial(self._walk_nary, " | "), op.OR, op.BV_OR)
-        self.set_function(partial(self._walk_nary, " + "), op.PLUS, op.BV_ADD)
-        self.set_function(partial(self._walk_nary, " * "), op.TIMES, op.BV_MUL)
-        self.set_function(partial(self._walk_nary, " / "), op.DIV)
-        self.set_function(partial(self._walk_nary, " ^ "), op.POW)
-        self.set_function(partial(self._walk_nary, " <-> "), op.IFF)
-        self.set_function(partial(self._walk_nary, " -> "), op.IMPLIES)
-        self.set_function(partial(self._walk_nary, " - "), op.MINUS, op.BV_SUB)
-        self.set_function(partial(self._walk_nary, " = "), op.EQUALS)
-        self.set_function(partial(self._walk_nary, " <= "), op.LE)
-        self.set_function(partial(self._walk_nary, " < "), op.LT)
-
-        self.set_function(partial(self._walk_nary, " xor "), op.BV_XOR)
-        self.set_function(partial(self._walk_nary, "::"), op.BV_CONCAT)
-        self.set_function(partial(self._walk_nary, " u/ "), op.BV_UDIV)
-        self.set_function(partial(self._walk_nary, " u% "), op.BV_UREM)
-        self.set_function(partial(self._walk_nary, " s/ "), op.BV_SDIV)
-        self.set_function(partial(self._walk_nary, " s% "), op.BV_SREM)
-        self.set_function(partial(self._walk_nary, " s<= "), op.BV_SLE)
-        self.set_function(partial(self._walk_nary, " s< "), op.BV_SLT)
-        self.set_function(partial(self._walk_nary, " u<= "), op.BV_ULE)
-        self.set_function(partial(self._walk_nary, " u< "), op.BV_ULT)
-        self.set_function(partial(self._walk_nary, " << "), op.BV_LSHL)
-        self.set_function(partial(self._walk_nary, " >> "), op.BV_LSHR)
-        self.set_function(partial(self._walk_nary, " a>> "), op.BV_ASHR)
-        self.set_function(partial(self._walk_nary, " bvcomp "), op.BV_COMP)
-        self.set_function(self.walk_not, op.BV_NOT)
-
     def printer(self, f, threshold=None):
         """Performs the serialization of 'f'.
 
@@ -77,12 +47,12 @@ class HRPrinter(TreeWalker):
     def walk_threshold(self, formula):
         self.write("...")
 
-    def _walk_nary(self, op_symbol, formula):
+    def walk_nary(self, formula, ops):
         self.write("(")
         args = formula.args()
         for s in args[:-1]:
             yield s
-            self.write(op_symbol)
+            self.write(ops)
         yield args[-1]
         self.write(")")
 
@@ -232,10 +202,46 @@ class HRPrinter(TreeWalker):
             yield assign[k]
             self.write("]")
 
+    def walk_and(self, formula): return self.walk_nary(formula, " & ")
+    def walk_or(self, formula): return self.walk_nary(formula, " | ")
+    def walk_plus(self, formula): return self.walk_nary(formula, " + ")
+    def walk_times(self, formula): return self.walk_nary(formula, " * ")
+    def walk_div(self, formula): return self.walk_nary(formula, " / ")
+    def walk_pow(self, formula): return self.walk_nary(formula, " ^ ")
+    def walk_iff(self, formula): return self.walk_nary(formula, " <-> ")
+    def walk_implies(self, formula): return self.walk_nary(formula, " -> ")
+    def walk_minus(self, formula): return self.walk_nary(formula, " - ")
+    def walk_equals(self, formula): return self.walk_nary(formula, " = ")
+    def walk_le (self, formula): return self.walk_nary(formula, " <= ")
+    def walk_lt (self, formula): return self.walk_nary(formula, " < ")
+    def walk_bv_xor (self, formula): return self.walk_nary(formula, " xor ")
+    def walk_bv_concat (self, formula): return self.walk_nary(formula, "::")
+    def walk_bv_udiv (self, formula): return self.walk_nary(formula, " u/ ")
+    def walk_bv_urem (self, formula): return self.walk_nary(formula, " u% ")
+    def walk_bv_sdiv (self, formula): return self.walk_nary(formula, " s/ ")
+    def walk_bv_srem (self, formula): return self.walk_nary(formula, " s% ")
+    def walk_bv_sle (self, formula): return self.walk_nary(formula, " s<= ")
+    def walk_bv_slt (self, formula): return self.walk_nary(formula, " s< ")
+    def walk_bv_ule (self, formula): return self.walk_nary(formula, " u<= ")
+    def walk_bv_ult (self, formula): return self.walk_nary(formula, " u< ")
+    def walk_bv_lshl (self, formula): return self.walk_nary(formula, " << ")
+    def walk_bv_lshr (self, formula): return self.walk_nary(formula, " >> ")
+    def walk_bv_ashr (self, formula): return self.walk_nary(formula, " a>> ")
+    def walk_bv_comp (self, formula): return self.walk_nary(formula, " bvcomp ")
+    walk_bv_and = walk_and
+    walk_bv_or = walk_or
+    walk_bv_not = walk_not
+    walk_bv_add = walk_plus
+    walk_bv_mul = walk_times
+    walk_bv_sub = walk_minus
+
+#EOC HRPrinter
 
 
 class HRSerializer(object):
     """Return the serialized version of the formula as a string."""
+
+    PrinterClass = HRPrinter
 
     def __init__(self, environment=None):
         self.environment = environment
@@ -248,7 +254,7 @@ class HRSerializer(object):
         """
         buf = cStringIO()
         if printer is None:
-            p = HRPrinter(buf)
+            p = self.PrinterClass(buf)
         else:
             p = printer(buf)
 
@@ -278,20 +284,20 @@ class SmartPrinter(HRPrinter):
             self.subs = {}
         else:
             self.subs = subs
-        self.original_functions = dict(self.functions)
-        self.set_function(self.smart_walk, *op.ALL_TYPES)
 
     def printer(self, f, threshold=None):
         self.walk(f, threshold=threshold)
 
+    @handles(op.ALL_TYPES)
     def smart_walk(self, formula):
         if formula in self.subs:
             # Smarties contains a string.
             # In the future, we could allow for arbitrary function calls
             self.write(self.subs[formula])
         else:
-            return self.original_functions[formula.node_type()](formula)
+            return HRPrinter.super(self, formula)
 
+# EOC SmartPrinter
 
 def smart_serialize(formula, subs=None, threshold=None):
     """Creates and calls a SmartPrinter to perform smart serialization."""

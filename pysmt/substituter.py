@@ -20,11 +20,12 @@ import warnings
 from six import iteritems
 
 import pysmt.walkers
+from pysmt.walkers.generic import handles
 import pysmt.operators as op
 from pysmt.exceptions import PysmtTypeError
 
 
-class Substituter(pysmt.walkers.DagWalker):
+class Substituter(pysmt.walkers.IdentityDagWalker):
     """Performs substitution of a set of terms within a formula.
 
     Let f be a formula ans subs be a map from formula to formula.
@@ -54,13 +55,12 @@ class Substituter(pysmt.walkers.DagWalker):
     separate calls to the substitution procedure.
     """
     def __init__(self, env):
-        pysmt.walkers.DagWalker.__init__(self, env=env, invalidate_memoization=True)
+        pysmt.walkers.IdentityDagWalker.__init__(self, env=env, invalidate_memoization=True)
         self.manager = self.env.formula_manager
-        self.orig_subs = None
-        # We keep an internal copy of an IdentityDagWalker. This is
-        # used to rebuild expressions that are not affected by the
-        # substitution.
-        self._inner_idw = pysmt.walkers.IdentityDagWalker(env=self.env)
+        if self.__class__ == Substituter:
+            raise NotImplementedError(
+                "Cannot instantiate abstract Substituter class directly. "
+                "Use MSSubstituter or MGSubstituter instead.")
 
     def _get_key(self, formula, **kwargs):
         return formula
@@ -96,9 +96,9 @@ class Substituter(pysmt.walkers.DagWalker):
             key = self._get_key(formula, **kwargs)
             self.memoization[key] = res
         else:
-            pysmt.walkers.DagWalker._push_with_children_to_stack(self,
-                                                                 formula,
-                                                                 **kwargs)
+            pysmt.walkers.IdentityDagWalker._push_with_children_to_stack(self,
+                                                                         formula,
+                                                                         **kwargs)
 
     def substitute(self, formula, subs):
         """Replaces any subformula in formula with the definition in subs."""
@@ -126,33 +126,51 @@ class Substituter(pysmt.walkers.DagWalker):
                 raise PysmtTypeError(
                     "Value %d does not belong to the Formula Manager." % i)
 
-        self.orig_subs = subs
         res = self.walk(formula, substitutions=subs)
-        self.orig_subs = None
         return res
 
 
 class MGSubstituter(Substituter):
-    """Performs Most Specific Substitution.
+    """Performs Most Generic Substitution.
 
     This is the default behavior since version 0.5
     """
     def __init__(self, env):
         Substituter.__init__(self, env=env)
-        self.set_function(self.walk_identity_or_replace, *op.all_types())
 
+    @handles(set(op.ALL_TYPES) - op.QUANTIFIERS)
     def walk_identity_or_replace(self, formula, args, **kwargs):
         """
         If the formula appears in the substitution, return the substitution.
         Otherwise, rebuild the formula by calling the IdentityWalker.
         """
-        if formula in self.orig_subs:
-            return self.orig_subs[formula]
+        substitutions = kwargs['substitutions']
+        if formula in substitutions:
+            res = substitutions[formula]
         else:
-            # Call the function associated to type of 'formula'
-            # E.g., if formula is an And() it will call walk_and
-            # and rebuild the And expression with the new children
-            return self._inner_idw.functions[formula.node_type()](formula, args=args, **kwargs)
+            res = Substituter.super(self, formula, args=args, **kwargs)
+        return res
+
+    def walk_forall(self, formula, args, **kwargs):
+        substitutions = kwargs['substitutions']
+        if formula in substitutions:
+            res = substitutions[formula]
+        else:
+            qvars = [pysmt.walkers.IdentityDagWalker.walk_symbol(self, v, args, **kwargs)
+                     for v in formula.quantifier_vars()]
+            res = self.mgr.ForAll(qvars, args[0])
+        return res
+
+    def walk_exists(self, formula, args, **kwargs):
+        substitutions = kwargs['substitutions']
+        if formula in substitutions:
+            res = substitutions[formula]
+        else:
+            qvars = [pysmt.walkers.IdentityDagWalker.walk_symbol(self, v, args, **kwargs)
+                     for v in formula.quantifier_vars()]
+            res = self.mgr.Exists(qvars, args[0])
+        return res
+
 
 # EOC MGSubstituter
 
@@ -165,22 +183,36 @@ class MSSubstituter(Substituter):
 
     def __init__(self, env):
         Substituter.__init__(self, env=env)
-        self.set_function(self.walk_replace, *op.all_types())
 
     def substitute(self, formula, subs):
         return Substituter.substitute(self, formula, subs)
 
-    def _substitute(self, formula):
+    def _substitute(self, formula, substitutions):
         """Returns the substitution for formula, if one is defined, otherwise
-        it defaults to the identify (formula).
+        returns the formula unchanged.
 
         This is an helper function, to simplify the implementation of
         the walk_* functions.
         """
-        return self.orig_subs.get(formula, formula)
+        return substitutions.get(formula, formula)
 
+    @handles(set(op.ALL_TYPES) - op.QUANTIFIERS)
     def walk_replace(self, formula, args, **kwargs):
-        new_f = self._inner_idw.functions[formula.node_type()](formula, args=args, **kwargs)
-        return self._substitute(new_f)
+        new_f =  Substituter.super(self, formula, args=args, **kwargs)
+        return self._substitute(new_f, kwargs['substitutions'])
+
+    def walk_forall(self, formula, args, **kwargs):
+        substitutions = kwargs['substitutions']
+        qvars = [pysmt.walkers.IdentityDagWalker.walk_symbol(self, v, args, **kwargs)
+                 for v in formula.quantifier_vars()]
+        new_f = self.mgr.ForAll(qvars, args[0])
+        return self._substitute(new_f, substitutions)
+
+    def walk_exists(self, formula, args, **kwargs):
+        substitutions = kwargs['substitutions']
+        qvars = [pysmt.walkers.IdentityDagWalker.walk_symbol(self, v, args, **kwargs)
+                 for v in formula.quantifier_vars()]
+        new_f = self.mgr.Exists(qvars, args[0])
+        return self._substitute(new_f, substitutions)
 
 # EOC MSSSubstituter

@@ -978,7 +978,7 @@ class FormulaContextualizer(IdentityDagWalker):
         IdentityDagWalker.__init__(self, env=env)
         self.type_normalize = self.env.type_manager.normalize
 
-    def walk_symbol(self, formula, **kwargs):
+    def walk_symbol(self, formula, args, **kwargs):
         # Recreate the Symbol taking into account the type information
         ty = formula.symbol_type()
         newty = self.type_normalize(ty)
@@ -989,3 +989,9 @@ class FormulaContextualizer(IdentityDagWalker):
         assign = dict(zip(args[1::2], args[2::2]))
         ty = self.type_normalize(formula.array_value_index_type())
         return self.mgr.Array(ty, args[0], assign)
+
+    def walk_function(self, formula, args, **kwargs):
+        # We re-create the symbol name
+        old_name = formula.function_name()
+        new_name = self.walk_symbol(old_name, None)
+        return self.mgr.Function(new_name, args)

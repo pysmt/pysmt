@@ -21,10 +21,11 @@ Note that other expressions can be built in the FormulaManager, but
 they will be rewritten (during construction) in order to only use
 these operators.
 """
+from itertools import chain
 from six.moves import xrange
 
 
-ALL_TYPES = list(xrange(0,53))
+ALL_TYPES = tuple(xrange(0,53))
 
 (
 FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF, # Boolean Logic (0-6)
@@ -68,48 +69,64 @@ BOOL_CONNECTIVES = frozenset([AND, OR, NOT, IMPLIES, IFF])
 
 BOOL_OPERATORS = frozenset(QUANTIFIERS | BOOL_CONNECTIVES)
 
-RELATIONS = frozenset([LE, LT, EQUALS, BV_ULE, BV_ULT, BV_SLT, BV_SLE])
+BV_RELATIONS = frozenset([BV_ULE, BV_ULT, BV_SLT, BV_SLE])
+
+IRA_RELATIONS = frozenset([LE, LT])
+
+RELATIONS = frozenset((EQUALS,)) | BV_RELATIONS | IRA_RELATIONS
 
 CONSTANTS = frozenset([REAL_CONSTANT, BOOL_CONSTANT, INT_CONSTANT,
                        BV_CONSTANT, ALGEBRAIC_CONSTANT])
 
-BV_OPERATORS = frozenset([BV_CONSTANT, BV_NOT, BV_AND, BV_OR, BV_XOR,
-                          BV_CONCAT, BV_EXTRACT, BV_ULT, BV_ULE, BV_NEG, BV_ADD,
+BV_OPERATORS = frozenset([BV_NOT, BV_AND, BV_OR, BV_XOR,
+                          BV_CONCAT, BV_EXTRACT, BV_NEG, BV_ADD,
                           BV_SUB, BV_MUL, BV_UDIV, BV_UREM, BV_LSHL, BV_LSHR,
-                          BV_ROL, BV_ROR, BV_ZEXT, BV_SEXT, BV_SLT, BV_SLE,
+                          BV_ROL, BV_ROR, BV_ZEXT, BV_SEXT,
                           BV_COMP, BV_SDIV, BV_SREM, BV_ASHR])
 
 IRA_OPERATORS = frozenset([PLUS, MINUS, TIMES, TOREAL, DIV, POW])
 
 ARRAY_OPERATORS = frozenset([ARRAY_SELECT, ARRAY_STORE, ARRAY_VALUE])
 
-CUSTOM_NODE_TYPES = []
-
 THEORY_OPERATORS = IRA_OPERATORS | BV_OPERATORS | ARRAY_OPERATORS
 
-def new_node_type(new_node_id=None):
-    """Adds a new node type to the list of custom node types and returns the ID."""
-    if new_node_id is None:
-        if len(CUSTOM_NODE_TYPES) == 0:
-            new_node_id = ALL_TYPES[-1] + 1
-        else:
-            new_node_id = CUSTOM_NODE_TYPES[-1] + 1
+CUSTOM_NODE_TYPES = []
 
-    assert new_node_id not in ALL_TYPES
-    assert new_node_id not in CUSTOM_NODE_TYPES
-    CUSTOM_NODE_TYPES.append(new_node_id)
-    return new_node_id
+assert (BOOL_OPERATORS | THEORY_OPERATORS | RELATIONS | \
+        CONSTANTS | frozenset((SYMBOL, FUNCTION, ITE))) == frozenset(ALL_TYPES)
+
+assert len(BOOL_OPERATORS & THEORY_OPERATORS) == 0
+assert len(BOOL_OPERATORS & RELATIONS) == 0
+assert len(BOOL_OPERATORS & CONSTANTS) == 0
+assert len(THEORY_OPERATORS & RELATIONS) == 0
+assert len(THEORY_OPERATORS & CONSTANTS) == 0
+assert len(RELATIONS & CONSTANTS) == 0
+
+def new_node_type(node_id=None, node_str=None):
+    """Adds a new node type to the list of custom node types and returns the ID."""
+    if node_id is None:
+        if len(CUSTOM_NODE_TYPES) == 0:
+            node_id = ALL_TYPES[-1] + 1
+        else:
+            node_id = CUSTOM_NODE_TYPES[-1] + 1
+
+    assert node_id not in ALL_TYPES
+    assert node_id not in CUSTOM_NODE_TYPES
+    CUSTOM_NODE_TYPES.append(node_id)
+    if node_str is None:
+        node_str = "Node_%d" % node_id
+    __OP_STR__[node_id] = node_str
+    return node_id
 
 
 def op_to_str(node_id):
     """Returns a string representation of the given node."""
-    if node_id not in __OP_STR__:
-        return str(node_id)
     return __OP_STR__[node_id]
+
 
 def all_types():
     """Returns an iterator over all base and custom types."""
-    return iter(ALL_TYPES + CUSTOM_NODE_TYPES)
+    return chain(iter(ALL_TYPES), iter(CUSTOM_NODE_TYPES))
 
 
 __OP_STR__ = {

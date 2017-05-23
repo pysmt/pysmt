@@ -861,4 +861,5 @@ def _mgr():
 def _is_bv(node):
     """Aux function to check if a fnode is a BV."""
     return (node.is_symbol() and node.symbol_type().is_bv_type()) or \
+            node.node_type() is BV_CONSTANT or\
             node.node_type() in BV_OPERATORS
