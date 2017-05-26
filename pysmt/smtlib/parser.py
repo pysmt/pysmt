@@ -600,6 +600,12 @@ class SmtLibParser(object):
         return self.env.formula_manager.Symbol(name=name,
                                                typename=typename)
 
+    def _get_quantified_var(self, name, type_name, params=None):
+        """Returns the PySMT variable corresponding to a declaration"""
+        typename = self._get_basic_type(type_name, params)
+        return self.env.formula_manager.FreshSymbol(typename=typename,
+                                                    template=name+"%d")
+
     def atom(self, token, mgr):
         """
         Given a token and a FormulaManager, returns the pysmt representation of
@@ -656,9 +662,11 @@ class SmtLibParser(object):
         """
         Cleans the execution environment when we exit the scope of a quantifier
         """
-        for var in vrs:
-            self.cache.unbind(var.symbol_name())
-        return fun(vrs, body)
+        variables = set()
+        for vname, var in vrs:
+            self.cache.unbind(vname)
+            variables.add(var)
+        return fun(variables, body)
 
     def _enter_let(self, stack, tokens, key):
         """Handles a let expression by recurring on the expression and
@@ -704,9 +712,9 @@ class SmtLibParser(object):
             vname = self.parse_atom(tokens, "expression")
             typename = self.parse_type(tokens, "expression")
 
-            var = self._get_var(vname, typename)
+            var = self._get_quantified_var(vname, typename)
             self.cache.bind(vname, var)
-            vrs.append(var)
+            vrs.append((vname, var))
 
             self.consume_closing(tokens, "expression")
             current = tokens.consume()
