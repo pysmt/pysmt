@@ -17,6 +17,7 @@
 #
 import os
 
+from cStringIO import StringIO
 from pysmt.shortcuts import reset_env
 from pysmt.test import TestCase
 from pysmt.smtlib.parser import SmtLibParser
@@ -25,24 +26,17 @@ from pysmt.smtlib.parser import SmtLibParser
 class TestSmtLibParserFuzzer(TestCase):
 
     def test_fuzzed(self):
-        failed = []
         for fname in FUZZED_FILES:
-            try:
-                self.parse(os.path.join(SMTLIB_DIR, fname))
-            except Exception as ex:
-                failed.append((fname, ex))
-        if len(failed) != 0:
-            for fname, ex in failed:
-                print(fname, ex)
-                print("-"*50)
-        self.assertTrue(len(failed) == 0,
-                        "%d/%d" %(len(failed), len(FUZZED_FILES)))
+            script = self.parse(os.path.join(SMTLIB_DIR, fname))
+            script.serialize(StringIO())
+
 
     def parse(self, fname):
         reset_env()
         parser = SmtLibParser()
         script = parser.get_script_fname(fname)
         self.assertIsNotNone(script)
+        return script
         # Can we know that the last command is a check-sat?
 
 SMTLIB_DIR = "pysmt/test/smtlib/fuzzed"
