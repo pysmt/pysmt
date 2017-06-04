@@ -160,7 +160,7 @@ class TheoryOracle(walkers.DagWalker):
             theory = theory.combine(self._theory_from_type(ty.index_type))
             theory = theory.combine(self._theory_from_type(ty.elem_type))
         else:
-            assert ty.is_function_type()
+            # ty is either a function type or a custom type
             theory = Theory(uninterpreted=True)
         return theory
 

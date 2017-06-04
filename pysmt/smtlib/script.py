@@ -123,6 +123,11 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
                                                  name,
                                                  params,
                                                  rtype))
+        elif self.name == smtcmd.DECLARE_SORT:
+            type_ = self.args[0]
+            outstream.write("(%s %s %d)" % (self.name,
+                                            type_.name,
+                                            type_.arity))
 
         elif self.name in smtcmd.ALL_COMMANDS:
             raise NotImplementedError("'%s' is a valid SMT-LIB command "\

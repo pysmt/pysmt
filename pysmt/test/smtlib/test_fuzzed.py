@@ -38,6 +38,8 @@ class TestSmtLibParserFuzzer(TestCase):
         self.assertIsNotNone(script)
         return script
         # Can we know that the last command is a check-sat?
+#
+
 
 SMTLIB_DIR = "pysmt/test/smtlib/fuzzed"
 FUZZED_FILES = ["AUFLIA.smt2.bz2",
