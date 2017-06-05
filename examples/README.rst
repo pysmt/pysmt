@@ -16,3 +16,4 @@ This directory contains examples to get you started using pySMT. Suggested order
 11. `parallel.py </examples/parallel.py>`_ : Shows how to use multi-processing to perform parallel and asynchronous solving
 12. `smtlib.py </examples/smtlib.py>`_ : Demonstrates how to perform SMT-LIB parsing, dumping and extension
 13. `einstein.py </examples/einstein.py>`_ : Shows the use of UNSAT Core as debugging tools
+14. `xor.py </examples/xor.py>`_ : Equivalence checking of XOR rewriting using BitVectors
