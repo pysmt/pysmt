@@ -53,7 +53,7 @@ class Environment(object):
     FreeVarsOracleClass= pysmt.oracles.FreeVarsOracle
     SizeOracleClass = pysmt.oracles.SizeOracle
     AtomsOracleClass = pysmt.oracles.AtomsOracle
-
+    TypesOracleClass = pysmt.oracles.TypesOracle
 
     def __init__(self):
         self._stc = self.TypeCheckerClass(self)
@@ -68,6 +68,7 @@ class Environment(object):
         self._fvo = self.FreeVarsOracleClass(self)
         self._sizeo = self.SizeOracleClass(self)
         self._ao = self.AtomsOracleClass(self)
+        self._typeso = self.TypesOracleClass(self)
         self._type_manager = self.TypeManagerClass(self)
 
         self._factory = None
@@ -117,6 +118,11 @@ class Environment(object):
     def theoryo(self):
         """ Get the Theory Oracle """
         return self._theoryo
+
+    @property
+    def typeso(self):
+        """ Get the Types Oracle """
+        return self._typeso
 
     @property
     def fvo(self):

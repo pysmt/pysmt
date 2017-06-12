@@ -28,8 +28,10 @@ class TestSmtLibParserFuzzer(TestCase):
     def test_fuzzed(self):
         for fname in FUZZED_FILES:
             script = self.parse(os.path.join(SMTLIB_DIR, fname))
-            script.serialize(StringIO())
-
+            buf = StringIO()
+            script.serialize(buf)
+            #print(buf.getvalue())
+            self.assertTrue(len(buf.getvalue()) > 1)
 
     def parse(self, fname):
         reset_env()
@@ -37,7 +39,6 @@ class TestSmtLibParserFuzzer(TestCase):
         script = parser.get_script_fname(fname)
         self.assertIsNotNone(script)
         return script
-        # Can we know that the last command is a check-sat?
 #
 
 

@@ -43,16 +43,27 @@ class PySMTType(object):
 
     """
 
-    def __init__(self, basename=None, args=None):
-        self.basename = basename
-        self.args = args
-        self.arity = len(args) if args else 0
-        if self.args:
-            args = "{%s}" % ", ".join(str(a) for a in self.args)
+    def __init__(self, decl=None, basename=None, args=None):
+        if decl:
+            self.decl = decl
+            self.basename = decl.name
+            self.arity = decl.arity
+            if (args and self.arity != len(args)) or \
+               (not args and self.arity != 0):
+                raise PysmtValueError("Invalid number of arguments. " +
+                                      "Expected %d, got %d." % (self.arity,
+                                                                len(args)))
         else:
-            args = ""
-        if basename:
-            self.name = basename + args
+            self.basename = basename
+            self.arity = len(args) if args else 0
+
+        self.args = args
+        if self.args:
+            args_str = "{%s}" % ", ".join(str(a) for a in self.args)
+        else:
+            args_str = ""
+        if self.basename:
+            self.name = self.basename + args_str
         else:
             self.name = None
 
@@ -114,21 +125,24 @@ class PySMTType(object):
 # Basic Types Declarations
 class _BoolType(PySMTType):
     def __init__(self):
-        PySMTType.__init__(self, basename="Bool", args=None)
+        decl = _TypeDecl(None, "Bool", 0)
+        PySMTType.__init__(self, decl=decl, args=None)
 
     def is_bool_type(self):
         return True
 
 class _IntType(PySMTType):
     def __init__(self):
-        PySMTType.__init__(self, basename="Int", args=None)
+        decl = _TypeDecl(None, "Int", 0)
+        PySMTType.__init__(self, decl=decl, args=None)
 
     def is_int_type(self):
         return True
 
 class _RealType(PySMTType):
     def __init__(self):
-        PySMTType.__init__(self, basename="Real", args=None)
+        decl = _TypeDecl(None, "Real", 0)
+        PySMTType.__init__(self, decl=decl, args=None)
 
     def is_real_type(self):
         return True
@@ -146,9 +160,8 @@ class _ArrayType(PySMTType):
     _instances = {}
 
     def __init__(self, index_type, elem_type):
-        PySMTType.__init__(self,
-                           basename="Array",
-                           args=(index_type, elem_type))
+        decl = _TypeDecl(None, "Array", 2)
+        PySMTType.__init__(self, decl=decl, args=(index_type, elem_type))
 
     @property
     def elem_type(self):
@@ -184,7 +197,8 @@ class _BVType(PySMTType):
     _instances = {}
 
     def __init__(self, width=32):
-        PySMTType.__init__(self, basename="BV{%d}" % width, args=None)
+        decl = _TypeDecl(None, "BV{%d}" % width, 0)
+        PySMTType.__init__(self, decl=decl, args=None)
         self._width = width
 
     @property
@@ -312,6 +326,9 @@ class _TypeDecl(object):
 
     def __call__(self, *args):
         return self.typemgr.get_type_instance(self, *args)
+
+    def __str__(self):
+        return "%s/%s" % (self.name, self.arity)
 
 # EOC _TypeDecl
 
@@ -460,6 +477,7 @@ class TypeManager(object):
         return td
 
     def get_type_instance(self, type_decl, *args):
+        """Creates an instance of the TypeDecl with the given arguments."""
         if not all(isinstance(t, PySMTType) for t in args):
             raise PysmtValueError("Trying to instantiate %s with non-type args."\
                                   % str(type_decl))
@@ -467,7 +485,7 @@ class TypeManager(object):
         try:
             ty = self._custom_types[key]
         except KeyError:
-            ty = PySMTType(basename=type_decl.name, args=args)
+            ty = PySMTType(decl=type_decl, args=args)
             self._custom_types[key] = ty
         return ty
 
@@ -507,8 +525,8 @@ class TypeManager(object):
                     else:
                         # Custom Type
                         typedecl = self.Type(type_.basename, type_.arity)
-                        new_args = (typemap[a] for a in type_.args)
-                        myty = self.get_type_instance(typedecl, new_args)
+                        new_args = tuple(typemap[a] for a in type_.args)
+                        myty = self.get_type_instance(typedecl, *new_args)
                     typemap[ty] = myty
         return typemap[type_]
 

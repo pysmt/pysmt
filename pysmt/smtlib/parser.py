@@ -870,35 +870,30 @@ class SmtLibParser(object):
                 self.consume_closing(tokens, command)
                 res = self.env.type_manager.BVType(size)
             else:
-                #it must be a custom-defined type
+                # It must be a custom-defined type
                 base_type = self.cache.get(op)
-                if base_type is not None:
-                    if isinstance(base_type, _TypeDecl):
-                        pparams = []
-                        has_free_params = False
-                        for _ in range(base_type.arity):
-                            ty = self.parse_type(tokens, command, type_params=type_params)
-                            pparams.append(ty)
-                            if isinstance(ty, tuple):
-                                has_free_params = True
-                        if has_free_params:
-                            def definition(*args):
-                                params = []
-                                for x in pparams:
-                                    if isinstance(x, tuple):
-                                        params.append(args[type_params.index(x[0])])
-                                    else:
-                                        params.append(x)
-                                return self.env.type_manager.get_type_instance(base_type, *params)
-                            res = PartialType("tmp", definition)
-                        else:
-                            res = self.env.type_manager.get_type_instance(base_type, *pparams)
-                    else:
-                        raise PysmtSyntaxError("Unexpected token '%s' in %s command." % \
-                                               (op, command))
-                else:
+                if base_type is None or not isinstance(base_type, _TypeDecl):
                     raise PysmtSyntaxError("Unexpected token '%s' in %s command." % \
                                            (op, command))
+                pparams = []
+                has_free_params = False
+                for _ in range(base_type.arity):
+                    ty = self.parse_type(tokens, command, type_params=type_params)
+                    pparams.append(ty)
+                    if isinstance(ty, tuple):
+                        has_free_params = True
+                if has_free_params:
+                    def definition(*args):
+                        params = []
+                        for x in pparams:
+                            if isinstance(x, tuple):
+                                params.append(args[type_params.index(x[0])])
+                            else:
+                                params.append(x)
+                        return self.env.type_manager.get_type_instance(base_type, *params)
+                    res = PartialType("tmp", definition)
+                else:
+                    res = self.env.type_manager.get_type_instance(base_type, *pparams)
                 self.consume_closing(tokens, command)
         elif var == "Bool":
             res = self.env.type_manager.BOOL()

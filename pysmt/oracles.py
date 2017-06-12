@@ -18,9 +18,12 @@
 """This module provides classes used to analyze and determine
 properties of formulae.
 
+ * SizeOracle provides metrics about the formula
  * QuantifierOracle says whether a formula is quantifier free
  * TheoryOracle says which logic is used in the formula.
- * FreeVarsOracle says which variables are free in the formula
+ * FreeVarsOracle provides variables that are free in the formula
+ * AtomsOracle provides the set of boolean atoms in the formula
+ * TypesOracle provides the list of types in the formula
 """
 
 import pysmt
@@ -386,6 +389,77 @@ class AtomsOracle(walkers.DagWalker):
             return frozenset(x for a in args for x in a)
 
 # EOC AtomsOracle
+
+
+class TypesOracle(walkers.DagWalker):
+
+    def get_types(self, formula, custom_only=False):
+        """Returns the types appearing in the formula.
+
+        custom_only: filter the result by excluding base SMT-LIB types.
+        """
+        types = self.walk(formula)
+        # types is a frozen set
+        # exp_types is a list
+        exp_types = self.expand_types(types)
+        # Base types filtering
+        if custom_only:
+            exp_types = [x for x in exp_types
+                         if not x.is_bool_type() and
+                         not x.is_int_type() and
+                         not x.is_real_type() and
+                         not x.is_bv_type() and
+                         not x.is_array_type()
+            ]
+        return exp_types
+
+    def expand_types(self, types):
+        """Recursively look into composite types.
+
+        Note: This returns a list. The list is ordered (by
+        construction) by having simpler types first)
+        """
+        all_types = set()
+        expanded = []
+        stack = list(types)
+        while stack:
+            t = stack.pop()
+            if t not in all_types:
+                expanded.append(t)
+                all_types.add(t)
+            if t.arity > 0:
+                for subtype in t.args:
+                    if subtype not in all_types:
+                        expanded.append(subtype)
+                        all_types.add(subtype)
+                        stack.append(subtype)
+        expanded.reverse()
+        return expanded
+
+    @walkers.handles(set(op.ALL_TYPES) - \
+                     set([op.SYMBOL, op.FUNCTION, op.QUANTIFIERS]))
+    def walk_combine(self, formula, args, **kwargs):
+        #pylint: disable=unused-argument
+        res = set()
+        for arg in args:
+            res.update(arg)
+        return frozenset(res)
+
+    @walkers.handles(op.SYMBOL)
+    def walk_symbol(self, formula, **kwargs):
+        return frozenset([formula.symbol_type()])
+
+    @walkers.handles(op.FUNCTION)
+    def walk_function(self, formula, **kwargs):
+        ftype = formula.function_name().symbol_type()
+        return set([ftype.return_type] + list(ftype.param_types))
+
+    @walkers.handles(op.QUANTIFIERS)
+    def walk_quantifier(self, formula, args, **kwargs):
+        return frozenset([x.symbol_type()
+                          for x in formula.quantifier_vars()])
+
+# EOC TypesOracle
 
 
 def get_logic(formula, env=None):
