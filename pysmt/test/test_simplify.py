@@ -20,7 +20,7 @@ from pysmt.test import TestCase, skipIfSolverNotAvailable, main
 from pysmt.test.examples import get_example_formulae
 from pysmt.environment import get_env
 from pysmt.shortcuts import (Array, Store, Int, Iff, Symbol, Plus, Equals, And,
-                             Real, Times)
+                             Real, Times, Not, FALSE, Or, TRUE)
 from pysmt.typing import INT, REAL
 from pysmt.simplifier import BddSimplifier
 from pysmt.logics import QF_BOOL
@@ -108,6 +108,29 @@ class TestSimplify(TestCase):
         f = Times(r, r, Real(1))
         f = f.simplify()
         self.assertNotIn(Real(1), f.args())
+
+
+    def test_and_flattening(self):
+        x,y,z = (Symbol(name) for name in "xyz")
+        f1 = And(x, y, z)
+        f2 = And(x, And(y, z))
+        self.assertEqual(f2.simplify(), f1)
+
+    def test_or_flattening(self):
+        x,y,z = (Symbol(name) for name in "xyz")
+        f1 = Or(x, y, z)
+        f2 = Or(x, Or(y, z))
+        self.assertEqual(f2.simplify(), f1)
+
+    def test_trivial_false_and(self):
+        x,y,z = (Symbol(name) for name in "xyz")
+        f = And(x, y, z, Not(x))
+        self.assertEqual(f.simplify(), FALSE())
+
+    def test_trivial_true_or(self):
+        x,y,z = (Symbol(name) for name in "xyz")
+        f = Or(x, y, z, Not(x))
+        self.assertEqual(f.simplify(), TRUE())
 
 if __name__ == '__main__':
     main()
