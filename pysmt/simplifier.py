@@ -79,28 +79,54 @@ class Simplifier(pysmt.walkers.DagWalker):
         return res
 
     def walk_and(self, formula, args, **kwargs):
-        args = [x for x in args if not x.is_true()]
-        if len(args) == 0:
-            return self.manager.TRUE()
-        elif len(args) == 1:
-            return args[0]
-        else:
-            if any(x.is_false() for x in args):
+        new_args = set()
+        for a in args:
+            if a.is_true():
+                continue
+            if a.is_false():
                 return self.manager.FALSE()
 
-        return self.manager.And(args)
+            if a.is_and():
+                for s in a.args():
+                    if self.walk_not(self.manager.Not(s), [s]) in new_args:
+                        return self.manager.FALSE()
+                    new_args.add(s)
+            else:
+                if self.walk_not(self.manager.Not(a), [a]) in new_args:
+                    return self.manager.FALSE()
+                new_args.add(a)
+
+        if len(new_args) == 0:
+            return self.manager.TRUE()
+        elif len(new_args) == 1:
+            return next(iter(new_args))
+        else:
+            return self.manager.And(new_args)
 
     def walk_or(self, formula, args, **kwargs):
-        args = [x for x in args if not x.is_false()]
-        if len(args) == 0:
-            return self.manager.FALSE()
-        elif len(args) == 1:
-            return args[0]
-        else:
-            if any(x.is_true() for x in args):
+        new_args = set()
+        for a in args:
+            if a.is_false():
+                continue
+            if a.is_true():
                 return self.manager.TRUE()
 
-        return self.manager.Or(args)
+            if a.is_or():
+                for s in a.args():
+                    if self.walk_not(self.manager.Not(s), [s]) in new_args:
+                        return self.manager.TRUE()
+                    new_args.add(s)
+            else:
+                if self.walk_not(self.manager.Not(a), [a]) in new_args:
+                    return self.manager.TRUE()
+                new_args.add(a)
+
+        if len(new_args) == 0:
+            return self.manager.FALSE()
+        elif len(new_args) == 1:
+            return next(iter(new_args))
+        else:
+            return self.manager.Or(new_args)
 
     def walk_not(self, formula, args, **kwargs):
         assert len(args) == 1
