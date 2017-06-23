@@ -389,8 +389,9 @@ class Z3Converter(Converter, DagWalker):
         self.z3RealSort = z3.RealSort(self.ctx)
         self.z3BoolSort = z3.BoolSort(self.ctx)
         self.z3IntSort  = z3.IntSort(self.ctx)
-        self.z3ArraySorts = {}
+        self._z3ArraySorts = {}
         self._z3BitVecSorts = {}
+        self._z3Sorts = {}
         # Unique reference to Function Declaration
         self._z3_func_decl_cache = {}
         return
@@ -403,6 +404,27 @@ class Z3Converter(Converter, DagWalker):
             bvsort = z3.BitVecSort(width)
             self._z3BitVecSorts[width] = bvsort
         return bvsort
+
+    def z3ArraySort(self, key, value):
+        """Return the z3 ArraySort for the given key value."""
+        try:
+            return self._z3ArraySorts[(askey(key),
+                                      askey(value))]
+        except KeyError:
+            sort = z3.ArraySort(key, value)
+            self._z3ArraySorts[(askey(key),
+                               askey(value))] = sort
+        return sort
+
+    def z3Sort(self, name):
+        """Return the z3 Sort for the given name."""
+        name = str(name)
+        try:
+            return self._z3Sorts[name]
+        except KeyError:
+            sort = z3.DeclareSort(name)
+            self._z3Sorts[name] = sort
+        return sort
 
     @catch_conversion_error
     def convert(self, formula):
@@ -624,10 +646,7 @@ class Z3Converter(Converter, DagWalker):
             sort_ast = self.z3RealSort.ast
         elif symbol_type.is_int_type():
             sort_ast = self.z3IntSort.ast
-        elif symbol_type.is_array_type():
-            sort_ast = self._type_to_z3(symbol_type).ast
         else:
-            assert symbol_type.is_bv_type()
             sort_ast = self._type_to_z3(symbol_type).ast
         # Create const with given sort
         res = z3.Z3_mk_const(self.ctx.ref(), z3_sname, sort_ast)
@@ -848,17 +867,12 @@ class Z3Converter(Converter, DagWalker):
         elif tp.is_array_type():
             key_sort = self._type_to_z3(tp.index_type)
             val_sort = self._type_to_z3(tp.elem_type)
-            try:
-                return self.z3ArraySorts[(askey(key_sort),
-                                          askey(val_sort))]
-            except KeyError:
-                sort = z3.ArraySort(key_sort, val_sort)
-                self.z3ArraySorts[(askey(key_sort),
-                                   askey(val_sort))] = sort
-                return sort
-        else:
-            assert tp.is_bv_type() , "Unsupported type '%s'" % tp
+            return self.z3ArraySort(key_sort, val_sort)
+        elif tp.is_bv_type():
             return self.z3BitVecSort(tp.width)
+        else:
+            assert tp.is_custom_type(), "Unsupported type '%s'" % tp
+            return self.z3Sort(tp)
         raise NotImplementedError("Unsupported type in conversion: %s" % tp)
 
     def __del__(self):

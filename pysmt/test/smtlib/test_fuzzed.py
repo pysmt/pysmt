@@ -17,7 +17,7 @@
 #
 import os
 
-from StringIO import StringIO
+from six import StringIO
 
 from nose.plugins.attrib import attr
 from pysmt.shortcuts import reset_env

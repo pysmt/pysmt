@@ -17,7 +17,7 @@
 #
 import os
 
-from cStringIO import StringIO
+from six import StringIO
 
 from pysmt.shortcuts import reset_env
 from pysmt.test import TestCase

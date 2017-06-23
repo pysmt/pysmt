@@ -53,9 +53,11 @@ class PySMTType(object):
                 raise PysmtValueError("Invalid number of arguments. " +
                                       "Expected %d, got %d." % (self.arity,
                                                                 len(args)))
+            self.custom_type = decl.custom_type
         else:
             self.basename = basename
             self.arity = len(args) if args else 0
+            self.custom_type = False
 
         self.args = args
         if self.args:
@@ -85,6 +87,9 @@ class PySMTType(object):
 
     def is_function_type(self):
         return False
+
+    def is_custom_type(self):
+        return self.custom_type
 
     def __hash__(self):
         return hash(self.name)
@@ -323,12 +328,17 @@ class _TypeDecl(object):
         self.typemgr = type_manager
         self.name = name
         self.arity = arity
+        self.custom_type = False
 
     def __call__(self, *args):
         return self.typemgr.get_type_instance(self, *args)
 
     def __str__(self):
         return "%s/%s" % (self.name, self.arity)
+
+    def set_custom_type_flag(self):
+        assert self.custom_type == False
+        self.custom_type = True
 
 # EOC _TypeDecl
 
@@ -469,6 +479,7 @@ class TypeManager(object):
                                       " %d." % (name, td.arity))
         except KeyError:
             td = _TypeDecl(self, name, arity)
+            td.set_custom_type_flag()
             self._custom_types_decl[name] = td
 
         if td.arity == 0:
