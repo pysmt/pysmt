@@ -878,7 +878,7 @@ def get_full_example_formulae(environment=None):
                     expr=Not(Equals(usb1, usb1)),
                     is_valid=False,
                     is_sat=False,
-                    logic=pysmt.logics.QF_UF
+                    logic=pysmt.logics.QF_BOOLt
                 ),
 
         ]

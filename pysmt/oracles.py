@@ -149,22 +149,26 @@ class TheoryOracle(walkers.DagWalker):
         return self.walk(formula)
 
     def _theory_from_type(self, ty):
-        theory = None
+        theory = Theory()
         if ty.is_real_type():
-            theory = Theory(real_arithmetic=True, real_difference=True)
+            theory.real_arithmetic = True
+            theory.real_difference = True
         elif ty.is_int_type():
-            theory = Theory(integer_arithmetic=True, integer_difference=True)
+            theory.integer_arithmetic = True
+            theory.integer_difference = True
         elif ty.is_bool_type():
-            theory = Theory()
+            pass
         elif ty.is_bv_type():
-            theory = Theory(bit_vectors=True)
+            theory.bit_vectors = True
         elif ty.is_array_type():
-            theory = Theory(arrays=True)
+            theory.arrays = True
             theory = theory.combine(self._theory_from_type(ty.index_type))
             theory = theory.combine(self._theory_from_type(ty.elem_type))
+        elif ty.is_custom_type():
+            theory.custom_type = True
         else:
-            # ty is either a function type or a custom type
-            theory = Theory(uninterpreted=True)
+            # ty is either a function type
+            theory.uninterpreted = True
         return theory
 
     @walkers.handles(op.RELATIONS)
@@ -186,15 +190,17 @@ class TheoryOracle(walkers.DagWalker):
     def walk_constant(self, formula, args, **kwargs):
         """Returns a new theory object with the type of the constant."""
         #pylint: disable=unused-argument
+        theory_out = Theory()
         if formula.is_real_constant():
-            theory_out = Theory(real_arithmetic=True, real_difference=True)
+            theory_out.real_arithmetic = True
+            theory_out.real_difference = True
         elif formula.is_int_constant():
-            theory_out = Theory(integer_arithmetic=True, integer_difference=True)
+            theory_out.integer_arithmetic = True
+            theory_out.integer_difference = True
         elif formula.is_bv_constant():
-            theory_out = Theory(bit_vectors=True)
+            theory_out.bit_vectors = True
         else:
             assert formula.is_bool_constant()
-            theory_out = Theory()
         return theory_out
 
     def walk_symbol(self, formula, args, **kwargs):

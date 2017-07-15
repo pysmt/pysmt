@@ -17,7 +17,9 @@
 #
 import os
 
-from cStringIO import StringIO
+from StringIO import StringIO
+
+from nose.plugins.attrib import attr
 from pysmt.shortcuts import reset_env
 from pysmt.test import TestCase
 from pysmt.smtlib.parser import SmtLibParser
@@ -25,6 +27,7 @@ from pysmt.smtlib.parser import SmtLibParser
 
 class TestSmtLibParserFuzzer(TestCase):
 
+    @attr("slow")
     def test_fuzzed(self):
         for fname in FUZZED_FILES:
             script = self.parse(os.path.join(SMTLIB_DIR, fname))
