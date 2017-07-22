@@ -81,7 +81,8 @@ def get_full_example_formulae(environment=None):
         bv16 = Symbol("bv16", BV16)
 
         unary_sort = Type("S", 1)
-        unary_sort_bool = unary_sort(BOOL)
+        tmgr = environment.type_manager
+        unary_sort_bool = tmgr.get_type_instance(unary_sort, BOOL)
         usb1 = Symbol("usb1", unary_sort_bool)
 
         result = [

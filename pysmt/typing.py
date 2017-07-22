@@ -32,7 +32,8 @@ different instance of BVType.
 
 """
 import pysmt
-from pysmt.exceptions import PysmtValueError
+
+from pysmt.exceptions import PysmtValueError, PysmtModeError
 
 
 class PySMTType(object):
@@ -130,7 +131,7 @@ class PySMTType(object):
 # Basic Types Declarations
 class _BoolType(PySMTType):
     def __init__(self):
-        decl = _TypeDecl(None, "Bool", 0)
+        decl = _TypeDecl("Bool", 0)
         PySMTType.__init__(self, decl=decl, args=None)
 
     def is_bool_type(self):
@@ -138,7 +139,7 @@ class _BoolType(PySMTType):
 
 class _IntType(PySMTType):
     def __init__(self):
-        decl = _TypeDecl(None, "Int", 0)
+        decl = _TypeDecl("Int", 0)
         PySMTType.__init__(self, decl=decl, args=None)
 
     def is_int_type(self):
@@ -146,7 +147,7 @@ class _IntType(PySMTType):
 
 class _RealType(PySMTType):
     def __init__(self):
-        decl = _TypeDecl(None, "Real", 0)
+        decl = _TypeDecl("Real", 0)
         PySMTType.__init__(self, decl=decl, args=None)
 
     def is_real_type(self):
@@ -165,7 +166,7 @@ class _ArrayType(PySMTType):
     _instances = {}
 
     def __init__(self, index_type, elem_type):
-        decl = _TypeDecl(None, "Array", 2)
+        decl = _TypeDecl("Array", 2)
         PySMTType.__init__(self, decl=decl, args=(index_type, elem_type))
 
     @property
@@ -202,7 +203,7 @@ class _BVType(PySMTType):
     _instances = {}
 
     def __init__(self, width=32):
-        decl = _TypeDecl(None, "BV{%d}" % width, 0)
+        decl = _TypeDecl("BV{%d}" % width, 0)
         PySMTType.__init__(self, decl=decl, args=None)
         self._width = width
 
@@ -324,14 +325,18 @@ class _TypeDecl(object):
     NOTE: This object is **not** a Type, but a Type Declaration.
     """
 
-    def __init__(self, type_manager, name, arity):
-        self.typemgr = type_manager
+    def __init__(self, name, arity):
         self.name = name
         self.arity = arity
         self.custom_type = False
 
     def __call__(self, *args):
-        return self.typemgr.get_type_instance(self, *args)
+        env = pysmt.environment.get_env()
+        # Note: This uses the global type manager
+        if not env.enable_infix_notation:
+            raise PysmtModeError("Infix notation disabled. "
+                                 "Use type_manager.get_type_instance instead.")
+        return env.type_manager.get_type_instance(self, *args)
 
     def __str__(self):
         return "%s/%s" % (self.name, self.arity)
@@ -478,7 +483,7 @@ class TypeManager(object):
                 raise PysmtValueError("Type %s previously declared with arity "\
                                       " %d." % (name, td.arity))
         except KeyError:
-            td = _TypeDecl(self, name, arity)
+            td = _TypeDecl(name, arity)
             td.set_custom_type_flag()
             self._custom_types_decl[name] = td
 

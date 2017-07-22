@@ -90,7 +90,9 @@ class TestOracles(TestCase):
                                 (f, types_all))
 
     def test_types_oracle(self):
-        S = Type("S", 0)
+        get_env().enable_infix_notation = True
+
+        S = Type("S")
         U = Type("U", 1)
         B = Type("B", 2)
         csort = B(U(S),
