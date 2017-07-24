@@ -205,11 +205,11 @@ class SmtLibScript(object):
 
         return _And(stack)
 
-    def to_file(self, fname, daggify=False):
+    def to_file(self, fname, daggify=True):
         with open(fname, "w") as outstream:
             self.serialize(outstream, daggify=daggify)
 
-    def serialize(self, outstream, daggify=False):
+    def serialize(self, outstream, daggify=True):
         """Serializes the SmtLibScript expanding commands"""
         if daggify:
             printer = SmtDagPrinter(outstream)
