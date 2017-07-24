@@ -100,7 +100,9 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
     def reset_assertions(self):
         del self.cvc4
-        self.cvc4 = CVC4.SmtEngine(self.em)
+        # CVC4's SWIG interface is not acquiring ownership of the
+        # SmtEngine object. Forcing it here.
+        self.cvc4 = CVC4.SmtEngine(self.em); self.cvc4.thisown=1
         self.options(self)
         self.declarations = set()
         self.cvc4.setLogic(self.logic_name)
