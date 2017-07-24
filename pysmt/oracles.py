@@ -30,7 +30,7 @@ import pysmt
 import pysmt.walkers as walkers
 import pysmt.operators as op
 
-from pysmt import typing as types
+from pysmt import typing
 
 from pysmt.logics import Logic, Theory, get_closer_pysmt_logic
 
@@ -377,7 +377,7 @@ class AtomsOracle(walkers.DagWalker):
         return None
 
     def walk_symbol(self, formula, **kwargs):
-        if formula.is_symbol(types.BOOL):
+        if formula.is_symbol(typing.BOOL):
             return frozenset([formula])
         return None
 
@@ -408,6 +408,7 @@ class TypesOracle(walkers.DagWalker):
         # types is a frozen set
         # exp_types is a list
         exp_types = self.expand_types(types)
+        assert len(types) <= len(exp_types)
         # Base types filtering
         if custom_only:
             exp_types = [x for x in exp_types
@@ -458,12 +459,12 @@ class TypesOracle(walkers.DagWalker):
     @walkers.handles(op.FUNCTION)
     def walk_function(self, formula, **kwargs):
         ftype = formula.function_name().symbol_type()
-        return set([ftype.return_type] + list(ftype.param_types))
+        return frozenset([ftype.return_type] + list(ftype.param_types))
 
     @walkers.handles(op.QUANTIFIERS)
     def walk_quantifier(self, formula, args, **kwargs):
         return frozenset([x.symbol_type()
-                          for x in formula.quantifier_vars()])
+                          for x in formula.quantifier_vars()]) | args[0]
 
 # EOC TypesOracle
 
