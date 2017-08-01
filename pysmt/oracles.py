@@ -18,16 +18,19 @@
 """This module provides classes used to analyze and determine
 properties of formulae.
 
+ * SizeOracle provides metrics about the formula
  * QuantifierOracle says whether a formula is quantifier free
  * TheoryOracle says which logic is used in the formula.
- * FreeVarsOracle says which variables are free in the formula
+ * FreeVarsOracle provides variables that are free in the formula
+ * AtomsOracle provides the set of boolean atoms in the formula
+ * TypesOracle provides the list of types in the formula
 """
 
 import pysmt
 import pysmt.walkers as walkers
 import pysmt.operators as op
 
-from pysmt import typing as types
+from pysmt import typing
 
 from pysmt.logics import Logic, Theory, get_closer_pysmt_logic
 
@@ -146,22 +149,26 @@ class TheoryOracle(walkers.DagWalker):
         return self.walk(formula)
 
     def _theory_from_type(self, ty):
-        theory = None
+        theory = Theory()
         if ty.is_real_type():
-            theory = Theory(real_arithmetic=True, real_difference=True)
+            theory.real_arithmetic = True
+            theory.real_difference = True
         elif ty.is_int_type():
-            theory = Theory(integer_arithmetic=True, integer_difference=True)
+            theory.integer_arithmetic = True
+            theory.integer_difference = True
         elif ty.is_bool_type():
-            theory = Theory()
+            pass
         elif ty.is_bv_type():
-            theory = Theory(bit_vectors=True)
+            theory.bit_vectors = True
         elif ty.is_array_type():
-            theory = Theory(arrays=True)
+            theory.arrays = True
             theory = theory.combine(self._theory_from_type(ty.index_type))
             theory = theory.combine(self._theory_from_type(ty.elem_type))
+        elif ty.is_custom_type():
+            theory.custom_type = True
         else:
-            assert ty.is_function_type()
-            theory = Theory(uninterpreted=True)
+            # ty is either a function type
+            theory.uninterpreted = True
         return theory
 
     @walkers.handles(op.RELATIONS)
@@ -183,15 +190,17 @@ class TheoryOracle(walkers.DagWalker):
     def walk_constant(self, formula, args, **kwargs):
         """Returns a new theory object with the type of the constant."""
         #pylint: disable=unused-argument
+        theory_out = Theory()
         if formula.is_real_constant():
-            theory_out = Theory(real_arithmetic=True, real_difference=True)
+            theory_out.real_arithmetic = True
+            theory_out.real_difference = True
         elif formula.is_int_constant():
-            theory_out = Theory(integer_arithmetic=True, integer_difference=True)
+            theory_out.integer_arithmetic = True
+            theory_out.integer_difference = True
         elif formula.is_bv_constant():
-            theory_out = Theory(bit_vectors=True)
+            theory_out.bit_vectors = True
         else:
             assert formula.is_bool_constant()
-            theory_out = Theory()
         return theory_out
 
     def walk_symbol(self, formula, args, **kwargs):
@@ -368,7 +377,7 @@ class AtomsOracle(walkers.DagWalker):
         return None
 
     def walk_symbol(self, formula, **kwargs):
-        if formula.is_symbol(types.BOOL):
+        if formula.is_symbol(typing.BOOL):
             return frozenset([formula])
         return None
 
@@ -386,6 +395,78 @@ class AtomsOracle(walkers.DagWalker):
             return frozenset(x for a in args for x in a)
 
 # EOC AtomsOracle
+
+
+class TypesOracle(walkers.DagWalker):
+
+    def get_types(self, formula, custom_only=False):
+        """Returns the types appearing in the formula.
+
+        custom_only: filter the result by excluding base SMT-LIB types.
+        """
+        types = self.walk(formula)
+        # types is a frozen set
+        # exp_types is a list
+        exp_types = self.expand_types(types)
+        assert len(types) <= len(exp_types)
+        # Base types filtering
+        if custom_only:
+            exp_types = [x for x in exp_types
+                         if not x.is_bool_type() and
+                         not x.is_int_type() and
+                         not x.is_real_type() and
+                         not x.is_bv_type() and
+                         not x.is_array_type()
+            ]
+        return exp_types
+
+    def expand_types(self, types):
+        """Recursively look into composite types.
+
+        Note: This returns a list. The list is ordered (by
+        construction) by having simpler types first)
+        """
+        all_types = set()
+        expanded = []
+        stack = list(types)
+        while stack:
+            t = stack.pop()
+            if t not in all_types:
+                expanded.append(t)
+                all_types.add(t)
+            if t.arity > 0:
+                for subtype in t.args:
+                    if subtype not in all_types:
+                        expanded.append(subtype)
+                        all_types.add(subtype)
+                        stack.append(subtype)
+        expanded.reverse()
+        return expanded
+
+    @walkers.handles(set(op.ALL_TYPES) - \
+                     set([op.SYMBOL, op.FUNCTION, op.QUANTIFIERS]))
+    def walk_combine(self, formula, args, **kwargs):
+        #pylint: disable=unused-argument
+        res = set()
+        for arg in args:
+            res.update(arg)
+        return frozenset(res)
+
+    @walkers.handles(op.SYMBOL)
+    def walk_symbol(self, formula, **kwargs):
+        return frozenset([formula.symbol_type()])
+
+    @walkers.handles(op.FUNCTION)
+    def walk_function(self, formula, **kwargs):
+        ftype = formula.function_name().symbol_type()
+        return frozenset([ftype.return_type] + list(ftype.param_types))
+
+    @walkers.handles(op.QUANTIFIERS)
+    def walk_quantifier(self, formula, args, **kwargs):
+        return frozenset([x.symbol_type()
+                          for x in formula.quantifier_vars()]) | args[0]
+
+# EOC TypesOracle
 
 
 def get_logic(formula, env=None):

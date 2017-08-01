@@ -86,6 +86,9 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         self.cvc4 = None
         self.declarations = None
         self.logic_name = str(logic)
+        if "t" in self.logic_name:
+            # Custom Type extension
+            self.logic_name = self.logic_name.replace("t","")
         if self.logic_name == "QF_BOOL":
             self.logic_name = "QF_LRA"
         elif self.logic_name == "BOOL":
@@ -117,6 +120,7 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         assignment = {}
         for s in self.environment.formula_manager.get_all_symbols():
             if s.is_term():
+                if s.symbol_type().is_custom_type(): continue
                 v = self.get_value(s)
                 assignment[s] = v
         return EagerModel(assignment=assignment, environment=self.environment)
@@ -162,10 +166,8 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         else:
             var_set = (var for var in self.declarations\
                        if name_filter(var))
-
         for var in var_set:
             print("%s = %s", (var.symbol_name(), self.get_value(var)))
-
         return
 
     def get_value(self, item):
@@ -517,6 +519,8 @@ class CVC4Converter(Converter, DagWalker):
             return self.cvc4_exprMgr.mkArrayType(idx_cvc_type, elem_cvc_type)
         elif tp.is_bv_type():
             return self.cvc4_exprMgr.mkBitVectorType(tp.width)
+        elif tp.is_custom_type():
+            return self.cvc4_exprMgr.mkSort(str(tp))
         else:
             raise NotImplementedError("Unsupported type: %s" %tp)
 

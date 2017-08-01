@@ -77,7 +77,7 @@ class TestSorts(TestCase):
         FakeArrayType = Type("FakeArray", 2)
         with self.assertRaises(PysmtValueError):
             FreshSymbol(FakeArrayType)
-        FakeArrayII = FakeArrayType(INT, INT)
+        FakeArrayII = self.env.type_manager.get_type_instance(FakeArrayType, INT, INT)
         self.assertEqual(str(FakeArrayII), "FakeArray{Int, Int}")
         self.assertEqual(FakeArrayII.as_smtlib(False), "(FakeArray Int Int)")
         s = FreshSymbol(FakeArrayII)
@@ -126,13 +126,16 @@ class TestSorts(TestCase):
             Type("A", 1)
 
         C = Type("C", 1)
-        c5 = FreshSymbol(C(A))
-        c6 = FreshSymbol(C(B))
+        CA = self.env.type_manager.get_type_instance(C, A)
+        CB = self.env.type_manager.get_type_instance(C, B)
+        c5 = FreshSymbol(CA)
+        c6 = FreshSymbol(CB)
         self.assertIsNotNone(c5)
         with self.assertRaises(PysmtTypeError):
             EqualsOrIff(c5, c6)
 
         # Nesting
+        self.env.enable_infix_notation = True
         ty = C(C(C(C(C(A)))))
         self.assertIsNotNone(FreshSymbol(ty))
 

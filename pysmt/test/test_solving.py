@@ -179,7 +179,6 @@ class TestBasic(TestCase):
                 if not logic.theory.linear: continue
                 v = is_valid(f, solver_name='cvc4', logic=logic)
                 s = is_sat(f, solver_name='cvc4', logic=logic)
-
                 self.assertEqual(validity, v, f)
                 self.assertEqual(satisfiability, s, f)
 
@@ -187,6 +186,7 @@ class TestBasic(TestCase):
                 # CVC4 does not handle quantifiers in a complete way
                 self.assertFalse(logic.quantifier_free)
             except NoSolverAvailableError as ex:
+                # Logic is not supported by CVC4
                 pass
 
     @skipIfSolverNotAvailable("yices")

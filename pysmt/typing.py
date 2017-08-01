@@ -32,7 +32,8 @@ different instance of BVType.
 
 """
 import pysmt
-from pysmt.exceptions import PysmtValueError
+
+from pysmt.exceptions import PysmtValueError, PysmtModeError
 
 
 class PySMTType(object):
@@ -43,16 +44,29 @@ class PySMTType(object):
 
     """
 
-    def __init__(self, basename=None, args=None):
-        self.basename = basename
-        self.args = args
-        self.arity = len(args) if args else 0
-        if self.args:
-            args = "{%s}" % ", ".join(str(a) for a in self.args)
+    def __init__(self, decl=None, basename=None, args=None):
+        if decl:
+            self.decl = decl
+            self.basename = decl.name
+            self.arity = decl.arity
+            if (args and self.arity != len(args)) or \
+               (not args and self.arity != 0):
+                raise PysmtValueError("Invalid number of arguments. " +
+                                      "Expected %d, got %d." % (self.arity,
+                                                                len(args)))
+            self.custom_type = decl.custom_type
         else:
-            args = ""
-        if basename:
-            self.name = basename + args
+            self.basename = basename
+            self.arity = len(args) if args else 0
+            self.custom_type = False
+
+        self.args = args
+        if self.args:
+            args_str = "{%s}" % ", ".join(str(a) for a in self.args)
+        else:
+            args_str = ""
+        if self.basename:
+            self.name = self.basename + args_str
         else:
             self.name = None
 
@@ -74,6 +88,9 @@ class PySMTType(object):
 
     def is_function_type(self):
         return False
+
+    def is_custom_type(self):
+        return self.custom_type
 
     def __hash__(self):
         return hash(self.name)
@@ -114,21 +131,24 @@ class PySMTType(object):
 # Basic Types Declarations
 class _BoolType(PySMTType):
     def __init__(self):
-        PySMTType.__init__(self, basename="Bool", args=None)
+        decl = _TypeDecl("Bool", 0)
+        PySMTType.__init__(self, decl=decl, args=None)
 
     def is_bool_type(self):
         return True
 
 class _IntType(PySMTType):
     def __init__(self):
-        PySMTType.__init__(self, basename="Int", args=None)
+        decl = _TypeDecl("Int", 0)
+        PySMTType.__init__(self, decl=decl, args=None)
 
     def is_int_type(self):
         return True
 
 class _RealType(PySMTType):
     def __init__(self):
-        PySMTType.__init__(self, basename="Real", args=None)
+        decl = _TypeDecl("Real", 0)
+        PySMTType.__init__(self, decl=decl, args=None)
 
     def is_real_type(self):
         return True
@@ -146,9 +166,8 @@ class _ArrayType(PySMTType):
     _instances = {}
 
     def __init__(self, index_type, elem_type):
-        PySMTType.__init__(self,
-                           basename="Array",
-                           args=(index_type, elem_type))
+        decl = _TypeDecl("Array", 2)
+        PySMTType.__init__(self, decl=decl, args=(index_type, elem_type))
 
     @property
     def elem_type(self):
@@ -184,7 +203,8 @@ class _BVType(PySMTType):
     _instances = {}
 
     def __init__(self, width=32):
-        PySMTType.__init__(self, basename="BV{%d}" % width, args=None)
+        decl = _TypeDecl("BV{%d}" % width, 0)
+        PySMTType.__init__(self, decl=decl, args=None)
         self._width = width
 
     @property
@@ -305,13 +325,25 @@ class _TypeDecl(object):
     NOTE: This object is **not** a Type, but a Type Declaration.
     """
 
-    def __init__(self, type_manager, name, arity):
-        self.typemgr = type_manager
+    def __init__(self, name, arity):
         self.name = name
         self.arity = arity
+        self.custom_type = False
 
     def __call__(self, *args):
-        return self.typemgr.get_type_instance(self, *args)
+        env = pysmt.environment.get_env()
+        # Note: This uses the global type manager
+        if not env.enable_infix_notation:
+            raise PysmtModeError("Infix notation disabled. "
+                                 "Use type_manager.get_type_instance instead.")
+        return env.type_manager.get_type_instance(self, *args)
+
+    def __str__(self):
+        return "%s/%s" % (self.name, self.arity)
+
+    def set_custom_type_flag(self):
+        assert self.custom_type == False
+        self.custom_type = True
 
 # EOC _TypeDecl
 
@@ -358,6 +390,10 @@ class TypeManager(object):
         self._array_types = {}
         self._custom_types = {}
         self._custom_types_decl = {}
+        self._bool = None
+        self._real = None
+        self._int = None
+        #
         self.load_global_types()
         self.environment = environment
 
@@ -366,6 +402,18 @@ class TypeManager(object):
         for bvtype in (BV1, BV8, BV16, BV32, BV64, BV128):
             self._bv_types[bvtype.width] = bvtype
         self._array_types[(INT, INT)] = ARRAY_INT_INT
+        self._bool = BOOL
+        self._real = REAL
+        self._int = INT
+
+    def BOOL(self):
+        return self._bool
+
+    def REAL(self):
+        return self._real
+
+    def INT(self):
+        return self._int
 
     def BVType(self, width=32):
         """Returns the singleton associated to the BV type for the given width.
@@ -435,7 +483,8 @@ class TypeManager(object):
                 raise PysmtValueError("Type %s previously declared with arity "\
                                       " %d." % (name, td.arity))
         except KeyError:
-            td = _TypeDecl(self, name, arity)
+            td = _TypeDecl(name, arity)
+            td.set_custom_type_flag()
             self._custom_types_decl[name] = td
 
         if td.arity == 0:
@@ -444,6 +493,7 @@ class TypeManager(object):
         return td
 
     def get_type_instance(self, type_decl, *args):
+        """Creates an instance of the TypeDecl with the given arguments."""
         if not all(isinstance(t, PySMTType) for t in args):
             raise PysmtValueError("Trying to instantiate %s with non-type args."\
                                   % str(type_decl))
@@ -451,7 +501,7 @@ class TypeManager(object):
         try:
             ty = self._custom_types[key]
         except KeyError:
-            ty = PySMTType(basename=type_decl.name, args=args)
+            ty = PySMTType(decl=type_decl, args=args)
             self._custom_types[key] = ty
         return ty
 
@@ -491,8 +541,8 @@ class TypeManager(object):
                     else:
                         # Custom Type
                         typedecl = self.Type(type_.basename, type_.arity)
-                        new_args = (typemap[a] for a in type_.args)
-                        myty = self.get_type_instance(typedecl, new_args)
+                        new_args = tuple(typemap[a] for a in type_.args)
+                        myty = self.get_type_instance(typedecl, *new_args)
                     typemap[ty] = myty
         return typemap[type_]
 

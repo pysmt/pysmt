@@ -20,7 +20,7 @@ from pysmt.shortcuts import Symbol, Implies, And, Not
 from pysmt.test.examples import get_example_formulae
 from pysmt.test import TestCase, main
 from pysmt.oracles import get_logic
-from pysmt.typing import BOOL
+from pysmt.typing import BOOL, Type
 
 
 class TestOracles(TestCase):
@@ -61,6 +61,65 @@ class TestOracles(TestCase):
                 self.assertFalse(a.is_not())
                 self.assertFalse(a.is_iff())
                 self.assertFalse(a.is_quantifier())
+
+    def test_types_oracle_examples(self):
+        oracle = get_env().typeso
+        for (f, _, _, _) in get_example_formulae():
+            types_all = oracle.get_types(f)
+            types_custom = oracle.get_types(f, custom_only=True)
+            # Custom types are a subset of all types
+            s1 = set(types_all)
+            s2 = set(types_custom)
+            self.assertTrue(s1.issuperset(s2))
+
+            # Compare logics with types
+            theory = self.env.theoryo.get_theory(f)
+            if len(f.get_free_variables()) == 0:
+                continue
+            if theory.arrays:
+                self.assertTrue(any(x.is_array_type() for x in types_all),
+                                (f, types_all))
+            if theory.bit_vectors:
+                self.assertTrue(any(x.is_bv_type() for x in types_all),
+                                (f, types_all))
+            if theory.integer_arithmetic:
+                self.assertTrue(any(x.is_int_type() for x in types_all),
+                                (f, types_all))
+            if theory.real_arithmetic:
+                self.assertTrue(any(x.is_real_type() for x in types_all),
+                                (f, types_all))
+
+    def test_types_oracle(self):
+        get_env().enable_infix_notation = True
+
+        S = Type("S")
+        U = Type("U", 1)
+        B = Type("B", 2)
+        csort = B(U(S),
+                  B(BOOL, S))
+        v = Symbol("v", csort)
+        types_all = self.env.typeso.get_types(v)
+        types_custom = self.env.typeso.get_types(v, custom_only=True)
+        self.assertIsNotNone(types_all)
+        # Only BOOL does not appear in types_custom
+        self.assertTrue(len(types_all) == 5)
+        self.assertTrue(len(types_custom) == 4)
+
+        # Types are in partial order: simpler is earlier
+        idx_S = types_custom.index(S)
+        idx_US = types_custom.index(U(S))
+        idx_BBS = types_custom.index(B(BOOL, S))
+        idx_BUSBBS = types_custom.index(B(U(S), B(BOOL, S)))
+
+        self.assertIsNotNone(idx_S)
+        self.assertIsNotNone(idx_US)
+        self.assertIsNotNone(idx_BBS)
+        self.assertIsNotNone(idx_BUSBBS)
+
+        self.assertEqual(types_custom[0], S)
+        self.assertTrue(idx_S < idx_US)
+        self.assertTrue(idx_US < idx_BUSBBS)
+        self.assertTrue(idx_BBS < idx_BUSBBS)
 
 
 if __name__ == '__main__':

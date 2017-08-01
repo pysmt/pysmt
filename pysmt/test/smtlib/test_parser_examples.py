@@ -37,13 +37,14 @@ class TestSMTParseExamples(TestCase):
             if logic == logics.QF_BV:
                 # See test_parse_examples_bv
                 continue
-            buf_out = cStringIO()
+            buf = cStringIO()
             script_out = smtlibscript_from_formula(f_out)
-            script_out.serialize(outstream=buf_out)
+            script_out.serialize(outstream=buf)
+            #print(buf)
 
-            buf_in = cStringIO(buf_out.getvalue())
+            buf.seek(0)
             parser = SmtLibParser()
-            script_in = parser.get_script(buf_in)
+            script_in = parser.get_script(buf)
             f_in = script_in.get_last_formula()
             self.assertEqual(f_in.simplify(), f_out.simplify())
 
@@ -113,7 +114,6 @@ class TestSMTParseExamples(TestCase):
             buf_out = cStringIO()
             script_out = smtlibscript_from_formula(f_out)
             script_out.serialize(outstream=buf_out)
-
             buf_in = cStringIO(buf_out.getvalue())
             parser = SmtLibParser()
             script_in = parser.get_script(buf_in)
@@ -139,6 +139,9 @@ class TestSMTParseExamples(TestCase):
         os.close(fdi) # Close initial file descriptor
         for (f_out, _, _, _) in fs:
             write_smtlib(f_out, tmp_fname)
+            # with open(tmp_fname) as fin:
+            #     print(fin.read())
+
             f_in = read_smtlib(tmp_fname)
             self.assertEqual(f_out.simplify(), f_in.simplify())
         # Clean-up

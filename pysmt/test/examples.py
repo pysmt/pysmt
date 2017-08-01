@@ -33,7 +33,8 @@ from pysmt.shortcuts import (Symbol, Function,
                              BVLShl, BVLShr,BVRol, BVRor,
                              BVZExt, BVSExt, BVSub, BVComp, BVAShr, BVSLE,
                              BVSLT, BVSGT, BVSGE, BVSDiv, BVSRem,
-                             Store, Select, Array)
+                             Store, Select, Array,
+                             Type)
 from pysmt.constants import Fraction
 
 from pysmt.typing import REAL, BOOL, INT, BV8, BV16, BVType, ARRAY_INT_INT
@@ -71,7 +72,6 @@ def get_full_example_formulae(environment=None):
         rg = Symbol("rg", FunctionType(REAL, [REAL]))
 
         ih = Symbol("ih", FunctionType(INT, [REAL, INT]))
-        ig = Symbol("ig", FunctionType(INT, [INT]))
 
         bf = Symbol("bf", FunctionType(BOOL, [BOOL]))
         bg = Symbol("bg", FunctionType(BOOL, [BOOL]))
@@ -79,6 +79,11 @@ def get_full_example_formulae(environment=None):
         bv3 = Symbol("bv3", BVType(3))
         bv8 = Symbol("bv8", BV8)
         bv16 = Symbol("bv16", BV16)
+
+        unary_sort = Type("S", 1)
+        tmgr = environment.type_manager
+        unary_sort_bool = tmgr.get_type_instance(unary_sort, BOOL)
+        usb1 = Symbol("usb1", unary_sort_bool)
 
         result = [
             # Formula, is_valid, is_sat, is_qf
@@ -867,6 +872,14 @@ def get_full_example_formulae(environment=None):
                     is_valid=True,
                     is_sat=True,
                     logic=pysmt.logics.QF_NIA
+                ),
+
+            # Sorts
+            Example(hr="(! (usb1 = usb1))",
+                    expr=Not(Equals(usb1, usb1)),
+                    is_valid=False,
+                    is_sat=False,
+                    logic=pysmt.logics.QF_BOOLt
                 ),
 
         ]

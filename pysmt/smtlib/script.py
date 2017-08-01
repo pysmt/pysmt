@@ -85,7 +85,8 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
             outstream.write("))")
 
         elif self.name in [smtcmd.CHECK_SAT, smtcmd.EXIT,
-                           smtcmd.RESET_ASSERTIONS]:
+                           smtcmd.RESET_ASSERTIONS, smtcmd.GET_UNSAT_CORE,
+                           smtcmd.GET_ASSIGNMENT]:
             outstream.write("(%s)" % self.name)
 
         elif self.name == smtcmd.SET_LOGIC:
@@ -123,6 +124,11 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
                                                  name,
                                                  params,
                                                  rtype))
+        elif self.name == smtcmd.DECLARE_SORT:
+            type_decl = self.args[0]
+            outstream.write("(%s %s %d)" % (self.name,
+                                            type_decl.name,
+                                            type_decl.arity))
 
         elif self.name in smtcmd.ALL_COMMANDS:
             raise NotImplementedError("'%s' is a valid SMT-LIB command "\
@@ -259,6 +265,11 @@ def smtlibscript_from_formula(formula, logic=None):
     script.add(name=smtcmd.SET_LOGIC,
                args=[smt_logic])
 
+    # Declare all types
+    types = get_env().typeso.get_types(formula, custom_only=True)
+    for type_ in types:
+        script.add(name=smtcmd.DECLARE_SORT, args=[type_.decl])
+
     deps = formula.get_free_variables()
     # Declare all variables
     for symbol in deps:
@@ -271,8 +282,8 @@ def smtlibscript_from_formula(formula, logic=None):
     # check-sat
     script.add_command(SmtLibCommand(name=smtcmd.CHECK_SAT,
                                      args=[]))
-
     return script
+
 
 def evaluate_command(cmd, solver):
     if cmd.name == smtcmd.SET_INFO:
@@ -322,6 +333,9 @@ def evaluate_command(cmd, solver):
 
     elif cmd.name == smtcmd.CHECK_SAT_ASSUMING:
         return solver.check_sat(cmd.args)
+
+    elif cmd.name == smtcmd.GET_UNSAT_CORE:
+        return solver.get_unsat_core()
 
     elif cmd.name in smtcmd.ALL_COMMANDS:
         raise NotImplementedError("'%s' is a valid SMT-LIB command "\

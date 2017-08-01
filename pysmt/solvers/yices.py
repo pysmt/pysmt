@@ -178,13 +178,14 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
     def get_model(self):
         assignment = {}
-        # MG: This iteration is probelmatic, since it assumes that all
+        # MG: This iteration is problematic, since it assumes that all
         # defined symbols have a type that is compatible with this
         # solver.  In this case, the problem occurs with Arrays and
         # Strings that are not supported.
         for s in self.environment.formula_manager.get_all_symbols():
             if s.is_term():
                 if s.symbol_type().is_array_type(): continue
+                if s.symbol_type().is_custom_type(): continue
                 v = self.get_value(s)
                 assignment[s] = v
         return EagerModel(assignment=assignment, environment=self.environment)
@@ -247,7 +248,6 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
             if name_filter is None or not var.symbol_name().startswith(name_filter):
                 print("%s = %s", (var.symbol_name(), self.get_value(var)))
 
-
     def _check_error(self, res):
         if res != 0:
             err = yicespy.yices_error_string()
@@ -296,6 +296,7 @@ class YicesConverter(Converter, DagWalker):
         self.symbol_to_decl = {}
         # Maps an internal yices instance into the corresponding symbol
         self.decl_to_symbol = {}
+        self._yicesSort = {}
 
     @catch_conversion_error
     def convert(self, formula):
@@ -425,9 +426,11 @@ class YicesConverter(Converter, DagWalker):
         res = None
         if tp.is_bv_type():
             res = yicespy.yices_bveq_atom(args[0], args[1])
-        else:
-            assert tp.is_int_type() or tp.is_real_type()
+        elif tp.is_int_type() or tp.is_real_type():
             res = yicespy.yices_arith_eq_atom(args[0], args[1])
+        else:
+            assert tp.is_custom_type()
+            res = yicespy.yices_eq(args[0], args[1])
         self._check_term_result(res)
         return res
 
@@ -601,6 +604,15 @@ class YicesConverter(Converter, DagWalker):
         self._check_term_result(res)
         return res
 
+    def yicesSort(self, name):
+        """Return the yices Sort for the given name."""
+        name = str(name)
+        try:
+            return self._yicesSort[name]
+        except KeyError:
+            sort = yicespy.yices_new_uninterpreted_type()
+            self._yicesSort[name] = sort
+        return sort
 
     def _type_to_yices(self, tp):
         if tp.is_bool_type():
@@ -618,6 +630,8 @@ class YicesConverter(Converter, DagWalker):
                                               rtp)
         elif tp.is_bv_type():
             return yicespy.yices_bv_type(tp.width)
+        elif tp.is_custom_type():
+            return self.yicesSort(str(tp))
         else:
             raise NotImplementedError(tp)
 
