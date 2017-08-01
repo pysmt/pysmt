@@ -1035,9 +1035,13 @@ class MSatConverter(Converter, DagWalker):
                 msat_msg = mathsat.msat_last_error_message(self.msat_env())
                 raise InternalSolverError(msat_msg)
             return msat_type
-        else:
-            assert tp.is_bv_type(), "Usupported type for '%s'" % tp
+        elif tp.is_bv_type():
             return mathsat.msat_get_bv_type(self.msat_env(), tp.width)
+        elif tp.is_custom_type():
+            return mathsat.msat_get_simple_type(self.msat_env(), str(tp))
+        else:
+            raise NotImplementedError("Usupported type for '%s'" % tp)
+
 
     def _msat_type_to_type(self, tp):
         """Converts a MathSAT type into a PySMT type."""

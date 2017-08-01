@@ -24,14 +24,14 @@ from six.moves import xrange
 
 import pysmt.smtlib.commands as smtcmd
 from pysmt.environment import get_env
-from pysmt.typing import BOOL, REAL, INT, FunctionType, BVType, ArrayType
 from pysmt.logics import get_logic_by_name, UndefinedLogicError
-from pysmt.exceptions import UnknownSmtLibCommandError, PysmtSyntaxError, PysmtTypeError
+from pysmt.exceptions import UnknownSmtLibCommandError, PysmtSyntaxError
+from pysmt.exceptions import PysmtTypeError
 from pysmt.smtlib.script import SmtLibCommand, SmtLibScript
 from pysmt.smtlib.annotations import Annotations
 from pysmt.utils import interactive_char_iterator
 from pysmt.constants import Fraction
-
+from pysmt.typing import _TypeDecl, PartialType
 
 def open_(fname):
     """Transparently handle .bz2 files."""
@@ -431,7 +431,7 @@ class SmtLibParser(object):
         if len(args) == 1:
             lty = self.env.stc.get_type(args[0])
             mult = None
-            if lty == INT:
+            if lty == self.env.type_manager.INT():
                 if args[0].is_int_constant():
                     return mgr.Int(-1 * args[0].constant_value())
                 mult = mgr.Int(-1)
@@ -450,8 +450,7 @@ class SmtLibParser(object):
         const = self.parse_atom(tokens, "expression")
         if const != "const":
             raise PysmtSyntaxError("expected 'const' in expression after 'as'")
-        tyname = self.parse_type(tokens, "expression")
-        ty = self._get_basic_type(tyname)
+        ty = self.parse_type(tokens, "expression")
 
         def res(expr):
             return self.env.formula_manager.Array(ty.index_type, expr)
@@ -541,7 +540,7 @@ class SmtLibParser(object):
         """Utility function that treats = between booleans as <->"""
         mgr = self.env.formula_manager
         lty = self.env.stc.get_type(left)
-        if lty == BOOL:
+        if lty == self.env.type_manager.BOOL():
             return mgr.Iff(left, right)
         else:
             return self.Equals(left, right)
@@ -554,42 +553,20 @@ class SmtLibParser(object):
                             Fraction(right.constant_value()))
         return self.Div(left, right)
 
-    def _get_basic_type(self, type_name, params=None):
-        """
-        Returns the pysmt type representation for the given type name.
-        If params is specified, the type is interpreted as a function type.
-        """
-        if params is None or len(params) == 0:
-            if isinstance(type_name, tuple):
-                assert len(type_name) == 3
-                assert type_name[0] == "Array"
-                return ArrayType(self._get_basic_type(type_name[1]),
-                                 self._get_basic_type(type_name[2]))
 
-            if type_name == "Bool":
-                return BOOL
-            elif type_name == "Int":
-                return INT
-            elif type_name == "Real":
-                return REAL
-            elif type_name.startswith("BV"):
-                size = int(type_name[2:])
-                return BVType(size)
-            else:
-                res = self.cache.get(type_name)
-                if res is not None:
-                    res = self._get_basic_type(res)
-                return res
-        else:
-            rt = self._get_basic_type(type_name)
-            pt = [self._get_basic_type(par) for par in params]
-            return FunctionType(rt, pt)
-
-    def _get_var(self, name, type_name, params=None):
+    def _get_var(self, name, type_name):
         """Returns the PySMT variable corresponding to a declaration"""
-        typename = self._get_basic_type(type_name, params)
         return self.env.formula_manager.Symbol(name=name,
-                                                        typename=typename)
+                                               typename=type_name)
+
+    def _get_quantified_var(self, name, type_name):
+        """Returns the PySMT variable corresponding to a declaration"""
+        try:
+            return self._get_var(name, type_name)
+        except PysmtTypeError:
+            return self.env.formula_manager.FreshSymbol(typename=type_name,
+                                                        template=name+"%d")
+
     def atom(self, token, mgr):
         """
         Given a token and a FormulaManager, returns the pysmt representation of
@@ -646,9 +623,11 @@ class SmtLibParser(object):
         """
         Cleans the execution environment when we exit the scope of a quantifier
         """
-        for var in vrs:
-            self.cache.unbind(var.symbol_name())
-        return fun(vrs, body)
+        variables = set()
+        for vname, var in vrs:
+            self.cache.unbind(vname)
+            variables.add(var)
+        return fun(variables, body)
 
     def _enter_let(self, stack, tokens, key):
         """Handles a let expression by recurring on the expression and
@@ -694,9 +673,9 @@ class SmtLibParser(object):
             vname = self.parse_atom(tokens, "expression")
             typename = self.parse_type(tokens, "expression")
 
-            var = self._get_var(vname, typename)
+            var = self._get_quantified_var(vname, typename)
             self.cache.bind(vname, var)
-            vrs.append(var)
+            vrs.append((vname, var))
 
             self.consume_closing(tokens, "expression")
             current = tokens.consume()
@@ -855,44 +834,85 @@ class SmtLibParser(object):
                                "at most %d arguments." % (current, command,
                                                           max_size))
 
-    def parse_type(self, tokens, command, additional_token=None):
+    def parse_type(self, tokens, command, type_params=None, additional_token=None):
         """Parses a single type name from the tokens"""
         if additional_token is not None:
             var = additional_token
         else:
             var = tokens.consume()
-        if var == "(":
+
+        res = None
+        if type_params and var in type_params:
+            return (var,) # This is a type parameter, it is handled recursively
+        elif var == "(":
             op = tokens.consume()
 
             if op == "Array":
                 idxtype = self.parse_type(tokens, command)
                 elemtype = self.parse_type(tokens, command)
                 self.consume_closing(tokens, command)
-                return ("Array", idxtype, elemtype)
+                res = self.env.type_manager.ArrayType(idxtype, elemtype)
 
-            if op != "_":
+            elif op == "_":
+                ts = tokens.consume()
+                if ts != "BitVec":
+                    raise PysmtSyntaxError("Unexpected token '%s' in %s command." % \
+                                      (ts, command))
+
+                size = 0
+                dim = tokens.consume()
+                try:
+                    size = int(dim)
+                except ValueError:
+                    raise PysmtSyntaxError("Unexpected token '%s' in %s command." % \
+                                      (dim, command))
+
+                self.consume_closing(tokens, command)
+                res = self.env.type_manager.BVType(size)
+            else:
+                # It must be a custom-defined type
+                base_type = self.cache.get(op)
+                if base_type is None or not isinstance(base_type, _TypeDecl):
+                    raise PysmtSyntaxError("Unexpected token '%s' in %s command." % \
+                                           (op, command))
+                pparams = []
+                has_free_params = False
+                for _ in range(base_type.arity):
+                    ty = self.parse_type(tokens, command, type_params=type_params)
+                    pparams.append(ty)
+                    if isinstance(ty, tuple):
+                        has_free_params = True
+                if has_free_params:
+                    def definition(*args):
+                        params = []
+                        for x in pparams:
+                            if isinstance(x, tuple):
+                                params.append(args[type_params.index(x[0])])
+                            else:
+                                params.append(x)
+                        return self.env.type_manager.get_type_instance(base_type, *params)
+                    res = PartialType("tmp", definition)
+                else:
+                    res = self.env.type_manager.get_type_instance(base_type, *pparams)
+                self.consume_closing(tokens, command)
+        elif var == "Bool":
+            res = self.env.type_manager.BOOL()
+        elif var == "Int":
+            res = self.env.type_manager.INT()
+        elif var == "Real":
+            res = self.env.type_manager.REAL()
+        else:
+            cached = self.cache.get(var)
+            if cached is not None:
+                res = self.cache.get(var)
+            else:
                 raise PysmtSyntaxError("Unexpected token '%s' in %s command." % \
-                                  (op, command))
-            ts = tokens.consume()
-            if ts != "BitVec":
-                raise PysmtSyntaxError("Unexpected token '%s' in %s command." % \
-                                  (ts, command))
+                                       (var, command))
 
-            size = 0
-            dim = tokens.consume()
-            try:
-                size = int(dim)
-            except ValueError:
-                raise PysmtSyntaxError("Unexpected token '%s' in %s command." % \
-                                  (dim, command))
-
-            self.consume_closing(tokens, command)
-            return "BV%d" % size
-
-        elif var == ")":
-            raise PysmtSyntaxError("Unexpected token '%s' in %s command." % \
-                              (var, command))
-        return var
+        if isinstance(res, _TypeDecl):
+            return res()
+        else:
+            return res
 
 
     def parse_atom(self, tokens, command):
@@ -909,7 +929,7 @@ class SmtLibParser(object):
         current = tokens.consume()
         res = []
         while current != ")":
-            res.append(self.parse_type(tokens, command,additional_token=current))
+            res.append(self.parse_type(tokens, command, additional_token=current))
             current = tokens.consume()
         return res
 
@@ -1047,8 +1067,8 @@ class SmtLibParser(object):
 
     def _cmd_declare_const(self, current, tokens):
         """(declare-const <symbol> <sort>)"""
-        elements = self.parse_atoms(tokens, current, 2)
-        (var, typename) = elements
+        var = self.parse_atom(tokens, current)
+        typename = self.parse_type(tokens, current)
         v = self._get_var(var, typename)
         self.cache.bind(var, v)
         return SmtLibCommand(current, [v])
@@ -1066,7 +1086,10 @@ class SmtLibParser(object):
         typename = self.parse_type(tokens, current)
         self.consume_closing(tokens, current)
 
-        v = self._get_var(var, typename, params)
+        if params:
+            typename = self.env.type_manager.FunctionType(typename, params)
+
+        v = self._get_var(var, typename)
         if v.symbol_type().is_function_type():
             self.cache.bind(var, \
                     functools.partial(self._function_call_helper, v))
@@ -1097,16 +1120,32 @@ class SmtLibParser(object):
 
     def _cmd_declare_sort(self, current, tokens):
         """(declare-sort <symbol> <numeral>)"""
-        return self._cmd_not_implemented(current, tokens)
+        (typename, arity) = self.parse_atoms(tokens, current, 2)
+        try:
+            type_ = self.env.type_manager.Type(typename, int(arity))
+        except ValueError:
+            raise PysmtSyntaxError("Expected an integer as arity of type %s" % typename)
+        self.cache.bind(typename, type_)
+        return SmtLibCommand(current, [type_])
 
     def _cmd_define_sort(self, current, tokens):
-        """(define-sort <fun_def>)"""
+        """(define-sort <name> <args> <fun_def>)"""
         name = self.parse_atom(tokens, current)
         self.consume_opening(tokens, current)
+
+        params = []
         cur = tokens.consume()
-        if cur != ')':
-            return self._cmd_not_implemented(current, tokens)
-        rtype = self.parse_type(tokens, current)
+        while cur != ')':
+            params.append(cur)
+            cur = tokens.consume()
+
+        rtype = self.parse_type(tokens, current, type_params=params)
+        if isinstance(rtype, PartialType):
+            rtype.name = name
+        elif isinstance(rtype, tuple):
+            def definition(*args):
+                return args[params.index(rtype[0])]
+            rtype = PartialType(name, definition)
         self.consume_closing(tokens, current)
         self.cache.define(name, [], rtype)
         return SmtLibCommand(current, [name, [], rtype])

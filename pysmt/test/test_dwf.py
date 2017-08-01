@@ -27,8 +27,9 @@ class TestDwf(TestCase):
     # NOTE: We enforce order of execution of the tests, since in the
     # other test we define a custom type.
     def test_00_new_node_type(self):
-        self.assertEqual(len(CUSTOM_NODE_TYPES), 0, "Initially there should be no custom types")
-        idx = new_node_type()
+        self.assertNotIn(199, CUSTOM_NODE_TYPES,
+                        "Initially there should be no custom node with id 199")
+        idx = new_node_type(node_id=199)
         self.assertIsNotNone(idx)
         with self.assertRaises(AssertionError):
             new_node_type(idx)

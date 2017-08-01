@@ -18,6 +18,7 @@
 from six.moves import xrange
 
 import pysmt.walkers
+from pysmt.walkers import handles
 import pysmt.operators as op
 import pysmt.typing as types
 from pysmt.utils import set_bit
@@ -30,11 +31,6 @@ class Simplifier(pysmt.walkers.DagWalker):
     def __init__(self, env=None):
         pysmt.walkers.DagWalker.__init__(self, env=env)
         self.manager = self.env.formula_manager
-
-        self.set_function(self.walk_identity, op.SYMBOL, op.REAL_CONSTANT,
-                          op.INT_CONSTANT, op.BOOL_CONSTANT, op.BV_CONSTANT,
-                          op.ALGEBRAIC_CONSTANT)
-
         self._validate_simplifications = None
         self.original_walk = self.walk
 
@@ -83,28 +79,54 @@ class Simplifier(pysmt.walkers.DagWalker):
         return res
 
     def walk_and(self, formula, args, **kwargs):
-        args = [x for x in args if not x.is_true()]
-        if len(args) == 0:
-            return self.manager.TRUE()
-        elif len(args) == 1:
-            return args[0]
-        else:
-            if any(x.is_false() for x in args):
+        new_args = set()
+        for a in args:
+            if a.is_true():
+                continue
+            if a.is_false():
                 return self.manager.FALSE()
 
-        return self.manager.And(args)
+            if a.is_and():
+                for s in a.args():
+                    if self.walk_not(self.manager.Not(s), [s]) in new_args:
+                        return self.manager.FALSE()
+                    new_args.add(s)
+            else:
+                if self.walk_not(self.manager.Not(a), [a]) in new_args:
+                    return self.manager.FALSE()
+                new_args.add(a)
+
+        if len(new_args) == 0:
+            return self.manager.TRUE()
+        elif len(new_args) == 1:
+            return next(iter(new_args))
+        else:
+            return self.manager.And(new_args)
 
     def walk_or(self, formula, args, **kwargs):
-        args = [x for x in args if not x.is_false()]
-        if len(args) == 0:
-            return self.manager.FALSE()
-        elif len(args) == 1:
-            return args[0]
-        else:
-            if any(x.is_true() for x in args):
+        new_args = set()
+        for a in args:
+            if a.is_false():
+                continue
+            if a.is_true():
                 return self.manager.TRUE()
 
-        return self.manager.Or(args)
+            if a.is_or():
+                for s in a.args():
+                    if self.walk_not(self.manager.Not(s), [s]) in new_args:
+                        return self.manager.TRUE()
+                    new_args.add(s)
+            else:
+                if self.walk_not(self.manager.Not(a), [a]) in new_args:
+                    return self.manager.TRUE()
+                new_args.add(a)
+
+        if len(new_args) == 0:
+            return self.manager.FALSE()
+        elif len(new_args) == 1:
+            return next(iter(new_args))
+        else:
+            return self.manager.Or(new_args)
 
     def walk_not(self, formula, args, **kwargs):
         assert len(args) == 1
@@ -671,6 +693,12 @@ class Simplifier(pysmt.walkers.DagWalker):
 
         return self.manager.Div(sl, sr)
 
+    @handles(op.SYMBOL)
+    @handles(op.REAL_CONSTANT, op.INT_CONSTANT, op.BOOL_CONSTANT)
+    @handles(op.BV_CONSTANT, op.ALGEBRAIC_CONSTANT)
+    def walk_identity(self, formula, args, **kwargs):
+        return formula
+
 # EOC Simplifier
 
 
@@ -695,7 +723,6 @@ class BddSimplifier(Simplifier):
 
     def __init__(self, env=None, static_ordering=None, bool_abstraction=False):
         Simplifier.__init__(self, env=env)
-        self.super_functions = dict(self.functions)
         self._validation_sname = None
 
         Solver = self.env.factory.Solver
@@ -708,8 +735,6 @@ class BddSimplifier(Simplifier):
         self.back = self.s.converter.back
         # Set methods for boolean_abstraction
         self.bool_abstraction = bool_abstraction
-        self.set_function(self.walk_simplify_and_abstract, *op.RELATIONS)
-        self.set_function(self.walk_abstract_function, op.FUNCTION)
         self.ba_map = {}
         self.get_type = self.env.stc.get_type
         self.FreshSymbol = self.env.formula_manager.FreshSymbol
@@ -757,23 +782,22 @@ class BddSimplifier(Simplifier):
         res = abs_res.substitute(self.ba_map)
         return res
 
+    @handles(op.RELATIONS)
     def walk_simplify_and_abstract(self, formula, args, **kwargs):
-        super_rewriter = self.super_functions[formula.node_type()]
-        rewritten = super_rewriter(formula, args, **kwargs)
-        print(rewritten)
+        rewritten = Simplifier.super(self, formula, args, **kwargs)
         if rewritten.is_bool_constant():
             return rewritten
         new_var = self.FreshSymbol()
         self.ba_map[new_var] = rewritten
         return new_var
 
-    def walk_abstract_function(self, formula, args, **kwargs):
-        super_rewriter = self.super_functions[formula.node_type()]
-        rewritten = super_rewriter(formula, args, **kwargs)
+    def walk_function(self, formula, args, **kwargs):
+        rewritten = Simplifier.walk_function(self, formula, args, **kwargs)
         if rewritten.function_name().symbol_type().return_type.is_bool_type():
             new_var = self.FreshSymbol()
             self.ba_map[new_var] = rewritten
             return new_var
         return rewritten
+
 
 #EOC BddSimplifier

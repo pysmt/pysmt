@@ -72,8 +72,7 @@ class PortfolioTestCase(TestCase):
                                incremental=False,
                                generate_models=False) as s:
                     res = s.is_sat(formula)
-                    result = "sat" if res else "unsat"
-                    self.assertEqual(expected_result, result, smtfile)
+                    self.assertEqual(expected_result, res, smtfile)
 
     def run_smtlib(self, smtfile, logic, expected_result):
         env = reset_env()
@@ -84,8 +83,7 @@ class PortfolioTestCase(TestCase):
                        incremental=False,
                        generate_models=False) as s:
             res = s.is_sat(formula)
-            result = "sat" if res else "unsat"
-            self.assertEqual(expected_result, result, smtfile)
+            self.assertEqual(expected_result, res, smtfile)
 
     @skipIfSolverNotAvailable("msat")
     @skipIfSolverNotAvailable("cvc4")

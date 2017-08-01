@@ -27,28 +27,29 @@ from pysmt.exceptions import UndefinedLogicError, NoLogicAvailableError
 class Theory(object):
     """Describes a theory similarly to the SMTLIB 2.0."""
     def __init__(self,
-                 arrays = False,
-                 arrays_const = False,
-                 bit_vectors = False,
-                 floating_point = False,
-                 integer_arithmetic = False,
-                 real_arithmetic = False,
-                 integer_difference = False,
-                 real_difference = False,
-                 linear = True,
-                 uninterpreted = False):
-        self.arrays = arrays
-        self.arrays_const = arrays_const
-        self.bit_vectors = bit_vectors
-        self.floating_point = floating_point
-        self.integer_arithmetic = integer_arithmetic
-        self.real_arithmetic = real_arithmetic
-        self.integer_difference = integer_difference
-        self.real_difference = real_difference
-        self.linear = linear
-        self.uninterpreted = uninterpreted
+                 arrays = None,
+                 arrays_const = None,
+                 bit_vectors = None,
+                 floating_point = None,
+                 integer_arithmetic = None,
+                 real_arithmetic = None,
+                 integer_difference = None,
+                 real_difference = None,
+                 linear = None,
+                 uninterpreted = None,
+                 custom_type = None):
+        self.arrays = arrays or False
+        self.arrays_const = arrays_const or False
+        self.bit_vectors = bit_vectors or False
+        self.floating_point = floating_point or False
+        self.integer_arithmetic = integer_arithmetic or False
+        self.real_arithmetic = real_arithmetic or False
+        self.integer_difference = integer_difference or False
+        self.real_difference = real_difference or False
+        self.linear = linear if linear is not None else True
+        self.uninterpreted = uninterpreted or False
+        self.custom_type = custom_type or False
         assert not arrays_const or arrays, "Cannot set arrays_const w/o arrays"
-
         return
 
     def set_lira(self, value=True):
@@ -93,7 +94,8 @@ class Theory(object):
                             integer_difference = self.integer_difference,
                             real_difference = self.real_difference,
                             linear = self.linear,
-                            uninterpreted = self.uninterpreted)
+                            uninterpreted = self.uninterpreted,
+                            custom_type = self.custom_type)
         return new_theory
 
     def combine(self, other):
@@ -127,22 +129,24 @@ class Theory(object):
             integer_difference=integer_difference,
             real_difference=real_difference,
             linear=self.linear and other.linear,
-            uninterpreted=self.uninterpreted or other.uninterpreted)
+            uninterpreted=self.uninterpreted or other.uninterpreted,
+            custom_type=self.custom_type or other.custom_type)
 
     def __eq__(self, other):
         if other is None or (not isinstance(other, Theory)):
             return False
 
-        return self.arrays == other.arrays and \
-            self.arrays_const == other.arrays_const and \
-            self.bit_vectors == other.bit_vectors and \
-            self.floating_point == other.floating_point and \
-            self.integer_arithmetic == other.integer_arithmetic and \
-            self.real_arithmetic == other.real_arithmetic and \
-            self.integer_difference == other.integer_difference and \
-            self.real_difference == other.real_difference and \
-            self.linear == other.linear and \
-            self.uninterpreted == other.uninterpreted
+        return (self.arrays == other.arrays and
+                self.arrays_const == other.arrays_const and
+                self.bit_vectors == other.bit_vectors and
+                self.floating_point == other.floating_point and
+                self.integer_arithmetic == other.integer_arithmetic and
+                self.real_arithmetic == other.real_arithmetic and
+                self.integer_difference == other.integer_difference and
+                self.real_difference == other.real_difference and
+                self.linear == other.linear and
+                self.uninterpreted == other.uninterpreted and
+                self.custom_type == other.custom_type)
 
     def __ne__(self, other):
         return not (self == other)
@@ -178,6 +182,7 @@ class Theory(object):
                 self.bit_vectors <= other.bit_vectors and
                 self.floating_point <= other.floating_point and
                 self.uninterpreted <= other.uninterpreted and
+                self.custom_type <= other.custom_type and
                 le_integer_difference and
                 self.integer_arithmetic <= other.integer_arithmetic and
                 le_real_difference and
@@ -185,16 +190,17 @@ class Theory(object):
                 le_linear)
 
     def __str__(self):
-        return "Arrays: %s, " % self.arrays +\
-            "ArraysConst: %s, " % self.arrays_const +\
-            "BV: %s, " % self.bit_vectors +\
-            "FP: %s, " % self.floating_point +\
-            "IA: %s, " % self.integer_arithmetic +\
-            "RA: %s, " % self.real_arithmetic +\
-            "ID: %s, " % self.integer_difference +\
-            "RD: %s, " % self.real_difference +\
-            "Linear: %s, " % self.linear +\
-            "EUF: %s" % self.uninterpreted
+        return ("Arrays: %s, " % self.arrays +
+                "ArraysConst: %s, " % self.arrays_const +
+                "BV: %s, " % self.bit_vectors +
+                "FP: %s, " % self.floating_point +
+                "IA: %s, " % self.integer_arithmetic +
+                "RA: %s, " % self.real_arithmetic +
+                "ID: %s, " % self.integer_difference +
+                "RD: %s, " % self.real_difference +
+                "Linear: %s, " % self.linear +
+                "EUF: %s, " % self.uninterpreted +
+                "Type: %s" % self.custom_type)
 
     __repr__ = __str__
 
@@ -210,34 +216,14 @@ class Logic(object):
     def __init__(self, name, description,
                  quantifier_free = False,
                  theory=None,
-                 arrays=False,
-                 arrays_const=False,
-                 bit_vectors=False,
-                 floating_point=False,
-                 integer_arithmetic=False,
-                 real_arithmetic=False,
-                 integer_difference=False,
-                 real_difference=False,
-                 linear=True,
-                 uninterpreted=False):
-
+                 **theory_kwargs):
         self.name = name
         self.description = description
         self.quantifier_free = quantifier_free
         if theory is None:
-            self.theory = Theory(arrays=arrays,
-                                 arrays_const=arrays_const,
-                                 bit_vectors=bit_vectors,
-                                 floating_point=floating_point,
-                                 integer_arithmetic=integer_arithmetic,
-                                 real_arithmetic=real_arithmetic,
-                                 integer_difference=integer_difference,
-                                 real_difference=real_difference,
-                                 linear=linear,
-                                 uninterpreted=uninterpreted)
+            self.theory = Theory(**theory_kwargs)
         else:
             self.theory = theory
-
         return
 
     def get_quantified_version(self):
@@ -263,10 +249,9 @@ class Logic(object):
         if other is None or (not isinstance(other, Logic)):
             return False
 
-        return self.name == other.name and \
-            self.description == other.description and \
-            self.quantifier_free == other.quantifier_free and \
-            self.theory == other.theory
+        return (self.name == other.name and
+                self.quantifier_free == other.quantifier_free and
+                self.theory == other.theory)
 
     def __ne__(self, other):
         return not (self == other)
@@ -294,11 +279,17 @@ QF_BOOL = Logic(name="QF_BOOL",
                 """The simplest logic: quantifier-free boolean logic.""",
                 quantifier_free=True)
 
-
 BOOL = Logic(name="BOOL",
              description=\
              """Quantified boolean logic.""")
 QBF=BOOL # Provide additional name for consistency with literature
+
+
+QF_BOOLt = Logic(name="QF_BOOLt",
+                description=\
+                """Quantifier-free boolean logic with custom sorts.""",
+                 quantifier_free=True,
+                 custom_type=True)
 
 
 AUFLIA = Logic(name="AUFLIA",
@@ -439,6 +430,18 @@ bitvectors.""",
               quantifier_free=True,
               bit_vectors=True)
 
+BV = Logic(name="BV",
+           description=\
+"""Closed formulas over the theory of fixed-size
+bitvectors.""",
+           bit_vectors=True)
+
+UFBV = Logic(name="UFBV",
+             description=\
+"""Closed formulas over the theory of fixed-size bitvectors
+ and uninterpreted functions.""",
+             bit_vectors=True,
+             uninterpreted=True)
 
 QF_IDL = Logic(name="QF_IDL",
                description=\
@@ -640,14 +643,25 @@ PYSMT_LOGICS = frozenset([QF_BOOL, QF_IDL, QF_LIA, QF_LRA, QF_RDL, QF_UF, QF_UFI
                           QF_BV, QF_UFBV,
                           QF_ABV, QF_AUFBV, QF_AUFLIA, QF_ALIA, QF_AX,
                           QF_AUFBVLIRA,
-                          QF_NRA, QF_NIA,
+                          QF_NRA, QF_NIA, UFBV, BV,
                       ])
 
-# PySMT Supports constant arrays: We auto-generate these logics
-#     QF_AUFBV  becomes QF_AUFBV*
+# PySMT Logics includes additional features:
+#  - constant arrays: QF_AUFBV  becomes QF_AUFBV*
+#  - theories without custom types (no-name) QF_AUFBV QF_AUFBVt
 #
+
 ext_logics = set()
 for l in PYSMT_LOGICS:
+    if not l.theory.custom_type:
+        new_theory = l.theory.copy()
+        new_theory.custom_type = True
+        nl = Logic(name=l.name+"t",
+                   description=l.description+" (with Custom Types)",
+                   quantifier_free=l.quantifier_free,
+                   theory=new_theory)
+        ext_logics.add(nl)
+
     if l.theory.arrays:
         new_theory = l.theory.copy()
         new_theory.arrays_const = True
@@ -656,6 +670,8 @@ for l in PYSMT_LOGICS:
                    quantifier_free=l.quantifier_free,
                    theory=new_theory)
         ext_logics.add(nl)
+
+
 
 LOGICS = LOGICS | frozenset(ext_logics)
 PYSMT_LOGICS = PYSMT_LOGICS | frozenset(ext_logics)
@@ -684,30 +700,14 @@ def convert_logic_from_string(name):
         name = get_logic_by_name(name)
     return name
 
-def get_logic_name(quantifier_free=False,
-                   arrays=False,
-                   arrays_const=False,
-                   bit_vectors=False,
-                   floating_point=False,
-                   integer_arithmetic=False,
-                   real_arithmetic=False,
-                   integer_difference=False,
-                   real_difference=False,
-                   linear=True,
-                   uninterpreted=False):
-    """Returns the name of the Logic that matches the given properties."""
 
-    return get_logic(quantifier_free,
-                     arrays,
-                     arrays_const,
-                     bit_vectors,
-                     floating_point,
-                     integer_arithmetic,
-                     real_arithmetic,
-                     integer_difference,
-                     real_difference,
-                     linear,
-                     uninterpreted).name
+def get_logic_name(**logic_kwargs):
+    """Returns the name of the Logic that matches the given properties.
+
+    See get_logic for the list of parameters.
+    """
+    return get_logic(**logic_kwargs).name
+
 
 def get_logic(quantifier_free=False,
               arrays=False,
@@ -719,24 +719,26 @@ def get_logic(quantifier_free=False,
               integer_difference=False,
               real_difference=False,
               linear=True,
-              uninterpreted=False):
+              uninterpreted=False,
+              custom_type=False):
     """Returns the Logic that matches the given properties.
 
     Equivalent (but better) to executing get_logic_by_name(get_logic_name(...))
     """
 
     for logic in LOGICS:
-        if (  logic.quantifier_free == quantifier_free and
-              logic.theory.arrays == arrays and \
-              logic.theory.arrays_const == arrays_const and \
-              logic.theory.bit_vectors == bit_vectors and \
-              logic.theory.floating_point == floating_point and \
-              logic.theory.integer_arithmetic == integer_arithmetic and \
-              logic.theory.real_arithmetic == real_arithmetic and \
-              logic.theory.integer_difference == integer_difference and \
-              logic.theory.real_difference == real_difference and \
-              logic.theory.linear == linear and \
-              logic.theory.uninterpreted == uninterpreted):
+        if (logic.quantifier_free == quantifier_free and
+            logic.theory.arrays == arrays and
+            logic.theory.arrays_const == arrays_const and
+            logic.theory.bit_vectors == bit_vectors and
+            logic.theory.floating_point == floating_point and
+            logic.theory.integer_arithmetic == integer_arithmetic and
+            logic.theory.real_arithmetic == real_arithmetic and
+            logic.theory.integer_difference == integer_difference and
+            logic.theory.real_difference == real_difference and
+            logic.theory.linear == linear and
+            logic.theory.uninterpreted == uninterpreted and
+            logic.theory.custom_type == custom_type):
             return logic
     raise UndefinedLogicError
 

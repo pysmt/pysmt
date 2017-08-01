@@ -185,8 +185,8 @@ class TestSmtLibScript(TestCase):
                 next(parser.get_command_generator(cStringIO(cmd)))
             except NotImplementedError:
                 nie += 1
-        # There are currently 5 not-implemented commands
-        self.assertEquals(nie, 5)
+        # There are currently 3 not-implemented commands
+        self.assertEquals(nie, 3)
 
 DEMO_SMTSCRIPT = [ "(declare-fun a () Bool)",
                    "(declare-fun b () Bool)",
@@ -197,9 +197,14 @@ DEMO_SMTSCRIPT = [ "(declare-fun a () Bool)",
                    "(check-sat-assuming (a b c))",
                    "(check-sat-assuming ((not a) b (not c)))",
                    "(declare-const d Bool)",
-                   "(declare-fun xyz (A B) C)", # Shouldn't this raise an error?
                    "(declare-fun abc () Int)",
                    "(declare-sort A 0)",
+                   "(declare-sort B 0)",
+                   "(declare-sort C 0)",
+                   "(declare-sort D 1)",
+                   "(define-sort E () (D Int))",
+                   "(declare-sort F 2)",
+                   "(define-sort G (H) (F Int H))",
                    "(define-fun f ((a Bool)) B a)",
                    "(define-fun g ((a Bool)) B (f a))",
                    "(define-fun-rec f ((a A)) B a)",

@@ -698,6 +698,12 @@ class TestFormulaManager(TestCase):
         f_new = src_mgr.normalize(f)
         self.assertEqual(f_new, f, "%s != %s" %(id(a),id(b)))
 
+        # Verify that new types do not lead to errors in pickling
+        from pysmt.test.examples import get_example_formulae
+        for (f, _, _, _) in get_example_formulae():
+            pickle.dumps(f, pickle.HIGHEST_PROTOCOL)
+
+
     def test_infix(self):
         x, y, p = self.x, self.y, self.p
 

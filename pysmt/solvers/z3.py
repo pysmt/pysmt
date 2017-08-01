@@ -296,37 +296,6 @@ class Z3Converter(Converter, DagWalker):
         self._get_type = environment.stc.get_type
         self._back_memoization = {}
         self.ctx = z3_ctx
-        # Forward conversion
-        self.set_function(p_(self.walk_nary, z3.Z3_mk_and), op.AND)
-        self.set_function(p_(self.walk_nary, z3.Z3_mk_or), op.OR)
-        self.set_function(p_(self.walk_nary, z3.Z3_mk_add), op.PLUS)
-        self.set_function(p_(self.walk_nary, z3.Z3_mk_mul), op.TIMES)
-        self.set_function(p_(self.walk_nary, z3.Z3_mk_sub), op.MINUS)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_implies), op.IMPLIES)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_le), op.LE)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_lt), op.LT)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_eq), op.EQUALS, op.IFF)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_power), op.POW)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_div), op.DIV)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvult), op.BV_ULT)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvule), op.BV_ULE)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvslt), op.BV_SLT)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvsle), op.BV_SLE)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_concat), op.BV_CONCAT)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvor), op.BV_OR)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvand), op.BV_AND)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvxor), op.BV_XOR)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvadd), op.BV_ADD)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvsub), op.BV_SUB)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvmul), op.BV_MUL)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvudiv), op.BV_UDIV)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvurem), op.BV_UREM)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvshl), op.BV_LSHL)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvlshr), op.BV_LSHR)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvsdiv), op.BV_SDIV)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvsrem), op.BV_SREM)
-        self.set_function(p_(self.walk_binary, z3.Z3_mk_bvashr), op.BV_ASHR)
-        self.set_function(self.walk_quantifier, *op.QUANTIFIERS)
 
         # Back Conversion
         self._back_fun = {
@@ -394,8 +363,9 @@ class Z3Converter(Converter, DagWalker):
         self.z3RealSort = z3.RealSort(self.ctx)
         self.z3BoolSort = z3.BoolSort(self.ctx)
         self.z3IntSort  = z3.IntSort(self.ctx)
-        self.z3ArraySorts = {}
+        self._z3ArraySorts = {}
         self._z3BitVecSorts = {}
+        self._z3Sorts = {}
         # Unique reference to Function Declaration
         self._z3_func_decl_cache = {}
         return
@@ -408,6 +378,27 @@ class Z3Converter(Converter, DagWalker):
             bvsort = z3.BitVecSort(width)
             self._z3BitVecSorts[width] = bvsort
         return bvsort
+
+    def z3ArraySort(self, key, value):
+        """Return the z3 ArraySort for the given key value."""
+        try:
+            return self._z3ArraySorts[(askey(key),
+                                      askey(value))]
+        except KeyError:
+            sort = z3.ArraySort(key, value)
+            self._z3ArraySorts[(askey(key),
+                               askey(value))] = sort
+        return sort
+
+    def z3Sort(self, name):
+        """Return the z3 Sort for the given name."""
+        name = str(name)
+        try:
+            return self._z3Sorts[name]
+        except KeyError:
+            sort = z3.DeclareSort(name)
+            self._z3Sorts[name] = sort
+        return sort
 
     @catch_conversion_error
     def convert(self, formula):
@@ -607,17 +598,6 @@ class Z3Converter(Converter, DagWalker):
             _args[i] = arg
         return _args, sz
 
-    def walk_nary(self, func, formula, args, **kwargs):
-        _args, sz = self._to_ast_array(args)
-        z3term = func(self.ctx.ref(), sz, _args)
-        z3.Z3_inc_ref(self.ctx.ref(), z3term)
-        return z3term
-
-    def walk_binary(self, func, formula, args, **kwargs):
-        z3term = func(self.ctx.ref(), args[0], args[1])
-        z3.Z3_inc_ref(self.ctx.ref(), z3term)
-        return z3term
-
     def walk_not(self, formula, args, **kwargs):
         z3term = z3.Z3_mk_not(self.ctx.ref(), args[0])
         z3.Z3_inc_ref(self.ctx.ref(), z3term)
@@ -633,10 +613,7 @@ class Z3Converter(Converter, DagWalker):
             sort_ast = self.z3RealSort.ast
         elif symbol_type.is_int_type():
             sort_ast = self.z3IntSort.ast
-        elif symbol_type.is_array_type():
-            sort_ast = self._type_to_z3(symbol_type).ast
         else:
-            assert symbol_type.is_bv_type()
             sort_ast = self._type_to_z3(symbol_type).ast
         # Create const with given sort
         res = z3.Z3_mk_const(self.ctx.ref(), z3_sname, sort_ast)
@@ -846,6 +823,54 @@ class Z3Converter(Converter, DagWalker):
         else:
             raise NotImplementedError("Unsupported sort in conversion: %s" % sort)
 
+    def make_walk_nary(func):
+        def walk_nary(self, formula, args, **kwargs):
+            _args, sz = self._to_ast_array(args)
+            z3term = func(self.ctx.ref(), sz, _args)
+            z3.Z3_inc_ref(self.ctx.ref(), z3term)
+            return z3term
+        return walk_nary
+
+    def make_walk_binary(func):
+        def walk_binary(self, formula, args, **kwargs):
+            z3term = func(self.ctx.ref(), args[0], args[1])
+            z3.Z3_inc_ref(self.ctx.ref(), z3term)
+            return z3term
+        return walk_binary
+
+    walk_and     = make_walk_nary(z3.Z3_mk_and)
+    walk_or      = make_walk_nary(z3.Z3_mk_or)
+    walk_plus    = make_walk_nary(z3.Z3_mk_add)
+    walk_times   = make_walk_nary(z3.Z3_mk_mul)
+    walk_minus   = make_walk_nary(z3.Z3_mk_sub)
+    walk_implies = make_walk_binary(z3.Z3_mk_implies)
+    walk_le      = make_walk_binary(z3.Z3_mk_le)
+    walk_lt      = make_walk_binary(z3.Z3_mk_lt)
+    walk_equals  = make_walk_binary(z3.Z3_mk_eq)
+    walk_iff     = make_walk_binary(z3.Z3_mk_eq)
+    walk_pow     = make_walk_binary(z3.Z3_mk_power)
+    walk_div     = make_walk_binary(z3.Z3_mk_div)
+    walk_bv_ult  = make_walk_binary(z3.Z3_mk_bvult)
+    walk_bv_ule  = make_walk_binary(z3.Z3_mk_bvule)
+    walk_bv_slt  = make_walk_binary(z3.Z3_mk_bvslt)
+    walk_bv_sle  = make_walk_binary(z3.Z3_mk_bvsle)
+    walk_bv_concat = make_walk_binary(z3.Z3_mk_concat)
+    walk_bv_or   = make_walk_binary(z3.Z3_mk_bvor)
+    walk_bv_and  = make_walk_binary(z3.Z3_mk_bvand)
+    walk_bv_xor  = make_walk_binary(z3.Z3_mk_bvxor)
+    walk_bv_add  = make_walk_binary(z3.Z3_mk_bvadd)
+    walk_bv_sub  = make_walk_binary(z3.Z3_mk_bvsub)
+    walk_bv_mul  = make_walk_binary(z3.Z3_mk_bvmul)
+    walk_bv_udiv = make_walk_binary(z3.Z3_mk_bvudiv)
+    walk_bv_urem = make_walk_binary(z3.Z3_mk_bvurem)
+    walk_bv_lshl = make_walk_binary(z3.Z3_mk_bvshl)
+    walk_bv_lshr = make_walk_binary(z3.Z3_mk_bvlshr)
+    walk_bv_sdiv = make_walk_binary(z3.Z3_mk_bvsdiv)
+    walk_bv_srem = make_walk_binary(z3.Z3_mk_bvsrem)
+    walk_bv_ashr = make_walk_binary(z3.Z3_mk_bvashr)
+    walk_exists = walk_quantifier
+    walk_forall = walk_quantifier
+
     def _type_to_z3(self, tp):
         """Convert a pySMT type into the corresponding Z3 sort."""
         if tp.is_bool_type():
@@ -857,17 +882,12 @@ class Z3Converter(Converter, DagWalker):
         elif tp.is_array_type():
             key_sort = self._type_to_z3(tp.index_type)
             val_sort = self._type_to_z3(tp.elem_type)
-            try:
-                return self.z3ArraySorts[(askey(key_sort),
-                                          askey(val_sort))]
-            except KeyError:
-                sort = z3.ArraySort(key_sort, val_sort)
-                self.z3ArraySorts[(askey(key_sort),
-                                   askey(val_sort))] = sort
-                return sort
-        else:
-            assert tp.is_bv_type() , "Unsupported type '%s'" % tp
+            return self.z3ArraySort(key_sort, val_sort)
+        elif tp.is_bv_type():
             return self.z3BitVecSort(tp.width)
+        else:
+            assert tp.is_custom_type(), "Unsupported type '%s'" % tp
+            return self.z3Sort(tp)
         raise NotImplementedError("Unsupported type in conversion: %s" % tp)
 
     def __del__(self):
