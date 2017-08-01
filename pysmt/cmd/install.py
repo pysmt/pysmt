@@ -35,7 +35,7 @@ INSTALLERS = [Installer(MSatInstaller,    "5.3.13", {}),
               Installer(Z3Installer,      "4.4.1", {"osx": "10.11"}),
               Installer(CVC4Installer,    "1.5-prerelease", {"git_version" : "c15ff43597b41ea457befecb1b0e2402e28cb523"}),
               Installer(YicesInstaller,   "2.5.1", {"yicespy_version": "07439670a54d08a76cfb931194e1eaf07ea026a1"}),
-              Installer(BtorInstaller,    "2.2.0", {"lingeling_version": "bal"}),
+              Installer(BtorInstaller,    "2.4.1", {"lingeling_version": "bbc"}),
               Installer(PicoSATInstaller, "965", {"pypicosat_minor_version" : "1708010052"}),
               Installer(CuddInstaller,    "2.0.3", {"git_version" : "75fe055c2a736a3ac3e971c1ade108b815edc96c"})]
 
@@ -134,13 +134,13 @@ def parse_options():
                         action='store_true', default=False,
                         help='Confirm that you agree with the licenses of the\
                         solvers and skip the interactive question')
-    
+
     install_path_default = os.path.join("~", ".smt_solvers")
     parser.add_argument('--install-path', dest='install_path',
                         type=str, default=install_path_default,
                         help='The folder to use for the installation')
 
-    py_bindings = os.path.join(install_path_default, 
+    py_bindings = os.path.join(install_path_default,
                                "python-bindings-%d.%d" % sys.version_info[0:2])
     parser.add_argument('--bindings-path', dest='bindings_path',
                         type=str, default=py_bindings,
