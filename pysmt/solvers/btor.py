@@ -130,8 +130,10 @@ class BoolectorOptions(SolverOptions):
             raise PysmtValueError("Error setting the option '%s=%s'" \
                                   % (name,value))
         except KeyError:
-            raise PysmtValueError("Unable to set non-existing option '%s=%s'" \
-                                  % (name,value))
+            raise PysmtValueError("Unable to set non-existing option '%s'. "
+                                  "The accepted options options are: %s" \
+                                  % (name, ", ".join(boolector.BoolectorOpt(btor, io).lng
+                                                     for io in self.internal_options)))
 
     def __call__(self, solver):
         if self.generate_models:
