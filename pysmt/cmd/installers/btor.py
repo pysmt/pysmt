@@ -34,8 +34,11 @@ class BtorInstaller(SolverInstaller):
                                  mirror_link=mirror_link)
 
     def compile(self):
-        # First build
-        SolverInstaller.run("make", directory=self.extract_path)
+        # Extract sub-archives
+        SolverInstaller.run("tar xf archives/lingeling*.tar.gz", directory=self.extract_path)
+        SolverInstaller.run("mv lingeling* lingeling", directory=self.extract_path)
+        SolverInstaller.run("tar xf archives/boolector*.tar.gz", directory=self.extract_path)
+        SolverInstaller.run("mv boolector* boolector", directory=self.extract_path)
 
         # Reconfigure and build python bindings
         SolverInstaller.run("bash ./configure.sh -fPIC",
@@ -43,14 +46,18 @@ class BtorInstaller(SolverInstaller):
         SolverInstaller.run("make",
                           directory=os.path.join(self.extract_path, "lingeling"))
 
-        SolverInstaller.run("bash ./configure -python",
+        SolverInstaller.run("bash ./configure.sh -python",
                           directory=os.path.join(self.extract_path, "boolector"))
         SolverInstaller.run("make",
                           directory=os.path.join(self.extract_path, "boolector"))
 
+        # Redo this step to make sure the correct version of python is used
+        SolverInstaller.run_python("setup.py build_ext -b build -t build/api/python/tmp",
+                                   directory=os.path.join(self.extract_path, "boolector"))
+
 
     def move(self):
-        bdir = os.path.join(self.extract_path, "boolector")
+        bdir = os.path.join(self.extract_path, "boolector/build")
         for f in os.listdir(bdir):
             if f.startswith("boolector") and f.endswith(".so"):
                 SolverInstaller.mv(os.path.join(bdir, f), self.bindings_dir)
