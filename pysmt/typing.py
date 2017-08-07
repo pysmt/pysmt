@@ -89,9 +89,6 @@ class PySMTType(object):
     def is_string_type(self):
         return False
 
-    def is_array_type(self):
-        return False
-
     def is_function_type(self):
         return False
 

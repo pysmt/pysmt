@@ -210,8 +210,8 @@ class Theory(object):
                 "RD: %s, " % self.real_difference +
                 "Linear: %s, " % self.linear +
                 "EUF: %s, " % self.uninterpreted +
-                "Type: %s" % self.custom_type +
-                "STRING: %s"% self.strings)
+                "Type: %s, " % self.custom_type +
+                "String: %s"% self.strings)
 
     __repr__ = __str__
 
@@ -596,12 +596,13 @@ symbols.""",
 
 
 QF_SLIA = Logic(name="QF_SLIA",
-              description=\
-""" Don't know clearly what to write here //GL """,
-            integer_arithmetic=True,
-            quantifier_free=True,
-            uninterpreted=True,
-            strings=True)
+                description=\
+                """Extension of LIA including theory of Strings.""",
+                integer_arithmetic=True,
+                quantifier_free=True,
+                uninterpreted=True,
+                strings=True)
+
 
 QF_AUFBVLIRA = Logic(name="QF_AUFBVLIRA",
                      description=\
@@ -662,7 +663,8 @@ QF_LOGICS = frozenset(_l for _l in LOGICS if _l.quantifier_free)
 PYSMT_LOGICS = frozenset([QF_BOOL, QF_IDL, QF_LIA, QF_LRA, QF_RDL, QF_UF, QF_UFIDL,
                           QF_UFLIA, QF_UFLRA, QF_UFLIRA,
                           BOOL, LRA, LIA, UFLIRA, UFLRA,
-                          QF_BV, QF_UFBV, QF_SLIA,
+                          QF_BV, QF_UFBV,
+                          QF_SLIA,
                           QF_BV, QF_UFBV,
                           QF_ABV, QF_AUFBV, QF_AUFLIA, QF_ALIA, QF_AX,
                           QF_AUFBVLIRA,

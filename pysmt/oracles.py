@@ -165,7 +165,7 @@ class TheoryOracle(walkers.DagWalker):
             theory = theory.combine(self._theory_from_type(ty.index_type))
             theory = theory.combine(self._theory_from_type(ty.elem_type))
         elif ty.is_string_type():
-            theory.string = True
+            theory.strings = True
         elif ty.is_custom_type():
             theory.custom_type = True
         else:
