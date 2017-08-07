@@ -536,6 +536,8 @@ class Factory(object):
             return solver.is_valid(formula)
 
     def is_unsat(self, formula, solver_name=None, logic=None, portfolio=None):
+        if logic is None or logic == AUTO_LOGIC:
+            logic = get_logic(formula, self.environment)
         if portfolio is not None:
             solver = Portfolio(solvers_set=portfolio,
                                environment=self.environment,
