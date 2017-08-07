@@ -444,7 +444,8 @@ class TypesOracle(walkers.DagWalker):
         return expanded
 
     @walkers.handles(set(op.ALL_TYPES) - \
-                     set([op.SYMBOL, op.FUNCTION, op.QUANTIFIERS]))
+                     set([op.SYMBOL, op.FUNCTION]) -\
+                     op.QUANTIFIERS - op.CONSTANTS)
     def walk_combine(self, formula, args, **kwargs):
         #pylint: disable=unused-argument
         res = set()
@@ -465,6 +466,10 @@ class TypesOracle(walkers.DagWalker):
     def walk_quantifier(self, formula, args, **kwargs):
         return frozenset([x.symbol_type()
                           for x in formula.quantifier_vars()]) | args[0]
+
+    @walkers.handles(op.CONSTANTS)
+    def walk_constant(self, formula, args, **kwargs):
+        return frozenset([formula.constant_type()])
 
 # EOC TypesOracle
 
