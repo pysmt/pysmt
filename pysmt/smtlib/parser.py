@@ -1069,6 +1069,7 @@ class SmtLibParser(object):
         """(declare-const <symbol> <sort>)"""
         var = self.parse_atom(tokens, current)
         typename = self.parse_type(tokens, current)
+        self.consume_closing(tokens, current)
         v = self._get_var(var, typename)
         self.cache.bind(var, v)
         return SmtLibCommand(current, [v])
