@@ -431,5 +431,14 @@ class TestRegressions(TestCase):
             self.assertEqual(solver.btor.Failed(btor_notx, btor_noty),
                              [True, True])
 
+    def test_parse_declare_const(self):
+        smtlib_input = """
+        (declare-const s Int)
+        (check-sat)"""
+        parser = SmtLibParser()
+        buffer_ = cStringIO(smtlib_input)
+        script = parser.get_script(buffer_)
+        self.assertIsNotNone(script)
+
 if __name__ == "__main__":
     main()
