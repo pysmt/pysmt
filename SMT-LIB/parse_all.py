@@ -3,18 +3,16 @@ import time
 import sys
 import random
 import multiprocessing
+import argparse
 
 from itertools import islice
 
-from pysmt.shortcuts import reset_env, get_env
-from pysmt.smtlib.parser import SmtLibParser
-from pysmt.solvers.noop import NoopSolver
+from pysmt.shortcuts import reset_env, read_smtlib
 
-SMTLIB_DIR = "./"
 
 def get_all_smt_files(target_dir=None):
     if target_dir == None:
-        target_dir = SMTLIB_DIR
+        target_dir = "./"
 
     assert os.path.exists(target_dir)
     for root, _, files in os.walk(target_dir):
@@ -28,46 +26,52 @@ def execute_script_fname(smtfile):
     print(smtfile)
     reset_env()
     assert os.path.exists(smtfile)
-    parser = SmtLibParser()
-    solver = NoopSolver(get_env())
-
     start = time.clock()
-    script = parser.get_script_fname(smtfile)
+    read_smtlib(smtfile)
     end = time.clock()
-
-    script.evaluate(solver)
-    res = solver.get_asserted_formula()
-    assert res is not None
-
-    return (smtfile, (end - start))
+    return ( (end - start), smtfile)
 
 
 def dump_stats(timings, fname):
+    if fname is None:
+        fname = "stats.out"
     with open(fname, "w") as f:
         f.write('filename, time\n')
         for k in timings:
-            f.write('"%s", "%s"\n' % k)
+            f.write('%f, "%s"\n' % k)
 
 
 def main():
-    if len(sys.argv) != 3:
-        print("usage: %s <number of files to benchmark> <statistics file>" %\
-              sys.argv[0])
-        exit(1)
+    parser = argparse.ArgumentParser(description='SMT-LIB Parser Benchmarking')
+    parser.add_argument('--base', type=str, nargs='?',
+                        help='top-directory of the benchmarks')
+
+    parser.add_argument('--count', type=int, nargs='?',
+                        default=-1,
+                        help='number of files to benchmark')
+
+    parser.add_argument('--out', type=str, default="stats.out", nargs='?',
+                        help='Where to save the statistics')
+
+    args = parser.parse_args()
 
     random.seed(42)
     p = multiprocessing.Pool()
     chunks = multiprocessing.cpu_count()
-    file_list = list(get_all_smt_files())
+    file_list = list(get_all_smt_files(args.base))
     random.shuffle(file_list)
-    files_cnt = int(sys.argv[1])
+    if args.count == -1:
+        files_cnt = len(file_list)
+    else:
+        files_cnt = args.count
     print("Submitting %d jobs, %d at the time" % (files_cnt, chunks))
     timings = p.map(execute_script_fname, islice(file_list, files_cnt), chunks)
 
-    mean = sum(x[1] for x in timings) / len(timings)
-    print("The mean execution time is:", mean, "seconds")
+    mean = sum(x[0] for x in timings) / len(timings)
+    print("The mean execution time was %0.2f seconds" % mean)
+    print("The max execution time was %0.2f seconds" % max(x[0] for x in timings))
 
-    outfile = sys.argv[2]
+    outfile = args.out
     dump_stats(timings, outfile)
     print("The statistics file has been generated in '%s'" % outfile)
 
