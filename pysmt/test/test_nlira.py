@@ -99,13 +99,22 @@ class TestNonLinear(TestCase):
     def test_div_pow(self):
         x = FreshSymbol(REAL)
         f = Equals(Times(Real(4), Pow(x, Real(-1))), Real(2))
-        self.assertTrue(is_sat(f))
+        try:
+            self.assertTrue(is_sat(f))
+        except SolverReturnedUnknownResultError:
+            pass
 
         f = Equals(Div(Real(4), x), Real(2))
-        self.assertTrue(is_sat(f, solver_name="z3"))
-        f = Equals(Times(x, x), Real(16))
-        self.assertTrue(is_sat(f))
+        try:
+            self.assertTrue(is_sat(f, solver_name="z3"))
+        except SolverReturnedUnknownResultError:
+            pass
 
+        f = Equals(Times(x, x), Real(16))
+        try:
+            self.assertTrue(is_sat(f))
+        except SolverReturnedUnknownResultError:
+            pass
 
 if __name__ == "__main__":
     main()

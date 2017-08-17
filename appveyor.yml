@@ -75,10 +75,10 @@ install:
   - "%CMD_IN_ENV% python install.py --confirm-agreement"
 
   # Set the pythonpath
-  - "python install.py --env > bindings_path.txt"
-  - "SET /p BINDINGS_CMD=<bindings_path.txt"
-  - "%BINDINGS_CMD%"
+  - "python install.py --env > bindings_path.bat"
+  - call ./bindings_path.bat
   - ECHO "PythonPath=%PYTHONPATH%"
+  - ECHO "Path=%PATH%"
 
 build: false
 

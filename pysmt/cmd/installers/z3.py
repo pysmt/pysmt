@@ -25,7 +25,7 @@ class Z3Installer(SolverInstaller):
     SOLVER = "z3"
 
     def __init__(self, install_dir, bindings_dir, solver_version,
-                 mirror_link=None, osx=None):
+                 mirror_link=None, osx=None, git_version=None):
         arch = self.architecture
         if arch == "x86_64":
             arch = "x64"
@@ -38,8 +38,12 @@ class Z3Installer(SolverInstaller):
         elif system == "windows":
             system = "win"
 
-        archive_name = "z3-%s-%s-%s.zip" % (solver_version, arch, system)
-        native_link = "https://github.com/Z3Prover/z3/releases/download/z3-4.4.1/{archive_name}"
+        # Stable versions template
+        # archive_name = "z3-%s-%s-%s.zip" % (solver_version, arch, system)
+        #
+        # Nightly build template
+        archive_name = "z3-%s.%s-%s-%s.zip" % (solver_version, git_version, arch, system)
+        native_link = "https://github.com/pysmt/Z3bin/blob/master/nightly/{archive_name}?raw=true"
 
         SolverInstaller.__init__(self, install_dir=install_dir,
                                  bindings_dir=bindings_dir,
@@ -50,16 +54,7 @@ class Z3Installer(SolverInstaller):
 
     def move(self):
         bpath = os.path.join(self.extract_path, "bin")
-        files = ["z3consts.py",
-                 "z3core.py",
-                 "z3num.py",
-                 "z3poly.py",
-                 "z3printer.py",
-                 "z3.py",
-                 "z3rcf.py",
-                 "z3test.py",
-                 "z3types.py",
-                 "z3util.py"]
+        files = ["python/z3"]
         if self.os_name == "linux":
             files += [ "libz3.so" ]
         elif self.os_name == "darwin":
