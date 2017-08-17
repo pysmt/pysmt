@@ -395,18 +395,15 @@ class Z3Converter(Converter, DagWalker):
             self._z3Sorts[name] = sort
         return sort
 
-    @catch_conversion_error
-    def convert(self, formula):
-        z3term = self.walk(formula)
-
+    def get_z3_ref(self, formula):
         if formula.node_type in op.QUANTIFIERS:
-            return z3.QuantifierRef(z3term, self.ctx)
+            return z3.QuantifierRef
         elif formula.node_type() in BOOLREF_SET:
-            return z3.BoolRef(z3term, self.ctx)
+            return z3.BoolRef
         elif formula.node_type() in ARITHREF_SET:
-            return z3.ArithRef(z3term, self.ctx)
+            return z3.ArithRef
         elif formula.node_type() in BITVECREF_SET:
-            return z3.BitVecRef(z3term, self.ctx)
+            return z3.BitVecRef
         elif formula.is_symbol() or formula.is_function_application():
             if formula.is_function_application():
                 type_ = formula.function_name().symbol_type()
@@ -415,30 +412,39 @@ class Z3Converter(Converter, DagWalker):
                 type_ = formula.symbol_type()
 
             if type_.is_bool_type():
-                return z3.BoolRef(z3term, self.ctx)
+                return z3.BoolRef
             elif type_.is_real_type() or type_.is_int_type():
-                return z3.ArithRef(z3term, self.ctx)
+                return z3.ArithRef
             elif type_.is_array_type():
-                return z3.ArrayRef(z3term, self.ctx)
+                return z3.ArrayRef
             elif type_.is_bv_type():
-                return z3.BitVecRef(z3term, self.ctx)
+                return z3.BitVecRef
             else:
                 raise NotImplementedError(formula)
         elif formula.node_type() in op.ARRAY_OPERATORS:
-            return z3.ArrayRef(z3term, self.ctx)
+            return z3.ArrayRef
+        elif formula.is_ite():
+            child = formula.arg(1)
+            return self.get_z3_ref(child)
         else:
             assert formula.is_constant(), formula
             type_ = formula.constant_type()
             if type_.is_bool_type():
-                return z3.BoolRef(z3term, self.ctx)
+                return z3.BoolRef
             elif type_.is_real_type() or type_.is_int_type():
-                return z3.ArithRef(z3term, self.ctx)
+                return z3.ArithRef
             elif type_.is_array_type():
-                return z3.ArrayRef(z3term, self.ctx)
+                return z3.ArrayRef
             elif type_.is_bv_type():
-                return z3.BitVecRef(z3term, self.ctx)
+                return z3.BitVecRef
             else:
                 raise NotImplementedError(formula)
+
+    @catch_conversion_error
+    def convert(self, formula):
+        z3term = self.walk(formula)
+        ref_class = self.get_z3_ref(formula)
+        return ref_class(z3term, self.ctx)
 
     def back(self, expr, model=None):
         """Convert a Z3 expression back into a pySMT expression.
