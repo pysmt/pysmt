@@ -23,7 +23,7 @@ import pysmt.smtlib.commands as smtcmd
 from pysmt.shortcuts import (Real, Plus, Symbol, Equals, And, Bool, Or, Not,
                              Div, LT, LE, Int, ToReal, Iff, Exists, Times, FALSE,
                              BVLShr, BVLShl, BVAShr, BV, BVAdd, BVULT, BVMul,
-                             Select, Array)
+                             Select, Array, Ite)
 from pysmt.shortcuts import Solver, get_env, qelim, get_model, TRUE, ExactlyOne
 from pysmt.typing import REAL, BOOL, INT, BVType, FunctionType, ArrayType
 from pysmt.test import (TestCase, skipIfSolverNotAvailable, skipIfNoSolverForLogic,
@@ -439,6 +439,16 @@ class TestRegressions(TestCase):
         buffer_ = cStringIO(smtlib_input)
         script = parser.get_script(buffer_)
         self.assertIsNotNone(script)
+
+    @skipIfSolverNotAvailable("z3")
+    def test_z3_conversion_ite(self):
+        with Solver(name='z3') as solver:
+            x = Symbol('x')
+            y = Symbol('y')
+            f = Ite(x, y, FALSE())
+            solver.add_assertion(f)
+            self.assertTrue(solver.solve())
+
 
 if __name__ == "__main__":
     main()
