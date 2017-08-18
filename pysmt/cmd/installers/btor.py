@@ -34,17 +34,28 @@ class BtorInstaller(SolverInstaller):
                                  mirror_link=mirror_link)
 
     def compile(self):
-        # Extract sub-archives
-        SolverInstaller.run("tar xf archives/lingeling*.tar.gz", directory=self.extract_path)
-        SolverInstaller.run("mv lingeling* lingeling", directory=self.extract_path)
-        SolverInstaller.run("tar xf archives/boolector*.tar.gz", directory=self.extract_path)
-        SolverInstaller.run("mv boolector* boolector", directory=self.extract_path)
-
-        # Reconfigure and build python bindings
+        import glob
+        # Build lingeling
+        lingeling_archive = glob.glob(os.path.join(self.extract_path,
+                                                   "archives", "lingeling-*.tar.gz"))[0]
+        SolverInstaller.untar(lingeling_archive, self.extract_path)
+        lingeling_dir = glob.glob(os.path.join(self.extract_path,
+                                               "lingeling*"))[0]
+        SolverInstaller.mv(lingeling_dir,
+                           os.path.join(self.extract_path, "lingeling"))
         SolverInstaller.run("bash ./configure.sh -fPIC",
                           directory=os.path.join(self.extract_path, "lingeling"))
         SolverInstaller.run("make",
                           directory=os.path.join(self.extract_path, "lingeling"))
+
+        # Build Btor
+        boolector_archive = glob.glob(os.path.join(self.extract_path,
+                                                   "archives", "boolector-*.tar.gz"))[0]
+        SolverInstaller.untar(boolector_archive, self.extract_path)
+        boolector_dir = glob.glob(os.path.join(self.extract_path,
+                                               "boolector*"))[0]
+        SolverInstaller.mv(boolector_dir,
+                           os.path.join(self.extract_path, "boolector"))
 
         SolverInstaller.run("bash ./configure.sh -python",
                           directory=os.path.join(self.extract_path, "boolector"))
@@ -63,19 +74,13 @@ class BtorInstaller(SolverInstaller):
                 SolverInstaller.mv(os.path.join(bdir, f), self.bindings_dir)
 
     def get_installed_version(self):
-        with TemporaryPath([self.bindings_dir]):
-            version = None
+        res = self.get_installed_version_script(self.bindings_dir, "btor")
+        version = None
+        if res == "OK":
             vfile = os.path.join(self.extract_path, "boolector", "VERSION")
             try:
-                # The version is read from a file, but we first check
-                # if the module is installed
-                # pylint: disable=unused-import
-                import boolector
                 with open(vfile) as f:
                     version = f.read().strip()
-            finally:
-                if "boolector" in sys.modules:
-                    del sys.modules["boolector"]
-                # Return None, without raising an exception
-                # pylint: disable=lost-exception
-                return version
+            except OSError:
+                return None
+        return version

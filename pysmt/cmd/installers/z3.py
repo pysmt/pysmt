@@ -71,15 +71,4 @@ class Z3Installer(SolverInstaller):
             SolverInstaller.mv(os.path.join(bpath, f), self.bindings_dir)
 
     def get_installed_version(self):
-        with TemporaryPath([self.bindings_dir]):
-            version = None
-            try:
-                import z3
-                (major, minor, ver, _) = z3.get_version()
-                version = "%d.%d.%d" % (major, minor, ver)
-            finally:
-                if "z3" in sys.modules:
-                    del sys.modules["z3"]
-                # Return None, without raising an exception
-                # pylint: disable=lost-exception
-                return version
+        return self.get_installed_version_script(self.bindings_dir, "z3")
