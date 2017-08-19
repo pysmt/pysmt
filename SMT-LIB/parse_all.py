@@ -56,7 +56,6 @@ def main():
         exit(1)
 
     random.seed(42)
-
     p = multiprocessing.Pool()
     chunks = multiprocessing.cpu_count()
     file_list = list(get_all_smt_files())
