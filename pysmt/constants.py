@@ -183,13 +183,13 @@ else:
 
 USE_Z3 = False
 try:
-    import z3num
+    import z3.z3num
     USE_Z3 = True
 except ImportError:
     pass
 
 if USE_Z3:
-    class Numeral(z3num.Numeral):
+    class Numeral(z3.z3num.Numeral):
         """Represents a Number (Algebraic)"""
         def __hash__(self):
             return hash(self.sexpr())

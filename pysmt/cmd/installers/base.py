@@ -90,9 +90,9 @@ class SolverInstaller(object):
 
     def download_links(self):
         if self.mirror_link is not None:
-            yield self.mirror_link.format(archive_name=self.archive_name)
+            yield self.mirror_link.format(archive_name=self.archive_name, solver_version=self.solver_version)
         if self.native_link is not None:
-            yield self.native_link.format(archive_name=self.archive_name)
+            yield self.native_link.format(archive_name=self.archive_name, solver_version=self.solver_version)
 
     def download(self):
         """Downloads the archive from one of the mirrors"""
