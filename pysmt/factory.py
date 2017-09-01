@@ -45,7 +45,8 @@ DEFAULT_SOLVER_PREFERENCE_LIST = ['msat', 'z3', 'cvc4', 'yices', 'btor',
 DEFAULT_QELIM_PREFERENCE_LIST = ['z3', 'msat_lw', 'msat_fm', 'bdd',
                                  'shannon', 'selfsub']
 DEFAULT_INTERPOLATION_PREFERENCE_LIST = ['msat', 'z3']
-DEFAULT_OPTIMIZER_PREFERENCE_LIST = ['z3', 'msat_sua', 'z3_sua']
+DEFAULT_OPTIMIZER_PREFERENCE_LIST = ['z3', 'msat_incr', 'z3_incr', 'yices_incr',
+                                     'msat_sua', 'z3_sua', 'yices_sua']
 DEFAULT_LOGIC = QF_UFLIRA
 DEFAULT_QE_LOGIC = LRA
 DEFAULT_INTERPOLATION_LOGIC = QF_UFLRA
@@ -359,15 +360,25 @@ class Factory(object):
         self._all_optimizers = {}
 
         try:
-            from pysmt.solvers.z3 import Z3NativeOptimizer, Z3SUAOptimizer
+            from pysmt.solvers.z3 import Z3NativeOptimizer, Z3SUAOptimizer, \
+                Z3IncrementalOptimizer
             self._all_optimizers['z3'] = Z3NativeOptimizer
             self._all_optimizers['z3_sua'] = Z3SUAOptimizer
+            self._all_optimizers['z3_incr'] = Z3IncrementalOptimizer
         except SolverAPINotFound:
             pass
 
         try:
-            from pysmt.solvers.msat import MSatSUAOptimizer
+            from pysmt.solvers.msat import MSatSUAOptimizer, MSatIncrementalOptimizer
             self._all_optimizers['msat_sua'] = MSatSUAOptimizer
+            self._all_optimizers['msat_incr'] = MSatIncrementalOptimizer
+        except SolverAPINotFound:
+            pass
+
+        try:
+            from pysmt.solvers.yices import YicesSUAOptimizer, YicesIncrementalOptimizer
+            self._all_optimizers['yices_sua'] = YicesSUAOptimizer
+            self._all_optimizers['yices_incr'] = YicesIncrementalOptimizer
         except SolverAPINotFound:
             pass
 

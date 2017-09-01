@@ -45,7 +45,7 @@ from pysmt.decorators import clear_pending_pop, catch_conversion_error
 from pysmt.solvers.qelim import QuantifierEliminator
 from pysmt.solvers.interpolation import Interpolator
 from pysmt.walkers.identitydag import IdentityDagWalker
-from pysmt.solvers.optimizer import SUAOptimizerMixin
+from pysmt.solvers.optimizer import SUAOptimizerMixin, IncrementalOptimizerMixin
 
 class MSatEnv(object):
     """A wrapper for the msat_env object.
@@ -1338,4 +1338,7 @@ class MSatBoolUFRewriter(IdentityDagWalker):
 # EOC MSatBoolUFRewriter
 
 class MSatSUAOptimizer(MathSAT5Solver, SUAOptimizerMixin):
+    LOGICS = MathSAT5Solver.LOGICS
+
+class MSatIncrementalOptimizer(MathSAT5Solver, IncrementalOptimizerMixin):
     LOGICS = MathSAT5Solver.LOGICS
