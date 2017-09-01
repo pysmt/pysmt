@@ -502,7 +502,7 @@ class Factory(object):
 
         If logic is None, the map will contain all the known solvers
         """
-        return self._filter_solvers(self._all_interpolators, logic=logic)
+        return self._filter_solvers(self._all_optimizers, logic=logic)
 
 
 

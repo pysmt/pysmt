@@ -26,10 +26,54 @@ class Optimizer(Solver):
     """
 
     def optimize(self, cost_function, initial_cost=None, callback=None):
+        """Returns a model object that minimizes the value of `cost_function`
+        while satisfying all the formulae asserted in the optimizer.
+
+        `cost_function` must be a term with integer, real or
+        bit-vector type whose value type has to be minimized
+
+        If `initial_cost` is specified, then all values of
+        `cost_function` greater this value are discarded from the
+        search.
+
+        `callback` is a function taking in input a model object that
+        may be called during the search communicating the current best
+        model. If, when called, the function returns True the search
+        is immediately stopped. This is useful to terminate the search
+        in algorithms where termination is not guaranteed or to stop
+        the search prematurely when a criterion is met.
+
+        This function can raise a PysmtUnboundedOptimizationError if
+        the solver detects that the optimum value is either positive
+        or negative infinite or if there is no optimum value because
+        one can move arbitrarily close to the optimum without reching
+        it (e.g. "x > 5" has no minimum for x, only an infimum)
+        """
         raise NotImplementedError
 
 
     def pareto_optimize(self, cost_functions, callback=None):
+        """This function is a generator returning *all* the pareto-optimal
+        solutions for the problem of minimizing the `cost_functions`
+        keeping the formulae asserted in this optimizer satisfied.
+
+        `cost_functions` must be a list of terms with integer, real or
+        bit-vector types whose values type has to be minimized
+
+        `callback` is a function taking in input a model object that
+        may be called during the search communicating the current best
+        model. If, when called, the function returns True the search
+        is immediately stopped. This is useful to terminate the search
+        in algorithms where termination is not guaranteed or to stop
+        the search prematurely when a criterion is met.
+
+        This function can raise a PysmtUnboundedOptimizationError if
+        the solver detects that the optimum value is either positive
+        or negative infinite or if there is no optimum value because
+        one can move arbitrarily close to the optimum without reching
+        it (e.g. "x > 5" has no minimum for x, only an infimum)
+
+        """
         raise NotImplementedError
 
 
@@ -45,12 +89,15 @@ class SUAOptimizerMixin(Optimizer):
         elif otype.is_bv_type():
             return mgr.BVULT(x, y)
 
-    def optimize(self, cost_function, initial_cost=None, callback=None):
-        # logic = get_logic(cost_function, env=self.environment)
-        # if logic.theory.real_arithmetic or logic.theory.real_difference or \
-        #    logic.theory.uninterpreted:
-        #     raise PysmtValueError("Logic %s is not supported by SUA Optimizers" % logic)
+    def _le(self, x, y):
+        otype = self.environment.stc.get_type(x)
+        mgr = self.environment.formula_manager
+        if otype.is_int_type() or otype.is_real_type():
+            return mgr.LE(x, y)
+        elif otype.is_bv_type():
+            return mgr.BVULE(x, y)
 
+    def optimize(self, cost_function, initial_cost=None, callback=None):
         last_model = None
         keep = True
 
@@ -71,10 +118,42 @@ class SUAOptimizerMixin(Optimizer):
                 cost_so_far = self.get_value(cost_function)
                 if callback is not None:
                     exit_request = callback(last_model)
-                    if exit_request:
+                    if exit_request is True:
                         break
         return last_model
 
-
     def pareto_optimize(self, cost_functions, callback=None):
-        raise NotImplementedError
+        mgr = self.environment.formula_manager
+
+        eliminated = []
+        terminated = False
+        while not terminated:
+            last_model = None
+            keep = True
+            costs_so_far = None
+            while keep:
+                if costs_so_far is not None:
+                    k = [self._le(cost_functions[i], costs_so_far[i])
+                         for i in range(len(cost_functions))]
+                    k.append(mgr.Or(self._lt(cost_functions[i], costs_so_far[i])
+                                    for i in range(len(cost_functions))))
+                    keep = self.solve(assumptions=eliminated + k)
+                else:
+                    keep = self.solve(assumptions=eliminated)
+
+                if keep:
+                    last_model = self.get_model()
+                    costs_so_far = []
+                    for i in range(len(cost_functions)):
+                        costs_so_far.append(self.get_value(cost_functions[i]))
+                    if callback is not None:
+                        exit_request = callback(last_model)
+                        if exit_request is True:
+                            break
+            if last_model is not None:
+                yield last_model
+                eliminated.append(mgr.Or(self._lt(cost_functions[i],
+                                                  last_model[cost_functions[i]])
+                                         for i in range(len(cost_functions))))
+            else:
+                terminated = True
