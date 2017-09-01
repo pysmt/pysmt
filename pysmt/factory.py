@@ -562,7 +562,6 @@ class Factory(object):
         """
         return self._filter_solvers(self._all_optimizers, logic=logic)
 
-
     ##
     ## Wrappers: These functions are exported in shortcuts
     ##
