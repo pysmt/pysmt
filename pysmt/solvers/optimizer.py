@@ -31,7 +31,6 @@ class Optimizer(Solver):
 
         `cost_function` must be a term with integer, real or
         bit-vector type whose value has to be minimized
-
         This function can raise a PysmtUnboundedOptimizationError if
         the solver detects that the optimum value is either positive
         or negative infinite or if there is no optimum value because
