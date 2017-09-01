@@ -157,9 +157,18 @@ class Tokenizer(object):
     def __init__(self, handle, interactive=False):
         if not interactive:
             # reads char-by-char
-            self.reader = itertools.chain.from_iterable(handle)
+            if __debug__:
+                self.reader = self.char_iterator(handle)
+                self.__col_cnt = 0
+                self.__row_cnt = 0
+            else:
+                self.reader = itertools.chain.from_iterable(handle)
+                self.__col_cnt = None
+                self.__row_cnt = None
         else:
             self.reader = interactive_char_iterator(handle)
+            self.__col_cnt = None
+            self.__row_cnt = None
         self.generator = self.create_generator(self.reader)
         self.extra_queue = []
         self.consume = self.consume_token
@@ -180,6 +189,12 @@ class Tokenizer(object):
 
     def raw_read(self):
         return next(self.reader)
+
+    @property
+    def pos_info(self):
+        if self.__row_cnt is not None:
+            return (self.__row_cnt, self.__col_cnt)
+        return None
 
     @staticmethod
     def create_generator(reader):
@@ -210,13 +225,14 @@ class Tokenizer(object):
                                 c = next(reader)
                                 if c != "|" and c != "\\":
                                     # Only \| and \\ are supported escapings
-                                    raise PysmtSyntaxError("Unknown escaping in " \
-                                                           "quoted symbol: "
-                                                           "'\\%s'" % c)
+                                    raise PysmtSyntaxError(
+                                        "Unknown escaping in quoted symbol: "
+                                        "'\\%s'" % c, reader.pos_info)
                             s.append(c)
                             c = next(reader)
                         if not c:
-                            raise PysmtSyntaxError("Expected '|'")
+                            raise PysmtSyntaxError("Expected '|'",
+                                                   reader.pos_info)
                         yield "".join(s)
                         c = next(reader)
 
@@ -236,7 +252,8 @@ class Tokenizer(object):
                                 s.append(c)
                                 c = next(reader)
                         if not c:
-                            raise PysmtSyntaxError("Expected '|'")
+                            raise PysmtSyntaxError("Expected '|'",
+                                                   reader.pos_info)
                         yield '"%s"' % ("".join(s)) # string literals maintain their quoting
 
                     else:
@@ -258,6 +275,20 @@ class Tokenizer(object):
                     tk.append(c)
                     c = next(reader)
                 yield "".join(tk)
+
+    def char_iterator(self, handle):
+        c = handle.read(1)
+        while c:
+            if c == "\n":
+                self.__row_cnt += 1
+                self.__col_cnt = 0
+            elif c == "\r":
+                pass
+            else:
+                self.__col_cnt += 1
+            yield c
+            c = handle.read(1)
+
 
 # EOC Tokenizer
 
@@ -449,7 +480,8 @@ class SmtLibParser(object):
         #pylint: disable=unused-argument
         const = self.parse_atom(tokens, "expression")
         if const != "const":
-            raise PysmtSyntaxError("expected 'const' in expression after 'as'")
+            raise PysmtSyntaxError("expected 'const' in expression after 'as'",
+                                   tokens.pos_info)
         ty = self.parse_type(tokens, "expression")
 
         def res(expr):
@@ -474,7 +506,7 @@ class SmtLibParser(object):
                 end = int(send)
             except ValueError:
                 raise PysmtSyntaxError("Expected number in '_ extract' "
-                                       "expression")
+                                       "expression", tokens.pos_info)
             fun = lambda x : mgr.BVExtract(x, start, end)
 
         elif op == "zero_extend":
@@ -483,7 +515,7 @@ class SmtLibParser(object):
                 width = int(swidth)
             except ValueError:
                 raise PysmtSyntaxError("Expected number in '_ zero_extend' "
-                                       "expression")
+                                       "expression", tokens.pos_info)
             fun = lambda x: mgr.BVZExt(x, width)
 
         elif op == "repeat":
@@ -492,7 +524,7 @@ class SmtLibParser(object):
                 count = int(scount)
             except ValueError:
                 raise PysmtSyntaxError("Expected number in '_ repeat' "
-                                       "expression")
+                                       "expression", tokens.pos_info)
             fun = lambda x: mgr.BVRepeat(x, count)
 
         elif op == "rotate_left":
@@ -501,7 +533,7 @@ class SmtLibParser(object):
                 step = int(sstep)
             except ValueError:
                 raise PysmtSyntaxError("Expected number in '_ rotate_left' "
-                                       "expression")
+                                       "expression", tokens.pos_info)
             fun = lambda x: mgr.BVRol(x, step)
 
         elif op == "rotate_right":
@@ -510,7 +542,7 @@ class SmtLibParser(object):
                 step = int(sstep)
             except ValueError:
                 raise PysmtSyntaxError("Expected number in '_ rotate_left' "
-                                       "expression")
+                                       "expression", tokens.pos_info)
             fun = lambda x: mgr.BVRor(x, step)
 
         elif op == "sign_extend":
@@ -519,7 +551,7 @@ class SmtLibParser(object):
                 width = int(swidth)
             except ValueError:
                 raise PysmtSyntaxError("Expected number in '(_ sign_extend) "
-                                       "expression'")
+                                       "expression'", tokens.pos_info)
             fun = lambda x: mgr.BVSExt(x, width)
 
         elif op.startswith("bv"):
@@ -528,11 +560,12 @@ class SmtLibParser(object):
                 width = int(self.parse_atom(tokens, "expression"))
             except ValueError:
                 raise PysmtSyntaxError("Expected number in '_ bv' expression: "
-                                       "'%s'" % op)
+                                       "'%s'" % op, tokens.pos_info)
             fun = mgr.BV(v, width)
 
         else:
-            raise PysmtSyntaxError("Unexpected '_' expression '%s'" % op)
+            raise PysmtSyntaxError("Unexpected '_' expression '%s'" % op,
+                                   tokens.pos_info)
 
         stack[-1].append(lambda : fun)
 
@@ -640,7 +673,8 @@ class SmtLibParser(object):
         self.consume_opening(tokens, "expression")
         while current != ")":
             if current != "(":
-                raise PysmtSyntaxError("Expected '(' in let binding")
+                raise PysmtSyntaxError("Expected '(' in let binding",
+                                       tokens.pos_info)
             vname = self.parse_atom(tokens, "expression")
             expr = self.get_expression(tokens)
             newvals[vname] = expr
@@ -669,7 +703,7 @@ class SmtLibParser(object):
         self.consume_opening(tokens, "expression")
         while current != ")":
             if current != "(":
-                raise PysmtSyntaxError("Expected '(' in let binding")
+                raise PysmtSyntaxError("Expected '(' in let binding", tokens.pos_info)
             vname = self.parse_atom(tokens, "expression")
             typename = self.parse_type(tokens, "expression")
 
@@ -700,7 +734,8 @@ class SmtLibParser(object):
         while tk != ")":
             if not tk.startswith(":"):
                 raise PysmtSyntaxError("Annotations keyword should start with"
-                                       " colon! Offending token: '%s'" % tk)
+                                       " colon! Offending token: '%s'" % tk,
+                                       tokens.pos_info)
             keyword = tk[1:]
             tk = tokens.consume()
             value = None
@@ -752,7 +787,8 @@ class SmtLibParser(object):
                     lst = stack.pop()
                     fun = lst.pop(0)
                 except IndexError:
-                    raise PysmtSyntaxError("Unexpected ')'")
+                    raise PysmtSyntaxError("Unexpected ')'",
+                                           tokens.pos_info)
 
                 try:
                     res = fun(*lst)
@@ -816,10 +852,12 @@ class SmtLibParser(object):
             if current == ")":
                 raise PysmtSyntaxError("Expected at least %d arguments in "
                                        "%s command." %\
-                                  (min_size, command))
+                                       (min_size, command),
+                                       tokens.pos_info)
             if current == "(":
                 raise PysmtSyntaxError("Unexpected token '(' in %s "
-                                       "command." % command)
+                                       "command." % command,
+                                       tokens.pos_info)
             res.append(current)
 
         for _ in xrange(min_size, max_size + 1):
@@ -828,11 +866,13 @@ class SmtLibParser(object):
                 return res
             if current == "(":
                 raise PysmtSyntaxError("Unexpected token '(' in %s "
-                                       "command." % command)
+                                       "command." % command,
+                                       tokens.pos_info)
             res.append(current)
         raise PysmtSyntaxError("Unexpected token '%s' in %s command. Expected " \
-                               "at most %d arguments." % (current, command,
-                                                          max_size))
+                               "at most %d arguments." %\
+                               (current, command, max_size),
+                               tokens.pos_info)
 
     def parse_type(self, tokens, command, type_params=None, additional_token=None):
         """Parses a single type name from the tokens"""
@@ -857,7 +897,8 @@ class SmtLibParser(object):
                 ts = tokens.consume()
                 if ts != "BitVec":
                     raise PysmtSyntaxError("Unexpected token '%s' in %s command." % \
-                                      (ts, command))
+                                           (ts, command),
+                                           tokens.pos_info)
 
                 size = 0
                 dim = tokens.consume()
@@ -865,7 +906,8 @@ class SmtLibParser(object):
                     size = int(dim)
                 except ValueError:
                     raise PysmtSyntaxError("Unexpected token '%s' in %s command." % \
-                                      (dim, command))
+                                           (dim, command),
+                                           tokens.pos_info)
 
                 self.consume_closing(tokens, command)
                 res = self.env.type_manager.BVType(size)
@@ -874,7 +916,8 @@ class SmtLibParser(object):
                 base_type = self.cache.get(op)
                 if base_type is None or not isinstance(base_type, _TypeDecl):
                     raise PysmtSyntaxError("Unexpected token '%s' in %s command." % \
-                                           (op, command))
+                                           (op, command),
+                                           tokens.pos_info)
                 pparams = []
                 has_free_params = False
                 for _ in range(base_type.arity):
@@ -907,7 +950,8 @@ class SmtLibParser(object):
                 res = self.cache.get(var)
             else:
                 raise PysmtSyntaxError("Unexpected token '%s' in %s command." % \
-                                       (var, command))
+                                       (var, command),
+                                       tokens.pos_info)
 
         if isinstance(res, _TypeDecl):
             return res()
@@ -920,7 +964,8 @@ class SmtLibParser(object):
         var = tokens.consume()
         if var == "(" or var == ")":
             raise PysmtSyntaxError("Unexpected token '%s' in %s command." % \
-                              (var, command))
+                                   (var, command),
+                                   tokens.pos_info)
         return var
 
     def parse_params(self, tokens, command):
@@ -962,14 +1007,16 @@ class SmtLibParser(object):
         p = tokens.consume()
         if p != "(":
             raise PysmtSyntaxError("Unexpected token '%s' in %s command. " \
-                              "Expected '('" % (p, command))
+                                   "Expected '('" %
+                                   (p, command), tokens.pos_info)
 
     def consume_closing(self, tokens, command):
         """ Consumes a single ')' """
         p = tokens.consume()
         if p != ")":
             raise PysmtSyntaxError("Unexpected token '%s' in %s command. " \
-                              "Expected ')'" % (p, command))
+                                   "Expected ')'" %
+                                   (p, command, tokens.pos_info))
 
     def _function_call_helper(self, v, *args):
         """ Helper function for dealing with function calls """
@@ -988,7 +1035,7 @@ class SmtLibParser(object):
         current = tokens.consume()
         while current != ")":
             if current != "(":
-                raise PysmtSyntaxError("'(' expected")
+                raise PysmtSyntaxError("'(' expected", tokens.pos_info)
             vname = self.get_expression(tokens)
             expr = self.get_expression(tokens)
             self.consume_closing(tokens, current)
@@ -1069,6 +1116,7 @@ class SmtLibParser(object):
         """(declare-const <symbol> <sort>)"""
         var = self.parse_atom(tokens, current)
         typename = self.parse_type(tokens, current)
+        self.consume_closing(tokens, current)
         v = self._get_var(var, typename)
         self.cache.bind(var, v)
         return SmtLibCommand(current, [v])
@@ -1124,7 +1172,8 @@ class SmtLibParser(object):
         try:
             type_ = self.env.type_manager.Type(typename, int(arity))
         except ValueError:
-            raise PysmtSyntaxError("Expected an integer as arity of type %s" % typename)
+            raise PysmtSyntaxError("Expected an integer as arity of type %s."%\
+                                   typename, tokens.pos_info)
         self.cache.bind(typename, type_)
         return SmtLibCommand(current, [type_])
 

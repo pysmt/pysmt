@@ -5,18 +5,18 @@ git:
 
 cache:
   apt: true
-  directories:
-  - ${HOME}/.smt_solvers/btor
-  - ${HOME}/.smt_solvers/bdd
-  - ${HOME}/.cache/pip
-  - ${HOME}/python_bindings/all
-  - ${HOME}/python_bindings/msat
-  - ${HOME}/python_bindings/z3
-  - ${HOME}/python_bindings/cvc4
-  - ${HOME}/python_bindings/yices
-  - ${HOME}/python_bindings/bdd
-  - ${HOME}/python_bindings/picosat
-  - ${HOME}/python_bindings/btor
+  # directories:
+  # - ${HOME}/.smt_solvers/btor
+  # - ${HOME}/.smt_solvers/bdd
+  # - ${HOME}/.cache/pip
+  # - ${HOME}/python_bindings/all
+  # - ${HOME}/python_bindings/msat
+  # - ${HOME}/python_bindings/z3
+  # - ${HOME}/python_bindings/cvc4
+  # - ${HOME}/python_bindings/yices
+  # - ${HOME}/python_bindings/bdd
+  # - ${HOME}/python_bindings/picosat
+  # - ${HOME}/python_bindings/btor
 
 addons:
   apt:

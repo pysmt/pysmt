@@ -23,7 +23,7 @@ import pysmt.smtlib.commands as smtcmd
 from pysmt.shortcuts import (Real, Plus, Symbol, Equals, And, Bool, Or, Not,
                              Div, LT, LE, Int, ToReal, Iff, Exists, Times, FALSE,
                              BVLShr, BVLShl, BVAShr, BV, BVAdd, BVULT, BVMul,
-                             Select, Array)
+                             Select, Array, Ite)
 from pysmt.shortcuts import Solver, get_env, qelim, get_model, TRUE, ExactlyOne
 from pysmt.typing import REAL, BOOL, INT, BVType, FunctionType, ArrayType
 from pysmt.test import (TestCase, skipIfSolverNotAvailable, skipIfNoSolverForLogic,
@@ -430,6 +430,38 @@ class TestRegressions(TestCase):
             btor_noty = solver.converter.convert(Not(y))
             self.assertEqual(solver.btor.Failed(btor_notx, btor_noty),
                              [True, True])
+
+    def test_parse_declare_const(self):
+        smtlib_input = """
+        (declare-const s Int)
+        (check-sat)"""
+        parser = SmtLibParser()
+        buffer_ = cStringIO(smtlib_input)
+        script = parser.get_script(buffer_)
+        self.assertIsNotNone(script)
+
+    @skipIfSolverNotAvailable("z3")
+    def test_z3_conversion_ite(self):
+        with Solver(name='z3') as solver:
+            x = Symbol('x')
+            y = Symbol('y')
+            f = Ite(x, y, FALSE())
+            solver.add_assertion(f)
+            self.assertTrue(solver.solve())
+
+    def test_parse_exception(self):
+        from pysmt.exceptions import PysmtSyntaxError
+        smtlib_input = "(declare-const x x x Int)" +\
+                       "(check-sat)"
+        parser = SmtLibParser()
+        buffer_ = cStringIO(smtlib_input)
+        try:
+            parser.get_script(buffer_)
+            self.assertFalse(True)
+        except PysmtSyntaxError as ex:
+            self.assertEqual(ex.pos_info[0], 0)
+            self.assertEqual(ex.pos_info[1], 19)
+
 
 if __name__ == "__main__":
     main()

@@ -579,9 +579,9 @@ class TestBasic(TestCase):
         for (f, _, sat, logic) in get_example_formulae():
             if logic == QF_BV:
                 solver = Solver(name="btor",
-                                solver_options={"rewrite_level":0,
-                                                "dual_prop":1,
-                                                "eliminate_slices":1})
+                                solver_options={"rewrite-level":0,
+                                                "fun:dual-prop":1,
+                                                "eliminate-slices":1})
                 solver.add_assertion(f)
                 res = solver.solve()
                 self.assertTrue(res == sat)

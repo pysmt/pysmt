@@ -148,7 +148,10 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
                                            environment=environment,
                                            logic=logic,
                                            **options)
-        self.z3 = z3.SolverFor(str(logic))
+        try:
+            self.z3 = z3.SolverFor(str(logic))
+        except z3.Z3Exception:
+            self.z3 = z3.Solver()
         self.options(self)
         self.declarations = set()
         self.converter = Z3Converter(environment, z3_ctx=self.z3.ctx)
@@ -400,18 +403,15 @@ class Z3Converter(Converter, DagWalker):
             self._z3Sorts[name] = sort
         return sort
 
-    @catch_conversion_error
-    def convert(self, formula):
-        z3term = self.walk(formula)
-
+    def get_z3_ref(self, formula):
         if formula.node_type in op.QUANTIFIERS:
-            return z3.QuantifierRef(z3term, self.ctx)
+            return z3.QuantifierRef
         elif formula.node_type() in BOOLREF_SET:
-            return z3.BoolRef(z3term, self.ctx)
+            return z3.BoolRef
         elif formula.node_type() in ARITHREF_SET:
-            return z3.ArithRef(z3term, self.ctx)
+            return z3.ArithRef
         elif formula.node_type() in BITVECREF_SET:
-            return z3.BitVecRef(z3term, self.ctx)
+            return z3.BitVecRef
         elif formula.is_symbol() or formula.is_function_application():
             if formula.is_function_application():
                 type_ = formula.function_name().symbol_type()
@@ -420,30 +420,39 @@ class Z3Converter(Converter, DagWalker):
                 type_ = formula.symbol_type()
 
             if type_.is_bool_type():
-                return z3.BoolRef(z3term, self.ctx)
+                return z3.BoolRef
             elif type_.is_real_type() or type_.is_int_type():
-                return z3.ArithRef(z3term, self.ctx)
+                return z3.ArithRef
             elif type_.is_array_type():
-                return z3.ArrayRef(z3term, self.ctx)
+                return z3.ArrayRef
             elif type_.is_bv_type():
-                return z3.BitVecRef(z3term, self.ctx)
+                return z3.BitVecRef
             else:
                 raise NotImplementedError(formula)
         elif formula.node_type() in op.ARRAY_OPERATORS:
-            return z3.ArrayRef(z3term, self.ctx)
+            return z3.ArrayRef
+        elif formula.is_ite():
+            child = formula.arg(1)
+            return self.get_z3_ref(child)
         else:
             assert formula.is_constant(), formula
             type_ = formula.constant_type()
             if type_.is_bool_type():
-                return z3.BoolRef(z3term, self.ctx)
+                return z3.BoolRef
             elif type_.is_real_type() or type_.is_int_type():
-                return z3.ArithRef(z3term, self.ctx)
+                return z3.ArithRef
             elif type_.is_array_type():
-                return z3.ArrayRef(z3term, self.ctx)
+                return z3.ArrayRef
             elif type_.is_bv_type():
-                return z3.BitVecRef(z3term, self.ctx)
+                return z3.BitVecRef
             else:
                 raise NotImplementedError(formula)
+
+    @catch_conversion_error
+    def convert(self, formula):
+        z3term = self.walk(formula)
+        ref_class = self.get_z3_ref(formula)
+        return ref_class(z3term, self.ctx)
 
     def back(self, expr, model=None):
         """Convert a Z3 expression back into a pySMT expression.
@@ -905,7 +914,7 @@ class Z3QuantifierEliminator(QuantifierEliminator):
         QuantifierEliminator.__init__(self)
         self.environment = environment
         self.logic = logic
-        self.converter = Z3Converter(environment, z3._get_ctx(None))
+        self.converter = Z3Converter(environment, z3.main_ctx())
 
     def eliminate_quantifiers(self, formula):
         logic = get_logic(formula, self.environment)
@@ -921,7 +930,7 @@ class Z3QuantifierEliminator(QuantifierEliminator):
         s = simplifier(f, elim_and=True,
                        pull_cheap_ite=True,
                        ite_extra_rules=True).as_expr()
-        res = eliminator(s, eliminate_variables_as_block=True).as_expr()
+        res = eliminator(f).as_expr()
 
         pysmt_res = None
         try:
@@ -951,7 +960,7 @@ class Z3Interpolator(Interpolator):
         Interpolator.__init__(self)
         self.environment = environment
         self.logic = logic
-        self.converter = Z3Converter(environment, z3_ctx=z3._get_ctx(None))
+        self.converter = Z3Converter(environment, z3_ctx=z3.main_ctx())
 
     def _check_logic(self, formulas):
         for f in formulas:

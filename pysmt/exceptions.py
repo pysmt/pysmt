@@ -134,7 +134,16 @@ class PysmtTypeError(PysmtException, TypeError):
     pass
 
 class PysmtSyntaxError(PysmtException, SyntaxError):
-    pass
+    def __init__(self, message, pos_info=None):
+        super(PysmtSyntaxError, self).__init__(message)
+        self.pos_info = pos_info
+
+    def __str__(self):
+        if self.pos_info:
+            return "Line %d, Col %d: " % self.pos_info + self.message
+        else:
+            return self.message
+
 
 class PysmtIOError(PysmtException, IOError):
     pass

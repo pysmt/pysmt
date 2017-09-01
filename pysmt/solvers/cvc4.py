@@ -263,7 +263,7 @@ class CVC4Converter(Converter, DagWalker):
         return self.declared_vars[formula]
 
     def walk_iff(self, formula, args, **kwargs):
-        return self.mkExpr(CVC4.IFF, args[0], args[1])
+        return self.mkExpr(CVC4.EQUAL, args[0], args[1])
 
     def walk_implies(self, formula, args, **kwargs):
         return self.mkExpr(CVC4.IMPLIES, args[0], args[1])

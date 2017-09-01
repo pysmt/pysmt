@@ -20,7 +20,7 @@ from pysmt.shortcuts import Symbol, Implies, And, Not
 from pysmt.test.examples import get_example_formulae
 from pysmt.test import TestCase, main
 from pysmt.oracles import get_logic
-from pysmt.typing import BOOL, Type
+from pysmt.typing import BOOL, Type, INT
 
 
 class TestOracles(TestCase):
@@ -121,6 +121,11 @@ class TestOracles(TestCase):
         self.assertTrue(idx_US < idx_BUSBBS)
         self.assertTrue(idx_BBS < idx_BUSBBS)
 
+    def test_type_oracles_constants(self):
+        mgr = self.env.formula_manager
+        f = mgr.Plus(mgr.Int(5), mgr.Int(6))
+        types_all = self.env.typeso.get_types(f)
+        self.assertEqual(types_all, [INT])
 
 if __name__ == '__main__':
     main()

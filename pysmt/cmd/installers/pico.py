@@ -52,7 +52,7 @@ class PicoSATInstaller(SolverInstaller):
 
     def compile(self):
         picosat_dir = os.path.join(self.extract_path, "picosat-%s" % self.solver_version)
-        SolverInstaller.run('bash configure', directory=picosat_dir,
+        SolverInstaller.run('bash configure.sh', directory=picosat_dir,
                             env_variables={"CFLAGS": " -fPIC"})
         SolverInstaller.run('make', directory=picosat_dir,
                             env_variables={"CFLAGS": " -fPIC"})
@@ -70,14 +70,4 @@ class PicoSATInstaller(SolverInstaller):
         SolverInstaller.mv(os.path.join(self.extract_path, "picosat.py"), self.bindings_dir)
 
     def get_installed_version(self):
-        with TemporaryPath([self.bindings_dir]):
-            version = None
-            try:
-                import picosat
-                version = picosat.picosat_version()
-            finally:
-                if "picosat" in sys.modules:
-                    del sys.modules["picosat"]
-                # Return None, without raising an exception
-                # pylint: disable=lost-exception
-                return version
+        return self.get_installed_version_script(self.bindings_dir, "picosat")

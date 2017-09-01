@@ -40,7 +40,7 @@ class CVC4Installer(SolverInstaller):
         SolverInstaller.mv(os.path.join(self.bin_path, "share/pyshared/CVC4.py"),
                            self.bindings_dir)
         SolverInstaller.mv(os.path.join(self.bin_path, "lib/pyshared/_CVC4.so"),
-                                        self.bindings_dir)
+                           self.bindings_dir)
 
     def compile(self):
         # Prepare the building system
@@ -51,32 +51,28 @@ class CVC4Installer(SolverInstaller):
                             directory=os.path.join(self.extract_path, "contrib"))
 
         # Configure and build CVC4
-        config = "./configure --prefix={bin_path} \
-                              --enable-language-bindings=python \
-                              --with-antlr-dir={dir_path}/antlr-3.4 ANTLR={dir_path}/antlr-3.4/bin/antlr3;\
-                  make; \
-                  make install ".format(bin_path=self.bin_path, dir_path=self.extract_path)
+        config_cmd = "./configure --prefix={bin_path} \
+                                  --enable-language-bindings=python \
+                                  --with-antlr-dir={dir_path}/antlr-3.4 ANTLR={dir_path}/antlr-3.4/bin/antlr3"
+        config_cmd = config_cmd.format(bin_path=self.bin_path,
+                                       dir_path=self.extract_path)
+
         if os.path.exists(sys.executable+"-config"):
             pyconfig = {"PYTHON_CONFIG": sys.executable+"-config"}
         else:
             pyconfig = {}
-        SolverInstaller.run(config,
-                            directory=self.extract_path,
+
+        SolverInstaller.run(config_cmd,  directory=self.extract_path,
+                            env_variables=pyconfig)
+        SolverInstaller.run("make", directory=self.extract_path,
+                            env_variables=pyconfig)
+        SolverInstaller.run("make install", directory=self.extract_path,
                             env_variables=pyconfig)
 
+
         # Fix the paths of the bindings
-        SolverInstaller.run("cp CVC4.so.3.0.0 _CVC4.so",
-                            directory=os.path.join(self.bin_path, "lib/pyshared"))
+        SolverInstaller.mv(os.path.join(self.bin_path, "lib/pyshared/CVC4.so.4.0.0"),
+                           os.path.join(self.bin_path, "lib/pyshared/_CVC4.so"))
 
     def get_installed_version(self):
-        with TemporaryPath([self.bindings_dir]):
-            version = None
-            try:
-                import CVC4
-                version = CVC4.Configuration_getVersionString()
-            finally:
-                if "CVC4" in sys.modules:
-                    del sys.modules["CVC4"]
-                # Return None, without raising an exception
-                # pylint: disable=lost-exception
-                return version
+        return self.get_installed_version_script(self.bindings_dir, "cvc4")

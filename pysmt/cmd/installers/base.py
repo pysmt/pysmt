@@ -19,12 +19,14 @@ import zipfile
 import tarfile
 import six
 import struct
+import subprocess
 
 from contextlib import contextmanager
 
 import six.moves
 from six.moves import xrange
 from six.moves.urllib.error import HTTPError, URLError
+
 
 @contextmanager
 def TemporaryPath(path):
@@ -88,10 +90,9 @@ class SolverInstaller(object):
 
     def download_links(self):
         if self.mirror_link is not None:
-            yield self.mirror_link.format(archive_name=self.archive_name)
+            yield self.mirror_link.format(archive_name=self.archive_name, solver_version=self.solver_version)
         if self.native_link is not None:
-            yield self.native_link.format(archive_name=self.archive_name)
-
+            yield self.native_link.format(archive_name=self.archive_name, solver_version=self.solver_version)
 
     def download(self):
         """Downloads the archive from one of the mirrors"""
@@ -121,7 +122,6 @@ class SolverInstaller(object):
         else:
             raise ValueError("Unsupported archive for extraction: %s" % path)
 
-
     def compile(self):
         """Performs the compilation if needed"""
         pass
@@ -142,7 +142,6 @@ class SolverInstaller(object):
         self.unpack()
         self.compile()
         self.move()
-
         return
 
     def is_installed(self):
@@ -150,12 +149,10 @@ class SolverInstaller(object):
         ver = self.get_installed_version()
         return (ver is not None) and (ver == self.solver_version)
 
-
     def get_installed_version(self):
         """Returns a string representing the version of the solver currently
         installed or None if the solver is not found"""
         return None
-
 
     @staticmethod
     def do_download(url, file_name):
@@ -188,9 +185,8 @@ class SolverInstaller(object):
         f.close()
         return True
 
-
     @staticmethod
-    def run_python(script, directory=None, env_variables=None):
+    def run_python(script, directory=None, env_variables=None, get_output=False):
         """Executes a python script"""
         interpreter = 'python'
         if sys.executable:
@@ -198,22 +194,23 @@ class SolverInstaller(object):
 
         cmd = '{interpreter} {script}'.format(interpreter=interpreter,
                                               script=script)
-        SolverInstaller.run(cmd, directory=directory, env_variables = env_variables)
+        return SolverInstaller.run(cmd, directory=directory,
+                                   env_variables=env_variables,
+                                   get_output=get_output)
 
     @staticmethod
-    def run(program, directory=None, env_variables=None):
+    def run(program, directory=None, env_variables=None, get_output=False):
         """Executes an arbitrary program"""
-        if directory is not None:
-            cmd = 'cd {directory}; {program}'
-        else:
-            cmd = '{program}'
-
+        environment = os.environ.copy()
         if env_variables is not None:
             for k,v in six.iteritems(env_variables):
-                cmd = "export %s='%s'; %s" % (k, v, cmd)
+                environment[k] = v
 
-        os.system(cmd.format(directory=directory,
-                             program=program))
+        if get_output:
+            output = subprocess.check_output(program.split(), env=environment, cwd=directory)
+            return output.decode("ascii")
+        else:
+            subprocess.check_call(program.split(), env=environment, cwd=directory)
 
     @staticmethod
     def clean_dir(path):
@@ -243,7 +240,6 @@ class SolverInstaller(object):
             shutil.copy(source, dest)
             os.unlink(source)
 
-
     @staticmethod
     def untar(fname, directory, mode='r:gz'):
         """Extracts the tarfile using the specified mode in the given directory."""
@@ -256,3 +252,28 @@ class SolverInstaller(object):
         myzip = zipfile.ZipFile(fname, "r")
         myzip.extractall(directory)
         myzip.close()
+
+    def get_installed_version_script(self, bindings_dir, package):
+        check_version_script = os.path.abspath(os.path.join(
+                                 os.path.dirname(__file__),
+                                 "..",
+                                 "check_version.py"))
+        env = {}
+        for k in ["LD_LIBRARY_PATH", "PATH", "PYTHONPATH"]:
+            if k in os.environ:
+                env[k] = bindings_dir + os.pathsep + os.environ[k]
+            else:
+                env[k] = bindings_dir
+
+        try:
+            output = self.run_python("%s %s" % (check_version_script, package),
+                                     env_variables=env,
+                                     get_output=True)
+            output = output.strip()
+        except Exception as ex:
+            print("Error while checking %s" % package)
+            return None
+
+        if output == "NOT INSTALLED":
+            return None
+        return output
