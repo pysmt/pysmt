@@ -35,7 +35,7 @@ from pysmt.solvers.solver import (IncrementalTrackingSolver, UnsatCoreSolver,
                                   Model, Converter, SolverOptions)
 from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 from pysmt.solvers.qelim import QuantifierEliminator
-from pysmt.solvers.optimizer import Optimizer, SUAOptimizerMixin
+from pysmt.solvers.optimizer import Optimizer, SUAOptimizerMixin, IncrementalOptimizerMixin
 from pysmt.solvers.interpolation import Interpolator
 
 from pysmt.walkers import DagWalker
@@ -1050,4 +1050,7 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
             yield model
 
 class Z3SUAOptimizer(Z3Solver, SUAOptimizerMixin):
+    LOGICS = Z3Solver.LOGICS
+
+class Z3IncrementalOptimizer(Z3Solver, IncrementalOptimizerMixin):
     LOGICS = Z3Solver.LOGICS
