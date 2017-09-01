@@ -157,3 +157,87 @@ class SUAOptimizerMixin(Optimizer):
                                          for i in range(len(cost_functions))))
             else:
                 terminated = True
+
+
+class IncrementalOptimizerMixin(Optimizer):
+    """Optimizer mixin using solving under assumptions"""
+
+    def _lt(self, x, y):
+        otype = self.environment.stc.get_type(x)
+        mgr = self.environment.formula_manager
+        if otype.is_int_type() or otype.is_real_type():
+            return mgr.LT(x, y)
+        elif otype.is_bv_type():
+            return mgr.BVULT(x, y)
+
+    def _le(self, x, y):
+        otype = self.environment.stc.get_type(x)
+        mgr = self.environment.formula_manager
+        if otype.is_int_type() or otype.is_real_type():
+            return mgr.LE(x, y)
+        elif otype.is_bv_type():
+            return mgr.BVULE(x, y)
+
+    def optimize(self, cost_function, initial_cost=None, callback=None):
+        last_model = None
+        keep = True
+
+        self.push()
+        initial_assumptions = []
+        if initial_cost is not None:
+            self.add_assertion(self._lt(cost_function, initial_cost))
+
+        cost_so_far = None
+        while keep:
+            if cost_so_far is not None:
+                self.add_assertion(self._lt(cost_function, cost_so_far))
+            keep = self.solve()
+
+            if keep:
+                last_model = self.get_model()
+                cost_so_far = self.get_value(cost_function)
+                if callback is not None:
+                    exit_request = callback(last_model)
+                    if exit_request is True:
+                        break
+        self.pop()
+        return last_model
+
+    def pareto_optimize(self, cost_functions, callback=None):
+        mgr = self.environment.formula_manager
+
+        terminated = False
+        self.push()
+        while not terminated:
+            last_model = None
+            keep = True
+            costs_so_far = None
+            self.push()
+            while keep:
+                if costs_so_far is not None:
+                    for i in range(len(cost_functions)):
+                        self.add_assertion(self._le(cost_functions[i],
+                                                    costs_so_far[i]))
+                    self.add_assertion(mgr.Or(self._lt(cost_functions[i],
+                                                       costs_so_far[i])
+                                              for i in range(len(cost_functions))))
+                keep = self.solve()
+
+                if keep:
+                    last_model = self.get_model()
+                    costs_so_far = []
+                    for i in range(len(cost_functions)):
+                        costs_so_far.append(self.get_value(cost_functions[i]))
+                    if callback is not None:
+                        exit_request = callback(last_model)
+                        if exit_request is True:
+                            break
+            self.pop()
+            if last_model is not None:
+                yield last_model
+                self.add_assertion(mgr.Or(self._lt(cost_functions[i],
+                                                   last_model[cost_functions[i]])
+                                          for i in range(len(cost_functions))))
+            else:
+                terminated = True
+        self.pop()
