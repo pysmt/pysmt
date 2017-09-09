@@ -681,6 +681,9 @@ class FNode(object):
     def Equals(self, right):
         return self._apply_infix(right, _mgr().Equals)
 
+    def NotEquals(self, right):
+        return self._apply_infix(right, _mgr().NotEquals)
+
     def Ite(self, then_, else_):
         if _env().enable_infix_notation:
             if isinstance(then_, FNode) and isinstance(else_, FNode):

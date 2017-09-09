@@ -209,6 +209,10 @@ def Equals(left, right):
     return get_env().formula_manager.Equals(left, right)
 
 
+def NotEquals(left, right):
+    r""".. math:: l != r"""
+    return get_env().formula_manager.NotEquals(left, right)
+
 def GT(left, right):
     r""".. math:: l > r"""
     return get_env().formula_manager.GT(left, right)
