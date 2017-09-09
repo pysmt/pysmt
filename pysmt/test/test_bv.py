@@ -18,7 +18,7 @@
 from pysmt.test import TestCase, skipIfNoSolverForLogic, main
 from pysmt.shortcuts import Symbol, And, Symbol, Equals, TRUE
 from pysmt.shortcuts import is_sat, is_valid, get_model, is_unsat
-from pysmt.typing import BVType, BV32, BV128
+from pysmt.typing import BVType, BV32, BV128, FunctionType, ArrayType
 from pysmt.logics import QF_BV
 from pysmt.exceptions import PysmtValueError, PysmtTypeError
 
@@ -306,6 +306,27 @@ class TestBV(TestCase):
         self.assertFalse(bvconst.is_bv_constant(value=5, width=8))
         self.assertFalse(bvconst.is_bv_constant(3,9))
         self.assertFalse(bvconst.is_bv_constant(3))
+
+    def test_infix_with_function(self):
+        mgr = self.env.formula_manager
+        self.env.enable_infix_notation = True
+
+        ftype = FunctionType(BV128, (BV32,))
+        g = mgr.Symbol("g", ftype)
+        f = mgr.Function(g, (mgr.BV(1, 32),))
+        self.assertEqual(f.Equals(5),
+                         f.Equals(mgr.BV(5, 128)))
+
+    def test_infix_with_array(self):
+        mgr = self.env.formula_manager
+        self.env.enable_infix_notation = True
+
+        atype = ArrayType(BV32, BV128)
+        g = mgr.Symbol("g", atype)
+        f = mgr.Select(g, mgr.BV(1, 32))
+        self.assertEqual(f.Equals(5),
+                         f.Equals(mgr.BV(5, 128)))
+
 
 if __name__ == "__main__":
     main()

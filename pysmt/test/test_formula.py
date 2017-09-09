@@ -26,8 +26,8 @@ from pysmt.shortcuts import get_env
 from pysmt.environment import Environment
 from pysmt.test import TestCase, skipIfNoSolverForLogic, main
 from pysmt.logics import QF_BOOL
-from pysmt.exceptions import (UndefinedSymbolError, PysmtTypeError,
-                              PysmtModeError, PysmtValueError)
+from pysmt.exceptions import (UndefinedSymbolError, UnsupportedOperatorError,
+                              PysmtTypeError, PysmtModeError, PysmtValueError)
 from pysmt.formula import FormulaManager
 from pysmt.constants import Fraction, Integer
 
@@ -722,7 +722,7 @@ class TestFormulaManager(TestCase):
         self.assertEqual(p + p, Plus(p,p))
         self.assertEqual(p > p, GT(p,p))
 
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(UnsupportedOperatorError):
             x[1]
 
     def test_infix_extended(self):
