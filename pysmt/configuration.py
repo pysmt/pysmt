@@ -17,7 +17,7 @@
 #
 """Utils to configure pySMT.
 
-The following is an example of configuratoin file.
+The following is an example of configuration file.
 
 [global]
 use_infix_notation: true

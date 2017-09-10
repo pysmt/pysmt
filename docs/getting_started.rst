@@ -65,6 +65,15 @@ system environment variables ``PYSMT_GMPY2`` to ``True`` or
 ``False``. If this is set to true and the gmpy library cannot be
 imported, an exception will be thrown.
 
+Cython
+""""""
+
+PySMT supports the use of `Cython <http://cython.org/>`_ in order to
+improve the performances of some internal component. If Cython is
+installed, this will be used (by default) to compile the SMT-LIB
+parser. The use of Cython can be controlled by setting the environment
+variable ``PYSMT_CYTHON`` to ``True`` or ``False``. If set to false,
+the default pure python implementation will be used.
 
 
 Hello World
