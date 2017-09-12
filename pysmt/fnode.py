@@ -751,6 +751,13 @@ class FNode(object):
     def BVRepeat(self, count):
         return _mgr().BVRepeat(self, count)
 
+    # Arrays
+    def Select(self, index):
+        return _mgr().Select(self, index)
+
+    def Store(self, index, value):
+        return _mgr().Store(self, index, value)
+
     #
     # Infix operators
     #
