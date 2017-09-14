@@ -22,6 +22,7 @@ import pysmt
 from pysmt.typing import BOOL, REAL, INT, FunctionType, BV8, BVType
 from pysmt.shortcuts import Symbol, is_sat, Not, Implies, GT, Plus, Int, Real
 from pysmt.shortcuts import Minus, Times, Xor, And, Or, TRUE, Iff, FALSE, Ite
+from pysmt.shortcuts import Equals
 from pysmt.shortcuts import get_env
 from pysmt.environment import Environment
 from pysmt.test import TestCase, skipIfNoSolverForLogic, main
@@ -771,7 +772,7 @@ class TestFormulaManager(TestCase):
             x.Ite(1,2)
 
         self.assertEqual(6 - r, Plus(Times(r, Real(-1)), Real(6)))
-
+        self.assertEqual(Not(Equals(x,y)), x.NotEquals(y))
         # BVs
 
         # BV_CONSTANT: We use directly python numbers
