@@ -137,6 +137,12 @@ class TestArray(TestCase):
         with self.assertRaises(PysmtValueError):
             self.assertTrue(ax3.is_constant(value=Real(2)))
 
+    def test_infix(self):
+        a = Symbol("a", ARRAY_INT_INT)
+        self.assertEqual(a.Select(Int(5)),
+                         Select(a, Int(5)))
+        self.assertEqual(a.Store(Int(5), Int(6)),
+                         Store(a, Int(5), Int(6)))
 
 if __name__ == "__main__":
     main()

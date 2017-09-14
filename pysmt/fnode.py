@@ -681,6 +681,9 @@ class FNode(object):
     def Equals(self, right):
         return self._apply_infix(right, _mgr().Equals)
 
+    def NotEquals(self, right):
+        return self._apply_infix(right, _mgr().NotEquals)
+
     def Ite(self, then_, else_):
         if _env().enable_infix_notation:
             if isinstance(then_, FNode) and isinstance(else_, FNode):
@@ -747,6 +750,13 @@ class FNode(object):
 
     def BVRepeat(self, count):
         return _mgr().BVRepeat(self, count)
+
+    # Arrays
+    def Select(self, index):
+        return _mgr().Select(self, index)
+
+    def Store(self, index, value):
+        return _mgr().Store(self, index, value)
 
     #
     # Infix operators

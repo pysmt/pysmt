@@ -266,10 +266,14 @@ class FormulaManager(object):
     def Equals(self, left, right):
         """ Creates an expression of the form: left = right
 
-        Restriction: Left and Right must be both REAL or INT type
+        For the boolean case use Iff
         """
         return self.create_node(node_type=op.EQUALS,
                                 args=(left, right))
+
+    def NotEquals(self, left, right):
+        """ Creates an expression of the form: left != right"""
+        return self.Not(self.Equals(left, right))
 
     def GE(self, left, right):
         """ Creates an expression of the form:

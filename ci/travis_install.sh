@@ -32,10 +32,10 @@ then
 fi
 
 pip install six
+pip install cython;
 
 if [ "${PYSMT_SOLVER}" == "all" ] || [ "${PYSMT_SOLVER}" == "btor" ];
 then
-    pip install cython;
     pip install python-coveralls;
 fi
 
