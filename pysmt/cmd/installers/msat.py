@@ -49,6 +49,8 @@ class MSatInstaller(SolverInstaller):
         self.python_bindings_dir = os.path.join(self.extract_path, "python")
 
     def compile(self):
+        if self.os_name == "windows":
+            return
         SolverInstaller.run_python("./setup.py build", self.python_bindings_dir)
 
     def move(self):
