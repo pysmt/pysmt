@@ -13,8 +13,6 @@
 # limitations under the License.
 
 import os
-import re
-import sys
 import platform
 
 from pysmt.cmd.installers.base import SolverInstaller, TemporaryPath
