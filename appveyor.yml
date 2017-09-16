@@ -47,6 +47,11 @@ environment:
       PYTHON_ARCH: "64"
       PYSMT_SOLVER: "z3"
 
+    - PYTHON: "C:\\Python35-x64"
+      PYTHON_VERSION: "3.5.2"
+      PYTHON_ARCH: "64"
+      PYSMT_SOLVER: "msat"
+
 
 
 install:
