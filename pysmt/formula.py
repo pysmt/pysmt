@@ -569,21 +569,24 @@ class FormulaManager(object):
         if width is None:
             raise PysmtValueError("Need to specify a width for the constant")
 
-        if is_python_integer(value):
-            if value < 0:
-                raise PysmtValueError("Cannot specify a negative value: %d" \
-                                      % value)
-            if value >= 2**width:
-                raise PysmtValueError("Cannot express %d in %d bits" \
-                                      % (value, width))
-
-            return self.create_node(node_type=op.BV_CONSTANT,
-                                    args=tuple(),
-                                    payload=(value, width))
-
+        if is_pysmt_integer(value):
+            _value = value
+        elif is_python_integer(value):
+            _value = pysmt_integer_from_integer(value)
         else:
-            raise PysmtTypeError("Invalid type in constant. The type was:" + \
-                                 str(type(value)))
+            raise PysmtTypeError("Invalid type in constant. The type was: %s" \
+                                 % str(type(value)))
+        if _value < 0:
+            raise PysmtValueError("Cannot specify a negative value: %d" \
+                                  % _value)
+        if _value >= 2**width:
+            raise PysmtValueError("Cannot express %d in %d bits" \
+                                  % (_value, width))
+
+        return self.create_node(node_type=op.BV_CONSTANT,
+                                args=tuple(),
+                                payload=(_value, width))
+
 
     def SBV(self, value, width=None):
         """Returns a constant of type BitVector interpreting the sign.

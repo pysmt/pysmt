@@ -15,12 +15,14 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+
 from pysmt.test import TestCase, skipIfNoSolverForLogic, main
 from pysmt.shortcuts import Symbol, And, Symbol, Equals, TRUE
 from pysmt.shortcuts import is_sat, is_valid, get_model, is_unsat
 from pysmt.typing import BVType, BV32, BV128, FunctionType, ArrayType
 from pysmt.logics import QF_BV
 from pysmt.exceptions import PysmtValueError, PysmtTypeError
+
 
 class TestBV(TestCase):
 
