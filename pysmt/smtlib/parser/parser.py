@@ -619,7 +619,7 @@ class SmtLibParser(object):
                     if token[1] != "x":
                         raise PysmtSyntaxError("Invalid bit-vector constant "
                                                "'%s'" % token)
-                    width = (len(token) - 2) * 16
+                    width = (len(token) - 2) * 4
                     value = int("0" + token[1:], 16)
                 res = mgr.BV(value, width)
             else:
