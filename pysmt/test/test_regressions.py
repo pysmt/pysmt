@@ -462,6 +462,14 @@ class TestRegressions(TestCase):
             self.assertEqual(ex.pos_info[0], 0)
             self.assertEqual(ex.pos_info[1], 19)
 
+    def test_parse_bvconst_width(self):
+        smtlib_input = "(assert (> #x10 #x10))"
+        parser = SmtLibParser()
+        buffer_ = cStringIO(smtlib_input)
+        expr = parser.get_script(buffer_).get_last_formula()
+        const = expr.args()[0]
+        self.assertEqual(const.bv_width(), 8, const.bv_width())
+
 
 if __name__ == "__main__":
     main()
