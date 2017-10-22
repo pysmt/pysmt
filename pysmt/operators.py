@@ -25,7 +25,7 @@ from itertools import chain
 from six.moves import xrange
 
 
-ALL_TYPES = tuple(xrange(0,53))
+ALL_TYPES = tuple(xrange(0,54))
 
 (
 FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF, # Boolean Logic (0-6)
@@ -54,13 +54,15 @@ BV_COMP,                                    # Returns 1_1 if the arguments are
                                             # equal otherwise it returns 0_1 (44)
 BV_SDIV, BV_SREM,                           # Signed Division and Reminder(45-46)
 BV_ASHR,                                    # Arithmetic shift right (47)
-ARRAY_SELECT,                               # Array Select (48)
-ARRAY_STORE,                                # Array Store (49)
-ARRAY_VALUE,                                # Array Value (50)
+BV_TONATURAL,                               # BV to Natural Conversion (48)
 
-DIV,                                        # Arithmetic Division (51)
-POW,                                        # Arithmetic Power (52)
-ALGEBRAIC_CONSTANT,                         # Algebraic Number (53)
+ARRAY_SELECT,                               # Array Select (49)
+ARRAY_STORE,                                # Array Store (50)
+ARRAY_VALUE,                                # Array Value (51)
+
+DIV,                                        # Arithmetic Division (52)
+POW,                                        # Arithmetic Power (53)
+ALGEBRAIC_CONSTANT,                         # Algebraic Number (54)
 ) = ALL_TYPES
 
 QUANTIFIERS = frozenset([FORALL, EXISTS])
@@ -84,7 +86,7 @@ BV_OPERATORS = frozenset([BV_NOT, BV_AND, BV_OR, BV_XOR,
                           BV_ROL, BV_ROR, BV_ZEXT, BV_SEXT,
                           BV_COMP, BV_SDIV, BV_SREM, BV_ASHR])
 
-IRA_OPERATORS = frozenset([PLUS, MINUS, TIMES, TOREAL, DIV, POW])
+IRA_OPERATORS = frozenset([PLUS, MINUS, TIMES, TOREAL, DIV, POW, BV_TONATURAL])
 
 ARRAY_OPERATORS = frozenset([ARRAY_SELECT, ARRAY_STORE, ARRAY_VALUE])
 
@@ -177,6 +179,7 @@ __OP_STR__ = {
     BV_SDIV : "BV_SDIV",
     BV_SREM : "BV_SREM",
     BV_ASHR : "BV_ASHR",
+    BV_TONATURAL : "BV_TONATURAL",
     ARRAY_SELECT : "ARRAY_SELECT",
     ARRAY_STORE : "ARRAY_STORE",
     ARRAY_VALUE : "ARRAY_VALUE",

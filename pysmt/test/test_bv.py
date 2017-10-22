@@ -329,6 +329,10 @@ class TestBV(TestCase):
         self.assertEqual(f.Equals(5),
                          f.Equals(mgr.BV(5, 128)))
 
+    def test_bv_to_natural(self):
+        mgr = self.env.formula_manager
+        c1 = mgr.BVToNatural(mgr.BV(1, 32)).simplify()
+        self.assertEqual(c1.constant_value(), 1)
 
 if __name__ == "__main__":
     main()

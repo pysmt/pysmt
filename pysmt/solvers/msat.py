@@ -433,9 +433,10 @@ class MSatConverter(Converter, DagWalker):
             mathsat.MSAT_TAG_BV_LSHR: self._back_adapter(self.mgr.BVLShr),
             mathsat.MSAT_TAG_BV_ASHR: self._back_adapter(self.mgr.BVAShr),
             mathsat.MSAT_TAG_BV_COMP: self._back_adapter(self.mgr.BVComp),
+            mathsat.MSAT_TAG_INT_FROM_UBV: self._back_adapter(self.mgr.BVToNatural),
             mathsat.MSAT_TAG_ARRAY_READ: self._back_adapter(self.mgr.Select),
             mathsat.MSAT_TAG_ARRAY_WRITE: self._back_adapter(self.mgr.Store),
-            # Slightly more complext conversion
+            # Slightly more complex conversion
             mathsat.MSAT_TAG_BV_EXTRACT: self._back_bv_extract,
             mathsat.MSAT_TAG_BV_ZEXT: self._back_bv_zext,
             mathsat.MSAT_TAG_BV_SEXT: self._back_bv_sext,
@@ -990,6 +991,9 @@ class MSatConverter(Converter, DagWalker):
     def walk_toreal(self, formula, args, **kwargs):
         # In mathsat toreal is implicit
         return args[0]
+
+    def walk_bv_tonatural(self, formula, args, **kwargs):
+        return mathsat.msat_make_int_from_ubv(self.msat_env(), args[0])
 
     def walk_array_select(self, formula, args, **kwargs):
         return mathsat.msat_make_array_read(self.msat_env(), args[0], args[1])

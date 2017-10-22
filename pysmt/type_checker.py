@@ -107,6 +107,12 @@ class SimpleTypeChecker(walkers.DagWalker):
                 return None
         return BOOL
 
+    def walk_bv_tonatural(self, formula, args, **kwargs):
+        #pylint: disable=unused-argument
+        if args[0].is_bv_type():
+            return INT
+        return None
+
     def walk_bv_concat(self, formula, args, **kwargs):
         # Width of BV operators are computed at construction time.
         # The type-checker only verifies that they are indeed

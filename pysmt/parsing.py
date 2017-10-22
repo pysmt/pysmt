@@ -107,7 +107,7 @@ class GrammarSymbol(object):
 # 70 : Plus, Minus, BVAdd, BVSub
 # 80 : Times, Div, BVMul, BVUDiv, BVSDiv, BVSRem, BVURem
 # 90 : BVLShl, BVLShr, BVAShr, BVConcat, BVXor, BVRor, BVRol, BVZExt, BVSExt, BVComp
-# 100 : ToReal Uminus BVNeg
+# 100 : ToReal Uminus BVNeg BVToNat
 # 200 : ()
 # 300 : []
 
@@ -172,14 +172,15 @@ class HRLexer(Lexer):
             Rule(r"(,)", ExprComma(), False),# comma
             Rule(r"(\.)", ExprDot(), False),# dot
             Rule(r"(xor)", InfixOpAdapter(self.mgr.BVXor, 10), False),# BVXor
-            Rule(r"(ROR)", InfixOpAdapter(self.BVHack(self.mgr.BVRor), 90), False),# BVXor
-            Rule(r"(ROL)", InfixOpAdapter(self.BVHack(self.mgr.BVRol), 90), False),# BVXor
-            Rule(r"(ZEXT)", InfixOpAdapter(self.BVHack(self.mgr.BVZExt), 90), False),# BVXor
-            Rule(r"(SEXT)", InfixOpAdapter(self.BVHack(self.mgr.BVSExt), 90), False),# BVXor
-            Rule(r"(bvcomp)", InfixOpAdapter(self.mgr.BVComp, 90), False),# BVXor
-            Rule(r"(forall)", Quantifier(self.mgr.ForAll, 20), False),# BVXor
-            Rule(r"(exists)", Quantifier(self.mgr.Exists, 20), False),# BVXor
-            Rule(r"(ToReal)", UnaryOpAdapter(self.mgr.ToReal, 100), False),# BVXor
+            Rule(r"(ROR)", InfixOpAdapter(self.BVHack(self.mgr.BVRor), 90), False),# BVRor
+            Rule(r"(ROL)", InfixOpAdapter(self.BVHack(self.mgr.BVRol), 90), False),# BVRol
+            Rule(r"(ZEXT)", InfixOpAdapter(self.BVHack(self.mgr.BVZExt), 90), False),# BVZext
+            Rule(r"(SEXT)", InfixOpAdapter(self.BVHack(self.mgr.BVSExt), 90), False),# BVSext
+            Rule(r"(bvcomp)", InfixOpAdapter(self.mgr.BVComp, 90), False),#
+            Rule(r"(forall)", Quantifier(self.mgr.ForAll, 20), False),#
+            Rule(r"(exists)", Quantifier(self.mgr.Exists, 20), False),#
+            Rule(r"(ToReal)", UnaryOpAdapter(self.mgr.ToReal, 100), False),#
+            Rule(r"(bv2nat)", UnaryOpAdapter(self.mgr.BVToNatural, 100), False),#
             Rule(r"\"(.*?)\"", self.identifier, True),# quoted identifiers
             Rule(r"([A-Za-z_][A-Za-z0-9_]*)", self.identifier, True),# identifiers
             Rule(r"(.)", self.lexing_error, True), # input error
