@@ -447,6 +447,8 @@ class TypeManager(object):
         try:
             ty = self._function_types[key]
         except KeyError:
+            assert_is_type(return_type, __name__)
+            assert_are_types(param_types, __name__)
             ty = _FunctionType(return_type=return_type,
                                param_types=param_types)
             self._function_types[key] = ty
@@ -463,6 +465,7 @@ class TypeManager(object):
         try:
             ty = self._array_types[key]
         except KeyError:
+            assert_are_types((index_type, elem_type), __name__)
             ty = _ArrayType(index_type, elem_type)
             self._array_types[key] = ty
         return ty
@@ -494,9 +497,7 @@ class TypeManager(object):
 
     def get_type_instance(self, type_decl, *args):
         """Creates an instance of the TypeDecl with the given arguments."""
-        if not all(isinstance(t, PySMTType) for t in args):
-            raise PysmtValueError("Trying to instantiate %s with non-type args."\
-                                  % str(type_decl))
+        assert_are_types(args, __name__)
         key = (type_decl, tuple(args)) if args is not None else type_decl
         try:
             ty = self._custom_types[key]
@@ -547,6 +548,17 @@ class TypeManager(object):
         return typemap[type_]
 
 # EOC TypeManager
+
+
+# Util
+def assert_is_type(target, func_name):
+    if not isinstance(target, PySMTType):
+        raise PysmtValueError("Invalid type '%s' in %s." % (target, func_name))
+
+def assert_are_types(targets, func_name):
+    for target in targets:
+        assert_is_type(target, func_name)
+
 
 
 def BVType(width=32):
