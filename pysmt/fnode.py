@@ -650,26 +650,32 @@ class FNode(object):
     # Infix Notation
     @assert_infix_enabled
     def _apply_infix(self, right, function, bv_function=None):
-        mgr = _mgr()
-        # BVs
         # Default bv_function to function
-        if bv_function is None: bv_function = function
+        if bv_function is None:
+            bv_function = function
+        right = self._infix_prepare_arg(right, self.get_type())
         if self.get_type().is_bv_type():
-            if is_python_integer(right):
-                right = mgr.BV(right, width=self.bv_width())
             return bv_function(self, right)
-        # Boolean, Integer and Arithmetic
-        if is_python_boolean(right):
-            right = mgr.Bool(right)
-        elif is_python_integer(right):
-            ty = self.get_type()
-            if ty.is_real_type():
-                right = mgr.Real(right)
-            else:
-                right = mgr.Int(right)
-        elif is_python_rational(right):
-            right = mgr.Real(right)
         return function(self, right)
+
+    @assert_infix_enabled
+    def _infix_prepare_arg(self, arg, expected_type):
+        mgr = _mgr()
+        if isinstance(arg, FNode):
+            return arg
+
+        # BVs
+        if expected_type.is_bv_type():
+            return mgr.BV(arg, width=expected_type.width)
+        # Boolean, Integer and Arithmetic
+        elif expected_type.is_bool_type():
+            return mgr.Bool(arg)
+        elif expected_type.is_int_type():
+            return mgr.Int(arg)
+        elif expected_type.is_real_type():
+            return mgr.Real(arg)
+        else:
+            raise PysmtValueError("Unsupported value '%s' in infix operator" % str(arg))
 
     def Implies(self, right):
         return self._apply_infix(right, _mgr().Implies)
@@ -854,6 +860,20 @@ class FNode(object):
 
     def __mod__(self, right):
         return self._apply_infix(right, None, bv_function=_mgr().BVURem)
+
+    @assert_infix_enabled
+    def __call__(self, *args):
+        if self.is_symbol() and self.symbol_type().is_function_type():
+            types = self.symbol_type().param_types
+            if (len(types) != len(args)):
+                raise PysmtValueError("Wrong number of parameters passed in "
+                                      "infix 'call' operator")
+            args = [self._infix_prepare_arg(x, t) for x,t in zip(args, types)]
+            return _mgr().Function(self, args)
+        else:
+            raise PysmtValueError("Call operator can be applied to symbol "
+                                  "types having function type only")
+
 # EOC FNode
 
 
