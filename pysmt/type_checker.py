@@ -155,12 +155,23 @@ class SimpleTypeChecker(walkers.DagWalker):
             return None
         return BVType(target_width)
 
-    @walkers.handles(op.EQUALS, op.LE, op.LT)
-    def walk_math_relation(self, formula, args, **kwargs):
+    def walk_equals(self, formula, args, **kwargs):
         #pylint: disable=unused-argument
-        if args[0].is_bv_type():
+        if args[0].is_bool_type():
+            raise PysmtTypeError("The formula '%s' is not well-formed."
+                                 "Equality operator is not supported for Boolean"
+                                 " terms. Use Iff instead." \
+                                 % str(formula))
+        elif args[0].is_bv_type():
             return self.walk_bv_to_bool(formula, args)
         return self.walk_type_to_type(formula, args, args[0], BOOL)
+
+    @walkers.handles(op.LE, op.LT)
+    def walk_math_relation(self, formula, args, **kwargs):
+        #pylint: disable=unused-argument
+        if args[0].is_real_type():
+            return self.walk_type_to_type(formula, args, REAL, BOOL)
+        return self.walk_type_to_type(formula, args, INT, BOOL)
 
     def walk_ite(self, formula, args, **kwargs):
         assert formula is not None
