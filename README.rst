@@ -217,7 +217,7 @@ The following table summarizes the features supported via pySMT for each of the 
 License
 =======
 
-pySMT is release under the APACHE 2.0 License.
+pySMT is released under the APACHE 2.0 License.
 
 For further questions, feel free to open an issue, or write to
 pysmt@googlegroups.com (`Browse the Archive <https://groups.google.com/d/forum/pysmt>`_).
