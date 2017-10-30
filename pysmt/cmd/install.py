@@ -131,6 +131,10 @@ def parse_options():
                         default=False,
                         help='Prints a bash export command to extend the PYTHONPATH')
 
+    parser.add_argument('--powershell', dest='powershell', action='store_true',
+                        default=False,
+                        help='In combination with --env under windows, prints the commands in powershell format')
+
     parser.add_argument('--confirm-agreement', dest='skip_intro',
                         action='store_true', default=False,
                         help='Confirm that you agree with the licenses of the\
@@ -219,8 +223,12 @@ def main():
     elif options.env:
         bindings_dir= os.path.expanduser(options.bindings_path)
         if platform.system().lower() == "windows":
-            print("set PYTHONPATH=" + bindings_dir + ";%PYTHONPATH%")
-            print("set PATH=" + bindings_dir + ";%PATH%")
+            if options.powershell:
+                print('$env:PythonPath += ";%s"' % bindings_dir)
+                print('$env:Path += ";%s"' % bindings_dir)
+            else:
+                print("set PYTHONPATH=" + bindings_dir + ";%PYTHONPATH%")
+                print("set PATH=" + bindings_dir + ";%PATH%")
         else:
             print("export PYTHONPATH=\"" + bindings_dir + ":${PYTHONPATH}\"")
             print("export LD_LIBRARY_PATH=\"" + bindings_dir + ":${LD_LIBRARY_PATH}\"")

@@ -6,47 +6,60 @@ environment:
     CMD_IN_ENV: "cmd /E:ON /V:ON /C .\\ci\\appveyor\\run_with_env.cmd"
 
   matrix:
-    - PYTHON: "C:\\Python27"
-      PYTHON_VERSION: "2.7.8"
-      PYTHON_ARCH: "32"
-      PYSMT_SOLVER: "None"
-
     - PYTHON: "C:\\Python27-x64"
       PYTHON_VERSION: "2.7.8"
       PYTHON_ARCH: "64"
       PYSMT_SOLVER: "None"
 
-    - PYTHON: "C:\\Python35"
-      PYTHON_VERSION: "3.5.2"
-      PYTHON_ARCH: "32"
-      PYSMT_SOLVER: "None"
-
-    - PYTHON: "C:\\Python35-x64"
-      PYTHON_VERSION: "3.5.2"
+    - PYTHON: "C:\\Python36-x64"
+      PYTHON_VERSION: "3.6.x"
       PYTHON_ARCH: "64"
       PYSMT_SOLVER: "None"
 
 
     - PYTHON: "C:\\Python27"
-      PYTHON_VERSION: "2.7.8"
+      PYTHON_VERSION: "2.7.x"
       PYTHON_ARCH: "32"
       PYSMT_SOLVER: "z3"
 
     - PYTHON: "C:\\Python27-x64"
-      PYTHON_VERSION: "2.7.8"
+      PYTHON_VERSION: "2.7.x"
       PYTHON_ARCH: "64"
       PYSMT_SOLVER: "z3"
 
-    - PYTHON: "C:\\Python35"
-      PYTHON_VERSION: "3.5.2"
+    - PYTHON: "C:\\Python36"
+      PYTHON_VERSION: "3.6.x"
       PYTHON_ARCH: "32"
       PYSMT_SOLVER: "z3"
 
-    - PYTHON: "C:\\Python35-x64"
-      PYTHON_VERSION: "3.5.2"
+    - PYTHON: "C:\\Python36-x64"
+      PYTHON_VERSION: "3.6.x"
       PYTHON_ARCH: "64"
       PYSMT_SOLVER: "z3"
 
+
+    - PYTHON: "C:\\Python27"
+      PYTHON_VERSION: "2.7.x"
+      PYTHON_ARCH: "32"
+      PYSMT_SOLVER: "msat"
+
+    - PYTHON: "C:\\Python27-x64"
+      PYTHON_VERSION: "2.7.x"
+      PYTHON_ARCH: "64"
+      PYSMT_SOLVER: "msat"
+
+    # There is a problem with python 3.5+ with the compilation of MathSAT on AppVeyor.
+    # We need at least VS 2015 to build extensions, but it does not work on AppVeyor for some reason.
+    # see https://wiki.python.org/moin/WindowsCompilers
+    - PYTHON: "C:\\Python34"
+      PYTHON_VERSION: "3.4.x"
+      PYTHON_ARCH: "32"
+      PYSMT_SOLVER: "msat"
+
+    - PYTHON: "C:\\Python34-x64"
+      PYTHON_VERSION: "3.4.x"
+      PYTHON_ARCH: "64"
+      PYSMT_SOLVER: "msat"
 
 
 install:
@@ -58,25 +71,25 @@ install:
 
   # Install Python (from the official .msi of http://python.org) and pip when
   # not already installed.
-  - "powershell ./ci/appveyor/install.ps1"
+  - ps: "./ci/appveyor/install.ps1"
 
   # Prepend newly installed Python to the PATH of this build (this cannot be
   # done from inside the powershell script as it would require to restart
   # the parent CMD process).
-  - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
+  - cmd: "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
 
   # Check that we have the expected version and architecture for Python
-  - "python --version"
-  - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
+  - cmd: "python --version"
+  - cmd: "python -c \"import struct; print(struct.calcsize('P') * 8)\""
 
-  - "%CMD_IN_ENV% pip install -r dev-requirements.txt"
+  - cmd: "%CMD_IN_ENV% pip install -r dev-requirements.txt"
 
   # Install the solvers
-  - "%CMD_IN_ENV% python install.py --confirm-agreement"
+  - cmd: "%CMD_IN_ENV% python install.py --confirm-agreement"
 
   # Set the pythonpath
-  - "python install.py --env > bindings_path.bat"
-  - call ./bindings_path.bat
+  - cmd: "%CMD_IN_ENV% python install.py --env > bindings_path.bat"
+  - cmd: "call ./bindings_path.bat"
   - ECHO "PythonPath=%PYTHONPATH%"
   - ECHO "Path=%PATH%"
 
