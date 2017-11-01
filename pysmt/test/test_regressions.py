@@ -29,7 +29,7 @@ from pysmt.typing import REAL, BOOL, INT, BVType, FunctionType, ArrayType
 from pysmt.test import (TestCase, skipIfSolverNotAvailable, skipIfNoSolverForLogic,
                         skipIfNoQEForLogic)
 from pysmt.test import main
-from pysmt.exceptions import ConvertExpressionError, PysmtValueError
+from pysmt.exceptions import ConvertExpressionError, PysmtValueError, PysmtTypeError
 from pysmt.test.examples import get_example_formulae
 from pysmt.environment import Environment
 from pysmt.rewritings import cnf_as_set
@@ -469,6 +469,14 @@ class TestRegressions(TestCase):
         expr = parser.get_script(buffer_).get_last_formula()
         const = expr.args()[0]
         self.assertEqual(const.bv_width(), 8, const.bv_width())
+
+    def test_equality_typing(self):
+        x = Symbol('x', BOOL)
+        y = Symbol('y', BOOL)
+        with self.assertRaises(PysmtTypeError):
+            Equals(x, y)
+        with self.assertRaises(PysmtTypeError):
+            LE(x, y)
 
 
 if __name__ == "__main__":

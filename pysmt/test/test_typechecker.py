@@ -15,7 +15,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from pysmt.typing import REAL, BOOL, INT, FunctionType
+from pysmt.typing import REAL, BOOL, INT, FunctionType, BV8
 from pysmt.type_checker import (assert_no_boolean_in_args,
                                 assert_boolean_args,
                                 assert_same_type_args,
@@ -58,6 +58,30 @@ class TestSimpleTypeChecker(TestCase):
         tc = get_env().stc
         res = tc.walk(h)
         self.assertEqual(res, BOOL)
+
+
+    def test_arith_relations(self):
+        self.assertEqual(self.tc.walk(LE(self.p, self.q)), BOOL)
+        self.assertEqual(self.tc.walk(LT(self.p, self.q)), BOOL)
+        self.assertEqual(self.tc.walk(LE(self.r, self.s)), BOOL)
+        self.assertEqual(self.tc.walk(LT(self.r, self.s)), BOOL)
+
+        with self.assertRaises(PysmtTypeError):
+            LE(self.p, self.r)
+        with self.assertRaises(PysmtTypeError):
+            LT(self.p, self.r)
+        with self.assertRaises(PysmtTypeError):
+            LE(self.x, self.y)
+        with self.assertRaises(PysmtTypeError):
+            LT(self.x, self.y)
+
+        bv_a = Symbol("BV_A", BV8)
+        bv_b = Symbol("BV_B", BV8)
+
+        with self.assertRaises(PysmtTypeError):
+            LE(bv_a, bv_b)
+        with self.assertRaises(PysmtTypeError):
+            LT(bv_a, bv_b)
 
 
     def test_functions(self):
