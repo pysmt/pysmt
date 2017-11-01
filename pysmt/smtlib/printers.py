@@ -154,7 +154,7 @@ class SmtPrinter(TreeWalker):
         else:
             assert formula.is_bv_rol()
             rotate_type = "rotate_left"
-        self.write("((_ %s %d ) " % (rotate_type,
+        self.write("((_ %s %d) " % (rotate_type,
                                      formula.bv_rotation_step()))
         yield formula.arg(0)
         self.write(")")
@@ -166,7 +166,7 @@ class SmtPrinter(TreeWalker):
         else:
             assert formula.is_bv_sext()
             extend_type = "sign_extend"
-        self.write("((_ %s %d ) " % (extend_type,
+        self.write("((_ %s %d) " % (extend_type,
                                      formula.bv_extend_step()))
         yield formula.arg(0)
         self.write(")")
