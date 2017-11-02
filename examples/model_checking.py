@@ -13,7 +13,6 @@ from six.moves import xrange
 from pysmt.shortcuts import Symbol, Not, Equals, And, Times, Int, Plus, LE, Or, Iff
 from pysmt.shortcuts import is_sat, is_unsat
 from pysmt.typing import INT, BOOL
-from pysmt.formula import FormulaManager
 
 
 def next_var(v):
