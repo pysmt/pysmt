@@ -10,9 +10,10 @@
 #
 from six.moves import xrange
 
-from pysmt.shortcuts import Symbol, Not, Equals, And, Times, Int, Plus, LE
+from pysmt.shortcuts import Symbol, Not, Equals, And, Times, Int, Plus, LE, Or, Iff
 from pysmt.shortcuts import is_sat, is_unsat
-from pysmt.typing import INT
+from pysmt.typing import INT, BOOL
+from pysmt.formula import FormulaManager
 
 
 def next_var(v):
@@ -51,7 +52,7 @@ def get_unrolling(system, k):
     E.g. T(0,1) & T(1,2) & ... & T(k-1,k)
     """
     res = []
-    for i in xrange(k):
+    for i in xrange(k+1):
         subs_i = get_subs(system, i)
         res.append(system.trans.substitute(subs_i))
     return And(res)
@@ -62,19 +63,23 @@ def get_simple_path(system, k):
     each time encodes a different state
     """
     res = []
-    for i in xrange(k):
+    for i in xrange(k+1):
         subs_i = get_subs(system, i)
-        for j in xrange(i+1, k):
+        for j in xrange(i+1, k+1):
+            state = []
             subs_j = get_subs(system, j)
             for v in system.variables:
                 v_i = v.substitute(subs_i)
                 v_j = v.substitute(subs_j)
-                res.append(Not(Equals(v_i, v_j)))
+                cond = Not(Iff(v_i, v_j)) if v_i.get_type() == BOOL else \
+                       Not(Equals(v_i, v_j))
+                state.append(cond)
+            res.append(Or(state))
     return And(res)
 
 
 def get_k_hypothesis(system, prop, k):
-    """Hypothesis for k-induction: each state up to k fulfills the property"""
+    """Hypothesis for k-induction: each state up to k-1 fulfills the property"""
     res = []
     for i in xrange(k):
         subs_i = get_subs(system, i)
