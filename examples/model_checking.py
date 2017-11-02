@@ -10,9 +10,9 @@
 #
 from six.moves import xrange
 
-from pysmt.shortcuts import Symbol, Not, Equals, And, Times, Int, Plus, LE, Or, Iff
+from pysmt.shortcuts import Symbol, Not, Equals, And, Times, Int, Plus, LE, Or, EqualsOrIff
 from pysmt.shortcuts import is_sat, is_unsat
-from pysmt.typing import INT, BOOL
+from pysmt.typing import INT
 
 
 def next_var(v):
@@ -70,9 +70,7 @@ def get_simple_path(system, k):
             for v in system.variables:
                 v_i = v.substitute(subs_i)
                 v_j = v.substitute(subs_j)
-                cond = Not(Iff(v_i, v_j)) if v_i.get_type() == BOOL else \
-                       Not(Equals(v_i, v_j))
-                state.append(cond)
+                state.append(Not(EqualsOrIff(v_i, v_j)))
             res.append(Or(state))
     return And(res)
 
