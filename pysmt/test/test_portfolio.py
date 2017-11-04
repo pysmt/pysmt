@@ -17,13 +17,15 @@
 #
 import os
 
+from six.moves import xrange
+
 from pysmt.test import TestCase
 from pysmt.test import skipIfSolverNotAvailable
 from pysmt.test.examples import get_example_formulae
 from pysmt.logics import QF_LRA, QF_UFLIRA, QF_BOOL
 from pysmt.solvers.portfolio import Portfolio
 from pysmt.smtlib.parser import get_formula_fname
-from pysmt.shortcuts import TRUE, Implies, Equals, Symbol, FALSE
+from pysmt.shortcuts import TRUE, Implies, Equals, Symbol, FALSE, And
 from pysmt.shortcuts import reset_env, is_sat
 from pysmt.typing import REAL
 
@@ -56,7 +58,7 @@ class PortfolioTestCase(TestCase):
                 self.run_smtlib(smtfile, logic, expected_result)
 
     @skipIfSolverNotAvailable("msat")
-    def test_smtlib_multi_msat(self):
+    def dtest_smtlib_multi_msat(self):
         from pysmt.test.smtlib.parser_utils import SMTLIB_TEST_FILES, SMTLIB_DIR
 
         for (logic, f, expected_result) in SMTLIB_TEST_FILES:
@@ -165,6 +167,21 @@ class PortfolioTestCase(TestCase):
                 with self.assertRaises(Exception):
                     s.solve()
 
+    @skipIfSolverNotAvailable("msat")
+    def test_deep_pickling(self):
+        # Generate a very deep formula
+        depth = 1000000
+        f = Symbol("x")
+        for _ in xrange(depth):
+            f = And(f, f)
+
+        with Portfolio(["msat"],
+                       logic=QF_BOOL,
+                       environment=self.env,
+                       incremental=False,
+                       generate_models=False) as s:
+            s.add_assertion(f)
+            self.assertTrue(s.solve())
 
 if __name__ == "__main__":
     import unittest
