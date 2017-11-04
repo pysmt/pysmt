@@ -7,7 +7,7 @@ environment:
 
   matrix:
     - PYTHON: "C:\\Python27-x64"
-      PYTHON_VERSION: "2.7.8"
+      PYTHON_VERSION: "2.7.x"
       PYTHON_ARCH: "64"
       PYSMT_SOLVER: "None"
 
@@ -48,9 +48,18 @@ environment:
       PYTHON_ARCH: "64"
       PYSMT_SOLVER: "msat"
 
-    # There is a problem with python 3.5+ with the compilation of MathSAT on AppVeyor.
-    # We need at least VS 2015 to build extensions, but it does not work on AppVeyor for some reason.
-    # see https://wiki.python.org/moin/WindowsCompilers
+    # There is a problem with python 3.5+ with the compilation of
+    # MathSAT on AppVeyor.  We need at least VS 2015 to build
+    # extensions, but it does not work on AppVeyor for some reason.
+    # see https://wiki.python.org/moin/WindowsCompilers for the
+    # compiler requirements.  I tried several configurations but I am
+    # not able to force the compilation of the MathSAT wrapper with
+    # Visual Studio 14, Visual Studio 10 is being used
+    # instead. However, on my machine where I only have Visual Studio
+    # 14 this work flawlessly. I am not sure if this is an issue with
+    # the Windows SDK, the image itself or the presence of multiple
+    # version of Visual Studio.
+
     - PYTHON: "C:\\Python34"
       PYTHON_VERSION: "3.4.x"
       PYTHON_ARCH: "32"
@@ -79,15 +88,18 @@ install:
   - cmd: "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
 
   # Check that we have the expected version and architecture for Python
-  - cmd: "python --version"
-  - cmd: "python -c \"import struct; print(struct.calcsize('P') * 8)\""
+  - cmd: "%CMD_IN_ENV% python --version"
+  - cmd: "%CMD_IN_ENV% python -c \"import struct; print(struct.calcsize('P') * 8)\""
 
   - cmd: "%CMD_IN_ENV% pip install -r dev-requirements.txt"
+
+  # Update setputools
+  - cmd: "%CMD_IN_ENV% pip install --upgrade setuptools"
 
   # Install the solvers
   - cmd: "%CMD_IN_ENV% python install.py --confirm-agreement"
 
-  # Set the pythonpath
+  # Set and check the pythonpath
   - cmd: "%CMD_IN_ENV% python install.py --env > bindings_path.bat"
   - cmd: "call ./bindings_path.bat"
   - ECHO "PythonPath=%PYTHONPATH%"
