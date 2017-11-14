@@ -49,7 +49,7 @@ class PDR(object):
         while True:
             cube = self.get_bad_state(prop)
             if cube is not None:
-                if self.recursive_block(cube, len(self.R)-1):
+                if self.recursive_block(cube):
                     print("--> Bug found at step %d" % (len(self.R)))
                     return
             else:
@@ -72,23 +72,17 @@ class PDR(object):
             return And([EqualsOrIff(v, self.solver.get_value(v)) for v in self.system.variables])
         return None
 
-    def recursive_block(self, cube, i):
+    def recursive_block(self, cube):
         """Blocks the cube at each frame, if possible."""
-        if i == 0:
-            return True
-
-        while True:
+        for i in range(len(self.R)-1, 0, -1):
             cubeprime = cube.substitute(dict([(v, next_var(v)) for v in self.system.variables]))
             cubepre = self.solve(And(self.R[i-1], self.system.trans, Not(cube), cubeprime))
             if cubepre is None:
-                break
-            if self.recursive_block(cubepre, i-1):
-                return True
-
-        for j in range(1, i+1):
-            self.R[j] = And(self.R[j], Not(cube))
-
-        return False
+                for j in range(1, i+1):
+                    self.R[j] = And(self.R[j], Not(cube))
+                return False
+            cube = cubepre
+        return True
     
     def inductive(self, prop):
         """Checks if last two frames are equivalent """
