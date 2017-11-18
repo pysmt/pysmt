@@ -86,7 +86,7 @@ common operations using pySMT.
 
 
 The Problem
-~~~~~~~~~~~
+"""""""""""
 
 The problem that we are going to solve is the following:
 
@@ -96,7 +96,7 @@ The problem that we are going to solve is the following:
   Is there a value for each letter so that H+E+L+L+O = W+O+R+L+D = 25?
 
 The Basics
-~~~~~~~~~~
+""""""""""
 
 The module :py:mod:`pysmt.shortcuts` provides the most used functions of the
 library. These are simple wrappers around functionalities provided by
@@ -142,7 +142,12 @@ symbols. Comprehensions are so common in pySMT that n-ary operators
           structure of the formula looks like, without flooding the
           output when formulas are huge. If you want to print the
           whole formula, you need to call the
-          :py:meth:`~pysmt.fnode.FNode..serialize()` method.
+          :py:meth:`~pysmt.fnode.FNode..serialize()` method: ::
+
+              print(formula) # (x & (y | ... ))
+              print(formula.serialize()) # (x & (y | (z | y)))
+
+
 
 Defaults methods for formula allow for simple printing. Checking
 satisfiability can also be done with a one-liner.
