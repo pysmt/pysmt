@@ -165,23 +165,23 @@ class TestBasic(TestCase):
         for (f, validity, satisfiability, logic) in get_example_formulae():
             if not logic.quantifier_free: continue
             if not logic.theory.linear: continue
+            if logic.theory.strings: continue
+
             v = is_valid(f, solver_name='msat', logic=logic)
             s = is_sat(f, solver_name='msat', logic=logic)
-
             self.assertEqual(validity, v, f)
             self.assertEqual(satisfiability, s, f)
 
     @skipIfSolverNotAvailable("cvc4")
     def test_examples_cvc4(self):
         for (f, validity, satisfiability, logic) in get_example_formulae():
+            if not logic.theory.linear: continue
+            if logic.theory.arrays_const: continue
             try:
-                if not logic.quantifier_free: continue
-                if not logic.theory.linear: continue
                 v = is_valid(f, solver_name='cvc4', logic=logic)
                 s = is_sat(f, solver_name='cvc4', logic=logic)
                 self.assertEqual(validity, v, f)
                 self.assertEqual(satisfiability, s, f)
-
             except SolverReturnedUnknownResultError:
                 # CVC4 does not handle quantifiers in a complete way
                 self.assertFalse(logic.quantifier_free)
@@ -194,10 +194,11 @@ class TestBasic(TestCase):
         for (f, validity, satisfiability, logic) in get_example_formulae():
             if not logic.quantifier_free: continue
             if not logic.theory.linear: continue
+            if logic.theory.strings: continue
             if logic.theory.arrays: continue
+
             v = is_valid(f, solver_name='yices', logic=logic)
             s = is_sat(f, solver_name='yices', logic=logic)
-
             self.assertEqual(validity, v, f)
             self.assertEqual(satisfiability, s, f)
 
@@ -205,14 +206,15 @@ class TestBasic(TestCase):
     def test_examples_btor(self):
         for (f, validity, satisfiability, logic) in get_example_formulae():
             if not logic.quantifier_free: continue
-            try:
-                v = is_valid(f, solver_name='btor', logic=logic)
-                s = is_sat(f, solver_name='btor', logic=logic)
-                self.assertEqual(validity, v, f)
-                self.assertEqual(satisfiability, s, f)
-            except NoSolverAvailableError:
-                pass #Skip tests for unsupported logic
+            if logic.theory.strings: continue
+            if logic.theory.integer_arithmetic: continue
+            if logic.theory.real_arithmetic: continue
+            if logic.theory.custom_type: continue
 
+            v = is_valid(f, solver_name='btor', logic=logic)
+            s = is_sat(f, solver_name='btor', logic=logic)
+            self.assertEqual(validity, v, f)
+            self.assertEqual(satisfiability, s, f)
 
     def do_model(self, solver_name):
         for (f, _, satisfiability, logic) in get_example_formulae():
@@ -276,6 +278,7 @@ class TestBasic(TestCase):
         for (f, validity, satisfiability, logic) in get_example_formulae():
             if not logic.theory.linear: continue
             if not logic.quantifier_free: continue
+            if logic.theory.strings: continue
             if logic.theory.bit_vectors: continue
             s = Solver(name='z3')
             z3_f = s.converter.convert(f)
@@ -286,15 +289,19 @@ class TestBasic(TestCase):
             self.assertEqual(v, validity, (f, simp_f))
             self.assertEqual(s, satisfiability, (f, simp_f))
 
-
     @skipIfSolverNotAvailable("z3")
     def test_examples_z3(self):
         for (f, validity, satisfiability, logic) in get_example_formulae():
-            v = is_valid(f, solver_name='z3', logic=logic)
-            s = is_sat(f, solver_name='z3', logic=logic)
+            try:
+                v = is_valid(f, solver_name='z3', logic=logic)
+                s = is_sat(f, solver_name='z3', logic=logic)
 
-            self.assertEqual(validity, v, f)
-            self.assertEqual(satisfiability, s, f)
+                self.assertEqual(validity, v, f)
+                self.assertEqual(satisfiability, s, f)
+            except NoSolverAvailableError:
+                # Trying to solve a logic that mathsat does not support
+                theory = logic.theory
+                assert theory.strings
 
     def test_examples_by_logic(self):
         for (f, validity, satisfiability, logic) in get_example_formulae():
@@ -311,7 +318,6 @@ class TestBasic(TestCase):
                                      "Unkown result are accepted only on "\
                                      "Quantified formulae")
 
-
     def test_examples_get_implicant(self):
         for (f, _, satisfiability, logic) in get_example_formulae():
             if logic.quantifier_free:
@@ -326,7 +332,6 @@ class TestBasic(TestCase):
                         # Some solvers do not support ARRAY_VALUE
                         self.assertEqual(ex.expression.node_type(), op.ARRAY_VALUE)
                         self.assertTrue(sname in ["cvc4", "btor"])
-
 
     def test_solving_under_assumption(self):
         v1, v2 = [FreshSymbol() for _ in xrange(2)]

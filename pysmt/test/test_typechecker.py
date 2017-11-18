@@ -214,7 +214,7 @@ class TestSimpleTypeChecker(TestCase):
 
     def test_examples(self):
         for (f, _, _, _) in get_example_formulae():
-            self.assertIs(f.get_type(), BOOL)
+            self.assertIs(f.get_type(), BOOL, f)
 
 if __name__ == '__main__':
     main()

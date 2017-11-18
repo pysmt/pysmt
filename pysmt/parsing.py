@@ -1,4 +1,4 @@
-#
+ #
 # This file is part of pySMT.
 #
 #   Copyright 2014 Andrea Micheli and Marco Gario
@@ -123,6 +123,7 @@ class HRLexer(Lexer):
             Rule(r"(-?\d+\.\d+)", self.real_constant, True),# decimals
             Rule(r"(-?\d+_\d+)", self.bv_constant, True),# bv
             Rule(r"(-?\d+)", self.int_constant, True),# integer literals
+            Rule(r"\"(.*?)\"", self.string_constant, True), # String Constant
             Rule(r"BV\{(\d+)\}", self.bv_type, True),# BV Type
             Rule(r"(Array\{)", OpenArrayTypeTok(), False),# Array Type
             Rule(r"(Int)", IntTypeTok(), False),# Int Type
@@ -180,7 +181,20 @@ class HRLexer(Lexer):
             Rule(r"(forall)", Quantifier(self.mgr.ForAll, 20), False),# BVXor
             Rule(r"(exists)", Quantifier(self.mgr.Exists, 20), False),# BVXor
             Rule(r"(ToReal)", UnaryOpAdapter(self.mgr.ToReal, 100), False),# BVXor
-            Rule(r"\"(.*?)\"", self.identifier, True),# quoted identifiers
+
+            Rule(r"(str\.len)", FunctionCallAdapter(self.mgr.StrLength, 100), False), # str_length
+            Rule(r"(str\.\+\+)", FunctionCallAdapter(self.mgr.StrConcat, 100), False), # str_concat
+            Rule(r"(str\.at)", FunctionCallAdapter(self.mgr.StrCharAt, 100), False), # str_charat
+            Rule(r"(str\.contains)", FunctionCallAdapter(self.mgr.StrContains, 100), False), # str_contains
+            Rule(r"(str\.indexof)", FunctionCallAdapter(self.mgr.StrIndexOf, 100), False), # str_indexof
+            Rule(r"(str\.replace)", FunctionCallAdapter(self.mgr.StrReplace, 100), False), # str_replace
+            Rule(r"(str\.substr)", FunctionCallAdapter(self.mgr.StrSubstr, 100), False), # str_substr
+            Rule(r"(str\.prefixof)", FunctionCallAdapter(self.mgr.StrPrefixOf, 100), False), # str_prefixof
+            Rule(r"(str\.suffixof)", FunctionCallAdapter(self.mgr.StrSuffixOf, 100), False), # str_suffixof
+            Rule(r"(str\.to\.int)", FunctionCallAdapter(self.mgr.StrToInt, 100), False), # str_to_int
+            Rule(r"(int\.to\.str)", FunctionCallAdapter(self.mgr.IntToStr, 100), False), # int_to_str
+
+            Rule(r"'(.*?)'", self.identifier, True), # quoted identifiers
             Rule(r"([A-Za-z_][A-Za-z0-9_]*)", self.identifier, True),# identifiers
             Rule(r"(.)", self.lexing_error, True), # input error
         ]
@@ -201,6 +215,9 @@ class HRLexer(Lexer):
 
     def int_constant(self, read):
         return Constant(self.mgr.Int(int(read)))
+
+    def string_constant(self, read):
+        return Constant(self.mgr.String(read))
 
     def identifier(self, read):
         return Identifier(read, env=self.env)
@@ -258,6 +275,7 @@ class HRLexer(Lexer):
                 raise PysmtSyntaxError("Constant expected, got '%s'" % b)
         return _res
 
+
 # EOC HRLexer
 
 #
@@ -266,26 +284,13 @@ class HRLexer(Lexer):
 
 # Placeholder tokens
 
-class ClosePar(GrammarSymbol):
-    pass
-
-class CloseBrak(GrammarSymbol):
-    pass
 
 class CloseBrace(GrammarSymbol):
-    pass
-
-class ExprElse(GrammarSymbol):
     pass
 
 class ArrStore(GrammarSymbol):
     pass
 
-class ExprComma(GrammarSymbol):
-    pass
-
-class ExprDot(GrammarSymbol):
-    pass
 
 class BVTypeTok(GrammarSymbol):
     def __init__(self, width):
@@ -366,7 +371,9 @@ class OpenPar(GrammarSymbol):
 
     def nud(self, parser):
         r = parser.expression()
-        parser.expect(ClosePar, ")")
+        if type(parser.token) != ClosePar:
+            raise SyntaxError("Expected ')', got '%s'" % parser.token)
+        parser.advance()
         return r
 
     def led(self, parser, left):
@@ -563,3 +570,50 @@ class InfixOrUnaryOpAdapter(GrammarSymbol):
     def led(self, parser, left):
         right = parser.expression(self.lbp)
         return self.b_operator(left, right)
+
+
+class FunctionCallAdapter(GrammarSymbol):
+    """Adapter for function calls."""
+
+    def __init__(self, operator, lbp):
+        GrammarSymbol.__init__(self)
+        self.operator = operator
+        self.lbp = lbp
+
+    def nud(self, parser):
+        parser.advance() # OpenPar
+        params = []
+        if type(parser.token) != ClosePar:
+            while True:
+                r = parser.expression()
+                params.append(r)
+                if type(parser.token) != ExprComma:
+                    break
+                parser.advance()
+        if type(parser.token) != ClosePar:
+            raise SyntaxError("Expected ')'")
+        parser.advance()
+        return self.operator(*params)
+
+    def __repr__(self):
+        return repr(self.operator)
+
+
+class ClosePar(GrammarSymbol):
+    pass
+
+
+class CloseBrak(GrammarSymbol):
+    pass
+
+
+class ExprElse(GrammarSymbol):
+    pass
+
+
+class ExprDot(GrammarSymbol):
+    pass
+
+
+class ExprComma(GrammarSymbol):
+    pass

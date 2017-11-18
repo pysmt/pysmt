@@ -200,3 +200,9 @@ else:
         def __init__(self, obj):
             raise NotImplementedError("Z3 is not installed. "\
                 "We currently do not support stand-alone algebraic numbers.")
+
+#
+# Strings
+#
+def is_python_string(str1):
+    return type(str1) == str

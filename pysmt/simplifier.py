@@ -74,7 +74,8 @@ class Simplifier(pysmt.walkers.DagWalker):
         ltype = get_type(formula)
         rtype = get_type(res)
         test = Equals(formula, res) if ltype != BOOL else Iff(formula, res)
-        assert (ltype == rtype) and is_valid(test, solver_name="z3"), \
+        assert (ltype == rtype) and is_valid(test,
+                                             solver_name=self.validate_simplifications), \
                ("Was: %s \n Obtained: %s\n" % (str(formula), str(res)))
         return res
 
@@ -648,6 +649,98 @@ class Simplifier(pysmt.walkers.DagWalker):
             return ret
         return self.manager.BVAShr(l, r)
 
+    def walk_str_length(self, formula, args, **kwargs):
+        s = args[0]
+        if s.is_string_constant():
+            return self.manager.Int(len(s.constant_value()))
+        return self.manager.StrLength(s)
+
+    def walk_str_concat(self, formula, args, **kwargs):
+        if all(arg.is_string_constant() for arg in args):
+            ret = "".join(x.constant_value() for x in args)
+            return self.manager.String(ret)
+        return self.manager.StrConcat(args)
+
+    def walk_str_charat(self, formula,  args, **kwargs):
+        s, i = args
+        if s.is_string_constant() and i.is_int_constant():
+            res = s.constant_value()[i.constant_value():i.constant_value() + 1]
+            return self.manager.String(res)
+        return self.manager.StrCharat(s, i)
+
+    def walk_str_contains(self, formula, args, **kwargs):
+        s,t = args
+        if s.is_string_constant() and t.is_string_constant():
+            return self.manager.Bool(t.constant_value() in s.constant_value())
+        return self.manager.StrContains(s, t)
+
+    def walk_str_indexof(self, formula, args, **kwargs):
+        s, t, i = args
+        if s.is_string_constant() and t.is_string_constant() and i.is_int_constant():
+            idx = s.constant_value().find(t.constant_value(), i.constant_value())
+            # idx = -1, if t is not found
+            return self.manager.Int(idx)
+        return self.manager.StrIndexof(s, t, i)
+
+    def walk_str_replace(self, formula, args, **kwargs):
+        s, t1, t2 = args
+        if s.is_string_constant() and t1.is_string_constant() and t2.is_string_constant():
+            t1_str = t1.constant_value()
+            t2_str = t2.constant_value()
+            s_str = s.constant_value()
+            return self.manager.String(s_str.replace(t1_str, t2_str, 1))
+        return self.manager.StrReplace(s, t1, t2)
+
+    def walk_str_substr(self, formula, args, **kwargs):
+        s, i, j = args
+        if s.is_string_constant() and i.is_int_constant() and j.is_int_constant():
+            start_ = i.constant_value()
+            end_ = i.constant_value() + j.constant_value()
+            res = s.constant_value()[start_:end_]
+            return self.manager.String(res)
+        return self.manager.StrSubstr(s, i, j)
+
+    def walk_str_prefixof(self, formula, args, **kwargs):
+        s, t = args
+        if s.is_string_constant() and t.is_string_constant():
+            return self.manager.Bool(t.constant_value().startswith(s.constant_value()))
+        return self.manager.StrPrefixof(s, t)
+
+    def walk_str_suffixof(self, formula, args, **kwargs):
+        s, t = args
+        if s.is_string_constant() and t.is_string_constant():
+            return self.manager.Bool(t.constant_value().endswith(s.constant_value()))
+        return self.manager.StrSuffixof(s, t)
+
+    def walk_str_to_int(self, formula, args, **kwargs):
+        s = args[0]
+        if s.is_string_constant():
+            try:
+                return self.manager.Int(int(s.constant_value()))
+            except ValueError:
+                return self.manager.Int(-1)
+        return self.manager.StrToInt(s)
+
+    def walk_int_to_str(self, formula, args, **kwargs):
+        i = args[0]
+        if i.is_int_constant():
+            if i.constant_value() < 0:
+                return self.manager.String("")
+            return self.manager.String(str(i.constant_value()))
+        return self.manager.IntToStr(i)
+
+    def walk_str_to_unit16(self, formula, args, **kwargs):
+        return self.manager.StrToUint16(args[0])
+
+    def walk_uint16_to_str(self, formula, args, **kwargs):
+        return self.manager.Uint16ToStr(args[0])
+
+    def walk_str_to_uint32(self, formula, args, **kwargs):
+        return self.manager.StrToUint32(args[0])
+
+    def walk_uint32_to_str(self, formula, args, **kwargs):
+        return self.manager.Uint32ToStr(args[0])
+
     def walk_array_select(self, formula, args, **kwargs):
         a, i = args
         if a.is_array_value() and i.is_constant():
@@ -695,7 +788,7 @@ class Simplifier(pysmt.walkers.DagWalker):
 
     @handles(op.SYMBOL)
     @handles(op.REAL_CONSTANT, op.INT_CONSTANT, op.BOOL_CONSTANT)
-    @handles(op.BV_CONSTANT, op.ALGEBRAIC_CONSTANT)
+    @handles(op.BV_CONSTANT, op.STR_CONSTANT, op.ALGEBRAIC_CONSTANT)
     def walk_identity(self, formula, args, **kwargs):
         return formula
 

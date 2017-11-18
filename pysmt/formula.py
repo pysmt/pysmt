@@ -34,14 +34,17 @@ from six.moves import xrange
 import pysmt.typing as types
 import pysmt.operators as op
 
+
 from pysmt.fnode import FNode, FNodeContent
 from pysmt.exceptions import UndefinedSymbolError, PysmtValueError,PysmtTypeError
 from pysmt.walkers.identitydag import IdentityDagWalker
 from pysmt.constants import Fraction
-from pysmt.constants import (is_pysmt_fraction, is_python_rational,
-                             pysmt_fraction_from_rational)
-from pysmt.constants import (is_pysmt_integer,
+from pysmt.constants import (is_pysmt_fraction,
+                             is_pysmt_integer,
+                             is_python_rational,
                              is_python_integer,
+                             is_python_string,
+                             pysmt_fraction_from_rational,
                              pysmt_integer_from_integer)
 
 
@@ -60,6 +63,8 @@ class FormulaManager(object):
 
         self.int_constants = {}
         self.real_constants = {}
+        self.string_constants = {}
+
         self.true_formula = self.create_node(node_type=op.BOOL_CONSTANT,
                                              args=tuple(),
                                              payload=True)
@@ -363,6 +368,21 @@ class FormulaManager(object):
                              payload=val)
         self.int_constants[value] = n
         return n
+
+    def String(self, value):
+        """Return a constant of type STRING."""
+        if value in self.string_constants:
+            return self.string_constants[value]
+
+        if is_python_string(value):
+            n = self.create_node(node_type=op.STR_CONSTANT,
+                                 args=tuple(),
+                                 payload=value)
+            self.string_constants[value] = n
+            return n
+        else:
+            raise TypeError("Invalid type in constant. The type was:" + \
+                            str(type(value)))
 
     def TRUE(self):
         """Return the boolean constant True."""
@@ -896,6 +916,87 @@ class FormulaManager(object):
         for _ in xrange(count-1):
             res = self.BVConcat(res, formula)
         return res
+
+    def StrLength(self, formula):
+        """Returns the length of a formula resulting a String"""
+        return self.create_node(node_type=op.STR_LENGTH, args=(formula,))
+
+    def StrConcat(self, *args):
+        """Returns the concatenation of n Strings.
+
+        s1, s2, ..., and sn are String terms.
+        String concatenation takes at least 2 arguments.
+        """
+        tuple_args = self._polymorph_args_to_tuple(args)
+        if len(tuple_args) <= 1:
+            raise TypeError("Cannot create a Str_Concat without arguments.")
+        return self.create_node(node_type=op.STR_CONCAT, args=tuple_args)
+
+    def StrContains(self, s, t):
+        """Returns wether the String s contains the String t.
+
+        s and t are String terms.
+        """
+        return self.create_node(node_type=op.STR_CONTAINS, args=(s, t))
+
+    def StrIndexOf(self, s, t, i):
+        """Returns the position of the first occurrence of t in s after the index i.
+
+        s and t being a non empty strings and i a non-negative integer.
+        It returns -1 if the value to search for never occurs.
+        """
+        return self.create_node(node_type=op.STR_INDEXOF, args=(s, t, i))
+
+    def StrReplace(self, s, t1, t2):
+        """Returns a new string where the first occurrence of t1 is replace by t2.
+
+        where s, t1 and t2 are string terms, t1 is non-empty.
+        """
+        return self.create_node(node_type=op.STR_REPLACE, args=(s, t1, t2))
+
+    def StrSubstr(self, s, i, j):
+        """Returns a substring of s starting at i and ending at j+i.
+
+        where s is a string term and i, j are integer terms.
+        """
+        return self.create_node(node_type=op.STR_SUBSTR, args=(s, i, j))
+
+    def StrPrefixOf(self, s, t):
+        """Returns whether the s is a prefix of the string t.
+
+        where s and t are string terms.
+        """
+        return self.create_node(node_type=op.STR_PREFIXOF, args=(s, t))
+
+    def StrSuffixOf(self, s, t):
+        """Returns whether the string s is a suffix of the string t.
+
+        where s and t are string terms.
+        """
+        return self.create_node(node_type=op.STR_SUFFIXOF, args=(s, t))
+
+    def StrToInt(self, s):
+        """Returns the corresponding natural number of s is valid;
+
+        If s is not valid, it returns -1.
+        #MG: What does valid mean in this context?
+        """
+        return self.create_node(node_type=op.STR_TO_INT, args=(s,))
+
+    def IntToStr(self, x):
+        """Returns the corresponding String representing the natural number x.
+
+        where x is an integer term. If x is not a natural number it
+        returns the empty String.
+        """
+        return self.create_node(node_type=op.INT_TO_STR, args=(x, ))
+
+    def StrCharAt(self, s, i):
+        """Returns a single character String at position i.
+
+        s is a string term and i is an integer term. i is the position.
+        """
+        return self.create_node(node_type=op.STR_CHARAT, args=(s, i))
 
     def Select(self, arr, idx):
         """Creates a node representing an array selection."""

@@ -33,12 +33,15 @@ from pysmt.shortcuts import (Symbol, Function,
                              BVLShl, BVLShr,BVRol, BVRor,
                              BVZExt, BVSExt, BVSub, BVComp, BVAShr, BVSLE,
                              BVSLT, BVSGT, BVSGE, BVSDiv, BVSRem,
-                             Store, Select, Array,
-                             Type)
-from pysmt.constants import Fraction
+                             String, StrCharAt, StrConcat, StrContains,
+                             StrIndexOf, StrLength, StrPrefixOf, StrReplace,
+                             StrSubstr, StrSuffixOf, StrToInt,
+                             IntToStr,
+                             Store, Select, Array, Type)
 
 from pysmt.typing import REAL, BOOL, INT, BV8, BV16, BVType, ARRAY_INT_INT
-from pysmt.typing import FunctionType, ArrayType
+from pysmt.typing import FunctionType, ArrayType, STRING
+from pysmt.constants import Fraction
 
 
 Example = namedtuple('Example',
@@ -84,6 +87,8 @@ def get_full_example_formulae(environment=None):
         tmgr = environment.type_manager
         unary_sort_bool = tmgr.get_type_instance(unary_sort, BOOL)
         usb1 = Symbol("usb1", unary_sort_bool)
+
+        str1 = Symbol("str1", STRING)
 
         result = [
             # Formula, is_valid, is_sat, is_qf
@@ -684,8 +689,93 @@ def get_full_example_formulae(environment=None):
                     is_sat=False,
                     logic=pysmt.logics.QF_UFLIRA
                 ),
+            #
+            # STR
+            #
+            Example(hr='("mystr" = str1)',
+                    expr=Equals(String("mystr"), str1),
+                    is_valid=False,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_SLIA
+                ),
 
-            Example(hr="""("Did you know that any string works? #yolo" & "10" & "|#somesolverskeepthe||" & " ")""",
+            Example(hr='((5 < str.len(str1)) & ("mystr" = str1))',
+                    expr=And(LT(Int(5), StrLength(str1)),
+                             Equals(String("mystr"), str1)),
+                    is_valid=False,
+                    is_sat=False,
+                    logic=pysmt.logics.QF_SLIA
+                ),
+
+            Example(hr='((5 = str.len(str1)) & (str.++("my", "str") = str1))',
+                    expr=And(Equals(Int(5), StrLength(str1)),
+                             Equals(StrConcat(String("my"),String("str")), str1)),
+                    is_valid=False,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_SLIA
+                ),
+
+            Example(hr='(str.at("mystr", 1) = "y")',
+                    expr=Equals(StrCharAt(String("mystr"), Int(1)), String("y") ),
+                    is_valid=True,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_SLIA
+                ),
+
+            Example(hr='str.contains("mystr", "my")',
+                    expr=StrContains(String("mystr"),String("my")),
+                    is_valid=True,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_SLIA
+                ),
+
+            Example(hr='(str.indexof("mystr", "str", 1) = 2)',
+                    expr=Equals(StrIndexOf(String("mystr"),String("str"),Int(1)),Int(2)),
+                    is_valid=True,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_SLIA
+                ),
+
+            Example(hr='(str.replace("mystr", "str", "my") = "mymy")',
+                    expr=Equals(StrReplace(String("mystr"),String("str"),String("my")),String("mymy")),
+                    is_valid=True,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_SLIA
+                ),
+
+            Example(hr='(str.substr("mystr", 2, 4) = "st")',
+                expr=Equals(StrSubstr(String("mystr"),Int(2),Int(4)),String("st")),
+                    is_valid=False,
+                    is_sat=False,
+                    logic=pysmt.logics.QF_SLIA
+                ),
+
+            Example(hr='str.prefixof("my", "mystr")',
+                    expr=StrPrefixOf(String("my"), String("mystr")),
+                    is_valid=True,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_SLIA
+                ),
+
+            Example(hr='str.suffixof("str", "mystr")',
+                    expr=StrSuffixOf(String("str"), String("mystr")),
+                    is_valid=True,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_SLIA),
+
+            Example(hr='(int.to.str(9) = "9")',
+                    expr=Equals(IntToStr(Int(9)), String("9")),
+                    is_valid=True,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_SLIA),
+
+            Example(hr='(str.to.int("9") = 9)',
+                    expr=Equals(StrToInt(String("9")), Int(9)),
+                    is_valid=True,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_SLIA),
+
+            Example(hr="('Did you know that any string works? #yolo' & '10' & '|#somesolverskeepthe||' & ' ')""",
                     expr=And(Symbol("Did you know that any string works? #yolo"),
                              Symbol("10"),
                              Symbol("|#somesolverskeepthe||"),
@@ -704,8 +794,7 @@ def get_full_example_formulae(environment=None):
                                         Store(aii, Int(0), q))),
                     is_valid=True,
                     is_sat=True,
-                    logic=pysmt.logics.QF_ALIA
-                ),
+                    logic=pysmt.logics.QF_ALIA),
 
             Example(hr="(aii[0 := 0][0] = 0)",
                     expr=Equals(Select(Store(aii, Int(0), Int(0)), Int(0)),

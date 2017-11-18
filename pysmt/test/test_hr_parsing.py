@@ -72,20 +72,18 @@ class TestHRParser(TestCase):
             if fname is not None:
                 os.unlink(fname)
 
-
     def test_examples(self):
         p = HRParser()
-
         for (f, _, _, _) in get_example_formulae():
             s = f.serialize()
             res = p.parse(s)
-
             check = (res == f)
             if not check:
                 try:
                     self.assertValid(Iff(res, f))
                 except NoSolverAvailableError:
                     pass
+
 
 
 if __name__ == '__main__':

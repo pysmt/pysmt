@@ -27,7 +27,7 @@ except ImportError:
     raise SolverAPINotFound
 
 import pysmt.typing as types
-from pysmt.logics import PYSMT_LOGICS, ARRAYS_CONST_LOGICS
+from pysmt.logics import PYSMT_LOGICS, ARRAYS_CONST_LOGICS, QF_SLIA
 
 from pysmt.solvers.solver import Solver, Converter, SolverOptions
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
@@ -58,6 +58,10 @@ class CVC4Options(SolverOptions):
             raise PysmtValueError("Error setting the option '%s=%s'" % (name,value))
 
     def __call__(self, solver):
+        if solver.logic_name == "QF_SLIA":
+            self._set_option(solver.cvc4,
+                             "strings-exp", "true")
+
         self._set_option(solver.cvc4,
                          "produce-models", str(self.generate_models).lower())
         self._set_option(solver.cvc4,
@@ -73,7 +77,8 @@ class CVC4Options(SolverOptions):
 
 
 class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
-    LOGICS = PYSMT_LOGICS - ARRAYS_CONST_LOGICS -\
+
+    LOGICS = ( PYSMT_LOGICS | frozenset([QF_SLIA]) ) - ARRAYS_CONST_LOGICS -\
              set(l for l in PYSMT_LOGICS if not l.theory.linear)
     OptionsClass = CVC4Options
 
@@ -83,6 +88,7 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
                         logic=logic,
                         **options)
         self.em = CVC4.ExprManager()
+
         self.cvc4 = None
         self.declarations = None
         self.logic_name = str(logic)
@@ -183,6 +189,16 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
     def _exit(self):
         del self.cvc4
 
+    def set_option(self, name, value):
+        """Sets an option.
+
+        :param name and value: Option to be set
+        :type name: String
+        :type value: String
+        """
+        self.cvc4.setOption(name, CVC4.SExpr(value))
+
+
 
 class CVC4Converter(Converter, DagWalker):
 
@@ -196,6 +212,7 @@ class CVC4Converter(Converter, DagWalker):
         self.realType = cvc4_exprMgr.realType()
         self.intType = cvc4_exprMgr.integerType()
         self.boolType = cvc4_exprMgr.booleanType()
+        self.stringType = cvc4_exprMgr.stringType()
 
         self.declared_vars = {}
         self.backconversion = {}
@@ -229,6 +246,9 @@ class CVC4Converter(Converter, DagWalker):
                 v = bv.getValue().toString()
                 width = bv.getSize()
                 res = self.mgr.BV(int(v), width)
+            elif expr.getType().isString():
+                v = expr.getConstString()
+                res = self.mgr.String(v.toString())
             elif expr.getType().isArray():
                 const_ = expr.getConstArrayStoreAll()
                 array_type = self._cvc4_type_to_type(const_.getType())
@@ -501,6 +521,42 @@ class CVC4Converter(Converter, DagWalker):
     def walk_bv_ashr (self, formula, args, **kwargs):
         return self.mkExpr(CVC4.BITVECTOR_ASHR, args[0], args[1])
 
+    def walk_str_constant(self, formula, args, **kwargs):
+        return self.mkConst(CVC4.CVC4String(formula.constant_value()))
+
+    def walk_str_length (self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.STRING_LENGTH , args[0])
+
+    def walk_str_concat(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.STRING_CONCAT, args)
+
+    def walk_str_contains(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.STRING_STRCTN, args[0], args[1])
+
+    def walk_str_indexof(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.STRING_STRIDOF, args[0], args[1], args[2])
+
+    def walk_str_replace(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.STRING_STRREPL, args[0], args[1], args[2])
+
+    def walk_str_substr(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.STRING_SUBSTR, args[0], args[1], args[2])
+
+    def walk_str_prefixof(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.STRING_PREFIX, args[0], args[1])
+
+    def walk_str_suffixof(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.STRING_SUFFIX, args[0], args[1])
+
+    def walk_str_to_int(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.STRING_STOI, args[0])
+
+    def walk_int_to_str(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.STRING_ITOS, args[0])
+
+    def walk_str_charat(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.STRING_CHARAT, args[0], args[1])
+
     def _type_to_cvc4(self, tp):
         if tp.is_bool_type():
             return self.boolType
@@ -519,6 +575,8 @@ class CVC4Converter(Converter, DagWalker):
             return self.cvc4_exprMgr.mkArrayType(idx_cvc_type, elem_cvc_type)
         elif tp.is_bv_type():
             return self.cvc4_exprMgr.mkBitVectorType(tp.width)
+        elif tp.is_string_type():
+            return self.stringType
         elif tp.is_custom_type():
             return self.cvc4_exprMgr.mkSort(str(tp))
         else:

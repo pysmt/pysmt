@@ -44,7 +44,7 @@ from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               ConvertExpressionError,
                               UndefinedSymbolError, PysmtValueError)
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
-from pysmt.logics import LRA, LIA, QF_UFLIA, QF_UFLRA, PYSMT_LOGICS
+from pysmt.logics import LRA, LIA, QF_UFLIA, QF_UFLRA, PYSMT_LOGICS, QF_SLIA
 from pysmt.oracles import get_logic
 from pysmt.constants import Fraction, Numeral, is_pysmt_integer, to_python_integer
 
@@ -613,6 +613,12 @@ class Z3Converter(Converter, DagWalker):
             sort_ast = self.z3RealSort.ast
         elif symbol_type.is_int_type():
             sort_ast = self.z3IntSort.ast
+        elif symbol_type.is_array_type():
+            sort_ast = self._type_to_z3(symbol_type).ast
+        elif symbol_type.is_string_type():
+            raise ConvertExpressionError(message=("Unsupported string symbol: %s" %
+                                                  str(formula)),
+                                         expression=formula)
         else:
             sort_ast = self._type_to_z3(symbol_type).ast
         # Create const with given sort

@@ -164,6 +164,8 @@ class TheoryOracle(walkers.DagWalker):
             theory.arrays = True
             theory = theory.combine(self._theory_from_type(ty.index_type))
             theory = theory.combine(self._theory_from_type(ty.elem_type))
+        elif ty.is_string_type():
+            theory.string = True
         elif ty.is_custom_type():
             theory.custom_type = True
         else:
@@ -174,6 +176,7 @@ class TheoryOracle(walkers.DagWalker):
     @walkers.handles(op.RELATIONS)
     @walkers.handles(op.BOOL_OPERATORS)
     @walkers.handles(op.BV_OPERATORS)
+    @walkers.handles(op.STR_OPERATORS)
     @walkers.handles(op.ITE, op.ARRAY_SELECT, op.ARRAY_STORE, op.MINUS)
     def walk_combine(self, formula, args, **kwargs):
         """Combines the current theory value of the children"""
@@ -187,6 +190,7 @@ class TheoryOracle(walkers.DagWalker):
 
     @walkers.handles(op.REAL_CONSTANT, op.BOOL_CONSTANT)
     @walkers.handles(op.INT_CONSTANT, op.BV_CONSTANT)
+    @walkers.handles(op.STR_CONSTANT)
     def walk_constant(self, formula, args, **kwargs):
         """Returns a new theory object with the type of the constant."""
         #pylint: disable=unused-argument
@@ -199,6 +203,8 @@ class TheoryOracle(walkers.DagWalker):
             theory_out.integer_difference = True
         elif formula.is_bv_constant():
             theory_out.bit_vectors = True
+        elif formula.is_string_constant():
+            theory_out.strings = True
         else:
             assert formula.is_bool_constant()
         return theory_out
@@ -227,8 +233,7 @@ class TheoryOracle(walkers.DagWalker):
     def walk_toreal(self, formula, args, **kwargs):
         #pylint: disable=unused-argument
         """Extends the Theory with LIRA."""
-        theory_out = args[0].copy()
-        theory_out = theory_out.set_lira()
+        theory_out = args[0].set_lira() # This makes a copy of args[0]
         return theory_out
 
     def walk_times(self, formula, args, **kwargs):
@@ -254,6 +259,15 @@ class TheoryOracle(walkers.DagWalker):
         theory_out = theory_out.set_difference_logic(value=False)
         assert not theory_out.real_difference
         assert not theory_out.integer_difference
+        return theory_out
+
+    def walk_strings(self, formula, args, **kwargs):
+        """Extends the Theory with Strings."""
+        #pylint: disable=unused-argument
+        if formula.is_string_constant():
+            theory_out = Theory(strings=True)
+        else:
+            theory_out = args[0].set_strings() # This makes a copy of args[0]
         return theory_out
 
     def walk_array_value(self, formula, args, **kwargs):
@@ -291,6 +305,7 @@ class TheoryOracle(walkers.DagWalker):
 # Operators for which Args is an FNode
 DEPENDENCIES_SIMPLE_ARGS = (set(op.ALL_TYPES) - \
                            (set([op.SYMBOL, op.FUNCTION]) | op.QUANTIFIERS | op.CONSTANTS))
+
 
 class FreeVarsOracle(walkers.DagWalker):
     # We have only few categories for this walker.
@@ -416,7 +431,8 @@ class TypesOracle(walkers.DagWalker):
                          not x.is_int_type() and
                          not x.is_real_type() and
                          not x.is_bv_type() and
-                         not x.is_array_type()
+                         not x.is_array_type() and
+                         not x.is_string_type()
             ]
         return exp_types
 

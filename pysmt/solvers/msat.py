@@ -173,7 +173,10 @@ class MathSATOptions(SolverOptions):
 class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
                      SmtLibBasicSolver, SmtLibIgnoreMixin):
 
-    LOGICS = PYSMT_QF_LOGICS - set(l for l in PYSMT_QF_LOGICS if not l.theory.linear)
+    LOGICS = PYSMT_QF_LOGICS -\
+             set(l for l in PYSMT_QF_LOGICS \
+                 if not l.theory.linear or l.theory.strings)
+
     OptionsClass = MathSATOptions
 
     def __init__(self, environment, logic, **options):

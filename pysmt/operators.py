@@ -25,42 +25,59 @@ from itertools import chain
 from six.moves import xrange
 
 
-ALL_TYPES = tuple(xrange(0,53))
+ALL_TYPES = list(xrange(0,65))
 
 (
 FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF, # Boolean Logic (0-6)
 SYMBOL, FUNCTION,                           # Symbols and functions calls (7-8)
-REAL_CONSTANT, BOOL_CONSTANT, INT_CONSTANT, # Constants (9-11)
-PLUS, MINUS, TIMES,                         # LIA/LRA operators (12-14)
-LE, LT, EQUALS,                             # LIA/LRA relations (15-17)
-ITE,                                        # Term-ite (18)
-TOREAL,                                     # LIRA toreal() function (19)
+REAL_CONSTANT, BOOL_CONSTANT, INT_CONSTANT, STR_CONSTANT, # Constants (9-12)
+PLUS, MINUS, TIMES,                         # LIA/LRA operators (13-15)
+LE, LT, EQUALS,                             # LIA/LRA relations (16-18)
+ITE,                                        # Term-ite (19)
+TOREAL,                                     # LIRA toreal() function (20)
 #
 # MG: FLOOR? INT_MOD_CONGR?
 #
 # BV
-BV_CONSTANT,                                # Bit-Vector constant (20)
-BV_NOT, BV_AND, BV_OR, BV_XOR,              # Logical Operators on Bit (21-24)
-BV_CONCAT,                                  # BV Concatenation (25)
-BV_EXTRACT,                                 # BV sub-vector extraction (26)
-BV_ULT, BV_ULE,                             # Unsigned Comparison (27-28)
-BV_NEG, BV_ADD, BV_SUB,                     # Basic arithmetic (29-31)
-BV_MUL, BV_UDIV, BV_UREM,                   # Division/Multiplication (32-34)
-BV_LSHL, BV_LSHR,                           # Shifts (35-36)
-BV_ROL, BV_ROR,                             # Rotation (37-38)
-BV_ZEXT, BV_SEXT,                           # Extension (39-40)
-BV_SLT, BV_SLE,                             # Signed Comparison (41-42)
+BV_CONSTANT,                                # Bit-Vector constant (21)
+BV_NOT, BV_AND, BV_OR, BV_XOR,              # Logical Operators on Bit (22-25)
+BV_CONCAT,                                  # BV Concatenation (26)
+BV_EXTRACT,                                 # BV sub-vector extraction (27)
+BV_ULT, BV_ULE,                             # Unsigned Comparison (28-29)
+BV_NEG, BV_ADD, BV_SUB,                     # Basic arithmetic (30-32)
+BV_MUL, BV_UDIV, BV_UREM,                   # Division/Multiplication (33-35)
+BV_LSHL, BV_LSHR,                           # Shifts (36-37)
+BV_ROL, BV_ROR,                             # Rotation (38-39)
+BV_ZEXT, BV_SEXT,                           # Extension (40-41)
+BV_SLT, BV_SLE,                             # Signed Comparison (42-43)
 BV_COMP,                                    # Returns 1_1 if the arguments are
                                             # equal otherwise it returns 0_1 (44)
 BV_SDIV, BV_SREM,                           # Signed Division and Reminder(45-46)
 BV_ASHR,                                    # Arithmetic shift right (47)
-ARRAY_SELECT,                               # Array Select (48)
-ARRAY_STORE,                                # Array Store (49)
-ARRAY_VALUE,                                # Array Value (50)
+#
+# STRINGS
+#
+STR_LENGTH,                                 # Length (48)
+STR_CONCAT,                                 # Concat (49)
+STR_CONTAINS,                               # Contains (50)
+STR_INDEXOF,                                # IndexOf (51)
+STR_REPLACE,                                # Replace (52)
+STR_SUBSTR,                                 # Sub String (53)
+STR_PREFIXOF,                               # Prefix (54)
+STR_SUFFIXOF,                               # Suffix (55)
+STR_TO_INT,                                 # atoi (56)
+INT_TO_STR,                                 # itoa (57)
+STR_CHARAT,                                 # Char at an index (58)
+#
+# ARRAYS
+#
+ARRAY_SELECT,                               # Array Select (59)
+ARRAY_STORE,                                # Array Store (60)
+ARRAY_VALUE,                                # Array Value (61)
 
-DIV,                                        # Arithmetic Division (51)
-POW,                                        # Arithmetic Power (52)
-ALGEBRAIC_CONSTANT,                         # Algebraic Number (53)
+DIV,                                        # Arithmetic Division (62)
+POW,                                        # Arithmetic Power (63)
+ALGEBRAIC_CONSTANT,                         # Algebraic Number (64)
 ) = ALL_TYPES
 
 QUANTIFIERS = frozenset([FORALL, EXISTS])
@@ -69,26 +86,34 @@ BOOL_CONNECTIVES = frozenset([AND, OR, NOT, IMPLIES, IFF])
 
 BOOL_OPERATORS = frozenset(QUANTIFIERS | BOOL_CONNECTIVES)
 
+CONSTANTS = frozenset([BOOL_CONSTANT, REAL_CONSTANT, INT_CONSTANT,
+                       BV_CONSTANT, STR_CONSTANT, ALGEBRAIC_CONSTANT])
+
+# Relations are predicates on theory atoms.
+# Relations have boolean type. They are a subset of the operators for a theory
 BV_RELATIONS = frozenset([BV_ULE, BV_ULT, BV_SLT, BV_SLE])
 
 IRA_RELATIONS = frozenset([LE, LT])
 
-RELATIONS = frozenset((EQUALS,)) | BV_RELATIONS | IRA_RELATIONS
+STR_RELATIONS = frozenset([STR_CONTAINS, STR_PREFIXOF, STR_SUFFIXOF])
 
-CONSTANTS = frozenset([REAL_CONSTANT, BOOL_CONSTANT, INT_CONSTANT,
-                       BV_CONSTANT, ALGEBRAIC_CONSTANT])
+RELATIONS = frozenset((EQUALS,)) | BV_RELATIONS | IRA_RELATIONS | STR_RELATIONS
 
+# Operators are functions that return a Theory object
 BV_OPERATORS = frozenset([BV_NOT, BV_AND, BV_OR, BV_XOR,
                           BV_CONCAT, BV_EXTRACT, BV_NEG, BV_ADD,
                           BV_SUB, BV_MUL, BV_UDIV, BV_UREM, BV_LSHL, BV_LSHR,
                           BV_ROL, BV_ROR, BV_ZEXT, BV_SEXT,
                           BV_COMP, BV_SDIV, BV_SREM, BV_ASHR])
 
+STR_OPERATORS = frozenset([STR_LENGTH, STR_CONCAT, STR_INDEXOF, STR_REPLACE,
+                           STR_SUBSTR, STR_CHARAT, STR_TO_INT, INT_TO_STR,])
+
 IRA_OPERATORS = frozenset([PLUS, MINUS, TIMES, TOREAL, DIV, POW])
 
 ARRAY_OPERATORS = frozenset([ARRAY_SELECT, ARRAY_STORE, ARRAY_VALUE])
 
-THEORY_OPERATORS = IRA_OPERATORS | BV_OPERATORS | ARRAY_OPERATORS
+THEORY_OPERATORS = IRA_OPERATORS | BV_OPERATORS | ARRAY_OPERATORS | STR_OPERATORS
 
 CUSTOM_NODE_TYPES = []
 
@@ -101,6 +126,7 @@ assert len(BOOL_OPERATORS & CONSTANTS) == 0
 assert len(THEORY_OPERATORS & RELATIONS) == 0
 assert len(THEORY_OPERATORS & CONSTANTS) == 0
 assert len(RELATIONS & CONSTANTS) == 0
+
 
 def new_node_type(node_id=None, node_str=None):
     """Adds a new node type to the list of custom node types and returns the ID."""
@@ -142,6 +168,7 @@ __OP_STR__ = {
     REAL_CONSTANT : "REAL_CONSTANT",
     BOOL_CONSTANT : "BOOL_CONSTANT",
     INT_CONSTANT : "INT_CONSTANT",
+    STR_CONSTANT : "STR_CONSTANT",
     PLUS : "PLUS",
     MINUS : "MINUS",
     TIMES : "TIMES",
@@ -177,6 +204,17 @@ __OP_STR__ = {
     BV_SDIV : "BV_SDIV",
     BV_SREM : "BV_SREM",
     BV_ASHR : "BV_ASHR",
+    STR_LENGTH: "STR_LENGTH",
+    STR_CONCAT: "STR_CONCAT",
+    STR_CONTAINS: "STR_CONTAINS",
+    STR_INDEXOF: "STR_INDEXOF",
+    STR_REPLACE:"STR_REPLACE",
+    STR_SUBSTR: "STR_SUBSTR",
+    STR_PREFIXOF: "STR_PREFIXOF",
+    STR_SUFFIXOF: "STR_SUFFIXOF",
+    STR_TO_INT: "STR_TO_INT",
+    INT_TO_STR: "INT_TO_STR",
+    STR_CHARAT: "STR_CHARAT",
     ARRAY_SELECT : "ARRAY_SELECT",
     ARRAY_STORE : "ARRAY_STORE",
     ARRAY_VALUE : "ARRAY_VALUE",

@@ -37,7 +37,8 @@ class Theory(object):
                  real_difference = None,
                  linear = None,
                  uninterpreted = None,
-                 custom_type = None):
+                 custom_type = None,
+                 strings = None):
         self.arrays = arrays or False
         self.arrays_const = arrays_const or False
         self.bit_vectors = bit_vectors or False
@@ -49,6 +50,7 @@ class Theory(object):
         self.linear = linear if linear is not None else True
         self.uninterpreted = uninterpreted or False
         self.custom_type = custom_type or False
+        self.strings = strings or False
         assert not arrays_const or arrays, "Cannot set arrays_const w/o arrays"
         return
 
@@ -61,6 +63,11 @@ class Theory(object):
     def set_linear(self, value=True):
         res = self.copy()
         res.linear = value
+        return res
+
+    def set_strings(self, value=True):
+        res = self.copy()
+        res.strings = value
         return res
 
     def set_difference_logic(self, value=True):
@@ -95,7 +102,8 @@ class Theory(object):
                             real_difference = self.real_difference,
                             linear = self.linear,
                             uninterpreted = self.uninterpreted,
-                            custom_type = self.custom_type)
+                            custom_type = self.custom_type,
+                            strings = self.strings)
         return new_theory
 
     def combine(self, other):
@@ -130,12 +138,12 @@ class Theory(object):
             real_difference=real_difference,
             linear=self.linear and other.linear,
             uninterpreted=self.uninterpreted or other.uninterpreted,
-            custom_type=self.custom_type or other.custom_type)
+            custom_type=self.custom_type or other.custom_type,
+            strings=self.strings or other.strings)
 
     def __eq__(self, other):
         if other is None or (not isinstance(other, Theory)):
             return False
-
         return (self.arrays == other.arrays and
                 self.arrays_const == other.arrays_const and
                 self.bit_vectors == other.bit_vectors and
@@ -146,7 +154,8 @@ class Theory(object):
                 self.real_difference == other.real_difference and
                 self.linear == other.linear and
                 self.uninterpreted == other.uninterpreted and
-                self.custom_type == other.custom_type)
+                self.custom_type == other.custom_type and
+                self.strings == other.strings)
 
     def __ne__(self, other):
         return not (self == other)
@@ -187,7 +196,8 @@ class Theory(object):
                 self.integer_arithmetic <= other.integer_arithmetic and
                 le_real_difference and
                 self.real_arithmetic <= other.real_arithmetic and
-                le_linear)
+                le_linear and
+                self.strings <= other.strings)
 
     def __str__(self):
         return ("Arrays: %s, " % self.arrays +
@@ -200,7 +210,8 @@ class Theory(object):
                 "RD: %s, " % self.real_difference +
                 "Linear: %s, " % self.linear +
                 "EUF: %s, " % self.uninterpreted +
-                "Type: %s" % self.custom_type)
+                "Type: %s" % self.custom_type +
+                "STRING: %s"% self.strings)
 
     __repr__ = __str__
 
@@ -583,6 +594,15 @@ symbols.""",
               linear=False,
               uninterpreted=True)
 
+
+QF_SLIA = Logic(name="QF_SLIA",
+              description=\
+""" Don't know clearly what to write here //GL """,
+            integer_arithmetic=True,
+            quantifier_free=True,
+            uninterpreted=True,
+            strings=True)
+
 QF_AUFBVLIRA = Logic(name="QF_AUFBVLIRA",
                      description=\
                      """Quantifier free Arrays, Bitvectors and LIRA""",
@@ -593,6 +613,7 @@ QF_AUFBVLIRA = Logic(name="QF_AUFBVLIRA",
                      bit_vectors=True,
                      integer_arithmetic=True,
                      real_arithmetic=True)
+
 
 AUTO = Logic(name="Auto",
              description="Special logic used to indicate that the logic to be used depends on the formula.")
@@ -627,7 +648,8 @@ SMTLIB2_LOGICS = frozenset([ AUFLIA,
                              QF_UFLRA,
                              QF_UFNRA,
                              QF_UFNIA,
-                             QF_UFLIRA
+                             QF_UFLIRA,
+                             QF_SLIA
                          ])
 
 LOGICS = SMTLIB2_LOGICS | frozenset([ QF_BOOL, BOOL, QF_AUFBVLIRA])
@@ -640,6 +662,7 @@ QF_LOGICS = frozenset(_l for _l in LOGICS if _l.quantifier_free)
 PYSMT_LOGICS = frozenset([QF_BOOL, QF_IDL, QF_LIA, QF_LRA, QF_RDL, QF_UF, QF_UFIDL,
                           QF_UFLIA, QF_UFLRA, QF_UFLIRA,
                           BOOL, LRA, LIA, UFLIRA, UFLRA,
+                          QF_BV, QF_UFBV, QF_SLIA,
                           QF_BV, QF_UFBV,
                           QF_ABV, QF_AUFBV, QF_AUFLIA, QF_ALIA, QF_AX,
                           QF_AUFBVLIRA,
@@ -675,6 +698,7 @@ for l in PYSMT_LOGICS:
 
 LOGICS = LOGICS | frozenset(ext_logics)
 PYSMT_LOGICS = PYSMT_LOGICS | frozenset(ext_logics)
+
 
 PYSMT_QF_LOGICS = frozenset(_l for _l in PYSMT_LOGICS if _l.quantifier_free)
 
@@ -720,7 +744,8 @@ def get_logic(quantifier_free=False,
               real_difference=False,
               linear=True,
               uninterpreted=False,
-              custom_type=False):
+              custom_type=False,
+              strings=False):
     """Returns the Logic that matches the given properties.
 
     Equivalent (but better) to executing get_logic_by_name(get_logic_name(...))
@@ -738,7 +763,8 @@ def get_logic(quantifier_free=False,
             logic.theory.real_difference == real_difference and
             logic.theory.linear == linear and
             logic.theory.uninterpreted == uninterpreted and
-            logic.theory.custom_type == custom_type):
+            logic.theory.custom_type == custom_type and
+            logic.theory.strings == strings):
             return logic
     raise UndefinedLogicError
 

@@ -45,6 +45,9 @@ class IdentityDagWalker(DagWalker):
     def walk_bool_constant(self, formula, args, **kwargs):
         return self.mgr.Bool(formula.constant_value())
 
+    def walk_str_constant(self, formula, **kwargs):
+        return self.mgr.String(formula.constant_value())
+
     def walk_and(self, formula, args, **kwargs):
         return self.mgr.And(args)
 
@@ -185,6 +188,39 @@ class IdentityDagWalker(DagWalker):
 
     def walk_bv_srem(self, formula, args, **kwargs):
         return self.mgr.BVSRem(args[0], args[1])
+
+    def walk_str_length(self, formula, args, **kwargs):
+        return self.mgr.StrLength(args[0])
+
+    def walk_str_concat(self, formula, args, **kwargs):
+        return self.mgr.StrConcat(args)
+
+    def walk_str_contains(self, formula, args, **kwargs):
+        return self.mgr.StrContains(args[0], args[1])
+
+    def walk_str_indexof(self, formula, args, **kwargs):
+        return self.mgr.StrIndexOf(args[0], args[1], args[2])
+
+    def walk_str_replace(self, formula, args, **kwargs):
+        return self.mgr.StrReplace(args[0], args[1], args[2])
+
+    def walk_str_substr(self, formula, args, **kwargs):
+        return self.mgr.StrSubstr(args[0], args[1], args[2])
+
+    def walk_str_prefixof(self, formula, args, **kwargs):
+        return self.mgr.StrPrefixOf(args[0], args[1])
+
+    def walk_str_suffixof(self, formula, args, **kwargs):
+        return self.mgr.StrSuffixOf(args[0], args[1])
+
+    def walk_str_to_int(self, formula, args, **kwargs):
+        return self.mgr.StrToInt(args[0])
+
+    def walk_int_to_str(self, formula, args, **kwargs):
+        return self.mgr.IntToStr(args[0])
+
+    def walk_str_charat(self, formula, args, **kwargs):
+        return self.mgr.StrCharAt(args[0], args[1])
 
     def walk_array_select(self, formula, args, **kwargs):
         return self.mgr.Select(args[0], args[1])

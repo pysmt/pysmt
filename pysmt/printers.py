@@ -76,7 +76,7 @@ class HRPrinter(TreeWalker):
         self.write(")")
 
     def walk_symbol(self, formula):
-        self.write(quote(formula.symbol_name(), style='"'))
+        self.write(quote(formula.symbol_name(), style="'"))
 
     def walk_function(self, formula):
         yield formula.function_name()
@@ -171,6 +171,94 @@ class HRPrinter(TreeWalker):
     def walk_toreal(self, formula):
         self.write("ToReal(")
         yield formula.arg(0)
+        self.write(")")
+
+    def walk_length(self, formula):
+        self.write("len(")
+        self.walk(formula.arg(0))
+        self.write(")")
+
+    def walk_str_constant(self, formula):
+        assert (type(formula.constant_value()) == str ), \
+            "The type was " + str(type(formula.constant_value()))
+        self.write('"%s"' % formula.constant_value())
+
+    def walk_str_length(self,formula):
+        self.write("str.len(" )
+        self.walk(formula.arg(0))
+        self.write(")")
+
+    def walk_str_charat(self,formula, **kwargs):
+        self.write("str.at(" )
+        self.walk(formula.arg(0))
+        self.write(", ")
+        self.walk(formula.arg(1))
+        self.write(")")
+
+    def walk_str_concat(self,formula, **kwargs):
+        self.write("str.++(" )
+        for arg in formula.args()[:-1]:
+            self.walk(arg)
+            self.write(", ")
+        self.walk(formula.args()[-1])
+        self.write(")")
+
+    def walk_str_contains(self,formula, **kwargs):
+        self.write("str.contains(" )
+        self.walk(formula.arg(0))
+        self.write(", ")
+        self.walk(formula.arg(1))
+        self.write(")")
+
+    def walk_str_indexof(self,formula, **kwargs):
+        self.write("str.indexof(" )
+        self.walk(formula.arg(0))
+        self.write(", ")
+        self.walk(formula.arg(1))
+        self.write(", ")
+        self.walk(formula.arg(2))
+        self.write(")")
+
+    def walk_str_replace(self,formula, **kwargs):
+        self.write("str.replace(" )
+        self.walk(formula.arg(0))
+        self.write(", ")
+        self.walk(formula.arg(1))
+        self.write(", ")
+        self.walk(formula.arg(2))
+        self.write(")")
+
+    def walk_str_substr(self,formula, **kwargs):
+        self.write("str.substr(" )
+        self.walk(formula.arg(0))
+        self.write(", ")
+        self.walk(formula.arg(1))
+        self.write(", ")
+        self.walk(formula.arg(2))
+        self.write(")")
+
+    def walk_str_prefixof(self,formula, **kwargs):
+        self.write("str.prefixof(" )
+        self.walk(formula.arg(0))
+        self.write(", ")
+        self.walk(formula.arg(1))
+        self.write(")")
+
+    def walk_str_suffixof(self,formula, **kwargs):
+        self.write("str.suffixof(" )
+        self.walk(formula.arg(0))
+        self.write(", ")
+        self.walk(formula.arg(1))
+        self.write(")")
+
+    def walk_str_to_int(self,formula, **kwargs):
+        self.write("str.to.int(" )
+        self.walk(formula.arg(0))
+        self.write(")")
+
+    def walk_int_to_str(self,formula, **kwargs):
+        self.write("int.to.str(" )
+        self.walk(formula.arg(0))
         self.write(")")
 
     def walk_array_select(self, formula):
