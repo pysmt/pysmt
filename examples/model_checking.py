@@ -1,14 +1,24 @@
 # This example shows a more advance use of pySMT.
 #
 # It provides a simple implementation of Bounded Model Checking [1]
-# with K-Induction [2], and PDR [3], and applies it on a simple 
+# with K-Induction [2], and PDR [3,4], and applies it on a simple
 # transition system.
 #
-# [1] ...
+# [1] Biere, Cimatti, Clarke, Zhu,
+#     "Symbolic Model Checking without BDDs",
+#     TACAS 1999
 #
-# [2] ...
+# [2] Sheeran, Singh,  Stalmarck,
+#     "Checking  safety  properties  using  induction  and  a SAT-solver",
+#     FMCAD 2000
 #
-# [3] ...
+# [3] Bradley
+#     "SAT-Based Model Checking without Unrolling",
+#     VMCAI 2011
+#
+# [4] Een, Mischenko, Brayton
+#     "Efficient implementation of property directed reachability",
+#     FMCAD 2011
 #
 from six.moves import xrange
 
@@ -39,9 +49,10 @@ class TransitionSystem(object):
 class PDR(object):
     def __init__(self, system):
         self.system = system
-        self.R = [system.init]
+        self.frames = [system.init]
         self.solver = Solver()
-        
+        self.prime_map = dict([(v, next_var(v)) for v in self.system.variables])
+
     def check_property(self, prop):
         """Property Directed Reachability approach without optimizations."""
         print("Checking property %s..." % prop)
@@ -49,53 +60,60 @@ class PDR(object):
         while True:
             cube = self.get_bad_state(prop)
             if cube is not None:
+                # Blocking phase of a bad state
                 if self.recursive_block(cube):
-                    print("--> Bug found at step %d" % (len(self.R)))
-                    return
+                    print("--> Bug found at step %d" % (len(self.frames)))
+                    break
+                else:
+                    print("   [PDR] Cube blocked '%s'" % str(cube))
             else:
-                if self.inductive(prop):
+                # Checking if the last two frames are equivalent i.e., are inductive
+                if self.inductive():
                     print("--> The system is safe!")
-                    return
-                print("   [PDR]    Adding frame %d..." % (len(self.R)))
-                self.R.append(TRUE())
+                    break
+                else:
+                    print("   [PDR] Adding frame %d..." % (len(self.frames)))
+                    self.frames.append(TRUE())
 
     def get_bad_state(self, prop):
-        """Extracts a reachable state that intersects the negation 
+        """Extracts a reachable state that intersects the negation
         of the property and the last current frame"""
-        return self.solve(And(self.R[-1], Not(prop)))
+        return self.solve(And(self.frames[-1], Not(prop)))
 
     def solve(self, formula):
         """Provides a satisfiable assignment to the state variables that are consistent with the input formula"""
-        self.solver.reset_assertions()
-        self.solver.add_assertion(formula)
-        if self.solver.solve():
+        if self.solver.solve([formula]):
             return And([EqualsOrIff(v, self.solver.get_value(v)) for v in self.system.variables])
         return None
 
     def recursive_block(self, cube):
-        """Blocks the cube at each frame, if possible."""
-        for i in range(len(self.R)-1, 0, -1):
+        """Blocks the cube at each frame, if possible.
+
+        Returns True if the cube cannot be blocked.
+        """
+        for i in range(len(self.frames)-1, 0, -1):
             cubeprime = cube.substitute(dict([(v, next_var(v)) for v in self.system.variables]))
-            cubepre = self.solve(And(self.R[i-1], self.system.trans, Not(cube), cubeprime))
+            cubepre = self.solve(And(self.frames[i-1], self.system.trans, Not(cube), cubeprime))
             if cubepre is None:
                 for j in range(1, i+1):
-                    self.R[j] = And(self.R[j], Not(cube))
+                    self.frames[j] = And(self.frames[j], Not(cube))
                 return False
             cube = cubepre
         return True
-    
-    def inductive(self, prop):
+
+    def inductive(self):
         """Checks if last two frames are equivalent """
-        if len(self.R) > 1 and \
-           self.solve(Not(EqualsOrIff(self.R[-1], self.R[-2]))) is None:
+        if len(self.frames) > 1 and \
+           self.solve(Not(EqualsOrIff(self.frames[-1], self.frames[-2]))) is None:
             return True
         return False
-        
+
+
 class BMCInduction(object):
-    
+
     def __init__(self, system):
         self.system = system
-    
+
     def get_subs(self, i):
         """Builds a map from x to x@i and from x' to x@(i+1), for all x in system."""
         subs_i = {}
@@ -103,7 +121,6 @@ class BMCInduction(object):
             subs_i[v] = at_time(v, i)
             subs_i[next_var(v)] = at_time(v, i+1)
         return subs_i
-
 
     def get_unrolling(self, k):
         """Unrolling of the transition relation from 0 to k:
@@ -115,7 +132,6 @@ class BMCInduction(object):
             subs_i = self.get_subs(i)
             res.append(self.system.trans.substitute(subs_i))
         return And(res)
-
 
     def get_simple_path(self, k):
         """Simple path constraint for k-induction:
@@ -134,7 +150,6 @@ class BMCInduction(object):
                 res.append(Or(state))
         return And(res)
 
-
     def get_k_hypothesis(self, prop, k):
         """Hypothesis for k-induction: each state up to k-1 fulfills the property"""
         res = []
@@ -142,7 +157,6 @@ class BMCInduction(object):
             subs_i = self.get_subs(i)
             res.append(prop.substitute(subs_i))
         return And(res)
-
 
     def get_bmc(self, prop, k):
         """Returns the BMC encoding at step k"""
@@ -186,52 +200,36 @@ def counter(bit_count):
     #
     # INIT: bits = 0 & reset = FALSE;
     #
-    # TRANS: next(bits) = bits + 1;
-    # TRANS: next(reset) = (next(bits) = 0 -> next(reset)) & (bits != 0 -> !reset);
-    
-    bits = [Symbol("b%s"%b, BOOL) for b in range(bit_count)]
-    bits.reverse()
-    nbits = [next_var(x) for x in bits]
+    # TRANS: next(bits) = bits + 1
+    # TRANS: next(bits = 0) <-> next(reset)
+
+    from pysmt.typing import BVType
+    bits = Symbol("bits", BVType(bit_count))
+    nbits = next_var(bits)
     reset = Symbol("r", BOOL)
     nreset = next_var(reset)
-    variables = bits + [reset]
+    variables = [bits, reset]
 
-    count = []    
-    tr = []
-    get_bin = lambda x, n: format(x, 'b').zfill(n)
-    conv = lambda v, x: v if x == 1 else Not(v)
-    
-    for idx in range((2**bit_count)-1):
-        val = [int(x) for x in str(get_bin(idx, bit_count))]
-        for j in range(len(val)):
-            val[j] = conv(bits[j], val[j])
-        val1 = [int(x) for x in str(get_bin(idx+1, bit_count))]
-        for j in range(len(val1)):
-            val1[j] = conv(nbits[j], val1[j])
-        tr.append(And(val + val1))
+    init = bits.Equals(0) & Not(reset)
 
-    tr.append(And(And(bits), And([Not(b) for b in nbits])))
-    
-    count_trans = Or(tr)
-    reset_trans = And(EqualsOrIff(And(bits), nreset), Implies(reset, Not(nreset)))
-    trans = And(count_trans, reset_trans)
+    trans = nbits.Equals(bits + 1) &\
+            (nbits.Equals(0)).Iff(nreset)
 
-    init = And([Not(b) for b in bits]+[Not(reset)])
+    # A true invariant property: (reset -> bits = 0)
+    true_prop = reset.Implies(bits.Equals(0))
 
-    # A true invariant property: (reset -> bits = 0) & (bits != 0 -> !reset)
-    true_prop = And(Implies(reset, And([Not(b) for b in bits])), Implies(Or(bits), Not(reset)))
-
-    # A false invariant property: (bits != 2**bit_count)
-    false_prop = Not(And(bits))
+    # A false invariant property: (bits != 2**bit_count-1)
+    false_prop = bits.NotEquals(2**bit_count -1)
 
     return (TransitionSystem(variables, init, trans), [true_prop, false_prop])
-            
+
+
 def main():
     example = counter(4)
-    
+
     bmcind = BMCInduction(example[0])
     pdr = PDR(example[0])
-    
+
     for prop in example[1]:
         bmcind.check_property(prop)
         pdr.check_property(prop)
