@@ -32,7 +32,7 @@ from pysmt.shortcuts import (Symbol, Function,
                              BVNeg, BVAdd, BVMul, BVUDiv, BVURem, BVSub,
                              BVLShl, BVLShr,BVRol, BVRor,
                              BVZExt, BVSExt, BVSub, BVComp, BVAShr, BVSLE,
-                             BVSLT, BVSGT, BVSGE, BVSDiv, BVSRem,
+                             BVSLT, BVSGT, BVSGE, BVSDiv, BVSRem, BVToNatural,
                              Store, Select, Array,
                              Type)
 from pysmt.constants import Fraction
@@ -574,6 +574,13 @@ def get_full_example_formulae(environment=None):
                     is_valid=False,
                     is_sat=True,
                     logic=pysmt.logics.QF_BV
+                ),
+
+            Example(hr="(bv2nat(1_8) = 1)",
+                    expr=Equals(BVToNatural(BVOne(8)), Int(1)),
+                    is_valid=True,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_AUFBVLIRA
                 ),
             #
             # Quantification
