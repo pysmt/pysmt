@@ -17,7 +17,7 @@
 #
 """Utils to configure pySMT.
 
-The following is an example of configuratoin file.
+The following is an example of configuration file.
 
 [global]
 use_infix_notation: true
@@ -43,6 +43,7 @@ import six.moves.configparser as cp
 from warnings import warn
 
 from pysmt.logics import get_logic_by_name
+from pysmt.exceptions import PysmtIOError
 
 def configure_environment(config_filename, environment):
     """
@@ -52,7 +53,7 @@ def configure_environment(config_filename, environment):
     factory = environment.factory
 
     if not os.path.exists(config_filename):
-        raise IOError("File '%s' does not exists." % config_filename)
+        raise PysmtIOError("File '%s' does not exists." % config_filename)
 
     # We do not use variable inside the config file
     config = cp.RawConfigParser()
@@ -70,7 +71,8 @@ def configure_environment(config_filename, environment):
 
         logics_string = config.get(s, "logics")
         if logics_string is None:
-            warn("Missing 'logics' value in definition of '%s' solver" % name)
+            warn("Missing 'logics' value in definition of '%s' solver" % name,
+                 stacklevel=2)
             continue
 
         logics = [get_logic_by_name(l) for l in logics_string.split()]
@@ -87,18 +89,21 @@ def configure_environment(config_filename, environment):
             elif infix.lower() == "false":
                 environment.enable_infix_notation = True
             else:
-                warn("Unknown value for 'use_infix_notation': %s" % infix)
+                warn("Unknown value for 'use_infix_notation': %s" % infix,
+                     stacklevel=2)
 
         if pref_list is not None:
             prefs = pref_list.split()
             for s in prefs:
                 if s not in factory.all_solvers():
-                    warn("Unknown solver '%s' in solver_preference_list" % s)
+                    warn("Unknown solver '%s' in solver_preference_list" % s,
+                         stacklevel=2)
 
             for s in factory.all_solvers():
                 if s not in prefs:
                     warn("Solver '%s' is not in the preference list, "\
-                         "and will be disabled." % s)
+                         "and will be disabled." % s,
+                         stacklevel=2)
 
             factory.set_solver_preference_list(prefs)
 

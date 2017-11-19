@@ -18,8 +18,9 @@
 from pysmt.shortcuts import And, Not, Symbol, Bool, Exists, Solver
 from pysmt.shortcuts import get_env, qelim, Or
 from pysmt.test import TestCase, skipIfSolverNotAvailable, main
-from pysmt.test.examples import EXAMPLE_FORMULAS
+from pysmt.test.examples import get_example_formulae
 from pysmt.logics import BOOL
+from pysmt.exceptions import PysmtValueError
 
 class TestBdd(TestCase):
 
@@ -65,7 +66,7 @@ class TestBdd(TestCase):
     @skipIfSolverNotAvailable("bdd")
     def test_examples_conversion(self):
         convert = self.bdd_converter.convert
-        for example in EXAMPLE_FORMULAS:
+        for example in get_example_formulae():
             if example.logic != BOOL:
                 continue
             expr = convert(example.expr)
@@ -73,7 +74,7 @@ class TestBdd(TestCase):
 
     @skipIfSolverNotAvailable("bdd")
     def test_examples_solving(self):
-        for example in EXAMPLE_FORMULAS:
+        for example in get_example_formulae():
             if example.logic != BOOL:
                 continue
             solver = Solver(logic=BOOL,
@@ -120,7 +121,7 @@ class TestBdd(TestCase):
     @skipIfSolverNotAvailable("bdd")
     def test_reordering(self):
         with Solver(name="bdd", logic=BOOL,
-                    dynamic_reordering=True) as s:
+                    solver_options={'dynamic_reordering': True}) as s:
             s.add_assertion(self.big_tree)
             self.assertTrue(s.solve())
 
@@ -129,11 +130,11 @@ class TestBdd(TestCase):
         from pysmt.solvers.bdd import BddOptions
         for algo in BddOptions.CUDD_ALL_REORDERING_ALGORITHMS:
             with Solver(name="bdd", logic=BOOL,
-                        dynamic_reordering=True,
-                        reordering_algorithm=algo) as s:
+                        solver_options={'dynamic_reordering': True,
+                                        'reordering_algorithm': algo}) as s:
                 s.add_assertion(self.big_tree)
                 self.assertTrue(s.solve())
-                self.assertEquals(algo, s.ddmanager.ReorderingStatus()[1])
+                self.assertEqual(algo, s.ddmanager.ReorderingStatus()[1])
 
     @skipIfSolverNotAvailable("bdd")
     def test_fixed_ordering(self):
@@ -142,7 +143,7 @@ class TestBdd(TestCase):
 
         for order in [f_order, r_order]:
             with Solver(name="bdd", logic=BOOL,
-                        static_ordering=order) as s:
+                        solver_options={'static_ordering': order}) as s:
                 s.add_assertion(self.big_tree)
                 self.assertTrue(s.solve())
 
@@ -154,15 +155,16 @@ class TestBdd(TestCase):
 
     @skipIfSolverNotAvailable("bdd")
     def test_invalid_ordering(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(PysmtValueError):
             Solver(name="bdd", logic=BOOL,
-                   static_ordering=[And(self.x, self.y), self.y])
+                   solver_options={'static_ordering':
+                                   [And(self.x, self.y), self.y]})
 
     @skipIfSolverNotAvailable("bdd")
     def test_initial_ordering(self):
         with Solver(name="bdd", logic=BOOL,
-                       static_ordering=[self.x, self.y],
-                       dynamic_reordering=True) as s:
+                    solver_options={'static_ordering':[self.x, self.y],
+                                    'dynamic_reordering':True}) as s:
             s.add_assertion(self.big_tree)
             self.assertTrue(s.solve())
             self.assertNotEquals(s.ddmanager.ReorderingStatus()[1], 0)

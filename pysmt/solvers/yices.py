@@ -16,9 +16,9 @@
 #   limitations under the License.
 #
 import atexit
+from warnings import warn
 
 from six.moves import xrange
-from fractions import Fraction
 
 from pysmt.exceptions import SolverAPINotFound
 
@@ -29,13 +29,15 @@ except ImportError:
 
 
 from pysmt.solvers.eager import EagerModel
-from pysmt.solvers.solver import Solver, Converter
+from pysmt.solvers.solver import Solver, Converter, SolverOptions
 from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 
 from pysmt.walkers import DagWalker
 from pysmt.exceptions import SolverReturnedUnknownResultError
-from pysmt.exceptions import InternalSolverError, NonLinearError
+from pysmt.exceptions import (InternalSolverError, NonLinearError,
+                              PysmtValueError, PysmtTypeError)
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
+from pysmt.constants import Fraction, is_pysmt_integer
 
 import pysmt.logics
 
@@ -60,11 +62,77 @@ STATUS_UNKNOWN = 2
 STATUS_SAT = 3
 STATUS_UNSAT = 4
 
+def yices_logic(pysmt_logic):
+    """Return a Yices String representing the given pySMT logic."""
+    ylogic = str(pysmt_logic)
+    if ylogic == "QF_BOOL":
+        ylogic = "NONE"
+    return ylogic
+
+
+class YicesOptions(SolverOptions):
+    def __init__(self, **base_options):
+        SolverOptions.__init__(self, **base_options)
+        # TODO: Yices Supports UnsatCore extraction
+        # but we did not wrapped it yet.
+        if self.unsat_cores_mode is not None:
+            raise PysmtValueError("'unsat_cores_mode' option not supported.")
+
+    @staticmethod
+    def _set_option(cfg, name, value):
+        rv = yicespy.yices_set_config(cfg, name, value)
+        if rv != 0:
+            # This might be a parameter to be set later (see set_params)
+            # We raise the exception only if the parameter exists but the value
+            # provided to the parameter is invalid.
+            err = yicespy.yices_error_code()
+            if err == yicespy.CTX_INVALID_PARAMETER_VALUE:
+                raise PysmtValueError("Error setting the option "
+                                      "'%s=%s'" % (name,value))
+
+    def __call__(self, solver):
+        if self.generate_models:
+            # Yices always generates models
+            pass
+        if self.incremental:
+            self._set_option(solver.yices_config, "mode", "push-pop")
+        else:
+            self._set_option(solver.yices_config, "mode", "one-shot")
+
+        if self.random_seed is not None:
+            self._set_option(solver.yices_config,
+                             "random-seed", str(self.random_seed))
+
+        for k,v in self.solver_options.items():
+            self._set_option(solver.yices_config, str(k), str(v))
+
+    def set_params(self, solver):
+        """Set Search Parameters.
+
+        Yices makes a distinction between configuratin and search
+        parameters.  The first are fixed for the lifetime of a
+        context, while the latter can be different for every call to
+        check_context.
+
+        A list of available parameters is available at:
+        http://yices.csl.sri.com/doc/parameters.html
+        """
+        params = yicespy.yices_new_param_record()
+        yicespy.yices_default_params_for_context(solver.yices, params)
+        for k,v in self.solver_options.items():
+            rv = yicespy.yices_set_param(params, k, v)
+            if rv != 0:
+                raise PysmtValueError("Error setting the option '%s=%s'" % (k,v))
+        solver.yices_params = params
+
+# EOC YicesOptions
+
 
 class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
     LOGICS = pysmt.logics.PYSMT_QF_LOGICS - pysmt.logics.ARRAYS_LOGICS -\
              set(l for l in pysmt.logics.PYSMT_QF_LOGICS if not l.theory.linear)
+    OptionsClass = YicesOptions
 
     def __init__(self, environment, logic, **options):
         Solver.__init__(self,
@@ -73,9 +141,14 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
                         **options)
 
         self.declarations = set()
-
-        self.yices = yicespy.yices_new_context(None)
-        # MG: TODO: Set options!!!
+        self.yices_config = yicespy.yices_new_config()
+        if yicespy.yices_default_config_for_logic(self.yices_config,
+                                                  yices_logic(logic)) != 0:
+            warn("Error setting config for logic %s" % logic)
+        self.options(self)
+        self.yices = yicespy.yices_new_context(self.yices_config)
+        self.options.set_params(self)
+        yicespy.yices_free_config(self.yices_config)
         self.converter = YicesConverter(environment)
         self.mgr = environment.formula_manager
         self.model = None
@@ -84,12 +157,11 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
     @clear_pending_pop
     def reset_assertions(self):
-        raise NotImplementedError
+        yicespy.yices_reset_context(self.yices)
 
     @clear_pending_pop
     def declare_variable(self, var):
-        self.declarations.add(var)
-        return
+        raise NotImplementedError
 
     @clear_pending_pop
     def add_assertion(self, formula, named=None):
@@ -106,13 +178,14 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
     def get_model(self):
         assignment = {}
-        # MG: This iteration is probelmatic, since it assumes that all
+        # MG: This iteration is problematic, since it assumes that all
         # defined symbols have a type that is compatible with this
         # solver.  In this case, the problem occurs with Arrays and
         # Strings that are not supported.
         for s in self.environment.formula_manager.get_all_symbols():
             if s.is_term():
                 if s.symbol_type().is_array_type(): continue
+                if s.symbol_type().is_custom_type(): continue
                 v = self.get_value(s)
                 assignment[s] = v
         return EagerModel(assignment=assignment, environment=self.environment)
@@ -124,7 +197,7 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
             self.add_assertion(self.mgr.And(assumptions))
             self.pending_pop = True
 
-        out = yicespy.yices_check_context(self.yices, None)
+        out = yicespy.yices_check_context(self.yices, self.yices_params)
 
         if self.model is not None:
             yicespy.yices_free_model(self.model)
@@ -175,7 +248,6 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
             if name_filter is None or not var.symbol_name().startswith(name_filter):
                 print("%s = %s", (var.symbol_name(), self.get_value(var)))
 
-
     def _check_error(self, res):
         if res != 0:
             err = yicespy.yices_error_string()
@@ -207,6 +279,9 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
     def _exit(self):
         yicespy.yices_free_context(self.yices)
+        yicespy.yices_free_param_record(self.yices_params)
+
+# EOC YicesSolver
 
 
 class YicesConverter(Converter, DagWalker):
@@ -221,6 +296,7 @@ class YicesConverter(Converter, DagWalker):
         self.symbol_to_decl = {}
         # Maps an internal yices instance into the corresponding symbol
         self.decl_to_symbol = {}
+        self._yicesSort = {}
 
     @catch_conversion_error
     def convert(self, formula):
@@ -296,8 +372,7 @@ class YicesConverter(Converter, DagWalker):
         return res
 
     def walk_int_constant(self, formula, **kwargs):
-        assert type(formula.constant_value()) == int or \
-            type(formula.constant_value()) == long
+        assert is_pysmt_integer(formula.constant_value())
         rep = str(formula.constant_value())
         res = yicespy.yices_parse_rational(rep)
         self._check_term_result(res)
@@ -351,15 +426,19 @@ class YicesConverter(Converter, DagWalker):
         res = None
         if tp.is_bv_type():
             res = yicespy.yices_bveq_atom(args[0], args[1])
-        else:
-            assert tp.is_int_type() or tp.is_real_type()
+        elif tp.is_int_type() or tp.is_real_type():
             res = yicespy.yices_arith_eq_atom(args[0], args[1])
+        else:
+            assert tp.is_custom_type()
+            res = yicespy.yices_eq(args[0], args[1])
         self._check_term_result(res)
         return res
 
     def walk_times(self, formula, args, **kwargs):
-        res = yicespy.yices_mul(args[0], args[1])
-        self._check_term_result(res)
+        res = args[0]
+        for x in args[1:]:
+            res = yicespy.yices_mul(res, x)
+            self._check_term_result(res)
         return res
 
     def walk_toreal(self, formula, args, **kwargs):
@@ -525,6 +604,15 @@ class YicesConverter(Converter, DagWalker):
         self._check_term_result(res)
         return res
 
+    def yicesSort(self, name):
+        """Return the yices Sort for the given name."""
+        name = str(name)
+        try:
+            return self._yicesSort[name]
+        except KeyError:
+            sort = yicespy.yices_new_uninterpreted_type()
+            self._yicesSort[name] = sort
+        return sort
 
     def _type_to_yices(self, tp):
         if tp.is_bool_type():
@@ -542,11 +630,15 @@ class YicesConverter(Converter, DagWalker):
                                               rtp)
         elif tp.is_bv_type():
             return yicespy.yices_bv_type(tp.width)
+        elif tp.is_custom_type():
+            return self.yicesSort(str(tp))
         else:
             raise NotImplementedError(tp)
 
     def declare_variable(self, var):
-        if not var.is_symbol(): raise TypeError
+        if not var.is_symbol():
+            raise PysmtTypeError("Trying to declare as a variable something "
+                                 "that is not a symbol: %s" % var)
         if var.symbol_name() not in self.symbol_to_decl:
             tp = self._type_to_yices(var.symbol_type())
             decl = yicespy.yices_new_uninterpreted_term(tp)

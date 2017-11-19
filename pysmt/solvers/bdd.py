@@ -30,13 +30,29 @@ from pysmt.solvers.solver import Solver, Converter, SolverOptions
 from pysmt.solvers.eager import EagerModel
 from pysmt.walkers import DagWalker
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
-from pysmt.exceptions import ConvertExpressionError
+from pysmt.exceptions import (ConvertExpressionError, PysmtValueError,
+                              PysmtTypeError)
 from pysmt.oracles import get_logic
 from pysmt.solvers.qelim import QuantifierEliminator
 
 
 class BddOptions(SolverOptions):
+    """Options for the BDD Solver.
+
+    * static_ordering: None, list of Symbols
+      Enable static ordering with the given list of symbols
+
+    * dynamic_reordering: True, False
+      Enable dynamic reordering
+
+    * reordering_algorithm: BddOptions.CUDD_ALL_REORDERING_ALGORITHMS
+      Specify which reordering algorithm to use when dynamic_reording
+      is enabled.
+
+    """
     ## CUDD Reordering algorithms
+    CUDD_ALL_REORDERING_ALGORITHMS = range(1,23)
+
     CUDD_REORDER_SAME, \
     CUDD_REORDER_NONE, \
     CUDD_REORDER_RANDOM, \
@@ -58,43 +74,71 @@ class BddOptions(SolverOptions):
     CUDD_REORDER_LINEAR, \
     CUDD_REORDER_LINEAR_CONVERGE, \
     CUDD_REORDER_LAZY_SIFT, \
-    CUDD_REORDER_EXACT = range(22)
+    CUDD_REORDER_EXACT = CUDD_ALL_REORDERING_ALGORITHMS
 
-    CUDD_ALL_REORDERING_ALGORITHMS = range(1, 22)
+    def __init__(self, **base_options):
+        SolverOptions.__init__(self, **base_options)
 
-    VALID_OPTIONS = SolverOptions.VALID_OPTIONS + \
-                    [("static_ordering", None),
-                     ("dynamic_reordering", False),
-                     ("reordering_algorithm", CUDD_REORDER_SIFT),
-                    ]
-
-    def __init__(self, **kwargs):
-        SolverOptions.__init__(self, **kwargs)
-
+        if self.random_seed is not None:
+            raise PysmtValueError("'random_seed' option not supported.")
         if self.unsat_cores_mode is not None:
-            # Check if, for some reason, unsat cores are
-            # required. In case, raise an error.
-            #
-            # TODO: This should be within the Solver, here we should
-            # only check that options are set and non-contraddicting.
-            #
-            raise NotImplementedError("BddSolver does not "\
-                                      "support unsat cores")
+            raise PysmtValueError("'unsat_cores_mode' option not supported.")
 
-    # @classmethod
-    # def from_base_options(cls, base_options):
-    #     generate_models=base_options.generate_models
-    #     unsat_cores_mode=base_options.unsat_cores_mode
-    #     incremental=base_options.incremental
-    #     return BddOptions(generate_models=generate_models,
-    #                       unsat_cores_mode=unsat_cores_mode,
-    #                       incremental=incremental)
+        for k,v in self.solver_options.items():
+            if k == "static_ordering":
+                if v is not None:
+                    try:
+                        valid = all(x.is_symbol(types.BOOL) for x in v)
+                    except:
+                        valid = False
+                    if not valid:
+                        raise PysmtValueError("The BDD static ordering must be" \
+                                              " a list of Boolean variables")
+            elif k == "dynamic_reordering":
+                if v not in (True, False):
+                    raise PysmtValueError("Invalid value %s for '%s'" % \
+                                          (str(k),str(v)))
+            elif k == "reordering_algorithm":
+                if v not in BddOptions.CUDD_ALL_REORDERING_ALGORITHMS:
+                    raise PysmtValueError("Invalid value %s for '%s'" % \
+                                          (str(k),str(v)))
+            else:
+                raise PysmtValueError("Unrecognized option '%s'." % k)
+            # Store option
+            setattr(self, k, v)
 
+        # Set Defaults
+        if not hasattr(self, "dynamic_reordering"):
+            self.dynamic_reordering = False
+        if not hasattr(self, "reordering_algorithm"):
+            if not self.dynamic_reordering:
+                self.reordering_algorithm = None
+            else:
+                self.reordering_algorithm = BddOptions.CUDD_REORDER_SIFT
+        if not hasattr(self, "static_ordering"):
+            self.static_ordering = None
+
+        # Consistency check
+        if not self.dynamic_reordering and self.reordering_algorithm is not None:
+            raise PysmtValueError("reordering_algorithm requires "
+                                  "dynamic_reordering.")
+
+    def __call__(self, solver):
+        # Impose initial ordering
+        if self.static_ordering is not None:
+            for var in self.static_ordering:
+                solver.declare_variable(var)
+        if self.dynamic_reordering:
+            solver.ddmanager.AutodynEnable(self.reordering_algorithm)
+        else:
+            solver.ddmanager.AutodynDisable()
+
+# EOC BddOptions
 
 
 class BddSolver(Solver):
+    """CUDD BDD Solver"""
     LOGICS = [ pysmt.logics.QF_BOOL, pysmt.logics.BOOL ]
-
     OptionsClass = BddOptions
 
     def __init__(self, environment, logic, **options):
@@ -107,19 +151,7 @@ class BddSolver(Solver):
         self.ddmanager = repycudd.DdManager()
         self.converter = BddConverter(environment=self.environment,
                                       ddmanager=self.ddmanager)
-
-        # Impose initial ordering
-        if self.options.static_ordering is not None:
-            for var in self.options.static_ordering:
-                if not var.is_symbol(types.BOOL):
-                    raise ValueError("The BDD static ordering must be a " \
-                                     "list of Boolean variables")
-                self.declare_variable(var)
-
-        if self.options.dynamic_reordering:
-            self.ddmanager.AutodynEnable(self.options.reordering_algorithm)
-        else:
-            self.ddmanager.AutodynDisable()
+        self.options(self)
 
         # This stack keeps a pair (Expr, Bdd), with the semantics that
         # the bdd at the i-th element of the list contains the bdd of
@@ -255,7 +287,9 @@ class BddConverter(Converter, DagWalker):
         return cube
 
     def declare_variable(self, var):
-        if not var.is_symbol(type_=types.BOOL): raise TypeError
+        if not var.is_symbol(type_=types.BOOL):
+            raise PysmtTypeError("Trying to declare as a variable something "
+                                 "that is not a symbol: %s" % var)
         if var not in self.var2node:
             node = self.ddmanager.NewVar()
             self.idx2var[node.NodeReadIndex()] = var

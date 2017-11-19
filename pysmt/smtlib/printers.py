@@ -17,11 +17,11 @@
 #
 from functools import partial
 
-from six.moves import xrange
+from six.moves import xrange, cStringIO
 
 import pysmt.operators as op
 from pysmt.environment import get_env
-from pysmt.walkers import TreeWalker, DagWalker
+from pysmt.walkers import TreeWalker, DagWalker, handles
 from pysmt.utils import quote
 
 
@@ -33,52 +33,6 @@ class SmtPrinter(TreeWalker):
         self.write = self.stream.write
         self.mgr = get_env().formula_manager
 
-        self.set_function(partial(self._walk_nary, "and"), op.AND)
-        self.set_function(partial(self._walk_nary, "or"), op.OR)
-        self.set_function(partial(self._walk_nary, "not"), op.NOT)
-        self.set_function(partial(self._walk_nary, "=>"), op.IMPLIES)
-        self.set_function(partial(self._walk_nary, "="), op.IFF)
-        self.set_function(partial(self._walk_nary, "+"), op.PLUS)
-        self.set_function(partial(self._walk_nary, "-"), op.MINUS)
-        self.set_function(partial(self._walk_nary, "*"), op.TIMES)
-        self.set_function(partial(self._walk_nary, "="), op.EQUALS)
-        self.set_function(partial(self._walk_nary, "<="), op.LE)
-        self.set_function(partial(self._walk_nary, "<"), op.LT)
-        self.set_function(partial(self._walk_nary, "ite"), op.ITE)
-        self.set_function(partial(self._walk_nary, "to_real"), op.TOREAL)
-        self.set_function(partial(self._walk_nary, "/"), op.DIV)
-        self.set_function(partial(self._walk_nary, "pow"), op.POW)
-
-        self.set_function(partial(self._walk_nary, "bvand"), op.BV_AND)
-        self.set_function(partial(self._walk_nary, "bvor"), op.BV_OR)
-        self.set_function(partial(self._walk_nary, "bvnot"), op.BV_NOT)
-        self.set_function(partial(self._walk_nary, "bvxor"), op.BV_XOR)
-        self.set_function(partial(self._walk_nary, "bvadd"), op.BV_ADD)
-        self.set_function(partial(self._walk_nary, "bvsub"), op.BV_SUB)
-        self.set_function(partial(self._walk_nary, "bvneg"), op.BV_NEG)
-        self.set_function(partial(self._walk_nary, "bvmul"), op.BV_MUL)
-        self.set_function(partial(self._walk_nary, "bvudiv"), op.BV_UDIV)
-        self.set_function(partial(self._walk_nary, "bvurem"), op.BV_UREM)
-        self.set_function(partial(self._walk_nary, "bvshl"), op.BV_LSHL)
-        self.set_function(partial(self._walk_nary, "bvlshr"), op.BV_LSHR)
-        self.set_function(partial(self._walk_nary, "bvult"), op.BV_ULT)
-        self.set_function(partial(self._walk_nary, "bvule"), op.BV_ULE)
-        self.set_function(partial(self._walk_nary, "bvslt"), op.BV_SLT)
-        self.set_function(partial(self._walk_nary, "bvsle"), op.BV_SLE)
-        self.set_function(partial(self._walk_nary, "concat"), op.BV_CONCAT)
-        self.set_function(partial(self._walk_nary, "bvcomp"), op.BV_COMP)
-        self.set_function(partial(self._walk_nary, "bvashr"), op.BV_ASHR)
-        self.set_function(partial(self._walk_nary, "bvsdiv"), op.BV_SDIV)
-        self.set_function(partial(self._walk_nary, "bvsrem"), op.BV_SREM)
-        self.set_function(self.walk_bv_extract, op.BV_EXTRACT)
-        self.set_function(self.walk_bv_rotate, op.BV_ROR)
-        self.set_function(self.walk_bv_rotate, op.BV_ROL)
-        self.set_function(self.walk_bv_extend, op.BV_ZEXT)
-        self.set_function(self.walk_bv_extend, op.BV_SEXT)
-
-        self.set_function(partial(self._walk_nary, "select"), op.ARRAY_SELECT)
-        self.set_function(partial(self._walk_nary, "store"), op.ARRAY_STORE)
-
     def printer(self, f):
         self.walk(f)
 
@@ -86,19 +40,57 @@ class SmtPrinter(TreeWalker):
         """This is a complete printer"""
         raise NotImplementedError
 
-    def _walk_nary(self, operator, formula):
+    def walk_nary(self, formula, operator):
         self.write("(%s" % operator)
         for s in formula.args():
             self.write(" ")
-            self.walk(s)
+            yield s
         self.write(")")
 
+    def walk_and(self, formula): return self.walk_nary(formula, "and")
+    def walk_or(self, formula): return self.walk_nary(formula, "or")
+    def walk_not(self, formula): return self.walk_nary(formula, "not")
+    def walk_implies(self, formula): return self.walk_nary(formula, "=>")
+    def walk_iff(self, formula): return self.walk_nary(formula, "=")
+    def walk_plus(self, formula): return self.walk_nary(formula, "+")
+    def walk_minus(self, formula): return self.walk_nary(formula, "-")
+    def walk_times(self, formula): return self.walk_nary(formula, "*")
+    def walk_equals(self, formula): return self.walk_nary(formula, "=")
+    def walk_le(self, formula): return self.walk_nary(formula, "<=")
+    def walk_lt(self, formula): return self.walk_nary(formula, "<")
+    def walk_ite(self, formula): return self.walk_nary(formula, "ite")
+    def walk_toreal(self, formula): return self.walk_nary(formula, "to_real")
+    def walk_div(self, formula): return self.walk_nary(formula, "/")
+    def walk_pow(self, formula): return self.walk_nary(formula, "pow")
+    def walk_bv_and(self, formula): return self.walk_nary(formula, "bvand")
+    def walk_bv_or(self, formula): return self.walk_nary(formula, "bvor")
+    def walk_bv_not(self, formula): return self.walk_nary(formula, "bvnot")
+    def walk_bv_xor(self, formula): return self.walk_nary(formula, "bvxor")
+    def walk_bv_add(self, formula): return self.walk_nary(formula, "bvadd")
+    def walk_bv_sub(self, formula): return self.walk_nary(formula, "bvsub")
+    def walk_bv_neg(self, formula): return self.walk_nary(formula, "bvneg")
+    def walk_bv_mul(self, formula): return self.walk_nary(formula, "bvmul")
+    def walk_bv_udiv(self, formula): return self.walk_nary(formula, "bvudiv")
+    def walk_bv_urem(self, formula): return self.walk_nary(formula, "bvurem")
+    def walk_bv_lshl(self, formula): return self.walk_nary(formula, "bvshl")
+    def walk_bv_lshr(self, formula): return self.walk_nary(formula, "bvlshr")
+    def walk_bv_ult(self, formula): return self.walk_nary(formula, "bvult")
+    def walk_bv_ule(self, formula): return self.walk_nary(formula, "bvule")
+    def walk_bv_slt(self, formula): return self.walk_nary(formula, "bvslt")
+    def walk_bv_sle(self, formula): return self.walk_nary(formula, "bvsle")
+    def walk_bv_concat(self, formula): return self.walk_nary(formula, "concat")
+    def walk_bv_comp(self, formula): return self.walk_nary(formula, "bvcomp")
+    def walk_bv_ashr(self, formula): return self.walk_nary(formula, "bvashr")
+    def walk_bv_sdiv(self, formula): return self.walk_nary(formula, "bvsdiv")
+    def walk_bv_srem(self, formula): return self.walk_nary(formula, "bvsrem")
+    def walk_array_select(self, formula): return self.walk_nary(formula, "select")
+    def walk_array_store(self, formula): return self.walk_nary(formula, "store")
 
     def walk_symbol(self, formula):
         self.write(quote(formula.symbol_name()))
 
     def walk_function(self, formula):
-        return self._walk_nary(formula.function_name(), formula)
+        return self.walk_nary(formula, formula.function_name())
 
     def walk_int_constant(self, formula):
         if formula.constant_value() < 0:
@@ -131,10 +123,10 @@ class SmtPrinter(TreeWalker):
         self.write("#b" + formula.bv_bin_str())
 
     def walk_forall(self, formula):
-        self._walk_quantifier("forall", formula)
+        return self._walk_quantifier("forall", formula)
 
     def walk_exists(self, formula):
-        self._walk_quantifier("exists", formula)
+        return self._walk_quantifier("exists", formula)
 
     def _walk_quantifier(self, operator, formula):
         assert len(formula.quantifier_vars()) > 0
@@ -142,19 +134,20 @@ class SmtPrinter(TreeWalker):
 
         for s in formula.quantifier_vars():
             self.write("(")
-            self.walk(s)
+            yield s
             self.write(" %s)" % s.symbol_type().as_smtlib(False))
 
         self.write(") ")
-        self.walk(formula.arg(0))
+        yield formula.arg(0)
         self.write(")")
 
     def walk_bv_extract(self, formula):
         self.write("((_ extract %d %d) " % (formula.bv_extract_end(),
                                             formula.bv_extract_start()))
-        self.walk(formula.arg(0))
+        yield formula.arg(0)
         self.write(")")
 
+    @handles(op.BV_ROR, op.BV_ROL)
     def walk_bv_rotate(self, formula):
         if formula.is_bv_ror():
             rotate_type = "rotate_right"
@@ -163,9 +156,10 @@ class SmtPrinter(TreeWalker):
             rotate_type = "rotate_left"
         self.write("((_ %s %d ) " % (rotate_type,
                                      formula.bv_rotation_step()))
-        self.walk(formula.arg(0))
+        yield formula.arg(0)
         self.write(")")
 
+    @handles(op.BV_ZEXT, op.BV_SEXT)
     def walk_bv_extend(self, formula):
         if formula.is_bv_zext():
             extend_type = "zero_extend"
@@ -174,7 +168,7 @@ class SmtPrinter(TreeWalker):
             extend_type = "sign_extend"
         self.write("((_ %s %d ) " % (extend_type,
                                      formula.bv_extend_step()))
-        self.walk(formula.arg(0))
+        yield formula.arg(0)
         self.write(")")
 
     def walk_array_value(self, formula):
@@ -183,14 +177,14 @@ class SmtPrinter(TreeWalker):
             self.write("(store ")
 
         self.write("((as const %s) " % formula.get_type().as_smtlib(False))
-        self.walk(formula.array_value_default())
+        yield formula.array_value_default()
         self.write(")")
 
-        for k in sorted(assign):
+        for k in sorted(assign, key=str):
             self.write(" ")
-            self.walk(k)
+            yield k
             self.write(" ")
-            self.walk(assign[k])
+            yield assign[k]
             self.write(")")
 
 class SmtDagPrinter(DagWalker):
@@ -204,52 +198,6 @@ class SmtDagPrinter(DagWalker):
         self.template = template
         self.names = None
         self.mgr = get_env().formula_manager
-
-        self.set_function(partial(self._walk_nary, "and"), op.AND)
-        self.set_function(partial(self._walk_nary, "or"), op.OR)
-        self.set_function(partial(self._walk_nary, "not"), op.NOT)
-        self.set_function(partial(self._walk_nary, "=>"), op.IMPLIES)
-        self.set_function(partial(self._walk_nary, "="), op.IFF)
-        self.set_function(partial(self._walk_nary, "+"), op.PLUS)
-        self.set_function(partial(self._walk_nary, "-"), op.MINUS)
-        self.set_function(partial(self._walk_nary, "*"), op.TIMES)
-        self.set_function(partial(self._walk_nary, "pow"), op.POW)
-        self.set_function(partial(self._walk_nary, "="), op.EQUALS)
-        self.set_function(partial(self._walk_nary, "<="), op.LE)
-        self.set_function(partial(self._walk_nary, "<"), op.LT)
-        self.set_function(partial(self._walk_nary, "ite"), op.ITE)
-        self.set_function(partial(self._walk_nary, "to_real"), op.TOREAL)
-        self.set_function(partial(self._walk_nary, "/"), op.DIV)
-
-        self.set_function(partial(self._walk_nary, "bvand"), op.BV_AND)
-        self.set_function(partial(self._walk_nary, "bvor"), op.BV_OR)
-        self.set_function(partial(self._walk_nary, "bvnot"), op.BV_NOT)
-        self.set_function(partial(self._walk_nary, "bvxor"), op.BV_XOR)
-        self.set_function(partial(self._walk_nary, "bvadd"), op.BV_ADD)
-        self.set_function(partial(self._walk_nary, "bvsub"), op.BV_SUB)
-        self.set_function(partial(self._walk_nary, "bvneg"), op.BV_NEG)
-        self.set_function(partial(self._walk_nary, "bvmul"), op.BV_MUL)
-        self.set_function(partial(self._walk_nary, "bvudiv"), op.BV_UDIV)
-        self.set_function(partial(self._walk_nary, "bvurem"), op.BV_UREM)
-        self.set_function(partial(self._walk_nary, "bvshl"), op.BV_LSHL)
-        self.set_function(partial(self._walk_nary, "bvlshr"), op.BV_LSHR)
-        self.set_function(partial(self._walk_nary, "bvult"), op.BV_ULT)
-        self.set_function(partial(self._walk_nary, "bvule"), op.BV_ULE)
-        self.set_function(partial(self._walk_nary, "bvslt"), op.BV_SLT)
-        self.set_function(partial(self._walk_nary, "bvsle"), op.BV_SLE)
-        self.set_function(partial(self._walk_nary, "concat"), op.BV_CONCAT)
-        self.set_function(partial(self._walk_nary, "bvcomp"), op.BV_COMP)
-        self.set_function(partial(self._walk_nary, "bvashr"), op.BV_ASHR)
-        self.set_function(partial(self._walk_nary, "bvsdiv"), op.BV_SDIV)
-        self.set_function(partial(self._walk_nary, "bvsrem"), op.BV_SREM)
-        self.set_function(self.walk_bv_extract, op.BV_EXTRACT)
-        self.set_function(self.walk_bv_rotate, op.BV_ROR)
-        self.set_function(self.walk_bv_rotate, op.BV_ROL)
-        self.set_function(self.walk_bv_extend, op.BV_SEXT)
-        self.set_function(self.walk_bv_extend, op.BV_ZEXT)
-
-        self.set_function(partial(self._walk_nary, "select"), op.ARRAY_SELECT)
-        self.set_function(partial(self._walk_nary, "store"), op.ARRAY_STORE)
 
     def _push_with_children_to_stack(self, formula, **kwargs):
         """Add children to the stack."""
@@ -283,7 +231,7 @@ class SmtDagPrinter(DagWalker):
         self.name_seed += 1
         return res
 
-    def _walk_nary(self, operator, formula, args):
+    def walk_nary(self, formula, args, operator):
         assert formula is not None
         sym = self._new_symbol()
         self.openings += 1
@@ -294,11 +242,125 @@ class SmtDagPrinter(DagWalker):
         self.write("))) ")
         return sym
 
+    def walk_and(self, formula, args):
+        return self.walk_nary(formula, args, "and")
+
+    def walk_or(self, formula, args):
+        return self.walk_nary(formula, args, "or")
+
+    def walk_not(self, formula, args):
+        return self.walk_nary(formula, args, "not")
+
+    def walk_implies(self, formula, args):
+        return self.walk_nary(formula, args, "=>")
+
+    def walk_iff(self, formula, args):
+        return self.walk_nary(formula, args, "=")
+
+    def walk_plus(self, formula, args):
+        return self.walk_nary(formula, args, "+")
+
+    def walk_minus(self, formula, args):
+        return self.walk_nary(formula, args, "-")
+
+    def walk_times(self, formula, args):
+        return self.walk_nary(formula, args, "*")
+
+    def walk_equals(self, formula, args):
+        return self.walk_nary(formula, args, "=")
+
+    def walk_le(self, formula, args):
+        return self.walk_nary(formula, args, "<=")
+
+    def walk_lt(self, formula, args):
+        return self.walk_nary(formula, args, "<")
+
+    def walk_ite(self, formula, args):
+        return self.walk_nary(formula, args, "ite")
+
+    def walk_toreal(self, formula, args):
+        return self.walk_nary(formula, args, "to_real")
+
+    def walk_div(self, formula, args):
+        return self.walk_nary(formula, args, "/")
+
+    def walk_pow(self, formula, args):
+        return self.walk_nary(formula, args, "pow")
+
+    def walk_bv_and(self, formula, args):
+        return self.walk_nary(formula, args, "bvand")
+
+    def walk_bv_or(self, formula, args):
+        return self.walk_nary(formula, args, "bvor")
+
+    def walk_bv_not(self, formula, args):
+        return self.walk_nary(formula, args, "bvnot")
+
+    def walk_bv_xor(self, formula, args):
+        return self.walk_nary(formula, args, "bvxor")
+
+    def walk_bv_add(self, formula, args):
+        return self.walk_nary(formula, args, "bvadd")
+
+    def walk_bv_sub(self, formula, args):
+        return self.walk_nary(formula, args, "bvsub")
+
+    def walk_bv_neg(self, formula, args):
+        return self.walk_nary(formula, args, "bvneg")
+
+    def walk_bv_mul(self, formula, args):
+        return self.walk_nary(formula, args, "bvmul")
+
+    def walk_bv_udiv(self, formula, args):
+        return self.walk_nary(formula, args, "bvudiv")
+
+    def walk_bv_urem(self, formula, args):
+
+        return self.walk_nary(formula, args, "bvurem")
+    def walk_bv_lshl(self, formula, args):
+        return self.walk_nary(formula, args, "bvshl")
+
+    def walk_bv_lshr(self, formula, args):
+        return self.walk_nary(formula, args, "bvlshr")
+
+    def walk_bv_ult(self, formula, args):
+        return self.walk_nary(formula, args, "bvult")
+
+    def walk_bv_ule(self, formula, args):
+        return self.walk_nary(formula, args, "bvule")
+
+    def walk_bv_slt(self, formula, args):
+        return self.walk_nary(formula, args, "bvslt")
+
+    def walk_bv_sle(self, formula, args):
+        return self.walk_nary(formula, args, "bvsle")
+
+    def walk_bv_concat(self, formula, args):
+        return self.walk_nary(formula, args, "concat")
+
+    def walk_bv_comp(self, formula, args):
+        return self.walk_nary(formula, args, "bvcomp")
+
+    def walk_bv_ashr(self, formula, args):
+        return self.walk_nary(formula, args, "bvashr")
+
+    def walk_bv_sdiv(self, formula, args):
+        return self.walk_nary(formula, args, "bvsdiv")
+
+    def walk_bv_srem(self, formula, args):
+        return self.walk_nary(formula, args, "bvsrem")
+
+    def walk_array_select(self, formula, args):
+        return self.walk_nary(formula, args, "select")
+
+    def walk_array_store(self, formula, args):
+        return self.walk_nary(formula, args, "store")
+
     def walk_symbol(self, formula, **kwargs):
         return quote(formula.symbol_name())
 
     def walk_function(self, formula, args, **kwargs):
-        return self._walk_nary(formula.function_name(), formula, args)
+        return self.walk_nary(formula, args, formula.function_name())
 
     def walk_int_constant(self, formula, **kwargs):
         if formula.constant_value() < 0:
@@ -374,6 +436,7 @@ class SmtDagPrinter(DagWalker):
         self.write("))) ")
         return sym
 
+    @handles(op.BV_SEXT, op.BV_ZEXT)
     def walk_bv_extend(self, formula, args, **kwargs):
         #pylint: disable=unused-argument
         if formula.is_bv_zext():
@@ -392,6 +455,7 @@ class SmtDagPrinter(DagWalker):
         self.write("))) ")
         return sym
 
+    @handles(op.BV_ROR, op.BV_ROL)
     def walk_bv_rotate(self, formula, args, **kwargs):
         #pylint: disable=unused-argument
         if formula.is_bv_ror():
@@ -430,3 +494,25 @@ class SmtDagPrinter(DagWalker):
             self.write(")")
         self.write("))")
         return sym
+
+
+def to_smtlib(formula, daggify=True):
+    """Returns a Smt-Lib string representation of the formula.
+
+    The daggify parameter can be used to switch from a linear-size
+    representation that uses 'let' operators to represent the
+    formula as a dag or a simpler (but possibly exponential)
+    representation that expands the formula as a tree.
+
+    See :py:class:`SmtPrinter`
+    """
+    buf = cStringIO()
+    p = None
+    if daggify:
+        p = SmtDagPrinter(buf)
+    else:
+        p = SmtPrinter(buf)
+    p.printer(formula)
+    res = buf.getvalue()
+    buf.close()
+    return res

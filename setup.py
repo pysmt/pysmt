@@ -1,5 +1,7 @@
 from setuptools import setup, find_packages
 
+import pysmt
+
 long_description=\
 """============================================================
  pySMT: A library for SMT formulae manipulation and solving
@@ -36,9 +38,7 @@ Additionally, you can use any SMT-LIB 2 compliant solver.
 PySMT assumes that the python bindings for the SMT Solver are installed and
 accessible from your PYTHONPATH.
 
-pySMT works on both Python 2 and Python 3. Some solvers support both
-versions (e.g., MathSAT) but in general, many solvers still support
-only Python 2.
+pySMT works on both Python 3 and Python 2.
 
 
 Wanna know more?
@@ -50,7 +50,7 @@ Visit http://www.pysmt.org
 
 setup(
     name='PySMT',
-    version='0.5.1dev1',
+    version=pysmt.__version__,
     author='PySMT Team',
     author_email='info@pysmt.org',
     packages = find_packages(),

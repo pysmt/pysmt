@@ -25,44 +25,153 @@ except ImportError:
     raise SolverAPINotFound
 
 
-from pysmt.solvers.solver import (IncrementalTrackingSolver, UnsatCoreSolver,
-                                  Model, Converter)
+from pysmt.solvers.solver import (IncrementalTrackingSolver,
+                                  Converter, SolverOptions)
 from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 from pysmt.solvers.eager import EagerModel
 from pysmt.walkers import DagWalker
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
-                              SolverNotConfiguredForUnsatCoresError,
-                              SolverStatusError,
-                              ConvertExpressionError)
+                              ConvertExpressionError, PysmtValueError)
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
 from pysmt.logics import QF_BV, QF_UFBV, QF_ABV, QF_AUFBV, QF_AX
-from pysmt.oracles import get_logic
+from pysmt.constants import to_python_integer
 
+
+class BoolectorOptions(SolverOptions):
+    def __init__(self, **base_options):
+        SolverOptions.__init__(self, **base_options)
+        if self.random_seed is not None:
+            raise PysmtValueError("BTOR Does not support Random Seed setting.")
+
+        # Disabling Incremental usage is not allowed.
+        # This needs to be set to 1
+        self.incrementality = True
+        self.internal_options = [boolector.BTOR_OPT_MODEL_GEN,
+                                 boolector.BTOR_OPT_INCREMENTAL,
+                                 boolector.BTOR_OPT_INCREMENTAL_SMT1,
+                                 boolector.BTOR_OPT_INPUT_FORMAT,
+                                 boolector.BTOR_OPT_OUTPUT_NUMBER_FORMAT,
+                                 boolector.BTOR_OPT_OUTPUT_FORMAT,
+                                 boolector.BTOR_OPT_ENGINE,
+                                 boolector.BTOR_OPT_SAT_ENGINE,
+                                 boolector.BTOR_OPT_AUTO_CLEANUP,
+                                 boolector.BTOR_OPT_PRETTY_PRINT,
+                                 boolector.BTOR_OPT_EXIT_CODES,
+                                 boolector.BTOR_OPT_SEED,
+                                 boolector.BTOR_OPT_VERBOSITY,
+                                 boolector.BTOR_OPT_LOGLEVEL,
+                                 boolector.BTOR_OPT_REWRITE_LEVEL,
+                                 boolector.BTOR_OPT_SKELETON_PREPROC,
+                                 boolector.BTOR_OPT_ACKERMANN,
+                                 boolector.BTOR_OPT_BETA_REDUCE_ALL,
+                                 boolector.BTOR_OPT_ELIMINATE_SLICES,
+                                 boolector.BTOR_OPT_VAR_SUBST,
+                                 boolector.BTOR_OPT_UCOPT,
+                                 boolector.BTOR_OPT_MERGE_LAMBDAS,
+                                 boolector.BTOR_OPT_EXTRACT_LAMBDAS,
+                                 boolector.BTOR_OPT_NORMALIZE_ADD,
+                                 boolector.BTOR_OPT_FUN_PREPROP,
+                                 boolector.BTOR_OPT_FUN_PRESLS,
+                                 boolector.BTOR_OPT_FUN_DUAL_PROP,
+                                 boolector.BTOR_OPT_FUN_DUAL_PROP_QSORT,
+                                 boolector.BTOR_OPT_FUN_JUST,
+                                 boolector.BTOR_OPT_FUN_JUST_HEURISTIC,
+                                 boolector.BTOR_OPT_FUN_LAZY_SYNTHESIZE,
+                                 boolector.BTOR_OPT_FUN_EAGER_LEMMAS,
+                                 boolector.BTOR_OPT_SLS_NFLIPS,
+                                 boolector.BTOR_OPT_SLS_STRATEGY,
+                                 boolector.BTOR_OPT_SLS_JUST,
+                                 boolector.BTOR_OPT_SLS_MOVE_GW,
+                                 boolector.BTOR_OPT_SLS_MOVE_RANGE,
+                                 boolector.BTOR_OPT_SLS_MOVE_SEGMENT,
+                                 boolector.BTOR_OPT_SLS_MOVE_RAND_WALK,
+                                 boolector.BTOR_OPT_SLS_PROB_MOVE_RAND_WALK,
+                                 boolector.BTOR_OPT_SLS_MOVE_RAND_ALL,
+                                 boolector.BTOR_OPT_SLS_MOVE_RAND_RANGE,
+                                 boolector.BTOR_OPT_SLS_MOVE_PROP,
+                                 boolector.BTOR_OPT_SLS_MOVE_PROP_N_PROP,
+                                 boolector.BTOR_OPT_SLS_MOVE_PROP_N_SLS,
+                                 boolector.BTOR_OPT_SLS_MOVE_PROP_FORCE_RW,
+                                 boolector.BTOR_OPT_SLS_MOVE_INC_MOVE_TEST,
+                                 boolector.BTOR_OPT_SLS_USE_RESTARTS,
+                                 boolector.BTOR_OPT_SLS_USE_BANDIT,
+                                 boolector.BTOR_OPT_PROP_USE_RESTARTS,
+                                 boolector.BTOR_OPT_PROP_USE_BANDIT,
+                                 boolector.BTOR_OPT_PROP_PATH_SEL,
+                                 boolector.BTOR_OPT_PROP_PROB_USE_INV_VALUE,
+                                 boolector.BTOR_OPT_PROP_PROB_FLIP_COND,
+                                 boolector.BTOR_OPT_PROP_PROB_FLIP_COND_CONST,
+                                 boolector.BTOR_OPT_PROP_FLIP_COND_CONST_DELTA,
+                                 boolector.BTOR_OPT_PROP_FLIP_COND_CONST_NPATHSEL,
+                                 boolector.BTOR_OPT_PROP_PROB_SLICE_KEEP_DC,
+                                 boolector.BTOR_OPT_PROP_PROB_CONC_FLIP,
+                                 boolector.BTOR_OPT_PROP_PROB_SLICE_FLIP,
+                                 boolector.BTOR_OPT_PROP_PROB_EQ_FLIP,
+                                 boolector.BTOR_OPT_PROP_PROB_AND_FLIP,
+                                 boolector.BTOR_OPT_PROP_NO_MOVE_ON_CONFLICT,
+                                 boolector.BTOR_OPT_AIGPROP_USE_RESTARTS,
+                                 boolector.BTOR_OPT_AIGPROP_USE_BANDIT,
+                                 boolector.BTOR_OPT_SORT_EXP,
+                                 boolector.BTOR_OPT_SORT_AIG,
+                                 boolector.BTOR_OPT_SORT_AIGVEC,
+                                 boolector.BTOR_OPT_AUTO_CLEANUP_INTERNAL,
+                                 boolector.BTOR_OPT_SIMPLIFY_CONSTRAINTS,
+                                 boolector.BTOR_OPT_CHK_FAILED_ASSUMPTIONS]
+
+
+    def _set_option(self, btor, name, value):
+        available_options = {boolector.BoolectorOpt(btor, io).lng : io
+                             for io in self.internal_options}
+        try:
+            btor.Set_opt(available_options[name], value)
+        except TypeError:
+            raise PysmtValueError("Error setting the option '%s=%s'" \
+                                  % (name,value))
+        except boolector.BoolectorException:
+            raise PysmtValueError("Error setting the option '%s=%s'" \
+                                  % (name,value))
+        except KeyError:
+            raise PysmtValueError("Unable to set non-existing option '%s'. "
+                                  "The accepted options options are: %s" \
+                                  % (name, ", ".join(boolector.BoolectorOpt(btor, io).lng
+                                                     for io in self.internal_options)))
+
+    def __call__(self, solver):
+        if self.generate_models:
+            self._set_option(solver.btor, "model-gen", 1)
+        else:
+            self._set_option(solver.btor, "model-gen", 0)
+        if self.incrementality:
+            self._set_option(solver.btor, "incremental", 1)
+
+        for k,v in self.solver_options.items():
+            # Note: Options values in btor are mostly integers
+            self._set_option(solver.btor, str(k), v)
+
+# EOC BoolectorOptions
 
 
 class BoolectorSolver(IncrementalTrackingSolver,
                       SmtLibBasicSolver, SmtLibIgnoreMixin):
 
     LOGICS = [QF_BV, QF_UFBV, QF_ABV, QF_AUFBV, QF_AX]
+    OptionsClass = BoolectorOptions
 
     def __init__(self, environment, logic, **options):
         IncrementalTrackingSolver.__init__(self,
                                            environment=environment,
                                            logic=logic,
                                            **options)
-
         self.btor = boolector.Boolector()
-
-        self.btor.Set_opt("model_gen", 0)
-        # Disabling Incremental usage is not allowed.
-        # This needs to be set to 1
-        self.btor.Set_opt("incremental", 1)
-        if self.options.generate_models:
-            self.btor.Set_opt("model_gen", 1)
+        self.options(self)
         self.converter = BTORConverter(environment, self.btor)
         self.mgr = environment.formula_manager
         self.declarations = {}
         return
+
+# EOC BoolectorOptions
+
+        pass
 
     @clear_pending_pop
     def _reset_assertions(self):
@@ -87,10 +196,8 @@ class BoolectorSolver(IncrementalTrackingSolver,
     @clear_pending_pop
     def _solve(self, assumptions=None):
         if assumptions is not None:
-            assumption = self.mgr.And(assumptions)
-            self._assert_is_boolean(assumption)
-            btor_assumption =  self.converter.convert(assumption)
-            self.btor.Assume(btor_assumption)
+            btor_assumptions = [self.converter.convert(a) for a in assumptions]
+            self.btor.Assume(*btor_assumptions)
 
         res = self.btor.Sat()
         if res == self.btor.SAT:
@@ -194,7 +301,7 @@ class BTORConverter(Converter, DagWalker):
     def walk_symbol(self, formula, **kwargs):
         symbol_type = formula.symbol_type()
         if symbol_type.is_bool_type():
-            res = self._btor.Var(1, formula.symbol_name())
+            res = self._btor.Var(self._btor.BitVecSort(1), formula.symbol_name())
         elif symbol_type.is_real_type():
             raise ConvertExpressionError
         elif symbol_type.is_int_type():
@@ -206,10 +313,12 @@ class BTORConverter(Converter, DagWalker):
             if not (index_type.is_bv_type() and elem_type.is_bv_type()):
                 raise ConvertExpressionError("BTOR supports only Array(BV,BV). "\
                                              "Type '%s' was given." % str(symbol_type))
-            res = self._btor.Array(elem_type.width, index_type.width)
+            res = self._btor.Array(self._btor.ArraySort(self._btor.BitVecSort(index_type.width),
+                                                        self._btor.BitVecSort(elem_type.width)),
+                                   formula.symbol_name())
         else:
             assert symbol_type.is_bv_type()
-            res = self._btor.Var(formula.bv_width(),
+            res = self._btor.Var(self._btor.BitVecSort(formula.bv_width()),
                                  formula.symbol_name())
         self.declared_vars[formula] = res
         return res
@@ -235,7 +344,7 @@ class BTORConverter(Converter, DagWalker):
         return _uf(*args)
 
     def walk_bv_constant(self, formula, **kwargs):
-        value = formula.constant_value()
+        value = to_python_integer(formula.constant_value())
         width = formula.bv_width()
         return self._btor.Const(value, width)
 

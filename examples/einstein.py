@@ -36,8 +36,9 @@
 #
 # The question is: who owns the fish?
 
-from pysmt.shortcuts import Symbol, ExactlyOne, Implies, Or, And, FALSE, Iff
-from pysmt.shortcuts import get_model, get_unsat_core, is_sat
+from pysmt.shortcuts import (Symbol, ExactlyOne, Or, And, FALSE, TRUE,
+                             Iff, Implies)
+from pysmt.shortcuts import get_model, get_unsat_core, is_sat, is_unsat
 
 #
 # Lets start by expliciting all values for all dimensions
@@ -91,53 +92,58 @@ def smoke(number, name):
 # We can encode the facts
 #
 
-facts = And(
-    # The Brit lives in the red house.
-    And( Iff(nat(i, "british"), color(i, "red")) for i in Houses ),
+facts = TRUE()
+for i in Houses:
+    facts = (facts &
+        # The Brit lives in the red house.
+        nat(i, "british").Iff(color(i, "red")) &
 
-    # The Swede keeps dogs as pets.
-    And( Iff(nat(i, "swedish"), pet(i, "dogs")) for i in Houses ),
+        # The Swede keeps dogs as pets.
+        nat(i, "swedish").Iff(pet(i, "dogs")) &
 
-    # The Dane drinks tea.
-    And( Iff(nat(i, "danish"), drink(i, "tea")) for i in Houses ) ,
+        # The Dane drinks tea.
+        nat(i, "danish").Iff(drink(i, "tea")) &
 
-    # The green house is on the immediate left of the white house.
-    And( Iff(color(i, "green"), color(i+1, "white")) for i in Houses) ,
+        # The green house is on the immediate left of the white house.
+        color(i, "green").Iff(color(i+1, "white")) &
 
-    # The green house owner drinks coffee.
-    And( Iff(color(i, "green"), drink(i, "coffee")) for i in Houses ) ,
+        # The green house owner drinks coffee.
+        color(i, "green").Iff(drink(i, "coffee")) &
 
-    # The owner who smokes Pall Mall rears birds.
-    And( Iff(smoke(i, "pall_mall"), pet(i, "birds")) for i in Houses ) ,
+        # The owner who smokes Pall Mall rears birds.
+        smoke(i, "pall_mall").Iff(pet(i, "birds")) &
 
-    # The owner of the yellow house smokes Dunhill.
-    And( Iff(color(i, "yellow"), smoke(i, "dunhill")) for i in Houses ) ,
+        # The owner of the yellow house smokes Dunhill.
+        color(i, "yellow").Iff(smoke(i, "dunhill")) &
 
-    # The owner living in the center house drinks milk.
-    And( drink(2, "milk") ) ,
+        # The owner who smokes Bluemasters drinks beer.
+        smoke(i, "bluemasters").Iff(drink(i, "beer")) &
 
-    # The Norwegian lives in the first house.
-    And( nat(0, "norwegian") ) ,
+        # The German smokes Prince.
+        nat(i, "german").Iff(smoke(i, "prince")) &
 
-    # The owner who smokes Blends lives next to the one who keeps cats.
-    And( Iff(smoke(i, "blends"), Or(pet(i-1, "cats"), pet(i+1, "cats"))) for i in Houses ) ,
+        # The owner who smokes Blends lives next to the one who keeps cats.
+        smoke(i, "blends").Implies(pet(i-1, "cats") | pet(i+1, "cats")) &
 
-    # The owner who keeps the horse lives next to the one who smokes Dunhill.
-    And( Iff(pet(i, "horses"), Or(smoke(i-1, "dunhill"), smoke(i+1, "dunhill"))) for i in Houses ) ,
+        # The owner who keeps the horse lives next to the one who smokes Dunhill.
+        pet(i, "horses").Implies(smoke(i-1, "dunhill") | smoke(i+1, "dunhill")) &
 
-    # The owner who smokes Bluemasters drinks beer.
-    And( Iff(smoke(i, "bluemasters"), drink(i, "beer")) for i in Houses ) ,
+        # The Norwegian lives next to the blue house.
+        # Carefull with this one!
+        nat(i, "norwegian").Iff(color(i-1, "blue") | color(i+1, "blue")) &
 
-    # The German smokes Prince.
-    And( Iff(nat(i, "german"), smoke(i, "prince")) for i in Houses ) ,
-
-    # The Norwegian lives next to the blue house.
-    # Careful with this!!!
-    And( Iff(nat(i, "norwegian"), Or(color(i-1, "blue"), color(i+1, "blue"))) for i in Houses ) ,
-
-    # The owner who smokes Blends lives next to the one who drinks water.
-    And( Iff(smoke(i, "blends"), Or(drink(i-1, "water"), drink(i+1, "water"))) for i in Houses )
+        # The owner who smokes Blends lives next to the one who drinks water.
+        smoke(i, "blends").Implies(drink(i-1, "water") | drink(i+1, "water"))
     )
+
+facts = And(facts,
+            # The owner living in the center house drinks milk.
+            drink(2, "milk"),
+
+            # The Norwegian lives in the first house.
+            nat(0, "norwegian")
+)
+
 
 domain = And(
     And(ExactlyOne(color(i, c) for i in Houses) for c in Color),
@@ -153,7 +159,7 @@ domain = And(
     And(ExactlyOne(smoke(i, c) for c in Smoke) for i in Houses),
     )
 
-problem = And(domain, facts)
+problem = domain.And(facts)
 
 model = get_model(problem)
 
@@ -163,6 +169,7 @@ if model is None:
     # are satisfiable in isolation.
     assert is_sat(facts)
     assert is_sat(domain)
+    assert is_unsat(problem)
 
     # In isolation they are both fine, rules from both are probably
     # interacting.
@@ -182,8 +189,7 @@ if model is None:
     # use.  Nevertheless, this represents a starting point for your
     # debugging.  A possible way to approach the result is to look for
     # clauses of size 1 (i.e., unit clauses). In the facts list there
-    # are only 2 facts:
-    #   2_drink_milk
+    # is only 1 fact:
     #   0_nat_norwegian
     #
     # The clause ("1_color_blue" <-> "0_nat_norwegian")

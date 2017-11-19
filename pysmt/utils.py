@@ -1,8 +1,22 @@
+#
+# This file is part of pySMT.
+#
+#   Copyright 2014 Andrea Micheli and Marco Gario
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
 import re
-import io
 import itertools
-from six import PY2
-from fractions import Fraction
 
 
 def all_assignments(bool_variables, env):
@@ -43,27 +57,6 @@ def twos_complement(val, bits):
 #
 # Python Compatibility Functions
 #
-def is_python_integer(n):
-    if PY2:
-        return type(n) == long or type(n) == int
-    else:
-        return type(n) == int
-
-
-def is_python_rational(n):
-    return is_python_integer(n) or type(n) == float or type(n) == Fraction
-
-
-def is_python_boolean(n):
-    return n is True or n is False
-
-
-def BufferedTextReader(fname):
-    if PY2:
-        return io.BufferedReader(io.FileIO(fname, 'r'))
-    else:
-        return io.TextIOWrapper(open(fname, 'rb'))
-
 
 def interactive_char_iterator(handle):
     c = handle.read(1)
@@ -86,12 +79,12 @@ def quote(name, style='|'):
         return name
 
 
-def unquote(name, style='|'):
-    if name.startswith(style):
-        if name.endswith(style):
-            name = name.replace("%s" % style, "\\%s" % style).replace("\\\\", "\\")
-            return name[1:-1]
+def open_(fname):
+    """Transparently handle .bz2 files."""
+    if fname.endswith(".bz2"):
+        import bz2
+        if PY2:
+            return bz2.BZ2File(fname, "r")
         else:
-            raise ValueError("Malformed Name")
-    else:
-        return name
+            return bz2.open(fname, "rt")
+    return open(fname)

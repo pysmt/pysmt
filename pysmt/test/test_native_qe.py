@@ -27,6 +27,7 @@ from pysmt.test.examples import get_example_formulae
 class TestNativeQE(TestCase):
 
     def setUp(self):
+        TestCase.setUp(self)
         self.x, self.y = Symbol("x"), Symbol("y")
         self.qe = ["shannon", "selfsub"]
 

@@ -15,13 +15,85 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from fractions import Fraction
+import re
+from collections import namedtuple
 
 import pysmt.typing as types
-from pysmt.parsing.pratt import PrattParser, Lexer, Rule, GrammarSymbol
-from pysmt.parsing.pratt import (UnaryOpAdapter, InfixOpAdapter,
-                                 InfixOrUnaryOpAdapter)
+from pysmt.environment import get_env
+from pysmt.exceptions import PysmtSyntaxError, UndefinedSymbolError
+from pysmt.constants import Fraction
 
+
+def HRParser(env=None):
+    """Parser for HR format of pySMT."""
+    return PrattParser(HRLexer, env=env)
+
+
+def parse(string):
+    """Parse an hr-string."""
+    return HRParser().parse(string)
+
+
+# Rules for the Lexer
+Rule = namedtuple('Rule', ['regex', 'symbol', 'is_functional'])
+
+
+class Lexer(object):
+    """This class produces a stream of token objects for the Pratt-parser.
+
+    The rules for the token are store in self.rules. Call self.compile() after
+    modifying rules.
+    """
+
+    def __init__(self, env=None):
+        if env is None:
+            env = get_env()
+        self.env = env
+        self.mgr = env.formula_manager
+        self.get_type = env.stc.get_type
+
+        self.rules = []
+        self.scanner = None
+        self.eoi = EndOfInput()
+
+    def compile(self):
+        self.scanner = re.compile("|".join(rule.regex for rule in self.rules),
+                                  re.DOTALL | re.VERBOSE)
+    def lexing_error(self, read):
+        raise PysmtSyntaxError("Unexpected input: %s" % read)
+
+    def tokenize(self, data):
+        """The token generator for the given string"""
+        for match in re.finditer(self.scanner, data):
+            for idx, capture in enumerate(match.groups()):
+                if capture is not None:
+                    rule = self.rules[idx]
+                    symbol = rule.symbol
+                    if rule.symbol is not None:
+                        if rule.is_functional:
+                            yield symbol(capture)
+                        else:
+                            yield symbol
+                    break
+        yield self.eoi
+
+# EOC Lexer
+
+
+class GrammarSymbol(object):
+    """Base class for all the parsing tokens"""
+
+    def __init__(self, lbp=0, value=None, payload=None):
+        self.lbp = lbp
+        self.value = value
+        self.payload = payload
+
+    def nud(self, parser):
+        raise PysmtSyntaxError("Syntax error at token '%s'." % parser.token)
+
+    def led(self, parser, left):
+        raise PysmtSyntaxError("Syntax error at token '%s' (Read: '%s')." % \
+                          (parser.token, left))
 
 #
 # Precedence table (from low priority to high priority):
@@ -38,16 +110,6 @@ from pysmt.parsing.pratt import (UnaryOpAdapter, InfixOpAdapter,
 # 100 : ToReal Uminus BVNeg
 # 200 : ()
 # 300 : []
-
-def HRParser(env=None):
-    """Parser for HR format of pySMT."""
-    return PrattParser(HRLexer, env=env)
-
-
-def parse(string):
-    """Parse a hr-string."""
-    return HRParser().parse(string)
-
 
 class HRLexer(Lexer):
     """Produces a stream of token objects for the Human-Readable format."""
@@ -193,7 +255,7 @@ class HRLexer(Lexer):
             if b.is_constant():
                 return op(a, b.constant_value())
             else:
-                raise SyntaxError("Constant expected, got '%s'" % b)
+                raise PysmtSyntaxError("Constant expected, got '%s'" % b)
         return _res
 
 # EOC HRLexer
@@ -259,7 +321,7 @@ class Identifier(GrammarSymbol):
         GrammarSymbol.__init__(self)
         self.value = env.formula_manager.get_symbol(name)
         if self.value is None:
-            raise ValueError("Undefined symbol: '%s'" % name)
+            raise UndefinedSymbolError(name)
 
     def nud(self, parser):
         return self.value
@@ -350,7 +412,7 @@ class OpenBrak(GrammarSymbol):
             parser.expect(CloseBrak, "]")
             return parser.mgr.Store(op, e1, e2)
         else:
-            raise SyntaxError("Unexpected token:" + str(parser.token))
+            raise PysmtSyntaxError("Unexpected token:" + str(parser.token))
 
 
 class Quantifier(GrammarSymbol):
@@ -371,3 +433,133 @@ class Quantifier(GrammarSymbol):
         parser.expect(ExprDot, ".")
         matrix = parser.expression(self.lbp)
         return self.operator(qvars, matrix)
+
+
+class PrattParser(object):
+    """The Pratt-Parser
+
+    This parser is explained in:
+       http://effbot.org/zone/simple-top-down-parsing.htm
+
+    The LexerClass is required, and is the one doing the heavy lifting.
+    """
+
+    def __init__(self, LexerClass, env=None):
+        if env is None:
+            env = get_env()
+
+        self.env = env
+        self.mgr = env.formula_manager
+        self.get_type = env.stc.get_type
+        self.lexer = LexerClass(env)
+
+        self.token = None
+        self.tokenizer = None
+
+    def expression(self, rbp=0):
+        """Parses an expression"""
+        t = self.token
+        self.token = next(self.tokenizer)
+        left = t.nud(self)
+        while rbp < self.token.lbp:
+            t = self.token
+            self.token = next(self.tokenizer)
+            left = t.led(self, left)
+        return left
+
+    def parse_fname(self, fname):
+        """Parses the content of the given file name"""
+        with open(fname, "r") as f:
+            return self.parse(f.read())
+
+    def parse(self, string):
+        """Parses the content of the given string"""
+        self.token = None
+        self.tokenizer = self.lexer.tokenize(string)
+        self.token = next(self.tokenizer)
+        result = self.expression()
+        try:
+            bd = next(self.tokenizer)
+            raise PysmtSyntaxError("Bogus data after expression: '%s' "
+                                   "(Partial: %s)" % (bd, result))
+        except StopIteration:
+            return result
+
+    def advance(self):
+        """Advance reading of one token"""
+        self.token = next(self.tokenizer)
+
+
+    def expect(self, token_class, token_repr):
+        """
+        Check that the next token is the specified one or fail with a
+        ParserError
+        """
+        if type(self.token) != token_class:
+            raise PysmtSyntaxError("Expected '%s'" % token_repr)
+        self.advance()
+
+# EOC PrattParser
+
+#
+# Adapters
+#
+# These are adapters used to create tokens for various types of symbols
+#
+
+class EndOfInput(GrammarSymbol):
+    pass
+
+
+class UnaryOpAdapter(GrammarSymbol):
+    """Adapter for unary operator."""
+
+    def __init__(self, operator, lbp):
+        GrammarSymbol.__init__(self)
+        self.operator = operator
+        self.lbp = lbp
+
+    def nud(self, parser):
+        right = parser.expression(self.lbp)
+        return self.operator(right)
+
+
+class InfixOpAdapter(GrammarSymbol):
+    """Adapter for infix operator."""
+
+    def __init__(self, operator, lbp):
+        GrammarSymbol.__init__(self)
+        self.operator = operator
+        self.lbp = lbp
+
+    def led(self, parser, left):
+        right = parser.expression(self.lbp)
+        return self.operator(left, right)
+
+    def __repr__(self):
+        return repr(self.operator)
+
+
+class InfixOrUnaryOpAdapter(GrammarSymbol):
+    """Adapter for operators that can be both binary infix or unary.
+
+    b_operator and b_lbp: define the behavior when considering the symbol
+                          as a binary operator.
+    u_operator and u_lbp: define the behavior when considering the symbol
+                          as a unary operator.
+    """
+
+    def __init__(self, b_operator, u_operator, b_lbp, u_lbp):
+        GrammarSymbol.__init__(self)
+        self.b_operator = b_operator
+        self.u_operator = u_operator
+        self.lbp = b_lbp
+        self.u_lbp = u_lbp
+
+    def nud(self, parser):
+        right = parser.expression(self.u_lbp)
+        return self.u_operator(right)
+
+    def led(self, parser, left):
+        right = parser.expression(self.lbp)
+        return self.b_operator(left, right)

@@ -3,24 +3,51 @@ environment:
     # SDK v7.0 MSVC Express 2008's SetEnv.cmd script will fail if the
     # /E:ON and /V:ON options are not enabled in the batch script intepreter
     # See: http://stackoverflow.com/a/13751649/163740
-    CMD_IN_ENV: "cmd /E:ON /V:ON /C .\\appveyor\\run_with_env.cmd"
+    CMD_IN_ENV: "cmd /E:ON /V:ON /C .\\ci\\appveyor\\run_with_env.cmd"
 
   matrix:
     - PYTHON: "C:\\Python27"
       PYTHON_VERSION: "2.7.8"
       PYTHON_ARCH: "32"
+      PYSMT_SOLVER: "None"
 
-    # - PYTHON: "C:\\Python27-x64"
-    #   PYTHON_VERSION: "2.7.8"
-    #   PYTHON_ARCH: "64"
-
-    # - PYTHON: "C:\\Python34"
-    #   PYTHON_VERSION: "3.4.1"
-    #   PYTHON_ARCH: "32"
-
-    - PYTHON: "C:\\Python34-x64"
-      PYTHON_VERSION: "3.4.1"
+    - PYTHON: "C:\\Python27-x64"
+      PYTHON_VERSION: "2.7.8"
       PYTHON_ARCH: "64"
+      PYSMT_SOLVER: "None"
+
+    - PYTHON: "C:\\Python35"
+      PYTHON_VERSION: "3.5.2"
+      PYTHON_ARCH: "32"
+      PYSMT_SOLVER: "None"
+
+    - PYTHON: "C:\\Python35-x64"
+      PYTHON_VERSION: "3.5.2"
+      PYTHON_ARCH: "64"
+      PYSMT_SOLVER: "None"
+
+
+    - PYTHON: "C:\\Python27"
+      PYTHON_VERSION: "2.7.8"
+      PYTHON_ARCH: "32"
+      PYSMT_SOLVER: "z3"
+
+    - PYTHON: "C:\\Python27-x64"
+      PYTHON_VERSION: "2.7.8"
+      PYTHON_ARCH: "64"
+      PYSMT_SOLVER: "z3"
+
+    - PYTHON: "C:\\Python35"
+      PYTHON_VERSION: "3.5.2"
+      PYTHON_ARCH: "32"
+      PYSMT_SOLVER: "z3"
+
+    - PYTHON: "C:\\Python35-x64"
+      PYTHON_VERSION: "3.5.2"
+      PYTHON_ARCH: "64"
+      PYSMT_SOLVER: "z3"
+
+
 
 install:
   - ECHO "Filesystem root:"
@@ -31,7 +58,7 @@ install:
 
   # Install Python (from the official .msi of http://python.org) and pip when
   # not already installed.
-  - "powershell ./appveyor/install.ps1"
+  - "powershell ./ci/appveyor/install.ps1"
 
   # Prepend newly installed Python to the PATH of this build (this cannot be
   # done from inside the powershell script as it would require to restart
@@ -44,11 +71,19 @@ install:
 
   - "%CMD_IN_ENV% pip install -r dev-requirements.txt"
 
-# MG: Build is where we probably want to build the solvers
-build: false  # Not a C# project, build stuff at the test step instead.
+  # Install the solvers
+  - "%CMD_IN_ENV% python install.py --confirm-agreement"
+
+  # Set the pythonpath
+  - "python install.py --env > bindings_path.bat"
+  - call ./bindings_path.bat
+  - ECHO "PythonPath=%PYTHONPATH%"
+  - ECHO "Path=%PATH%"
+
+build: false
 
 test_script:
-  # Build the compiled extension and run the project tests
+  - "%CMD_IN_ENV% python install.py --check"
   - "%CMD_IN_ENV% nosetests -v "
 
 # after_test:

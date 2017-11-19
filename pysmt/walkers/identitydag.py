@@ -32,17 +32,17 @@ class IdentityDagWalker(DagWalker):
                            invalidate_memoization=invalidate_memoization)
         self.mgr = self.env.formula_manager
 
-    def walk_symbol(self, formula, **kwargs):
+    def walk_symbol(self, formula, args, **kwargs):
         return self.mgr.Symbol(formula.symbol_name(),
-                                               formula.symbol_type())
+                               formula.symbol_type())
 
-    def walk_real_constant(self, formula, **kwargs):
+    def walk_real_constant(self, formula, args, **kwargs):
         return self.mgr.Real(formula.constant_value())
 
-    def walk_int_constant(self, formula, **kwargs):
+    def walk_int_constant(self, formula, args, **kwargs):
         return self.mgr.Int(formula.constant_value())
 
-    def walk_bool_constant(self, formula, **kwargs):
+    def walk_bool_constant(self, formula, args, **kwargs):
         return self.mgr.Bool(formula.constant_value())
 
     def walk_and(self, formula, args, **kwargs):
@@ -73,18 +73,20 @@ class IdentityDagWalker(DagWalker):
         return self.mgr.LT(args[0], args[1])
 
     def walk_forall(self, formula, args, **kwargs):
-        qvars = [self.walk_symbol(v) for v in formula.quantifier_vars()]
+        qvars = [self.walk_symbol(v, args, **kwargs)
+                 for v in formula.quantifier_vars()]
         return self.mgr.ForAll(qvars, args[0])
 
     def walk_exists(self, formula, args, **kwargs):
-        qvars = [self.walk_symbol(v) for v in formula.quantifier_vars()]
+        qvars = [self.walk_symbol(v, args, **kwargs)
+                 for v in formula.quantifier_vars()]
         return self.mgr.Exists(qvars, args[0])
 
     def walk_plus(self, formula, args, **kwargs):
         return self.mgr.Plus(args)
 
     def walk_times(self, formula, args, **kwargs):
-        return self.mgr.Times(args[0], args[1])
+        return self.mgr.Times(args)
 
     def walk_pow(self, formula, args, **kwargs):
         return self.mgr.Pow(args[0], args[1])
@@ -95,8 +97,7 @@ class IdentityDagWalker(DagWalker):
     def walk_function(self, formula, args, **kwargs):
         # We re-create the symbol name
         old_name = formula.function_name()
-        new_name = self.mgr.Symbol(old_name.symbol_name(),
-                                   old_name.symbol_type())
+        new_name = self.walk_symbol(old_name, args, **kwargs)
         return self.mgr.Function(new_name, args)
 
     def walk_toreal(self, formula, args, **kwargs):
@@ -192,9 +193,7 @@ class IdentityDagWalker(DagWalker):
         return self.mgr.Store(args[0], args[1], args[2])
 
     def walk_array_value(self, formula, args, **kwargs):
-        assign = {}
-        for i,c in enumerate(args[1::2]):
-            assign[c] = args[i+1]
+        assign = dict(zip(args[1::2], args[2::2]))
         return self.mgr.Array(formula.array_value_index_type(),
                               args[0],
                               assign)

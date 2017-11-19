@@ -1,11 +1,455 @@
 Change Log
 ==========
 
-GIT-master: XXXX-XX-XX -- ??
-----------------------------
-* Added support for non-linear, polynomial arithmetic. This fature si
-  currently supported only by Z3. For this reason we rely on z3 to
-  represent algebraic solutions (e.g., sqrt(2)).
+0.7.0: 2017-08-12 -- Class Based Walkers and Sorts
+--------------------------------------------------
+
+BACKWARDS INCOMPATIBLE CHANGES:
+
+* Removed option "quantified" in Solver (PR #377)
+
+* Removed deprecated CNFizer.printer method (PR #359)
+
+General:
+
+* Class-Based Walkers (PR #359):
+
+  Walkers behavior is now defined in the class definition.  Processing
+  an AND node always calls walk_and. This makes it possible to
+  subclass and override methods, but at the same time call the
+  implementation of a super class, e.g.::
+
+     def walk_and(...):
+          return ParentWalker.walk_and(self, ....)
+
+  The utility method Walker.super is provided to automatically handle the
+  dispatch of a node to the correct walk_* function, e.g.,::
+
+    def walk_bool_to_bool(...):
+        return ParentWalker._super(self, ....)
+
+  The method Walker.set_functions is deprecated, but kept for
+  compatibility with old-style walkers. Using set_functions has the same
+  effect as before. However, you cannot modify a subclass of a walker
+  using set_functions. *You should not be using set_functions anymore!*
+
+  The method Walker.set_handler is used to perform the same operation of
+  set_function at the class level. The associated decorator @handles can
+  be used to associate methods with nodetypes.
+
+  These changes make it possible to extend the walkers from outside
+  pySMT, without relying on hacks like the Dynamic Walker Factory
+  (DWF). See examples/ltl.py for a detailed example.
+
+* Introduce the support for custom sorts (PySMTTypes) (PR #375)
+
+  Two new classes are introduced: _Type and PartialType
+
+  PartialType is used to represent the concept of SMT-LIB "define-sort".
+  The class _TypeDecl is used to represents a Type declaration, and
+  as such cannot be used directly to instantiate a
+  Symbol. This capture the semantics of declare-sort. A wrapper
+  Type() is given to simplify its use, and making 0-arity sorts a
+  special case. The following two statements are equivalent::
+
+    Type("Colors")
+    Type("Colors", 0)
+
+  0-ary type are instantiated by default. For n-ary types, the type
+  needs to be instantiated. This can be done with the method
+  ``TypeManager.get_type_instance`` or by using infix notation (if
+  enabled)::
+
+    type_manager.get_type_instance(Type(Pair, 2), Int, Int))
+    Type(Pair, 2)(Int, Int)
+
+  Type declarations and Type instances are memoized in the
+  environment, and suitable shortucts have been introduced.
+  Logics definition has been extended with the field ``custom_types``
+  to detect the use of custom types. *Note*: Due to the limited
+  support of custom types by solvers, by default every SMT-LIB logic
+  is defined with ``custom_types=False``.
+
+* Add shortcuts.to_smtlib() to easily dump an SMT-LIB formula
+
+* Add explicit support for BV and UFBV logics (PR #423): Thanks to
+  **Alexey Ignatiev** for reporting this.
+
+
+Solvers:
+
+* PicoSAT: Upgrade to 965 (PR #425)
+
+* Boolector: Upgrade to 2.4.1 (PR #422)
+
+* CVC4: Fixed memory-leak (PR #419)
+
+* Yices: Upgrade to 2.5.2 (PR #426)
+
+
+Bugfix:
+
+* Fixed assumption handling in the Boolector wrapper. Thanks to
+  **Alexey Ignatiev** for contributing with this patch!
+
+* Fix cyclic imports (PR #406). Thanks to **@rene-rex** for reporting
+  this.
+
+* Fixed SMT-LIB Script serialization to default to a daggified
+  representation. (PR #418)
+
+* Fixed SMT-LIB Parsing of declare-const . Thanks to
+  **@ahmedirfan1983** for reporting this. (PR #429)
+
+* Fixed logic detection when calling is_unsat (PR #428)
+
+
+
+0.6.1: 2016-12-02 -- Portfolio and Coverage
+-------------------------------------------
+
+General:
+
+* Portfolio Solver (PR #284):
+
+  Created Portfolio class that uses multiprocessing to solve the
+  problem using multiple solvers. get_value and get_model work after a
+  SAT query. Other artifacts (unsat-core, interpolants) are not
+  supported.
+  Factory.is_* methods have been extended to include `portfolio`
+  key-word, and exported as is_* shortcuts. The syntax becomes::
+
+    is_sat(f, portfolio=["s1", "s2"])
+
+* Coverage has been significantly improved, thus giving raise to some
+  clean-up of the tests and minor bug fixes. Thanks to Coveralls.io
+  for providing free coverage analysis. (PR #353, PR #358, PR #372)
+
+* Introduce PysmtException, from which all exceptions must
+  inherit. This also introduces hybrid exceptions that inherit both
+  from the Standard Library and from PysmtException (i.e.,
+  PysmtValueError). Thanks to **Alberto Griggio** for
+  suggesting this change. (PR #365)
+
+* Windows: Add support for installing Z3. Thanks to **Samuele
+  Gallerani** for contributing this patch. (PR #385)
+
+* Arrays: Improved efficiency of array_value_get (PR #357)
+
+* Documentation: Thanks to the **Hacktoberfest** for sponsoring these
+  activities:
+
+  * Every function in shortcuts.py now has a docstring! Thanks to
+    **Vijay Raghavan** for contributing this patch. (PR #363)
+
+  * Contributing information has been moved to the official
+    documentation and prettyfied! Thanks to **Jason Taylor Hodge** for
+    contributing this patch. (PR #339)
+
+  * Add link to Google Group in Readme.md . Thanks to @ankit01ojha for
+    contributing this. (PR #345)
+
+* smtlibscript_from_formula(): Allow the user to specify a custom
+  logic. Thanks to **Alberto Griggio** for contributing this
+  patch. (PR #360)
+
+Solvers:
+
+* MathSAT: Improve back-conversion performance by using MSAT_TAGS (PR #379)
+
+* MathSAT: Add LIA support for Quantifier Elimination
+
+* Removed: Solver.declare_variable and Solver.set_options (PR #369, PR #378)
+
+Bugfix:
+
+* CVC4:
+
+  * Enforce BV Division by 0 to return a known value (0xFF) (PR #351)
+
+  * Force absolute import of CVC4. Thanks to **Alexey Ignatiev**
+    (@2sev) for reporting this issue. (PR #382)
+
+* MathSAT: Thanks to **Alberto Griggio** for contributing these patches
+
+  * Fix assertions about arity of BV sign/zero extend ops. (PR #350, PR #351)
+
+  * Report the error message generated by MathSAT when raising a
+    SolverReturnedUnknownResultError (PR #355)
+
+* Enforce a single call to is_sat in non-incremental mode (PR
+  #368). Thanks to @colinmorris for pointing out this issue.
+
+* Clarified Installation section and added example of call to
+  ```pysmt-install --env```.  Thanks to **Marco Roveri**
+  (@marcoroveri) for pointing this out.
+
+* SMT-LIB Parser:
+
+  * Minor fixes highlighted by fuzzer (PR #376)
+
+  * Fixed annotations parsing according to SMTLib rules (PR #374)
+
+* pysmt-install: Gracefully fail if GIT is not installed (PR #390)
+  Thanks to **Alberto Griggio** for reporting this.
+
+* Removed dependency from internet connections when checking picosat
+  version (PR #386)
+
+
+0.6.0: 2016-10-09 -- GMPY2 and Goodbye Recursion
+------------------------------------------------
+
+BACKWARDS INCOMPATIBLE CHANGES:
+
+* Integer, Fraction and Numerals are now defined in pysmt.constants
+  (see below for details). The breaking changes are:
+
+  * Users should use pysmt.constants.Fraction, if they want to
+    guarantee that the same type is being used (different types are
+    automatically converted);
+  * Methods from pysmt.utils moved to pysmt.constants;
+  * Numerals class was moved from pysmt.numeral (that does not exist
+    anymore).
+
+
+* Non-Recursive TreeWalker (PR #322)
+
+  Modified TreeWalker to be non-recursive. The algorithm works by
+  keeping an explicit stack of the walking functions **that are now
+  required to be generators**. See pysmt.printer.HRPrinter for an
+  example. This removes the last piece of recursion in pySMT !
+
+
+* Times is now an n-ary operator (Issue #297 / PR #304)
+
+  Functions operating on the args of Times (e.g., rewritings) should
+  be adjusted accordingly.
+
+
+* Simplified module pysmt.parsing into a unique file (PR #301)
+
+  The pysmt.parsing module was originally divided in two files:
+  pratt.py and parser.py. These files were removed and the parser
+  combined into a unique parsing.py file. Code importing those modules
+  directly needs to be updated.
+
+
+* Use solver_options to specify solver-dependent options (PR #338):
+
+  * MathSAT5Solver option 'debugFile' has been removed. Use the
+    solver option: "debug_api_call_trace_filename".
+
+  * BddSolver used to have the options as keyword
+    arguments (static_ordering, dynamic_reordering etc). This is not
+    supported anymore.
+
+
+* Removed deprecated methods (PR #332):
+
+  * FNode.get_dependencies (use FNode.get_free_variables)
+  * FNode.get_sons (use FNode.get_args)
+  * FNode.is_boolean_operator (use FNode.is_bool_op)
+  * pysmt.test.skipIfNoSolverAvailable
+  * pysmt.randomizer (not used and broken)
+
+
+
+General:
+
+* Support for GMPY2 to represent Fractions (PR #309).
+
+  Usage of GMPY2 can be controlled by setting the env variable
+  PYSMT_GMPY to True or False. By default, pySMT tries to use GMPY2 if
+  installed, and fallbacks on Python's Fraction otherwise.
+
+
+* Constants module: pysmt.constants (PR #309)
+
+  This module provides an abstraction for constants Integer and
+  Fraction, supporting different ways of representing them
+  internally. Additionally, this module provides several utility
+  methods:
+
+    * is_pysmt_fraction
+    * is_pysmt_integer
+    * is_python_integer
+    * is_python_rational
+    * is_python_boolean
+
+  Conversion can be achieved via:
+
+    * pysmt_fraction_from_rational
+    * pysmt_integer_from_integer
+    * to_python_integer (handle long/int py2/py3 mismatch)
+
+
+* Add Version information (Issue #299 / PR #303)
+
+  * pysmt.VERSION : A tuple containing the version information
+  * pysmt.__version__ : String representation of VERSION (following PEP 440)
+  * pysmt.git_version : A simple function that returns the version including git information.
+
+  install.py (pysmt-install) and shell.py gain a new --version option that
+  uses git_version to display the version information.
+
+
+* Shortcuts: read_smtlib() and write_smtlib()
+
+* Docs: Completely Revised the documentation (PR #294)
+
+* Rewritings: TimesDistributor (PR #302)
+
+  Perform distributivity on an N-ary Times across addition and
+  subtraction.
+
+
+* SizeOracle: Add MEASURE_BOOL_DAG measure (PR #319)
+
+  Measure the Boolean size of the formula. This is equivalent to
+  replacing every theory expression with a fresh boolean variable, and
+  measuring the DAG size of the formula. This can be used to estimate
+  the Boolean complexity of the SMT formula.
+
+
+* PYSMT_SOLVERS controls available solvers (Issue #266 / PR #316):
+
+  Using the PYSMT_SOLVER system environment option, it is possible to
+  restrict the set of installed solvers that are actually accessible
+  to pySMT. For example, setting PYSMT_SOLVER="msat,z3" will limit the
+  accessible solvers to msat and z3.
+
+
+* Protect FNodeContent.payload access (Issue #291 / PR 310)
+
+  All methods in FNode that access the payload now check that the
+  FNode instance is of the correct type, e.g.:
+
+  FNode.symbol_name() checks that FNode.is_symbol()
+
+  This prevents from accessing the payload in a spurious way. Since
+  this has an impact on every access to the payload, it has been
+  implemented as an assertion, and can be disabled by running the
+  interpreter with -O.
+
+
+Solvers:
+
+* Z3 Converter Improvements (PR #321):
+
+  * Optimized Conversion to Z3 Solver Forward conversion is 4x faster,
+    and 20% more memory efficient, because we work at a lower level
+    of the Z3 Python API and do not create intermediate AstRef objects
+    anymore.  Back conversion is 2x faster because we use a direct
+    dispatching method based on the Z3 OP type, instead of the
+    big conditional that we were using previously.
+
+  * Add back-conversion via SMT-LIB string buffer.
+    Z3Converter.back_via_smtlib() performs back conversion by printing the
+    formula as an SMT-LIB string, and parsing it back. For formulas of
+    significant size, this can be drastically faster than using the API.
+
+  * Extend back conversion to create new Symbols, if needed. This
+    always raise a warning alerting the user that a new symbol is being
+    implicitly defined.
+
+* OSX: Z3 and MathSAT can be installed with pysmt-install (PR #244)
+
+* MathSAT: Upgrade to 5.3.13 (PR #305)
+
+* Yices: Upgrade to 2.5.1
+
+* Better handling of solver options (PR  #338):
+
+  Solver constructor takes the optional dictionary ``solver_options``
+  of options that are solver dependent. It is thus possible to
+  directly pass options to the underlying solver.
+
+
+Bugfix:
+
+* Fixed: Times back conversion in Z3 was binary not n-ary. Thanks to
+  **Ahmed Irfan** for submitting the patch (PR #340, PR #341)
+
+* Fixed: Bug in ``array_value_assigned_values_map``, returning the
+  incorrect values for an Array constant value. Thanks to
+  **Daniel Ricardo dos Santos** for pointing this out and submitting
+  the patch.
+
+* Fixed: SMT-LIB define-fun serialization (PR #315)
+
+* Issue #323: Parsing of variables named bvX (PR #326)
+
+* Issue #292: Installers: Make dependency from pip optional (PR #300)
+
+* Fixed: Bug in MathSAT's ``get_unsat_core`` (PR #331), that could
+  lead to an unbounded mutual recursion. Thanks to **Ahmed Irfan** for
+  reporting this (PR #331)
+
+
+0.5.1: 2016-08-17 -- NIRA and Python 3.5
+----------------------------------------
+
+Theories:
+
+* Non Linear Arithmetic (NRA/NIA): Added support for
+  non-linear, polynomial arithmetic. This thoery is currently
+  supported only by Z3. (PR #282)
+
+  * New operator POW and DIV
+
+  * LIRA Solvers not supporting Non-Linear will raise the
+    NonLinearError exception, while solvers not supporting arithmetics
+    will raise a ConvertExpressionError exception (see
+    test_nlira.py:test_unknownresult)
+
+  * Algebraic solutions (e.g., sqrt(2) are represented using the
+    internal z3 object -- This is bound to change in the future.
+
+
+General:
+
+* Python 3.5: Full support for Python 3.5, all solvers are now tested
+  (and working) on Python 3.5 (PR #287)
+
+* Improved installed solvers check (install.py)
+
+  - install.py --check now takes into account the bindings_dir and
+    prints the version of the installed solver
+
+  - Bindings are installed in different directories depending on the
+    minor version of Python. In this way it is possible to use both
+    Python 2.7 and 3.5.
+
+  - There is a distinction btw installed solvers and solvers in the
+    PYTHONPATH.
+
+  - Qelim, Unsat-Core and Interpolants are also visualized (but not
+    checked)
+
+* Support for reading compressed SMT-LIB files (.bz2)
+
+* Simplified HRPrinter code
+
+* Removed six dependency from type_checker (PR #283)
+
+* BddSimplifier (pysmt.simplifier.BddSimplifier): Uses BDDs
+  to simplify the boolean structure of an SMT formula. (See
+  test_simplify.py:test_bdd_simplify) (PR #286)
+
+
+Solvers:
+
+* Yices: New wrapper supporting python 3.5 (https://github.com/pysmt/yicespy)
+* Yices: Upgrade to 2.4.2
+* SMT-LIB Wrapper: Improved interaction with subprocess (#298)
+
+Bugfix:
+
+* Bugfix in Z3Converter.walk_array_value. Thanks to **Alberto Griggio**
+  for contributing this patch
+
+* Bugfix in DL Logic comparison (commit 9e9c8c)
 
 
 0.5.0: 2016-06-09 -- Arrays
@@ -15,12 +459,12 @@ BACKWARDS INCOMPATIBLE CHANGES:
 
 * MGSubstituter becomes the new default substitution method (PR #253)
 
-  When performing substitution with a mapping like ```{a: b, Not(a),
-  c}```, ```Not(a)``` is considered before ```a```. The previous
-  behavior (MSSubstituter) would have substituted ```a``` first, and
-  then the rule for ```Not(a)``` would not have been applied.
+  When performing substitution with a mapping like ``{a: b, Not(a),
+  c}``, ``Not(a)`` is considered before ``a``. The previous
+  behavior (MSSubstituter) would have substituted ``a`` first, and
+  then the rule for ``Not(a)`` would not have been applied.
 
-* Removed argument ```user_options``` from Solver()
+* Removed argument ``user_options`` from Solver()
 
 Theories:
 
@@ -52,13 +496,13 @@ General:
 
 * Improved handling of options in Solvers (PR #250):
 
-  Solver() takes **options as free keyword arguments. These options
+  Solver() takes ``**options`` as free keyword arguments. These options
   are checked by the class SolverOptions, in order to validate that
   these are meaningful options and perform a preliminary validation to
   catch typos etc. by raising a ValueError exception if the option is
   unknown.
 
-  It is now possible to do: ```Solver(name="bdd", dynamic_reordering=True)```
+  It is now possible to do: ``Solver(name="bdd", dynamic_reordering=True)``
 
 
 Solvers:
@@ -104,7 +548,7 @@ General:
 * pysmt.parsing: Added parser for Human Readable expressions
 * pysmt-install: new installer engine
 * Most General Substitution: Introduced new Substituter, that performs
-top-down substitution. This will become the default in version 0.5.
+  top-down substitution. This will become the default in version 0.5.
 * Improved compliance with SMT-LIB 2 and 2.5
 * EagerModel can now take a solver model in input
 * Introduce new exception 'UndefinedSymbolError' when trying to access

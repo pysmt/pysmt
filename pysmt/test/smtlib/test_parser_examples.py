@@ -15,15 +15,18 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+import os
+from tempfile import mkstemp
+
 from six.moves import cStringIO
 
 import pysmt.logics as logics
-from pysmt.test import TestCase, skipIfNoSolverForLogic
+from pysmt.test import TestCase, skipIfNoSolverForLogic, main
 from pysmt.test.examples import get_example_formulae
 from pysmt.smtlib.parser import SmtLibParser
 from pysmt.smtlib.script import smtlibscript_from_formula
 from pysmt.shortcuts import Iff
-
+from pysmt.shortcuts import read_smtlib, write_smtlib
 
 class TestSMTParseExamples(TestCase):
 
@@ -34,13 +37,14 @@ class TestSMTParseExamples(TestCase):
             if logic == logics.QF_BV:
                 # See test_parse_examples_bv
                 continue
-            buf_out = cStringIO()
+            buf = cStringIO()
             script_out = smtlibscript_from_formula(f_out)
-            script_out.serialize(outstream=buf_out)
+            script_out.serialize(outstream=buf)
+            #print(buf)
 
-            buf_in = cStringIO(buf_out.getvalue())
+            buf.seek(0)
             parser = SmtLibParser()
-            script_in = parser.get_script(buf_in)
+            script_in = parser.get_script(buf)
             f_in = script_in.get_last_formula()
             self.assertEqual(f_in.simplify(), f_out.simplify())
 
@@ -110,7 +114,6 @@ class TestSMTParseExamples(TestCase):
             buf_out = cStringIO()
             script_out = smtlibscript_from_formula(f_out)
             script_out.serialize(outstream=buf_out)
-
             buf_in = cStringIO(buf_out.getvalue())
             parser = SmtLibParser()
             script_in = parser.get_script(buf_in)
@@ -127,3 +130,22 @@ class TestSMTParseExamples(TestCase):
             else: # Loops exited normally
                 print("-"*40)
                 print(script_in)
+
+
+    def test_read_and_write_shortcuts(self):
+        fs = get_example_formulae()
+
+        fdi, tmp_fname = mkstemp()
+        os.close(fdi) # Close initial file descriptor
+        for (f_out, _, _, _) in fs:
+            write_smtlib(f_out, tmp_fname)
+            # with open(tmp_fname) as fin:
+            #     print(fin.read())
+
+            f_in = read_smtlib(tmp_fname)
+            self.assertEqual(f_out.simplify(), f_in.simplify())
+        # Clean-up
+        os.remove(tmp_fname)
+
+if __name__ == "__main__":
+    main()

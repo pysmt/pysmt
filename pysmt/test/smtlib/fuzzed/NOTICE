@@ -1,0 +1,5 @@
+These files were generated using FuzzSMT by JKU, with the patch by the
+patch by Christoph Wintersteiger.
+
+See: Robert Brummayer and Armin Biere.
+     Fuzzing and Delta-Debugging SMT Solvers

@@ -15,6 +15,7 @@
 import os
 import re
 import sys
+import platform
 
 from pysmt.cmd.installers.base import SolverInstaller, TemporaryPath
 
@@ -28,7 +29,10 @@ class MSatInstaller(SolverInstaller):
         archive_name = "mathsat-%s-%s-%s.tar.gz" % (solver_version,
                                                     self.os_name,
                                                     self.architecture)
+        if self.os_name == "darwin":
+            archive_name = archive_name.replace("darwin", "darwin-libcxx")
         native_link = "http://mathsat.fbk.eu/download.php?file={archive_name}"
+
         SolverInstaller.__init__(self, install_dir=install_dir,
                                  bindings_dir=bindings_dir,
                                  solver_version=solver_version,
@@ -38,14 +42,15 @@ class MSatInstaller(SolverInstaller):
 
         self.python_bindings_dir = os.path.join(self.extract_path, "python")
 
-
     def compile(self):
         SolverInstaller.run_python("./setup.py build", self.python_bindings_dir)
-
 
     def move(self):
         libdir = "lib.%s-%s-%s" % (self.os_name, self.architecture,
                                    self.python_version)
+        if self.os_name == "darwin":
+            osx_version = ".".join(platform.mac_ver()[0].split(".")[:2])
+            libdir = libdir.replace("darwin", "macosx-%s" % osx_version)
         pdir = self.python_bindings_dir
         bdir = os.path.join(pdir, "build")
         sodir = os.path.join(bdir, libdir)
@@ -55,17 +60,5 @@ class MSatInstaller(SolverInstaller):
                 SolverInstaller.mv(os.path.join(sodir, f), self.bindings_dir)
         SolverInstaller.mv(os.path.join(pdir, "mathsat.py"), self.bindings_dir)
 
-
     def get_installed_version(self):
-        with TemporaryPath([self.bindings_dir]):
-            version = None
-            try:
-                import mathsat
-                version_str = mathsat.msat_get_version()
-                m = re.match(r"^MathSAT5 version (\d+\.\d+\.\d+) .*$", version_str)
-                if m is not None:
-                    version = m.group(1)
-            finally:
-                if "mathsat" in sys.modules:
-                    del sys.modules["mathsat"]
-                return version
+        return self.get_installed_version_script(self.bindings_dir, "msat")

@@ -58,9 +58,6 @@ class YicesInstaller(SolverInstaller):
         wheel_file = glob.glob(os.path.join(self.base_dir, "yicespy") + "*.whl")[0]
         SolverInstaller.unzip(wheel_file, self.bindings_dir)
 
-
-
-
     def compile(self):
         # Prepare an empty folder for installing yices
         SolverInstaller.clean_dir(self.yices_path)
@@ -72,15 +69,4 @@ class YicesInstaller(SolverInstaller):
 
 
     def get_installed_version(self):
-        with TemporaryPath([self.bindings_dir]):
-            version = None
-            try:
-                import yicespy
-                v = yicespy.__dict__['__YICES_VERSION']
-                m = yicespy.__dict__['__YICES_VERSION_MAJOR']
-                p = yicespy.__dict__['__YICES_VERSION_PATCHLEVEL']
-                version = "%d.%d.%d" % (v, m, p)
-            finally:
-                if "yicespy" in sys.modules:
-                    del sys.modules["yicespy"]
-                return version
+        return self.get_installed_version_script(self.bindings_dir, "yices")

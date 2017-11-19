@@ -17,9 +17,8 @@
 #
 """FNode are the building blocks of formulae."""
 import collections
-from fractions import Fraction
-
-import pysmt.environment
+import pysmt
+import pysmt.smtlib
 from pysmt.operators import (FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF,
                              SYMBOL, FUNCTION,
                              REAL_CONSTANT, BOOL_CONSTANT, INT_CONSTANT,
@@ -44,9 +43,12 @@ from pysmt.operators import  (BOOL_OPERATORS, THEORY_OPERATORS,
                               BV_OPERATORS, IRA_OPERATORS, ARRAY_OPERATORS,
                               RELATIONS, CONSTANTS)
 from pysmt.typing import BOOL, REAL, INT, BVType
-from pysmt.decorators import deprecated
-from pysmt.utils import is_python_integer, is_python_rational, is_python_boolean
+from pysmt.decorators import deprecated, assert_infix_enabled
 from pysmt.utils import twos_complement
+from pysmt.constants import (Fraction, is_python_integer,
+                             is_python_rational, is_python_boolean)
+from pysmt.exceptions import (PysmtValueError, PysmtModeError,
+                              UnsupportedOperatorError)
 
 
 FNodeContent = collections.namedtuple("FNodeContent",
@@ -98,10 +100,6 @@ class FNode(object):
         """Return the given subformula at the given position."""
         return self._content.args[idx]
 
-    @deprecated("get_free_variables")
-    def get_dependencies(self):
-        return self.get_free_variables()
-
     def get_free_variables(self):
         """Return the set of Symbols that are free in the formula."""
         return _env().fvo.get_free_variables(self)
@@ -109,10 +107,6 @@ class FNode(object):
     def get_atoms(self):
         """Return the set of atoms appearing in the formula."""
         return _env().ao.get_atoms(self)
-
-    @deprecated("args")
-    def get_sons(self):
-        return self.args()
 
     def simplify(self):
         """Return a simplified version of the formula."""
@@ -153,8 +147,8 @@ class FNode(object):
                     if not c.is_constant():
                         return False
                 if _type is not None or value is not None:
-                    raise ValueError("constant type and value checking is " \
-                                     "not available for array values")
+                    raise PysmtValueError("constant type and value checking " \
+                                          "is not available for array values")
                 return True
             return False
         if _type is not None:
@@ -323,9 +317,14 @@ class FNode(object):
         """Test whether the node is a theory operator."""
         return self.node_type() in THEORY_OPERATORS
 
+    def is_ira_op(self):
+        """Test whether the node is an Int or Real Arithmetic operator."""
+        return self.node_type() in IRA_OPERATORS
+
+    @deprecated("is_isa_op")
     def is_lira_op(self):
-        """Test whether the node is a LIRA operator."""
-        return self.node_type() in LIRA_OPERATORS
+        """Test whether the node is a IRA operator."""
+        return self.node_type() in IRA_OPERATORS
 
     def is_bv_op(self):
         """Test whether the node is a BitVector operator."""
@@ -510,13 +509,21 @@ class FNode(object):
         """
         return _env().serializer.serialize(self, threshold=threshold)
 
+    def to_smtlib(self, daggify=True):
+        """Returns a Smt-Lib string representation of the formula.
+
+        The daggify parameter can be used to switch from a linear-size
+        representation that uses 'let' operators to represent the
+        formula as a dag or a simpler (but possibly exponential)
+        representation that expands the formula as a tree.
+
+        See :py:class:`SmtPrinter`
+        """
+        return pysmt.smtlib.printers.to_smtlib(self, daggify=daggify)
+
     def is_function_application(self):
         """Test whether the node is a Function application."""
         return self.node_type() == FUNCTION
-
-    @deprecated("is_bool_op")
-    def is_boolean_operator(self):
-        return self.is_bool_op()
 
     def is_term(self):
         """Test whether the node is a term.
@@ -527,14 +534,17 @@ class FNode(object):
 
     def symbol_type(self):
         """Return the type of the Symbol."""
+        assert self.is_symbol()
         return self._content.payload[1]
 
     def symbol_name(self):
         """Return the name of the Symbol."""
+        assert self.is_symbol()
         return self._content.payload[0]
 
     def constant_value(self):
         """Return the value of the Constant."""
+        assert self.is_constant()
         if self.node_type() == BV_CONSTANT:
             return self._content.payload[0]
         return self._content.payload
@@ -576,41 +586,53 @@ class FNode(object):
         return bitstr
 
     def array_value_index_type(self):
+        assert self.is_array_value()
         return self._content.payload
 
     def array_value_get(self, index):
+        """Returns the value of this Array Value at the given index. The
+        index must be a constant of the correct type.
+
+        This function is equivalent (but possibly faster) than the
+        following code::
+
+          m = self.array_value_assigned_values_map()
+          try:
+              return m[index]
+          except KeyError:
+              return self.array_value_default()
+        """
         assert index.is_constant()
-        idx = index.simplify()
         args = self.args()
-        s = 0
-        e = (len(args) - 1) / 2
-        while e - s > 0:
-            p = (e - s) / 2
-            i = args[2 * p + 1]
-            if i == idx:
-                return args[i+1]
-            elif i < idx:
-                s = p
+        start = 0
+        end = (len(args) - 1) // 2
+        while (end - start) > 0:
+            pivot = (end + start) // 2
+            i = args[2 * pivot + 1]
+            if id(i) == id(index):
+                return args[2 * pivot + 2]
+            elif id(i) > id(index):
+                end = pivot
             else:
-                e = p
+                start = pivot + 1
         return self.array_value_default()
 
+
     def array_value_assigned_values_map(self):
-        res = {}
         args = self.args()
-        for i,c in enumerate(args[1::2]):
-            res[c] = args[i+1]
-        return res
+        return dict(zip(args[1::2], args[2::2]))
 
     def array_value_default(self):
         return self.args()[0]
 
     def function_name(self):
         """Return the Function name."""
+        assert self.is_function_application()
         return self._content.payload
 
     def quantifier_vars(self):
         """Return the list of quantified variables."""
+        assert self.is_quantifier()
         return self._content.payload
 
     def algebraic_approx_value(self, precision=10):
@@ -626,30 +648,34 @@ class FNode(object):
         return Fraction(n,d)
 
     # Infix Notation
+    @assert_infix_enabled
     def _apply_infix(self, right, function, bv_function=None):
-        if _env().enable_infix_notation:
-            mgr = _mgr()
-            # BVs
-            # Default bv_function to function
-            if bv_function is None: bv_function = function
-            if _is_bv(self):
-                if is_python_integer(right):
-                    right = mgr.BV(right, width=self.bv_width())
-                return bv_function(self, right)
-            # Boolean, Integer and Arithmetic
-            if is_python_boolean(right):
-                right = mgr.Bool(right)
-            elif is_python_integer(right):
-                ty = self.get_type()
-                if ty.is_real_type():
-                    right = mgr.Real(right)
-                else:
-                    right = mgr.Int(right)
-            elif is_python_rational(right):
-                right = mgr.Real(right)
-            return function(self, right)
+        # Default bv_function to function
+        if bv_function is None:
+            bv_function = function
+        right = self._infix_prepare_arg(right, self.get_type())
+        if self.get_type().is_bv_type():
+            return bv_function(self, right)
+        return function(self, right)
+
+    @assert_infix_enabled
+    def _infix_prepare_arg(self, arg, expected_type):
+        mgr = _mgr()
+        if isinstance(arg, FNode):
+            return arg
+
+        # BVs
+        if expected_type.is_bv_type():
+            return mgr.BV(arg, width=expected_type.width)
+        # Boolean, Integer and Arithmetic
+        elif expected_type.is_bool_type():
+            return mgr.Bool(arg)
+        elif expected_type.is_int_type():
+            return mgr.Int(arg)
+        elif expected_type.is_real_type():
+            return mgr.Real(arg)
         else:
-            raise Exception("Cannot use infix notation")
+            raise PysmtValueError("Unsupported value '%s' in infix operator" % str(arg))
 
     def Implies(self, right):
         return self._apply_infix(right, _mgr().Implies)
@@ -660,8 +686,15 @@ class FNode(object):
     def Equals(self, right):
         return self._apply_infix(right, _mgr().Equals)
 
-    def Ite(self, right):
-        return self._apply_infix(right, _mgr().Ite)
+    def NotEquals(self, right):
+        return self._apply_infix(right, _mgr().NotEquals)
+
+    @assert_infix_enabled
+    def Ite(self, then_, else_):
+        if isinstance(then_, FNode) and isinstance(else_, FNode):
+            return _mgr().Ite(self, then_, else_)
+        else:
+            raise PysmtModeError("Cannot infix ITE with implicit argument types.")
 
     def And(self, right):
         return self._apply_infix(right, _mgr().And)
@@ -721,6 +754,13 @@ class FNode(object):
     def BVRepeat(self, count):
         return _mgr().BVRepeat(self, count)
 
+    # Arrays
+    def Select(self, index):
+        return _mgr().Select(self, index)
+
+    def Store(self, index, value):
+        return _mgr().Store(self, index, value)
+
     #
     # Infix operators
     #
@@ -736,7 +776,7 @@ class FNode(object):
     def __rsub__(self, left):
         # Swap operators to perform right-subtract
         # For BVs we might need to build the BV constant
-        if _is_bv(self):
+        if self.get_type().is_bv_type():
             if is_python_integer(left):
                 left = _mgr().BV(left, width=self.bv_width())
             return left._apply_infix(self, _mgr().BVSub)
@@ -787,35 +827,18 @@ class FNode(object):
         return self._apply_infix(other, _mgr().Xor, _mgr().BVXor)
 
     def __neg__(self):
-        if _is_bv(self):
+        if self.get_type().is_bv_type():
             return _mgr().BVNeg(self)
         return self._apply_infix(-1, _mgr().Times)
 
+    @assert_infix_enabled
     def __invert__(self):
-        if not _env().enable_infix_notation:
-            raise Exception("Cannot use infix notation")
-        if _is_bv(self):
+        if self.get_type().is_bv_type():
             return _mgr().BVNot(self)
         return _mgr().Not(self)
 
-    def __int__(self):
-        if self.is_int_constant():
-            return self.constant_value()
-        raise NotImplementedError("Cannot convert `%s` to integer" % str(self))
-
-    def __long__(self):
-        if self.is_int_constant():
-            return self.constant_value()
-        raise NotImplementedError("Cannot convert `%s` to integer" % str(self))
-
-    def __float__(self):
-        if self.is_int_constant() or self.is_real_constant():
-            return float(self.constant_value())
-        raise NotImplementedError("Cannot convert `%s` to float" % str(self))
-
+    @assert_infix_enabled
     def __getitem__(self, idx):
-        if not _env().enable_infix_notation:
-            raise Exception("Cannot use infix notation")
         if isinstance(idx, slice):
             end = idx.stop
             start = idx.start
@@ -824,9 +847,10 @@ class FNode(object):
             # Single point [idx]
             end = idx
             start = idx
-        if _is_bv(self):
+        if self.get_type().is_bv_type():
             return _mgr().BVExtract(self, start=start, end=end)
-        raise NotImplementedError
+        raise UnsupportedOperatorError("Unsupported operation '__getitem__' on '%s'." %
+                                       str(self))
 
     def __lshift__(self, right):
         return self._apply_infix(right, None, bv_function=_mgr().BVLShl)
@@ -836,17 +860,28 @@ class FNode(object):
 
     def __mod__(self, right):
         return self._apply_infix(right, None, bv_function=_mgr().BVURem)
+
+    @assert_infix_enabled
+    def __call__(self, *args):
+        if self.is_symbol() and self.symbol_type().is_function_type():
+            types = self.symbol_type().param_types
+            if (len(types) != len(args)):
+                raise PysmtValueError("Wrong number of parameters passed in "
+                                      "infix 'call' operator")
+            args = [self._infix_prepare_arg(x, t) for x,t in zip(args, types)]
+            return _mgr().Function(self, args)
+        else:
+            raise PysmtValueError("Call operator can be applied to symbol "
+                                  "types having function type only")
+
 # EOC FNode
+
 
 def _env():
     """Aux function to obtain the environment."""
     return pysmt.environment.get_env()
 
+
 def _mgr():
     """Aux function to obtain the formula manager."""
     return pysmt.environment.get_env().formula_manager
-
-def _is_bv(node):
-    """Aux function to check if a fnode is a BV."""
-    return (node.is_symbol() and node.symbol_type().is_bv_type()) or \
-            node.node_type() in BV_OPERATORS

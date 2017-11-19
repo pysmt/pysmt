@@ -74,6 +74,7 @@ def typecheck_result(f):
         res.get_type() # This raises an exception if an invalid type is found
     return typecheck_result_wrap
 
+
 def catch_conversion_error(f):
     """Catch unknown operators errors and converts them into conversion error."""
 
@@ -89,3 +90,19 @@ def catch_conversion_error(f):
             expression=ex.expression)
         return res
     return catch_conversion_error_wrap
+
+
+def assert_infix_enabled(f):
+    """Raise an exception if infix notation is not enabled."""
+    from functools import wraps
+    from pysmt.exceptions import PysmtModeError
+    INFIX_ERROR_MSG = """Infix notation is not enabled for the current environment.
+Enable it by setting enable_infix_notation to True."""
+
+    @wraps(f)
+    def assert_infix_enabled_wrap(*args, **kwargs):
+        from pysmt.environment import get_env
+        if not get_env().enable_infix_notation:
+            raise PysmtModeError(INFIX_ERROR_MSG)
+        return f(*args, **kwargs)
+    return assert_infix_enabled_wrap

@@ -15,7 +15,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from fractions import Fraction
 
 from pysmt.test import TestCase, main
 from pysmt.test import skipIfSolverNotAvailable
@@ -28,6 +27,7 @@ from pysmt.exceptions import (ConvertExpressionError,
                               NonLinearError,
                               SolverReturnedUnknownResultError)
 from pysmt.logics import QF_NRA
+from pysmt.constants import Fraction
 
 
 class TestNonLinear(TestCase):
@@ -99,13 +99,22 @@ class TestNonLinear(TestCase):
     def test_div_pow(self):
         x = FreshSymbol(REAL)
         f = Equals(Times(Real(4), Pow(x, Real(-1))), Real(2))
-        self.assertTrue(is_sat(f))
+        try:
+            self.assertTrue(is_sat(f))
+        except SolverReturnedUnknownResultError:
+            pass
 
         f = Equals(Div(Real(4), x), Real(2))
-        self.assertTrue(is_sat(f, solver_name="z3"))
-        f = Equals(Times(x, x), Real(16))
-        self.assertTrue(is_sat(f))
+        try:
+            self.assertTrue(is_sat(f, solver_name="z3"))
+        except SolverReturnedUnknownResultError:
+            pass
 
+        f = Equals(Times(x, x), Real(16))
+        try:
+            self.assertTrue(is_sat(f))
+        except SolverReturnedUnknownResultError:
+            pass
 
 if __name__ == "__main__":
     main()

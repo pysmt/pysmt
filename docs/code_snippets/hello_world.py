@@ -6,8 +6,8 @@ world = [Symbol(s, INT) for s in "world"]
 
 letters = set(hello+world)
 
-domains = And([And( LE(Int(1), l),
-                    GE(Int(10), l) ) for l in letters])
+domains = And(And(LE(Int(1), l),
+                  GE(Int(10), l)) for l in letters)
 
 sum_hello = Plus(hello)
 sum_world = Plus(world)
@@ -21,7 +21,11 @@ print("Serialization of the formula:")
 print(formula)
 
 with Solver(name="z3") as solver:
-    solver.add_assertion(formula)
+    solver.add_assertion(domains)
+    if not solver.solve():
+        print("Domain is not SAT!!!")
+        exit()
+    solver.add_assertion(problem)
     if solver.solve():
         for l in letters:
             print("%s = %s" %(l, solver.get_value(l)))

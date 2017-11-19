@@ -43,7 +43,6 @@ class TestBasic(TestCase):
         # shape of the formula into a logically equivalent form.
         self.assertValid(Iff(f, res), logic=QF_UFLIRA)
 
-
     @skipIfSolverNotAvailable("msat")
     def test_msat_back_not_identical(self):
         msat = Solver(name="msat", logic=QF_UFLIRA)
@@ -56,14 +55,24 @@ class TestBasic(TestCase):
         res = msat.converter.back(term)
         self.assertFalse(f == res)
 
-
-    def do_back(self, solver_name):
+    def do_back(self, solver_name, z3_string_buffer=False):
         for formula, _, _, logic in get_example_formulae():
             if logic.quantifier_free:
+                if logic.theory.custom_type and z3_string_buffer:
+                    # Printing of declare-sort from Z3 is not conformant
+                    # with the SMT-LIB. We might consider extending our
+                    # parser.
+                    continue
                 try:
                     s = Solver(name=solver_name, logic=logic)
                     term = s.converter.convert(formula)
-                    res = s.converter.back(term)
+                    if solver_name == "z3":
+                        if z3_string_buffer:
+                            res = s.converter.back_via_smtlib(term)
+                        else:
+                            res = s.converter.back(term)
+                    else:
+                        res = s.converter.back(term)
                     self.assertValid(Iff(formula, res), logic=logic,
                                      solver_name=solver_name)
                 except NoSolverAvailableError:
@@ -75,7 +84,8 @@ class TestBasic(TestCase):
 
     @skipIfSolverNotAvailable("z3")
     def test_z3_back_formulae(self):
-        self.do_back("z3")
+        self.do_back("z3", z3_string_buffer=False)
+        self.do_back("z3", z3_string_buffer=True)
 
 
 if __name__ == '__main__':

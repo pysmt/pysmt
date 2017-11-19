@@ -30,26 +30,21 @@ class TestInterpolation(TestCase):
         with self.assertRaises(NoSolverAvailableError):
             Interpolator(name="nonexistent")
 
-
     @skipIfSolverNotAvailable('z3')
     def test_binary_interpolant_z3(self):
         self._test_binary_interpolant('z3')
-
 
     @skipIfSolverNotAvailable('msat')
     def test_binary_interpolant_msat(self):
         self._test_binary_interpolant('msat')
 
-
     @skipIfSolverNotAvailable('z3')
     def test_sequence_interpolant_z3(self):
         self._test_sequence_interpolant('z3')
 
-
     @skipIfSolverNotAvailable('msat')
     def test_sequence_interpolant_msat(self):
         self._test_sequence_interpolant('msat')
-
 
     def _test_binary_interpolant(self, name):
         itp = Interpolator(name=name)
@@ -57,13 +52,16 @@ class TestInterpolation(TestCase):
         self._real_example(itp, True)
         self._int_example(itp, True)
 
-
     def _test_sequence_interpolant(self, name):
         itp = Interpolator(name=name)
         self._bool_example(itp, False)
         self._real_example(itp, False)
         self._int_example(itp, False)
 
+    @skipIfSolverNotAvailable('msat')
+    def test_context(self):
+        with Interpolator() as itp:
+            self._bool_example(itp, False)
 
     def _bool_example(self, itp, binary):
         # Bool Example

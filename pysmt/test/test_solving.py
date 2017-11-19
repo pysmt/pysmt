@@ -29,9 +29,11 @@ from pysmt.test import main
 from pysmt.test.examples import get_example_formulae
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               InternalSolverError, NoSolverAvailableError,
-                              ConvertExpressionError, UndefinedLogicError)
-from pysmt.logics import QF_UFLIRA, QF_BOOL, QF_LRA, AUTO
+                              ConvertExpressionError, UndefinedLogicError,
+                              PysmtTypeError, PysmtValueError)
+from pysmt.logics import QF_UFLIRA, QF_BOOL, QF_LRA, AUTO, QF_BV
 from pysmt.logics import convert_logic_from_string
+
 
 class TestBasic(TestCase):
 
@@ -83,7 +85,7 @@ class TestBasic(TestCase):
         factory = get_env().factory
         factory.default_logic = QF_BOOL
 
-        self.assertEquals(factory.default_logic, QF_BOOL)
+        self.assertEqual(factory.default_logic, QF_BOOL)
         varA = Symbol("A", BOOL)
         varB = Symbol("B", BOOL)
 
@@ -177,7 +179,6 @@ class TestBasic(TestCase):
                 if not logic.theory.linear: continue
                 v = is_valid(f, solver_name='cvc4', logic=logic)
                 s = is_sat(f, solver_name='cvc4', logic=logic)
-
                 self.assertEqual(validity, v, f)
                 self.assertEqual(satisfiability, s, f)
 
@@ -185,6 +186,7 @@ class TestBasic(TestCase):
                 # CVC4 does not handle quantifiers in a complete way
                 self.assertFalse(logic.quantifier_free)
             except NoSolverAvailableError as ex:
+                # Logic is not supported by CVC4
                 pass
 
     @skipIfSolverNotAvailable("yices")
@@ -263,6 +265,27 @@ class TestBasic(TestCase):
     def test_model_picosat(self):
         self.do_model("picosat")
 
+    @skipIfSolverNotAvailable("z3")
+    def test_tactics_z3(self):
+        from z3 import Tactic, Then
+        from pysmt.shortcuts import Iff
+
+        my_tactic = Then(Tactic('simplify'), Tactic('propagate-values'),
+                         Tactic('elim-uncnstr'))
+
+        for (f, validity, satisfiability, logic) in get_example_formulae():
+            if not logic.theory.linear: continue
+            if not logic.quantifier_free: continue
+            if logic.theory.bit_vectors: continue
+            s = Solver(name='z3')
+            z3_f = s.converter.convert(f)
+            simp_z3_f = my_tactic(z3_f)
+            simp_f = s.converter.back(simp_z3_f.as_expr())
+            v = is_valid(simp_f)
+            s = is_sat(simp_f)
+            self.assertEqual(v, validity, (f, simp_f))
+            self.assertEqual(s, satisfiability, (f, simp_f))
+
 
     @skipIfSolverNotAvailable("z3")
     def test_examples_z3(self):
@@ -283,7 +306,7 @@ class TestBasic(TestCase):
                     self.assertEqual(satisfiability, s, f.serialize())
                 except SolverReturnedUnknownResultError:
                     s = Solver(logic=logic)
-                    print(s, logic, f)
+                    print(s, logic, f.serialize())
                     self.assertFalse(logic.quantifier_free,
                                      "Unkown result are accepted only on "\
                                      "Quantified formulae")
@@ -296,7 +319,7 @@ class TestBasic(TestCase):
                     try:
                         f_i = get_implicant(f, logic=logic, solver_name=sname)
                         if satisfiability:
-                            self.assertValid(Implies(f_i, f), logic=logic, msg=f)
+                            self.assertValid(Implies(f_i, f), logic=logic, msg=(f_i, f))
                         else:
                             self.assertIsNone(f_i)
                     except ConvertExpressionError as ex:
@@ -386,7 +409,7 @@ class TestBasic(TestCase):
 
         for sname in get_env().factory.all_solvers(logic=QF_LRA):
             with Solver(name=sname) as solver:
-                with self.assertRaises(TypeError):
+                with self.assertRaises(PysmtTypeError):
                     solver.add_assertion(f1)
                 self.assertIsNone(solver.add_assertion(f2))
 
@@ -401,7 +424,7 @@ class TestBasic(TestCase):
                 solver.add_assertion(f)
                 res = solver.solve()
                 self.assertTrue(res)
-                with self.assertRaises(TypeError):
+                with self.assertRaises(PysmtTypeError):
                     solver.get_value(h)
                 self.assertIsNotNone(solver.get_value(h_0_0))
 
@@ -508,8 +531,60 @@ class TestBasic(TestCase):
         solver = Solver(logic=QF_BOOL, incremental=True)
         self.assertIsNotNone(solver)
         # Options are enforced at construction time
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             Solver(logic=QF_BOOL, invalid_option=False)
+        with self.assertRaises(PysmtValueError):
+            Solver(logic=QF_BOOL, solver_options={'invalid': None})
+
+    @skipIfNoSolverForLogic(QF_BOOL)
+    def test_options_random_seed(self):
+        for sname in get_env().factory.all_solvers(logic=QF_BOOL):
+            if sname in ["btor", "bdd"]:
+                with self.assertRaises(PysmtValueError):
+                    Solver(name=sname, random_seed=42)
+            else:
+                s = Solver(name=sname, random_seed=42)
+                self.assertIsNotNone(s)
+
+    @skipIfSolverNotAvailable("picosat")
+    def test_picosat_options(self):
+        from pysmt.solvers.pico import PicosatOptions
+        from tempfile import TemporaryFile
+        x, y = Symbol("x"), Symbol("y")
+        with TemporaryFile() as fout:
+            solver_options = {'preprocessing': False,
+                              'enable_trace_generation': False,
+                              'output': fout,
+                              'global_default_phase': PicosatOptions.GLOBAL_DEFAULT_PHASE_FALSE,
+                              'more_important_lit': [x],
+                              'less_important_lit': [y],
+                              'propagation_limit': 100,
+                              'verbosity': 1,
+                          }
+            with Solver(name='picosat', solver_options=solver_options) as s:
+                s.add_assertion(And(x,y))
+                s.solve()
+
+    @skipIfNoSolverForLogic(QF_BOOL)
+    def test_incremental_is_sat(self):
+        from pysmt.exceptions import SolverStatusError
+        with Solver(incremental=False, logic=QF_BOOL) as s:
+            self.assertTrue(s.is_sat(Symbol("x")))
+            with self.assertRaises(SolverStatusError):
+                s.is_sat(Not(Symbol("x")))
+
+
+    @skipIfSolverNotAvailable("btor")
+    def test_btor_options(self):
+        for (f, _, sat, logic) in get_example_formulae():
+            if logic == QF_BV:
+                solver = Solver(name="btor",
+                                solver_options={"rewrite-level":0,
+                                                "fun:dual-prop":1,
+                                                "eliminate-slices":1})
+                solver.add_assertion(f)
+                res = solver.solve()
+                self.assertTrue(res == sat)
 
 if __name__ == '__main__':
     main()

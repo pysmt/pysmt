@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from six.moves.urllib import request as urllib2
-from six.moves import input, xrange
+from six.moves import input
 
 import os
 import argparse
 import sys
+import platform
 
 from collections import namedtuple
 
@@ -26,15 +26,17 @@ from pysmt.cmd.installers import CVC4Installer, YicesInstaller, BtorInstaller
 from pysmt.cmd.installers import CuddInstaller
 
 from pysmt.environment import get_env
+from pysmt.exceptions import PysmtException
+from pysmt import git_version
 
 # Build a list of installers, one for each solver
 Installer = namedtuple("Installer", ["InstallerClass", "version", "extra_params"])
-INSTALLERS = [Installer(MSatInstaller,    "5.3.9", {}),
-              Installer(Z3Installer,      "4.4.1", {}),
-              Installer(CVC4Installer,    "1.5-prerelease", {"git_version" : "c15ff43597b41ea457befecb1b0e2402e28cb523"}),
-              Installer(YicesInstaller,   "2.4.2", {"yicespy_version": "22b94419522ba772a1cc1e72dbe84e01b8adc16d"}),
-              Installer(BtorInstaller,    "2.2.0", {"lingeling_version": "bal"}),
-              Installer(PicoSATInstaller, "960", {}),
+INSTALLERS = [Installer(MSatInstaller,    "5.3.13", {}),
+              Installer(CVC4Installer,    "1.5", {"git_version" : "05663e0d338c2bab30b5f19820de01788ec2b276"}),
+              Installer(Z3Installer,      "4.5.1", {"osx": "10.11", "git_version": "082936bca6fb"}),
+              Installer(YicesInstaller,   "2.5.2", {"yicespy_version": "f0768ffeec15ea310f830d10878971c9998454ac"}),
+              Installer(BtorInstaller,    "2.4.1", {"lingeling_version": "bbc"}),
+              Installer(PicoSATInstaller, "965", {"pypicosat_minor_version" : "1708010052"}),
               Installer(CuddInstaller,    "2.0.3", {"git_version" : "75fe055c2a736a3ac3e971c1ade108b815edc96c"})]
 
 
@@ -54,6 +56,9 @@ def get_requested_solvers():
 def check_installed(required_solvers, install_dir, bindings_dir, mirror_link):
     """Checks which solvers are visible to pySMT."""
 
+    # Check which solvers are accessible from the Factory
+    pypath_solvers = get_env().factory.all_solvers()
+
     global_solvers_status = []
     print("Installed Solvers:")
     for i in INSTALLERS:
@@ -68,11 +73,9 @@ def check_installed(required_solvers, install_dir, bindings_dir, mirror_link):
         global_solvers_status.append((solver, is_installed, version))
         del installer_
 
-    # Check which solvers are accessible from the Factory
-    pypath_solvers = get_env().factory.all_solvers()
     for solver in required_solvers:
         if solver not in pypath_solvers:
-            raise Exception("Was expecting to find %s installed" % solver)
+            raise PysmtException("Was expecting to find %s installed" % solver)
 
     #
     # Output information
@@ -104,6 +107,8 @@ def parse_options():
                                      ' on the command line or in the environment'
                                      ' variable PYSMT_SOLVER if not already '
                                      'instaled on the system.')
+    parser.add_argument('--version', action='version',
+                        version='%(prog)s {version}'.format(version=git_version()))
 
     for i in INSTALLERS:
         name = i.InstallerClass.SOLVER
@@ -131,12 +136,15 @@ def parse_options():
                         help='Confirm that you agree with the licenses of the\
                         solvers and skip the interactive question')
 
+    install_path_default = os.path.join("~", ".smt_solvers")
     parser.add_argument('--install-path', dest='install_path',
-                        type=str, default="~/.smt_solvers",
+                        type=str, default=install_path_default,
                         help='The folder to use for the installation')
 
+    py_bindings = os.path.join(install_path_default,
+                               "python-bindings-%d.%d" % sys.version_info[0:2])
     parser.add_argument('--bindings-path', dest='bindings_path',
-                        type=str, default="~/.smt_solvers/python_bindings",
+                        type=str, default=py_bindings,
                         help='The folder to use for the bindings')
 
     options = parser.parse_args()
@@ -172,9 +180,6 @@ def main():
     if mirror_url is not None:
         mirror_url += "/{archive_name}"
 
-    # Env variable controlling the solvers to be installed or checked
-    requested_solvers = get_requested_solvers()
-
     # This should work on any platform
     install_dir= os.path.expanduser(options.install_path)
     if not os.path.exists(install_dir):
@@ -189,8 +194,20 @@ def main():
     all_solvers = options.all_solvers
     for i in INSTALLERS:
         name = i.InstallerClass.SOLVER
-        if all_solvers or getattr(options, name) or name in requested_solvers:
+        if all_solvers or getattr(options, name):
             solvers_to_install.append(i)
+
+    # Env variable controlling the solvers to be installed or checked
+    requested_solvers = get_requested_solvers()
+    if len(solvers_to_install) != 0 and len(requested_solvers) != 0:
+        print("Warning: Solvers specified on the command line, "
+              "ignoring env variable 'PYSMT_SOLVER'")
+    if len(solvers_to_install) == 0:
+        # No solver requested from cmd-line, checking ENV
+        for i in INSTALLERS:
+            name = i.InstallerClass.SOLVER
+            if name in requested_solvers:
+                solvers_to_install.append(i)
 
     if options.check:
         check_installed([x.InstallerClass.SOLVER for x in solvers_to_install],
@@ -201,7 +218,12 @@ def main():
 
     elif options.env:
         bindings_dir= os.path.expanduser(options.bindings_path)
-        print("export PYTHONPATH=\""+ bindings_dir + ":${PYTHONPATH}\"")
+        if platform.system().lower() == "windows":
+            print("set PYTHONPATH=" + bindings_dir + ";%PYTHONPATH%")
+            print("set PATH=" + bindings_dir + ";%PATH%")
+        else:
+            print("export PYTHONPATH=\"" + bindings_dir + ":${PYTHONPATH}\"")
+            print("export LD_LIBRARY_PATH=\"" + bindings_dir + ":${LD_LIBRARY_PATH}\"")
 
     else:
         if len(solvers_to_install) == 0:

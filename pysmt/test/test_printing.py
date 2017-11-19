@@ -21,70 +21,69 @@ from six.moves import xrange
 from pysmt.shortcuts import Or, And, Not, Plus, Iff, Implies
 from pysmt.shortcuts import Exists, ForAll, Ite, ExactlyOne
 from pysmt.shortcuts import Bool, Real, Int, Symbol, Function
-from pysmt.shortcuts import Times, Minus, Equals, LE, LT, ToReal
+from pysmt.shortcuts import Times, Minus, Equals, LE, LT, ToReal, FreshSymbol
 from pysmt.typing import REAL, INT, FunctionType
 from pysmt.smtlib.printers import SmtPrinter, SmtDagPrinter
 from pysmt.printers import smart_serialize
 from pysmt.test import TestCase, main
-from pysmt.test.examples import get_example_formulae
+from pysmt.test.examples import get_str_example_formulae
 
 
 class TestPrinting(TestCase):
     def print_to_string(self, formula):
-        buf = cStringIO()
-        printer = SmtPrinter(buf)
-        printer.printer(formula)
-
-        return buf.getvalue()
+        return formula.to_smtlib(daggify=False)
 
     def test_real(self):
         f = Plus([ Real(1),
                    Symbol("x", REAL),
                    Symbol("y", REAL)])
 
-        f_string = self.print_to_string(f)
-        self.assertEqual(f_string, "(+ 1.0 x y)")
+        self.assertEqual(f.to_smtlib(daggify=False), "(+ 1.0 x y)")
+        self.assertEqual(f.to_smtlib(daggify=True), "(let ((.def_0 (+ 1.0 x y))) .def_0)")
 
     def test_boolean(self):
         x, y, z = Symbol("x"), Symbol("y"), Symbol("z")
         f = Or(And(Not(x), Iff(x, y)), Implies(x, z))
 
-        f_string = self.print_to_string(f)
-        self.assertEqual(f_string,
+        self.assertEqual(f.to_smtlib(daggify=False),
                           "(or (and (not x) (= x y)) (=> x z))")
+        self.assertEqual(f.to_smtlib(daggify=True),
+                          "(let ((.def_0 (=> x z))) (let ((.def_1 (= x y))) (let ((.def_2 (not x))) (let ((.def_3 (and .def_2 .def_1))) (let ((.def_4 (or .def_3 .def_0))) .def_4)))))")
 
     def test_int(self):
         p, q = Symbol("p", INT), Symbol("q", INT)
         f = Or(Equals(Times(p, Int(5)), Minus(p,q)),
                LT(p,q), LE(Int(6), Int(1)))
 
-        f_string = self.print_to_string(f)
-        self.assertEqual(f_string,
+        self.assertEqual(f.to_smtlib(daggify=False),
                           "(or (= (* p 5) (- p q)) (< p q) (<= 6 1))")
+        self.assertEqual(f.to_smtlib(daggify=True),
+                          "(let ((.def_0 (<= 6 1))) (let ((.def_1 (< p q))) (let ((.def_2 (- p q))) (let ((.def_3 (* p 5))) (let ((.def_4 (= .def_3 .def_2))) (let ((.def_5 (or .def_4 .def_1 .def_0))) .def_5))))))")
 
     def test_ite(self):
         x = Symbol("x")
         p, q = Symbol("p", INT), Symbol("q", INT)
 
         f = Ite(x, p, q)
-        f_string = self.print_to_string(f)
 
-        self.assertEqual(f_string,
-                          "(ite x p q)")
+        self.assertEqual(f.to_smtlib(daggify=False),
+                         "(ite x p q)")
+        self.assertEqual(f.to_smtlib(daggify=True),
+                         "(let ((.def_0 (ite x p q))) .def_0)")
 
     def test_quantifiers(self):
         x = Symbol("x")
         fa = ForAll([x], And(x, Not(x)))
         fe = Exists([x], And(x, Not(x)))
 
-        fa_string = self.print_to_string(fa)
-        fe_string = self.print_to_string(fe)
-
-        self.assertEqual(fa_string,
-                          "(forall ((x Bool)) (and x (not x)))")
-
-        self.assertEqual(fe_string,
-                          "(exists ((x Bool)) (and x (not x)))")
+        self.assertEqual(fa.to_smtlib(daggify=False),
+                         "(forall ((x Bool)) (and x (not x)))")
+        self.assertEqual(fe.to_smtlib(daggify=False),
+                         "(exists ((x Bool)) (and x (not x)))")
+        self.assertEqual(fa.to_smtlib(daggify=True),
+                         "(let ((.def_0 (forall ((x Bool)) (let ((.def_0 (not x))) (let ((.def_1 (and x .def_0))) .def_1))))).def_0)")
+        self.assertEqual(fe.to_smtlib(daggify=True),
+                         "(let ((.def_0 (exists ((x Bool)) (let ((.def_0 (not x))) (let ((.def_1 (and x .def_0))) .def_1))))).def_0)")
 
 
     def test_constant(self):
@@ -96,25 +95,25 @@ class TestPrinting(TestCase):
         i1 = Int(4)
         i2 = Int(-4)
 
-        b1_string = self.print_to_string(b1)
-        b2_string = self.print_to_string(b2)
+        self.assertEqual(b1.to_smtlib(daggify=True), "true")
+        self.assertEqual(b2.to_smtlib(daggify=True), "false")
 
-        self.assertEqual(b1_string, "true")
-        self.assertEqual(b2_string, "false")
+        self.assertEqual(r1.to_smtlib(daggify=True), "(/ 11 2)")
+        self.assertEqual(r2.to_smtlib(daggify=True), "5.0")
+        self.assertEqual(r3.to_smtlib(daggify=True), "(- (/ 11 2))")
 
-        r1_string = self.print_to_string(r1)
-        r2_string = self.print_to_string(r2)
-        r3_string = self.print_to_string(r3)
+        self.assertEqual(i1.to_smtlib(daggify=True), "4")
+        self.assertEqual(i2.to_smtlib(daggify=True), "(- 4)")
 
-        self.assertEqual(r1_string, "(/ 11 2)")
-        self.assertEqual(r2_string, "5.0")
-        self.assertEqual(r3_string, "(- (/ 11 2))")
+        self.assertEqual(b1.to_smtlib(daggify=False), "true")
+        self.assertEqual(b2.to_smtlib(daggify=False), "false")
 
-        i1_string = self.print_to_string(i1)
-        i2_string = self.print_to_string(i2)
+        self.assertEqual(r1.to_smtlib(daggify=False), "(/ 11 2)")
+        self.assertEqual(r2.to_smtlib(daggify=False), "5.0")
+        self.assertEqual(r3.to_smtlib(daggify=False), "(- (/ 11 2))")
 
-        self.assertEqual(i1_string, "4")
-        self.assertEqual(i2_string, "(- 4)")
+        self.assertEqual(i1.to_smtlib(daggify=False), "4")
+        self.assertEqual(i2.to_smtlib(daggify=False), "(- 4)")
 
     def test_function(self):
         f1_type = FunctionType(REAL, [REAL, REAL])
@@ -127,18 +126,18 @@ class TestPrinting(TestCase):
         f1 = Function(f1_symbol, [p,q])
         f2 = Function(f2_symbol, [])
 
-        f1_string = self.print_to_string(f1)
-        f2_string = self.print_to_string(f2)
+        self.assertEqual(f1.to_smtlib(daggify=False), "(f1 p q)")
+        self.assertEqual(f2.to_smtlib(daggify=False), "f2")
 
-        self.assertEqual(f1_string, "(f1 p q)")
-        self.assertEqual(f2_string, "f2")
+        self.assertEqual(f1.to_smtlib(daggify=True), "(let ((.def_0 (f1 p q))) .def_0)")
+        self.assertEqual(f2.to_smtlib(daggify=True), "f2")
 
     def test_toreal(self):
         p = Symbol("p", INT)
         rp = ToReal(p)
 
-        rp_string = self.print_to_string(rp)
-        self.assertEqual(rp_string, "(to_real p)")
+        self.assertEqual(rp.to_smtlib(daggify=False), "(to_real p)")
+        self.assertEqual(rp.to_smtlib(daggify=True), "(let ((.def_0 (to_real p))) .def_0)")
 
     def test_threshold_printing(self):
         x = Symbol("x")
@@ -166,13 +165,13 @@ class TestPrinting(TestCase):
 
         short_f_str = dag_buf.getvalue()
         long_f_str = tree_buf.getvalue()
-
         self.assertTrue(len(short_f_str) < len(long_f_str))
 
     def test_examples(self):
-        for i, (f, _, _, _) in enumerate(get_example_formulae()):
-            self.assertTrue(len(str(f)) >= 1, str(f))
-            self.assertEqual(str(f), SERIALIZED_EXAMPLES[i])
+        for s, f, logic in get_str_example_formulae(environment=None):
+            str_f = f.serialize()
+            self.assertTrue(len(str_f) >= 1, str_f)
+            self.assertEqual(str_f, s)
 
     def test_smart_serialize(self):
         x, y = Symbol("x"), Symbol("y")
@@ -196,85 +195,16 @@ class TestPrinting(TestCase):
         self.assertTrue(len(old_str) > len(smart_str))
         self.assertEqual("ExactlyOne(x0,x1,x2,x3,x4)", smart_str)
 
-
-SERIALIZED_EXAMPLES = [
-    """(x & y)""",
-    """(x <-> y)""",
-    """((x | y) & (! (x | y)))""",
-    """(x & (! y))""",
-    """(False -> True)""",
-    """((q < p) & (x -> y))""",
-    """(((p + q) = 5) & (q < p))""",
-    """((q <= p) | (p <= q))""",
-    """(! (p < (q * 2)))""",
-    """(p < (p - (5 - 2)))""",
-    """((x ? 7 : ((p + -1) * 3)) = q)""",
-    """(p < (q + 1))""",
-    """((s < r) & (x -> y))""",
-    """(((r + s) = 28/5) & (s < r))""",
-    """((s <= r) | (r <= s))""",
-    """(! ((r * 2.0) < (s * 2.0)))""",
-    """(! (r < (r - (5.0 - 2.0))))""",
-    """((x ? 7.0 : ((s + -1.0) * 3.0)) = r)""",
-    """(bf(x) <-> bg(x))""",
-    """(rf(5.0, rg(r)) = 0.0)""",
-    """((rg(r) = (5.0 + 2.0)) <-> (rg(r) = 7.0))""",
-    """((r = (s + 1.0)) & (rg(s) = 5.0) & (rg((r - 1.0)) = 7.0))""",
-    """((1_32 & 0_32) = 0_32)""",
-    """((! 2_3) = 5_3)""",
-    """((7_3 xor 0_3) = 0_3)""",
-    """((bv1::bv1) u< 0_16)""",
-    """(1_32[0:7] = 1_8)""",
-    """(0_8 u< (((bv1 + 1_8) * 5_8) u/ 5_8))""",
-    """(0_16 u<= bv2)""",
-    """(0_16 s<= bv2)""",
-    """((0_32 u< (5_32 u% 2_32)) & ((5_32 u% 2_32) u<= 1_32))""",
-    """((((1_32 + (- ...)) << 1_32) >> 1_32) = 1_32)""",
-    """((1_32 - 1_32) = 0_32)""",
-    """(((1_32 ROL 1) ROR 1) = 1_32)""",
-    """((0_5 ZEXT 11) = (0_1 SEXT 15))""",
-    """((bv2 - bv2) = 0_16)""",
-    """((bv2 - bv2)[0:7] = bv1)""",
-    """((bv2[0:7] bvcomp bv1) = 1_1)""",
-    """((bv2 bvcomp bv2) = 0_1)""",
-    """(bv2 s< bv2)""",
-    """(bv2 s< 0_16)""",
-    """((bv2 s< 0_16) | (0_16 s<= bv2))""",
-    """(bv2 u< bv2)""",
-    """(bv2 u< 0_16)""",
-    """((bv2 | 0_16) = bv2)""",
-    """((bv2 & 0_16) = 0_16)""",
-    """((0_16 s< bv2) & ((bv2 s/ 65535_16) s< 0_16))""",
-    """((0_16 s< bv2) & ((bv2 s% 1_16) s< 0_16))""",
-    """((bv2 u% 1_16) = 0_16)""",
-    """((bv2 s% 1_16) = 0_16)""",
-    """((bv2 s% (- 1_16)) = 0_16)""",
-    """((bv2 a>> 0_16) = bv2)""",
-    """((0_16 s<= bv2) & ((bv2 a>> 1_16) = (bv2 >> 1_16)))""",
-    """(forall y . (x -> y))""",
-    """(forall p, q . ((p + q) = 0))""",
-    """(forall r, s . (((0.0 < r) & (0.0 < s)) -> ((r - s) < r)))""",
-    """(exists x, y . (x -> y))""",
-    """(exists p, q . ((p + q) = 0))""",
-    """(exists r . (forall s . (r < (r - s))))""",
-    """(forall r . (exists s . (r < (r - s))))""",
-    """(x & (forall r . ((r + s) = 5.0)))""",
-    """(exists x . ((x <-> (5.0 < s)) & (s < 3.0)))""",
-    """((p < ih(r, q)) & (x -> y))""",
-    """(((p - 3) = q) -> ((p < ih(r, (... + ...))) | (ih(r, p) <= p)))""",
-    """(((ToReal((... - ...)) = r) & (ToReal(q) = r)) -> ((p < ih(ToReal(...), (... + ...))) | (ih(r, p) <= p)))""",
-    """(! (((ToReal(...) = r) & (ToReal(...) = r)) -> ((p < ...(..., ...)) | (...(..., ...) <= p))))""",
-    """("Did you know that any string works? #yolo" & "10" & "|#somesolverskeepthe||" & " ")""",
-    """((q = 0) -> (aii[0 := 0] = aii[0 := q]))""",
-    """(aii[0 := 0][0] = 0)""",
-    """((Array{Int, Int}(0)[1 := 1] = aii) & (aii[1] = 0))""",
-    """((a_arb_aii = Array{Array{Real, BV{8}}, Array{Int, Int}}(Array{Int, Int}(7))) -> (a_arb_aii[arb][42] = 7))""",
-    """(abb[bv1 := y_][bv1 := z_] = abb[bv1 := z_])""",
-    """((r / s) = (r * s))""",
-    """(2.0 = (r * r))""",
-    """((p ^ 2) = 0)""",
-    """((r ^ 2.0) = 0.0)""",
-]
+    def test_stack_recursion(self):
+        import sys
+        limit = sys.getrecursionlimit()
+        f = FreshSymbol()
+        p = FreshSymbol()
+        for _ in xrange(limit):
+            f = Or(p, And(f, p))
+        self.assertTrue(f.size() >= limit)
+        s = f.serialize()
+        self.assertIsNotNone(s)
 
 
 if __name__ == '__main__':

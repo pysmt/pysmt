@@ -24,7 +24,7 @@ except ImportError:
     import unittest
 
 from pysmt.environment import get_env, reset_env
-from pysmt.decorators import deprecated
+skipIf = unittest.skipIf
 
 
 class TestCase(unittest.TestCase):
@@ -64,19 +64,6 @@ class TestCase(unittest.TestCase):
                                                   solver_name=solver_name,
                                                   logic=logic),
                         msg=msg)
-
-
-@deprecated("skipIfNoSolverForLogic (be specific about expectations!)")
-def skipIfNoSolverAvailable(test_fun):
-    """Skip the test if no solver is available."""
-
-    msg = "No solver available"
-    cond = len(get_env().factory.all_solvers()) == 0
-    @unittest.skipIf(cond, msg)
-    @wraps(test_fun)
-    def wrapper(self, *args, **kwargs):
-        return test_fun(self, *args, **kwargs)
-    return wrapper
 
 
 class skipIfSolverNotAvailable(object):
@@ -156,23 +143,6 @@ class skipIfNoQEForLogic(object):
         def wrapper(*args, **kwargs):
             return test_fun(*args, **kwargs)
         return wrapper
-
-
-def skipIfNoSMTWrapper(test_fun):
-    """Skip a test if there is no quantifier eliminator for the given logic."""
-    msg = "No SMT-Lib solver is available"
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    cond = any(f.endswith(".solver.sh")
-               for _, _, fnames in os.walk(BASE_DIR)
-               for f in fnames)
-
-    @unittest.skipIf(cond, msg)
-    @wraps(test_fun)
-    def wrapper(*args, **kwargs):
-        return test_fun(*args, **kwargs)
-    return wrapper
-
-
 
 
 # Export a main function

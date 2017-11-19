@@ -32,6 +32,7 @@ multiple information can be extracted from the formula by navigating
 it only once.
 
 """
+
 from pysmt.walkers.dag import DagWalker
 assert DagWalker
 
@@ -40,3 +41,6 @@ assert TreeWalker
 
 from pysmt.walkers.identitydag import IdentityDagWalker
 assert IdentityDagWalker
+
+from pysmt.walkers.generic import handles
+assert handles

@@ -1,4 +1,4 @@
-from pysmt.shortcuts import And, Symbol, LE, GE, Int, Equals, Plus, Times, is_sat
+from pysmt.shortcuts import And, Symbol, LE, GE, Int, Equals, Plus, Times, is_sat, get_model
 from pysmt.typing import INT
 
 
@@ -20,8 +20,8 @@ problem = And(Equals(sum_hello, sum_world),
 
 formula = And(domains, problem)
 
-print "Serialization of the formula:"
-print formula
+print("Serialization of the formula:")
+print(formula)
 
-print "Checking Satisfiability:"
-print is_sat(formula)
+print("Checking Satisfiability:")
+print(is_sat(formula))

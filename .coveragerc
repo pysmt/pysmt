@@ -1,0 +1,13 @@
+[run]
+omit = pysmt/cmd/*
+       pysmt/test/*
+
+[report]
+exclude_lines =
+    # Disable specific lines
+    pragma: no cover
+    # Skip methods that are not implemented
+    raise NotImplementedError
+
+    # Skip main methods
+    main()

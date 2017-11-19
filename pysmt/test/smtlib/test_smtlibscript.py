@@ -25,6 +25,10 @@ from pysmt.smtlib.script import SmtLibScript, SmtLibCommand
 from pysmt.smtlib.script import smtlibscript_from_formula, evaluate_command
 from pysmt.smtlib.parser import get_formula_strict, get_formula, SmtLibParser
 from pysmt.solvers.smtlib import SmtLibIgnoreMixin
+from pysmt.logics import QF_UFLIRA
+from pysmt.exceptions import UndefinedLogicError, PysmtValueError
+
+
 
 class TestSmtLibScript(TestCase):
 
@@ -65,6 +69,24 @@ class TestSmtLibScript(TestCase):
         self.assertIn("(declare-fun y () Bool)", output)
         self.assertIn("(check-sat)", output)
 
+        # Use custom logic (as str)
+        script2 = smtlibscript_from_formula(f, logic="BOOL")
+        outstream = cStringIO()
+        script2.serialize(outstream)
+        output = outstream.getvalue()
+        self.assertIn("(set-logic BOOL)", output)
+
+        # Use custom logic (as Logic obj)
+        script3 = smtlibscript_from_formula(f, logic=QF_UFLIRA)
+        outstream = cStringIO()
+        script3.serialize(outstream)
+        output = outstream.getvalue()
+        self.assertIn("(set-logic QF_UFLIRA)", output)
+
+        # Custom logic must be a Logic or Str
+        with self.assertRaises(UndefinedLogicError):
+            smtlibscript_from_formula(f, logic=4)
+
 
     def test_get_strict_formula(self):
 
@@ -96,7 +118,7 @@ class TestSmtLibScript(TestCase):
         self.assertEqual(f, target_two)
 
         stream_in = cStringIO(smtlib_double)
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(PysmtValueError):
             f = get_formula_strict(stream_in)
 
 
@@ -126,6 +148,33 @@ class TestSmtLibScript(TestCase):
                          solver=mock)
 
 
+    def test_smtlibignore_mixin(self):
+        """In SmtLibIgnoreMixin, all SMT-LIB methods return None."""
+        class SmtLibIgnore(SmtLibIgnoreMixin):
+            pass
+
+        solver = SmtLibIgnore()
+        self.assertIsNone(solver.set_logic(None))
+        self.assertIsNone(solver.declare_fun(None))
+        self.assertIsNone(solver.declare_const(None))
+        self.assertIsNone(solver.define_fun(None, None, None, None))
+        self.assertIsNone(solver.declare_sort(None, None))
+        self.assertIsNone(solver.define_sort(None, None, None))
+        self.assertIsNone(solver.assert_(None))
+        self.assertIsNone(solver.get_assertions())
+        self.assertIsNone(solver.check_sat())
+        self.assertIsNone(solver.get_proof())
+        self.assertIsNone(solver.get_unsat_core())
+        self.assertIsNone(solver.get_values(None))
+        self.assertIsNone(solver.get_assignment())
+        self.assertIsNone(solver.push())
+        self.assertIsNone(solver.pop())
+        self.assertIsNone(solver.get_option(None))
+        self.assertIsNone(solver.set_option(None, None))
+        self.assertIsNone(solver.get_info(None))
+        self.assertIsNone(solver.set_info(None, None))
+        self.assertIsNone(solver.exit())
+
     def test_all_parsing(self):
         # Create a small file that tests all commands of smt-lib 2
         parser = SmtLibParser()
@@ -136,8 +185,8 @@ class TestSmtLibScript(TestCase):
                 next(parser.get_command_generator(cStringIO(cmd)))
             except NotImplementedError:
                 nie += 1
-        # There are currently 5 not-implemented commands
-        self.assertEquals(nie, 5)
+        # There are currently 3 not-implemented commands
+        self.assertEquals(nie, 3)
 
 DEMO_SMTSCRIPT = [ "(declare-fun a () Bool)",
                    "(declare-fun b () Bool)",
@@ -148,9 +197,14 @@ DEMO_SMTSCRIPT = [ "(declare-fun a () Bool)",
                    "(check-sat-assuming (a b c))",
                    "(check-sat-assuming ((not a) b (not c)))",
                    "(declare-const d Bool)",
-                   "(declare-fun xyz (A B) C)", # Shouldn't this raise an error?
                    "(declare-fun abc () Int)",
                    "(declare-sort A 0)",
+                   "(declare-sort B 0)",
+                   "(declare-sort C 0)",
+                   "(declare-sort D 1)",
+                   "(define-sort E () (D Int))",
+                   "(declare-sort F 2)",
+                   "(define-sort G (H) (F Int H))",
                    "(define-fun f ((a Bool)) B a)",
                    "(define-fun g ((a Bool)) B (f a))",
                    "(define-fun-rec f ((a A)) B a)",

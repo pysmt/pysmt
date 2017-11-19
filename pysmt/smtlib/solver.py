@@ -1,15 +1,68 @@
+# Copyright 2014 Andrea Micheli and Marco Gario
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import time
 from io import TextIOWrapper
 from subprocess import Popen, PIPE
 
-from six import iteritems, PY2
+from six import PY2
 
 import pysmt.smtlib.commands as smtcmd
 from pysmt.solvers.eager import EagerModel
 from pysmt.smtlib.parser import SmtLibParser
 from pysmt.smtlib.script import SmtLibCommand
-from pysmt.solvers.solver import Solver
+from pysmt.solvers.solver import Solver, SolverOptions
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
-                              UnknownSolverAnswerError)
+                              UnknownSolverAnswerError, PysmtValueError)
+
+
+class SmtLibOptions(SolverOptions):
+    """Options for the SmtLib Solver.
+
+    * debug_interaction: True, False
+      Print the communication between pySMT and the wrapped executable
+    """
+    def __init__(self, **base_options):
+        SolverOptions.__init__(self, **base_options)
+        if self.unsat_cores_mode is not None:
+            raise PysmtValueError("'unsat_cores_mode' option not supported.")
+        self.debug_interaction = False
+
+        if 'debug_interaction' in self.solver_options:
+            self.debug_interaction = self.solver_options
+            del self.solver_options['debug_interaction']
+
+    def __call__(self, solver):
+        # These options are needed for the wrapper to work
+        solver.set_option(":print-success", "true")
+        solver.set_option(":diagnostic-output-channel", '"stdout"')
+
+        if self.generate_models:
+            solver.set_option(":produce-models", "true")
+        else:
+            solver.set_option(":produce-models", "false")
+
+        if self.random_seed is not None:
+            solver.set_option(":random-seed", str(self.random_seed))
+
+        for k,v in self.solver_options.items():
+            if k in (':print-success', 'diagnostic-output-channel'):
+                raise PysmtValueError("Cannot override %s." % k)
+            solver.set_option(k, str(v))
+
+# EOC SmtLibOptions
+
 
 class SmtLibSolver(Solver):
     """Wrapper for using a solver via textual SMT-LIB interface.
@@ -18,19 +71,21 @@ class SmtLibSolver(Solver):
     the executable. Interaction with the solver occurs via pipe.
     """
 
-    def __init__(self, args, environment, logic, user_options=None,
-                 LOGICS=None):
+    OptionsClass = SmtLibOptions
+
+    def __init__(self, args, environment, logic, LOGICS=None, **options):
         Solver.__init__(self,
                         environment,
                         logic=logic,
-                        user_options=user_options)
-        # Flag used to debug interaction with the solver
-        self.dbg = False
+                        **options)
 
         if LOGICS is not None: self.LOGICS = LOGICS
         self.args = args
         self.declared_vars = set()
-        self.solver = Popen(args, stdout=PIPE, stderr=PIPE, stdin=PIPE)
+        self.solver = Popen(args, stdout=PIPE, stderr=PIPE, stdin=PIPE,
+                            bufsize=-1)
+        # Give time to the process to start-up
+        time.sleep(0.01)
         self.parser = SmtLibParser(interactive=True)
         if PY2:
             self.solver_stdin = self.solver.stdin
@@ -40,14 +95,7 @@ class SmtLibSolver(Solver):
             self.solver_stdout = TextIOWrapper(self.solver.stdout)
 
         # Initialize solver
-        self.set_option(":print-success", "true")
-        if self.options.generate_models:
-            self.set_option(":produce-models", "true")
-        # Redirect diagnostic output to stdout
-        self.set_option(":diagnostic-output-channel", '"stdout"')
-        if self.options is not None:
-            for o,v in iteritems(self.options):
-                self.set_option(o,v)
+        self.options(self)
         self.set_logic(logic)
 
     def set_option(self, name, value):
@@ -57,9 +105,13 @@ class SmtLibSolver(Solver):
     def set_logic(self, logic):
         self._send_silent_command(SmtLibCommand(smtcmd.SET_LOGIC, [logic]))
 
+    def _debug(self, msg, *format_args):
+        if self.options.debug_interaction:
+            print(msg % format_args)
+
     def _send_command(self, cmd):
         """Sends a command to the STDIN pipe."""
-        if self.dbg: print("Sending: " + cmd.serialize_to_string())
+        self._debug("Sending: %s", cmd.serialize_to_string())
         cmd.serialize(self.solver_stdin, daggify=True)
         self.solver_stdin.write("\n")
         self.solver_stdin.flush()
@@ -72,13 +124,13 @@ class SmtLibSolver(Solver):
     def _get_answer(self):
         """Reads a line from STDOUT pipe"""
         res = self.solver_stdout.readline().strip()
-        if self.dbg: print("Read: " + str(res))
+        self._debug("Read: %s", res)
         return res
 
     def _get_value_answer(self):
         """Reads and parses an assignment from the STDOUT pipe"""
         lst = self.parser.get_assignment_list(self.solver_stdout)
-        if self.dbg: print("Read: " + str(lst))
+        self._debug("Read: %s", lst)
         return lst
 
     def _declare_variable(self, symbol):
@@ -109,6 +161,9 @@ class SmtLibSolver(Solver):
         return
 
     def add_assertion(self, formula, named=None):
+        # This is needed because Z3 (and possibly other solvers) incorrectly
+        # recognize N * M * x as a non-linear term
+        formula = formula.simplify()
         deps = formula.get_free_variables()
         for d in deps:
             if d not in self.declared_vars:
