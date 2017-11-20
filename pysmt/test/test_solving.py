@@ -330,8 +330,9 @@ class TestBasic(TestCase):
                             self.assertIsNone(f_i)
                     except ConvertExpressionError as ex:
                         # Some solvers do not support ARRAY_VALUE
-                        self.assertEqual(ex.expression.node_type(), op.ARRAY_VALUE)
-                        self.assertTrue(sname in ["cvc4", "btor"])
+                        if ex.expression.node_type() == op.ARRAY_VALUE:
+                            self.assertTrue(sname in ["cvc4", "btor"])
+                        self.assertTrue(ex.expression.node_type() == op.BV_TONAT)
 
     def test_solving_under_assumption(self):
         v1, v2 = [FreshSymbol() for _ in xrange(2)]

@@ -998,6 +998,13 @@ class FormulaManager(object):
         """
         return self.create_node(node_type=op.STR_CHARAT, args=(s, i))
 
+    def BVToNatural(self, formula):
+        """Returns the Natural number represented by the BitVector.
+
+        Given a BitVector of width m returns an integer between 0 and 2^m-1
+        """
+        return self.create_node(node_type=op.BV_TONATURAL, args=(formula,))
+
     def Select(self, arr, idx):
         """Creates a node representing an array selection."""
         return self.create_node(node_type=op.ARRAY_SELECT, args=(arr, idx))

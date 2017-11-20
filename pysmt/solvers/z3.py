@@ -341,6 +341,7 @@ class Z3Converter(Converter, DagWalker):
             z3.Z3_OP_BSUB : lambda args, expr: self.mgr.BVSub(args[0], args[1]),
             z3.Z3_OP_EXT_ROTATE_LEFT : lambda args, expr: self.mgr.BVRol(args[0], args[1].bv_unsigned_value()),
             z3.Z3_OP_EXT_ROTATE_RIGHT: lambda args, expr: self.mgr.BVRor(args[0], args[1].bv_unsigned_value()),
+            z3.Z3_OP_BV2INT: lambda args, expr: self.mgr.BVToNatural(args[0]),
             z3.Z3_OP_POWER : lambda args, expr: self.mgr.Pow(args[0], args[1]),
             z3.Z3_OP_SELECT : lambda args, expr: self.mgr.Select(args[0], args[1]),
             z3.Z3_OP_STORE : lambda args, expr: self.mgr.Store(args[0], args[1], args[2]),
@@ -550,7 +551,7 @@ class Z3Converter(Converter, DagWalker):
 
         # If we reach this point, we did not manage to translate the expression
         raise ConvertExpressionError(message=("Unsupported expression: %s" %
-                                              str(expr)),
+                                              (str(expr))),
                                      expression=expr)
 
     def _back_z3_eq(self, args, expr):
@@ -777,7 +778,7 @@ class Z3Converter(Converter, DagWalker):
         z3.Z3_inc_ref(self.ctx.ref(), z3term)
         return z3term
 
-    def walk_bv_comp (self, formula, args, **kwargs):
+    def walk_bv_comp(self, formula, args, **kwargs):
         cond = z3.Z3_mk_eq(self.ctx.ref(), args[0], args[1])
         z3.Z3_inc_ref(self.ctx.ref(), cond)
         then_ = z3.Z3_mk_numeral(self.ctx.ref(), "1", self.z3BitVecSort(1).ast)
@@ -790,6 +791,11 @@ class Z3Converter(Converter, DagWalker):
         z3.Z3_dec_ref(self.ctx.ref(), cond)
         z3.Z3_dec_ref(self.ctx.ref(), then_)
         z3.Z3_dec_ref(self.ctx.ref(), else_)
+        return z3term
+
+    def walk_bv_tonatural(self, formula, args, **kwargs):
+        z3term = z3.Z3_mk_bv2int(self.ctx.ref(), args[0], False)
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
         return z3term
 
     def walk_array_select(self, formula, args, **kwargs):

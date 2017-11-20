@@ -111,6 +111,5 @@ class TestParserExtensibility(TestCase):
         self.assertIsNotNone(ts)
 
 
-
 if __name__ == '__main__':
     main()

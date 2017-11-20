@@ -425,6 +425,7 @@ class SmtLibParser(object):
                             'str.suffixof':self._operator_adapter(mgr.StrSuffixOf),
                             'str.to.int':self._operator_adapter(mgr.StrToInt),
                             'int.to.str':self._operator_adapter(mgr.IntToStr),
+                            'bv2nat':self._operator_adapter(mgr.BVToNatural),
                             # arrays
                             'select':self._operator_adapter(mgr.Select),
                             'store':self._operator_adapter(mgr.Store),
@@ -1321,6 +1322,8 @@ class SmtLibZ3Parser(SmtLibParser):
                                 self._operator_adapter(self._ext_rotate_left)
         self.interpreted["ext_rotate_right"] =\
                                 self._operator_adapter(self._ext_rotate_right)
+        mgr = self.env.formula_manager
+        self.interpreted['bv2int'] = self._operator_adapter(mgr.BVToNatural)
 
     def _ext_rotate_left(self, x, y):
         return self.env.formula_manager.BVRol(x, y.simplify().constant_value())

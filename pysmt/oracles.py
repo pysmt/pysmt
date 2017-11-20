@@ -236,6 +236,13 @@ class TheoryOracle(walkers.DagWalker):
         theory_out = args[0].set_lira() # This makes a copy of args[0]
         return theory_out
 
+    def walk_bv_tonatural(self, formula, args, **kwargs):
+        #pylint: disable=unused-argument
+        """Extends the Theory with Integer."""
+        theory_out = args[0].copy()
+        theory_out.integer_arithmetic = True
+        return theory_out
+
     def walk_times(self, formula, args, **kwargs):
         """Extends the Theory with Non-Linear, if needed."""
         theory_out = args[0]

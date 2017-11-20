@@ -765,6 +765,14 @@ def BVComp(left, right):
     """
     return get_env().formula_manager.BVComp(left, right)
 
+def BVToNatural(formula):
+    """Returns the Natural number represented by the BitVector.
+
+    :param formula: Bitvector to be converted
+    :returns: An integer between 0 and 2^m-1
+    :rtype: FNode
+    """
+    return get_env().formula_manager.BVToNatural(formula)
 
 # Strings
 def StrLength(string):

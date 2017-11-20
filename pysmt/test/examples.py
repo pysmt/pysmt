@@ -36,7 +36,7 @@ from pysmt.shortcuts import (Symbol, Function,
                              String, StrCharAt, StrConcat, StrContains,
                              StrIndexOf, StrLength, StrPrefixOf, StrReplace,
                              StrSubstr, StrSuffixOf, StrToInt,
-                             IntToStr,
+                             IntToStr, BVToNatural,
                              Store, Select, Array, Type)
 
 from pysmt.typing import REAL, BOOL, INT, BV8, BV16, BVType, ARRAY_INT_INT
@@ -579,6 +579,13 @@ def get_full_example_formulae(environment=None):
                     is_valid=False,
                     is_sat=True,
                     logic=pysmt.logics.QF_BV
+                ),
+
+            Example(hr="(bv2nat(1_8) = 1)",
+                    expr=Equals(BVToNatural(BVOne(8)), Int(1)),
+                    is_valid=True,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_AUFBVLIRA
                 ),
             #
             # Quantification

@@ -404,6 +404,9 @@ class CVC4Converter(Converter, DagWalker):
     def walk_bv_mul(self, formula, args, **kwargs):
         return self.mkExpr(CVC4.BITVECTOR_MULT, args[0], args[1])
 
+    def walk_bv_tonatural(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.BITVECTOR_TO_NAT, args[0])
+
     def walk_bv_udiv(self, formula, args, **kwargs):
         # Force deterministic semantics of division by 0
         # If the denominator is bv0, then the result is ~0
@@ -468,13 +471,13 @@ class CVC4Converter(Converter, DagWalker):
     def walk_bv_slt(self, formula, args, **kwargs):
         return self.mkExpr(CVC4.BITVECTOR_SLT, args[0], args[1])
 
-    def walk_bv_sle (self, formula, args, **kwargs):
+    def walk_bv_sle(self, formula, args, **kwargs):
         return self.mkExpr(CVC4.BITVECTOR_SLE, args[0], args[1])
 
-    def walk_bv_comp (self, formula, args, **kwargs):
+    def walk_bv_comp(self, formula, args, **kwargs):
         return self.mkExpr(CVC4.BITVECTOR_COMP, args[0], args[1])
 
-    def walk_bv_sdiv (self, formula, args, **kwargs):
+    def walk_bv_sdiv(self, formula, args, **kwargs):
         # Force deterministic semantics of division by 0
         # If the denominator is bv0, then the result is:
         #   * ~0 (if the numerator is signed >= 0)
@@ -500,7 +503,7 @@ class CVC4Converter(Converter, DagWalker):
             is_zero = self.mkExpr(CVC4.EQUAL, d, zero)
             return self.mkExpr(CVC4.ITE, is_zero, sign_expr, base)
 
-    def walk_bv_srem (self, formula, args, **kwargs):
+    def walk_bv_srem(self, formula, args, **kwargs):
         # Force deterministic semantics of reminder by 0
         # If the denominator is bv0, then the result is the numerator
         n,d = args
@@ -518,7 +521,7 @@ class CVC4Converter(Converter, DagWalker):
             test = self.mkExpr(CVC4.EQUAL, d, zero)
             return self.mkExpr(CVC4.ITE, test, n, base)
 
-    def walk_bv_ashr (self, formula, args, **kwargs):
+    def walk_bv_ashr(self, formula, args, **kwargs):
         return self.mkExpr(CVC4.BITVECTOR_ASHR, args[0], args[1])
 
     def walk_str_constant(self, formula, args, **kwargs):

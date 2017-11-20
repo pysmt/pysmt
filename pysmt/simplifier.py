@@ -741,6 +741,11 @@ class Simplifier(pysmt.walkers.DagWalker):
     def walk_uint32_to_str(self, formula, args, **kwargs):
         return self.manager.Uint32ToStr(args[0])
 
+    def walk_bv_tonatural(self, formula, args, **kwargs):
+        if args[0].is_bv_constant():
+            return self.manager.Int(args[0].constant_value())
+        return self.manager.BVToNatural(args[0])
+
     def walk_array_select(self, formula, args, **kwargs):
         a, i = args
         if a.is_array_value() and i.is_constant():
@@ -871,7 +876,6 @@ class BddSimplifier(Simplifier):
     def abstract_and_simplify(self, formula):
         abs_formula = self.walk(formula)
         abs_res = self.back(self.convert(abs_formula))
-        print(formula, abs_formula, abs_res)
         res = abs_res.substitute(self.ba_map)
         return res
 
