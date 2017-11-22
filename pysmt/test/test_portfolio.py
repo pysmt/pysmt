@@ -167,15 +167,15 @@ class PortfolioTestCase(TestCase):
                 with self.assertRaises(Exception):
                     s.solve()
 
-    @skipIfSolverNotAvailable("msat")
+    @skipIfSolverNotAvailable("z3")
     def test_deep_pickling(self):
         # Generate a very deep formula
-        depth = 1000000
+        depth = 100000
         f = Symbol("x")
         for _ in xrange(depth):
             f = And(f, f)
 
-        with Portfolio(["msat"],
+        with Portfolio(["z3"],
                        logic=QF_BOOL,
                        environment=self.env,
                        incremental=False,
