@@ -729,18 +729,6 @@ class Simplifier(pysmt.walkers.DagWalker):
             return self.manager.String(str(i.constant_value()))
         return self.manager.IntToStr(i)
 
-    def walk_str_to_unit16(self, formula, args, **kwargs):
-        return self.manager.StrToUint16(args[0])
-
-    def walk_uint16_to_str(self, formula, args, **kwargs):
-        return self.manager.Uint16ToStr(args[0])
-
-    def walk_str_to_uint32(self, formula, args, **kwargs):
-        return self.manager.StrToUint32(args[0])
-
-    def walk_uint32_to_str(self, formula, args, **kwargs):
-        return self.manager.Uint32ToStr(args[0])
-
     def walk_bv_tonatural(self, formula, args, **kwargs):
         if args[0].is_bv_constant():
             return self.manager.Int(args[0].constant_value())

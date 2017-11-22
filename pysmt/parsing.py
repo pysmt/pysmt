@@ -193,7 +193,7 @@ class HRLexer(Lexer):
             Rule(r"(str\.to\.int)", FunctionCallAdapter(self.mgr.StrToInt, 100), False), # str_to_int
             Rule(r"(int\.to\.str)", FunctionCallAdapter(self.mgr.IntToStr, 100), False), # int_to_str
             Rule(r"(bv2nat)", UnaryOpAdapter(self.mgr.BVToNatural, 100), False),#
-            Rule(r"\"(.*?)\"", self.identifier, True),# quoted identifiers
+            Rule(r"'(.*?)'", self.identifier, True), # quoted identifiers
             Rule(r"([A-Za-z_][A-Za-z0-9_]*)", self.identifier, True),# identifiers
             Rule(r"(.)", self.lexing_error, True), # input error
         ]

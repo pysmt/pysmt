@@ -271,30 +271,6 @@ class SimpleTypeChecker(walkers.DagWalker):
 
         return tp.return_type
 
-    def walk_str_to_unit16(self, formula, args, **kwargs):
-        assert formula is not None
-        if len(args) == 1 and args[0].is_string_type():
-            return INT
-        return None
-
-    def walk_uint16_to_str(self, formula, args, **kwargs):
-        assert formula is not None
-        if len(args) == 1 and args[0].is_int_type():
-            return STRING
-        return None
-
-    def walk_str_to_uint32(self, formula, args, **kwargs):
-        assert formula is not None
-        if len(args) == 1 and args[0].is_string_type():
-            return INT
-        return None
-
-    def walk_uint32_to_str(self, formula, args, **kwargs):
-        assert formula is not None
-        if len(args) == 1 and args[0].is_int_type():
-            return STRING
-        return None
-
     def walk_str_charat(self, formula, args, **kwargs):
         assert formula is not None
         if len(args) == 2 and \

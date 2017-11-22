@@ -976,10 +976,9 @@ class FormulaManager(object):
         return self.create_node(node_type=op.STR_SUFFIXOF, args=(s, t))
 
     def StrToInt(self, s):
-        """Returns the corresponding natural number of s is valid;
+        """Returns the corresponding natural number of s.
 
-        If s is not valid, it returns -1.
-        #MG: What does valid mean in this context?
+        If s does not represent a natural number, it returns -1.
         """
         return self.create_node(node_type=op.STR_TO_INT, args=(s,))
 

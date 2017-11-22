@@ -252,26 +252,6 @@ class SmtPrinter(TreeWalker):
         self.walk(formula.arg(0))
         self.write(")")
 
-    # def walk_str_to_unit16(self,formula, **kwargs):
-    #     self.write("( str.to.uint16 " )
-    #     self.walk(formula.arg(0))
-    #     self.write(")")
-
-    # def walk_uint16_to_str(self,formula, **kwargs):
-    #     self.write("( uint16.to.str " )
-    #     self.walk(formula.arg(0))
-    #     self.write(")")
-
-    # def walk_str_to_uint32(self,formula, **kwargs):
-    #     self.write("( str.to.uint32 " )
-    #     self.walk(formula.arg(0))
-    #     self.write(")")
-
-    # def walk_uint32_to_str(self,formula, **kwargs):
-    #     self.write("( uint32.to.str " )
-    #     self.walk(formula.arg(0))
-    #     self.write(")")
-
     def walk_array_value(self, formula):
         assign = formula.array_value_assigned_values_map()
         for _ in xrange(len(assign)):
@@ -621,18 +601,6 @@ class SmtDagPrinter(DagWalker):
 
     def walk_int_to_str(self,formula, args, **kwargs):
         return "( int.to.str %s )" % args[0]
-
-    # def walk_str_to_unit16(self,formula, args, **kwargs):
-    #     return "( str.to.uint16 %s )" % args[0]
-
-    # def walk_uint16_to_str(self,formula, args, **kwargs):
-    #     return "( uint16.to.str %s )" % args[0]
-
-    # def walk_str_to_uint32(self,formula, args, **kwargs):
-    #     return "( str.to.uint32 %s )" % args[0]
-
-    # def walk_uint32_to_str(self,formula, args, **kwargs):
-    #     return "( uint32.to.str %s )" % args[0]
 
     def walk_array_value(self, formula, args, **kwargs):
         sym = self._new_symbol()
