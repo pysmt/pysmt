@@ -1172,12 +1172,14 @@ if hasattr(mathsat, "MSAT_EXIST_ELIM_ALLSMT_FM"):
             del self.msat_env
 
     class MSatFMQuantifierEliminator(MSatQuantifierEliminator):
+        LOGICS = [LRA]
         def __init__(self, environment, logic=None):
             MSatQuantifierEliminator.__init__(self, environment,
                                               logic=logic, algorithm='fm')
 
 
     class MSatLWQuantifierEliminator(MSatQuantifierEliminator):
+        LOGICS = [LRA, LIA]
         def __init__(self, environment, logic=None):
             MSatQuantifierEliminator.__init__(self, environment,
                                               logic=logic, algorithm='lw')
