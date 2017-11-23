@@ -27,7 +27,7 @@ except ImportError:
     raise SolverAPINotFound
 
 import pysmt.typing as types
-from pysmt.logics import PYSMT_LOGICS, ARRAYS_CONST_LOGICS, QF_SLIA
+from pysmt.logics import PYSMT_LOGICS, ARRAYS_CONST_LOGICS
 
 from pysmt.solvers.solver import Solver, Converter, SolverOptions
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
@@ -78,8 +78,10 @@ class CVC4Options(SolverOptions):
 
 class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
-    LOGICS = ( PYSMT_LOGICS | frozenset([QF_SLIA]) ) - ARRAYS_CONST_LOGICS -\
+    LOGICS = PYSMT_LOGICS -\
+             ARRAYS_CONST_LOGICS -\
              set(l for l in PYSMT_LOGICS if not l.theory.linear)
+
     OptionsClass = CVC4Options
 
     def __init__(self, environment, logic, **options):
