@@ -176,7 +176,8 @@ class TheoryOracle(walkers.DagWalker):
     @walkers.handles(op.RELATIONS)
     @walkers.handles(op.BOOL_OPERATORS)
     @walkers.handles(op.BV_OPERATORS)
-    @walkers.handles(op.STR_OPERATORS)
+    @walkers.handles(op.STR_OPERATORS -\
+                     set([op.STR_LENGTH, op.STR_INDEXOF, op.STR_TO_INT]))
     @walkers.handles(op.ITE, op.ARRAY_SELECT, op.ARRAY_STORE, op.MINUS)
     def walk_combine(self, formula, args, **kwargs):
         """Combines the current theory value of the children"""
@@ -227,6 +228,9 @@ class TheoryOracle(walkers.DagWalker):
                 theory_out = theory_out.combine(t)
         else:
             theory_out = Theory()
+        # Extend Theory with function return type
+        rtype = formula.function_name().symbol_type().return_type
+        theory_out = theory_out.combine(self._theory_from_type(rtype))
         theory_out.uninterpreted = True
         return theory_out
 
@@ -235,12 +239,21 @@ class TheoryOracle(walkers.DagWalker):
         """Extends the Theory with LIRA."""
         theory_out = args[0].set_lira() # This makes a copy of args[0]
         return theory_out
+        rtype = formula.symbol_name()
+
+    @walkers.handles([op.STR_LENGTH, op.STR_INDEXOF, op.STR_TO_INT])
+    def walk_str_int(self, formula, args, **kwargs):
+        theory_out = self.walk_combine(formula, args, **kwargs)
+        theory_out.integer_arithmetic = True
+        theory_out.integer_difference = True
+        return theory_out
 
     def walk_bv_tonatural(self, formula, args, **kwargs):
         #pylint: disable=unused-argument
         """Extends the Theory with Integer."""
         theory_out = args[0].copy()
         theory_out.integer_arithmetic = True
+        theory_out.integer_difference = True
         return theory_out
 
     def walk_times(self, formula, args, **kwargs):

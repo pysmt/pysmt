@@ -20,7 +20,7 @@ from pysmt.shortcuts import Symbol, Implies, And, Not
 from pysmt.test.examples import get_example_formulae
 from pysmt.test import TestCase, main
 from pysmt.oracles import get_logic
-from pysmt.typing import BOOL, Type, INT
+from pysmt.typing import BOOL, Type, INT, FunctionType
 
 
 class TestOracles(TestCase):
@@ -126,6 +126,18 @@ class TestOracles(TestCase):
         f = mgr.Plus(mgr.Int(5), mgr.Int(6))
         types_all = self.env.typeso.get_types(f)
         self.assertEqual(types_all, [INT])
+
+    def test_theory_oracle_on_functions(self):
+        from pysmt.logics import QF_UFIDL
+
+        mgr = self.env.formula_manager
+        ftype = FunctionType(INT, (BOOL,))
+        f = mgr.Symbol("f", ftype)
+        f_1 = mgr.Function(f, (mgr.TRUE(),))
+        theory = self.env.theoryo.get_theory(f_1)
+        self.assertEqual(theory, QF_UFIDL.theory)
+
+
 
 if __name__ == '__main__':
     main()
