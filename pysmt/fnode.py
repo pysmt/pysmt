@@ -597,13 +597,31 @@ class FNode(object):
         """Return the signed value encoded by the BitVector."""
         return twos_complement(self.constant_value(), self.bv_width())
 
+    def bv_str(self, fmt='b'):
+        """Return a string representation of the BitVector.
+
+        fmt: 'b' : Binary
+             'd' : Decimal
+             'x' : Hexadecimal
+
+        The representation is always unsigned
+        """
+        if fmt == 'b':
+            fstr = '{0:0%db}' % self.bv_width()
+        elif fmt == 'd':
+            fstr = '{}'
+        else:
+            assert fmt == 'x', "Unknown option %s" % str(fmt)
+            fstr = '{0:0%dx}' % (self.bv_width()/4)
+        str_ = fstr.format(self.constant_value())
+        return str_
+
     def bv_bin_str(self, reverse=False):
         """Return the binary representation of the BitVector as string.
 
         The reverse option is provided to deal with MSB/LSB.
         """
-        fstr = '{0:0%db}' % self.bv_width()
-        bitstr = fstr.format(self.constant_value())
+        bitstr = self.bv_str(fmt='b')
         if reverse:
             bitstr = bitstr[::-1]
         return bitstr
