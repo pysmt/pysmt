@@ -79,13 +79,15 @@ class Simplifier(pysmt.walkers.DagWalker):
         return res
 
     def walk_and(self, formula, args, **kwargs):
+        if len(args) == 2 and args[0] == args[1]:
+            return args[0]
+
         new_args = set()
         for a in args:
             if a.is_true():
                 continue
             if a.is_false():
                 return self.manager.FALSE()
-
             if a.is_and():
                 for s in a.args():
                     if self.walk_not(self.manager.Not(s), [s]) in new_args:
@@ -104,13 +106,15 @@ class Simplifier(pysmt.walkers.DagWalker):
             return self.manager.And(new_args)
 
     def walk_or(self, formula, args, **kwargs):
+        if len(args) == 2 and args[0] == args[1]:
+            return args[0]
+
         new_args = set()
         for a in args:
             if a.is_false():
                 continue
             if a.is_true():
                 return self.manager.TRUE()
-
             if a.is_or():
                 for s in a.args():
                     if self.walk_not(self.manager.Not(s), [s]) in new_args:

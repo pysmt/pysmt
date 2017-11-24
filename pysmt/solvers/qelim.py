@@ -101,3 +101,48 @@ class ShannonQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
 
     def _exit(self):
         pass
+
+# EOC ShannonQuantifierEliminator
+
+class SelfSubstitutionQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
+    """Boolean Quantifier Elimination based on Self-Substitution.
+
+    Described in :
+     "BDD-Based Boolean Functional Synthesis",
+     Dror Fried, Lucas M. Tabajara, and Moshe Y. Vardi,
+     CAV 2016
+    """
+    LOGICS = [pysmt.logics.BOOL]
+
+    def __init__(self, environment, logic=None):
+        IdentityDagWalker.__init__(self, env=environment)
+        QuantifierEliminator.__init__(self)
+        self.logic = logic
+
+    def eliminate_quantifiers(self, formula):
+        return self.walk(formula)
+
+    def self_substitute(self, formula, qvars, token):
+        for v in qvars[::-1]:
+            inner_sub = formula.substitute({v: token})
+            formula = formula.substitute({v: inner_sub})
+        return formula
+
+    def walk_forall(self, formula, args, **kwargs):
+        """Forall y . f(x, y) =>  f(x, f(x, 0))"""
+        qvars = formula.quantifier_vars()
+        f = args[0]
+        token = self.env.formula_manager.FALSE()
+        qf_f = self.self_substitute(f, qvars, token)
+        return qf_f
+
+    def walk_exists(self, formula, args, **kwargs):
+        """Exists y . f(x, y) =>  f(x, f(x, 1))"""
+        qvars = formula.quantifier_vars()
+        f = args[0]
+        token = self.env.formula_manager.TRUE()
+        qf_f = self.self_substitute(f, qvars, token)
+        return qf_f
+
+    def _exit(self):
+        pass
