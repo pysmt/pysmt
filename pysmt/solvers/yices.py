@@ -130,8 +130,10 @@ class YicesOptions(SolverOptions):
 
 class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
-    LOGICS = pysmt.logics.PYSMT_QF_LOGICS - pysmt.logics.ARRAYS_LOGICS -\
-             set(l for l in pysmt.logics.PYSMT_QF_LOGICS if not l.theory.linear)
+    LOGICS = pysmt.logics.PYSMT_QF_LOGICS -\
+             pysmt.logics.ARRAYS_LOGICS -\
+             set(l for l in pysmt.logics.PYSMT_QF_LOGICS
+                 if not l.theory.linear or l.theory.strings)
     OptionsClass = YicesOptions
 
     def __init__(self, environment, logic, **options):
@@ -183,6 +185,8 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         # solver.  In this case, the problem occurs with Arrays and
         # Strings that are not supported.
         for s in self.environment.formula_manager.get_all_symbols():
+            if s.is_symbol() and s.symbol_type().is_string_type():
+                continue
             if s.is_term():
                 if s.symbol_type().is_array_type(): continue
                 if s.symbol_type().is_custom_type(): continue

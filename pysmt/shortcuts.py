@@ -280,6 +280,11 @@ def Real(value):
     return get_env().formula_manager.Real(value)
 
 
+def String(value):
+    """Returns a String constant with the given value."""
+    return get_env().formula_manager.String(value)
+
+
 def TRUE():
     """Returns the Boolean constant TRUE.
 
@@ -768,6 +773,84 @@ def BVToNatural(formula):
     :rtype: FNode
     """
     return get_env().formula_manager.BVToNatural(formula)
+
+# Strings
+def StrLength(string):
+    """Returns the length of a formula resulting a String"""
+    return get_env().formula_manager.StrLength(string)
+
+def StrCharAt(string, index):
+    """Returns a single character String at position i.
+
+    s is a string term and i is an integer term. i is the position.
+    """
+    return get_env().formula_manager.StrCharAt(string, index)
+
+def StrConcat(*args):
+    """Returns the concatenation of n Strings.
+
+    s1, s2, ..., and sn are String terms.
+    String concatenation takes at least 2 arguments.
+    """
+    return get_env().formula_manager.StrConcat(*args)
+
+def StrContains(string, target):
+    """Returns wether string contains the target.
+
+    s and t are String terms.
+    """
+    return get_env().formula_manager.StrContains(string, target)
+
+def StrIndexOf(string, target, offset):
+    """Returns the position of the first occurrence of target in string after the offset.
+
+    s and t being a non empty strings and i a non-negative integer.
+    It returns -1 if the value to search for never occurs.
+    """
+    return get_env().formula_manager.StrIndexOf(string, target, offset)
+
+def StrReplace(s, t1, t2):
+    """Returns a new string where the first occurrence of t1 is replace by t2.
+
+    where s, t1 and t2 are string terms, t1 is non-empty.
+    """
+    return get_env().formula_manager.StrReplace(s, t1, t2)
+
+def StrSubstr(s, i, j):
+    """Returns a substring of s starting at i and ending at j+i.
+
+    where s is a string term and i, j are integer terms.
+    """
+    return get_env().formula_manager.StrSubstr(s, i, j)
+
+def StrPrefixOf(s, t):
+    """Returns whether the s is a prefix of the string t.
+
+    where s and t are string terms.
+    """
+    return get_env().formula_manager.StrPrefixOf(s, t)
+
+def StrSuffixOf(s, t):
+    """Returns whether the string s is a suffix of the string t.
+
+    where s and t are string terms.
+    """
+    return get_env().formula_manager.StrSuffixOf(s, t)
+
+def StrToInt(x):
+    """Returns the corresponding natural number of s is valid;
+
+    If s is not valid, it returns -1.
+    """
+    return get_env().formula_manager.StrToInt(x)
+
+def IntToStr(x):
+    """Returns the corresponding String representing the natural number x.
+
+    where x is an integer term. If x is not a natural number it
+    returns the empty String.
+    """
+    return get_env().formula_manager.IntToStr(x)
 
 #
 # Arrays

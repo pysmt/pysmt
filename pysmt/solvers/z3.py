@@ -135,7 +135,7 @@ class Z3Options(SolverOptions):
 class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
                SmtLibBasicSolver, SmtLibIgnoreMixin):
 
-    LOGICS = PYSMT_LOGICS
+    LOGICS = PYSMT_LOGICS - set(x for x in PYSMT_LOGICS if x.theory.strings)
     OptionsClass = Z3Options
 
     def __init__(self, environment, logic, **options):
@@ -614,6 +614,12 @@ class Z3Converter(Converter, DagWalker):
             sort_ast = self.z3RealSort.ast
         elif symbol_type.is_int_type():
             sort_ast = self.z3IntSort.ast
+        elif symbol_type.is_array_type():
+            sort_ast = self._type_to_z3(symbol_type).ast
+        elif symbol_type.is_string_type():
+            raise ConvertExpressionError(message=("Unsupported string symbol: %s" %
+                                                  str(formula)),
+                                         expression=formula)
         else:
             sort_ast = self._type_to_z3(symbol_type).ast
         # Create const with given sort

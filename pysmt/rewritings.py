@@ -283,7 +283,8 @@ class NNFizer(DagWalker):
             return [i, mgr.Not(i), t, e]
 
         else:
-            assert formula.is_symbol() or \
+            assert formula.is_str_op() or \
+                formula.is_symbol() or \
                 formula.is_function_application() or \
                 formula.is_bool_constant() or \
                 formula.is_theory_relation(), str(formula)
@@ -398,8 +399,8 @@ class PrenexNormalizer(DagWalker):
 
     def walk_symbol(self, formula, **kwargs):
         if formula.symbol_type().is_bool_type():
-            return [],formula
-        return None
+            return [], formula
+        return None # Note: When returning None, we do not pack it into a tuple!
 
     @handles(op.CONSTANTS)
     def walk_constant(self, formula, **kwargs):
@@ -530,6 +531,7 @@ class PrenexNormalizer(DagWalker):
         return None
 
 # EOC PrenexNormalizer
+
 
 
 class AIGer(DagWalker):

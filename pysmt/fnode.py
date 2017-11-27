@@ -37,12 +37,21 @@ from pysmt.operators import (FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF,
                              BV_COMP,
                              BV_SDIV, BV_SREM,
                              BV_ASHR,
+                             STR_CONSTANT,
+                             STR_LENGTH, STR_CONCAT, STR_CONTAINS,
+                             STR_INDEXOF, STR_REPLACE, STR_SUBSTR,
+                             STR_PREFIXOF, STR_SUFFIXOF,
+                             STR_TO_INT, INT_TO_STR,
+                             STR_CHARAT,
                              ARRAY_SELECT, ARRAY_STORE, ARRAY_VALUE,
                              ALGEBRAIC_CONSTANT)
+
 from pysmt.operators import  (BOOL_OPERATORS, THEORY_OPERATORS,
                               BV_OPERATORS, IRA_OPERATORS, ARRAY_OPERATORS,
+                              STR_OPERATORS,
                               RELATIONS, CONSTANTS)
-from pysmt.typing import BOOL, REAL, INT, BVType
+
+from pysmt.typing import BOOL, REAL, INT, BVType, STRING
 from pysmt.decorators import deprecated, assert_infix_enabled
 from pysmt.utils import twos_complement
 from pysmt.constants import (Fraction, is_python_integer,
@@ -158,6 +167,8 @@ class FNode(object):
                 return False
             if _type.is_bool_type() and self.node_type() != BOOL_CONSTANT:
                 return False
+            if _type.is_string_type() and self.node_type() != STR_CONSTANT:
+                return False
             if _type.is_bv_type():
                 if self.node_type() != BV_CONSTANT:
                     return False
@@ -202,6 +213,13 @@ class FNode(object):
         else:
             return self.is_constant(_type=BVType(width=width),
                                     value=value)
+
+    def is_string_constant(self, value=None):
+        """Test whether the formula is a String constant.
+
+        Optionally, check that the constant has the given value.
+        """
+        return self.is_constant(STRING, value)
 
     def is_algebraic_constant(self):
         """Test whether the formula is an Algebraic Constant"""
@@ -532,6 +550,9 @@ class FNode(object):
         """
         return not (self.is_symbol() and self.symbol_type().is_function_type())
 
+    def is_str_op(self):
+        return self.node_type() in STR_OPERATORS
+
     def symbol_type(self):
         """Return the type of the Symbol."""
         assert self.is_symbol()
@@ -557,6 +578,8 @@ class FNode(object):
             return REAL
         elif self.node_type() == BOOL_CONSTANT:
             return BOOL
+        elif self.node_type() == STR_CONSTANT:
+            return STRING
         else:
             assert self.node_type() == BV_CONSTANT,\
                 "Unsupported method constant_type '%s'" % self

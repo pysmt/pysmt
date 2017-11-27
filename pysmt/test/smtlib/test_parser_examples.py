@@ -28,6 +28,7 @@ from pysmt.smtlib.script import smtlibscript_from_formula
 from pysmt.shortcuts import Iff
 from pysmt.shortcuts import read_smtlib, write_smtlib
 
+
 class TestSMTParseExamples(TestCase):
 
     def test_parse_examples(self):
@@ -130,7 +131,6 @@ class TestSMTParseExamples(TestCase):
             else: # Loops exited normally
                 print("-"*40)
                 print(script_in)
-
 
     def test_read_and_write_shortcuts(self):
         fs = get_example_formulae()
