@@ -1,10 +1,7 @@
-environment:
-  global:
-    # SDK v7.0 MSVC Express 2008's SetEnv.cmd script will fail if the
-    # /E:ON and /V:ON options are not enabled in the batch script intepreter
-    # See: http://stackoverflow.com/a/13751649/163740
-    CMD_IN_ENV: "cmd /E:ON /V:ON /C .\\ci\\appveyor\\run_with_env.cmd"
+image:
+- Visual Studio 2015
 
+environment:
   matrix:
     - PYTHON: "C:\\Python27-x64"
       PYTHON_VERSION: "2.7.x"
@@ -38,46 +35,18 @@ environment:
       PYSMT_SOLVER: "z3"
 
 
-    - PYTHON: "C:\\Python27"
-      PYTHON_VERSION: "2.7.x"
-      PYTHON_ARCH: "32"
-      PYSMT_SOLVER: "msat"
-
     - PYTHON: "C:\\Python27-x64"
       PYTHON_VERSION: "2.7.x"
       PYTHON_ARCH: "64"
       PYSMT_SOLVER: "msat"
 
-    # There is a problem with python 3.5+ with the compilation of
-    # MathSAT on AppVeyor.  We need at least VS 2015 to build
-    # extensions, but it does not work on AppVeyor for some reason.
-    # see https://wiki.python.org/moin/WindowsCompilers for the
-    # compiler requirements.  I tried several configurations but I am
-    # not able to force the compilation of the MathSAT wrapper with
-    # Visual Studio 14, Visual Studio 10 is being used
-    # instead. However, on my machine where I only have Visual Studio
-    # 14 this work flawlessly. I am not sure if this is an issue with
-    # the Windows SDK, the image itself or the presence of multiple
-    # version of Visual Studio.
-
-    - PYTHON: "C:\\Python34"
-      PYTHON_VERSION: "3.4.x"
-      PYTHON_ARCH: "32"
-      PYSMT_SOLVER: "msat"
-
-    - PYTHON: "C:\\Python34-x64"
-      PYTHON_VERSION: "3.4.x"
+    - PYTHON: "C:\\Python36-x64"
+      PYTHON_VERSION: "3.6.x"
       PYTHON_ARCH: "64"
       PYSMT_SOLVER: "msat"
 
 
 install:
-  - ECHO "Filesystem root:"
-  - ps: "ls \"C:/\""
-
-  - ECHO "Installed SDKs:"
-  - ps: "ls \"C:/Program Files/Microsoft SDKs/Windows\""
-
   # Install Python (from the official .msi of http://python.org) and pip when
   # not already installed.
   - ps: "./ci/appveyor/install.ps1"
@@ -88,19 +57,19 @@ install:
   - cmd: "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
 
   # Check that we have the expected version and architecture for Python
-  - cmd: "%CMD_IN_ENV% python --version"
-  - cmd: "%CMD_IN_ENV% python -c \"import struct; print(struct.calcsize('P') * 8)\""
+  - cmd: "python --version"
+  - cmd: "python -c \"import struct; print(struct.calcsize('P') * 8)\""
 
-  - cmd: "%CMD_IN_ENV% pip install -r dev-requirements.txt"
+  - cmd: "pip install -r dev-requirements.txt"
 
   # Update setputools
-  - cmd: "%CMD_IN_ENV% pip install --upgrade setuptools"
+  - cmd: "pip install --upgrade setuptools"
 
   # Install the solvers
-  - cmd: "%CMD_IN_ENV% python install.py --confirm-agreement"
+  - cmd: "python install.py --confirm-agreement"
 
   # Set and check the pythonpath
-  - cmd: "%CMD_IN_ENV% python install.py --env > bindings_path.bat"
+  - cmd: "python install.py --env > bindings_path.bat"
   - cmd: "call ./bindings_path.bat"
   - ECHO "PythonPath=%PYTHONPATH%"
   - ECHO "Path=%PATH%"
@@ -108,12 +77,12 @@ install:
 build: false
 
 test_script:
-  - "%CMD_IN_ENV% python install.py --check"
-  - "%CMD_IN_ENV% nosetests -v "
+  - cmd: "python install.py --check"
+  - cmd: "nosetests -v "
 
 # after_test:
 #    # If tests are successful, create a whl package for the project.
-#    - "%CMD_IN_ENV% python setup.py bdist_wheel bdist_wininst"
+#    - cmd: "python setup.py bdist_wheel bdist_wininst"
 #    - ps: "ls dist"
 
 # artifacts:

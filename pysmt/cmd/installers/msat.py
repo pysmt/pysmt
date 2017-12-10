@@ -17,30 +17,6 @@ import glob
 
 from pysmt.cmd.installers.base import SolverInstaller
 
-# A patched version of setup.py for the Windows platform
-WIN_PATCHED_SETUP_PY = """#!/usr/bin/env python
-import os, sys
-from setuptools import setup, Extension
-
-MATHSAT_DIR = '..'
-
-libraries = ['mathsat', 'psapi', 'mpir']
-
-setup(name='mathsat', version='0.1',
-      description='MathSAT API',
-      ext_modules=[Extension('_mathsat', ['mathsat_python_wrap.c'],
-                             define_macros=[('SWIG','1')],
-                             include_dirs=[os.path.join(MATHSAT_DIR,
-                                                        'include')],
-                             library_dirs=[os.path.join(MATHSAT_DIR, 'lib')],
-                             extra_compile_args=[],
-                             extra_link_args=[],
-                             libraries=libraries,
-                             language='c++',
-                             )]
-      )
-"""
-
 
 class MSatInstaller(SolverInstaller):
 
@@ -85,8 +61,7 @@ class MSatInstaller(SolverInstaller):
         # array that is malloc'd is freed with a call to msat_free
         # instead of a plain free(). This issue has been fixed
         # upstream, and this patching can be removed when we will
-        # upgrade the version of MathSAT to be greater (but not equal) to
-        # 5.4.1.
+        # upgrade the version of MathSAT
         key = "if (arg2) msat_free(arg2);"
         subst = "if (arg2) free(arg2);"
         c_body = None
@@ -99,17 +74,19 @@ class MSatInstaller(SolverInstaller):
         if self.os_name == "windows":
             libdir = os.path.join(self.python_bindings_dir, "../lib")
             incdir = os.path.join(self.python_bindings_dir, "../include")
-            gmp_h_url = "https://raw.githubusercontent.com/mikand/tamer-windows-deps/master/gmp/include/gmp.h"
+            gmp_h_url = "https://github.com/mikand/tamer-windows-deps/raw/master/gmp/include/gmp.h"
             mpir_dll_url = "https://github.com/Legrandin/mpir-windows-builds/blob/master/mpir-2.6.0_VS2015_%s/mpir.dll?raw=true" % self.bits
             mpir_lib_url = "https://github.com/Legrandin/mpir-windows-builds/blob/master/mpir-2.6.0_VS2015_%s/mpir.lib?raw=true" % self.bits
+            setup_py_win_url = "https://github.com/pysmt/solvers_patches/raw/master/mathsat/setup-win.py"
 
             SolverInstaller.do_download(gmp_h_url, os.path.join(incdir, "gmp.h"))
             SolverInstaller.do_download(mpir_dll_url, os.path.join(libdir, "mpir.dll"))
             SolverInstaller.do_download(mpir_lib_url, os.path.join(libdir, "mpir.lib"))
 
             # Overwrite setup.py with the patched version
-            with open(os.path.join(self.python_bindings_dir, "setup.py"), "w") as f:
-                f.write(WIN_PATCHED_SETUP_PY)
+            setup_py = os.path.join(self.python_bindings_dir, "setup.py")
+            SolverInstaller.mv(setup_py, setup_py + ".original")
+            SolverInstaller.do_download(setup_py_win_url, setup_py)
 
         # Run setup.py to compile the bindings
         SolverInstaller.run_python("./setup.py build", self.python_bindings_dir)
@@ -119,18 +96,19 @@ class MSatInstaller(SolverInstaller):
         pdir = self.python_bindings_dir
         bdir = os.path.join(pdir, "build")
         sodir = glob.glob(bdir + "/lib.*")[0]
+        libdir = os.path.join(self.python_bindings_dir, "../lib")
 
+        # First, we need the SWIG-generated wrapper
         for f in os.listdir(sodir):
             if f.endswith(".so") or f.endswith(".pyd"):
                 SolverInstaller.mv(os.path.join(sodir, f), self.bindings_dir)
         SolverInstaller.mv(os.path.join(pdir, "mathsat.py"), self.bindings_dir)
 
-        # Under windows we also need the DLLs of mathsat and mpir in the PATH
-        if self.os_name == "windows":
-            libdir = os.path.join(self.python_bindings_dir, "../lib")
-            SolverInstaller.mv(os.path.join(libdir, "mathsat.dll"), self.bindings_dir)
-            SolverInstaller.mv(os.path.join(libdir, "mpir.dll"), self.bindings_dir)
-
+        # Since MathSAT 5.5.0 we also need the SO/DLL/DYLIB of mathsat in the PATH
+        # Under Windows, we also need the DLLs of MPIR in the PATH
+        for f in os.listdir(libdir):
+            if f.endswith(".so") or f.endswith(".dll") or f.endswith(".dylib"):
+                SolverInstaller.mv(os.path.join(libdir, f), self.bindings_dir)
 
     def get_installed_version(self):
         return self.get_installed_version_script(self.bindings_dir, "msat")
