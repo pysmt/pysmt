@@ -55,22 +55,6 @@ class MSatInstaller(SolverInstaller):
 
 
     def compile(self):
-        # Patching the swig wrapper
-        # This hardcoded patch fixes a problem in the msat wrapper
-        # that can cause segfaults (especially under windows). An
-        # array that is malloc'd is freed with a call to msat_free
-        # instead of a plain free(). This issue has been fixed
-        # upstream, and this patching can be removed when we will
-        # upgrade the version of MathSAT
-        key = "if (arg2) msat_free(arg2);"
-        subst = "if (arg2) free(arg2);"
-        c_body = None
-        with open(os.path.join(self.python_bindings_dir, "mathsat_python_wrap.c"), "r") as f:
-            c_body = f.read()
-        c_body = c_body.replace(key, subst)
-        with open(os.path.join(self.python_bindings_dir, "mathsat_python_wrap.c"), "w") as f:
-            f.write(c_body)
-
         if self.os_name == "windows":
             libdir = os.path.join(self.python_bindings_dir, "../lib")
             incdir = os.path.join(self.python_bindings_dir, "../include")
