@@ -20,6 +20,8 @@ cache:
 
 addons:
   apt:
+    sources:
+    - sourceline: 'ppa:ubuntu-toolchain-r/test'
     packages:
     - python-setuptools
     - python-nose
@@ -36,6 +38,7 @@ addons:
     - libboost-dev
     - python3-all-dev
     - libmpc-dev
+    - libstdc++6
 
 python:
   - 3.5
