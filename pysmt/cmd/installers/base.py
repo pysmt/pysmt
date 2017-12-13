@@ -78,11 +78,14 @@ class SolverInstaller(object):
 
     @property
     def architecture(self):
-        bits = 8 * struct.calcsize("P")
-        if bits == 64:
+        if self.bits == 64:
             return "x86_64"
         else:
             return "x86"
+
+    @property
+    def bits(self):
+        return 8 * struct.calcsize("P")
 
     @property
     def python_version(self):
