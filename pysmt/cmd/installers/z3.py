@@ -39,11 +39,12 @@ class Z3Installer(SolverInstaller):
             system = "win"
 
         # Stable versions template
-        # archive_name = "z3-%s-%s-%s.zip" % (solver_version, arch, system)
+        archive_name = "z3-%s-%s-%s.zip" % (solver_version, arch, system)
+        native_link = "https://github.com/pysmt/Z3bin/blob/master/releases/{archive_name}?raw=true"
         #
         # Nightly build template
-        archive_name = "z3-%s.%s-%s-%s.zip" % (solver_version, git_version, arch, system)
-        native_link = "https://github.com/pysmt/Z3bin/blob/master/nightly/{archive_name}?raw=true"
+        # archive_name = "z3-%s.%s-%s-%s.zip" % (solver_version, git_version, arch, system)
+        # native_link = "https://github.com/pysmt/Z3bin/blob/master/nightly/{archive_name}?raw=true"
 
         SolverInstaller.__init__(self, install_dir=install_dir,
                                  bindings_dir=bindings_dir,
