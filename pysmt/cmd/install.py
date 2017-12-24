@@ -25,7 +25,6 @@ from pysmt.cmd.installers import MSatInstaller, Z3Installer, PicoSATInstaller
 from pysmt.cmd.installers import CVC4Installer, YicesInstaller, BtorInstaller
 from pysmt.cmd.installers import CuddInstaller
 
-from pysmt.environment import get_env
 from pysmt.exceptions import PysmtException
 from pysmt import git_version
 
@@ -55,6 +54,7 @@ def get_requested_solvers():
 
 def check_installed(required_solvers, install_dir, bindings_dir, mirror_link):
     """Checks which solvers are visible to pySMT."""
+    from pysmt.environment import get_env
 
     # Check which solvers are accessible from the Factory
     pypath_solvers = get_env().factory.all_solvers()
