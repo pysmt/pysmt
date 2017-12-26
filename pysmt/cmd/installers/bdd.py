@@ -44,7 +44,7 @@ class CuddInstaller(SolverInstaller):
             makefile = "Makefile_64bit"
 
         # Build the pycudd
-        command = ['python%s-config' % self.python_version, '--includes']
+        command = ['python-config', '--includes']
         p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=None)
         prefix = p.stdout.read()
         if PY2:

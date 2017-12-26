@@ -20,17 +20,6 @@ if [ "${TRAVIS_PULL_REQUEST}" == "false" ] && [ "${TRAVIS_BRANCH}" != "master" ]
     fi
 fi
 
-
-# This is for btor that fails to find the python 3 library to link
-export LIBRARY_PATH=${LIBRARY_PATH}:/opt/python/3.5.3/lib
-
-# For some reason, Travis CI cannot find the command python3.5-config.
-# Therefore, we force the path here
-if [ "${TRAVIS_PYTHON_VERSION}" == "3.5" ];
-then
-    export PATH=${PATH}:/opt/python/3.5.3/bin/ ;
-fi
-
 pip install six
 pip install cython;
 
@@ -42,6 +31,11 @@ fi
 if [ "${PYSMT_GMPY}" == "TRUE" ];
 then
     pip install gmpy2;
+fi
+
+# Adding Python 3.6 library path to GCC search
+if [ "${TRAVIS_PYTHON_VERSION}" == "3.6" ]; then
+    export LIBRARY_PATH="/opt/python/3.6.3/lib:${LIBRARY_PATH}"
 fi
 
 
