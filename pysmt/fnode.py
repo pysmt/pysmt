@@ -726,23 +726,32 @@ class FNode(object):
         return self._apply_infix(right, _mgr().Or)
 
     # BV
-    def BVSLT(self, right):
-        return self._apply_infix(right, _mgr().BVSLT)
+    def BVAnd(self, right):
+        return self._apply_infix(right, _mgr().BVAnd)
 
-    def BVSLE(self, right):
-        return self._apply_infix(right, _mgr().BVSLE)
+    def BVAdd(self, right):
+        return self._apply_infix(right, _mgr().BVAdd)
+
+    def BVAShr(self, right):
+        return self._apply_infix(right, _mgr().BVAShr)
 
     def BVComp(self, right):
         return self._apply_infix(right, _mgr().BVComp)
 
-    def BVSDiv(self, right):
-        return self._apply_infix(right, _mgr().BVSDiv)
+    def BVConcat(self, right):
+        return self._apply_infix(right, _mgr().BVConcat)
 
-    def BVSRem(self, right):
-        return self._apply_infix(right, _mgr().BVSRem)
+    def BVExtract(self, start, stop):
+        return _mgr().BVExtract(self, start, stop)
 
-    def BVAShr(self, right):
-        return self._apply_infix(right, _mgr().BVAShr)
+    def BVLShl(self, right):
+        return self._apply_infix(right, _mgr().BVLShl)
+
+    def BVLShr(self, right):
+        return self._apply_infix(right, _mgr().BVLShr)
+
+    def BVMul(self, right):
+        return self._apply_infix(right, _mgr().BVMul)
 
     def BVNand(self, right):
         return self._apply_infix(right, _mgr().BVNand)
@@ -750,17 +759,11 @@ class FNode(object):
     def BVNor(self, right):
         return self._apply_infix(right, _mgr().BVNor)
 
-    def BVXnor(self, right):
-        return self._apply_infix(right, _mgr().BVXnor)
+    def BVOr(self, right):
+        return self._apply_infix(right, _mgr().BVOr)
 
-    def BVSGT(self, right):
-        return self._apply_infix(right, _mgr().BVSGT)
-
-    def BVSGE(self, right):
-        return self._apply_infix(right, _mgr().BVSGE)
-
-    def BVSMod(self, right):
-        return self._apply_infix(right, _mgr().BVSMod)
+    def BVRepeat(self, count):
+        return _mgr().BVRepeat(self, count)
 
     def BVRol(self, steps):
         return _mgr().BVRol(self, steps)
@@ -768,14 +771,59 @@ class FNode(object):
     def BVRor(self, steps):
         return _mgr().BVRor(self, steps)
 
-    def BVZExt(self, increase):
-        return _mgr().BVZExt(self, increase)
+    def BVSDiv(self, right):
+        return self._apply_infix(right, _mgr().BVSDiv)
 
     def BVSExt(self, increase):
         return _mgr().BVSExt(self, increase)
 
-    def BVRepeat(self, count):
-        return _mgr().BVRepeat(self, count)
+    def BVSGE(self, right):
+        return self._apply_infix(right, _mgr().BVSGE)
+
+    def BVSGT(self, right):
+        return self._apply_infix(right, _mgr().BVSGT)
+
+    def BVSLE(self, right):
+        return self._apply_infix(right, _mgr().BVSLE)
+
+    def BVSLT(self, right):
+        return self._apply_infix(right, _mgr().BVSLT)
+
+    def BVSub(self, right):
+        return self._apply_infix(right, _mgr().BVSub)
+
+    def BVSMod(self, right):
+        return self._apply_infix(right, _mgr().BVSMod)
+
+    def BVSRem(self, right):
+        return self._apply_infix(right, _mgr().BVSRem)
+
+    def BVUDiv(self, right):
+        return self._apply_infix(right, _mgr().BVUDiv)
+
+    def BVUGE(self, right):
+        return self._apply_infix(right, _mgr().BVUGE)
+
+    def BVUGT(self, right):
+        return self._apply_infix(right, _mgr().BVUGT)
+
+    def BVULE(self, right):
+        return self._apply_infix(right, _mgr().BVULE)
+
+    def BVULT(self, right):
+        return self._apply_infix(right, _mgr().BVULT)
+
+    def BVURem(self, right):
+        return self._apply_infix(right, _mgr().BVURem)
+
+    def BVXor(self, right):
+        return self._apply_infix(right, _mgr().BVXor)
+
+    def BVXnor(self, right):
+        return self._apply_infix(right, _mgr().BVXnor)
+
+    def BVZExt(self, increase):
+        return _mgr().BVZExt(self, increase)
 
     # Arrays
     def Select(self, index):
