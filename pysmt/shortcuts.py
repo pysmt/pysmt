@@ -1186,9 +1186,9 @@ def read_smtlib(fname):
 
 
 def write_smtlib(formula, fname):
-    """Reads the SMT formula from the given file.
+    """Writes the given formula in Smt-Lib format to the given file.
 
-    :param formula: Specify the SMT formula to look for
+    :param formula: Specify the SMT formula to be written
     :param fname: Specify the filename
     """
     with open(fname, "w") as fout:
