@@ -15,7 +15,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import os
+import os, sys
 
 from pysmt.test import TestCase
 from pysmt.test import skipIfSolverNotAvailable
@@ -59,11 +59,19 @@ class PortfolioTestCase(TestCase):
     def test_smtlib_multi_msat(self):
         from pysmt.test.smtlib.parser_utils import SMTLIB_TEST_FILES, SMTLIB_DIR
 
+        # On some platforms (Windows x64) the internal pickling process requires
+        # quite a lot of recursion...
+        old_recursion_limit = sys.getrecursionlimit()
+        sys.setrecursionlimit(999999)
+        
         for (logic, f, expected_result) in SMTLIB_TEST_FILES:
             smtfile = os.path.join(SMTLIB_DIR, f)
             if logic <= QF_UFLIRA:
                 env = reset_env()
                 formula = get_formula_fname(smtfile, env)
+                # Simplifying the formula to reduce its depth to avoid errors on some
+                # platforms until issue #455 for details.
+                formula = formula.simplify()
                 with Portfolio([("msat", {"random_seed": 1}),
                                 ("msat", {"random_seed": 17}),
                                 ("msat", {"random_seed": 42})],
@@ -73,6 +81,9 @@ class PortfolioTestCase(TestCase):
                                generate_models=False) as s:
                     res = s.is_sat(formula)
                     self.assertEqual(expected_result, res, smtfile)
+
+        #reset recursion limit
+        sys.setrecursionlimit(old_recursion_limit)
 
     def run_smtlib(self, smtfile, logic, expected_result):
         env = reset_env()

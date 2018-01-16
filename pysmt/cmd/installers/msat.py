@@ -13,11 +13,9 @@
 # limitations under the License.
 
 import os
-import re
-import sys
-import platform
+import glob
 
-from pysmt.cmd.installers.base import SolverInstaller, TemporaryPath
+from pysmt.cmd.installers.base import SolverInstaller
 
 
 class MSatInstaller(SolverInstaller):
@@ -26,11 +24,24 @@ class MSatInstaller(SolverInstaller):
 
     def __init__(self, install_dir, bindings_dir, solver_version,
                  mirror_link=None):
-        archive_name = "mathsat-%s-%s-%s.tar.gz" % (solver_version,
-                                                    self.os_name,
-                                                    self.architecture)
-        if self.os_name == "darwin":
-            archive_name = archive_name.replace("darwin", "darwin-libcxx")
+
+        # Getting the right archive name
+        os_name = self.os_name
+        arch = self.architecture
+        ext = "tar.gz"
+        if os_name == "windows":
+            ext = "zip"
+            arch = "msvc"
+            if self.architecture == "x86_64":
+                os_name = "win64"
+            else:
+                os_name = "win32"
+        elif os_name == "darwin":
+            os_name = "darwin-libcxx"
+
+        archive_name = "mathsat-%s-%s-%s.%s" % (solver_version, os_name,
+                                                arch, ext)
+
         native_link = "http://mathsat.fbk.eu/download.php?file={archive_name}"
 
         SolverInstaller.__init__(self, install_dir=install_dir,
@@ -42,23 +53,46 @@ class MSatInstaller(SolverInstaller):
 
         self.python_bindings_dir = os.path.join(self.extract_path, "python")
 
+
     def compile(self):
+        if self.os_name == "windows":
+            libdir = os.path.join(self.python_bindings_dir, "../lib")
+            incdir = os.path.join(self.python_bindings_dir, "../include")
+            gmp_h_url = "https://github.com/mikand/tamer-windows-deps/raw/master/gmp/include/gmp.h"
+            mpir_dll_url = "https://github.com/Legrandin/mpir-windows-builds/blob/master/mpir-2.6.0_VS2015_%s/mpir.dll?raw=true" % self.bits
+            mpir_lib_url = "https://github.com/Legrandin/mpir-windows-builds/blob/master/mpir-2.6.0_VS2015_%s/mpir.lib?raw=true" % self.bits
+            setup_py_win_url = "https://github.com/pysmt/solvers_patches/raw/master/mathsat/setup-win.py"
+
+            SolverInstaller.do_download(gmp_h_url, os.path.join(incdir, "gmp.h"))
+            SolverInstaller.do_download(mpir_dll_url, os.path.join(libdir, "mpir.dll"))
+            SolverInstaller.do_download(mpir_lib_url, os.path.join(libdir, "mpir.lib"))
+
+            # Overwrite setup.py with the patched version
+            setup_py = os.path.join(self.python_bindings_dir, "setup.py")
+            SolverInstaller.mv(setup_py, setup_py + ".original")
+            SolverInstaller.do_download(setup_py_win_url, setup_py)
+
+        # Run setup.py to compile the bindings
         SolverInstaller.run_python("./setup.py build", self.python_bindings_dir)
 
+
     def move(self):
-        libdir = "lib.%s-%s-%s" % (self.os_name, self.architecture,
-                                   self.python_version)
-        if self.os_name == "darwin":
-            osx_version = ".".join(platform.mac_ver()[0].split(".")[:2])
-            libdir = libdir.replace("darwin", "macosx-%s" % osx_version)
         pdir = self.python_bindings_dir
         bdir = os.path.join(pdir, "build")
-        sodir = os.path.join(bdir, libdir)
+        sodir = glob.glob(bdir + "/lib.*")[0]
+        libdir = os.path.join(self.python_bindings_dir, "../lib")
 
+        # First, we need the SWIG-generated wrapper
         for f in os.listdir(sodir):
-            if f.endswith(".so"):
+            if f.endswith(".so") or f.endswith(".pyd"):
                 SolverInstaller.mv(os.path.join(sodir, f), self.bindings_dir)
         SolverInstaller.mv(os.path.join(pdir, "mathsat.py"), self.bindings_dir)
+
+        # Since MathSAT 5.5.0 we also need the SO/DLL/DYLIB of mathsat in the PATH
+        # Under Windows, we also need the DLLs of MPIR in the PATH
+        for f in os.listdir(libdir):
+            if f.endswith(".so") or f.endswith(".dll") or f.endswith(".dylib"):
+                SolverInstaller.mv(os.path.join(libdir, f), self.bindings_dir)
 
     def get_installed_version(self):
         return self.get_installed_version_script(self.bindings_dir, "msat")

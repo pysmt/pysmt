@@ -31,7 +31,7 @@ from pysmt import git_version
 
 # Build a list of installers, one for each solver
 Installer = namedtuple("Installer", ["InstallerClass", "version", "extra_params"])
-INSTALLERS = [Installer(MSatInstaller,    "5.3.13", {}),
+INSTALLERS = [Installer(MSatInstaller,    "5.5.1", {}),
               Installer(CVC4Installer,    "1.5", {"git_version" : "05663e0d338c2bab30b5f19820de01788ec2b276"}),
               Installer(Z3Installer,      "4.5.1", {"osx": "10.11", "git_version": "082936bca6fb"}),
               Installer(YicesInstaller,   "2.5.2", {"yicespy_version": "f0768ffeec15ea310f830d10878971c9998454ac"}),
@@ -131,6 +131,10 @@ def parse_options():
                         default=False,
                         help='Prints a bash export command to extend the PYTHONPATH')
 
+    parser.add_argument('--powershell', dest='powershell', action='store_true',
+                        default=False,
+                        help='In combination with --env under windows, prints the commands in powershell format')
+
     parser.add_argument('--confirm-agreement', dest='skip_intro',
                         action='store_true', default=False,
                         help='Confirm that you agree with the licenses of the\
@@ -219,8 +223,12 @@ def main():
     elif options.env:
         bindings_dir= os.path.expanduser(options.bindings_path)
         if platform.system().lower() == "windows":
-            print("set PYTHONPATH=" + bindings_dir + ";%PYTHONPATH%")
-            print("set PATH=" + bindings_dir + ";%PATH%")
+            if options.powershell:
+                print('$env:PythonPath += ";%s"' % bindings_dir)
+                print('$env:Path += ";%s"' % bindings_dir)
+            else:
+                print("set PYTHONPATH=" + bindings_dir + ";%PYTHONPATH%")
+                print("set PATH=" + bindings_dir + ";%PATH%")
         else:
             print("export PYTHONPATH=\"" + bindings_dir + ":${PYTHONPATH}\"")
             print("export LD_LIBRARY_PATH=\"" + bindings_dir + ":${LD_LIBRARY_PATH}\"")
