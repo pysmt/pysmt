@@ -11,13 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import sys
 import os
 import subprocess
-import re
 
-from pysmt.cmd.installers.base import SolverInstaller, TemporaryPath
 from six import PY2
+
+from pysmt.cmd.installers.base import SolverInstaller
 
 
 class CuddInstaller(SolverInstaller):
@@ -43,9 +42,16 @@ class CuddInstaller(SolverInstaller):
         if self.architecture == "x86_64":
             makefile = "Makefile_64bit"
 
+        # Find python-config
+        command = self.find_python_config()
+        if command is None:
+            raise OSError("No installation of python-config found on this system."
+                          " Please install python-config for this version of python.")
+        print("Found python-confing in %s" % command)
+
         # Build the pycudd
-        command = ['python%s-config' % self.python_version, '--includes']
-        p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=None)
+        prefix = None
+        p = subprocess.Popen([command, '--includes'], stdout=subprocess.PIPE, stderr=None)
         prefix = p.stdout.read()
         if PY2:
             pass # Prefix is already a string

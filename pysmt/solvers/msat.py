@@ -509,12 +509,12 @@ class MSatConverter(Converter, DagWalker):
         return self._walk_back(expr, self.mgr)
 
     def _most_generic(self, ty1, ty2):
-        """Returns teh most generic, yet compatible type between ty1 and ty2"""
+        """Returns the most generic, yet compatible type between ty1 and ty2"""
         if ty1 == ty2:
             return ty1
 
-        assert ty1 in [types.REAL, types.INT]
-        assert ty2 in [types.REAL, types.INT]
+        assert ty1 in [types.REAL, types.INT], str(ty1)
+        assert ty2 in [types.REAL, types.INT], str(ty2)
         return types.REAL
 
     def _get_signature(self, term, args):
@@ -581,13 +581,14 @@ class MSatConverter(Converter, DagWalker):
         return types.FunctionType(t, [t1, t1.index_type])
 
     def _sig_array_write(self, term, args):
-        at = self.env.stc.get_type(args[0])
+        ty = mathsat.msat_term_get_type(term)
+        at = self._msat_type_to_type(ty)
         return types.FunctionType(at, [at, at.index_type, at.elem_type])
 
     def _sig_array_const(self, term,  args):
         ty = mathsat.msat_term_get_type(term)
         pyty = self._msat_type_to_type(ty)
-        return types.FunctionType(pyty, [self.env.stc.get_type(args[0])])
+        return types.FunctionType(pyty, [pyty.elem_type])
 
     def _sig_unknown(self, term, args):
         if mathsat.msat_term_is_boolean_constant(self.msat_env(), term):
