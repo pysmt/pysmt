@@ -783,6 +783,48 @@ class Simplifier(pysmt.walkers.DagWalker):
 
         return self.manager.Div(sl, sr)
 
+    def walk_floordiv(self, formula, args, **kwargs):
+        sl = args[0]
+        sr = args[1]
+
+        if sl.is_constant() and sr.is_constant():
+            l = sl.constant_value()
+            r = sr.constant_value()
+            assert sl.is_int_constant()
+            return self.manager.Int(l / r)
+
+        if sl.is_constant():
+            if sl.is_zero():
+                return sl
+
+        if sr.is_constant():
+            if sr.is_one():
+                return sl
+
+        return self.manager.FloorDiv(sl, sr)
+
+    def walk_mod(self, formula, args, **kwargs):
+        sl = args[0]
+        sr = args[1]
+
+        if sl.is_constant() and sr.is_constant():
+            l = sl.constant_value()
+            r = sr.constant_value()
+            assert sl.is_int_constant()
+            assert sr.is_int_constant()
+            return self.manager.Int(l % r)
+
+        if sl.is_constant():
+            if sl.is_zero():
+                return sl
+
+        if sr.is_constant():
+            if sr.is_one():
+                return self.manager.Int(0)
+
+        return self.manager.Mod(sl, sr)
+
+
     @handles(op.SYMBOL)
     @handles(op.REAL_CONSTANT, op.INT_CONSTANT, op.BOOL_CONSTANT)
     @handles(op.BV_CONSTANT, op.STR_CONSTANT, op.ALGEBRAIC_CONSTANT)

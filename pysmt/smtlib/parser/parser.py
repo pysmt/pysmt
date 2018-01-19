@@ -352,6 +352,8 @@ class SmtLibParser(object):
         self.Minus = functools.partial(fix_real, mgr.Minus)
         self.Times = functools.partial(fix_real, mgr.Times)
         self.Div = functools.partial(fix_real, mgr.Div)
+        self.Mod = functools.partial(fix_real, mgr.Mod)
+        self.FloorDiv = functools.partial(fix_real, mgr.FloorDiv)
         self.Ite = functools.partial(fix_real, mgr.Ite)
         self.AllDifferent = functools.partial(fix_real, mgr.AllDifferent)
 
@@ -367,6 +369,8 @@ class SmtLibParser(object):
                             '-':self._operator_adapter(self._minus_or_uminus),
                             '*':self._operator_adapter(self.Times),
                             '/':self._operator_adapter(self._division),
+                            '//':self._operator_adapter(self._floordiv),
+                            'mod':self._operator_adapter(self._modulo),
                             'pow':self._operator_adapter(mgr.Pow),
                             '>':self._operator_adapter(self.GT),
                             '<':self._operator_adapter(self.LT),
@@ -599,6 +603,16 @@ class SmtLibParser(object):
             return mgr.Real(Fraction(left.constant_value()) / \
                             Fraction(right.constant_value()))
         return self.Div(left, right)
+
+    def _modulo(self, left, right):
+        """Utility function that builds a modulo"""
+        mgr = self.env.formula_manager
+        return self.Mod(left, right)
+
+    def _floordiv(self, left, right):
+        """Utility function that builds a floordiv"""
+        mgr = self.env.formula_manager
+        return self.FloorDiv(left, right)
 
     def _get_var(self, name, type_name):
         """Returns the PySMT variable corresponding to a declaration"""

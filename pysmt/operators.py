@@ -25,7 +25,7 @@ from itertools import chain
 from six.moves import xrange
 
 
-ALL_TYPES = list(xrange(0,66))
+ALL_TYPES = list(xrange(0,68))
 
 (
 FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF, # Boolean Logic (0-6)
@@ -35,10 +35,9 @@ PLUS, MINUS, TIMES,                         # LIA/LRA operators (13-15)
 LE, LT, EQUALS,                             # LIA/LRA relations (16-18)
 ITE,                                        # Term-ite (19)
 TOREAL,                                     # LIRA toreal() function (20)
-#
-# MG: FLOOR? INT_MOD_CONGR?
-#
+# 
 # BV
+#
 BV_CONSTANT,                                # Bit-Vector constant (21)
 BV_NOT, BV_AND, BV_OR, BV_XOR,              # Logical Operators on Bit (22-25)
 BV_CONCAT,                                  # BV Concatenation (26)
@@ -79,6 +78,8 @@ DIV,                                        # Arithmetic Division (62)
 POW,                                        # Arithmetic Power (63)
 ALGEBRAIC_CONSTANT,                         # Algebraic Number (64)
 BV_TONATURAL,                               # BV to Natural Conversion (65)
+MOD,                                        # Integer modulo (66)
+FLOORDIV,                                   # Integer division (67)
 ) = ALL_TYPES
 
 QUANTIFIERS = frozenset([FORALL, EXISTS])
@@ -110,7 +111,7 @@ BV_OPERATORS = frozenset([BV_NOT, BV_AND, BV_OR, BV_XOR,
 STR_OPERATORS = frozenset([STR_LENGTH, STR_CONCAT, STR_INDEXOF, STR_REPLACE,
                            STR_SUBSTR, STR_CHARAT, STR_TO_INT, INT_TO_STR,])
 
-IRA_OPERATORS = frozenset([PLUS, MINUS, TIMES, TOREAL, DIV, POW, BV_TONATURAL])
+IRA_OPERATORS = frozenset([PLUS, MINUS, TIMES, TOREAL, DIV, POW, BV_TONATURAL, MOD, FLOORDIV])
 
 ARRAY_OPERATORS = frozenset([ARRAY_SELECT, ARRAY_STORE, ARRAY_VALUE])
 
@@ -221,6 +222,8 @@ __OP_STR__ = {
     ARRAY_STORE : "ARRAY_STORE",
     ARRAY_VALUE : "ARRAY_VALUE",
     DIV: "DIV",
+    FLOORDIV: "FLOORDIV",
+    MOD: "MOD",
     POW: "POW",
     ALGEBRAIC_CONSTANT: "ALGEBRAIC_CONSTANT",
 }
