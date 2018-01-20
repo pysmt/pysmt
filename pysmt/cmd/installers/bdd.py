@@ -53,6 +53,8 @@ class CuddInstaller(SolverInstaller):
         prefix = None
         p = subprocess.Popen([command, '--includes'], stdout=subprocess.PIPE, stderr=None)
         prefix = p.stdout.read()
+        print("Prefix Found:")
+        print(prefix)
         if PY2:
             pass # Prefix is already a string
         else:
