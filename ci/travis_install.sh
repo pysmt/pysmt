@@ -36,6 +36,7 @@ fi
 # Adding Python 3.6 library path to GCC search
 if [ "${TRAVIS_PYTHON_VERSION}" == "3.6" ]; then
     export LIBRARY_PATH="/opt/python/3.6.3/lib:${LIBRARY_PATH}"
+    export CPATH="/opt/python/3.6.3/include/python3.6m:${CPATH}"
 fi
 
 
