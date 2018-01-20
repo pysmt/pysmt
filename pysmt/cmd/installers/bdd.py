@@ -47,7 +47,7 @@ class CuddInstaller(SolverInstaller):
         if command is None:
             raise OSError("No installation of python-config found on this system."
                           " Please install python-config for this version of python.")
-        print("Found python-confing in %s" % command)
+        print("Found python-config in %s" % command)
 
         # Build the pycudd
         prefix = None
