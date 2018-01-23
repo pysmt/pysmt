@@ -23,6 +23,7 @@ from pysmt.shortcuts import And, Plus, Minus, get_env
 from pysmt.logics import QF_LIA, QF_LRA
 
 from pysmt.exceptions import PysmtUnboundedOptimizationError
+from pysmt.solvers.optimizer import SUAOptimizerMixin, IncrementalOptimizerMixin
 
 class TestOptimization(TestCase):
 
@@ -36,20 +37,17 @@ class TestOptimization(TestCase):
                 model = opt.optimize(x)
                 self.assertEqual(model[x], Int(10))
 
-    def _auto_satisfy_sua(self, model):
-        """This function is needed to make the unbounded tests terminate when
-           using the diverging SUA algorithms"""
-        raise PysmtUnboundedOptimizationError
-
     @skipIfNoOptimizerForLogic(QF_LIA)
     def test_unbounded(self):
         x = Symbol("x", INT)
         formula = LE(x, Int(10))
         for oname in get_env().factory.all_optimizers(logic=QF_LIA):
             with Optimizer(name=oname) as opt:
+                if opt.can_diverge_for_unbounded_cases():
+                    continue
                 opt.add_assertion(formula)
                 with self.assertRaises(PysmtUnboundedOptimizationError):
-                    opt.optimize(x, callback=self._auto_satisfy_sua)
+                    opt.optimize(x)
 
     @skipIfNoOptimizerForLogic(QF_LRA)
     def test_infinitesimal(self):
@@ -57,9 +55,11 @@ class TestOptimization(TestCase):
         formula = GT(x, Real(10))
         for oname in get_env().factory.all_optimizers(logic=QF_LRA):
             with Optimizer(name=oname) as opt:
+                if opt.can_diverge_for_unbounded_cases():
+                    continue
                 opt.add_assertion(formula)
                 with self.assertRaises(PysmtUnboundedOptimizationError):
-                    opt.optimize(x, callback=self._auto_satisfy_sua)
+                    opt.optimize(x)
 
     @skipIfNoOptimizerForLogic(QF_LIA)
     def test_pareto(self):
