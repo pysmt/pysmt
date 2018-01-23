@@ -28,7 +28,27 @@ def check_version(module):
             version_str = mathsat.msat_get_version()
             m = re.match(r"^MathSAT5 version (\d+\.\d+\.\d+) .*$", version_str)
             if m is not None:
+                # Do not confuse msat with optimsat
                 version = m.group(1)
+                c = None
+                try:
+                    c = mathsat.msat_objective
+                except AttributeError:
+                    pass
+                if c is not None:
+                    version = None
+
+        elif module == "optimsat":
+            import mathsat
+            version_str = mathsat.msat_get_version()
+            m = re.match(r"^MathSAT5 version (\d+\.\d+\.\d+) .*$", version_str)
+            if m is not None:
+                # Do not confuse msat with optimsat
+                version = m.group(1)
+                try:
+                    mathsat.msat_objective
+                except AttributeError:
+                    version = None
 
         elif module == "cudd":
             import repycudd
