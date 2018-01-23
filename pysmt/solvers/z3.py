@@ -1033,14 +1033,6 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
                           logic=logic, **options)
         self.z3 = z3.Optimize()
 
-    def _le(self, x, y):
-        otype = self.environment.stc.get_type(x)
-        mgr = self.environment.formula_manager
-        if otype.is_int_type() or otype.is_real_type():
-            return mgr.LE(x, y)
-        elif otype.is_bv_type():
-            return mgr.BVULE(x, y)
-
     def optimize(self, cost_function):
         obj = self.converter.convert(cost_function)
         h = self.z3.minimize(obj)
