@@ -23,7 +23,7 @@ from collections import namedtuple
 
 from pysmt.cmd.installers import MSatInstaller, Z3Installer, PicoSATInstaller
 from pysmt.cmd.installers import CVC4Installer, YicesInstaller, BtorInstaller
-from pysmt.cmd.installers import CuddInstaller
+from pysmt.cmd.installers import CuddInstaller, OptiMSatInstaller
 
 from pysmt.environment import get_env
 from pysmt.exceptions import PysmtException
@@ -37,7 +37,8 @@ INSTALLERS = [Installer(MSatInstaller,    "5.5.1", {}),
               Installer(YicesInstaller,   "2.5.2", {"yicespy_version": "f0768ffeec15ea310f830d10878971c9998454ac"}),
               Installer(BtorInstaller,    "2.4.1", {"lingeling_version": "bbc"}),
               Installer(PicoSATInstaller, "965", {"pypicosat_minor_version" : "1708010052"}),
-              Installer(CuddInstaller,    "2.0.3", {"git_version" : "75fe055c2a736a3ac3e971c1ade108b815edc96c"})]
+              Installer(CuddInstaller,    "2.0.3", {"git_version" : "75fe055c2a736a3ac3e971c1ade108b815edc96c"}),
+              Installer(OptiMSatInstaller, "1.5.0", {})]
 
 
 def get_requested_solvers():
@@ -198,6 +199,9 @@ def main():
     all_solvers = options.all_solvers
     for i in INSTALLERS:
         name = i.InstallerClass.SOLVER
+        if all_solvers and name == 'optimsat':
+            continue # Skip OptiMathSAT in the --all case because currently,
+                     # msat and optimsat cannot co-exist
         if all_solvers or getattr(options, name):
             solvers_to_install.append(i)
 
