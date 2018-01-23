@@ -16,10 +16,11 @@
 #   limitations under the License.
 #
 from pysmt.shortcuts import *
-from pysmt.typing import INT, REAL, FunctionType
+from pysmt.typing import INT, REAL, FunctionType, BV16
 from pysmt.logics import UFLRA, UFLIRA
 from pysmt.test import TestCase, main
-from pysmt.test import skipIfSolverNotAvailable, skipIfNoSolverForLogic
+from pysmt.test import skipIfNoSolverForLogic
+from pysmt.exceptions import PysmtModeError, PysmtValueError
 
 
 class TestEUF(TestCase):
@@ -36,6 +37,38 @@ class TestEUF(TestCase):
 
         self.assertSat(check, logic=UFLIRA,
                        msg="Formula was expected to be sat")
+
+
+    def test_infix(self):
+        ftype1 = FunctionType(REAL, [REAL])
+        ftype2 = FunctionType(REAL, [REAL, INT])
+        f = Symbol("f", ftype1)
+        g = Symbol("g", ftype2)
+
+        with self.assertRaises(PysmtModeError):
+            f(1.0)
+
+        get_env().enable_infix_notation = True
+
+        infix = Equals(f(1.0), g(2.0, 4))
+        explicit = Equals(Function(f, [Real(1.0)]), Function(g, [Real(2.0), Int(4)]))
+        self.assertEqual(infix, explicit)
+
+        ftype1 = FunctionType(REAL, [BV16])
+        ftype2 = FunctionType(BV16, [INT, BV16])
+        f = Symbol("bvf", ftype1)
+        g = Symbol("bvg", ftype2)
+        infix = Equals(f(g(2, 6)), Real(0))
+        explicit = Equals(Function(f, [Function(g, [Int(2), BV(6, 16)])]), Real(0))
+        self.assertEqual(infix, explicit)
+
+        with self.assertRaises(PysmtValueError):
+            f(BV(6, 16), BV(8, 16))
+
+        ftype3 = FunctionType(REAL, [])
+        h = Symbol("h", ftype3)
+        with self.assertRaises(PysmtValueError):
+            h()
 
     @skipIfNoSolverForLogic(UFLRA)
     def test_quantified_euf(self):

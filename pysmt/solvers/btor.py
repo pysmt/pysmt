@@ -34,6 +34,7 @@ from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               ConvertExpressionError, PysmtValueError)
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
 from pysmt.logics import QF_BV, QF_UFBV, QF_ABV, QF_AUFBV, QF_AX
+from pysmt.constants import to_python_integer
 
 
 class BoolectorOptions(SolverOptions):
@@ -343,7 +344,7 @@ class BTORConverter(Converter, DagWalker):
         return _uf(*args)
 
     def walk_bv_constant(self, formula, **kwargs):
-        value = formula.constant_value()
+        value = to_python_integer(formula.constant_value())
         width = formula.bv_width()
         return self._btor.Const(value, width)
 

@@ -51,7 +51,8 @@ class TestLogic(TestCase):
                               real_difference=l.theory.real_difference,
                               linear=l.theory.linear,
                               uninterpreted=l.theory.uninterpreted,
-                              custom_type=l.theory.custom_type)
+                              custom_type=l.theory.custom_type,
+                              strings=l.theory.strings)
             self.assertEqual(l_out, l,
                               "Expected %s, got %s instead" % \
                               (l, l_out))

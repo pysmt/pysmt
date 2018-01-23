@@ -86,6 +86,9 @@ class PySMTType(object):
     def is_array_type(self):
         return False
 
+    def is_string_type(self):
+        return False
+
     def is_function_type(self):
         return False
 
@@ -151,6 +154,14 @@ class _RealType(PySMTType):
         PySMTType.__init__(self, decl=decl, args=None)
 
     def is_real_type(self):
+        return True
+
+class _StringType(PySMTType):
+    def __init__(self):
+        decl = _TypeDecl("String", 0)
+        PySMTType.__init__(self, decl=decl, args=None)
+
+    def is_string_type(self):
         return True
 
 # End Basic Types Declarations
@@ -368,6 +379,21 @@ class PartialType(object):
 #
 
 
+class StringType(PySMTType):
+    def __init__(self):
+        PySMTType.__init__(self, type_id = 6)
+
+    def is_string_type(self):
+        return True
+
+    def as_smtlib(self, funstyle=True):
+        if funstyle:
+            return "() String"
+        else:
+            return "String"
+
+    def __str__(self):
+        return "String"
 
 #
 # Singletons for the basic types
@@ -375,6 +401,7 @@ class PartialType(object):
 BOOL = _BoolType()
 REAL = _RealType()
 INT =  _IntType()
+STRING = _StringType()
 PYSMT_TYPES = frozenset([BOOL, REAL, INT])
 
 # Helper Constants
@@ -393,6 +420,7 @@ class TypeManager(object):
         self._bool = None
         self._real = None
         self._int = None
+        self._string = None
         #
         self.load_global_types()
         self.environment = environment
@@ -405,6 +433,7 @@ class TypeManager(object):
         self._bool = BOOL
         self._real = REAL
         self._int = INT
+        self._string = STRING
 
     def BOOL(self):
         return self._bool
@@ -414,6 +443,9 @@ class TypeManager(object):
 
     def INT(self):
         return self._int
+
+    def STRING(self):
+        return self._string
 
     def BVType(self, width=32):
         """Returns the singleton associated to the BV type for the given width.
@@ -447,6 +479,8 @@ class TypeManager(object):
         try:
             ty = self._function_types[key]
         except KeyError:
+            assert_is_type(return_type, __name__)
+            assert_are_types(param_types, __name__)
             ty = _FunctionType(return_type=return_type,
                                param_types=param_types)
             self._function_types[key] = ty
@@ -463,6 +497,7 @@ class TypeManager(object):
         try:
             ty = self._array_types[key]
         except KeyError:
+            assert_are_types((index_type, elem_type), __name__)
             ty = _ArrayType(index_type, elem_type)
             self._array_types[key] = ty
         return ty
@@ -494,9 +529,7 @@ class TypeManager(object):
 
     def get_type_instance(self, type_decl, *args):
         """Creates an instance of the TypeDecl with the given arguments."""
-        if not all(isinstance(t, PySMTType) for t in args):
-            raise PysmtValueError("Trying to instantiate %s with non-type args."\
-                                  % str(type_decl))
+        assert_are_types(args, __name__)
         key = (type_decl, tuple(args)) if args is not None else type_decl
         try:
             ty = self._custom_types[key]
@@ -515,7 +548,8 @@ class TypeManager(object):
         while stack:
             ty = stack.pop()
             if ty.arity == 0:
-                if ty.is_bool_type() or ty.is_int_type() or ty.is_real_type():
+                if (ty.is_bool_type() or ty.is_int_type() or
+                    ty.is_real_type() or ty.is_string_type()):
                     myty = ty
                 elif ty.is_bv_type():
                     myty = self.BVType(ty.width)
@@ -547,6 +581,17 @@ class TypeManager(object):
         return typemap[type_]
 
 # EOC TypeManager
+
+
+# Util
+def assert_is_type(target, func_name):
+    if not isinstance(target, PySMTType):
+        raise PysmtValueError("Invalid type '%s' in %s." % (target, func_name))
+
+def assert_are_types(targets, func_name):
+    for target in targets:
+        assert_is_type(target, func_name)
+
 
 
 def BVType(width=32):

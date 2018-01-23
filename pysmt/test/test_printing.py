@@ -206,6 +206,5 @@ class TestPrinting(TestCase):
         s = f.serialize()
         self.assertIsNotNone(s)
 
-
 if __name__ == '__main__':
     main()

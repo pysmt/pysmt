@@ -76,7 +76,7 @@ class HRPrinter(TreeWalker):
         self.write(")")
 
     def walk_symbol(self, formula):
-        self.write(quote(formula.symbol_name(), style='"'))
+        self.write(quote(formula.symbol_name(), style="'"))
 
     def walk_function(self, formula):
         yield formula.function_name()
@@ -173,6 +173,89 @@ class HRPrinter(TreeWalker):
         yield formula.arg(0)
         self.write(")")
 
+    def walk_str_constant(self, formula):
+        assert (type(formula.constant_value()) == str ), \
+            "The type was " + str(type(formula.constant_value()))
+        self.write('"%s"' % formula.constant_value())
+
+    def walk_str_length(self,formula):
+        self.write("str.len(" )
+        self.walk(formula.arg(0))
+        self.write(")")
+
+    def walk_str_charat(self,formula, **kwargs):
+        self.write("str.at(" )
+        self.walk(formula.arg(0))
+        self.write(", ")
+        self.walk(formula.arg(1))
+        self.write(")")
+
+    def walk_str_concat(self,formula, **kwargs):
+        self.write("str.++(" )
+        for arg in formula.args()[:-1]:
+            self.walk(arg)
+            self.write(", ")
+        self.walk(formula.args()[-1])
+        self.write(")")
+
+    def walk_str_contains(self,formula, **kwargs):
+        self.write("str.contains(" )
+        self.walk(formula.arg(0))
+        self.write(", ")
+        self.walk(formula.arg(1))
+        self.write(")")
+
+    def walk_str_indexof(self,formula, **kwargs):
+        self.write("str.indexof(" )
+        self.walk(formula.arg(0))
+        self.write(", ")
+        self.walk(formula.arg(1))
+        self.write(", ")
+        self.walk(formula.arg(2))
+        self.write(")")
+
+    def walk_str_replace(self,formula, **kwargs):
+        self.write("str.replace(" )
+        self.walk(formula.arg(0))
+        self.write(", ")
+        self.walk(formula.arg(1))
+        self.write(", ")
+        self.walk(formula.arg(2))
+        self.write(")")
+
+    def walk_str_substr(self,formula, **kwargs):
+        self.write("str.substr(" )
+        self.walk(formula.arg(0))
+        self.write(", ")
+        self.walk(formula.arg(1))
+        self.write(", ")
+        self.walk(formula.arg(2))
+        self.write(")")
+
+    def walk_str_prefixof(self,formula, **kwargs):
+        self.write("str.prefixof(" )
+        self.walk(formula.arg(0))
+        self.write(", ")
+        self.walk(formula.arg(1))
+        self.write(")")
+
+    def walk_str_suffixof(self,formula, **kwargs):
+        self.write("str.suffixof(" )
+        self.walk(formula.arg(0))
+        self.write(", ")
+        self.walk(formula.arg(1))
+        self.write(")")
+
+    def walk_str_to_int(self,formula, **kwargs):
+        self.write("str.to.int(" )
+        self.walk(formula.arg(0))
+        self.write(")")
+
+    def walk_int_to_str(self,formula, **kwargs):
+        self.write("int.to.str(" )
+        self.walk(formula.arg(0))
+        self.write(")")
+
     def walk_array_select(self, formula):
         yield formula.arg(0)
         self.write("[")
@@ -202,6 +285,11 @@ class HRPrinter(TreeWalker):
             yield assign[k]
             self.write("]")
 
+    def walk_bv_tonatural(self, formula):
+        self.write("bv2nat(")
+        yield formula.arg(0)
+        self.write(")")
+
     def walk_and(self, formula): return self.walk_nary(formula, " & ")
     def walk_or(self, formula): return self.walk_nary(formula, " | ")
     def walk_plus(self, formula): return self.walk_nary(formula, " + ")
@@ -212,22 +300,22 @@ class HRPrinter(TreeWalker):
     def walk_implies(self, formula): return self.walk_nary(formula, " -> ")
     def walk_minus(self, formula): return self.walk_nary(formula, " - ")
     def walk_equals(self, formula): return self.walk_nary(formula, " = ")
-    def walk_le (self, formula): return self.walk_nary(formula, " <= ")
-    def walk_lt (self, formula): return self.walk_nary(formula, " < ")
-    def walk_bv_xor (self, formula): return self.walk_nary(formula, " xor ")
-    def walk_bv_concat (self, formula): return self.walk_nary(formula, "::")
-    def walk_bv_udiv (self, formula): return self.walk_nary(formula, " u/ ")
-    def walk_bv_urem (self, formula): return self.walk_nary(formula, " u% ")
-    def walk_bv_sdiv (self, formula): return self.walk_nary(formula, " s/ ")
-    def walk_bv_srem (self, formula): return self.walk_nary(formula, " s% ")
-    def walk_bv_sle (self, formula): return self.walk_nary(formula, " s<= ")
-    def walk_bv_slt (self, formula): return self.walk_nary(formula, " s< ")
-    def walk_bv_ule (self, formula): return self.walk_nary(formula, " u<= ")
-    def walk_bv_ult (self, formula): return self.walk_nary(formula, " u< ")
-    def walk_bv_lshl (self, formula): return self.walk_nary(formula, " << ")
-    def walk_bv_lshr (self, formula): return self.walk_nary(formula, " >> ")
-    def walk_bv_ashr (self, formula): return self.walk_nary(formula, " a>> ")
-    def walk_bv_comp (self, formula): return self.walk_nary(formula, " bvcomp ")
+    def walk_le(self, formula): return self.walk_nary(formula, " <= ")
+    def walk_lt(self, formula): return self.walk_nary(formula, " < ")
+    def walk_bv_xor(self, formula): return self.walk_nary(formula, " xor ")
+    def walk_bv_concat(self, formula): return self.walk_nary(formula, "::")
+    def walk_bv_udiv(self, formula): return self.walk_nary(formula, " u/ ")
+    def walk_bv_urem(self, formula): return self.walk_nary(formula, " u% ")
+    def walk_bv_sdiv(self, formula): return self.walk_nary(formula, " s/ ")
+    def walk_bv_srem(self, formula): return self.walk_nary(formula, " s% ")
+    def walk_bv_sle(self, formula): return self.walk_nary(formula, " s<= ")
+    def walk_bv_slt(self, formula): return self.walk_nary(formula, " s< ")
+    def walk_bv_ule(self, formula): return self.walk_nary(formula, " u<= ")
+    def walk_bv_ult(self, formula): return self.walk_nary(formula, " u< ")
+    def walk_bv_lshl(self, formula): return self.walk_nary(formula, " << ")
+    def walk_bv_lshr(self, formula): return self.walk_nary(formula, " >> ")
+    def walk_bv_ashr(self, formula): return self.walk_nary(formula, " a>> ")
+    def walk_bv_comp(self, formula): return self.walk_nary(formula, " bvcomp ")
     walk_bv_and = walk_and
     walk_bv_or = walk_or
     walk_bv_not = walk_not

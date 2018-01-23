@@ -24,7 +24,8 @@ reasoning about the type of formulae.
 """
 import pysmt.walkers as walkers
 import pysmt.operators as op
-from pysmt.typing import BOOL, REAL, INT, BVType, ArrayType
+
+from pysmt.typing import BOOL, REAL, INT, BVType, ArrayType, STRING
 from pysmt.exceptions import PysmtTypeError
 
 
@@ -91,6 +92,26 @@ class SimpleTypeChecker(walkers.DagWalker):
                 return None
         return target_bv_type
 
+    @walkers.handles(op.STR_CONCAT, op.STR_REPLACE)
+    def walk_str_to_str(self, formula, args, **kwargs):
+        #pylint: disable=unused-argument
+        return self.walk_type_to_type(formula, args, STRING, STRING)
+
+    @walkers.handles(op.STR_LENGTH, op.STR_TO_INT)
+    def walk_str_to_int(self, formula, args, **kwargs):
+        #pylint: disable=unused-argument
+        return self.walk_type_to_type(formula, args, STRING, INT)
+
+    @walkers.handles(op.STR_CONTAINS, op.STR_PREFIXOF, op.STR_SUFFIXOF)
+    def walk_str_to_bool(self, formula, args, **kwargs):
+        #pylint: disable=unused-argument
+        return self.walk_type_to_type(formula, args, STRING, BOOL)
+
+    @walkers.handles(op.INT_TO_STR)
+    def walk_int_to_str(self, formula, args, **kwargs):
+        #pylint: disable=unused-argument
+        return self.walk_type_to_type(formula, args, INT, STRING)
+
     def walk_bv_comp(self, formula, args, **kwargs):
         # We check that all children are BV and the same size
         a,b = args
@@ -106,6 +127,12 @@ class SimpleTypeChecker(walkers.DagWalker):
             if (not a.is_bv_type()) or width != a.width:
                 return None
         return BOOL
+
+    def walk_bv_tonatural(self, formula, args, **kwargs):
+        #pylint: disable=unused-argument
+        if args[0].is_bv_type():
+            return INT
+        return None
 
     def walk_bv_concat(self, formula, args, **kwargs):
         # Width of BV operators are computed at construction time.
@@ -155,12 +182,23 @@ class SimpleTypeChecker(walkers.DagWalker):
             return None
         return BVType(target_width)
 
-    @walkers.handles(op.EQUALS, op.LE, op.LT)
-    def walk_math_relation(self, formula, args, **kwargs):
+    def walk_equals(self, formula, args, **kwargs):
         #pylint: disable=unused-argument
-        if args[0].is_bv_type():
+        if args[0].is_bool_type():
+            raise PysmtTypeError("The formula '%s' is not well-formed."
+                                 "Equality operator is not supported for Boolean"
+                                 " terms. Use Iff instead." \
+                                 % str(formula))
+        elif args[0].is_bv_type():
             return self.walk_bv_to_bool(formula, args)
         return self.walk_type_to_type(formula, args, args[0], BOOL)
+
+    @walkers.handles(op.LE, op.LT)
+    def walk_math_relation(self, formula, args, **kwargs):
+        #pylint: disable=unused-argument
+        if args[0].is_real_type():
+            return self.walk_type_to_type(formula, args, REAL, BOOL)
+        return self.walk_type_to_type(formula, args, INT, BOOL)
 
     def walk_ite(self, formula, args, **kwargs):
         assert formula is not None
@@ -189,6 +227,13 @@ class SimpleTypeChecker(walkers.DagWalker):
         assert formula is not None
         assert len(args) == 0
         return INT
+
+    @walkers.handles(op.STR_CONSTANT)
+    def walk_identity_string(self, formula, args, **kwargs):
+        #pylint: disable=unused-argument
+        assert formula is not None
+        assert len(args) == 0
+        return STRING
 
     @walkers.handles(op.BV_CONSTANT)
     def walk_identity_bv(self, formula, args, **kwargs):
@@ -225,6 +270,28 @@ class SimpleTypeChecker(walkers.DagWalker):
                 return None
 
         return tp.return_type
+
+    def walk_str_charat(self, formula, args, **kwargs):
+        assert formula is not None
+        if len(args) == 2 and \
+           args[0].is_string_type() and \
+           args[1].is_int_type():
+            return STRING
+        return None
+
+    def walk_str_indexof(self, formula, args, **kwargs):
+        assert formula is not None
+        if len(args) == 3 and args[0].is_string_type() and \
+           args[1].is_string_type() and args[2].is_int_type():
+            return INT
+        return None
+
+    def walk_str_substr(self, formula, args, **kwargs):
+        assert formula is not None
+        if len(args) == 3 and args[0].is_string_type() and \
+           args[1].is_int_type() and args[2].is_int_type():
+            return STRING
+        return None
 
     def walk_array_select(self, formula, args, **kwargs):
         assert formula is not None

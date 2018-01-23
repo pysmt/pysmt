@@ -94,6 +94,7 @@ else:
 big_f = And(f.expr for f in get_example_formulae() \
             if not f.logic.theory.bit_vectors and \
                not f.logic.theory.arrays and \
+               not f.logic.theory.strings and \
                    f.logic.theory.linear)
 
 # Create keyword arguments for the function call.

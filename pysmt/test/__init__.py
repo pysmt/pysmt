@@ -24,6 +24,7 @@ except ImportError:
     import unittest
 
 from pysmt.environment import get_env, reset_env
+skipIf = unittest.skipIf
 
 
 class TestCase(unittest.TestCase):

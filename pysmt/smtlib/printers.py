@@ -83,6 +83,7 @@ class SmtPrinter(TreeWalker):
     def walk_bv_ashr(self, formula): return self.walk_nary(formula, "bvashr")
     def walk_bv_sdiv(self, formula): return self.walk_nary(formula, "bvsdiv")
     def walk_bv_srem(self, formula): return self.walk_nary(formula, "bvsrem")
+    def walk_bv_tonatural(self, formula): return self.walk_nary(formula, "bv2nat")
     def walk_array_select(self, formula): return self.walk_nary(formula, "select")
     def walk_array_store(self, formula): return self.walk_nary(formula, "store")
 
@@ -122,6 +123,9 @@ class SmtPrinter(TreeWalker):
     def walk_bv_constant(self, formula):
         self.write("#b" + formula.bv_bin_str())
 
+    def walk_str_constant(self, formula):
+        self.write('"' + formula.constant_value() + '"')
+
     def walk_forall(self, formula):
         return self._walk_quantifier("forall", formula)
 
@@ -154,7 +158,7 @@ class SmtPrinter(TreeWalker):
         else:
             assert formula.is_bv_rol()
             rotate_type = "rotate_left"
-        self.write("((_ %s %d ) " % (rotate_type,
+        self.write("((_ %s %d) " % (rotate_type,
                                      formula.bv_rotation_step()))
         yield formula.arg(0)
         self.write(")")
@@ -166,9 +170,86 @@ class SmtPrinter(TreeWalker):
         else:
             assert formula.is_bv_sext()
             extend_type = "sign_extend"
-        self.write("((_ %s %d ) " % (extend_type,
+        self.write("((_ %s %d) " % (extend_type,
                                      formula.bv_extend_step()))
         yield formula.arg(0)
+        self.write(")")
+
+    def walk_str_length(self, formula):
+        self.write("(str.len ")
+        self.walk(formula.arg(0))
+        self.write(")")
+
+    def walk_str_charat(self,formula, **kwargs):
+        self.write("( str.at " )
+        self.walk(formula.arg(0))
+        self.write(" ")
+        self.walk(formula.arg(1))
+        self.write(")")
+
+    def walk_str_concat(self,formula, **kwargs):
+        self.write("( str.++ " )
+        for arg in formula.args():
+            self.walk(arg)
+            self.write(" ")
+        self.write(")")
+
+    def walk_str_contains(self,formula, **kwargs):
+        self.write("( str.contains " )
+        self.walk(formula.arg(0))
+        self.write(" ")
+        self.walk(formula.arg(1))
+        self.write(")")
+
+    def walk_str_indexof(self,formula, **kwargs):
+        self.write("( str.indexof " )
+        self.walk(formula.arg(0))
+        self.write(" ")
+        self.walk(formula.arg(1))
+        self.write(" ")
+        self.walk(formula.arg(2))
+        self.write(")")
+
+    def walk_str_replace(self,formula, **kwargs):
+        self.write("( str.replace " )
+        self.walk(formula.arg(0))
+        self.write(" ")
+        self.walk(formula.arg(1))
+        self.write(" ")
+        self.walk(formula.arg(2))
+        self.write(")")
+
+    def walk_str_substr(self,formula, **kwargs):
+        self.write("( str.substr " )
+        self.walk(formula.arg(0))
+        self.write(" ")
+        self.walk(formula.arg(1))
+        self.write(" ")
+        self.walk(formula.arg(2))
+        self.write(")")
+
+    def walk_str_prefixof(self,formula, **kwargs):
+        self.write("( str.prefixof " )
+        self.walk(formula.arg(0))
+        self.write(" ")
+        self.walk(formula.arg(1))
+        self.write(")")
+
+    def walk_str_suffixof(self,formula, **kwargs):
+        self.write("( str.suffixof " )
+        self.walk(formula.arg(0))
+        self.write(" ")
+        self.walk(formula.arg(1))
+        self.write(")")
+
+    def walk_str_to_int(self,formula, **kwargs):
+        self.write("( str.to.int " )
+        self.walk(formula.arg(0))
+        self.write(")")
+
+    def walk_int_to_str(self,formula, **kwargs):
+        self.write("( int.to.str " )
+        self.walk(formula.arg(0))
         self.write(")")
 
     def walk_array_value(self, formula):
@@ -186,6 +267,7 @@ class SmtPrinter(TreeWalker):
             self.write(" ")
             yield assign[k]
             self.write(")")
+
 
 class SmtDagPrinter(DagWalker):
 
@@ -350,6 +432,9 @@ class SmtDagPrinter(DagWalker):
     def walk_bv_srem(self, formula, args):
         return self.walk_nary(formula, args, "bvsrem")
 
+    def walk_bv_tonatural(self, formula, args):
+        return self.walk_nary(formula, args, "bv2nat")
+
     def walk_array_select(self, formula, args):
         return self.walk_nary(formula, args, "select")
 
@@ -396,6 +481,9 @@ class SmtDagPrinter(DagWalker):
             return "true"
         else:
             return "false"
+
+    def walk_str_constant(self, formula, **kwargs):
+        return '"' + formula.constant_value() + '"'
 
     def walk_forall(self, formula, args, **kwargs):
         return self._walk_quantifier("forall", formula, args)
@@ -473,6 +561,46 @@ class SmtDagPrinter(DagWalker):
             self.write(s)
         self.write("))) ")
         return sym
+
+    def walk_str_length(self, formula, args, **kwargs):
+        return "(str.len %s)" % args[0]
+
+    def walk_str_charat(self,formula, args,**kwargs):
+        return "( str.at %s %s )" % (args[0], args[1])
+
+    def walk_str_concat(self, formula, args, **kwargs):
+        sym = self._new_symbol()
+        self.openings += 1
+        self.write("(let ((%s (%s" % (sym, "str.++ " ))
+        for s in args:
+            self.write(" ")
+            self.write(s)
+        self.write("))) ")
+        return sym
+
+    def walk_str_contains(self,formula, args, **kwargs):
+        return "( str.contains %s %s)" % (args[0], args[1])
+
+    def walk_str_indexof(self,formula, args, **kwargs):
+        return "( str.indexof %s %s %s )" % (args[0], args[1], args[2])
+
+    def walk_str_replace(self,formula, args, **kwargs):
+        return "( str.replace %s %s %s )" % (args[0], args[1], args[2])
+
+    def walk_str_substr(self,formula, args,**kwargs):
+        return "( str.substr %s %s %s)" % (args[0], args[1], args[2])
+
+    def walk_str_prefixof(self,formula, args,**kwargs):
+        return "( str.prefixof %s %s )" % (args[0], args[1])
+
+    def walk_str_suffixof(self,formula, args, **kwargs):
+        return "( str.suffixof %s %s )" % (args[0], args[1])
+
+    def walk_str_to_int(self,formula, args, **kwargs):
+        return "( str.to.int %s )" % args[0]
+
+    def walk_int_to_str(self,formula, args, **kwargs):
+        return "( int.to.str %s )" % args[0]
 
     def walk_array_value(self, formula, args, **kwargs):
         sym = self._new_symbol()

@@ -173,7 +173,10 @@ class MathSATOptions(SolverOptions):
 class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
                      SmtLibBasicSolver, SmtLibIgnoreMixin):
 
-    LOGICS = PYSMT_QF_LOGICS - set(l for l in PYSMT_QF_LOGICS if not l.theory.linear)
+    LOGICS = PYSMT_QF_LOGICS -\
+             set(l for l in PYSMT_QF_LOGICS \
+                 if not l.theory.linear or l.theory.strings)
+
     OptionsClass = MathSATOptions
 
     def __init__(self, environment, logic, **options):
@@ -433,9 +436,10 @@ class MSatConverter(Converter, DagWalker):
             mathsat.MSAT_TAG_BV_LSHR: self._back_adapter(self.mgr.BVLShr),
             mathsat.MSAT_TAG_BV_ASHR: self._back_adapter(self.mgr.BVAShr),
             mathsat.MSAT_TAG_BV_COMP: self._back_adapter(self.mgr.BVComp),
+            mathsat.MSAT_TAG_INT_FROM_UBV: self._back_adapter(self.mgr.BVToNatural),
             mathsat.MSAT_TAG_ARRAY_READ: self._back_adapter(self.mgr.Select),
             mathsat.MSAT_TAG_ARRAY_WRITE: self._back_adapter(self.mgr.Store),
-            # Slightly more complext conversion
+            # Slightly more complex conversion
             mathsat.MSAT_TAG_BV_EXTRACT: self._back_bv_extract,
             mathsat.MSAT_TAG_BV_ZEXT: self._back_bv_zext,
             mathsat.MSAT_TAG_BV_SEXT: self._back_bv_sext,
@@ -505,12 +509,12 @@ class MSatConverter(Converter, DagWalker):
         return self._walk_back(expr, self.mgr)
 
     def _most_generic(self, ty1, ty2):
-        """Returns teh most generic, yet compatible type between ty1 and ty2"""
+        """Returns the most generic, yet compatible type between ty1 and ty2"""
         if ty1 == ty2:
             return ty1
 
-        assert ty1 in [types.REAL, types.INT]
-        assert ty2 in [types.REAL, types.INT]
+        assert ty1 in [types.REAL, types.INT], str(ty1)
+        assert ty2 in [types.REAL, types.INT], str(ty2)
         return types.REAL
 
     def _get_signature(self, term, args):
@@ -577,13 +581,14 @@ class MSatConverter(Converter, DagWalker):
         return types.FunctionType(t, [t1, t1.index_type])
 
     def _sig_array_write(self, term, args):
-        at = self.env.stc.get_type(args[0])
+        ty = mathsat.msat_term_get_type(term)
+        at = self._msat_type_to_type(ty)
         return types.FunctionType(at, [at, at.index_type, at.elem_type])
 
     def _sig_array_const(self, term,  args):
         ty = mathsat.msat_term_get_type(term)
         pyty = self._msat_type_to_type(ty)
-        return types.FunctionType(pyty, [self.env.stc.get_type(args[0])])
+        return types.FunctionType(pyty, [pyty.elem_type])
 
     def _sig_unknown(self, term, args):
         if mathsat.msat_term_is_boolean_constant(self.msat_env(), term):
@@ -991,6 +996,9 @@ class MSatConverter(Converter, DagWalker):
         # In mathsat toreal is implicit
         return args[0]
 
+    def walk_bv_tonatural(self, formula, args, **kwargs):
+        return mathsat.msat_make_int_from_ubv(self.msat_env(), args[0])
+
     def walk_array_select(self, formula, args, **kwargs):
         return mathsat.msat_make_array_read(self.msat_env(), args[0], args[1])
 
@@ -1172,12 +1180,14 @@ if hasattr(mathsat, "MSAT_EXIST_ELIM_ALLSMT_FM"):
             del self.msat_env
 
     class MSatFMQuantifierEliminator(MSatQuantifierEliminator):
+        LOGICS = [LRA]
         def __init__(self, environment, logic=None):
             MSatQuantifierEliminator.__init__(self, environment,
                                               logic=logic, algorithm='fm')
 
 
     class MSatLWQuantifierEliminator(MSatQuantifierEliminator):
+        LOGICS = [LRA, LIA]
         def __init__(self, environment, logic=None):
             MSatQuantifierEliminator.__init__(self, environment,
                                               logic=logic, algorithm='lw')

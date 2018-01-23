@@ -22,6 +22,7 @@ import struct
 import subprocess
 
 from contextlib import contextmanager
+from distutils import spawn
 
 import six.moves
 from six.moves import xrange
@@ -78,11 +79,14 @@ class SolverInstaller(object):
 
     @property
     def architecture(self):
-        bits = 8 * struct.calcsize("P")
-        if bits == 64:
+        if self.bits == 64:
             return "x86_64"
         else:
             return "x86"
+
+    @property
+    def bits(self):
+        return 8 * struct.calcsize("P")
 
     @property
     def python_version(self):
@@ -277,3 +281,15 @@ class SolverInstaller(object):
         if output == "NOT INSTALLED":
             return None
         return output
+
+
+    def find_python_config(self):
+        command_tplate = 'python%s-config'
+        alternatives = [self.python_version, '']
+        command = None
+        for alt in alternatives:
+            name = command_tplate % alt
+            command = spawn.find_executable(name)
+            if command is not None:
+                break
+        return command

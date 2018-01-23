@@ -174,6 +174,18 @@ class TestSorts(TestCase):
         self.assertFalse(h.array_value_index_type() is \
                          h2.array_value_index_type())
 
+    def test_check_types_in_constructors(self):
+        with self.assertRaises(PysmtValueError):
+            ArrayType(INT, BV)
+
+        with self.assertRaises(PysmtValueError):
+            ArrayType(BV, INT)
+
+        with self.assertRaises(PysmtValueError):
+            FunctionType(BV, (REAL,))
+
+        with self.assertRaises(PysmtValueError):
+            FunctionType(REAL, (BV,))
 
 if __name__ == '__main__':
     main()

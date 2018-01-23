@@ -37,17 +37,27 @@ from pysmt.operators import (FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF,
                              BV_COMP,
                              BV_SDIV, BV_SREM,
                              BV_ASHR,
+                             STR_CONSTANT,
+                             STR_LENGTH, STR_CONCAT, STR_CONTAINS,
+                             STR_INDEXOF, STR_REPLACE, STR_SUBSTR,
+                             STR_PREFIXOF, STR_SUFFIXOF,
+                             STR_TO_INT, INT_TO_STR,
+                             STR_CHARAT,
                              ARRAY_SELECT, ARRAY_STORE, ARRAY_VALUE,
                              ALGEBRAIC_CONSTANT)
+
 from pysmt.operators import  (BOOL_OPERATORS, THEORY_OPERATORS,
                               BV_OPERATORS, IRA_OPERATORS, ARRAY_OPERATORS,
+                              STR_OPERATORS,
                               RELATIONS, CONSTANTS)
-from pysmt.typing import BOOL, REAL, INT, BVType
-from pysmt.decorators import deprecated
+
+from pysmt.typing import BOOL, REAL, INT, BVType, STRING
+from pysmt.decorators import deprecated, assert_infix_enabled
 from pysmt.utils import twos_complement
 from pysmt.constants import (Fraction, is_python_integer,
                              is_python_rational, is_python_boolean)
-from pysmt.exceptions import PysmtValueError, PysmtModeError
+from pysmt.exceptions import (PysmtValueError, PysmtModeError,
+                              UnsupportedOperatorError)
 
 
 FNodeContent = collections.namedtuple("FNodeContent",
@@ -157,6 +167,8 @@ class FNode(object):
                 return False
             if _type.is_bool_type() and self.node_type() != BOOL_CONSTANT:
                 return False
+            if _type.is_string_type() and self.node_type() != STR_CONSTANT:
+                return False
             if _type.is_bv_type():
                 if self.node_type() != BV_CONSTANT:
                     return False
@@ -201,6 +213,13 @@ class FNode(object):
         else:
             return self.is_constant(_type=BVType(width=width),
                                     value=value)
+
+    def is_string_constant(self, value=None):
+        """Test whether the formula is a String constant.
+
+        Optionally, check that the constant has the given value.
+        """
+        return self.is_constant(STRING, value)
 
     def is_algebraic_constant(self):
         """Test whether the formula is an Algebraic Constant"""
@@ -531,6 +550,9 @@ class FNode(object):
         """
         return not (self.is_symbol() and self.symbol_type().is_function_type())
 
+    def is_str_op(self):
+        return self.node_type() in STR_OPERATORS
+
     def symbol_type(self):
         """Return the type of the Symbol."""
         assert self.is_symbol()
@@ -556,6 +578,8 @@ class FNode(object):
             return REAL
         elif self.node_type() == BOOL_CONSTANT:
             return BOOL
+        elif self.node_type() == STR_CONSTANT:
+            return STRING
         else:
             assert self.node_type() == BV_CONSTANT,\
                 "Unsupported method constant_type '%s'" % self
@@ -647,30 +671,34 @@ class FNode(object):
         return Fraction(n,d)
 
     # Infix Notation
+    @assert_infix_enabled
     def _apply_infix(self, right, function, bv_function=None):
-        if _env().enable_infix_notation:
-            mgr = _mgr()
-            # BVs
-            # Default bv_function to function
-            if bv_function is None: bv_function = function
-            if _is_bv(self):
-                if is_python_integer(right):
-                    right = mgr.BV(right, width=self.bv_width())
-                return bv_function(self, right)
-            # Boolean, Integer and Arithmetic
-            if is_python_boolean(right):
-                right = mgr.Bool(right)
-            elif is_python_integer(right):
-                ty = self.get_type()
-                if ty.is_real_type():
-                    right = mgr.Real(right)
-                else:
-                    right = mgr.Int(right)
-            elif is_python_rational(right):
-                right = mgr.Real(right)
-            return function(self, right)
+        # Default bv_function to function
+        if bv_function is None:
+            bv_function = function
+        right = self._infix_prepare_arg(right, self.get_type())
+        if self.get_type().is_bv_type():
+            return bv_function(self, right)
+        return function(self, right)
+
+    @assert_infix_enabled
+    def _infix_prepare_arg(self, arg, expected_type):
+        mgr = _mgr()
+        if isinstance(arg, FNode):
+            return arg
+
+        # BVs
+        if expected_type.is_bv_type():
+            return mgr.BV(arg, width=expected_type.width)
+        # Boolean, Integer and Arithmetic
+        elif expected_type.is_bool_type():
+            return mgr.Bool(arg)
+        elif expected_type.is_int_type():
+            return mgr.Int(arg)
+        elif expected_type.is_real_type():
+            return mgr.Real(arg)
         else:
-            raise PysmtModeError("Cannot use infix notation")
+            raise PysmtValueError("Unsupported value '%s' in infix operator" % str(arg))
 
     def Implies(self, right):
         return self._apply_infix(right, _mgr().Implies)
@@ -684,14 +712,12 @@ class FNode(object):
     def NotEquals(self, right):
         return self._apply_infix(right, _mgr().NotEquals)
 
+    @assert_infix_enabled
     def Ite(self, then_, else_):
-        if _env().enable_infix_notation:
-            if isinstance(then_, FNode) and isinstance(else_, FNode):
-                return _mgr().Ite(self, then_, else_)
-            else:
-                raise PysmtModeError("Cannot infix ITE with implicit argument types.")
+        if isinstance(then_, FNode) and isinstance(else_, FNode):
+            return _mgr().Ite(self, then_, else_)
         else:
-            raise PysmtModeError("Cannot use infix notation")
+            raise PysmtModeError("Cannot infix ITE with implicit argument types.")
 
     def And(self, right):
         return self._apply_infix(right, _mgr().And)
@@ -773,7 +799,7 @@ class FNode(object):
     def __rsub__(self, left):
         # Swap operators to perform right-subtract
         # For BVs we might need to build the BV constant
-        if _is_bv(self):
+        if self.get_type().is_bv_type():
             if is_python_integer(left):
                 left = _mgr().BV(left, width=self.bv_width())
             return left._apply_infix(self, _mgr().BVSub)
@@ -824,20 +850,18 @@ class FNode(object):
         return self._apply_infix(other, _mgr().Xor, _mgr().BVXor)
 
     def __neg__(self):
-        if _is_bv(self):
+        if self.get_type().is_bv_type():
             return _mgr().BVNeg(self)
         return self._apply_infix(-1, _mgr().Times)
 
+    @assert_infix_enabled
     def __invert__(self):
-        if not _env().enable_infix_notation:
-            raise PysmtModeError("Cannot use infix notation")
-        if _is_bv(self):
+        if self.get_type().is_bv_type():
             return _mgr().BVNot(self)
         return _mgr().Not(self)
 
+    @assert_infix_enabled
     def __getitem__(self, idx):
-        if not _env().enable_infix_notation:
-            raise PysmtModeError("Cannot use infix notation")
         if isinstance(idx, slice):
             end = idx.stop
             start = idx.start
@@ -846,9 +870,10 @@ class FNode(object):
             # Single point [idx]
             end = idx
             start = idx
-        if _is_bv(self):
+        if self.get_type().is_bv_type():
             return _mgr().BVExtract(self, start=start, end=end)
-        raise NotImplementedError
+        raise UnsupportedOperatorError("Unsupported operation '__getitem__' on '%s'." %
+                                       str(self))
 
     def __lshift__(self, right):
         return self._apply_infix(right, None, bv_function=_mgr().BVLShl)
@@ -858,18 +883,28 @@ class FNode(object):
 
     def __mod__(self, right):
         return self._apply_infix(right, None, bv_function=_mgr().BVURem)
+
+    @assert_infix_enabled
+    def __call__(self, *args):
+        if self.is_symbol() and self.symbol_type().is_function_type():
+            types = self.symbol_type().param_types
+            if (len(types) != len(args)):
+                raise PysmtValueError("Wrong number of parameters passed in "
+                                      "infix 'call' operator")
+            args = [self._infix_prepare_arg(x, t) for x,t in zip(args, types)]
+            return _mgr().Function(self, args)
+        else:
+            raise PysmtValueError("Call operator can be applied to symbol "
+                                  "types having function type only")
+
 # EOC FNode
+
 
 def _env():
     """Aux function to obtain the environment."""
     return pysmt.environment.get_env()
 
+
 def _mgr():
     """Aux function to obtain the formula manager."""
     return pysmt.environment.get_env().formula_manager
-
-def _is_bv(node):
-    """Aux function to check if a fnode is a BV."""
-    return (node.is_symbol() and node.symbol_type().is_bv_type()) or \
-            node.node_type() is BV_CONSTANT or\
-            node.node_type() in BV_OPERATORS

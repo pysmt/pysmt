@@ -33,6 +33,7 @@ from pysmt.utils import interactive_char_iterator
 from pysmt.constants import Fraction
 from pysmt.typing import _TypeDecl, PartialType
 
+
 def open_(fname):
     """Transparently handle .bz2 files."""
     if fname.endswith(".bz2"):
@@ -412,6 +413,19 @@ class SmtLibParser(object):
                             'bvsle':self._operator_adapter(mgr.BVSLE),
                             'bvsgt':self._operator_adapter(mgr.BVSGT),
                             'bvsge':self._operator_adapter(mgr.BVSGE),
+                            # Strings
+                            'str.len':self._operator_adapter(mgr.StrLength),
+                            'str.++':self._operator_adapter(mgr.StrConcat),
+                            'str.at':self._operator_adapter(mgr.StrCharAt),
+                            'str.contains':self._operator_adapter(mgr.StrContains),
+                            'str.indexof':self._operator_adapter(mgr.StrIndexOf),
+                            'str.replace':self._operator_adapter(mgr.StrReplace),
+                            'str.substr':self._operator_adapter(mgr.StrSubstr),
+                            'str.prefixof':self._operator_adapter(mgr.StrPrefixOf),
+                            'str.suffixof':self._operator_adapter(mgr.StrSuffixOf),
+                            'str.to.int':self._operator_adapter(mgr.StrToInt),
+                            'int.to.str':self._operator_adapter(mgr.IntToStr),
+                            'bv2nat':self._operator_adapter(mgr.BVToNatural),
                             # arrays
                             'select':self._operator_adapter(mgr.Select),
                             'store':self._operator_adapter(mgr.Store),
@@ -586,7 +600,6 @@ class SmtLibParser(object):
                             Fraction(right.constant_value()))
         return self.Div(left, right)
 
-
     def _get_var(self, name, type_name):
         """Returns the PySMT variable corresponding to a declaration"""
         return self.env.formula_manager.Symbol(name=name,
@@ -619,9 +632,12 @@ class SmtLibParser(object):
                     if token[1] != "x":
                         raise PysmtSyntaxError("Invalid bit-vector constant "
                                                "'%s'" % token)
-                    width = (len(token) - 2) * 16
+                    width = (len(token) - 2) * 4
                     value = int("0" + token[1:], 16)
                 res = mgr.BV(value, width)
+            elif token[0] == '"':
+                # String constant
+                res = mgr.String(token.replace('"',''))
             else:
                 # it could be a number or a string
                 try:
@@ -944,6 +960,8 @@ class SmtLibParser(object):
             res = self.env.type_manager.INT()
         elif var == "Real":
             res = self.env.type_manager.REAL()
+        elif var == "String":
+            res = self.env.type_manager.STRING()
         else:
             cached = self.cache.get(var)
             if cached is not None:
@@ -1304,6 +1322,8 @@ class SmtLibZ3Parser(SmtLibParser):
                                 self._operator_adapter(self._ext_rotate_left)
         self.interpreted["ext_rotate_right"] =\
                                 self._operator_adapter(self._ext_rotate_right)
+        mgr = self.env.formula_manager
+        self.interpreted['bv2int'] = self._operator_adapter(mgr.BVToNatural)
 
     def _ext_rotate_left(self, x, y):
         return self.env.formula_manager.BVRol(x, y.simplify().constant_value())

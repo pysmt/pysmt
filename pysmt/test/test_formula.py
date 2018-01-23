@@ -27,8 +27,8 @@ from pysmt.shortcuts import get_env
 from pysmt.environment import Environment
 from pysmt.test import TestCase, skipIfNoSolverForLogic, main
 from pysmt.logics import QF_BOOL
-from pysmt.exceptions import (UndefinedSymbolError, PysmtTypeError,
-                              PysmtModeError, PysmtValueError)
+from pysmt.exceptions import (UndefinedSymbolError, UnsupportedOperatorError,
+                              PysmtTypeError, PysmtModeError, PysmtValueError)
 from pysmt.formula import FormulaManager
 from pysmt.constants import Fraction, Integer
 
@@ -723,11 +723,11 @@ class TestFormulaManager(TestCase):
         self.assertEqual(p + p, Plus(p,p))
         self.assertEqual(p > p, GT(p,p))
 
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(UnsupportedOperatorError):
             x[1]
 
     def test_infix_extended(self):
-        p, r, x, y = self.p, self.r, self.x, self.y
+        p, r, s, x, y = self.p, self.r, self.s, self.x, self.y
         get_env().enable_infix_notation = True
 
         self.assertEqual(Plus(p, Int(1)), p + 1)
@@ -772,7 +772,7 @@ class TestFormulaManager(TestCase):
             x.Ite(1,2)
 
         self.assertEqual(6 - r, Plus(Times(r, Real(-1)), Real(6)))
-        self.assertEqual(Not(Equals(x,y)), x.NotEquals(y))
+        self.assertEqual(Not(Equals(r,s)), r.NotEquals(s))
         # BVs
 
         # BV_CONSTANT: We use directly python numbers

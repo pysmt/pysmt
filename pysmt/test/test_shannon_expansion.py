@@ -30,13 +30,11 @@ class TestShannon(TestCase):
         TestCase.setUp(self)
         self.x, self.y = Symbol("x"), Symbol("y")
 
-
     def test_exists(self):
         f = Exists([self.x], And(self.x, self.y))
         g = qelim(f, solver_name="shannon")
         g = g.simplify()
         self.assertEqual(g, self.y)
-
 
     def test_forall(self):
         f = ForAll([self.x], And(self.x, self.y))
@@ -44,20 +42,17 @@ class TestShannon(TestCase):
         g = g.simplify()
         self.assertEqual(g, FALSE())
 
-
     def test_multiple(self):
         f = ForAll([self.x, self.y], Or(self.x, self.y))
         g = qelim(f, solver_name="shannon")
         g = g.simplify()
         self.assertEqual(g, FALSE())
 
-
     def test_nested(self):
         f = Exists([self.x], ForAll([self.y], Or(self.x, self.y)))
         g = qelim(f, solver_name="shannon")
         g = g.simplify()
         self.assertEqual(g, TRUE())
-
 
     def test_examples_solving(self):
         for example in get_example_formulae():
@@ -78,7 +73,6 @@ class TestShannon(TestCase):
                 self.assertTrue(g.is_true())
             else:
                 self.assertTrue(g.is_false())
-
 
     def test_w_theory(self):
         for example in get_example_formulae():
