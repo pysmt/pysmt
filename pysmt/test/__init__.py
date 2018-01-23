@@ -145,7 +145,7 @@ class skipIfNoQEForLogic(object):
         return wrapper
 
 class skipIfNoOptimizerForLogic(object):
-    """Skip a test if there is no quantifier eliminator for the given logic."""
+    """Skip a test if there is no optimizer for the given logic."""
 
     def __init__(self, logic):
         self.logic = logic

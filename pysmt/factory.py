@@ -380,6 +380,8 @@ class Factory(object):
             self._all_optimizers['optimsat'] = OptiMSatNativeOptimizer
         except ImportError:
             pass
+        except SolverAPINotFound:
+            pass
 
         try:
             from pysmt.solvers.yices import YicesSUAOptimizer, YicesIncrementalOptimizer
