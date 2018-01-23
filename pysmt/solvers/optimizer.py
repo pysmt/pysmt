@@ -189,6 +189,20 @@ class ExternalOptimizerMixin(Optimizer):
         self._cleanup(client_data)
         return last_model, cast(ub)
 
+
+class SUAOptimizerMixin(ExternalOptimizerMixin):
+    """Optimizer mixin using solving under assumptions"""
+
+    def _setup(self):
+        pass
+
+    def _cleanup(self):
+        pass
+
+    def _check_improve(self, cost_function, cost_so_far, lt):
+        k = lt(cost_function, cost_so_far)
+        return not self.solve(assumptions=[k])
+
     def pareto_optimize(self, cost_functions):
         _, lts, les = zip(*(self._comparation_functions(x) for x in cost_functions))
         terminated = False
