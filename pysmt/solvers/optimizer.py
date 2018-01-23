@@ -79,27 +79,53 @@ class Optimizer(Solver):
 
 
 
-class SUAOptimizerMixin(Optimizer):
-    """Optimizer mixin using solving under assumptions"""
+class ExternalOptimizerMixin(Optimizer):
+    """An optimizer that uses an SMT-Solver externally"""
+
+    def _setup(self):
+        raise NotImplementedError
+
+    def _cleanup(self):
+        raise NotImplementedError
+
+    def _check_improve(self, cost_function, cost_so_far, lt):
+        raise NotImplementedError
 
     def optimize(self, cost_function):
         last_model = None
-        optimum_found = True
+        optimum_found = False
+
+        self._setup()
 
         lt, _ = self._comparation_functions(cost_function)
 
         cost_so_far = None
-        while optimum_found:
-            if cost_so_far is not None:
-                k = lt(cost_function, cost_so_far)
-                optimum_found = self.solve(assumptions=[k])
+        while not optimum_found:
+            if cost_so_far is None:
+                optimum_found = not self.solve()
             else:
-                optimum_found = self.solve()
+                optimum_found = self._check_improve(cost_function, cost_so_far, lt)
 
-            if optimum_found:
+            if not optimum_found:
                 last_model = self.get_model()
                 cost_so_far = self.get_value(cost_function)
+
+        self._cleanup()
         return last_model
+
+
+class SUAOptimizerMixin(ExternalOptimizerMixin):
+    """Optimizer mixin using solving under assumptions"""
+
+    def _setup(self):
+        pass
+
+    def _cleanup(self):
+        pass
+
+    def _check_improve(self, cost_function, cost_so_far, lt):
+        k = lt(cost_function, cost_so_far)
+        return not self.solve(assumptions=[k])
 
     def pareto_optimize(self, cost_functions):
         mgr = self.environment.formula_manager
@@ -110,19 +136,19 @@ class SUAOptimizerMixin(Optimizer):
         terminated = False
         while not terminated:
             last_model = None
-            optimum_found = True
+            optimum_found = False
             costs_so_far = None
-            while optimum_found:
+            while not optimum_found:
                 if costs_so_far is not None:
                     k = [les[i](cost_functions[i], costs_so_far[i])
                          for i in range(len(cost_functions))]
                     k.append(mgr.Or(lts[i](cost_functions[i], costs_so_far[i])
                                     for i in range(len(cost_functions))))
-                    optimum_found = self.solve(assumptions=eliminated + k)
+                    optimum_found = not self.solve(assumptions=eliminated + k)
                 else:
-                    optimum_found = self.solve(assumptions=eliminated)
+                    optimum_found = not self.solve(assumptions=eliminated)
 
-                if optimum_found:
+                if not optimum_found:
                     last_model = self.get_model()
                     costs_so_far = []
                     for i in range(len(cost_functions)):
@@ -140,28 +166,21 @@ class SUAOptimizerMixin(Optimizer):
 
 
 
-class IncrementalOptimizerMixin(Optimizer):
+
+
+
+class IncrementalOptimizerMixin(ExternalOptimizerMixin):
     """Optimizer mixin using the incremental interface"""
 
-    def optimize(self, cost_function):
-        last_model = None
-        optimum_found = False
-
+    def _setup(self):
         self.push()
 
-        lt, _ = self._comparation_functions(cost_function)
-
-        cost_so_far = None
-        while not optimum_found:
-            if cost_so_far is not None:
-                self.add_assertion(lt(cost_function, cost_so_far))
-            optimum_found = not self.solve()
-
-            if not optimum_found:
-                last_model = self.get_model()
-                cost_so_far = self.get_value(cost_function)
+    def _cleanup(self):
         self.pop()
-        return last_model
+
+    def _check_improve(self, cost_function, cost_so_far, lt):
+        self.add_assertion(lt(cost_function, cost_so_far))
+        return not self.solve()
 
     def pareto_optimize(self, cost_functions):
         mgr = self.environment.formula_manager
