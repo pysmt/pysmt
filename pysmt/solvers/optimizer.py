@@ -181,14 +181,13 @@ class SUAOptimizerMixin(ExternalOptimizerMixin):
     def _pareto_check_progress(self, client_data, cost_functions,
                                costs_so_far, lts, les):
         mgr = self.environment.formula_manager
+        k = []
         if costs_so_far is not None:
             k = [les[i](cost_functions[i], costs_so_far[i])
                  for i in range(len(cost_functions))]
             k.append(mgr.Or(lts[i](cost_functions[i], costs_so_far[i])
                             for i in range(len(cost_functions))))
-            return not self.solve(assumptions=client_data + k)
-        else:
-            return not self.solve(assumptions=client_data)
+        return not self.solve(assumptions=client_data + k)
 
     def _pareto_block_model(self, client_data, cost_functions, last_model, lts, les):
         mgr = self.environment.formula_manager
