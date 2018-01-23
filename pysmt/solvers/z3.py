@@ -1067,6 +1067,10 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
         return False
 
 
+    def can_diverge_for_unbounded_cases(self):
+        return False
+
+
 class Z3SUAOptimizer(Z3Solver, SUAOptimizerMixin):
     LOGICS = Z3Solver.LOGICS
 

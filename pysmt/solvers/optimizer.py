@@ -191,7 +191,6 @@ class ExternalOptimizerMixin(Optimizer):
 
     def pareto_optimize(self, cost_functions):
         _, lts, les = zip(*(self._comparation_functions(x) for x in cost_functions))
-
         terminated = False
         client_data = self._setup()
         while not terminated:
@@ -218,6 +217,8 @@ class ExternalOptimizerMixin(Optimizer):
                 terminated = True
         self._cleanup(client_data)
 
+    def can_diverge_for_unbounded_cases(self):
+        return True
 
 class SUAOptimizerMixin(ExternalOptimizerMixin):
     """Optimizer mixin using solving under assumptions"""
