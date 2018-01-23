@@ -208,6 +208,9 @@ def main():
     all_solvers = options.all_solvers
     for i in INSTALLERS:
         name = i.InstallerClass.SOLVER
+        if all_solvers and name == 'optimsat':
+            continue # Skip OptiMathSAT in the --all case because currently,
+                     # msat and optimsat cannot co-exist
         if all_solvers or getattr(options, name):
             solvers_to_install.append(i)
 
