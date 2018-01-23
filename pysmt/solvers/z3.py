@@ -1051,9 +1051,7 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
         elif otype.is_bv_type():
             return mgr.BVULE(x, y)
 
-    def optimize(self, cost_function, initial_cost=None, callback=None):
-        if initial_cost is not None:
-            self.add_assertion(self._le(cost_function, initial_cost))
+    def optimize(self, cost_function):
         obj = self.converter.convert(cost_function)
         h = self.z3.minimize(obj)
         res = self.z3.check()
@@ -1071,7 +1069,7 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
             return None
 
 
-    def pareto_optimize(self, cost_functions, callback=None):
+    def pareto_optimize(self, cost_functions):
         self.z3.set(priority='pareto')
         criteria = []
         for cf in cost_functions:
@@ -1081,6 +1079,10 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
         while self.z3.check() == z3.sat:
             model = Z3Model(self.environment, self.z3.model())
             yield model
+
+    def can_diverge_for_unbounded_cases(self):
+        return False
+
 
 class Z3SUAOptimizer(Z3Solver, SUAOptimizerMixin):
     LOGICS = Z3Solver.LOGICS

@@ -1362,7 +1362,7 @@ if hasattr(mathsat, "msat_objective"):
             elif otype.is_bv_type():
                 return mgr.BVULE(x, y)
 
-        def optimize(self, cost_function, initial_cost=None, callback=None):
+        def optimize(self, cost_function):
             obj_fun = self.converter.convert(cost_function)
             msat_obj = mathsat.msat_push_minimize(self.msat_env(), obj_fun, None,
                                                   None, False)
@@ -1392,7 +1392,10 @@ if hasattr(mathsat, "msat_objective"):
                     return self.get_model()
 
 
-        def pareto_optimize(self, cost_functions, callback=None):
+        def pareto_optimize(self, cost_functions):
             # The pareto generation is currently not wrapped
             # (It is impossible to specify a callback)
             raise NotImplementedError
+
+        def can_diverge_for_unbounded_cases(self):
+            return False
