@@ -1381,7 +1381,7 @@ if hasattr(mathsat, "msat_objective"):
             elif otype.is_bv_type():
                 return mgr.BVULE(x, y)
 
-        def optimize(self, cost_function):
+        def optimize(self, cost_function, **kwargs):
             obj_fun = self.converter.convert(cost_function)
             msat_obj = mathsat.msat_push_minimize(self.msat_env(), obj_fun, None,
                                                   None, False)

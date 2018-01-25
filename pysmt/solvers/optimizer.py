@@ -18,6 +18,7 @@
 
 from pysmt.solvers.solver import Solver
 from pysmt.exceptions import PysmtValueError
+
 class Optimizer(Solver):
     """
     Interface for the optimization
