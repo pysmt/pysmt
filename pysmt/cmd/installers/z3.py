@@ -14,10 +14,9 @@
 from __future__ import absolute_import
 
 import os
-import sys
-import platform
+import glob
 
-from pysmt.cmd.installers.base import SolverInstaller, TemporaryPath
+from pysmt.cmd.installers.base import SolverInstaller
 
 
 class Z3Installer(SolverInstaller):
@@ -54,16 +53,18 @@ class Z3Installer(SolverInstaller):
 
     def move(self):
         bpath = os.path.join(self.extract_path, "bin")
-        files = ["python/z3"]
+        files = [os.path.join(bpath, "python/z3")]
         if self.os_name == "linux":
-            files += [ "libz3.so" ]
+            files += glob.glob(bpath + '/*.so')
         elif self.os_name == "darwin":
-            files += [ "libz3.a", "libz3.dylib" ]
+            files += glob.glob(bpath + '/*.a')
+            files += glob.glob(bpath + '/*.dylib')
         elif self.os_name == "windows":
-            files += [ "libz3.dll", "libz3.lib" ]
+            files += glob.glob(bpath + '/*.dll')
+            files += glob.glob(bpath + '/*.lib')
 
         for f in files:
-            SolverInstaller.mv(os.path.join(bpath, f), self.bindings_dir)
+            SolverInstaller.mv(f, self.bindings_dir)
 
     def get_installed_version(self):
         return self.get_installed_version_script(self.bindings_dir, "z3")
