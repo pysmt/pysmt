@@ -115,6 +115,9 @@ class Z3Options(SolverOptions):
         except z3.Z3Exception:
             raise PysmtValueError("Error setting the option '%s=%s'" \
                                   % (name, value))
+        except z3.z3types.Z3Exception:
+            raise PysmtValueError("Error setting the option '%s=%s'" \
+                                  % (name, value))
 
     def __call__(self, solver):
         self._set_option(solver.z3, 'model', self.generate_models)
@@ -128,7 +131,8 @@ class Z3Options(SolverOptions):
                 self._set_option(solver.z3, str(k), v)
             except z3.Z3Exception:
                 raise PysmtValueError("Error setting the option '%s=%s'" % (k,v))
-
+            except z3.z3types.Z3Exception:
+                raise PysmtValueError("Error setting the option '%s=%s'" % (k,v))
 # EOC Z3Options
 
 
@@ -146,6 +150,8 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
         try:
             self.z3 = z3.SolverFor(str(logic))
         except z3.Z3Exception:
+            self.z3 = z3.Solver()
+        except z3.z3types.Z3Exception:
             self.z3 = z3.Solver()
         self.options(self)
         self.declarations = set()
