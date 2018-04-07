@@ -107,6 +107,11 @@ class SimpleTypeChecker(walkers.DagWalker):
         #pylint: disable=unused-argument
         return self.walk_type_to_type(formula, args, STRING, BOOL)
 
+    @walkers.handles(op.STR_TO_RE)
+    def walk_str_to_re(self, formula, args, **kwargs):
+        #pylint: disable=unused-argument
+        return self.walk_type_to_type(formula, args, STRING, STRING)
+
     @walkers.handles(op.INT_TO_STR)
     def walk_int_to_str(self, formula, args, **kwargs):
         #pylint: disable=unused-argument
