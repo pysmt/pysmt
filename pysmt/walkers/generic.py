@@ -81,7 +81,7 @@ class Walker(with_metaclass(MetaNodeTypeHandler)):
                 self.functions[o] = getattr(self, nt_to_fun(o))
             except AttributeError:
                 self.functions[o] = self.walk_error
-
+        
     def set_function(self, function, *node_types):
         """Overrides the default walking function for each of the specified
         node_types with the given function

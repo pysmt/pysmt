@@ -426,6 +426,8 @@ class SmtLibParser(object):
                             'str.to.int':self._operator_adapter(mgr.StrToInt),
                             'int.to.str':self._operator_adapter(mgr.IntToStr),
                             'bv2nat':self._operator_adapter(mgr.BVToNatural),
+                            # Regex
+                            'str.to.re':self._operator_adapter(mgr.StrToRe),
                             # arrays
                             'select':self._operator_adapter(mgr.Select),
                             'store':self._operator_adapter(mgr.Store),

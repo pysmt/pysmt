@@ -1004,6 +1004,13 @@ class FormulaManager(object):
         """
         return self.create_node(node_type=op.BV_TONATURAL, args=(formula,))
 
+    def StrToRe(self, s):
+        """Returns the corresponting Regex that accept s.
+
+        where s is a string term 
+        """
+        return self.create_node(node_type=op.STR_TO_RE, args=(s,))
+
     def Select(self, arr, idx):
         """Creates a node representing an array selection."""
         return self.create_node(node_type=op.ARRAY_SELECT, args=(arr, idx))
