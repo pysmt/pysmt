@@ -24,6 +24,8 @@ In the current version these are:
  * BVType
  * FunctionType
  * ArrayType
+ * StringType
+ * RegexType
 
 Types are represented by singletons. Basic types (Bool, Int and Real)
 are constructed here by default, while BVType and FunctionType relies
@@ -164,6 +166,13 @@ class _StringType(PySMTType):
     def is_string_type(self):
         return True
 
+class _RegExType(PySMTType):
+    def __init__(self):
+        decl = _TypeDecl("RegEx", 0)
+        PySMTType.__init__(self, decl=decl, args=None)
+
+    def is_regex_type(self):
+        return True
 # End Basic Types Declarations
 
 
@@ -395,6 +404,23 @@ class StringType(PySMTType):
     def __str__(self):
         return "String"
 
+
+class RegExType(PySMTType):
+    def __init__(self):
+        PySMTType.__init__(self, type_id = 7)
+
+    def is_regex_type(self):
+        return True
+
+    def as_smtlib(self, funstyle=True):
+        if funstyle:
+            return "() RegEx"
+        else:
+            return "RegEx"
+
+    def __str__(self):
+        return "RegEx"
+
 #
 # Singletons for the basic types
 #
@@ -402,6 +428,7 @@ BOOL = _BoolType()
 REAL = _RealType()
 INT =  _IntType()
 STRING = _StringType()
+REGEX = _RegExType()
 PYSMT_TYPES = frozenset([BOOL, REAL, INT])
 
 # Helper Constants
@@ -421,6 +448,7 @@ class TypeManager(object):
         self._real = None
         self._int = None
         self._string = None
+        self._regex = None
         #
         self.load_global_types()
         self.environment = environment
@@ -434,6 +462,7 @@ class TypeManager(object):
         self._real = REAL
         self._int = INT
         self._string = STRING
+        self._regex = REGEX
 
     def BOOL(self):
         return self._bool
@@ -446,6 +475,9 @@ class TypeManager(object):
 
     def STRING(self):
         return self._string
+
+    def REGEX(self):
+        return self._regex
 
     def BVType(self, width=32):
         """Returns the singleton associated to the BV type for the given width.
@@ -549,7 +581,7 @@ class TypeManager(object):
             ty = stack.pop()
             if ty.arity == 0:
                 if (ty.is_bool_type() or ty.is_int_type() or
-                    ty.is_real_type() or ty.is_string_type()):
+                    ty.is_real_type() or ty.is_string_type() or ty.is_regex_type()):
                     myty = ty
                 elif ty.is_bv_type():
                     myty = self.BVType(ty.width)

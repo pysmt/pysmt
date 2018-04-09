@@ -964,6 +964,8 @@ class SmtLibParser(object):
             res = self.env.type_manager.REAL()
         elif var == "String":
             res = self.env.type_manager.STRING()
+        elif var == "RegEx":
+            res = self.env.type_manager.REGEX()
         else:
             cached = self.cache.get(var)
             if cached is not None:
