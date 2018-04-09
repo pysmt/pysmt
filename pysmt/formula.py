@@ -982,6 +982,13 @@ class FormulaManager(object):
         """
         return self.create_node(node_type=op.STR_TO_INT, args=(s,))
 
+    def StrToRe(self, s):
+        """Returns the corresponting Regex that accept s.
+
+        where s is a string term 
+        """
+        return self.create_node(node_type=op.STR_TO_RE, args=(s,))
+
     def IntToStr(self, x):
         """Returns the corresponding String representing the natural number x.
 
@@ -1003,13 +1010,6 @@ class FormulaManager(object):
         Given a BitVector of width m returns an integer between 0 and 2^m-1
         """
         return self.create_node(node_type=op.BV_TONATURAL, args=(formula,))
-
-    def StrToRe(self, s):
-        """Returns the corresponting Regex that accept s.
-
-        where s is a string term 
-        """
-        return self.create_node(node_type=op.STR_TO_RE, args=(s,))
 
     def Select(self, arr, idx):
         """Creates a node representing an array selection."""
