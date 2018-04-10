@@ -621,7 +621,7 @@ class SmtDagPrinter(DagWalker):
         return "( str.in.re %s %s )" % (args[0], args[1])
 
     def walk_re_allchar(self,formula, args, **kwargs):
-        self.write("( re.allchar )" )
+        return "( re.allchar )"
 
     def walk_int_to_str(self,formula, args, **kwargs):
         return "( int.to.str %s )" % args[0]
