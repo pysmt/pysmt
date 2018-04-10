@@ -302,6 +302,10 @@ class SimpleTypeChecker(walkers.DagWalker):
         assert formula is not None
         return REGEX_STRING
 
+    def walk_re_nostr(self, formula, args, **kwargs):
+        assert formula is not None
+        return REGEX_STRING
+
     def walk_str_substr(self, formula, args, **kwargs):
         assert formula is not None
         if len(args) == 3 and args[0].is_string_type() and \
