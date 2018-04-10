@@ -729,6 +729,14 @@ class Simplifier(pysmt.walkers.DagWalker):
         # TODO : Fix simplification for str_to_re!! 
         raise NotImplementedError
 
+    def walk_str_in_re(self, formula, args, **kwargs):
+        # TODO : Fix simplification for str_in_re!! 
+        raise NotImplementedError
+
+    def walk_re_allchar(self, formula, args, **kwargs):
+        # TODO : Fix simplification for re_allchar!! 
+        raise NotImplementedError
+
     def walk_int_to_str(self, formula, args, **kwargs):
         i = args[0]
         if i.is_int_constant():

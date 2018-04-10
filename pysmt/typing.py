@@ -88,6 +88,9 @@ class PySMTType(object):
     def is_array_type(self):
         return False
 
+    def is_regex_type(self):
+        return False
+
     def is_string_type(self):
         return False
 
@@ -166,13 +169,6 @@ class _StringType(PySMTType):
     def is_string_type(self):
         return True
 
-class _RegExType(PySMTType):
-    def __init__(self):
-        decl = _TypeDecl("RegEx", 0)
-        PySMTType.__init__(self, decl=decl, args=None)
-
-    def is_regex_type(self):
-        return True
 # End Basic Types Declarations
 
 
@@ -212,6 +208,30 @@ class _ArrayType(PySMTType):
 
 # EOC _ArrayType
 
+
+class _RegExType(PySMTType):
+    """Internal class used to represent an Regex type.
+
+    This class should not be instantiated directly, but the factory
+    method RegExType should be used instead.
+    """
+    def __init__(self, regex_type):
+        decl = _TypeDecl("RegEx", 1)
+        PySMTType.__init__(self, decl=decl, args=(regex_type, ))
+
+    @property
+    def regex_type(self):
+        """Returns the sort of the regex.
+
+        E.g.,  A: (RegEx String)
+        Returns String.
+        """
+        return self.args[1]
+
+    def is_regex_type(self):
+        return True
+
+# End of _RegExType
 
 class _BVType(PySMTType):
     """Internal class to represent a BitVector type.
@@ -404,23 +424,6 @@ class StringType(PySMTType):
     def __str__(self):
         return "String"
 
-
-class RegExType(PySMTType):
-    def __init__(self):
-        PySMTType.__init__(self, type_id = 7)
-
-    def is_regex_type(self):
-        return True
-
-    def as_smtlib(self, funstyle=True):
-        if funstyle:
-            return "() RegEx"
-        else:
-            return "RegEx"
-
-    def __str__(self):
-        return "RegEx"
-
 #
 # Singletons for the basic types
 #
@@ -428,12 +431,12 @@ BOOL = _BoolType()
 REAL = _RealType()
 INT =  _IntType()
 STRING = _StringType()
-REGEX = _RegExType()
 PYSMT_TYPES = frozenset([BOOL, REAL, INT])
 
 # Helper Constants
 BV1, BV8, BV16, BV32, BV64, BV128 = [_BVType(i) for i in [1, 8, 16, 32, 64, 128]]
 ARRAY_INT_INT = _ArrayType(INT,INT)
+REGEX_STRING = _RegExType(STRING)
 
 
 class TypeManager(object):
@@ -442,6 +445,7 @@ class TypeManager(object):
         self._bv_types = {}
         self._function_types = {}
         self._array_types = {}
+        self._regex_types = {}
         self._custom_types = {}
         self._custom_types_decl = {}
         self._bool = None
@@ -458,11 +462,11 @@ class TypeManager(object):
         for bvtype in (BV1, BV8, BV16, BV32, BV64, BV128):
             self._bv_types[bvtype.width] = bvtype
         self._array_types[(INT, INT)] = ARRAY_INT_INT
+        self._regex_types[STRING] = REGEX_STRING
         self._bool = BOOL
         self._real = REAL
         self._int = INT
         self._string = STRING
-        self._regex = REGEX
 
     def BOOL(self):
         return self._bool
@@ -475,9 +479,6 @@ class TypeManager(object):
 
     def STRING(self):
         return self._string
-
-    def REGEX(self):
-        return self._regex
 
     def BVType(self, width=32):
         """Returns the singleton associated to the BV type for the given width.
@@ -534,6 +535,21 @@ class TypeManager(object):
             self._array_types[key] = ty
         return ty
 
+    def RegExType(self, regex_type):
+        """Returns the singleton of the Regex type with the given arguments.
+
+        This function takes care of building and registering the type
+        whenever needed. To see the functions provided by the type look at
+        _RegexType
+        """
+        try:
+            ty = self._regex_types[regex_type]
+        except KeyError:
+            assert_are_types((regex_type), __name__)
+            ty = _RegExType(regex_type)
+            self._regex_types[regex_type] = ty
+        return ty
+
     def Type(self, name, arity=0):
         """Creates a new Type Declaration (sort declaration).
 
@@ -581,7 +597,7 @@ class TypeManager(object):
             ty = stack.pop()
             if ty.arity == 0:
                 if (ty.is_bool_type() or ty.is_int_type() or
-                    ty.is_real_type() or ty.is_string_type() or ty.is_regex_type()):
+                    ty.is_real_type() or ty.is_string_type()):
                     myty = ty
                 elif ty.is_bv_type():
                     myty = self.BVType(ty.width)
@@ -604,6 +620,9 @@ class TypeManager(object):
                         param_types = (typemap[a] for a in ty.param_types)
                         return_type = typemap[ty.return_type]
                         myty = self.FunctionType(return_type, param_types)
+                    elif ty.is_regex_type():
+                        regex_type = typemap[ty.regex_type]
+                        myty = self.RegExType(regex_type)
                     else:
                         # Custom Type
                         typedecl = self.Type(type_.basename, type_.arity)
@@ -640,6 +659,11 @@ def ArrayType(index_type, elem_type):
     """Returns the Array type with the given arguments."""
     mgr = pysmt.environment.get_env().type_manager
     return mgr.ArrayType(index_type=index_type, elem_type=elem_type)
+
+def RegExType(regex_type):
+    """Returns the RegEx type with the given sort."""
+    mgr = pysmt.environment.get_env().type_manager
+    return mgr.RegExType(regex_type=regex_type)
 
 def Type(name, arity=0):
     """Returns the Type Declaration with the given name (sort declaration)."""

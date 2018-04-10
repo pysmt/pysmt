@@ -25,7 +25,7 @@ from itertools import chain
 from six.moves import xrange
 
 
-ALL_TYPES = list(xrange(0,67))
+ALL_TYPES = list(xrange(0,69))
 
 (
 FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF, # Boolean Logic (0-6)
@@ -80,6 +80,8 @@ POW,                                        # Arithmetic Power (63)
 ALGEBRAIC_CONSTANT,                         # Algebraic Number (64)
 BV_TONATURAL,                               # BV to Natural Conversion (65)
 STR_TO_RE,                                  # String to Regular expression (66)
+STR_IN_RE,                                  # String in Regular expression (67)
+RE_ALLCHAR,                                 # The regular expression accepting every string (68)
 ) = ALL_TYPES
 
 QUANTIFIERS = frozenset([FORALL, EXISTS])
@@ -109,14 +111,15 @@ BV_OPERATORS = frozenset([BV_NOT, BV_AND, BV_OR, BV_XOR,
                           BV_COMP, BV_SDIV, BV_SREM, BV_ASHR])
 
 STR_OPERATORS = frozenset([STR_LENGTH, STR_CONCAT, STR_INDEXOF, STR_REPLACE,
-                           STR_SUBSTR, STR_CHARAT, STR_TO_INT, INT_TO_STR,
-                           STR_TO_RE])
+                           STR_SUBSTR, STR_CHARAT, STR_TO_INT, INT_TO_STR])
+
+REGEX_OPERATORS = frozenset([STR_TO_RE, STR_IN_RE, RE_ALLCHAR])
 
 IRA_OPERATORS = frozenset([PLUS, MINUS, TIMES, TOREAL, DIV, POW, BV_TONATURAL])
 
 ARRAY_OPERATORS = frozenset([ARRAY_SELECT, ARRAY_STORE, ARRAY_VALUE])
 
-THEORY_OPERATORS = IRA_OPERATORS | BV_OPERATORS | ARRAY_OPERATORS | STR_OPERATORS
+THEORY_OPERATORS = IRA_OPERATORS | BV_OPERATORS | ARRAY_OPERATORS | STR_OPERATORS | REGEX_OPERATORS
 
 CUSTOM_NODE_TYPES = []
 
@@ -226,4 +229,6 @@ __OP_STR__ = {
     POW: "POW",
     ALGEBRAIC_CONSTANT: "ALGEBRAIC_CONSTANT",
     STR_TO_RE: "STR_TO_RE",
+    STR_IN_RE: "STR_IN_RE",
+    RE_ALLCHAR: "RE_ALLCHAR",
 }

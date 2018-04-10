@@ -219,6 +219,12 @@ class IdentityDagWalker(DagWalker):
     def walk_str_to_re(self, formula, args, **kwargs):
         return self.mgr.StrToRe(args[0])
 
+    def walk_str_in_re(self, formula, args, **kwargs):
+        return self.mgr.StrInRe(args[0], args[1])
+
+    def walk_re_allchar(self, formula, args, **kwargs):
+        return self.mgr.ReAllchar()
+
     def walk_int_to_str(self, formula, args, **kwargs):
         return self.mgr.IntToStr(args[0])
 
