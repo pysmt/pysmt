@@ -262,6 +262,9 @@ class SmtPrinter(TreeWalker):
     def walk_re_allchar(self,formula, **kwargs):
         self.write("( re.allchar )" )
 
+    def walk_re_nostr(self,formula, **kwargs):
+        self.write("( re.nostr )" )
+
     def walk_int_to_str(self,formula, **kwargs):
         self.write("( int.to.str " )
         self.walk(formula.arg(0))
@@ -622,6 +625,9 @@ class SmtDagPrinter(DagWalker):
 
     def walk_re_allchar(self,formula, args, **kwargs):
         return "( re.allchar )"
+
+    def walk_re_nostr(self,formula, args, **kwargs):
+        return "( re.nostr )"
 
     def walk_int_to_str(self,formula, args, **kwargs):
         return "( int.to.str %s )" % args[0]

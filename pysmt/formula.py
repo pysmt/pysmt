@@ -1001,6 +1001,11 @@ class FormulaManager(object):
         """
         return self.create_node(node_type=op.RE_ALLCHAR, args=())
 
+    def ReNostr(self):
+        """Returns a regular expression that reject every string
+        """
+        return self.create_node(node_type=op.RE_NOSTR, args=())
+
     def IntToStr(self, x):
         """Returns the corresponding String representing the natural number x.
 

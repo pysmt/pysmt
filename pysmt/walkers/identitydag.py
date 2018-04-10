@@ -225,6 +225,9 @@ class IdentityDagWalker(DagWalker):
     def walk_re_allchar(self, formula, args, **kwargs):
         return self.mgr.ReAllchar()
 
+    def walk_re_nostr(self, formula, args, **kwargs):
+        return self.mgr.ReNostr()
+
     def walk_int_to_str(self, formula, args, **kwargs):
         return self.mgr.IntToStr(args[0])
 
