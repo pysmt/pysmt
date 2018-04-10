@@ -276,6 +276,14 @@ class HRPrinter(TreeWalker):
         self.walk(formula.arg(1))
         self.write(")")
 
+    def walk_re_concat(self,formula, **kwargs):
+        self.write("re.++(" )
+        for arg in formula.args()[:-1]:
+            self.walk(arg)
+            self.write(", ")
+        self.walk(formula.args()[-1])
+        self.write(")")
+
     def walk_int_to_str(self,formula, **kwargs):
         self.write("int.to.str(" )
         self.walk(formula.arg(0))

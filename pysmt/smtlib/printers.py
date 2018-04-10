@@ -272,6 +272,13 @@ class SmtPrinter(TreeWalker):
         self.walk(formula.arg(1))
         self.write(")")
 
+    def walk_re_concat(self,formula, **kwargs):
+        self.write("( re.++ " )
+        for arg in formula.args():
+            self.walk(arg)
+            self.write(" ")
+        self.write(")")
+
     def walk_int_to_str(self,formula, **kwargs):
         self.write("( int.to.str " )
         self.walk(formula.arg(0))
@@ -638,6 +645,16 @@ class SmtDagPrinter(DagWalker):
 
     def walk_re_range(self,formula, args, **kwargs):
         return "( re.range %s %s )" % (args[0], args[1])
+
+    def walk_re_concat(self, formula, args, **kwargs):
+        sym = self._new_symbol()
+        self.openings += 1
+        self.write("(let ((%s (%s" % (sym, "re.++ " ))
+        for s in args:
+            self.write(" ")
+            self.write(s)
+        self.write("))) ")
+        return sym
 
     def walk_int_to_str(self,formula, args, **kwargs):
         return "( int.to.str %s )" % args[0]
