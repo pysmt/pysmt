@@ -432,6 +432,7 @@ class SmtLibParser(object):
                             're.allchar':self._operator_adapter(mgr.ReAllchar),
                             're.nostr':self._operator_adapter(mgr.ReNostr),
                             're.range':self._operator_adapter(mgr.ReRange),
+                            're.++':self._operator_adapter(mgr.ReConcat),
                             # arrays
                             'select':self._operator_adapter(mgr.Select),
                             'store':self._operator_adapter(mgr.Store),

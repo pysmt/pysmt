@@ -226,7 +226,7 @@ class _RegExType(PySMTType):
         E.g.,  A: (RegEx String)
         Returns String.
         """
-        return self.args[1]
+        return self.args[0]
 
     def is_regex_type(self):
         return True
@@ -545,7 +545,7 @@ class TypeManager(object):
         try:
             ty = self._regex_types[regex_type]
         except KeyError:
-            assert_are_types((regex_type), __name__)
+            assert_are_types((regex_type, ), __name__)
             ty = _RegExType(regex_type)
             self._regex_types[regex_type] = ty
         return ty
@@ -642,7 +642,6 @@ def assert_is_type(target, func_name):
 def assert_are_types(targets, func_name):
     for target in targets:
         assert_is_type(target, func_name)
-
 
 
 def BVType(width=32):

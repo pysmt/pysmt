@@ -1011,6 +1011,17 @@ class FormulaManager(object):
         """
         return self.create_node(node_type=op.RE_RANGE, args=(ch1, ch2))
 
+    def ReConcat(self, *args):
+        """Returns the concatenation of n Regex.
+
+        r1, r2, ..., and rn are Regex terms.
+        Regex concatenation takes at least 2 arguments.
+        """
+        tuple_args = self._polymorph_args_to_tuple(args)
+        if len(tuple_args) <= 1:
+            raise TypeError("Cannot create a Re_Concat without arguments.")
+        return self.create_node(node_type=op.RE_CONCAT, args=tuple_args)
+
     def IntToStr(self, x):
         """Returns the corresponding String representing the natural number x.
 
