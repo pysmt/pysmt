@@ -269,6 +269,13 @@ class HRPrinter(TreeWalker):
     def walk_re_nostr(self, formula, **kwargs):
         self.write("re.nostr()")
 
+    def walk_re_range(self, formula, **kwargs):
+        self.write("re.range(" )
+        self.walk(formula.arg(0))
+        self.write(", ")
+        self.walk(formula.arg(1))
+        self.write(")")
+
     def walk_int_to_str(self,formula, **kwargs):
         self.write("int.to.str(" )
         self.walk(formula.arg(0))

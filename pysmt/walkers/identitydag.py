@@ -228,6 +228,9 @@ class IdentityDagWalker(DagWalker):
     def walk_re_nostr(self, formula, args, **kwargs):
         return self.mgr.ReNostr()
 
+    def walk_re_range(self, formula, args, **kwargs):
+        return self.mgr.ReRange(args[0], args[1])
+
     def walk_int_to_str(self, formula, args, **kwargs):
         return self.mgr.IntToStr(args[0])
 
