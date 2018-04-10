@@ -428,6 +428,8 @@ class SmtLibParser(object):
                             'bv2nat':self._operator_adapter(mgr.BVToNatural),
                             # Regex
                             'str.to.re':self._operator_adapter(mgr.StrToRe),
+                            'str.in.re':self._operator_adapter(mgr.StrInRe),
+                            're.allchar':self._operator_adapter(mgr.ReAllchar),
                             # arrays
                             'select':self._operator_adapter(mgr.Select),
                             'store':self._operator_adapter(mgr.Store),
@@ -904,12 +906,16 @@ class SmtLibParser(object):
             return (var,) # This is a type parameter, it is handled recursively
         elif var == "(":
             op = tokens.consume()
-
             if op == "Array":
                 idxtype = self.parse_type(tokens, command)
                 elemtype = self.parse_type(tokens, command)
                 self.consume_closing(tokens, command)
                 res = self.env.type_manager.ArrayType(idxtype, elemtype)
+
+            elif op == "RegEx":
+                regextype = self.parse_type(tokens, command)
+                self.consume_closing(tokens, command)
+                res = self.env.type_manager.RegExType(regextype)
 
             elif op == "_":
                 ts = tokens.consume()
@@ -964,8 +970,6 @@ class SmtLibParser(object):
             res = self.env.type_manager.REAL()
         elif var == "String":
             res = self.env.type_manager.STRING()
-        elif var == "RegEx":
-            res = self.env.type_manager.REGEX()
         else:
             cached = self.cache.get(var)
             if cached is not None:

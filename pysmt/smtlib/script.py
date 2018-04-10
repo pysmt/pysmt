@@ -139,6 +139,7 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
 
     def serialize_to_string(self, daggify=True):
         buf = cStringIO()
+        import ipdb; ipdb.set_trace()
         self.serialize(buf, daggify=daggify)
         return buf.getvalue()
 

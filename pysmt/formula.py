@@ -983,11 +983,23 @@ class FormulaManager(object):
         return self.create_node(node_type=op.STR_TO_INT, args=(s,))
 
     def StrToRe(self, s):
-        """Returns the corresponting Regex that accept s.
+        """Returns the corresponding Regex that accept s.
 
         where s is a string term 
         """
         return self.create_node(node_type=op.STR_TO_RE, args=(s,))
+    
+    def StrInRe(self, s, r):
+        """Returns wheather the string is accepted by the language defined by the Regex r
+
+        where s is a string term 
+        """
+        return self.create_node(node_type=op.STR_IN_RE, args=(s, r))
+
+    def ReAllchar(self):
+        """Returns a regular expression that accept every string
+        """
+        return self.create_node(node_type=op.RE_ALLCHAR, args=())
 
     def IntToStr(self, x):
         """Returns the corresponding String representing the natural number x.
