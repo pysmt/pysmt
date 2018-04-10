@@ -63,7 +63,6 @@ class DagWalker(Walker):
         Note: This function assumes that the results for the children
               are already available.
         """
-        import ipdb; ipdb.set_trace()
         key = self._get_key(formula, **kwargs)
         if key not in self.memoization:
             try:
