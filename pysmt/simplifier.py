@@ -761,6 +761,14 @@ class Simplifier(pysmt.walkers.DagWalker):
         # TODO : Fix simplification for re_opt!!
         raise NotImplementedError
 
+    def walk_re_union(self, formula, args, **kwargs):
+        # TODO : Fix simplification for re_union!!
+        raise NotImplementedError 
+
+    def walk_re_inter(self, formula, args, **kwargs):
+        # TODO : Fix simplification for re_inter!!
+        raise NotImplementedError 
+
     def walk_int_to_str(self, formula, args, **kwargs):
         i = args[0]
         if i.is_int_constant():
