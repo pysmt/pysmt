@@ -1022,6 +1022,27 @@ class FormulaManager(object):
             raise TypeError("Cannot create a Re_Concat without arguments.")
         return self.create_node(node_type=op.RE_CONCAT, args=tuple_args)
 
+    def ReKleeneStar(self, r):
+        """Returns the kleene * of the Regex r
+
+        where r is a RegEx term defined over a certain sort
+        """
+        return self.create_node(node_type=op.RE_KLEENE_STAR, args=(r,))
+
+    def ReKleenePlus(self, r):
+        """Returns the kleene + of the Regex r
+
+        where r is a RegEx term defined over a certain sort
+        """
+        return self.create_node(node_type=op.RE_KLEENE_PLUS, args=(r,))
+
+    def ReOpt(self, r):
+        """Returns zero or one use of r 
+
+        where r is a RegEx term defined over a certain sort
+        """
+        return self.create_node(node_type=op.RE_OPT, args=(r,))
+
     def IntToStr(self, x):
         """Returns the corresponding String representing the natural number x.
 

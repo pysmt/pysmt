@@ -196,7 +196,11 @@ class HRLexer(Lexer):
             Rule(r"(str\.in\.re)", FunctionCallAdapter(self.mgr.StrInRe, 100), False), # str_in_re
             Rule(r"(re\.range)", FunctionCallAdapter(self.mgr.ReRange, 100), False), # re_range
             Rule(r"(re\.\+\+)", FunctionCallAdapter(self.mgr.ReConcat, 100), False), # re_concat
-            Rule(r"(bv2nat)", UnaryOpAdapter(self.mgr.BVToNatural, 100), False),#
+            # TODO: UnaryOperator or FunctionCall??
+            Rule(r"(re\.\*)", FunctionCallAdapter(self.mgr.ReKleeneStar, 100), False), # re_kleene_star
+            Rule(r"(re\.\+)", FunctionCallAdapter(self.mgr.ReKleenePlus, 100), False), # re_kleene_plus
+            Rule(r"(re\.opt)", FunctionCallAdapter(self.mgr.ReOpt, 100), False), # re_kleene_plus
+            Rule(r"(bv2nat)", UnaryOpAdapter(self.mgr.BVToNatural, 100), False), # re_opt
             Rule(r"'(.*?)'", self.identifier, True), # quoted identifiers
             Rule(r"([A-Za-z_][A-Za-z0-9_]*)", self.identifier, True),# identifiers
             Rule(r"(.)", self.lexing_error, True), # input error
