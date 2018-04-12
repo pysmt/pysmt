@@ -234,6 +234,15 @@ class IdentityDagWalker(DagWalker):
     def walk_re_concat(self, formula, args, **kwargs):
         return self.mgr.ReConcat(args)
 
+    def walk_re_kleene_star(self, formula, args, **kwargs):
+        return self.mgr.ReKleeneStar(args[0])
+
+    def walk_re_kleene_plus(self, formula, args, **kwargs):
+        return self.mgr.ReKleenePlus(args[0])
+
+    def walk_re_opt(self, formula, args, **kwargs):
+        return self.mgr.ReOpt(args[0])
+
     def walk_int_to_str(self, formula, args, **kwargs):
         return self.mgr.IntToStr(args[0])
 

@@ -25,7 +25,7 @@ from itertools import chain
 from six.moves import xrange
 
 
-ALL_TYPES = list(xrange(0,72))
+ALL_TYPES = list(xrange(0,75))
 
 (
 FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF, # Boolean Logic (0-6)
@@ -84,7 +84,10 @@ STR_IN_RE,                                  # String in Regular expression (67)
 RE_ALLCHAR,                                 # The regular expression accepting every string (68)
 RE_NOSTR,                                   # The regular expression accepting every string (69)
 RE_RANGE,                                   # The range of characters between ch1 and ch2 (70)
-RE_CONCAT                                   # Concatenation of regular expressions (71)
+RE_CONCAT,                                  # Concatenation of regular expressions (71)
+RE_KLEENE_STAR,                             # Regex Kleene * (72)
+RE_KLEENE_PLUS,                             # Regex Kleene + (73) 
+RE_OPT,                                     # Zero or one use of r (74)
 ) = ALL_TYPES
 
 QUANTIFIERS = frozenset([FORALL, EXISTS])
@@ -117,7 +120,8 @@ STR_OPERATORS = frozenset([STR_LENGTH, STR_CONCAT, STR_INDEXOF, STR_REPLACE,
                            STR_SUBSTR, STR_CHARAT, STR_TO_INT, INT_TO_STR])
 
 REGEX_OPERATORS = frozenset([STR_TO_RE, STR_IN_RE, RE_ALLCHAR, RE_NOSTR,
-                             RE_RANGE, RE_CONCAT])
+                             RE_RANGE, RE_CONCAT, RE_KLEENE_PLUS, RE_KLEENE_STAR,
+                             RE_OPT])
 
 IRA_OPERATORS = frozenset([PLUS, MINUS, TIMES, TOREAL, DIV, POW, BV_TONATURAL])
 
@@ -238,4 +242,7 @@ __OP_STR__ = {
     RE_NOSTR: "RE_NOSTR",
     RE_RANGE: "RE_RANGE",
     RE_CONCAT: "RE_CONCAT",
+    RE_KLEENE_STAR: "RE_KLEENE_STAR",
+    RE_KLEENE_PLUS: "RE_KLEENE_PLUS",
+    RE_OPT: "RE_OPT",
 }

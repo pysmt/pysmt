@@ -266,7 +266,7 @@ class SmtPrinter(TreeWalker):
         self.write("( re.nostr )" )
 
     def walk_re_range(self,formula, **kwargs):
-        self.write("( str.range " )
+        self.write("( re.range " )
         self.walk(formula.arg(0))
         self.write(" ")
         self.walk(formula.arg(1))
@@ -277,6 +277,21 @@ class SmtPrinter(TreeWalker):
         for arg in formula.args():
             self.walk(arg)
             self.write(" ")
+        self.write(")")
+
+    def walk_re_kleene_star(self,formula, **kwargs):
+        self.write("( re.* " )
+        self.walk(formula.arg(0))
+        self.write(")")
+
+    def walk_re_kleene_plus(self,formula, **kwargs):
+        self.write("( re.+ " )
+        self.walk(formula.arg(0))
+        self.write(")")
+
+    def walk_re_opt(self,formula, **kwargs):
+        self.write("( re.opt " )
+        self.walk(formula.arg(0))
         self.write(")")
 
     def walk_int_to_str(self,formula, **kwargs):
@@ -656,6 +671,15 @@ class SmtDagPrinter(DagWalker):
         self.write("))) ")
         return sym
 
+    def walk_re_kleene_star(self,formula, args, **kwargs):
+        return "( re.* %s )" % (args[0])
+
+    def walk_re_kleene_plus(self,formula, args, **kwargs):
+        return "( re.+ %s )" % (args[0])
+
+    def walk_re_opt(self,formula, args, **kwargs):
+        return "( re.opt %s )" % (args[0])
+    
     def walk_int_to_str(self,formula, args, **kwargs):
         return "( int.to.str %s )" % args[0]
 

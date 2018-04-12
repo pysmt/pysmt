@@ -284,6 +284,21 @@ class HRPrinter(TreeWalker):
         self.walk(formula.args()[-1])
         self.write(")")
 
+    def walk_re_kleene_star(self, formula, **kwargs):
+        self.write("re.*(" )
+        self.walk(formula.arg(0))
+        self.write(")")
+
+    def walk_re_kleene_plus(self, formula, **kwargs):
+        self.write("re.+(" )
+        self.walk(formula.arg(0))
+        self.write(")")
+
+    def walk_re_opt(self, formula, **kwargs):
+        self.write("re.opt(" )
+        self.walk(formula.arg(0))
+        self.write(")")
+
     def walk_int_to_str(self,formula, **kwargs):
         self.write("int.to.str(" )
         self.walk(formula.arg(0))
