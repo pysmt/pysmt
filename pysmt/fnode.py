@@ -43,9 +43,6 @@ from pysmt.operators import (FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF,
                              STR_PREFIXOF, STR_SUFFIXOF,
                              STR_TO_INT, INT_TO_STR,
                              STR_CHARAT,
-                             STR_TO_RE, STR_IN_RE,
-                             RE_ALLCHAR, RE_NOSTR, RE_RANGE,
-                             RE_CONCAT, RE_KLEENE_STAR, RE_KLEENE_PLUS,
                              ARRAY_SELECT, ARRAY_STORE, ARRAY_VALUE,
                              ALGEBRAIC_CONSTANT)
 
@@ -560,7 +557,6 @@ class FNode(object):
     def is_str_op(self):
         return self.node_type() in STR_OPERATORS
     
-
     def symbol_type(self):
         """Return the type of the Symbol."""
         assert self.is_symbol()
