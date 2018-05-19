@@ -1,6 +1,104 @@
 Change Log
 ==========
 
+0.7.0: 2018-05-19 -- Strings and Cython Parser
+----------------------------------------------
+
+General:
+* Strings Theory (#458)
+
+  Add support for the theory of Strings as supported by CVC4.
+
+  Direct solver support is limited to CVC4, but the SMT-LIB interface
+  can be used to integrate with other solvers (e.g., Z3).
+
+  This feature was largely implemented by **Suresh Goduguluru** and
+  motivated by **Clark Barrett**.
+
+
+* SMT-LIB Parser: Improved performance with Cython (PR #432)
+
+  The SMT-LIB parser module is now compiled using Cython behind the
+  scenes. By default pySMT will try to use the cython version but the
+  behavior can be controlled via env variables::
+
+    PYSMT_CYTHON=False # disable Cython
+    PYSMT_CYTHON=True  # force Cython: Raises an error if cython or the
+                       # SMT-LIB parser module are not available.
+    unset PYSMT_CYTHON # defaults to Cython but silently falls back to
+                       #pure-python version
+
+  The API of ``pysmt.smtlib.parser`` does not change and preserves
+  compatibility with previous versions.
+
+  Benchmarking on parse_all.py shows: ::
+
+    $ PYSMT_CYTHON=True python3.5 parse_all.py --count 500
+    The mean execution time was 2.34 seconds
+    The max execution time was 59.77 seconds
+
+    $ PYSMT_CYTHON=False python3.5 parse_all.py --count 500
+    The mean execution time was 3.39 seconds
+    The max execution time was 85.46 seconds
+
+* SMT-LIB Parser: Added Debugging Information (Line/Col number) (PR #430)
+
+* pysmt-install: Simplified solver version check (PR #431)
+
+* Extended infix notation to support:
+  - Store and Select (PR #437)
+  - NotEquals (PR #438)
+  - EUF Function application (PR #445)
+
+* Examples: Quantifier Elimination in LRA (PR #447)
+
+* Sorts: Stronger type checking for composite sorts (PR #449)
+
+* BvToNatural: Introduced new operator to convert bitvectors into
+  natural numbers (PR #450)
+
+* Examples: Theory Combination (PR #451)
+
+* QE: Introduce new QE techniques based on Self-Substitution (PR #460)
+
+
+Solvers:
+* Z3: Upgrade to 4.5.1 dev (082936bca6fb) (PR #407)
+
+* CVC4: Upgrade to 1.5 (PR #424)
+
+* MathSAT: Upgrade to 5.5.1 (PR #453)
+
+* MathSAT: Add Windows Support (PR #453)
+
+
+Bugfix:
+
+* Z3: Conversion of top-level ITE (PR #433)
+
+* Z3: Fixed exception handling (PR #473): Thanks to **Bradley Ellert**
+  for reporting this.
+
+* Detect BV type in Array and Function when using infix notation (PR #436)
+
+* Support GMPY objects in BV construction (PR #441)
+
+* SMT-LIB: Fixed parsing of #x BV constants (PR #443): Thanks to
+  **@cdmcdonell** for reporting this.
+
+* SMT-LIB: Remove trailing whitespace from bvrol and bvsext (PR #459)
+
+* Fixed type-checking of Equals, LT and LE (PR #452)
+
+* Examples: Revised Einstein example (PR #448): Thanks to **Saul
+  Fuhrmann** for reporting the issue.
+
+* Examples: Fixed indexing and simple path condition in MC example (PR
+  454): Thanks to **Cristian Mattarei** for contributing this patch.
+
+* Fixed installer for picosat to use HTTPS (PR #481)
+
+
 0.7.0: 2017-08-12 -- Class Based Walkers and Sorts
 --------------------------------------------------
 
