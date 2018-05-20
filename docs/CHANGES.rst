@@ -72,6 +72,10 @@ Solvers:
 * MathSAT: Add Windows Support (PR #453)
 
 
+Theories:
+* Support for Theory of Strings (SMT-LIB + CVC4) (PR #458)
+
+
 Bugfix:
 
 * Z3: Conversion of top-level ITE (PR #433)
