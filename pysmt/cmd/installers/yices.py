@@ -24,9 +24,16 @@ class YicesInstaller(SolverInstaller):
 
     def __init__(self, install_dir, bindings_dir, solver_version,
                  mirror_link=None, yicespy_version='HEAD'):
-        
-        if self.os_name == "darwin":
-            pack = "x86_64-apple-darwin16.7.0-static-gmp"
+
+        self.needs_compilation = False
+        if self.os_name == "darwin" or self.needs_compilation:
+            sysctl = self.run("sysctl -a", get_output=True, suppress_stderr=True)
+            if 'hw.optional.avx2_0: 1' in sysctl:
+                # No need to compile, see http://yices.csl.sri.com/faq.html
+                pack = "x86_64-apple-darwin16.7.0-static-gmp"
+            else:
+                self.needs_compilation = True
+                pack = "src"
         else:
             pack = "x86_64-pc-linux-gnu-static-gmp"
 
@@ -67,8 +74,14 @@ class YicesInstaller(SolverInstaller):
         # Prepare an empty folder for installing yices
         SolverInstaller.clean_dir(self.yices_path)
 
-        SolverInstaller.run("bash ./install-yices %s" % self.yices_path,
-                            directory=self.extract_path)
+        if self.needs_compilation:
+            SolverInstaller.run("bash configure --prefix %s" % self.yices_path,
+                                directory=self.extract_path)
+            SolverInstaller.run("make", directory=self.extract_path)
+            SolverInstaller.run("make install", directory=self.extract_path)
+        else:
+            SolverInstaller.run("bash ./install-yices %s" % self.yices_path,
+                                directory=self.extract_path)
 
         self.install_yicespy()
 

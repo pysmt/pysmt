@@ -109,10 +109,11 @@ class SolverInstaller(object):
                         if e.code != 404:
                             raise
                         print("HTTP 404 while trying to get the archive using link" \
-                              " #%d (trial %d/%d)" % (i, turn+1, self.trials_404))
+                              " '%s' (trial %d/%d)" % (link, turn+1, self.trials_404))
                     except URLError as e:
                         print("Error while trying to get the archive using link" \
-                              " #%d (trial %d/%d)" % (i, turn+1, self.trials_404))
+                              " '%s' (trial %d/%d)" % (link, turn+1, self.trials_404))
+                        raise e
 
     def unpack(self):
         """Unpacks the archive"""
@@ -203,18 +204,31 @@ class SolverInstaller(object):
                                    get_output=get_output)
 
     @staticmethod
-    def run(program, directory=None, env_variables=None, get_output=False):
+    def run(program, directory=None, env_variables=None, get_output=False,
+            suppress_stderr=False):
         """Executes an arbitrary program"""
         environment = os.environ.copy()
         if env_variables is not None:
             for k,v in six.iteritems(env_variables):
                 environment[k] = v
 
+        stderr = None
+        if suppress_stderr:
+            stderr = open(os.devnull, 'w')
         if get_output:
-            output = subprocess.check_output(program.split(), env=environment, cwd=directory)
+            output = subprocess.check_output(program.split(),
+                                             env=environment,
+                                             cwd=directory,
+                                             stderr=stderr)
+            if suppress_stderr:
+                stderr.close()
             return output.decode("ascii")
         else:
-            subprocess.check_call(program.split(), env=environment, cwd=directory)
+            subprocess.check_call(program.split(), env=environment,
+                                  cwd=directory, stderr=stderr)
+            if suppress_stderr:
+                stderr.close()
+
 
     @staticmethod
     def clean_dir(path):

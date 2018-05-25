@@ -230,6 +230,7 @@ def main():
         else:
             print("export PYTHONPATH=\"" + bindings_dir + ":${PYTHONPATH}\"")
 
+
     else:
         if len(solvers_to_install) == 0:
             print("Nothing to do.\nTry with '%s --help'" % sys.argv[0])
