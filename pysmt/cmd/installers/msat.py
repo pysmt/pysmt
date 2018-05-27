@@ -94,5 +94,14 @@ class MSatInstaller(SolverInstaller):
             if f.endswith(".so") or f.endswith(".dll") or f.endswith(".dylib"):
                 SolverInstaller.mv(os.path.join(libdir, f), self.bindings_dir)
 
+        # Fix issue in MathSAT 5.5.1 linking to incorrect directory on OSX
+        if self.os_name == "darwin":
+            soname = glob.glob(self.bindings_dir + "/_mathsat*.so")[0]
+            old_path = "/Users/griggio/Documents/src/mathsat_release/build/libmathsat.dylib"
+            new_path = "%s/libmathsat.dylib" % self.bindings_dir
+            SolverInstaller.run("install_name_tool -change %s %s %s" %
+                                (old_path, new_path, soname))
+
+
     def get_installed_version(self):
         return self.get_installed_version_script(self.bindings_dir, "msat")
