@@ -1,104 +1,44 @@
-language: python
-dist: trusty
-git:
-  depth: 10
-
-cache:
-  apt: true
-  directories:
-  - ${HOME}/.smt_solvers/btor
-  - ${HOME}/.smt_solvers/bdd
-  - ${HOME}/.cache/pip
-  - ${HOME}/python_bindings/all
-  - ${HOME}/python_bindings/msat
-  - ${HOME}/python_bindings/z3
-  - ${HOME}/python_bindings/cvc4
-  - ${HOME}/python_bindings/yices
-  - ${HOME}/python_bindings/bdd
-  - ${HOME}/python_bindings/picosat
-  - ${HOME}/python_bindings/btor
-
-addons:
-  apt:
-    packages:
-    - python-setuptools
-    - python-nose
-    - python-pip
-    - python-dev
-    - make
-    - build-essential
-    - swig
-    - libgmp-dev
-    - autoconf
-    - libtool
-    - wget
-    - curl
-    - libboost-dev
-    - python3-all-dev
-    - libmpc-dev
+os: osx
+language: generic
+osx_image: xcode9.3
 
 python:
-  - 3.6
   - 2.7
-  - pypy
+  - 3.5
 
-
-# Multiple envs will cause multiple build across multiple python versions.
-# We test the following:
-# 1. PySMT w/o solvers
-# 2. PySMT with one solver at the time
-#
 env:
   matrix:
-    - PYSMT_SOLVER="all"   PYSMT_GMPY="TRUE"
-    - PYSMT_SOLVER="all"   PYSMT_GMPY="FALSE"
-    - PYSMT_SOLVER="None"  PYSMT_GMPY="FALSE"   PYSMT_CYTHON="TRUE"
-    - PYSMT_SOLVER="None"  PYSMT_GMPY="FALSE"   PYSMT_CYTHON="FALSE"
-    - PYSMT_SOLVER="msat"  PYSMT_GMPY="FALSE"
-    - PYSMT_SOLVER="z3"    PYSMT_GMPY="FALSE"
-    - PYSMT_SOLVER="cvc4"  PYSMT_GMPY="FALSE"
-    - PYSMT_SOLVER="yices" PYSMT_GMPY="FALSE"
-    - PYSMT_SOLVER="bdd"   PYSMT_GMPY="FALSE"
-    - PYSMT_SOLVER="picosat" PYSMT_GMPY="FALSE"
-    - PYSMT_SOLVER="btor"  PYSMT_GMPY="FALSE"
-    - PYSMT_SOLVER="msat_wrap" PYSMT_GMPY="FALSE"
-    - PYSMT_SOLVER="z3_wrap"   PYSMT_GMPY="FALSE"
-
-matrix:
-  fast_finish: true
-
-  exclude:
-    - python: pypy
-      env: PYSMT_SOLVER="all"   PYSMT_GMPY="TRUE"
-    - python: pypy
-      env: PYSMT_SOLVER="all"   PYSMT_GMPY="FALSE"
-    - python: pypy
-      env: PYSMT_SOLVER="None"  PYSMT_GMPY="FALSE"
-    - python: pypy
-      env: PYSMT_SOLVER="msat"  PYSMT_GMPY="FALSE"
-    - python: pypy
-      env: PYSMT_SOLVER="z3"    PYSMT_GMPY="FALSE"
-    - python: pypy
-      env: PYSMT_SOLVER="cvc4"  PYSMT_GMPY="FALSE"
-    - python: pypy
-      env: PYSMT_SOLVER="yices" PYSMT_GMPY="FALSE"
-    - python: pypy
-      env: PYSMT_SOLVER="bdd"   PYSMT_GMPY="FALSE"
-    - python: pypy
-      env: PYSMT_SOLVER="picosat" PYSMT_GMPY="FALSE"
-    - python: pypy
-      env: PYSMT_SOLVER="btor"  PYSMT_GMPY="FALSE"
-    - python: pypy
-      env: PYSMT_SOLVER="msat_wrap" PYSMT_GMPY="FALSE"
-    - python: pypy
-      env: PYSMT_SOLVER="z3_wrap"   PYSMT_GMPY="FALSE"
+    - PYVERSION=python2  PYSMT_SOLVER="None"
+    - PYVERSION=python2  PYSMT_SOLVER="msat"
+    - PYVERSION=python2  PYSMT_SOLVER="z3"
+    - PYVERSION=python2  PYSMT_SOLVER="yices"
+    - PYVERSION=python3  PYSMT_SOLVER="msat"
+    - PYVERSION=python3  PYSMT_SOLVER="z3"
+    - PYVERSION=python3  PYSMT_SOLVER="yices"
 
 install:
-  - "./ci/travis_install.sh"
+  - "brew update"
+  - "brew --version"
+  - "brew --prefix"
+  - "brew outdated python || brew upgrade python"
+  - "brew install python@2"
+  - "export PYTHON_EXE=`brew --prefix`/bin/${PYVERSION}"
+  - "echo ${PYTHON_EXE}"
+  - "brew install swig"
+  - "${PYTHON_EXE} -m pip install --upgrade pip"
+  - "${PYTHON_EXE} -m pip install --user six"
+  - "${PYTHON_EXE} -m pip install --user nose"
+  - "${PYTHON_EXE} -m pip install --user urllib3"
+  - "export BINDINGS_FOLDER=${HOME}/python_bindings/${PYSMT_SOLVER}"
+  - "mkdir -p ${BINDINGS_FOLDER}"
+  - "${PYTHON_EXE} install.py --confirm-agreement --bindings-path ${BINDINGS_FOLDER}"
+  - "eval `${PYTHON_EXE} install.py --env --bindings-path ${BINDINGS_FOLDER}`"
+
 
 script:
-  - "./ci/travis_script.sh"
-
-after_success:
-  - coveralls
-#
+  - echo ${PYTHON_EXE}
+  - "${PYTHON_EXE} --version"
+  - "echo ${PYTHONPATH}"
+  - "${PYTHON_EXE} install.py --check"
+  - "${PYTHON_EXE} -mnose pysmt -v"
+  - if [ "${PYSMT_SOLVER}" == "all" ]; then python install.py --msat --conf --force; cp -v $(find ~/.smt_solvers/ -name mathsat -type f) /tmp/mathsat; (for ex in `ls examples/*.py`; do echo $ex; python $ex || exit $?; done); fi
