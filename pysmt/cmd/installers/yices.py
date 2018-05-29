@@ -24,9 +24,14 @@ class YicesInstaller(SolverInstaller):
 
     def __init__(self, install_dir, bindings_dir, solver_version,
                  mirror_link=None, yicespy_version='HEAD'):
-        pack = "x86_64-unknown-linux-gnu-static-gmp"
+        
+        if self.os_name == "darwin":
+            pack = "x86_64-apple-darwin16.7.0-static-gmp"
+        else:
+            pack = "x86_64-pc-linux-gnu-static-gmp"
+
         archive_name = "yices-%s-%s.tar.gz" % (solver_version, pack)
-        native_link = "http://yices.csl.sri.com/cgi-bin/yices2-newnewdownload.cgi?file={archive_name}&accept=I+Agree"
+        native_link = "http://yices.csl.sri.com/releases/{solver_version}/{archive_name}"
         SolverInstaller.__init__(self, install_dir=install_dir,
                                  bindings_dir=bindings_dir,
                                  solver_version=solver_version,
