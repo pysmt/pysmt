@@ -1,6 +1,6 @@
 os: osx
 language: generic
-osx_image: xcode9.3
+osx_image: xcode8.3
 
 python:
   - 2.7
@@ -11,10 +11,10 @@ env:
     - PYVERSION=python2  PYSMT_SOLVER="None"
     - PYVERSION=python2  PYSMT_SOLVER="msat"
     - PYVERSION=python2  PYSMT_SOLVER="z3"
-    #- PYVERSION=python2  PYSMT_SOLVER="yices"
+    - PYVERSION=python2  PYSMT_SOLVER="yices"
     - PYVERSION=python3  PYSMT_SOLVER="msat"
     - PYVERSION=python3  PYSMT_SOLVER="z3"
-    #- PYVERSION=python3  PYSMT_SOLVER="yices"
+    - PYVERSION=python3  PYSMT_SOLVER="yices"
 
 install:
   - "brew update"
