@@ -1,7 +1,7 @@
 Change Log
 ==========
 
-0.7.0: 2018-05-19 -- Strings and Cython Parser
+0.7.5: 2018-05-29 -- Strings and Cython Parser
 ----------------------------------------------
 
 General:
