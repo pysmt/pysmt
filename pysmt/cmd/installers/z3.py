@@ -41,7 +41,7 @@ class Z3Installer(SolverInstaller):
             # Stable versions template
             archive_name = "z3-%s-%s-%s.zip" % (solver_version, arch, system)
             native_link = "https://github.com/Z3Prover/z3/releases/download/z3-" + solver_version + "/{archive_name}"
-            print(native_link)
+            # print(native_link)
         else:
             # Nightly build template
             archive_name = "z3-%s.%s-%s-%s.zip" % (solver_version, git_version, arch, system)
