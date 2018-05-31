@@ -86,7 +86,7 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
 
         elif self.name in [smtcmd.CHECK_SAT, smtcmd.EXIT,
                            smtcmd.RESET_ASSERTIONS, smtcmd.GET_UNSAT_CORE,
-                           smtcmd.GET_ASSIGNMENT, smtcmd.GET_MODEL]:
+                           smtcmd.GET_ASSIGNMENT]:
             outstream.write("(%s)" % self.name)
 
         elif self.name == smtcmd.SET_LOGIC:

@@ -649,10 +649,7 @@ class SmtLibParser(object):
                 res = mgr.BV(value, width)
             elif token[0] == '"':
                 # String constant
-                val = token[1:-1]
-                val = val.replace('""', '"')
-                val = val.decode('string-escape')
-                res = mgr.String(val)
+                res = mgr.String(token.replace('"',''))
             else:
                 # it could be a number or a string
                 try:
