@@ -239,23 +239,22 @@ class Tokenizer(object):
 
                     elif c == "\"":
                         # String literals
-                        s = []
-                        c = next(reader)
-                        while c:
+                        s = c
+                        num_quotes = 0
+                        while True:
+                            c = next(reader)
+                            if not c:
+                                raise PysmtSyntaxError("Expected '\"'",
+                                                       reader.pos_info)
+
+                            if c != "\"" and num_quotes % 2 != 0:
+                                break
+
+                            s += c
                             if c == "\"":
-                                c = next(reader)
-                                if c == "\"":
-                                    s.append(c)
-                                    c = next(reader)
-                                else:
-                                    break
-                            else:
-                                s.append(c)
-                                c = next(reader)
-                        if not c:
-                            raise PysmtSyntaxError("Expected '|'",
-                                                   reader.pos_info)
-                        yield '"%s"' % ("".join(s)) # string literals maintain their quoting
+                                num_quotes += 1
+
+                        yield s
 
                     else:
                         yield c
