@@ -185,12 +185,12 @@ def main():
         mirror_url += "/{archive_name}"
 
     # This should work on any platform
-    install_dir= os.path.expanduser(options.install_path)
+    install_dir = os.path.expanduser(options.install_path)
     if not os.path.exists(install_dir):
         os.mkdir(install_dir)
 
     # This should work on any platform
-    bindings_dir= os.path.expanduser(options.bindings_path)
+    bindings_dir = os.path.expanduser(options.bindings_path)
     if not os.path.exists(bindings_dir):
         os.mkdir(bindings_dir)
 
@@ -225,13 +225,10 @@ def main():
         if platform.system().lower() == "windows":
             if options.powershell:
                 print('$env:PythonPath += ";%s"' % bindings_dir)
-                print('$env:Path += ";%s"' % bindings_dir)
             else:
                 print("set PYTHONPATH=" + bindings_dir + ";%PYTHONPATH%")
-                print("set PATH=" + bindings_dir + ";%PATH%")
         else:
             print("export PYTHONPATH=\"" + bindings_dir + ":${PYTHONPATH}\"")
-            print("export LD_LIBRARY_PATH=\"" + bindings_dir + ":${LD_LIBRARY_PATH}\"")
 
     else:
         if len(solvers_to_install) == 0:
