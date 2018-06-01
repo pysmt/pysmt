@@ -73,10 +73,13 @@ class MSatInstaller(SolverInstaller):
             SolverInstaller.do_download(setup_py_win_url, setup_py)
 
         # Run setup.py to compile the bindings
-        # NB: -R adds --rpath=$ORIGIN to link step, which makes shared library object
-        # searched for in the extension's directory (no need for LD_LIBRARY_PATH)
-        # (note: this is default behavior for DLL discovery on Windows)
-        SolverInstaller.run_python("./setup.py build_ext -R $ORIGIN", self.python_bindings_dir)
+        if self.os_name == "windows":
+            SolverInstaller.run_python("./setup.py build_ext", self.python_bindings_dir)
+        else:
+            # NB: -R adds --rpath=$ORIGIN to link step, which makes shared library object
+            # searched for in the extension's directory (no need for LD_LIBRARY_PATH)
+            # (note: this is the default behavior for DLL discovery on Windows)
+            SolverInstaller.run_python("./setup.py build_ext -R $ORIGIN", self.python_bindings_dir)
 
 
     def move(self):
