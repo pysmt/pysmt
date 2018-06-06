@@ -59,7 +59,7 @@ class PysmtShell(object):
 
     def __init__(self, argv):
         self.env = get_env()
-        self.solvers = self.env.factory.all_solvers().keys()
+        self.solvers = list(self.env.factory.all_solvers().keys())
         self.parser = self.get_parser()
         self.args = self.parser.parse_args(argv)
 
