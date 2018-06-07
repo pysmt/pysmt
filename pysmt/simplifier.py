@@ -737,8 +737,8 @@ class Simplifier(pysmt.walkers.DagWalker):
         # TODO : Fix simplification for re_all!! 
         raise NotImplementedError
 
-    def walk_re_nostr(self, formula, args, **kwargs):
-        # TODO : Fix simplification for re_nostr!! 
+    def walk_re_none(self, formula, args, **kwargs):
+        # TODO : Fix simplification for re_none!! 
         raise NotImplementedError
 
     def walk_re_range(self, formula, args, **kwargs):

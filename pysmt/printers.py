@@ -266,8 +266,8 @@ class HRPrinter(TreeWalker):
     def walk_re_all(self, formula, **kwargs):
         self.write("re.all()")
 
-    def walk_re_nostr(self, formula, **kwargs):
-        self.write("re.nostr()")
+    def walk_re_none(self, formula, **kwargs):
+        self.write("re.none()")
 
     def walk_re_range(self, formula, **kwargs):
         self.write("re.range(" )

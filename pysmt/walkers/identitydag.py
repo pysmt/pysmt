@@ -225,8 +225,8 @@ class IdentityDagWalker(DagWalker):
     def walk_re_all(self, formula, args, **kwargs):
         return self.mgr.ReAll()
 
-    def walk_re_nostr(self, formula, args, **kwargs):
-        return self.mgr.ReNostr()
+    def walk_re_none(self, formula, args, **kwargs):
+        return self.mgr.ReNone()
 
     def walk_re_range(self, formula, args, **kwargs):
         return self.mgr.ReRange(args[0], args[1])

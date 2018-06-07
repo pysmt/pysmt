@@ -430,7 +430,7 @@ class SmtLibParser(object):
                             'str.to.re':self._operator_adapter(mgr.StrToRe),
                             'str.in.re':self._operator_adapter(mgr.StrInRe),
                             're.all':self._operator_adapter(mgr.ReAll),
-                            're.nostr':self._operator_adapter(mgr.ReNostr),
+                            're.none':self._operator_adapter(mgr.ReNone),
                             're.range':self._operator_adapter(mgr.ReRange),
                             're.++':self._operator_adapter(mgr.ReConcat),
                             're.*':self._operator_adapter(mgr.ReKleeneStar),

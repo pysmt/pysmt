@@ -1001,10 +1001,10 @@ class FormulaManager(object):
         """
         return self.create_node(node_type=op.RE_ALL, args=())
 
-    def ReNostr(self):
-        """Returns a regular expression that reject every string
+    def ReNone(self):
+        """Returns a constant denoting the empty set of strings 
         """
-        return self.create_node(node_type=op.RE_NOSTR, args=())
+        return self.create_node(node_type=op.RE_NONE, args=())
 
     def ReRange(self, ch1, ch2):
         """Returns a regular expression that reject every string

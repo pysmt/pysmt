@@ -262,8 +262,8 @@ class SmtPrinter(TreeWalker):
     def walk_re_all(self,formula, **kwargs):
         self.write("( re.all )" )
 
-    def walk_re_nostr(self,formula, **kwargs):
-        self.write("( re.nostr )" )
+    def walk_re_none(self,formula, **kwargs):
+        self.write("( re.none )" )
 
     def walk_re_range(self,formula, **kwargs):
         self.write("( re.range " )
@@ -669,8 +669,8 @@ class SmtDagPrinter(DagWalker):
     def walk_re_all(self,formula, args, **kwargs):
         return "( re.all )"
 
-    def walk_re_nostr(self,formula, args, **kwargs):
-        return "( re.nostr )"
+    def walk_re_none(self,formula, args, **kwargs):
+        return "( re.none )"
 
     def walk_re_range(self,formula, args, **kwargs):
         return "( re.range %s %s )" % (args[0], args[1])
