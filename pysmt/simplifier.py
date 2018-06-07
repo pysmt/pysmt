@@ -733,8 +733,8 @@ class Simplifier(pysmt.walkers.DagWalker):
         # TODO : Fix simplification for str_in_re!! 
         raise NotImplementedError
 
-    def walk_re_allchar(self, formula, args, **kwargs):
-        # TODO : Fix simplification for re_allchar!! 
+    def walk_re_all(self, formula, args, **kwargs):
+        # TODO : Fix simplification for re_all!! 
         raise NotImplementedError
 
     def walk_re_nostr(self, formula, args, **kwargs):

@@ -996,10 +996,10 @@ class FormulaManager(object):
         """
         return self.create_node(node_type=op.STR_IN_RE, args=(s, r))
 
-    def ReAllchar(self):
-        """Returns a regular expression that accept every string
+    def ReAll(self):
+        """Returns a constant denoting the set of all strings 
         """
-        return self.create_node(node_type=op.RE_ALLCHAR, args=())
+        return self.create_node(node_type=op.RE_ALL, args=())
 
     def ReNostr(self):
         """Returns a regular expression that reject every string

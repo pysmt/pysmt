@@ -263,8 +263,8 @@ class HRPrinter(TreeWalker):
         self.walk(formula.arg(1))
         self.write(")")
 
-    def walk_re_allchar(self, formula, **kwargs):
-        self.write("re.allchar()")
+    def walk_re_all(self, formula, **kwargs):
+        self.write("re.all()")
 
     def walk_re_nostr(self, formula, **kwargs):
         self.write("re.nostr()")
