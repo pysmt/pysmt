@@ -920,6 +920,11 @@ class SmtLibParser(object):
                 self.consume_closing(tokens, command)
                 res = self.env.type_manager.ArrayType(idxtype, elemtype)
 
+            elif op == "RegEx":
+                regextype = self.parse_type(tokens, command)
+                self.consume_closing(tokens, command)
+                res = self.env.type_manager.RegExType(regextype)
+
             elif op == "_":
                 ts = tokens.consume()
                 if ts != "BitVec":

@@ -443,6 +443,7 @@ class TypeManager(object):
         self._bv_types = {}
         self._function_types = {}
         self._array_types = {}
+        self._regex_types = {}
         self._custom_types = {}
         self._custom_types_decl = {}
         self._bool = None
@@ -605,6 +606,9 @@ class TypeManager(object):
                         param_types = (typemap[a] for a in ty.param_types)
                         return_type = typemap[ty.return_type]
                         myty = self.FunctionType(return_type, param_types)
+                    elif ty.is_regex_type():
+                        regex_type = typemap[ty.regex_type]
+                        myty = self.RegExType(regex_type)
                     else:
                         # Custom Type
                         typedecl = self.Type(type_.basename, type_.arity)
