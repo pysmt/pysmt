@@ -119,9 +119,10 @@ BV_OPERATORS = frozenset([BV_NOT, BV_AND, BV_OR, BV_XOR,
                           BV_COMP, BV_SDIV, BV_SREM, BV_ASHR])
 
 STR_OPERATORS = frozenset([STR_LENGTH, STR_CONCAT, STR_INDEXOF, STR_REPLACE,
-                           STR_SUBSTR, STR_CHARAT, STR_TO_INT, INT_TO_STR])
+                           STR_SUBSTR, STR_CHARAT, STR_TO_INT, INT_TO_STR,
+                           STR_TO_RE, STR_IN_RE])
 
-REGEX_OPERATORS = frozenset([STR_TO_RE, STR_IN_RE, RE_ALL, RE_NONE,
+REGEX_OPERATORS = frozenset([RE_ALL, RE_NONE,
                              RE_RANGE, RE_CONCAT, RE_KLEENE_PLUS, RE_KLEENE_STAR,
                              RE_OPT, RE_UNION, RE_INTER])
 

@@ -389,8 +389,6 @@ class PartialType(object):
 #
 # Constructors
 #
-
-
 class StringType(PySMTType):
     def __init__(self):
         PySMTType.__init__(self, type_id = 6)
