@@ -429,8 +429,8 @@ class SmtLibParser(object):
                             # Regex
                             'str.to.re':self._operator_adapter(mgr.StrToRe),
                             'str.in.re':self._operator_adapter(mgr.StrInRe),
-                            're.allchar':self._operator_adapter(mgr.ReAllchar),
-                            're.nostr':self._operator_adapter(mgr.ReNostr),
+                            're.all':self._operator_adapter(mgr.ReAll),
+                            're.none':self._operator_adapter(mgr.ReNone),
                             're.range':self._operator_adapter(mgr.ReRange),
                             're.++':self._operator_adapter(mgr.ReConcat),
                             're.*':self._operator_adapter(mgr.ReKleeneStar),
@@ -978,6 +978,8 @@ class SmtLibParser(object):
             res = self.env.type_manager.REAL()
         elif var == "String":
             res = self.env.type_manager.STRING()
+        elif var == "Regex":
+            res = self.env.type_manager.REGEX()
         else:
             cached = self.cache.get(var)
             if cached is not None:

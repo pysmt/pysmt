@@ -81,8 +81,8 @@ ALGEBRAIC_CONSTANT,                         # Algebraic Number (64)
 BV_TONATURAL,                               # BV to Natural Conversion (65)
 STR_TO_RE,                                  # String to Regular expression (66)
 STR_IN_RE,                                  # String in Regular expression (67)
-RE_ALLCHAR,                                 # The regular expression accepting every string (68)
-RE_NOSTR,                                   # The regular expression accepting every string (69)
+RE_ALL,                                 # The regular expression accepting every string (68)
+RE_NONE,                                   # The regular expression accepting every string (69)
 RE_RANGE,                                   # The range of characters between ch1 and ch2 (70)
 RE_CONCAT,                                  # Concatenation of regular expressions (71)
 RE_KLEENE_STAR,                             # Regex Kleene * (72)
@@ -119,9 +119,10 @@ BV_OPERATORS = frozenset([BV_NOT, BV_AND, BV_OR, BV_XOR,
                           BV_COMP, BV_SDIV, BV_SREM, BV_ASHR])
 
 STR_OPERATORS = frozenset([STR_LENGTH, STR_CONCAT, STR_INDEXOF, STR_REPLACE,
-                           STR_SUBSTR, STR_CHARAT, STR_TO_INT, INT_TO_STR])
+                           STR_SUBSTR, STR_CHARAT, STR_TO_INT, INT_TO_STR,
+                           STR_TO_RE, STR_IN_RE])
 
-REGEX_OPERATORS = frozenset([STR_TO_RE, STR_IN_RE, RE_ALLCHAR, RE_NOSTR,
+REGEX_OPERATORS = frozenset([RE_ALL, RE_NONE,
                              RE_RANGE, RE_CONCAT, RE_KLEENE_PLUS, RE_KLEENE_STAR,
                              RE_OPT, RE_UNION, RE_INTER])
 
@@ -240,8 +241,8 @@ __OP_STR__ = {
     ALGEBRAIC_CONSTANT: "ALGEBRAIC_CONSTANT",
     STR_TO_RE: "STR_TO_RE",
     STR_IN_RE: "STR_IN_RE",
-    RE_ALLCHAR: "RE_ALLCHAR",
-    RE_NOSTR: "RE_NOSTR",
+    RE_ALL: "RE_ALL",
+    RE_NONE: "RE_NONE",
     RE_RANGE: "RE_RANGE",
     RE_CONCAT: "RE_CONCAT",
     RE_KLEENE_STAR: "RE_KLEENE_STAR",

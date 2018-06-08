@@ -25,7 +25,7 @@ reasoning about the type of formulae.
 import pysmt.walkers as walkers
 import pysmt.operators as op
 
-from pysmt.typing import BOOL, REAL, INT, BVType, ArrayType, STRING, REGEX_STRING, RegExType
+from pysmt.typing import BOOL, REAL, INT, BVType, ArrayType, STRING, REGEX
 from pysmt.exceptions import PysmtTypeError
 
 
@@ -101,11 +101,7 @@ class SimpleTypeChecker(walkers.DagWalker):
     @walkers.handles(op.RE_OPT, op.RE_UNION, op.RE_INTER)
     def walk_re_to_re(self, formula, args, **kwargs):
         #pylint: disable=unused-argument
-        return self.walk_type_to_type(
-                formula,
-                args,
-                RegExType(args[0].regex_type),
-                RegExType(args[0].regex_type))
+        return self.walk_type_to_type(formula, args, REGEX, REGEX)
 
     @walkers.handles(op.STR_LENGTH, op.STR_TO_INT)
     def walk_str_to_int(self, formula, args, **kwargs):
@@ -115,7 +111,7 @@ class SimpleTypeChecker(walkers.DagWalker):
     @walkers.handles(op.STR_TO_RE)
     def walk_str_to_re(self, formula, args, **kwargs):
         #pylint: disable=unused-argument
-        return self.walk_type_to_type(formula, args, STRING, REGEX_STRING)
+        return self.walk_type_to_type(formula, args, STRING, REGEX)
 
     @walkers.handles(op.STR_CONTAINS, op.STR_PREFIXOF, op.STR_SUFFIXOF)
     def walk_str_to_bool(self, formula, args, **kwargs):
@@ -308,19 +304,19 @@ class SimpleTypeChecker(walkers.DagWalker):
             return BOOL
         return None
 
-    def walk_re_allchar(self, formula, args, **kwargs):
+    def walk_re_all(self, formula, args, **kwargs):
         assert formula is not None
-        return REGEX_STRING
+        return REGEX
 
-    def walk_re_nostr(self, formula, args, **kwargs):
+    def walk_re_none(self, formula, args, **kwargs):
         assert formula is not None
-        return REGEX_STRING
+        return REGEX
 
     def walk_re_range(self, formula, args, **kwargs):
         assert formula is not None
         if len(args) == 2 and args[0].is_string_type() and \
            args[1].is_string_type():
-            return REGEX_STRING
+            return REGEX
         return None
 
     def walk_str_substr(self, formula, args, **kwargs):

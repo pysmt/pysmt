@@ -996,20 +996,20 @@ class FormulaManager(object):
         """
         return self.create_node(node_type=op.STR_IN_RE, args=(s, r))
 
-    def ReAllchar(self):
-        """Returns a regular expression that accept every string
+    def ReAll(self):
+        """Returns a constant denoting the set of all strings 
         """
-        return self.create_node(node_type=op.RE_ALLCHAR, args=())
+        return self.create_node(node_type=op.RE_ALL, args=())
 
-    def ReNostr(self):
-        """Returns a regular expression that reject every string
+    def ReNone(self):
+        """Returns a constant denoting the empty set of strings 
         """
-        return self.create_node(node_type=op.RE_NOSTR, args=())
+        return self.create_node(node_type=op.RE_NONE, args=())
 
-    def ReRange(self, ch1, ch2):
-        """Returns a regular expression that reject every string
+    def ReRange(self, s1, s2):
+        """Returns a regular expression that represent the set of all strings s with (str.<= s1 s s2) 
         """
-        return self.create_node(node_type=op.RE_RANGE, args=(ch1, ch2))
+        return self.create_node(node_type=op.RE_RANGE, args=(s1, s2))
 
     def ReConcat(self, *args):
         """Returns the concatenation of n Regex.
