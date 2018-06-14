@@ -73,7 +73,13 @@ class MSatInstaller(SolverInstaller):
             SolverInstaller.do_download(setup_py_win_url, setup_py)
 
         # Run setup.py to compile the bindings
-        SolverInstaller.run_python("./setup.py build", self.python_bindings_dir)
+        if self.os_name == "windows":
+            SolverInstaller.run_python("./setup.py build_ext", self.python_bindings_dir)
+        else:
+            # NB: -R adds --rpath=$ORIGIN to link step, which makes shared library object
+            # searched for in the extension's directory (no need for LD_LIBRARY_PATH)
+            # (note: this is the default behavior for DLL discovery on Windows)
+            SolverInstaller.run_python("./setup.py build_ext -R $ORIGIN", self.python_bindings_dir)
 
 
     def move(self):
@@ -93,6 +99,15 @@ class MSatInstaller(SolverInstaller):
         for f in os.listdir(libdir):
             if f.endswith(".so") or f.endswith(".dll") or f.endswith(".dylib"):
                 SolverInstaller.mv(os.path.join(libdir, f), self.bindings_dir)
+
+        # Fix issue in MathSAT 5.5.1 linking to incorrect directory on OSX
+        if self.os_name == "darwin":
+            soname = glob.glob(self.bindings_dir + "/_mathsat*.so")[0]
+            old_path = "/Users/griggio/Documents/src/mathsat_release/build/libmathsat.dylib"
+            new_path = "%s/libmathsat.dylib" % self.bindings_dir
+            SolverInstaller.run("install_name_tool -change %s %s %s" %
+                                (old_path, new_path, soname))
+
 
     def get_installed_version(self):
         return self.get_installed_version_script(self.bindings_dir, "msat")

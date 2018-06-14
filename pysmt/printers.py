@@ -176,7 +176,7 @@ class HRPrinter(TreeWalker):
     def walk_str_constant(self, formula):
         assert (type(formula.constant_value()) == str ), \
             "The type was " + str(type(formula.constant_value()))
-        self.write('"%s"' % formula.constant_value())
+        self.write('"%s"' % formula.constant_value().replace('"', '""'))
 
     def walk_str_length(self,formula):
         self.write("str.len(" )

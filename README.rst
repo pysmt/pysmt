@@ -97,7 +97,7 @@ Supported Theories and Solvers
 
 pySMT provides methods to define a formula in Linear Real Arithmetic
 (LRA), Real Difference Logic (RDL), Equalities and Uninterpreted
-Functions (EUF), Bit-Vectors (BV), Arrays (A) and their
+Functions (EUF), Bit-Vectors (BV), Arrays (A), Strings (S) and their
 combinations. The following solvers are supported through native APIs:
 
 * MathSAT (http://mathsat.fbk.eu/)
