@@ -25,7 +25,7 @@ In the current version these are:
  * FunctionType
  * ArrayType
  * StringType
- * RegexType
+ * RegLanType
 
 Types are represented by singletons. Basic types (Bool, Int and Real)
 are constructed here by default, while BVType and FunctionType relies
@@ -415,12 +415,12 @@ class RegexType(PySMTType):
 
     def as_smtlib(self, funstyle=True):
         if funstyle:
-            return "() Regex"
+            return "() RegLan"
         else:
-            return "Regex"
+            return "RegLan"
 
     def __str__(self):
-        return "Regex"
+        return "RegLan"
 
 #
 # Singletons for the basic types
@@ -606,9 +606,6 @@ class TypeManager(object):
                         param_types = (typemap[a] for a in ty.param_types)
                         return_type = typemap[ty.return_type]
                         myty = self.FunctionType(return_type, param_types)
-                    elif ty.is_regex_type():
-                        regex_type = typemap[ty.regex_type]
-                        myty = self.RegExType(regex_type)
                     else:
                         # Custom Type
                         typedecl = self.Type(type_.basename, type_.arity)
