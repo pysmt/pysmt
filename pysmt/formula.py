@@ -1041,7 +1041,7 @@ class FormulaManager(object):
 
         where r is a RegEx term defined over a certain sort
         """
-        return self.create_node(node_type=op.RE_OPT, args=(r,))
+        return self.ReUnion(r, self.StrToRe(self.String("")))
 
     def ReUnion(self, r1, r2):
         """Returns a regular expression that accepts the union of the
