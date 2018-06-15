@@ -1034,7 +1034,7 @@ class FormulaManager(object):
 
         where r is a RegEx term defined over a certain sort
         """
-        return self.create_node(node_type=op.RE_KLEENE_PLUS, args=(r,))
+        return self.ReConcat(r, self.ReKleeneStar(r))
 
     def ReOpt(self, r):
         """Returns zero or one use of r 
