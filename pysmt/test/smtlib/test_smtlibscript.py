@@ -133,6 +133,7 @@ class TestSmtLibScript(TestCase):
                           smtcmd.EXIT,
                           smtcmd.SET_LOGIC,
                           smtcmd.DECLARE_CONST,
+                          smtcmd.DECLARE_SORT,
                           smtcmd.PUSH,
                           smtcmd.POP]:
 
