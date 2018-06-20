@@ -1176,9 +1176,6 @@ class SmtLibParser(object):
             formal.append(v)
         # Parse expression using also parameters
         ebody = self.get_expression(tokens)
-        # Discard parameters
-       # for x in formal:
-       #     self.cache.unbind(x.symbol_name())
         # Finish Parsing
         self.consume_closing(tokens, current)
         self.cache.define(var, formal, ebody)
