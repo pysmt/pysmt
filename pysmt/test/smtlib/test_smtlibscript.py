@@ -122,6 +122,7 @@ class TestSmtLibScript(TestCase):
             f = get_formula_strict(stream_in)
 
 
+    #n is defined once as an Int and once as a Real
     def test_define_funs_same_args(self):
         smtlib_script = "\n".join(['(define-fun f ((n Int)) Int n)', '(define-fun f ((n Real)) Real n)'])
         tmp_file_name = "tmp.smt2"
