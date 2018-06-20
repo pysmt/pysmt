@@ -30,7 +30,7 @@ environment is used (this is the default behavior of
 
 # Enable default deprecation warnings!
 import warnings
-warnings.simplefilter('default')
+warnings.filterwarnings('default', module='pysmt')
 
 import pysmt.configuration as config
 import pysmt.environment
