@@ -338,7 +338,9 @@ def evaluate_command(cmd, solver):
         return solver.get_unsat_core()
 
     elif cmd.name == smtcmd.DECLARE_SORT:
-        return solver.declare_sort(cmd.args[0], 0)
+        name = cmd.args[0].name
+        arity = cmd.args[0].arity
+        return solver.declare_sort(name, arity)
 
     elif cmd.name in smtcmd.ALL_COMMANDS:
         raise NotImplementedError("'%s' is a valid SMT-LIB command "\
