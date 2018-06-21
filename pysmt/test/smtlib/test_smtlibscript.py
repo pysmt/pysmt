@@ -125,13 +125,9 @@ class TestSmtLibScript(TestCase):
     #n is defined once as an Int and once as a Real
     def test_define_funs_same_args(self):
         smtlib_script = "\n".join(['(define-fun f ((n Int)) Int n)', '(define-fun f ((n Real)) Real n)'])
-        tmp_file_name = "tmp.smt2"
-        tmp_file = open(tmp_file_name, 'w')
-        tmp_file.write(smtlib_script)
-        tmp_file.close()
+        stream = cStringIO(smtlib_script)
         parser = SmtLibParser()
-        script = parser.get_script_fname(tmp_file_name)
-        os.remove(tmp_file_name)
+        script = parser.get_script(stream)
 
     def test_evaluate_command(self):
         class SmtLibIgnore(SmtLibIgnoreMixin):

@@ -610,7 +610,7 @@ class SmtLibParser(object):
             return self._get_var(name, type_name)
         except PysmtTypeError:
             return self.env.formula_manager.FreshSymbol(typename=type_name,
-                                                        template=name+"%d")
+                                                        template="__"+name+"%d")
 
     def atom(self, token, mgr):
         """
