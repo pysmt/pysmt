@@ -16,7 +16,7 @@
 #   limitations under the License.
 #
 from six.moves import cStringIO
-
+from pysmt.shortcuts import Solver
 import pysmt.smtlib.commands as smtcmd
 from pysmt.shortcuts import And, Or, Symbol, GT, Real, Not
 from pysmt.typing import REAL
@@ -54,6 +54,17 @@ class TestSmtLibScript(TestCase):
 
         res = script.filter_by_command_name([smtcmd.SET_LOGIC])
         self.assertEqual(len(list(res)), 1)
+
+
+    def test_declare_sort(self):
+        smtlib_script = '\n'.join(['(declare-sort s0 0)', \
+                                   '(declare-sort s1 1)', \
+                                   '(declare-const c0 s0)', \
+                                   '(declare-const c1 (s1 Int))'])
+        outstream = cStringIO(smtlib_script)
+        parser = SmtLibParser()
+        script = parser.get_script(outstream)
+        script.evaluate(Solver('z3'))
 
     def test_from_formula(self):
         x, y = Symbol("x"), Symbol("y")
@@ -132,7 +143,6 @@ class TestSmtLibScript(TestCase):
                           smtcmd.CHECK_SAT,
                           smtcmd.EXIT,
                           smtcmd.SET_LOGIC,
-                          smtcmd.DECLARE_SORT,
                           smtcmd.DECLARE_CONST,
                           smtcmd.PUSH,
                           smtcmd.POP]:
