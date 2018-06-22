@@ -606,8 +606,11 @@ class SmtLibParser(object):
 
     def _get_quantified_var(self, name, type_name):
         """Returns the PySMT variable corresponding to a declaration"""
-        return self.env.formula_manager.FreshSymbol(typename=type_name,
-                                                        template="__"+name+"%d")
+        try:
+            return self._get_var(name, type_name)
+        except PysmtTypeError:
+            return self.env.formula_manager.FreshSymbol(typename=type_name,
+                                                        template=name+"%d")
 
     def atom(self, token, mgr):
         """
@@ -1168,7 +1171,8 @@ class SmtLibParser(object):
         rtype = self.parse_type(tokens, current)
 
         for (x,t) in namedparams:
-            v = self._get_quantified_var(x, t)
+            v = self.env.formula_manager.FreshSymbol(typename=t,
+                                                        template=x+"%d")
             self.cache.bind(x, v)
             formal.append(v)
         # Parse expression using also parameters
