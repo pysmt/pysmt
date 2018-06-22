@@ -606,10 +606,7 @@ class SmtLibParser(object):
 
     def _get_quantified_var(self, name, type_name):
         """Returns the PySMT variable corresponding to a declaration"""
-        try:
-            return self._get_var(name, type_name)
-        except PysmtTypeError:
-            return self.env.formula_manager.FreshSymbol(typename=type_name,
+        return self.env.formula_manager.FreshSymbol(typename=type_name,
                                                         template="__"+name+"%d")
 
     def atom(self, token, mgr):
