@@ -610,7 +610,7 @@ class SmtLibParser(object):
             return self._get_var(name, type_name)
         except PysmtTypeError:
             return self.env.formula_manager.FreshSymbol(typename=type_name,
-                                                        template="__"+name+"%d")
+                                                        template=name+"%d")
 
     def atom(self, token, mgr):
         """
@@ -1172,7 +1172,7 @@ class SmtLibParser(object):
 
         for (x,t) in namedparams:
             v = self.env.formula_manager.FreshSymbol(typename=t,
-                                                        template=x+"%d")
+                                                        template="__"+x+"%d")
             self.cache.bind(x, v)
             formal.append(v)
         # Parse expression using also parameters
