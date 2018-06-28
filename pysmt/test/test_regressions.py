@@ -393,7 +393,7 @@ class TestRegressions(TestCase):
         s = parser.get_script(buffer_)
         for c in s:
             res = c.serialize_to_string(daggify=False)
-        self.assertEqual(res, smtlib_input)
+        self.assertEqual(res.replace('__x0', 'x'), smtlib_input)
 
     @skipIfSolverNotAvailable("z3")
     def test_z3_nary_back(self):

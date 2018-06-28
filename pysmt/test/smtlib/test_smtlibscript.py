@@ -16,7 +16,6 @@
 #   limitations under the License.
 #
 from six.moves import cStringIO
-
 import pysmt.smtlib.commands as smtcmd
 from pysmt.shortcuts import And, Or, Symbol, GT, Real, Not
 from pysmt.typing import REAL
@@ -122,6 +121,19 @@ class TestSmtLibScript(TestCase):
             f = get_formula_strict(stream_in)
 
 
+    #n is defined once as an Int and once as a Real
+    def test_define_funs_same_args(self):
+        smtlib_script = "\n".join(['(define-fun f ((n Int)) Int n)', '(define-fun f ((n Real)) Real n)'])
+        stream = cStringIO(smtlib_script)
+        parser = SmtLibParser()
+        script = parser.get_script(stream)
+
+    def test_define_funs_arg_and_fun(self):
+        smtlib_script = "\n".join(['(define-fun f ((n Int)) Int n)', '(declare-fun n () Real)'])
+        stream = cStringIO(smtlib_script)
+        parser = SmtLibParser()
+        script = parser.get_script(stream)
+
     def test_evaluate_command(self):
         class SmtLibIgnore(SmtLibIgnoreMixin):
             pass
@@ -207,6 +219,12 @@ DEMO_SMTSCRIPT = [ "(declare-fun a () Bool)",
                    "(define-sort G (H) (F Int H))",
                    "(define-fun f ((a Bool)) B a)",
                    "(define-fun g ((a Bool)) B (f a))",
+                   "(define-fun h ((a Int)) Int a)",
+                   "(declare-const x Bool)",
+                   "(declare-const y Int)",
+                   "(assert (= (h y) y))",
+                   "(assert (= (f x) x))",
+                   "(check-sat)",
                    "(define-fun-rec f ((a A)) B a)",
                    "(define-fun-rec g ((a A)) B (g a))",
                    """(define-funs-rec ((h ((a A)) B) (i ((a A)) B) )

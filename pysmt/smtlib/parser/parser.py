@@ -876,7 +876,6 @@ class SmtLibParser(object):
                                        "command." % command,
                                        tokens.pos_info)
             res.append(current)
-
         for _ in xrange(min_size, max_size + 1):
             current = tokens.consume()
             if current == ")":
@@ -1170,16 +1169,18 @@ class SmtLibParser(object):
         var = self.parse_atom(tokens, current)
         namedparams = self.parse_named_params(tokens, current)
         rtype = self.parse_type(tokens, current)
-
+        bindings = []
         for (x,t) in namedparams:
-            v = self._get_var(x, t)
+            v = self.env.formula_manager.FreshSymbol(typename=t,
+                                                        template="__"+x+"%d")
             self.cache.bind(x, v)
-            formal.append(v)
+            formal.append(v) #remember the variable
+            bindings.append(x) #remember the name
         # Parse expression using also parameters
         ebody = self.get_expression(tokens)
-        # Discard parameters
-        for x in formal:
-            self.cache.unbind(x.symbol_name())
+        #Discard parameters
+        for x in bindings:
+            self.cache.unbind(x)
         # Finish Parsing
         self.consume_closing(tokens, current)
         self.cache.define(var, formal, ebody)
