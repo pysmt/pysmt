@@ -21,9 +21,16 @@ if [ "${TRAVIS_PULL_REQUEST}" == "false" ] && [ "${TRAVIS_BRANCH}" != "master" ]
         echo "Skipping 'all' configuration"
         exit 0
     fi
+    if [ "${TRAVIS_OS_NAME}" == "osx" ]; then
+        echo "Skipping MacOSX build"
+        exit 0
+    fi
 fi
 
-export BINDINGS_FOLDER=${HOME}/python_bindings/${PYSMT_SOLVER}
+PYSMT_SOLVER_FOLDER="${PYSMT_SOLVER}_${TRAVIS_OS_NAME}"
+PYSMT_SOLVER_FOLDER="${PYSMT_SOLVER_FOLDER//,/$'_'}"
+export BINDINGS_FOLDER=${HOME}/python_bindings/${PYSMT_SOLVER_FOLDER}
+
 eval `python install.py --env --bindings-path ${BINDINGS_FOLDER}`
 echo ${PYTHONPATH}
 python install.py --check
@@ -33,9 +40,9 @@ python install.py --check
 #  * Coverage is enabled only on master / all
 if [ "${TRAVIS_BRANCH}" == "master" ] && [ "${PYSMT_SOLVER}" == "all" ];
 then
-  nosetests pysmt -v # --with-coverage --cover-package=pysmt
+    python -m nose pysmt -v # --with-coverage --cover-package=pysmt
 else
-  nosetests pysmt -v
+    python -m nose pysmt -v
 fi
 
 #
