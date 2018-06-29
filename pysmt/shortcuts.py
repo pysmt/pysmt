@@ -627,12 +627,12 @@ def BVLShr(left, right):
 
 
 def BVAShr(left, right):
-    """Returns the RIGHT arithmetic rotation of the left BV by the number
+    """Returns the RIGHT arithmetic shift of the left BV by the number
         of steps specified by the right BV.
 
     :param left: Specify the left bitvector
     :param right: Specify the right bitvector
-    :returns: The RIGHT arithmetic rotation of the left BV by the number
+    :returns: The RIGHT arithmetic shift of the left BV by the number
               of steps specified by the right BV
     :rtype: FNode
     """
