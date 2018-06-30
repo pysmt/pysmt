@@ -16,6 +16,7 @@
 #   limitations under the License.
 #
 from six.moves import cStringIO
+
 import pysmt.smtlib.commands as smtcmd
 from pysmt.shortcuts import And, Or, Symbol, GT, Real, Not
 from pysmt.typing import REAL
@@ -53,6 +54,20 @@ class TestSmtLibScript(TestCase):
 
         res = script.filter_by_command_name([smtcmd.SET_LOGIC])
         self.assertEqual(len(list(res)), 1)
+
+
+    def test_declare_sort(self):
+        class SmtLibIgnore(SmtLibIgnoreMixin):
+            pass
+        mock = SmtLibIgnore()
+        parser = SmtLibParser()
+        smtlib_script = '\n'.join(['(declare-sort s0 0)', \
+                                   '(declare-sort s1 1)', \
+                                   '(declare-const c0 s0)', \
+                                   '(declare-const c1 (s1 Int))'])
+        outstream = cStringIO(smtlib_script)
+        script = parser.get_script(outstream)
+        script.evaluate(solver=mock)
 
     def test_from_formula(self):
         x, y = Symbol("x"), Symbol("y")
