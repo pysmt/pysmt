@@ -19,10 +19,19 @@
 This module defines some rewritings for pySMT formulae.
 """
 from pysmt.decorators import deprecated
-from pysmt.walkers import DagWalker, IdentityDagWalker, handles
+from pysmt.walkers import DagWalker, IdentityDagWalker, TreeWalker, handles
 import pysmt.typing as types
 import pysmt.operators as op
+from pysmt.shortcuts import Symbol, Equals, And, Implies, Function
 
+import pprint
+pp = pprint.PrettyPrinter(indent=4)
+
+
+#helper to iterate over pairs
+def pairwise(iterable):
+    a = iter(iterable)
+    return zip(a, a)
 
 class CNFizer(DagWalker):
 
@@ -671,6 +680,122 @@ class TimesDistributor(IdentityDagWalker):
             return self.Plus(new_args)
 
 # EOC TimesDistributivity
+
+
+
+class Ackermanization():
+    def __init__(self, environment=None):
+        #funs_to_args keeps for every function symbol f,
+        #a set of lists of arguments.
+        #if f(g(x),y) amd f(x,g(y)) occur in a formula, then we
+        #will have "f": set([g(x), y], [x, g(y)])
+        self._funs_to_args = {}
+
+        #maps the actual applications to the constants that will be
+        #generated
+        self._terms_to_consts = {}
+
+        #maps each application to an index, used for the constant generation
+        self._indexes = {}
+
+
+    def do_ackermanization(self, formula):
+        self._fill_maps(formula)
+        #function consistency
+        implications = self._get_equality_implications()
+        function_consistency = And(implications)
+
+        substitued_formula = self._make_substitutions(formula)
+
+        if (len(implications) == 0):
+            result = substitued_formula
+        else:
+            result = And(function_consistency, substitued_formula)
+        #clean dictionary for future formulas
+        self._funs_to_args = {}
+        self._terms_to_consts = {}
+        self._indexes = {}
+
+        return result
+
+    def _get_equality_implications(self):
+        result = set([])
+        for f in self._funs_to_args:
+            implications = self._generate_implications(f)
+            result.update(implications)
+        return result
+
+
+    def _generate_implications(self, f):
+        result = set([])
+        possible_args = self._funs_to_args[f]
+        for option1, option2 in pairwise(possible_args):
+            implication = self._generate_implication(option1, option2, f)
+            result.add(implication)
+        return result
+
+    def _generate_implication(self, option1, option2, f):
+        left_conjuncts = set([])
+        for i in range(0, len(option1)):
+            const1 = self._terms_to_consts[option1[i]]
+            const2 = self._terms_to_consts[option2[i]]
+            conjunct = Equals(const1, const2)
+            left_conjuncts.add(conjunct)
+        left = And(left_conjuncts)
+        app1 = Function(f, option1)
+        app2 = Function(f, option2)
+        app1_const = self._terms_to_consts[app1]
+        app2_const = self._terms_to_consts[app2]
+        right = Equals(app1_const, app2_const)
+        implication = Implies(left, right)
+        return implication
+
+
+
+
+    def _make_substitutions(self, formula):
+        return formula.substitute(self._terms_to_consts)
+
+    def _fill_maps(self, formula):
+        if formula.is_function_application():
+            function_name = formula.function_name()
+            arguments = formula.args()
+            self._add_args_to_fun(function_name, arguments)
+            self._add_application(formula)
+            for arg in formula.args():
+                self._add_application(arg)
+        else:
+            for arg in formula.args():
+                self._fill_maps(arg)
+
+
+    def _add_application(self, formula):
+        if formula in self._terms_to_consts.keys():
+            pass
+        else:
+            const_name = "__x" + str(self._generate_code(formula)) + "__"
+            if formula.is_function_application():
+                const_type = formula.function_name().symbol_type().return_type
+            else:
+                const_type = formula.get_type()
+            self._terms_to_consts[formula] = Symbol(const_name, const_type)
+
+
+    def _generate_code(self, application):
+        if application in self._indexes:
+            return self._indexes[application]
+        else:
+            self._indexes[application] = len(self._indexes)
+            return self._indexes[application]
+
+    def _add_args_to_fun(self, function_name, args):
+        if function_name not in self._funs_to_args.keys():
+            self._funs_to_args[function_name] = set([])
+        self._funs_to_args[function_name].add(args)
+
+
+
+# EOC Ackermanization
 
 
 def nnf(formula, environment=None):
