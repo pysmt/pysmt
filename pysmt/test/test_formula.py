@@ -812,43 +812,32 @@ class TestFormulaManager(TestCase):
         bv8 = self.mgr.FreshSymbol(BV8)
         bv7 = self.mgr.FreshSymbol(BVType(7))
 
-        self.assertEqual(bv8.Equals(const1),
-                         bv8.Equals(const1_8))
+        self.assertEqual(bv8.Equals(const1), bv8.Equals(const1_8))
 
         # BV_AND,
-        self.assertEqual(bv8 & const1,
-                         self.mgr.BVAnd(bv8, const1_8))
-
-        self.assertEqual(const1 & bv8,
-                         self.mgr.BVAnd(bv8, const1_8))
-
-        self.assertEqual(const1 & bv8,
-                         self.mgr.BVAnd(bv8, const1_8))
+        self.assertEqual(bv8 & const1,      self.mgr.BVAnd(bv8, const1_8))
+        self.assertEqual(bv8.BVAnd(const1), self.mgr.BVAnd(bv8, const1_8))
+        self.assertEqual(const1 & bv8,      self.mgr.BVAnd(bv8, const1_8))
         # BV_XOR,
-        self.assertEqual(bv8 ^ const1,
-                         self.mgr.BVXor(bv8, const1_8))
-        self.assertEqual(const1 ^ bv8,
-                         self.mgr.BVXor(bv8, const1_8))
+        self.assertEqual(bv8 ^ const1,      self.mgr.BVXor(bv8, const1_8))
+        self.assertEqual(bv8.BVXor(const1), self.mgr.BVXor(bv8, const1_8))
+        self.assertEqual(const1 ^ bv8,      self.mgr.BVXor(bv8, const1_8))
         # BV_OR,
-        self.assertEqual(bv8 | const1,
-                         self.mgr.BVOr(bv8, const1_8))
-        self.assertEqual(const1 | bv8,
-                         self.mgr.BVOr(bv8, const1_8))
+        self.assertEqual(bv8 | const1,      self.mgr.BVOr(bv8, const1_8))
+        self.assertEqual(bv8.BVOr(const1),  self.mgr.BVOr(bv8, const1_8))
+        self.assertEqual(const1 | bv8,      self.mgr.BVOr(bv8, const1_8))
         # BV_ADD,
-        self.assertEqual(bv8 + const1,
-                         self.mgr.BVAdd(bv8, const1_8))
-        self.assertEqual(const1 + bv8,
-                         self.mgr.BVAdd(bv8, const1_8))
+        self.assertEqual(bv8 + const1,      self.mgr.BVAdd(bv8, const1_8))
+        self.assertEqual(bv8.BVAdd(const1), self.mgr.BVAdd(bv8, const1_8))
+        self.assertEqual(const1 + bv8,      self.mgr.BVAdd(bv8, const1_8))
         # BV_SUB,
-        self.assertEqual(bv8 - const1,
-                         self.mgr.BVSub(bv8, const1_8))
-        self.assertEqual(const1 - bv8,
-                         self.mgr.BVSub(const1_8, bv8))
+        self.assertEqual(bv8 - const1,      self.mgr.BVSub(bv8, const1_8))
+        self.assertEqual(bv8.BVSub(const1), self.mgr.BVSub(bv8, const1_8))
+        self.assertEqual(const1 - bv8,      self.mgr.BVSub(const1_8, bv8))
         # BV_MUL,
-        self.assertEqual(bv8 * const1,
-                         self.mgr.BVMul(bv8, const1_8))
-        self.assertEqual(const1 * bv8,
-                         self.mgr.BVMul(bv8, const1_8))
+        self.assertEqual(bv8 * const1,      self.mgr.BVMul(bv8, const1_8))
+        self.assertEqual(bv8.BVMul(const1), self.mgr.BVMul(bv8, const1_8))
+        self.assertEqual(const1 * bv8,      self.mgr.BVMul(bv8, const1_8))
 
         # BV_NOT:
         # !!!WARNING!!! Cannot be applied to python constants!!
@@ -857,116 +846,81 @@ class TestFormulaManager(TestCase):
             _8bv(~const1)
 
         # For symbols and expressions this works as expected
-        self.assertEqual(~bv8,
-                         self.mgr.BVNot(bv8))
+        self.assertEqual(~bv8, self.mgr.BVNot(bv8))
 
         # BV_NEG -- Cannot be applied to 'infix' constants
         self.assertEqual(-bv8, self.mgr.BVNeg(bv8))
 
         # BV_EXTRACT -- Cannot be applied to 'infix' constants
-        self.assertEqual(bv8[0:7],
-                         self.mgr.BVExtract(bv8, 0, 7))
-        self.assertEqual(bv8[:7],
-                         self.mgr.BVExtract(bv8, end=7))
-        self.assertEqual(bv8[0:],
-                         self.mgr.BVExtract(bv8, start=0))
-        self.assertEqual(bv8[7],
-                         self.mgr.BVExtract(bv8, start=7, end=7))
+        self.assertEqual(bv8[0:7],  self.mgr.BVExtract(bv8, 0, 7))
+        self.assertEqual(bv8[:7],   self.mgr.BVExtract(bv8, end=7))
+        self.assertEqual(bv8[0:],   self.mgr.BVExtract(bv8, start=0))
+        self.assertEqual(bv8[7],    self.mgr.BVExtract(bv8, start=7, end=7))
+        self.assertEqual(bv8.BVExtract(0,7),  self.mgr.BVExtract(bv8, 0, 7))
         # BV_ULT,
-        self.assertEqual(bv8 < const1,
-                         self.mgr.BVULT(bv8, const1_8))
+        self.assertEqual(bv8 < const1,        self.mgr.BVULT(bv8, const1_8))
+        self.assertEqual(bv8.BVULT(const1),   self.mgr.BVULT(bv8, const1_8))
         # BV_ULE,
-        self.assertEqual(bv8 <= const1,
-                         self.mgr.BVULE(bv8, const1_8))
+        self.assertEqual(bv8 <= const1,       self.mgr.BVULE(bv8, const1_8))
+        self.assertEqual(bv8.BVULE(const1),   self.mgr.BVULE(bv8, const1_8))
         # BV_UGT
-        self.assertEqual(bv8 > const1,
-                         self.mgr.BVUGT(bv8, const1_8))
+        self.assertEqual(bv8 > const1,        self.mgr.BVUGT(bv8, const1_8))
+        self.assertEqual(bv8.BVUGT(const1),    self.mgr.BVUGT(bv8, const1_8))
         # BV_UGE
-        self.assertEqual(bv8 >= const1,
-                         self.mgr.BVUGE(bv8, const1_8))
+        self.assertEqual(bv8 >= const1,       self.mgr.BVUGE(bv8, const1_8))
+        self.assertEqual(bv8.BVUGE(const1),    self.mgr.BVUGE(bv8, const1_8))
         # BV_LSHL,
-        self.assertEqual(bv8 << const1,
-                         self.mgr.BVLShl(bv8, const1_8))
+        self.assertEqual(bv8 << const1,       self.mgr.BVLShl(bv8, const1_8))
+        self.assertEqual(bv8.BVLShl(const1),  self.mgr.BVLShl(bv8, const1_8))
         # BV_LSHR,
-        self.assertEqual(bv8 >> const1,
-                         self.mgr.BVLShr(bv8, const1_8))
+        self.assertEqual(bv8 >> const1,       self.mgr.BVLShr(bv8, const1_8))
+        self.assertEqual(bv8.BVLShr(const1),    self.mgr.BVLShr(bv8, const1_8))
         # BV_UDIV,
-        self.assertEqual(bv8 / const1,
-                         self.mgr.BVUDiv(bv8, const1_8))
+        self.assertEqual(bv8 / const1,        self.mgr.BVUDiv(bv8, const1_8))
+        self.assertEqual(bv8.BVUDiv(const1),  self.mgr.BVUDiv(bv8, const1_8))
         # BV_UREM,
-        self.assertEqual(bv8 % const1,
-                         self.mgr.BVURem(bv8, const1_8))
+        self.assertEqual(bv8 % const1,        self.mgr.BVURem(bv8, const1_8))
+        self.assertEqual(bv8.BVURem(const1),  self.mgr.BVURem(bv8, const1_8))
 
-        # The following operators use the infix syntax left.Operator.right
-        # These includes all signed operators
-
-        # BVSLT,
-        self.assertEqual(self.mgr.BVSLT(bv8, const1_8),
-                         bv8.BVSLT(const1_8))
-
-        #BVSLE,
-        self.assertEqual(self.mgr.BVSLE(bv8, const1_8),
-                         bv8.BVSLE(const1_8))
-
-        #BVComp
-        self.assertEqual(self.mgr.BVComp(bv8, const1_8),
-                         bv8.BVComp(const1_8))
-
-        #BVSDiv
-        self.assertEqual(self.mgr.BVSDiv(bv8, const1_8),
-                         bv8.BVSDiv(const1_8))
-
-        #BVSRem
-        self.assertEqual(self.mgr.BVSRem(bv8, const1_8),
-                         bv8.BVSRem(const1_8))
-
-        #BVAShr
-        self.assertEqual(self.mgr.BVAShr(bv8, const1_8),
-                         bv8.BVAShr(const1_8))
-
-        #BVNand
-        self.assertEqual(self.mgr.BVNand(bv8, const1_8),
-                         bv8.BVNand(const1_8))
-
-        #BVNor
-        self.assertEqual(self.mgr.BVNor(bv8, const1_8),
-                         bv8.BVNor(const1_8))
-
-        #BVXnor
-        self.assertEqual(self.mgr.BVXnor(bv8, const1_8),
-                         bv8.BVXnor(const1_8))
-
-        #BVSGT
-        self.assertEqual(self.mgr.BVSGT(bv8, const1_8),
-                         bv8.BVSGT(const1_8))
-
-        #BVSGE
-        self.assertEqual(self.mgr.BVSGE(bv8, const1_8),
-                         bv8.BVSGE(const1_8))
-
-        #BVSMod
-        self.assertEqual(self.mgr.BVSMod(bv8, const1_8),
-                         bv8.BVSMod(const1_8))
-
-        #BVRol,
-        self.assertEqual(self.mgr.BVRol(bv8, steps=5),
-                         bv8.BVRol(5))
-
-        #BVRor,
-        self.assertEqual(self.mgr.BVRor(bv8, steps=5),
-                         bv8.BVRor(5))
-
-        #BVZExt,
-        self.assertEqual(self.mgr.BVZExt(bv8, increase=4),
-                         bv8.BVZExt(4))
-
-        #BVSExt,
-        self.assertEqual(self.mgr.BVSExt(bv8, increase=4),
-                         bv8.BVSExt(4))
-
-        #BVRepeat,
-        self.assertEqual(self.mgr.BVRepeat(bv8, count=5),
-                         bv8.BVRepeat(5))
+        # The following operators only have the infix syntax:
+        #    left.Operator.right
+        # These includes all Signed operators
+        #  BVSLT,
+        self.assertEqual(bv8.BVSLT(const1_8), self.mgr.BVSLT(bv8, const1_8))
+        # BVSLE,
+        self.assertEqual(bv8.BVSLE(const1_8), self.mgr.BVSLE(bv8, const1_8))
+        # BVComp
+        self.assertEqual(bv8.BVComp(const1_8), self.mgr.BVComp(bv8, const1_8))
+        # BVSDiv
+        self.assertEqual(bv8.BVSDiv(const1_8), self.mgr.BVSDiv(bv8, const1_8))
+        # BVSRem
+        self.assertEqual(bv8.BVSRem(const1_8), self.mgr.BVSRem(bv8, const1_8))
+        # BVAShr
+        self.assertEqual(bv8.BVAShr(const1_8), self.mgr.BVAShr(bv8, const1_8))
+        # BVNand
+        self.assertEqual(bv8.BVNand(const1_8), self.mgr.BVNand(bv8, const1_8))
+        # BVNor
+        self.assertEqual(bv8.BVNor(const1_8), self.mgr.BVNor(bv8, const1_8))
+        # BVXnor
+        self.assertEqual(bv8.BVXnor(const1_8), self.mgr.BVXnor(bv8, const1_8))
+        # BVSGT
+        self.assertEqual(bv8.BVSGT(const1_8), self.mgr.BVSGT(bv8, const1_8))
+        # BVSGE
+        self.assertEqual(bv8.BVSGE(const1_8), self.mgr.BVSGE(bv8, const1_8))
+        # BVSMod
+        self.assertEqual(bv8.BVSMod(const1_8), self.mgr.BVSMod(bv8, const1_8))
+        # BVRol,
+        self.assertEqual(bv8.BVRol(5), self.mgr.BVRol(bv8, steps=5))
+        # BVRor,
+        self.assertEqual(bv8.BVRor(5), self.mgr.BVRor(bv8, steps=5))
+        # BVZExt,
+        self.assertEqual(bv8.BVZExt(4), self.mgr.BVZExt(bv8, increase=4))
+        # BVSExt,
+        self.assertEqual(bv8.BVSExt(4), self.mgr.BVSExt(bv8, increase=4))
+        # BVRepeat,
+        self.assertEqual(bv8.BVRepeat(5), self.mgr.BVRepeat(bv8, count=5))
+        # BVConcat
+        self.assertEqual(bv8.BVConcat(bv8), self.mgr.BVConcat(bv8, bv8))
 
 
     def test_toReal(self):
