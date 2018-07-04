@@ -42,8 +42,10 @@ if [ "${TRAVIS_OS_NAME}" == "osx" ]; then
     brew_install_or_upgrade pyenv
     brew_install_or_upgrade pyenv-virtualenv
 
-
-    pyenv install ${TRAVIS_PYTHON_VERSION}
+    brew_install_or_upgrade readline
+    brew_install_or_upgrade xz
+    brew_install_or_upgrade zlib
+    CFLAGS="-I$(xcrun --show-sdk-path)/usr/include" pyenv install ${TRAVIS_PYTHON_VERSION}
 
     pyenv virtualenv ${TRAVIS_PYTHON_VERSION} venv
 
