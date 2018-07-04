@@ -121,6 +121,7 @@ class Z3Options(SolverOptions):
 
     def __call__(self, solver):
         self._set_option(solver.z3, 'model', self.generate_models)
+        self._set_option(solver.z3, 'smt.string_solver', 'z3str3')
 
         if self.unsat_cores_mode is not None:
             self._set_option(solver.z3, 'unsat_core', True)
@@ -351,6 +352,17 @@ class Z3Converter(Converter, DagWalker):
             z3.Z3_OP_POWER : lambda args, expr: self.mgr.Pow(args[0], args[1]),
             z3.Z3_OP_SELECT : lambda args, expr: self.mgr.Select(args[0], args[1]),
             z3.Z3_OP_STORE : lambda args, expr: self.mgr.Store(args[0], args[1], args[2]),
+            z3.Z3_OP_SEQ_LENGTH: lambda args, expr: self.mgr.StrLength(args[0]),
+            z3.Z3_OP_SEQ_CONCAT: lambda args, expr: self.mgr.StrConcat(args),
+            z3.Z3_OP_SEQ_AT: lambda args, expr: self.mgr.StrCharAt(args[0], args[1]),
+            z3.Z3_OP_SEQ_CONTAINS: lambda args, expr: self.mgr.StrContains(args[0], args[1]),
+            z3.Z3_OP_SEQ_INDEX: lambda args, expr: self.mgr.StrIndexOf(args[0], args[1], args[2]),
+            z3.Z3_OP_SEQ_REPLACE: lambda args, expr: self.mgr.StrReplace(args[0], args[1], args[2]),
+            z3.Z3_OP_SEQ_EXTRACT: lambda args, expr: self.mgr.StrSubstr(args[0], args[1], args[2]),
+            z3.Z3_OP_SEQ_PREFIX: lambda args, expr: self.mgr.StrPrefixOf(args[0], args[1]),
+            z3.Z3_OP_SEQ_SUFFIX: lambda args, expr: self.mgr.StrSuffixOf(args[0], args[1]),
+            z3.Z3_OP_INT_TO_STR: lambda args, expr: self.mgr.IntToStr(args[0]),
+            z3.Z3_OP_STR_TO_INT: lambda args, expr: self.mgr.StrToInt(args[0]),
             # Actually use both args, expr
             z3.Z3_OP_SIGN_EXT: lambda args, expr: self.mgr.BVSExt(args[0], z3.get_payload(expr, 0)),
             z3.Z3_OP_ZERO_EXT: lambda args, expr: self.mgr.BVZExt(args[0], z3.get_payload(expr, 0)),
@@ -368,6 +380,7 @@ class Z3Converter(Converter, DagWalker):
         self.z3RealSort = z3.RealSort(self.ctx)
         self.z3BoolSort = z3.BoolSort(self.ctx)
         self.z3IntSort  = z3.IntSort(self.ctx)
+        self.z3StrSort  = z3.StringSort(self.ctx)
         self._z3ArraySorts = {}
         self._z3BitVecSorts = {}
         self._z3Sorts = {}
@@ -429,6 +442,8 @@ class Z3Converter(Converter, DagWalker):
                 return z3.ArrayRef
             elif type_.is_bv_type():
                 return z3.BitVecRef
+            elif type_.is_string_type():
+                return z3.SeqRef
             else:
                 raise NotImplementedError(formula)
         elif formula.node_type() in op.ARRAY_OPERATORS:
@@ -489,12 +504,6 @@ class Z3Converter(Converter, DagWalker):
             raise NotImplementedError(
                 "Quantified back conversion is currently not supported")
 
-        assert not len(args) > 2 or \
-            (z3.is_and(expr) or z3.is_or(expr) or
-             z3.is_add(expr) or z3.is_mul(expr) or
-             (len(args) == 3 and (z3.is_ite(expr) or z3.is_array_store(expr)))),\
-            "Unexpected n-ary term: %s" % expr
-
         res = None
         try:
             decl = z3.Z3_get_app_decl(expr.ctx_ref(), expr.as_ast())
@@ -519,6 +528,10 @@ class Z3Converter(Converter, DagWalker):
                 n = expr.as_long()
                 w = expr.size()
                 return self.mgr.BV(n, w)
+            elif z3.is_string_value(expr):
+                # String
+                str_ = expr.as_string()[1:-1].decode('string_escape')
+                return self.mgr.String(str_)
             elif z3.is_as_array(expr):
                 if model is None:
                     raise NotImplementedError("As-array expressions cannot be" \
@@ -623,9 +636,7 @@ class Z3Converter(Converter, DagWalker):
         elif symbol_type.is_array_type():
             sort_ast = self._type_to_z3(symbol_type).ast
         elif symbol_type.is_string_type():
-            raise ConvertExpressionError(message=("Unsupported string symbol: %s" %
-                                                  str(formula)),
-                                         expression=formula)
+            sort_ast = self.z3StrSort.ast
         else:
             sort_ast = self._type_to_z3(symbol_type).ast
         # Create const with given sort
@@ -679,6 +690,14 @@ class Z3Converter(Converter, DagWalker):
     def walk_bool_constant(self, formula, **kwargs):
         _t = z3.BoolVal(formula.constant_value(), ctx=self.ctx)
         z3term = _t.as_ast()
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
+        return z3term
+
+    def walk_str_constant(self, formula, **kwargs):
+        # TODO: String constants are ASCII. pysmt.constants should account for this
+        #assert is_pysmt_integer(formula.constant_value())
+        const = formula.constant_value()
+        z3term = z3.Z3_mk_string(self.ctx.ref(), const)
         z3.Z3_inc_ref(self.ctx.ref(), z3term)
         return z3term
 
@@ -826,6 +845,36 @@ class Z3Converter(Converter, DagWalker):
             z3.Z3_inc_ref(self.ctx.ref(), z3term)
         return z3term
 
+    def walk_str_to_int(self, formula, args, **kwargs):
+        z3term = z3.Z3_mk_str_to_int(self.ctx.ref(), args[0])
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
+        return z3term
+
+    def walk_int_to_str(self, formula, args, **kwargs):
+        z3term = z3.Z3_mk_int_to_str(self.ctx.ref(), args[0])
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
+        return z3term
+
+    def walk_str_length(self, formula, args, **kwargs):
+        z3term = z3.Z3_mk_seq_length(self.ctx.ref(), args[0])
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
+        return z3term
+
+    def walk_str_replace(self, formula, args, **kwargs):
+        z3term = z3.Z3_mk_seq_replace(self.ctx.ref(), args[0], args[1], args[2])
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
+        return z3term
+
+    def walk_str_substr(self, formula, args, **kwargs):
+        z3term = z3.Z3_mk_seq_extract(self.ctx.ref(), args[0], args[1], args[2])
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
+        return z3term
+
+    def walk_str_indexof(self, formula, args, **kwargs):
+        z3term = z3.Z3_mk_seq_index(self.ctx.ref(), args[0], args[1], args[2])
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
+        return z3term
+
     def _z3_to_type(self, sort):
         if sort.kind() == z3.Z3_BOOL_SORT:
             return types.BOOL
@@ -838,6 +887,8 @@ class Z3Converter(Converter, DagWalker):
                                    self._z3_to_type(sort.range()))
         elif sort.kind() == z3.Z3_BV_SORT:
             return types.BVType(sort.size())
+        elif sort.kind() == z3.Z3_SEQ_SORT:
+            return types.STRING
         else:
             raise NotImplementedError("Unsupported sort in conversion: %s" % sort)
 
@@ -888,6 +939,12 @@ class Z3Converter(Converter, DagWalker):
     walk_bv_ashr = make_walk_binary(z3.Z3_mk_bvashr)
     walk_exists = walk_quantifier
     walk_forall = walk_quantifier
+    walk_str_contains = make_walk_binary(z3.Z3_mk_seq_contains)
+    walk_str_suffixof = make_walk_binary(z3.Z3_mk_seq_suffix)
+    walk_str_prefixof = make_walk_binary(z3.Z3_mk_seq_prefix)
+    walk_str_concat   = make_walk_nary(z3.Z3_mk_seq_concat)
+    walk_str_charat   = make_walk_binary(z3.Z3_mk_seq_at)
+
 
     def _type_to_z3(self, tp):
         """Convert a pySMT type into the corresponding Z3 sort."""
