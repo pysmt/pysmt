@@ -139,7 +139,7 @@ class TestBasic(TestCase):
         v0 = self.env.formula_manager.get_symbol('"v__AT0"')
         v1_str = next(iter(ann[v0]["next"]))
         self.env.formula_manager.get_symbol(v1_str)
-        self.assertEquals(v1_str, '"v__AT1"')
+        self.assertEqual(v1_str, '"v__AT1"')
 
 
     def test_complex_annotations_values(self):
@@ -153,7 +153,7 @@ class TestBasic(TestCase):
         ann = script.annotations
         v0 = self.env.formula_manager.get_symbol('"v__AT0"')
         v1_str = next(iter(ann[v0]["next"]))
-        self.assertEquals(v1_str, "(+ 1     meaningless)")
+        self.assertEqual(v1_str, "(+ 1     meaningless)")
 
 
     def test_annotations_colon_values(self):
@@ -167,7 +167,7 @@ class TestBasic(TestCase):
         ann = script.annotations
         v0 = self.env.formula_manager.get_symbol('"v__AT0"')
         v1_str = next(iter(ann[v0]["next"]))
-        self.assertEquals(v1_str, ":this_is_considered_a_value")
+        self.assertEqual(v1_str, ":this_is_considered_a_value")
 
 
 if __name__ == '__main__':
