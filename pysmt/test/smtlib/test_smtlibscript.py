@@ -225,7 +225,7 @@ class TestSmtLibScript(TestCase):
             except NotImplementedError:
                 nie += 1
         # There are currently 3 not-implemented commands
-        self.assertEquals(nie, 3)
+        self.assertEqual(nie, 3)
 
 DEMO_SMTSCRIPT = [ "(declare-fun a () Bool)",
                    "(declare-fun b () Bool)",
