@@ -231,7 +231,7 @@ matrix:
     osx_image: xcode9.3
     language: generic
     python: pypy
-    env: PYSMT_SOLVER="None"      PYSMT_GMPY="FALSE"   PYSMT_CYTHON="FALSE"   TRAVIS_PYTHON_VERSION="pypy3.5-5.10.0"
+    env: PYSMT_SOLVER="None"      PYSMT_GMPY="FALSE"   PYSMT_CYTHON="FALSE"   TRAVIS_PYTHON_VERSION="pypy3.5-5.10.1"
 
 
 git:
