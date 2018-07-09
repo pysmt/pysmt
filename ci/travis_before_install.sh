@@ -46,8 +46,8 @@ if [ "${TRAVIS_OS_NAME}" == "osx" ]; then
     brew_install_or_upgrade xz
     brew_install_or_upgrade zlib
 
-    brew_install_or_upgrade install libffi
-    brew_install_or_upgrade install ncurses
+    brew_install_or_upgrade libffi
+    brew_install_or_upgrade ncurses
 
     CFLAGS="-I$(xcrun --show-sdk-path)/usr/include" pyenv install ${TRAVIS_PYTHON_VERSION}
 
