@@ -1,6 +1,7 @@
 #!/bin/bash
 set -ev
 
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 #
 # Skip Install if Python 2.7 or PyPy and not a PR
@@ -26,6 +27,9 @@ if [ "${TRAVIS_PULL_REQUEST}" == "false" ] && [ "${TRAVIS_BRANCH}" != "master" ]
         exit 0
     fi
 fi
+
+echo "Check that the correct version of Python is running"
+python ${DIR}/check_python_version.py "${TRAVIS_PYTHON_VERSION}"
 
 PYSMT_SOLVER_FOLDER="${PYSMT_SOLVER}_${TRAVIS_OS_NAME}"
 PYSMT_SOLVER_FOLDER="${PYSMT_SOLVER_FOLDER//,/$'_'}"
