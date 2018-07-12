@@ -51,10 +51,10 @@ if [ "${TRAVIS_OS_NAME}" == "osx" ]; then
     brew_install_or_upgrade libffi
     brew_install_or_upgrade ncurses
 
-    CFLAGS="-I$(xcrun --show-sdk-path)/usr/include" pyenv install ${TRAVIS_PYTHON_VERSION}
+    pyenv install ${TRAVIS_PYTHON_VERSION}
 
     pyenv virtualenv ${TRAVIS_PYTHON_VERSION} venv
-
-    # Check that the correct version of Python is running.
-    python ${DIR}/check_python_version.py "${TRAVIS_PYTHON_VERSION}"
 fi
+
+# Check that the correct version of Python is running.
+python ${DIR}/check_python_version.py "${TRAVIS_PYTHON_VERSION}"
