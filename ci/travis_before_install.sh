@@ -54,6 +54,7 @@ if [ "${TRAVIS_OS_NAME}" == "osx" ]; then
     pyenv install ${TRAVIS_PYTHON_VERSION}
 
     pyenv virtualenv ${TRAVIS_PYTHON_VERSION} venv
+    pyenv activate venv
 fi
 
 # Check that the correct version of Python is running.
