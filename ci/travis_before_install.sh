@@ -1,6 +1,8 @@
 #!/bin/bash
 set -ev
 
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
 #
 # Skip Install if Python 2.7 or PyPy and not a PR
 #
@@ -54,5 +56,5 @@ if [ "${TRAVIS_OS_NAME}" == "osx" ]; then
     pyenv virtualenv ${TRAVIS_PYTHON_VERSION} venv
 
     # Check that the correct version of Python is running.
-    python --version
+    python ${DIR}/check_python_version.py "${TRAVIS_PYTHON_VERSION}"
 fi
