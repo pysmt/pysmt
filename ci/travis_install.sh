@@ -34,11 +34,6 @@ echo "Check that the correct version of Python is running"
 python ${DIR}/check_python_version.py "${TRAVIS_PYTHON_VERSION}"
 
 PIP_INSTALL="python -m pip install --upgrade"
-if [ "${TRAVIS_OS_NAME}" == "osx" ]; then
-    # On OSX we need to upgrade pip as the image version is too old ...
-    curl https://bootstrap.pypa.io/get-pip.py | sudo python
-    PIP_INSTALL="python -m pip install --user --upgrade"
-fi
 
 $PIP_INSTALL configparser
 $PIP_INSTALL six
