@@ -37,7 +37,8 @@ PIP_INSTALL="python -m pip install --upgrade"
 
 $PIP_INSTALL configparser
 $PIP_INSTALL six
-$PIP_INSTALL cython;
+$PIP_INSTALL cython
+$PIP_INSTALL wheel
 
 if [ "${PYSMT_SOLVER}" == "all" ] || [ "${PYSMT_SOLVER}" == *"btor"* ];
 then
