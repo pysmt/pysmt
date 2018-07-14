@@ -22,10 +22,9 @@ class BtorInstaller(SolverInstaller):
     SOLVER = "btor"
 
     def __init__(self, install_dir, bindings_dir, solver_version,
-                 mirror_link=None, lingeling_version=None):
-        archive_name = "boolector-%s-with-lingeling-%s.tar.bz2" % \
-                       (solver_version, lingeling_version)
-        native_link = "http://fmv.jku.at/boolector/{archive_name}"
+                 mirror_link=None):
+        archive_name = "boolector-%s.tar.gz" % solver_version
+        native_link = "https://github.com/Boolector/boolector/archive/%s.tar.gz" % solver_version
         SolverInstaller.__init__(self, install_dir=install_dir,
                                  bindings_dir=bindings_dir,
                                  solver_version=solver_version,
@@ -34,53 +33,48 @@ class BtorInstaller(SolverInstaller):
                                  mirror_link=mirror_link)
 
     def compile(self):
-        import glob
+        # Unpack
+        SolverInstaller.untar(os.path.join(self.base_dir, self.archive_name),
+                              self.extract_path)
+
         # Build lingeling
-        lingeling_archive = glob.glob(os.path.join(self.extract_path,
-                                                   "archives", "lingeling-*.tar.gz"))[0]
-        SolverInstaller.untar(lingeling_archive, self.extract_path)
-        lingeling_dir = glob.glob(os.path.join(self.extract_path,
-                                               "lingeling*"))[0]
-        SolverInstaller.mv(lingeling_dir,
-                           os.path.join(self.extract_path, "lingeling"))
-        SolverInstaller.run("bash ./configure.sh -fPIC",
-                          directory=os.path.join(self.extract_path, "lingeling"))
-        SolverInstaller.run("make",
-                          directory=os.path.join(self.extract_path, "lingeling"))
+        SolverInstaller.run("bash ./contrib/setup-lingeling.sh",
+                            directory=self.extract_path)
 
         # Build Btor
-        boolector_archive = glob.glob(os.path.join(self.extract_path,
-                                                   "archives", "boolector-*.tar.gz"))[0]
-        SolverInstaller.untar(boolector_archive, self.extract_path)
-        boolector_dir = glob.glob(os.path.join(self.extract_path,
-                                               "boolector*"))[0]
-        SolverInstaller.mv(boolector_dir,
-                           os.path.join(self.extract_path, "boolector"))
+        SolverInstaller.run("bash ./contrib/setup-btor2tools.sh",
+                            directory=self.extract_path)
 
-        SolverInstaller.run("bash ./configure.sh -python",
-                          directory=os.path.join(self.extract_path, "boolector"))
-        SolverInstaller.run("make",
-                          directory=os.path.join(self.extract_path, "boolector"))
-
-        # Redo this step to make sure the correct version of python is used
-        SolverInstaller.run_python("setup.py build_ext -b build -t build/api/python/tmp",
-                                   directory=os.path.join(self.extract_path, "boolector"))
+        # Build Boolector Solver
+        SolverInstaller.run("bash ./configure.sh --python",
+                            directory=self.extract_path)
+        SolverInstaller.run("make -j2",
+                            directory=os.path.join(self.extract_path, "build"))
 
 
     def move(self):
-        bdir = os.path.join(self.extract_path, "boolector/build")
-        for f in os.listdir(bdir):
-            if f.startswith("boolector") and f.endswith(".so"):
-                SolverInstaller.mv(os.path.join(bdir, f), self.bindings_dir)
+        libdir = os.path.join(self.extract_path, "build", "lib")
+        for f in os.listdir(libdir):
+            if f.startswith("pyboolector") and f.endswith(".so"):
+                SolverInstaller.mv(os.path.join(libdir, f),
+                                   self.bindings_dir)
+
 
     def get_installed_version(self):
+        import re
+
         res = self.get_installed_version_script(self.bindings_dir, "btor")
         version = None
         if res == "OK":
-            vfile = os.path.join(self.extract_path, "boolector", "VERSION")
+            vfile = os.path.join(self.extract_path, "CMakeLists.txt")
             try:
                 with open(vfile) as f:
-                    version = f.read().strip()
+                    content = f.read().strip()
+                    m = re.search('set\(VERSION "(.*)"\)', content)
+                if m is not None:
+                    version = m.group(1)
             except OSError:
+                return None
+            except IOError:
                 return None
         return version
