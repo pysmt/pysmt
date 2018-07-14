@@ -38,7 +38,7 @@ def check_version(module):
                 version = m.group(1)
 
         elif module == "btor":
-            import boolector
+            import pyboolector
             version = "OK" # Just checking if import succeeds
 
         elif module == "cvc4":
