@@ -83,10 +83,10 @@ matrix:
     env: PYSMT_SOLVER="z3_wrap"   PYSMT_GMPY="FALSE"
 
   - os: linux
-    python: pypy
+    python: pypy3.5
     env: PYSMT_SOLVER="None"      PYSMT_GMPY="FALSE"   PYSMT_CYTHON="TRUE"
   - os: linux
-    python: pypy
+    python: pypy3.5
     env: PYSMT_SOLVER="None"      PYSMT_GMPY="FALSE"   PYSMT_CYTHON="FALSE"
 
 
@@ -223,15 +223,15 @@ matrix:
     env: PYSMT_SOLVER="z3_wrap"   PYSMT_GMPY="FALSE"   TRAVIS_PYTHON_VERSION="2.7.15"
 
   - os: osx
-    osx_image: xcode9
+    osx_image: xcode9.3
     language: generic
     python: pypy
-    env: PYSMT_SOLVER="None"      PYSMT_GMPY="FALSE"   PYSMT_CYTHON="TRUE"   TRAVIS_PYTHON_VERSION="pypy2.7-6.0.0"
+    env: PYSMT_SOLVER="None"      PYSMT_GMPY="FALSE"   PYSMT_CYTHON="TRUE"   TRAVIS_PYTHON_VERSION="pypy3.5-5.10.1"
   - os: osx
-    osx_image: xcode9
+    osx_image: xcode9.3
     language: generic
     python: pypy
-    env: PYSMT_SOLVER="None"      PYSMT_GMPY="FALSE"   PYSMT_CYTHON="FALSE"   TRAVIS_PYTHON_VERSION="pypy2.7-6.0.0"
+    env: PYSMT_SOLVER="None"      PYSMT_GMPY="FALSE"   PYSMT_CYTHON="FALSE"   TRAVIS_PYTHON_VERSION="pypy3.5-5.10.1"
 
 
 git:

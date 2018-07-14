@@ -1,6 +1,8 @@
 #!/bin/bash
 set -ev
 
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
 #
 # Skip Install if Python 2.7 or PyPy and not a PR
 #
@@ -42,11 +44,20 @@ if [ "${TRAVIS_OS_NAME}" == "osx" ]; then
     brew_install_or_upgrade pyenv
     brew_install_or_upgrade pyenv-virtualenv
 
+    brew_install_or_upgrade readline
+    brew_install_or_upgrade xz
+    brew_install_or_upgrade zlib
+
+    brew_install_or_upgrade libffi
+    brew_install_or_upgrade ncurses
 
     pyenv install ${TRAVIS_PYTHON_VERSION}
 
     pyenv virtualenv ${TRAVIS_PYTHON_VERSION} venv
 
-    # Check that the correct version of Python is running.
-    python --version
+    eval "$(pyenv init -)"
+    pyenv activate venv
 fi
+
+# Check that the correct version of Python is running.
+python ${DIR}/check_python_version.py "${TRAVIS_PYTHON_VERSION}"

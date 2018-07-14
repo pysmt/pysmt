@@ -1,6 +1,8 @@
 #!/bin/bash
 set -ev
 
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
 #
 # Skip Install if Python 2.7 or PyPy and not a PR
 #
@@ -24,16 +26,19 @@ if [ "${TRAVIS_PULL_REQUEST}" == "false" ] && [ "${TRAVIS_BRANCH}" != "master" ]
     fi
 fi
 
-PIP_INSTALL="python -m pip install --upgrade"
 if [ "${TRAVIS_OS_NAME}" == "osx" ]; then
-    # On OSX we need to upgrade pip as the image version is too old ...
-    curl https://bootstrap.pypa.io/get-pip.py | sudo python
-    PIP_INSTALL="python -m pip install --user --upgrade"
+    eval "$(pyenv init -)"
+    pyenv activate venv
 fi
+echo "Check that the correct version of Python is running"
+python ${DIR}/check_python_version.py "${TRAVIS_PYTHON_VERSION}"
+
+PIP_INSTALL="python -m pip install --upgrade"
 
 $PIP_INSTALL configparser
 $PIP_INSTALL six
-$PIP_INSTALL cython;
+$PIP_INSTALL cython
+$PIP_INSTALL wheel
 
 if [ "${PYSMT_SOLVER}" == "all" ] || [ "${PYSMT_SOLVER}" == *"btor"* ];
 then
