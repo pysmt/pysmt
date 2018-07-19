@@ -18,14 +18,14 @@
 from pysmt.shortcuts import (And, Iff, Or, Symbol, Implies, Not,
                              Exists, ForAll,
                              Times, Plus, Minus, Equals, Real,
-                             is_valid, Function)
+                             is_valid, is_sat, Function)
 from pysmt.test import TestCase, skipIfNoSolverForLogic, main
 from pysmt.rewritings import prenex_normal_form, nnf, conjunctive_partition, aig
 from pysmt.rewritings import disjunctive_partition
 from pysmt.rewritings import TimesDistributor, ackermannize
 from pysmt.test.examples import get_example_formulae
 from pysmt.exceptions import SolverReturnedUnknownResultError
-from pysmt.logics import BOOL, QF_NRA, QF_LRA, QF_LIA
+from pysmt.logics import BOOL, QF_NRA, QF_LRA, QF_LIA, QF_AUFLIA
 from pysmt.typing import REAL, INT, FunctionType
 
 
@@ -87,7 +87,7 @@ class TestRewritings(TestCase):
         a,b = (Symbol(x, INT) for x in "ab")
         f,g,h = (Symbol(x, FunctionType(INT, [INT])) for x in "fgh")
         #f(g(h(a))) = f(g(h(b)))
-        formula1 = Equals(
+        formula1 = Not(Equals(
                     Function(f,
                              [Function(g,
                                        [Function(h, [a])])
@@ -97,9 +97,49 @@ class TestRewritings(TestCase):
                                        [Function(h, [b])])
                              ]),
 
-                )
-        ack1 = ackermannize(formula1)
-        print(ack1)
+                ))
+        formula2 = Equals(a, b)
+        formula = And(formula1, formula2)
+        ack = ackermannize(formula)
+        #verify that there are no functions in ack
+        atoms = ack.get_atoms()
+        for atom in atoms:
+            for arg in atom.args():
+                self.assertFalse(arg.is_function_application())
+        #verify that ack and formula are equisat
+        formula_sat = is_sat(formula, logic=QF_AUFLIA)
+        ack_sat = is_sat(ack, logic=QF_LIA)
+        self.assertTrue(formula_sat == ack_sat)
+
+    def test_ackermannization_binary(self):
+        a,b = (Symbol(x, INT) for x in "ab")
+        f,g = (Symbol(x, FunctionType(INT, [INT, INT])) for x in "fg")
+        h = Symbol("h", FunctionType(INT, [INT]))
+        #f(g(h(a))) = f(g(h(b)))
+        formula1 = Not(Equals(
+                    Function(f,
+                             [a, Function(g,
+                                       [a, Function(h, [a])])
+                             ]),
+                    Function(f,
+                             [b, Function(g,
+                                       [b, Function(h, [b])])
+                             ]),
+
+                ))
+        formula2 = Equals(a, b)
+        formula = And(formula1, formula2)
+        ack = ackermannize(formula)
+        #verify that there are no functions in ack
+        atoms = ack.get_atoms()
+        for atom in atoms:
+            for arg in atom.args():
+                self.assertFalse(arg.is_function_application())
+        #verify that ack and formula are equisat
+        formula_sat = is_sat(formula, logic=QF_AUFLIA)
+        ack_sat = is_sat(ack, logic=QF_LIA)
+        self.assertTrue(formula_sat == ack_sat)
+
 
 
     def test_nnf_examples(self):

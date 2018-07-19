@@ -687,7 +687,7 @@ class Ackermannization():
     def __init__(self, environment=None):
         #funs_to_args keeps for every function symbol f,
         #a set of lists of arguments.
-        #if f(g(x),y) amd f(x,g(y)) occur in a formula, then we
+        #if f(g(x),y) and f(x,g(y)) occur in a formula, then we
         #will have "f": set([g(x), y], [x, g(y)])
         self._funs_to_args = {}
 
@@ -701,21 +701,15 @@ class Ackermannization():
 
     def do_ackermannization(self, formula):
         self._fill_maps(formula)
+        #new formula without function symbols
+        substitued_formula = self._make_substitutions(formula)
         #function consistency
         implications = self._get_equality_implications()
         function_consistency = And(implications)
-
-        substitued_formula = self._make_substitutions(formula)
-
         if (len(implications) == 0):
             result = substitued_formula
         else:
             result = And(function_consistency, substitued_formula)
-        #clean dictionary for future formulas
-        #self._funs_to_args = {}
-        #self._terms_to_consts = {}
-        #self._indexes = {}
-
         return result
 
     def _get_equality_implications(self):
@@ -764,6 +758,7 @@ class Ackermannization():
             self._add_application(formula)
             for arg in formula.args():
                 self._add_application(arg)
+                self._fill_maps(arg)
         else:
             for arg in formula.args():
                 self._fill_maps(arg)
@@ -799,8 +794,8 @@ class Ackermannization():
 
 ackermannizators_map = {}
 
-def ackermannize(formula, environment=None):
-    if environment in ackermannizators_map.keys():
+def ackermannize(formula, environment=None, reset_names=True):
+    if environment in ackermannizators_map.keys() and not reset_names:
         ack = ackermannizators_map[environment]
     else:
         ack = Ackermannization(environment)
