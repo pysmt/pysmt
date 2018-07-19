@@ -683,7 +683,7 @@ class TimesDistributor(IdentityDagWalker):
 
 
 
-class Ackermanization():
+class Ackermannization():
     def __init__(self, environment=None):
         #funs_to_args keeps for every function symbol f,
         #a set of lists of arguments.
@@ -699,7 +699,7 @@ class Ackermanization():
         self._indexes = {}
 
 
-    def do_ackermanization(self, formula):
+    def do_ackermannization(self, formula):
         self._fill_maps(formula)
         #function consistency
         implications = self._get_equality_implications()
@@ -712,9 +712,9 @@ class Ackermanization():
         else:
             result = And(function_consistency, substitued_formula)
         #clean dictionary for future formulas
-        self._funs_to_args = {}
-        self._terms_to_consts = {}
-        self._indexes = {}
+        #self._funs_to_args = {}
+        #self._terms_to_consts = {}
+        #self._indexes = {}
 
         return result
 
@@ -795,8 +795,19 @@ class Ackermanization():
 
 
 
-# EOC Ackermanization
+# EOC Ackermannization
 
+ackermannizators_map = {}
+
+def ackermannize(formula, environment=None):
+    if environment in ackermannizators_map.keys():
+        ack = ackermannizators_map[environment]
+    else:
+        ack = Ackermannization(environment)
+        ackermannizators_map[environment] = ack
+    ackermannizator = ackermannizators_map[environment]
+    result = ackermannizator.do_ackermannization(formula)
+    return result
 
 def nnf(formula, environment=None):
     """Converts the given formula in NNF"""

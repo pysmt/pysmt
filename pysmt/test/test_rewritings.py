@@ -18,15 +18,15 @@
 from pysmt.shortcuts import (And, Iff, Or, Symbol, Implies, Not,
                              Exists, ForAll,
                              Times, Plus, Minus, Equals, Real,
-                             is_valid)
+                             is_valid, Function)
 from pysmt.test import TestCase, skipIfNoSolverForLogic, main
 from pysmt.rewritings import prenex_normal_form, nnf, conjunctive_partition, aig
 from pysmt.rewritings import disjunctive_partition
-from pysmt.rewritings import TimesDistributor
+from pysmt.rewritings import TimesDistributor, ackermannize
 from pysmt.test.examples import get_example_formulae
 from pysmt.exceptions import SolverReturnedUnknownResultError
 from pysmt.logics import BOOL, QF_NRA, QF_LRA, QF_LIA
-from pysmt.typing import REAL
+from pysmt.typing import REAL, INT, FunctionType
 
 
 class TestRewritings(TestCase):
@@ -82,6 +82,25 @@ class TestRewritings(TestCase):
                     except SolverReturnedUnknownResultError:
                         ok = not logic.quantifier_free
                     self.assertTrue(ok)
+
+    def test_ackermannization_unary(self):
+        a,b = (Symbol(x, INT) for x in "ab")
+        f,g,h = (Symbol(x, FunctionType(INT, [INT])) for x in "fgh")
+        #f(g(h(a))) = f(g(h(b)))
+        formula1 = Equals(
+                    Function(f,
+                             [Function(g,
+                                       [Function(h, [a])])
+                             ]),
+                    Function(f,
+                             [Function(g,
+                                       [Function(h, [b])])
+                             ]),
+
+                )
+        ack1 = ackermannize(formula1)
+        print(ack1)
+
 
     def test_nnf_examples(self):
         for (f, _, _, logic) in get_example_formulae():
