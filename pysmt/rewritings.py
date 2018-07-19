@@ -24,9 +24,6 @@ import pysmt.typing as types
 import pysmt.operators as op
 from pysmt.shortcuts import Symbol, Equals, And, Implies, Function
 
-import pprint
-pp = pprint.PrettyPrinter(indent=4)
-
 
 #helper to iterate over pairs
 def pairwise(iterable):
