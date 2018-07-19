@@ -112,6 +112,7 @@ class TestRewritings(TestCase):
         ack_sat = is_sat(ack, logic=QF_LIA)
         self.assertTrue(formula_sat == ack_sat)
 
+    @skipIfNoSolverForLogic(QF_AUFLIA)
     def test_ackermannization_binary(self):
         a,b = (Symbol(x, INT) for x in "ab")
         f,g = (Symbol(x, FunctionType(INT, [INT, INT])) for x in "fg")
