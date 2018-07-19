@@ -83,6 +83,7 @@ class TestRewritings(TestCase):
                         ok = not logic.quantifier_free
                     self.assertTrue(ok)
 
+    @skipIfNoSolverForLogic(QF_AUFLIA)
     def test_ackermannization_unary(self):
         a,b = (Symbol(x, INT) for x in "ab")
         f,g,h = (Symbol(x, FunctionType(INT, [INT])) for x in "fgh")
