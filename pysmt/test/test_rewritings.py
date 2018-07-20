@@ -101,16 +101,7 @@ class TestRewritings(TestCase):
                 ))
         formula2 = Equals(a, b)
         formula = And(formula1, formula2)
-        ack = ackermannize(formula)
-        #verify that there are no functions in ack
-        atoms = ack.get_atoms()
-        for atom in atoms:
-            for arg in atom.args():
-                self.assertFalse(arg.is_function_application())
-        #verify that ack and formula are equisat
-        formula_sat = is_sat(formula, logic=QF_AUFLIA)
-        ack_sat = is_sat(ack, logic=QF_LIA)
-        self.assertTrue(formula_sat == ack_sat)
+        self._verify_ackermannization(formula)
 
     @skipIfNoSolverForLogic(QF_AUFLIA)
     def test_ackermannization_binary(self):
@@ -131,6 +122,9 @@ class TestRewritings(TestCase):
                 ))
         formula2 = Equals(a, b)
         formula = And(formula1, formula2)
+        self._verify_ackermannization(formula)
+
+    def _verify_ackermannization(self, formula):
         ack = ackermannize(formula)
         #verify that there are no functions in ack
         atoms = ack.get_atoms()
@@ -141,7 +135,6 @@ class TestRewritings(TestCase):
         formula_sat = is_sat(formula, logic=QF_AUFLIA)
         ack_sat = is_sat(ack, logic=QF_LIA)
         self.assertTrue(formula_sat == ack_sat)
-
 
 
     def test_nnf_examples(self):
