@@ -22,7 +22,7 @@ from pysmt.shortcuts import (And, Iff, Or, Symbol, Implies, Not,
 from pysmt.test import TestCase, skipIfNoSolverForLogic, main
 from pysmt.rewritings import prenex_normal_form, nnf, conjunctive_partition, aig
 from pysmt.rewritings import disjunctive_partition
-from pysmt.rewritings import TimesDistributor, ackermannize
+from pysmt.rewritings import TimesDistributor, Ackermannizer
 from pysmt.test.examples import get_example_formulae
 from pysmt.exceptions import SolverReturnedUnknownResultError
 from pysmt.logics import BOOL, QF_NRA, QF_LRA, QF_LIA, QF_AUFLIA
@@ -87,7 +87,7 @@ class TestRewritings(TestCase):
     def test_ackermannization_unary(self):
         a,b = (Symbol(x, INT) for x in "ab")
         f,g,h = (Symbol(x, FunctionType(INT, [INT])) for x in "fgh")
-        #f(g(h(a))) = f(g(h(b)))
+        #f(g(h(a))) != f(g(h(b)))
         formula1 = Not(Equals(
                     Function(f,
                              [Function(g,
@@ -108,7 +108,7 @@ class TestRewritings(TestCase):
         a,b = (Symbol(x, INT) for x in "ab")
         f,g = (Symbol(x, FunctionType(INT, [INT, INT])) for x in "fg")
         h = Symbol("h", FunctionType(INT, [INT]))
-        #f(g(h(a))) = f(g(h(b)))
+        #f(g(h(a))) != f(g(h(b)))
         formula1 = Not(Equals(
                     Function(f,
                              [a, Function(g,
@@ -125,7 +125,8 @@ class TestRewritings(TestCase):
         self._verify_ackermannization(formula)
 
     def _verify_ackermannization(self, formula):
-        ack = ackermannize(formula)
+        ackermannization = Ackermannizer()
+        ack = ackermannization.do_ackermannization(formula)
         #verify that there are no functions in ack
         atoms = ack.get_atoms()
         for atom in atoms:

@@ -680,8 +680,9 @@ class TimesDistributor(IdentityDagWalker):
 
 
 
-class Ackermannization():
+class Ackermannizer(IdentityDagWalker):
     def __init__(self, environment=None):
+        IdentityDagWalker.__init__(self, environment)
         #funs_to_args keeps for every function symbol f,
         #a set of lists of arguments.
         #if f(g(x),y) and f(x,g(y)) occur in a formula, then we
@@ -724,9 +725,15 @@ class Ackermannization():
     def _generate_implication(self, option1, option2, f):
         left_conjuncts = set([])
         for i in range(0, len(option1)):
-            const1 = self._terms_dict[option1[i]]
-            const2 = self._terms_dict[option2[i]]
-            conjunct = EqualsOrIff(const1, const2)
+            if option1[i].is_function_application():
+                term1 = self._terms_dict[option1[i]]
+            else:
+                term1 = option1[i]
+            if option2[i].is_function_application():
+                term2 = self._terms_dict[option2[i]]
+            else:
+                term2 = option2[i]
+            conjunct = EqualsOrIff(term2, term2)
             left_conjuncts.add(conjunct)
         left = And(left_conjuncts)
         app1 = Function(f, option1)
@@ -744,15 +751,17 @@ class Ackermannization():
         return formula.substitute(self._terms_dict)
 
     def _fill_maps(self, formula):
-        if formula.is_function_application():
+        self.walk(formula)
+
+
+    def walk_function(self, formula, args, **kwargs):
+        rewritten = IdentityDagWalker.super(self,formula, args, **kwargs)
+        if rewritten not in self._terms_dict:
             function_name = formula.function_name()
             arguments = formula.args()
             self._add_args_to_fun(function_name, arguments)
-            self._add_application(formula)
-            for arg in formula.args():
-                self._add_application(arg)
-        for arg in formula.args():
-            self._fill_maps(arg)
+            self._add_application(rewritten)
+        return formula
 
 
     def _add_application(self, formula):
@@ -766,8 +775,6 @@ class Ackermannization():
                 sym = FreshSymbol(typename=const_type,
                              template="_ack_" + term_txt + "_%d")
                 self._terms_dict[formula] = sym
-            else:
-                self._terms_dict[formula] = formula
 
     def _add_args_to_fun(self, function_name, args):
         if function_name not in self._funs_to_args.keys():
@@ -776,19 +783,8 @@ class Ackermannization():
 
 
 
-# EOC Ackermannization
+# EOC Ackermannizer
 
-ackermannizators_map = {}
-
-def ackermannize(formula, environment=None, reset_names=True):
-    if environment in ackermannizators_map.keys() and not reset_names:
-        ack = ackermannizators_map[environment]
-    else:
-        ack = Ackermannization(environment)
-        ackermannizators_map[environment] = ack
-    ackermannizator = ackermannizators_map[environment]
-    result = ackermannizator.do_ackermannization(formula)
-    return result
 
 def nnf(formula, environment=None):
     """Converts the given formula in NNF"""
