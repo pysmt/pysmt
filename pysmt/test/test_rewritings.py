@@ -132,10 +132,16 @@ class TestRewritings(TestCase):
             for arg in atom.args():
                 self.assertFalse(arg.is_function_application())
         #verify that ack and formula are equisat
-        formula_sat = is_sat(formula, logic=QF_AUFLIA)
-        ack_sat = is_sat(ack, logic=QF_LIA)
-        self.assertTrue(formula_sat == ack_sat)
+        formula_sat = is_sat(formula)
+        ack_sat = is_sat(ack)
+        ok = (formula_sat == True and ack_sat == True) or (formula_sat == False and ack_sat == False)
+        self.assertTrue(ok)
 
+    def test_ackermannization_for_examples(self):
+        for (f, _, _, logic) in get_example_formulae():
+            if (not logic.is_quantified()):
+                if self.env.factory.has_solvers(logic=logic):
+                    self._verify_ackermannization(f)
 
     def test_nnf_examples(self):
         for (f, _, _, logic) in get_example_formulae():

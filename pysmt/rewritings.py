@@ -19,11 +19,11 @@
 This module defines some rewritings for pySMT formulae.
 """
 from pysmt.decorators import deprecated
-from pysmt.walkers import DagWalker, IdentityDagWalker, TreeWalker, handles
+from pysmt.walkers import DagWalker, IdentityDagWalker, handles
 import pysmt.typing as types
 import pysmt.operators as op
-from pysmt.shortcuts import Symbol, Equals, And, Implies, Function
-
+from pysmt.shortcuts import Symbol, FreshSymbol, EqualsOrIff, And, Implies, Function
+from pysmt.smtlib.printers import to_smtlib
 
 #helper to iterate over pairs
 def pairwise(iterable):
@@ -689,12 +689,8 @@ class Ackermannization():
         self._funs_to_args = {}
 
         #maps the actual applications to the constants that will be
-        #generated
-        self._terms_to_consts = {}
-
-        #maps each application to an index, used for the constant generation
-        self._indexes = {}
-
+        #generated, or to the original term if it is not replaced.
+        self._terms_dict = {}
 
     def do_ackermannization(self, formula):
         self._fill_maps(formula)
@@ -728,16 +724,16 @@ class Ackermannization():
     def _generate_implication(self, option1, option2, f):
         left_conjuncts = set([])
         for i in range(0, len(option1)):
-            const1 = self._terms_to_consts[option1[i]]
-            const2 = self._terms_to_consts[option2[i]]
-            conjunct = Equals(const1, const2)
+            const1 = self._terms_dict[option1[i]]
+            const2 = self._terms_dict[option2[i]]
+            conjunct = EqualsOrIff(const1, const2)
             left_conjuncts.add(conjunct)
         left = And(left_conjuncts)
         app1 = Function(f, option1)
         app2 = Function(f, option2)
-        app1_const = self._terms_to_consts[app1]
-        app2_const = self._terms_to_consts[app2]
-        right = Equals(app1_const, app2_const)
+        app1_const = self._terms_dict[app1]
+        app2_const = self._terms_dict[app2]
+        right = EqualsOrIff(app1_const, app2_const)
         implication = Implies(left, right)
         return implication
 
@@ -745,7 +741,7 @@ class Ackermannization():
 
 
     def _make_substitutions(self, formula):
-        return formula.substitute(self._terms_to_consts)
+        return formula.substitute(self._terms_dict)
 
     def _fill_maps(self, formula):
         if formula.is_function_application():
@@ -760,23 +756,18 @@ class Ackermannization():
 
 
     def _add_application(self, formula):
-        if formula in self._terms_to_consts.keys():
+        if formula in self._terms_dict.keys():
             pass
         else:
-            const_name = "__x" + str(self._generate_code(formula)) + "__"
             if formula.is_function_application():
                 const_type = formula.function_name().symbol_type().return_type
+                term_smt = to_smtlib(formula, False)
+                term_txt = term_smt.replace("(", "_").replace(")", "_").replace(" ", "_")
+                sym = FreshSymbol(typename=const_type,
+                             template="_ack_" + term_txt + "_%d")
+                self._terms_dict[formula] = sym
             else:
-                const_type = formula.get_type()
-            self._terms_to_consts[formula] = Symbol(const_name, const_type)
-
-
-    def _generate_code(self, application):
-        if application in self._indexes:
-            return self._indexes[application]
-        else:
-            self._indexes[application] = len(self._indexes)
-            return self._indexes[application]
+                self._terms_dict[formula] = formula
 
     def _add_args_to_fun(self, function_name, args):
         if function_name not in self._funs_to_args.keys():
