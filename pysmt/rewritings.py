@@ -22,7 +22,6 @@ from pysmt.decorators import deprecated
 from pysmt.walkers import DagWalker, IdentityDagWalker, handles
 import pysmt.typing as types
 import pysmt.operators as op
-from pysmt.shortcuts import Symbol, FreshSymbol, EqualsOrIff, And, Implies, Function
 from pysmt.smtlib.printers import to_smtlib
 
 #helper to iterate over pairs
@@ -699,11 +698,11 @@ class Ackermannizer(IdentityDagWalker):
         substitued_formula = self._make_substitutions(formula)
         #function consistency
         implications = self._get_equality_implications()
-        function_consistency = And(implications)
+        function_consistency = self.mgr.And(implications)
         if (len(implications) == 0):
             result = substitued_formula
         else:
-            result = And(function_consistency, substitued_formula)
+            result = self.mgr.And(function_consistency, substitued_formula)
         return result
 
     def _get_equality_implications(self):
@@ -733,15 +732,15 @@ class Ackermannizer(IdentityDagWalker):
                 term2 = self._terms_dict[option2[i]]
             else:
                 term2 = option2[i]
-            conjunct = EqualsOrIff(term2, term2)
+            conjunct = self.mgr.EqualsOrIff(term2, term2)
             left_conjuncts.add(conjunct)
-        left = And(left_conjuncts)
-        app1 = Function(f, option1)
-        app2 = Function(f, option2)
+        left = self.mgr.And(left_conjuncts)
+        app1 = self.mgr.Function(f, option1)
+        app2 = self.mgr.Function(f, option2)
         app1_const = self._terms_dict[app1]
         app2_const = self._terms_dict[app2]
-        right = EqualsOrIff(app1_const, app2_const)
-        implication = Implies(left, right)
+        right = self.mgr.EqualsOrIff(app1_const, app2_const)
+        implication = self.mgr.Implies(left, right)
         return implication
 
 
@@ -770,10 +769,8 @@ class Ackermannizer(IdentityDagWalker):
         else:
             if formula.is_function_application():
                 const_type = formula.function_name().symbol_type().return_type
-                term_smt = to_smtlib(formula, False)
-                term_txt = term_smt.replace("(", "_").replace(")", "_").replace(" ", "_")
-                sym = FreshSymbol(typename=const_type,
-                             template="_ack_" + term_txt + "_%d")
+                sym = self.mgr.FreshSymbol(typename=const_type,
+                             template="ack%d")
                 self._terms_dict[formula] = sym
 
     def _add_args_to_fun(self, function_name, args):
