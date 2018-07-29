@@ -19,3 +19,4 @@ This directory contains examples to get you started using pySMT. Suggested order
 14. `xor.py </examples/xor.py>`_ : Equivalence checking of XOR rewriting using BitVectors
 15. `qe.py </examples/qe.py>`_ : Quantifier Elimination of an LRA formula
 16. `theory_combination.py </examples/theory_combination.py>`_ : Combine multiple theories (Array, BitVectors, Integer, and Reals) in the same formula
+17. `portfolio.py </examples/portfolio.py>`_ : Portfolio solving

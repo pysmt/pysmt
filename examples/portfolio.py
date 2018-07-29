@@ -15,10 +15,16 @@ f = Implies(x, y)
 #
 from pysmt.shortcuts import is_sat
 
+# We enable logging to see what is going on behind the scenes:
+import logging
+_info = logging.getLogger(__name__).info
+logging.basicConfig(level=logging.DEBUG)
+
 # A solver set is an iterable of solver names or pairs of
 # solvers+options (See next example)
 
-solvers_set = ["z3", "yices"]
+_info("Example 1: is_sat")
+solvers_set = ["z3", "yices", "msat"]
 res = is_sat(f, portfolio=solvers_set)
 assert res is True
 
@@ -34,6 +40,8 @@ from pysmt.logics import QF_UFLIRA
 
 # The options given to the Portfolio will be passed to all solvers, in
 # particular, we are enabling incrementality and model generation.
+
+_info("Example 2: Portfolio()")
 with Portfolio(solvers_set,
                logic=QF_UFLIRA,
                incremental=True,
@@ -56,9 +64,11 @@ with Portfolio(solvers_set,
 # documentation. This is an area of pySMT that could use additional
 # feedback and help!
 
+_info("Example 3: Portfolio w options")
 with Portfolio([("msat", {"random_seed": 1}),
                 ("msat", {"random_seed": 17}),
-                ("msat", {"random_seed": 42})],
+                ("msat", {"random_seed": 42}),
+                "cvc4", "yices"],
                logic=QF_UFLIRA,
                incremental=False,
                generate_models=False) as s:
