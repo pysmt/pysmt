@@ -46,7 +46,7 @@ fi
 echo "${PYTHONPATH}"
 python install.py --env
 python install.py --check
-
+python -c "import pyboolector"
 #
 # Run the test suite
 #  * Coverage is enabled only on master / all
