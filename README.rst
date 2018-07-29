@@ -149,7 +149,7 @@ Using other SMT-LIB Solvers
    # The solver name of the SMT-LIB solver can be now used anywhere
    # where pySMT would accept an API solver name
    with Solver(name=name, logic="QF_UFLRA") as s:
-     assert s.is_sat(Symbol("x"))
+     print(s.is_sat(Symbol("x"))) # True
 
 
 
@@ -241,7 +241,7 @@ each of the available solvers.
  +------------------+-----------+--------------------------------+-------------+------------------------+------------+--------------+
  | Z3               |  z3       | UF, LIA, LRA, BV, AX, NRA, NIA |  z3         | z3                     | Yes        | Yes          |
  +------------------+-----------+--------------------------------+-------------+------------------------+------------+--------------+
- | CVC4             |  cvc4     | UF, LIA, LRA, BV, AX, Strings  |  Yes        | No                     | No         | No           |
+ | CVC4             |  cvc4     | UF, LIA, LRA, BV, AX, S       |  Yes        | No                     | No         | No           |
  +------------------+-----------+--------------------------------+-------------+------------------------+------------+--------------+
  | Yices            |  yices    | UF, LIA, LRA, BV               |  No         | No                     | No         | No           |
  +------------------+-----------+--------------------------------+-------------+------------------------+------------+--------------+
