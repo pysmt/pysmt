@@ -89,6 +89,44 @@ Is there a value for each letter (between 1 and 9) so that H+E+L+L+O = W+O+R+L+D
   else:
     print("No solution found")
 
+
+Portfolio
+---------
+
+Portfolio solving consists of running multiple solvers in
+parallel. pySMT provides a simple interface to perform portfolio
+solving using multiple solvers and multiple solver configurations.
+
+.. code:: python
+
+   from pysmt.shortcuts import Portfolio, Symbol, Not
+
+   x, y = Symbol("x"), Symbol("y")
+   f = x.Implies(y)
+
+   with Portfolio(["cvc4",
+                   "yices",
+                   ("msat", {"random_seed": 1}),
+                   ("msat", {"random_seed": 17}),
+                   ("msat", {"random_seed": 42})],
+                  logic="QF_UFLIRA",
+                  incremental=False,
+                  generate_models=False) as s:
+     s.add_assertion(f)
+     s.push()
+     s.add_assertion(x)
+     res = s.solve()
+     v_y = s.get_value(y)
+     print(v_y) # TRUE
+
+     s.pop()
+     s.add_assertion(Not(y))
+     res = s.solve()
+     v_x = s.get_value(x)
+     print(v_x) # FALSE
+
+
+
 Check out more examples in the `examples/ directory
 </examples>`_ and the `documentation on ReadTheDocs <http://pysmt.readthedocs.io>`_
 
