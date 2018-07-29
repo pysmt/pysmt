@@ -200,3 +200,14 @@ pySMT is released under the APACHE 2.0 License.
 
 For further questions, feel free to open an issue, or write to
 pysmt@googlegroups.com (`Browse the Archive <https://groups.google.com/d/forum/pysmt>`_).
+
+If you use pySMT in your work, please consider citing:
+
+.. code::
+
+  @inproceedings{pysmt2015,
+    title={PySMT: a solver-agnostic library for fast prototyping of SMT-based algorithms},
+    author={Gario, Marco and Micheli, Andrea},
+    booktitle={SMT Workshop 2015},
+    year={2015}
+  }
