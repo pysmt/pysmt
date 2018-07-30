@@ -705,6 +705,12 @@ class Ackermannizer(IdentityDagWalker):
             result = self.mgr.And(function_consistency, substitued_formula)
         return result
 
+    def get_term_to_const_dict(self):
+        return self._terms_dict
+
+    def get_const_to_term_dict(self):
+        return {v: k for k, v in self._terms_dict.items()}
+
     def _get_equality_implications(self):
         result = set([])
         for f in self._funs_to_args:

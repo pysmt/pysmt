@@ -144,6 +144,32 @@ class TestRewritings(TestCase):
                 if self.env.factory.has_solvers(logic=logic):
                     self._verify_ackermannization(f)
 
+    def test_ackermannization_dictionaries(self):
+        a,b = (Symbol(x, INT) for x in "ab")
+        f,g = (Symbol(x, FunctionType(INT, [INT, INT])) for x in "fg")
+        h = Symbol("h", FunctionType(INT, [INT]))
+        #f(g(h(a))) != f(g(h(b)))
+        formula1 = Not(Equals(
+                    Function(f,
+                             [a, Function(g,
+                                       [a, Function(h, [a])])
+                             ]),
+                    Function(f,
+                             [b, Function(g,
+                                       [b, Function(h, [b])])
+                             ]),
+
+                ))
+        formula2 = Equals(a, b)
+        formula = And(formula1, formula2)
+        ackermannization = Ackermannizer()
+        ack = ackermannization.do_ackermannization(formula)
+        terms_to_consts = ackermannization.get_term_to_const_dict()
+        consts_to_terms = ackermannization.get_const_to_term_dict()
+        term = Function(f, [a, Function(g, [a, Function(h, [a])])])
+        const = terms_to_consts[term]
+        self.assertTrue(term == consts_to_terms[const])
+
     def test_nnf_examples(self):
         for (f, _, _, logic) in get_example_formulae():
             if self.env.factory.has_solvers(logic=logic):
