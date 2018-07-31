@@ -693,10 +693,7 @@ class Ackermannizer(IdentityDagWalker):
         self._terms_dict = {}
 
     def do_ackermannization(self, formula):
-        self._fill_maps(formula)
-        #new formula without function symbols
-        substitued_formula = self._make_substitutions(formula)
-        #function consistency
+        substitued_formula = self._fill_maps_and_sub(formula)
         implications = self._get_equality_implications()
         function_consistency = self.mgr.And(implications)
         if (len(implications) == 0):
@@ -738,7 +735,7 @@ class Ackermannizer(IdentityDagWalker):
                 term2 = self._terms_dict[option2[i]]
             else:
                 term2 = option2[i]
-            conjunct = self.mgr.EqualsOrIff(term2, term2)
+            conjunct = self.mgr.EqualsOrIff(term1, term2)
             left_conjuncts.add(conjunct)
         left = self.mgr.And(left_conjuncts)
         app1 = self.mgr.Function(f, option1)
@@ -749,24 +746,20 @@ class Ackermannizer(IdentityDagWalker):
         implication = self.mgr.Implies(left, right)
         return implication
 
-
-
-
-    def _make_substitutions(self, formula):
-        return formula.substitute(self._terms_dict)
-
-    def _fill_maps(self, formula):
-        self.walk(formula)
-
+    def _fill_maps_and_sub(self, formula):
+        return self.walk(formula)
 
     def walk_function(self, formula, args, **kwargs):
         rewritten = IdentityDagWalker.super(self,formula, args, **kwargs)
-        if rewritten not in self._terms_dict:
+        try:
+            ack_symbol = self._terms_dict[formula]
+        except KeyError:
             function_name = formula.function_name()
             arguments = formula.args()
             self._add_args_to_fun(function_name, arguments)
-            self._add_application(rewritten)
-        return formula
+            self._add_application(formula)
+            ack_symbol = self._terms_dict[formula]
+        return ack_symbol
 
 
     def _add_application(self, formula):

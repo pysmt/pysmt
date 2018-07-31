@@ -27,6 +27,7 @@ from pysmt.test.examples import get_example_formulae
 from pysmt.exceptions import SolverReturnedUnknownResultError
 from pysmt.logics import BOOL, QF_NRA, QF_LRA, QF_LIA, QF_AUFLIA
 from pysmt.typing import REAL, INT, FunctionType
+from pysmt.smtlib.printers import to_smtlib
 
 
 class TestRewritings(TestCase):
