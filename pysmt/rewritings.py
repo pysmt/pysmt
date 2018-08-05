@@ -18,6 +18,7 @@
 """
 This module defines some rewritings for pySMT formulae.
 """
+from itertools import combinations
 
 from pysmt.walkers import DagWalker, IdentityDagWalker, handles
 import pysmt.typing as types
@@ -710,29 +711,20 @@ class Ackermannizer(IdentityDagWalker):
         return result
 
     def _generate_implications(self, f):
-        def pairwise(iterable):
-            # Helper to iterate over pairs
-            a = iter(iterable)
-            return zip(a, a)
-
         result = set([])
         possible_args = self._funs_to_args[f]
-        for option1, option2 in pairwise(possible_args):
+        for option1, option2 in combinations(possible_args, 2):
             implication = self._generate_implication(option1, option2, f)
             result.add(implication)
         return result
 
     def _generate_implication(self, option1, option2, f):
         left_conjuncts = set([])
-        for i in range(0, len(option1)):
-            if option1[i].is_function_application():
-                term1 = self._terms_dict[option1[i]]
-            else:
-                term1 = option1[i]
-            if option2[i].is_function_application():
-                term2 = self._terms_dict[option2[i]]
-            else:
-                term2 = option2[i]
+        for term1, term2 in zip(option1, option2):
+            if term1.is_function_application():
+                term1 = self._terms_dict[term1]
+            if term2.is_function_application():
+                term2 = self._terms_dict[term2]
             conjunct = self.mgr.EqualsOrIff(term1, term2)
             left_conjuncts.add(conjunct)
         left = self.mgr.And(left_conjuncts)
