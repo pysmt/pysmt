@@ -18,16 +18,11 @@
 """
 This module defines some rewritings for pySMT formulae.
 """
-from pysmt.decorators import deprecated
+
 from pysmt.walkers import DagWalker, IdentityDagWalker, handles
 import pysmt.typing as types
 import pysmt.operators as op
-from pysmt.smtlib.printers import to_smtlib
 
-#helper to iterate over pairs
-def pairwise(iterable):
-    a = iter(iterable)
-    return zip(a, a)
 
 class CNFizer(DagWalker):
 
@@ -678,14 +673,13 @@ class TimesDistributor(IdentityDagWalker):
 # EOC TimesDistributivity
 
 
-
 class Ackermannizer(IdentityDagWalker):
     def __init__(self, environment=None):
         IdentityDagWalker.__init__(self, environment)
-        #funs_to_args keeps for every function symbol f,
-        #a set of lists of arguments.
-        #if f(g(x),y) and f(x,g(y)) occur in a formula, then we
-        #will have "f": set([g(x), y], [x, g(y)])
+        # funs_to_args keeps for every function symbol f,
+        # a set of lists of arguments.
+        # if f(g(x),y) and f(x,g(y)) occur in a formula, then we
+        # will have "f": set([g(x), y], [x, g(y)])
         self._funs_to_args = {}
 
         #maps the actual applications to the constants that will be
@@ -695,10 +689,10 @@ class Ackermannizer(IdentityDagWalker):
     def do_ackermannization(self, formula):
         substitued_formula = self._fill_maps_and_sub(formula)
         implications = self._get_equality_implications()
-        function_consistency = self.mgr.And(implications)
         if (len(implications) == 0):
             result = substitued_formula
         else:
+            function_consistency = self.mgr.And(implications)
             result = self.mgr.And(function_consistency, substitued_formula)
         return result
 
@@ -706,7 +700,7 @@ class Ackermannizer(IdentityDagWalker):
         return self._terms_dict
 
     def get_const_to_term_dict(self):
-        return {v: k for k, v in self._terms_dict.items()}
+        return dict((v, k) for k, v in self._terms_dict.items())
 
     def _get_equality_implications(self):
         result = set([])
@@ -715,8 +709,12 @@ class Ackermannizer(IdentityDagWalker):
             result.update(implications)
         return result
 
-
     def _generate_implications(self, f):
+        def pairwise(iterable):
+            # Helper to iterate over pairs
+            a = iter(iterable)
+            return zip(a, a)
+
         result = set([])
         possible_args = self._funs_to_args[f]
         for option1, option2 in pairwise(possible_args):
@@ -750,29 +748,25 @@ class Ackermannizer(IdentityDagWalker):
         return self.walk(formula)
 
     def walk_function(self, formula, args, **kwargs):
-        rewritten = IdentityDagWalker.super(self,formula, args, **kwargs)
         try:
             ack_symbol = self._terms_dict[formula]
         except KeyError:
-            function_name = formula.function_name()
-            arguments = formula.args()
-            self._add_args_to_fun(function_name, arguments)
+            self._add_args_to_fun(formula)
             self._add_application(formula)
             ack_symbol = self._terms_dict[formula]
         return ack_symbol
 
-
     def _add_application(self, formula):
-        if formula in self._terms_dict.keys():
-            pass
-        else:
-            if formula.is_function_application():
-                const_type = formula.function_name().symbol_type().return_type
-                sym = self.mgr.FreshSymbol(typename=const_type,
-                             template="ack%d")
-                self._terms_dict[formula] = sym
+        assert formula.is_function_application()
+        if formula not in self._terms_dict:
+            const_type = formula.function_name().symbol_type().return_type
+            sym = self.mgr.FreshSymbol(typename=const_type,
+                                       template="ack%d")
+            self._terms_dict[formula] = sym
 
-    def _add_args_to_fun(self, function_name, args):
+    def _add_args_to_fun(self, formula):
+        function_name = formula.function_name()
+        args = formula.args()
         if function_name not in self._funs_to_args.keys():
             self._funs_to_args[function_name] = set([])
         self._funs_to_args[function_name].add(args)
