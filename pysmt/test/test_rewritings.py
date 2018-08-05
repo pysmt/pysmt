@@ -95,6 +95,7 @@ class TestRewritings(TestCase):
         formula = And(formula1, formula2)
         self._verify_ackermannization(formula)
 
+    @skipIfNoSolverForLogic(QF_AUFLIA)
     def test_ackermannization_pairwise(self):
         self.env.enable_infix_notation = True
         a, b, c, d = (Symbol(x, INT) for x in "abcd")
