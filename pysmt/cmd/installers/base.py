@@ -23,6 +23,7 @@ import subprocess
 
 from contextlib import contextmanager
 from distutils import spawn
+from distutils.dist import Distribution
 
 import six.moves
 from six.moves import xrange
@@ -307,3 +308,38 @@ class SolverInstaller(object):
             if command is not None:
                 break
         return command
+
+
+def package_install_site(name='', user=False, plat_specific=False):
+    """pip-inspired, distutils-based method for fetching the
+    default install location (site-packages path).
+
+    Returns virtual environment or system site-packages, unless
+    `user=True` in which case returns user-site (typ. under `~/.local/
+    on linux).
+
+    If there's a distinction (on a particular system) between platform
+    specific and pure python package locations, set `plat_specific=True`
+    to retrieve the former.
+    """
+
+    dist = Distribution({'name': name})
+    dist.parse_config_files()
+    inst = dist.get_command_obj('install', create=True)
+    # NOTE: specifying user=True will create user-site
+    if user:
+        inst.user = user
+        inst.prefix = ""
+    inst.finalize_options()
+
+    # platform-specific site vs. purelib (platform-independent) site
+    if plat_specific:
+        loc = inst.install_platlib
+    else:
+        loc = inst.install_purelib
+
+    # install_lib specified in setup.cfg has highest precedence
+    if 'install_lib' in dist.get_option_dict('install'):
+        loc = inst.install_lib
+
+    return loc
