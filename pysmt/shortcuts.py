@@ -948,6 +948,38 @@ def Interpolator(name=None, logic=None):
     return get_env().factory.Interpolator(name=name, logic=logic)
 
 
+def Portfolio(solvers_set, logic, **options):
+    """Creates a portfolio using the specified solvers.
+
+    Solver_set is an iterable. Elements of solver_set can be
+      1) a name of a solver
+      2) a tuple containing a name of a solver and dict of options
+
+    E.g.,
+      Portfolio(["msat", "z3"], incremental=True)
+    or
+      Porfolio([("msat", {"random_seed": 1}), ("msat", {"random_seed": 2})],
+               incremental=True)
+
+    Options specified in the Portfolio are shared among all
+    solvers, e.g., in the first example all solvers will receive
+    the option 'incremental=True'.
+
+    One process will be used for each of the solvers.
+
+    :param solvers_set: Specify set of solvers to be used in the portfolio.
+    :param logic: Specify the logic that is going to be used, this
+        might restrict the set of solvers in the portfolio.
+    :returns: A portfolio solver
+    :rtype: Portfolio
+    """
+    import pysmt.solvers.portfolio as pf
+    return pf.Portfolio(solvers_set=solvers_set,
+                        logic=logic,
+                        environment=get_env(),
+                        **options)
+
+
 def is_sat(formula, solver_name=None, logic=None, portfolio=None):
     """ Returns whether a formula is satisfiable.
 
