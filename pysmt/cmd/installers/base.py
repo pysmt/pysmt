@@ -343,3 +343,34 @@ def package_install_site(name='', user=False, plat_specific=False):
         loc = inst.install_lib
 
     return loc
+
+
+def running_under_virtualenv():
+    """
+    Return True if we're running inside a virtualenv, False otherwise.
+
+    Note: copied from pip.
+    """
+
+    if hasattr(sys, 'real_prefix'):
+        return True
+    elif sys.prefix != getattr(sys, "base_prefix", sys.prefix):
+        return True
+
+    return False
+
+
+def solver_install_site(plat_specific=False):
+    """Determine solver's install site similarly to pip behaviour on Debian."""
+
+    default_user = True
+    if running_under_virtualenv():
+        default_user = False
+    try:
+        if os.geteuid() == 0:
+            default_user = False
+    except:
+        # getuid/geteuid not supported on windows
+        pass
+
+    return package_install_site(user=default_user, plat_specific=plat_specific)
