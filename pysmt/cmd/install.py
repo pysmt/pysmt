@@ -24,6 +24,7 @@ from collections import namedtuple
 from pysmt.cmd.installers import MSatInstaller, Z3Installer, PicoSATInstaller
 from pysmt.cmd.installers import CVC4Installer, YicesInstaller, BtorInstaller
 from pysmt.cmd.installers import CuddInstaller
+from pysmt.cmd.installers.base import solver_install_site
 
 from pysmt.environment import get_env
 from pysmt.exceptions import PysmtException
@@ -145,8 +146,7 @@ def parse_options():
                         type=str, default=install_path_default,
                         help='The folder to use for the installation')
 
-    py_bindings = os.path.join(install_path_default,
-                               "python-bindings-%d.%d" % sys.version_info[0:2])
+    py_bindings = solver_install_site(plat_specific=True)
     parser.add_argument('--bindings-path', dest='bindings_path',
                         type=str, default=py_bindings,
                         help='The folder to use for the bindings')
