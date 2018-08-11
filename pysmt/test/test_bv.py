@@ -334,5 +334,20 @@ class TestBV(TestCase):
         c1 = mgr.BVToNatural(mgr.BV(1, 32)).simplify()
         self.assertEqual(c1.constant_value(), 1)
 
+
+    def test_bv_str(self):
+        mgr = self.env.formula_manager
+        c1 = mgr.BV(17, 8)
+        self.assertEqual(c1.bv_str('b'), '00010001')
+        self.assertEqual(c1.bv_str('d'), '17')
+        self.assertEqual(c1.bv_str('x'), '11')
+
+        c1 = mgr.BV(255, 8)
+        self.assertEqual(c1.bv_str('b'), '11111111')
+        self.assertEqual(c1.bv_str('d'), '255')
+        self.assertEqual(c1.bv_str('x'), 'ff')
+
+
+
 if __name__ == "__main__":
     main()

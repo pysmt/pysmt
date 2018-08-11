@@ -14,10 +14,9 @@
 from __future__ import absolute_import
 
 import os
-import sys
-import platform
+import glob
 
-from pysmt.cmd.installers.base import SolverInstaller, TemporaryPath
+from pysmt.cmd.installers.base import SolverInstaller
 
 
 class Z3Installer(SolverInstaller):
@@ -38,12 +37,15 @@ class Z3Installer(SolverInstaller):
         elif system == "windows":
             system = "win"
 
-        # Stable versions template
-        # archive_name = "z3-%s-%s-%s.zip" % (solver_version, arch, system)
-        #
-        # Nightly build template
-        archive_name = "z3-%s.%s-%s-%s.zip" % (solver_version, git_version, arch, system)
-        native_link = "https://github.com/pysmt/Z3bin/blob/master/nightly/{archive_name}?raw=true"
+        if git_version is None:
+            # Stable versions template
+            archive_name = "z3-%s-%s-%s.zip" % (solver_version, arch, system)
+            native_link = "https://github.com/Z3Prover/z3/releases/download/z3-" + solver_version + "/{archive_name}"
+            # print(native_link)
+        else:
+            # Nightly build template
+            archive_name = "z3-%s.%s-%s-%s.zip" % (solver_version, git_version, arch, system)
+            native_link = "https://github.com/pysmt/Z3bin/blob/master/nightly/{archive_name}?raw=true"
 
         SolverInstaller.__init__(self, install_dir=install_dir,
                                  bindings_dir=bindings_dir,
@@ -54,16 +56,27 @@ class Z3Installer(SolverInstaller):
 
     def move(self):
         bpath = os.path.join(self.extract_path, "bin")
-        files = ["python/z3"]
+        libfiles = []
         if self.os_name == "linux":
-            files += [ "libz3.so" ]
+            libfiles += glob.glob(bpath + '/*.so')
         elif self.os_name == "darwin":
-            files += [ "libz3.a", "libz3.dylib" ]
+            libfiles += glob.glob(bpath + '/*.a')
+            libfiles += glob.glob(bpath + '/*.dylib')
         elif self.os_name == "windows":
-            files += [ "libz3.dll", "libz3.lib" ]
+            libfiles += glob.glob(bpath + '/*.dll')
+            libfiles += glob.glob(bpath + '/*.lib')
 
-        for f in files:
-            SolverInstaller.mv(os.path.join(bpath, f), self.bindings_dir)
+        SolverInstaller.mv(os.path.join(bpath, "python/z3"), self.bindings_dir)
+
+        # z3 will check for shared libraries in z3/lib, before builtins.Z3_LIB_DIRS,
+        # and Z3_LIBRARY_PATH env var lookup (or OS-level LD_LIBRARY_PATH)
+        # (see z3/z3core.py)
+        libpath = os.path.join(self.bindings_dir, "z3/lib/")
+        if not os.path.exists(libpath):
+            os.mkdir(libpath)
+
+        for f in libfiles:
+            SolverInstaller.mv(f, libpath)
 
     def get_installed_version(self):
         return self.get_installed_version_script(self.bindings_dir, "z3")

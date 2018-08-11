@@ -239,23 +239,22 @@ class Tokenizer(object):
 
                     elif c == "\"":
                         # String literals
-                        s = []
-                        c = next(reader)
-                        while c:
+                        s = c
+                        num_quotes = 0
+                        while True:
+                            c = next(reader)
+                            if not c:
+                                raise PysmtSyntaxError("Expected '\"'",
+                                                       reader.pos_info)
+
+                            if c != "\"" and num_quotes % 2 != 0:
+                                break
+
+                            s += c
                             if c == "\"":
-                                c = next(reader)
-                                if c == "\"":
-                                    s.append(c)
-                                    c = next(reader)
-                                else:
-                                    break
-                            else:
-                                s.append(c)
-                                c = next(reader)
-                        if not c:
-                            raise PysmtSyntaxError("Expected '|'",
-                                                   reader.pos_info)
-                        yield '"%s"' % ("".join(s)) # string literals maintain their quoting
+                                num_quotes += 1
+
+                        yield s
 
                     else:
                         yield c
@@ -637,7 +636,9 @@ class SmtLibParser(object):
                 res = mgr.BV(value, width)
             elif token[0] == '"':
                 # String constant
-                res = mgr.String(token.replace('"',''))
+                val = token[1:-1]
+                val = val.replace('""', '"')
+                res = mgr.String(val)
             else:
                 # it could be a number or a string
                 try:
@@ -875,7 +876,6 @@ class SmtLibParser(object):
                                        "command." % command,
                                        tokens.pos_info)
             res.append(current)
-
         for _ in xrange(min_size, max_size + 1):
             current = tokens.consume()
             if current == ")":
@@ -1169,16 +1169,18 @@ class SmtLibParser(object):
         var = self.parse_atom(tokens, current)
         namedparams = self.parse_named_params(tokens, current)
         rtype = self.parse_type(tokens, current)
-
+        bindings = []
         for (x,t) in namedparams:
-            v = self._get_var(x, t)
+            v = self.env.formula_manager.FreshSymbol(typename=t,
+                                                        template="__"+x+"%d")
             self.cache.bind(x, v)
-            formal.append(v)
+            formal.append(v) #remember the variable
+            bindings.append(x) #remember the name
         # Parse expression using also parameters
         ebody = self.get_expression(tokens)
-        # Discard parameters
-        for x in formal:
-            self.cache.unbind(x.symbol_name())
+        #Discard parameters
+        for x in bindings:
+            self.cache.unbind(x)
         # Finish Parsing
         self.consume_closing(tokens, current)
         self.cache.define(var, formal, ebody)

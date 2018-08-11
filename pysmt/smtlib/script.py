@@ -86,7 +86,7 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
 
         elif self.name in [smtcmd.CHECK_SAT, smtcmd.EXIT,
                            smtcmd.RESET_ASSERTIONS, smtcmd.GET_UNSAT_CORE,
-                           smtcmd.GET_ASSIGNMENT]:
+                           smtcmd.GET_ASSIGNMENT, smtcmd.GET_MODEL]:
             outstream.write("(%s)" % self.name)
 
         elif self.name == smtcmd.SET_LOGIC:
@@ -336,6 +336,11 @@ def evaluate_command(cmd, solver):
 
     elif cmd.name == smtcmd.GET_UNSAT_CORE:
         return solver.get_unsat_core()
+
+    elif cmd.name == smtcmd.DECLARE_SORT:
+        name = cmd.args[0].name
+        arity = cmd.args[0].arity
+        return solver.declare_sort(name, arity)
 
     elif cmd.name in smtcmd.ALL_COMMANDS:
         raise NotImplementedError("'%s' is a valid SMT-LIB command "\

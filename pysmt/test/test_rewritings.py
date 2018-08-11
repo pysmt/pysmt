@@ -18,15 +18,15 @@
 from pysmt.shortcuts import (And, Iff, Or, Symbol, Implies, Not,
                              Exists, ForAll,
                              Times, Plus, Minus, Equals, Real,
-                             is_valid)
+                             is_valid, is_sat, Function)
 from pysmt.test import TestCase, skipIfNoSolverForLogic, main
 from pysmt.rewritings import prenex_normal_form, nnf, conjunctive_partition, aig
 from pysmt.rewritings import disjunctive_partition
-from pysmt.rewritings import TimesDistributor
+from pysmt.rewritings import TimesDistributor, Ackermannizer
 from pysmt.test.examples import get_example_formulae
 from pysmt.exceptions import SolverReturnedUnknownResultError
-from pysmt.logics import BOOL, QF_NRA, QF_LRA, QF_LIA
-from pysmt.typing import REAL
+from pysmt.logics import BOOL, QF_NRA, QF_LRA, QF_AUFLIA
+from pysmt.typing import REAL, INT, FunctionType
 
 
 class TestRewritings(TestCase):
@@ -82,6 +82,126 @@ class TestRewritings(TestCase):
                     except SolverReturnedUnknownResultError:
                         ok = not logic.quantifier_free
                     self.assertTrue(ok)
+
+    @skipIfNoSolverForLogic(QF_AUFLIA)
+    def test_ackermannization_unary(self):
+        self.env.enable_infix_notation = True
+        a, b = (Symbol(x, INT) for x in "ab")
+        f, g, h = (Symbol(x, FunctionType(INT, [INT])) for x in "fgh")
+
+        formula1 = Not(Equals(f(g(h(a))),
+                              f(g(h(b)))))
+        formula2 = Equals(a, b)
+        formula = And(formula1, formula2)
+        self._verify_ackermannization(formula)
+
+    @skipIfNoSolverForLogic(QF_AUFLIA)
+    def test_ackermannization_pairwise(self):
+        self.env.enable_infix_notation = True
+        a, b, c, d = (Symbol(x, INT) for x in "abcd")
+        f = Symbol("f", FunctionType(INT, [INT]))
+        formula = And(Not(Equals(f(b), f(c))),
+                      Equals(f(a), f(b)),
+                      Equals(f(c), f(d)),
+                      Equals(a, d))
+        self.assertUnsat(formula)
+        formula_ack = Ackermannizer().do_ackermannization(formula)
+        self.assertUnsat(formula_ack)
+
+
+    @skipIfNoSolverForLogic(QF_AUFLIA)
+    def test_ackermannization_explicit(self):
+        self.env.enable_infix_notation = True
+        a,b = (Symbol(x, INT) for x in "ab")
+        f,g = (Symbol(x, FunctionType(INT, [INT, INT])) for x in "fg")
+        h = Symbol("h", FunctionType(INT, [INT]))
+
+        formula1 = Not(Equals(f(a, g(a, h(a))),
+                              f(b, g(b, h(b)))))
+
+        # Explicit the Ackermanization of this expression We end up
+        # with a conjunction of implications that is then conjoined
+        # with the original formula.
+        ackermannization = Ackermannizer()
+        actual_ack = ackermannization.do_ackermannization(formula1)
+
+        terms_to_consts = ackermannization.get_term_to_const_dict()
+        ack_h_a = terms_to_consts[h(a)]
+        ack_h_b = terms_to_consts[h(b)]
+        ack_g_a_h_a = terms_to_consts[g(a, h(a))]
+        ack_g_b_h_b = terms_to_consts[g(b, h(b))]
+        ack_f_a_g_a_h_a = terms_to_consts[f(a, g(a, h(a)))]
+        ack_f_b_g_b_h_b = terms_to_consts[f(b, g(b, h(b)))]
+
+        target_ack = And(
+            Equals(a, b).Implies(Equals(ack_h_a, ack_h_b)),
+            And(Equals(a, b),
+                Equals(ack_h_a, ack_h_b)).Implies(
+                    Equals(ack_g_a_h_a, ack_g_b_h_b)),
+            And(Equals(a, b),
+                Equals(ack_h_a, ack_h_b),
+                Equals(ack_g_a_h_a, ack_g_b_h_b)).Implies(
+                    Equals(ack_f_a_g_a_h_a, ack_f_b_g_b_h_b)))
+        target_ack = And(target_ack,
+                         Not(Equals(ack_f_a_g_a_h_a, ack_f_b_g_b_h_b)))
+        self.assertValid(target_ack.Iff(actual_ack))
+
+    @skipIfNoSolverForLogic(QF_AUFLIA)
+    def test_ackermannization_binary(self):
+        self.env.enable_infix_notation = True
+        a,b = (Symbol(x, INT) for x in "ab")
+        f,g = (Symbol(x, FunctionType(INT, [INT, INT])) for x in "fg")
+        h = Symbol("h", FunctionType(INT, [INT]))
+
+        formula1 = Not(Equals(f(a, g(a, h(a))),
+                              f(b, g(b, h(b)))))
+
+        formula2 = Equals(a, b)
+        formula = And(formula1, formula2)
+        self._verify_ackermannization(formula)
+
+    def test_ackermannization_for_examples(self):
+        for (f, _, _, logic) in get_example_formulae():
+            if not logic.is_quantified() and logic.theory.uninterpreted:
+                if self.env.factory.has_solvers(logic=logic):
+                    self._verify_ackermannization(f)
+
+    def test_ackermannization_dictionaries(self):
+        self.env.enable_infix_notation = True
+        a,b = (Symbol(x, INT) for x in "ab")
+        f,g = (Symbol(x, FunctionType(INT, [INT, INT])) for x in "fg")
+        h = Symbol("h", FunctionType(INT, [INT]))
+
+        formula1 = Not(Equals(f(a, g(a, h(a))),
+                              f(b, g(b, h(b)))))
+        formula2 = Equals(a, b)
+        formula = And(formula1, formula2)
+        ackermannization = Ackermannizer()
+        _ = ackermannization.do_ackermannization(formula)
+        terms_to_consts = ackermannization.get_term_to_const_dict()
+        consts_to_terms = ackermannization.get_const_to_term_dict()
+        # The maps have the same length
+        self.assertEqual(len(terms_to_consts), len(consts_to_terms))
+        # The maps are the inverse of each other
+        for t in terms_to_consts:
+            self.assertEqual(t, consts_to_terms[terms_to_consts[t]])
+        # Check that the the functions are there
+        for atom in formula.get_atoms():
+            if atom.is_function_application():
+                self.assertIsNotNone(terms_to_consts[atom])
+
+    def _verify_ackermannization(self, formula):
+        ackermannization = Ackermannizer()
+        ack = ackermannization.do_ackermannization(formula)
+        #verify that there are no functions in ack
+        atoms = ack.get_atoms()
+        for atom in atoms:
+            for arg in atom.args():
+                self.assertFalse(arg.is_function_application())
+        #verify that ack and formula are equisat
+        formula_sat = is_sat(formula)
+        ack_sat = is_sat(ack)
+        self.assertTrue(formula_sat == ack_sat)
 
     def test_nnf_examples(self):
         for (f, _, _, logic) in get_example_formulae():

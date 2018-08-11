@@ -38,7 +38,7 @@ class PicoSATInstaller(SolverInstaller):
     def download(self):
         self.complete_version = "%s.%s" % (self.solver_version,
                                            self.pypicosat_minor_version)
-        pypi_link = "http://pypi.python.org/pypi/pyPicoSAT/%s/json" % self.complete_version
+        pypi_link = "https://pypi.python.org/pypi/pyPicoSAT/%s/json" % self.complete_version
         response = urllib2.urlopen(pypi_link)
         reader = codecs.getreader("utf-8")
         pypi_json = json.load(reader(response))

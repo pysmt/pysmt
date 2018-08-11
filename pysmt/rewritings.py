@@ -18,7 +18,8 @@
 """
 This module defines some rewritings for pySMT formulae.
 """
-from pysmt.decorators import deprecated
+from itertools import combinations
+
 from pysmt.walkers import DagWalker, IdentityDagWalker, handles
 import pysmt.typing as types
 import pysmt.operators as op
@@ -671,6 +672,100 @@ class TimesDistributor(IdentityDagWalker):
             return self.Plus(new_args)
 
 # EOC TimesDistributivity
+
+
+class Ackermannizer(IdentityDagWalker):
+    def __init__(self, environment=None):
+        IdentityDagWalker.__init__(self, environment)
+        # funs_to_args keeps for every function symbol f,
+        # a set of lists of arguments.
+        # if f(g(x),y) and f(x,g(y)) occur in a formula, then we
+        # will have "f": set([g(x), y], [x, g(y)])
+        self._funs_to_args = {}
+
+        #maps the actual applications to the constants that will be
+        #generated, or to the original term if it is not replaced.
+        self._terms_dict = {}
+
+    def do_ackermannization(self, formula):
+        substitued_formula = self._fill_maps_and_sub(formula)
+        implications = self._get_equality_implications()
+        if (len(implications) == 0):
+            result = substitued_formula
+        else:
+            function_consistency = self.mgr.And(implications)
+            result = self.mgr.And(function_consistency, substitued_formula)
+        return result
+
+    def get_term_to_const_dict(self):
+        return self._terms_dict
+
+    def get_const_to_term_dict(self):
+        return dict((v, k) for k, v in self._terms_dict.items())
+
+    def _get_equality_implications(self):
+        result = set([])
+        for f in self._funs_to_args:
+            implications = self._generate_implications(f)
+            result.update(implications)
+        return result
+
+    def _generate_implications(self, f):
+        result = set([])
+        possible_args = self._funs_to_args[f]
+        for option1, option2 in combinations(possible_args, 2):
+            implication = self._generate_implication(option1, option2, f)
+            result.add(implication)
+        return result
+
+    def _generate_implication(self, option1, option2, f):
+        left_conjuncts = set([])
+        for term1, term2 in zip(option1, option2):
+            if term1.is_function_application():
+                term1 = self._terms_dict[term1]
+            if term2.is_function_application():
+                term2 = self._terms_dict[term2]
+            conjunct = self.mgr.EqualsOrIff(term1, term2)
+            left_conjuncts.add(conjunct)
+        left = self.mgr.And(left_conjuncts)
+        app1 = self.mgr.Function(f, option1)
+        app2 = self.mgr.Function(f, option2)
+        app1_const = self._terms_dict[app1]
+        app2_const = self._terms_dict[app2]
+        right = self.mgr.EqualsOrIff(app1_const, app2_const)
+        implication = self.mgr.Implies(left, right)
+        return implication
+
+    def _fill_maps_and_sub(self, formula):
+        return self.walk(formula)
+
+    def walk_function(self, formula, args, **kwargs):
+        try:
+            ack_symbol = self._terms_dict[formula]
+        except KeyError:
+            self._add_args_to_fun(formula)
+            self._add_application(formula)
+            ack_symbol = self._terms_dict[formula]
+        return ack_symbol
+
+    def _add_application(self, formula):
+        assert formula.is_function_application()
+        if formula not in self._terms_dict:
+            const_type = formula.function_name().symbol_type().return_type
+            sym = self.mgr.FreshSymbol(typename=const_type,
+                                       template="ack%d")
+            self._terms_dict[formula] = sym
+
+    def _add_args_to_fun(self, formula):
+        function_name = formula.function_name()
+        args = formula.args()
+        if function_name not in self._funs_to_args.keys():
+            self._funs_to_args[function_name] = set([])
+        self._funs_to_args[function_name].add(args)
+
+
+
+# EOC Ackermannizer
 
 
 def nnf(formula, environment=None):

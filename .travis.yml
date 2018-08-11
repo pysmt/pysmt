@@ -1,23 +1,265 @@
 language: python
-dist: trusty
+
+matrix:
+  include:
+  - os: linux
+    python: 3.6
+    env: PYSMT_SOLVER="all"       PYSMT_GMPY="TRUE"
+  - os: linux
+    python: 3.6
+    env: PYSMT_SOLVER="all"       PYSMT_GMPY="FALSE"
+  - os: linux
+    python: 3.6
+    env: PYSMT_SOLVER="None"      PYSMT_GMPY="FALSE"   PYSMT_CYTHON="TRUE"
+  - os: linux
+    python: 3.6
+    env: PYSMT_SOLVER="None"      PYSMT_GMPY="FALSE"   PYSMT_CYTHON="FALSE"
+  - os: linux
+    python: 3.6
+    env: PYSMT_SOLVER="msat"      PYSMT_GMPY="FALSE"
+  - os: linux
+    python: 3.6
+    env: PYSMT_SOLVER="optimsat"  PYSMT_GMPY="FALSE"
+  - os: linux
+    python: 3.6
+    env: PYSMT_SOLVER="z3"        PYSMT_GMPY="FALSE"
+  - os: linux
+    python: 3.6
+    env: PYSMT_SOLVER="cvc4"      PYSMT_GMPY="FALSE"
+  - os: linux
+    python: 3.6
+    env: PYSMT_SOLVER="yices"     PYSMT_GMPY="FALSE"
+  - os: linux
+    python: 3.6
+    env: PYSMT_SOLVER="bdd"       PYSMT_GMPY="FALSE"
+  - os: linux
+    python: 3.6
+    env: PYSMT_SOLVER="picosat"   PYSMT_GMPY="FALSE"
+  - os: linux
+    python: 3.6
+    env: PYSMT_SOLVER="btor"      PYSMT_GMPY="FALSE"
+  - os: linux
+    python: 3.6
+    env: PYSMT_SOLVER="msat_wrap" PYSMT_GMPY="FALSE"
+  - os: linux
+    python: 3.6
+    env: PYSMT_SOLVER="z3_wrap"   PYSMT_GMPY="FALSE"
+
+  - os: linux
+    python: 2.7
+    env: PYSMT_SOLVER="all"       PYSMT_GMPY="TRUE"
+  - os: linux
+    python: 2.7
+    env: PYSMT_SOLVER="all"       PYSMT_GMPY="FALSE"
+  - os: linux
+    python: 2.7
+    env: PYSMT_SOLVER="None"      PYSMT_GMPY="FALSE"   PYSMT_CYTHON="TRUE"
+  - os: linux
+    python: 2.7
+    env: PYSMT_SOLVER="None"      PYSMT_GMPY="FALSE"   PYSMT_CYTHON="FALSE"
+  - os: linux
+    python: 2.7
+    env: PYSMT_SOLVER="msat"      PYSMT_GMPY="FALSE"
+  - os: linux
+    python: 2.7
+    env: PYSMT_SOLVER="optimsat"  PYSMT_GMPY="FALSE"
+  - os: linux
+    python: 2.7
+    env: PYSMT_SOLVER="z3"        PYSMT_GMPY="FALSE"
+  - os: linux
+    python: 2.7
+    env: PYSMT_SOLVER="cvc4"      PYSMT_GMPY="FALSE"
+  - os: linux
+    python: 2.7
+    env: PYSMT_SOLVER="yices"     PYSMT_GMPY="FALSE"
+  - os: linux
+    python: 2.7
+    env: PYSMT_SOLVER="bdd"       PYSMT_GMPY="FALSE"
+  - os: linux
+    python: 2.7
+    env: PYSMT_SOLVER="picosat"   PYSMT_GMPY="FALSE"
+  - os: linux
+    python: 2.7
+    env: PYSMT_SOLVER="btor"      PYSMT_GMPY="FALSE"
+  - os: linux
+    python: 2.7
+    env: PYSMT_SOLVER="msat_wrap" PYSMT_GMPY="FALSE"
+  - os: linux
+    python: 2.7
+    env: PYSMT_SOLVER="z3_wrap"   PYSMT_GMPY="FALSE"
+
+  - os: linux
+    python: pypy3.5
+    env: PYSMT_SOLVER="None"      PYSMT_GMPY="FALSE"   PYSMT_CYTHON="TRUE"
+  - os: linux
+    python: pypy3.5
+    env: PYSMT_SOLVER="None"      PYSMT_GMPY="FALSE"   PYSMT_CYTHON="FALSE"
+
+
+  - os: osx
+    osx_image: xcode9.3
+    language: generic
+    python: 3.6
+    env: PYSMT_SOLVER="msat,z3,yices"       PYSMT_GMPY="TRUE"   TRAVIS_PYTHON_VERSION="3.6.5"
+  - os: osx
+    osx_image: xcode9.3
+    language: generic
+    python: 3.6
+    env: PYSMT_SOLVER="msat,z3,yices"       PYSMT_GMPY="FALSE"   TRAVIS_PYTHON_VERSION="3.6.5"
+  - os: osx
+    osx_image: xcode9
+    language: generic
+    python: 3.6
+    env: PYSMT_SOLVER="None"      PYSMT_GMPY="FALSE"   PYSMT_CYTHON="TRUE"   TRAVIS_PYTHON_VERSION="3.6.5"
+  - os: osx
+    osx_image: xcode9
+    language: generic
+    python: 3.6
+    env: PYSMT_SOLVER="None"      PYSMT_GMPY="FALSE"   PYSMT_CYTHON="FALSE"   TRAVIS_PYTHON_VERSION="3.6.5"
+  - os: osx
+    osx_image: xcode9
+    language: generic
+    python: 3.6
+    env: PYSMT_SOLVER="msat"      PYSMT_GMPY="FALSE"   TRAVIS_PYTHON_VERSION="3.6.5"
+  - os: osx
+    osx_image: xcode9
+    language: generic
+    python: 3.6
+    env: PYSMT_SOLVER="optimsat"  PYSMT_GMPY="FALSE"   TRAVIS_PYTHON_VERSION="3.6.5"
+  - os: osx
+    osx_image: xcode9.3
+    language: generic
+    python: 3.6
+    env: PYSMT_SOLVER="z3"        PYSMT_GMPY="FALSE"   TRAVIS_PYTHON_VERSION="3.6.5"
+  # - os: osx
+  #   osx_image: xcode9
+  #   language: generic
+  #   python: 3.6
+  #   env: PYSMT_SOLVER="cvc4"      PYSMT_GMPY="FALSE"   TRAVIS_PYTHON_VERSION="3.6.5"
+  - os: osx
+    osx_image: xcode9
+    language: generic
+    python: 3.6
+    env: PYSMT_SOLVER="yices"     PYSMT_GMPY="FALSE"   TRAVIS_PYTHON_VERSION="3.6.5"
+  # - os: osx
+  #   osx_image: xcode9
+  #   language: generic
+  #   python: 3.6
+  #   env: PYSMT_SOLVER="bdd"       PYSMT_GMPY="FALSE"   TRAVIS_PYTHON_VERSION="3.6.5"
+  # - os: osx
+  #   osx_image: xcode9
+  #   language: generic
+  #   python: 3.6
+  #   env: PYSMT_SOLVER="picosat"   PYSMT_GMPY="FALSE"   TRAVIS_PYTHON_VERSION="3.6.5"
+  # - os: osx
+  #   osx_image: xcode9
+  #   language: generic
+  #   python: 3.6
+  #   env: PYSMT_SOLVER="btor"      PYSMT_GMPY="FALSE"   TRAVIS_PYTHON_VERSION="3.6.5"
+  - os: osx
+    osx_image: xcode9
+    language: generic
+    python: 3.6
+    env: PYSMT_SOLVER="msat_wrap" PYSMT_GMPY="FALSE"   TRAVIS_PYTHON_VERSION="3.6.5"
+  - os: osx
+    osx_image: xcode9.3
+    language: generic
+    python: 3.6
+    env: PYSMT_SOLVER="z3_wrap"   PYSMT_GMPY="FALSE"   TRAVIS_PYTHON_VERSION="3.6.5"
+
+  - os: osx
+    osx_image: xcode9.3
+    language: generic
+    python: 2.7
+    env: PYSMT_SOLVER="msat,z3,yices"       PYSMT_GMPY="TRUE"   TRAVIS_PYTHON_VERSION="2.7.15"
+  - os: osx
+    osx_image: xcode9.3
+    language: generic
+    python: 2.7
+    env: PYSMT_SOLVER="msat,z3,yices"       PYSMT_GMPY="FALSE"   TRAVIS_PYTHON_VERSION="2.7.15"
+  - os: osx
+    osx_image: xcode9
+    language: generic
+    python: 2.7
+    env: PYSMT_SOLVER="None"      PYSMT_GMPY="FALSE"   PYSMT_CYTHON="TRUE"   TRAVIS_PYTHON_VERSION="2.7.15"
+  - os: osx
+    osx_image: xcode9
+    language: generic
+    python: 2.7
+    env: PYSMT_SOLVER="None"      PYSMT_GMPY="FALSE"   PYSMT_CYTHON="FALSE"   TRAVIS_PYTHON_VERSION="2.7.15"
+  - os: osx
+    osx_image: xcode9
+    language: generic
+    python: 2.7
+    env: PYSMT_SOLVER="msat"      PYSMT_GMPY="FALSE"   TRAVIS_PYTHON_VERSION="2.7.15"
+  - os: osx
+    osx_image: xcode9
+    language: generic
+    python: 2.7
+    env: PYSMT_SOLVER="optimsat"  PYSMT_GMPY="FALSE"   TRAVIS_PYTHON_VERSION="2.7.15"
+  - os: osx
+    osx_image: xcode9.3
+    language: generic
+    python: 2.7
+    env: PYSMT_SOLVER="z3"        PYSMT_GMPY="FALSE"   TRAVIS_PYTHON_VERSION="2.7.15"
+  # - os: osx
+  #   osx_image: xcode9
+  #   language: generic
+  #   python: 2.7
+  #   env: PYSMT_SOLVER="cvc4"      PYSMT_GMPY="FALSE"   TRAVIS_PYTHON_VERSION="2.7.15"
+  - os: osx
+    osx_image: xcode9
+    language: generic
+    python: 2.7
+    env: PYSMT_SOLVER="yices"     PYSMT_GMPY="FALSE"   TRAVIS_PYTHON_VERSION="2.7.15"
+  # - os: osx
+  #   osx_image: xcode9
+  #   language: generic
+  #   python: 2.7
+  #   env: PYSMT_SOLVER="bdd"       PYSMT_GMPY="FALSE"   TRAVIS_PYTHON_VERSION="2.7.15"
+  # - os: osx
+  #   osx_image: xcode9
+  #   language: generic
+  #   python: 2.7
+  #   env: PYSMT_SOLVER="picosat"   PYSMT_GMPY="FALSE"   TRAVIS_PYTHON_VERSION="2.7.15"
+  # - os: osx
+  #   osx_image: xcode9
+  #   language: generic
+  #   python: 2.7
+  #   env: PYSMT_SOLVER="btor"      PYSMT_GMPY="FALSE"   TRAVIS_PYTHON_VERSION="2.7.15"
+  - os: osx
+    osx_image: xcode9
+    language: generic
+    python: 2.7
+    env: PYSMT_SOLVER="msat_wrap" PYSMT_GMPY="FALSE"   TRAVIS_PYTHON_VERSION="2.7.15"
+  - os: osx
+    osx_image: xcode9.3
+    language: generic
+    python: 2.7
+    env: PYSMT_SOLVER="z3_wrap"   PYSMT_GMPY="FALSE"   TRAVIS_PYTHON_VERSION="2.7.15"
+
+  - os: osx
+    osx_image: xcode9.3
+    language: generic
+    python: pypy
+    env: PYSMT_SOLVER="None"      PYSMT_GMPY="FALSE"   PYSMT_CYTHON="TRUE"   TRAVIS_PYTHON_VERSION="pypy3.5-5.10.1"
+  - os: osx
+    osx_image: xcode9.3
+    language: generic
+    python: pypy
+    env: PYSMT_SOLVER="None"      PYSMT_GMPY="FALSE"   PYSMT_CYTHON="FALSE"   TRAVIS_PYTHON_VERSION="pypy3.5-5.10.1"
+
+
 git:
   depth: 10
+
 
 cache:
   apt: true
   directories:
-  - ${HOME}/.smt_solvers/btor
-  - ${HOME}/.smt_solvers/bdd
   - ${HOME}/.cache/pip
-  - ${HOME}/python_bindings/all
-  - ${HOME}/python_bindings/msat
-  - ${HOME}/python_bindings/z3
-  - ${HOME}/python_bindings/cvc4
-  - ${HOME}/python_bindings/yices
-  - ${HOME}/python_bindings/bdd
-  - ${HOME}/python_bindings/picosat
-  - ${HOME}/python_bindings/btor
-  - ${HOME}/python_bindings/optimsat
+  - ${HOME}/Library/Caches/Homebrew # For MacOSX
+  - ${HOME}/python_bindings
 
 addons:
   apt:
@@ -38,71 +280,16 @@ addons:
     - python3-all-dev
     - libmpc-dev
 
-python:
-  - 3.6
-  - 2.7
-  - pypy
-
-
-# Multiple envs will cause multiple build across multiple python versions.
-# We test the following:
-# 1. PySMT w/o solvers
-# 2. PySMT with one solver at the time
-#
-env:
-  matrix:
-    - PYSMT_SOLVER="all"       PYSMT_GMPY="TRUE"
-    - PYSMT_SOLVER="all"       PYSMT_GMPY="FALSE"
-    - PYSMT_SOLVER="None"      PYSMT_GMPY="FALSE"   PYSMT_CYTHON="TRUE"
-    - PYSMT_SOLVER="None"      PYSMT_GMPY="FALSE"   PYSMT_CYTHON="FALSE"
-    - PYSMT_SOLVER="msat"      PYSMT_GMPY="FALSE"
-    - PYSMT_SOLVER="z3"        PYSMT_GMPY="FALSE"
-    - PYSMT_SOLVER="cvc4"      PYSMT_GMPY="FALSE"
-    - PYSMT_SOLVER="yices"     PYSMT_GMPY="FALSE"
-    - PYSMT_SOLVER="bdd"       PYSMT_GMPY="FALSE"
-    - PYSMT_SOLVER="picosat"   PYSMT_GMPY="FALSE"
-    - PYSMT_SOLVER="btor"      PYSMT_GMPY="FALSE"
-    - PYSMT_SOLVER="optimsat"  PYSMT_GMPY="FALSE"
-    - PYSMT_SOLVER="msat_wrap" PYSMT_GMPY="FALSE"
-    - PYSMT_SOLVER="z3_wrap"   PYSMT_GMPY="FALSE"
-
-matrix:
-  fast_finish: true
-
-  exclude:
-    - python: pypy
-      env: PYSMT_SOLVER="all"       PYSMT_GMPY="TRUE"
-    - python: pypy
-      env: PYSMT_SOLVER="all"       PYSMT_GMPY="FALSE"
-    - python: pypy
-      env: PYSMT_SOLVER="None"      PYSMT_GMPY="FALSE"
-    - python: pypy
-      env: PYSMT_SOLVER="msat"      PYSMT_GMPY="FALSE"
-    - python: pypy
-      env: PYSMT_SOLVER="z3"        PYSMT_GMPY="FALSE"
-    - python: pypy
-      env: PYSMT_SOLVER="cvc4"      PYSMT_GMPY="FALSE"
-    - python: pypy
-      env: PYSMT_SOLVER="yices"     PYSMT_GMPY="FALSE"
-    - python: pypy
-      env: PYSMT_SOLVER="bdd"       PYSMT_GMPY="FALSE"
-    - python: pypy
-      env: PYSMT_SOLVER="picosat"   PYSMT_GMPY="FALSE"
-    - python: pypy
-      env: PYSMT_SOLVER="btor"      PYSMT_GMPY="FALSE"
-    - python: pypy
-      env: PYSMT_SOLVER="optimsat"  PYSMT_GMPY="FALSE"
-    - python: pypy
-      env: PYSMT_SOLVER="msat_wrap" PYSMT_GMPY="FALSE"
-    - python: pypy
-      env: PYSMT_SOLVER="z3_wrap"   PYSMT_GMPY="FALSE"
+before_install:
+  - "./ci/travis_before_install.sh"
 
 install:
   - "./ci/travis_install.sh"
 
+
 script:
   - "./ci/travis_script.sh"
 
+
 after_success:
-  - coveralls
-#
+  - "./ci/travis_after_success.sh"

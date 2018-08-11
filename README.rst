@@ -89,6 +89,70 @@ Is there a value for each letter (between 1 and 9) so that H+E+L+L+O = W+O+R+L+D
   else:
     print("No solution found")
 
+
+Portfolio
+---------
+
+Portfolio solving consists of running multiple solvers in
+parallel. pySMT provides a simple interface to perform portfolio
+solving using multiple solvers and multiple solver configurations.
+
+.. code:: python
+
+   from pysmt.shortcuts import Portfolio, Symbol, Not
+
+   x, y = Symbol("x"), Symbol("y")
+   f = x.Implies(y)
+
+   with Portfolio(["cvc4",
+                   "yices",
+                   ("msat", {"random_seed": 1}),
+                   ("msat", {"random_seed": 17}),
+                   ("msat", {"random_seed": 42})],
+                  logic="QF_UFLIRA",
+                  incremental=False,
+                  generate_models=False) as s:
+     s.add_assertion(f)
+     s.push()
+     s.add_assertion(x)
+     res = s.solve()
+     v_y = s.get_value(y)
+     print(v_y) # TRUE
+
+     s.pop()
+     s.add_assertion(Not(y))
+     res = s.solve()
+     v_x = s.get_value(x)
+     print(v_x) # FALSE
+
+
+Using other SMT-LIB Solvers
+---------------------------
+
+.. code:: python
+
+   from pysmt.shortcuts import Symbol, get_env, Solver
+   from pysmt.logics import QF_UFLRA
+
+   name = "mathsat-smtlib" # Note: The API version is called 'msat'
+
+   # Path to the solver. The solver needs to take the smtlib file from
+   # stdin. This might require creating a tiny shell script to set the
+   # solver options.
+   path = ["/tmp/mathsat"]
+   logics = [QF_UFLRA,]    # List of the supported logics
+
+   # Add the solver to the environment
+   env = get_env()
+   env.factory.add_generic_solver(name, path, logics)
+
+   # The solver name of the SMT-LIB solver can be now used anywhere
+   # where pySMT would accept an API solver name
+   with Solver(name=name, logic="QF_UFLRA") as s:
+     print(s.is_sat(Symbol("x"))) # True
+
+
+
 Check out more examples in the `examples/ directory
 </examples>`_ and the `documentation on ReadTheDocs <http://pysmt.readthedocs.io>`_
 
@@ -97,7 +161,7 @@ Supported Theories and Solvers
 
 pySMT provides methods to define a formula in Linear Real Arithmetic
 (LRA), Real Difference Logic (RDL), Equalities and Uninterpreted
-Functions (EUF), Bit-Vectors (BV), Arrays (A) and their
+Functions (EUF), Bit-Vectors (BV), Arrays (A), Strings (S) and their
 combinations. The following solvers are supported through native APIs:
 
 * MathSAT (http://mathsat.fbk.eu/)
@@ -170,49 +234,28 @@ Solvers Support
 The following table summarizes the features supported via pySMT for
 each of the available solvers.
 
- +------------------+------------+--------------------------------+------------+
- | Solver           | pySMT name |  Supported Theories            | Quantifiers|
- +==================+============+================================+============+
- | MathSAT          |   msat     | UF, LIA, LRA, BV, AX           |  No        |
- +------------------+------------+--------------------------------+------------+
- | Z3               |   z3       | UF, LIA, LRA, BV, AX, NRA, NIA |  Yes       |
- +------------------+------------+--------------------------------+------------+
- | CVC4             |   cvc4     | UF, LIA, LRA, BV, AX           |  Yes       |
- +------------------+------------+--------------------------------+------------+
- | Yices            |   yices    | UF, LIA, LRA, BV               |  No        |
- +------------------+------------+--------------------------------+------------+
- | SMT-Lib Interface|   <custom> | UF, LIA, LRA, BV, AX           |  Yes       |
- +------------------+------------+--------------------------------+------------+
- | PicoSAT          |   picosat  | [None]                         |  No        |
- +------------------+------------+--------------------------------+------------+
- | Boolector        |   btor     | UF, BV, AX                     |  No        |
- +------------------+------------+--------------------------------+------------+
- | BDD (CUDD)       |   bdd      | [None]                         |  Yes       |
- +------------------+------------+--------------------------------+------------+
+ +------------------+-----------+--------------------------------+-------------+------------------------+------------+--------------+
+ | Solver           | pySMT name|  Supported Theories            | Quantifiers | Quantifier Elimination | Unsat Core | Interpolation|
+ +==================+===========+================================+=============+========================+============+==============+
+ | MathSAT          |  msat     | UF, LIA, LRA, BV, AX           |  No         | msat-fm, msat-lw       | Yes        | Yes          |
+ +------------------+-----------+--------------------------------+-------------+------------------------+------------+--------------+
+ | Z3               |  z3       | UF, LIA, LRA, BV, AX, NRA, NIA |  z3         | z3                     | Yes        | Yes          |
+ +------------------+-----------+--------------------------------+-------------+------------------------+------------+--------------+
+ | CVC4             |  cvc4     | UF, LIA, LRA, BV, AX, S       |  Yes        | No                     | No         | No           |
+ +------------------+-----------+--------------------------------+-------------+------------------------+------------+--------------+
+ | Yices            |  yices    | UF, LIA, LRA, BV               |  No         | No                     | No         | No           |
+ +------------------+-----------+--------------------------------+-------------+------------------------+------------+--------------+
+ | Boolector        |  btor     | UF, BV, AX                     |  No         | No                     | No         | No           |
+ +------------------+-----------+--------------------------------+-------------+------------------------+------------+--------------+
+ | SMT-Lib Interface|  <custom> | UF, LIA, LRA, BV, AX           |  Yes        | No                     | No         | No           |
+ +------------------+-----------+--------------------------------+-------------+------------------------+------------+--------------+
+ | PicoSAT          |  picosat  | [None]                         |  No         | [No]                   | No         | No           |
+ +------------------+-----------+--------------------------------+-------------+------------------------+------------+--------------+
+ | BDD (CUDD)       |  bdd      | [None]                         |  Yes        | bdd                    | No         | No           |
+ +------------------+-----------+--------------------------------+-------------+------------------------+------------+--------------+
 
 
-The following table summarizes the features supported via pySMT for
-each of the available quantifier eliminators
 
-  =====================   ==========   ================
-  Quantifier Eliminator   pySMT name   Supported Logics
-  =====================   ==========   ================
-  MathSAT FM              msat-fm      LRA
-  MathSAT LW              msat-lw      LRA, LIA
-  Z3                      z3           LRA, LIA
-  BDD (CUDD)              bdd          BOOL
-  =====================   ==========   ================
-
-Unsat-Core extraction is currently supported on: MathSAT and Z3.
-
-The following table summarizes the features supported via pySMT for each of the available Craig interpolators
-
-  ============   ==========   =========================
-  Interpolator   pySMT name   Supported Logics
-  ============   ==========   =========================
-  MathSAT        msat         QF_UFLIA, QF_UFLRA, QF_BV
-  Z3             z3           QF_UFLIA, QF_UFLRA
-  ============   ==========   =========================
 
 License
 =======
@@ -221,3 +264,14 @@ pySMT is released under the APACHE 2.0 License.
 
 For further questions, feel free to open an issue, or write to
 pysmt@googlegroups.com (`Browse the Archive <https://groups.google.com/d/forum/pysmt>`_).
+
+If you use pySMT in your work, please consider citing:
+
+.. code::
+
+  @inproceedings{pysmt2015,
+    title={PySMT: a solver-agnostic library for fast prototyping of SMT-based algorithms},
+    author={Gario, Marco and Micheli, Andrea},
+    booktitle={SMT Workshop 2015},
+    year={2015}
+  }

@@ -1,6 +1,8 @@
 #!/bin/bash
 set -ev
 
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
 #
 # Skip Install if Python 2.7 or PyPy and not a PR
 #
@@ -18,19 +20,34 @@ if [ "${TRAVIS_PULL_REQUEST}" == "false" ] && [ "${TRAVIS_BRANCH}" != "master" ]
         echo "Skipping 'all' configuration"
         exit 0
     fi
+    if [ "${TRAVIS_OS_NAME}" == "osx" ]; then
+        echo "Skipping MacOSX build"
+        exit 0
+    fi
 fi
 
-pip install six
-pip install cython;
+if [ "${TRAVIS_OS_NAME}" == "osx" ]; then
+    eval "$(pyenv init -)"
+    pyenv activate venv
+fi
+echo "Check that the correct version of Python is running"
+python ${DIR}/check_python_version.py "${TRAVIS_PYTHON_VERSION}"
 
-if [ "${PYSMT_SOLVER}" == "all" ] || [ "${PYSMT_SOLVER}" == "btor" ];
+PIP_INSTALL="python -m pip install --upgrade"
+
+$PIP_INSTALL configparser
+$PIP_INSTALL six
+$PIP_INSTALL cython
+$PIP_INSTALL wheel
+
+if [ "${PYSMT_SOLVER}" == "all" ] || [ "${PYSMT_SOLVER}" == *"btor"* ];
 then
-    pip install python-coveralls;
+    $PIP_INSTALL python-coveralls;
 fi
 
 if [ "${PYSMT_GMPY}" == "TRUE" ];
 then
-    pip install gmpy2;
+    $PIP_INSTALL gmpy2;
 fi
 
 # Adding Python 3.6 library path to GCC search
@@ -43,21 +60,30 @@ fi
 #
 # Install Solvers
 #
-export BINDINGS_FOLDER=${HOME}/python_bindings/${PYSMT_SOLVER}
+PYSMT_SOLVER_FOLDER="${PYSMT_SOLVER}_${TRAVIS_OS_NAME}"
+PYSMT_SOLVER_FOLDER="${PYSMT_SOLVER_FOLDER//,/$'_'}"
+export BINDINGS_FOLDER=${HOME}/python_bindings/${PYSMT_SOLVER_FOLDER}
+
 mkdir -p ${BINDINGS_FOLDER}
 python install.py --confirm-agreement --bindings-path ${BINDINGS_FOLDER}
 eval `python install.py --env --bindings-path ${BINDINGS_FOLDER}`
 
-if [ "${PYSMT_SOLVER}" == "all" ] || [ "${PYSMT_SOLVER}" == "z3_wrap" ]; then
+if [ "${PYSMT_SOLVER}" == "all" ] || [ "${PYSMT_SOLVER}" == *"z3_wrap"* ]; then
     python install.py --z3 --conf --force;
     cp -v $(find ~/.smt_solvers/ -name z3 -type f) pysmt/test/smtlib/bin/z3;
     chmod +x pysmt/test/smtlib/bin/z3;
     mv pysmt/test/smtlib/bin/z3.solver.sh.template pysmt/test/smtlib/bin/z3.solver.sh ;
 fi
 
-if [ "${PYSMT_SOLVER}" == "all" ] || [ "${PYSMT_SOLVER}" == "msat_wrap" ];
+if [ "${PYSMT_SOLVER}" == "all" ] || [ "${PYSMT_SOLVER}" == *"msat_wrap"* ];
 then
     python install.py --msat --conf --force;
     cp -v $(find ~/.smt_solvers/ -name mathsat -type f) pysmt/test/smtlib/bin/mathsat;
     mv pysmt/test/smtlib/bin/mathsat.solver.sh.template pysmt/test/smtlib/bin/mathsat.solver.sh ;
+fi
+
+
+# On OSX install nosetest
+if [ "${TRAVIS_OS_NAME}" == "osx" ]; then
+    $PIP_INSTALL nose
 fi

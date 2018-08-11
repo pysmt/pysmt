@@ -55,6 +55,32 @@ class TestSmtLibScript(TestCase):
         res = script.filter_by_command_name([smtcmd.SET_LOGIC])
         self.assertEqual(len(list(res)), 1)
 
+
+    def test_declare_sort(self):
+        class SmtLibIgnore(SmtLibIgnoreMixin):
+            declare_sort_history = []
+            def declare_sort(self, name, arity):
+                self.declare_sort_history.append((name, arity))
+
+        mock = SmtLibIgnore()
+        parser = SmtLibParser()
+        smtlib_script = '\n'.join(['(declare-sort s0 0)', \
+                                   '(declare-sort s1 1)', \
+                                   '(declare-const c0 s0)', \
+                                   '(declare-const c1 (s1 Int))'])
+        outstream = cStringIO(smtlib_script)
+        script = parser.get_script(outstream)
+        script.evaluate(solver=mock)
+
+        self.assertEqual(len(mock.declare_sort_history), 2)
+        s0_name, s0_arity = mock.declare_sort_history[0]
+        s1_name, s1_arity = mock.declare_sort_history[1]
+        self.assertEqual(s0_name, "s0")
+        self.assertEqual(s0_arity, 0)
+        self.assertEqual(s1_name, "s1")
+        self.assertEqual(s1_arity, 1)
+
+
     def test_from_formula(self):
         x, y = Symbol("x"), Symbol("y")
         f = And(x, Or(y, x))
@@ -122,6 +148,19 @@ class TestSmtLibScript(TestCase):
             f = get_formula_strict(stream_in)
 
 
+    #n is defined once as an Int and once as a Real
+    def test_define_funs_same_args(self):
+        smtlib_script = "\n".join(['(define-fun f ((n Int)) Int n)', '(define-fun f ((n Real)) Real n)'])
+        stream = cStringIO(smtlib_script)
+        parser = SmtLibParser()
+        script = parser.get_script(stream)
+
+    def test_define_funs_arg_and_fun(self):
+        smtlib_script = "\n".join(['(define-fun f ((n Int)) Int n)', '(declare-fun n () Real)'])
+        stream = cStringIO(smtlib_script)
+        parser = SmtLibParser()
+        script = parser.get_script(stream)
+
     def test_evaluate_command(self):
         class SmtLibIgnore(SmtLibIgnoreMixin):
             pass
@@ -186,7 +225,7 @@ class TestSmtLibScript(TestCase):
             except NotImplementedError:
                 nie += 1
         # There are currently 3 not-implemented commands
-        self.assertEquals(nie, 3)
+        self.assertEqual(nie, 3)
 
 DEMO_SMTSCRIPT = [ "(declare-fun a () Bool)",
                    "(declare-fun b () Bool)",
@@ -207,6 +246,12 @@ DEMO_SMTSCRIPT = [ "(declare-fun a () Bool)",
                    "(define-sort G (H) (F Int H))",
                    "(define-fun f ((a Bool)) B a)",
                    "(define-fun g ((a Bool)) B (f a))",
+                   "(define-fun h ((a Int)) Int a)",
+                   "(declare-const x Bool)",
+                   "(declare-const y Int)",
+                   "(assert (= (h y) y))",
+                   "(assert (= (f x) x))",
+                   "(check-sat)",
                    "(define-fun-rec f ((a A)) B a)",
                    "(define-fun-rec g ((a A)) B (g a))",
                    """(define-funs-rec ((h ((a A)) B) (i ((a A)) B) )

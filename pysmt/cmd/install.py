@@ -33,8 +33,8 @@ from pysmt import git_version
 Installer = namedtuple("Installer", ["InstallerClass", "version", "extra_params"])
 INSTALLERS = [Installer(MSatInstaller,    "5.5.1", {}),
               Installer(CVC4Installer,    "1.5", {"git_version" : "05663e0d338c2bab30b5f19820de01788ec2b276"}),
-              Installer(Z3Installer,      "4.5.1", {"osx": "10.11", "git_version": "082936bca6fb"}),
-              Installer(YicesInstaller,   "2.5.2", {"yicespy_version": "f0768ffeec15ea310f830d10878971c9998454ac"}),
+              Installer(Z3Installer,      "4.6.0", {"osx": "10.11.6"}),
+              Installer(YicesInstaller,   "2.6.0", {"yicespy_version": "f0768ffeec15ea310f830d10878971c9998454ac"}),
               Installer(BtorInstaller,    "2.4.1", {"lingeling_version": "bbc"}),
               Installer(PicoSATInstaller, "965", {"pypicosat_minor_version" : "1708010052"}),
               Installer(CuddInstaller,    "2.0.3", {"git_version" : "75fe055c2a736a3ac3e971c1ade108b815edc96c"}),
@@ -189,12 +189,12 @@ def main():
         mirror_url += "/{archive_name}"
 
     # This should work on any platform
-    install_dir= os.path.expanduser(options.install_path)
+    install_dir = os.path.expanduser(options.install_path)
     if not os.path.exists(install_dir):
         os.mkdir(install_dir)
 
     # This should work on any platform
-    bindings_dir= os.path.expanduser(options.bindings_path)
+    bindings_dir = os.path.expanduser(options.bindings_path)
     if not os.path.exists(bindings_dir):
         os.mkdir(bindings_dir)
 
@@ -232,13 +232,11 @@ def main():
         if platform.system().lower() == "windows":
             if options.powershell:
                 print('$env:PythonPath += ";%s"' % bindings_dir)
-                print('$env:Path += ";%s"' % bindings_dir)
             else:
                 print("set PYTHONPATH=" + bindings_dir + ";%PYTHONPATH%")
-                print("set PATH=" + bindings_dir + ";%PATH%")
         else:
             print("export PYTHONPATH=\"" + bindings_dir + ":${PYTHONPATH}\"")
-            print("export LD_LIBRARY_PATH=\"" + bindings_dir + ":${LD_LIBRARY_PATH}\"")
+
 
     else:
         if len(solvers_to_install) == 0:

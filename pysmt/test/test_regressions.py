@@ -23,7 +23,7 @@ import pysmt.smtlib.commands as smtcmd
 from pysmt.shortcuts import (Real, Plus, Symbol, Equals, And, Bool, Or, Not,
                              Div, LT, LE, Int, ToReal, Iff, Exists, Times, FALSE,
                              BVLShr, BVLShl, BVAShr, BV, BVAdd, BVULT, BVMul,
-                             Select, Array, Ite)
+                             Select, Array, Ite, String)
 from pysmt.shortcuts import Solver, get_env, qelim, get_model, TRUE, ExactlyOne
 from pysmt.typing import REAL, BOOL, INT, BVType, FunctionType, ArrayType
 from pysmt.test import (TestCase, skipIfSolverNotAvailable, skipIfNoSolverForLogic,
@@ -393,7 +393,7 @@ class TestRegressions(TestCase):
         s = parser.get_script(buffer_)
         for c in s:
             res = c.serialize_to_string(daggify=False)
-        self.assertEqual(res, smtlib_input)
+        self.assertEqual(res.replace('__x0', 'x'), smtlib_input)
 
     @skipIfSolverNotAvailable("z3")
     def test_z3_nary_back(self):
@@ -477,6 +477,38 @@ class TestRegressions(TestCase):
             Equals(x, y)
         with self.assertRaises(PysmtTypeError):
             LE(x, y)
+
+    def test_string_constant_quote_escaping_hr_printer(self):
+        x = String('a"b')
+        y = String('""')
+        z = String('"')
+        self.assertEqual('"a""b"', str(x))
+        self.assertEqual('""""""', str(y))
+        self.assertEqual('""""', str(z))
+
+    def test_string_constant_quote_escaping_smtlib_printer(self):
+        x = String('a"b')
+        y = String('""')
+        z = String('"')
+        self.assertEqual('"a""b"', x.to_smtlib())
+        self.assertEqual('""""""', y.to_smtlib())
+        self.assertEqual('""""', z.to_smtlib())
+
+    def test_string_constant_quote_escaping_parsing(self):
+        script = """
+        (declare-const x String)
+        (assert (= x "a""b"))
+        (assert (= x "\"\""))
+        (assert (= x "\"\"\"\""))
+        """
+
+        p = SmtLibParser()
+        buffer = cStringIO(script)
+        s = p.get_script(buffer)
+        self.assertEqual('a"b', s.commands[1].args[0].arg(1).constant_value())
+        self.assertEqual('"', s.commands[2].args[0].arg(1).constant_value())
+        self.assertEqual('""', s.commands[3].args[0].arg(1).constant_value())
+
 
 
 if __name__ == "__main__":
