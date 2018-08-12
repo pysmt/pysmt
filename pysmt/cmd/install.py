@@ -138,18 +138,20 @@ def parse_options():
 
     parser.add_argument('--confirm-agreement', dest='skip_intro',
                         action='store_true', default=False,
-                        help='Confirm that you agree with the licenses of the\
-                        solvers and skip the interactive question')
+                        help='Confirm that you agree with the licenses of the'
+                             ' solvers and skip the interactive question')
 
     install_path_default = os.path.join("~", ".smt_solvers")
     parser.add_argument('--install-path', dest='install_path',
                         type=str, default=install_path_default,
-                        help='The folder to use for the installation')
+                        help='The folder to use for the installation'
+                             ' (defaults to: {!r})'.format(install_path_default))
 
     py_bindings = solver_install_site(plat_specific=True)
     parser.add_argument('--bindings-path', dest='bindings_path',
                         type=str, default=py_bindings,
-                        help='The folder to use for the bindings')
+                        help='The folder to use for the bindings (defaults to the'
+                             ' relevant site-packages directory: {!r})'.format(py_bindings))
 
     options = parser.parse_args()
     return options

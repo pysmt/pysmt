@@ -363,6 +363,7 @@ def running_under_virtualenv():
 def solver_install_site(plat_specific=False):
     """Determine solver's install site similarly to pip behaviour on Debian."""
 
+    # install to local user-site, unless in virtualenv or running as root
     default_user = True
     if running_under_virtualenv():
         default_user = False
