@@ -1,5 +1,9 @@
 language: python
 
+env:
+  global:
+    - PYSMT_CUSTOM_BINDINGS_PATH="FALSE"
+
 matrix:
   include:
   - os: linux

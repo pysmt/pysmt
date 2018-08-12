@@ -68,12 +68,6 @@ install:
   # Install the solvers
   - cmd: "python install.py --confirm-agreement"
 
-  # Set and check the pythonpath
-  - cmd: "python install.py --env > bindings_path.bat"
-  - cmd: "call ./bindings_path.bat"
-  - ECHO "PythonPath=%PYTHONPATH%"
-  - ECHO "Path=%PATH%"
-
 build: false
 
 test_script:

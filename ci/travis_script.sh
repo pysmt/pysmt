@@ -35,12 +35,15 @@ fi
 echo "Check that the correct version of Python is running"
 python ${DIR}/check_python_version.py "${TRAVIS_PYTHON_VERSION}"
 
-PYSMT_SOLVER_FOLDER="${PYSMT_SOLVER}_${TRAVIS_OS_NAME}"
-PYSMT_SOLVER_FOLDER="${PYSMT_SOLVER_FOLDER//,/$'_'}"
-export BINDINGS_FOLDER=${HOME}/python_bindings/${PYSMT_SOLVER_FOLDER}
+# Update PYTHONPATH only if needed
+if [ "${PYSMT_CUSTOM_BINDINGS_PATH}" == "TRUE" ]; then
+    PYSMT_SOLVER_FOLDER="${PYSMT_SOLVER}_${TRAVIS_OS_NAME}"
+    PYSMT_SOLVER_FOLDER="${PYSMT_SOLVER_FOLDER//,/$'_'}"
+    BINDINGS_FOLDER="${HOME}/python_bindings/${PYSMT_SOLVER_FOLDER}"
+    eval "$(python install.py --env --bindings-path "${BINDINGS_FOLDER}")"
+fi
 
-eval `python install.py --env --bindings-path ${BINDINGS_FOLDER}`
-echo ${PYTHONPATH}
+echo "${PYTHONPATH}"
 python install.py --check
 
 #
