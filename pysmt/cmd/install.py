@@ -189,12 +189,12 @@ def main():
     # This should work on any platform
     install_dir = os.path.expanduser(options.install_path)
     if not os.path.exists(install_dir):
-        os.mkdir(install_dir)
+        os.makedirs(install_dir)
 
     # This should work on any platform
     bindings_dir = os.path.expanduser(options.bindings_path)
     if not os.path.exists(bindings_dir):
-        os.mkdir(bindings_dir)
+        os.makedirs(bindings_dir)
 
     solvers_to_install = []
     all_solvers = options.all_solvers
