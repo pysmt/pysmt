@@ -44,6 +44,7 @@ if [ "${PYSMT_CUSTOM_BINDINGS_PATH}" == "TRUE" ]; then
 fi
 
 echo "${PYTHONPATH}"
+python install.py --env
 python install.py --check
 
 #
@@ -63,5 +64,8 @@ if [ "${PYSMT_SOLVER}" == "all" ];
 then
     python install.py --msat --conf --force;
     cp -v $(find ~/.smt_solvers/ -name mathsat -type f) /tmp/mathsat;
-    (for ex in `ls examples/*.py`; do echo $ex; python $ex || exit $?; done);
+    for ex in examples/*.py; do
+        echo $ex
+        python $ex
+    done
 fi
