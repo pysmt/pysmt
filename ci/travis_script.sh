@@ -64,6 +64,11 @@ if [ "${PYSMT_SOLVER}" == "all" ];
 then
     python install.py --msat --conf --force;
     cp -v $(find ~/.smt_solvers/ -name mathsat -type f) /tmp/mathsat;
+
+    # since we're relying on relative `pysmt` import in examples,
+    # ensure `.` is added to `sys.path`
+    export PYTHONPATH=${PYTHONPATH:-.}
+
     for ex in examples/*.py; do
         echo $ex
         python $ex
