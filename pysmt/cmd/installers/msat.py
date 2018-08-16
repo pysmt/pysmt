@@ -73,7 +73,7 @@ class MSatInstaller(SolverInstaller):
             SolverInstaller.do_download(setup_py_win_url, setup_py)
 
         # Run setup.py to compile the bindings
-        if self.os_name == "windows":
+        if self.os_name in {"windows", "darwin"}:
             SolverInstaller.run_python("./setup.py build_ext", self.python_bindings_dir)
         else:
             # NB: -R adds --rpath=$ORIGIN to link step, which makes shared library object
