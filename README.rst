@@ -200,15 +200,12 @@ The script *pysmt-install* can be used to simplify the installation of the solve
 
  $ pysmt-install --msat
 
-will install MathSAT 5. Once the installation is complete, you
-can use the option ``--env`` to obtain a string to update your
-``PYTHONPATH``::
+will install MathSAT 5.
 
-  $ pysmt-install --env
-  export PYTHONPATH="/home/pysmt/.smt_solvers/python-bindings-2.7:${PYTHONPATH}"
-
-By default the solvers are installed in your home directory in the
-folder ``.smt_solvers``. ``pysmt-install`` has many options to
+By default the solvers are downloaded, unpacked and built in your home directory
+in the ``.smt_solvers`` folder. Compiled libraries and actual solver packages are
+installed in the relevant ``site-packages`` directory (e.g. virtual environment's
+packages root or local user-site). ``pysmt-install`` has many options to
 customize its behavior.
 
 *Note:* This script does not install required

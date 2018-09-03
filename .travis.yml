@@ -1,5 +1,9 @@
 language: python
 
+env:
+  global:
+    - PYSMT_CUSTOM_BINDINGS_PATH="FALSE"
+
 matrix:
   include:
   - os: linux
@@ -243,7 +247,8 @@ cache:
   directories:
   - ${HOME}/.cache/pip
   - ${HOME}/Library/Caches/Homebrew # For MacOSX
-  - ${HOME}/python_bindings
+  #- ${HOME}/python_bindings
+  - ${VIRTUAL_ENV}
 
 
 addons:

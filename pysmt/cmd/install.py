@@ -24,6 +24,7 @@ from collections import namedtuple
 from pysmt.cmd.installers import MSatInstaller, Z3Installer, PicoSATInstaller
 from pysmt.cmd.installers import CVC4Installer, YicesInstaller, BtorInstaller
 from pysmt.cmd.installers import CuddInstaller
+from pysmt.cmd.installers.base import solver_install_site
 
 from pysmt.environment import get_env
 from pysmt.exceptions import PysmtException
@@ -137,19 +138,20 @@ def parse_options():
 
     parser.add_argument('--confirm-agreement', dest='skip_intro',
                         action='store_true', default=False,
-                        help='Confirm that you agree with the licenses of the\
-                        solvers and skip the interactive question')
+                        help='Confirm that you agree with the licenses of the'
+                             ' solvers and skip the interactive question')
 
     install_path_default = os.path.join("~", ".smt_solvers")
     parser.add_argument('--install-path', dest='install_path',
                         type=str, default=install_path_default,
-                        help='The folder to use for the installation')
+                        help='The folder to use for the installation'
+                             ' (defaults to: {!r})'.format(install_path_default))
 
-    py_bindings = os.path.join(install_path_default,
-                               "python-bindings-%d.%d" % sys.version_info[0:2])
+    py_bindings = solver_install_site(plat_specific=True)
     parser.add_argument('--bindings-path', dest='bindings_path',
                         type=str, default=py_bindings,
-                        help='The folder to use for the bindings')
+                        help='The folder to use for the bindings (defaults to the'
+                             ' relevant site-packages directory: {!r})'.format(py_bindings))
 
     options = parser.parse_args()
     return options
@@ -187,12 +189,12 @@ def main():
     # This should work on any platform
     install_dir = os.path.expanduser(options.install_path)
     if not os.path.exists(install_dir):
-        os.mkdir(install_dir)
+        os.makedirs(install_dir)
 
     # This should work on any platform
     bindings_dir = os.path.expanduser(options.bindings_path)
     if not os.path.exists(bindings_dir):
-        os.mkdir(bindings_dir)
+        os.makedirs(bindings_dir)
 
     solvers_to_install = []
     all_solvers = options.all_solvers

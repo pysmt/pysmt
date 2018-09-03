@@ -35,12 +35,16 @@ fi
 echo "Check that the correct version of Python is running"
 python ${DIR}/check_python_version.py "${TRAVIS_PYTHON_VERSION}"
 
-PYSMT_SOLVER_FOLDER="${PYSMT_SOLVER}_${TRAVIS_OS_NAME}"
-PYSMT_SOLVER_FOLDER="${PYSMT_SOLVER_FOLDER//,/$'_'}"
-export BINDINGS_FOLDER=${HOME}/python_bindings/${PYSMT_SOLVER_FOLDER}
+# Update PYTHONPATH only if needed
+if [ "${PYSMT_CUSTOM_BINDINGS_PATH}" == "TRUE" ]; then
+    PYSMT_SOLVER_FOLDER="${PYSMT_SOLVER}_${TRAVIS_OS_NAME}"
+    PYSMT_SOLVER_FOLDER="${PYSMT_SOLVER_FOLDER//,/$'_'}"
+    BINDINGS_FOLDER="${HOME}/python_bindings/${PYSMT_SOLVER_FOLDER}"
+    eval "$(python install.py --env --bindings-path "${BINDINGS_FOLDER}")"
+fi
 
-eval `python install.py --env --bindings-path ${BINDINGS_FOLDER}`
-echo ${PYTHONPATH}
+echo "${PYTHONPATH}"
+python install.py --env
 python install.py --check
 
 #
@@ -60,5 +64,13 @@ if [ "${PYSMT_SOLVER}" == "all" ];
 then
     python install.py --msat --conf --force;
     cp -v $(find ~/.smt_solvers/ -name mathsat -type f) /tmp/mathsat;
-    (for ex in `ls examples/*.py`; do echo $ex; python $ex || exit $?; done);
+
+    # since we're relying on relative `pysmt` import in examples,
+    # ensure `.` is added to `sys.path`
+    export PYTHONPATH=${PYTHONPATH:-.}
+
+    for ex in examples/*.py; do
+        echo $ex
+        python $ex
+    done
 fi

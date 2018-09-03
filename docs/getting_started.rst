@@ -37,15 +37,17 @@ installed with the same script: e.g., ::
 
   $ pysmt-install --msat
 
-installs the MathSAT5 solver. Once the installation is complete, you
-can use the option ``--env`` to obtain a string to update your
-``PYTHONPATH``::
+installs the MathSAT5 solver.
 
-  $ pysmt-install --env
-  export PYTHONPATH="/home/pysmt/.smt_solvers/python-bindings-2.7:${PYTHONPATH}"
+By default the solvers are downloaded, unpacked and built in your home directory
+in the ``.smt_solvers`` folder. Compiled libraries and actual solver packages are
+installed in the relevant ``site-packages`` directory (e.g. virtual environment's
+packages root or local user-site).
 
-By default the solvers are installed in your home directory in the
-folder ``.smt_solvers``. ``pysmt-install`` has many options to
+If you specified a custom ``--bindings-path`` during install, you
+can use the ``--env`` option to obtain a string to update your
+``PYTHONPATH``. When defaults are used, there's not need to update
+the ``PYTHONPATH``. ``pysmt-install`` has many options to
 customize its behavior.
 
 .. _gs-hello-world:
