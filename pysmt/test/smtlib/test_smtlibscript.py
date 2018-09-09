@@ -148,18 +148,24 @@ class TestSmtLibScript(TestCase):
             f = get_formula_strict(stream_in)
 
 
-    #n is defined once as an Int and once as a Real
     def test_define_funs_same_args(self):
+        # n is defined once as an Int and once as a Real
         smtlib_script = "\n".join(['(define-fun f ((n Int)) Int n)', '(define-fun f ((n Real)) Real n)'])
         stream = cStringIO(smtlib_script)
         parser = SmtLibParser()
-        script = parser.get_script(stream)
+        _ = parser.get_script(stream)
+        # No exceptions are thrown
+        self.assertTrue(True)
+
 
     def test_define_funs_arg_and_fun(self):
         smtlib_script = "\n".join(['(define-fun f ((n Int)) Int n)', '(declare-fun n () Real)'])
         stream = cStringIO(smtlib_script)
         parser = SmtLibParser()
-        script = parser.get_script(stream)
+        _ = parser.get_script(stream)
+        # No exceptions are thrown
+        self.assertTrue(True)
+
 
     def test_evaluate_command(self):
         class SmtLibIgnore(SmtLibIgnoreMixin):

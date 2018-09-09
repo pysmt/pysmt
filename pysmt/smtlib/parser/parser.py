@@ -15,6 +15,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+from __future__ import generator_stop
+
 import functools
 import itertools
 
@@ -188,6 +190,18 @@ class Tokenizer(object):
     def consume_token(self):
         return next(self.generator)
 
+    def consume_enforce(self, msg=None):
+        """Throws a PySmtSyntaxError if unable to consume a token."""
+        try:
+            t = self.consume()
+        except StopIteration:
+            if msg:
+                raise PysmtSyntaxError (msg, self.pos_info)
+            else:
+                raise PysmtSyntaxError("Unexpected end of stream.",
+                                       self.pos_info)
+        return t
+
     def raw_read(self):
         return next(self.reader)
 
@@ -208,73 +222,76 @@ class Tokenizer(object):
         separators = set(["(", ")", "|", "\""])
         specials = spaces | separators | set([";", ""])
 
-        c = next(reader)
-
-        eof = False
-        while not eof:
-            if c in specials:
-                # consume the spaces
-                if c in spaces:
-                    c = next(reader)
-
-                elif c in separators:
-                    if c == "|":
-                        s = []
+        try:
+            c = next(reader)
+            eof = False
+            while not eof:
+                if c in specials:
+                    # consume the spaces
+                    if c in spaces:
                         c = next(reader)
-                        while c and c != "|":
-                            if c == "\\": # This is a single '\'
+
+                    elif c in separators:
+                        if c == "|":
+                            s = []
+                            c = next(reader)
+                            while c and c != "|":
+                                if c == "\\": # This is a single '\'
+                                    c = next(reader)
+                                    if c != "|" and c != "\\":
+                                        # Only \| and \\ are supported escapings
+                                        raise PysmtSyntaxError(
+                                            "Unknown escaping in quoted symbol: "
+                                            "'\\%s'" % c, reader.pos_info)
+                                s.append(c)
                                 c = next(reader)
-                                if c != "|" and c != "\\":
-                                    # Only \| and \\ are supported escapings
-                                    raise PysmtSyntaxError(
-                                        "Unknown escaping in quoted symbol: "
-                                        "'\\%s'" % c, reader.pos_info)
-                            s.append(c)
-                            c = next(reader)
-                        if not c:
-                            raise PysmtSyntaxError("Expected '|'",
-                                                   reader.pos_info)
-                        yield "".join(s)
-                        c = next(reader)
-
-                    elif c == "\"":
-                        # String literals
-                        s = c
-                        num_quotes = 0
-                        while True:
-                            c = next(reader)
                             if not c:
-                                raise PysmtSyntaxError("Expected '\"'",
+                                raise PysmtSyntaxError("Expected '|'",
                                                        reader.pos_info)
+                            yield "".join(s)
+                            c = next(reader)
 
-                            if c != "\"" and num_quotes % 2 != 0:
-                                break
+                        elif c == "\"":
+                            # String literals
+                            s = c
+                            num_quotes = 0
+                            while True:
+                                c = next(reader)
+                                if not c:
+                                    raise PysmtSyntaxError("Expected '\"'",
+                                                           reader.pos_info)
 
-                            s += c
-                            if c == "\"":
-                                num_quotes += 1
+                                if c != "\"" and num_quotes % 2 != 0:
+                                    break
 
-                        yield s
+                                s += c
+                                if c == "\"":
+                                    num_quotes += 1
+
+                            yield s
+
+                        else:
+                            yield c
+                            c = next(reader)
+
+                    elif c == ";":
+                        while c and c != "\n":
+                            c = next(reader)
+                        c = next(reader)
 
                     else:
-                        yield c
-                        c = next(reader)
-
-                elif c == ";":
-                    while c and c != "\n":
-                        c = next(reader)
-                    c = next(reader)
-
+                        # EOF
+                        eof = True
+                        assert len(c) == 0
                 else:
-                    # EOF
-                    eof = True
-                    assert len(c) == 0
-            else:
-                tk = []
-                while c not in specials:
-                    tk.append(c)
-                    c = next(reader)
-                yield "".join(tk)
+                    tk = []
+                    while c not in specials:
+                        tk.append(c)
+                        c = next(reader)
+                    yield "".join(tk)
+        except StopIteration:
+            # No more data to read, close generator
+            return
 
     def char_iterator(self, handle):
         c = handle.read(1)
@@ -697,7 +714,7 @@ class SmtLibParser(object):
             newvals[vname] = expr
             self.cache.bind(vname, expr)
             self.consume_closing(tokens, "expression")
-            current = tokens.consume()
+            current = tokens.consume_enforce()
 
         stack[-1].append(self._exit_let)
         stack[-1].append(newvals.keys())
@@ -729,7 +746,7 @@ class SmtLibParser(object):
             vrs.append((vname, var))
 
             self.consume_closing(tokens, "expression")
-            current = tokens.consume()
+            current = tokens.consume_enforce()
 
         quant = None
         if key == 'forall':
@@ -747,14 +764,14 @@ class SmtLibParser(object):
 
         term = self.get_expression(tokens)
 
-        tk = tokens.consume()
+        tk = tokens.consume_enforce()
         while tk != ")":
             if not tk.startswith(":"):
                 raise PysmtSyntaxError("Annotations keyword should start with"
                                        " colon! Offending token: '%s'" % tk,
                                        tokens.pos_info)
             keyword = tk[1:]
-            tk = tokens.consume()
+            tk = tokens.consume_enforce()
             value = None
             if tk == "(":
                 counter = 1
@@ -769,7 +786,7 @@ class SmtLibParser(object):
                 value = "".join(buff)
             else:
                 value = tk
-            tk = tokens.consume()
+            tk = tokens.consume_enforce()
             self.cache.annotations.add(term, keyword, value)
 
         assert len(stack[-1]) == 0
@@ -785,45 +802,49 @@ class SmtLibParser(object):
         mgr = self.env.formula_manager
         stack = []
 
-        while True:
-            tk = tokens.consume()
+        try:
+            while True:
+                tk = tokens.consume()
 
-            if tk == "(":
-                while tk == "(":
-                    stack.append([])
-                    tk = tokens.consume()
+                if tk == "(":
+                    while tk == "(":
+                        stack.append([])
+                        tk = tokens.consume()
 
-                if tk in self.interpreted:
-                    fun = self.interpreted[tk]
-                    fun(stack, tokens, tk)
+                    if tk in self.interpreted:
+                        fun = self.interpreted[tk]
+                        fun(stack, tokens, tk)
+                    else:
+                        stack[-1].append(self.atom(tk, mgr))
+
+                elif tk == ")":
+                    try:
+                        lst = stack.pop()
+                        fun = lst.pop(0)
+                    except IndexError:
+                        raise PysmtSyntaxError("Unexpected ')'",
+                                               tokens.pos_info)
+
+                    try:
+                        res = fun(*lst)
+                    except TypeError as err:
+                        if not callable(fun):
+                            raise NotImplementedError("Unknown function '%s'" % fun)
+                        raise err
+
+                    if len(stack) > 0:
+                        stack[-1].append(res)
+                    else:
+                        return res
+
                 else:
-                    stack[-1].append(self.atom(tk, mgr))
-
-            elif tk == ")":
-                try:
-                    lst = stack.pop()
-                    fun = lst.pop(0)
-                except IndexError:
-                    raise PysmtSyntaxError("Unexpected ')'",
-                                           tokens.pos_info)
-
-                try:
-                    res = fun(*lst)
-                except TypeError as err:
-                    if not callable(fun):
-                        raise NotImplementedError("Unknown function '%s'" % fun)
-                    raise err
-
-                if len(stack) > 0:
-                    stack[-1].append(res)
-                else:
-                    return res
-
-            else:
-                try:
-                    stack[-1].append(self.atom(tk, mgr))
-                except IndexError:
-                    return self.atom(tk, mgr)
+                    try:
+                        stack[-1].append(self.atom(tk, mgr))
+                    except IndexError:
+                        return self.atom(tk, mgr)
+        except StopIteration:
+            # No more data when trying to consume tokens
+            return
 
     def get_script(self, script):
         """
@@ -848,6 +869,7 @@ class SmtLibParser(object):
         tokens = Tokenizer(script, interactive=self.interactive)
         for cmd in self.get_command(tokens):
             yield cmd
+        return
 
     def get_script_fname(self, script_fname):
         """Given a filename and a Solver, executes the solver on the file."""
@@ -865,7 +887,8 @@ class SmtLibParser(object):
         res = []
         current = None
         for _ in xrange(min_size):
-            current = tokens.consume()
+            current = tokens.consume_enforce("Unexpected end of stream in %s "
+                                             "command." % command)
             if current == ")":
                 raise PysmtSyntaxError("Expected at least %d arguments in "
                                        "%s command." %\
@@ -877,7 +900,8 @@ class SmtLibParser(object):
                                        tokens.pos_info)
             res.append(current)
         for _ in xrange(min_size, max_size + 1):
-            current = tokens.consume()
+            current = tokens.consume_enforce("Unexpected end of stream in %s "
+                                             "command." % command)
             if current == ")":
                 return res
             if current == "(":
@@ -895,14 +919,14 @@ class SmtLibParser(object):
         if additional_token is not None:
             var = additional_token
         else:
-            var = tokens.consume()
-
+            var = tokens.consume_enforce("Unexpected end of stream in %s command." % \
+                                         command)
         res = None
         if type_params and var in type_params:
             return (var,) # This is a type parameter, it is handled recursively
         elif var == "(":
-            op = tokens.consume()
-
+            op = tokens.consume_enforce("Unexpected end of stream in %s command." % \
+                                        command)
             if op == "Array":
                 idxtype = self.parse_type(tokens, command)
                 elemtype = self.parse_type(tokens, command)
@@ -910,14 +934,15 @@ class SmtLibParser(object):
                 res = self.env.type_manager.ArrayType(idxtype, elemtype)
 
             elif op == "_":
-                ts = tokens.consume()
+                ts = tokens.consume_enforce("Unexpected end of stream in %s command." % \
+                                            command)
                 if ts != "BitVec":
                     raise PysmtSyntaxError("Unexpected token '%s' in %s command." % \
                                            (ts, command),
                                            tokens.pos_info)
 
                 size = 0
-                dim = tokens.consume()
+                dim = tokens.consume_enforce()
                 try:
                     size = int(dim)
                 except ValueError:
@@ -979,7 +1004,8 @@ class SmtLibParser(object):
 
     def parse_atom(self, tokens, command):
         """Parses a single name from the tokens"""
-        var = tokens.consume()
+        var = tokens.consume_enforce("Unexpected end of stream in %s command." % \
+                                     command)
         if var == "(" or var == ")":
             raise PysmtSyntaxError("Unexpected token '%s' in %s command." % \
                                    (var, command),
@@ -989,24 +1015,28 @@ class SmtLibParser(object):
     def parse_params(self, tokens, command):
         """Parses a list of types from the tokens"""
         self.consume_opening(tokens, command)
-        current = tokens.consume()
+        current = tokens.consume_enforce("Unexpected end of stream in %s command." % \
+                                         command)
         res = []
         while current != ")":
             res.append(self.parse_type(tokens, command, additional_token=current))
-            current = tokens.consume()
+            current = tokens.consume_enforce("Unexpected end of stream in %s command." % \
+                                             command)
         return res
 
     def parse_named_params(self, tokens, command):
         """Parses a list of names and type from the tokens"""
         self.consume_opening(tokens, command)
-        current = tokens.consume()
+        current = tokens.consume_enforce("Unexpected end of stream in %s command." % \
+                                         command)
         res = []
         while current != ")":
             vname = self.parse_atom(tokens, command)
             typename = self.parse_type(tokens, command)
             res.append((vname, typename))
             self.consume_closing(tokens, command)
-            current = tokens.consume()
+            current = tokens.consume_enforce("Unexpected end of stream in %s command." % \
+                                             command)
         return res
 
     def parse_expr_list(self, tokens, command):
@@ -1022,7 +1052,11 @@ class SmtLibParser(object):
 
     def consume_opening(self, tokens, command):
         """ Consumes a single '(' """
-        p = tokens.consume()
+        try:
+            p = tokens.consume()
+        except StopIteration:
+            # No more data
+            return
         if p != "(":
             raise PysmtSyntaxError("Unexpected token '%s' in %s command. " \
                                    "Expected '('" %
@@ -1030,11 +1064,11 @@ class SmtLibParser(object):
 
     def consume_closing(self, tokens, command):
         """ Consumes a single ')' """
-        p = tokens.consume()
+        p = tokens.consume_enforce("Unexpected end of stream. Expected ')'")
         if p != ")":
             raise PysmtSyntaxError("Unexpected token '%s' in %s command. " \
                                    "Expected ')'" %
-                                   (p, command, tokens.pos_info))
+                                   (p, command), tokens.pos_info)
 
     def _function_call_helper(self, v, *args):
         """ Helper function for dealing with function calls """
@@ -1050,7 +1084,7 @@ class SmtLibParser(object):
         tokens = Tokenizer(script, interactive=self.interactive)
         res = []
         self.consume_opening(tokens, "<main>")
-        current = tokens.consume()
+        current = tokens.consume_enforce()
         while current != ")":
             if current != "(":
                 raise PysmtSyntaxError("'(' expected", tokens.pos_info)
@@ -1058,15 +1092,19 @@ class SmtLibParser(object):
             expr = self.get_expression(tokens)
             self.consume_closing(tokens, current)
             res.append((vname, expr))
-            current = tokens.consume()
+            current = tokens.consume_enforce()
         self.cache.unbind_all(symbols)
         return res
 
     def get_command(self, tokens):
         """Builds an SmtLibCommand instance out of a parsed term."""
         while True:
-            self.consume_opening(tokens, "<main>")
-            current = tokens.consume()
+            try:
+                self.consume_opening(tokens, "<main>")
+            except StopIteration:
+                # No openings
+                return
+            current = tokens.consume_enforce()
             if current in self.commands:
                 fun = self.commands[current]
                 yield fun(current, tokens)
@@ -1203,10 +1241,10 @@ class SmtLibParser(object):
         self.consume_opening(tokens, current)
 
         params = []
-        cur = tokens.consume()
+        cur = tokens.consume_enforce()
         while cur != ')':
             params.append(cur)
-            cur = tokens.consume()
+            cur = tokens.consume_enforce()
 
         rtype = self.parse_type(tokens, current, type_params=params)
         if isinstance(rtype, PartialType):
