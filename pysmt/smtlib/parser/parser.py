@@ -15,8 +15,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from __future__ import generator_stop
-
 import functools
 import itertools
 
@@ -174,26 +172,29 @@ class Tokenizer(object):
             self.__row_cnt = None
         self.generator = self.create_generator(self.reader)
         self.extra_queue = []
-        self.consume = self.consume_token
+        self.consume = self.consume_enforced
 
     def add_extra_token(self, token):
         self.extra_queue.append(token)
         self.consume = self.consume_token_queue
 
-    def consume_token_queue(self):
+    def consume_token_queue(self, msg=None):
         if self.extra_queue:
             return self.extra_queue.pop(0)
         else:
-            self.consume = self.consume_token
+            self.consume = self.consume_enforced
+        return self.consume_enforced(msg)
+
+    def consume_maybe(self):
+        """Consumes and returns a single token from the stream.
+           If the stream is empty `StopIteration` is thrown"""
         return next(self.generator)
 
-    def consume_token(self):
-        return next(self.generator)
-
-    def consume_enforce(self, msg=None):
-        """Throws a PySmtSyntaxError if unable to consume a token."""
+    def consume_enforced(self, msg=None):
+        """Consumes and returns a single token from the stream.
+           If the stream is empty, a PysmtSyntaxError is thrown"""
         try:
-            t = self.consume()
+            t = self.consume_maybe()
         except StopIteration:
             if msg:
                 raise PysmtSyntaxError (msg, self.pos_info)
@@ -714,7 +715,7 @@ class SmtLibParser(object):
             newvals[vname] = expr
             self.cache.bind(vname, expr)
             self.consume_closing(tokens, "expression")
-            current = tokens.consume_enforce()
+            current = tokens.consume()
 
         stack[-1].append(self._exit_let)
         stack[-1].append(newvals.keys())
@@ -746,7 +747,7 @@ class SmtLibParser(object):
             vrs.append((vname, var))
 
             self.consume_closing(tokens, "expression")
-            current = tokens.consume_enforce()
+            current = tokens.consume()
 
         quant = None
         if key == 'forall':
@@ -764,14 +765,14 @@ class SmtLibParser(object):
 
         term = self.get_expression(tokens)
 
-        tk = tokens.consume_enforce()
+        tk = tokens.consume()
         while tk != ")":
             if not tk.startswith(":"):
                 raise PysmtSyntaxError("Annotations keyword should start with"
                                        " colon! Offending token: '%s'" % tk,
                                        tokens.pos_info)
             keyword = tk[1:]
-            tk = tokens.consume_enforce()
+            tk = tokens.consume()
             value = None
             if tk == "(":
                 counter = 1
@@ -786,7 +787,7 @@ class SmtLibParser(object):
                 value = "".join(buff)
             else:
                 value = tk
-            tk = tokens.consume_enforce()
+            tk = tokens.consume()
             self.cache.annotations.add(term, keyword, value)
 
         assert len(stack[-1]) == 0
@@ -804,7 +805,7 @@ class SmtLibParser(object):
 
         try:
             while True:
-                tk = tokens.consume()
+                tk = tokens.consume_maybe()
 
                 if tk == "(":
                     while tk == "(":
@@ -887,7 +888,7 @@ class SmtLibParser(object):
         res = []
         current = None
         for _ in xrange(min_size):
-            current = tokens.consume_enforce("Unexpected end of stream in %s "
+            current = tokens.consume("Unexpected end of stream in %s "
                                              "command." % command)
             if current == ")":
                 raise PysmtSyntaxError("Expected at least %d arguments in "
@@ -900,7 +901,7 @@ class SmtLibParser(object):
                                        tokens.pos_info)
             res.append(current)
         for _ in xrange(min_size, max_size + 1):
-            current = tokens.consume_enforce("Unexpected end of stream in %s "
+            current = tokens.consume("Unexpected end of stream in %s "
                                              "command." % command)
             if current == ")":
                 return res
@@ -919,13 +920,13 @@ class SmtLibParser(object):
         if additional_token is not None:
             var = additional_token
         else:
-            var = tokens.consume_enforce("Unexpected end of stream in %s command." % \
+            var = tokens.consume("Unexpected end of stream in %s command." % \
                                          command)
         res = None
         if type_params and var in type_params:
             return (var,) # This is a type parameter, it is handled recursively
         elif var == "(":
-            op = tokens.consume_enforce("Unexpected end of stream in %s command." % \
+            op = tokens.consume("Unexpected end of stream in %s command." % \
                                         command)
             if op == "Array":
                 idxtype = self.parse_type(tokens, command)
@@ -934,7 +935,7 @@ class SmtLibParser(object):
                 res = self.env.type_manager.ArrayType(idxtype, elemtype)
 
             elif op == "_":
-                ts = tokens.consume_enforce("Unexpected end of stream in %s command." % \
+                ts = tokens.consume("Unexpected end of stream in %s command." % \
                                             command)
                 if ts != "BitVec":
                     raise PysmtSyntaxError("Unexpected token '%s' in %s command." % \
@@ -942,7 +943,7 @@ class SmtLibParser(object):
                                            tokens.pos_info)
 
                 size = 0
-                dim = tokens.consume_enforce()
+                dim = tokens.consume()
                 try:
                     size = int(dim)
                 except ValueError:
@@ -1004,7 +1005,7 @@ class SmtLibParser(object):
 
     def parse_atom(self, tokens, command):
         """Parses a single name from the tokens"""
-        var = tokens.consume_enforce("Unexpected end of stream in %s command." % \
+        var = tokens.consume("Unexpected end of stream in %s command." % \
                                      command)
         if var == "(" or var == ")":
             raise PysmtSyntaxError("Unexpected token '%s' in %s command." % \
@@ -1015,19 +1016,19 @@ class SmtLibParser(object):
     def parse_params(self, tokens, command):
         """Parses a list of types from the tokens"""
         self.consume_opening(tokens, command)
-        current = tokens.consume_enforce("Unexpected end of stream in %s command." % \
+        current = tokens.consume("Unexpected end of stream in %s command." % \
                                          command)
         res = []
         while current != ")":
             res.append(self.parse_type(tokens, command, additional_token=current))
-            current = tokens.consume_enforce("Unexpected end of stream in %s command." % \
+            current = tokens.consume("Unexpected end of stream in %s command." % \
                                              command)
         return res
 
     def parse_named_params(self, tokens, command):
         """Parses a list of names and type from the tokens"""
         self.consume_opening(tokens, command)
-        current = tokens.consume_enforce("Unexpected end of stream in %s command." % \
+        current = tokens.consume("Unexpected end of stream in %s command." % \
                                          command)
         res = []
         while current != ")":
@@ -1035,7 +1036,7 @@ class SmtLibParser(object):
             typename = self.parse_type(tokens, command)
             res.append((vname, typename))
             self.consume_closing(tokens, command)
-            current = tokens.consume_enforce("Unexpected end of stream in %s command." % \
+            current = tokens.consume("Unexpected end of stream in %s command." % \
                                              command)
         return res
 
@@ -1053,7 +1054,7 @@ class SmtLibParser(object):
     def consume_opening(self, tokens, command):
         """ Consumes a single '(' """
         try:
-            p = tokens.consume()
+            p = tokens.consume_maybe()
         except StopIteration:
             raise #Re-raise execption for higher-level management, see get_command()
         if p != "(":
@@ -1063,7 +1064,7 @@ class SmtLibParser(object):
 
     def consume_closing(self, tokens, command):
         """ Consumes a single ')' """
-        p = tokens.consume_enforce("Unexpected end of stream. Expected ')'")
+        p = tokens.consume("Unexpected end of stream. Expected ')'")
         if p != ")":
             raise PysmtSyntaxError("Unexpected token '%s' in %s command. " \
                                    "Expected ')'" %
@@ -1083,7 +1084,7 @@ class SmtLibParser(object):
         tokens = Tokenizer(script, interactive=self.interactive)
         res = []
         self.consume_opening(tokens, "<main>")
-        current = tokens.consume_enforce()
+        current = tokens.consume()
         while current != ")":
             if current != "(":
                 raise PysmtSyntaxError("'(' expected", tokens.pos_info)
@@ -1091,7 +1092,7 @@ class SmtLibParser(object):
             expr = self.get_expression(tokens)
             self.consume_closing(tokens, current)
             res.append((vname, expr))
-            current = tokens.consume_enforce()
+            current = tokens.consume()
         self.cache.unbind_all(symbols)
         return res
 
@@ -1103,7 +1104,7 @@ class SmtLibParser(object):
             except StopIteration:
                 # No openings
                 return
-            current = tokens.consume_enforce()
+            current = tokens.consume()
             if current in self.commands:
                 fun = self.commands[current]
                 yield fun(current, tokens)
@@ -1240,10 +1241,10 @@ class SmtLibParser(object):
         self.consume_opening(tokens, current)
 
         params = []
-        cur = tokens.consume_enforce()
+        cur = tokens.consume()
         while cur != ')':
             params.append(cur)
-            cur = tokens.consume_enforce()
+            cur = tokens.consume()
 
         rtype = self.parse_type(tokens, current, type_params=params)
         if isinstance(rtype, PartialType):
