@@ -21,6 +21,7 @@ import itertools
 from warnings import warn
 from six import iteritems, PY2
 from six.moves import xrange
+from collections import deque
 
 import pysmt.smtlib.commands as smtcmd
 from pysmt.environment import get_env
@@ -171,37 +172,34 @@ class Tokenizer(object):
             self.__col_cnt = None
             self.__row_cnt = None
         self.generator = self.create_generator(self.reader)
-        self.extra_queue = []
-        self.consume = self.consume_enforced
+        self.extra_queue = deque()
 
     def add_extra_token(self, token):
         self.extra_queue.append(token)
-        self.consume = self.consume_token_queue
-
-    def consume_token_queue(self, msg=None):
-        if self.extra_queue:
-            return self.extra_queue.pop(0)
-        else:
-            self.consume = self.consume_enforced
-        return self.consume_enforced(msg)
 
     def consume_maybe(self):
         """Consumes and returns a single token from the stream.
            If the stream is empty `StopIteration` is thrown"""
-        return next(self.generator)
+        if self.extra_queue:
+            return self.extra_queue.popleft()
+        else:
+            return next(self.generator)
 
-    def consume_enforced(self, msg=None):
+    def consume(self, msg=None):
         """Consumes and returns a single token from the stream.
            If the stream is empty, a PysmtSyntaxError is thrown"""
-        try:
-            t = self.consume_maybe()
-        except StopIteration:
-            if msg:
-                raise PysmtSyntaxError (msg, self.pos_info)
-            else:
-                raise PysmtSyntaxError("Unexpected end of stream.",
-                                       self.pos_info)
-        return t
+        if self.extra_queue:
+            return self.extra_queue.pop(0)
+        else:
+            try:
+                t = self.consume_maybe()
+            except StopIteration:
+                if msg:
+                    raise PysmtSyntaxError (msg, self.pos_info)
+                else:
+                    raise PysmtSyntaxError("Unexpected end of stream.",
+                                           self.pos_info)
+            return t
 
     def raw_read(self):
         return next(self.reader)
@@ -827,6 +825,8 @@ class SmtLibParser(object):
                                                tokens.pos_info)
 
                     try:
+                        print(lst)
+                        print(fun)
                         res = fun(*lst)
                     except TypeError as err:
                         if not callable(fun):
