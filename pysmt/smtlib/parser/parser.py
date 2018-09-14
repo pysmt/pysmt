@@ -1055,8 +1055,7 @@ class SmtLibParser(object):
         try:
             p = tokens.consume()
         except StopIteration:
-            # No more data
-            return
+            raise #Re-raise execption for higher-level management, see get_command()
         if p != "(":
             raise PysmtSyntaxError("Unexpected token '%s' in %s command. " \
                                    "Expected '('" %
