@@ -82,6 +82,7 @@ class SmtLibSolver(Solver):
         if LOGICS is not None: self.LOGICS = LOGICS
         self.args = args
         self.declared_vars = set()
+        self.declared_sorts = set()
         self.solver = Popen(args, stdout=PIPE, stderr=PIPE, stdin=PIPE,
                             bufsize=-1)
         # Give time to the process to start-up
@@ -132,8 +133,16 @@ class SmtLibSolver(Solver):
         lst = self.parser.get_assignment_list(self.solver_stdout)
         self._debug("Read: %s", lst)
         return lst
+    
+    def _declare_sort(self, sort):
+        cmd = SmtLibCommand(smtcmd.DECLARE_SORT, [sort])
+        self._send_silent_command(cmd)
+        self.declared_sorts.add(sort)
 
     def _declare_variable(self, symbol):
+        sort = symbol.symbol_type()
+        if sort not in self.declared_sorts:
+            self._declare_sort(sort)
         cmd = SmtLibCommand(smtcmd.DECLARE_FUN, [symbol])
         self._send_silent_command(cmd)
         self.declared_vars.add(symbol)
