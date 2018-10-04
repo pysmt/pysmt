@@ -25,7 +25,7 @@ from pysmt.smtlib.script import SmtLibCommand
 from pysmt.solvers.solver import Solver, SolverOptions
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               UnknownSolverAnswerError, PysmtValueError)
-
+from pysmt.oracles import TypesOracle
 
 class SmtLibOptions(SolverOptions):
     """Options for the SmtLib Solver.
@@ -78,7 +78,7 @@ class SmtLibSolver(Solver):
                         environment,
                         logic=logic,
                         **options)
-
+        self.to = self.environment.typeso
         if LOGICS is not None: self.LOGICS = LOGICS
         self.args = args
         self.declared_vars = set()
@@ -140,9 +140,6 @@ class SmtLibSolver(Solver):
         self.declared_sorts.add(sort)
 
     def _declare_variable(self, symbol):
-        sort = symbol.symbol_type()
-        if sort not in self.declared_sorts:
-            self._declare_sort(sort)
         cmd = SmtLibCommand(smtcmd.DECLARE_FUN, [symbol])
         self._send_silent_command(cmd)
         self.declared_vars.add(symbol)
@@ -173,6 +170,10 @@ class SmtLibSolver(Solver):
         # This is needed because Z3 (and possibly other solvers) incorrectly
         # recognize N * M * x as a non-linear term
         formula = formula.simplify()
+        sorts = self.to.get_types(formula, custom_only=True)
+        for s in sorts:
+            if s not in self.declared_sorts:
+                self._declare_sort(s)
         deps = formula.get_free_variables()
         for d in deps:
             if d not in self.declared_vars:
