@@ -21,7 +21,7 @@
 # See examples for Z3, Mathsat and Yices in pysmt/test/smtlib/bin/*.template
 #
 from pysmt.logics import QF_UFLRA, QF_UFIDL, QF_LRA, QF_IDL, QF_LIA
-from pysmt.shortcuts import get_env, GT, Solver, Symbol, Type, Equals, FunctionType
+from pysmt.shortcuts import get_env, GT, Solver, Symbol
 from pysmt.typing import REAL, INT
 from pysmt.exceptions import NoSolverAvailableError
 
@@ -36,18 +36,9 @@ env.factory.add_generic_solver(name, path, logics)
 
 r, s = Symbol("r", REAL), Symbol("s", REAL)
 p, q = Symbol("p", INT), Symbol("q", INT)
-A = Type("A", 0)
-a, b = Symbol("a", A), Symbol("b", A)
-fun = Symbol("g", FunctionType(A, [INT, A]))
 
-f_a = Equals(a, fun(p, b))
 f_lra = GT(r, s)
 f_idl = GT(p, q)
-
-with Solver(name=name, logic=QF_UFLRA) as s:
-    s.add_assertion(f_a)
-    res = s.solve()
-    assert res, "Was expecting '%s' to be SAT" %f_a
 
 # PySMT takes care of recognizing that QF_LRA can be solved by a QF_UFLRA solver.
 with Solver(name=name, logic=QF_LRA) as s:
