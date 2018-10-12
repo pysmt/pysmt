@@ -23,6 +23,7 @@ from pysmt.constants import Fraction, is_pysmt_fraction, is_pysmt_integer
 
 try:
     import mathsat
+    from mathsat import MSAT_FALSE, MSAT_TRUE, MSAT_UNDEF
 except ImportError:
     raise SolverAPINotFound
 
@@ -351,9 +352,10 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
         titem = mathsat.msat_make_term(self.msat_env(), decl, [])
         return titem
 
-    def set_preferred_var(self, var):
+    def set_preferred_var(self, var, val=MSAT_UNDEF):
         tvar = self.converter.convert(var)
-        mathsat.msat_add_preferred_for_branching(self.msat_env(), tvar)
+        mval = [MSAT_FALSE, MSAT_UNDEF, MSAT_TRUE][val+1]
+        mathsat.msat_add_preferred_for_branching(self.msat_env(), tvar, mval)
         return
 
     def print_model(self, name_filter=None):
