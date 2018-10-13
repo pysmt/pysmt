@@ -353,7 +353,6 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
 
     def set_preferred_var(self, var, val=None):
         tvar = self.converter.convert(var)
-        mval = mathsat.MSAT_UNDEF
         if val is None:
             mathsat.msat_add_preferred_for_branching(self.msat_env(), tvar)
         else:
