@@ -498,6 +498,32 @@ class TestBasic(TestCase):
         with self.assertRaises(InternalSolverError):
             new_converter.convert(f2)
 
+    @skipIfSolverNotAvailable("msat")
+    def test_msat_preferred_variable(self):
+        a, b, c = [Symbol(x) for x in "abc"]
+        na, nb, nc = [Not(Symbol(x)) for x in "abc"]
+
+        f = And(Implies(a, And(b,c)),
+                Implies(na, And(nb,nc)))
+
+        s1 = Solver("msat")
+        s1.add_assertion(f)
+        s1.set_preferred_var(a, True)
+        self.assertTrue(s1.solve())
+        self.assertTrue(s1.get_value(a).is_true())
+
+        s2 = Solver("msat")
+        s2.add_assertion(f)
+        s2.set_preferred_var(a, False)
+        self.assertTrue(s2.solve())
+        self.assertTrue(s2.get_value(a).is_false())
+
+        # Show that calling without polarity still works
+        # This case is harder to test, because we only say
+        # that the split will occur on that variable first.
+        s1.set_preferred_var(a)
+
+
     @skipIfNoSolverForLogic(QF_BOOL)
     def test_conversion_error(self):
         from pysmt.type_checker import SimpleTypeChecker
