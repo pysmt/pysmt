@@ -284,6 +284,7 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
         return res
 
     def _exit(self):
+        del self.converter
         del self.z3
 
 
@@ -380,7 +381,7 @@ class Z3Converter(Converter, DagWalker):
         try:
             bvsort = self._z3BitVecSorts[width]
         except KeyError:
-            bvsort = z3.BitVecSort(width)
+            bvsort = z3.BitVecSort(width, self.ctx)
             self._z3BitVecSorts[width] = bvsort
         return bvsort
 
@@ -401,7 +402,7 @@ class Z3Converter(Converter, DagWalker):
         try:
             return self._z3Sorts[name]
         except KeyError:
-            sort = z3.DeclareSort(name)
+            sort = z3.DeclareSort(name, self.ctx)
             self._z3Sorts[name] = sort
         return sort
 

@@ -20,7 +20,7 @@ from unittest import skipIf
 
 from pysmt.test import TestCase, main
 from pysmt.shortcuts import get_env, Solver, is_valid, is_sat
-from pysmt.shortcuts import LE, LT, Real, GT, Int, Symbol, And, Not
+from pysmt.shortcuts import LE, LT, Real, GT, Int, Symbol, And, Not, Type, FunctionType, Equals, Function
 from pysmt.typing import BOOL, REAL, INT
 from pysmt.logics import QF_UFLIRA, QF_UFLRA, QF_UFLIA, QF_BOOL, QF_UFBV
 from pysmt.exceptions import (SolverRedefinitionError, NoSolverAvailableError,
@@ -109,6 +109,21 @@ class TestGenericWrapper(TestCase):
 
             self.assertFalse(model.get_value(b).is_true())
             self.assertTrue(model.get_value(a).is_true())
+
+    
+    @skipIf(len(ALL_WRAPPERS) == 0, "No wrapper available")
+    def test_custom_types(self):
+        A = Type("A", 0)
+        a, b = Symbol("a", A), Symbol("b", A)
+        p = Symbol("p", INT)
+        fun = Symbol("g", FunctionType(A, [INT, A]))
+        app = Function(fun, [p, b])
+        f_a = Equals(a, app)
+        for n in self.all_solvers:
+            with Solver(name=n, logic=QF_UFLIA) as s:
+                s.add_assertion(f_a)
+                res = s.solve()
+                self.assertTrue(res)
 
     @skipIf(len(ALL_WRAPPERS) == 0, "No wrapper available")
     def test_examples(self):
