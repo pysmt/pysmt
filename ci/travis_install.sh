@@ -50,10 +50,10 @@ then
     $PIP_INSTALL gmpy2;
 fi
 
-# Adding Python 3.6 library path to GCC search
-if [ "${TRAVIS_PYTHON_VERSION}" == "3.6" ]; then
-    export LIBRARY_PATH="/opt/python/3.6.3/lib:${LIBRARY_PATH}"
-    export CPATH="/opt/python/3.6.3/include/python3.6m:${CPATH}"
+# Adding Python 3.7 library path to GCC search
+if [ "${TRAVIS_PYTHON_VERSION}" == "3.7" ]; then
+    export LIBRARY_PATH="/opt/python/3.7.0/lib:${LIBRARY_PATH}"
+    export CPATH="/opt/python/3.7.0/include/python3.7m:${CPATH}"
 fi
 
 
