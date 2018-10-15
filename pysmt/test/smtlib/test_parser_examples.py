@@ -27,7 +27,7 @@ from pysmt.smtlib.parser import SmtLibParser
 from pysmt.smtlib.script import smtlibscript_from_formula
 from pysmt.shortcuts import Iff
 from pysmt.shortcuts import read_smtlib, write_smtlib
-
+from pysmt.exceptions import PysmtSyntaxError
 
 class TestSMTParseExamples(TestCase):
 
@@ -146,6 +146,16 @@ class TestSMTParseExamples(TestCase):
             self.assertEqual(f_out.simplify(), f_in.simplify())
         # Clean-up
         os.remove(tmp_fname)
+
+    def test_incomplete_stream(self):
+        txt = """
+        (declare-fun A () Bool)
+        (declare-fun B () Bool)
+        (assert (and A
+        """
+        parser = SmtLibParser()
+        with self.assertRaises(PysmtSyntaxError):
+            parser.get_script(cStringIO(txt))
 
 if __name__ == "__main__":
     main()
