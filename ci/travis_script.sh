@@ -45,7 +45,7 @@ fi
 
 echo "${PYTHONPATH}"
 python install.py --env
-find ${python install.py --env}
+find ${PYTHONPATH}
 python -m pyboolector
 
 python install.py --check
