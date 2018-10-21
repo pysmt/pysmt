@@ -20,13 +20,17 @@ from six.moves import xrange
 from pysmt.shortcuts import Solver, BVAnd, BVOr, BVXor, BVConcat, BVULT, BVUGT, \
     BVULE, BVUGE, BVAdd, BVSub, BVMul, BVUDiv, BVURem, BVLShl, BVLShr, BVNot, \
     BVNeg, BVZExt, BVSExt, BVRor, BVRol, BV, BVExtract, BVSLT, BVSLE, BVComp, \
-    BVSDiv, BVSRem, BVAShr
+    BVSDiv, BVSRem, BVAShr, get_env, EqualsOrIff, BVZero, Symbol
+from pysmt.typing import BVType
 from pysmt.test import TestCase, skipIfSolverNotAvailable, main
 
 
 class TestBvSimplification(TestCase):
 
     def setUp(self):
+        # For the preparation of assertValid()
+        super(TestBvSimplification, self).setUp()
+
         self.width = 4
         self.bin_operators = [BVAnd, BVOr, BVXor, BVConcat, BVULT, BVUGT, BVULE,
                               BVUGE, BVAdd, BVSub, BVMul, BVUDiv, BVURem, BVLShl,
@@ -94,6 +98,37 @@ class TestBvSimplification(TestCase):
                 for op in self.special_operators:
                     self.check(op(l, n))
 
+    def check_equal_and_valid(self, formula, expected):
+        simplified = formula.simplify()
+
+        self.assertEqual(simplified, expected)
+
+        # Check the formula equality by a solver.
+        if "z3" in get_env().factory.all_solvers():
+            self.assertValid(EqualsOrIff(simplified, formula), solver_name="z3")
+
+    def test_bv_0_add(self):
+        x = Symbol("x", BVType(32))
+        f = BVAdd(BVZero(32), x)
+        self.check_equal_and_valid(f, x)
+
+    def test_bv_add_0(self):
+        x = Symbol("x", BVType(32))
+        f = BVAdd(x, BVZero(32))
+        self.check_equal_and_valid(f, x)
+
+    def test_bv_add_constants(self):
+        f = BVAdd(BV(10, 32), BV(12, 32))
+        self.check_equal_and_valid(f, BV(22, 32))
+
+    def test_bv_add_symbols(self):
+        x, y = (Symbol(name, BVType(32)) for name in "xy")
+        f = BVAdd(x, y)
+        self.check_equal_and_valid(f, BVAdd(x, y))
+
+    def test_bv_add_overflow(self):
+        f = BVAdd(BV(2**32 - 1, 32), BV(10, 32))
+        self.check_equal_and_valid(f, BV(9, 32))
 
 if __name__ == '__main__':
     main()

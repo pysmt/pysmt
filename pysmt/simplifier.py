@@ -445,10 +445,25 @@ class Simplifier(pysmt.walkers.DagWalker):
         return self.manager.BVXor(args[0], args[1])
 
     def walk_bv_add(self, formula, args, **kwargs):
-        if args[0].is_bv_constant() and args[1].is_bv_constant():
-            res = args[0].constant_value() + args[1].constant_value()
-            res = res % 2**formula.bv_width()
-            return self.manager.BV(res, width=formula.bv_width())
+        simplified = None
+
+        if args[0].is_bv_constant():
+            lhs = args[0].bv_unsigned_value()
+            if lhs == 0:
+                # 0 + args[1] -> args[1]
+                simplified = args[1]
+            elif args[1].is_bv_constant():
+                width = formula.bv_width()
+                res = lhs + args[1].bv_unsigned_value()
+                res = res % 2**width
+                simplified = self.manager.BV(res, width=width)
+        elif args[1].is_bv_constant() and args[1].bv_unsigned_value() == 0:
+            # args[0] + 0 -> args[0]
+            simplified = args[0]
+
+        if simplified is not None:
+            return simplified
+
         return self.manager.BVAdd(args[0], args[1])
 
     def walk_bv_mul(self, formula, args, **kwargs):
