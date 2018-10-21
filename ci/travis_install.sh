@@ -55,6 +55,10 @@ if [ "${TRAVIS_PYTHON_VERSION}" == "3.6" ]; then
     export LIBRARY_PATH="/opt/python/3.6.3/lib:${LIBRARY_PATH}"
     export CPATH="/opt/python/3.6.3/include/python3.6m:${CPATH}"
 fi
+if [ "${TRAVIS_PYTHON_VERSION}" == "2.7" ]; then
+    export LIBRARY_PATH="/opt/python/2.7.14/lib:${LIBRARY_PATH}"
+    export CPATH="/opt/python/2.7.14/include/python2.7:${CPATH}"
+fi
 
 
 #

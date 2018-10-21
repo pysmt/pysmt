@@ -45,7 +45,6 @@ fi
 
 echo "${PYTHONPATH}"
 python install.py --env
-find "/opt/python/"
 python -c "import pyboolector"
 
 python install.py --check
