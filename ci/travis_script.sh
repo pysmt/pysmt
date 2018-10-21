@@ -45,7 +45,7 @@ fi
 
 echo "${PYTHONPATH}"
 python install.py --env
-find "/home/travis/virtualenv/python2.7.14/lib/python2.7/site-packages"
+find "/opt/python/"
 python -c "import pyboolector"
 
 python install.py --check
