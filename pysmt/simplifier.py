@@ -563,9 +563,23 @@ class Simplifier(pysmt.walkers.DagWalker):
         return self.manager.BVULT(args[0], args[1])
 
     def walk_bv_ule(self, formula, args, **kwargs):
-        if args[0].is_bv_constant() and args[1].is_bv_constant():
-            res = args[0].bv_unsigned_value() <= args[1].bv_unsigned_value()
-            return self.manager.Bool(res)
+        simplified = None
+
+        if args[0] == args[1]:
+            # x u<= x -> TRUE
+            simplified = self.manager.TRUE()
+        elif args[0].is_bv_constant():
+            lhs = args[0].bv_unsigned_value()
+            if lhs == 0:
+                # 0 u<= args[1] -> TRUE
+                simplified = self.manager.TRUE()
+            elif args[1].is_bv_constant():
+                res = lhs <= args[1].bv_unsigned_value()
+                simplified = self.manager.Bool(res)
+
+        if simplified is not None:
+            return simplified
+
         return self.manager.BVULE(args[0], args[1])
 
     def walk_bv_extract(self, formula, args, **kwargs):

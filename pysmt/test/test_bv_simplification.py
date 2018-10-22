@@ -254,5 +254,24 @@ class TestBvSimplification(TestCase):
         f = BVULT(BVZero(32), BVOne(32))
         self.check_equal_and_valid(f, Bool(True))
 
+    def test_bv_ule_eq(self):
+        x, y = (Symbol(name, BVType(32)) for name in "xy")
+        f = BVULE(BVMul(x, y), BVMul(x, y))
+        self.check_equal_and_valid(f, Bool(True))
+
+    def test_bv_zero_ule(self):
+        x = Symbol("x", BVType(32))
+        f = BVULE(BVZero(32), x)
+        self.check_equal_and_valid(f, Bool(True))
+
+    def test_bv_ule_symbols(self):
+        x, y = (Symbol(name, BVType(32)) for name in "xy")
+        f = BVULE(x, y)
+        self.check_equal_and_valid(f, BVULE(x, y))
+
+    def test_bv_ule_constants(self):
+        f = BVULE(BVZero(32), BVOne(32))
+        self.check_equal_and_valid(f, Bool(True))
+
 if __name__ == '__main__':
     main()
