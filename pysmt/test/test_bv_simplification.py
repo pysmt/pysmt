@@ -20,7 +20,7 @@ from six.moves import xrange
 from pysmt.shortcuts import Solver, BVAnd, BVOr, BVXor, BVConcat, BVULT, BVUGT, \
     BVULE, BVUGE, BVAdd, BVSub, BVMul, BVUDiv, BVURem, BVLShl, BVLShr, BVNot, \
     BVNeg, BVZExt, BVSExt, BVRor, BVRol, BV, BVExtract, BVSLT, BVSLE, BVComp, \
-    BVSDiv, BVSRem, BVAShr, get_env, EqualsOrIff, BVZero, Symbol
+    BVSDiv, BVSRem, BVAShr, get_env, EqualsOrIff, BVZero, BVOne, Symbol
 from pysmt.typing import BVType
 from pysmt.test import TestCase, skipIfSolverNotAvailable, main
 
@@ -129,6 +129,39 @@ class TestBvSimplification(TestCase):
     def test_bv_add_overflow(self):
         f = BVAdd(BV(2**32 - 1, 32), BV(10, 32))
         self.check_equal_and_valid(f, BV(9, 32))
+
+    def test_bv_0_mul(self):
+        x = Symbol("x", BVType(32))
+        f = BVMul(BVZero(32), x)
+        self.check_equal_and_valid(f, BVZero(32))
+
+    def test_bv_1_mul(self):
+        x = Symbol("x", BVType(32))
+        f = BVMul(BVOne(32), x)
+        self.check_equal_and_valid(f, x)
+
+    def test_bv_mul_0(self):
+        x = Symbol("x", BVType(32))
+        f = BVMul(x, BVZero(32))
+        self.check_equal_and_valid(f, BVZero(32))
+
+    def test_bv_mul_1(self):
+        x = Symbol("x", BVType(32))
+        f = BVMul(x, BVOne(32))
+        self.check_equal_and_valid(f, x)
+
+    def test_bv_mul_constants(self):
+        f = BVMul(BV(10, 32), BV(12, 32))
+        self.check_equal_and_valid(f, BV(120, 32))
+
+    def test_bv_mul_symbols(self):
+        x, y = (Symbol(name, BVType(32)) for name in "xy")
+        f = BVMul(x, y)
+        self.check_equal_and_valid(f, BVMul(x, y))
+
+    def test_bv_mul_overflow(self):
+        f = BVMul(BV(2**31, 32), BV(3, 32))
+        self.check_equal_and_valid(f, BV(0x80000000, 32))
 
 if __name__ == '__main__':
     main()
