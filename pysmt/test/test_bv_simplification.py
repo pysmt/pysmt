@@ -20,7 +20,7 @@ from six.moves import xrange
 from pysmt.shortcuts import Solver, BVAnd, BVOr, BVXor, BVConcat, BVULT, BVUGT, \
     BVULE, BVUGE, BVAdd, BVSub, BVMul, BVUDiv, BVURem, BVLShl, BVLShr, BVNot, \
     BVNeg, BVZExt, BVSExt, BVRor, BVRol, BV, BVExtract, BVSLT, BVSLE, BVComp, \
-    BVSDiv, BVSRem, BVAShr, get_env, EqualsOrIff, BVZero, BVOne, Symbol
+    BVSDiv, BVSRem, BVAShr, get_env, EqualsOrIff, BVZero, BVOne, Symbol, Bool
 from pysmt.typing import BVType
 from pysmt.test import TestCase, skipIfSolverNotAvailable, main
 
@@ -234,6 +234,25 @@ class TestBvSimplification(TestCase):
         x, y = (Symbol(name, BVType(32)) for name in "xy")
         f = BVURem(x, y)
         self.check_equal_and_valid(f, BVURem(x, y))
+
+    def test_bv_ult_eq(self):
+        x, y = (Symbol(name, BVType(32)) for name in "xy")
+        f = BVULT(BVMul(x, y), BVMul(x, y))
+        self.check_equal_and_valid(f, Bool(False))
+
+    def test_bv_ult_zero(self):
+        x = Symbol("x", BVType(32))
+        f = BVULT(x, BVZero(32))
+        self.check_equal_and_valid(f, Bool(False))
+
+    def test_bv_ult_symbols(self):
+        x, y = (Symbol(name, BVType(32)) for name in "xy")
+        f = BVULT(x, y)
+        self.check_equal_and_valid(f, BVULT(x, y))
+
+    def test_bv_ult_constants(self):
+        f = BVULT(BVZero(32), BVOne(32))
+        self.check_equal_and_valid(f, Bool(True))
 
 if __name__ == '__main__':
     main()
