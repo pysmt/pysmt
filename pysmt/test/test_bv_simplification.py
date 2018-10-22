@@ -199,5 +199,41 @@ class TestBvSimplification(TestCase):
         f = BVUDiv(x, y)
         self.check_equal_and_valid(f, BVUDiv(x, y))
 
+    def test_bv_urem_1(self):
+        x = Symbol("x", BVType(32))
+        f = BVURem(x, BVOne(32))
+        self.check_equal_and_valid(f, BVZero(32))
+
+    def test_bv_symbol_urem_0(self):
+        x = Symbol("x", BVType(32))
+        f = BVURem(x, BVZero(32))
+        self.check_equal_and_valid(f, x)
+
+    def test_bv_0_urem_0(self):
+        f = BVURem(BVZero(32), BVZero(32))
+        self.check_equal_and_valid(f, BVZero(32))
+
+    def test_bv_nonzero_urem_0(self):
+        f = BVURem(BV(10, 32), BVZero(32))
+        self.check_equal_and_valid(f, BV(10, 32))
+
+    def test_bv_0_urem_nonzero(self):
+        f = BVURem(BVZero(32), BV(10, 32))
+        self.check_equal_and_valid(f, BVZero(32))
+
+    def test_bv_0_urem_symbol(self):
+        x = Symbol("x", BVType(32))
+        f = BVURem(BVZero(32), x)
+        self.check_equal_and_valid(f, BVZero(32))
+
+    def test_bv_urem_constants(self):
+        f = BVURem(BV(20, 32), BV(11, 32))
+        self.check_equal_and_valid(f, BV(9, 32))
+
+    def test_bv_urem_symbols(self):
+        x, y = (Symbol(name, BVType(32)) for name in "xy")
+        f = BVURem(x, y)
+        self.check_equal_and_valid(f, BVURem(x, y))
+
 if __name__ == '__main__':
     main()
