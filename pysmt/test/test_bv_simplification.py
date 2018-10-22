@@ -331,5 +331,28 @@ class TestBvSimplification(TestCase):
         f = BVOr(BV(0xdededede, 32), BV(0xacacacac, 32))
         self.check_equal_and_valid(f, BV(0xfefefefe, 32))
 
+    def test_bv_sub_zero(self):
+        x = Symbol("x", BVType(32))
+        f = BVSub(x, BVZero(32))
+        self.check_equal_and_valid(f, x)
+
+    def test_bv_sub_eq(self):
+        x, y = (Symbol(name, BVType(32)) for name in "xy")
+        f = BVSub(BVMul(x, y), BVMul(x, y))
+        self.check_equal_and_valid(f, BVZero(32))
+
+    def test_bv_sub_symbols(self):
+        x, y = (Symbol(name, BVType(32)) for name in "xy")
+        f = BVSub(x, y)
+        self.check_equal_and_valid(f, BVSub(x, y))
+
+    def test_bv_sub_constants(self):
+        f = BVSub(BV(30, 32), BV(20, 32))
+        self.check_equal_and_valid(f, BV(10, 32))
+
+    def test_bv_sub_underflow(self):
+        f = BVSub(BV(1, 32), BV(2, 32))
+        self.check_equal_and_valid(f, BV(0xffffffff, 32))
+
 if __name__ == '__main__':
     main()
