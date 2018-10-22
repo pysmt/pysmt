@@ -416,5 +416,19 @@ class TestBvSimplification(TestCase):
         f = BVSLT(BV(10, 32), BV(2**32 - 1, 32))
         self.check_equal_and_valid(f, Bool(False))
 
+    def test_bv_sle_eq(self):
+        x, y = (Symbol(name, BVType(32)) for name in "xy")
+        f = BVSLE(BVMul(x, y), BVMul(x, y))
+        self.check_equal_and_valid(f, Bool(True))
+
+    def test_bv_sle_symbols(self):
+        x, y = (Symbol(name, BVType(32)) for name in "xy")
+        f = BVSLE(x, y)
+        self.check_equal_and_valid(f, BVSLE(x, y))
+
+    def test_bv_sle_constants(self):
+        f = BVSLE(BV(10, 32), BV(2**32 - 1, 32))
+        self.check_equal_and_valid(f, Bool(False))
+
 if __name__ == '__main__':
     main()
