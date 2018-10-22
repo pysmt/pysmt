@@ -774,6 +774,9 @@ class Simplifier(pysmt.walkers.DagWalker):
         if args[0].is_bv_constant() and args[1].is_bv_constant():
             res = args[0].bv_signed_value() < args[1].bv_signed_value()
             return self.manager.Bool(res)
+        if args[0] == args[1]:
+            # x < x -> False
+            return self.manager.Bool(False)
         return self.manager.BVSLT(args[0], args[1])
 
     def walk_bv_sle(self, formula, args, **kwargs):

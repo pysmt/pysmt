@@ -402,5 +402,19 @@ class TestBvSimplification(TestCase):
         f = BVLShr(BV(0xff, 32), BVOne(32))
         self.check_equal_and_valid(f, BV(0x7f, 32))
 
+    def test_bv_slt_eq(self):
+        x, y = (Symbol(name, BVType(32)) for name in "xy")
+        f = BVSLT(BVMul(x, y), BVMul(x, y))
+        self.check_equal_and_valid(f, Bool(False))
+
+    def test_bv_slt_symbols(self):
+        x, y = (Symbol(name, BVType(32)) for name in "xy")
+        f = BVSLT(x, y)
+        self.check_equal_and_valid(f, BVSLT(x, y))
+
+    def test_bv_slt_constants(self):
+        f = BVSLT(BV(10, 32), BV(2**32 - 1, 32))
+        self.check_equal_and_valid(f, Bool(False))
+
 if __name__ == '__main__':
     main()
