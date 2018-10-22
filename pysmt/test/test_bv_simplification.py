@@ -273,5 +273,34 @@ class TestBvSimplification(TestCase):
         f = BVULE(BVZero(32), BVOne(32))
         self.check_equal_and_valid(f, Bool(True))
 
+    def test_bv_and_zero(self):
+        x = Symbol("x", BVType(32))
+        f = BVAnd(x, BVZero(32))
+        self.check_equal_and_valid(f, BVZero(32))
+
+    def test_bv_zero_and(self):
+        x = Symbol("x", BVType(32))
+        f = BVAnd(BVZero(32), x)
+        self.check_equal_and_valid(f, BVZero(32))
+
+    def test_bv_and_all_ones(self):
+        x = Symbol("x", BVType(32))
+        f = BVAnd(x, BV(2**32 - 1, 32))
+        self.check_equal_and_valid(f, x)
+
+    def test_bv_all_ones_and(self):
+        x = Symbol("x", BVType(32))
+        f = BVAnd(BV(2**32 - 1, 32), x)
+        self.check_equal_and_valid(f, x)
+
+    def test_bv_and_symbols(self):
+        x, y = (Symbol(name, BVType(32)) for name in "xy")
+        f = BVAnd(x, y)
+        self.check_equal_and_valid(f, BVAnd(x, y))
+
+    def test_bv_and_constants(self):
+        f = BVAnd(BV(0xdededede, 32), BV(0xacacacac, 32))
+        self.check_equal_and_valid(f, BV(0x8c8c8c8c, 32))
+
 if __name__ == '__main__':
     main()
