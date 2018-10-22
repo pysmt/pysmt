@@ -302,5 +302,34 @@ class TestBvSimplification(TestCase):
         f = BVAnd(BV(0xdededede, 32), BV(0xacacacac, 32))
         self.check_equal_and_valid(f, BV(0x8c8c8c8c, 32))
 
+    def test_bv_or_zero(self):
+        x = Symbol("x", BVType(32))
+        f = BVOr(x, BVZero(32))
+        self.check_equal_and_valid(f, x)
+
+    def test_bv_zero_or(self):
+        x = Symbol("x", BVType(32))
+        f = BVOr(BVZero(32), x)
+        self.check_equal_and_valid(f, x)
+
+    def test_bv_or_all_ones(self):
+        x = Symbol("x", BVType(32))
+        f = BVOr(x, BV(2**32 - 1, 32))
+        self.check_equal_and_valid(f, BV(2**32 - 1, 32))
+
+    def test_bv_all_ones_or(self):
+        x = Symbol("x", BVType(32))
+        f = BVOr(BV(2**32 - 1, 32), x)
+        self.check_equal_and_valid(f, BV(2**32 - 1, 32))
+
+    def test_bv_or_symbols(self):
+        x, y = (Symbol(name, BVType(32)) for name in "xy")
+        f = BVOr(x, y)
+        self.check_equal_and_valid(f, BVOr(x, y))
+
+    def test_bv_or_constants(self):
+        f = BVOr(BV(0xdededede, 32), BV(0xacacacac, 32))
+        self.check_equal_and_valid(f, BV(0xfefefefe, 32))
+
 if __name__ == '__main__':
     main()
