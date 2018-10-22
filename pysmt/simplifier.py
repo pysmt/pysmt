@@ -497,13 +497,26 @@ class Simplifier(pysmt.walkers.DagWalker):
         return self.manager.BVMul(args[0], args[1])
 
     def walk_bv_udiv(self, formula, args, **kwargs):
-        if args[0].is_bv_constant() and args[1].is_bv_constant():
-            if args[1].bv_unsigned_value() == 0:
-                res = 2**formula.bv_width() - 1
-            else:
-                res = args[0].bv_unsigned_value() // args[1].bv_unsigned_value()
-                res = res % 2**formula.bv_width()
-            return self.manager.BV(res, width=formula.bv_width())
+        simplified = None
+
+        if args[1].is_bv_constant():
+            rhs = args[1].bv_unsigned_value()
+            if rhs == 0:
+                # args[0] / 0 -> all 1's
+                width = formula.bv_width()
+                simplified = self.manager.BV(2**width - 1, width=width)
+            elif rhs == 1:
+                # args[0] / 1 -> args[0]
+                simplified = args[0]
+            elif args[0].is_bv_constant():
+                width = formula.bv_width()
+                res = args[0].bv_unsigned_value() // rhs
+                res = res % 2**width
+                simplified = self.manager.BV(res, width=width)
+
+        if simplified is not None:
+            return simplified
+
         return self.manager.BVUDiv(args[0], args[1])
 
     def walk_bv_urem(self, formula, args, **kwargs):

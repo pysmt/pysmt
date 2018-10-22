@@ -163,5 +163,41 @@ class TestBvSimplification(TestCase):
         f = BVMul(BV(2**31, 32), BV(3, 32))
         self.check_equal_and_valid(f, BV(0x80000000, 32))
 
+    def test_bv_udiv_1(self):
+        x = Symbol("x", BVType(32))
+        f = BVUDiv(x, BVOne(32))
+        self.check_equal_and_valid(f, x)
+
+    def test_bv_symbol_udiv_0(self):
+        x = Symbol("x", BVType(32))
+        f = BVUDiv(x, BVZero(32))
+        self.check_equal_and_valid(f, BV(2**32 - 1, 32))
+
+    def test_bv_0_udiv_0(self):
+        f = BVUDiv(BVZero(32), BVZero(32))
+        self.check_equal_and_valid(f, BV(2**32 - 1, 32))
+
+    def test_bv_nonzero_udiv_0(self):
+        f = BVUDiv(BV(10, 32), BVZero(32))
+        self.check_equal_and_valid(f, BV(2**32 - 1, 32))
+
+    def test_bv_0_udiv_nonzero(self):
+        f = BVUDiv(BVZero(32), BV(10, 32))
+        self.check_equal_and_valid(f, BVZero(32))
+
+    def test_bv_0_udiv_symbol(self):
+        x = Symbol("x", BVType(32))
+        f = BVUDiv(BVZero(32), x)
+        self.check_equal_and_valid(f, BVUDiv(BVZero(32), x))
+
+    def test_bv_udiv_constants(self):
+        f = BVUDiv(BV(20, 32), BV(10, 32))
+        self.check_equal_and_valid(f, BV(2, 32))
+
+    def test_bv_udiv_symbols(self):
+        x, y = (Symbol(name, BVType(32)) for name in "xy")
+        f = BVUDiv(x, y)
+        self.check_equal_and_valid(f, BVUDiv(x, y))
+
 if __name__ == '__main__':
     main()
