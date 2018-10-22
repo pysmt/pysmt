@@ -722,10 +722,30 @@ class Simplifier(pysmt.walkers.DagWalker):
         return self.manager.BVLShl(args[0], args[1])
 
     def walk_bv_lshr(self, formula, args, **kwargs):
-        if args[0].is_bv_constant() and args[1].is_bv_constant():
-            res = args[0].bv_unsigned_value() >> args[1].bv_unsigned_value()
-            w = args[0].bv_width()
-            return self.manager.BV(res % (2 ** w), w)
+        simplified = None
+
+        if args[1].is_bv_constant():
+            rhs = args[1].bv_unsigned_value()
+
+            if rhs == 0:
+                # x >> 0 -> x
+                simplified = args[0]
+            else:
+                width = args[0].bv_width()
+
+                if rhs >= width:
+                    # x_n >> m -> 0, where m >= n
+                    simplified = self.manager.BVZero(width)
+                elif args[0].is_bv_constant():
+                    res = args[0].bv_unsigned_value() >> rhs
+                    simplified = self.manager.BV(res % (2 ** width), width)
+        elif args[0].is_bv_constant() and args[0].bv_unsigned_value() == 0:
+            # 0 >> x -> 0
+            simplified = args[0]
+
+        if simplified is not None:
+            return simplified
+
         return self.manager.BVLShr(args[0], args[1])
 
     def walk_bv_sub(self, formula, args, **kwargs):

@@ -378,5 +378,29 @@ class TestBvSimplification(TestCase):
         f = BVLShl(BV(0xff, 32), BVOne(32))
         self.check_equal_and_valid(f, BV(0x1fe, 32))
 
+    def test_bv_lshr_zero(self):
+        x = Symbol("x", BVType(32))
+        f = BVLShr(x, BVZero(32))
+        self.check_equal_and_valid(f, x)
+
+    def test_bv_zero_lshr(self):
+        x = Symbol("x", BVType(32))
+        f = BVLShr(BVZero(32), x)
+        self.check_equal_and_valid(f, BVZero(32))
+
+    def test_bv_lshr_underflow(self):
+        x = Symbol("x", BVType(32))
+        f = BVLShr(x, BV(33, 32))
+        self.check_equal_and_valid(f, BVZero(32))
+
+    def test_bv_lshr_symbols(self):
+        x, y = (Symbol(name, BVType(32)) for name in "xy")
+        f = BVLShr(x, y)
+        self.check_equal_and_valid(f, BVLShr(x, y))
+
+    def test_bv_lshr_constants(self):
+        f = BVLShr(BV(0xff, 32), BVOne(32))
+        self.check_equal_and_valid(f, BV(0x7f, 32))
+
 if __name__ == '__main__':
     main()
