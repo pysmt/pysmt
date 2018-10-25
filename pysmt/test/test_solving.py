@@ -332,7 +332,7 @@ class TestBasic(TestCase):
                         # Some solvers do not support ARRAY_VALUE
                         if ex.expression.node_type() == op.ARRAY_VALUE:
                             self.assertTrue(sname in ["cvc4", "btor"])
-                        self.assertTrue(ex.expression.node_type() == op.BV_TONAT)
+                        self.assertTrue(ex.expression.node_type() == op.BV_TONATURAL)
 
     def test_solving_under_assumption(self):
         v1, v2 = [FreshSymbol() for _ in xrange(2)]
@@ -472,21 +472,18 @@ class TestBasic(TestCase):
     @skipIfSolverNotAvailable("msat")
     def test_msat_converter_on_msat_error(self):
         import mathsat
-        import _mathsat
         from pysmt.solvers.msat import MathSAT5Solver, MSatConverter
 
 
         env = get_env()
         msat = MathSAT5Solver(env, logic=QF_UFLIRA)
-        new_converter = MSatConverter(env, msat.msat_env)
 
-        def walk_plus(formula, args):
-            res = mathsat.MSAT_MAKE_ERROR_TERM()
-            return res
+        class NewConverter(MSatConverter):
+            def walk_plus(self, formula, args, **kwargs):
+                res = mathsat.MSAT_MAKE_ERROR_TERM()
+                return res
 
-        # Replace the function used to compute the Plus()
-        # with one that returns a msat_error
-        new_converter.set_function(walk_plus, op.PLUS)
+        new_converter = NewConverter(env, msat.msat_env)
 
         r, s = FreshSymbol(REAL), FreshSymbol(REAL)
         f1 = GT(r, s)
