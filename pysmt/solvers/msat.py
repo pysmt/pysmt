@@ -39,7 +39,7 @@ from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               SolverNotConfiguredForUnsatCoresError,
                               SolverStatusError,
                               InternalSolverError,
-                              NonLinearError, PysmtValueError, PysmtTypeError,
+                              PysmtValueError, PysmtTypeError,
                               ConvertExpressionError)
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
 from pysmt.solvers.qelim import QuantifierEliminator
@@ -978,14 +978,8 @@ class MSatConverter(Converter, DagWalker):
 
     def walk_times(self, formula, args, **kwargs):
         res = args[0]
-        nl_count = 0 if mathsat.msat_term_is_number(self.msat_env(), res) else 1
         for x in args[1:]:
-            if not mathsat.msat_term_is_number(self.msat_env(), x):
-                nl_count += 1
-            if nl_count >= 2:
-                raise NonLinearError(formula)
-            else:
-                res = mathsat.msat_make_times(self.msat_env(), res, x)
+            res = mathsat.msat_make_times(self.msat_env(), res, x)
         return res
 
     def walk_function(self, formula, args, **kwargs):
