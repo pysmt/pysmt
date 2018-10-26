@@ -164,7 +164,6 @@ class TestBasic(TestCase):
     def test_examples_msat(self):
         for (f, validity, satisfiability, logic) in get_example_formulae():
             if not logic.quantifier_free: continue
-            if not logic.theory.linear: continue
             if logic.theory.strings: continue
 
             v = is_valid(f, solver_name='msat', logic=logic)
