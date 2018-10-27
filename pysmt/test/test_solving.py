@@ -92,12 +92,10 @@ class TestBasic(TestCase):
         f = And(varA, Not(varB))
         self.assertSat(f)
 
-
     @skipIfNoSolverForLogic(QF_BOOL)
     def test_get_model_unsat(self):
         varA = Symbol("A", BOOL)
         varB = Symbol("B", BOOL)
-
         f = And(varA, Not(varB))
         g = f.substitute({varB:varA})
 
@@ -112,7 +110,6 @@ class TestBasic(TestCase):
     def test_get_model_sat(self):
         varA = Symbol("A", BOOL)
         varX = Symbol("X", REAL)
-
         f = And(varA, Equals(varX, Real(8)))
 
         res = get_model(f, logic=QF_LRA)
@@ -142,14 +139,12 @@ class TestBasic(TestCase):
     def test_get_implicant_sat(self):
         varA = Symbol("A", BOOL)
         varX = Symbol("X", REAL)
-
         f = And(varA, Equals(varX, Real(8)))
 
         for solver in get_env().factory.all_solvers(logic=QF_LRA):
             res = get_implicant(f, solver_name=solver)
             self.assertIsNotNone(res, "Formula was expected to be SAT")
             self.assertValid(Implies(res, f), logic=QF_LRA)
-
 
     @skipIfNoSolverForLogic(QF_BOOL)
     def test_get_py_value(self):
@@ -185,7 +180,7 @@ class TestBasic(TestCase):
             except SolverReturnedUnknownResultError:
                 # CVC4 does not handle quantifiers in a complete way
                 self.assertFalse(logic.quantifier_free)
-            except NoSolverAvailableError as ex:
+            except NoSolverAvailableError:
                 # Logic is not supported by CVC4
                 pass
 
@@ -322,17 +317,11 @@ class TestBasic(TestCase):
         for (f, _, satisfiability, logic) in get_example_formulae():
             if logic.quantifier_free:
                 for sname in get_env().factory.all_solvers(logic=logic):
-                    try:
-                        f_i = get_implicant(f, logic=logic, solver_name=sname)
-                        if satisfiability:
-                            self.assertValid(Implies(f_i, f), logic=logic, msg=(f_i, f))
-                        else:
-                            self.assertIsNone(f_i)
-                    except ConvertExpressionError as ex:
-                        # Some solvers do not support ARRAY_VALUE
-                        if ex.expression.node_type() == op.ARRAY_VALUE:
-                            self.assertTrue(sname in ["cvc4", "btor"])
-                        self.assertTrue(ex.expression.node_type() == op.BV_TONAT)
+                    f_i = get_implicant(f, logic=logic, solver_name=sname)
+                    if satisfiability:
+                        self.assertValid(Implies(f_i, f), logic=logic, msg=(f_i, f))
+                    else:
+                        self.assertIsNone(f_i)
 
     def test_solving_under_assumption(self):
         v1, v2 = [FreshSymbol() for _ in xrange(2)]
@@ -355,14 +344,11 @@ class TestBasic(TestCase):
                 self.assertEqual(model2.get_value(v1), FALSE())
                 self.assertEqual(model2.get_value(v2), TRUE())
 
-
     def test_solving_under_assumption_theory(self):
         x = Symbol("x", REAL)
         y = Symbol("y", REAL)
-
         v1 = GT(x, Real(10))
         v2 = LE(y, Real(2))
-
         xor = Or(And(v1, Not(v2)), And(Not(v1), v2))
 
         for name in get_env().factory.all_solvers(logic=QF_LRA):
@@ -384,10 +370,8 @@ class TestBasic(TestCase):
 
     def test_solving_under_assumption_mixed(self):
         x = Symbol("x", REAL)
-
         v1 = GT(x, Real(10))
         v2 = Symbol("v2", BOOL)
-
         xor = Or(And(v1, Not(v2)), And(Not(v1), v2))
 
         for name in get_env().factory.all_solvers(logic=QF_UFLIRA):
@@ -409,7 +393,6 @@ class TestBasic(TestCase):
 
     def test_add_assertion(self):
         r = FreshSymbol(REAL)
-
         f1 = Plus(r, r)
         f2 = GT(r, r)
 
@@ -472,21 +455,18 @@ class TestBasic(TestCase):
     @skipIfSolverNotAvailable("msat")
     def test_msat_converter_on_msat_error(self):
         import mathsat
-        import _mathsat
         from pysmt.solvers.msat import MathSAT5Solver, MSatConverter
 
 
         env = get_env()
         msat = MathSAT5Solver(env, logic=QF_UFLIRA)
-        new_converter = MSatConverter(env, msat.msat_env)
 
-        def walk_plus(formula, args):
-            res = mathsat.MSAT_MAKE_ERROR_TERM()
-            return res
+        class NewConverter(MSatConverter):
+            def walk_plus(self, formula, args, **kwargs):
+                res = mathsat.MSAT_MAKE_ERROR_TERM()
+                return res
 
-        # Replace the function used to compute the Plus()
-        # with one that returns a msat_error
-        new_converter.set_function(walk_plus, op.PLUS)
+        new_converter = NewConverter(env, msat.msat_env)
 
         r, s = FreshSymbol(REAL), FreshSymbol(REAL)
         f1 = GT(r, s)
@@ -522,7 +502,6 @@ class TestBasic(TestCase):
         # This case is harder to test, because we only say
         # that the split will occur on that variable first.
         s1.set_preferred_var(a)
-
 
     @skipIfNoSolverForLogic(QF_BOOL)
     def test_conversion_error(self):
@@ -604,7 +583,6 @@ class TestBasic(TestCase):
             self.assertTrue(s.is_sat(Symbol("x")))
             with self.assertRaises(SolverStatusError):
                 s.is_sat(Not(Symbol("x")))
-
 
     @skipIfSolverNotAvailable("btor")
     def test_btor_options(self):
