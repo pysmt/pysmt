@@ -52,8 +52,8 @@ fi
 
 # Adding Python 3.7 library path to GCC search
 if [ "${TRAVIS_PYTHON_VERSION}" == "3.7" ]; then
-    export LIBRARY_PATH="/opt/python/3.7.0/lib:${LIBRARY_PATH}"
-    export CPATH="/opt/python/3.7.0/include/python3.7m:${CPATH}"
+    export LIBRARY_PATH="/opt/python/3.7.1/lib:${LIBRARY_PATH}"
+    export CPATH="/opt/python/3.7.1/include/python3.7m:${CPATH}"
 fi
 
 
