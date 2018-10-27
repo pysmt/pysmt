@@ -20,9 +20,10 @@ from six.moves import xrange
 from pysmt.shortcuts import Solver, BVAnd, BVOr, BVXor, BVConcat, BVULT, BVUGT, \
     BVULE, BVUGE, BVAdd, BVSub, BVMul, BVUDiv, BVURem, BVLShl, BVLShr, BVNot, \
     BVNeg, BVZExt, BVSExt, BVRor, BVRol, BV, BVExtract, BVSLT, BVSLE, BVComp, \
-    BVSDiv, BVSRem, BVAShr, get_env, EqualsOrIff, BVZero, BVOne, Symbol, Bool
+    BVSDiv, BVSRem, BVAShr, EqualsOrIff, BVZero, BVOne, Symbol, Bool
 from pysmt.typing import BVType
 from pysmt.test import TestCase, skipIfSolverNotAvailable, main
+from pysmt.logics import QF_BV
 
 
 class TestBvSimplification(TestCase):
@@ -104,8 +105,8 @@ class TestBvSimplification(TestCase):
         self.assertEqual(simplified, expected)
 
         # Check the formula equality by a solver.
-        if "z3" in get_env().factory.all_solvers():
-            self.assertValid(EqualsOrIff(simplified, formula), solver_name="z3")
+        if self.env.factory.all_solvers(QF_BV):
+            self.assertValid(EqualsOrIff(simplified, formula), logic=QF_BV)
 
     def test_bv_0_add(self):
         x = Symbol("x", BVType(32))
