@@ -212,15 +212,11 @@ class BoolectorSolver(IncrementalTrackingSolver,
 
     @clear_pending_pop
     def _push(self, levels=1):
-        # Boolector does not support push/pop.
-        # Incrementality could be simulated by keeping a stack
-        # of boolector instances.
-        # See self.btor.Clone()
-        raise NotImplementedError
+        self.btor.Push(levels)
 
     @clear_pending_pop
     def _pop(self, levels=1):
-        raise NotImplementedError
+        self.btor.Pop(levels)
 
     def print_model(self, name_filter=None):
         for var in self.declarations:
