@@ -404,15 +404,15 @@ class BTORConverter(Converter, DagWalker):
         if rhs_w == target_w:
             return lhs << args[1]
         else:
-            # IF (rhs <= max) Then Rescale Else Max
+            # If (rhs > max) Then 0 Else Rescale
             max_value = 2**target_w-1
             max_big = self._btor.Const(max_value, rhs_w)
-            cond = self._btor.Ulte(rhs, max_big)
-            max_small = self._btor.Const(max_value, target_w)
+            cond = self._btor.Ugt(rhs, max_big)
+            zero = self._btor.Const(0, lhs_w)
             rescaled = self._btor.Slice(rhs, target_w-1, 0)
-            return lhs << self._btor.Cond(cond,
-                                              rescaled,
-                                              max_small)
+            return self._btor.Cond(cond,
+                                   zero,
+                                   self._btor.Sll(lhs, rescaled))
 
     def walk_bv_lshr(self, formula, args, **kwargs):
         # LHS width must be a power of 2
@@ -426,15 +426,15 @@ class BTORConverter(Converter, DagWalker):
         if rhs_w == target_w:
             return lhs >> rhs
         else:
-            # IF (rhs <= max) Then Rescale Else Max
+            # If (rhs > max) Then 0 Else Rescale
             max_value = 2**target_w-1
             max_big = self._btor.Const(max_value, rhs_w)
-            cond = self._btor.Ulte(rhs, max_big)
-            max_small = self._btor.Const(max_value, target_w)
+            cond = self._btor.Ugt(rhs, max_big)
+            zero = self._btor.Const(0, lhs_w)
             rescaled = self._btor.Slice(rhs, target_w-1, 0)
-            return lhs >> self._btor.Cond(cond,
-                                          rescaled,
-                                          max_small)
+            return self._btor.Cond(cond,
+                                   zero,
+                                   self._btor.Srl(lhs, rescaled))
 
     def walk_bv_rol(self, formula, args, **kwargs):
         return self._btor.Rol(args[0],
