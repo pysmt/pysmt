@@ -6,45 +6,71 @@ env:
 
 matrix:
   include:
-  # Linux - Python 3.6
+  # Linux - Python 3.7
   - os: linux
-    python: 3.6
+    sudo: required
+    dist: xenial
+    python: 3.7
     env: PYSMT_SOLVER="all"       PYSMT_GMPY="TRUE"
   - os: linux
-    python: 3.6
+    python: 3.7
+    sudo: required
+    dist: xenial
     env: PYSMT_SOLVER="all"       PYSMT_GMPY="FALSE"
   - os: linux
-    python: 3.6
+    python: 3.7
+    sudo: required
+    dist: xenial
     env: PYSMT_SOLVER="None"      PYSMT_GMPY="FALSE"   PYSMT_CYTHON="TRUE"
   - os: linux
-    python: 3.6
+    sudo: required
+    dist: xenial
+    python: 3.7
     env: PYSMT_SOLVER="None"      PYSMT_GMPY="FALSE"   PYSMT_CYTHON="FALSE"
   - os: linux
-    python: 3.6
+    sudo: required
+    dist: xenial
+    python: 3.7
     env: PYSMT_SOLVER="msat"      PYSMT_GMPY="FALSE"
   - os: linux
-    python: 3.6
+    sudo: required
+    dist: xenial
+    python: 3.7
     env: PYSMT_SOLVER="z3"        PYSMT_GMPY="FALSE"
   - os: linux
-    python: 3.6
+    sudo: required
+    dist: xenial
+    python: 3.7
     env: PYSMT_SOLVER="cvc4"      PYSMT_GMPY="FALSE"
   - os: linux
-    python: 3.6
+    sudo: required
+    dist: xenial
+    python: 3.7
     env: PYSMT_SOLVER="yices"     PYSMT_GMPY="FALSE"
   - os: linux
-    python: 3.6
+    sudo: required
+    dist: xenial
+    python: 3.7
     env: PYSMT_SOLVER="bdd"       PYSMT_GMPY="FALSE"
   - os: linux
-    python: 3.6
+    sudo: required
+    dist: xenial
+    python: 3.7
     env: PYSMT_SOLVER="picosat"   PYSMT_GMPY="FALSE"
   - os: linux
-    python: 3.6
+    sudo: required
+    dist: xenial
+    python: 3.7
     env: PYSMT_SOLVER="btor"      PYSMT_GMPY="FALSE"
   - os: linux
-    python: 3.6
+    sudo: required
+    dist: xenial
+    python: 3.7
     env: PYSMT_SOLVER="msat_wrap" PYSMT_GMPY="FALSE"
   - os: linux
-    python: 3.6
+    sudo: required
+    dist: xenial
+    python: 3.7
     env: PYSMT_SOLVER="z3_wrap"   PYSMT_GMPY="FALSE"
 
   # Linux - Python 2.7
