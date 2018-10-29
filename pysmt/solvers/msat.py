@@ -277,6 +277,7 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
         return (res == mathsat.MSAT_SAT)
 
     def _check_unsat_core_config(self):
+        # TODO: Move this to the unsat-core mixin
         if self.options.unsat_cores_mode is None:
             raise SolverNotConfiguredForUnsatCoresError
 
@@ -294,7 +295,6 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
         set of formulae"""
         self._check_unsat_core_config()
         if self.options.unsat_cores_mode == "all":
-
             terms = mathsat.msat_get_unsat_core(self.msat_env())
             if terms is None:
                 raise InternalSolverError(
@@ -308,7 +308,6 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
         dict of names to formulae"""
         self._check_unsat_core_config()
         if self.options.unsat_cores_mode == "named":
-
             assumptions = mathsat.msat_get_unsat_assumptions(self.msat_env())
             pysmt_assumptions = set(self.converter.back(t) for t in assumptions)
 

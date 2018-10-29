@@ -33,7 +33,7 @@ from pysmt.walkers import DagWalker
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               ConvertExpressionError, PysmtValueError)
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
-from pysmt.logics import QF_BV, QF_UFBV, QF_ABV, QF_AUFBV, QF_AX
+from pysmt.logics import QF_AUFBV, BV, AUTO
 from pysmt.constants import to_python_integer
 
 
@@ -154,7 +154,7 @@ class BoolectorOptions(SolverOptions):
 class BoolectorSolver(IncrementalTrackingSolver,
                       SmtLibBasicSolver, SmtLibIgnoreMixin):
 
-    LOGICS = [QF_BV, QF_UFBV, QF_ABV, QF_AUFBV, QF_AX]
+    LOGICS = [AUTO, QF_AUFBV, BV]
     OptionsClass = BoolectorOptions
 
     def __init__(self, environment, logic, **options):
@@ -186,6 +186,7 @@ class BoolectorSolver(IncrementalTrackingSolver,
         self._assert_is_boolean(formula)
         term = self.converter.convert(formula)
         self.btor.Assert(term)
+        return formula
 
     def get_model(self):
         assignment = {}
@@ -208,7 +209,22 @@ class BoolectorSolver(IncrementalTrackingSolver,
             raise SolverReturnedUnknownResultError
 
     def get_unsat_core(self):
-        raise NotImplementedError
+        """After a call to solve() yielding UNSAT,
+           returns the unsat core as a set of formulae
+        """
+        self._check_unsat_core_config()
+
+        # TODO: Btor has a method Failed that takes a list of bool expr,
+        # and returns a list of boolean variables, with the semantics that
+        # the formula at position i is part of the unsat core iff the value is True
+        if self.options.unsat_cores_mode == "all":
+            is_unsat_core = self.btor.Failed(self._assumptions)
+            unsat_core = [f for (is_unsat_core, f) in
+                          zip(self.btor.Failed(self._assumptions), self._assumptions)]
+            return set(self.converter.back(t) for t in terms)
+        else:
+            raise NotImplementedError()
+
 
     @clear_pending_pop
     def _push(self, levels=1):

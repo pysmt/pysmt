@@ -185,7 +185,6 @@ class Theory(object):
             le_linear = True
         else:
             le_linear = False
-
         return (self.arrays <= other.arrays and
                 self.arrays_const <= other.arrays_const and
                 self.bit_vectors <= other.bit_vectors and
@@ -778,6 +777,8 @@ def most_generic_logic(logics):
     """
     res = [ l for l in logics if all(l >= x for x in logics)]
     if len(res) != 1:
+        if AUTO in logics:
+            return AUTO
         raise NoLogicAvailableError("Could not find the most generic "
                                     "logic for %s." % str(logics))
     return res[0]

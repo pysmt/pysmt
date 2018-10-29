@@ -654,7 +654,16 @@ def get_full_example_formulae(environment=None):
                     is_valid=False,
                     is_sat=True,
                     logic=pysmt.logics.LRA
-                ),
+            ),
+
+            Example(hr="(exists bv16 . ((bv16 + 1_16) = 0_16))",
+                    expr=Exists([bv16], (Equals(BVAdd(bv16, BVOne(16)),
+                                                BVZero(16)))),
+                    is_valid=True,
+                    is_sat=True,
+                    logic=pysmt.logics.BV
+            ),
+
 
             #
             # UFLIRA
