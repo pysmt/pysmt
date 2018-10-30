@@ -178,7 +178,7 @@ class TestBasic(TestCase):
             except SolverReturnedUnknownResultError:
                 # CVC4 does not handle quantifiers in a complete way
                 # CVC4 can return unknown for nonlinear logics
-                self.assertFalse(logic.quantifier_free or\
+                self.assertFalse(logic.quantifier_free and\
                                  logic.theory.linear)
             except NoSolverAvailableError:
                 # Logic is not supported by CVC4

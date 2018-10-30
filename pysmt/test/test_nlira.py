@@ -32,12 +32,13 @@ from pysmt.constants import Fraction
 
 class TestNonLinear(TestCase):
 
-    @skipIfSolverNotAvailable("z3")
     def test_times(self):
         x = FreshSymbol(REAL)
         f = Equals(Times(x, x), x)
-        with Solver(name="z3") as s:
-            self.assertTrue(s.is_sat(f))
+        for sname in self.env.factory.all_solvers():
+            if sname in ["cvc4", "msat", "z3"]:
+                with Solver(name=sname) as s:
+                    self.assertTrue(s.is_sat(f))
 
     @skipIfSolverNotAvailable("z3")
     def test_div(self):
@@ -66,34 +67,29 @@ class TestNonLinear(TestCase):
 
     def test_unknownresult(self):
         x = FreshSymbol(REAL)
-        f = Equals(Times(x, x), Real(2))
+        f = Equals(Times(x, x), Real(4))
         for sname in self.env.factory.all_solvers():
             with Solver(name=sname) as s:
                 if sname in  ["bdd", "picosat", "btor"]:
                     with self.assertRaises(ConvertExpressionError):
                         s.is_sat(f)
-                elif sname in ["yices", "cvc4", "msat"]:
+                elif sname is "yices":
                     with self.assertRaises(NonLinearError):
                         s.is_sat(f)
                 else:
                     res = s.is_sat(f)
-                    self.assertTrue(res, sname)
+                    self.assertTrue(res)
                     self.assertIn(QF_NRA, s.LOGICS, sname)
 
-    @skipIfSolverNotAvailable("z3")
     def test_integer(self):
         x = FreshSymbol(INT)
-        f = Equals(Times(x, x), Int(2))
-        with Solver(name="z3") as s:
-            self.assertFalse(s.is_sat(f))
-
-        # f = Equals(Times(Int(4), Pow(x, Int(-1))), Int(2))
-        # self.assertTrue(is_sat(f, solver_name="z3"))
-
-        f = Equals(Div(Int(4), x), Int(2))
-        self.assertTrue(is_sat(f, solver_name="z3"))
-        f = Equals(Times(x, x), Int(16))
-        self.assertTrue(is_sat(f))
+        f1 = Equals(Times(x, x), Int(2))
+        f2 = Equals(Times(x, x), Int(16))
+        for sname in self.env.factory.all_solvers():
+            if sname in ["cvc4", "msat", "z3"]:
+                with Solver(name=sname) as s:
+                    self.assertFalse(s.is_sat(f1))
+                    self.assertTrue(s.is_sat(f2))
 
     @skipIfSolverNotAvailable("z3")
     def test_div_pow(self):
