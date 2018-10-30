@@ -4,7 +4,7 @@ Tutorials
 This page is under-construction. For now, it contains a copy of the
 files within the `examples/ folder
 <https://github.com/pysmt/pysmt/blob/master/examples/README.rst>`_ of
-the pySMT repository.
+the pySMT repository and a basic tutorial on Boolean logic.
 
 If you are interested in helping us create better tutorials, please
 let us know at info@pysmt.org .
@@ -12,6 +12,11 @@ let us know at info@pysmt.org .
 
 .. contents::
    :local:
+
+
+Boolean Logic in PySMT
+----------------------
+An introductory basic example on how to use pySMT for Booean satisfiability: :ref:`pysmt-tutorials-booleanlogic`.
 
 First example
 -------------
