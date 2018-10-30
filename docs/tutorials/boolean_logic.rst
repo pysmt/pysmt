@@ -113,7 +113,7 @@ also creates and returns a satisfying model for the formula.
 This function is called ``get_model`` and given a formula, it returns
 ``None`` if the formula is UNSAT, otherwise it returns an object
 implementing the ``Model`` interface, that can be queried to retrive a
-satisfying assignment. We shall see the ``Model`` interfce in detail,
+satisfying assignment. We shall see the ``Model`` interface in detail,
 but for now we will use some basic features.
 
 .. code:: python
