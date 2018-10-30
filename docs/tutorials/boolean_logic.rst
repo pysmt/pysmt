@@ -25,7 +25,7 @@ satisfiability and to retrieve Solver instances.
 
 The module to import is ``pysmt.shortcuts``.
 
-In our example, we need six four functions: ``Symbol``, ``And``,
+In our example, we need six functions: ``Symbol``, ``And``,
 ``Not``, ``Or``, ``is_sat`` and ``get_model``.
 
 .. code:: python
