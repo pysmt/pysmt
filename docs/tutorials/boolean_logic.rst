@@ -49,7 +49,7 @@ and returns the PySMT representation for a variable :math:`a`.
 At this point, we can create our formula. PySMT offers a number of
 functions to construct formulae like conjunction (``And``), disjunction
 (``Or``), negation (``Not``) and so on. Each builds a PySMT
-representation of a formula given as arguemnts other formulae. For
+representation of a formula given as arguments other formulae. For
 example, ``Not(a)`` returns the PySMT representation of :math:`\neg a`.
 We can build the formula :math:`a \wedge \neg a` as follows.
 
