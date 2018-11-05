@@ -884,8 +884,8 @@ def get_full_example_formulae(environment=None):
                     logic=pysmt.logics.QF_NRA
                 ),
 
-            Example(hr="(2.0 = (r * r))",
-                    expr=Equals(Real(2), Times(r,r)),
+            Example(hr="(4.0 = (r * r))",
+                    expr=Equals(Real(4), Times(r,r)),
                     is_valid=False,
                     is_sat=True,
                     logic=pysmt.logics.QF_NRA
@@ -905,8 +905,8 @@ def get_full_example_formulae(environment=None):
                     logic=pysmt.logics.QF_NRA
                 ),
 
-            Example(hr="((r * r * r) = 25.0)",
-                    expr=Equals(Times(r, r, r), Real(25)),
+            Example(hr="((r * r * r) = 27.0)",
+                    expr=Equals(Times(r, r, r), Real(27)),
                     is_valid=False,
                     is_sat=True,
                     logic=pysmt.logics.QF_NRA
