@@ -350,6 +350,9 @@ class CVC4Converter(Converter, DagWalker):
             res = self.mkExpr(CVC4.MULT, res, x)
         return res
 
+    def walk_div(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.DIVISION, args[0], args[1])
+
     def walk_toreal(self, formula, args, **kwargs):
         return self.mkExpr(CVC4.TO_REAL, args[0])
 
