@@ -418,6 +418,7 @@ class MSatConverter(Converter, DagWalker):
             mathsat.MSAT_TAG_LEQ: self._back_adapter(self.mgr.LE),
             mathsat.MSAT_TAG_PLUS: self._back_adapter(self.mgr.Plus),
             mathsat.MSAT_TAG_TIMES: self._back_adapter(self.mgr.Times),
+            mathsat.MSAT_TAG_DIVIDE: self._back_adapter(self.mgr.Div),
             mathsat.MSAT_TAG_BV_MUL: self._back_adapter(self.mgr.BVMul),
             mathsat.MSAT_TAG_BV_ADD: self._back_adapter(self.mgr.BVAdd),
             mathsat.MSAT_TAG_BV_UDIV: self._back_adapter(self.mgr.BVUDiv),
@@ -473,6 +474,7 @@ class MSatConverter(Converter, DagWalker):
             mathsat.MSAT_TAG_LEQ: self._sig_most_generic_bool_binary,
             mathsat.MSAT_TAG_PLUS:  self._sig_most_generic_bool_binary,
             mathsat.MSAT_TAG_TIMES: self._sig_most_generic_bool_binary,
+            mathsat.MSAT_TAG_DIVIDE: self._sig_most_generic_bool_binary,
             mathsat.MSAT_TAG_BV_MUL: self._sig_binary,
             mathsat.MSAT_TAG_BV_ADD: self._sig_binary,
             mathsat.MSAT_TAG_BV_UDIV:self._sig_binary,
@@ -981,6 +983,9 @@ class MSatConverter(Converter, DagWalker):
         for x in args[1:]:
             res = mathsat.msat_make_times(self.msat_env(), res, x)
         return res
+
+    def walk_div(self, formula, args, **kwargs):
+        return mathsat.msat_make_divide(self.msat_env(), args[0], args[1])
 
     def walk_function(self, formula, args, **kwargs):
         name = formula.function_name()
