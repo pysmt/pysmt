@@ -1,6 +1,125 @@
 Change Log
 ==========
 
+0.8.0: 2019-01-27 -- Better Install and Great Community
+-------------------------------------------------------
+
+BACKWARDS INCOMPATIBLE CHANGES:
+
+  Disabled support for interpolation in Z3, since this is not
+  available anymore up-stream
+
+Deprecation Warning:
+
+This release is the **last** release to support Python 2.7.
+Starting from 0.9.0 only Python 3+ will be supported.
+
+General:
+
+* Solver installation within site-package (PR #517). pysmt-install now
+  installs the solvers within the site-package directory (by
+  default). This makes it possible to work with virtual environments,
+  and does not require anymore to export the Python path, greatly
+  simplifying the installation process. Thanks to **Radomi
+  Stevanovic** for contributing the patch.
+
+* Simplify shared lib usage (PR #494): Modify z3 and msat installers
+  in order to make their shared binary objects (libraries/dlls)
+  auto-discoverable, without the need for setting
+  LD_LIBRARY_PATH/PATH. Thanks to **Radomir Stevanovic** for
+  contributing the patch.
+
+* BV Simplification (PR #531): Multiple improvements on the
+  simplification of BV expressions. Thanks to **Haozhong Zhang** for
+  contributing the patch.
+
+* Ackermannization (PR #515): Add support for Ackermannization in
+  pysmt.rewritings. Thanks to **Yoni Zohar** for contributing the patch.
+
+* FNode.bv_str: Multiple format for BV printing (PR #468)
+
+* Examples (PR #507): Extend model_checking example with PDR. Thanks
+  to **Cristian Mattarei** for contributing the patch.
+
+* Docs: Tutorial on basic boolean solving (PR #535)
+
+* Tests: Removed old warning and other clean-ups (PR #532, #512)
+
+* Warnings (PR #497): Importing pysmt.shortcuts will only raise
+  warnings within pySMT, instead of all warnings from external
+  libraries.
+
+* Examples (PR #541): Add example for the theory of Strings
+
+* Top-Level Propagator (PR #544): Add a basic toplevel-propagation
+  functionality to propagate definitions of the form: variable =
+  constant, variable = variable, constant = constant .
+  Thanks to **Ahmed Irfan** for providing this feature.
+
+* Clean-up debug print from SMT parser (PR #543): Thanks to **Ahmed
+  Irfan** for providing this patch.
+
+
+Solvers:
+
+* Yices: Upgrade to 2.6.0 (PR #509).
+
+* Boolector: Upgrade to 3.0.1-pre (7f5d32) (PR #514)
+
+* CVC4: Upgrade to 1.7-prerelease (PR #552)
+  *Known issue*: Passing options to CVC4 fails sometimes.
+
+* Z3: Upgrade to 4.8.4 (PR #550).
+  Removed support for interpolation.
+
+* Yices: Add support for OSX (PR #486). Thanks to **Varun Patro** for
+  contributing the patch.
+
+* SMTLIB Solver (PR #524): Add support for custom sorts in SMT-LIB
+  interface. Thanks to **Yoni Zohar** for contributing the patch.
+
+* MathSAT (PR #526): Add option to support preferred variables with
+  polarity. Thanks to **Cristian Mattarei** for providing the patch.
+
+
+Bugfix:
+
+* SmtLib parser (PR #521): Fix StopIteration error. The error would
+  make it impossible to use the parser with Python 3.7. The fix
+  changes the structure of the parser, in order to separate cases in
+  which we know that there is a token to consume (function consume)
+  and when we want to consume a token only if available (function
+  consume_maybe). Thanks to **@samuelkolb** and **Kangjing Huang** for
+  reporting this.
+
+* Boolector: Fixed bug in LShl and LShr conversion (PR #534)
+
+* Z3 (PR #530, #528): Fixed race condition during context
+  deletion. The race condition would cause pySMT to segfault on
+  certain situations. Thanks to **Haozhong Zhang** for helping us
+  reproduce the issue and to **@Johanvdberg** for reporting it.
+
+* MathSAT (PR #518): Fix installation error on darwin. Thanks to
+  **Lenny Truong** for contributing the patch.
+
+* Fix declare-sort bug (PR #501). Thanks to **Yoni Zohar** for
+  contributing the patch.
+
+* Fix docstring for BVAShr (PR #503). Thanks to **Mathias Preiner**
+  for contributing the patch.
+
+* Fix yices compilation on OSX without AVX2 instruction (PR #491)
+
+* Fix PysmtTypeError when reusing symbols in SMT-LIB define-fun (PR
+  #502). Thanks to **Yoni Zohar** for contributing the patch.
+
+* Fix doublequote escaping (PR #489). Thanks to **Lukas Dresel** for
+  contributing the patch.
+
+* Fix pySMT CLI for Python3 (PR #493). Thanks to **Radomir
+  Stevanovic** for contributing the patch.
+
+
 0.7.5: 2018-05-29 -- Strings and Cython Parser
 ----------------------------------------------
 
