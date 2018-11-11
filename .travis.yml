@@ -75,42 +75,55 @@ matrix:
 
   # Linux - Python 2.7
   - os: linux
+    dist: xenial
     python: 2.7
     env: PYSMT_SOLVER="all"       PYSMT_GMPY="TRUE"
   - os: linux
+    dist: xenial
     python: 2.7
     env: PYSMT_SOLVER="all"       PYSMT_GMPY="FALSE"
   - os: linux
+    dist: xenial
     python: 2.7
     env: PYSMT_SOLVER="None"      PYSMT_GMPY="FALSE"   PYSMT_CYTHON="TRUE"
   - os: linux
+    dist: xenial
     python: 2.7
     env: PYSMT_SOLVER="None"      PYSMT_GMPY="FALSE"   PYSMT_CYTHON="FALSE"
   - os: linux
+    dist: xenial
     python: 2.7
     env: PYSMT_SOLVER="msat"      PYSMT_GMPY="FALSE"
   - os: linux
+    dist: xenial
     python: 2.7
     env: PYSMT_SOLVER="z3"        PYSMT_GMPY="FALSE"
   - os: linux
+    dist: xenial
     python: 2.7
     env: PYSMT_SOLVER="cvc4"      PYSMT_GMPY="FALSE"
   - os: linux
+    dist: xenial
     python: 2.7
     env: PYSMT_SOLVER="yices"     PYSMT_GMPY="FALSE"
   - os: linux
+    dist: xenial
     python: 2.7
     env: PYSMT_SOLVER="bdd"       PYSMT_GMPY="FALSE"
   - os: linux
+    dist: xenial
     python: 2.7
     env: PYSMT_SOLVER="picosat"   PYSMT_GMPY="FALSE"
   - os: linux
+    dist: xenial
     python: 2.7
     env: PYSMT_SOLVER="btor"      PYSMT_GMPY="FALSE"
   - os: linux
+    dist: xenial
     python: 2.7
     env: PYSMT_SOLVER="msat_wrap" PYSMT_GMPY="FALSE"
   - os: linux
+    dist: xenial
     python: 2.7
     env: PYSMT_SOLVER="z3_wrap"   PYSMT_GMPY="FALSE"
 
