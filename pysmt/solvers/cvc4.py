@@ -529,7 +529,7 @@ class CVC4Converter(Converter, DagWalker):
     def walk_str_constant(self, formula, args, **kwargs):
         return self.mkConst(CVC4.CVC4String(formula.constant_value()))
 
-    def walk_str_length (self, formula, args, **kwargs):
+    def walk_str_length(self, formula, args, **kwargs):
         return self.mkExpr(CVC4.STRING_LENGTH , args[0])
 
     def walk_str_concat(self, formula, args, **kwargs):

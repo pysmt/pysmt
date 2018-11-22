@@ -135,7 +135,7 @@ class TestString(TestCase):
 
     @skipIfNoSolverForLogic(QF_SLIA)
     def test_int_to_str(self):
-        f = Equals((IntToStr(Int(1))), String("1"))
+        f = Equals(IntToStr(Int(1)), String("1"))
         self.assertValid(f)
         f = Equals(IntToStr(Int(-1)), String(""))
         self.assertValid(f)
