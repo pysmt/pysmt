@@ -825,8 +825,6 @@ class SmtLibParser(object):
                                                tokens.pos_info)
 
                     try:
-                        print(lst)
-                        print(fun)
                         res = fun(*lst)
                     except TypeError as err:
                         if not callable(fun):
