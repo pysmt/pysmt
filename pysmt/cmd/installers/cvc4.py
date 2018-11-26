@@ -52,12 +52,13 @@ class CVC4Installer(SolverInstaller):
                             directory=os.path.join(self.extract_path, "contrib"))
 
         # Build ABC
-        SolverInstaller.run("bash get-abc",
-                            directory=os.path.join(self.extract_path, "contrib"))
+        # SolverInstaller.run("bash get-abc",
+        #                     directory=os.path.join(self.extract_path, "contrib"))
+        # Build GLPK
+        # We could configure with --gpl --best, but this takes forever to build
 
         # Configure and build CVC4
-        config_cmd = "./configure.sh --best --gpl \
-                                     --language-bindings=python \
+        config_cmd = "./configure.sh --language-bindings=python \
                                      --python%s" % self.python_version[0]
 
         if os.path.exists(sys.executable+"-config"):
@@ -69,8 +70,8 @@ class CVC4Installer(SolverInstaller):
                             env_variables=pyconfig)
         SolverInstaller.run("make", directory=self.build_path,
                             env_variables=pyconfig)
-        SolverInstaller.run("make install", directory=self.build_path,
-                            env_variables=pyconfig)
+        # SolverInstaller.run("make install", directory=self.build_path,
+        #                     env_variables=pyconfig)
 
     def get_installed_version(self):
         return self.get_installed_version_script(self.bindings_dir, "cvc4")
