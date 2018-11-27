@@ -35,7 +35,7 @@ Installer = namedtuple("Installer",
                        ["InstallerClass", "version", "extra_params"])
 INSTALLERS = [
     Installer(MSatInstaller,    "5.5.1", {}),
-    Installer(CVC4Installer,    "1.7",
+    Installer(CVC4Installer,    "1.7-prerelease",
               {"git_version" : "391ab9df6c3fd9a3771864900c1718534c1e4666"}),
     Installer(Z3Installer,      "4.8.4",
               {"osx": "10.14.1", "commit": "d6df51951f4c"}),
@@ -46,7 +46,7 @@ INSTALLERS = [
     Installer(PicoSATInstaller, "965",
               {"pypicosat_minor_version" : "1708010052"}),
     Installer(CuddInstaller,    "2.0.3",
-              {"git_version" : "75fe055c2a736a3ac3e971c1ade108b815edc96c"}),
+              {"git_version" : "ecb03d6d231273343178f566cc4d7258dcce52b4"}),
 ]
 
 
