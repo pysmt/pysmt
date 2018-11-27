@@ -223,7 +223,6 @@ addons:
     - python-dev
     - make
     - build-essential
-    - swig
     - libgmp-dev
     - autoconf
     - libtool
