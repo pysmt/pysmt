@@ -21,7 +21,7 @@ from pysmt.shortcuts import (And, Iff, Or, Symbol, Implies, Not,
                              is_valid, is_sat, Function)
 from pysmt.test import TestCase, skipIfNoSolverForLogic, main
 from pysmt.rewritings import prenex_normal_form, nnf, conjunctive_partition, aig
-from pysmt.rewritings import disjunctive_partition
+from pysmt.rewritings import disjunctive_partition, propagate_toplevel
 from pysmt.rewritings import TimesDistributor, Ackermannizer
 from pysmt.test.examples import get_example_formulae
 from pysmt.exceptions import SolverReturnedUnknownResultError
@@ -233,6 +233,16 @@ class TestRewritings(TestCase):
                     ok = not logic.quantifier_free
                 self.assertTrue(ok)
 
+    def test_propagate_toplevel(self):
+       for (f, _, _, logic) in get_example_formulae():
+            if self.env.factory.has_solvers(logic=logic):
+                rwf = propagate_toplevel(f)
+                try:
+                    ok = is_valid(Iff(f, rwf), logic=logic)
+                except SolverReturnedUnknownResultError:
+                    ok = not logic.quantifier_free
+                self.assertTrue(ok)
+        
     def test_aig_examples(self):
         for (f, _, _, logic) in get_example_formulae():
             if self.env.factory.has_solvers(logic=logic):
