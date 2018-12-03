@@ -832,3 +832,29 @@ def disjunctive_partition(formula):
                 to_process += cur.args()
             else:
                 yield cur
+
+
+def propagate_toplevel(formula, env=None, do_simplify=True):
+    """ Propagates the toplevel definitions and returns an equivalent formula.
+    It considers two kinds of definitions:
+    1) variable = constant
+    2) variable = variable
+    """
+    if env is None:
+        import pysmt.environment
+        env = pysmt.environment.get_env()
+    mgr = env.formula_manager
+    sigma = {}
+    for c in conjunctive_partition(formula):
+        if c.is_equals():
+            l, r = sorted(c.args(), key=hash)
+            if l.is_symbol() and (r.is_symbol() or r.is_constant()) and\
+               l not in sigma:
+                sigma[l] = r
+            elif r.is_symbol() and (l.is_symbol() or l.is_constant()) and\
+                 r not in sigma:
+                sigma[r] = l
+    res = formula.substitute(sigma)
+    res = mgr.And(res, mgr.And(
+        [mgr.Equals(k, sigma[k]) for k in sigma]))
+    return res.simplify() if do_simplify else res
