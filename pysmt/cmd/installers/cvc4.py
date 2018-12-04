@@ -46,6 +46,9 @@ class CVC4Installer(SolverInstaller):
         # Prepare the building system
         SolverInstaller.run("bash autogen.sh", directory=self.extract_path)
 
+        # Fix url of ANTLR
+        SolverInstaller.run("sed -i s/http/https/g ./contrib/get-antlr-3.4", directory=self.extract_path)
+
         # Build ANTLR
         SolverInstaller.run("bash get-antlr-3.4",
                             directory=os.path.join(self.extract_path, "contrib"))
