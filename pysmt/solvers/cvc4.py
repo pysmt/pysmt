@@ -339,6 +339,13 @@ class CVC4Converter(Converter, DagWalker):
     def walk_array_select(self, formula, args, **kwargs):
         return self.mkExpr(CVC4.SELECT, args[0], args[1])
 
+    def walk_array_value(self, formula, args, **kwargs):
+        arr_type = self.env.stc.get_type(formula)
+        rval = self.mkConst(CVC4.ArrayStoreAll(self._type_to_cvc4(arr_type), args[0]))
+        for i, c in enumerate(args[1::2]):
+            rval = self.mkExpr(CVC4.STORE, rval, c, args[(i*2)+2])
+        return rval
+
     def walk_minus(self, formula, args, **kwargs):
         return self.mkExpr(CVC4.MINUS, args[0], args[1])
 
