@@ -834,27 +834,63 @@ def disjunctive_partition(formula):
                 yield cur
 
 
-def propagate_toplevel(formula, env=None, do_simplify=True):
+def propagate_toplevel(formula, env=None, do_simplify=True, preserve_equivalence=True):
     """ Propagates the toplevel definitions and returns an equivalent formula.
     It considers two kinds of definitions:
     1) variable = constant
     2) variable = variable
     """
+    leader = {} # maps a member to the group's leader
+    group = {} # maps a group leader to the group (which is a set)
+
+    def add_eq(a, b):
+        leadera = leader.get(a)
+        leaderb = leader.get(b)
+        if leadera is not None:
+            if leaderb is not None:
+                if leadera == leaderb:
+                    return # nothing to do
+                groupa = group[leadera]
+                groupb = group[leaderb]
+                if leaderb.is_constant() or\
+                   (leaderb.node_id < leadera.node_id and\
+                    not leadera.is_constant()):
+                    a, leadera, groupa, b, leaderb, groupb = b, leaderb, groupb,\
+                                                             a, leadera, groupa
+                groupa |= groupb
+                del group[leaderb]
+                for k in groupb:
+                    leader[k] = leadera
+            else:
+                group[leadera].add(b)
+                leader[b] = leadera
+        else:
+            if leaderb is not None:
+                group[leaderb].add(a)
+                leader[a] = leaderb
+            else:
+                if b.is_constant():
+                    a, b = b, a
+                leader[a] = leader[b] = a
+                group[a] = set([a, b])
+
     if env is None:
         import pysmt.environment
         env = pysmt.environment.get_env()
     mgr = env.formula_manager
-    sigma = {}
+
     for c in conjunctive_partition(formula):
         if c.is_equals():
-            l, r = sorted(c.args(), key=hash)
-            if l.is_symbol() and (r.is_symbol() or r.is_constant()) and\
-               l not in sigma:
-                sigma[l] = r
-            elif r.is_symbol() and (l.is_symbol() or l.is_constant()) and\
-                 r not in sigma:
-                sigma[r] = l
+            l, r = c.args()
+            if l.is_array_value() or r.is_array_value():
+                # skipping constant arrays
+                continue
+            if (l.is_symbol() and (r.is_symbol() or r.is_constant())) or\
+               (r.is_symbol() and (l.is_symbol() or l.is_constant())):
+                add_eq(l, r)
+
+    sigma = leader
     res = formula.substitute(sigma)
-    res = mgr.And(res, mgr.And(
-        [mgr.Equals(k, sigma[k]) for k in sigma]))
+    if preserve_equivalence:
+        res = mgr.And(res, mgr.And([mgr.Equals(k, sigma[k]) for k in sigma]))
     return res.simplify() if do_simplify else res
