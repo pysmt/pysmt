@@ -251,12 +251,20 @@ class TestRewritings(TestCase):
         f = And(LT(Times(x, x), Real(0)), Equals(Real(1), x))
         fp = propagate_toplevel(f)
         self.assertTrue(fp.is_false())
-        self.assertTrue(is_valid(Iff(f, fp)))
+        try:
+            ok = is_valid(Iff(f, fp))
+        except SolverReturnedUnknownResultError:
+            ok = not logic.quantifier_free
+        self.assertTrue(ok)
         
         f = And(LT(Times(x, x), Real(0)), Equals(y, x), Equals(y, Real(1)))
         fp = propagate_toplevel(f)
         self.assertTrue(fp.is_false())
-        self.assertTrue(is_valid(Iff(f, fp)))
+        try:
+            ok = is_valid(Iff(f, fp))
+        except SolverReturnedUnknownResultError:
+            ok = not logic.quantifier_free
+        self.assertTrue(ok)
 
     def test_aig_examples(self):
         for (f, _, _, logic) in get_example_formulae():
