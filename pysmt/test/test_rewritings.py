@@ -18,6 +18,7 @@
 from pysmt.shortcuts import (And, Iff, Or, Symbol, Implies, Not,
                              Exists, ForAll,
                              Times, Plus, Minus, Equals, Real,
+                             LT,
                              is_valid, is_sat, Function)
 from pysmt.test import TestCase, skipIfNoSolverForLogic, main
 from pysmt.rewritings import prenex_normal_form, nnf, conjunctive_partition, aig
@@ -233,7 +234,7 @@ class TestRewritings(TestCase):
                     ok = not logic.quantifier_free
                 self.assertTrue(ok)
 
-    def test_propagate_toplevel(self):
+    def test_propagate_toplevel_examples(self):
        for (f, _, _, logic) in get_example_formulae():
             if self.env.factory.has_solvers(logic=logic):
                 rwf = propagate_toplevel(f)
@@ -242,7 +243,21 @@ class TestRewritings(TestCase):
                 except SolverReturnedUnknownResultError:
                     ok = not logic.quantifier_free
                 self.assertTrue(ok)
+
+    def test_propagate_toplevel(self):
+        x = Symbol("x", REAL)
+        y = Symbol("y", REAL)
+
+        f = And(LT(Times(x, x), Real(0)), Equals(Real(1), x))
+        fp = propagate_toplevel(f)
+        self.assertTrue(fp.is_false())
+        self.assertTrue(is_valid(Iff(f, fp)))
         
+        f = And(LT(Times(x, x), Real(0)), Equals(y, x), Equals(y, Real(1)))
+        fp = propagate_toplevel(f)
+        self.assertTrue(fp.is_false())
+        self.assertTrue(is_valid(Iff(f, fp)))
+
     def test_aig_examples(self):
         for (f, _, _, logic) in get_example_formulae():
             if self.env.factory.has_solvers(logic=logic):
