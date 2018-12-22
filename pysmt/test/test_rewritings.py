@@ -248,23 +248,25 @@ class TestRewritings(TestCase):
         x = Symbol("x", REAL)
         y = Symbol("y", REAL)
 
-        f = And(LT(Times(x, x), Real(0)), Equals(Real(1), x))
+        f = And(LT(Real(4), Times(x, x)), Equals(Real(1), x))
         fp = propagate_toplevel(f)
         self.assertTrue(fp.is_false())
-        try:
-            ok = is_valid(Iff(f, fp))
-        except SolverReturnedUnknownResultError:
-            ok = not logic.quantifier_free
-        self.assertTrue(ok)
+        if self.env.factory.has_solvers(logic=QF_NRA):
+            try:
+                ok = is_valid(Iff(f, fp))
+            except SolverReturnedUnknownResultError:
+                ok = not logic.quantifier_free
+            self.assertTrue(ok)
         
-        f = And(LT(Times(x, x), Real(0)), Equals(y, x), Equals(y, Real(1)))
+        f = And(LT(Real(4), Times(x, x)), Equals(y, x), Equals(y, Real(1)))
         fp = propagate_toplevel(f)
         self.assertTrue(fp.is_false())
-        try:
-            ok = is_valid(Iff(f, fp))
-        except SolverReturnedUnknownResultError:
-            ok = not logic.quantifier_free
-        self.assertTrue(ok)
+        if self.env.factory.has_solvers(logic=QF_NRA):
+            try:
+                ok = is_valid(Iff(f, fp))
+            except SolverReturnedUnknownResultError:
+                ok = not logic.quantifier_free
+            self.assertTrue(ok)
 
     def test_aig_examples(self):
         for (f, _, _, logic) in get_example_formulae():
