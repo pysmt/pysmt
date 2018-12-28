@@ -112,7 +112,9 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         self.cvc4 = CVC4.SmtEngine(self.em); self.cvc4.thisown=1
         self.options(self)
         self.declarations = set()
-        self.cvc4.setLogic(self.logic_name)
+        # remove extra characters from logic_name
+        logic = self.logic_name.replace("*", "")
+        self.cvc4.setLogic(logic)
 
     def declare_variable(self, var):
         raise NotImplementedError
