@@ -268,6 +268,15 @@ class TestRewritings(TestCase):
                 ok = not logic.quantifier_free
             self.assertTrue(ok)
 
+        f = And(Equals(Real(4), x), Equals(y, x), Equals(y, Real(0)))
+        fp = propagate_toplevel(f)
+        self.assertTrue(fp.is_false())
+        fp = propagate_toplevel(f, preserve_equivalence=False)
+        self.assertTrue(fp.is_false())
+        fp = propagate_toplevel(f, preserve_equivalence=False, do_simplify=False)
+        self.assertTrue(fp.is_false())
+        
+
     def test_aig_examples(self):
         for (f, _, _, logic) in get_example_formulae():
             if self.env.factory.has_solvers(logic=logic):
