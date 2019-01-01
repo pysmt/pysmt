@@ -889,7 +889,17 @@ def propagate_toplevel(formula, env=None, do_simplify=True, preserve_equivalence
                (r.is_symbol() and (l.is_symbol() or l.is_constant())):
                 add_eq(l, r)
 
-    sigma = leader
+    # check and build the mapping
+    sigma = {}
+    for k in leader:
+        v = leader[k]
+        if k.node_id != v.node_id:
+            if k.is_constant() and v.is_constant() and\
+               k.constant_value() != v.constant_value():
+                return mgr.FALSE()
+            else:
+                sigma[k] = v
+
     res = formula.substitute(sigma)
     if preserve_equivalence:
         res = mgr.And(res, mgr.And([mgr.Equals(k, sigma[k]) for k in sigma]))
