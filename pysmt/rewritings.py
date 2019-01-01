@@ -768,6 +768,50 @@ class Ackermannizer(IdentityDagWalker):
 # EOC Ackermannizer
 
 
+class DisjointSet(object):
+
+    def __init__(self):
+        self.leader = {} # maps a member to the group's leader
+        self.group = {} # maps a group leader to the group (which is a set)
+
+    def add(self, a, b):
+        leadera = self.leader.get(a)
+        leaderb = self.leader.get(b)
+        if leadera is not None:
+            if leaderb is not None:
+                if leadera == leaderb:
+                    return # nothing to do
+                groupa = self.group[leadera]
+                groupb = self.group[leaderb]
+                if leaderb.is_constant() or\
+                   (leaderb.node_id() < leadera.node_id() and\
+                    not leadera.is_constant()):
+                    a, leadera, groupa, b, leaderb, groupb = b, leaderb, groupb,\
+                                                             a, leadera, groupa
+                groupa |= groupb
+                del group[leaderb]
+                for k in groupb:
+                    self.leader[k] = leadera
+            else:
+                self.group[leadera].add(b)
+                self.leader[b] = leadera
+        else:
+            if leaderb is not None:
+                self.group[leaderb].add(a)
+                self.leader[a] = leaderb
+            else:
+                if b.is_constant():
+                    a, b = b, a
+                self.leader[a] = self.leader[b] = a
+                self.group[a] = set([a, b])
+
+    def find(self, k):
+        return self.leader[k]
+
+# EOC DisjointSet
+
+
+
 def nnf(formula, environment=None):
     """Converts the given formula in NNF"""
     nnfizer = NNFizer(environment)
@@ -840,45 +884,13 @@ def propagate_toplevel(formula, env=None, do_simplify=True, preserve_equivalence
     1) variable = constant
     2) variable = variable
     """
-    leader = {} # maps a member to the group's leader
-    group = {} # maps a group leader to the group (which is a set)
-
-    def add_eq(a, b):
-        leadera = leader.get(a)
-        leaderb = leader.get(b)
-        if leadera is not None:
-            if leaderb is not None:
-                if leadera == leaderb:
-                    return # nothing to do
-                groupa = group[leadera]
-                groupb = group[leaderb]
-                if leaderb.is_constant() or\
-                   (leaderb.node_id() < leadera.node_id() and\
-                    not leadera.is_constant()):
-                    a, leadera, groupa, b, leaderb, groupb = b, leaderb, groupb,\
-                                                             a, leadera, groupa
-                groupa |= groupb
-                del group[leaderb]
-                for k in groupb:
-                    leader[k] = leadera
-            else:
-                group[leadera].add(b)
-                leader[b] = leadera
-        else:
-            if leaderb is not None:
-                group[leaderb].add(a)
-                leader[a] = leaderb
-            else:
-                if b.is_constant():
-                    a, b = b, a
-                leader[a] = leader[b] = a
-                group[a] = set([a, b])
-
     if env is None:
         import pysmt.environment
         env = pysmt.environment.get_env()
     mgr = env.formula_manager
-
+    disjoint_set = DisjointSet()
+    relevant = set()
+    
     for c in conjunctive_partition(formula):
         if c.is_equals():
             l, r = c.args()
@@ -887,13 +899,16 @@ def propagate_toplevel(formula, env=None, do_simplify=True, preserve_equivalence
                 continue
             if (l.is_symbol() and (r.is_symbol() or r.is_constant())) or\
                (r.is_symbol() and (l.is_symbol() or l.is_constant())):
-                add_eq(l, r)
+                relevant.add(l)
+                relevant.add(r)
+                disjoint_set.add(l, r)
 
     # check and build the mapping
     sigma = {}
-    for k in leader:
-        v = leader[k]
+    for k in relevant:
+        v = disjoint_set.find(k)
         if k.node_id() != v.node_id():
+            # early detection of a conflict
             if k.is_constant() and v.is_constant() and\
                k.constant_value() != v.constant_value():
                 return mgr.FALSE()
