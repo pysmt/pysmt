@@ -853,7 +853,7 @@ def propagate_toplevel(formula, env=None, do_simplify=True, preserve_equivalence
                 groupa = group[leadera]
                 groupb = group[leaderb]
                 if leaderb.is_constant() or\
-                   (leaderb.node_id < leadera.node_id and\
+                   (leaderb.node_id() < leadera.node_id() and\
                     not leadera.is_constant()):
                     a, leadera, groupa, b, leaderb, groupb = b, leaderb, groupb,\
                                                              a, leadera, groupa
@@ -893,7 +893,7 @@ def propagate_toplevel(formula, env=None, do_simplify=True, preserve_equivalence
     sigma = {}
     for k in leader:
         v = leader[k]
-        if k.node_id != v.node_id:
+        if k.node_id() != v.node_id():
             if k.is_constant() and v.is_constant() and\
                k.constant_value() != v.constant_value():
                 return mgr.FALSE()
