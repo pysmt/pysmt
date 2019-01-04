@@ -253,11 +253,7 @@ class CVC4Converter(Converter, DagWalker):
                 v = expr.getConstString()
                 res = self.mgr.String(v.toString())
             elif expr.getType().isArray():
-                const_ = expr.getConstArrayStoreAll()
-                array_type = self._cvc4_type_to_type(const_.getType())
-                base_value = self.back(const_.getExpr())
-                res = self.mgr.Array(array_type.index_type,
-                                     base_value)
+                res  = self.__arrays_back(expr)
             else:
                 raise PysmtTypeError("Unsupported constant type:",
                                      expr.getType().toString())
@@ -265,6 +261,40 @@ class CVC4Converter(Converter, DagWalker):
             raise PysmtTypeError("Unsupported expression:", expr.toString())
 
         return res
+
+    def __arrays_back(self, arr_expr):
+        '''
+        Helper function to take a CVC4 array and make an Array
+        '''
+        assert arr_expr.getType().isArray(), "Expecting a CVC4 array"
+        visit = [arr_expr]
+        visited = set()
+        cache = dict()
+        while visit:
+            expr = visit.pop()
+            if expr not in visited:
+                visit.append(expr)
+                visited.add(expr)
+                for c in expr.getChildren():
+                    visit.append(c)
+            else:
+                if expr.getType().isArray():
+                    if expr.getNumChildren() == 3:
+                        children = expr.getChildren()
+                        cache[expr.getId()] = self.mgr.Store(cache[children[0].getId()],
+                                                             cache[children[1].getId()],
+                                                             cache[children[2].getId()])
+                    else:
+                        const_ = expr.getConstArrayStoreAll()
+                        array_type = self._cvc4_type_to_type(const_.getType())
+                        base_value = self.back(const_.getExpr())
+                        cache[expr.getId()] = self.mgr.Array(array_type.index_type,
+                                                             base_value)
+                else:
+                    cache[expr.getId()] = self.back(expr)
+
+        return cache[arr_expr.getId()]
+
 
     @catch_conversion_error
     def convert(self, formula):
