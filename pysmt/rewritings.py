@@ -769,13 +769,24 @@ class Ackermannizer(IdentityDagWalker):
 
 
 class DisjointSet(object):
+    """A simple implementation of the DisjointSet data-structure.
+    
+    It supports also ranking-based DisjointSet and it can be enabled
+    by: 
+
+    1. defining a binary compare function for the  to be stored in
+    a DisjointSet. 
+
+    2. Set the compare function while creating the DisjointSet object.
+    """
 
     def __init__(self, compare_fun=None):
         self.leader = {} # maps a member to the group's leader
         self.group = {} # maps a group leader to the group (which is a set)
-        self.comp = compare_fun # comparison function used for ranking
+        self.comp = compare_fun # a binary comparison function used for ranking
 
     def add(self, a, b):
+        """Add the pair (a,b) in the set"""
         leadera = self.leader.get(a)
         leaderb = self.leader.get(b)
         if leadera is not None:
@@ -805,6 +816,7 @@ class DisjointSet(object):
                 self.group[a] = set([a, b])
 
     def find(self, k):
+        """Find the root of k in the set"""
         return self.leader[k]
 
 # EOC DisjointSet
