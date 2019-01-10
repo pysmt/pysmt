@@ -770,9 +770,10 @@ class Ackermannizer(IdentityDagWalker):
 
 class DisjointSet(object):
 
-    def __init__(self):
+    def __init__(self, compare_fun=None):
         self.leader = {} # maps a member to the group's leader
         self.group = {} # maps a group leader to the group (which is a set)
+        self.comp = compare_fun # comparison function used for ranking
 
     def add(self, a, b):
         leadera = self.leader.get(a)
@@ -783,9 +784,7 @@ class DisjointSet(object):
                     return # nothing to do
                 groupa = self.group[leadera]
                 groupb = self.group[leaderb]
-                if leaderb.is_constant() or\
-                   (leaderb.node_id() < leadera.node_id() and\
-                    not leadera.is_constant()):
+                if self.comp is not None and self.comp(leadera, leaderb) > 0:
                     a, leadera, groupa, b, leaderb, groupb = b, leaderb, groupb,\
                                                              a, leadera, groupa
                 groupa |= groupb
@@ -800,7 +799,7 @@ class DisjointSet(object):
                 self.group[leaderb].add(a)
                 self.leader[a] = leaderb
             else:
-                if b.is_constant():
+                if self.comp is not None and self.comp(a, b) > 0:
                     a, b = b, a
                 self.leader[a] = self.leader[b] = a
                 self.group[a] = set([a, b])
@@ -888,7 +887,21 @@ def propagate_toplevel(formula, env=None, do_simplify=True, preserve_equivalence
         import pysmt.environment
         env = pysmt.environment.get_env()
     mgr = env.formula_manager
-    disjoint_set = DisjointSet()
+
+    # comparison function for ranking
+    def compare(a, b):
+        if a.node_id() == b.node_id():
+            return 0
+        if a.is_constant() and b.is_constant():
+            return (a.constant_value() > b.constant_value()) - (a.constant_value()\
+                                                                < b.constant_value())
+        if a.is_constant():
+            return -1
+        if b.is_constant():
+            return 1
+        return (a.node_id() > b.node_id()) - (a.node_id() < b.node_id())
+
+    disjoint_set = DisjointSet(compare_fun=compare)
     relevant = set()
     
     for c in conjunctive_partition(formula):
