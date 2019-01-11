@@ -275,7 +275,10 @@ class TestRewritings(TestCase):
         self.assertTrue(fp.is_false())
         fp = propagate_toplevel(f, preserve_equivalence=False, do_simplify=False)
         self.assertTrue(fp.is_false())
-        
+
+        f = Equals(Real(4), Real(5))
+        fp = propagate_toplevel(f, do_simplify=False)
+        self.assertTrue(fp.is_false())
 
     def test_aig_examples(self):
         for (f, _, _, logic) in get_example_formulae():

@@ -891,9 +891,10 @@ def disjunctive_partition(formula):
 
 def propagate_toplevel(formula, env=None, do_simplify=True, preserve_equivalence=True):
     """ Propagates the toplevel definitions and returns an equivalent formula.
-    It considers two kinds of definitions:
+    It considers three kinds of definitions:
     1) variable = constant
     2) variable = variable
+    3) constant = constant
     """
     if env is None:
         import pysmt.environment
@@ -921,8 +922,8 @@ def propagate_toplevel(formula, env=None, do_simplify=True, preserve_equivalence
             if l.is_array_value() or r.is_array_value():
                 # skipping constant arrays
                 continue
-            if (l.is_symbol() and (r.is_symbol() or r.is_constant())) or\
-               (r.is_symbol() and (l.is_symbol() or l.is_constant())):
+            if (l.is_symbol() or l.is_constant()) and\
+               (r.is_symbol() or r.is_constant()):
                 relevant.add(l)
                 relevant.add(r)
                 disjoint_set.add(l, r)
