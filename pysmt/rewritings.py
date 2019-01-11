@@ -905,13 +905,12 @@ def propagate_toplevel(formula, env=None, do_simplify=True, preserve_equivalence
         if a.node_id() == b.node_id():
             return 0
         if a.is_constant() and b.is_constant():
-            return (a.constant_value() > b.constant_value()) - (a.constant_value()\
-                                                                < b.constant_value())
+            return a.constant_value() - b.constant_value()
         if a.is_constant():
             return -1
         if b.is_constant():
             return 1
-        return (a.node_id() > b.node_id()) - (a.node_id() < b.node_id())
+        return a.node_id() - b.node_id()
 
     disjoint_set = DisjointSet(compare_fun=compare)
     relevant = set()
