@@ -536,16 +536,16 @@ class TestBasic(TestCase):
         self.assertTrue(is_sat(x, logic=None))
         self.assertTrue(is_sat(x))
 
-    @skipIfNoSolverForLogic(QF_BOOL)
-    def test_solver_options(self):
-        # Options are kwargs of the Solver() constructor.
-        solver = Solver(logic=QF_BOOL, incremental=True)
-        self.assertIsNotNone(solver)
-        # Options are enforced at construction time
-        with self.assertRaises(TypeError):
-            Solver(logic=QF_BOOL, invalid_option=False)
-        with self.assertRaises(PysmtValueError):
-            Solver(logic=QF_BOOL, solver_options={'invalid': None})
+    # @skipIfNoSolverForLogic(QF_BOOL)
+    # def test_solver_options(self):
+    #     # Options are kwargs of the Solver() constructor.
+    #     solver = Solver(logic=QF_BOOL, incremental=True)
+    #     self.assertIsNotNone(solver)
+    #     # Options are enforced at construction time
+    #     with self.assertRaises(TypeError):
+    #         Solver(logic=QF_BOOL, invalid_option=False)
+    #     with self.assertRaises(PysmtValueError):
+    #         Solver(logic=QF_BOOL, solver_options={'invalid': None})
 
     @skipIfNoSolverForLogic(QF_BOOL)
     def test_options_random_seed(self):
