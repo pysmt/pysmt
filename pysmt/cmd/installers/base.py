@@ -23,6 +23,7 @@ import subprocess
 
 from contextlib import contextmanager
 from distutils import spawn
+from distutils.dist import Distribution
 
 import six.moves
 from six.moves import xrange
@@ -307,3 +308,70 @@ class SolverInstaller(object):
             if command is not None:
                 break
         return command
+
+
+def package_install_site(name='', user=False, plat_specific=False):
+    """pip-inspired, distutils-based method for fetching the
+    default install location (site-packages path).
+
+    Returns virtual environment or system site-packages, unless
+    `user=True` in which case returns user-site (typ. under `~/.local/
+    on linux).
+
+    If there's a distinction (on a particular system) between platform
+    specific and pure python package locations, set `plat_specific=True`
+    to retrieve the former.
+    """
+
+    dist = Distribution({'name': name})
+    dist.parse_config_files()
+    inst = dist.get_command_obj('install', create=True)
+    # NOTE: specifying user=True will create user-site
+    if user:
+        inst.user = user
+        inst.prefix = ""
+    inst.finalize_options()
+
+    # platform-specific site vs. purelib (platform-independent) site
+    if plat_specific:
+        loc = inst.install_platlib
+    else:
+        loc = inst.install_purelib
+
+    # install_lib specified in setup.cfg has highest precedence
+    if 'install_lib' in dist.get_option_dict('install'):
+        loc = inst.install_lib
+
+    return loc
+
+
+def running_under_virtualenv():
+    """
+    Return True if we're running inside a virtualenv, False otherwise.
+
+    Note: copied from pip.
+    """
+
+    if hasattr(sys, 'real_prefix'):
+        return True
+    elif sys.prefix != getattr(sys, "base_prefix", sys.prefix):
+        return True
+
+    return False
+
+
+def solver_install_site(plat_specific=False):
+    """Determine solver's install site similarly to pip behaviour on Debian."""
+
+    # install to local user-site, unless in virtualenv or running as root
+    default_user = True
+    if running_under_virtualenv():
+        default_user = False
+    try:
+        if os.geteuid() == 0:
+            default_user = False
+    except:
+        # getuid/geteuid not supported on windows
+        pass
+
+    return package_install_site(user=default_user, plat_specific=plat_specific)

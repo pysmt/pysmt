@@ -50,23 +50,25 @@ then
     $PIP_INSTALL gmpy2;
 fi
 
-# Adding Python 3.6 library path to GCC search
-if [ "${TRAVIS_PYTHON_VERSION}" == "3.6" ]; then
-    export LIBRARY_PATH="/opt/python/3.6.3/lib:${LIBRARY_PATH}"
-    export CPATH="/opt/python/3.6.3/include/python3.6m:${CPATH}"
+# Adding Python 3.7 library path to GCC search
+if [ "${TRAVIS_PYTHON_VERSION}" == "3.7" ]; then
+    export LIBRARY_PATH="/opt/python/3.7.1/lib:${LIBRARY_PATH}"
+    export CPATH="/opt/python/3.7.1/include/python3.7m:${CPATH}"
 fi
 
 
 #
 # Install Solvers
 #
-PYSMT_SOLVER_FOLDER="${PYSMT_SOLVER}_${TRAVIS_OS_NAME}"
-PYSMT_SOLVER_FOLDER="${PYSMT_SOLVER_FOLDER//,/$'_'}"
-export BINDINGS_FOLDER=${HOME}/python_bindings/${PYSMT_SOLVER_FOLDER}
-
-mkdir -p ${BINDINGS_FOLDER}
-python install.py --confirm-agreement --bindings-path ${BINDINGS_FOLDER}
-eval `python install.py --env --bindings-path ${BINDINGS_FOLDER}`
+if [ "${PYSMT_CUSTOM_BINDINGS_PATH}" == "TRUE" ]; then
+    PYSMT_SOLVER_FOLDER="${PYSMT_SOLVER}_${TRAVIS_OS_NAME}"
+    PYSMT_SOLVER_FOLDER="${PYSMT_SOLVER_FOLDER//,/$'_'}"
+    BINDINGS_FOLDER="${HOME}/python_bindings/${PYSMT_SOLVER_FOLDER}"
+    python install.py --confirm-agreement --bindings-path "${BINDINGS_FOLDER}"
+    eval "$(python install.py --env --bindings-path "${BINDINGS_FOLDER}")"
+else
+    python install.py --confirm-agreement
+fi
 
 if [ "${PYSMT_SOLVER}" == "all" ] || [ "${PYSMT_SOLVER}" == *"z3_wrap"* ]; then
     python install.py --z3 --conf --force;

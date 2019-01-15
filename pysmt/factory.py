@@ -92,7 +92,6 @@ class Factory(object):
         self._default_qe_logic = DEFAULT_QE_LOGIC
         self._default_interpolation_logic = DEFAULT_INTERPOLATION_LOGIC
         self._default_optimizer_logic = DEFAULT_OPTIMIZER_LOGIC
-
         self._get_available_solvers()
         self._get_available_qe()
         self._get_available_interpolators()

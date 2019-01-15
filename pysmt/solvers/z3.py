@@ -289,6 +289,7 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
         return res
 
     def _exit(self):
+        del self.converter
         del self.z3
 
 
@@ -385,7 +386,7 @@ class Z3Converter(Converter, DagWalker):
         try:
             bvsort = self._z3BitVecSorts[width]
         except KeyError:
-            bvsort = z3.BitVecSort(width)
+            bvsort = z3.BitVecSort(width, self.ctx)
             self._z3BitVecSorts[width] = bvsort
         return bvsort
 
@@ -406,7 +407,7 @@ class Z3Converter(Converter, DagWalker):
         try:
             return self._z3Sorts[name]
         except KeyError:
-            sort = z3.DeclareSort(name)
+            sort = z3.DeclareSort(name, self.ctx)
             self._z3Sorts[name] = sort
         return sort
 
@@ -919,8 +920,12 @@ class Z3Converter(Converter, DagWalker):
 
     def __del__(self):
         # Cleaning-up Z3Converter requires dec-ref'ing the terms in the cache
-        for t in self.memoization.values():
-            z3.Z3_dec_ref(self.ctx.ref(), t)
+        if self.ctx.ref():
+            # Check that there is still a context object
+            # This might not be the case if we are using the global context
+            # and the interpreter is shutting down
+            for t in self.memoization.values():
+                z3.Z3_dec_ref(self.ctx.ref(), t)
 
 # EOC Z3Converter
 
