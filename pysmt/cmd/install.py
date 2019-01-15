@@ -46,7 +46,7 @@ INSTALLERS = [
     Installer(PicoSATInstaller, "965",
               {"pypicosat_minor_version" : "1708010052"}),
     Installer(CuddInstaller,    "2.0.3",
-              {"git_version" : "75fe055c2a736a3ac3e971c1ade108b815edc96c"})]
+              {"git_version" : "ecb03d6d231273343178f566cc4d7258dcce52b4"})]
 
 
 def get_requested_solvers():
