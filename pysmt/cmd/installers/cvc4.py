@@ -56,7 +56,8 @@ class CVC4Installer(SolverInstaller):
         # Configure and build CVC4
         config_cmd = "./configure --prefix={bin_path} \
                                   --enable-language-bindings=python \
-                                  --with-antlr-dir={dir_path}/antlr-3.4 ANTLR={dir_path}/antlr-3.4/bin/antlr3"
+                                  --with-antlr-dir={dir_path}/antlr-3.4 ANTLR={dir_path}/antlr-3.4/bin/antlr3 \
+                                  --disable-dependency-tracking"
         config_cmd = config_cmd.format(bin_path=self.bin_path,
                                        dir_path=self.extract_path)
 
