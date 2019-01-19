@@ -75,7 +75,7 @@ class CVC4Installer(SolverInstaller):
 
 
         # Fix the paths of the bindings
-        SolverInstaller.mv(os.path.join(self.bin_path, "lib/pyshared/CVC4.so.4.0.0"),
+        SolverInstaller.mv(os.path.join(self.bin_path, "lib/pyshared/CVC4.4.so"),
                            os.path.join(self.bin_path, "lib/pyshared/_CVC4.so"))
 
     def get_installed_version(self):
