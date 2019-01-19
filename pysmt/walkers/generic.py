@@ -17,7 +17,7 @@
 #
 from functools import partial
 from six import with_metaclass
-import collections
+import collections.abc
 
 import pysmt.operators as op
 import pysmt.exceptions
@@ -40,7 +40,7 @@ class handles(object):
 
     """
     def __init__(self, *nodetypes):
-        if len(nodetypes) == 1 and isinstance(nodetypes[0], collections.Iterable):
+        if len(nodetypes) == 1 and isinstance(nodetypes[0], collections.abc.Iterable):
             nodetypes = nodetypes[0]
         self.nodetypes = list(nodetypes)
 

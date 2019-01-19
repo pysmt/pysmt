@@ -47,7 +47,7 @@ class CVC4Installer(SolverInstaller):
         SolverInstaller.run("bash autogen.sh", directory=self.extract_path)
 
         # Fix url of ANTLR
-        SolverInstaller.run("sed -i s/http/https/g ./contrib/get-antlr-3.4", directory=self.extract_path)
+        SolverInstaller.run("sed -i .bak s/http/https/g ./contrib/get-antlr-3.4", directory=self.extract_path)
 
         # Build ANTLR
         SolverInstaller.run("bash get-antlr-3.4",
@@ -56,7 +56,8 @@ class CVC4Installer(SolverInstaller):
         # Configure and build CVC4
         config_cmd = "./configure --prefix={bin_path} \
                                   --enable-language-bindings=python \
-                                  --with-antlr-dir={dir_path}/antlr-3.4 ANTLR={dir_path}/antlr-3.4/bin/antlr3"
+                                  --with-antlr-dir={dir_path}/antlr-3.4 ANTLR={dir_path}/antlr-3.4/bin/antlr3 \
+                                  --disable-dependency-tracking"
         config_cmd = config_cmd.format(bin_path=self.bin_path,
                                        dir_path=self.extract_path)
 
@@ -74,7 +75,7 @@ class CVC4Installer(SolverInstaller):
 
 
         # Fix the paths of the bindings
-        SolverInstaller.mv(os.path.join(self.bin_path, "lib/pyshared/CVC4.so.4.0.0"),
+        SolverInstaller.mv(os.path.join(self.bin_path, "lib/pyshared/CVC4.4.so"),
                            os.path.join(self.bin_path, "lib/pyshared/_CVC4.so"))
 
     def get_installed_version(self):
