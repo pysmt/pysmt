@@ -768,6 +768,61 @@ class Ackermannizer(IdentityDagWalker):
 # EOC Ackermannizer
 
 
+class DisjointSet(object):
+    """A simple implementation of the DisjointSet data-structure.
+    
+    It supports also ranking-based DisjointSet and it can be enabled
+    by: 
+
+    1. defining a binary compare function for the  to be stored in
+    a DisjointSet. 
+
+    2. Set the compare function while creating the DisjointSet object.
+    """
+
+    def __init__(self, compare_fun=None):
+        self.leader = {} # maps a member to the group's leader
+        self.group = {} # maps a group leader to the group (which is a set)
+        self.comp = compare_fun # a binary comparison function used for ranking
+
+    def add(self, a, b):
+        """Add the pair (a,b) in the set"""
+        leadera = self.leader.get(a)
+        leaderb = self.leader.get(b)
+        if leadera is not None:
+            if leaderb is not None:
+                if leadera == leaderb:
+                    return # nothing to do
+                groupa = self.group[leadera]
+                groupb = self.group[leaderb]
+                if self.comp is not None and self.comp(leadera, leaderb) > 0:
+                    a, leadera, groupa, b, leaderb, groupb = b, leaderb, groupb,\
+                                                             a, leadera, groupa
+                groupa |= groupb
+                del group[leaderb]
+                for k in groupb:
+                    self.leader[k] = leadera
+            else:
+                self.group[leadera].add(b)
+                self.leader[b] = leadera
+        else:
+            if leaderb is not None:
+                self.group[leaderb].add(a)
+                self.leader[a] = leaderb
+            else:
+                if self.comp is not None and self.comp(a, b) > 0:
+                    a, b = b, a
+                self.leader[a] = self.leader[b] = a
+                self.group[a] = set([a, b])
+
+    def find(self, k):
+        """Find the root of k in the set"""
+        return self.leader[k]
+
+# EOC DisjointSet
+
+
+
 def nnf(formula, environment=None):
     """Converts the given formula in NNF"""
     nnfizer = NNFizer(environment)
@@ -832,3 +887,60 @@ def disjunctive_partition(formula):
                 to_process += cur.args()
             else:
                 yield cur
+
+
+def propagate_toplevel(formula, env=None, do_simplify=True, preserve_equivalence=True):
+    """ Propagates the toplevel definitions and returns an equivalent formula.
+    It considers three kinds of definitions:
+    1) variable = constant
+    2) variable = variable
+    3) constant = constant
+    """
+    if env is None:
+        import pysmt.environment
+        env = pysmt.environment.get_env()
+    mgr = env.formula_manager
+
+    # comparison function for ranking
+    def compare(a, b):
+        if a.node_id() == b.node_id():
+            return 0
+        if a.is_constant() and b.is_constant():
+            return a.constant_value() - b.constant_value()
+        if a.is_constant():
+            return -1
+        if b.is_constant():
+            return 1
+        return a.node_id() - b.node_id()
+
+    disjoint_set = DisjointSet(compare_fun=compare)
+    relevant = set()
+    
+    for c in conjunctive_partition(formula):
+        if c.is_equals():
+            l, r = c.args()
+            if l.is_array_value() or r.is_array_value():
+                # skipping constant arrays
+                continue
+            if (l.is_symbol() or l.is_constant()) and\
+               (r.is_symbol() or r.is_constant()):
+                relevant.add(l)
+                relevant.add(r)
+                disjoint_set.add(l, r)
+
+    # check and build the mapping
+    sigma = {}
+    for k in relevant:
+        v = disjoint_set.find(k)
+        if k.node_id() != v.node_id():
+            # early detection of a conflict
+            if k.is_constant() and v.is_constant() and\
+               k.constant_value() != v.constant_value():
+                return mgr.FALSE()
+            else:
+                sigma[k] = v
+
+    res = formula.substitute(sigma)
+    if preserve_equivalence:
+        res = mgr.And(res, mgr.And([mgr.Equals(k, sigma[k]) for k in sigma]))
+    return res.simplify() if do_simplify else res

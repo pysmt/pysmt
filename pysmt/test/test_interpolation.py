@@ -30,17 +30,9 @@ class TestInterpolation(TestCase):
         with self.assertRaises(NoSolverAvailableError):
             Interpolator(name="nonexistent")
 
-    @skipIfSolverNotAvailable('z3')
-    def test_binary_interpolant_z3(self):
-        self._test_binary_interpolant('z3')
-
     @skipIfSolverNotAvailable('msat')
     def test_binary_interpolant_msat(self):
         self._test_binary_interpolant('msat')
-
-    @skipIfSolverNotAvailable('z3')
-    def test_sequence_interpolant_z3(self):
-        self._test_sequence_interpolant('z3')
 
     @skipIfSolverNotAvailable('msat')
     def test_sequence_interpolant_msat(self):

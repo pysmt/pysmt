@@ -18,10 +18,11 @@
 from pysmt.shortcuts import (And, Iff, Or, Symbol, Implies, Not,
                              Exists, ForAll,
                              Times, Plus, Minus, Equals, Real,
+                             LT,
                              is_valid, is_sat, Function)
 from pysmt.test import TestCase, skipIfNoSolverForLogic, main
 from pysmt.rewritings import prenex_normal_form, nnf, conjunctive_partition, aig
-from pysmt.rewritings import disjunctive_partition
+from pysmt.rewritings import disjunctive_partition, propagate_toplevel
 from pysmt.rewritings import TimesDistributor, Ackermannizer
 from pysmt.test.examples import get_example_formulae
 from pysmt.exceptions import SolverReturnedUnknownResultError
@@ -232,6 +233,52 @@ class TestRewritings(TestCase):
                 except SolverReturnedUnknownResultError:
                     ok = not logic.quantifier_free
                 self.assertTrue(ok)
+
+    def test_propagate_toplevel_examples(self):
+       for (f, _, _, logic) in get_example_formulae():
+            if self.env.factory.has_solvers(logic=logic):
+                rwf = propagate_toplevel(f)
+                try:
+                    ok = is_valid(Iff(f, rwf), logic=logic)
+                except SolverReturnedUnknownResultError:
+                    ok = not logic.quantifier_free
+                self.assertTrue(ok)
+
+    def test_propagate_toplevel(self):
+        x = Symbol("x", REAL)
+        y = Symbol("y", REAL)
+
+        f = And(LT(Real(4), Times(x, x)), Equals(Real(1), x))
+        fp = propagate_toplevel(f)
+        self.assertTrue(fp.is_false())
+        if self.env.factory.has_solvers(logic=QF_NRA):
+            try:
+                ok = is_valid(Iff(f, fp))
+            except SolverReturnedUnknownResultError:
+                ok = not logic.quantifier_free
+            self.assertTrue(ok)
+        
+        f = And(LT(Real(4), Times(x, x)), Equals(y, x), Equals(y, Real(1)))
+        fp = propagate_toplevel(f)
+        self.assertTrue(fp.is_false())
+        if self.env.factory.has_solvers(logic=QF_NRA):
+            try:
+                ok = is_valid(Iff(f, fp))
+            except SolverReturnedUnknownResultError:
+                ok = not logic.quantifier_free
+            self.assertTrue(ok)
+
+        f = And(Equals(Real(4), x), Equals(y, x), Equals(y, Real(0)))
+        fp = propagate_toplevel(f)
+        self.assertTrue(fp.is_false())
+        fp = propagate_toplevel(f, preserve_equivalence=False)
+        self.assertTrue(fp.is_false())
+        fp = propagate_toplevel(f, preserve_equivalence=False, do_simplify=False)
+        self.assertTrue(fp.is_false())
+
+        f = Equals(Real(4), Real(5))
+        fp = propagate_toplevel(f, do_simplify=False)
+        self.assertTrue(fp.is_false())
 
     def test_aig_examples(self):
         for (f, _, _, logic) in get_example_formulae():
