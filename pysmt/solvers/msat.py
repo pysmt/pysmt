@@ -19,7 +19,8 @@ from warnings import warn
 from six.moves import xrange
 
 from pysmt.exceptions import SolverAPINotFound
-from pysmt.constants import Fraction, is_pysmt_fraction, is_pysmt_integer
+from pysmt.constants import (Fraction, is_pysmt_fraction, is_pysmt_integer,
+                             to_python_integer)
 
 try:
     import mathsat
@@ -985,7 +986,7 @@ class MSatConverter(Converter, DagWalker):
         return res
 
     def walk_pow(self, formula, args, **kwargs):
-        n = formula.args()[1].constant_value()
+        n = to_python_integer(formula.args()[1].constant_value())
         if n == 0:
             return mathsat.msat_make_number(self.msat_env(), "1")
         is_neg = True if n < 0 else False
