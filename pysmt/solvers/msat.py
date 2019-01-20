@@ -984,6 +984,20 @@ class MSatConverter(Converter, DagWalker):
             res = mathsat.msat_make_times(self.msat_env(), res, x)
         return res
 
+    def walk_pow(self, formula, args, **kwargs):
+        n = formula.args()[1].constant_value()
+        if n == 0:
+            return mathsat.msat_make_number(self.msat_env(), "1")
+        is_neg = True if n < 0 else False
+        n = abs(n)
+        res = args[0]
+        for i in range(2, n):
+            res = mathsat.msat_make_times(self.msat_env(), res, args[0])
+        if is_neg:
+            one = mathsat.msat_make_number(self.msat_env(), "1")
+            res = mathsat.msat_make_divide(self.msat_env(), one, res)
+        return res
+
     def walk_div(self, formula, args, **kwargs):
         return mathsat.msat_make_divide(self.msat_env(), args[0], args[1])
 
