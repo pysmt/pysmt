@@ -1052,7 +1052,7 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
             try:
                 self.converter.back(opt_value)
                 model = Z3Model(self.environment, self.z3.model())
-                return model
+                return model, model.get_value(cost_function)
             except PysmtInfinityError:
                 raise PysmtUnboundedOptimizationError("The optimal value is unbounded")
             except PysmtInfinitesimalError:
@@ -1070,7 +1070,7 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
 
         while self.z3.check() == z3.sat:
             model = Z3Model(self.environment, self.z3.model())
-            yield model
+            yield model, [model.get_value(x) for x in cost_functions]
 
     def can_diverge_for_unbounded_cases(self):
         return False
