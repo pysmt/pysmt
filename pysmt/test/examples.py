@@ -877,7 +877,7 @@ def get_full_example_formulae(environment=None):
                     logic=pysmt.logics.QF_ABV
                 ),
 
-            Example(hr="(((r / s) = (r * s)) & (s != 0))",
+            Example(hr="(((r / s) = (r * s)) & (! (s = 0.0)))",
                     expr=And(Equals(Div(r, s), Times(r,s)),
                              NotEquals(s, Real(0))),
                     is_valid=False,
