@@ -471,9 +471,7 @@ class Factory(object):
 
     def set_optimizer_preference_list(self, preference_list):
         """Defines the order in which to pick the optimizers."""
-        assert preference_list is not None
-        assert len(preference_list) > 0
-        self.optimizer_preference_list = preference_list
+        self.set_preference_list('Optimizer', preference_list)
 
 
     def _filter_solvers(self, solver_list, logic=None):
