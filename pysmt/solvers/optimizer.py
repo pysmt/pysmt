@@ -19,16 +19,16 @@
 from pysmt.solvers.solver import Solver
 from pysmt.exceptions import PysmtValueError
 
-import time
-
 class Optimizer(Solver):
     """
     Interface for the optimization
     """
 
     def optimize(self, cost_function, **kwargs):
-        """Returns a model object that minimizes the value of `cost_function`
-        while satisfying all the formulae asserted in the optimizer.
+        """Returns a pair `(model, cost)` where `model` is an object that
+        minimizes the value of `cost_function` while satisfying all
+        the formulae asserted in the optimizer, while `cost` is the
+        objective function value for the model.
 
         `cost_function` must be a term with integer, real or
         bit-vector type whose value has to be minimized
@@ -38,6 +38,7 @@ class Optimizer(Solver):
         or negative infinite or if there is no optimum value because
         one can move arbitrarily close to the optimum without reching
         it (e.g. "x > 5" has no minimum for x, only an infimum)
+
         """
         raise NotImplementedError
 
@@ -46,6 +47,11 @@ class Optimizer(Solver):
         """This function is a generator returning *all* the pareto-optimal
         solutions for the problem of minimizing the `cost_functions`
         keeping the formulae asserted in this optimizer satisfied.
+
+        The solutions are returned as pairs `(model, costs)` where
+        model is the pareto-optimal assignment and costs is the list
+        of costs, one for each optimization function in
+        `cost_functions`.
 
         `cost_functions` must be a list of terms with integer, real or
         bit-vector types whose values have to be minimized
@@ -67,8 +73,8 @@ class Optimizer(Solver):
         raise NotImplementedError
 
     def _comparation_functions(self, objective_formula):
-        """Internal utility function to get the proper LT and LE function for
-        the given objective formula
+        """Internal utility function to get the proper cast, LT and LE
+        function for the given objective formula
         """
         otype = self.environment.stc.get_type(objective_formula)
         mgr = self.environment.formula_manager
@@ -183,7 +189,7 @@ class ExternalOptimizerMixin(Optimizer):
                 else:
                     raise PysmtValueError("Unknown optimization strategy '%s'" % strategy)
         self._cleanup(client_data)
-        return last_model
+        return last_model, cast(ub)
 
     def pareto_optimize(self, cost_functions):
         _, lts, les = zip(*(self._comparation_functions(x) for x in cost_functions))
@@ -207,7 +213,7 @@ class ExternalOptimizerMixin(Optimizer):
                         costs_so_far.append(self.get_value(cost_functions[i]))
             self._pareto_cleanup(client_data)
             if last_model is not None:
-                yield last_model
+                yield last_model, costs_so_far
                 self._pareto_block_model(client_data, cost_functions,
                                          last_model, lts, les)
             else:

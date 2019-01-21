@@ -1389,7 +1389,8 @@ if hasattr(mathsat, "msat_objective"):
                     check = mathsat.msat_set_model(self.msat_env(), msat_obj)
                     if check != 0:
                         raise ValueError()
-                    return self.get_model()
+                    model = self.get_model()
+                    return model, model.get_value(cost_function)
 
 
         def pareto_optimize(self, cost_functions):
