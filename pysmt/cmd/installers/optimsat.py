@@ -59,7 +59,7 @@ class OptiMSatInstaller(SolverInstaller):
         # Run setup.py to compile the bindings
         SolverInstaller.mv(os.path.join(self.python_bindings_dir, 'mathsat_python_wrap.c'),
                            os.path.join(self.python_bindings_dir, 'mathsat_python_wrap.cpp'))
-        SolverInstaller.run_python("./setup.py build", self.python_bindings_dir)
+        SolverInstaller.run_python("./setup.py build_ext -R $ORIGIN", self.python_bindings_dir)
 
 
     def move(self):
