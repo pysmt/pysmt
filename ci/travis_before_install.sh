@@ -65,6 +65,6 @@ python ${DIR}/check_python_version.py "${TRAVIS_PYTHON_VERSION}"
 # Install latest version of SWIG
 git clone https://github.com/swig/swig.git
 cd swig
-git checkout rel-3.0.10
+git checkout rel-3.0.12
 ./autogen.sh && ./configure && make
 sudo make install
