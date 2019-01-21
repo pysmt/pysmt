@@ -216,8 +216,10 @@ class SolverInstaller(object):
         stderr = None
         if suppress_stderr:
             stderr = open(os.devnull, 'w')
+        if isinstance(program, str):
+            program = program.split()
         if get_output:
-            output = subprocess.check_output(program.split(),
+            output = subprocess.check_output(program,
                                              env=environment,
                                              cwd=directory,
                                              stderr=stderr)
@@ -225,7 +227,7 @@ class SolverInstaller(object):
                 stderr.close()
             return output.decode("ascii")
         else:
-            subprocess.check_call(program.split(), env=environment,
+            subprocess.check_call(program, env=environment,
                                   cwd=directory, stderr=stderr)
             if suppress_stderr:
                 stderr.close()

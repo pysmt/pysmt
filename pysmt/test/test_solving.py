@@ -542,6 +542,11 @@ class TestBasic(TestCase):
         solver = Solver(logic=QF_BOOL, incremental=True)
         self.assertIsNotNone(solver)
         # Options are enforced at construction time
+        if type(solver).__name__ == 'CVC4Solver':
+            # We skip the rest of the test on CVC4 1.7 because its
+            # python wrapper crashes if an unknown option is provided.
+            # See: https://github.com/CVC4/CVC4/issues/2810
+            return
         with self.assertRaises(TypeError):
             Solver(logic=QF_BOOL, invalid_option=False)
         with self.assertRaises(PysmtValueError):
