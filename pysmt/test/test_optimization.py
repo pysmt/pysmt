@@ -23,7 +23,6 @@ from pysmt.shortcuts import And, Plus, Minus, get_env
 from pysmt.logics import QF_LIA, QF_LRA
 
 from pysmt.exceptions import PysmtUnboundedOptimizationError
-from pysmt.solvers.optimizer import SUAOptimizerMixin, IncrementalOptimizerMixin
 
 class TestOptimization(TestCase):
 
