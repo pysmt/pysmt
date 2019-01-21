@@ -69,7 +69,9 @@ def check_installed(required_solvers, install_dir, bindings_dir, mirror_link):
     """Checks which solvers are visible to pySMT."""
 
     # Check which solvers are accessible from the Factory
-    pypath_solvers = get_env().factory.all_solvers()
+    pypath_solvers = list(get_env().factory.all_solvers())
+    if 'optimsat' in get_env().factory.all_optimizers():
+        pypath_solvers.append('optimsat')
 
     global_solvers_status = []
     print("Installed Solvers:")
