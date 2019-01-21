@@ -43,7 +43,7 @@ DEFAULT_SOLVER_PREFERENCE_LIST = ['msat', 'z3', 'cvc4', 'yices', 'btor',
                                   'picosat', 'bdd']
 DEFAULT_QELIM_PREFERENCE_LIST = ['z3', 'msat_fm', 'msat_lw', 'bdd',
                                  'shannon', 'selfsub']
-DEFAULT_INTERPOLATION_PREFERENCE_LIST = ['msat', 'z3']
+DEFAULT_INTERPOLATION_PREFERENCE_LIST = ['msat']
 DEFAULT_LOGIC = QF_UFLIRA
 DEFAULT_QE_LOGIC = LRA
 DEFAULT_INTERPOLATION_LOGIC = QF_UFLRA
@@ -308,12 +308,6 @@ class Factory(object):
 
     def _get_available_interpolators(self):
         self._all_interpolators = {}
-
-        try:
-            from pysmt.solvers.z3 import Z3Interpolator
-            self._all_interpolators['z3'] = Z3Interpolator
-        except SolverAPINotFound:
-            pass
 
         try:
             from pysmt.solvers.msat import MSatInterpolator

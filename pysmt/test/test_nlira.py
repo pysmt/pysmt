@@ -90,10 +90,11 @@ class TestNonLinear(TestCase):
         # f = Equals(Times(Int(4), Pow(x, Int(-1))), Int(2))
         # self.assertTrue(is_sat(f, solver_name="z3"))
 
-        f = Equals(Div(Int(4), x), Int(2))
-        self.assertTrue(is_sat(f, solver_name="z3"))
+        # f = Equals(Div(Int(4), x), Int(2))
+        # self.assertTrue(is_sat(f, solver_name="z3"))
+
         f = Equals(Times(x, x), Int(16))
-        self.assertTrue(is_sat(f))
+        self.assertTrue(is_sat(f, solver_name="z3"))
 
     @skipIfSolverNotAvailable("z3")
     def test_div_pow(self):

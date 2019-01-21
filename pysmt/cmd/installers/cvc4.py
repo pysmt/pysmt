@@ -34,48 +34,50 @@ class CVC4Installer(SolverInstaller):
                                  native_link=native_link,
                                  mirror_link=mirror_link)
         self.git_version = git_version
-        self.bin_path = os.path.join(self.bindings_dir, "CVC4_bin")
+        self.build_path = os.path.join(self.extract_path, "build")
+        self.bin_path = os.path.join(self.build_path, "src", "bindings", "python")
 
     def move(self):
-        SolverInstaller.mv(os.path.join(self.bin_path, "share/pyshared/CVC4.py"),
-                           self.bindings_dir)
-        SolverInstaller.mv(os.path.join(self.bin_path, "lib/pyshared/_CVC4.so"),
-                           self.bindings_dir)
+        CVC4_py = os.path.join(self.bin_path, "CVC4.py")
+        CVC4_so = os.path.join(self.bin_path, "_CVC4.so")
+        SolverInstaller.mv(CVC4_py, self.bindings_dir)
+        SolverInstaller.mv(CVC4_so, self.bindings_dir)
 
     def compile(self):
-        # Prepare the building system
-        SolverInstaller.run("bash autogen.sh", directory=self.extract_path)
-
-        # Fix url of ANTLR
-        SolverInstaller.run("sed -i s/http/https/g ./contrib/get-antlr-3.4", directory=self.extract_path)
-
         # Build ANTLR
         SolverInstaller.run("bash get-antlr-3.4",
                             directory=os.path.join(self.extract_path, "contrib"))
 
+        # Build ABC
+        # SolverInstaller.run("bash get-abc",
+        #                     directory=os.path.join(self.extract_path, "contrib"))
+        # Build GLPK
+        # We could configure with --gpl --best, but this takes forever to build
+
+        # Inject Python library and include paths into CMake because CVC4 search
+        # system can be fooled in some systems
+        import distutils.sysconfig as sysconfig
+        PYTHON_LIBRARY = sysconfig.get_config_var('LIBDIR')
+        PYTHON_INCLUDE_DIR = sysconfig.get_python_inc()
+        SolverInstaller.run(['sed', '-i',
+                             's|cmake_opts=""|cmake_opts="-DPYTHON_LIBRARY=' + PYTHON_LIBRARY + ' -DPYTHON_INCLUDE_DIR=' + PYTHON_INCLUDE_DIR + '"|g',
+                             './configure.sh'], directory=self.extract_path)
+
         # Configure and build CVC4
-        config_cmd = "./configure --prefix={bin_path} \
-                                  --enable-language-bindings=python \
-                                  --with-antlr-dir={dir_path}/antlr-3.4 ANTLR={dir_path}/antlr-3.4/bin/antlr3"
-        config_cmd = config_cmd.format(bin_path=self.bin_path,
-                                       dir_path=self.extract_path)
+        config_cmd = "./configure.sh --language-bindings=python \
+                                     --python%s" % self.python_version[0]
 
         if os.path.exists(sys.executable+"-config"):
             pyconfig = {"PYTHON_CONFIG": sys.executable+"-config"}
         else:
             pyconfig = {}
 
-        SolverInstaller.run(config_cmd,  directory=self.extract_path,
+        SolverInstaller.run(config_cmd, directory=self.extract_path,
                             env_variables=pyconfig)
-        SolverInstaller.run("make", directory=self.extract_path,
+        SolverInstaller.run("make", directory=self.build_path,
                             env_variables=pyconfig)
-        SolverInstaller.run("make install", directory=self.extract_path,
-                            env_variables=pyconfig)
-
-
-        # Fix the paths of the bindings
-        SolverInstaller.mv(os.path.join(self.bin_path, "lib/pyshared/CVC4.so.4.0.0"),
-                           os.path.join(self.bin_path, "lib/pyshared/_CVC4.so"))
+        # SolverInstaller.run("make install", directory=self.build_path,
+        #                     env_variables=pyconfig)
 
     def get_installed_version(self):
         return self.get_installed_version_script(self.bindings_dir, "cvc4")
