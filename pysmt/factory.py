@@ -36,17 +36,20 @@ from pysmt.logics import convert_logic_from_string
 from pysmt.oracles import get_logic
 from pysmt.solvers.qelim import (ShannonQuantifierEliminator,
                                  SelfSubstitutionQuantifierEliminator)
-from pysmt.solvers.solver import SolverOptions
 from pysmt.solvers.portfolio import Portfolio
 
-DEFAULT_SOLVER_PREFERENCE_LIST = ['msat', 'z3', 'cvc4', 'yices', 'btor',
-                                  'picosat', 'bdd']
-DEFAULT_QELIM_PREFERENCE_LIST = ['z3', 'msat_fm', 'msat_lw', 'bdd',
-                                 'shannon', 'selfsub']
-DEFAULT_OPTIMIZER_PREFERENCE_LIST = ['optimsat', 'z3', 'msat_incr', 'z3_incr',
+SOLVER_TYPES = ['Solver', 'Solver supporting Unsat Cores',
+                'Quantifier Eliminator', 'Interpolator', 'Optimizer']
+DEFAULT_PREFERENCES = {'Solver': ['msat', 'z3', 'cvc4', 'yices', 'btor',
+                                  'picosat', 'bdd'],
+                       'Solver supporting Unsat Cores': ['msat', 'z3', 'cvc4',
+                                                         'yices', 'btor', 'picosat', 'bdd'],
+                       'Quantifier Eliminator': ['z3', 'msat_fm', 'msat_lw',
+                                                 'bdd', 'shannon', 'selfsub'],
+                       'Optimizer': ['optimsat', 'z3', 'msat_incr', 'z3_incr',
                                      'yices_incr', 'msat_sua', 'z3_sua',
-                                     'yices_sua']
-DEFAULT_INTERPOLATION_PREFERENCE_LIST = ['msat']
+                                     'yices_sua'],
+                       'Interpolator': ['msat']}
 DEFAULT_LOGIC = QF_UFLIRA
 DEFAULT_QE_LOGIC = LRA
 DEFAULT_INTERPOLATION_LOGIC = QF_UFLRA
@@ -61,11 +64,7 @@ class Factory(object):
     is_sat, is_unsat etc.
 
     """
-    def __init__(self, environment,
-                 solver_preference_list=None,
-                 qelim_preference_list=None,
-                 interpolation_preference_list=None,
-                 optimizer_preference_list=None):
+    def __init__(self, environment, preferences=None):
         self.environment = environment
         self._all_solvers = None
         self._all_unsat_core_solvers = None
@@ -74,19 +73,9 @@ class Factory(object):
         self._all_optimizers = None
         self._generic_solvers = {}
 
-        #
-        if solver_preference_list is None:
-            solver_preference_list = DEFAULT_SOLVER_PREFERENCE_LIST
-        self.solver_preference_list = solver_preference_list
-        if qelim_preference_list is None:
-            qelim_preference_list = DEFAULT_QELIM_PREFERENCE_LIST
-        self.qelim_preference_list = qelim_preference_list
-        if interpolation_preference_list is None:
-            interpolation_preference_list = DEFAULT_INTERPOLATION_PREFERENCE_LIST
-        self.interpolation_preference_list = interpolation_preference_list
-        if optimizer_preference_list is None:
-            optimizer_preference_list = DEFAULT_OPTIMIZER_PREFERENCE_LIST
-        self.optimizer_preference_list = optimizer_preference_list
+        self.preferences = dict(DEFAULT_PREFERENCES)
+        if preferences is not None:
+            self.preferences.update(preferences)
         #
         self._default_logic = DEFAULT_LOGIC
         self._default_qe_logic = DEFAULT_QE_LOGIC
@@ -102,7 +91,6 @@ class Factory(object):
         SolverClass, closer_logic = \
            self._get_solver_class(solver_list=self._all_solvers,
                                   solver_type="Solver",
-                                  preference_list=self.solver_preference_list,
                                   default_logic=self.default_logic,
                                   name=name,
                                   logic=logic)
@@ -117,7 +105,6 @@ class Factory(object):
         SolverClass, closer_logic = \
            self._get_solver_class(solver_list=self._all_unsat_core_solvers,
                                   solver_type="Solver supporting Unsat Cores",
-                                  preference_list=self.solver_preference_list,
                                   default_logic=self.default_logic,
                                   name=name,
                                   logic=logic)
@@ -130,7 +117,6 @@ class Factory(object):
         SolverClass, closer_logic = \
            self._get_solver_class(solver_list=self._all_qelims,
                                   solver_type="Quantifier Eliminator",
-                                  preference_list=self.qelim_preference_list,
                                   default_logic=self.default_qe_logic,
                                   name=name,
                                   logic=logic)
@@ -142,7 +128,6 @@ class Factory(object):
         SolverClass, closer_logic = \
            self._get_solver_class(solver_list=self._all_interpolators,
                                   solver_type="Interpolator",
-                                  preference_list=self.interpolation_preference_list,
                                   default_logic=self._default_interpolation_logic,
                                   name=name,
                                   logic=logic)
@@ -154,7 +139,6 @@ class Factory(object):
         SolverClass, closer_logic = \
            self._get_solver_class(solver_list=self._all_optimizers,
                                   solver_type="Optimizer",
-                                  preference_list=self.optimizer_preference_list,
                                   default_logic=self._default_optimizer_logic,
                                   name=name,
                                   logic=logic)
@@ -163,8 +147,8 @@ class Factory(object):
                            logic=closer_logic)
 
 
-    def _get_solver_class(self, solver_list, solver_type, preference_list,
-                          default_logic, name=None, logic=None):
+    def _get_solver_class(self, solver_list, solver_type, default_logic,
+                          name=None, logic=None):
         if len(solver_list) == 0:
             raise NoSolverAvailableError("No %s is available" % solver_type)
 
@@ -200,6 +184,7 @@ class Factory(object):
 
         if solvers is not None and len(solvers) > 0:
             # Pick the first solver based on preference list
+            preference_list = self.preferences[solver_type]
             SolverClass = self._pick_favorite(preference_list, solver_list, solvers)
             closer_logic = get_closer_logic(SolverClass.LOGICS, logic)
             return SolverClass, closer_logic
@@ -227,7 +212,9 @@ class Factory(object):
         solver.UNSAT_CORE_SUPPORT = unsat_core_support
         self._all_solvers[name] = solver
         # Extend preference list accordingly
-        self.solver_preference_list.append(name)
+        self.preferences['Solver'].append(name)
+        if unsat_core_support:
+            self.preferences['Solver supporting Unsat Cores'].append(name)
 
     def is_generic_solver(self, name):
         return name in self._generic_solvers
@@ -372,6 +359,13 @@ class Factory(object):
         except SolverAPINotFound:
             pass
 
+    def set_preference_list(self, solver_type, preference_list):
+        """Defines the order in which to pick the solvers."""
+        assert solver_type in SOLVER_TYPES
+        assert preference_list is not None
+        assert len(preference_list) > 0
+        self.preferences[solver_type] = preference_list
+
 
     def set_solver_preference_list(self, preference_list):
         """Defines the order in which to pick the solvers.
@@ -382,30 +376,19 @@ class Factory(object):
         selected automatically. Note, however, that the solver can
         still be selected by calling it by name.
         """
-        assert preference_list is not None
-        assert len(preference_list) > 0
-        self.solver_preference_list = preference_list
-
+        self.set_preference_list('Solver', preference_list)
 
     def set_qelim_preference_list(self, preference_list):
         """Defines the order in which to pick the solvers."""
-        assert preference_list is not None
-        assert len(preference_list) > 0
-        self.qelim_preference_list = preference_list
-
+        self.set_preference_list('Quantifier Eliminator', preference_list)
 
     def set_interpolation_preference_list(self, preference_list):
         """Defines the order in which to pick the solvers."""
-        assert preference_list is not None
-        assert len(preference_list) > 0
-        self.interpolation_preference_list = preference_list
-
+        self.set_preference_list('Interpolator', preference_list)
 
     def set_optimizer_preference_list(self, preference_list):
         """Defines the order in which to pick the optimizers."""
-        assert preference_list is not None
-        assert len(preference_list) > 0
-        self.optimizer_preference_list = preference_list
+        self.set_preference_list('Optimizer', preference_list)
 
 
     def _filter_solvers(self, solver_list, logic=None):
