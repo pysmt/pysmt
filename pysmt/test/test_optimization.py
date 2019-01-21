@@ -34,8 +34,9 @@ class TestOptimization(TestCase):
         for oname in get_env().factory.all_optimizers(logic=QF_LIA):
             with Optimizer(name=oname) as opt:
                 opt.add_assertion(formula)
-                model = opt.optimize(x)
+                model, cost = opt.optimize(x)
                 self.assertEqual(model[x], Int(10))
+                self.assertEqual(cost, Int(10))
 
     @skipIfNoOptimizerForLogic(QF_LIA)
     def test_unbounded(self):
@@ -70,9 +71,10 @@ class TestOptimization(TestCase):
             with Optimizer(name=oname) as opt:
                 try:
                     opt.add_assertion(formula)
-                    models = list(opt.pareto_optimize([Plus(x, y), Minus(x, y)]))
+                    models, costs = zip(*opt.pareto_optimize([Plus(x, y), Minus(x, y)]))
                     self.assertEqual(len(models), 11)
                     self.assertTrue(all(m[x].constant_value() == 0 for m in models))
+                    self.assertTrue(all(x[0].constant_value() == -x[1].constant_value() for x in costs))
                 except NotImplementedError:
                     pass # OptiMathSAT wrapping of pareto is incomplete
 
