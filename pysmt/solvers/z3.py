@@ -24,7 +24,9 @@ try:
 except ImportError:
     raise SolverAPINotFound
 
-from functools import partial as p_
+# Keep array models expressed as values instead of Lambdas
+# (see https://github.com/Z3Prover/z3/issues/1769)
+z3.set_param('model_compress', False)
 
 from six.moves import xrange
 
@@ -36,7 +38,6 @@ from pysmt.solvers.solver import (IncrementalTrackingSolver, UnsatCoreSolver,
 from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 from pysmt.solvers.qelim import QuantifierEliminator
 from pysmt.solvers.optimizer import Optimizer, SUAOptimizerMixin, IncrementalOptimizerMixin
-from pysmt.solvers.interpolation import Interpolator
 
 from pysmt.walkers import DagWalker
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
@@ -47,7 +48,7 @@ from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               PysmtInfinityError, PysmtInfinitesimalError,
                               PysmtUnboundedOptimizationError)
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
-from pysmt.logics import LRA, LIA, QF_UFLIA, QF_UFLRA, PYSMT_LOGICS
+from pysmt.logics import LRA, LIA, QF_UFLRA, PYSMT_LOGICS
 from pysmt.oracles import get_logic
 from pysmt.constants import Fraction, Numeral, is_pysmt_integer
 
@@ -126,7 +127,6 @@ class Z3Options(SolverOptions):
 
     def __call__(self, solver):
         self._set_option(solver.z3, 'model', self.generate_models)
-
         if self.unsat_cores_mode is not None:
             self._set_option(solver.z3, 'unsat_core', True)
         if self.random_seed is not None:
@@ -476,11 +476,11 @@ class Z3Converter(Converter, DagWalker):
             if key not in self._back_memoization:
                 self._back_memoization[key] = None
                 stack.append(current)
-                for i in xrange(current.num_args()):
-                    stack.append(current.arg(i))
+                for c in current.children():
+                    stack.append(c)
             elif self._back_memoization[key] is None:
-                args = [self._back_memoization[(askey(current.arg(i)), model)]
-                        for i in xrange(current.num_args())]
+                args = [self._back_memoization[(askey(c), model)]
+                        for c in current.children()]
                 res = self._back_single_term(current, args, model)
                 self._back_memoization[key] = res
             else:
@@ -968,54 +968,6 @@ class Z3QuantifierEliminator(QuantifierEliminator):
                 "elimination as the attribute 'expression' of this " \
                 "exception object" % str(res)),
                                           expression=res)
-
-        return pysmt_res
-
-    def _exit(self):
-        pass
-
-
-class Z3Interpolator(Interpolator):
-
-    LOGICS = [QF_UFLIA, QF_UFLRA]
-
-    def __init__(self, environment, logic=None):
-        Interpolator.__init__(self)
-        self.environment = environment
-        self.logic = logic
-        self.converter = Z3Converter(environment, z3_ctx=z3.main_ctx())
-
-    def _check_logic(self, formulas):
-        for f in formulas:
-            logic = get_logic(f, self.environment)
-            ok = any(logic <= l for l in self.LOGICS)
-            if not ok:
-                raise PysmtValueError("Logic not supported by Z3 interpolation."
-                                      "(detected logic is: %s)" % str(logic))
-
-    def binary_interpolant(self, a, b):
-        self._check_logic([a, b])
-
-        a = self.converter.convert(a)
-        b = self.converter.convert(b)
-
-        try:
-            itp = z3.binary_interpolant(a, b)
-            pysmt_res = self.converter.back(itp)
-        except z3.ModelRef:
-            pysmt_res = None
-
-        return pysmt_res
-
-    def sequence_interpolant(self, formulas):
-        self._check_logic(formulas)
-
-        zf = [self.converter.convert(f) for f in formulas]
-        try:
-            itp = z3.sequence_interpolant(zf)
-            pysmt_res = [self.converter.back(f) for f in itp]
-        except z3.ModelRef:
-            pysmt_res = None
 
         return pysmt_res
 
