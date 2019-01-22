@@ -38,8 +38,8 @@ from pysmt.walkers import DagWalker
 from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 from pysmt.solvers.eager import EagerModel
 from pysmt.decorators import catch_conversion_error
-from pysmt.constants import Fraction, is_pysmt_integer, to_python_integer
-
+from pysmt.constants import Fraction, is_pysmt_integer
+from pysmt.decorators import clear_pending_pop
 
 class CVC4Options(SolverOptions):
 
@@ -105,6 +105,7 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         self.converter = CVC4Converter(environment, cvc4_exprMgr=self.em)
         return
 
+    @clear_pending_pop
     def reset_assertions(self):
         del self.cvc4
         # CVC4's SWIG interface is not acquiring ownership of the
@@ -114,6 +115,7 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         self.declarations = set()
         self.cvc4.setLogic(self.logic_name)
 
+    @clear_pending_pop
     def declare_variable(self, var):
         raise NotImplementedError
 
@@ -132,6 +134,7 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
                 assignment[s] = v
         return EagerModel(assignment=assignment, environment=self.environment)
 
+    @clear_pending_pop
     def solve(self, assumptions=None):
         if assumptions is not None:
             conj_assumptions = self.environment.formula_manager.And(assumptions)
@@ -151,6 +154,7 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
             return res_type == CVC4.Result.SAT
         return
 
+    @clear_pending_pop
     def push(self, levels=1):
         if not self.options.incremental:
             # The exceptions from CVC4 are not raised correctly
@@ -162,6 +166,7 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
             self.cvc4.push()
         return
 
+    @clear_pending_pop
     def pop(self, levels=1):
         for _ in xrange(levels):
             self.cvc4.pop()

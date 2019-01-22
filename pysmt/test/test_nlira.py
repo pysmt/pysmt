@@ -37,21 +37,21 @@ class TestNonLinear(TestCase):
         f = Equals(Times(x, x), x)
         for sname in self.env.factory.all_solvers():
             if sname in ["cvc4", "msat", "z3"]:
-                with Solver(name=sname) as s:
+                with Solver(name=sname, logic='QF_NRA') as s:
                     self.assertTrue(s.is_sat(f))
 
     @skipIfSolverNotAvailable("z3")
     def test_div(self):
         x = FreshSymbol(REAL)
         f = Equals(Div(x, x), x)
-        with Solver(name="z3") as s:
+        with Solver(name="z3", logic='QF_NRA') as s:
             self.assertTrue(s.is_sat(f))
 
     @skipIfSolverNotAvailable("z3")
     def test_irrational(self):
         x = FreshSymbol(REAL)
         f = Equals(Times(x, x), Real(2))
-        with Solver(name="z3") as s:
+        with Solver(name="z3", logic='QF_NRA') as s:
             self.assertTrue(s.is_sat(f))
             model = s.get_model()
             xval = model[x]
@@ -69,14 +69,16 @@ class TestNonLinear(TestCase):
         x = FreshSymbol(REAL)
         f = Equals(Times(x, x), Real(4))
         for sname in self.env.factory.all_solvers():
-            with Solver(name=sname) as s:
-                if sname in ["bdd", "picosat", "btor"]:
+            if sname in ["bdd", "picosat", "btor"]:
+                with Solver(name=sname) as s:
                     with self.assertRaises(ConvertExpressionError):
                         s.is_sat(f)
-                elif sname == "yices":
+            elif sname == "yices":
+                with Solver(name=sname) as s:
                     with self.assertRaises(NonLinearError):
                         s.is_sat(f)
-                else:
+            else:
+                with Solver(name=sname, logic='QF_NRA') as s:
                     res = s.is_sat(f)
                     self.assertTrue(res)
                     self.assertIn(QF_NRA, s.LOGICS, sname)
@@ -87,9 +89,16 @@ class TestNonLinear(TestCase):
         f2 = Equals(Times(x, x), Int(16))
         for sname in self.env.factory.all_solvers():
             if sname in ["cvc4", "msat", "z3"]:
-                with Solver(name=sname) as s:
-                    self.assertFalse(s.is_sat(f1))
-                    self.assertTrue(s.is_sat(f2))
+                with Solver(name=sname, logic='QF_NIA') as s:
+                    try:
+                        self.assertFalse(s.is_sat(f1))
+                    except SolverReturnedUnknownResultError:
+                        pass
+
+                    try:
+                        self.assertTrue(s.is_sat(f2))
+                    except SolverReturnedUnknownResultError:
+                        pass
 
     @skipIfSolverNotAvailable("z3")
     def test_div_pow(self):
