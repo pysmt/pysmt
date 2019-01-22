@@ -690,6 +690,8 @@ if ENV_SOLVER_LIST is not None:
         ENV_SOLVER_LIST = None
     elif ENV_SOLVER_LIST.lower() == "none":
         ENV_SOLVER_LIST = []
+    elif ENV_SOLVER_LIST.lower() == "optimsat":
+        ENV_SOLVER_LIST = ['msat', 'optimsat']
     else:
         # E.g. "msat, z3"
         ENV_SOLVER_LIST = [s.strip() \
