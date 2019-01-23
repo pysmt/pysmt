@@ -119,6 +119,7 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
     def declare_variable(self, var):
         raise NotImplementedError
 
+    @clear_pending_pop
     def add_assertion(self, formula, named=None):
         self._assert_is_boolean(formula)
         term = self.converter.convert(formula)
