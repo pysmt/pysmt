@@ -20,3 +20,4 @@ This directory contains examples to get you started using pySMT. Suggested order
 15. `qe.py </examples/qe.py>`_ : Quantifier Elimination of an LRA formula
 16. `theory_combination.py </examples/theory_combination.py>`_ : Combine multiple theories (Array, BitVectors, Integer, and Reals) in the same formula
 17. `portfolio.py </examples/portfolio.py>`_ : Portfolio solving
+18. `strings.py </examples/strings.py>`_ : Example on the theory of Strings
