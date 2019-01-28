@@ -71,6 +71,8 @@ Solvers:
 
 * Z3: Upgrade to 4.8.4 (PR #550).
   Removed support for interpolation.
+  *Known issue*: Some tests on use of tactics exhibit some random
+   failures on Travis.
 
 * Yices: Add support for OSX (PR #486). Thanks to **Varun Patro** for
   contributing the patch.
