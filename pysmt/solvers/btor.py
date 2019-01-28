@@ -20,7 +20,7 @@ from math import log, ceil
 from pysmt.exceptions import SolverAPINotFound
 
 try:
-    import boolector
+    import pyboolector
 except ImportError:
     raise SolverAPINotFound
 
@@ -46,94 +46,94 @@ class BoolectorOptions(SolverOptions):
         # Disabling Incremental usage is not allowed.
         # This needs to be set to 1
         self.incrementality = True
-        self.internal_options = [boolector.BTOR_OPT_MODEL_GEN,
-                                 boolector.BTOR_OPT_INCREMENTAL,
-                                 boolector.BTOR_OPT_INCREMENTAL_SMT1,
-                                 boolector.BTOR_OPT_INPUT_FORMAT,
-                                 boolector.BTOR_OPT_OUTPUT_NUMBER_FORMAT,
-                                 boolector.BTOR_OPT_OUTPUT_FORMAT,
-                                 boolector.BTOR_OPT_ENGINE,
-                                 boolector.BTOR_OPT_SAT_ENGINE,
-                                 boolector.BTOR_OPT_AUTO_CLEANUP,
-                                 boolector.BTOR_OPT_PRETTY_PRINT,
-                                 boolector.BTOR_OPT_EXIT_CODES,
-                                 boolector.BTOR_OPT_SEED,
-                                 boolector.BTOR_OPT_VERBOSITY,
-                                 boolector.BTOR_OPT_LOGLEVEL,
-                                 boolector.BTOR_OPT_REWRITE_LEVEL,
-                                 boolector.BTOR_OPT_SKELETON_PREPROC,
-                                 boolector.BTOR_OPT_ACKERMANN,
-                                 boolector.BTOR_OPT_BETA_REDUCE_ALL,
-                                 boolector.BTOR_OPT_ELIMINATE_SLICES,
-                                 boolector.BTOR_OPT_VAR_SUBST,
-                                 boolector.BTOR_OPT_UCOPT,
-                                 boolector.BTOR_OPT_MERGE_LAMBDAS,
-                                 boolector.BTOR_OPT_EXTRACT_LAMBDAS,
-                                 boolector.BTOR_OPT_NORMALIZE_ADD,
-                                 boolector.BTOR_OPT_FUN_PREPROP,
-                                 boolector.BTOR_OPT_FUN_PRESLS,
-                                 boolector.BTOR_OPT_FUN_DUAL_PROP,
-                                 boolector.BTOR_OPT_FUN_DUAL_PROP_QSORT,
-                                 boolector.BTOR_OPT_FUN_JUST,
-                                 boolector.BTOR_OPT_FUN_JUST_HEURISTIC,
-                                 boolector.BTOR_OPT_FUN_LAZY_SYNTHESIZE,
-                                 boolector.BTOR_OPT_FUN_EAGER_LEMMAS,
-                                 boolector.BTOR_OPT_SLS_NFLIPS,
-                                 boolector.BTOR_OPT_SLS_STRATEGY,
-                                 boolector.BTOR_OPT_SLS_JUST,
-                                 boolector.BTOR_OPT_SLS_MOVE_GW,
-                                 boolector.BTOR_OPT_SLS_MOVE_RANGE,
-                                 boolector.BTOR_OPT_SLS_MOVE_SEGMENT,
-                                 boolector.BTOR_OPT_SLS_MOVE_RAND_WALK,
-                                 boolector.BTOR_OPT_SLS_PROB_MOVE_RAND_WALK,
-                                 boolector.BTOR_OPT_SLS_MOVE_RAND_ALL,
-                                 boolector.BTOR_OPT_SLS_MOVE_RAND_RANGE,
-                                 boolector.BTOR_OPT_SLS_MOVE_PROP,
-                                 boolector.BTOR_OPT_SLS_MOVE_PROP_N_PROP,
-                                 boolector.BTOR_OPT_SLS_MOVE_PROP_N_SLS,
-                                 boolector.BTOR_OPT_SLS_MOVE_PROP_FORCE_RW,
-                                 boolector.BTOR_OPT_SLS_MOVE_INC_MOVE_TEST,
-                                 boolector.BTOR_OPT_SLS_USE_RESTARTS,
-                                 boolector.BTOR_OPT_SLS_USE_BANDIT,
-                                 boolector.BTOR_OPT_PROP_USE_RESTARTS,
-                                 boolector.BTOR_OPT_PROP_USE_BANDIT,
-                                 boolector.BTOR_OPT_PROP_PATH_SEL,
-                                 boolector.BTOR_OPT_PROP_PROB_USE_INV_VALUE,
-                                 boolector.BTOR_OPT_PROP_PROB_FLIP_COND,
-                                 boolector.BTOR_OPT_PROP_PROB_FLIP_COND_CONST,
-                                 boolector.BTOR_OPT_PROP_FLIP_COND_CONST_DELTA,
-                                 boolector.BTOR_OPT_PROP_FLIP_COND_CONST_NPATHSEL,
-                                 boolector.BTOR_OPT_PROP_PROB_SLICE_KEEP_DC,
-                                 boolector.BTOR_OPT_PROP_PROB_CONC_FLIP,
-                                 boolector.BTOR_OPT_PROP_PROB_SLICE_FLIP,
-                                 boolector.BTOR_OPT_PROP_PROB_EQ_FLIP,
-                                 boolector.BTOR_OPT_PROP_PROB_AND_FLIP,
-                                 boolector.BTOR_OPT_PROP_NO_MOVE_ON_CONFLICT,
-                                 boolector.BTOR_OPT_AIGPROP_USE_RESTARTS,
-                                 boolector.BTOR_OPT_AIGPROP_USE_BANDIT,
-                                 boolector.BTOR_OPT_SORT_EXP,
-                                 boolector.BTOR_OPT_SORT_AIG,
-                                 boolector.BTOR_OPT_SORT_AIGVEC,
-                                 boolector.BTOR_OPT_AUTO_CLEANUP_INTERNAL,
-                                 boolector.BTOR_OPT_SIMPLIFY_CONSTRAINTS,
-                                 boolector.BTOR_OPT_CHK_FAILED_ASSUMPTIONS]
+        self.internal_options = [pyboolector.BTOR_OPT_MODEL_GEN,
+                                 pyboolector.BTOR_OPT_INCREMENTAL,
+                                 pyboolector.BTOR_OPT_INCREMENTAL_SMT1,
+                                 pyboolector.BTOR_OPT_INPUT_FORMAT,
+                                 pyboolector.BTOR_OPT_OUTPUT_NUMBER_FORMAT,
+                                 pyboolector.BTOR_OPT_OUTPUT_FORMAT,
+                                 pyboolector.BTOR_OPT_ENGINE,
+                                 pyboolector.BTOR_OPT_SAT_ENGINE,
+                                 pyboolector.BTOR_OPT_AUTO_CLEANUP,
+                                 pyboolector.BTOR_OPT_PRETTY_PRINT,
+                                 pyboolector.BTOR_OPT_EXIT_CODES,
+                                 pyboolector.BTOR_OPT_SEED,
+                                 pyboolector.BTOR_OPT_VERBOSITY,
+                                 pyboolector.BTOR_OPT_LOGLEVEL,
+                                 pyboolector.BTOR_OPT_REWRITE_LEVEL,
+                                 pyboolector.BTOR_OPT_SKELETON_PREPROC,
+                                 pyboolector.BTOR_OPT_ACKERMANN,
+                                 pyboolector.BTOR_OPT_BETA_REDUCE_ALL,
+                                 pyboolector.BTOR_OPT_ELIMINATE_SLICES,
+                                 pyboolector.BTOR_OPT_VAR_SUBST,
+                                 pyboolector.BTOR_OPT_UCOPT,
+                                 pyboolector.BTOR_OPT_MERGE_LAMBDAS,
+                                 pyboolector.BTOR_OPT_EXTRACT_LAMBDAS,
+                                 pyboolector.BTOR_OPT_NORMALIZE_ADD,
+                                 pyboolector.BTOR_OPT_FUN_PREPROP,
+                                 pyboolector.BTOR_OPT_FUN_PRESLS,
+                                 pyboolector.BTOR_OPT_FUN_DUAL_PROP,
+                                 pyboolector.BTOR_OPT_FUN_DUAL_PROP_QSORT,
+                                 pyboolector.BTOR_OPT_FUN_JUST,
+                                 pyboolector.BTOR_OPT_FUN_JUST_HEURISTIC,
+                                 pyboolector.BTOR_OPT_FUN_LAZY_SYNTHESIZE,
+                                 pyboolector.BTOR_OPT_FUN_EAGER_LEMMAS,
+                                 pyboolector.BTOR_OPT_SLS_NFLIPS,
+                                 pyboolector.BTOR_OPT_SLS_STRATEGY,
+                                 pyboolector.BTOR_OPT_SLS_JUST,
+                                 pyboolector.BTOR_OPT_SLS_MOVE_GW,
+                                 pyboolector.BTOR_OPT_SLS_MOVE_RANGE,
+                                 pyboolector.BTOR_OPT_SLS_MOVE_SEGMENT,
+                                 pyboolector.BTOR_OPT_SLS_MOVE_RAND_WALK,
+                                 pyboolector.BTOR_OPT_SLS_PROB_MOVE_RAND_WALK,
+                                 pyboolector.BTOR_OPT_SLS_MOVE_RAND_ALL,
+                                 pyboolector.BTOR_OPT_SLS_MOVE_RAND_RANGE,
+                                 pyboolector.BTOR_OPT_SLS_MOVE_PROP,
+                                 pyboolector.BTOR_OPT_SLS_MOVE_PROP_N_PROP,
+                                 pyboolector.BTOR_OPT_SLS_MOVE_PROP_N_SLS,
+                                 pyboolector.BTOR_OPT_SLS_MOVE_PROP_FORCE_RW,
+                                 pyboolector.BTOR_OPT_SLS_MOVE_INC_MOVE_TEST,
+                                 pyboolector.BTOR_OPT_SLS_USE_RESTARTS,
+                                 pyboolector.BTOR_OPT_SLS_USE_BANDIT,
+                                 pyboolector.BTOR_OPT_PROP_USE_RESTARTS,
+                                 pyboolector.BTOR_OPT_PROP_USE_BANDIT,
+                                 pyboolector.BTOR_OPT_PROP_PATH_SEL,
+                                 pyboolector.BTOR_OPT_PROP_PROB_USE_INV_VALUE,
+                                 pyboolector.BTOR_OPT_PROP_PROB_FLIP_COND,
+                                 pyboolector.BTOR_OPT_PROP_PROB_FLIP_COND_CONST,
+                                 pyboolector.BTOR_OPT_PROP_FLIP_COND_CONST_DELTA,
+                                 pyboolector.BTOR_OPT_PROP_FLIP_COND_CONST_NPATHSEL,
+                                 pyboolector.BTOR_OPT_PROP_PROB_SLICE_KEEP_DC,
+                                 pyboolector.BTOR_OPT_PROP_PROB_CONC_FLIP,
+                                 pyboolector.BTOR_OPT_PROP_PROB_SLICE_FLIP,
+                                 pyboolector.BTOR_OPT_PROP_PROB_EQ_FLIP,
+                                 pyboolector.BTOR_OPT_PROP_PROB_AND_FLIP,
+                                 pyboolector.BTOR_OPT_PROP_NO_MOVE_ON_CONFLICT,
+                                 pyboolector.BTOR_OPT_AIGPROP_USE_RESTARTS,
+                                 pyboolector.BTOR_OPT_AIGPROP_USE_BANDIT,
+                                 pyboolector.BTOR_OPT_SORT_EXP,
+                                 pyboolector.BTOR_OPT_SORT_AIG,
+                                 pyboolector.BTOR_OPT_SORT_AIGVEC,
+                                 pyboolector.BTOR_OPT_AUTO_CLEANUP_INTERNAL,
+                                 pyboolector.BTOR_OPT_SIMPLIFY_CONSTRAINTS,
+                                 pyboolector.BTOR_OPT_CHK_FAILED_ASSUMPTIONS]
 
 
     def _set_option(self, btor, name, value):
-        available_options = {boolector.BoolectorOpt(btor, io).lng : io
+        available_options = {pyboolector.BoolectorOpt(btor, io).lng : io
                              for io in self.internal_options}
         try:
             btor.Set_opt(available_options[name], value)
         except TypeError:
             raise PysmtValueError("Error setting the option '%s=%s'" \
                                   % (name,value))
-        except boolector.BoolectorException:
+        except pyboolector.BoolectorException:
             raise PysmtValueError("Error setting the option '%s=%s'" \
                                   % (name,value))
         except KeyError:
             raise PysmtValueError("Unable to set non-existing option '%s'. "
                                   "The accepted options options are: %s" \
-                                  % (name, ", ".join(boolector.BoolectorOpt(btor, io).lng
+                                  % (name, ", ".join(pyboolector.BoolectorOpt(btor, io).lng
                                                      for io in self.internal_options)))
 
     def __call__(self, solver):
@@ -162,7 +162,7 @@ class BoolectorSolver(IncrementalTrackingSolver,
                                            environment=environment,
                                            logic=logic,
                                            **options)
-        self.btor = boolector.Boolector()
+        self.btor = pyboolector.Boolector()
         self.options(self)
         self.converter = BTORConverter(environment, self.btor)
         self.mgr = environment.formula_manager

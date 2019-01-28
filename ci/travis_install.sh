@@ -50,16 +50,16 @@ then
     $PIP_INSTALL gmpy2;
 fi
 
+
+#
+# Install Solvers
+#
 # Adding Python 3.7 library path to GCC search
 if [ "${TRAVIS_PYTHON_VERSION}" == "3.7" ]; then
     export LIBRARY_PATH="/opt/python/3.7.1/lib:${LIBRARY_PATH}"
     export CPATH="/opt/python/3.7.1/include/python3.7m:${CPATH}"
 fi
 
-
-#
-# Install Solvers
-#
 if [ "${PYSMT_CUSTOM_BINDINGS_PATH}" == "TRUE" ]; then
     PYSMT_SOLVER_FOLDER="${PYSMT_SOLVER}_${TRAVIS_OS_NAME}"
     PYSMT_SOLVER_FOLDER="${PYSMT_SOLVER_FOLDER//,/$'_'}"

@@ -265,7 +265,6 @@ class TestBasic(TestCase):
     @skipIfSolverNotAvailable("z3")
     def test_tactics_z3(self):
         from z3 import Tactic, Then
-        from pysmt.shortcuts import Iff
 
         my_tactic = Then(Tactic('simplify'), Tactic('propagate-values'),
                          Tactic('elim-uncnstr'))

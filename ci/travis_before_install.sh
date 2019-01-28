@@ -63,8 +63,11 @@ fi
 python ${DIR}/check_python_version.py "${TRAVIS_PYTHON_VERSION}"
 
 # Install latest version of SWIG
-git clone https://github.com/swig/swig.git
-cd swig
-git checkout rel-3.0.12
-./autogen.sh && ./configure && make
-sudo make install
+if [ "${PYSMT_SOLVER}" == "bdd" ] || [ "${PYSMT_SOLVER}" == "cvc4" ] || [ "${PYSMT_SOLVER}" == "btor" ] || [ "${PYSMT_SOLVER}" == "all" ]
+then
+    git clone https://github.com/swig/swig.git
+    cd swig
+    git checkout rel-3.0.12
+    ./autogen.sh && ./configure && make
+    sudo make install
+fi
