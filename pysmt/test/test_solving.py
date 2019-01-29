@@ -169,6 +169,7 @@ class TestBasic(TestCase):
     @skipIfSolverNotAvailable("cvc4")
     def test_examples_cvc4(self):
         for (f, validity, satisfiability, logic) in get_example_formulae():
+            if not logic.theory.linear: continue
             if logic.theory.arrays_const: continue
             try:
                 v = is_valid(f, solver_name='cvc4', logic=logic)
@@ -177,9 +178,7 @@ class TestBasic(TestCase):
                 self.assertEqual(satisfiability, s, f)
             except SolverReturnedUnknownResultError:
                 # CVC4 does not handle quantifiers in a complete way
-                # CVC4 can return unknown for nonlinear logics
-                self.assertFalse(logic.quantifier_free and\
-                                 logic.theory.linear)
+                self.assertFalse(logic.quantifier_free)
             except NoSolverAvailableError:
                 # Logic is not supported by CVC4
                 pass
@@ -308,9 +307,10 @@ class TestBasic(TestCase):
                 except SolverReturnedUnknownResultError:
                     s = Solver(logic=logic)
                     print(s, logic, f.serialize())
-                    self.assertFalse(logic.quantifier_free,
+                    self.assertFalse(logic.quantifier_free and\
+                                     logic.theory.linear,
                                      "Unkown result are accepted only on "\
-                                     "Quantified formulae")
+                                     "Quantified or nonlinear formulae")
 
     def test_examples_get_implicant(self):
         for (f, _, satisfiability, logic) in get_example_formulae():
