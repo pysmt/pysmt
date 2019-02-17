@@ -23,7 +23,7 @@ from six.moves import cStringIO
 import pysmt.logics as logics
 from pysmt.test import TestCase, skipIfNoSolverForLogic, main
 from pysmt.test.examples import get_example_formulae
-from pysmt.smtlib.parser import SmtLibParser
+from pysmt.smtlib.parser import SmtLibParser, Tokenizer
 from pysmt.smtlib.script import smtlibscript_from_formula
 from pysmt.shortcuts import Iff
 from pysmt.shortcuts import read_smtlib, write_smtlib
@@ -156,6 +156,20 @@ class TestSMTParseExamples(TestCase):
         parser = SmtLibParser()
         with self.assertRaises(PysmtSyntaxError):
             parser.get_script(cStringIO(txt))
+
+    def test_parse_consume(self):
+        smt_script = """
+        (model
+        (define-fun STRING_cmd_line_arg_1_1000 () String "AAAAAAAAAAAA")
+        )
+        """
+        tokens = Tokenizer(cStringIO(smt_script), interactive=True)
+        parser = SmtLibParser()
+        tokens.consume()
+        tokens.consume()
+        next_token = tokens.consume()
+        tokens.add_extra_token(next_token)
+        tokens.consume()
 
 if __name__ == "__main__":
     main()
