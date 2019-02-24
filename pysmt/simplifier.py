@@ -360,6 +360,7 @@ class Simplifier(pysmt.walkers.DagWalker):
             elif not const.is_one():
                 new_args.append(const)
 
+        new_args = sorted(new_args, key=hash)
         return self.manager.Times(new_args)
 
 
