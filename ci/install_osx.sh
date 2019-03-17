@@ -7,11 +7,11 @@ PULL_REQUEST=${SYSTEM_PULLREQUEST_PULLREQUESTNUMBER}
 BRANCH=${SYSTEM_PULLREQUEST_TARGETBRANCH}
 OS=${AGENT_OS}
 
-# function brew_install_or_upgrade {
-#     brew install "$1" || (brew upgrade "$1" && brew cleanup "$1")
-# }
+function brew_install_or_upgrade {
+    brew install "$1" || (brew upgrade "$1" && brew cleanup "$1")
+}
 
-# brew update
+
 # brew_install_or_upgrade openssl
 # brew_install_or_upgrade readline
 # brew_install_or_upgrade swig
@@ -19,7 +19,10 @@ OS=${AGENT_OS}
 
 # brew_install_or_upgrade mpfr
 # brew_install_or_upgrade libmpc
-# brew_install_or_upgrade gmp
+if [ "${PYSMT_SOLVER}" == "msat" ]
+then
+   brew_install_or_upgrade gmp
+fi
 
 # brew_install_or_upgrade pyenv
 # brew_install_or_upgrade pyenv-virtualenv

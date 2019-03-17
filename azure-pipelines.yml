@@ -2,17 +2,90 @@ trigger:
 - master
 
 jobs:
-- job: 'PySMT_Ubuntu_16_04'
+- job: 'Ubuntu16All'
   pool:
     vmImage: 'Ubuntu-16.04'
   strategy:
     matrix:
-      Python27:
+      Py27All:
         python.version: '2.7'
         PYTHON_VERSION: '2.7'
-      Python37:
+        PYSMT_SOLVER: "all"
+      Py37All:
         python.version: '3.7'
         PYTHON_VERSION: '3.7'
+        PYSMT_SOLVER: "all"
+
+# - job: 'Ubuntu16'
+#   pool:
+#     vmImage: 'Ubuntu-16.04'
+#   strategy:
+#     matrix:
+#       Py27NoSolver:
+#         python.version: '2.7'
+#         PYTHON_VERSION: '2.7'
+#         PYSMT_SOLVER: "None"
+#       Py37NoSolver:
+#         python.version: '3.7'
+#         PYTHON_VERSION: '3.7'
+#         PYSMT_SOLVER: "None"
+#       Py27Msat:
+#         python.version: '2.7'
+#         PYTHON_VERSION: '2.7'
+#         PYSMT_SOLVER: "msat"
+#       Py37Msat:
+#         python.version: '3.7'
+#         PYTHON_VERSION: '3.7'
+#         PYSMT_SOLVER: "msat"
+#       Py27Z3:
+#         python.version: '2.7'
+#         PYTHON_VERSION: '2.7'
+#         PYSMT_SOLVER: "z3"
+#       Py37Z3:
+#         python.version: '3.7'
+#         PYTHON_VERSION: '3.7'
+#         PYSMT_SOLVER: "z3"
+#       Py27Yices:
+#         python.version: '2.7'
+#         PYTHON_VERSION: '2.7'
+#         PYSMT_SOLVER: "yices"
+#       Py37Yices:
+#         python.version: '3.7'
+#         PYTHON_VERSION: '3.7'
+#         PYSMT_SOLVER: "yices"
+#       Py27CVC4:
+#         python.version: '2.7'
+#         PYTHON_VERSION: '2.7'
+#         PYSMT_SOLVER: "cvc4"
+#       Py37CVC4:
+#         python.version: '3.7'
+#         PYTHON_VERSION: '3.7'
+#         PYSMT_SOLVER: "cvc4"
+#       Py27Btor:
+#         python.version: '2.7'
+#         PYTHON_VERSION: '2.7'
+#         PYSMT_SOLVER: "btor"
+#       Py37Btor:
+#         python.version: '3.7'
+#         PYTHON_VERSION: '3.7'
+#         PYSMT_SOLVER: "btor"
+#       Py27Picosat:
+#         python.version: '2.7'
+#         PYTHON_VERSION: '2.7'
+#         PYSMT_SOLVER: "picosat"
+#       Py37Picosat:
+#         python.version: '3.7'
+#         PYTHON_VERSION: '3.7'
+#         PYSMT_SOLVER: "picosat"
+#       Py27Bdd:
+#         python.version: '2.7'
+#         PYTHON_VERSION: '2.7'
+#         PYSMT_SOLVER: "bdd"
+#       Py37Bdd:
+#         python.version: '3.7'
+#         PYTHON_VERSION: '3.7'
+#         PYSMT_SOLVER: "bdd"
+
 
   steps:
   - task: UsePythonVersion@0
@@ -20,27 +93,84 @@ jobs:
       versionSpec: '$(python.version)'
       architecture: 'x64'
 
-  - script: ci/install_linux.sh
+  - bash: ci/install_linux.sh
     displayName: 'Install dependencies'
 
 
-- job: 'PySMT_OSX_10_13'
-  pool:
-    vmImage: 'macOS-10.13'
-  strategy:
-    matrix:
-      Python27:
-        python.version: '2.7'
-        PYTHON_VERSION: '2.7'
-      Python37:
-        python.version: '3.7'
-        PYTHON_VERSION: '3.7'
+# - job: 'OSX10_13'
+#   pool:
+#     vmImage: 'macOS-10.13'
+#   strategy:
+#     matrix:
+#       Py27NoSolver:
+#         python.version: '2.7'
+#         PYTHON_VERSION: '2.7'
+#         PYSMT_SOLVER: "None"
+#       Py37NoSolver:
+#         python.version: '3.7'
+#         PYTHON_VERSION: '3.7'
+#         PYSMT_SOLVER: "None"
+#       Py27Msat:
+#         python.version: '2.7'
+#         PYTHON_VERSION: '2.7'
+#         PYSMT_SOLVER: "msat"
+#       Py37Msat:
+#         python.version: '3.7'
+#         PYTHON_VERSION: '3.7'
+#         PYSMT_SOLVER: "msat"
+#       Py27Z3:
+#         python.version: '2.7'
+#         PYTHON_VERSION: '2.7'
+#         PYSMT_SOLVER: "z3"
+#       Py37Z3:
+#         python.version: '3.7'
+#         PYTHON_VERSION: '3.7'
+#         PYSMT_SOLVER: "z3"
 
-  steps:
-  - task: UsePythonVersion@0
-    inputs:
-      versionSpec: '$(python.version)'
-      architecture: 'x64'
+#   steps:
+#   - task: UsePythonVersion@0
+#     inputs:
+#       versionSpec: '$(python.version)'
+#       architecture: 'x64'
 
-  - script: ci/install_osx.sh
-    displayName: 'Install dependencies'
+#   - bash: ci/install_osx.sh
+#     displayName: 'Install dependencies'
+
+# - job: 'Win2016'
+#   pool:
+#     vmImage: 'vs2017-win2016'
+#   strategy:
+#     matrix:
+#       Py27NoSolver:
+#         python.version: '2.7'
+#         PYTHON_VERSION: '2.7'
+#         PYSMT_SOLVER: "None"
+#       Py37NoSolver:
+#         python.version: '3.7'
+#         PYTHON_VERSION: '3.7'
+#         PYSMT_SOLVER: "None"
+#       Py27Msat:
+#         python.version: '2.7'
+#         PYTHON_VERSION: '2.7'
+#         PYSMT_SOLVER: "msat"
+#       Py37Msat:
+#         python.version: '3.7'
+#         PYTHON_VERSION: '3.7'
+#         PYSMT_SOLVER: "msat"
+#       Py27Z3:
+#         python.version: '2.7'
+#         PYTHON_VERSION: '2.7'
+#         PYSMT_SOLVER: "z3"
+#       Py37Z3:
+#         python.version: '3.7'
+#         PYTHON_VERSION: '3.7'
+#         PYSMT_SOLVER: "z3"
+
+#   steps:
+#   - task: UsePythonVersion@0
+#     inputs:
+#       versionSpec: '$(python.version)'
+#       architecture: 'x64'
+
+#   - powershell: ci/install_win.ps1
+#     displayName: 'Install dependencies'

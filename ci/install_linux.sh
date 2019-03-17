@@ -3,21 +3,25 @@ set -ev
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-PULL_REQUEST=${SYSTEM_PULLREQUEST_PULLREQUESTNUMBER}
-BRANCH=${SYSTEM_PULLREQUEST_TARGETBRANCH}
-OS=${AGENT_OS}
-
 # Check that the correct version of Python is running.
 python ${DIR}/check_python_version.py "${PYTHON_VERSION}"
 
-# Install latest version of SWIG
-if [ "${PYSMT_SOLVER}" == "bdd" ] || [ "${PYSMT_SOLVER}" == "cvc4" ] || [ "${PYSMT_SOLVER}" == "btor" ] || [ "${PYSMT_SOLVER}" == "all" ]
+# Install latest version of SWIG for CVC4
+# (The other solvers in isolation fall-back to the system swig)
+if [ "${PYSMT_SOLVER}" == "cvc4" ] || [ "${PYSMT_SOLVER}" == "all" ]
 then
+    sudo apt install -y flex bison
     git clone https://github.com/swig/swig.git
     cd swig
     git checkout rel-3.0.12
     ./autogen.sh && ./configure && make
     sudo make install
+    cd ..
+fi
+#
+if [ "${PYSMT_SOLVER}" == "yices" ] || [ "${PYSMT_SOLVER}" == "btor" ] || [ "${PYSMT_SOLVER}" == "bdd" ] || [ "${PYSMT_SOLVER}" == "picosat" ]
+then
+    sudo apt install -y swig
 fi
 
 echo "Check that the correct version of Python is running"
@@ -43,7 +47,7 @@ fi
 
 
 if [ "${PYSMT_CUSTOM_BINDINGS_PATH}" == "TRUE" ]; then
-    PYSMT_SOLVER_FOLDER="${PYSMT_SOLVER}_${OS}"
+    PYSMT_SOLVER_FOLDER="${PYSMT_SOLVER}_${AGENT_OS}"
     PYSMT_SOLVER_FOLDER="${PYSMT_SOLVER_FOLDER//,/$'_'}"
     BINDINGS_FOLDER="${HOME}/python_bindings/${PYSMT_SOLVER_FOLDER}"
     python install.py --confirm-agreement --bindings-path "${BINDINGS_FOLDER}"
@@ -80,13 +84,7 @@ python install.py --check
 
 #
 # Run the test suite
-#  * Coverage is enabled only on master / all
-if [ "${BRANCH}" == "master" ] && [ "${PYSMT_SOLVER}" == "all" ];
-then
-    python -m nose pysmt -v # --with-coverage --cover-package=pysmt
-else
-    python -m nose pysmt -v
-fi
+python -m nose pysmt -v # --with-coverage --cover-package=pysmt
 
 #
 # Test examples in examples/ folder

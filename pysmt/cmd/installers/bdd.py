@@ -42,28 +42,10 @@ class CuddInstaller(SolverInstaller):
         if self.architecture == "x86_64":
             makefile = "Makefile_64bit"
 
-        # Find python-config
-        command = self.find_python_config()
-        if command is None:
-            raise OSError("No installation of python-config found on this system."
-                          " Please install python-config for this version of python.")
-        print("Found python-config in %s" % command)
-
-        # Build the pycudd
-        prefix = None
-        p = subprocess.Popen([command, '--includes'], stdout=subprocess.PIPE, stderr=None)
-        prefix = p.stdout.read()
-        if PY2:
-            pass # Prefix is already a string
-        else:
-            # > PY3 Prefix is binary data
-            prefix = prefix.decode()
-
-        if not prefix or len(prefix) == 0:
-            prefix = "/usr"
-
-        SolverInstaller.run("make -C %s -f %s PYTHON_INCL=%s" %
-                            (self.extract_path, makefile, prefix))
+        import distutils.sysconfig as sysconfig
+        PYTHON_INCLUDE_DIR = sysconfig.get_python_inc()
+        SolverInstaller.run("make -C %s -f %s PYTHON_INCL=-I%s" %
+                            (self.extract_path, makefile, PYTHON_INCLUDE_DIR))
 
 
     def move(self):
