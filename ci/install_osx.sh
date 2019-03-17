@@ -7,6 +7,37 @@ PULL_REQUEST=${SYSTEM_PULLREQUEST_PULLREQUESTNUMBER}
 BRANCH=${SYSTEM_PULLREQUEST_TARGETBRANCH}
 OS=${AGENT_OS}
 
+# function brew_install_or_upgrade {
+#     brew install "$1" || (brew upgrade "$1" && brew cleanup "$1")
+# }
+
+# brew update
+# brew_install_or_upgrade openssl
+# brew_install_or_upgrade readline
+# brew_install_or_upgrade swig
+# brew_install_or_upgrade gperf
+
+# brew_install_or_upgrade mpfr
+# brew_install_or_upgrade libmpc
+# brew_install_or_upgrade gmp
+
+# brew_install_or_upgrade pyenv
+# brew_install_or_upgrade pyenv-virtualenv
+
+# brew_install_or_upgrade readline
+# brew_install_or_upgrade xz
+# brew_install_or_upgrade zlib
+
+# brew_install_or_upgrade libffi
+# brew_install_or_upgrade ncurses
+
+# pyenv install ${PYTHON_VERSION}
+
+# pyenv virtualenv ${PYTHON_VERSION} venv
+
+# eval "$(pyenv init -)"
+# pyenv activate venv
+
 # Check that the correct version of Python is running.
 python ${DIR}/check_python_version.py "${PYTHON_VERSION}"
 
