@@ -263,7 +263,7 @@ class TestBasic(TestCase):
         self.do_model("picosat")
 
     @skipIfSolverNotAvailable("z3")
-    def test_tactics_z3(self):
+    def disabled_test_tactics_z3(self):
         from z3 import Tactic, Then
 
         my_tactic = Then(Tactic('simplify'), Tactic('propagate-values'),
