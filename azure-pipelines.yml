@@ -93,6 +93,15 @@ jobs:
         python.version: '2.7'
         PYTHON_VERSION: '2.7'
         PYSMT_SOLVER: "bdd"
+      Py27MsatWrap:
+        python.version: '2.7'
+        PYTHON_VERSION: '2.7'
+        PYSMT_SOLVER: "msat_wrap"
+      Py27Z3Wrap:
+        python.version: '2.7'
+        PYTHON_VERSION: '2.7'
+        PYSMT_SOLVER: "z3_wrap"
+
   steps:
   - task: UsePythonVersion@0
     inputs:
@@ -140,6 +149,14 @@ jobs:
         python.version: '3.7'
         PYTHON_VERSION: '3.7'
         PYSMT_SOLVER: "bdd"
+      Py37MsatWrap:
+        python.version: '3.7'
+        PYTHON_VERSION: '3.7'
+        PYSMT_SOLVER: "msat_wrap"
+      Py37Z3Wrap:
+        python.version: '3.7'
+        PYTHON_VERSION: '3.7'
+        PYSMT_SOLVER: "z3_wrap"
   steps:
   - task: UsePythonVersion@0
     inputs:
