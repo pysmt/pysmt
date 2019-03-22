@@ -134,5 +134,10 @@ class TestSimplify(TestCase):
         f = Or(x, y, z, Not(x))
         self.assertEqual(f.simplify(), TRUE())
 
+    def test_trivial_true_times(self):
+        x,y,z = (Symbol(name, REAL) for name in "xyz")
+        f = Equals(Times(x, z, y), Times(z, y, x))
+        self.assertEqual(f.simplify(), TRUE())
+
 if __name__ == '__main__':
     main()
