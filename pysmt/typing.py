@@ -24,6 +24,8 @@ In the current version these are:
  * BVType
  * FunctionType
  * ArrayType
+ * StringType
+ * RegLanType
 
 Types are represented by singletons. Basic types (Bool, Int and Real)
 are constructed here by default, while BVType and FunctionType relies
@@ -84,6 +86,9 @@ class PySMTType(object):
         return False
 
     def is_array_type(self):
+        return False
+
+    def is_regex_type(self):
         return False
 
     def is_string_type(self):
@@ -164,6 +169,14 @@ class _StringType(PySMTType):
     def is_string_type(self):
         return True
 
+class _RegexType(PySMTType):
+    def __init__(self):
+        decl = _TypeDecl("Regex", 0)
+        PySMTType.__init__(self, decl=decl, args=None)
+
+    def is_regex_type(self):
+        return True
+
 # End Basic Types Declarations
 
 
@@ -202,7 +215,6 @@ class _ArrayType(PySMTType):
         return True
 
 # EOC _ArrayType
-
 
 class _BVType(PySMTType):
     """Internal class to represent a BitVector type.
@@ -382,6 +394,7 @@ BOOL = _BoolType()
 REAL = _RealType()
 INT =  _IntType()
 STRING = _StringType()
+REGEX = _RegexType()
 PYSMT_TYPES = frozenset([BOOL, REAL, INT])
 
 # Helper Constants
@@ -395,12 +408,14 @@ class TypeManager(object):
         self._bv_types = {}
         self._function_types = {}
         self._array_types = {}
+        self._regex_types = {}
         self._custom_types = {}
         self._custom_types_decl = {}
         self._bool = None
         self._real = None
         self._int = None
         self._string = None
+        self._regex = None
         #
         self.load_global_types()
         self.environment = environment
@@ -414,6 +429,7 @@ class TypeManager(object):
         self._real = REAL
         self._int = INT
         self._string = STRING
+        self._regex = REGEX
 
     def BOOL(self):
         return self._bool
@@ -426,6 +442,9 @@ class TypeManager(object):
 
     def STRING(self):
         return self._string
+
+    def REGEX(self):
+        return self._regex
 
     def BVType(self, width=32):
         """Returns the singleton associated to the BV type for the given width.
@@ -573,7 +592,6 @@ def assert_are_types(targets, func_name):
         assert_is_type(target, func_name)
 
 
-
 def BVType(width=32):
     """Returns the BV type for the given width."""
     mgr = pysmt.environment.get_env().type_manager
@@ -588,6 +606,7 @@ def ArrayType(index_type, elem_type):
     """Returns the Array type with the given arguments."""
     mgr = pysmt.environment.get_env().type_manager
     return mgr.ArrayType(index_type=index_type, elem_type=elem_type)
+
 
 def Type(name, arity=0):
     """Returns the Type Declaration with the given name (sort declaration)."""

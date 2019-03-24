@@ -982,6 +982,83 @@ class FormulaManager(object):
         """
         return self.create_node(node_type=op.STR_TO_INT, args=(s,))
 
+    def StrToRe(self, s):
+        """Returns the corresponding Regex that accept s.
+
+        where s is a string term 
+        """
+        return self.create_node(node_type=op.STR_TO_RE, args=(s,))
+    
+    def StrInRe(self, s, r):
+        """Returns wheather the string is accepted by the language defined by the Regex r
+
+        where s is a string term 
+        """
+        return self.create_node(node_type=op.STR_IN_RE, args=(s, r))
+
+    def ReAll(self):
+        """Returns a constant denoting the set of all strings 
+        """
+        return self.create_node(node_type=op.RE_ALL, args=())
+
+    def ReNone(self):
+        """Returns a constant denoting the empty set of strings 
+        """
+        return self.create_node(node_type=op.RE_NONE, args=())
+
+    def ReRange(self, s1, s2):
+        """Returns a regular expression that represent the set of all strings s with (str.<= s1 s s2) 
+        """
+        return self.create_node(node_type=op.RE_RANGE, args=(s1, s2))
+
+    def ReConcat(self, *args):
+        """Returns the concatenation of n Regex.
+
+        r1, r2, ..., and rn are Regex terms.
+        Regex concatenation takes at least 2 arguments.
+        """
+        tuple_args = self._polymorph_args_to_tuple(args)
+        if len(tuple_args) <= 1:
+            raise TypeError("Cannot create a Re_Concat without arguments.")
+        return self.create_node(node_type=op.RE_CONCAT, args=tuple_args)
+
+    def ReKleeneStar(self, r):
+        """Returns the kleene * of the Regex r
+
+        where r is a RegEx term defined over a certain sort
+        """
+        return self.create_node(node_type=op.RE_KLEENE_STAR, args=(r,))
+
+    def ReKleenePlus(self, r):
+        """Returns the kleene + of the Regex r
+
+        where r is a RegEx term defined over a certain sort
+        """
+        return self.ReConcat(r, self.ReKleeneStar(r))
+
+    def ReOpt(self, r):
+        """Returns zero or one use of r 
+
+        where r is a RegEx term defined over a certain sort
+        """
+        return self.ReUnion(r, self.StrToRe(self.String("")))
+
+    def ReUnion(self, r1, r2):
+        """Returns a regular expression that accepts the union of the
+        languages accepted by r1 and r2.
+
+        where r1 and r2 are RegEx terms defined over a certain sort 
+        """
+        return self.create_node(node_type=op.RE_UNION, args=(r1, r2))
+
+    def ReInter(self, r1, r2):
+        """Returns a regular expression that accepts the intersection of the
+        languages accepted by r1 and r2.
+
+        where r1 and r2 are RegEx terms defined over a certain sort 
+        """
+        return self.create_node(node_type=op.RE_INTER, args=(r1, r2))
+         
     def IntToStr(self, x):
         """Returns the corresponding String representing the natural number x.
 

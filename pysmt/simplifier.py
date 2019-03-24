@@ -881,7 +881,7 @@ class Simplifier(pysmt.walkers.DagWalker):
         if s.is_string_constant() and i.is_int_constant():
             res = s.constant_value()[i.constant_value():i.constant_value() + 1]
             return self.manager.String(res)
-        return self.manager.StrCharat(s, i)
+        return self.manager.StrCharAt(s, i)
 
     def walk_str_contains(self, formula, args, **kwargs):
         s,t = args
@@ -895,7 +895,7 @@ class Simplifier(pysmt.walkers.DagWalker):
             idx = s.constant_value().find(t.constant_value(), i.constant_value())
             # idx = -1, if t is not found
             return self.manager.Int(idx)
-        return self.manager.StrIndexof(s, t, i)
+        return self.manager.StrIndexOf(s, t, i)
 
     def walk_str_replace(self, formula, args, **kwargs):
         s, t1, t2 = args
@@ -919,13 +919,13 @@ class Simplifier(pysmt.walkers.DagWalker):
         s, t = args
         if s.is_string_constant() and t.is_string_constant():
             return self.manager.Bool(t.constant_value().startswith(s.constant_value()))
-        return self.manager.StrPrefixof(s, t)
+        return self.manager.StrPrefixOf(s, t)
 
     def walk_str_suffixof(self, formula, args, **kwargs):
         s, t = args
         if s.is_string_constant() and t.is_string_constant():
             return self.manager.Bool(t.constant_value().endswith(s.constant_value()))
-        return self.manager.StrSuffixof(s, t)
+        return self.manager.StrSuffixOf(s, t)
 
     def walk_str_to_int(self, formula, args, **kwargs):
         s = args[0]
@@ -935,6 +935,50 @@ class Simplifier(pysmt.walkers.DagWalker):
             except ValueError:
                 return self.manager.Int(-1)
         return self.manager.StrToInt(s)
+
+    def walk_str_to_re(self, formula, args, **kwargs):
+        # TODO : Fix simplification for str_to_re!! 
+        raise NotImplementedError
+
+    def walk_str_in_re(self, formula, args, **kwargs):
+        # TODO : Fix simplification for str_in_re!! 
+        raise NotImplementedError
+
+    def walk_re_all(self, formula, args, **kwargs):
+        # TODO : Fix simplification for re_all!! 
+        raise NotImplementedError
+
+    def walk_re_none(self, formula, args, **kwargs):
+        # TODO : Fix simplification for re_none!! 
+        raise NotImplementedError
+
+    def walk_re_range(self, formula, args, **kwargs):
+        # TODO : Fix simplification for re_range!! 
+        raise NotImplementedError
+
+    def walk_re_concat(self, formula, args, **kwargs):
+        # TODO : Fix simplification for re_concat!!
+        raise NotImplementedError
+
+    def walk_re_kleene_star(self, formula, args, **kwargs):
+        # TODO : Fix simplification for re_kleene_star!!
+        raise NotImplementedError
+
+    def walk_re_kleene_plus(self, formula, args, **kwargs):
+        # TODO : Fix simplification for re_kleene_plus!!
+        raise NotImplementedError
+
+    def walk_re_opt(self, formula, args, **kwargs):
+        # TODO : Fix simplification for re_opt!!
+        raise NotImplementedError
+
+    def walk_re_union(self, formula, args, **kwargs):
+        # TODO : Fix simplification for re_union!!
+        raise NotImplementedError 
+
+    def walk_re_inter(self, formula, args, **kwargs):
+        # TODO : Fix simplification for re_inter!!
+        raise NotImplementedError 
 
     def walk_int_to_str(self, formula, args, **kwargs):
         i = args[0]

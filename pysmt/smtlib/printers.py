@@ -247,6 +247,67 @@ class SmtPrinter(TreeWalker):
         self.walk(formula.arg(0))
         self.write(")")
 
+    def walk_str_to_re(self,formula, **kwargs):
+        self.write("( str.to.re " )
+        self.walk(formula.arg(0))
+        self.write(")") 
+
+    def walk_str_in_re(self,formula, **kwargs):
+        self.write("( str.in.re " )
+        self.walk(formula.arg(0))
+        self.write(" ")
+        self.walk(formula.arg(1))
+        self.write(")")
+
+    def walk_re_all(self,formula, **kwargs):
+        self.write("( re.all )" )
+
+    def walk_re_none(self,formula, **kwargs):
+        self.write("( re.none )" )
+
+    def walk_re_range(self,formula, **kwargs):
+        self.write("( re.range " )
+        self.walk(formula.arg(0))
+        self.write(" ")
+        self.walk(formula.arg(1))
+        self.write(")")
+
+    def walk_re_concat(self,formula, **kwargs):
+        self.write("( re.++ " )
+        for arg in formula.args():
+            self.walk(arg)
+            self.write(" ")
+        self.write(")")
+
+    def walk_re_kleene_star(self,formula, **kwargs):
+        self.write("( re.* " )
+        self.walk(formula.arg(0))
+        self.write(")")
+
+    def walk_re_kleene_plus(self,formula, **kwargs):
+        self.write("( re.+ " )
+        self.walk(formula.arg(0))
+        self.write(")")
+
+    def walk_re_opt(self,formula, **kwargs):
+        self.write("( re.opt " )
+        self.walk(formula.arg(0))
+        self.write(")")
+
+    def walk_re_union(self,formula, **kwargs):
+        self.write("( re.union " )
+        self.walk(formula.arg(0))
+        self.write(" ")
+        self.walk(formula.arg(1))
+        self.write(")")
+
+    def walk_re_inter(self,formula, **kwargs):
+        self.write("( re.inter" )
+        self.walk(formula.arg(0))
+        self.write(" ")
+        self.walk(formula.arg(1))
+        self.write(")")
+
     def walk_int_to_str(self,formula, **kwargs):
         self.write("( int.to.str " )
         self.walk(formula.arg(0))
@@ -598,7 +659,47 @@ class SmtDagPrinter(DagWalker):
 
     def walk_str_to_int(self,formula, args, **kwargs):
         return "( str.to.int %s )" % args[0]
+    
+    def walk_str_to_re(self,formula, args, **kwargs):
+        return "( str.to.re %s )" % args[0]
 
+    def walk_str_in_re(self,formula, args, **kwargs):
+        return "( str.in.re %s %s )" % (args[0], args[1])
+
+    def walk_re_all(self,formula, args, **kwargs):
+        return "( re.all )"
+
+    def walk_re_none(self,formula, args, **kwargs):
+        return "( re.none )"
+
+    def walk_re_range(self,formula, args, **kwargs):
+        return "( re.range %s %s )" % (args[0], args[1])
+
+    def walk_re_concat(self, formula, args, **kwargs):
+        sym = self._new_symbol()
+        self.openings += 1
+        self.write("(let ((%s (%s" % (sym, "re.++ " ))
+        for s in args:
+            self.write(" ")
+            self.write(s)
+        self.write("))) ")
+        return sym
+
+    def walk_re_kleene_star(self,formula, args, **kwargs):
+        return "( re.* %s )" % (args[0])
+
+    def walk_re_kleene_plus(self,formula, args, **kwargs):
+        return "( re.+ %s )" % (args[0])
+
+    def walk_re_opt(self,formula, args, **kwargs):
+        return "( re.opt %s )" % (args[0])
+
+    def walk_re_union(self,formula, args, **kwargs):
+        return "( re.union %s %s )" % (args[0], args[1])
+    
+    def walk_re_inter(self,formula, args, **kwargs):
+        return "( re.inter %s %s )" % (args[0], args[1])
+    
     def walk_int_to_str(self,formula, args, **kwargs):
         return "( int.to.str %s )" % args[0]
 

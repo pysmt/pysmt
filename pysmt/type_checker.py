@@ -25,7 +25,7 @@ reasoning about the type of formulae.
 import pysmt.walkers as walkers
 import pysmt.operators as op
 
-from pysmt.typing import BOOL, REAL, INT, BVType, ArrayType, STRING
+from pysmt.typing import BOOL, REAL, INT, BVType, ArrayType, STRING, REGEX
 from pysmt.exceptions import PysmtTypeError
 
 
@@ -97,10 +97,21 @@ class SimpleTypeChecker(walkers.DagWalker):
         #pylint: disable=unused-argument
         return self.walk_type_to_type(formula, args, STRING, STRING)
 
+    @walkers.handles(op.RE_CONCAT, op.RE_KLEENE_PLUS, op.RE_KLEENE_STAR)
+    @walkers.handles(op.RE_OPT, op.RE_UNION, op.RE_INTER)
+    def walk_re_to_re(self, formula, args, **kwargs):
+        #pylint: disable=unused-argument
+        return self.walk_type_to_type(formula, args, REGEX, REGEX)
+
     @walkers.handles(op.STR_LENGTH, op.STR_TO_INT)
     def walk_str_to_int(self, formula, args, **kwargs):
         #pylint: disable=unused-argument
         return self.walk_type_to_type(formula, args, STRING, INT)
+
+    @walkers.handles(op.STR_TO_RE)
+    def walk_str_to_re(self, formula, args, **kwargs):
+        #pylint: disable=unused-argument
+        return self.walk_type_to_type(formula, args, STRING, REGEX)
 
     @walkers.handles(op.STR_CONTAINS, op.STR_PREFIXOF, op.STR_SUFFIXOF)
     def walk_str_to_bool(self, formula, args, **kwargs):
@@ -284,6 +295,28 @@ class SimpleTypeChecker(walkers.DagWalker):
         if len(args) == 3 and args[0].is_string_type() and \
            args[1].is_string_type() and args[2].is_int_type():
             return INT
+        return None
+
+    def walk_str_in_re(self, formula, args, **kwargs):
+        assert formula is not None
+        if len(args) == 2 and args[0].is_string_type() and \
+           args[1].is_regex_type():
+            return BOOL
+        return None
+
+    def walk_re_all(self, formula, args, **kwargs):
+        assert formula is not None
+        return REGEX
+
+    def walk_re_none(self, formula, args, **kwargs):
+        assert formula is not None
+        return REGEX
+
+    def walk_re_range(self, formula, args, **kwargs):
+        assert formula is not None
+        if len(args) == 2 and args[0].is_string_type() and \
+           args[1].is_string_type():
+            return REGEX
         return None
 
     def walk_str_substr(self, formula, args, **kwargs):

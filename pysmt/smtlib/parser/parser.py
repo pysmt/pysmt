@@ -441,6 +441,18 @@ class SmtLibParser(object):
                             'str.to.int':self._operator_adapter(mgr.StrToInt),
                             'int.to.str':self._operator_adapter(mgr.IntToStr),
                             'bv2nat':self._operator_adapter(mgr.BVToNatural),
+                            # Regex
+                            'str.to.re':self._operator_adapter(mgr.StrToRe),
+                            'str.in.re':self._operator_adapter(mgr.StrInRe),
+                            're.all':self._operator_adapter(mgr.ReAll),
+                            're.none':self._operator_adapter(mgr.ReNone),
+                            're.range':self._operator_adapter(mgr.ReRange),
+                            're.++':self._operator_adapter(mgr.ReConcat),
+                            're.*':self._operator_adapter(mgr.ReKleeneStar),
+                            're.+':self._operator_adapter(mgr.ReKleenePlus),
+                            're.opt':self._operator_adapter(mgr.ReOpt),
+                            're.union':self._operator_adapter(mgr.ReUnion),
+                            're.inter':self._operator_adapter(mgr.ReInter),
                             # arrays
                             'select':self._operator_adapter(mgr.Select),
                             'store':self._operator_adapter(mgr.Store),
@@ -986,6 +998,8 @@ class SmtLibParser(object):
             res = self.env.type_manager.REAL()
         elif var == "String":
             res = self.env.type_manager.STRING()
+        elif var == "RegLan":
+            res = self.env.type_manager.REGEX()
         else:
             cached = self.cache.get(var)
             if cached is not None:
