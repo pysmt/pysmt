@@ -1,11 +1,17 @@
-from pysmt.shortcuts import FreshSymbol, Symbol, String, LE, GE, Int, Not, Or, And, Equals, Plus, Solver, StrContains
-from pysmt.typing import INT, STRING
+from pysmt.shortcuts import FreshSymbol, Int, Or, And, Equals, Plus, Solver
+from pysmt.typing import INT
 from enum import Enum
 import logging
 logger = logging.getLogger('xoxo')
 logger.setLevel(logging.DEBUG)
 ch = logging.StreamHandler()
-ch.setLevel(logging.INFO) # change to DEBUG for info on assertions
+
+if __debug__: # start with -O
+    log_level = logging.DEBUG
+else:
+    log_level = logging.INFO
+ch.setLevel(log_level)
+
 logger.addHandler(ch)
 
 class Cell(Enum):
@@ -13,7 +19,6 @@ class Cell(Enum):
     o = 10
     s = 0
 
-DEBUG = False
 turns = 0
 sq_size = 3
 test = 'tests/test1.txt'
@@ -21,9 +26,9 @@ test = 'tests/blank.txt'
 
 # create symbols for the board
 board = [[FreshSymbol(INT) for _ in xrange(sq_size)]
-    for _ in xrange(sq_size)]
+            for _ in xrange(sq_size)]
 
-solver = Solver(name="z3")
+solver = Solver()
 
 # setup assertions for board
 for row in board:
@@ -135,7 +140,8 @@ while True:
     logger.debug(x_win_this_turn_assertions)
     if solver.solve([x_win_this_turn_assertions]):
         print_solver_board()
-        exit("x wins")
+        print("x wins")
+        exit()
 
     # can I win next turn?
     logger.debug("look for o to win")
@@ -147,7 +153,8 @@ while True:
         if result is not None:
             play_move(Cell.o, result[0], result[1])
             print_board()
-            exit("o wins")
+            print("o wins")
+            exit()
 
     logger.debug("look for x to win next turn")
     logger.debug(x_win_next_turn_assertions)
