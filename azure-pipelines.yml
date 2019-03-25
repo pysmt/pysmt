@@ -112,6 +112,94 @@ jobs:
 
 
 
+- job: 'Ubuntu16PyPy2'
+  condition: or(eq(variables['Build.SourceBranchName'], 'master'), eq(variables['Build.Reason'], 'PullRequest'))
+  pool:
+    vmImage: 'Ubuntu-16.04'
+  strategy:
+    matrix:
+      PyPy2NoSolver:
+        pypy_binary: 'pypy'
+        PYTHON_VERSION: 'pypy'
+        PYSMT_SOLVER: "None"
+      PyPy2MsatWrap:
+        pypy_binary: 'pypy'
+        PYTHON_VERSION: 'pypy'
+        PYSMT_SOLVER: "msat_wrap"
+      PyPy2Z3Wrap:
+        pypy_binary: 'pypy'
+        PYTHON_VERSION: 'pypy'
+        PYSMT_SOLVER: "z3_wrap"
+
+  steps:
+  - bash: |
+      echo "##vso[task.setvariable variable=PATH]$(System.DefaultWorkingDirectory)/pypy.tmp/pypy/bin:$(PATH)"
+  - bash: |
+      mkdir pypy.tmp
+      cd pypy.tmp
+      curl --location --output archive https://bitbucket.org/pypy/pypy/downloads/pypy2.7-v7.0.0-linux64.tar.bz2
+      tar xvf archive
+      rm archive
+      mv ./* pypy
+      cd ..
+    displayName: 'Get PyPy'
+  - bash: |
+      type $(pypy_binary)
+      $(pypy_binary) --version
+    displayName: 'Check for PyPy'
+  - bash: |
+      curl --output pypy.tmp/get-pip.py https://bootstrap.pypa.io/get-pip.py
+      $(pypy_binary) pypy.tmp/get-pip.py
+    displayName: 'Get PIP'
+  - bash: ci/install_linux.sh
+    displayName: 'Install and Test'
+
+
+
+- job: 'Ubuntu16PyPy3'
+  condition: or(eq(variables['Build.SourceBranchName'], 'master'), eq(variables['Build.Reason'], 'PullRequest'))
+  pool:
+    vmImage: 'Ubuntu-16.04'
+  strategy:
+    matrix:
+      PyPy3NoSolver:
+        pypy_binary: 'pypy3'
+        PYTHON_VERSION: 'pypy3'
+        PYSMT_SOLVER: "None"
+      PyPy3MsatWrap:
+        pypy_binary: 'pypy3'
+        PYTHON_VERSION: 'pypy3'
+        PYSMT_SOLVER: "msat_wrap"
+      PyPy3Z3Wrap:
+        pypy_binary: 'pypy3'
+        PYTHON_VERSION: 'pypy3'
+        PYSMT_SOLVER: "z3_wrap"
+
+  steps:
+  - bash: |
+      echo "##vso[task.setvariable variable=PATH]$(System.DefaultWorkingDirectory)/pypy.tmp/pypy/bin:$(PATH)"
+  - bash: |
+      mkdir pypy.tmp
+      cd pypy.tmp
+      curl --location --output archive https://bitbucket.org/pypy/pypy/downloads/pypy3.5-v7.0.0-linux64.tar.bz2
+      tar xvf archive
+      rm archive
+      mv ./* pypy
+      cd ..
+    displayName: 'Get PyPy'
+  - bash: |
+      type $(pypy_binary)
+      $(pypy_binary) --version
+    displayName: 'Check for PyPy'
+  - bash: |
+      curl --output pypy.tmp/get-pip.py https://bootstrap.pypa.io/get-pip.py
+      $(pypy_binary) pypy.tmp/get-pip.py
+    displayName: 'Get PIP'
+  - bash: ci/install_linux.sh
+    displayName: 'Install and Test'
+
+
+
 - job: 'Ubuntu16Py37'
   pool:
     vmImage: 'Ubuntu-16.04'
