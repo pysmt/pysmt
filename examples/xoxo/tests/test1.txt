@@ -1,0 +1,3 @@
+o o x
+o x x
+o x -

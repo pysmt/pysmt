@@ -1,4 +1,4 @@
-# Noughts and Crosses player with SAT solver
+# Noughts and Crosses/Tic-Tac-Toe player with SAT solver
 
 uses pySMT and the solver of your choice to play O's and X's. The computer plays Os.
 Player X is given the value 1, and player O is given value 10. 
