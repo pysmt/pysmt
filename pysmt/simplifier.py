@@ -895,7 +895,7 @@ class Simplifier(pysmt.walkers.DagWalker):
             idx = s.constant_value().find(t.constant_value(), i.constant_value())
             # idx = -1, if t is not found
             return self.manager.Int(idx)
-        return self.manager.StrIndexof(s, t, i)
+        return self.manager.StrIndexOf(s, t, i)
 
     def walk_str_replace(self, formula, args, **kwargs):
         s, t1, t2 = args
