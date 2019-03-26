@@ -1,0 +1,5 @@
+(set-logic QF_S)
+(declare-fun var0 () String)
+(assert (= var0 (str.++ "*zCEs" "")))
+(assert (= var0 (str.++ "`Q\\M-" "")))
+(check-sat)
