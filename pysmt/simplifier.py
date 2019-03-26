@@ -937,48 +937,51 @@ class Simplifier(pysmt.walkers.DagWalker):
         return self.manager.StrToInt(s)
 
     def walk_str_to_re(self, formula, args, **kwargs):
-        # TODO : Fix simplification for str_to_re!! 
-        raise NotImplementedError
+        s = args[0]
+        if s.is_string_constant():
+            raise NotImplementedError
+        return self.manager.StrToRe(s)
 
     def walk_str_in_re(self, formula, args, **kwargs):
-        # TODO : Fix simplification for str_in_re!! 
-        raise NotImplementedError
-
-    def walk_re_all(self, formula, args, **kwargs):
-        # TODO : Fix simplification for re_all!! 
-        raise NotImplementedError
-
-    def walk_re_none(self, formula, args, **kwargs):
-        # TODO : Fix simplification for re_none!! 
-        raise NotImplementedError
-
-    def walk_re_range(self, formula, args, **kwargs):
-        # TODO : Fix simplification for re_range!! 
-        raise NotImplementedError
+        s, r = args
+        if s.is_string_constant() and r.is_regex_constant():
+            raise NotImplementedError
+        return self.manager.StrInRe(s, r)
 
     def walk_re_concat(self, formula, args, **kwargs):
-        # TODO : Fix simplification for re_concat!!
-        raise NotImplementedError
+        if any(r.is_regex_constant() in args):
+            raise NotImplementedError
+        return self.manager.ReConcat(*args)
 
     def walk_re_kleene_star(self, formula, args, **kwargs):
-        # TODO : Fix simplification for re_kleene_star!!
-        raise NotImplementedError
+        r = args[0]
+        if r.is_regex_constant():
+            raise NotImplementedError
+        return self.manager.ReKleeneStar(r)
 
     def walk_re_kleene_plus(self, formula, args, **kwargs):
-        # TODO : Fix simplification for re_kleene_plus!!
-        raise NotImplementedError
+        r = args[0]
+        if r.is_regex_constant():
+            raise NotImplementedError
+        return self.manager.ReKleenePlus(r)
 
     def walk_re_opt(self, formula, args, **kwargs):
-        # TODO : Fix simplification for re_opt!!
-        raise NotImplementedError
+        r = args[0]
+        if r.is_regex_constant():
+            raise NotImplementedError
+        return self.manager.ReOpt(r)
 
     def walk_re_union(self, formula, args, **kwargs):
-        # TODO : Fix simplification for re_union!!
-        raise NotImplementedError 
+        r1, r2 = args
+        if r1.is_regex_constant() and r2.is_regex_constant():
+            raise NotImplementedError
+        return self.manager.ReUnion(r1, r2)
 
     def walk_re_inter(self, formula, args, **kwargs):
-        # TODO : Fix simplification for re_inter!!
-        raise NotImplementedError 
+        r1, r2 = args
+        if r1.is_regex_constant() and r2.is_regex_constant():
+            raise NotImplementedError
+        return self.manager.ReInter(r1, r2)
 
     def walk_int_to_str(self, formula, args, **kwargs):
         i = args[0]
@@ -1041,6 +1044,7 @@ class Simplifier(pysmt.walkers.DagWalker):
     @handles(op.SYMBOL)
     @handles(op.REAL_CONSTANT, op.INT_CONSTANT, op.BOOL_CONSTANT)
     @handles(op.BV_CONSTANT, op.STR_CONSTANT, op.ALGEBRAIC_CONSTANT)
+    @handles(op.RE_ALL, op.RE_NONE, op.RE_RANGE)
     def walk_identity(self, formula, args, **kwargs):
         return formula
 
