@@ -396,7 +396,7 @@ class TestRegressions(TestCase):
         self.assertEqual(res.replace('__x0', 'x'), smtlib_input)
 
     @skipIfSolverNotAvailable("z3")
-    def test_z3_nary_back(self):
+    def disabled_test_z3_nary_back(self):
         from z3 import Tactic
         r = Symbol("r", REAL)
         s = Symbol("s", REAL)
