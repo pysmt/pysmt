@@ -155,6 +155,29 @@ class TestBasic(TestCase):
             s.solve()
             self.assertTrue(s.get_py_value(varA))
 
+    @skipIfNoSolverForLogic(QF_BOOL)
+    def test_incremental(self):
+        a = Symbol('a', BOOL)
+        b = Symbol('b', BOOL)
+        c = Symbol('c', BOOL)
+
+        for name in get_env().factory.all_solvers(logic=QF_BOOL):
+            with Solver(name) as solver:
+                solver.add_assertion(Or(a, b))
+                solver.add_assertion(Or(Not(b), c))
+                self.assertTrue(solver.solve())
+                try:
+                    solver.push(1)
+                except NotImplementedError:
+                    # if push not implemented, pop shouldn't be either
+                    self.assertRaises(NotImplementedError, solver.pop)
+                    continue
+
+                solver.add_assertion(And(Not(a), Not(c)))
+                self.assertFalse(solver.solve())
+                solver.pop(1)
+                self.assertTrue(solver.solve())
+
     @skipIfSolverNotAvailable("msat")
     def test_examples_msat(self):
         for (f, validity, satisfiability, logic) in get_example_formulae():
