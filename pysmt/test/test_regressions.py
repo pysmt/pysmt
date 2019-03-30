@@ -405,7 +405,7 @@ class TestRegressions(TestCase):
 
         with Solver(name="z3") as solver:
             z3_f = solver.converter.convert(f)
-            z3_f = Tactic('simplify')(z3_f).as_expr()
+            z3_f = Tactic('simplify', solver.z3.ctx)(z3_f).as_expr()
             fp = solver.converter.back(z3_f)
             self.assertValid(Iff(f, fp), (f, fp))
 
