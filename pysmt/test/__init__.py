@@ -82,7 +82,7 @@ class skipIfSolverNotAvailable(object):
         return wrapper
 
 class skipIfQENotAvailable(object):
-    """Skip a test if the given solver is not available."""
+    """Skip a test if the given solver does not support quantifier elimination."""
 
     def __init__(self, qe):
         self.qe = qe
