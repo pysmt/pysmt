@@ -267,33 +267,36 @@ class CVC4Converter(Converter, DagWalker):
         Helper function to take a CVC4 array and make an Array
         '''
         assert arr_expr.getType().isArray(), "Expecting a CVC4 array"
-        visit = [arr_expr]
+        to_visit = [arr_expr]
         visited = set()
-        cache = dict()
-        while visit:
-            expr = visit.pop()
+        pysmt_expr = dict()
+        while to_visit:
+            expr = to_visit.pop()
             if expr not in visited:
-                visit.append(expr)
+                to_visit.append(expr)
                 visited.add(expr)
                 for c in expr.getChildren():
-                    visit.append(c)
+                    to_visit.append(c)
             else:
                 if expr.getType().isArray():
                     if expr.getNumChildren() == 3:
                         children = expr.getChildren()
-                        cache[expr.getId()] = self.mgr.Store(cache[children[0].getId()],
-                                                             cache[children[1].getId()],
-                                                             cache[children[2].getId()])
+                        pysmt_expr[expr.getId()] = self.mgr.Store(pysmt_expr[children[0].getId()],
+                                                                  pysmt_expr[children[1].getId()],
+                                                                  pysmt_expr[children[2].getId()])
                     else:
+                        # CVC4 stores arrays as a sequence of stores on a StoreAll node
+                        # the StoreAll node keeps a constant of the element type at every index
+                        # this is base_value below
                         const_ = expr.getConstArrayStoreAll()
                         array_type = self._cvc4_type_to_type(const_.getType())
                         base_value = self.back(const_.getExpr())
-                        cache[expr.getId()] = self.mgr.Array(array_type.index_type,
-                                                             base_value)
+                        pysmt_expr[expr.getId()] = self.mgr.Array(array_type.index_type,
+                                                                  base_value)
                 else:
-                    cache[expr.getId()] = self.back(expr)
+                    pysmt_expr[expr.getId()] = self.back(expr)
 
-        return cache[arr_expr.getId()]
+        return pysmt_expr[arr_expr.getId()]
 
 
     @catch_conversion_error
