@@ -294,7 +294,7 @@ jobs:
         PYSMT_SOLVER: "msat"
       Py37Msat:
         PYTHON_VERSION: '3.7'
-        PYSMT_SOLVEnR: "msat"
+        PYSMT_SOLVER: "msat"
       Py27Z3:
         PYTHON_VERSION: '2.7'
         PYSMT_SOLVER: "z3"
