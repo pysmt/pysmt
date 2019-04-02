@@ -294,7 +294,7 @@ jobs:
         PYSMT_SOLVER: "msat"
       Py37Msat:
         PYTHON_VERSION: '3.7'
-        PYSMT_SOLVER: "msat"
+        PYSMT_SOLVEnR: "msat"
       Py27Z3:
         PYTHON_VERSION: '2.7'
         PYSMT_SOLVER: "z3"
@@ -306,7 +306,7 @@ jobs:
     inputs:
       versionSpec: '$(PYTHON_VERSION)'
       architecture: 'x64'
-  - powershell: ci/install_win.ps1
+  - bash: ci/install_win.sh
     displayName: 'Prepare System'
-  - powershell: ci/run_win.ps1
-    displayName: 'Prepare System'
+  - bash: ci/run_win.sh
+    displayName: 'Testing'
