@@ -24,7 +24,7 @@ function os_install {
         esac
         brew install "${PKG}" || (brew upgrade "${PKG}" && brew cleanup "${PKG}")
     else
-        apt install -y ${PKG}
+        sudo apt install -y ${PKG}
     fi
 }
 
@@ -57,7 +57,7 @@ then
     cd swig
     git checkout rel-3.0.12
     ./autogen.sh && ./configure && make
-    make install
+    sudo make install
     cd ..
 fi
 #
