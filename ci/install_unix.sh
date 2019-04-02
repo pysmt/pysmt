@@ -1,28 +1,63 @@
 #!/bin/bash
 set -ev
 
+# This script directory
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
+# Utility function to install packages in the OS
+function os_install {
+    PKG=${1}
+
+    if [ ${AGENT_OS} == "Darwin" ];
+    then
+        # Convert package names from apt to brew naming
+        case ${PKG} in
+            "libmpc-dev")
+                PKG="libmpc"
+            ;;
+            "libmpfr-dev")
+                PKG="mpfr"
+            ;;
+            "libgmp-dev")
+                PKG="gmp"
+            ;;
+        esac
+        brew install "${PKG}" || (brew upgrade "${PKG}" && brew cleanup "${PKG}")
+    else
+        apt install -y ${PKG}
+    fi
+}
+
+# Use python or pypy as commands depending on the build
 PYTHON="python"
 if [ "${PYTHON_VERSION}" == "pypy" ] || [ "${PYTHON_VERSION}" == "pypy3" ]
 then
     PYTHON="${PYTHON_VERSION}"
 fi
+
+# 'pip install' command
 PIP_INSTALL="${PYTHON} -m pip install --upgrade"
 
 # Check that the correct version of Python is running.
 ${PYTHON} ${DIR}/check_python_version.py "${PYTHON_VERSION}"
 
+# Install GMP for compiling mathsat bindings
+if [ "${PYSMT_SOLVER}" == "msat" ] || [ "${PYSMT_SOLVER}" == "yices" ]
+then
+   os_install libgmp-dev
+fi
+
 # Install latest version of SWIG for CVC4
 # (The other solvers in isolation fall-back to the system swig)
 if [ "${PYSMT_SOLVER}" == "cvc4" ] || [ "${PYSMT_SOLVER}" == "all" ]
 then
-    sudo apt install -y flex bison
+    os_install flex
+    os_install bison
     git clone https://github.com/swig/swig.git
     cd swig
     git checkout rel-3.0.12
     ./autogen.sh && ./configure && make
-    sudo make install
+    make install
     cd ..
 fi
 #
@@ -31,7 +66,7 @@ if [ "${PYSMT_SOLVER}" == "yices" ] || \
    [ "${PYSMT_SOLVER}" == "bdd" ] || \
    [ "${PYSMT_SOLVER}" == "picosat" ]
 then
-    sudo apt install -y swig
+    os_install swig
 fi
 
 # Install dependencies
@@ -43,7 +78,8 @@ $PIP_INSTALL nose
 # Install gmpy if needed
 if [ "${PYSMT_GMPY}" == "TRUE" ]
 then
-    sudo apt install -y libmpfr-dev libmpc-dev
+    os_install libmpfr-dev
+    os_install libmpc-dev
     $PIP_INSTALL gmpy2;
 fi
 
@@ -54,7 +90,6 @@ if [ "${PYSMT_CYTHON}" == "TRUE" ] || \
 then
     $PIP_INSTALL cython
 fi
-
 
 # Install the solver(s)!
 ${PYTHON} install.py --confirm-agreement
@@ -75,24 +110,3 @@ fi
 
 # Check that the solvers are installed
 ${PYTHON} install.py --check
-
-
-# Run the test suite
-${PYTHON} -m nose pysmt -v # --with-coverage --cover-package=pysmt
-
-
-# Test examples in examples/ folder
-if [ "${PYSMT_SOLVER}" == "all" ];
-then
-    ${PYTHON} install.py --msat --conf --force;
-    cp -v $(find ~/.smt_solvers/ -name mathsat -type f) /tmp/mathsat;
-
-    # since we're relying on relative `pysmt` import in examples,
-    # ensure `.` is added to `sys.path`
-    export PYTHONPATH=${PYTHONPATH:-.}
-
-    for ex in examples/*.py; do
-        echo $ex
-        ${PYTHON} $ex
-    done
-fi

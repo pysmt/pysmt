@@ -1,4 +1,52 @@
 jobs:
+
+- job: 'Ubuntu16Py37'
+  pool:
+    vmImage: 'Ubuntu-16.04'
+  strategy:
+    matrix:
+      Py37NoSolver:
+        PYTHON_VERSION: '3.7'
+        PYSMT_SOLVER: "None"
+      Py37Msat:
+        PYTHON_VERSION: '3.7'
+        PYSMT_SOLVER: "msat"
+      Py37Z3:
+        PYTHON_VERSION: '3.7'
+        PYSMT_SOLVER: "z3"
+      Py37Yices:
+        PYTHON_VERSION: '3.7'
+        PYSMT_SOLVER: "yices"
+      Py37CVC4:
+        PYTHON_VERSION: '3.7'
+        PYSMT_SOLVER: "cvc4"
+      Py37Btor:
+        PYTHON_VERSION: '3.7'
+        PYSMT_SOLVER: "btor"
+      Py37Picosat:
+        PYTHON_VERSION: '3.7'
+        PYSMT_SOLVER: "picosat"
+      Py37Bdd:
+        PYTHON_VERSION: '3.7'
+        PYSMT_SOLVER: "bdd"
+      Py37MsatWrap:
+        PYTHON_VERSION: '3.7'
+        PYSMT_SOLVER: "msat_wrap"
+      Py37Z3Wrap:
+        PYTHON_VERSION: '3.7'
+        PYSMT_SOLVER: "z3_wrap"
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '$(PYTHON_VERSION)'
+      architecture: 'x64'
+  - bash: ci/install_unix.sh
+    displayName: 'Prepare System'
+  - bash: ci/run_unix.sh
+    displayName: 'Testing'
+
+
+
 - job: 'Ubuntu16All'
   condition: or(eq(variables['Build.SourceBranchName'], 'master'), eq(variables['Build.Reason'], 'PullRequest'))
   pool:
@@ -6,41 +54,33 @@ jobs:
   strategy:
     matrix:
       Py27All:
-        python.version: '2.7'
         PYTHON_VERSION: '2.7'
         PYSMT_SOLVER: "all"
       Py37All:
-        python.version: '3.7'
         PYTHON_VERSION: '3.7'
         PYSMT_SOLVER: "all"
       Py27Cython:
-        python.version: '2.7'
         PYTHON_VERSION: '2.7'
         PYSMT_SOLVER: "None"
         PYSMT_CYTHON: "TRUE"
       Py37Cython:
-        python.version: '3.7'
         PYTHON_VERSION: '3.7'
         PYSMT_SOLVER: "None"
         PYSMT_CYTHON: "TRUE"
       Py27GMPy:
-        python.version: '2.7'
         PYTHON_VERSION: '2.7'
         PYSMT_SOLVER: "None"
         PYSMT_GMPY: "TRUE"
       Py37GMPy:
-        python.version: '3.7'
         PYTHON_VERSION: '3.7'
         PYSMT_SOLVER: "None"
         PYSMT_GMPY: "TRUE"
       Py27CythonGMPy:
-        python.version: '2.7'
         PYTHON_VERSION: '2.7'
         PYSMT_SOLVER: "None"
         PYSMT_CYTHON: "TRUE"
         PYSMT_GMPY: "TRUE"
       Py37CythonGMPy:
-        python.version: '3.7'
         PYTHON_VERSION: '3.7'
         PYSMT_SOLVER: "None"
         PYSMT_CYTHON: "TRUE"
@@ -48,10 +88,12 @@ jobs:
   steps:
   - task: UsePythonVersion@0
     inputs:
-      versionSpec: '$(python.version)'
+      versionSpec: '$(PYTHON_VERSION)'
       architecture: 'x64'
-  - bash: ci/install_linux.sh
-    displayName: 'Install and Test'
+  - bash: ci/install_unix.sh
+    displayName: 'Prepare System'
+  - bash: ci/run_unix.sh
+    displayName: 'Testing'
 
 
 
@@ -62,53 +104,44 @@ jobs:
   strategy:
     matrix:
       Py27NoSolver:
-        python.version: '2.7'
         PYTHON_VERSION: '2.7'
         PYSMT_SOLVER: "None"
       Py27Msat:
-        python.version: '2.7'
         PYTHON_VERSION: '2.7'
         PYSMT_SOLVER: "msat"
       Py27Z3:
-        python.version: '2.7'
         PYTHON_VERSION: '2.7'
         PYSMT_SOLVER: "z3"
       Py27Yices:
-        python.version: '2.7'
         PYTHON_VERSION: '2.7'
         PYSMT_SOLVER: "yices"
       Py27CVC4:
-        python.version: '2.7'
         PYTHON_VERSION: '2.7'
         PYSMT_SOLVER: "cvc4"
       Py27Btor:
-        python.version: '2.7'
         PYTHON_VERSION: '2.7'
         PYSMT_SOLVER: "btor"
       Py27Picosat:
-        python.version: '2.7'
         PYTHON_VERSION: '2.7'
         PYSMT_SOLVER: "picosat"
       Py27Bdd:
-        python.version: '2.7'
         PYTHON_VERSION: '2.7'
         PYSMT_SOLVER: "bdd"
       Py27MsatWrap:
-        python.version: '2.7'
         PYTHON_VERSION: '2.7'
         PYSMT_SOLVER: "msat_wrap"
       Py27Z3Wrap:
-        python.version: '2.7'
         PYTHON_VERSION: '2.7'
         PYSMT_SOLVER: "z3_wrap"
-
   steps:
   - task: UsePythonVersion@0
     inputs:
-      versionSpec: '$(python.version)'
+      versionSpec: '$(PYTHON_VERSION)'
       architecture: 'x64'
-  - bash: ci/install_linux.sh
-    displayName: 'Install and Test'
+  - bash: ci/install_unix.sh
+    displayName: 'Prepare System'
+  - bash: ci/run_unix.sh
+    displayName: 'Testing'
 
 
 
@@ -130,7 +163,6 @@ jobs:
         pypy_binary: 'pypy'
         PYTHON_VERSION: 'pypy'
         PYSMT_SOLVER: "z3_wrap"
-
   steps:
   - bash: |
       echo "##vso[task.setvariable variable=PATH]$(System.DefaultWorkingDirectory)/pypy.tmp/pypy/bin:$(PATH)"
@@ -151,8 +183,10 @@ jobs:
       curl --output pypy.tmp/get-pip.py https://bootstrap.pypa.io/get-pip.py
       $(pypy_binary) pypy.tmp/get-pip.py
     displayName: 'Get PIP'
-  - bash: ci/install_linux.sh
-    displayName: 'Install and Test'
+  - bash: ci/install_unix.sh
+    displayName: 'Prepare System'
+  - bash: ci/run_unix.sh
+    displayName: 'Testing'
 
 
 
@@ -174,7 +208,6 @@ jobs:
         pypy_binary: 'pypy3'
         PYTHON_VERSION: 'pypy3'
         PYSMT_SOLVER: "z3_wrap"
-
   steps:
   - bash: |
       echo "##vso[task.setvariable variable=PATH]$(System.DefaultWorkingDirectory)/pypy.tmp/pypy/bin:$(PATH)"
@@ -195,63 +228,10 @@ jobs:
       curl --output pypy.tmp/get-pip.py https://bootstrap.pypa.io/get-pip.py
       $(pypy_binary) pypy.tmp/get-pip.py
     displayName: 'Get PIP'
-  - bash: ci/install_linux.sh
-    displayName: 'Install and Test'
-
-
-
-- job: 'Ubuntu16Py37'
-  pool:
-    vmImage: 'Ubuntu-16.04'
-  strategy:
-    matrix:
-      Py37NoSolver:
-        python.version: '3.7'
-        PYTHON_VERSION: '3.7'
-        PYSMT_SOLVER: "None"
-      Py37Msat:
-        python.version: '3.7'
-        PYTHON_VERSION: '3.7'
-        PYSMT_SOLVER: "msat"
-      Py37Z3:
-        python.version: '3.7'
-        PYTHON_VERSION: '3.7'
-        PYSMT_SOLVER: "z3"
-      Py37Yices:
-        python.version: '3.7'
-        PYTHON_VERSION: '3.7'
-        PYSMT_SOLVER: "yices"
-      Py37CVC4:
-        python.version: '3.7'
-        PYTHON_VERSION: '3.7'
-        PYSMT_SOLVER: "cvc4"
-      Py37Btor:
-        python.version: '3.7'
-        PYTHON_VERSION: '3.7'
-        PYSMT_SOLVER: "btor"
-      Py37Picosat:
-        python.version: '3.7'
-        PYTHON_VERSION: '3.7'
-        PYSMT_SOLVER: "picosat"
-      Py37Bdd:
-        python.version: '3.7'
-        PYTHON_VERSION: '3.7'
-        PYSMT_SOLVER: "bdd"
-      Py37MsatWrap:
-        python.version: '3.7'
-        PYTHON_VERSION: '3.7'
-        PYSMT_SOLVER: "msat_wrap"
-      Py37Z3Wrap:
-        python.version: '3.7'
-        PYTHON_VERSION: '3.7'
-        PYSMT_SOLVER: "z3_wrap"
-  steps:
-  - task: UsePythonVersion@0
-    inputs:
-      versionSpec: '$(python.version)'
-      architecture: 'x64'
-  - bash: ci/install_linux.sh
-    displayName: 'Install and Test'
+  - bash: ci/install_unix.sh
+    displayName: 'Prepare System'
+  - bash: ci/run_unix.sh
+    displayName: 'Testing'
 
 
 
@@ -262,44 +242,38 @@ jobs:
   strategy:
     matrix:
       Py27NoSolver:
-        python.version: '2.7'
         PYTHON_VERSION: '2.7'
         PYSMT_SOLVER: "None"
       Py37NoSolver:
-        python.version: '3.7'
         PYTHON_VERSION: '3.7'
         PYSMT_SOLVER: "None"
       Py27Msat:
-        python.version: '2.7'
         PYTHON_VERSION: '2.7'
         PYSMT_SOLVER: "msat"
       Py37Msat:
-        python.version: '3.7'
         PYTHON_VERSION: '3.7'
         PYSMT_SOLVER: "msat"
       Py27Z3:
-        python.version: '2.7'
         PYTHON_VERSION: '2.7'
         PYSMT_SOLVER: "z3"
       Py37Z3:
-        python.version: '3.7'
         PYTHON_VERSION: '3.7'
         PYSMT_SOLVER: "z3"
       Py27Yices:
-        python.version: '2.7'
         PYTHON_VERSION: '2.7'
         PYSMT_SOLVER: "yices"
       Py37Yices:
-        python.version: '3.7'
         PYTHON_VERSION: '3.7'
         PYSMT_SOLVER: "yices"
   steps:
   - task: UsePythonVersion@0
     inputs:
-      versionSpec: '$(python.version)'
+      versionSpec: '$(PYTHON_VERSION)'
       architecture: 'x64'
-  - bash: ci/install_osx.sh
-    displayName: 'Install and Test'
+  - bash: ci/install_unix.sh
+    displayName: 'Prepare System'
+  - bash: ci/run_unix.sh
+    displayName: 'Testing'
 
 
 
@@ -310,34 +284,29 @@ jobs:
   strategy:
     matrix:
       Py27NoSolver:
-        python.version: '2.7'
         PYTHON_VERSION: '2.7'
         PYSMT_SOLVER: "None"
       Py37NoSolver:
-        python.version: '3.7'
         PYTHON_VERSION: '3.7'
         PYSMT_SOLVER: "None"
       Py27Msat:
-        python.version: '2.7'
         PYTHON_VERSION: '2.7'
         PYSMT_SOLVER: "msat"
       Py37Msat:
-        python.version: '3.7'
         PYTHON_VERSION: '3.7'
         PYSMT_SOLVER: "msat"
       Py27Z3:
-        python.version: '2.7'
         PYTHON_VERSION: '2.7'
         PYSMT_SOLVER: "z3"
       Py37Z3:
-        python.version: '3.7'
         PYTHON_VERSION: '3.7'
         PYSMT_SOLVER: "z3"
-
   steps:
   - task: UsePythonVersion@0
     inputs:
-      versionSpec: '$(python.version)'
+      versionSpec: '$(PYTHON_VERSION)'
       architecture: 'x64'
   - powershell: ci/install_win.ps1
-    displayName: 'Install and Test'
+    displayName: 'Prepare System'
+  - powershell: ci/run_win.ps1
+    displayName: 'Prepare System'

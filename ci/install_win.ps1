@@ -7,4 +7,3 @@ python -m pip install --upgrade setuptools
 python install.py --confirm-agreement
 
 python install.py --check
-python -m nose -v
