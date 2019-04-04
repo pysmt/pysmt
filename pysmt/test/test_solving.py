@@ -177,6 +177,11 @@ class TestBasic(TestCase):
                 self.assertFalse(solver.solve())
                 solver.pop(1)
                 self.assertTrue(solver.solve())
+                solver.add_assertion(FALSE())
+                self.assertFalse(solver.solve())
+                solver.reset_assertions()
+                solver.add_assertion(a)
+                self.assertTrue(solver.solve())
 
     @skipIfSolverNotAvailable("msat")
     def test_examples_msat(self):
