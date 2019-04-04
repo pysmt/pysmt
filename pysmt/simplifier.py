@@ -23,6 +23,7 @@ import pysmt.operators as op
 import pysmt.typing as types
 from pysmt.utils import set_bit
 from pysmt.exceptions import PysmtValueError
+from pysmt.fnode import FNode
 
 
 class Simplifier(pysmt.walkers.DagWalker):
@@ -360,6 +361,7 @@ class Simplifier(pysmt.walkers.DagWalker):
             elif not const.is_one():
                 new_args.append(const)
 
+        new_args = sorted(new_args, key=FNode.node_id)
         return self.manager.Times(new_args)
 
 
@@ -893,7 +895,7 @@ class Simplifier(pysmt.walkers.DagWalker):
             idx = s.constant_value().find(t.constant_value(), i.constant_value())
             # idx = -1, if t is not found
             return self.manager.Int(idx)
-        return self.manager.StrIndexof(s, t, i)
+        return self.manager.StrIndexOf(s, t, i)
 
     def walk_str_replace(self, formula, args, **kwargs):
         s, t1, t2 = args

@@ -289,8 +289,9 @@ class TestBasic(TestCase):
     def test_tactics_z3(self):
         from z3 import Tactic, Then
 
-        my_tactic = Then(Tactic('simplify'), Tactic('propagate-values'),
-                         Tactic('elim-uncnstr'))
+        my_tactic = lambda ctx : Then(Tactic('simplify', ctx),
+                                      Tactic('propagate-values', ctx),
+                                      Tactic('elim-uncnstr', ctx))
 
         for (f, validity, satisfiability, logic) in get_example_formulae():
             if not logic.theory.linear: continue
@@ -299,7 +300,7 @@ class TestBasic(TestCase):
             if logic.theory.bit_vectors: continue
             s = Solver(name='z3')
             z3_f = s.converter.convert(f)
-            simp_z3_f = my_tactic(z3_f)
+            simp_z3_f = my_tactic(s.z3.ctx)(z3_f)
             simp_f = s.converter.back(simp_z3_f.as_expr())
             v = is_valid(simp_f)
             s = is_sat(simp_f)

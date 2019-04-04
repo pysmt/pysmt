@@ -51,7 +51,8 @@ def main():
         print('Wrong platform detected. %s was expected, but this script ' \
               'is running on %s!' % (expected_impl, impl))
         exit(2)
-    if expected_minor != str(version.minor) or expected_major != str(version.major):
+    if (expected_minor != '*' and expected_minor != str(version.minor)) or \
+       expected_major != str(version.major):
         print('Wrong version detected. %s.%s was expected, but this script ' \
               'is running on %s.%s!' % (expected_major, expected_minor,
                                         version.major, version.minor))

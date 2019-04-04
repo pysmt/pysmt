@@ -2,8 +2,8 @@
 pySMT: a Python API for SMT
 ===========================
 
-.. image:: https://travis-ci.org/pysmt/pysmt.svg?branch=master
-           :target: https://travis-ci.org/pysmt/pysmt
+.. image:: https://dev.azure.com/micheliandrea/PySMT/_apis/build/status/pysmt.pysmt?branchName=master
+           :target: https://dev.azure.com/micheliandrea/PySMT/_build/latest?definitionId=1&branchName=master
            :alt: Build Status
 
 .. image:: https://coveralls.io/repos/github/pysmt/pysmt/badge.svg
@@ -21,6 +21,7 @@ pySMT: a Python API for SMT
 .. image:: https://img.shields.io/pypi/l/pysmt.svg
            :target: /LICENSE
            :alt: Apache License
+
 .. image:: https://img.shields.io/badge/Browse%20the%20Archive-Google%20groups-orange.svg
            :target: https://groups.google.com/d/forum/pysmt
            :alt: Google groups
