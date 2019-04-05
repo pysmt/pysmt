@@ -209,6 +209,7 @@ class PicosatSolver(Solver):
         picosat.picosat_flushout(self._log_file_handler)
         picosat.picosat_reset(self.pico)
         self.pico = picosat.picosat_init()
+        self._var_ids = {}
         self.options(self)
 
     @clear_pending_pop
@@ -283,8 +284,7 @@ class PicosatSolver(Solver):
         assignment = {}
         for var, vid in iteritems(self._var_ids):
             v = picosat.picosat_deref(self.pico, vid)
-            if v == 0:
-                assert False
+            assert v!=0, "Error when translating variable."
 
             value = self.mgr.Bool(v == 1)
             assignment[var] = value
