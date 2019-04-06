@@ -310,3 +310,13 @@ jobs:
     displayName: 'Prepare System'
   - bash: ci/run_win.sh
     displayName: 'Testing'
+
+- job: PyPi
+  steps:
+  - script: 'pip install twine'
+  - bash: make_distrib.sh
+  - bash: cd dist; zip PySMT*.whl six.py
+  - task: TwineAuthenticate@0
+  inputs:
+    externalFeeds: PyPITest
+  - script: 'twine -r {PyPITest/pySMT} --config-file $(PYPIRC_PATH) dist/*'
