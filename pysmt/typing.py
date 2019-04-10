@@ -374,26 +374,6 @@ class PartialType(object):
     def __call__(self, *args):
         return self.definition(*args)
 
-#
-# Constructors
-#
-
-
-class StringType(PySMTType):
-    def __init__(self):
-        PySMTType.__init__(self, type_id = 6)
-
-    def is_string_type(self):
-        return True
-
-    def as_smtlib(self, funstyle=True):
-        if funstyle:
-            return "() String"
-        else:
-            return "String"
-
-    def __str__(self):
-        return "String"
 
 #
 # Singletons for the basic types

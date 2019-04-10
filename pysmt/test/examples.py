@@ -743,6 +743,13 @@ def get_full_example_formulae(environment=None):
                     logic=pysmt.logics.QF_SLIA
                 ),
 
+            Example(hr='(str.indexof(str1, "str", 1) = 2)',
+                    expr=Equals(StrIndexOf(str1,String("str"),Int(1)),Int(2)),
+                    is_valid=False,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_SLIA
+                ),
+
             Example(hr='(str.replace("mystr", "str", "my") = "mymy")',
                     expr=Equals(StrReplace(String("mystr"),String("str"),String("my")),String("mymy")),
                     is_valid=True,
