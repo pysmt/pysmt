@@ -22,7 +22,6 @@ VERSION = (0, 8, 1, "dev", 1)
 __version__ = "%d.%d.%d%s%d" % VERSION if len(VERSION) == 5 else \
               "%d.%d.%d" % VERSION
 
-
 def git_version():
     """Human-readable version of latest commit.
 
@@ -43,3 +42,10 @@ def git_version():
         return __version__ # pragma: no cover
     except OSError:
         return __version__ # pragma: no cover
+
+# Override version number in dev branch to include the number of
+# commits since the release
+if len(VERSION) == 5:
+    commits_from_tag = git_version().split("-")[1]
+    VERSION = VERSION[:4] + (commits_from_tag,)
+    __version__ = "%d.%d.%d%s%s" % VERSION
