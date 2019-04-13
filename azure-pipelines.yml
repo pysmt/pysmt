@@ -48,7 +48,7 @@ jobs:
 
 
 - job: 'Ubuntu16All'
-  condition: or(eq(variables['Build.SourceBranchName'], 'master'), eq(variables['Build.Reason'], 'PullRequest'))
+  condition: or(eq(variables['build.sourceBranch'], 'refs/heads/master'), eq(variables['Build.Reason'], 'PullRequest'))
   pool:
     vmImage: 'Ubuntu-16.04'
   strategy:
@@ -98,7 +98,7 @@ jobs:
 
 
 - job: 'Ubuntu16Py27'
-  condition: or(eq(variables['Build.SourceBranchName'], 'master'), eq(variables['Build.Reason'], 'PullRequest'))
+  condition: or(eq(variables['build.sourceBranch'], 'refs/heads/master'), eq(variables['Build.Reason'], 'PullRequest'))
   pool:
     vmImage: 'Ubuntu-16.04'
   strategy:
@@ -146,7 +146,7 @@ jobs:
 
 
 - job: 'Ubuntu16PyPy2'
-  condition: or(eq(variables['Build.SourceBranchName'], 'master'), eq(variables['Build.Reason'], 'PullRequest'))
+  condition: or(eq(variables['build.sourceBranch'], 'refs/heads/master'), eq(variables['Build.Reason'], 'PullRequest'))
   pool:
     vmImage: 'Ubuntu-16.04'
   strategy:
@@ -191,7 +191,7 @@ jobs:
 
 
 - job: 'Ubuntu16PyPy3'
-  condition: or(eq(variables['Build.SourceBranchName'], 'master'), eq(variables['Build.Reason'], 'PullRequest'))
+  condition: or(eq(variables['build.sourceBranch'], 'refs/heads/master'), eq(variables['Build.Reason'], 'PullRequest'))
   pool:
     vmImage: 'Ubuntu-16.04'
   strategy:
@@ -236,7 +236,7 @@ jobs:
 
 
 - job: 'OSX10_13'
-  condition: or(eq(variables['Build.SourceBranchName'], 'master'), eq(variables['Build.Reason'], 'PullRequest'))
+  condition: or(eq(variables['build.sourceBranch'], 'refs/heads/master'), eq(variables['Build.Reason'], 'PullRequest'))
   pool:
     vmImage: 'macOS-10.13'
   strategy:
@@ -278,7 +278,7 @@ jobs:
 
 
 - job: 'Win2016'
-  condition: or(eq(variables['Build.SourceBranchName'], 'master'), eq(variables['Build.Reason'], 'PullRequest'))
+  condition: or(eq(variables['build.sourceBranch'], 'refs/heads/master'), eq(variables['Build.Reason'], 'PullRequest'))
   pool:
     vmImage: 'vs2017-win2016'
   strategy:
@@ -320,12 +320,15 @@ jobs:
     - 'Ubuntu16PyPy3'
     - 'OSX10_13'
     - 'Win2016'
-  condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/master'))
+  # condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/master'))
   steps:
-  - script: 'pip install twine wheel'
-  - script: './make_distrib.sh; ls dist/'
+  - bash: pip install twine wheel
+    displayName: 'Install Twine and Wheel'
+  - script: './make_distrib.sh'
+    displayName: 'Make Distrib'
   - script: 'cd dist; zip PySMT*.whl six.py'
   - task: TwineAuthenticate@0
     inputs:
       externalFeeds: PyPITest
   - script: 'python -m twine upload -r pySMT --config-file $(PYPIRC_PATH) dist/*.whl'
+    displayName: 'Uploading to PyPI-Test'
