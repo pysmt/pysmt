@@ -320,7 +320,7 @@ jobs:
     - 'Ubuntu16PyPy3'
     - 'OSX10_13'
     - 'Win2016'
-  # condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/master'))
+  condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/master'))
   steps:
   - bash: pip install twine wheel
     displayName: 'Install Twine and Wheel'
