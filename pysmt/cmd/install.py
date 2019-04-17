@@ -259,7 +259,3 @@ def main():
                                          mirror_link=mirror_url,
                                          **i.extra_params)
             installer.install(force_redo=options.force_redo)
-
-
-if __name__ == "__main__":
-    main()
