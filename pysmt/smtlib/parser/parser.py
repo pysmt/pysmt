@@ -36,13 +36,16 @@ from pysmt.typing import _TypeDecl, PartialType
 
 
 def open_(fname):
-    """Transparently handle .bz2 files."""
+    """Transparently handle .bz2 and .gz files."""
     if fname.endswith(".bz2"):
         import bz2
         if PY2:
             return bz2.BZ2File(fname, "r")
         else:
             return bz2.open(fname, "rt")
+    if fname.endswith(".gz"):
+        import gzip
+        return gzip.open(fname, "rt")
     return open(fname)
 
 
