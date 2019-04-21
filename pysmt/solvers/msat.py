@@ -989,7 +989,7 @@ class MSatConverter(Converter, DagWalker):
         n = to_python_integer(formula.args()[1].constant_value())
         if n == 0:
             return mathsat.msat_make_number(self.msat_env(), "1")
-        is_neg = True if n < 0 else False
+        is_neg = (n < 0)
         n = abs(n)
         res = args[0]
         for i in range(2, n):
