@@ -35,10 +35,9 @@ class TestNonLinear(TestCase):
     def test_times(self):
         x = FreshSymbol(REAL)
         f = Equals(Times(x, x), x)
-        for sname in self.env.factory.all_solvers():
-            if sname in ["cvc4", "msat", "z3"]:
-                with Solver(name=sname, logic='QF_NRA') as s:
-                    self.assertTrue(s.is_sat(f))
+        for sname in self.env.factory.all_solvers('QF_NRA'):
+            with Solver(name=sname, logic='QF_NRA') as s:
+                self.assertTrue(s.is_sat(f))
 
     @skipIfSolverNotAvailable("z3")
     def test_div(self):
@@ -87,18 +86,17 @@ class TestNonLinear(TestCase):
         x = FreshSymbol(INT)
         f1 = Equals(Times(x, x), Int(2))
         f2 = Equals(Times(x, x), Int(16))
-        for sname in self.env.factory.all_solvers():
-            if sname in ["cvc4", "msat", "z3"]:
-                with Solver(name=sname, logic='QF_NIA') as s:
-                    try:
-                        self.assertFalse(s.is_sat(f1))
-                    except SolverReturnedUnknownResultError:
-                        pass
+        for sname in self.env.factory.all_solvers('QF_NIA'):
+            with Solver(name=sname, logic='QF_NIA') as s:
+                try:
+                    self.assertFalse(s.is_sat(f1))
+                except SolverReturnedUnknownResultError:
+                    pass
 
-                    try:
-                        self.assertTrue(s.is_sat(f2))
-                    except SolverReturnedUnknownResultError:
-                        pass
+                try:
+                    self.assertTrue(s.is_sat(f2))
+                except SolverReturnedUnknownResultError:
+                    pass
 
     @skipIfSolverNotAvailable("z3")
     def test_div_pow(self):
