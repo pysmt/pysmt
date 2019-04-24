@@ -7,34 +7,41 @@ logger = logging.getLogger('xoxo')
 logger.setLevel(logging.DEBUG)
 ch = logging.StreamHandler()
 
-if __debug__: # start with -O
-    log_level = logging.DEBUG
-else:
+if __debug__: # start with python -O
     log_level = logging.INFO
+else:
+    print("verbose logging")
+    log_level = logging.DEBUG
 
 ch.setLevel(log_level)
 
 logger.addHandler(ch)
 
-class Cell(Enum):
-    s = BV(0,4) # space
-    x = BV(1,4) # x
-    o = BV(2,4) # o
+VECT_WIDTH = 4
 
-board = [[FreshSymbol(BVType(4)) for _ in range(3)]
+class Cell(Enum):
+    s = BV(0,VECT_WIDTH) # space
+    x = BV(1,VECT_WIDTH) # x - human player goes first
+    o = BV(2,VECT_WIDTH) # o - cpu player
+
+x_turns = 0
+o_turns = 0
+x_val = Cell.x.value.constant_value()
+o_val = Cell.o.value.constant_value()
+
+board = [[FreshSymbol(BVType(VECT_WIDTH)) for _ in range(3)]
             for _ in range(3)]
 
 solver = Solver()
 
+# initialise board cells, each one has to be blank, x or o
 for row in board:
     for cell in row:
         solver.add_assertion(Or([Equals(cell, i.value)
              for i in Cell]))
 
-test = 'tests/test1.txt'
-test = 'tests/blank.txt'
-
 # load board
+test = 'tests/blank.txt'
 with open(test) as fh:
     for row, line in enumerate(fh.readlines()):
         for col, cell in enumerate(line.strip().split(' ')):
@@ -42,7 +49,6 @@ with open(test) as fh:
                 solver.add_assertion(Equals(board[row][col], Cell.x.value))
             elif cell == Cell.o.name:
                 solver.add_assertion(Equals(board[row][col], Cell.o.value))
-
 
 def already_played(row, col):
     if solver.get_value(board[row][col]) == Cell.s.value:
@@ -83,57 +89,39 @@ def get_win_assertion(player):
            And(Equals(board[2][0], player), Equals(board[1][1], player), Equals(board[0][2], player)),
            ]
 
-def get_next_move(player):
-    return [
-            Equals(board[0][0], player),
-            Equals(board[0][1], player),
-            Equals(board[0][2], player),
-            Equals(board[1][0], player),
-            Equals(board[1][1], player),
-            Equals(board[1][2], player),
-            Equals(board[2][0], player),
-            Equals(board[2][1], player),
-            Equals(board[2][2], player),
-           ]
 
+# only return options not already played
+def find_all_moves(player):
+    logger.debug("finding all possible moves for %s" % player)
+    options = []
+    for r, row in enumerate(board):
+        for c, cell in enumerate(row):
+            if not Equals(board[r][c], player) in solver.assertions: # if not already played
+                options.append(Equals(cell, player))
+                logger.debug("%d,%d" % (r,c))
+    return options
 
-def get_sum_board():
-    return board[0][0] + board[0][1] + board[0][2] +  \
-            board[1][0] + board[1][1] + board[1][2] + \
+def pick_new_move(player):
+    logger.debug("picking a move for %s" % player)
+    for r, row in enumerate(board):
+        for c, cell in enumerate(row):
+            if not Equals(board[r][c], player) in solver.assertions: # if not already played
+                if solver.get_value(cell) == player: # and is in the solution
+                    return(r,c)
+
+def get_board_sum():
+    return board[0][0] + board[0][1] + board[0][2] + board[1][0] + board[1][1] + board[1][2] + \
             board[2][0] + board[2][1] + board[2][2]
-
-def can_win(player, board_val):
-    win_assert = Or(get_win_assertion(player))
-    logger.debug("testing for player %s to win with board_val %d" % (player, board_val))
-    res = solver.solve([win_assert, Equals(get_sum_board(), BV(board_val, 4))])
-    logger.debug(solver.assertions)
-    if res:
-        logger.debug("found a win")
-        return True
-    logger.debug("no place to win")
-    return False
 
 def convert_num_to_indices(num):
     row = int(num/3)
     col = num % 3
     return(row,col)
 
-def get_new_move(player):
-    logger.debug("looking for a move for %s" % player)
-    #import ipdb; ipdb.set_trace()
-    for r, row in enumerate(board):
-        for c, cell in enumerate(row):
-            if not Equals(board[r][c], player) in solver.assertions: # if not already played
-                if solver.get_value(cell) == player: # and is marked as a move
-                    return(r,c)
-
-human_turns = 0
-cpu_turns = 0
 while True:
-    solver.solve([Equals(get_sum_board(), BV(human_turns * 1 + cpu_turns * 2,4))])
-
     # get user input and handle errors
     logger.info("-" * 40)
+    solver.solve([Equals(get_board_sum(), BV(x_turns * x_val + o_turns * o_val, VECT_WIDTH))])
     print_board()
     try:
         next_cell = int(input("type a cell (1-9):")) - 1
@@ -146,36 +134,54 @@ while True:
     row, col = convert_num_to_indices(next_cell)
     if(not already_played(row, col)):
         play_move(Cell.x.value, row, col)
-        human_turns += 1
+        x_turns += 1
     else:
         logger.info("that cell is already taken")
         continue
 
-    if can_win(Cell.x.value, human_turns * 1 + cpu_turns * 2):
+    # check for x to win
+    if solver.solve([
+                        Or(get_win_assertion(Cell.x.value)),
+                        Equals(get_board_sum(), BV(x_turns * x_val + o_turns * o_val, VECT_WIDTH))]):
         print("x wins")
         print_board()
         exit(0)
+    elif x_turns == 5:
+        print("no win possible")
+        exit(0)
 
-    cpu_turns += 1
+    # cpu's turn
+    o_turns += 1
 
-    # see if cpu can win this turn
-    if can_win(Cell.o.value, human_turns * 1 + cpu_turns * 2):
-        result = get_new_move(Cell.o.value)
+    # see if o can win this turn
+    if solver.solve([
+                        Or(get_win_assertion(Cell.o.value)),
+                        Equals(get_board_sum(), BV(x_turns * x_val + o_turns * o_val, VECT_WIDTH))]):
+        logger.debug("found a way for o to win")
+        result = pick_new_move(Cell.o.value)
         play_move(Cell.o.value, result[0], result[1])
         print("o wins")
         print_board()
         exit(0)
-    # try to block x
-    elif solver.solve([Or(get_win_assertion(Cell.x.value)), Or(get_next_move(Cell.o.value)), Equals(get_sum_board(), BV((human_turns+1) * 1 + (cpu_turns) * 2,4))]):
-        print("found a way to block x winning next time with board val %d" % ((human_turns+1) * 1 + (cpu_turns) * 2))
+
+    # try to block x next turn (x_turns+1) after both players have played again
+    elif solver.solve([
+                        Or(get_win_assertion(Cell.x.value)),
+                        And(Or(find_all_moves(Cell.o.value)), Or(find_all_moves(Cell.x.value))),
+                        Equals(get_board_sum(), BV((x_turns+1) * x_val + o_turns * o_val, VECT_WIDTH))]):
+        logger.debug("found a way to block x winning next time with board val %d" % ((x_turns+1) * x_val + o_turns * o_val))
         print_board()
-        result = get_new_move(Cell.x.value)
+        result = pick_new_move(Cell.x.value) # get the winning move for x and play for o
         play_move(Cell.o.value, result[0], result[1])
-    # force solver to find a next move for o, rather than 2 moves for x by specifying possible next moves with get_next_move()
-    elif solver.solve([Or(get_next_move(Cell.o.value)), Equals(get_sum_board(), BV(human_turns * 1 + cpu_turns * 2,4))]):
-        result = get_new_move(Cell.o.value)
+
+    # force solver to find a next move for o, rather than 2 moves for x by specifying possible next moves with find_all_moves()
+    elif solver.solve([
+                        Or(find_all_moves(Cell.o.value)),
+                        Equals(get_board_sum(), BV(x_turns * x_val + o_turns * o_val, VECT_WIDTH))]):
+        result = pick_new_move(Cell.o.value)
         play_move(Cell.o.value, result[0], result[1])
+    
+    # o can't play
     else:
         print("o can't play")
         exit(0)
-
