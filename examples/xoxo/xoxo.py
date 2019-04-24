@@ -3,22 +3,7 @@ from pysmt.typing import BVType
 from enum import Enum
 import logging
 
-logger = logging.getLogger('xoxo')
-logger.setLevel(logging.DEBUG)
-ch = logging.StreamHandler()
-
-if __debug__:
-    print("start with python -O for debugging")
-    log_level = logging.INFO
-else:
-    print("verbose logging on")
-    log_level = logging.DEBUG
-
-ch.setLevel(log_level)
-
-logger.addHandler(ch)
-
-VECT_WIDTH = 4
+VECT_WIDTH = 5
 
 class Cell(Enum):
     s = BV(0,VECT_WIDTH) # space
