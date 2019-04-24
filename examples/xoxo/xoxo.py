@@ -73,7 +73,7 @@ def play_move(p, row, col):
     logger.debug("adding assertion for player %s at (%d, %d)" % (p.name, row, col))
     solver.add_assertion(And(Equals(board[row][col], p.value)))
 
-def get_win_assertion(p):
+def get_win_formula(p):
     return [
            # rows
            And(Equals(board[0][0], p.value), Equals(board[0][1], p.value), Equals(board[0][2], p.value)),
@@ -142,7 +142,7 @@ while True:
 
     # check for x to win
     if solver.solve([
-                        Or(get_win_assertion(Cell.x)),
+                        Or(get_win_formula(Cell.x)),
                         Equals(get_board_sum(), BV(x_turns * x_val + o_turns * o_val, VECT_WIDTH))]):
         print("x wins")
         print_board()
@@ -156,7 +156,7 @@ while True:
 
     # see if o can win this turn
     if solver.solve([
-                        Or(get_win_assertion(Cell.o)),
+                        Or(get_win_formula(Cell.o)),
                         Equals(get_board_sum(), BV(x_turns * x_val + o_turns * o_val, VECT_WIDTH))]):
         logger.debug("found a way for o to win")
         result = pick_new_move(Cell.o)
@@ -167,7 +167,7 @@ while True:
 
     # try to block x next turn (x_turns+1) after both players have played again
     elif solver.solve([
-                        Or(get_win_assertion(Cell.x)),
+                        Or(get_win_formula(Cell.x)),
                         And(Or(find_all_moves(Cell.o)), Or(find_all_moves(Cell.x))),
                         Equals(get_board_sum(), BV((x_turns+1) * x_val + o_turns * o_val, VECT_WIDTH))]):
         logger.debug("found a way to block x winning next time with board val %d" % ((x_turns+1) * x_val + o_turns * o_val))
