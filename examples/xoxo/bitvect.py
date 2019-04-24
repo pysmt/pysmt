@@ -7,10 +7,11 @@ logger = logging.getLogger('xoxo')
 logger.setLevel(logging.DEBUG)
 ch = logging.StreamHandler()
 
-if __debug__: # start with python -O
+if __debug__:
+    print("start with python -O for debugging")
     log_level = logging.INFO
 else:
-    print("verbose logging")
+    print("verbose logging on")
     log_level = logging.DEBUG
 
 ch.setLevel(log_level)
