@@ -27,7 +27,11 @@ rewritten as LE and LT. Similarly, the operator Xor is rewritten using
 its definition.
 """
 
-import collections
+import sys
+if sys.version_info >= (3, 3):
+    from collections.abc import Iterable
+else:
+    from collections import Iterable
 
 from six.moves import xrange
 
@@ -1066,7 +1070,7 @@ class FormulaManager(object):
            And([a,b,c]) and And(a,b,c)
         are both valid, and they are converted into a tuple (a,b,c) """
 
-        if len(args) == 1 and isinstance(args[0], collections.Iterable):
+        if len(args) == 1 and isinstance(args[0], Iterable):
             args = args[0]
         return tuple(args)
 
