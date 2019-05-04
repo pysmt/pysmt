@@ -42,7 +42,7 @@ INSTALLERS = [
     Installer(YicesInstaller,   "2.6.0",
               {"yicespy_version": "f0768ffeec15ea310f830d10878971c9998454ac"}),
     Installer(BtorInstaller,    "3.0.1-pre",
-              {"git_version" : "8062caf14f797a3aa85bf310705973468874e127"}),
+              {"git_version" : "f689fbbfe820392d35e26be368f9d87d2dbdb037"}),
     Installer(PicoSATInstaller, "965",
               {"pypicosat_minor_version" : "1708010052"}),
     Installer(CuddInstaller,    "2.0.3",
