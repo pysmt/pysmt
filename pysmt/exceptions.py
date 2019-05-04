@@ -137,6 +137,7 @@ class PysmtSyntaxError(PysmtException, SyntaxError):
     def __init__(self, message, pos_info=None):
         super(PysmtSyntaxError, self).__init__(message)
         self.pos_info = pos_info
+        self.message = message
 
     def __str__(self):
         if self.pos_info:
