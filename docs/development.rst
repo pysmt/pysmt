@@ -199,8 +199,8 @@ Preparing a Release (Check-List)
 ================================
 
 In order to make a release, the master branch must pass all tests on
-the CI (Travis and Appveyor). The release process is broken into the
-following steps:
+the CI (Travis and Appveyor). The release process is broken down into
+the following steps:
 
  * Release branch creation
  * Changelog update
@@ -215,7 +215,7 @@ following steps:
 Release Branch Creation
 -----------------------
 
-As all other activities, also the creation of a release requires
+As all other activities, the creation of a release requires
 working on a separate branch. This makes it possible to interrupt,
 share, and resume the release creation, if bugs are discovered during
 this process. The branch must be called ``rc/a.b.c``, where a.b.c is
@@ -342,13 +342,13 @@ Avoid Infix Notation and shortcuts
 ----------------------------------
 
 Infix notation and shortcuts assume that you are operating on the
-global environment. The expression ``a & b`` needs:
+global environment. The expression ``a & b`` needs to:
 
-* Resolve the implicit operator (i.e., translate ``&`` into ``And``)
-* Access the global environment
-* Access corresponding formula manager
-* Check if the right-hand-side is already an FNode
-* Call ``FormulaManager.And`` on the two elements.
+1. Resolve the implicit operator (i.e., translate ``&`` into ``And``)
+2. Access the global environment
+3. Access the corresponding formula manager
+4. Check if the right-hand-side is already an FNode
+5. Call ``FormulaManager.And`` on the two elements.
 
 Using a shortcut is similar in complexity, although you skip step 1
 and 4. Therefore, within loop intensive code, make sure that you
@@ -375,7 +375,7 @@ calls to the type-checker are memoized, the cost of doing so can add
 up. If you are 100% sure that your expressions will be well-typed,
 then you can use the following code to create a context that disables
 temporarily the type-checker. WARNING: If you create an expression
-that is not well-typed while the type-checker is disabled,, there is no
+that is not well-typed while the type-checker is disabled, there is no
 way to detect it later on. ::
 
   class SuspendTypeChecking(object):
@@ -415,7 +415,7 @@ is spent in simple loops. A typical example is parsing, modifying, and
 dumping an SMT-LIB: this flow can significantly improve by using pypy.
 
 Some work has been done in order to use `CFFI
-<http://cffi.readthedocs.io/en/latest/>`_ in order to interface more
+<http://cffi.readthedocs.io/en/latest/>`_ to interface more
 solvers with pypy (see `mathsat-cffi
 <https://github.com/pysmt/mathsat-cffi>`_ repo). If you are interested
 in this activity, please `get in touch <https://groups.google.com/forum/#!forum/pysmt>`_.
