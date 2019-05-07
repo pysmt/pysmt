@@ -1,6 +1,51 @@
 Change Log
 ==========
 
+0.9.0: 2020-04-1X -- PySMT as module
+------------------------------------
+
+General:
+
+* PySMT as module (PR #573): It is now possible to do
+    python -m pysmt install
+
+  and
+
+    python -m pysmt shell
+
+  while the tool pystm-install is still available, using the module
+  syntax makes it easier to understand which version of python will be
+  used, in case multiple interpreters co-exist.
+
+
+Solvers:
+
+* Boolector: Upgrade to f689f (PR #577)
+
+* Boolector: Incremental support (PR #567). Thanks to **Makai Mann**
+  for providing the patch.
+
+* Z3: Upgrade to 4.8.7
+
+Bugfix:
+
+* Collections.abc: fix deprecation warning (PR #574, PR #562).
+  Thanks to **Liana Hadarean** and **Caleb Donovick**.
+
+* PysmtSyntaxError: Fix missing message constructor (PR #576).
+  Thanks to **Liana Hadarean** for providing a fix.
+
+* Version: Static version in make_distrib.sh (PR #575)
+
+* Fix simplifier StrIndexOf capitalization (PR #563).
+  Thanks to **Makai Mann** for providing the patch.
+
+* Sort the arguments of Times while simplifying (PR #561).
+  Thanks to **Ahmed Irfan** for providing the patch.
+
+* Fix bug in deque pop in smtlib/parser (PR #558).
+  Thanks to **Sebastiano Mariani** for providing the patch.
+
 0.8.0: 2019-01-27 -- Better Install and Great Community
 -------------------------------------------------------
 
@@ -20,7 +65,7 @@ General:
   installs the solvers within the site-package directory (by
   default). This makes it possible to work with virtual environments,
   and does not require anymore to export the Python path, greatly
-  simplifying the installation process. Thanks to **Radomi
+  simplifying the installation process. Thanks to **Radomir
   Stevanovic** for contributing the patch.
 
 * Simplify shared lib usage (PR #494): Modify z3 and msat installers
