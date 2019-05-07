@@ -412,13 +412,6 @@ class TestRegressions(TestCase):
     def test_array_initialization_printing(self):
         self.assertEqual(str(Array(INT, Int(0), {Int(1):Int(2)})), "Array{Int, Int}(0)[1 := 2]")
 
-    def test_git_version(self):
-        from pysmt import git_version
-        v = git_version()
-        self.assertIsNotNone(v)
-        parts = v.split("-")
-        self.assertTrue(len(parts) , 4)
-
     @skipIfSolverNotAvailable("btor")
     def test_boolector_assumptions(self):
         with Solver(name='btor') as solver:

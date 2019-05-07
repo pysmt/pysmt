@@ -28,7 +28,7 @@ from pysmt.cmd.installers.base import solver_install_site
 
 from pysmt.environment import get_env
 from pysmt.exceptions import PysmtException
-from pysmt import git_version
+from pysmt import __version__ as pysmt_version
 
 # Build a list of installers, one for each solver
 Installer = namedtuple("Installer",
@@ -119,7 +119,7 @@ def parse_options():
                                      ' variable PYSMT_SOLVER if not already '
                                      'instaled on the system.')
     parser.add_argument('--version', action='version',
-                        version='%(prog)s {version}'.format(version=git_version()))
+                        version='%(prog)s {version}'.format(version=pysmt_version))
 
     for i in INSTALLERS:
         name = i.InstallerClass.SOLVER
