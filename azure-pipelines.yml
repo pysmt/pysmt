@@ -330,5 +330,5 @@ jobs:
   - task: TwineAuthenticate@0
     inputs:
       externalFeeds: PyPI
-  - script: 'python -m twine upload --repository-url https://upload.pypi.org/legacy/ -r PySMT --config-file $(PYPIRC_PATH) dist/*.whl'
+  - script: 'python -m twine upload -r PySMT --config-file $(PYPIRC_PATH) dist/*.whl'
     displayName: 'Uploading to PyPI'
