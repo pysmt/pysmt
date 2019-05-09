@@ -62,8 +62,6 @@ setup(
     install_requires=["six"],
     entry_points={
         'console_scripts': [
-            'pysmt = pysmt.cmd.shell:main',
-            'pysmt-shell = pysmt.cmd.shell:main_interactive',
             'pysmt-install = pysmt.cmd.install:main',
         ],
     },

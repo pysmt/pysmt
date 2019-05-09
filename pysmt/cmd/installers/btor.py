@@ -52,22 +52,21 @@ class BtorInstaller(SolverInstaller):
         SolverInstaller.run("bash ./contrib/setup-btor2tools.sh",
                             directory=self.extract_path)
 
-        # Inject Python library and include paths into CMake because Boolector search
-        # system can be fooled in some systems
+        # Inject Python library and include paths into CMake because Boolector
+        # search system can be fooled in some systems
         import distutils.sysconfig as sysconfig
         PYTHON_LIBRARY = sysconfig.get_config_var('LIBDIR')
         PYTHON_INCLUDE_DIR = sysconfig.get_python_inc()
-        SolverInstaller.run(['sed', '-i',
-                             's|cmake_opts=""|cmake_opts="-DPYTHON_LIBRARY=' + PYTHON_LIBRARY + ' -DPYTHON_INCLUDE_DIR=' + PYTHON_INCLUDE_DIR + '"|g',
-                             './configure.sh'], directory=self.extract_path)
+        CMAKE_OPTS = ' -DPYTHON_LIBRARY=' + PYTHON_LIBRARY
+        CMAKE_OPTS += ' -DPYTHON_INCLUDE_DIR=' + PYTHON_INCLUDE_DIR
 
         # Build Boolector Solver
         SolverInstaller.run("bash ./configure.sh --python",
-                            directory=self.extract_path)
+                            directory=self.extract_path,
+                            env_variables={"CMAKE_OPTS": CMAKE_OPTS})
 
         SolverInstaller.run("make -j2",
                             directory=os.path.join(self.extract_path, "build"))
-
 
     def move(self):
         libdir = os.path.join(self.extract_path, "build", "lib")

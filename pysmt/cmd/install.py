@@ -28,7 +28,7 @@ from pysmt.cmd.installers.base import solver_install_site
 
 from pysmt.environment import get_env
 from pysmt.exceptions import PysmtException
-from pysmt import git_version
+from pysmt import __version__ as pysmt_version
 
 # Build a list of installers, one for each solver
 Installer = namedtuple("Installer",
@@ -42,7 +42,7 @@ INSTALLERS = [
     Installer(YicesInstaller,   "2.6.0",
               {"yicespy_version": "f0768ffeec15ea310f830d10878971c9998454ac"}),
     Installer(BtorInstaller,    "3.0.1-pre",
-              {"git_version" : "8062caf14f797a3aa85bf310705973468874e127"}),
+              {"git_version" : "f689fbbfe820392d35e26be368f9d87d2dbdb037"}),
     Installer(PicoSATInstaller, "965",
               {"pypicosat_minor_version" : "1708010052"}),
     Installer(CuddInstaller,    "2.0.3",
@@ -119,7 +119,7 @@ def parse_options():
                                      ' variable PYSMT_SOLVER if not already '
                                      'instaled on the system.')
     parser.add_argument('--version', action='version',
-                        version='%(prog)s {version}'.format(version=git_version()))
+                        version='%(prog)s {version}'.format(version=pysmt_version))
 
     for i in INSTALLERS:
         name = i.InstallerClass.SOLVER
@@ -259,7 +259,3 @@ def main():
                                          mirror_link=mirror_url,
                                          **i.extra_params)
             installer.install(force_redo=options.force_redo)
-
-
-if __name__ == "__main__":
-    main()

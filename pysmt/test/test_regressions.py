@@ -412,13 +412,6 @@ class TestRegressions(TestCase):
     def test_array_initialization_printing(self):
         self.assertEqual(str(Array(INT, Int(0), {Int(1):Int(2)})), "Array{Int, Int}(0)[1 := 2]")
 
-    def test_git_version(self):
-        from pysmt import git_version
-        v = git_version()
-        self.assertIsNotNone(v)
-        parts = v.split("-")
-        self.assertTrue(len(parts) , 4)
-
     @skipIfSolverNotAvailable("btor")
     def test_boolector_assumptions(self):
         with Solver(name='btor') as solver:
@@ -509,6 +502,12 @@ class TestRegressions(TestCase):
         self.assertEqual('"', s.commands[2].args[0].arg(1).constant_value())
         self.assertEqual('""', s.commands[3].args[0].arg(1).constant_value())
 
+    def test_pysmt_syntax_error(self):
+        from pysmt.exceptions import PysmtSyntaxError
+        try:
+            raise PysmtSyntaxError("'define-fun' expected", (5,5))
+        except PysmtSyntaxError as ex:
+            self.assertEqual(str(ex), "Line 5, Col 5: 'define-fun' expected")
 
 
 if __name__ == "__main__":
