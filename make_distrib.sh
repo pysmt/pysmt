@@ -7,8 +7,8 @@
 #      * Latest commit "49a49f2"
 # we get v0.5.1.dev4
 #
-VERSION=`git describe | sed  's/v\(.*\)-\(.*\)-\(.*\)/\1.dev\2/'`
-echo "__version__ = \"$VERSION\"" > pysmt/__init__.py
+DEV_VERSION=`git describe | sed  's/v\(.*\)-\(.*\)-\(.*\)/\2/'`
+sed -i "s/\"dev\", 1/\"dev\", $DEV_VERSION/" pysmt/__init__.py
 
 # Create package files
 python setup.py bdist --format=gztar
