@@ -26,7 +26,7 @@ from pysmt.typing import REAL, INT
 from pysmt.exceptions import (ConvertExpressionError,
                               NonLinearError,
                               SolverReturnedUnknownResultError)
-from pysmt.logics import QF_NRA
+from pysmt.logics import QF_NRA, QF_NIA
 from pysmt.constants import Fraction
 
 
@@ -35,22 +35,22 @@ class TestNonLinear(TestCase):
     def test_times(self):
         x = FreshSymbol(REAL)
         f = Equals(Times(x, x), x)
-        for sname in self.env.factory.all_solvers('QF_NRA'):
-            with Solver(name=sname, logic='QF_NRA') as s:
+        for sname in self.env.factory.all_solvers(QF_NRA):
+            with Solver(name=sname, logic=QF_NRA) as s:
                 self.assertTrue(s.is_sat(f))
 
     @skipIfSolverNotAvailable("z3")
     def test_div(self):
         x = FreshSymbol(REAL)
         f = Equals(Div(x, x), x)
-        with Solver(name="z3", logic='QF_NRA') as s:
+        with Solver(name="z3", logic=QF_NRA) as s:
             self.assertTrue(s.is_sat(f))
 
     @skipIfSolverNotAvailable("z3")
     def test_irrational(self):
         x = FreshSymbol(REAL)
         f = Equals(Times(x, x), Real(2))
-        with Solver(name="z3", logic='QF_NRA') as s:
+        with Solver(name="z3", logic=QF_NRA) as s:
             self.assertTrue(s.is_sat(f))
             model = s.get_model()
             xval = model[x]
@@ -77,7 +77,7 @@ class TestNonLinear(TestCase):
                     with self.assertRaises(NonLinearError):
                         s.is_sat(f)
             else:
-                with Solver(name=sname, logic='QF_NRA') as s:
+                with Solver(name=sname, logic=QF_NRA) as s:
                     res = s.is_sat(f)
                     self.assertTrue(res)
                     self.assertIn(QF_NRA, s.LOGICS, sname)
@@ -86,8 +86,8 @@ class TestNonLinear(TestCase):
         x = FreshSymbol(INT)
         f1 = Equals(Times(x, x), Int(2))
         f2 = Equals(Times(x, x), Int(16))
-        for sname in self.env.factory.all_solvers('QF_NIA'):
-            with Solver(name=sname, logic='QF_NIA') as s:
+        for sname in self.env.factory.all_solvers(QF_NIA):
+            with Solver(name=sname, logic=QF_NIA) as s:
                 try:
                     self.assertFalse(s.is_sat(f1))
                 except SolverReturnedUnknownResultError:
