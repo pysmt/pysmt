@@ -40,6 +40,19 @@ class BtorInstaller(SolverInstaller):
                                  mirror_link=mirror_link)
 
     def compile(self):
+        # Override default Python library, include, and interpreter
+        # path into Boolector's CMake because CMake can get confused
+        # if multiple interpreters are available, especially python 2
+        # vs python 3.
+        import distutils.sysconfig as sysconfig
+        import sys
+        PYTHON_LIBRARY = sysconfig.get_config_var('LIBDIR')
+        PYTHON_INCLUDE_DIR = sysconfig.get_python_inc()
+        PYTHON_EXECUTABLE = sys.executable
+        CMAKE_OPTS = ' -DPYTHON_LIBRARY=' + PYTHON_LIBRARY
+        CMAKE_OPTS += ' -DPYTHON_INCLUDE_DIR=' + PYTHON_INCLUDE_DIR
+        CMAKE_OPTS += ' -DPYTHON_EXECUTABLE=' + PYTHON_EXECUTABLE
+
         # Unpack
         SolverInstaller.untar(os.path.join(self.base_dir, self.archive_name),
                               self.extract_path)
@@ -52,13 +65,6 @@ class BtorInstaller(SolverInstaller):
         SolverInstaller.run("bash ./contrib/setup-btor2tools.sh",
                             directory=self.extract_path)
 
-        # Inject Python library and include paths into CMake because Boolector
-        # search system can be fooled in some systems
-        import distutils.sysconfig as sysconfig
-        PYTHON_LIBRARY = sysconfig.get_config_var('LIBDIR')
-        PYTHON_INCLUDE_DIR = sysconfig.get_python_inc()
-        CMAKE_OPTS = ' -DPYTHON_LIBRARY=' + PYTHON_LIBRARY
-        CMAKE_OPTS += ' -DPYTHON_INCLUDE_DIR=' + PYTHON_INCLUDE_DIR
 
         # Build Boolector Solver
         SolverInstaller.run("bash ./configure.sh --python",
