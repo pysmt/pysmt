@@ -26,7 +26,7 @@ from pysmt.test.examples import get_example_formulae
 from pysmt.smtlib.parser import SmtLibParser, Tokenizer
 from pysmt.smtlib.script import smtlibscript_from_formula
 from pysmt.shortcuts import Iff
-from pysmt.shortcuts import read_smtlib, write_smtlib
+from pysmt.shortcuts import read_smtlib, write_smtlib, get_env
 from pysmt.exceptions import PysmtSyntaxError
 
 class TestSMTParseExamples(TestCase):
@@ -170,6 +170,18 @@ class TestSMTParseExamples(TestCase):
         next_token = tokens.consume()
         tokens.add_extra_token(next_token)
         tokens.consume()
+
+    def test_parser_params(self):
+        txt = """
+        (define-fun x ((y Int)) Bool (> y 0))
+        (declare-fun z () Int)
+        (declare-fun y () Bool)
+        (assert (and y (x z)))
+        """
+        parser = SmtLibParser()
+        script = parser.get_script(cStringIO(txt))
+        self.assertEqual(len(get_env().formula_manager.get_all_symbols()),
+                         len(script.get_declared_symbols()) + len(script.get_define_fun_parameter_symbols()))
 
 if __name__ == "__main__":
     main()
