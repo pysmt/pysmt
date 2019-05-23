@@ -23,7 +23,7 @@ import pysmt.smtlib.commands as smtcmd
 from pysmt.shortcuts import (Real, Plus, Symbol, Equals, And, Bool, Or, Not,
                              Div, LT, LE, Int, ToReal, Iff, Exists, Times, FALSE,
                              BVLShr, BVLShl, BVAShr, BV, BVAdd, BVULT, BVMul,
-                             Select, Array, Ite, String)
+                             Select, Array, Ite, String, Function, to_smtlib)
 from pysmt.shortcuts import Solver, get_env, qelim, get_model, TRUE, ExactlyOne
 from pysmt.typing import REAL, BOOL, INT, BVType, FunctionType, ArrayType
 from pysmt.test import (TestCase, skipIfSolverNotAvailable, skipIfNoSolverForLogic,
@@ -509,6 +509,12 @@ class TestRegressions(TestCase):
         except PysmtSyntaxError as ex:
             self.assertEqual(str(ex), "Line 5, Col 5: 'define-fun' expected")
 
+    def test_function_smtlib_print(self):
+        f_t = FunctionType(BOOL, [BOOL])
+        f0 = Symbol('f 0', f_t)
+        f0_of_false = Function(f0, [Bool(False)])
+        s = to_smtlib(f0_of_false, False)
+        self.assertEqual(s, '(|f 0| false)')
 
 if __name__ == "__main__":
     main()

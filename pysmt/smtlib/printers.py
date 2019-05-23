@@ -91,7 +91,7 @@ class SmtPrinter(TreeWalker):
         self.write(quote(formula.symbol_name()))
 
     def walk_function(self, formula):
-        return self.walk_nary(formula, formula.function_name())
+        return self.walk_nary(formula, quote(formula.function_name().symbol_name()))
 
     def walk_int_constant(self, formula):
         if formula.constant_value() < 0:
@@ -445,7 +445,7 @@ class SmtDagPrinter(DagWalker):
         return quote(formula.symbol_name())
 
     def walk_function(self, formula, args, **kwargs):
-        return self.walk_nary(formula, args, formula.function_name())
+        return self.walk_nary(formula, args, quote(formula.function_name().symbol_name()))
 
     def walk_int_constant(self, formula, **kwargs):
         if formula.constant_value() < 0:
