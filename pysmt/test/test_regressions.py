@@ -268,8 +268,9 @@ class TestRegressions(TestCase):
         self.assertEqual(new_f, Bool(False))
 
     def test_empty_string_symbol(self):
-        with self.assertRaises(PysmtValueError):
-            Symbol("")
+        a = Symbol("")
+        b = Symbol(" ")
+        self.assertNotEqual(a, b)
 
     def test_smtlib_info_quoting(self):
         cmd = SmtLibCommand(smtcmd.SET_INFO, [":source", "This\nis\nmultiline!"])
