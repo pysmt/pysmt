@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -ev
+
 PYTHON="python"
 if [ "${PYTHON_VERSION}" == "pypy" ] || [ "${PYTHON_VERSION}" == "pypy3" ]
 then
