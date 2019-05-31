@@ -63,6 +63,12 @@ class TestBasic(TestCase):
                     # with the SMT-LIB. We might consider extending our
                     # parser.
                     continue
+
+                # The back conversion via SMTLIB of Z3 has a bug causing
+                # segfault if a variable name is empty. This is a temporary workaround.
+                if any(len(v.symbol_name()) == 0 for v in formula.get_free_variables()):
+                    z3_string_buffer = False
+
                 try:
                     s = Solver(name=solver_name, logic=logic)
                     term = s.converter.convert(formula)

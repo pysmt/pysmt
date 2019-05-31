@@ -227,7 +227,6 @@ class TestSMTParseExamples(TestCase):
         """
         parser = SmtLibParser()
         script = parser.get_script(cStringIO(txt))
-        print(script.get_declared_symbols())
         self.assertEqual(len(script.get_declared_symbols()), 10)
 
 
