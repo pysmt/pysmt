@@ -64,8 +64,11 @@ class TestBasic(TestCase):
                     # parser.
                     continue
 
-                # The back conversion via SMTLIB of Z3 has a bug causing
-                # segfault if a variable name is empty. This is a temporary workaround.
+                # The back conversion via SMTLIB of Z3 has a bug
+                # causing segfault if a variable name is empty. This
+                # is a temporary workaround until
+                # https://github.com/Z3Prover/z3/issues/2309 is
+                # resolved.
                 if any(len(v.symbol_name()) == 0 for v in formula.get_free_variables()):
                     z3_string_buffer = False
 
