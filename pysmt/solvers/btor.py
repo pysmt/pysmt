@@ -223,15 +223,21 @@ class BoolectorSolver(IncrementalTrackingSolver, UnsatCoreSolver,
             raise SolverReturnedUnknownResultError
 
     def get_unsat_core(self):
-        unsat_core = set()
-        # relies on this assertion stack being ordered
-        assert isinstance(self._assertion_stack, list)
-        btor_assertions = [self.converter.convert(a) for a in self._assertion_stack]
-        in_unsat_core = self.btor.Failed(*btor_assertions)
-        for a, in_core in zip(self._assertion_stack, in_unsat_core):
-            if in_core:
-                unsat_core.add(a)
-        return unsat_core
+        self._check_unsat_core_config()
+
+        if self.options.unsat_cores_mode == 'all':
+            unsat_core = set()
+            # relies on this assertion stack being ordered
+            assert isinstance(self._assertion_stack, list)
+            btor_assertions = [self.converter.convert(a) for a in self._assertion_stack]
+            in_unsat_core = self.btor.Failed(*btor_assertions)
+            for a, in_core in zip(self._assertion_stack, in_unsat_core):
+                if in_core:
+                    unsat_core.add(a)
+            return unsat_core
+        else:
+            # get_named_unsat_core currently unsupported
+            raise NotImplementedError("get_named_unsat_core not supported for boolector")
 
     @clear_pending_pop
     def _push(self, levels=1):
