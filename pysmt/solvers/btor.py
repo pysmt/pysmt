@@ -25,7 +25,7 @@ except ImportError:
     raise SolverAPINotFound
 
 
-from pysmt.solvers.solver import (IncrementalTrackingSolver,
+from pysmt.solvers.solver import (IncrementalTrackingSolver, UnsatCoreSolver,
                                   Converter, SolverOptions)
 from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 from pysmt.solvers.eager import EagerModel
@@ -151,7 +151,7 @@ class BoolectorOptions(SolverOptions):
 # EOC BoolectorOptions
 
 
-class BoolectorSolver(IncrementalTrackingSolver,
+class BoolectorSolver(IncrementalTrackingSolver, UnsatCoreSolver,
                       SmtLibBasicSolver, SmtLibIgnoreMixin):
 
     LOGICS = [QF_BV, QF_UFBV, QF_ABV, QF_AUFBV, QF_AX]
@@ -188,7 +188,11 @@ class BoolectorSolver(IncrementalTrackingSolver,
     def _add_assertion(self, formula, named=None):
         self._assert_is_boolean(formula)
         term = self.converter.convert(formula)
-        self.btor.Assert(term)
+        if self.options.unsat_cores_mode is None:
+            self.btor.Assert(term)
+        else:
+            # need to use assumptions to get unsat cores
+            self.btor.Assume(term)
         return formula
 
     def get_model(self):
@@ -212,7 +216,15 @@ class BoolectorSolver(IncrementalTrackingSolver,
             raise SolverReturnedUnknownResultError
 
     def get_unsat_core(self):
-        raise NotImplementedError
+        unsat_core = set()
+        # relies on this assertion stack being ordered
+        assert isinstance(self._assertion_stack, list)
+        btor_assertions = [self.converter.convert(a) for a in self._assertion_stack]
+        in_unsat_core = self.btor.Failed(*btor_assertions)
+        for a, in_core in zip(self._assertion_stack, in_unsat_core):
+            if in_core:
+                unsat_core.add(a)
+        return unsat_core
 
     @clear_pending_pop
     def _push(self, levels=1):
