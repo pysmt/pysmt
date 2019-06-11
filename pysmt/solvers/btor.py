@@ -233,9 +233,6 @@ class BoolectorSolver(IncrementalTrackingSolver, UnsatCoreSolver,
                 unsat_core.add(a)
         return unsat_core
 
-    def get_named_unsat_core(self):
-        raise NotImplementedError
-
     @clear_pending_pop
     def _push(self, levels=1):
         self.btor.Push(levels)
