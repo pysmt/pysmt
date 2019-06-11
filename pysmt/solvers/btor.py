@@ -208,6 +208,13 @@ class BoolectorSolver(IncrementalTrackingSolver, UnsatCoreSolver,
             self.btor.Assume(*btor_assumptions)
 
         res = self.btor.Sat()
+
+        # need to re-add assumptions if in unsat-core mode
+        # which uses Assume instead of Assert
+        if self.options.unsat_cores_mode is not None:
+            for a in self._assertion_stack:
+                self._add_assertion(a)
+
         if res == self.btor.SAT:
             return True
         elif res == self.btor.UNSAT:
