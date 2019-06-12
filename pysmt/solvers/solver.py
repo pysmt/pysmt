@@ -20,6 +20,7 @@ from six.moves import xrange
 from pysmt.typing import BOOL
 from pysmt.solvers.options import SolverOptions
 from pysmt.exceptions import (SolverReturnedUnknownResultError, PysmtValueError,
+                              SolverNotConfiguredForUnsatCoresError,
                               PysmtTypeError, SolverStatusError)
 
 
