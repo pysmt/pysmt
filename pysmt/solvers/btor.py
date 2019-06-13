@@ -398,6 +398,11 @@ class BTORConverter(Converter, DagWalker):
         lhs, rhs = self._extend_bv_pow2(args[0]), args[1]
         lhs_w, rhs_w = lhs.width, rhs.width
 
+        if lhs_w == 1:
+            assert rhs_w == 1, "expecting bit-widths to match"
+            # shifting a one-bit bit-vector
+            return self._btor.And(lhs, self._btor.Not(rhs))
+
         # Boolector requires that witdh(rhs) = log2(width(lhs))
         target_w = int(ceil(log(lhs_w, 2)))
         if rhs_w == target_w:
@@ -420,6 +425,11 @@ class BTORConverter(Converter, DagWalker):
         lhs, rhs = self._extend_bv_pow2(args[0]), args[1]
         lhs_w, rhs_w = lhs.width, rhs.width
         target_w = int(ceil(log(lhs_w, 2)))
+
+        if lhs_w == 1:
+            assert rhs_w == 1, "expecting bit-widths to match"
+            # shifting a one-bit bit-vector
+            return self._btor.And(lhs, self._btor.Not(rhs))
 
         # Boolector requires that width(rhs) = log2(width(lhs))
         if rhs_w == target_w:
@@ -470,6 +480,12 @@ class BTORConverter(Converter, DagWalker):
         # if this is not the case
         lhs, rhs = self._extend_bv_pow2(args[0], signed=True), args[1]
         lhs_w, rhs_w = lhs.width, rhs.width
+
+        if lhs_w == 1:
+            assert rhs_w == 1, "expecting bit-widths to match"
+            # shifting a one-bit bit-vector
+            # for ashr this just gives the original result back
+            return lhs
 
         # Boolector requires that witdh(rhs) = log2(width(lhs))
         target_w = int(ceil(log(lhs_w, 2)))
