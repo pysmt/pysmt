@@ -189,6 +189,7 @@ class BoolectorSolver(IncrementalTrackingSolver,
         self._assert_is_boolean(formula)
         term = self.converter.convert(formula)
         self.btor.Assert(term)
+        return formula
 
     def get_model(self):
         assignment = {}
