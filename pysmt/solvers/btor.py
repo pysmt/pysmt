@@ -167,6 +167,7 @@ class BoolectorSolver(IncrementalTrackingSolver, UnsatCoreSolver,
         self.converter = BTORConverter(environment, self.btor)
         self.mgr = environment.formula_manager
         self.declarations = {}
+        self._named_assertions = {}
         return
 
 # EOC BoolectorOptions
@@ -191,6 +192,9 @@ class BoolectorSolver(IncrementalTrackingSolver, UnsatCoreSolver,
         if self.options.unsat_cores_mode is None:
             self.btor.Assert(term)
         else:
+            if self.options.unsat_cores_mode == "named" and \
+               named is not None:
+                self._named_assertions[formula] = named
             # need to use assumptions to get unsat cores
             self.btor.Assume(term)
         return formula
@@ -223,6 +227,8 @@ class BoolectorSolver(IncrementalTrackingSolver, UnsatCoreSolver,
             raise SolverReturnedUnknownResultError
 
     def get_unsat_core(self):
+        """After a call to solve() yielding UNSAT, returns the unsat core as a
+        set of formulae"""
         self._check_unsat_core_config()
 
         if self.options.unsat_cores_mode == 'all':
@@ -236,8 +242,27 @@ class BoolectorSolver(IncrementalTrackingSolver, UnsatCoreSolver,
                     unsat_core.add(a)
             return unsat_core
         else:
-            # get_named_unsat_core currently unsupported
-            raise NotImplementedError("get_named_unsat_core not supported for boolector")
+            return get_named_unsat_core().values()
+
+    def get_named_unsat_core(self):
+        """After a call to solve() yielding UNSAT, returns the unsat core as a
+        dict of names to formulae"""
+        self._check_unsat_core_config()
+
+        if self.options.unsat_cores_mode == "named":
+            unsat_core = {}
+            # relies on this assertion stack being ordered
+            assert isinstance(self._assertion_stack, list)
+            btor_named_assertions = [self.converter.convert(a) for a in self._named_assertions.keys()]
+            in_unsat_core = self.btor.Failed(*btor_named_assertions)
+            for a, in_core in zip(self._assertion_stack, in_unsat_core):
+                if in_core:
+                    name = self._named_assertions[a]
+                    unsat_core[name] = a
+            return unsat_core
+        else:
+            return dict(("_a%d" % i, f)
+                        for i, f in enumerate(self.get_unsat_core()))
 
     @clear_pending_pop
     def _push(self, levels=1):
