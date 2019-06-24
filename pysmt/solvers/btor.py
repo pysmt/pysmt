@@ -25,7 +25,7 @@ except ImportError:
     raise SolverAPINotFound
 
 
-from pysmt.solvers.solver import (IncrementalTrackingSolver,
+from pysmt.solvers.solver import (IncrementalTrackingSolver, UnsatCoreSolver,
                                   Converter, SolverOptions)
 from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 from pysmt.solvers.eager import EagerModel
@@ -151,7 +151,7 @@ class BoolectorOptions(SolverOptions):
 # EOC BoolectorOptions
 
 
-class BoolectorSolver(IncrementalTrackingSolver,
+class BoolectorSolver(IncrementalTrackingSolver, UnsatCoreSolver,
                       SmtLibBasicSolver, SmtLibIgnoreMixin):
 
     LOGICS = [QF_BV, QF_UFBV, QF_ABV, QF_AUFBV, QF_AX]
@@ -167,6 +167,7 @@ class BoolectorSolver(IncrementalTrackingSolver,
         self.converter = BTORConverter(environment, self.btor)
         self.mgr = environment.formula_manager
         self.declarations = {}
+        self._named_assertions = {}
         return
 
 # EOC BoolectorOptions
@@ -188,7 +189,14 @@ class BoolectorSolver(IncrementalTrackingSolver,
     def _add_assertion(self, formula, named=None):
         self._assert_is_boolean(formula)
         term = self.converter.convert(formula)
-        self.btor.Assert(term)
+        if self.options.unsat_cores_mode is None:
+            self.btor.Assert(term)
+        else:
+            if self.options.unsat_cores_mode == "named" and \
+               named is not None:
+                self._named_assertions[formula] = named
+            # need to use assumptions to get unsat cores
+            self.btor.Assume(term)
         return formula
 
     def get_model(self):
@@ -204,6 +212,13 @@ class BoolectorSolver(IncrementalTrackingSolver,
             self.btor.Assume(*btor_assumptions)
 
         res = self.btor.Sat()
+
+        # need to re-add assumptions if in unsat-core mode
+        # which uses Assume instead of Assert
+        if self.options.unsat_cores_mode is not None:
+            for a in self._assertion_stack:
+                self._add_assertion(a)
+
         if res == self.btor.SAT:
             return True
         elif res == self.btor.UNSAT:
@@ -212,7 +227,42 @@ class BoolectorSolver(IncrementalTrackingSolver,
             raise SolverReturnedUnknownResultError
 
     def get_unsat_core(self):
-        raise NotImplementedError
+        """After a call to solve() yielding UNSAT, returns the unsat core as a
+        set of formulae"""
+        self._check_unsat_core_config()
+
+        if self.options.unsat_cores_mode == 'all':
+            unsat_core = set()
+            # relies on this assertion stack being ordered
+            assert isinstance(self._assertion_stack, list)
+            btor_assertions = [self.converter.convert(a) for a in self._assertion_stack]
+            in_unsat_core = self.btor.Failed(*btor_assertions)
+            for a, in_core in zip(self._assertion_stack, in_unsat_core):
+                if in_core:
+                    unsat_core.add(a)
+            return unsat_core
+        else:
+            return self.get_named_unsat_core().values()
+
+    def get_named_unsat_core(self):
+        """After a call to solve() yielding UNSAT, returns the unsat core as a
+        dict of names to formulae"""
+        self._check_unsat_core_config()
+
+        if self.options.unsat_cores_mode == "named":
+            unsat_core = {}
+            # relies on this assertion stack being ordered
+            assert isinstance(self._assertion_stack, list)
+            btor_named_assertions = [self.converter.convert(a) for a in self._named_assertions.keys()]
+            in_unsat_core = self.btor.Failed(*btor_named_assertions)
+            for a, in_core in zip(self._assertion_stack, in_unsat_core):
+                if in_core:
+                    name = self._named_assertions[a]
+                    unsat_core[name] = a
+            return unsat_core
+        else:
+            return dict(("_a%d" % i, f)
+                        for i, f in enumerate(self.get_unsat_core()))
 
     @clear_pending_pop
     def _push(self, levels=1):
