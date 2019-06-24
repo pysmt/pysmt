@@ -242,7 +242,7 @@ class BoolectorSolver(IncrementalTrackingSolver, UnsatCoreSolver,
                     unsat_core.add(a)
             return unsat_core
         else:
-            return get_named_unsat_core().values()
+            return self.get_named_unsat_core().values()
 
     def get_named_unsat_core(self):
         """After a call to solve() yielding UNSAT, returns the unsat core as a
