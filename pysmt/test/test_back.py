@@ -64,20 +64,11 @@ class TestBasic(TestCase):
                     # parser.
                     continue
 
-                # The back conversion via SMTLIB of Z3 has a bug
-                # causing segfault if a variable name is empty. This
-                # is a temporary workaround until
-                # https://github.com/Z3Prover/z3/issues/2309 is
-                # resolved.
-                zsb = z3_string_buffer
-                # if any(len(v.symbol_name()) == 0 for v in formula.get_free_variables()):
-                #     zsb = False
-
                 try:
                     s = Solver(name=solver_name, logic=logic)
                     term = s.converter.convert(formula)
                     if solver_name == "z3":
-                        if zsb:
+                        if z3_string_buffer:
                             res = s.converter.back_via_smtlib(term)
                         else:
                             res = s.converter.back(term)
