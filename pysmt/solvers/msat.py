@@ -277,19 +277,6 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
 
         return (res == mathsat.MSAT_SAT)
 
-    def _check_unsat_core_config(self):
-        if self.options.unsat_cores_mode is None:
-            raise SolverNotConfiguredForUnsatCoresError
-
-        if self.last_result is None or self.last_result:
-            raise SolverStatusError("The last call to solve() was not" \
-                                    " unsatisfiable")
-
-        if self.last_command != "solve":
-            raise SolverStatusError("The solver status has been modified by a" \
-                                    " '%s' command after the last call to" \
-                                    " solve()" % self.last_command)
-
     def get_unsat_core(self):
         """After a call to solve() yielding UNSAT, returns the unsat core as a
         set of formulae"""

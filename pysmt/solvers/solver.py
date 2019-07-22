@@ -20,6 +20,7 @@ from six.moves import xrange
 from pysmt.typing import BOOL
 from pysmt.solvers.options import SolverOptions
 from pysmt.exceptions import (SolverReturnedUnknownResultError, PysmtValueError,
+                              SolverNotConfiguredForUnsatCoresError,
                               PysmtTypeError, SolverStatusError)
 
 
@@ -405,6 +406,19 @@ class UnsatCoreSolver(object):
     """A solver supporting unsat core extraction"""
 
     UNSAT_CORE_SUPPORT = True
+
+    def _check_unsat_core_config(self):
+        if self.options.unsat_cores_mode is None:
+            raise SolverNotConfiguredForUnsatCoresError
+
+        if self.last_result is None or self.last_result:
+            raise SolverStatusError("The last call to solve() was not" \
+                                    " unsatisfiable")
+
+        if self.last_command != "solve":
+            raise SolverStatusError("The solver status has been modified by a" \
+                                    " '%s' command after the last call to" \
+                                    " solve()" % self.last_command)
 
     def get_unsat_core(self):
         """Returns the unsat core as a set of formulae.

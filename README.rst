@@ -207,7 +207,9 @@ By default the solvers are downloaded, unpacked and built in your home directory
 in the ``.smt_solvers`` folder. Compiled libraries and actual solver packages are
 installed in the relevant ``site-packages`` directory (e.g. virtual environment's
 packages root or local user-site). ``pysmt-install`` has many options to
-customize its behavior.
+customize its behavior. If you have multiple versions of python in your system, 
+we recommend the following syntax to run pysmt-install: ``python -m pysmt install``.
+
 
 *Note:* This script does not install required
 dependencies for building the solver (e.g., make or gcc) and has been
