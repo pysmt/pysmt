@@ -31,7 +31,7 @@ pySMT makes working with **Satisfiability Modulo Theory** simple:
 
 * Define formulae in a *simple*, *intuitive*, and *solver independent* way
 * Solve your formulae using one of the native solvers, or by wrapping
-  any SMT-Lib complaint solver,
+  any SMT-Lib compliant solver,
 * Dump your problems in the SMT-Lib format,
 * and more...
 
