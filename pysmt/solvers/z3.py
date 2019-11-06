@@ -29,7 +29,7 @@ except ImportError:
 z3.set_param('model_compress', False)
 
 from six.moves import xrange
-
+from six import next
 
 import pysmt.typing as types
 import pysmt.operators as op
@@ -293,6 +293,21 @@ ARITHREF_SET = op.IRA_OPERATORS
 BITVECREF_SET = op.BV_OPERATORS
 
 
+def left_assoc(op, args):
+    args = iter(args)
+    try:
+        ret = next(args)
+    except StopIteration:
+        raise ValueError("assoc: empty arguments.")
+    for arg in args:
+        ret = op(ret, arg)
+    return ret
+
+
+def right_assoc(op, args):
+    return left_assoc(lambda x,y: op(y, x), reversed(args))
+
+
 class Z3Converter(Converter, DagWalker):
 
     def __init__(self, environment, z3_ctx):
@@ -364,6 +379,13 @@ class Z3Converter(Converter, DagWalker):
             z3.Z3_OP_EQ : self._back_z3_eq,
             z3.Z3_OP_UMINUS : self._back_z3_uminus,
             z3.Z3_OP_CONST_ARRAY : self._back_z3_const_array,
+        }
+        # Extra N-ary ops. May not be complete.
+        self._back_fun_assoc = {
+            z3.Z3_OP_BADD: left_assoc,
+            z3.Z3_OP_BAND: left_assoc,
+            z3.Z3_OP_BOR: left_assoc,
+            z3.Z3_OP_CONCAT: left_assoc,
         }
         # Unique reference to Sorts
         self.z3RealSort = z3.RealSort(self.ctx)
@@ -493,7 +515,8 @@ class Z3Converter(Converter, DagWalker):
         assert not len(args) > 2 or \
             (z3.is_and(expr) or z3.is_or(expr) or
              z3.is_add(expr) or z3.is_mul(expr) or
-             (len(args) == 3 and (z3.is_ite(expr) or z3.is_array_store(expr)))),\
+             (len(args) == 3 and (z3.is_ite(expr) or z3.is_array_store(expr)))) or\
+             expr.decl().kind() in self._back_fun_assoc,\
             "Unexpected n-ary term: %s" % expr
 
         res = None
@@ -502,6 +525,9 @@ class Z3Converter(Converter, DagWalker):
             kind = z3.Z3_get_decl_kind(expr.ctx.ref(), decl)
             # Try to get the back-conversion function for the given Kind
             fun = self._back_fun[kind]
+            if kind in self._back_fun_assoc:
+                assoc = self._back_fun_assoc[kind]
+                return assoc(lambda x,y: fun((x,y), expr), args)
             return fun(args, expr)
         except KeyError as ex:
             pass
