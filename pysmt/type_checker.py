@@ -79,6 +79,14 @@ class SimpleTypeChecker(walkers.DagWalker):
             rval = self.walk_type_to_type(formula, args, INT, INT)
         return rval
 
+    def walk_realtoint(self, formula, args, **kwargs):
+        #pylint: disable=unused-argument
+        arg = args[0]
+        if arg.is_real_type():
+            return INT
+        else:
+            return None
+
     @walkers.handles(op.BV_ADD, op.BV_SUB, op.BV_NOT, op.BV_AND, op.BV_OR)
     @walkers.handles(op.BV_XOR, op.BV_NEG, op.BV_MUL)
     @walkers.handles(op.BV_UDIV, op.BV_UREM, op.BV_LSHL, op.BV_LSHR)

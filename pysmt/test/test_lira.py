@@ -19,6 +19,7 @@ from pysmt.shortcuts import *
 from pysmt.typing import INT, REAL, FunctionType
 from pysmt.test import TestCase, main
 from pysmt.logics import QF_UFLIRA, UFLIRA
+from pysmt.constants import Fraction
 
 class TestLIRA(TestCase):
 
@@ -46,6 +47,36 @@ class TestLIRA(TestCase):
         self.assertEqual(ToReal(Plus(b, Int(1))),
                           ToReal(ToReal(Plus(b, Int(1)))))
 
+    def test_realtoint(self):
+        b = Symbol('b', INT)
+
+        check = Equals(RealToInt(Real(Fraction(3, 2))), Int(1))
+        check = And(check,
+                    Equals(RealToInt(Real(Fraction(-3, 2))), Int(-2)))
+        check = And(check,
+                    Equals(RealToInt(Real(1)), Int(1)))
+        check = And(check,
+                    Equals(RealToInt(ToReal(b)), b))
+        for sname in get_env().factory.all_solvers(logic=UFLIRA):
+            self.assertValid(check, solver_name=sname)
+
+    def test_ceiling(self):
+        check = Equals(Ceiling(Real(Fraction(3, 2))), Int(2))
+        check = And(check,
+                    Equals(Ceiling(Real(Fraction(-3, 2))), Int(-1)))
+        check = And(check,
+                    Equals(Ceiling(Real(1)), Int(1)))
+        for sname in get_env().factory.all_solvers(logic=UFLIRA):
+            self.assertValid(check, solver_name=sname)
+
+    def test_truncate(self):
+        check = Equals(Truncate(Real(Fraction(3, 2))), Int(1))
+        check = And(check,
+                    Equals(Truncate(Real(Fraction(-3, 2))), Int(-1)))
+        check = And(check,
+                    Equals(Truncate(Real(1)), Int(1)))
+        for sname in get_env().factory.all_solvers(logic=UFLIRA):
+            self.assertValid(check, solver_name=sname)
 
     def test_uflira(self):
         a = Symbol("a", REAL)

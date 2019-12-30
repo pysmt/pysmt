@@ -479,6 +479,24 @@ class FormulaManager(object):
             raise PysmtTypeError("Argument is of type %s, but INT was "
                                  "expected!\n" % t)
 
+    def RealToInt(self, formula):
+        """ Cast a real formula to the int
+            that is no more than the real. """
+        return self.create_node(node_type=op.REALTOINT,
+                                args=(formula,))
+
+    def Ceiling(self, formula):
+        """ Cast a real formula to the int
+            that is at least as large as the real. """
+        int_val = self.RealToInt(formula)
+        cond = self.Equals(self.ToReal(int_val), formula)
+        return self.Ite(cond, int_val, self.Plus(int_val, self.Int(1)))
+
+    def Truncate(self, formula):
+        """ Truncate a real formula to int. """
+        cond = self.GE(formula, self.Real(0))
+        return self.Ite(cond, self.RealToInt(formula), self.Ceiling(formula))
+
     def AtMostOne(self, *args):
         """ At most one of the bool expressions can be true at anytime.
 

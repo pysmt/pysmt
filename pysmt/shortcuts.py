@@ -320,6 +320,19 @@ def ToReal(formula):
     """Explicit cast of a term into a Real term."""
     return get_env().formula_manager.ToReal(formula)
 
+def RealToInt(formula):
+    '''Cast a real term to the int
+       that is no more than the real.'''
+    return get_env().formula_manager.RealToInt(formula)
+
+def Ceiling(formula):
+    '''Cast a real term to the int
+       that is at least as large as the real.'''
+    return get_env().formula_manager.Ceiling(formula)
+
+def Truncate(formula):
+    '''Truncate a real term to the int.'''
+    return get_env().formula_manager.Truncate(formula)
 
 def AtMostOne(*args):
     """At most one can be true at anytime.

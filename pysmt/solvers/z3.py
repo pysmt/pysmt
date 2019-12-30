@@ -702,6 +702,11 @@ class Z3Converter(Converter, DagWalker):
         z3.Z3_inc_ref(self.ctx.ref(), z3term)
         return z3term
 
+    def walk_realtoint(self, formula, args, **kwargs):
+        z3term = z3.Z3_mk_real2int(self.ctx.ref(), args[0])
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
+        return z3term
+
     def _z3_func_decl(self, func_name):
         """Create a Z3 Function Declaration for the given function."""
         try:
