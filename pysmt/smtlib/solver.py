@@ -40,7 +40,7 @@ class SmtLibOptions(SolverOptions):
         self.debug_interaction = False
 
         if 'debug_interaction' in self.solver_options:
-            self.debug_interaction = self.solver_options
+            self.debug_interaction = self.solver_options['debug_interaction']
             del self.solver_options['debug_interaction']
 
     def __call__(self, solver):
