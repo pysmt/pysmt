@@ -808,7 +808,7 @@ class MSatConverter(Converter, DagWalker):
         if self._get_type(formula).is_bool_type():
             impl = self.mgr.Implies(formula.arg(0), formula.arg(1))
             th = self.walk_implies(impl, [i,t])
-            nif = self.mgr.Not(formula.arg(1))
+            nif = self.mgr.Not(formula.arg(0))
             ni = self.walk_not(nif, [i])
             el = self.walk_implies(self.mgr.Implies(nif, formula.arg(2)), [ni,e])
             return mathsat.msat_make_and(self.msat_env(), th, el)
