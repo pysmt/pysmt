@@ -63,6 +63,7 @@ class TestBasic(TestCase):
                     # with the SMT-LIB. We might consider extending our
                     # parser.
                     continue
+
                 try:
                     s = Solver(name=solver_name, logic=logic)
                     term = s.converter.convert(formula)

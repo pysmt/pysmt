@@ -334,7 +334,8 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
             mathsat.msat_pop_backtrack_point(self.msat_env())
 
     def _var2term(self, var):
-        decl = mathsat.msat_find_decl(self.msat_env(), var.symbol_name())
+        decl = mathsat.msat_find_decl(self.msat_env(),
+                                      self.converter._fix_var_name(var.symbol_name()))
         titem = mathsat.msat_make_term(self.msat_env(), decl, [])
         return titem
 
@@ -349,9 +350,7 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
     def print_model(self, name_filter=None):
         if name_filter is not None:
             raise NotImplementedError
-        for v in self.converter.symbol_to_decl.keys():
-            var = self.mgr.Symbol(v)
-            assert var is not None
+        for var in self.converter.symbol_to_decl.keys():
             print("%s = %s", (v, self.get_value(var)))
 
     def get_value(self, item):
@@ -676,6 +675,18 @@ class MSatConverter(Converter, DagWalker):
         pysmt_type = self._msat_type_to_type(msat_type)
         return self.mgr.Array(pysmt_type.index_type, args[0])
 
+    def _fix_var_name(self, n, back=False):
+        '''A simple workaround to use empty symbol names with MathSAT'''
+        sname = '___PYSMT_EMPTY_STRING___'
+        if back:
+            if n == sname:
+                return ''
+            return n
+        else:
+            if len(n) == 0:
+                n = sname
+            return n
+
     def _back_tag_unknown(self, term, args):
         """The TAG UNKNOWN is used to represent msat functions.
 
@@ -695,6 +706,7 @@ class MSatConverter(Converter, DagWalker):
                 res = self.mgr.BV(val, width)
         elif mathsat.msat_term_is_constant(self.msat_env(), term):
             rep = mathsat.msat_term_repr(term)
+            rep = self._fix_var_name(rep, back=True)
             ty = mathsat.msat_term_get_type(term)
             if mathsat.msat_term_is_boolean_constant(self.msat_env(), term):
                 res = self.mgr.Symbol(rep, types.BOOL)
@@ -1074,10 +1086,10 @@ class MSatConverter(Converter, DagWalker):
         if not var.is_symbol():
             raise PysmtTypeError("Trying to declare as a variable something "
                                  "that is not a symbol: %s" % var)
-        if var.symbol_name() not in self.symbol_to_decl:
+        if var not in self.symbol_to_decl:
             tp = self._type_to_msat(var.symbol_type())
             decl = mathsat.msat_declare_function(self.msat_env(),
-                                                 var.symbol_name(),
+                                                 self._fix_var_name(var.symbol_name()),
                                                  tp)
             if mathsat.MSAT_ERROR_DECL(decl):
                 msat_msg = mathsat.msat_last_error_message(self.msat_env())

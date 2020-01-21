@@ -789,11 +789,12 @@ def get_full_example_formulae(environment=None):
                     is_sat=True,
                     logic=pysmt.logics.QF_SLIA),
 
-            Example(hr="('Did you know that any string works? #yolo' & '10' & '|#somesolverskeepthe||' & ' ')""",
+            Example(hr="('Did you know that any string works? #yolo' & '10' & '|#somesolverskeepthe||' & ' ' & '')""",
                     expr=And(Symbol("Did you know that any string works? #yolo"),
                              Symbol("10"),
                              Symbol("|#somesolverskeepthe||"),
-                             Symbol(" ")),
+                             Symbol(" "),
+                             Symbol("")),
                     is_valid=False,
                     is_sat=True,
                     logic=pysmt.logics.QF_BOOL

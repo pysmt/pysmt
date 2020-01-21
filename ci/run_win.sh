@@ -1,4 +1,5 @@
 #!/bin/bash
+
 set -ev
 
 python install.py --check
