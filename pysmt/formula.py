@@ -674,11 +674,17 @@ class FormulaManager(object):
                                 args=(left,right),
                                 payload=(left.bv_width(),))
 
-    def BVConcat(self, left, right):
-        """Returns the Concatenation of the two BVs"""
-        return self.create_node(node_type=op.BV_CONCAT,
-                                args=(left,right),
-                                payload=(left.bv_width()+right.bv_width(),))
+    def BVConcat(self, *args):
+        """Returns the Concatenation of the given BVs"""
+        ex = self._polymorph_args_to_tuple(args)
+        base = self.create_node(node_type=op.BV_CONCAT,
+                                args=(ex[0], ex[1]),
+                                payload=(ex[0].bv_width() + ex[1].bv_width(),))
+        for e in ex[2:]:
+            base = self.create_node(node_type=op.BV_CONCAT,
+                                    args=(base, e),
+                                    payload=(base.bv_width() + e.bv_width(),))
+        return base
 
     def BVExtract(self, formula, start=0, end=None):
         """Returns the slice of formula from start to end (inclusive)."""
