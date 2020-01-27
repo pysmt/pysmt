@@ -623,7 +623,7 @@ class TestBasic(TestCase):
             if logic == QF_BV:
                 solver = Solver(name="btor",
                                 solver_options={"rewrite-level":0,
-                                                "fun:dual-prop":1,
+                                                "fun-dual-prop":1,
                                                 "eliminate-slices":1})
                 solver.add_assertion(f)
                 res = solver.solve()
