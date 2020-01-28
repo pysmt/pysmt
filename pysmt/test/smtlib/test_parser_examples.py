@@ -183,7 +183,7 @@ class TestSMTParseExamples(TestCase):
         self.assertEqual(len(get_env().formula_manager.get_all_symbols()),
                          len(script.get_declared_symbols()) + len(script.get_define_fun_parameter_symbols()))
 
-    @skipIfNoSolverForLogic(logics.QF_BV)
+    @skipIfNoSolverForLogic(logics.QF_ABV)
     def test_nary_bvconcat(self):
         txt = """
         (set-logic QF_BV )
