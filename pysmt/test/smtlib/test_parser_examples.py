@@ -183,5 +183,19 @@ class TestSMTParseExamples(TestCase):
         self.assertEqual(len(get_env().formula_manager.get_all_symbols()),
                          len(script.get_declared_symbols()) + len(script.get_define_fun_parameter_symbols()))
 
+    @skipIfNoSolverForLogic(logics.QF_ABV)
+    def test_nary_bvconcat(self):
+        txt = """
+        (set-logic QF_BV )
+        (declare-fun INPUT () (Array (_ BitVec 32) (_ BitVec 8) ) )
+        (declare-fun A () (_ BitVec 64))(assert (= A (bvor #x0000000000000000 (bvshl ((_ zero_extend 32) ((_ zero_extend 24) (select INPUT #x00000000))) #x0000000000000000))))
+        (declare-fun B () (_ BitVec 64))(assert (= B (concat ((_ extract 63 56) (bvor #x0000000000000000 (bvshl ((_ zero_extend 32) ((_ zero_extend 24) ((_ extract 7 0) (bvor #x0000000000000000 (bvshl ((_ zero_extend 32) ((_ zero_extend 24) (select INPUT #x00000000))) #x0000000000000000))))) #x0000000000000000))) ((_ extract 55 48) (bvor #x0000000000000000 (bvshl ((_ zero_extend 32) ((_ zero_extend 24) ((_ extract 7 0) (bvor #x0000000000000000 (bvshl ((_ zero_extend 32) ((_ zero_extend 24) (select INPUT #x00000000))) #x0000000000000000))))) #x0000000000000000))) ((_ extract 47 40) (bvor #x0000000000000000 (bvshl ((_ zero_extend 32) ((_ zero_extend 24) ((_ extract 7 0) (bvor #x0000000000000000 (bvshl ((_ zero_extend 32) ((_ zero_extend 24) (select INPUT #x00000000))) #x0000000000000000))))) #x0000000000000000))) ((_ extract 39 32) (bvor #x0000000000000000 (bvshl ((_ zero_extend 32) ((_ zero_extend 24) ((_ extract 7 0) (bvor #x0000000000000000 (bvshl ((_ zero_extend 32) ((_ zero_extend 24) (select INPUT #x00000000))) #x0000000000000000))))) #x0000000000000000))) ((_ extract 31 24) (bvor #x0000000000000000 (bvshl ((_ zero_extend 32) ((_ zero_extend 24) ((_ extract 7 0) (bvor #x0000000000000000 (bvshl ((_ zero_extend 32) ((_ zero_extend 24) (select INPUT #x00000000))) #x0000000000000000))))) #x0000000000000000))) ((_ extract 23 16) (bvor #x0000000000000000 (bvshl ((_ zero_extend 32) ((_ zero_extend 24) ((_ extract 7 0) (bvor #x0000000000000000 (bvshl ((_ zero_extend 32) ((_ zero_extend 24) (select INPUT #x00000000))) #x0000000000000000))))) #x0000000000000000))) ((_ extract 15 8) (bvor #x0000000000000000 (bvshl ((_ zero_extend 32) ((_ zero_extend 24) ((_ extract 7 0) (bvor #x0000000000000000 (bvshl ((_ zero_extend 32) ((_ zero_extend 24) (select INPUT #x00000000))) #x0000000000000000))))) #x0000000000000000))) ((_ extract 7 0) (bvor #x0000000000000000 (bvshl ((_ zero_extend 32) ((_ zero_extend 24) ((_ extract 7 0) (bvor #x0000000000000000 (bvshl ((_ zero_extend 32) ((_ zero_extend 24) (select INPUT #x00000000))) #x0000000000000000))))) #x0000000000000000))))))
+        (assert (=  A B))
+        (check-sat)"""
+        parser = SmtLibParser()
+        script = parser.get_script(cStringIO(txt))
+        f_in = script.get_last_formula()
+        self.assertSat(f_in)
+
 if __name__ == "__main__":
     main()
