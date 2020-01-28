@@ -322,12 +322,16 @@ jobs:
     - 'Win2016'
   condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/master'))
   steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.7'
+      architecture: 'x64'
   - bash: pip install --upgrade pip
     displayName: 'Upgrade PIP'
   - bash: pip install wheel
     displayName: 'Install Wheel'
   - bash: pip install twine
-    displayName: 'Install Wheel'
+    displayName: 'Install Twine'
   - script: './make_distrib.sh'
     displayName: 'Make Distrib'
   - script: 'cd dist; zip PySMT*.whl six.py'
