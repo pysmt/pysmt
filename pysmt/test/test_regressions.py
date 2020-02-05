@@ -23,7 +23,7 @@ import pysmt.smtlib.commands as smtcmd
 from pysmt.shortcuts import (Real, Plus, Symbol, Equals, And, Bool, Or, Not,
                              Div, LT, LE, Int, ToReal, Iff, Exists, Times, FALSE,
                              BVLShr, BVLShl, BVAShr, BV, BVAdd, BVULT, BVMul,
-                             Select, Array, Ite, String)
+                             Select, Array, Ite, String, Function, to_smtlib)
 from pysmt.shortcuts import Solver, get_env, qelim, get_model, TRUE, ExactlyOne
 from pysmt.typing import REAL, BOOL, INT, BVType, FunctionType, ArrayType
 from pysmt.test import (TestCase, skipIfSolverNotAvailable, skipIfNoSolverForLogic,
@@ -405,19 +405,12 @@ class TestRegressions(TestCase):
 
         with Solver(name="z3") as solver:
             z3_f = solver.converter.convert(f)
-            z3_f = Tactic('simplify')(z3_f).as_expr()
+            z3_f = Tactic('simplify', solver.z3.ctx)(z3_f).as_expr()
             fp = solver.converter.back(z3_f)
             self.assertValid(Iff(f, fp), (f, fp))
 
     def test_array_initialization_printing(self):
         self.assertEqual(str(Array(INT, Int(0), {Int(1):Int(2)})), "Array{Int, Int}(0)[1 := 2]")
-
-    def test_git_version(self):
-        from pysmt import git_version
-        v = git_version()
-        self.assertIsNotNone(v)
-        parts = v.split("-")
-        self.assertTrue(len(parts) , 4)
 
     @skipIfSolverNotAvailable("btor")
     def test_boolector_assumptions(self):
@@ -509,7 +502,19 @@ class TestRegressions(TestCase):
         self.assertEqual('"', s.commands[2].args[0].arg(1).constant_value())
         self.assertEqual('""', s.commands[3].args[0].arg(1).constant_value())
 
+    def test_pysmt_syntax_error(self):
+        from pysmt.exceptions import PysmtSyntaxError
+        try:
+            raise PysmtSyntaxError("'define-fun' expected", (5,5))
+        except PysmtSyntaxError as ex:
+            self.assertEqual(str(ex), "Line 5, Col 5: 'define-fun' expected")
 
+    def test_function_smtlib_print(self):
+        f_t = FunctionType(BOOL, [BOOL])
+        f0 = Symbol('f 0', f_t)
+        f0_of_false = Function(f0, [Bool(False)])
+        s = to_smtlib(f0_of_false, False)
+        self.assertEqual(s, '(|f 0| false)')
 
 if __name__ == "__main__":
     main()

@@ -25,7 +25,7 @@ from pysmt.smtlib.script import SmtLibCommand
 from pysmt.solvers.solver import Solver, SolverOptions
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               UnknownSolverAnswerError, PysmtValueError)
-from pysmt.oracles import TypesOracle
+from pysmt.decorators import clear_pending_pop
 
 class SmtLibOptions(SolverOptions):
     """Options for the SmtLib Solver.
@@ -40,7 +40,7 @@ class SmtLibOptions(SolverOptions):
         self.debug_interaction = False
 
         if 'debug_interaction' in self.solver_options:
-            self.debug_interaction = self.solver_options
+            self.debug_interaction = self.solver_options['debug_interaction']
             del self.solver_options['debug_interaction']
 
     def __call__(self, solver):
@@ -81,8 +81,8 @@ class SmtLibSolver(Solver):
         self.to = self.environment.typeso
         if LOGICS is not None: self.LOGICS = LOGICS
         self.args = args
-        self.declared_vars = set()
-        self.declared_sorts = set()
+        self.declared_vars = [set()]
+        self.declared_sorts = [set()]
         self.solver = Popen(args, stdout=PIPE, stderr=PIPE, stdin=PIPE,
                             bufsize=-1)
         # Give time to the process to start-up
@@ -133,22 +133,23 @@ class SmtLibSolver(Solver):
         lst = self.parser.get_assignment_list(self.solver_stdout)
         self._debug("Read: %s", lst)
         return lst
-    
+
     def _declare_sort(self, sort):
         cmd = SmtLibCommand(smtcmd.DECLARE_SORT, [sort])
         self._send_silent_command(cmd)
-        self.declared_sorts.add(sort)
+        self.declared_sorts[-1].add(sort)
 
     def _declare_variable(self, symbol):
         cmd = SmtLibCommand(smtcmd.DECLARE_FUN, [symbol])
         self._send_silent_command(cmd)
-        self.declared_vars.add(symbol)
+        self.declared_vars[-1].add(symbol)
 
     def _check_success(self):
         res = self._get_answer()
         if res != "success":
             raise UnknownSolverAnswerError("Solver returned: '%s'" % res)
 
+    @clear_pending_pop
     def solve(self, assumptions=None):
         assert assumptions is None
         self._send_command(SmtLibCommand(smtcmd.CHECK_SAT, []))
@@ -162,28 +163,36 @@ class SmtLibSolver(Solver):
         else:
             raise UnknownSolverAnswerError("Solver returned: " + ans)
 
+    @clear_pending_pop
     def reset_assertions(self):
         self._send_silent_command(SmtLibCommand(smtcmd.RESET_ASSERTIONS, []))
         return
 
+    @clear_pending_pop
     def add_assertion(self, formula, named=None):
         # This is needed because Z3 (and possibly other solvers) incorrectly
         # recognize N * M * x as a non-linear term
         formula = formula.simplify()
         sorts = self.to.get_types(formula, custom_only=True)
         for s in sorts:
-            if s not in self.declared_sorts:
+            if all(s not in ds for ds in self.declared_sorts):
                 self._declare_sort(s)
         deps = formula.get_free_variables()
         for d in deps:
-            if d not in self.declared_vars:
+            if all(d not in dv for dv in self.declared_vars):
                 self._declare_variable(d)
         self._send_silent_command(SmtLibCommand(smtcmd.ASSERT, [formula]))
 
+    @clear_pending_pop
     def push(self, levels=1):
+        self.declared_vars.append(set())
+        self.declared_sorts.append(set())
         self._send_silent_command(SmtLibCommand(smtcmd.PUSH, [levels]))
 
+    @clear_pending_pop
     def pop(self, levels=1):
+        self.declared_vars.pop()
+        self.declared_sorts.pop()
         self._send_silent_command(SmtLibCommand(smtcmd.POP, [levels]))
 
     def get_value(self, item):

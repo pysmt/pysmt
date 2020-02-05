@@ -23,10 +23,10 @@ from six.moves import cStringIO
 import pysmt.logics as logics
 from pysmt.test import TestCase, skipIfNoSolverForLogic, main
 from pysmt.test.examples import get_example_formulae
-from pysmt.smtlib.parser import SmtLibParser
+from pysmt.smtlib.parser import SmtLibParser, Tokenizer
 from pysmt.smtlib.script import smtlibscript_from_formula
 from pysmt.shortcuts import Iff
-from pysmt.shortcuts import read_smtlib, write_smtlib
+from pysmt.shortcuts import read_smtlib, write_smtlib, get_env
 from pysmt.exceptions import PysmtSyntaxError
 
 class TestSMTParseExamples(TestCase):
@@ -156,6 +156,46 @@ class TestSMTParseExamples(TestCase):
         parser = SmtLibParser()
         with self.assertRaises(PysmtSyntaxError):
             parser.get_script(cStringIO(txt))
+
+    def test_parse_consume(self):
+        smt_script = """
+        (model
+        (define-fun STRING_cmd_line_arg_1_1000 () String "AAAAAAAAAAAA")
+        )
+        """
+        tokens = Tokenizer(cStringIO(smt_script), interactive=True)
+        parser = SmtLibParser()
+        tokens.consume()
+        tokens.consume()
+        next_token = tokens.consume()
+        tokens.add_extra_token(next_token)
+        tokens.consume()
+
+    def test_parser_params(self):
+        txt = """
+        (define-fun x ((y Int)) Bool (> y 0))
+        (declare-fun z () Int)
+        (declare-fun y () Bool)
+        (assert (and y (x z)))
+        """
+        parser = SmtLibParser()
+        script = parser.get_script(cStringIO(txt))
+        self.assertEqual(len(get_env().formula_manager.get_all_symbols()),
+                         len(script.get_declared_symbols()) + len(script.get_define_fun_parameter_symbols()))
+
+    @skipIfNoSolverForLogic(logics.QF_ABV)
+    def test_nary_bvconcat(self):
+        txt = """
+        (set-logic QF_BV )
+        (declare-fun INPUT () (Array (_ BitVec 32) (_ BitVec 8) ) )
+        (declare-fun A () (_ BitVec 64))(assert (= A (bvor #x0000000000000000 (bvshl ((_ zero_extend 32) ((_ zero_extend 24) (select INPUT #x00000000))) #x0000000000000000))))
+        (declare-fun B () (_ BitVec 64))(assert (= B (concat ((_ extract 63 56) (bvor #x0000000000000000 (bvshl ((_ zero_extend 32) ((_ zero_extend 24) ((_ extract 7 0) (bvor #x0000000000000000 (bvshl ((_ zero_extend 32) ((_ zero_extend 24) (select INPUT #x00000000))) #x0000000000000000))))) #x0000000000000000))) ((_ extract 55 48) (bvor #x0000000000000000 (bvshl ((_ zero_extend 32) ((_ zero_extend 24) ((_ extract 7 0) (bvor #x0000000000000000 (bvshl ((_ zero_extend 32) ((_ zero_extend 24) (select INPUT #x00000000))) #x0000000000000000))))) #x0000000000000000))) ((_ extract 47 40) (bvor #x0000000000000000 (bvshl ((_ zero_extend 32) ((_ zero_extend 24) ((_ extract 7 0) (bvor #x0000000000000000 (bvshl ((_ zero_extend 32) ((_ zero_extend 24) (select INPUT #x00000000))) #x0000000000000000))))) #x0000000000000000))) ((_ extract 39 32) (bvor #x0000000000000000 (bvshl ((_ zero_extend 32) ((_ zero_extend 24) ((_ extract 7 0) (bvor #x0000000000000000 (bvshl ((_ zero_extend 32) ((_ zero_extend 24) (select INPUT #x00000000))) #x0000000000000000))))) #x0000000000000000))) ((_ extract 31 24) (bvor #x0000000000000000 (bvshl ((_ zero_extend 32) ((_ zero_extend 24) ((_ extract 7 0) (bvor #x0000000000000000 (bvshl ((_ zero_extend 32) ((_ zero_extend 24) (select INPUT #x00000000))) #x0000000000000000))))) #x0000000000000000))) ((_ extract 23 16) (bvor #x0000000000000000 (bvshl ((_ zero_extend 32) ((_ zero_extend 24) ((_ extract 7 0) (bvor #x0000000000000000 (bvshl ((_ zero_extend 32) ((_ zero_extend 24) (select INPUT #x00000000))) #x0000000000000000))))) #x0000000000000000))) ((_ extract 15 8) (bvor #x0000000000000000 (bvshl ((_ zero_extend 32) ((_ zero_extend 24) ((_ extract 7 0) (bvor #x0000000000000000 (bvshl ((_ zero_extend 32) ((_ zero_extend 24) (select INPUT #x00000000))) #x0000000000000000))))) #x0000000000000000))) ((_ extract 7 0) (bvor #x0000000000000000 (bvshl ((_ zero_extend 32) ((_ zero_extend 24) ((_ extract 7 0) (bvor #x0000000000000000 (bvshl ((_ zero_extend 32) ((_ zero_extend 24) (select INPUT #x00000000))) #x0000000000000000))))) #x0000000000000000))))))
+        (assert (=  A B))
+        (check-sat)"""
+        parser = SmtLibParser()
+        script = parser.get_script(cStringIO(txt))
+        f_in = script.get_last_formula()
+        self.assertSat(f_in)
 
 if __name__ == "__main__":
     main()

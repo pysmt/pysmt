@@ -202,7 +202,6 @@ In order to make a release, the master branch must pass all tests on
 the CI (Travis and Appveyor). The release process is broken into the
 following steps:
 
- * OSX Testing
  * Release branch creation
  * Changelog update
  * Version change
@@ -211,13 +210,6 @@ following steps:
  * PyPi update
  * Version Bumping
  * Announcement
-
-OSX Testing
------------
-
-The ``master`` branch is merge within ``travix/macosx``. Upon pushing
-this branch, Travis CI will run the tests on OSX platform. In this
-way, we know that pySMT works on all supported platforms.
 
 
 Release Branch Creation

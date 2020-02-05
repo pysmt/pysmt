@@ -189,7 +189,7 @@ class Tokenizer(object):
         """Consumes and returns a single token from the stream.
            If the stream is empty, a PysmtSyntaxError is thrown"""
         if self.extra_queue:
-            return self.extra_queue.pop(0)
+            return self.extra_queue.popleft()
         else:
             try:
                 t = self.consume_maybe()

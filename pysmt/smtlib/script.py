@@ -185,6 +185,16 @@ class SmtLibScript(object):
                       for cmd in self.filter_by_command_name([smtcmd.ASSERT])]
         return _And(assertions)
 
+    def get_declared_symbols(self):
+        return {cmd.args[0] for cmd in self.filter_by_command_name([smtcmd.DECLARE_CONST,
+                                                                    smtcmd.DECLARE_FUN])}
+    def get_define_fun_parameter_symbols(self):
+        res = set()
+        for cmd in self.filter_by_command_name([smtcmd.DEFINE_FUN]):
+            for s in cmd.args[1]:
+                res.add(s)
+        return res
+
     def get_last_formula(self, mgr=None):
         """Returns the last formula of the execution of the Script.
 

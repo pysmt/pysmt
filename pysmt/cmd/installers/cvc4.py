@@ -16,7 +16,7 @@ from __future__ import absolute_import
 import os
 import sys
 
-from pysmt.cmd.installers.base import SolverInstaller, TemporaryPath
+from pysmt.cmd.installers.base import SolverInstaller
 
 
 class CVC4Installer(SolverInstaller):
@@ -57,7 +57,9 @@ class CVC4Installer(SolverInstaller):
         # Inject Python library and include paths into CMake because CVC4 search
         # system can be fooled in some systems
         import distutils.sysconfig as sysconfig
-        PYTHON_LIBRARY = sysconfig.get_config_var('LIBDIR')
+        PYTHON_LIBRARY = os.environ.get('PYSMT_PYTHON_LIBDIR')
+        if not PYTHON_LIBRARY:
+            PYTHON_LIBRARY = sysconfig.get_config_var('LIBDIR')
         PYTHON_INCLUDE_DIR = sysconfig.get_python_inc()
         SolverInstaller.run(['sed', '-i',
                              's|cmake_opts=""|cmake_opts="-DPYTHON_LIBRARY=' + PYTHON_LIBRARY + ' -DPYTHON_INCLUDE_DIR=' + PYTHON_INCLUDE_DIR + '"|g',

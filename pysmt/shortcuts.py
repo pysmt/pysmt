@@ -472,15 +472,14 @@ def BVXor(left, right):
     return get_env().formula_manager.BVXor(left, right)
 
 
-def BVConcat(left, right):
+def BVConcat(*args):
     """Returns the Concatenation of the two BVs
 
-    :param left: Specify the left bitvector
-    :param right: Specify the right bitvector
-    :returns: The concatenation of the two BVs
+    :param args: Specify the bitvectors to concatenate
+    :returns: The concatenation of the given BVs
     :rtype: FNode
     """
-    return get_env().formula_manager.BVConcat(left, right)
+    return get_env().formula_manager.BVConcat(*args)
 
 
 def BVExtract(formula, start=0, end=None):

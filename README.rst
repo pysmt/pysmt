@@ -2,8 +2,8 @@
 pySMT: a Python API for SMT
 ===========================
 
-.. image:: https://travis-ci.org/pysmt/pysmt.svg?branch=master
-           :target: https://travis-ci.org/pysmt/pysmt
+.. image:: https://dev.azure.com/micheliandrea/PySMT/_apis/build/status/pysmt.pysmt?branchName=master
+           :target: https://dev.azure.com/micheliandrea/PySMT/_build/latest?definitionId=1&branchName=master
            :alt: Build Status
 
 .. image:: https://coveralls.io/repos/github/pysmt/pysmt/badge.svg
@@ -21,6 +21,7 @@ pySMT: a Python API for SMT
 .. image:: https://img.shields.io/pypi/l/pysmt.svg
            :target: /LICENSE
            :alt: Apache License
+
 .. image:: https://img.shields.io/badge/Browse%20the%20Archive-Google%20groups-orange.svg
            :target: https://groups.google.com/d/forum/pysmt
            :alt: Google groups
@@ -30,7 +31,7 @@ pySMT makes working with **Satisfiability Modulo Theory** simple:
 
 * Define formulae in a *simple*, *intuitive*, and *solver independent* way
 * Solve your formulae using one of the native solvers, or by wrapping
-  any SMT-Lib complaint solver,
+  any SMT-Lib compliant solver,
 * Dump your problems in the SMT-Lib format,
 * and more...
 
@@ -206,7 +207,9 @@ By default the solvers are downloaded, unpacked and built in your home directory
 in the ``.smt_solvers`` folder. Compiled libraries and actual solver packages are
 installed in the relevant ``site-packages`` directory (e.g. virtual environment's
 packages root or local user-site). ``pysmt-install`` has many options to
-customize its behavior.
+customize its behavior. If you have multiple versions of python in your system, 
+we recommend the following syntax to run pysmt-install: ``python -m pysmt install``.
+
 
 *Note:* This script does not install required
 dependencies for building the solver (e.g., make or gcc) and has been

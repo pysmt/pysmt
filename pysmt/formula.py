@@ -27,7 +27,11 @@ rewritten as LE and LT. Similarly, the operator Xor is rewritten using
 its definition.
 """
 
-import collections
+import sys
+if sys.version_info >= (3, 3):
+    from collections.abc import Iterable
+else:
+    from collections import Iterable
 
 from six.moves import xrange
 
@@ -670,11 +674,17 @@ class FormulaManager(object):
                                 args=(left,right),
                                 payload=(left.bv_width(),))
 
-    def BVConcat(self, left, right):
-        """Returns the Concatenation of the two BVs"""
-        return self.create_node(node_type=op.BV_CONCAT,
-                                args=(left,right),
-                                payload=(left.bv_width()+right.bv_width(),))
+    def BVConcat(self, *args):
+        """Returns the Concatenation of the given BVs"""
+        ex = self._polymorph_args_to_tuple(args)
+        base = self.create_node(node_type=op.BV_CONCAT,
+                                args=(ex[0], ex[1]),
+                                payload=(ex[0].bv_width() + ex[1].bv_width(),))
+        for e in ex[2:]:
+            base = self.create_node(node_type=op.BV_CONCAT,
+                                    args=(base, e),
+                                    payload=(base.bv_width() + e.bv_width(),))
+        return base
 
     def BVExtract(self, formula, start=0, end=None):
         """Returns the slice of formula from start to end (inclusive)."""
@@ -1066,7 +1076,7 @@ class FormulaManager(object):
            And([a,b,c]) and And(a,b,c)
         are both valid, and they are converted into a tuple (a,b,c) """
 
-        if len(args) == 1 and isinstance(args[0], collections.Iterable):
+        if len(args) == 1 and isinstance(args[0], Iterable):
             args = args[0]
         return tuple(args)
 

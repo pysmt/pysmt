@@ -155,6 +155,34 @@ class TestBasic(TestCase):
             s.solve()
             self.assertTrue(s.get_py_value(varA))
 
+    @skipIfNoSolverForLogic(QF_BOOL)
+    def test_incremental(self):
+        a = Symbol('a', BOOL)
+        b = Symbol('b', BOOL)
+        c = Symbol('c', BOOL)
+
+        for name in get_env().factory.all_solvers(logic=QF_BOOL):
+            with Solver(name) as solver:
+                solver.add_assertion(Or(a, b))
+                solver.add_assertion(Or(Not(b), c))
+                self.assertTrue(solver.solve())
+                try:
+                    solver.push(1)
+                except NotImplementedError:
+                    # if push not implemented, pop shouldn't be either
+                    self.assertRaises(NotImplementedError, solver.pop)
+                    continue
+
+                solver.add_assertion(And(Not(a), Not(c)))
+                self.assertFalse(solver.solve())
+                solver.pop(1)
+                self.assertTrue(solver.solve())
+                solver.add_assertion(FALSE())
+                self.assertFalse(solver.solve())
+                solver.reset_assertions()
+                solver.add_assertion(a)
+                self.assertTrue(solver.solve())
+
     @skipIfSolverNotAvailable("msat")
     def test_examples_msat(self):
         for (f, validity, satisfiability, logic) in get_example_formulae():
@@ -265,10 +293,10 @@ class TestBasic(TestCase):
     @skipIfSolverNotAvailable("z3")
     def test_tactics_z3(self):
         from z3 import Tactic, Then
-        from pysmt.shortcuts import Iff
 
-        my_tactic = Then(Tactic('simplify'), Tactic('propagate-values'),
-                         Tactic('elim-uncnstr'))
+        my_tactic = lambda ctx : Then(Tactic('simplify', ctx),
+                                      Tactic('propagate-values', ctx),
+                                      Tactic('elim-uncnstr', ctx))
 
         for (f, validity, satisfiability, logic) in get_example_formulae():
             if not logic.theory.linear: continue
@@ -277,7 +305,7 @@ class TestBasic(TestCase):
             if logic.theory.bit_vectors: continue
             s = Solver(name='z3')
             z3_f = s.converter.convert(f)
-            simp_z3_f = my_tactic(z3_f)
+            simp_z3_f = my_tactic(s.z3.ctx)(z3_f)
             simp_f = s.converter.back(simp_z3_f.as_expr())
             v = is_valid(simp_f)
             s = is_sat(simp_f)
@@ -595,7 +623,7 @@ class TestBasic(TestCase):
             if logic == QF_BV:
                 solver = Solver(name="btor",
                                 solver_options={"rewrite-level":0,
-                                                "fun:dual-prop":1,
+                                                "fun-dual-prop":1,
                                                 "eliminate-slices":1})
                 solver.add_assertion(f)
                 res = solver.solve()
