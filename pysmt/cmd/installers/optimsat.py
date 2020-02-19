@@ -37,7 +37,9 @@ class OptiMSatInstaller(SolverInstaller):
         archive_name = "optimathsat-%s-%s-%s.%s" % (solver_version, os_name,
                                                     arch, ext)
 
-        native_link = "http://optimathsat.disi.unitn.it/releases/optimathsat-%s/{archive_name}" % solver_version
+        # FIXME(PT): restore original link
+        #native_link = "http://optimathsat.disi.unitn.it/releases/optimathsat-%s/{archive_name}" % solver_version
+        native_link = "http://disi.unitn.it/trentin/resources/optimathsat-%s/{archive_name}" % solver_version
 
         SolverInstaller.__init__(self, install_dir=install_dir,
                                  bindings_dir=bindings_dir,
