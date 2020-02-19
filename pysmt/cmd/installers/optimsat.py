@@ -37,7 +37,9 @@ class OptiMSatInstaller(SolverInstaller):
         archive_name = "optimathsat-%s-%s-%s.%s" % (solver_version, os_name,
                                                     arch, ext)
 
-        native_link = "http://optimathsat.disi.unitn.it/releases/optimathsat-%s/{archive_name}" % solver_version
+        # FIXME(PT): restore original link
+        #native_link = "http://optimathsat.disi.unitn.it/releases/optimathsat-%s/{archive_name}" % solver_version
+        native_link = "http://disi.unitn.it/trentin/resources/optimathsat-%s/{archive_name}" % solver_version
 
         SolverInstaller.__init__(self, install_dir=install_dir,
                                  bindings_dir=bindings_dir,
@@ -50,15 +52,16 @@ class OptiMSatInstaller(SolverInstaller):
 
 
     def compile(self):
-        setup_py_url = "https://github.com/pysmt/solvers_patches/raw/master/optimsat/setup.py"
-        # Overwrite setup.py with the patched version
-        setup_py = os.path.join(self.python_bindings_dir, "setup.py")
-        SolverInstaller.mv(setup_py, setup_py + ".original")
-        SolverInstaller.do_download(setup_py_url, setup_py)
+        # FIXME(PT): restore, maybe?
+        #setup_py_url = "https://github.com/pysmt/solvers_patches/raw/master/optimsat/setup.py"
+        ## Overwrite setup.py with the patched version
+        #setup_py = os.path.join(self.python_bindings_dir, "setup.py")
+        #SolverInstaller.mv(setup_py, setup_py + ".original")
+        #SolverInstaller.do_download(setup_py_url, setup_py)
 
         # Run setup.py to compile the bindings
-        SolverInstaller.mv(os.path.join(self.python_bindings_dir, 'mathsat_python_wrap.c'),
-                           os.path.join(self.python_bindings_dir, 'mathsat_python_wrap.cpp'))
+        #SolverInstaller.mv(os.path.join(self.python_bindings_dir, 'mathsat_python_wrap.c'),
+        #                   os.path.join(self.python_bindings_dir, 'mathsat_python_wrap.cpp'))
         SolverInstaller.run_python("./setup.py build_ext -R $ORIGIN", self.python_bindings_dir)
 
 
@@ -72,7 +75,7 @@ class OptiMSatInstaller(SolverInstaller):
         for f in os.listdir(sodir):
             if f.endswith(".so") or f.endswith(".pyd"):
                 SolverInstaller.mv(os.path.join(sodir, f), self.bindings_dir)
-        SolverInstaller.mv(os.path.join(pdir, "mathsat.py"), self.bindings_dir)
+        SolverInstaller.mv(os.path.join(pdir, "optimathsat.py"), self.bindings_dir)
 
         # Since MathSAT 5.5.0 we also need the SO/DLL/DYLIB of mathsat in the PATH
         # Under Windows, we also need the DLLs of MPIR in the PATH
