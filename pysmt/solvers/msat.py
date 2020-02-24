@@ -1356,8 +1356,9 @@ if hasattr(mathsat, "msat_objective"):
 
         def optimize(self, cost_function, **kwargs):
             obj_fun = self.converter.convert(cost_function)
-            msat_obj = mathsat.msat_push_minimize(self.msat_env(), obj_fun, None,
+            msat_obj = mathsat.msat_make_minimize(self.msat_env(), obj_fun, None,
                                                   None, False)
+            mathsat.msat_assert_objective(self.msat_env(), msat_obj)
             self.solve()
             optres = mathsat.msat_objective_result(self.msat_env(), msat_obj)
             if optres == mathsat.MSAT_OPT_UNKNOWN:
