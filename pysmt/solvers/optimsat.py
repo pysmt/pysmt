@@ -15,54 +15,76 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+from warnings import warn
+from six.moves import xrange
 
-from pysmt.solvers.msat import *
-
-try:
-    import optimathsat
-except ImportError:
-    raise SolverAPINotFound
+from pysmt.exceptions import SolverAPINotFound
+from pysmt.constants import Fraction, is_pysmt_fraction, is_pysmt_integer
 
 from pysmt.solvers.dynmsat import OptiMSATWrapper
 
+from pysmt.logics import LRA, LIA, QF_UFLIA, QF_UFLRA, QF_BV, PYSMT_QF_LOGICS
+from pysmt.oracles import get_logic
+
+import pysmt.operators as op
+from pysmt import typing as types
+from pysmt.solvers.solver import (IncrementalTrackingSolver, UnsatCoreSolver,
+                                  Model, Converter, SolverOptions)
+from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
+from pysmt.walkers import DagWalker
+from pysmt.exceptions import (SolverReturnedUnknownResultError,
+                              SolverNotConfiguredForUnsatCoresError,
+                              SolverStatusError,
+                              InternalSolverError,
+                              NonLinearError, PysmtValueError, PysmtTypeError,
+                              ConvertExpressionError, PysmtUnboundedOptimizationError)
+from pysmt.decorators import clear_pending_pop, catch_conversion_error
+from pysmt.solvers.qelim import QuantifierEliminator
+from pysmt.solvers.interpolation import Interpolator
+from pysmt.walkers.identitydag import IdentityDagWalker
+from pysmt.solvers.optimizer import SUAOptimizerMixin, IncrementalOptimizerMixin
+from pysmt.solvers.optimizer import Optimizer
+
+from pysmt.solvers.msat import MSatEnv, MathSAT5Model, MathSATOptions
+from pysmt.solvers.msat import MathSAT5Solver, MSatConverter, MSatQuantifierEliminator
+from pysmt.solvers.msat import MSatInterpolator, MSatBoolUFRewriter
+
+# TODO:
+# - check msat does not instantiate any MSAT class directly (use virtual override)
+# - is it possible to reintroduce file-level try-except for library import?
+# - the "Not in Python's Path" message is wrong for MathSAT when only OptiMAthSAT
+#   is installed.. the current implementation must be revised.
 
 class OptiMSATEnv(OptiMSATWrapper, MSatEnv):
 
     def __init__(self, *args, **kwargs):
-        super(OptiMSATEnv, self).__init__(*args, **kwargs)
-
-    def __del__(self):
-        super(OptiMSATEnv, self).__del__()
+        OptiMSATWrapper.__init__(self)
+        MSatEnv.__init__(self, *args, **kwargs)
 
 
 class OptiMSATModel(OptiMSATWrapper, MathSAT5Model):
 
     def __init__(self, *args, **kwargs):
-        super(OptiMSATModel, self).__init__(*args, **kwargs)
-
-    def __del__(self):
-        super(OptiMSATModel, self).__del__()
+        OptiMSATWrapper.__init__(self)
+        MathSAT5Model.__init__(self, *args, **kwargs)
 
 
 class OptiMSATOptions(OptiMSATWrapper, MathSATOptions):
 
     def __init__(self, *args, **kwargs):
-        super(OptiMSATMOptions, self).__init__(*args, **kwargs)
-
-    def __del__(self):
-        super(OptiMSATOptions, self).__del__()
+        OptiMSATWrapper.__init__(self)
+        MathSATOptions.__init__(self, *args, **kwargs)
 
 
 class OptiMSATSolver(OptiMSATWrapper, MathSAT5Solver, Optimizer):
     # TODO: LOGICS, OptionsClass
 
     def __init__(self, *args, **kwargs):
-        super(OptiMSATSolver, self).__init__(*args, **kwargs)
+        OptiMSATWrapper.__init__(self)
+        MathSAT5Solver.__init__(self, *args, **kwargs)
+        Optimizer.__init__(self)
 #            MathSAT5Solver.__init__(self, environment=environment,
 #                                    logic=logic, **options)
-
-    def __del__(self):
-        super(OptiMSATSolver, self).__del__()
 
     def _le(self, x, y):
         # TODO: support FP?
@@ -116,71 +138,49 @@ class OptiMSATSolver(OptiMSATWrapper, MathSAT5Solver, Optimizer):
 
 
 
-
-
-
-
-
-
-
 class OptiMSATConverter(OptiMSATWrapper, MSatConverter):
 
     def __init__(self, *args, **kwargs):
-        super(OptiMSATConverter, self).__init__(*args, **kwargs)
-
-    def __del__(self):
-        super(OptiMSATConverter, self).__del__()
+        OptiMSATWrapper.__init__(self)
+        MSatConverter.__init__(self, *args, **kwargs)
 
 
-# Check if we are working on a version MathSAT supporting quantifier elimination
-if hasattr(OptiMSATWrapper().get_lib(), "MSAT_EXIST_ELIM_ALLSMT_FM"):
-    class OptiMSATQuantifierEliminator(OptiMSATWrapper, MSatQuantifierEliminator):
-        # TODO: LOGICS
+class OptiMSATQuantifierEliminator(OptiMSATWrapper, MSatQuantifierEliminator):
+    # TODO: LOGICS
 
-        def __init__(self, *args, **kwargs):
-            super(OptiMSATQuantifierEliminator, self).__init__(*args, **kwargs)
-
-        def __del__(self):
-            super(OptiMSATQuantifierEliminator, self).__del__()
+    def __init__(self, *args, **kwargs):
+        OptiMSATWrapper.__init__(self)
+        MSatQuantifierEliminator.__init__(self, *args, **kwargs)
 
 
-    class OptiMSATFMQuantifierEliminator(OptiMSATQuantifierEliminator):
-        # TODO: LOGICS
+class OptiMSATFMQuantifierEliminator(OptiMSATQuantifierEliminator):
+    # TODO: LOGICS
 
-        def __init__(self, *args, **kwargs):
-            super(OptiMSATFMQuantifierEliminator, self).__init__(*args, **kwargs)
-
-        def __del__(self):
-            super(OptiMSATFMQuantifierEliminator, self).__del__()
+    def __init__(self, *args, **kwargs):
+        OptiMSATQuantifierEliminator.__init__(algorithm='fm', *args, **kwargs)
 
 
-    class OptiMSATLWQuantifierEliminator(OptiMSATQuantifierEliminator):
-        # TODO: LOGICS
+class OptiMSATLWQuantifierEliminator(OptiMSATQuantifierEliminator):
+    # TODO: LOGICS
 
-        def __init__(self, *args, **kwargs):
-            super(OptiMSATLWQuantifierEliminator, self).__init__(*args, **kwargs)
-
-        def __del__(self):
-            super(OptiMSATLWQuantifierEliminator, self).__del__()
+    def __init__(self, *args, **kwargs):
+        OptiMSATQuantifierEliminator.__init__(algorithm='lw', *args, **kwargs)
 
 
 class OptiMSATInterpolator(OptiMSATWrapper, MSatInterpolator):
     # TODO: LOGICS
 
     def __init__(self, *args, **kwargs):
-        super(OptiMSATInterpolator, self).__init__(*args, **kwargs)
-
-    def __del__(self):
-        super(OptiMSATInterpolator, self).__del__()
+        OptiMSATWrapper.__init__(self)
+        MSatInterpolator.__init__(self, *args, **kwargs)
 
 
 class OptiMSATBoolUFRewriter(OptiMSATWrapper, MSatBoolUFRewriter):
 
     def __init__(self, *args, **kwargs):
-        super(OptiMSATBoolUFRewriter, self).__init__(*args, **kwargs)
+        OptiMSATWrapper.__init__(self)
+        MsatBoolUFRewriter.__init__(self, *args, **kwargs)
 
-    def __del__(self):
-        super(OptiMSATBoolUFRewriter, self).__del__()
 
 class OptiMSATSUAOptimizer(SUAOptimizerMixin, OptiMSATSolver):
     # TODO: LOGICS

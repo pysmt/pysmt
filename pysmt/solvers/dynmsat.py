@@ -32,14 +32,14 @@ class MSATWrapper(object):
         try:
             lib_name = self.get_lib_name()
             return importlib.import_module(lib_name)
-        except (ModuleNotFoundError, ImportError):
+        except ImportError:
             raise SolverAPINotFound
 
 
 class OptiMSATWrapper(MSATWrapper):
 
     def __init__(self, *args, **kwargs):
-        super(OptiMSATWrapper, self).__init__(*args, **kwargs)
+        MSATWrapper.__init__(self)
 
     def get_lib_name(self):
         return "optimathsat"

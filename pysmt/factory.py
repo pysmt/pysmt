@@ -312,6 +312,11 @@ class Factory(object):
         try:
             from pysmt.solvers.msat import (MSatFMQuantifierEliminator,
                                             MSatLWQuantifierEliminator)
+            try:
+                MSatFMQuantifierEliminator()
+                MSatLWQuantifierEliminator()
+            except:
+                raise SolverAPINotFound
             self._all_qelims['msat_fm'] = MSatFMQuantifierEliminator
             self._all_qelims['msat_lw'] = MSatLWQuantifierEliminator
         except SolverAPINotFound:

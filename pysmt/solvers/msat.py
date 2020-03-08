@@ -21,11 +21,6 @@ from six.moves import xrange
 from pysmt.exceptions import SolverAPINotFound
 from pysmt.constants import Fraction, is_pysmt_fraction, is_pysmt_integer
 
-try:
-    import mathsat
-except ImportError:
-    raise SolverAPINotFound
-
 from pysmt.solvers.dynmsat import MSATWrapper
 
 from pysmt.logics import LRA, LIA, QF_UFLIA, QF_UFLRA, QF_BV, PYSMT_QF_LOGICS
@@ -50,6 +45,7 @@ from pysmt.walkers.identitydag import IdentityDagWalker
 from pysmt.solvers.optimizer import SUAOptimizerMixin, IncrementalOptimizerMixin
 from pysmt.solvers.optimizer import Optimizer
 
+
 class MSatEnv(MSATWrapper):
     """A wrapper for the msat_env object.
 
@@ -63,6 +59,7 @@ class MSatEnv(MSATWrapper):
     __slots__ = ['msat_env']
 
     def __init__(self, msat_config=None):
+        MSATWrapper.__init__(self)
         if msat_config is None:
             self.msat_env = self._msat_wrapper.msat_create_env()
         else:
@@ -79,6 +76,7 @@ class MathSAT5Model(MSATWrapper, Model):
     """Stand-alone model"""
 
     def __init__(self, environment, msat_env):
+        MSATWrapper.__init__(self)
         Model.__init__(self, environment)
         self.msat_env = msat_env
         self.converter = MSatConverter(environment, self.msat_env)
@@ -141,6 +139,7 @@ class MathSAT5Model(MSATWrapper, Model):
 class MathSATOptions(MSATWrapper, SolverOptions):
 
     def __init__(self, **base_options):
+        MSATWrapper.__init__(self)
         SolverOptions.__init__(self, **base_options)
 
     @staticmethod
@@ -183,6 +182,7 @@ class MathSAT5Solver(MSATWrapper, IncrementalTrackingSolver, UnsatCoreSolver,
     OptionsClass = MathSATOptions
 
     def __init__(self, environment, logic, **options):
+        MSATWrapper.__init__(self)
         IncrementalTrackingSolver.__init__(self,
                                            environment=environment,
                                            logic=logic,
@@ -378,6 +378,7 @@ class MathSAT5Solver(MSATWrapper, IncrementalTrackingSolver, UnsatCoreSolver,
 class MSatConverter(MSATWrapper, Converter, DagWalker):
 
     def __init__(self, environment, msat_env):
+        MSATWrapper.__init__(self)
         DagWalker.__init__(self, environment)
 
         self.msat_env = msat_env
@@ -1096,106 +1097,112 @@ class MSatConverter(MSATWrapper, Converter, DagWalker):
             self.symbol_to_decl[var] = decl
             self.decl_to_symbol[self._msat_wrapper.msat_decl_id(decl)] = var
 
-# Check if we are working on a version MathSAT supporting quantifier elimination
-if hasattr(MSATWrapper().get_lib(), "MSAT_EXIST_ELIM_ALLSMT_FM"):
-    class MSatQuantifierEliminator(MSATWrapper, QuantifierEliminator, IdentityDagWalker):
 
-        LOGICS = [LRA, LIA]
+class MSatQuantifierEliminator(MSATWrapper, QuantifierEliminator, IdentityDagWalker):
 
-        def __init__(self, environment, logic=None, algorithm='lw'):
-            """Initialize the Quantifier Eliminator using 'fm' or 'lw'.
+    LOGICS = [LRA, LIA]
 
-            fm: Fourier-Motzkin (default)
-            lw: Loos-Weisspfenning
-            """
-            if algorithm not in ['fm', 'lw']:
-                raise PysmtValueError("Algorithm can be either 'fm' or 'lw'")
+    def __init__(self, environment, logic=None, algorithm='lw'):
+        """Initialize the Quantifier Eliminator using 'fm' or 'lw'.
 
-            if logic is not None and (not logic <= LRA and algorithm != "lw"):
-                raise PysmtValueError("MathSAT quantifier elimination for LIA"\
-                                      " only works with 'lw' algorithm")
+        fm: Fourier-Motzkin (default)
+        lw: Loos-Weisspfenning
+        """
+        if algorithm not in ['fm', 'lw']:
+            raise PysmtValueError("Algorithm can be either 'fm' or 'lw'")
 
-            QuantifierEliminator.__init__(self)
-            IdentityDagWalker.__init__(self, env=environment)
-            self.msat_config = self._msat_wrapper.msat_create_default_config("QF_LRA")
-            self.msat_env = MSatEnv(self.msat_config)
-            self._msat_wrapper.msat_destroy_config(self.msat_config)
+        if logic is not None and (not logic <= LRA and algorithm != "lw"):
+            raise PysmtValueError("MathSAT quantifier elimination for LIA"\
+                                  " only works with 'lw' algorithm")
 
-            self.set_function(self.walk_identity, op.SYMBOL, op.REAL_CONSTANT,
-                              op.BOOL_CONSTANT, op.INT_CONSTANT)
-            self.logic = logic
+        MSATWrapper.__init__(self)
 
-            self.algorithm = algorithm
-            self.converter = MSatConverter(environment, self.msat_env)
+        # Check if we are working on a version MathSAT supporting quantifier elimination
+        if not hasattr(self._msat_wrapper, "MSAT_EXIST_ELIM_ALLSMT_FM"):
+            raise NotImplementedError
 
-        def eliminate_quantifiers(self, formula):
-            """Returns a quantifier-free equivalent formula of `formula`."""
-            return self.walk(formula)
+        QuantifierEliminator.__init__(self)
+        IdentityDagWalker.__init__(self, env=environment)
+        self.msat_config = self._msat_wrapper.msat_create_default_config("QF_LRA")
+        self.msat_env = MSatEnv(self.msat_config)
+        self._msat_wrapper.msat_destroy_config(self.msat_config)
 
+        self.set_function(self.walk_identity, op.SYMBOL, op.REAL_CONSTANT,
+                          op.BOOL_CONSTANT, op.INT_CONSTANT)
+        self.logic = logic
 
-        def exist_elim(self, variables, formula):
-            logic = get_logic(formula, self.env)
-            if not (logic <= LRA or logic <= LIA):
-                raise PysmtValueError("MathSAT quantifier elimination only"\
-                                      " supports LRA or LIA (detected logic " \
-                                      "is: %s)" % str(logic))
+        self.algorithm = algorithm
+        self.converter = MSatConverter(environment, self.msat_env)
 
-            if not logic <= LRA and self.algorithm != "lw":
-                raise PysmtValueError("MathSAT quantifier elimination for LIA"\
-                                      " only works with 'lw' algorithm")
+    def eliminate_quantifiers(self, formula):
+        """Returns a quantifier-free equivalent formula of `formula`."""
+        return self.walk(formula)
 
 
-            fterm = self.converter.convert(formula)
-            tvars = [self.converter.convert(x) for x in variables]
+    def exist_elim(self, variables, formula):
+        logic = get_logic(formula, self.env)
+        if not (logic <= LRA or logic <= LIA):
+            raise PysmtValueError("MathSAT quantifier elimination only"\
+                                  " supports LRA or LIA (detected logic " \
+                                  "is: %s)" % str(logic))
 
-            algo = self._msat_wrapper.MSAT_EXIST_ELIM_ALLSMT_FM
-            if self.algorithm == 'lw':
-                algo = self._msat_wrapper.MSAT_EXIST_ELIM_VTS
-
-            res = self._msat_wrapper.msat_exist_elim(self.msat_env(), fterm, tvars, algo)
-
-            try:
-                return self.converter.back(res)
-            except ConvertExpressionError:
-                if logic <= LRA:
-                    raise
-                raise ConvertExpressionError(message=("Unable to represent" \
-                      "expression %s in pySMT: the quantifier elimination for " \
-                      "LIA is incomplete as it requires the modulus. You can " \
-                      "find the MathSAT term representing the quantifier " \
-                      "elimination as the attribute 'expression' of this " \
-                      "exception object" % str(res)), expression=res)
+        if not logic <= LRA and self.algorithm != "lw":
+            raise PysmtValueError("MathSAT quantifier elimination for LIA"\
+                                  " only works with 'lw' algorithm")
 
 
-        def walk_forall(self, formula, args, **kwargs):
-            assert formula.is_forall()
-            variables = formula.quantifier_vars()
-            subf = self.env.formula_manager.Not(args[0])
-            ex_res = self.exist_elim(variables, subf)
-            return self.env.formula_manager.Not(ex_res)
+        fterm = self.converter.convert(formula)
+        tvars = [self.converter.convert(x) for x in variables]
 
-        def walk_exists(self, formula, args, **kwargs):
-            # Monolithic quantifier elimination
-            assert formula.is_exists()
-            variables = formula.quantifier_vars()
-            subf = args[0]
-            return self.exist_elim(variables, subf)
+        algo = self._msat_wrapper.MSAT_EXIST_ELIM_ALLSMT_FM
+        if self.algorithm == 'lw':
+            algo = self._msat_wrapper.MSAT_EXIST_ELIM_VTS
 
-        def _exit(self):
-            del self.msat_env
+        res = self._msat_wrapper.msat_exist_elim(self.msat_env(), fterm, tvars, algo)
 
-    class MSatFMQuantifierEliminator(MSatQuantifierEliminator):
-        LOGICS = [LRA]
-        def __init__(self, environment, logic=None):
-            MSatQuantifierEliminator.__init__(self, environment,
-                                              logic=logic, algorithm='fm')
+        try:
+            return self.converter.back(res)
+        except ConvertExpressionError:
+            if logic <= LRA:
+                raise
+            raise ConvertExpressionError(message=("Unable to represent" \
+                  "expression %s in pySMT: the quantifier elimination for " \
+                  "LIA is incomplete as it requires the modulus. You can " \
+                  "find the MathSAT term representing the quantifier " \
+                  "elimination as the attribute 'expression' of this " \
+                  "exception object" % str(res)), expression=res)
 
 
-    class MSatLWQuantifierEliminator(MSatQuantifierEliminator):
-        LOGICS = [LRA, LIA]
-        def __init__(self, environment, logic=None):
-            MSatQuantifierEliminator.__init__(self, environment,
-                                              logic=logic, algorithm='lw')
+    def walk_forall(self, formula, args, **kwargs):
+        assert formula.is_forall()
+        variables = formula.quantifier_vars()
+        subf = self.env.formula_manager.Not(args[0])
+        ex_res = self.exist_elim(variables, subf)
+        return self.env.formula_manager.Not(ex_res)
+
+    def walk_exists(self, formula, args, **kwargs):
+        # Monolithic quantifier elimination
+        assert formula.is_exists()
+        variables = formula.quantifier_vars()
+        subf = args[0]
+        return self.exist_elim(variables, subf)
+
+    def _exit(self):
+        del self.msat_env
+
+
+class MSatFMQuantifierEliminator(MSatQuantifierEliminator):
+    LOGICS = [LRA]
+    def __init__(self, environment, logic=None):
+        MSatQuantifierEliminator.__init__(self, environment,
+                                          logic=logic, algorithm='fm')
+
+
+class MSatLWQuantifierEliminator(MSatQuantifierEliminator):
+    LOGICS = [LRA, LIA]
+    def __init__(self, environment, logic=None):
+        MSatQuantifierEliminator.__init__(self, environment,
+                                          logic=logic, algorithm='lw')
 
 
 class MSatInterpolator(MSATWrapper, Interpolator):
@@ -1203,6 +1210,7 @@ class MSatInterpolator(MSATWrapper, Interpolator):
     LOGICS = [QF_UFLIA, QF_UFLRA, QF_BV]
 
     def __init__(self, environment, logic=None):
+        MSATWrapper.__init__(self)
         Interpolator.__init__(self)
         self.msat_env = MSatEnv()
         self.converter = MSatConverter(environment, self.msat_env)
@@ -1272,7 +1280,7 @@ class MSatInterpolator(MSATWrapper, Interpolator):
                 self._msat_wrapper.msat_destroy_env(env)
 
 
-class MSatBoolUFRewriter(IdentityDagWalker):
+class MSatBoolUFRewriter(MSATWrapper, IdentityDagWalker):
     """Rewrites an expression containing UF with boolean arguments into an
        equivalent one with only theory UF.
 
@@ -1283,6 +1291,7 @@ class MSatBoolUFRewriter(IdentityDagWalker):
     """
 
     def __init__(self, environment):
+        MSATWrapper.__init__(self)
         IdentityDagWalker.__init__(self, environment)
         self.get_type = self.env.stc.get_type
         self.mgr = self.env.formula_manager
