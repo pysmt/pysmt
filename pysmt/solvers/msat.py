@@ -45,7 +45,6 @@ from pysmt.walkers.identitydag import IdentityDagWalker
 from pysmt.solvers.optimizer import SUAOptimizerMixin, IncrementalOptimizerMixin
 from pysmt.solvers.optimizer import Optimizer
 
-
 class MSatEnv():
     """A wrapper for the msat_env object.
 
@@ -305,7 +304,6 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
         dict of names to formulae"""
         self._check_unsat_core_config()
         if self.options.unsat_cores_mode == "named":
-
             assumptions = self._msat_lib.msat_get_unsat_assumptions(self.msat_env())
             pysmt_assumptions = set(self.converter.back(t) for t in assumptions)
 
@@ -1370,59 +1368,3 @@ class MSatSUAOptimizer(MathSAT5Solver, SUAOptimizerMixin):
 
 class MSatIncrementalOptimizer(MathSAT5Solver, IncrementalOptimizerMixin):
     LOGICS = MathSAT5Solver.LOGICS
-
-if hasattr(mathsat, "msat_objective"):
-    #OptiMathSAT installed
-    class OptiMSatNativeOptimizer(Optimizer, MathSAT5Solver):
-
-        LOGICS = MathSAT5Solver.LOGICS
-
-        def __init__(self, environment, logic, **options):
-            MathSAT5Solver.__init__(self, environment=environment,
-                                    logic=logic, **options)
-
-        def _le(self, x, y):
-            otype = self.environment.stc.get_type(x)
-            mgr = self.environment.formula_manager
-            if otype.is_int_type() or otype.is_real_type():
-                return mgr.LE(x, y)
-            elif otype.is_bv_type():
-                return mgr.BVULE(x, y)
-
-        def optimize(self, cost_function, **kwargs):
-            obj_fun = self.converter.convert(cost_function)
-            msat_obj = mathsat.msat_push_minimize(self.msat_env(), obj_fun, None,
-                                                  None, False)
-            self.solve()
-            optres = mathsat.msat_objective_result(self.msat_env(), msat_obj)
-            if optres == mathsat.MSAT_OPT_UNKNOWN:
-                raise SolverReturnedUnknownResultError()
-            elif optres == mathsat.MSAT_OPT_UNSAT:
-                return None
-            else:
-                unbounded = mathsat.msat_objective_value_is_unbounded(self.msat_env(),
-                                                                      msat_obj,
-                                                                      mathsat.MSAT_OPTIMUM)
-                if unbounded > 0:
-                    raise PysmtUnboundedOptimizationError("The optimal value is unbounded")
-                else:
-                    c = mathsat.msat_objective_value_repr(self.msat_env(),
-                                                          msat_obj,
-                                                          mathsat.MSAT_OPTIMUM)
-                    # This is a hack because msat_objective_value_is_strict
-                    # is not wrapped in Python (it takes a c++ reference)
-                    if c[0] == ">" or c[0] == "<":
-                        raise PysmtUnboundedOptimizationError("The optimal value is infinitesimal")
-                    check = mathsat.msat_set_model(self.msat_env(), msat_obj)
-                    if check != 0:
-                        raise ValueError()
-                    return self.get_model()
-
-
-        def pareto_optimize(self, cost_functions):
-            # The pareto generation is currently not wrapped
-            # (It is impossible to specify a callback)
-            raise NotImplementedError
-
-        def can_diverge_for_unbounded_cases(self):
-            return False
