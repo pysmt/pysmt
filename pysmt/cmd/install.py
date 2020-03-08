@@ -58,10 +58,7 @@ def get_requested_solvers():
         keys = requested_solvers_str.split(",")
         requested_solvers = [x.lower().strip() for x in keys]
         if "all" in requested_solvers:
-            # Skip OptiMathSAT in the 'all' case because currently
-            # msat and optimsat cannot co-exist
-            requested_solvers = [x.InstallerClass.SOLVER for x in INSTALLERS
-                                 if x.InstallerClass.SOLVER != 'optimsat']
+            requested_solvers = [x.InstallerClass.SOLVER for x in INSTALLERS]
     return requested_solvers
 
 
@@ -211,9 +208,6 @@ def main():
     all_solvers = options.all_solvers
     for i in INSTALLERS:
         name = i.InstallerClass.SOLVER
-        if all_solvers and name == 'optimsat':
-            continue # Skip OptiMathSAT in the --all case because currently
-                     # msat and optimsat cannot co-exist
         if all_solvers or getattr(options, name):
             solvers_to_install.append(i)
 
