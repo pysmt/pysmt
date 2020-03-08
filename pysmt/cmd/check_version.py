@@ -15,7 +15,6 @@
 import sys
 import re
 
-
 def check_version(module):
     try:
         if module == "z3":
@@ -28,11 +27,13 @@ def check_version(module):
             version_str = mathsat.msat_get_version()
             m = re.match(r"^MathSAT5 version (\d+\.\d+\.\d+) .*$", version_str)
             version = m.group(1)
+
         elif module == "optimsat":
             import optimathsat
             version_str = optimathsat.msat_get_version()
             m = re.match(r"^MathSAT5 version (\d+\.\d+\.\d+) .*$", version_str)
             version = m.group(1)
+
         elif module == "cudd":
             import repycudd
             doc = repycudd.DOCSTRING

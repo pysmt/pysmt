@@ -43,15 +43,16 @@ SOLVER_TYPES = ['Solver', 'Solver supporting Unsat Cores',
                 'Quantifier Eliminator', 'Interpolator', 'Optimizer']
 DEFAULT_PREFERENCES = {'Solver': ['msat', 'z3', 'cvc4', 'yices', 'btor',
                                   'picosat', 'bdd'],
-                       'Solver supporting Unsat Cores': ['msat', 'z3', 'cvc4',
+                       'Solver supporting Unsat Cores': ['optimsat', 'msat', 'z3', 'cvc4',
                                                          'yices', 'btor', 'picosat', 'bdd'],
                        'Quantifier Eliminator': ['z3', 'msat_fm', 'msat_lw',
+                                                 'optimsat_fm', 'optimsat_lw',
                                                  'bdd', 'shannon', 'selfsub'],
-                       'Optimizer': ['optimsat', 'z3', 'msat_incr', 'z3_incr',
-                                     'yices_incr', 'msat_sua', 'z3_sua',
-                                     'yices_sua'],
-                       'Interpolator': ['msat', 'z3']}
-
+                       'Optimizer': ['optimsat', 'z3',
+                                     'msat_incr', 'optimsat_incr', 'yices_incr', 'z3_incr',
+                                     'msat_sua', 'optimsat_sua', 'yices_sua', 'z3_sua'
+                                    ],
+                       'Interpolator': ['msat', 'optimsat', 'z3']}
 DEFAULT_LOGIC = QF_UFLIRA
 DEFAULT_QE_LOGIC = LRA
 DEFAULT_INTERPOLATION_LOGIC = QF_UFLRA
@@ -243,6 +244,12 @@ class Factory(object):
             pass
 
         try:
+            from pysmt.solvers.optimsat import OptiMSATSolver
+            installed_solvers['optimsat'] = OptiMSATSolver
+        except SolverAPINotFound:
+            pass
+
+        try:
             from pysmt.solvers.cvc4 import CVC4Solver
             installed_solvers['cvc4'] = CVC4Solver
         except SolverAPINotFound:
@@ -310,6 +317,14 @@ class Factory(object):
             pass
 
         try:
+            from pysmt.solvers.optimsat import (OptiMSATFMQuantifierEliminator,
+                                                OptiMSATLWQuantifierEliminator)
+            self._all_qelims['optimsat_fm'] = OptiMSATFMQuantifierEliminator
+            self._all_qelims['optimsat_lw'] = OptiMSATLWQuantifierEliminator
+        except SolverAPINotFound:
+            pass
+
+        try:
             from pysmt.solvers.bdd import BddQuantifierEliminator
             self._all_qelims['bdd'] = BddQuantifierEliminator
         except SolverAPINotFound:
@@ -325,6 +340,12 @@ class Factory(object):
         try:
             from pysmt.solvers.msat import MSatInterpolator
             self._all_interpolators['msat'] = MSatInterpolator
+        except SolverAPINotFound:
+            pass
+
+        try:
+            from pysmt.solvers.optimsat import OptiMSATInterpolator
+            self._all_interpolators['optimsat'] = OptiMSATInterpolator
         except SolverAPINotFound:
             pass
 
@@ -364,10 +385,11 @@ class Factory(object):
             pass
 
         try:
-            from pysmt.solvers.msat import OptiMSatNativeOptimizer
-            self._all_optimizers['optimsat'] = OptiMSatNativeOptimizer
-        except ImportError:
-            pass
+            from pysmt.solvers.optimsat import OptiMSATSolver, \
+                OptiMSATSUAOptimizer, OptiMSATIncrementalOptimizer
+            self._all_optimizers['optimsat'] = OptiMSATSolver
+            self._all_optimizers['optimsat_sua'] = OptiMSATSUAOptimizer
+            self._all_optimizers['optimsat_incr'] = OptiMSATIncrementalOptimizer
         except SolverAPINotFound:
             pass
 
@@ -688,8 +710,6 @@ if ENV_SOLVER_LIST is not None:
         ENV_SOLVER_LIST = None
     elif ENV_SOLVER_LIST.lower() == "none":
         ENV_SOLVER_LIST = []
-    elif ENV_SOLVER_LIST.lower() == "optimsat":
-        ENV_SOLVER_LIST = ['msat', 'optimsat']
     else:
         # E.g. "msat, z3"
         ENV_SOLVER_LIST = [s.strip() \
