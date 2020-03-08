@@ -157,14 +157,14 @@ class OptiMSATFMQuantifierEliminator(OptiMSATQuantifierEliminator):
     # TODO: LOGICS
 
     def __init__(self, *args, **kwargs):
-        OptiMSATQuantifierEliminator.__init__(algorithm='fm', *args, **kwargs)
+        OptiMSATQuantifierEliminator.__init__(self, algorithm='fm', *args, **kwargs)
 
 
 class OptiMSATLWQuantifierEliminator(OptiMSATQuantifierEliminator):
     # TODO: LOGICS
 
     def __init__(self, *args, **kwargs):
-        OptiMSATQuantifierEliminator.__init__(algorithm='lw', *args, **kwargs)
+        OptiMSATQuantifierEliminator.__init__(self, algorithm='lw', *args, **kwargs)
 
 
 class OptiMSATInterpolator(OptiMSATWrapper, MSatInterpolator):
