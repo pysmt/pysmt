@@ -238,12 +238,16 @@ class Factory(object):
             pass
 
         try:
+            from pysmt.solvers.dynmsat import MSATWrapper
+            MSATWrapper()
             from pysmt.solvers.msat import MathSAT5Solver
             installed_solvers['msat'] = MathSAT5Solver
         except SolverAPINotFound:
             pass
 
         try:
+            from pysmt.solvers.dynmsat import OptiMSATWrapper
+            OptiMSATWrapper()
             from pysmt.solvers.optimsat import OptiMSATSolver
             installed_solvers['optimsat'] = OptiMSATSolver
         except SolverAPINotFound:
@@ -309,6 +313,8 @@ class Factory(object):
             pass
 
         try:
+            from pysmt.solvers.dynmsat import MSATWrapper
+            MSATWrapper()
             from pysmt.solvers.msat import (MSatFMQuantifierEliminator,
                                             MSatLWQuantifierEliminator)
             try:
@@ -322,6 +328,8 @@ class Factory(object):
             pass
 
         try:
+            from pysmt.solvers.dynmsat import OptiMSATWrapper
+            OptiMSATWrapper()
             from pysmt.solvers.optimsat import (OptiMSATFMQuantifierEliminator,
                                                 OptiMSATLWQuantifierEliminator)
             self._all_qelims['optimsat_fm'] = OptiMSATFMQuantifierEliminator
@@ -343,12 +351,16 @@ class Factory(object):
         self._all_interpolators = {}
 
         try:
+            from pysmt.solvers.dynmsat import MSATWrapper
+            MSATWrapper()
             from pysmt.solvers.msat import MSatInterpolator
             self._all_interpolators['msat'] = MSatInterpolator
         except SolverAPINotFound:
             pass
 
         try:
+            from pysmt.solvers.dynmsat import OptiMSATWrapper
+            OptiMSATWrapper()
             from pysmt.solvers.optimsat import OptiMSATInterpolator
             self._all_interpolators['optimsat'] = OptiMSATInterpolator
         except SolverAPINotFound:
@@ -383,6 +395,8 @@ class Factory(object):
             pass
 
         try:
+            from pysmt.solvers.dynmsat import MSATWrapper
+            MSATWrapper()
             from pysmt.solvers.msat import MSatSUAOptimizer, MSatIncrementalOptimizer
             self._all_optimizers['msat_sua'] = MSatSUAOptimizer
             self._all_optimizers['msat_incr'] = MSatIncrementalOptimizer
@@ -390,6 +404,8 @@ class Factory(object):
             pass
 
         try:
+            from pysmt.solvers.dynmsat import OptiMSATWrapper
+            OptiMSATWrapper()
             from pysmt.solvers.optimsat import OptiMSATSolver, \
                 OptiMSATSUAOptimizer, OptiMSATIncrementalOptimizer
             self._all_optimizers['optimsat'] = OptiMSATSolver
