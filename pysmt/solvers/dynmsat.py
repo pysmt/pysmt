@@ -20,26 +20,47 @@ from pysmt.exceptions import SolverAPINotFound
 
 import importlib
 
-class MSATWrapper(object):
+def MSATLibLoader(name):
+    if name not in ["mathsat", "optimathsat"]:
+        raise ValueError(name)
 
-    def __init__(self, *args, **kwargs):
-        self._msat_wrapper = self.get_lib()
+    try:
+        return importlib.import_module(name)
+    except ImportError:
+        raise SolverAPINotFound
 
-    def get_lib_name(self):
-        return "mathsat"
+def MSATCreateEnv(name, msat_config):
+    map = {
+        "mathsat" : {
+            "class" : "MSatEnv",
+            "lib"   : "pysmt.solvers.msat"
+        },
+        "optimathsat": {
+            "class" : "OptiMSATEnv",
+            "lib"   : "pysmt.solvers.optimsat"
+        }
+    }
+    if name not in map.keys():
+        raise ValueError(name)
 
-    def get_lib(self):
-        try:
-            lib_name = self.get_lib_name()
-            return importlib.import_module(lib_name)
-        except ImportError:
-            raise SolverAPINotFound
+    EnvClass = getattr(importlib.import_module(map[name]["lib"]), map[name]["class"])
 
+    return EnvClass(msat_config)
 
-class OptiMSATWrapper(MSATWrapper):
+def MSATCreateConverter(name, environment, msat_env):
+    map = {
+        "mathsat" : {
+            "class" : "MSatConverter",
+            "lib"   : "pysmt.solvers.msat"
+        },
+        "optimathsat": {
+            "class" : "OptiMSATConverter",
+            "lib"   : "pysmt.solvers.optimsat"
+        }
+    }
+    if name not in map.keys():
+        raise ValueError(name)
 
-    def __init__(self, *args, **kwargs):
-        MSATWrapper.__init__(self)
+    ConvClass = getattr(importlib.import_module(map[name]["lib"]), map[name]["class"])
 
-    def get_lib_name(self):
-        return "optimathsat"
+    return ConvClass(environment, msat_env)
