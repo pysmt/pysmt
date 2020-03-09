@@ -21,7 +21,7 @@ from six.moves import xrange
 from pysmt.exceptions import SolverAPINotFound
 from pysmt.constants import Fraction, is_pysmt_fraction, is_pysmt_integer
 
-from pysmt.solvers.dynmsat import OptiMSATWrapper
+from pysmt.solvers.dynmsat import MSATLibLoader
 
 from pysmt.logics import LRA, LIA, QF_UFLIA, QF_UFLRA, QF_BV, PYSMT_QF_LOGICS
 from pysmt.oracles import get_logic
@@ -55,36 +55,35 @@ from pysmt.solvers.msat import MSatInterpolator, MSatBoolUFRewriter
 # - the "Not in Python's Path" message is wrong for MathSAT when only OptiMAthSAT
 #   is installed.. the current implementation must be revised.
 
-class OptiMSATEnv(OptiMSATWrapper, MSatEnv):
+class OptiMSATEnv(MSatEnv):
+    __lib_name__ = "optimathsat"
 
     def __init__(self, *args, **kwargs):
-        OptiMSATWrapper.__init__(self)
         MSatEnv.__init__(self, *args, **kwargs)
 
 
-class OptiMSATModel(OptiMSATWrapper, MathSAT5Model):
+class OptiMSATModel(MathSAT5Model):
+    __lib_name__ = "optimathsat"
 
     def __init__(self, *args, **kwargs):
-        OptiMSATWrapper.__init__(self)
         MathSAT5Model.__init__(self, *args, **kwargs)
 
 
-class OptiMSATOptions(OptiMSATWrapper, MathSATOptions):
+class OptiMSATOptions(MathSATOptions):
+    __lib_name__ = "optimathsat"
 
     def __init__(self, *args, **kwargs):
-        OptiMSATWrapper.__init__(self)
         MathSATOptions.__init__(self, *args, **kwargs)
 
 
-class OptiMSATSolver(OptiMSATWrapper, MathSAT5Solver, Optimizer):
+class OptiMSATSolver(MathSAT5Solver, Optimizer):
+    __lib_name__ = "optimathsat"
+    OptionsClass = OptiMSATOptions
     # TODO: LOGICS, OptionsClass
 
-    def __init__(self, *args, **kwargs):
-        OptiMSATWrapper.__init__(self)
-        MathSAT5Solver.__init__(self, *args, **kwargs)
-        Optimizer.__init__(self)
-#            MathSAT5Solver.__init__(self, environment=environment,
-#                                    logic=logic, **options)
+    def __init__(self, environment, logic, **options):
+        MathSAT5Solver.__init__(self, environment=environment,
+                                logic=logic, **options)
 
     def _le(self, x, y):
         # TODO: support FP?
@@ -97,30 +96,30 @@ class OptiMSATSolver(OptiMSATWrapper, MathSAT5Solver, Optimizer):
 
     def optimize(self, cost_function, **kwargs):
         obj_fun = self.converter.convert(cost_function)
-        msat_obj = self._msat_wrapper.msat_make_minimize(self.msat_env(), obj_fun, None,
+        msat_obj = self._msat_lib.msat_make_minimize(self.msat_env(), obj_fun, None,
                                               None, False)
-        self._msat_wrapper.msat_assert_objective(self.msat_env(), msat_obj)
+        self._msat_lib.msat_assert_objective(self.msat_env(), msat_obj)
         self.solve()
-        optres = self._msat_wrapper.msat_objective_result(self.msat_env(), msat_obj)
-        if optres == self._msat_wrapper.MSAT_OPT_UNKNOWN:
+        optres = self._msat_lib.msat_objective_result(self.msat_env(), msat_obj)
+        if optres == self._msat_lib.MSAT_OPT_UNKNOWN:
             raise SolverReturnedUnknownResultError()
-        elif optres == self._msat_wrapper.MSAT_OPT_UNSAT:
+        elif optres == self._msat_lib.MSAT_OPT_UNSAT:
             return None
         else:
-            unbounded = self._msat_wrapper.msat_objective_value_is_unbounded(self.msat_env(),
+            unbounded = self._msat_lib.msat_objective_value_is_unbounded(self.msat_env(),
                                                                   msat_obj,
-                                                                  self._msat_wrapper.MSAT_OPTIMUM)
+                                                                  self._msat_lib.MSAT_OPTIMUM)
             if unbounded > 0:
                 raise PysmtUnboundedOptimizationError("The optimal value is unbounded")
             else:
-                c = self._msat_wrapper.msat_objective_value_repr(self.msat_env(),
+                c = self._msat_lib.msat_objective_value_repr(self.msat_env(),
                                                       msat_obj,
-                                                      self._msat_wrapper.MSAT_OPTIMUM)
+                                                      self._msat_lib.MSAT_OPTIMUM)
                 # This is a hack because msat_objective_value_is_strict
                 # is not wrapped in Python (it takes a c++ reference)
                 if c[0] == ">" or c[0] == "<":
                     raise PysmtUnboundedOptimizationError("The optimal value is infinitesimal")
-                check = self._msat_wrapper.msat_set_model(self.msat_env(), msat_obj)
+                check = self._msat_lib.msat_set_model(self.msat_env(), msat_obj)
                 if check != 0:
                     raise ValueError()
                 model = self.get_model()
@@ -136,20 +135,18 @@ class OptiMSATSolver(OptiMSATWrapper, MathSAT5Solver, Optimizer):
             return False
 
 
-
-
-class OptiMSATConverter(OptiMSATWrapper, MSatConverter):
+class OptiMSATConverter(MSatConverter):
+    __lib_name__ = "optimathsat"
 
     def __init__(self, *args, **kwargs):
-        OptiMSATWrapper.__init__(self)
         MSatConverter.__init__(self, *args, **kwargs)
 
 
-class OptiMSATQuantifierEliminator(OptiMSATWrapper, MSatQuantifierEliminator):
+class OptiMSATQuantifierEliminator(MSatQuantifierEliminator):
+    __lib_name__ = "optimathsat"
     # TODO: LOGICS
 
     def __init__(self, *args, **kwargs):
-        OptiMSATWrapper.__init__(self)
         MSatQuantifierEliminator.__init__(self, *args, **kwargs)
 
 
@@ -167,18 +164,18 @@ class OptiMSATLWQuantifierEliminator(OptiMSATQuantifierEliminator):
         OptiMSATQuantifierEliminator.__init__(self, algorithm='lw', *args, **kwargs)
 
 
-class OptiMSATInterpolator(OptiMSATWrapper, MSatInterpolator):
+class OptiMSATInterpolator(MSatInterpolator):
+    __lib_name__ = "optimathsat"
     # TODO: LOGICS
 
     def __init__(self, *args, **kwargs):
-        OptiMSATWrapper.__init__(self)
         MSatInterpolator.__init__(self, *args, **kwargs)
 
 
-class OptiMSATBoolUFRewriter(OptiMSATWrapper, MSatBoolUFRewriter):
+class OptiMSATBoolUFRewriter(MSatBoolUFRewriter):
+    __lib_name__ = "optimathsat"
 
     def __init__(self, *args, **kwargs):
-        OptiMSATWrapper.__init__(self)
         MsatBoolUFRewriter.__init__(self, *args, **kwargs)
 
 
