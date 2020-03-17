@@ -40,7 +40,7 @@ from pysmt.solvers.portfolio import Portfolio
 
 SOLVER_TYPES = ['Solver', 'Solver supporting Unsat Cores',
                 'Quantifier Eliminator', 'Interpolator', 'Optimizer']
-DEFAULT_PREFERENCES = {'Solver': ['msat', 'z3', 'cvc4', 'yices', 'btor',
+DEFAULT_PREFERENCES = {'Solver': ['msat', 'optimsat', 'z3', 'cvc4', 'yices', 'btor',
                                   'picosat', 'bdd'],
                        'Solver supporting Unsat Cores': ['optimsat', 'msat', 'z3', 'cvc4',
                                                          'yices', 'btor', 'picosat', 'bdd'],
