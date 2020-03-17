@@ -58,8 +58,8 @@ from pysmt.solvers.msat import MSatInterpolator, MSatBoolUFRewriter
 class OptiMSATEnv(MSatEnv):
     __lib_name__ = "optimathsat"
 
-    def __init__(self, *args, **kwargs):
-        MSatEnv.__init__(self, *args, **kwargs)
+    def __init__(self, msat_config=None):
+        MSatEnv.__init__(self, msat_config=msat_config)
 
     def _do_create_env(self, msat_config=None, msat_env=None):
         return self._msat_lib.msat_create_opt_env(msat_config, msat_env)
@@ -68,28 +68,32 @@ class OptiMSATEnv(MSatEnv):
 class OptiMSATModel(MathSAT5Model):
     __lib_name__ = "optimathsat"
 
-    def __init__(self, *args, **kwargs):
-        MathSAT5Model.__init__(self, *args, **kwargs)
+    def __init__(self, environment, msat_env):
+        MathSAT5Model.__init__(self, environment=environment,
+                               msat_env=msat_env)
 
 
 class OptiMSATOptions(MathSATOptions):
     __lib_name__ = "optimathsat"
 
-    def __init__(self, *args, **kwargs):
-        MathSATOptions.__init__(self, *args, **kwargs)
+    def __init__(self, **base_options):
+        MathSATOptions.__init__(self, **base_options)
 
 
 class OptiMSATSolver(MathSAT5Solver, Optimizer):
     __lib_name__ = "optimathsat"
+
+    LOGICS = MathSAT5Solver.LOGICS
+
     OptionsClass = OptiMSATOptions
-    # TODO: LOGICS, OptionsClass
 
     def __init__(self, environment, logic, **options):
         MathSAT5Solver.__init__(self, environment=environment,
                                 logic=logic, **options)
 
     def _le(self, x, y):
-        # TODO: support FP?
+        # TODO: support FP
+        # TODO: support signed/unsigned BV optimization
         otype = self.environment.stc.get_type(x)
         mgr = self.environment.formula_manager
         if otype.is_int_type() or otype.is_real_type():
@@ -131,8 +135,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
         return OptiMSATModel(self.environment, self.msat_env)
 
     def pareto_optimize(self, cost_functions):
-        # The pareto generation is currently not wrapped
-        # (It is impossible to specify a callback)
+        # TODO
         raise NotImplementedError
 
     def can_diverge_for_unbounded_cases(self):
@@ -142,38 +145,47 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
 class OptiMSATConverter(MSatConverter):
     __lib_name__ = "optimathsat"
 
-    def __init__(self, *args, **kwargs):
-        MSatConverter.__init__(self, *args, **kwargs)
+    def __init__(self, environment, msat_env):
+        MSatConverter.__init__(self, environment=environment,
+                               msat_env=msat_env)
+
+    def _get_bool_uf_rewriter(self, environment)
+        return OptiMSATBoolUFRewriter(environment=environment)
 
 
 class OptiMSATQuantifierEliminator(MSatQuantifierEliminator):
     __lib_name__ = "optimathsat"
-    # TODO: LOGICS
 
-    def __init__(self, *args, **kwargs):
-        MSatQuantifierEliminator.__init__(self, *args, **kwargs)
+    LOGICS = MSatQuantifierEliminator.LOGICS
+
+    def __init__(self, environment, logic=None, algorithm='lw'):
+        MSatQuantifierEliminator.__init__(self, environment=environment,
+                                          logic=logic, algorithm=algorithm)
 
 
 class OptiMSATFMQuantifierEliminator(OptiMSATQuantifierEliminator):
-    # TODO: LOGICS
+    LOGICS = [LRA]
 
-    def __init__(self, *args, **kwargs):
-        OptiMSATQuantifierEliminator.__init__(self, algorithm='fm', *args, **kwargs)
+    def __init__(self, environment, logic=None):
+        OptiMSATQuantifierEliminator.__init__(self, environment,
+                                              logic=logic, algorithm='fm')
 
 
 class OptiMSATLWQuantifierEliminator(OptiMSATQuantifierEliminator):
-    # TODO: LOGICS
+    LOGICS = [LRA, LIA]
 
-    def __init__(self, *args, **kwargs):
-        OptiMSATQuantifierEliminator.__init__(self, algorithm='lw', *args, **kwargs)
+    def __init__(self, environment, logic=None):
+        OptiMSATQuantifierEliminator.__init__(self, environment,
+                                              logic=logic, algorithm='lw')
 
 
 class OptiMSATInterpolator(MSatInterpolator):
     __lib_name__ = "optimathsat"
-    # TODO: LOGICS
+    LOGICS = MSatInterpolator.LOGICS
 
-    def __init__(self, *args, **kwargs):
-        MSatInterpolator.__init__(self, *args, **kwargs)
+    def __init__(self, environment, logic=None):
+        MSatInterpolator.__init__(self, environment=environment,
+                                  logic=logic)
 
     def _do_create_env(self, msat_config=None, msat_env=None):
         return self._msat_lib.msat_create_opt_env(msat_config, msat_env)
@@ -182,15 +194,15 @@ class OptiMSATInterpolator(MSatInterpolator):
 class OptiMSATBoolUFRewriter(MSatBoolUFRewriter):
     __lib_name__ = "optimathsat"
 
-    def __init__(self, *args, **kwargs):
-        MsatBoolUFRewriter.__init__(self, *args, **kwargs)
+    def __init__(self, environment):
+        MsatBoolUFRewriter.__init__(self, environment=environment)
 
 
-class OptiMSATSUAOptimizer(SUAOptimizerMixin, OptiMSATSolver):
-    # TODO: LOGICS
-    pass
+class OptiMSATSUAOptimizer(OptiMSATSolver, SUAOptimizerMixin):
+    LOGICS = OptiMSATSolver.LOGICS
 
-class OptiMSATIncrementalOptimizer(IncrementalOptimizerMixin, OptiMSATSolver):
-    LOGICS = MathSAT5Solver.LOGICS
+
+class OptiMSATIncrementalOptimizer(OptiMSATSolver, IncrementalOptimizerMixin):
+    LOGICS = OptiMSATSolver.LOGICS
 
 

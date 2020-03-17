@@ -453,7 +453,7 @@ class MSatConverter(Converter, DagWalker):
         }
 
         # Handling of UF bool args
-        self._ufrewriter = MSatBoolUFRewriter(environment) # TODO
+        self._ufrewriter = _get_bool_uf_rewriter(environment)
 
         # Signature Computation
         self.term_sig = {
@@ -506,6 +506,9 @@ class MSatConverter(Converter, DagWalker):
         }
 
         return
+
+    def _get_bool_uf_rewriter(self, environment):
+        return MSatBoolUFRewriter(environment=environment)
 
     def back(self, expr):
         return self._walk_back(expr, self.mgr)
