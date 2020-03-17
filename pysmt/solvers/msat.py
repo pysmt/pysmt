@@ -60,16 +60,16 @@ class MSatEnv():
 
     def __init__(self, msat_config=None):
         self._msat_lib = MSATLibLoader(self.__class__.__lib_name__)
-        if msat_config is None:
-            self.msat_env = self._msat_lib.msat_create_env()
-        else:
-            self.msat_env = self._msat_lib.msat_create_env(msat_config)
+        self.msat_env = self._do_create_env(msat_config)
 
     def __del__(self):
         self._msat_lib.msat_destroy_env(self.msat_env)
 
     def __call__(self):
         return self.msat_env
+
+    def _do_create_env(self, msat_config=None, msat_env=None):
+        return self._msat_lib.msat_create_env(msat_config, msat_env)
 
 
 class MathSAT5Model(Model):
@@ -1251,7 +1251,7 @@ class MSatInterpolator(Interpolator):
             if self.logic == QF_BV:
                 self._msat_lib.msat_set_option(cfg, "theory.bv.eager", "false")
                 self._msat_lib.msat_set_option(cfg, "theory.eq_propagaion", "false")
-            env = self._msat_lib.msat_create_env(cfg, self.msat_env())
+            env = self._do_create_env(cfg, self.msat_env())
 
             groups = []
             for f in formulas:
@@ -1281,6 +1281,9 @@ class MSatInterpolator(Interpolator):
                 self._msat_lib.msat_destroy_config(cfg)
             if env:
                 self._msat_lib.msat_destroy_env(env)
+
+    def _do_create_env(self, msat_config=None, msat_env=None):
+        return self._msat_lib.msat_create_env(msat_config, msat_env)
 
 
 class MSatBoolUFRewriter(IdentityDagWalker):
