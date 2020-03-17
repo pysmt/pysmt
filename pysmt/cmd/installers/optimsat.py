@@ -50,17 +50,10 @@ class OptiMSatInstaller(SolverInstaller):
 
 
     def compile(self):
-        # FIXME(PT): restore, maybe?
-        #setup_py_url = "https://github.com/pysmt/solvers_patches/raw/master/optimsat/setup.py"
-        ## Overwrite setup.py with the patched version
-        #setup_py = os.path.join(self.python_bindings_dir, "setup.py")
-        #SolverInstaller.mv(setup_py, setup_py + ".original")
-        #SolverInstaller.do_download(setup_py_url, setup_py)
-
-        # Run setup.py to compile the bindings
-        #SolverInstaller.mv(os.path.join(self.python_bindings_dir, 'mathsat_python_wrap.c'),
-        #                   os.path.join(self.python_bindings_dir, 'mathsat_python_wrap.cpp'))
-        SolverInstaller.run_python("./setup.py build_ext -R $ORIGIN", self.python_bindings_dir)
+        if self.os_name in {"darwin"}:
+            SolverInstaller.run_python("./setup.py build_ext", self.python_bindings_dir)
+        else:
+            SolverInstaller.run_python("./setup.py build_ext -R $ORIGIN", self.python_bindings_dir)
 
 
     def move(self):
