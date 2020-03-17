@@ -64,6 +64,9 @@ class OptiMSATEnv(MSatEnv):
     def _do_create_env(self, msat_config=None, msat_env=None):
         return self._msat_lib.msat_create_opt_env(msat_config, msat_env)
 
+    def _do_create_env(self, msat_config=None, msat_env=None):
+        return self._msat_lib.msat_create_opt_env(msat_config, msat_env)
+
 
 class OptiMSATModel(MathSAT5Model):
     __lib_name__ = "optimathsat"
@@ -186,6 +189,9 @@ class OptiMSATInterpolator(MSatInterpolator):
     def __init__(self, environment, logic=None):
         MSatInterpolator.__init__(self, environment=environment,
                                   logic=logic)
+
+    def _do_create_env(self, msat_config=None, msat_env=None):
+        return self._msat_lib.msat_create_opt_env(msat_config, msat_env)
 
     def _do_create_env(self, msat_config=None, msat_env=None):
         return self._msat_lib.msat_create_opt_env(msat_config, msat_env)
