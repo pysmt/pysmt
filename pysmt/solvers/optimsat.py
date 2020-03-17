@@ -149,7 +149,7 @@ class OptiMSATConverter(MSatConverter):
         MSatConverter.__init__(self, environment=environment,
                                msat_env=msat_env)
 
-    def _get_bool_uf_rewriter(self, environment)
+    def _get_bool_uf_rewriter(self, environment):
         return OptiMSATBoolUFRewriter(environment=environment)
 
 
@@ -195,7 +195,7 @@ class OptiMSATBoolUFRewriter(MSatBoolUFRewriter):
     __lib_name__ = "optimathsat"
 
     def __init__(self, environment):
-        MsatBoolUFRewriter.__init__(self, environment=environment)
+        MSatBoolUFRewriter.__init__(self, environment=environment)
 
 
 class OptiMSATSUAOptimizer(OptiMSATSolver, SUAOptimizerMixin):

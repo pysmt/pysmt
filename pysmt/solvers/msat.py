@@ -453,7 +453,7 @@ class MSatConverter(Converter, DagWalker):
         }
 
         # Handling of UF bool args
-        self._ufrewriter = _get_bool_uf_rewriter(environment)
+        self._ufrewriter = self._get_bool_uf_rewriter(environment)
 
         # Signature Computation
         self.term_sig = {
