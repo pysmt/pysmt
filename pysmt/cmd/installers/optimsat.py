@@ -50,6 +50,17 @@ class OptiMSatInstaller(SolverInstaller):
 
 
     def compile(self):
+        if self.os_name == "windows":
+            libdir = os.path.join(self.python_bindings_dir, "../lib")
+            incdir = os.path.join(self.python_bindings_dir, "../include")
+            gmp_h_url = "https://github.com/mikand/tamer-windows-deps/raw/master/gmp/include/gmp.h"
+            mpir_dll_url = "https://github.com/Legrandin/mpir-windows-builds/blob/master/mpir-2.6.0_VS2015_%s/mpir.dll?raw=true" % self.bits
+            mpir_lib_url = "https://github.com/Legrandin/mpir-windows-builds/blob/master/mpir-2.6.0_VS2015_%s/mpir.lib?raw=true" % self.bits
+
+            SolverInstaller.do_download(gmp_h_url, os.path.join(incdir, "gmp.h"))
+            SolverInstaller.do_download(mpir_dll_url, os.path.join(libdir, "mpir.dll"))
+            SolverInstaller.do_download(mpir_lib_url, os.path.join(libdir, "mpir.lib"))
+
         if self.os_name in {"darwin"}:
             SolverInstaller.run_python("./setup.py build_ext", self.python_bindings_dir)
         else:
