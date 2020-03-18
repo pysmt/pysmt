@@ -72,7 +72,7 @@ class TestNonLinear(TestCase):
                 if sname in  ["bdd", "picosat", "btor"]:
                     with self.assertRaises(ConvertExpressionError):
                         s.is_sat(f)
-                elif sname in ["yices", "cvc4", "msat"]:
+                elif sname in ["yices", "cvc4", "msat", "optimsat"]:
                     with self.assertRaises(NonLinearError):
                         s.is_sat(f)
                 else:
