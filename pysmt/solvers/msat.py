@@ -55,7 +55,7 @@ class MSatEnv():
        env = MSatEnv()
        self._msat_lib.function(env())
     """
-    __slots__ = ['msat_env']
+    __slots__ = ['msat_env', '_msat_lib']
     __lib_name__ = "mathsat"
 
     def __init__(self, msat_config=None):
