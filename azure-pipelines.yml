@@ -259,12 +259,12 @@ jobs:
       Py37Msat:
         PYTHON_VERSION: '3.7'
         PYSMT_SOLVER: "msat"
-      Py27OptiMsat:
-        PYTHON_VERSION: '2.7'
-        PYSMT_SOLVER: "optimsat"
-      Py37OptiMsat:
-        PYTHON_VERSION: '3.7'
-        PYSMT_SOLVER: "optimsat"
+      # Py27OptiMsat:
+      #   PYTHON_VERSION: '2.7'
+      #   PYSMT_SOLVER: "optimsat"
+      # Py37OptiMsat:
+      #   PYTHON_VERSION: '3.7'
+      #   PYSMT_SOLVER: "optimsat"
       Py27Z3:
         PYTHON_VERSION: '2.7'
         PYSMT_SOLVER: "z3"
@@ -307,12 +307,12 @@ jobs:
       Py37Msat:
         PYTHON_VERSION: '3.7'
         PYSMT_SOLVER: "msat"
-      Py27OptiMsat:
-        PYTHON_VERSION: '2.7'
-        PYSMT_SOLVER: "optimsat"
-      Py37OptiMsat:
-        PYTHON_VERSION: '3.7'
-        PYSMT_SOLVER: "optimsat"
+      # Py27OptiMsat:
+      #   PYTHON_VERSION: '2.7'
+      #   PYSMT_SOLVER: "optimsat"
+      # Py37OptiMsat:
+      #   PYTHON_VERSION: '3.7'
+      #   PYSMT_SOLVER: "optimsat"
       Py27Z3:
         PYTHON_VERSION: '2.7'
         PYSMT_SOLVER: "z3"
