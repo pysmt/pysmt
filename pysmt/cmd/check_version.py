@@ -15,7 +15,6 @@
 import sys
 import re
 
-
 def check_version(module):
     try:
         if module == "z3":
@@ -27,28 +26,13 @@ def check_version(module):
             import mathsat
             version_str = mathsat.msat_get_version()
             m = re.match(r"^MathSAT5 version (\d+\.\d+\.\d+) .*$", version_str)
-            if m is not None:
-                # Do not confuse msat with optimsat
-                version = m.group(1)
-                c = None
-                try:
-                    c = mathsat.msat_objective
-                except AttributeError:
-                    pass
-                if c is not None:
-                    version = None
+            version = m.group(1)
 
         elif module == "optimsat":
-            import mathsat
-            version_str = mathsat.msat_get_version()
+            import optimathsat
+            version_str = optimathsat.msat_get_version()
             m = re.match(r"^MathSAT5 version (\d+\.\d+\.\d+) .*$", version_str)
-            if m is not None:
-                # Do not confuse msat with optimsat
-                version = m.group(1)
-                try:
-                    mathsat.msat_objective
-                except AttributeError:
-                    version = None
+            version = m.group(1)
 
         elif module == "cudd":
             import repycudd

@@ -50,16 +50,21 @@ class OptiMSatInstaller(SolverInstaller):
 
 
     def compile(self):
-        setup_py_url = "https://github.com/pysmt/solvers_patches/raw/master/optimsat/setup.py"
-        # Overwrite setup.py with the patched version
-        setup_py = os.path.join(self.python_bindings_dir, "setup.py")
-        SolverInstaller.mv(setup_py, setup_py + ".original")
-        SolverInstaller.do_download(setup_py_url, setup_py)
+        if self.os_name == "windows":
+            libdir = os.path.join(self.python_bindings_dir, "../lib")
+            incdir = os.path.join(self.python_bindings_dir, "../include")
+            gmp_h_url = "https://github.com/mikand/tamer-windows-deps/raw/master/gmp/include/gmp.h"
+            mpir_dll_url = "https://github.com/Legrandin/mpir-windows-builds/blob/master/mpir-2.6.0_VS2015_%s/mpir.dll?raw=true" % self.bits
+            mpir_lib_url = "https://github.com/Legrandin/mpir-windows-builds/blob/master/mpir-2.6.0_VS2015_%s/mpir.lib?raw=true" % self.bits
 
-        # Run setup.py to compile the bindings
-        SolverInstaller.mv(os.path.join(self.python_bindings_dir, 'mathsat_python_wrap.c'),
-                           os.path.join(self.python_bindings_dir, 'mathsat_python_wrap.cpp'))
-        SolverInstaller.run_python("./setup.py build_ext -R $ORIGIN", self.python_bindings_dir)
+            SolverInstaller.do_download(gmp_h_url, os.path.join(incdir, "gmp.h"))
+            SolverInstaller.do_download(mpir_dll_url, os.path.join(libdir, "mpir.dll"))
+            SolverInstaller.do_download(mpir_lib_url, os.path.join(libdir, "mpir.lib"))
+
+        if self.os_name in {"darwin"}:
+            SolverInstaller.run_python("./setup.py build_ext", self.python_bindings_dir)
+        else:
+            SolverInstaller.run_python("./setup.py build_ext -R $ORIGIN", self.python_bindings_dir)
 
 
     def move(self):
@@ -72,7 +77,7 @@ class OptiMSatInstaller(SolverInstaller):
         for f in os.listdir(sodir):
             if f.endswith(".so") or f.endswith(".pyd"):
                 SolverInstaller.mv(os.path.join(sodir, f), self.bindings_dir)
-        SolverInstaller.mv(os.path.join(pdir, "mathsat.py"), self.bindings_dir)
+        SolverInstaller.mv(os.path.join(pdir, "optimathsat.py"), self.bindings_dir)
 
         # Since MathSAT 5.5.0 we also need the SO/DLL/DYLIB of mathsat in the PATH
         # Under Windows, we also need the DLLs of MPIR in the PATH
