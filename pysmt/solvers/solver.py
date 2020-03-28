@@ -334,6 +334,7 @@ class IncrementalTrackingSolver(Solver):
         """
         return self._last_result
 
+    @clear_pending_pop
     @property
     @clear_pending_pop
     def assertions(self):
