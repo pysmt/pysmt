@@ -19,6 +19,7 @@ from six.moves import xrange
 
 from pysmt.typing import BOOL
 from pysmt.solvers.options import SolverOptions
+from pysmt.decorators import clear_pending_pop
 from pysmt.exceptions import (SolverReturnedUnknownResultError, PysmtValueError,
                               SolverNotConfiguredForUnsatCoresError,
                               PysmtTypeError, SolverStatusError)
@@ -333,6 +334,7 @@ class IncrementalTrackingSolver(Solver):
         """
         return self._last_result
 
+    @clear_pending_pop
     @property
     def assertions(self):
         """Returns the list of assertions that are still in the solver.
