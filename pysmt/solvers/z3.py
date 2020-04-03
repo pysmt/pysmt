@@ -37,7 +37,7 @@ from pysmt.solvers.solver import (IncrementalTrackingSolver, UnsatCoreSolver,
                                   Model, Converter, SolverOptions)
 from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 from pysmt.solvers.qelim import QuantifierEliminator
-from pysmt.solvers.optimizer import Optimizer, SUAOptimizerMixin, IncrementalOptimizerMixin
+from pysmt.optimization.optimizer import Optimizer, SUAOptimizerMixin, IncrementalOptimizerMixin
 
 from pysmt.walkers import DagWalker
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
@@ -48,7 +48,7 @@ from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               PysmtInfinityError, PysmtInfinitesimalError,
                               PysmtUnboundedOptimizationError)
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
-from pysmt.logics import LRA, LIA, QF_UFLRA, PYSMT_LOGICS
+from pysmt.logics import LRA, LIA, PYSMT_LOGICS
 from pysmt.oracles import get_logic
 from pysmt.constants import Fraction, Numeral, is_pysmt_integer
 
