@@ -18,7 +18,6 @@
 from warnings import warn
 from six.moves import xrange
 
-from pysmt.exceptions import SolverAPINotFound
 from pysmt.constants import Fraction, is_pysmt_fraction, is_pysmt_integer
 
 from pysmt.logics import LRA, LIA, QF_UFLIA, QF_UFLRA, QF_BV, PYSMT_QF_LOGICS
@@ -33,17 +32,15 @@ from pysmt.solvers.solver import (IncrementalTrackingSolver, UnsatCoreSolver,
 from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 from pysmt.walkers import DagWalker
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
-                              SolverNotConfiguredForUnsatCoresError,
-                              SolverStatusError,
                               InternalSolverError,
                               NonLinearError, PysmtValueError, PysmtTypeError,
-                              ConvertExpressionError, PysmtUnboundedOptimizationError)
+                              ConvertExpressionError)
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
 from pysmt.solvers.qelim import QuantifierEliminator
 from pysmt.solvers.interpolation import Interpolator
 from pysmt.walkers.identitydag import IdentityDagWalker
-from pysmt.solvers.optimizer import SUAOptimizerMixin, IncrementalOptimizerMixin
-from pysmt.solvers.optimizer import Optimizer
+from pysmt.optimization.optimizer import SUAOptimizerMixin, IncrementalOptimizerMixin
+from pysmt.optimization.optimizer import Optimizer
 
 class MSatEnv():
     """A wrapper for the msat_env object.
