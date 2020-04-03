@@ -31,7 +31,7 @@ except ImportError:
 from pysmt.solvers.eager import EagerModel
 from pysmt.solvers.solver import Solver, Converter, SolverOptions
 from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
-from pysmt.solvers.optimizer import SUAOptimizerMixin, IncrementalOptimizerMixin
+from pysmt.optimization.optimizer import SUAOptimizerMixin, IncrementalOptimizerMixin
 
 from pysmt.walkers import DagWalker
 from pysmt.exceptions import SolverReturnedUnknownResultError
