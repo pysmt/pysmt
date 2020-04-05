@@ -60,6 +60,13 @@ class Theory(object):
         res.real_arithmetic = value
         return res
 
+    def set_nira(self, value=True):
+        res = self.copy()
+        res.integer_arithmetic = value
+        res.real_arithmetic = value
+        res.linear = False
+        return res
+
     def set_linear(self, value=True):
         res = self.copy()
         res.linear = value
@@ -497,6 +504,15 @@ QF_NRA = Logic(name="QF_NRA",
                linear=False)
 
 
+QF_NIRA = Logic(name="QF_NIRA",
+               description=\
+"""Quantifier-free integer real arithmetic.""",
+               quantifier_free=True,
+               integer_arithmetic = True,
+               real_arithmetic=True,
+               linear=False)
+
+
 QF_RDL = Logic(name="QF_RDL",
                description=\
 """Difference Logic over the reals. In essence, Boolean combinations
@@ -641,6 +657,7 @@ SMTLIB2_LOGICS = frozenset([ AUFLIA,
                              QF_LRA,
                              QF_NIA,
                              QF_NRA,
+                             QF_NIRA,
                              QF_RDL,
                              QF_UF,
                              QF_UFBV ,

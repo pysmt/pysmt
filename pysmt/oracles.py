@@ -243,8 +243,8 @@ class TheoryOracle(walkers.DagWalker):
 
     def walk_realtoint(self, formula, args, **kwargs):
         #pylint: disable=unused-argument
-        """Extends the Theory with LIRA."""
-        theory_out = args[0].set_lira() # This makes a copy of args[0]
+        """Extends the Theory with NIRA."""
+        theory_out = args[0].set_nira() # This makes a copy of args[0]
         return theory_out
 
     @walkers.handles([op.STR_LENGTH, op.STR_INDEXOF, op.STR_TO_INT])
