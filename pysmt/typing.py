@@ -24,6 +24,8 @@ In the current version these are:
  * BVType
  * FunctionType
  * ArrayType
+ * FPType
+ * RMType
 
 Types are represented by singletons. Basic types (Bool, Int and Real)
 are constructed here by default, while BVType and FunctionType relies
@@ -94,6 +96,13 @@ class PySMTType(object):
 
     def is_custom_type(self):
         return self.custom_type
+
+    def is_fp_type(self, eb=None, sb=None):
+        #pylint: disable=unused-argument
+        return False
+
+    def is_rm_type(self):
+        return False
 
     def __hash__(self):
         return hash(self.name)
@@ -359,6 +368,67 @@ class _TypeDecl(object):
 # EOC _TypeDecl
 
 
+class _FPType(PySMTType):
+    """Internal class to represent a Floating-Point type.
+
+    This class should not be instantiated directly, but the factory
+    method FPType should be used instead.
+    """
+
+    _instances = {}
+
+    def __init__(self, eb, sb):
+        decl = _TypeDecl("FP_{0}_{1}".format(eb, sb), 0)
+        PySMTType.__init__(self, decl=decl, args=None)
+        self._eb = eb
+        self._sb = sb
+
+    @property
+    def exp_width(self):
+        return self._eb
+
+    @property
+    def sig_width(self):
+        return self._sb
+
+    def is_fp_type(self, eb=None, sb=None):
+        if eb and sb:
+            return self.exp_width == eb and self.sig_width == sb
+        elif eb:
+            return self.exp_width == eb
+        elif sb:
+            return self.sig_width == sb
+        else:
+            return True
+
+    def as_smtlib(self, funstyle=True):
+        type_decl = "(_ FloatingPoint {0} {1})".format(self.exp_width,
+            self.sig_width)
+        if funstyle:
+            return "() {0}".format(type_decl)
+        else:
+            return type_decl
+
+    def __eq__(self, other):
+        return other is not None \
+            and other.is_fp_type(self.exp_width, self.sig_width)
+
+    def __hash__(self):
+        return hash(self.sig_width) ^ hash(self.exp_width)
+
+# EOC _FPType
+
+class _RMType(PySMTType):
+    def __init__(self):
+        decl = _TypeDecl("RoundingMode", 0)
+        PySMTType.__init__(self, decl=decl, args=None)
+
+    def is_rm_type(self):
+        return True
+
+# EOC _RMType
+
+
 class PartialType(object):
     """PartialType allows to delay the definition of a Type.
 
@@ -381,11 +451,14 @@ class PartialType(object):
 BOOL = _BoolType()
 REAL = _RealType()
 INT =  _IntType()
+RM = _RMType()
 STRING = _StringType()
 PYSMT_TYPES = frozenset([BOOL, REAL, INT])
 
 # Helper Constants
 BV1, BV8, BV16, BV32, BV64, BV128 = [_BVType(i) for i in [1, 8, 16, 32, 64, 128]]
+FLOAT16, FLOAT32, FLOAT64, FLOAT128 = [_FPType(eb, sb) for eb, sb in
+    [(5, 11), (8, 24), (11, 53), (15, 113)]]
 ARRAY_INT_INT = _ArrayType(INT,INT)
 
 
@@ -397,10 +470,12 @@ class TypeManager(object):
         self._array_types = {}
         self._custom_types = {}
         self._custom_types_decl = {}
+        self._fp_types = {}
         self._bool = None
         self._real = None
         self._int = None
         self._string = None
+        self._rm = None
         #
         self.load_global_types()
         self.environment = environment
@@ -409,11 +484,14 @@ class TypeManager(object):
         """Register basic global types within the TypeManager."""
         for bvtype in (BV1, BV8, BV16, BV32, BV64, BV128):
             self._bv_types[bvtype.width] = bvtype
+        for fptype in (FLOAT16, FLOAT32, FLOAT64, FLOAT128):
+            self._fp_types[(fptype.exp_width, fptype.sig_width)] = fptype
         self._array_types[(INT, INT)] = ARRAY_INT_INT
         self._bool = BOOL
         self._real = REAL
         self._int = INT
         self._string = STRING
+        self._rm = RM
 
     def BOOL(self):
         return self._bool
@@ -426,6 +504,9 @@ class TypeManager(object):
 
     def STRING(self):
         return self._string
+
+    def RM(self):
+        return self.RM
 
     def BVType(self, width=32):
         """Returns the singleton associated to the BV type for the given width.
@@ -507,6 +588,20 @@ class TypeManager(object):
             return self.get_type_instance(td)
         return td
 
+    def FPType(self, eb, sb):
+        """Returns the singleton associated to the FP type for the given widths.
+
+        This function takes care of building and registering the type
+        whenever needed. To see the functions provided by the type look at
+        _FPType.
+        """
+        try:
+            ty = self._fp_types[(eb, sb)]
+        except KeyError:
+            ty = _FPType(eb, sb)
+            self._fp_types[(eb, sb)] = ty
+        return ty
+
     def get_type_instance(self, type_decl, *args):
         """Creates an instance of the TypeDecl with the given arguments."""
         assert_are_types(args, __name__)
@@ -529,10 +624,13 @@ class TypeManager(object):
             ty = stack.pop()
             if ty.arity == 0:
                 if (ty.is_bool_type() or ty.is_int_type() or
-                    ty.is_real_type() or ty.is_string_type()):
+                    ty.is_real_type() or ty.is_string_type() or
+                    ty.is_rm_type()):
                     myty = ty
                 elif ty.is_bv_type():
                     myty = self.BVType(ty.width)
+                elif ty.is_fxp_type():
+                    myty = self.FPType(ty.exp_width, ty.sig_width)
                 else:
                     myty = self.Type(ty.basename, arity=0)
                 typemap[ty] = myty
@@ -588,6 +686,11 @@ def ArrayType(index_type, elem_type):
     """Returns the Array type with the given arguments."""
     mgr = pysmt.environment.get_env().type_manager
     return mgr.ArrayType(index_type=index_type, elem_type=elem_type)
+
+def FPType(eb, sb):
+    """Returns the BV type for the given width."""
+    mgr = pysmt.environment.get_env().type_manager
+    return mgr.FPType(eb, sb)
 
 def Type(name, arity=0):
     """Returns the Type Declaration with the given name (sort declaration)."""
