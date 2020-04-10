@@ -323,6 +323,55 @@ class HRPrinter(TreeWalker):
     walk_bv_mul = walk_times
     walk_bv_sub = walk_minus
 
+    def walk_fp_op(self, formula, op):
+        self.write(op)
+        self.write("(")
+        args = formula.args()
+        for s in args[:-1]:
+            yield s
+            self.write(', ')
+        yield args[-1]
+        self.write(")")
+
+    def walk_fp_constant(self, formula):
+        #TODO: print special values
+        return self.walk_fp_op(formula, 'fp')
+    def walk_fp_rne(self, formula): self.write('RNE')
+    def walk_fp_rna(self, formula): self.write('RNA')
+    def walk_fp_rtp(self, formula): self.write('RTP')
+    def walk_fp_rtn(self, formula): self.write('RTN')
+    def walk_fp_rtz(self, formula): self.write('RTZ')
+    def walk_fp_abs(self, formula): return self.walk_fp_op(formula, 'fp.abs')
+    def walk_fp_neg(self, formula): return self.walk_fp_op(formula, 'fp.neg')
+    def walk_fp_sqrt(self, formula): return self.walk_fp_op(formula, 'fp.sqrt')
+    def walk_fp_round_to_integral(self, formula):
+        return self.walk_fp_op(formula, 'fp.roundToIntegral')
+    def walk_fp_add(self, formula): return self.walk_fp_op(formula, 'fp.add')
+    def walk_fp_sub(self, formula): return self.walk_fp_op(formula, 'fp.sub')
+    def walk_fp_mul(self, formula): return self.walk_fp_op(formula, 'fp.mul')
+    def walk_fp_div(self, formula): return self.walk_fp_op(formula, 'fp.div')
+    def walk_fp_fma(self, formula): return self.walk_fp_op(formula, 'fp.fma')
+    def walk_fp_rem(self, formula): return self.walk_fp_op(formula, 'fp.rem')
+    def walk_fp_min(self, formula): return self.walk_fp_op(formula, 'fp.min')
+    def walk_fp_max(self, formula): return self.walk_fp_op(formula, 'fp.max')
+    def walk_fp_leq(self, formula): return self.walk_fp_op(formula, 'fp.leq')
+    def walk_fp_lt(self, formula): return self.walk_fp_op(formula, 'fp.lt')
+    def walk_fp_eq(self, formula): return self.walk_fp_op(formula, 'fp.eq')
+    def walk_fp_is_normal(self, formula):
+        return self.walk_fp_op(formula, 'fp.isNormal')
+    def walk_fp_is_subnormal(self, formula):
+        return self.walk_fp_op(formula, 'fp.isSubnormal')
+    def walk_fp_is_zero(self, formula):
+        return self.walk_fp_op(formula, 'fp.isZero')
+    def walk_fp_is_infinite(self, formula):
+        return self.walk_fp_op(formula, 'fp.isInfinite')
+    def walk_fp_is_nan(self, formula):
+        return self.walk_fp_op(formula, 'fp.isNaN')
+    def walk_fp_is_negative(self, formula):
+        return self.walk_fp_op(formula, 'fp.isNegative')
+    def walk_fp_is_positive(self, formula):
+        return self.walk_fp_op(formula, 'fp.isPositive')
+
 #EOC HRPrinter
 
 

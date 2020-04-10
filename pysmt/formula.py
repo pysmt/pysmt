@@ -1046,6 +1046,164 @@ class FormulaManager(object):
         return self.create_node(node_type=op.ARRAY_VALUE, args=tuple(args),
                                 payload=idx_type)
 
+    def FP(self, sign, eb, i):
+        '''Create a node representing a floating-point constant.
+           Internally, a floating-point constant is faithfully represented by
+           three bit strings like the SMT standard.
+        '''
+        self.create_node(node_type=op.FP_CONSTANT, args=(sign, eb, i))
+
+    def FPPositiveZero(self, eb, sb):
+        '''Create floating-point +zero'''
+        return self.create_node(node_type=op.FP_CONSTANT,
+                                args=(self.BV(0, 1),
+                                      self.BV(0, eb),
+                                      self.BV(0, sb - 1)))
+
+    def FPNegativeZero(self, eb, sb):
+        '''Create floating-point -zero'''
+        return self.create_node(node_type=op.FP_CONSTANT,
+                                args=(self.BV(1, 1),
+                                      self.BV(0, eb),
+                                      self.BV(0, sb - 1)))
+
+    def FPPositiveInfinity(self, eb, sb):
+        '''Create floating-point +oo'''
+        return self.create_node(node_type=op.FP_CONSTANT,
+                                args=(self.BV(0, 1),
+                                      self.BV(2**eb - 1, eb),
+                                      self.BV(0, sb - 1)))
+
+    def FPNegativeInfinity(self, eb, sb):
+        '''Create floating-point -oo'''
+        return self.create_node(node_type=op.FP_CONSTANT,
+                                args=(self.BV(1, 1),
+                                      self.BV(2**eb - 1, eb),
+                                      self.BV(0, sb - 1)))
+
+    def FPNaN(self, eb, sb):
+        '''Create floating-point NaN'''
+        return self.create_node(node_type=op.FP_CONSTANT,
+                                args=(self.BV(0, 1),
+                                      self.BV(2**eb - 1, eb),
+                                      self.BV(1, sb - 1)))
+
+    def FPRNE(self):
+        '''Create floating-point rounding mode constant RNE'''
+        return self.create_node(node_type=op.FP_RNE, args=tuple())
+
+    def FPRNA(self):
+        '''Create floating-point rounding mode constant RNA'''
+        return self.create_node(node_type=op.FP_RNA, args=tuple())
+
+    def FPRTP(self):
+        '''Create floating-point rounding mode constant RTP'''
+        return self.create_node(node_type=op.FP_RTP, args=tuple())
+
+    def FPRTN(self):
+        '''Create floating-point rounding mode constant RTN'''
+        return self.create_node(node_type=op.FP_RTN, args=tuple())
+
+    def FPRTZ(self):
+        '''Create floating-point rounding mode constant RTZ'''
+        return self.create_node(node_type=op.FP_RTZ, args=tuple())
+
+    def FPAbs(self, f):
+        '''Create fp.abs operation'''
+        return self.create_node(node_type=op.FP_ABS, args=(f,))
+
+    def FPNeg(self, f):
+        '''Create fp.neg operation'''
+        return self.create_node(node_type=op.FP_NEG, args=(f,))
+
+    def FPSqrt(self, rm, f):
+        '''Create fp.sqrt operation'''
+        return self.create_node(node_type=op.FP_SQRT, args=(rm, f))
+
+    def FPRoundToIntegral(self, rm, f):
+        '''Create fp.roundToIntegral operation'''
+        return self.create_node(node_type=op.FP_ROUND_TO_INTEGRAL, args=(rm, f))
+
+    def FPAdd(self, rm, f1, f2):
+        '''Create fp.add operation'''
+        return self.create_node(node_type=op.FP_ADD, args=(rm, f1, f2))
+
+    def FPSub(self, rm, f1, f2):
+        '''Create fp.sub operation'''
+        return self.create_node(node_type=op.FP_SUB, args=(rm, f1, f2))
+
+    def FPMul(self, rm, f1, f2):
+        '''Create fp.mul operation'''
+        return self.create_node(node_type=op.FP_MUL, args=(rm, f1, f2))
+
+    def FPDiv(self, rm, f1, f2):
+        '''Create fp.div operation'''
+        return self.create_node(node_type=op.FP_DIV, args=(rm, f1, f2))
+
+    def FPFMA(self, rm, f1, f2, f3):
+        '''Create fp.fma operation'''
+        return self.create_node(node_type=op.FP_FMA, args=(rm, f1, f2, f3))
+
+    def FPRem(self, f1, f2):
+        '''Create fp.rem operation'''
+        return self.create_node(node_type=op.FP_REM, args=(f1, f2))
+
+    def FPMin(self, f1, f2):
+        '''Create fp.min operation'''
+        return self.create_node(node_type=op.FP_MIN, args=(f1, f2))
+
+    def FPMax(self, f1, f2):
+        '''Create fp.max operation'''
+        return self.create_node(node_type=op.FP_MAX, args=(f1, f2))
+
+    def FPLEQ(self, f1, f2):
+        '''Create fp.leq relation'''
+        return self.create_node(node_type=op.FP_LEQ, args=(f1, f2))
+
+    def FPLT(self, f1, f2):
+        '''Create fp.lt relation'''
+        return self.create_node(node_type=op.FP_LT, args=(f1, f2))
+
+    def FPGEQ(self, f1, f2):
+        '''Create fp.geq relation'''
+        return self.create_node(node_type=op.FP_LEQ, args=(f2, f1))
+
+    def FPGT(self, f1, f2):
+        '''Create fp.gt relation'''
+        return self.create_node(node_type=op.FP_LT, args=(f2, f1))
+
+    def FPEQ(self, f1, f2):
+        '''Create fp.eq relation'''
+        return self.create_node(node_type=op.FP_EQ, args=(f1, f2))
+
+    def FPIsNormal(self, f):
+        '''Create fp.isNormal predicate'''
+        return self.create_node(node_type=op.FP_IS_NORMAL, args=(f,))
+
+    def FPIsSubnormal(self, f):
+        '''Create fp.isSubnormal predicate'''
+        return self.create_node(node_type=op.FP_IS_SUBNORMAL, args=(f,))
+
+    def FPIsZero(self, f):
+        '''Create fp.isZero predicate'''
+        return self.create_node(node_type=op.FP_IS_ZERO, args=(f,))
+
+    def FPIsInfinite(self, f):
+        '''Create fp.isInfinite predicate'''
+        return self.create_node(node_type=op.FP_IS_INFINITE, args=(f,))
+
+    def FPIsNaN(self, f):
+        '''Create fp.isNaN predicate'''
+        return self.create_node(node_type=op.FP_IS_NAN, args=(f,))
+
+    def FPIsNegative(self, f):
+        '''Create fp.isNegative predicate'''
+        return self.create_node(node_type=op.FP_IS_NEGATIVE, args=(f,))
+
+    def FPIsPositive(self, f):
+        '''Create fp.isPositive predicate'''
+        return self.create_node(node_type=op.FP_IS_POSITIVE, args=(f,))
+
     def _Algebraic(self, val):
         """Returns the algebraic number val."""
         return self.create_node(node_type=op.ALGEBRAIC_CONSTANT,
