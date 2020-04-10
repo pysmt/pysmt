@@ -102,9 +102,10 @@ BOOL_CONNECTIVES = frozenset([AND, OR, NOT, IMPLIES, IFF])
 
 BOOL_OPERATORS = frozenset(QUANTIFIERS | BOOL_CONNECTIVES)
 
+FP_CONSTANTS = frozenset([FP_CONSTANT, FP_RNE, FP_RNA, FP_RTP, FP_RTN, FP_RTZ])
 CONSTANTS = frozenset([BOOL_CONSTANT, REAL_CONSTANT, INT_CONSTANT,
-                       BV_CONSTANT, STR_CONSTANT, ALGEBRAIC_CONSTANT,
-                       FP_CONSTANT, FP_RNE, FP_RNA, FP_RTP, FP_RTN, FP_RTZ])
+                       BV_CONSTANT, STR_CONSTANT, ALGEBRAIC_CONSTANT]) | \
+            FP_CONSTANTS
 
 # Relations are predicates on theory atoms.
 # Relations have boolean type. They are a subset of the operators for a theory

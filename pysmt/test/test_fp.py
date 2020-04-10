@@ -23,6 +23,7 @@ from pysmt.typing import FPType, RM, FLOAT16, FLOAT32, FLOAT64, FLOAT128, INT, \
                          BOOL
 from pysmt.exceptions import PysmtValueError, PysmtTypeError
 from pysmt.environment import get_env
+from pysmt.logics import QF_FP
 
 
 class TestFP(TestCase):
@@ -33,7 +34,7 @@ class TestFP(TestCase):
         self.tc = get_env().stc
         self.mgr = get_env().formula_manager
 
-    def test_fp(self):
+    def test_fp_types(self):
         # Identity test
         self.assertTrue(FLOAT16.is_fp_type())
         self.assertTrue(RM.is_rm_type())
@@ -106,6 +107,15 @@ class TestFP(TestCase):
                           (mgr.FPRoundToIntegral, 1)]:
             test_tc_fp_op_w_rnd(op, arity)
 
+    @skipIfNoSolverForLogic(QF_FP)
+    def test_fp(self):
+        mgr = self.mgr
+        negZero = mgr.FPNegativeZero(5, 11)
+        posZero = mgr.FPPositiveZero(5, 11)
+        self.assertTrue(is_sat(Equals(mgr.FPAbs(negZero), posZero),
+                        logic=QF_FP))
+        self.assertTrue(is_sat(Equals(mgr.FPNeg(negZero), posZero),
+                        logic=QF_FP))
 
 if __name__ == "__main__":
     main()

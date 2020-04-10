@@ -616,6 +616,13 @@ QF_AUFBVLIRA = Logic(name="QF_AUFBVLIRA",
                      real_arithmetic=True)
 
 
+QF_FP = Logic(name="QF_FP",
+              description=\
+              '''Closed quantifier-free formulas over the theory of floating-point.''',
+              quantifier_free=True,
+              floating_point=True)
+
+
 AUTO = Logic(name="Auto",
              description="Special logic used to indicate that the logic to be used depends on the formula.")
 
@@ -650,7 +657,8 @@ SMTLIB2_LOGICS = frozenset([ AUFLIA,
                              QF_UFNRA,
                              QF_UFNIA,
                              QF_UFLIRA,
-                             QF_SLIA
+                             QF_SLIA,
+                             QF_FP,
                          ])
 
 LOGICS = SMTLIB2_LOGICS | frozenset([ QF_BOOL, BOOL, QF_AUFBVLIRA])
