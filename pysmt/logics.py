@@ -60,10 +60,10 @@ class Theory(object):
         res.real_arithmetic = value
         return res
 
-    def set_nira(self, value=True):
+    def set_nira(self):
         res = self.copy()
-        res.integer_arithmetic = value
-        res.real_arithmetic = value
+        res.integer_arithmetic = True
+        res.real_arithmetic = True
         res.linear = False
         return res
 
