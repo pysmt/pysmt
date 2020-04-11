@@ -43,9 +43,7 @@ GET_UNSAT_CORE='get-unsat-core'
 GET_VALUE='get-value'
 LOAD_OBJECTIVE_MODEL= 'load-objective-model'
 MAXIMIZE='maximize'
-MAXMIN='maxmin'
 MINIMIZE='minimize'
-MAXMIN='minmax'
 POP='pop'
 PUSH='push'
 RESET='reset'
@@ -96,7 +94,7 @@ SMT_LIB_2_5_OMT = SMT_LIB_2_5 + [
     GET_OBJECTIVES,
     MAXIMIZE,
     MINIMIZE,
-    LOAD_OBJECTIVE_MODEL,
+    LOAD_OBJECTIVE_MODEL
 ]
 
 ALL_COMMANDS = SMT_LIB_2_5_OMT

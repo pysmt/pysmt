@@ -53,7 +53,7 @@ BV_SLT, BV_SLE,                             # Signed Comparison (42-43)
 BV_COMP,                                    # Returns 1_1 if the arguments are
                                             # equal otherwise it returns 0_1 (44)
 BV_SDIV, BV_SREM,                           # Signed Division and Reminder(45-46)
-BV_ASHR,                                    # Arithmetic shift right (47)
+BV_ASHR,                                    # Arithmetic shift right (47)f
 #
 # STRINGS
 #
