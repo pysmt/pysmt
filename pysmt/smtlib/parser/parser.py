@@ -449,6 +449,8 @@ class SmtLibParser(object):
 
         # Command tokens
         self.commands = {smtcmd.ASSERT : self._cmd_assert,
+                         smtcmd.ASSERT_SOFT: self._cmd_assert_soft,
+                         smtcmd.CHECK_ALLSAT: self._cmd_check_allsat,
                          smtcmd.CHECK_SAT : self._cmd_check_sat,
                          smtcmd.CHECK_SAT_ASSUMING : self._cmd_check_sat_assuming,
                          smtcmd.DECLARE_CONST : self._cmd_declare_const,
@@ -469,6 +471,11 @@ class SmtLibParser(object):
                          smtcmd.GET_UNSAT_ASSUMPTIONS : self._cmd_get_unsat_assumptions,
                          smtcmd.GET_UNSAT_CORE: self._cmd_get_unsat_core,
                          smtcmd.GET_VALUE : self._cmd_get_value,
+                         smtcmd.GET_OBJECTIVES: self._cmd_get_objectives,
+                         smtcmd.MAXIMIZE: self._cmd_objective,
+                         smtcmd.MAXMIN: self._cmd_maxmin_minmax,
+                         smtcmd.MINIMIZE: self._cmd_objective,
+                         smtcmd.MINMAX: self._cmd_maxmin_minmax,
                          smtcmd.POP : self._cmd_pop,
                          smtcmd.PUSH : self._cmd_push,
                          smtcmd.RESET : self._cmd_reset,
@@ -476,7 +483,8 @@ class SmtLibParser(object):
                          smtcmd.SET_LOGIC : self._cmd_set_logic,
                          smtcmd.SET_OPTION : self._cmd_set_option,
                          smtcmd.SET_INFO : self._cmd_set_info,
-                     }
+                         smtcmd.SET_MODEL: self._cmd_set_model,
+                         }
 
     def _reset(self):
         """Resets the parser to the initial state"""
@@ -1128,6 +1136,37 @@ class SmtLibParser(object):
         self.consume_closing(tokens, current)
         return SmtLibCommand(current, [expr])
 
+    def _cmd_assert_soft(self, current, tokens):
+        """(assert-soft <term> [:id <string>] [:weight <const_term>])"""
+        expr = self.get_expression(tokens)
+        mgr = self.env.formula_manager
+        weight_value = mgr.Int(1)
+        group_clause_id = "I"  # default identifier for soft-clause
+        parsed = self.parse_atom(tokens, current)
+        if parsed == ":weight":
+            weight_value = self.get_expression(tokens)
+        elif parsed == ":id":
+            group_clause_id = self.parse_atom(tokens, current)
+        curr_tokens = tokens.consume()
+        if str(curr_tokens) != ")":
+            tokens.add_extra_token(curr_tokens)
+            parsed = self.parse_atom(tokens, current)
+            if parsed == ":weight":
+                weight_value = self.get_expression(tokens)
+            elif parsed == " :id":
+                group_clause_id = self.parse_atom(tokens, current)
+            self.consume_closing(tokens, current)
+        else:
+            tokens.add_extra_token(curr_tokens)
+            self.consume_closing(tokens, current)
+        return SmtLibCommand(current, [expr, weight_value, group_clause_id])
+
+    def _cmd_check_allsat(self, current, tokens):
+        """(check-allsat <terms>)"""
+        params = self.parse_params(tokens, current)
+        self.consume_closing(tokens, current)
+        return SmtLibCommand(current, params)
+
     def _cmd_check_sat(self, current, tokens):
         """(check-sat)"""
         self.parse_atoms(tokens, current, 0)
@@ -1178,6 +1217,37 @@ class SmtLibParser(object):
     def _cmd_get_value(self, current, tokens):
         """(get-value (<term>+)"""
         params = self.parse_expr_list(tokens, current)
+        self.consume_closing(tokens, current)
+        return SmtLibCommand(current, params)
+
+    def _cmd_get_objectives(self, current, tokens):
+        """(get-objective)"""
+        self.parse_atoms(tokens, current, 0)
+        return SmtLibCommand(current, [])
+
+    def _cmd_objective(self, current, tokens):
+        """(maximize | minimize <term> [:id <string>] [:signed] [:lower <const_term>] [:upper <const_term>])"""
+        obj = self.get_expression(tokens)
+        params = []
+        curr = tokens.consume()
+        while curr != ")":
+            tokens.add_extra_token(curr)
+            curr_parse = self.parse_atom(tokens, current)
+            if curr_parse == ":lower" or curr_parse == ":upper":
+                exp = self.get_expression(tokens)
+                params.append(curr_parse)
+                params.append(exp)
+            else:
+                params.append(curr_parse)
+            curr = tokens.consume()
+        tokens.add_extra_token(")")
+        self.consume_closing(tokens, current)
+        return SmtLibCommand(current, [obj] + [params])
+
+    def _cmd_maxmin_minmax(self, current, tokens):
+        """(maxmin | minmax <term> ... <term> [:id <string>] [:signed] [:lower <const_term>] [:upper <const_term>])"""
+        params = self.parse_atoms(tokens, current, min_size=1, max_size=99)
+        tokens.add_extra_token(")")
         self.consume_closing(tokens, current)
         return SmtLibCommand(current, params)
 
@@ -1323,6 +1393,12 @@ class SmtLibParser(object):
         """(reset-assertions)"""
         self.parse_atoms(tokens, current, 0)
         return SmtLibCommand(current, [])
+
+    def _cmd_set_model(self, current, tokens):
+        """(set-model <numeral>)"""
+        expr = self.get_expression(tokens)
+        self.consume_closing(tokens, current)
+        return SmtLibCommand(current, [expr])
 
 # EOC SmtLibParser
 
