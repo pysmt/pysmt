@@ -25,7 +25,7 @@ from itertools import chain
 from six.moves import xrange
 
 
-ALL_TYPES = list(xrange(0,66))
+ALL_TYPES = list(xrange(0,67))
 
 (
 FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF, # Boolean Logic (0-6)
@@ -54,6 +54,7 @@ BV_COMP,                                    # Returns 1_1 if the arguments are
                                             # equal otherwise it returns 0_1 (44)
 BV_SDIV, BV_SREM,                           # Signed Division and Reminder(45-46)
 BV_ASHR,                                    # Arithmetic shift right (47)
+TO_BV,                                      # Transform an integer into BV
 #
 # STRINGS
 #
@@ -105,7 +106,7 @@ BV_OPERATORS = frozenset([BV_NOT, BV_AND, BV_OR, BV_XOR,
                           BV_CONCAT, BV_EXTRACT, BV_NEG, BV_ADD,
                           BV_SUB, BV_MUL, BV_UDIV, BV_UREM, BV_LSHL, BV_LSHR,
                           BV_ROL, BV_ROR, BV_ZEXT, BV_SEXT,
-                          BV_COMP, BV_SDIV, BV_SREM, BV_ASHR])
+                          BV_COMP, BV_SDIV, BV_SREM, BV_ASHR, TO_BV])
 
 STR_OPERATORS = frozenset([STR_LENGTH, STR_CONCAT, STR_INDEXOF, STR_REPLACE,
                            STR_SUBSTR, STR_CHARAT, STR_TO_INT, INT_TO_STR,])
@@ -179,6 +180,7 @@ __OP_STR__ = {
     ITE : "ITE",
     TOREAL : "TOREAL",
     BV_CONSTANT : "BV_CONSTANT",
+    TO_BV: "TO_BV",
     BV_NOT : "BV_NOT",
     BV_AND : "BV_AND",
     BV_OR : "BV_OR",
