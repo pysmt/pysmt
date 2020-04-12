@@ -18,11 +18,14 @@
 import os
 from unittest import skipIf
 
+from fractions import Fraction
+
 from pysmt.test import TestCase, main
 from pysmt.shortcuts import get_env, Solver, is_valid, is_sat
-from pysmt.shortcuts import LE, LT, Real, GT, Int, Symbol, And, Not, Type, FunctionType, Equals, Function
+from pysmt.shortcuts import LE, LT, Real, GT, Int, Symbol, And, Not, Type
+from pysmt.shortcuts import FunctionType, Equals, Function, TRUE, Implies, Plus
 from pysmt.typing import BOOL, REAL, INT
-from pysmt.logics import QF_UFLIRA, QF_UFLRA, QF_UFLIA, QF_BOOL, QF_UFBV
+from pysmt.logics import QF_UFLIRA, QF_UFLRA, QF_UFLIA, QF_BOOL, QF_UFBV, QF_LRA
 from pysmt.exceptions import (SolverRedefinitionError, NoSolverAvailableError,
                               UnknownSolverAnswerError)
 
@@ -110,7 +113,7 @@ class TestGenericWrapper(TestCase):
             self.assertFalse(model.get_value(b).is_true())
             self.assertTrue(model.get_value(a).is_true())
 
-    
+
     @skipIf(len(ALL_WRAPPERS) == 0, "No wrapper available")
     def test_custom_types(self):
         A = Type("A", 0)
@@ -173,6 +176,21 @@ class TestGenericWrapper(TestCase):
                 s.add_assertion(f)
                 res = s.solve()
                 self.assertFalse(res)
+
+
+    @skipIf(len(ALL_WRAPPERS) == 0, "No wrapper available")
+    def test_clear_pop_smtlibsolver(self):
+        for n in self.all_solvers:
+            with Solver(name=n, logic=QF_LRA) as s:
+                x1, x2 = [Symbol(var, REAL) for var in ["x1", "x2"]]
+                init = LT(Plus(x1, Real(-1), x2), Real(Fraction(1,4)))
+                invar = TRUE()
+                safe = LT(Plus(x1, x2), Real(8))
+                invar_init = And(invar, init)
+                iv_imp = Implies(invar, safe)
+
+                self.assertFalse(s.is_unsat(invar_init))
+                self.assertFalse(s.is_valid(iv_imp))
 
 
 if __name__ == "__main__":

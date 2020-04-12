@@ -45,8 +45,9 @@ class CVC4Installer(SolverInstaller):
 
     def compile(self):
         # Build ANTLR
-        SolverInstaller.run("bash get-antlr-3.4",
-                            directory=os.path.join(self.extract_path, "contrib"))
+
+        SolverInstaller.run("bash %s" % os.path.join("contrib", "get-antlr-3.4"),
+                            directory=self.extract_path)
 
         # Build ABC
         # SolverInstaller.run("bash get-abc",

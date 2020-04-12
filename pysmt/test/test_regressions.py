@@ -516,5 +516,34 @@ class TestRegressions(TestCase):
         s = to_smtlib(f0_of_false, False)
         self.assertEqual(s, '(|f 0| false)')
 
+    @skipIfSolverNotAvailable("yices")
+    def test_yices_bv_overflow(self):
+        smt_script = '''
+        (set-logic QF_BV)
+        (declare-fun s0 () (_ BitVec 64))
+        (define-fun s1 () (_ BitVec 64) #xFFFFFFFFFFFFFFFF)
+        (define-fun s2 () Bool (= s1 s0))
+        (assert s2)
+        (check-sat)
+        '''
+        from pysmt.smtlib.parser import get_formula_strict
+        f = get_formula_strict(cStringIO(smt_script))
+        self.assertSat(f, solver_name='yices')
+
+    @skipIfSolverNotAvailable("yices")
+    def test_yices_bv_no_overflow(self):
+        smt_script = '''
+        (set-logic QF_BV)
+        (declare-fun s0 () (_ BitVec 64))
+        (define-fun s1 () (_ BitVec 64) #x7FFFFFFFFFFFFFFF)
+        (define-fun s2 () Bool (= s1 s0))
+        (assert s2)
+        (check-sat)
+        '''
+        from pysmt.smtlib.parser import get_formula_strict
+        f = get_formula_strict(cStringIO(smt_script))
+        self.assertSat(f, solver_name='yices')
+
+
 if __name__ == "__main__":
     main()
