@@ -276,19 +276,6 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
 
         return (res == mathsat.MSAT_SAT)
 
-    def _check_unsat_core_config(self):
-        if self.options.unsat_cores_mode is None:
-            raise SolverNotConfiguredForUnsatCoresError
-
-        if self.last_result is None or self.last_result:
-            raise SolverStatusError("The last call to solve() was not" \
-                                    " unsatisfiable")
-
-        if self.last_command != "solve":
-            raise SolverStatusError("The solver status has been modified by a" \
-                                    " '%s' command after the last call to" \
-                                    " solve()" % self.last_command)
-
     def get_unsat_core(self):
         """After a call to solve() yielding UNSAT, returns the unsat core as a
         set of formulae"""
@@ -477,7 +464,7 @@ class MSatConverter(Converter, DagWalker):
             mathsat.MSAT_TAG_BV_ADD: self._sig_binary,
             mathsat.MSAT_TAG_BV_UDIV:self._sig_binary,
             mathsat.MSAT_TAG_BV_UREM:self._sig_binary,
-            mathsat.MSAT_TAG_BV_CONCAT: self._sig_binary,
+            mathsat.MSAT_TAG_BV_CONCAT: self._sig_bv_concat,
             mathsat.MSAT_TAG_BV_OR:  self._sig_binary,
             mathsat.MSAT_TAG_BV_XOR: self._sig_binary,
             mathsat.MSAT_TAG_BV_AND: self._sig_binary,
@@ -577,6 +564,11 @@ class MSatConverter(Converter, DagWalker):
         _, msb, lsb = mathsat.msat_term_is_bv_extract(self.msat_env(), term)
         t = self.env.stc.get_type(args[0])
         return types.FunctionType(types.BVType(msb - lsb + 1), [t])
+
+    def _sig_bv_concat(self, term, args):
+        t1 = self.env.stc.get_type(args[0])
+        t2 = self.env.stc.get_type(args[1])
+        return types.FunctionType(types.BVType(t1.width + t2.width), [t1, t2])
 
     def _sig_array_read(self, term, args):
         t1 = self.env.stc.get_type(args[0])

@@ -28,12 +28,18 @@ function os_install {
     fi
 }
 
+
+
 # Use python or pypy as commands depending on the build
 PYTHON="python"
 if [ "${PYTHON_VERSION}" == "pypy" ] || [ "${PYTHON_VERSION}" == "pypy3" ]
 then
     PYTHON="${PYTHON_VERSION}"
 fi
+
+# Fix problem with LIBDIR of Azure Pipelines
+VRS=`python -c 'import platform;print(platform.python_version())'`
+export PYSMT_PYTHON_LIBDIR="/opt/hostedtoolcache/Python/${VRS}/x64/lib/"
 
 # 'pip install' command
 PIP_INSTALL="${PYTHON} -m pip install --upgrade"
