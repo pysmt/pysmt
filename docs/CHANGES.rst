@@ -17,6 +17,7 @@ General:
 
 * Added functions to obtain the symbols in SMTLIB script (PR #583)
 
+* Python 2 is not supported anymore. While it might still work, we will not actively test for it anymore.
 
 Solvers:
 
