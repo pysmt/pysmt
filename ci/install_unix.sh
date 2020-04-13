@@ -81,6 +81,11 @@ $PIP_INSTALL six
 $PIP_INSTALL wheel
 $PIP_INSTALL nose
 
+if [ "${PYSMT_SOLVER}" == "cvc4" ]
+then
+    $PIP_INSTALL toml
+fi
+
 # Install gmpy if needed
 if [ "${PYSMT_GMPY}" == "TRUE" ]
 then
