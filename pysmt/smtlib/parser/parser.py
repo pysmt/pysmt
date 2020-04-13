@@ -1153,7 +1153,7 @@ class SmtLibParser(object):
             parsed = self.parse_atom(tokens, current)
             if parsed == ":weight":
                 weight_value = self.get_expression(tokens)
-            elif parsed == " :id":
+            elif parsed == ":id":
                 group_clause_id = self.parse_atom(tokens, current)
             self.consume_closing(tokens, current)
         else:
