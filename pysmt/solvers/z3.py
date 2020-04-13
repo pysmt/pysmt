@@ -26,7 +26,7 @@ except ImportError:
 
 # Keep array models expressed as values instead of Lambdas
 # (see https://github.com/Z3Prover/z3/issues/1769)
-z3.set_param('model_compress', False)
+z3.set_param('model.compact', False)
 
 from six.moves import xrange
 
