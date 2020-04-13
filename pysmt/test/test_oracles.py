@@ -20,7 +20,7 @@ from pysmt.shortcuts import Symbol, Implies, And, Not
 from pysmt.test.examples import get_example_formulae
 from pysmt.test import TestCase, main
 from pysmt.oracles import get_logic
-from pysmt.typing import BOOL, Type, INT, FunctionType
+from pysmt.typing import BOOL, Type, INT, REAL, FunctionType
 
 
 class TestOracles(TestCase):
@@ -137,6 +137,15 @@ class TestOracles(TestCase):
         theory = self.env.theoryo.get_theory(f_1)
         self.assertEqual(theory, QF_UFIDL.theory)
 
+    def test_types_oracle_divby0(self):
+        from pysmt.logics import QF_NRA
+
+        mgr = self.env.formula_manager
+        r = mgr.Symbol("r", REAL)
+        f = mgr.Equals(mgr.Real(4),
+                       mgr.Div(r, mgr.Real(0)))
+        theory = self.env.theoryo.get_theory(f)
+        self.assertFalse(theory.linear)
 
 
 if __name__ == '__main__':

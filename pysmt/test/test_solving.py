@@ -240,6 +240,34 @@ class TestBasic(TestCase):
             self.assertEqual(satisfiability, s, f)
 
     def do_model(self, solver_name):
+        def assert_model(f, subs):
+            simp = f.substitute(subs).simplify()
+            if not simp.is_true() and get_env().enable_div_by_0:
+                free_vars = simp.get_free_variables()
+                self.assertTrue(len(free_vars) == 0)
+
+                # Models might not be simplified to a constant value
+                # if there is a division by zero. We find the
+                # division(s) and ask the solver for a replacement
+                # expression.
+                stack = [simp]
+                div_0 = []
+                while stack:
+                    x = stack.pop()
+                    if x.is_constant():
+                        pass
+                    elif x.is_div() and x.arg(1).is_zero():
+                        div_0.append(x)
+                    stack += x.args()
+
+                subs = {}
+                for d in div_0:
+                    subs[d] = model.get_value(d)
+                    simp = simp.substitute(subs).simplify()
+
+            self.assertEqual(simp, TRUE(), "%s -- %s :> %s" % (f, subs, simp))
+            return
+
         for (f, _, satisfiability, logic) in get_example_formulae():
             if satisfiability and not logic.theory.uninterpreted and logic.quantifier_free:
                 try:
@@ -254,9 +282,7 @@ class TestBasic(TestCase):
                         for d in f.get_free_variables():
                             m = s.get_value(d)
                             subs[d] = m
-
-                        simp = f.substitute(subs).simplify()
-                        self.assertEqual(simp, TRUE(), "%s -- %s :> %s" % (f, subs, simp))
+                        assert_model(f, subs)
 
                         # Ask the eager model
                         subs = {}
@@ -264,9 +290,8 @@ class TestBasic(TestCase):
                         for d in f.get_free_variables():
                             m = model.get_value(d)
                             subs[d] = m
+                        assert_model(f, subs)
 
-                        simp = f.substitute(subs).simplify()
-                        self.assertEqual(simp, TRUE())
                 except NoSolverAvailableError:
                     pass
 
@@ -628,6 +653,7 @@ class TestBasic(TestCase):
                 solver.add_assertion(f)
                 res = solver.solve()
                 self.assertTrue(res == sat)
+
 
 if __name__ == '__main__':
     main()

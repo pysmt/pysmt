@@ -22,7 +22,7 @@ import pysmt.smtlib
 from pysmt.operators import (FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF,
                              SYMBOL, FUNCTION,
                              REAL_CONSTANT, BOOL_CONSTANT, INT_CONSTANT,
-                             PLUS, MINUS, TIMES,
+                             PLUS, MINUS, TIMES, DIV,
                              LE, LT, EQUALS,
                              ITE,
                              TOREAL,
@@ -298,6 +298,10 @@ class FNode(object):
     def is_times(self):
         """Test whether the node is the Times operator."""
         return self.node_type() == TIMES
+
+    def is_div(self):
+        """Test whether the node is the Division operator."""
+        return self.node_type() == DIV
 
     def is_implies(self):
         """Test whether the node is the Implies operator."""

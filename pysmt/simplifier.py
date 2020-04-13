@@ -975,7 +975,7 @@ class Simplifier(pysmt.walkers.DagWalker):
         sl = args[0]
         sr = args[1]
 
-        if sl.is_constant() and sr.is_constant():
+        if sl.is_constant() and sr.is_constant() and not sr.is_zero():
             l = sl.constant_value()
             r = sr.constant_value()
             if sl.is_real_constant():
