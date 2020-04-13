@@ -1,8 +1,7 @@
 Change Log
 ==========
 
-
-0.8.1: 2019-05-09 -- PySMT as module
+0.9.0: 2020-04-1X -- PySMT as module
 ------------------------------------
 
 General:
@@ -26,7 +25,7 @@ Solvers:
 * Boolector: Incremental support (PR #567). Thanks to **Makai Mann**
   for providing the patch.
 
-* Picosat: Fixed a bug related to solver reset (PR #567)
+* Z3: Upgrade to 4.8.7
 
 Bugfix:
 
@@ -46,7 +45,6 @@ Bugfix:
 
 * Fix bug in deque pop in smtlib/parser (PR #558).
   Thanks to **Sebastiano Mariani** for providing the patch.
-
 
 0.8.0: 2019-01-27 -- Better Install and Great Community
 -------------------------------------------------------
