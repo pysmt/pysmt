@@ -33,6 +33,7 @@ if sys.version_info >= (3, 3):
 else:
     from collections import Iterable
 
+import warnings
 from six.moves import xrange
 
 import pysmt.typing as types
@@ -261,7 +262,11 @@ class FormulaManager(object):
 
     def Div(self, left, right):
         """ Creates an expression of the form: left / right """
-        if right.is_constant(types.REAL):
+        if right.is_constant(types.REAL, 0) and self.env.enable_div_by_0:
+            # Allow division by 0 byt warn the user
+            # This can only happen in non-linear logics
+            warnings.warn("Warning: Division by 0")
+        elif right.is_constant(types.REAL):
             # If right is a constant we rewrite as left * 1/right
             inverse = Fraction(1) / right.constant_value()
             return self.Times(left, self.Real(inverse))

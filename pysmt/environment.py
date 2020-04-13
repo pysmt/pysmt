@@ -74,6 +74,7 @@ class Environment(object):
         self._factory = None
         # Configurations
         self.enable_infix_notation = False
+        self.enable_div_by_0 = True
 
         # Dynamic Walker Configuration Map
         # See: add_dynamic_walker_function
