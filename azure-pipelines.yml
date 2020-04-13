@@ -53,33 +53,33 @@ jobs:
     vmImage: 'Ubuntu-16.04'
   strategy:
     matrix:
-      Py27All:
-        PYTHON_VERSION: '2.7'
-        PYSMT_SOLVER: "all"
+      # Py27All:
+        # PYTHON_VERSION: '2.7'
+        # PYSMT_SOLVER: "all"
       Py37All:
         PYTHON_VERSION: '3.7'
         PYSMT_SOLVER: "all"
-      Py27Cython:
-        PYTHON_VERSION: '2.7'
-        PYSMT_SOLVER: "None"
-        PYSMT_CYTHON: "TRUE"
+      # Py27Cython:
+      #   PYTHON_VERSION: '2.7'
+      #   PYSMT_SOLVER: "None"
+      #   PYSMT_CYTHON: "TRUE"
       Py37Cython:
         PYTHON_VERSION: '3.7'
         PYSMT_SOLVER: "None"
         PYSMT_CYTHON: "TRUE"
-      Py27GMPy:
-        PYTHON_VERSION: '2.7'
-        PYSMT_SOLVER: "None"
-        PYSMT_GMPY: "TRUE"
+      # Py27GMPy:
+      #   PYTHON_VERSION: '2.7'
+      #   PYSMT_SOLVER: "None"
+      #   PYSMT_GMPY: "TRUE"
       Py37GMPy:
         PYTHON_VERSION: '3.7'
         PYSMT_SOLVER: "None"
         PYSMT_GMPY: "TRUE"
-      Py27CythonGMPy:
-        PYTHON_VERSION: '2.7'
-        PYSMT_SOLVER: "None"
-        PYSMT_CYTHON: "TRUE"
-        PYSMT_GMPY: "TRUE"
+      # Py27CythonGMPy:
+      #   PYTHON_VERSION: '2.7'
+      #   PYSMT_SOLVER: "None"
+      #   PYSMT_CYTHON: "TRUE"
+      #   PYSMT_GMPY: "TRUE"
       Py37CythonGMPy:
         PYTHON_VERSION: '3.7'
         PYSMT_SOLVER: "None"
@@ -97,51 +97,51 @@ jobs:
 
 
 
-- job: 'Ubuntu16Py27'
-  condition: or(eq(variables['build.sourceBranch'], 'refs/heads/master'), eq(variables['Build.Reason'], 'PullRequest'))
-  pool:
-    vmImage: 'Ubuntu-16.04'
-  strategy:
-    matrix:
-      Py27NoSolver:
-        PYTHON_VERSION: '2.7'
-        PYSMT_SOLVER: "None"
-      Py27Msat:
-        PYTHON_VERSION: '2.7'
-        PYSMT_SOLVER: "msat"
-      Py27Z3:
-        PYTHON_VERSION: '2.7'
-        PYSMT_SOLVER: "z3"
-      Py27Yices:
-        PYTHON_VERSION: '2.7'
-        PYSMT_SOLVER: "yices"
-      Py27CVC4:
-        PYTHON_VERSION: '2.7'
-        PYSMT_SOLVER: "cvc4"
-      Py27Btor:
-        PYTHON_VERSION: '2.7'
-        PYSMT_SOLVER: "btor"
-      Py27Picosat:
-        PYTHON_VERSION: '2.7'
-        PYSMT_SOLVER: "picosat"
-      Py27Bdd:
-        PYTHON_VERSION: '2.7'
-        PYSMT_SOLVER: "bdd"
-      Py27MsatWrap:
-        PYTHON_VERSION: '2.7'
-        PYSMT_SOLVER: "msat_wrap"
-      Py27Z3Wrap:
-        PYTHON_VERSION: '2.7'
-        PYSMT_SOLVER: "z3_wrap"
-  steps:
-  - task: UsePythonVersion@0
-    inputs:
-      versionSpec: '$(PYTHON_VERSION)'
-      architecture: 'x64'
-  - bash: ci/install_unix.sh
-    displayName: 'Prepare System'
-  - bash: ci/run_unix.sh
-    displayName: 'Testing'
+# - job: 'Ubuntu16Py27'
+#   condition: or(eq(variables['build.sourceBranch'], 'refs/heads/master'), eq(variables['Build.Reason'], 'PullRequest'))
+#   pool:
+#     vmImage: 'Ubuntu-16.04'
+#   strategy:
+#     matrix:
+#       Py27NoSolver:
+#         PYTHON_VERSION: '2.7'
+#         PYSMT_SOLVER: "None"
+#       Py27Msat:
+#         PYTHON_VERSION: '2.7'
+#         PYSMT_SOLVER: "msat"
+#       Py27Z3:
+#         PYTHON_VERSION: '2.7'
+#         PYSMT_SOLVER: "z3"
+#       Py27Yices:
+#         PYTHON_VERSION: '2.7'
+#         PYSMT_SOLVER: "yices"
+#       Py27CVC4:
+#         PYTHON_VERSION: '2.7'
+#         PYSMT_SOLVER: "cvc4"
+#       Py27Btor:
+#         PYTHON_VERSION: '2.7'
+#         PYSMT_SOLVER: "btor"
+#       Py27Picosat:
+#         PYTHON_VERSION: '2.7'
+#         PYSMT_SOLVER: "picosat"
+#       Py27Bdd:
+#         PYTHON_VERSION: '2.7'
+#         PYSMT_SOLVER: "bdd"
+#       Py27MsatWrap:
+#         PYTHON_VERSION: '2.7'
+#         PYSMT_SOLVER: "msat_wrap"
+#       Py27Z3Wrap:
+#         PYTHON_VERSION: '2.7'
+#         PYSMT_SOLVER: "z3_wrap"
+#   steps:
+#   - task: UsePythonVersion@0
+#     inputs:
+#       versionSpec: '$(PYTHON_VERSION)'
+#       architecture: 'x64'
+#   - bash: ci/install_unix.sh
+#     displayName: 'Prepare System'
+#   - bash: ci/run_unix.sh
+#     displayName: 'Testing'
 
 
 
@@ -241,27 +241,27 @@ jobs:
     vmImage: 'macOS-10.14'
   strategy:
     matrix:
-      Py27NoSolver:
-        PYTHON_VERSION: '2.7'
-        PYSMT_SOLVER: "None"
+      # Py27NoSolver:
+      #   PYTHON_VERSION: '2.7'
+      #   PYSMT_SOLVER: "None"
       Py37NoSolver:
         PYTHON_VERSION: '3.7'
         PYSMT_SOLVER: "None"
-      Py27Msat:
-        PYTHON_VERSION: '2.7'
-        PYSMT_SOLVER: "msat"
+      # Py27Msat:
+      #   PYTHON_VERSION: '2.7'
+      #   PYSMT_SOLVER: "msat"
       Py37Msat:
         PYTHON_VERSION: '3.7'
         PYSMT_SOLVER: "msat"
-      Py27Z3:
-        PYTHON_VERSION: '2.7'
-        PYSMT_SOLVER: "z3"
+      # Py27Z3:
+      #   PYTHON_VERSION: '2.7'
+      #   PYSMT_SOLVER: "z3"
       Py37Z3:
         PYTHON_VERSION: '3.7'
         PYSMT_SOLVER: "z3"
-      Py27Yices:
-        PYTHON_VERSION: '2.7'
-        PYSMT_SOLVER: "yices"
+      # Py27Yices:
+      #   PYTHON_VERSION: '2.7'
+      #   PYSMT_SOLVER: "yices"
       Py37Yices:
         PYTHON_VERSION: '3.7'
         PYSMT_SOLVER: "yices"
@@ -283,21 +283,21 @@ jobs:
     vmImage: 'vs2017-win2016'
   strategy:
     matrix:
-      Py27NoSolver:
-        PYTHON_VERSION: '2.7'
-        PYSMT_SOLVER: "None"
+      # Py27NoSolver:
+      #   PYTHON_VERSION: '2.7'
+      #   PYSMT_SOLVER: "None"
       Py37NoSolver:
         PYTHON_VERSION: '3.7'
         PYSMT_SOLVER: "None"
-      Py27Msat:
-        PYTHON_VERSION: '2.7'
-        PYSMT_SOLVER: "msat"
+      # Py27Msat:
+      #   PYTHON_VERSION: '2.7'
+      #   PYSMT_SOLVER: "msat"
       Py37Msat:
         PYTHON_VERSION: '3.7'
         PYSMT_SOLVER: "msat"
-      Py27Z3:
-        PYTHON_VERSION: '2.7'
-        PYSMT_SOLVER: "z3"
+      # Py27Z3:
+      #   PYTHON_VERSION: '2.7'
+      #   PYSMT_SOLVER: "z3"
       Py37Z3:
         PYTHON_VERSION: '3.7'
         PYSMT_SOLVER: "z3"
@@ -315,7 +315,7 @@ jobs:
   dependsOn:
     - 'Ubuntu16Py37'
     - 'Ubuntu16All'
-    - 'Ubuntu16Py27'
+#    - 'Ubuntu16Py27'
     - 'Ubuntu16PyPy2'
     - 'Ubuntu16PyPy3'
     - 'OSX10_13'
