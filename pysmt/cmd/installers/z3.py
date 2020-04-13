@@ -31,7 +31,7 @@ class Z3Installer(SolverInstaller):
 
         system = self.os_name
         if system == "linux":
-            system = "ubuntu-14.04"
+            system = "ubuntu-16.04"
         elif system == "darwin":
             system = "osx-%s" % osx
         elif system == "windows":
@@ -39,7 +39,10 @@ class Z3Installer(SolverInstaller):
 
         if git_version is None:
             # Stable versions template
-            archive_name = "z3-%s.%s-%s-%s.zip" % (solver_version, commit, arch, system)
+            if commit:
+                archive_name = "z3-%s.%s-%s-%s.zip" % (solver_version, commit, arch, system)
+            else:
+                archive_name = "z3-%s-%s-%s.zip"  % (solver_version, arch, system)
             native_link = "https://github.com/Z3Prover/z3/releases/download/z3-" + solver_version + "/{archive_name}"
             # print(native_link)
         else:
