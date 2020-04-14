@@ -17,8 +17,8 @@
 #   limitations under the License.
 #
 
-export NOSE_PROCESSES=4
-export NOSE_PROCESS_TIMEOUT=240
+#export NOSE_PROCESSES=-1
+#export NOSE_PROCESS_TIMEOUT=240
 export PYTHONDONTWRITEBYTECODE=True
 
 # Skip slow tests (-A "not slow")
@@ -26,4 +26,4 @@ export PYTHONDONTWRITEBYTECODE=True
 # Rule of thumb: if a test takes more than 10 seconds it
 #                should be marked as slow using:
 #                    @attr("slow")
-nosetests -v -A "not slow" -x pysmt/test
+python3 -m nose -v -A "not slow" -x pysmt/test
