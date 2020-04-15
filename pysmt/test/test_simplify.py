@@ -24,7 +24,7 @@ from pysmt.shortcuts import (Array, Store, Int, Iff, Symbol, Plus, Equals, And,
 from pysmt.typing import INT, REAL
 from pysmt.simplifier import BddSimplifier
 from pysmt.logics import QF_BOOL
-from pysmt.exceptions import ConvertExpressionError
+from pysmt.exceptions import ConvertExpressionError, NoSolverAvailableError
 
 
 class TestSimplify(TestCase):
@@ -95,7 +95,10 @@ class TestSimplify(TestCase):
         for (f, _, _, logic) in get_example_formulae():
             if logic.quantifier_free:
                 fprime = s.simplify(f)
-                self.assertValid(Iff(fprime, f))
+                try:
+                    self.assertValid(Iff(fprime, f))
+                except NoSolverAvailableError:
+                    pass
 
         s = BddSimplifier(bool_abstraction=True)
         f = And(Equals(Plus(Int(5), Int(1)),
