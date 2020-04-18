@@ -473,9 +473,7 @@ class SmtLibParser(object):
                          smtcmd.GET_VALUE : self._cmd_get_value,
                          smtcmd.GET_OBJECTIVES: self._cmd_get_objectives,
                          smtcmd.MAXIMIZE: self._cmd_objective,
-                         smtcmd.MAXMIN: self._cmd_maxmin_minmax,
                          smtcmd.MINIMIZE: self._cmd_objective,
-                         smtcmd.MINMAX: self._cmd_maxmin_minmax,
                          smtcmd.POP : self._cmd_pop,
                          smtcmd.PUSH : self._cmd_push,
                          smtcmd.RESET : self._cmd_reset,
@@ -483,7 +481,7 @@ class SmtLibParser(object):
                          smtcmd.SET_LOGIC : self._cmd_set_logic,
                          smtcmd.SET_OPTION : self._cmd_set_option,
                          smtcmd.SET_INFO : self._cmd_set_info,
-                         smtcmd.SET_MODEL: self._cmd_set_model,
+                         smtcmd.LOAD_OBJECTIVE_MODEL: self._cmd_set_model,
                          }
 
     def _reset(self):
@@ -1235,21 +1233,13 @@ class SmtLibParser(object):
             curr_parse = self.parse_atom(tokens, current)
             if curr_parse == ":lower" or curr_parse == ":upper":
                 exp = self.get_expression(tokens)
-                params.append(curr_parse)
-                params.append(exp)
+                params.append((curr_parse, exp))
             else:
                 params.append(curr_parse)
             curr = tokens.consume()
         tokens.add_extra_token(")")
         self.consume_closing(tokens, current)
-        return SmtLibCommand(current, [obj] + [params])
-
-    def _cmd_maxmin_minmax(self, current, tokens):
-        """(maxmin | minmax <term> ... <term> [:id <string>] [:signed] [:lower <const_term>] [:upper <const_term>])"""
-        params = self.parse_atoms(tokens, current, min_size=1, max_size=99)
-        tokens.add_extra_token(")")
-        self.consume_closing(tokens, current)
-        return SmtLibCommand(current, params)
+        return SmtLibCommand(current, [obj, params])
 
     def _cmd_declare_fun(self, current, tokens):
         """(declare-fun <symbol> (<sort>*) <sort>)"""
@@ -1396,9 +1386,11 @@ class SmtLibParser(object):
 
     def _cmd_set_model(self, current, tokens):
         """(set-model <numeral>)"""
-        expr = self.get_expression(tokens)
-        self.consume_closing(tokens, current)
-        return SmtLibCommand(current, [expr])
+        elements = self.parse_atoms(tokens, current, 0, 1)
+        levels = 1
+        if len(elements) > 0:
+            levels = int(elements[0])
+        return SmtLibCommand(current, [levels])
 
 # EOC SmtLibParser
 
