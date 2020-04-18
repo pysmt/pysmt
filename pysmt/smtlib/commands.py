@@ -41,10 +41,9 @@ GET_PROOF='get-proof'
 GET_UNSAT_ASSUMPTIONS='get-unsat-assumptions'
 GET_UNSAT_CORE='get-unsat-core'
 GET_VALUE='get-value'
+LOAD_OBJECTIVE_MODEL= 'load-objective-model'
 MAXIMIZE='maximize'
-MAXMIN='maxmin'
 MINIMIZE='minimize'
-MINMAX='minmax'
 POP='pop'
 PUSH='push'
 RESET='reset'
@@ -52,7 +51,7 @@ RESET_ASSERTIONS='reset-assertions'
 SET_INFO='set-info'
 SET_LOGIC='set-logic'
 SET_OPTION='set-option'
-SET_MODEL='set-model'
+
 
 #
 
@@ -94,10 +93,8 @@ SMT_LIB_2_5_OMT = SMT_LIB_2_5 + [
     CHECK_ALLSAT,
     GET_OBJECTIVES,
     MAXIMIZE,
-    MAXMIN,
     MINIMIZE,
-    MINMAX,
-    SET_MODEL,
+    LOAD_OBJECTIVE_MODEL,
 ]
 
 ALL_COMMANDS = SMT_LIB_2_5_OMT
