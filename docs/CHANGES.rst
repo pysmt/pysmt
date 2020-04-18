@@ -63,6 +63,7 @@ Bugfix:
 
 * Various documentation fixes. Thanks to **Matthew Fernandez**, **Guillem Francès**, and **Gianluca Redondi**.
 
+* Disable multiprocessing in run_tests.sh script (PR #637). Thanks **Patrick Trentin** for reporting this.
 
 0.8.0: 2019-01-27 -- Better Install and Great Community
 -------------------------------------------------------
