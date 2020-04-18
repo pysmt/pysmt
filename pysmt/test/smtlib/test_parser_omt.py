@@ -27,7 +27,7 @@ from pysmt.smtlib.parser import SmtLibParser
 class TestSmtLibParserOMT(TestCase):
 
     def test_parse_omt(self):
-        for file_id in range(1, 4):
+        for file_id in range(1, 3):
             # Parse
             script = self.parse(file_id)
             # Check cmds
