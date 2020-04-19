@@ -21,25 +21,39 @@ from pysmt.test import main
 from pysmt.shortcuts import Optimizer, GE, Int, Symbol, INT, LE, GT, REAL, Real
 from pysmt.shortcuts import And, Plus, Minus, get_env
 from pysmt.logics import QF_LIA, QF_LRA
+from pysmt.optimization.goal import MaximizationGoal, MinimizationGoal
 
 from pysmt.exceptions import PysmtUnboundedOptimizationError
 
 class TestOptimization(TestCase):
 
     @skipIfNoOptimizerForLogic(QF_LIA)
-    def test_basic(self):
+    def test_minimization_basic(self):
         x = Symbol("x", INT)
+        min = MinimizationGoal(x)
         formula = GE(x, Int(10))
         for oname in get_env().factory.all_optimizers(logic=QF_LIA):
             with Optimizer(name=oname) as opt:
                 opt.add_assertion(formula)
-                model, cost = opt.optimize(x)
+                model, cost = opt.optimize(min)
                 self.assertEqual(model[x], Int(10))
                 self.assertEqual(cost, Int(10))
 
     @skipIfNoOptimizerForLogic(QF_LIA)
+    def test_maximization_basic(self):
+        x = Symbol("x", INT)
+        max = MaximizationGoal(x)
+        formula = LE(x, Int(10))
+        for oname in get_env().factory.all_optimizers(logic=QF_LIA):
+            with Optimizer(name=oname) as opt:
+                opt.add_assertion(formula)
+                model, cost = opt.optimize(max)
+                self.assertEqual(model[x], Int(10))
+
+    @skipIfNoOptimizerForLogic(QF_LIA)
     def test_unbounded(self):
         x = Symbol("x", INT)
+        min = MinimizationGoal(x)
         formula = LE(x, Int(10))
         for oname in get_env().factory.all_optimizers(logic=QF_LIA):
             with Optimizer(name=oname) as opt:
@@ -47,11 +61,12 @@ class TestOptimization(TestCase):
                     continue
                 opt.add_assertion(formula)
                 with self.assertRaises(PysmtUnboundedOptimizationError):
-                    opt.optimize(x)
+                    opt.optimize(min)
 
     @skipIfNoOptimizerForLogic(QF_LRA)
     def test_infinitesimal(self):
         x = Symbol("x", REAL)
+        min = MinimizationGoal(x)
         formula = GT(x, Real(10))
         for oname in get_env().factory.all_optimizers(logic=QF_LRA):
             with Optimizer(name=oname) as opt:
@@ -59,7 +74,7 @@ class TestOptimization(TestCase):
                     continue
                 opt.add_assertion(formula)
                 with self.assertRaises(PysmtUnboundedOptimizationError):
-                    opt.optimize(x)
+                    opt.optimize(min)
 
     @skipIfNoOptimizerForLogic(QF_LIA)
     def test_pareto(self):
