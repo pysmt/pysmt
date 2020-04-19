@@ -24,7 +24,7 @@ class Optimizer(Solver):
     Interface for the optimization
     """
 
-    def optimize(self, cost_function, **kwargs):
+    def optimize(self, goal, **kwargs):
         """Returns a pair `(model, cost)` where `model` is an object that
         minimizes the value of `cost_function` while satisfying all
         the formulae asserted in the optimizer, while `cost` is the
@@ -131,7 +131,7 @@ class ExternalOptimizerMixin(Optimizer):
         else:
             raise PysmtValueError("Unknown optimization strategy '%s'" % strategy)
 
-    def optimize(self, cost_function, strategy='ub',
+    def optimize(self, goal, strategy='ub',
                  feasible_solution_callback=None,
                  step_size=1, **kwargs):
         """This function performs the optimization as described in
@@ -154,7 +154,7 @@ class ExternalOptimizerMixin(Optimizer):
         """
         last_model = None
 
-        cast, lt, le = self._comparation_functions(cost_function)
+        cast, lt, le = self._comparation_functions(goal.minimize_term())
 
         lb, ub = None, None
         client_data = self._setup()
@@ -167,7 +167,7 @@ class ExternalOptimizerMixin(Optimizer):
             else:
                 # Check if there is a model </<= bound
                 check_result = self._optimization_check_progress(client_data,
-                                                                 cost_function,
+                                                                 goal.minimize_term(),
                                                                  cast(bound),
                                                                  lt, le, strategy)
 
@@ -175,7 +175,7 @@ class ExternalOptimizerMixin(Optimizer):
                 last_model = self.get_model()
                 if feasible_solution_callback:
                     feasible_solution_callback(last_model)
-                ub = self.get_value(cost_function).constant_value()
+                ub = self.get_value(goal.minimize_term()).constant_value()
             else:
                 if strategy == 'ub':
                     lb = ub

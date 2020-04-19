@@ -246,7 +246,7 @@ class Factory(object):
         try:
             from pysmt.solvers.dynmsat import MSATLibLoader
             MSATLibLoader("optimathsat")
-            from pysmt.solvers.optimsat import OptiMSATSolver
+            from pysmt.optimization.optimsat import OptiMSATSolver
             installed_solvers['optimsat'] = OptiMSATSolver
         except SolverAPINotFound:
             pass
@@ -328,8 +328,8 @@ class Factory(object):
         try:
             from pysmt.solvers.dynmsat import MSATLibLoader
             MSATLibLoader("optimathsat")
-            from pysmt.solvers.optimsat import (OptiMSATFMQuantifierEliminator,
-                                                OptiMSATLWQuantifierEliminator)
+            from pysmt.optimization.optimsat import (OptiMSATFMQuantifierEliminator,
+                                                     OptiMSATLWQuantifierEliminator)
             self._all_qelims['optimsat_fm'] = OptiMSATFMQuantifierEliminator
             self._all_qelims['optimsat_lw'] = OptiMSATLWQuantifierEliminator
         except SolverAPINotFound:
@@ -359,7 +359,7 @@ class Factory(object):
         try:
             from pysmt.solvers.dynmsat import MSATLibLoader
             MSATLibLoader("optimathsat")
-            from pysmt.solvers.optimsat import OptiMSATInterpolator
+            from pysmt.optimization.optimsat import OptiMSATInterpolator
             self._all_interpolators['optimsat'] = OptiMSATInterpolator
         except SolverAPINotFound:
             pass
@@ -368,7 +368,7 @@ class Factory(object):
         self._all_optimizers = {}
 
         try:
-            from pysmt.solvers.z3 import Z3NativeOptimizer, Z3SUAOptimizer, \
+            from pysmt.optimization.z3 import Z3NativeOptimizer, Z3SUAOptimizer, \
                 Z3IncrementalOptimizer
             self._all_optimizers['z3'] = Z3NativeOptimizer
             self._all_optimizers['z3_sua'] = Z3SUAOptimizer
@@ -405,7 +405,7 @@ class Factory(object):
         try:
             from pysmt.solvers.dynmsat import MSATLibLoader
             MSATLibLoader("mathsat")
-            from pysmt.solvers.msat import MSatSUAOptimizer, MSatIncrementalOptimizer
+            from pysmt.optimization.msat import MSatSUAOptimizer, MSatIncrementalOptimizer
             self._all_optimizers['msat_sua'] = MSatSUAOptimizer
             self._all_optimizers['msat_incr'] = MSatIncrementalOptimizer
         except SolverAPINotFound:
@@ -414,7 +414,7 @@ class Factory(object):
         try:
             from pysmt.solvers.dynmsat import MSATLibLoader
             MSATLibLoader("optimathsat")
-            from pysmt.solvers.optimsat import OptiMSATSolver, \
+            from pysmt.optimization.optimsat import OptiMSATSolver, \
                 OptiMSATSUAOptimizer, OptiMSATIncrementalOptimizer
             self._all_optimizers['optimsat'] = OptiMSATSolver
             self._all_optimizers['optimsat_sua'] = OptiMSATSUAOptimizer

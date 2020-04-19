@@ -1359,9 +1359,3 @@ class MSatBoolUFRewriter(IdentityDagWalker):
         return res
 
 # EOC MSatBoolUFRewriter
-
-class MSatSUAOptimizer(MathSAT5Solver, SUAOptimizerMixin):
-    LOGICS = MathSAT5Solver.LOGICS
-
-class MSatIncrementalOptimizer(MathSAT5Solver, IncrementalOptimizerMixin):
-    LOGICS = MathSAT5Solver.LOGICS

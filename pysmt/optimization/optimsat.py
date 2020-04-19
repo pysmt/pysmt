@@ -82,7 +82,8 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
         elif otype.is_bv_type():
             return mgr.BVULE(x, y)
 
-    def optimize(self, cost_function, **kwargs):
+    def optimize(self, goal, **kwargs):
+        cost_function = goal.minimize_term()
         obj_fun = self.converter.convert(cost_function)
         msat_obj = self._msat_lib.msat_make_minimize(self.msat_env(), obj_fun, None, None, False)
         self._msat_lib.msat_assert_objective(self.msat_env(), msat_obj)
