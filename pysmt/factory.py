@@ -425,7 +425,7 @@ class Factory(object):
             pass
 
         try:
-            from pysmt.solvers.yices import YicesSUAOptimizer, YicesIncrementalOptimizer
+            from pysmt.optimization.yices import YicesSUAOptimizer, YicesIncrementalOptimizer
             self._all_optimizers['yices_sua'] = YicesSUAOptimizer
             self._all_optimizers['yices_incr'] = YicesIncrementalOptimizer
         except SolverAPINotFound:
