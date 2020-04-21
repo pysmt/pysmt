@@ -27,7 +27,7 @@ from pysmt.smtlib.parser import SmtLibParser
 class TestSmtLibParserOMT(TestCase):
 
     def test_parse_omt(self):
-        for file_id in range(1, 3):
+        for file_id in range(1, 4):
             # Parse
             script = self.parse(file_id)
             # Check cmds
@@ -49,7 +49,7 @@ class TestSmtLibParserOMT(TestCase):
         return script
 
 
-OMT_FILE_PATTERN = "pysmt/test/smtlib/omt/omt_test%d.smt2.bz2"
+OMT_FILE_PATTERN = "pysmt/test/smtlib/omt/omt_test%d.smt2"
 
 TESTS = {
     1: ["set-option",
@@ -94,8 +94,9 @@ TESTS = {
         "declare-fun",
         "assert",
         "minimize",
+        "minimize",
         "check-sat",
-        "get-objective",
+        "get-objectives",
         "exit"
     ]
 }
