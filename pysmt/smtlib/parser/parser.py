@@ -597,7 +597,25 @@ class SmtLibParser(object):
                 raise PysmtSyntaxError("Expected number in '_ bv' expression: "
                                        "'%s'" % op, tokens.pos_info)
             fun = mgr.BV(v, width)
-
+        elif op == "to_bv":
+            # this is necessary to the current syntax of _ to_bv, which open an empty stack
+            stack.pop()
+            try:
+                width = int(self.parse_atom(tokens, "expression"))
+            except ValueError:
+                raise PysmtSyntaxError("Expected number in '_ to_bv' expression: "
+                                       "'%s'" % op, tokens.pos_info)
+            self.consume_closing(tokens, "expression")
+            fnv = self.get_expression(tokens)
+            if fnv.is_int_constant():
+                v = fnv.constant_value()
+            else:
+                raise PysmtSyntaxError("Expected number in '_ to_bv' expression: "
+                    "'%s'" % op, tokens.pos_info)
+            if v >= 0:
+                fun = mgr.BV(v, width)
+            else:
+                fun = mgr.SBV(v, width)
         else:
             raise PysmtSyntaxError("Unexpected '_' expression '%s'" % op,
                                    tokens.pos_info)
@@ -810,12 +828,10 @@ class SmtLibParser(object):
         try:
             while True:
                 tk = tokens.consume_maybe()
-
                 if tk == "(":
                     while tk == "(":
                         stack.append([])
                         tk = tokens.consume()
-
                     if tk in self.interpreted:
                         fun = self.interpreted[tk]
                         fun(stack, tokens, tk)
@@ -1234,8 +1250,13 @@ class SmtLibParser(object):
             if curr_parse == ":lower" or curr_parse == ":upper":
                 exp = self.get_expression(tokens)
                 params.append((curr_parse, exp))
+            elif curr_parse == ":id":
+                id = self.parse_atom(tokens, "maximization/minimization")
+                params.append((curr_parse, id))
+            elif curr_parse == ":signed":
+                params.append((curr_parse,))
             else:
-                params.append(curr_parse)
+                raise NotImplementedError("The current option is not currently implemented %s" % curr_parse)
             curr = tokens.consume()
         tokens.add_extra_token(")")
         self.consume_closing(tokens, current)
