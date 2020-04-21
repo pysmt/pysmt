@@ -78,7 +78,7 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
             outstream.write(")")
 
         elif self.name == smtcmd.ASSERT_SOFT:
-            outstream.write("(%s" % self.name)
+            outstream.write("(%s " % self.name)
             printer.printer(self.args[0])
             outstream.write(" :id %s :weight " % self.args[1])
             outstream.write(self.args[2])
@@ -95,16 +95,15 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
         elif self.name in [smtcmd.MAXIMIZE, smtcmd.MINIMIZE]:
             outstream.write("(%s " % self.name)
             printer.printer(self.args[0])
-            print(self.args)
             for arg in self.args[1]:
                 if len(arg) == 1:
-                    print(arg)
-                    outstream.write(":%s" % arg[0])
+                    outstream.write(" %s " % arg[0])
                 elif len(arg) == 2:
-                    outstream.write(":%s " % arg[0])
+                    outstream.write(" %s " % arg[0])
                     printer.printer(arg[1])
                 elif len(arg) > 2:
                     raise NotImplementedError("The current optimization option is not implemented yet %s" % arg)
+            outstream.write(")")
 
         elif self.name in [smtcmd.CHECK_SAT, smtcmd.CHECK_ALLSAT, smtcmd.EXIT,
                            smtcmd.RESET_ASSERTIONS, smtcmd.GET_UNSAT_CORE,
