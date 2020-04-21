@@ -27,7 +27,7 @@ import pysmt
 
 class TestImports(TestCase):
 
-    EXCLUSION_LIST = ["pysmt.test", "pysmt.solvers", "pysmt.cmd"]
+    EXCLUSION_LIST = ["pysmt.test", "pysmt.solvers", "pysmt.optimization", "pysmt.cmd"]
 
     def test_imports(self):
         stack = [(pysmt.__name__, pysmt.__path__)]

@@ -652,9 +652,3 @@ class YicesConverter(Converter, DagWalker):
             yicespy.yices_set_term_name(decl, var.symbol_name())
             self.symbol_to_decl[var] = decl
             self.decl_to_symbol[decl] = var
-
-class YicesSUAOptimizer(YicesSolver, SUAOptimizerMixin):
-    LOGICS = YicesSolver.LOGICS
-
-class YicesIncrementalOptimizer(YicesSolver, IncrementalOptimizerMixin):
-    LOGICS = YicesSolver.LOGICS

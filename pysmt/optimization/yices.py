@@ -1,4 +1,3 @@
-"""
 from pysmt.solvers.yices import YicesSolver
 from pysmt.optimization.optimizer import SUAOptimizerMixin, IncrementalOptimizerMixin
 
@@ -7,4 +6,3 @@ class YicesSUAOptimizer(YicesSolver, SUAOptimizerMixin):
 
 class YicesIncrementalOptimizer(YicesSolver, IncrementalOptimizerMixin):
     LOGICS = YicesSolver.LOGICS
-"""
