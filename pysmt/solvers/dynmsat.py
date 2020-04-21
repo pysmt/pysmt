@@ -37,7 +37,7 @@ def MSATCreateEnv(name, msat_config):
         },
         "optimathsat": {
             "class" : "OptiMSATEnv",
-            "lib"   : "pysmt.solvers.optimsat"
+            "lib"   : "pysmt.optimization.optimsat"
         }
     }
     if name not in map.keys():
@@ -55,7 +55,7 @@ def MSATCreateConverter(name, environment, msat_env):
         },
         "optimathsat": {
             "class" : "OptiMSATConverter",
-            "lib"   : "pysmt.solvers.optimsat"
+            "lib"   : "pysmt.optimization.optimsat"
         }
     }
     if name not in map.keys():
