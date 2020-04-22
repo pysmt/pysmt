@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 from pysmt.solvers.z3 import Z3Solver, Z3Model
 
 from pysmt.exceptions import PysmtInfinityError, \
@@ -19,6 +21,7 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
     def __init__(self, environment, logic, **options):
         Z3Solver.__init__(self, environment=environment,
                           logic=logic, **options)
+        print(z3.__file__)
         self.z3 = z3.Optimize()
 
     def optimize(self, cost_function, **kwargs):
