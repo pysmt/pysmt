@@ -40,6 +40,48 @@ class TestSmtLibParserOMT(TestCase):
             script.serialize(buf)
             self.assertTrue(True)
 
+    def test_omt_parsing_exception(self):
+        parser = SmtLibParser()
+        with self.assertRaises(NotImplementedError):
+            _ = parser.get_script(StringIO("(assert-soft false :weight (+ 3 (- 4 2)) :id goal :id goal)"))
+        with self.assertRaises(NotImplementedError):
+            _ = parser.get_script(StringIO("(assert-soft false :weight (+ 3 (- 4 2)) :id goal :weight z )"))
+        with self.assertRaises(NotImplementedError):
+            _ = parser.get_script(StringIO("(assert-soft false :weight (+ 3 (- 4 2)) :id goal :not-implemented 12)"))
+        with self.assertRaises(NotImplementedError):
+            _ = parser.get_script(StringIO("(assert-soft false :not-implemented 12)"))
+        with self.assertRaises(NotImplementedError):
+            _ = parser.get_script(StringIO("(maximize z :upper 50 :lower 50 :not-implemented :id objective-1)"))
+
+    def test_command_option_value_correctness(self):
+        parser = SmtLibParser()
+        script = parser.get_script(StringIO("(assert-soft false :weight 2 :id goal)"))
+        cmd = next(iter(script))
+        assert cmd.name == "assert-soft"
+        assert len(cmd.args) == 2
+        script = parser.get_script(StringIO("(maximize z :upper 50 :lower 10)"))
+        cmd = next(iter(script))
+        assert cmd.name == "maximize"
+        assert len(cmd.args) == 2
+        script = parser.get_script(StringIO("(maximize z :upper 50 :lower 10 :lower 10)"))
+        cmd = next(iter(script))
+        assert cmd.name == "maximize"
+        assert len(cmd.args) == 2
+        script = parser.get_script(StringIO("(check-allsat ( a b c ))"))
+        cmd = next(iter(script))
+        assert cmd.name == "check-allsat"
+        assert len(cmd.args) == 3
+        script = parser.get_script(StringIO("(load-objective-model 1)"))
+        cmd = next(iter(script))
+        assert cmd.name == "load-objective-model"
+        assert len(cmd.args) == 1
+        script = parser.get_script(StringIO("(get-objectives)"))
+        cmd = next(iter(script))
+        assert cmd.name == "get-objectives"
+        assert len(cmd.args) == 0
+
+
+
     def parse(self, file_id):
         fname = OMT_FILE_PATTERN % file_id
         reset_env()
@@ -49,7 +91,7 @@ class TestSmtLibParserOMT(TestCase):
         return script
 
 
-OMT_FILE_PATTERN = "pysmt/test/smtlib/omt/omt_test%d.smt2.bz2"
+OMT_FILE_PATTERN = "pysmt/test/smtlib/omt/omt_test%d.smt2"
 
 TESTS = {
     1: ["set-option",
@@ -80,6 +122,8 @@ TESTS = {
         "declare-fun",
         "assert",
         "minimize",
+        "maximize",
+        "maximize",
         "maximize",
         "maximize",
         "check-sat",
