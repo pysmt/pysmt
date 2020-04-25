@@ -91,7 +91,7 @@ class TestSmtLibParserOMT(TestCase):
         return script
 
 
-OMT_FILE_PATTERN = "pysmt/test/smtlib/omt/omt_test%d.smt2.bz2"
+OMT_FILE_PATTERN = "pysmt/test/smtlib/omt/omt_test%d.smt2"
 
 TESTS = {
     1: ["set-option",
