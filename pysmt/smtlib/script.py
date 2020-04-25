@@ -80,8 +80,13 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
         elif self.name == smtcmd.ASSERT_SOFT:
             outstream.write("(%s " % self.name)
             printer.printer(self.args[0])
-            outstream.write(" :id %s :weight " % self.args[1])
-            outstream.write(self.args[2])
+            for arg in self.args[1]:
+                option_name, value = arg
+                if option_name == ":weight":
+                    outstream.write(" %s " % option_name)
+                    printer.printer(value)
+                else:
+                    outstream.write(" %s %s" % (option_name, value))
             outstream.write(")")
 
 
@@ -97,7 +102,7 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
             printer.printer(self.args[0])
             for arg in self.args[1]:
                 if len(arg) == 1:
-                    outstream.write(" %s " % arg[0])
+                    outstream.write(" %s" % arg[0])
                 elif len(arg) == 2:
                     outstream.write(" %s " % arg[0])
                     printer.printer(arg[1])
@@ -105,7 +110,18 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
                     raise NotImplementedError("The current optimization option is not implemented yet %s" % arg)
             outstream.write(")")
 
-        elif self.name in [smtcmd.CHECK_SAT, smtcmd.CHECK_ALLSAT, smtcmd.EXIT,
+        elif self.name == smtcmd.CHECK_ALLSAT:
+            outstream.write("(%s " % self.name)
+            if self.args:
+                outstream.write("(")
+                for expr in self.args[:-1]:
+                    printer.printer(expr)
+                    outstream.write(" ")
+                printer.printer(self.args[-1])
+                outstream.write(")")
+            outstream.write(")")
+
+        elif self.name in [smtcmd.CHECK_SAT, smtcmd.EXIT,
                            smtcmd.RESET_ASSERTIONS, smtcmd.GET_UNSAT_CORE,
                            smtcmd.GET_ASSIGNMENT, smtcmd.GET_MODEL, smtcmd.GET_OBJECTIVES]:
             outstream.write("(%s)" % self.name)
