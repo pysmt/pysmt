@@ -63,7 +63,7 @@ from pysmt.exceptions import (PysmtValueError, PysmtModeError,
 FNodeContent = collections.namedtuple("FNodeContent",
                                       ["node_type", "args", "payload"])
 
-class   FNode(object):
+class FNode(object):
     r"""FNode represent the basic structure for representing a formula.
 
     FNodes are built using the FormulaManager, and should not be
