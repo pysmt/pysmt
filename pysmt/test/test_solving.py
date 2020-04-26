@@ -240,7 +240,7 @@ class TestBasic(TestCase):
             self.assertEqual(satisfiability, s, f)
 
     def do_model(self, solver_name):
-        def assert_model(f, subs):
+        def assert_model(f, subs, solver):
             simp = f.substitute(subs).simplify()
             if not simp.is_true() and get_env().enable_div_by_0:
                 free_vars = simp.get_free_variables()
@@ -262,7 +262,7 @@ class TestBasic(TestCase):
 
                 subs = {}
                 for d in div_0:
-                    subs[d] = model.get_value(d)
+                    subs[d] = solver.get_value(d)
                     simp = simp.substitute(subs).simplify()
 
             self.assertEqual(simp, TRUE(), "%s -- %s :> %s" % (f, subs, simp))
@@ -282,7 +282,7 @@ class TestBasic(TestCase):
                         for d in f.get_free_variables():
                             m = s.get_value(d)
                             subs[d] = m
-                        assert_model(f, subs)
+                        assert_model(f, subs, s)
 
                         # Ask the eager model
                         subs = {}
@@ -290,7 +290,7 @@ class TestBasic(TestCase):
                         for d in f.get_free_variables():
                             m = model.get_value(d)
                             subs[d] = m
-                        assert_model(f, subs)
+                        assert_model(f, subs, s)
 
                 except NoSolverAvailableError:
                     pass
