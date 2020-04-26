@@ -1,7 +1,7 @@
 Change Log
 ==========
 
-0.9.0: 2020-04-1X -- PySMT as module
+0.9.0: 2020-04-26 -- PySMT as module
 ------------------------------------
 
 General:
@@ -28,8 +28,6 @@ Solvers:
 * Boolector: Upgrade to 3.2.1
 
 * MathSAT: Upgrade to 5.6.1
-
-* Yices: Upgrade to 2.6.2
 
 Bugfix:
 
