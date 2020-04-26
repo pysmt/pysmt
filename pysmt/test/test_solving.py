@@ -240,6 +240,7 @@ class TestBasic(TestCase):
             self.assertEqual(satisfiability, s, f)
 
     def do_model(self, solver_name):
+
         for (f, _, satisfiability, logic) in get_example_formulae():
             if satisfiability and not logic.theory.uninterpreted and logic.quantifier_free:
                 try:
@@ -249,24 +250,9 @@ class TestBasic(TestCase):
                         check = s.solve()
                         self.assertTrue(check)
 
-                        # Ask single values to the solver
-                        subs = {}
-                        for d in f.get_free_variables():
-                            m = s.get_value(d)
-                            subs[d] = m
-
-                        simp = f.substitute(subs).simplify()
-                        self.assertEqual(simp, TRUE(), "%s -- %s :> %s" % (f, subs, simp))
-
-                        # Ask the eager model
-                        subs = {}
                         model = s.get_model()
-                        for d in f.get_free_variables():
-                            m = model.get_value(d)
-                            subs[d] = m
+                        self.assertTrue(model.satisfies(f, s))
 
-                        simp = f.substitute(subs).simplify()
-                        self.assertEqual(simp, TRUE())
                 except NoSolverAvailableError:
                     pass
 
@@ -628,6 +614,7 @@ class TestBasic(TestCase):
                 solver.add_assertion(f)
                 res = solver.solve()
                 self.assertTrue(res == sat)
+
 
 if __name__ == '__main__':
     main()

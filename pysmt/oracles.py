@@ -315,6 +315,13 @@ class TheoryOracle(walkers.DagWalker):
         if len(left.get_free_variables()) != 0 and \
            len(right.get_free_variables()) != 0:
             theory_out = theory_out.set_linear(False)
+        elif formula.arg(1).is_zero():
+            # DivBy0 is non-linear
+            theory_out = theory_out.set_linear(False)
+        else:
+            theory_out = theory_out.combine(args[1])
+        return theory_out
+
         # This is  not in DL anymore
         theory_out = theory_out.set_difference_logic(False)
         return theory_out
