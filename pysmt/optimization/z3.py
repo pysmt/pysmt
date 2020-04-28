@@ -22,7 +22,7 @@ from pysmt.solvers.z3 import Z3Solver, Z3Model
 
 from pysmt.exceptions import PysmtInfinityError, \
     PysmtUnboundedOptimizationError, PysmtInfinitesimalError, \
-    SolverAPINotFound
+    SolverAPINotFound, GoalNotSupportedError
 
 from pysmt.optimization.optimizer import Optimizer, \
     SUAOptimizerMixin, IncrementalOptimizerMixin
@@ -41,21 +41,32 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
                           logic=logic, **options)
         print(z3.__file__)
         self.z3 = z3.Optimize()
-
-    def optimize(self, cost_function, **kwargs):
+    def optimize(self, goal, **kwargs):
+        cost_function = goal.term()
         obj = self.converter.convert(cost_function)
-        h = self.z3.minimize(obj)
-        res = self.z3.check()
-        if res == z3.sat:
-            opt_value = self.z3.lower(h)
-            try:
-                self.converter.back(opt_value)
-                model = Z3Model(self.environment, self.z3.model())
-                return model, model.get_value(cost_function)
-            except PysmtInfinityError:
-                raise PysmtUnboundedOptimizationError("The optimal value is unbounded")
-            except PysmtInfinitesimalError:
-                raise PysmtUnboundedOptimizationError("The optimal value is infinitesimal")
+
+        h = None
+        if goal.is_minimization_goal():
+            h = self.z3.minimize(obj)
+        elif goal.is_maximization_goal():
+            h = self.z3.maximize(obj)
+        else:
+            raise GoalNotSupportedError("z3", goal.__class__)
+
+        if h is not None:
+            res = self.z3.check()
+            if res == z3.sat:
+                opt_value = self.z3.lower(h)
+                try:
+                    self.converter.back(opt_value)
+                    model = Z3Model(self.environment, self.z3.model())
+                    return model, model.get_value(cost_function)
+                except PysmtInfinityError:
+                    raise PysmtUnboundedOptimizationError("The optimal value is unbounded")
+                except PysmtInfinitesimalError:
+                    raise PysmtUnboundedOptimizationError("The optimal value is infinitesimal")
+            else:
+                return None
         else:
             return None
 

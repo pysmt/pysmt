@@ -150,11 +150,11 @@ class ExternalOptimizerMixin(Optimizer):
 
         `step_size` the minimum reolution for finding a solution. The
         optimum will be found in the proximity of `step_size`
-
         """
+
         last_model = None
 
-        cast, lt, le = self._comparation_functions(goal.minimize_term())
+        cast, lt, le = self._comparation_functions(goal.term())
 
         lb, ub = None, None
         client_data = self._setup()
@@ -167,7 +167,7 @@ class ExternalOptimizerMixin(Optimizer):
             else:
                 # Check if there is a model </<= bound
                 check_result = self._optimization_check_progress(client_data,
-                                                                 goal.minimize_term(),
+                                                                 goal.term(),
                                                                  cast(bound),
                                                                  lt, le, strategy)
 
@@ -175,7 +175,7 @@ class ExternalOptimizerMixin(Optimizer):
                 last_model = self.get_model()
                 if feasible_solution_callback:
                     feasible_solution_callback(last_model)
-                ub = self.get_value(goal.minimize_term()).constant_value()
+                ub = self.get_value(goal.term()).constant_value()
             else:
                 if strategy == 'ub':
                     lb = ub
