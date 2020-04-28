@@ -18,8 +18,17 @@
 
 from pysmt.shortcuts import Times, Int
 
-class Goal:
-    pass
+class Goal(object):
+
+    def is_maximization_goal(self):
+        return isinstance(self, MaximizationGoal)
+
+    def is_minimization_goal(self):
+        return isinstance(self, MinimizationGoal)
+
+    def is_maxSMT_goal(self):
+        return isinstance(self, MaxSMT)
+
 
 class MaximizationGoal(Goal):
     """
@@ -34,8 +43,6 @@ class MaximizationGoal(Goal):
     def term(self):
         return self.formula
 
-    def minimize_term(self):
-        return Times(Int(-1), self.formula)
 
 
 class MinimizationGoal(Goal):
@@ -44,13 +51,11 @@ class MinimizationGoal(Goal):
     The object can be passed as an argument to the optimize method of any Optimizer
     Attention: some Optimizer may not support this goal
     """
+
     def __init__(self, formula):
         self.formula = formula
 
     def term(self):
-        return self.formula
-
-    def minimize_term(self):
         return self.formula
 
 
