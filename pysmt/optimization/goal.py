@@ -19,7 +19,30 @@
 from pysmt.shortcuts import Times, Int
 
 class Goal(object):
-    #TODO: documentation
+    """
+    This class defines goals for solvers.
+    Attention: this class is not instantiable
+
+    Examples:
+
+        example of minimization:
+        ```
+        with Optimizer(name = "z3") as opt:
+            min = MinimizationGoal(x)
+            formula = GE(y, Int(5))
+            opt.add_assertion(formula)
+            model, cost = opt.optimize(min)
+        ```
+
+        example of maximization:
+        ```
+        with Optimizer(name = "z3") as opt:
+            max = MaximizationGoal(x)
+            formula = LE(y, Int(5))
+            opt.add_assertion(formula)
+            model, cost = opt.optimize(max)
+        ```
+    """
 
     def is_maximization_goal(self):
         return isinstance(self, MaximizationGoal)
@@ -31,6 +54,7 @@ class Goal(object):
         return isinstance(self, MaxSMT)
 
     def is_simple_goal(self):
+        """This method groups together the goals of minimization and maximization"""
         return False
 
 
@@ -42,6 +66,10 @@ class MaximizationGoal(Goal):
     """
 
     def __init__(self, formula):
+        """
+        :param formula: The target formula
+        :type  formula: FNode
+        """
         self.formula = formula
 
     def term(self):
@@ -60,6 +88,10 @@ class MinimizationGoal(Goal):
     """
 
     def __init__(self, formula):
+        """
+        :param formula: The target formula
+        :type  formula: FNode
+        """
         self.formula = formula
 
     def term(self):
