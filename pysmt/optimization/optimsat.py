@@ -19,7 +19,8 @@
 from pysmt.logics import LRA, LIA
 
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
-                              PysmtUnboundedOptimizationError)
+                              PysmtUnboundedOptimizationError,
+                              GoalNotSupportedError)
 from pysmt.optimization.optimizer import SUAOptimizerMixin, IncrementalOptimizerMixin
 from pysmt.optimization.optimizer import Optimizer
 
@@ -83,9 +84,18 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
             return mgr.BVULE(x, y)
 
     def optimize(self, goal, **kwargs):
-        cost_function = goal.minimize_term()
+        cost_function = goal.term()
         obj_fun = self.converter.convert(cost_function)
-        msat_obj = self._msat_lib.msat_make_minimize(self.msat_env(), obj_fun, None, None, False)
+
+        if goal.is_minimization_goal():
+            make_fun = self._msat_lib.msat_make_minimize
+        elif goal.is_maximization_goal():
+            make_fun = self._msat_lib.msat_make_maximize
+        else:
+            raise GoalNotSupportedError("optimathsat", goal)
+
+        msat_obj = make_fun(self.msat_env(), obj_fun, None, None, False)
+
         self._msat_lib.msat_assert_objective(self.msat_env(), msat_obj)
         self.solve()
         optres = self._msat_lib.msat_objective_result(self.msat_env(), msat_obj)

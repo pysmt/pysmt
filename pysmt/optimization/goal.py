@@ -19,6 +19,7 @@
 from pysmt.shortcuts import Times, Int
 
 class Goal(object):
+    #TODO: documentation
 
     def is_maximization_goal(self):
         return isinstance(self, MaximizationGoal)
@@ -26,8 +27,11 @@ class Goal(object):
     def is_minimization_goal(self):
         return isinstance(self, MinimizationGoal)
 
-    def is_maxSMT_goal(self):
+    def is_maxsmt_goal(self):
         return isinstance(self, MaxSMT)
+
+    def is_simple_goal(self):
+        return False
 
 
 class MaximizationGoal(Goal):
@@ -43,6 +47,9 @@ class MaximizationGoal(Goal):
     def term(self):
         return self.formula
 
+    def is_simple_goal(self):
+        return True
+
 
 
 class MinimizationGoal(Goal):
@@ -57,6 +64,9 @@ class MinimizationGoal(Goal):
 
     def term(self):
         return self.formula
+
+    def is_simple_goal(self):
+        return True
 
 
 class MaxSMT(Goal):

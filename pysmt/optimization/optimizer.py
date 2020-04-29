@@ -17,7 +17,7 @@
 #
 
 from pysmt.solvers.solver import Solver
-from pysmt.exceptions import PysmtValueError
+from pysmt.exceptions import PysmtValueError, GoalNotSupportedError
 
 class Optimizer(Solver):
     """
@@ -123,11 +123,11 @@ class ExternalOptimizerMixin(Optimizer):
             u = lb + abs(lb) + 1
         return (l + u + 1) // 2
 
-    def _bound(self, lb, ub, strategy):
+    def _bound(self, lb, ub, strategy, goal):
         if strategy == 'binary':
-            return self._binary_bound(lb, ub)
+            return self._binary_bound(lb, ub) #ok
         if strategy == 'ub':
-            return ub
+            return ub if goal.is_minimization_goal() else lb
         else:
             raise PysmtValueError("Unknown optimization strategy '%s'" % strategy)
 
@@ -151,6 +151,38 @@ class ExternalOptimizerMixin(Optimizer):
         `step_size` the minimum reolution for finding a solution. The
         optimum will be found in the proximity of `step_size`
         """
+        rt = None, None
+        if goal.is_simple_goal():
+            rt = self._simple_optimize(goal, strategy,
+                             feasible_solution_callback,
+                             step_size, **kwargs)
+        else:
+            raise GoalNotSupportedError("ExternalOptimizerMixin", goal)
+        return rt
+
+
+
+    def _simple_optimize(self, goal, strategy,
+                      feasible_solution_callback,
+                      step_size, **kwargs):
+        rt = None
+        if goal.is_maximization_goal():
+            rt = self._optimize_max(goal, strategy,
+                             feasible_solution_callback,
+                             step_size, **kwargs)
+        elif goal.is_minimization_goal():
+            rt = self._optimize_min(goal, strategy,
+                             feasible_solution_callback,
+                             step_size, **kwargs)
+        else:
+            raise GoalNotSupportedError("ExternalOptimizerMixin", goal)
+        return rt
+
+
+
+    def _optimize_max(self, goal, strategy,
+                 feasible_solution_callback,
+                 step_size, **kwargs):
 
         last_model = None
 
@@ -158,9 +190,54 @@ class ExternalOptimizerMixin(Optimizer):
 
         lb, ub = None, None
         client_data = self._setup()
-        while lb is None or ub is None or (ub - lb) > step_size:
-            bound = self._bound(lb, ub, strategy)
 
+        i = 0
+        while lb is None or ub is None or (ub - lb) > step_size:
+            bound = self._bound(lb, ub, strategy, goal)
+
+            if bound is None:
+                # Just check satisfiability
+                check_result = self.solve()
+            else:
+                # Check if there is a model >/>= bound
+                check_result = self._optimization_check_progress(client_data,
+                                                                 cast(bound),
+                                                                 goal.term(),
+                                                                 lt, le, strategy)
+
+            if check_result:
+                last_model = self.get_model()
+                if feasible_solution_callback:
+                    feasible_solution_callback(last_model)
+                lb = self.get_value(goal.term()).constant_value()
+            else:
+                if strategy == 'ub':
+                    ub = lb
+                elif strategy == 'binary':
+                    if lb is None and ub is None:
+                        self._cleanup(client_data)
+                        return None
+                    else:
+                        ub = bound
+                else:
+                    raise PysmtValueError("Unknown optimization strategy '%s'" % strategy)
+        self._cleanup(client_data)
+        return last_model, cast(lb)
+
+
+    def _optimize_min(self, goal, strategy,
+                 feasible_solution_callback,
+                 step_size, **kwargs):
+
+        last_model = None
+
+        cast, lt, le = self._comparation_functions(goal.term())
+
+        lb, ub = None, None
+        client_data = self._setup()
+        i = 0
+        while lb is None or ub is None or (ub - lb) > step_size:
+            bound = self._bound(lb, ub, strategy, goal)
             if bound is None:
                 # Just check satisfiability
                 check_result = self.solve()
