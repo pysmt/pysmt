@@ -39,7 +39,7 @@ class TestOptimization(TestCase):
                 self.assertEqual(model[x], Int(10))
                 self.assertEqual(cost, Int(10))
 
-    """
+
     @skipIfNoOptimizerForLogic(QF_LIA)
     def test_maximization_basic(self):
         x = Symbol("x", INT)
@@ -50,7 +50,6 @@ class TestOptimization(TestCase):
                 opt.add_assertion(formula)
                 model, cost = opt.optimize(max)
                 self.assertEqual(model[x], Int(10))
-    """
 
     @skipIfNoOptimizerForLogic(QF_LIA)
     def test_unbounded(self):
