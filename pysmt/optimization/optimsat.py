@@ -84,17 +84,32 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
             return mgr.BVULE(x, y)
 
     def optimize(self, goal, **kwargs):
-        cost_function = goal.term()
-        obj_fun = self.converter.convert(cost_function)
 
-        if goal.is_minimization_goal():
-            make_fun = self._msat_lib.msat_make_minimize
-        elif goal.is_maximization_goal():
-            make_fun = self._msat_lib.msat_make_maximize
+        if goal.is_minimization_goal() or goal.is_maximization_goal():
+            if goal.is_minimization_goal():
+                make_fun = self._msat_lib.msat_make_minimize
+            else:
+                make_fun = self._msat_lib.msat_make_maximize
+
+            cost_function = goal.term()
+            obj_fun = self.converter.convert(cost_function)
+            msat_obj = make_fun(self.msat_env(), obj_fun, None, None, False)
+
+        elif goal.is_minmax_goal() or goal.is_maxmin_goal():
+            if goal.is_minmax_goal():
+                make_fun = self._msat_lib.msat_make_minmax
+            else:
+                make_fun = self._msat_lib.msat_make_maxmin
+
+            cost_function = goal.terms()
+            obj_fun = []
+            for f in cost_function:
+                obj_fun.append(self.converter.convert(f))
+            msat_obj = make_fun(self.msat_env(), obj_fun, None, None, False)
         else:
             raise GoalNotSupportedError("optimathsat", goal)
 
-        msat_obj = make_fun(self.msat_env(), obj_fun, None, None, False)
+
 
         self._msat_lib.msat_assert_objective(self.msat_env(), msat_obj)
         self.solve()
@@ -121,7 +136,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
                 raise ValueError()
 
             model = self.get_model()
-            return model, model.get_value(cost_function)
+            return model, optres
 
     def get_model(self):
         return OptiMSATModel(self.environment, self.msat_env)

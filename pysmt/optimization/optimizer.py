@@ -18,6 +18,8 @@
 
 from pysmt.solvers.solver import Solver
 from pysmt.exceptions import PysmtValueError, GoalNotSupportedError
+from pysmt.optimization.goal import MinimizationGoal, MaximizationGoal
+from pysmt.shortcuts import Symbol, INT, REAL, BVType
 
 class Optimizer(Solver):
     """
@@ -86,6 +88,55 @@ class Optimizer(Solver):
         else:
             raise PysmtValueError("Invalid optimization function type: %s" % otype)
 
+    def _get_symbol_type(self, objective_formula):
+        otype = self.environment.stc.get_type(objective_formula)
+        if otype.is_int_type():
+            return INT
+        elif otype.is_real_type():
+            return REAL
+        elif otype.is_bv_type():
+            return BVType(otype.width)
+        else:
+            raise PysmtValueError("Invalid optimization function type: %s" % otype)
+
+    def _get_or(self, objective_formula):
+        otype = self.environment.stc.get_type(objective_formula)
+        mgr = self.environment.formula_manager
+        if otype.is_int_type():
+            return mgr.Or
+        elif otype.is_real_type():
+            return mgr.Or
+        elif otype.is_bv_type():
+            return mgr.BVOr
+        else:
+            raise PysmtValueError("Invalid optimization function type: %s" % otype)
+
+
+    def _get_le(self, objective_formula):
+        otype = self.environment.stc.get_type(objective_formula)
+        mgr = self.environment.formula_manager
+        if otype.is_int_type():
+            return mgr.LE
+        elif otype.is_real_type():
+            return mgr.LE
+        elif otype.is_bv_type():
+            return mgr.BVULE
+        else:
+            raise PysmtValueError("Invalid optimization function type: %s" % otype)
+
+
+    def _get_lt(self, objective_formula):
+        otype = self.environment.stc.get_type(objective_formula)
+        mgr = self.environment.formula_manager
+        if otype.is_int_type():
+            return mgr.LT
+        elif otype.is_real_type():
+            return mgr.LT
+        elif otype.is_bv_type():
+            return mgr.BVULT
+        else:
+            raise PysmtValueError("Invalid optimization function type: %s" % otype)
+
 
 class ExternalOptimizerMixin(Optimizer):
     """An optimizer that uses an SMT-Solver externally"""
@@ -125,20 +176,20 @@ class ExternalOptimizerMixin(Optimizer):
 
     def _bound(self, lb, ub, strategy, goal):
         if strategy == 'binary':
-            return self._binary_bound(lb, ub) #ok
-        if strategy == 'ub':
+            return self._binary_bound(lb, ub)
+        if strategy == 'linear':
             return ub if goal.is_minimization_goal() else lb
         else:
             raise PysmtValueError("Unknown optimization strategy '%s'" % strategy)
 
-    def optimize(self, goal, strategy='ub',
+    def optimize(self, goal, strategy='linear',
                  feasible_solution_callback=None,
                  step_size=1, **kwargs):
         """This function performs the optimization as described in
         `Optimizer.optimize()`. However. two additional parameters are
         available:
 
-        `strategy` can be either 'binary' or 'ub'. 'binary' performs a
+        `strategy` can be either 'binary' or 'linear'. 'binary' performs a
         binary search to find the optimum, while 'ub' searches among
         the satisfiable models.
 
@@ -174,10 +225,85 @@ class ExternalOptimizerMixin(Optimizer):
             rt = self._optimize_min(goal, strategy,
                              feasible_solution_callback,
                              step_size, **kwargs)
+        elif goal.is_minmax_goal():
+            rt = self._optimize_minmax(goal, strategy,
+                                    feasible_solution_callback,
+                                    step_size, **kwargs)
+        elif goal.is_maxmin_goal():
+            rt = self._optimize_maxmin(goal, strategy,
+                                    feasible_solution_callback,
+                                    step_size, **kwargs)
         else:
             raise GoalNotSupportedError("ExternalOptimizerMixin", goal)
         return rt
 
+    def _optimize_minmax(self, goal, strategy,
+                 feasible_solution_callback,
+                 step_size, **kwargs):
+
+        part_res = []
+
+        for term in goal.terms():
+            self.push()
+            part_res.append(self._optimize_min(MinimizationGoal(term),
+                                          strategy, feasible_solution_callback,
+                                          step_size, **kwargs)[1]
+                            )
+            self.pop()
+        rt = None
+        self.push()
+        t = goal.terms()[0]
+        le = self._get_le(t)
+        _or = self._get_or(t)
+
+        symbol_type = self._get_symbol_type(t)
+
+        _private_symbol = Symbol("_private_symbol", symbol_type)
+        f = []
+        for res in part_res:
+            f.append(le(_private_symbol, res))
+
+        self.add_assertion(_or(f))
+        rt = self._optimize_max(MaximizationGoal(_private_symbol),
+                                strategy,feasible_solution_callback,
+                                step_size,**kwargs)[1]
+        self.pop()
+
+        return None, rt
+
+    def _optimize_maxmin(self, goal, strategy,
+                 feasible_solution_callback,
+                 step_size, **kwargs):
+
+        part_res = []
+
+        for term in goal.terms():
+            self.push()
+            part_res.append(self._optimize_min(MaximizationGoal(term),
+                                          strategy, feasible_solution_callback,
+                                          step_size, **kwargs)[1]
+                            )
+            self.pop()
+        rt = None
+        self.push()
+        t = goal.terms()[0]
+        le = self._get_le(t)
+        _or = self._get_or(t)
+
+        symbol_type = self._get_symbol_type(t)
+
+        _private_symbol = Symbol("_private_symbol", symbol_type)
+        f = []
+        for res in part_res:
+            f.append(le(res, _private_symbol))
+
+        self.add_assertion(_or(f))
+        rt = self._optimize_max(MinimizationGoal(_private_symbol),
+                                strategy,feasible_solution_callback,
+                                step_size,**kwargs)[1]
+        self.pop()
+
+        return None, rt
 
 
     def _optimize_max(self, goal, strategy,
@@ -192,9 +318,9 @@ class ExternalOptimizerMixin(Optimizer):
         client_data = self._setup()
 
         i = 0
+        improvement_rate = None
         while lb is None or ub is None or (ub - lb) > step_size:
             bound = self._bound(lb, ub, strategy, goal)
-
             if bound is None:
                 # Just check satisfiability
                 check_result = self.solve()
@@ -205,13 +331,17 @@ class ExternalOptimizerMixin(Optimizer):
                                                                  goal.term(),
                                                                  lt, le, strategy)
 
+            if lb is not None and improvement_rate is None:
+                improvement_rate = 0
+
+
             if check_result:
                 last_model = self.get_model()
                 if feasible_solution_callback:
                     feasible_solution_callback(last_model)
                 lb = self.get_value(goal.term()).constant_value()
             else:
-                if strategy == 'ub':
+                if strategy == 'linear':
                     ub = lb
                 elif strategy == 'binary':
                     if lb is None and ub is None:
@@ -254,7 +384,7 @@ class ExternalOptimizerMixin(Optimizer):
                     feasible_solution_callback(last_model)
                 ub = self.get_value(goal.term()).constant_value()
             else:
-                if strategy == 'ub':
+                if strategy == 'linear':
                     lb = ub
                 elif strategy == 'binary':
                     if lb is None and ub is None:
@@ -366,7 +496,7 @@ class IncrementalOptimizerMixin(ExternalOptimizerMixin):
 
     def _optimization_check_progress(self, client_data, cost_function,
                                      cost_so_far, lt, le, strategy):
-        if strategy == 'ub':
+        if strategy == 'linear':
             self.add_assertion(lt(cost_function, cost_so_far))
             return self.solve()
         elif strategy == 'binary':

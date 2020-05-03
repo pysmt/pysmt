@@ -21,7 +21,8 @@ from pysmt.test import main
 from pysmt.shortcuts import Optimizer, GE, Int, Symbol, INT, LE, GT, REAL, Real
 from pysmt.shortcuts import And, Plus, Minus, get_env
 from pysmt.logics import QF_LIA, QF_LRA
-from pysmt.optimization.goal import MaximizationGoal, MinimizationGoal
+from pysmt.optimization.goal import MaximizationGoal, MinimizationGoal, \
+    MinMaxGoal, MaxMinGoal
 
 from pysmt.exceptions import PysmtUnboundedOptimizationError
 
