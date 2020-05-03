@@ -28,6 +28,7 @@ class Goal(object):
         example of minimization:
         ```
         with Optimizer(name = "z3") as opt:
+            x = Symbol("x", INT)
             min = MinimizationGoal(x)
             formula = GE(y, Int(5))
             opt.add_assertion(formula)
@@ -50,8 +51,14 @@ class Goal(object):
     def is_minimization_goal(self):
         return isinstance(self, MinimizationGoal)
 
+    def is_minmax_goal(self):
+        return isinstance(self, MinMaxGoal)
+
+    def is_maxmin_goal(self):
+        return isinstance(self, MaxMinGoal)
+
     def is_maxsmt_goal(self):
-        return isinstance(self, MaxSMT)
+        return isinstance(self, MaxSMTGoal)
 
     def is_simple_goal(self):
         """This method groups together the goals of minimization and maximization"""
@@ -101,7 +108,36 @@ class MinimizationGoal(Goal):
         return True
 
 
-class MaxSMT(Goal):
+class MinMaxGoal(Goal):
+
+    def __init__(self, terms):
+        self.term = terms
+
+    def add_terms(self, *terms):
+        self.term.extend(list(terms))
+
+    def terms(self):
+        return self.term
+
+    def is_simple_goal(self):
+        return True
+
+class MaxMinGoal(Goal):
+
+    def __init__(self, terms):
+        self.term = terms
+
+    def add_terms(self, *terms):
+        self.term.extend(list(terms))
+
+    def terms(self):
+        return self.term
+
+    def is_simple_goal(self):
+        return True
+
+
+class MaxSMTGoal(Goal):
     """
     MaxSMT goal common to all solvers.
     Attention: some solvers may not support this goal
