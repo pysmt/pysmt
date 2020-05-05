@@ -49,7 +49,7 @@ from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               PysmtInfinityError, PysmtInfinitesimalError,
                               PysmtUnboundedOptimizationError)
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
-from pysmt.logics import LRA, LIA, QF_UFLRA, PYSMT_LOGICS
+from pysmt.logics import LRA, LIA, QF_UFLRA, QF_UFLIA, PYSMT_LOGICS
 from pysmt.oracles import get_logic
 from pysmt.constants import Fraction, Numeral, is_pysmt_integer
 
