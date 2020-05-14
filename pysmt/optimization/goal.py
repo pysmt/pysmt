@@ -17,6 +17,7 @@
 #
 
 from pysmt.shortcuts import Times, Int
+from pysmt.environment import get_env
 
 class Goal(object):
     """
@@ -60,9 +61,6 @@ class Goal(object):
     def is_maxsmt_goal(self):
         return isinstance(self, MaxSMTGoal)
 
-    def is_simple_goal(self):
-        """This method groups together the goals of minimization and maximization"""
-        return False
 
 
 class MaximizationGoal(Goal):
@@ -81,9 +79,6 @@ class MaximizationGoal(Goal):
 
     def term(self):
         return self.formula
-
-    def is_simple_goal(self):
-        return True
 
 
 
@@ -104,37 +99,18 @@ class MinimizationGoal(Goal):
     def term(self):
         return self.formula
 
-    def is_simple_goal(self):
-        return True
 
-
-class MinMaxGoal(Goal):
+class MinMaxGoal(MinimizationGoal):
 
     def __init__(self, terms):
-        self.term = terms
+        MinimizationGoal.__init__(get_env().formula_manager.Max(terms))
+        self.terms = terms
 
-    def add_terms(self, *terms):
-        self.term.extend(list(terms))
-
-    def terms(self):
-        return self.term
-
-    def is_simple_goal(self):
-        return True
-
-class MaxMinGoal(Goal):
+class MaxMinGoal(MaximizationGoal):
 
     def __init__(self, terms):
-        self.term = terms
-
-    def add_terms(self, *terms):
-        self.term.extend(list(terms))
-
-    def terms(self):
-        return self.term
-
-    def is_simple_goal(self):
-        return True
+        MaximizationGoal.__init__(get_env().formula_manager.Min(terms))
+        self.terms = terms
 
 
 class MaxSMTGoal(Goal):

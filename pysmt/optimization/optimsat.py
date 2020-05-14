@@ -93,7 +93,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
 
             cost_function = goal.term()
             obj_fun = self.converter.convert(cost_function)
-            msat_obj = make_fun(self.msat_env(), obj_fun, None, None, False)
+            msat_obj = make_fun(self.msat_env(), obj_fun, False)
 
         elif goal.is_minmax_goal() or goal.is_maxmin_goal():
             if goal.is_minmax_goal():
@@ -105,7 +105,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
             obj_fun = []
             for f in cost_function:
                 obj_fun.append(self.converter.convert(f))
-            msat_obj = make_fun(self.msat_env(), obj_fun, None, None, False)
+            msat_obj = make_fun(self.msat_env(), obj_fun, False)
         else:
             raise GoalNotSupportedError("optimathsat", goal)
 
