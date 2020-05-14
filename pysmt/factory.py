@@ -377,32 +377,6 @@ class Factory(object):
             pass
 
         try:
-            from pysmt.solvers.msat import MSatSUAOptimizer, MSatIncrementalOptimizer
-            self._all_optimizers['msat_sua'] = MSatSUAOptimizer
-            self._all_optimizers['msat_incr'] = MSatIncrementalOptimizer
-        except SolverAPINotFound:
-            pass
-
-        try:
-            from pysmt.solvers.yices import YicesSUAOptimizer, YicesIncrementalOptimizer
-            self._all_optimizers['yices_sua'] = YicesSUAOptimizer
-            self._all_optimizers['yices_incr'] = YicesIncrementalOptimizer
-        except SolverAPINotFound:
-            pass
-
-    def _get_available_optimizers(self):
-        self._all_optimizers = {}
-
-        try:
-            from pysmt.solvers.z3 import Z3NativeOptimizer, Z3SUAOptimizer, \
-                Z3IncrementalOptimizer
-            self._all_optimizers['z3'] = Z3NativeOptimizer
-            self._all_optimizers['z3_sua'] = Z3SUAOptimizer
-            self._all_optimizers['z3_incr'] = Z3IncrementalOptimizer
-        except SolverAPINotFound:
-            pass
-
-        try:
             from pysmt.solvers.dynmsat import MSATLibLoader
             MSATLibLoader("mathsat")
             from pysmt.optimization.msat import MSatSUAOptimizer, MSatIncrementalOptimizer

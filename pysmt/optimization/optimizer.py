@@ -66,13 +66,7 @@ class Optimizer(Solver):
         """
         raise NotImplementedError
 
-    def can_diverge_for_unbounded_cases(self):
-        """This function returns True if the algorithm implemented in this
-        optimizer can diverge (i.e. not terminate) if the objective is
-        unbounded (infinite or infinitesimal).
-        """
-        raise NotImplementedError
-
+    #to be removed
     def _comparation_functions(self, objective_formula):
         """Internal utility function to get the proper cast, LT and LE
         function for the given objective formula
@@ -87,6 +81,14 @@ class Optimizer(Solver):
             return (lambda x: mgr.BV(x, otype.width)), mgr.BVULT, mgr.BVULE
         else:
             raise PysmtValueError("Invalid optimization function type: %s" % otype)
+
+    def can_diverge_for_unbounded_cases(self):
+        """This function returns True if the algorithm implemented in this
+        optimizer can diverge (i.e. not terminate) if the objective is
+        unbounded (infinite or infinitesimal).
+        """
+        raise NotImplementedError
+
 
     def _get_symbol_type(self, objective_formula):
         otype = self.environment.stc.get_type(objective_formula)
@@ -136,6 +138,93 @@ class Optimizer(Solver):
             return mgr.BVULT
         else:
             raise PysmtValueError("Invalid optimization function type: %s" % otype)
+
+
+class OptSearchInterval():
+
+    def __init__(self, goal):
+        self._obj = goal
+        self._lower = None #-INF where i found this costant?
+        self._upper = None #+INF
+        self._pivot = None
+
+    def _comparation_functions(self, objective_formula):
+        """Internal utility function to get the proper cast, LT and LE
+        function for the given objective formula
+        """
+        otype = self.environment.stc.get_type(objective_formula)
+        mgr = self.environment.formula_manager
+        if otype.is_int_type():
+            return mgr.Int, mgr.LT, mgr.LE
+        elif otype.is_real_type():
+            return mgr.Real, mgr.LT, mgr.LE
+        elif otype.is_bv_type():
+            return (lambda x: mgr.BV(x, otype.width)), mgr.BVULT, mgr.BVULE
+        else:
+            raise PysmtValueError("Invalid optimization function type: %s" % otype)
+
+    def _make_better_than(self, goal, x):
+        cast, lt, _ = self._comparation_functions(goal.term())
+        if goal.is_minimization_goal():
+            t1 = goal.term()
+            t2 = x
+        else:
+            t1 = x
+            t2 = goal.term()
+        return lt(t1, t2)
+
+    def linear_search_cut(self):
+        """must be called always"""
+        if self._obj.is_minimization_goal():
+            bound = self._upper
+        else:
+            bound = self._lower
+
+        return self.make_better_than(self._obj, bound)
+
+    def _compute_pivot(self):
+        if self._lower is None and self._upper is None:
+            return None
+        l,u = self._lower, self._upper
+        if self._lower is None and self._upper is not None:
+            l = self._upper - (abs(self._upper) + 1)
+        elif self._lower is not None and self._upper is None:
+            u = self._lower + abs(self._lower) + 1
+        return (l + u + 1) // 2
+
+    def binary_search_cut(self):
+        """may be skipped"""
+        self._pivot = self._compute_pivot()
+        return self.make_better_than(self._obj, self._pivot)
+
+
+    def empty(self):
+        """True: remove this unit from optimization search"""
+        return self._upper <= self._lower
+
+
+    def search_is_sat(self, model):
+        self._pivot = None
+        model_value = model.eval(self._obj.term())
+        if self._obj.minimize and self.is_better_than(model_value, self._upper):
+            self._upper = model_value
+        elif self._obj.maximize and self.is_better_than(model_value, self._lower):
+            self._lower = model_value
+        else:
+            pass  # this may happen in boxed multi-independent optimization
+
+
+    def search_is_unsat(self):
+        if self._pivot is not None:
+            if self._obj.is_minimization_goal():
+                self._lower = self._pivot
+            else:
+                self._upper = self._pivot
+        else:
+            if self._obj.is_minimization_goal():
+                self._lower = self._upper
+            else:
+                self._upper = self._lower
 
 
 class ExternalOptimizerMixin(Optimizer):
@@ -203,8 +292,8 @@ class ExternalOptimizerMixin(Optimizer):
         optimum will be found in the proximity of `step_size`
         """
         rt = None, None
-        if goal.is_simple_goal():
-            rt = self._simple_optimize(goal, strategy,
+        if goal.is_maximization_goal() or goal.is_minimization_goal():
+            rt = self._optimize_max_min(goal, strategy,
                              feasible_solution_callback,
                              step_size, **kwargs)
         else:
@@ -212,101 +301,7 @@ class ExternalOptimizerMixin(Optimizer):
         return rt
 
 
-
-    def _simple_optimize(self, goal, strategy,
-                      feasible_solution_callback,
-                      step_size, **kwargs):
-        rt = None
-        if goal.is_maximization_goal():
-            rt = self._optimize_max(goal, strategy,
-                             feasible_solution_callback,
-                             step_size, **kwargs)
-        elif goal.is_minimization_goal():
-            rt = self._optimize_min(goal, strategy,
-                             feasible_solution_callback,
-                             step_size, **kwargs)
-        elif goal.is_minmax_goal():
-            rt = self._optimize_minmax(goal, strategy,
-                                    feasible_solution_callback,
-                                    step_size, **kwargs)
-        elif goal.is_maxmin_goal():
-            rt = self._optimize_maxmin(goal, strategy,
-                                    feasible_solution_callback,
-                                    step_size, **kwargs)
-        else:
-            raise GoalNotSupportedError("ExternalOptimizerMixin", goal)
-        return rt
-
-    def _optimize_minmax(self, goal, strategy,
-                 feasible_solution_callback,
-                 step_size, **kwargs):
-
-        part_res = []
-
-        for term in goal.terms():
-            self.push()
-            part_res.append(self._optimize_min(MinimizationGoal(term),
-                                          strategy, feasible_solution_callback,
-                                          step_size, **kwargs)[1]
-                            )
-            self.pop()
-        rt = None
-        self.push()
-        t = goal.terms()[0]
-        le = self._get_le(t)
-        _or = self._get_or(t)
-
-        symbol_type = self._get_symbol_type(t)
-
-        _private_symbol = Symbol("_private_symbol", symbol_type)
-        f = []
-        for res in part_res:
-            f.append(le(_private_symbol, res))
-
-        self.add_assertion(_or(f))
-        rt = self._optimize_max(MaximizationGoal(_private_symbol),
-                                strategy,feasible_solution_callback,
-                                step_size,**kwargs)[1]
-        self.pop()
-
-        return None, rt
-
-    def _optimize_maxmin(self, goal, strategy,
-                 feasible_solution_callback,
-                 step_size, **kwargs):
-
-        part_res = []
-
-        for term in goal.terms():
-            self.push()
-            part_res.append(self._optimize_min(MaximizationGoal(term),
-                                          strategy, feasible_solution_callback,
-                                          step_size, **kwargs)[1]
-                            )
-            self.pop()
-        rt = None
-        self.push()
-        t = goal.terms()[0]
-        le = self._get_le(t)
-        _or = self._get_or(t)
-
-        symbol_type = self._get_symbol_type(t)
-
-        _private_symbol = Symbol("_private_symbol", symbol_type)
-        f = []
-        for res in part_res:
-            f.append(le(res, _private_symbol))
-
-        self.add_assertion(_or(f))
-        rt = self._optimize_max(MinimizationGoal(_private_symbol),
-                                strategy,feasible_solution_callback,
-                                step_size,**kwargs)[1]
-        self.pop()
-
-        return None, rt
-
-
-    def _optimize_max(self, goal, strategy,
+    def _optimize_max_min(self, goal, strategy,
                  feasible_solution_callback,
                  step_size, **kwargs):
 
@@ -317,85 +312,53 @@ class ExternalOptimizerMixin(Optimizer):
         lb, ub = None, None
         client_data = self._setup()
 
-        i = 0
-        improvement_rate = None
-        while lb is None or ub is None or (ub - lb) > step_size:
+        terminate = False
+
+        while (lb is None or ub is None or (ub - lb) > step_size) and not terminate:
             bound = self._bound(lb, ub, strategy, goal)
             if bound is None:
                 # Just check satisfiability
                 check_result = self.solve()
             else:
+                parameters = None
+                if goal.is_minimization_goal():
+                    parameters = (client_data, goal.term(), cast(bound), lt, le, strategy)
+                else:
+                    # Suppose is a MaximizationGoal
+                    parameters = (client_data, cast(bound), goal.term(), lt, le, strategy)
                 # Check if there is a model >/>= bound
-                check_result = self._optimization_check_progress(client_data,
-                                                                 cast(bound),
-                                                                 goal.term(),
-                                                                 lt, le, strategy)
-
-            if lb is not None and improvement_rate is None:
-                improvement_rate = 0
+                check_result = self._optimization_check_progress(*parameters)
 
 
             if check_result:
                 last_model = self.get_model()
                 if feasible_solution_callback:
                     feasible_solution_callback(last_model)
-                lb = self.get_value(goal.term()).constant_value()
+                t = self.get_value(goal.term()).constant_value()
+                if goal.is_minimization_goal():
+                    ub  = t
+                else:
+                    lb = t
             else:
                 if strategy == 'linear':
-                    ub = lb
+                    terminate = True
                 elif strategy == 'binary':
                     if lb is None and ub is None:
                         self._cleanup(client_data)
                         return None
                     else:
-                        ub = bound
+                        if goal.is_minimization_goal():
+                            lb = bound
+                        else:
+                            ub = bound
                 else:
                     raise PysmtValueError("Unknown optimization strategy '%s'" % strategy)
         self._cleanup(client_data)
-        return last_model, cast(lb)
-
-
-    def _optimize_min(self, goal, strategy,
-                 feasible_solution_callback,
-                 step_size, **kwargs):
-
-        last_model = None
-
-        cast, lt, le = self._comparation_functions(goal.term())
-
-        lb, ub = None, None
-        client_data = self._setup()
-        i = 0
-        while lb is None or ub is None or (ub - lb) > step_size:
-            bound = self._bound(lb, ub, strategy, goal)
-            if bound is None:
-                # Just check satisfiability
-                check_result = self.solve()
-            else:
-                # Check if there is a model </<= bound
-                check_result = self._optimization_check_progress(client_data,
-                                                                 goal.term(),
-                                                                 cast(bound),
-                                                                 lt, le, strategy)
-
-            if check_result:
-                last_model = self.get_model()
-                if feasible_solution_callback:
-                    feasible_solution_callback(last_model)
-                ub = self.get_value(goal.term()).constant_value()
-            else:
-                if strategy == 'linear':
-                    lb = ub
-                elif strategy == 'binary':
-                    if lb is None and ub is None:
-                        self._cleanup(client_data)
-                        return None
-                    else:
-                        lb = bound
-                else:
-                    raise PysmtValueError("Unknown optimization strategy '%s'" % strategy)
-        self._cleanup(client_data)
-        return last_model, cast(ub)
+        if goal.is_minimization_goal():
+            t = ub
+        else:
+            t = lb
+        return last_model, cast(t)
 
 
 class SUAOptimizerMixin(ExternalOptimizerMixin):
