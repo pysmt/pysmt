@@ -66,7 +66,6 @@ class Optimizer(Solver):
         """
         raise NotImplementedError
 
-    #to be removed
     def _comparation_functions(self, objective_formula):
         """Internal utility function to get the proper cast, LT and LE
         function for the given objective formula
@@ -142,49 +141,36 @@ class Optimizer(Solver):
 
 class OptSearchInterval():
 
-    def __init__(self, goal):
+    def __init__(self, goal, comparation_functions):
         self._obj = goal
         self._lower = None #-INF where i found this costant?
         self._upper = None #+INF
         self._pivot = None
+        self._comparation_functions = comparation_functions
 
-    def _comparation_functions(self, objective_formula):
-        """Internal utility function to get the proper cast, LT and LE
-        function for the given objective formula
-        """
-        otype = self.environment.stc.get_type(objective_formula)
-        mgr = self.environment.formula_manager
-        if otype.is_int_type():
-            return mgr.Int, mgr.LT, mgr.LE
-        elif otype.is_real_type():
-            return mgr.Real, mgr.LT, mgr.LE
-        elif otype.is_bv_type():
-            return (lambda x: mgr.BV(x, otype.width)), mgr.BVULT, mgr.BVULE
-        else:
-            raise PysmtValueError("Invalid optimization function type: %s" % otype)
-
-    def _make_better_than(self, goal, x):
-        cast, lt, _ = self._comparation_functions(goal.term())
+    def _make_better_than(self, goal, x, strategy):
+        cast, lt, le = self._comparation_functions(goal.term())
+        op = le if strategy == "binary" else lt
         if goal.is_minimization_goal():
             t1 = goal.term()
             t2 = x
         else:
             t1 = x
             t2 = goal.term()
-        return lt(t1, t2)
+        return op(t1, t2)
 
-    def linear_search_cut(self):
+    def linear_search_cut(self, size_step):
         """must be called always"""
         if self._obj.is_minimization_goal():
-            bound = self._upper
+            bound = self._upper - size_step
         else:
-            bound = self._lower
+            bound = self._lower + size_step
 
-        return self.make_better_than(self._obj, bound)
+        return self._make_better_than(self._obj, bound, "linear")
 
     def _compute_pivot(self):
         if self._lower is None and self._upper is None:
-            return None
+            return 0
         l,u = self._lower, self._upper
         if self._lower is None and self._upper is not None:
             l = self._upper - (abs(self._upper) + 1)
@@ -195,21 +181,29 @@ class OptSearchInterval():
     def binary_search_cut(self):
         """may be skipped"""
         self._pivot = self._compute_pivot()
-        return self.make_better_than(self._obj, self._pivot)
+        return self._make_better_than(self._obj, self._pivot, "binary")
 
 
     def empty(self):
         """True: remove this unit from optimization search"""
+        if self._upper == None or self._lower == None:
+            return False
         return self._upper <= self._lower
 
 
     def search_is_sat(self, model):
         self._pivot = None
-        model_value = model.eval(self._obj.term())
-        if self._obj.minimize and self.is_better_than(model_value, self._upper):
-            self._upper = model_value
-        elif self._obj.maximize and self.is_better_than(model_value, self._lower):
-            self._lower = model_value
+        model_value = model.get_value(self._obj.term()).constant_value()
+        if self._obj.is_minimization_goal():
+            if self._upper is None:
+                self._upper = model_value
+            elif self._upper > model_value:
+                self._upper = model_value
+        elif self._obj.is_maximization_goal():
+            if self._lower is None:
+                self._lower = model_value
+            elif self._lower < model_value:
+                self._lower = model_value
         else:
             pass  # this may happen in boxed multi-independent optimization
 
@@ -293,12 +287,38 @@ class ExternalOptimizerMixin(Optimizer):
         """
         rt = None, None
         if goal.is_maximization_goal() or goal.is_minimization_goal():
-            rt = self._optimize_max_min(goal, strategy,
+            rt = self._optimize(goal, strategy,
                              feasible_solution_callback,
                              step_size, **kwargs)
         else:
             raise GoalNotSupportedError("ExternalOptimizerMixin", goal)
         return rt
+
+
+    def _optimize(self, goal, strategy,
+                 feasible_solution_callback,
+                 step_size, **kwargs):
+
+        current = OptSearchInterval(goal, self._comparation_functions)
+        first_step = True
+        while not current.empty():
+            if not first_step:
+                if strategy == "linear":
+                    lin_assertions = current.linear_search_cut(step_size)
+                elif strategy == "binary":
+                    lin_assertions = current.binary_search_cut()
+                else:
+                    raise PysmtValueError("Unknown optimization strategy '%s'" % strategy)
+                status = self.solve(assumptions=[lin_assertions])
+            else:
+                status = self.solve()
+                first_step = False
+            if status:
+                model = self.get_model()
+                current.search_is_sat(model)
+            else:
+                current.search_is_unsat()
+
 
 
     def _optimize_max_min(self, goal, strategy,
