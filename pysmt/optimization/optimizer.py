@@ -27,12 +27,12 @@ class Optimizer(Solver):
     """
 
     def optimize(self, goal, **kwargs):
-        """Returns a pair `(model, cost)` where `model` is an object that
-        minimizes the value of `cost_function` while satisfying all
+        """Returns a pair `(model, cost)` where `model` is an object
+        that obtained according to `goal` while satisfying all
         the formulae asserted in the optimizer, while `cost` is the
         objective function value for the model.
 
-        `cost_function` must be a term with integer, real or
+        `goal` must have a term with integer, real or
         bit-vector type whose value has to be minimized
         This function can raise a PysmtUnboundedOptimizationError if
         the solver detects that the optimum value is either positive
@@ -141,16 +141,17 @@ class Optimizer(Solver):
 
 class OptSearchInterval():
 
-    def __init__(self, goal, comparation_functions):
+    def __init__(self, goal, lt, le, client_data):
         self._obj = goal
         self._lower = None #-INF where i found this costant?
         self._upper = None #+INF
         self._pivot = None
-        self._comparation_functions = comparation_functions
+        self._lt = lt
+        self._le = le
+        self.client_data = client_data
 
     def _make_better_than(self, goal, x, strategy):
-        cast, lt, le = self._comparation_functions(goal.term())
-        op = le if strategy == "binary" else lt
+        op = self.le if strategy == "binary" else self.lt
         if goal.is_minimization_goal():
             t1 = goal.term()
             t2 = x
@@ -243,8 +244,7 @@ class ExternalOptimizerMixin(Optimizer):
     def _pareto_block_model(self, client_data, cost_functions, last_model, lts, les):
         raise NotImplementedError
 
-    def _optimization_check_progress(self, client_data, cost_function,
-                                     cost_so_far, lt, le, strategy):
+    def _optimization_check_progress(self, client_data, formula, strategy):
         raise NotImplementedError
 
     def _binary_bound(self, lb, ub):
@@ -298,8 +298,10 @@ class ExternalOptimizerMixin(Optimizer):
     def _optimize(self, goal, strategy,
                  feasible_solution_callback,
                  step_size, **kwargs):
-
-        current = OptSearchInterval(goal, self._comparation_functions)
+        model = None
+        client_data = self._setup()
+        cast, lt, le = self._comparation_functions(goal.term())
+        current = OptSearchInterval(goal, lt, le, client_data)
         first_step = True
         while not current.empty():
             if not first_step:
@@ -311,13 +313,18 @@ class ExternalOptimizerMixin(Optimizer):
                     raise PysmtValueError("Unknown optimization strategy '%s'" % strategy)
                 status = self.solve(assumptions=[lin_assertions])
             else:
-                status = self.solve()
                 first_step = False
+            status = self._optimization_check_progress(self.client_data, lin_assertions, strategy)
             if status:
                 model = self.get_model()
                 current.search_is_sat(model)
             else:
                 current.search_is_unsat()
+
+        self._cleanup(client_data)
+
+        return model, cast(goal.term())
+
 
 
 
@@ -380,51 +387,6 @@ class ExternalOptimizerMixin(Optimizer):
             t = lb
         return last_model, cast(t)
 
-
-class SUAOptimizerMixin(ExternalOptimizerMixin):
-    """Optimizer mixin using solving under assumptions"""
-
-    def _setup(self):
-        pass
-
-    def _cleanup(self):
-        pass
-
-    def _check_improve(self, cost_function, cost_so_far, lt):
-        k = lt(cost_function, cost_so_far)
-        return not self.solve(assumptions=[k])
-
-    def pareto_optimize(self, cost_functions):
-        _, lts, les = zip(*(self._comparation_functions(x) for x in cost_functions))
-        terminated = False
-        client_data = self._setup()
-        while not terminated:
-            last_model = None
-            optimum_found = False
-            costs_so_far = None
-            self._pareto_setup(client_data)
-            while not optimum_found:
-                optimum_found = self._pareto_check_progress(client_data,
-                                                            cost_functions,
-                                                            costs_so_far,
-                                                            lts, les)
-                if not optimum_found:
-                    last_model = self.get_model()
-                    costs_so_far = []
-                    for i in range(len(cost_functions)):
-                        costs_so_far.append(self.get_value(cost_functions[i]))
-            self._pareto_cleanup(client_data)
-            if last_model is not None:
-                yield last_model, costs_so_far
-                self._pareto_block_model(client_data, cost_functions,
-                                         last_model, lts, les)
-            else:
-                terminated = True
-        self._cleanup(client_data)
-
-    def can_diverge_for_unbounded_cases(self):
-        return True
-
 class SUAOptimizerMixin(ExternalOptimizerMixin):
     """Optimizer mixin using solving under assumptions"""
 
@@ -434,11 +396,8 @@ class SUAOptimizerMixin(ExternalOptimizerMixin):
     def _cleanup(self, client_data):
         pass
 
-    def _optimization_check_progress(self, client_data, cost_function,
-                                     cost_so_far, lt, le, strategy):
-        op = le if strategy == 'binary' else lt
-        k = op(cost_function, cost_so_far)
-        return self.solve(assumptions=[k])
+    def _optimization_check_progress(self, client_data, formula, strategy):
+        return self.solve(assumptions=[formula])
 
     def _pareto_setup(self, client_data):
         pass
@@ -477,14 +436,13 @@ class IncrementalOptimizerMixin(ExternalOptimizerMixin):
     def _cleanup(self, client_data):
         self.pop()
 
-    def _optimization_check_progress(self, client_data, cost_function,
-                                     cost_so_far, lt, le, strategy):
+    def _optimization_check_progress(self, client_data, formula, strategy):
         if strategy == 'linear':
-            self.add_assertion(lt(cost_function, cost_so_far))
+            self.add_assertion(formula)
             return self.solve()
         elif strategy == 'binary':
             self.push()
-            self.add_assertion(le(cost_function, cost_so_far))
+            self.add_assertion(formula)
             res = self.solve()
             self.pop()
             return res
