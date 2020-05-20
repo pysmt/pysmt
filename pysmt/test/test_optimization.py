@@ -38,7 +38,6 @@ class TestOptimization(TestCase):
                 opt.add_assertion(formula)
                 model, cost = opt.optimize(min)
                 self.assertEqual(model[x], Int(10))
-                self.assertEqual(cost, Int(10))
 
 
     @skipIfNoOptimizerForLogic(QF_LIA)
@@ -51,32 +50,6 @@ class TestOptimization(TestCase):
                 opt.add_assertion(formula)
                 model, cost = opt.optimize(max)
                 self.assertEqual(model[x], Int(10))
-
-    @skipIfNoOptimizerForLogic(QF_LIA)
-    def test_unbounded(self):
-        x = Symbol("x", INT)
-        min = MinimizationGoal(x)
-        formula = LE(x, Int(10))
-        for oname in get_env().factory.all_optimizers(logic=QF_LIA):
-            with Optimizer(name=oname) as opt:
-                if opt.can_diverge_for_unbounded_cases():
-                    continue
-                opt.add_assertion(formula)
-                with self.assertRaises(PysmtUnboundedOptimizationError):
-                    opt.optimize(min)
-
-    @skipIfNoOptimizerForLogic(QF_LRA)
-    def test_infinitesimal(self):
-        x = Symbol("x", REAL)
-        min = MinimizationGoal(x)
-        formula = GT(x, Real(10))
-        for oname in get_env().factory.all_optimizers(logic=QF_LRA):
-            with Optimizer(name=oname) as opt:
-                if opt.can_diverge_for_unbounded_cases():
-                    continue
-                opt.add_assertion(formula)
-                with self.assertRaises(PysmtUnboundedOptimizationError):
-                    opt.optimize(min)
 
     @skipIfNoOptimizerForLogic(QF_LIA)
     def test_pareto(self):
@@ -98,40 +71,27 @@ class TestOptimization(TestCase):
     def test_unbounded(self):
         x = Symbol("x", INT)
         formula = LE(x, Int(10))
+        min = MinimizationGoal(x)
         for oname in get_env().factory.all_optimizers(logic=QF_LIA):
             with Optimizer(name=oname) as opt:
                 if opt.can_diverge_for_unbounded_cases():
                     continue
                 opt.add_assertion(formula)
                 with self.assertRaises(PysmtUnboundedOptimizationError):
-                    opt.optimize(x)
+                    opt.optimize(min)
 
     @skipIfNoOptimizerForLogic(QF_LRA)
     def test_infinitesimal(self):
         x = Symbol("x", REAL)
         formula = GT(x, Real(10))
+        min = MinimizationGoal(x)
         for oname in get_env().factory.all_optimizers(logic=QF_LRA):
             with Optimizer(name=oname) as opt:
                 if opt.can_diverge_for_unbounded_cases():
                     continue
                 opt.add_assertion(formula)
                 with self.assertRaises(PysmtUnboundedOptimizationError):
-                    opt.optimize(x)
-
-    @skipIfNoOptimizerForLogic(QF_LIA)
-    def test_pareto(self):
-        x = Symbol("x", INT)
-        y = Symbol("y", INT)
-        formula = And(GE(x, Int(0)), GE(y, Int(0)), LE(x, Int(10)), LE(y, Int(10)))
-        for oname in get_env().factory.all_optimizers(logic=QF_LIA):
-            with Optimizer(name=oname) as opt:
-                try:
-                    opt.add_assertion(formula)
-                    models = list(opt.pareto_optimize([Plus(x, y), Minus(x, y)]))
-                    self.assertEqual(len(models), 11)
-                    self.assertTrue(all(m[x].constant_value() == 0 for m in models))
-                except NotImplementedError:
-                    pass # OptiMathSAT wrapping of pareto is incomplete
+                    opt.optimize(min)
 
 if __name__ == '__main__':
     main()
