@@ -126,13 +126,13 @@ class MinimizationGoal(Goal):
 class MinMaxGoal(MinimizationGoal):
 
     def __init__(self, terms):
-        MinimizationGoal.__init__(get_env().formula_manager.Max(terms))
+        MinimizationGoal.__init__(self, get_env().formula_manager.Max(terms))
         self.terms = terms
 
 class MaxMinGoal(MaximizationGoal):
 
     def __init__(self, terms):
-        MaximizationGoal.__init__(get_env().formula_manager.Min(terms))
+        MaximizationGoal.__init__(self, get_env().formula_manager.Min(terms))
         self.terms = terms
 
 
