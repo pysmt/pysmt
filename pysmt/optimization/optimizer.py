@@ -20,6 +20,8 @@ from pysmt.solvers.solver import Solver
 from pysmt.exceptions import PysmtValueError, GoalNotSupportedError
 from pysmt.optimization.goal import MinimizationGoal, MaximizationGoal
 from pysmt.shortcuts import Symbol, INT, REAL, BVType
+from pysmt.logics import LIA, LRA, BV
+from pysmt.oracles import get_logic
 
 class Optimizer(Solver):
     """
@@ -66,20 +68,6 @@ class Optimizer(Solver):
         """
         raise NotImplementedError
 
-    def _comparation_functions(self, objective_formula):
-        """Internal utility function to get the proper cast, LT and LE
-        function for the given objective formula
-        """
-        otype = self.environment.stc.get_type(objective_formula)
-        mgr = self.environment.formula_manager
-        if otype.is_int_type():
-            return mgr.Int, mgr.LT, mgr.LE
-        elif otype.is_real_type():
-            return mgr.Real, mgr.LT, mgr.LE
-        elif otype.is_bv_type():
-            return (lambda x: mgr.BV(x, otype.width)), mgr.BVULT, mgr.BVULE
-        else:
-            raise PysmtValueError("Invalid optimization function type: %s" % otype)
 
     def can_diverge_for_unbounded_cases(self):
         """This function returns True if the algorithm implemented in this
@@ -141,33 +129,63 @@ class Optimizer(Solver):
 
 class OptSearchInterval():
 
-    def __init__(self, goal, lt, le, client_data):
+    def __init__(self, goal, environment,client_data):
         self._obj = goal
         self._lower = None #-INF where i found this costant?
         self._upper = None #+INF
         self._pivot = None
-        self._lt = lt
-        self._le = le
+        self.environment = environment
+        self._cast, self.op_strict, self.op_ns = self._comparation_functions(goal)
         self.client_data = client_data
 
-    def _make_better_than(self, goal, x, strategy):
-        op = self.le if strategy == "binary" else self.lt
-        if goal.is_minimization_goal():
-            t1 = goal.term()
-            t2 = x
-        else:
-            t1 = x
-            t2 = goal.term()
-        return op(t1, t2)
+    def _comparation_functions(self, goal):
+        """Internal utility function to get the proper cast, LT and LE
+        function for the given objective formula
+        """
+        mgr = self.environment.formula_manager
+        cast_bv = None
+        if goal.get_logic() is BV:
+            otype = self.environment.stc.get_type(goal.term())
+            cast_bv = lambda x: mgr.BV(x, otype.width)
+        options = {
+            LIA: {
+                MinimizationGoal: {
+                    True: (mgr.Int, mgr.LT, mgr.LE),
+                },
+                MaximizationGoal: {
+                    True: (mgr.Int, mgr.GT, mgr.GE),
+                },
+            },
+            LRA: {
+                MinimizationGoal: {
+                    True: (mgr.Real, mgr.LT, mgr.LE),
+                },
+                MaximizationGoal: {
+                    True: (mgr.Real, mgr.GT, mgr.GE),
+                },
+            },
+            BV: {
+                MinimizationGoal: {
+                    False: (cast_bv, mgr.BVULT, mgr.BVULE),
+                    True: (cast_bv, mgr.BVSLT, mgr.BVSLE),
+                },
+                MaximizationGoal: {
+                    False: (cast_bv, mgr.BVUGT, mgr.BVUGE),
+                    True: (cast_bv, mgr.BVSGT, mgr.BVSGE),
+                },
+            },
 
-    def linear_search_cut(self, size_step):
+        }
+        return options[goal.get_logic()][goal.opt()][goal.signed()]
+
+    def linear_search_cut(self):
         """must be called always"""
         if self._obj.is_minimization_goal():
-            bound = self._upper - size_step
+            bound = self._upper
         else:
-            bound = self._lower + size_step
+            bound = self._lower
 
-        return self._make_better_than(self._obj, bound, "linear")
+        return self.op_strict(self._obj.term(), self._cast(bound))
 
     def _compute_pivot(self):
         if self._lower is None and self._upper is None:
@@ -182,7 +200,7 @@ class OptSearchInterval():
     def binary_search_cut(self):
         """may be skipped"""
         self._pivot = self._compute_pivot()
-        return self._make_better_than(self._obj, self._pivot, "binary")
+        return self.op_strict(self._obj.term(), self._cast(self._pivot))
 
 
     def empty(self):
@@ -247,24 +265,6 @@ class ExternalOptimizerMixin(Optimizer):
     def _optimization_check_progress(self, client_data, formula, strategy):
         raise NotImplementedError
 
-    def _binary_bound(self, lb, ub):
-        if lb is None and ub is None:
-            return None
-        l,u = lb,ub
-        if lb is None and ub is not None:
-            l = ub - (abs(ub) + 1)
-        elif lb is not None and ub is None:
-            u = lb + abs(lb) + 1
-        return (l + u + 1) // 2
-
-    def _bound(self, lb, ub, strategy, goal):
-        if strategy == 'binary':
-            return self._binary_bound(lb, ub)
-        if strategy == 'linear':
-            return ub if goal.is_minimization_goal() else lb
-        else:
-            raise PysmtValueError("Unknown optimization strategy '%s'" % strategy)
-
     def optimize(self, goal, strategy='linear',
                  feasible_solution_callback=None,
                  step_size=1, **kwargs):
@@ -300,21 +300,20 @@ class ExternalOptimizerMixin(Optimizer):
                  step_size, **kwargs):
         model = None
         client_data = self._setup()
-        cast, lt, le = self._comparation_functions(goal.term())
-        current = OptSearchInterval(goal, lt, le, client_data)
+        current = OptSearchInterval(goal,self.environment, client_data)
         first_step = True
         while not current.empty():
             if not first_step:
                 if strategy == "linear":
-                    lin_assertions = current.linear_search_cut(step_size)
+                    lin_assertions = current.linear_search_cut()
                 elif strategy == "binary":
                     lin_assertions = current.binary_search_cut()
                 else:
                     raise PysmtValueError("Unknown optimization strategy '%s'" % strategy)
-                status = self.solve(assumptions=[lin_assertions])
             else:
                 first_step = False
-            status = self._optimization_check_progress(self.client_data, lin_assertions, strategy)
+                lin_assertions = None
+            status = self._optimization_check_progress(client_data, lin_assertions, strategy)
             if status:
                 model = self.get_model()
                 current.search_is_sat(model)
@@ -323,69 +322,8 @@ class ExternalOptimizerMixin(Optimizer):
 
         self._cleanup(client_data)
 
-        return model, cast(goal.term())
+        return model, None
 
-
-
-
-    def _optimize_max_min(self, goal, strategy,
-                 feasible_solution_callback,
-                 step_size, **kwargs):
-
-        last_model = None
-
-        cast, lt, le = self._comparation_functions(goal.term())
-
-        lb, ub = None, None
-        client_data = self._setup()
-
-        terminate = False
-
-        while (lb is None or ub is None or (ub - lb) > step_size) and not terminate:
-            bound = self._bound(lb, ub, strategy, goal)
-            if bound is None:
-                # Just check satisfiability
-                check_result = self.solve()
-            else:
-                parameters = None
-                if goal.is_minimization_goal():
-                    parameters = (client_data, goal.term(), cast(bound), lt, le, strategy)
-                else:
-                    # Suppose is a MaximizationGoal
-                    parameters = (client_data, cast(bound), goal.term(), lt, le, strategy)
-                # Check if there is a model >/>= bound
-                check_result = self._optimization_check_progress(*parameters)
-
-
-            if check_result:
-                last_model = self.get_model()
-                if feasible_solution_callback:
-                    feasible_solution_callback(last_model)
-                t = self.get_value(goal.term()).constant_value()
-                if goal.is_minimization_goal():
-                    ub  = t
-                else:
-                    lb = t
-            else:
-                if strategy == 'linear':
-                    terminate = True
-                elif strategy == 'binary':
-                    if lb is None and ub is None:
-                        self._cleanup(client_data)
-                        return None
-                    else:
-                        if goal.is_minimization_goal():
-                            lb = bound
-                        else:
-                            ub = bound
-                else:
-                    raise PysmtValueError("Unknown optimization strategy '%s'" % strategy)
-        self._cleanup(client_data)
-        if goal.is_minimization_goal():
-            t = ub
-        else:
-            t = lb
-        return last_model, cast(t)
 
 class SUAOptimizerMixin(ExternalOptimizerMixin):
     """Optimizer mixin using solving under assumptions"""
@@ -397,7 +335,12 @@ class SUAOptimizerMixin(ExternalOptimizerMixin):
         pass
 
     def _optimization_check_progress(self, client_data, formula, strategy):
-        return self.solve(assumptions=[formula])
+        if formula is not None:
+            rt = self.solve(assumptions=[formula])
+        else:
+            rt = self.solve()
+        return rt
+
 
     def _pareto_setup(self, client_data):
         pass
@@ -438,14 +381,16 @@ class IncrementalOptimizerMixin(ExternalOptimizerMixin):
 
     def _optimization_check_progress(self, client_data, formula, strategy):
         if strategy == 'linear':
-            self.add_assertion(formula)
-            return self.solve()
+            if formula is not None:
+                self.add_assertion(formula)
+            rt = self.solve()
         elif strategy == 'binary':
             self.push()
-            self.add_assertion(formula)
-            res = self.solve()
+            if formula is not None:
+                self.add_assertion(formula)
+            rt = self.solve()
             self.pop()
-            return res
+        return rt
 
     def _pareto_setup(self, client_data):
         self.push()

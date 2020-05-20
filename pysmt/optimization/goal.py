@@ -18,6 +18,8 @@
 
 from pysmt.shortcuts import Times, Int
 from pysmt.environment import get_env
+from pysmt.oracles import get_logic
+from pysmt.logics import LIA, LRA, BV
 
 class Goal(object):
     """
@@ -61,6 +63,20 @@ class Goal(object):
     def is_maxsmt_goal(self):
         return isinstance(self, MaxSMTGoal)
 
+    def get_logic(self):
+        logic = get_logic(self.formula)
+        if logic.__le__(LIA):
+            return LIA
+        elif logic.__le__(LRA):
+            return LRA
+        elif logic.__le__(BV):
+            return BV
+        else:
+            return logic
+
+    def signed(self):
+        return True
+
 
 
 class MaximizationGoal(Goal):
@@ -76,6 +92,9 @@ class MaximizationGoal(Goal):
         :type  formula: FNode
         """
         self.formula = formula
+
+    def opt(self):
+        return MaximizationGoal
 
     def term(self):
         return self.formula
@@ -95,6 +114,10 @@ class MinimizationGoal(Goal):
         :type  formula: FNode
         """
         self.formula = formula
+
+    def opt(self):
+        return MinimizationGoal
+
 
     def term(self):
         return self.formula
