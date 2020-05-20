@@ -52,6 +52,122 @@ class TestOptimization(TestCase):
                 self.assertEqual(model[x], Int(10))
 
     @skipIfNoOptimizerForLogic(QF_LIA)
+    def test_maxmin_basic_lia(self):
+        x = Symbol("x", INT)
+        y = Symbol("y", INT)
+        z = Symbol("z", INT)
+
+        f11 = GE(x, Int(5))
+        f12 = LE(x, Int(8))
+        f21 = GE(y, Int(11))
+        f22 = LE(y, Int(14))
+        f31 = GE(z, Int(15))
+        f32 = LE(z, Int(18))
+
+        maxmin = MaxMinGoal([x, y, z])
+
+        for oname in get_env().factory.all_optimizers(logic=QF_LIA):
+            with Optimizer(name=oname) as opt:
+                opt.add_assertion(f11)
+                opt.add_assertion(f12)
+
+                opt.add_assertion(f21)
+                opt.add_assertion(f22)
+
+                opt.add_assertion(f31)
+                opt.add_assertion(f32)
+
+                model, cost = opt.optimize(maxmin)
+                self.assertEqual(model[maxmin.term()], Int(8))
+
+    @skipIfNoOptimizerForLogic(QF_LIA)
+    def test_minmax_basic_lia(self):
+        x = Symbol("x", INT)
+        y = Symbol("y", INT)
+        z = Symbol("z", INT)
+
+        f11 = GE(x, Int(5))
+        f12 = LE(x, Int(8))
+        f21 = GE(y, Int(11))
+        f22 = LE(y, Int(14))
+        f31 = GE(z, Int(15))
+        f32 = LE(z, Int(18))
+
+        minmax = MinMaxGoal([x, y, z])
+
+        for oname in get_env().factory.all_optimizers(logic=QF_LIA):
+            with Optimizer(name=oname) as opt:
+                opt.add_assertion(f11)
+                opt.add_assertion(f12)
+
+                opt.add_assertion(f21)
+                opt.add_assertion(f22)
+
+                opt.add_assertion(f31)
+                opt.add_assertion(f32)
+
+                model, cost = opt.optimize(minmax)
+                self.assertEqual(model[minmax.term()], Int(15))
+
+    @skipIfNoOptimizerForLogic(QF_LRA)
+    def test_maxmin_basic_lra(self):
+        x = Symbol("x", REAL)
+        y = Symbol("y", REAL)
+        z = Symbol("z", REAL)
+
+        f11 = GE(x, Real(5.0))
+        f12 = LE(x, Real(8.0))
+        f21 = GE(y, Real(11.0))
+        f22 = LE(y, Real(14.0))
+        f31 = GE(z, Real(15.0))
+        f32 = LE(z, Real(18.0))
+
+        maxmin = MaxMinGoal([x, y, z])
+
+        for oname in get_env().factory.all_optimizers(logic=QF_LRA):
+            with Optimizer(name=oname) as opt:
+                opt.add_assertion(f11)
+                opt.add_assertion(f12)
+
+                opt.add_assertion(f21)
+                opt.add_assertion(f22)
+
+                opt.add_assertion(f31)
+                opt.add_assertion(f32)
+
+                model, cost = opt.optimize(maxmin)
+                self.assertEqual(model[maxmin.term()], Real(8.0))
+
+    @skipIfNoOptimizerForLogic(QF_LRA)
+    def test_minmax_basic_lra(self):
+        x = Symbol("x", REAL)
+        y = Symbol("y", REAL)
+        z = Symbol("z", REAL)
+
+        f11 = GE(x, Real(5.0))
+        f12 = LE(x, Real(8.0))
+        f21 = GE(y, Real(11.0))
+        f22 = LE(y, Real(14.0))
+        f31 = GE(z, Real(15.0))
+        f32 = LE(z, Real(18.0))
+
+        minmax = MinMaxGoal([x, y, z])
+
+        for oname in get_env().factory.all_optimizers(logic=QF_LRA):
+            with Optimizer(name=oname) as opt:
+                opt.add_assertion(f11)
+                opt.add_assertion(f12)
+
+                opt.add_assertion(f21)
+                opt.add_assertion(f22)
+
+                opt.add_assertion(f31)
+                opt.add_assertion(f32)
+
+                model, cost = opt.optimize(minmax)
+                self.assertEqual(model[minmax.term()], Real(15.0))
+
+    @skipIfNoOptimizerForLogic(QF_LIA)
     def test_pareto(self):
         x = Symbol("x", INT)
         y = Symbol("y", INT)
