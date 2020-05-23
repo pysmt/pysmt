@@ -45,13 +45,10 @@ Certificate of Origin” approach as done by the Linux kernel. ::
       indefinitely and may be redistributed consistent with this project
       or the open source license(s) involved.
 
-During a Pull-Request you will be asked to complete the form at CLAHub:
-https://www.clahub.com/agreements/pysmt/pysmt . You will only have to
-complete this once, but this applies to **all** your contributions.
-
-If you are doing a drive-by patch (e.g., fixing a typo) and sending
-directly a patch, you can skip the CLA, by sending a signed patch. A
-signed patch can be obtained when committing using ``git commit -s``.
+During a Pull-Request you will be asked to edit the CONTRIBUTORS file to
+add your name and email address. By doing so, you agree to the CLA.
+You will only have to complete this once, but this applies to **all** your
+contributions.
 
 Tests
 ======
