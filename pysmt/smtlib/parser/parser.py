@@ -449,8 +449,6 @@ class SmtLibParser(object):
 
         # Command tokens
         self.commands = {smtcmd.ASSERT : self._cmd_assert,
-                         smtcmd.ASSERT_SOFT: self._cmd_assert_soft,
-                         smtcmd.CHECK_ALLSAT: self._cmd_check_allsat,
                          smtcmd.CHECK_SAT : self._cmd_check_sat,
                          smtcmd.CHECK_SAT_ASSUMING : self._cmd_check_sat_assuming,
                          smtcmd.DECLARE_CONST : self._cmd_declare_const,
@@ -471,9 +469,6 @@ class SmtLibParser(object):
                          smtcmd.GET_UNSAT_ASSUMPTIONS : self._cmd_get_unsat_assumptions,
                          smtcmd.GET_UNSAT_CORE: self._cmd_get_unsat_core,
                          smtcmd.GET_VALUE : self._cmd_get_value,
-                         smtcmd.GET_OBJECTIVES: self._cmd_get_objectives,
-                         smtcmd.MAXIMIZE: self._cmd_objective,
-                         smtcmd.MINIMIZE: self._cmd_objective,
                          smtcmd.POP : self._cmd_pop,
                          smtcmd.PUSH : self._cmd_push,
                          smtcmd.RESET : self._cmd_reset,
@@ -481,6 +476,12 @@ class SmtLibParser(object):
                          smtcmd.SET_LOGIC : self._cmd_set_logic,
                          smtcmd.SET_OPTION : self._cmd_set_option,
                          smtcmd.SET_INFO : self._cmd_set_info,
+                         # OMT Extension (http://optimathsat.disi.unitn.it/pages/smt2reference.html)
+                         smtcmd.ASSERT_SOFT: self._cmd_assert_soft,
+                         smtcmd.CHECK_ALLSAT: self._cmd_check_allsat,
+                         smtcmd.GET_OBJECTIVES: self._cmd_get_objectives,
+                         smtcmd.MAXIMIZE: self._cmd_objective,
+                         smtcmd.MINIMIZE: self._cmd_objective,
                          smtcmd.LOAD_OBJECTIVE_MODEL: self._cmd_load_objective_model,
                          }
 
@@ -1024,7 +1025,7 @@ class SmtLibParser(object):
 
 
     def parse_atom(self, tokens, command):
-        """Parses a single name from the tokens"""
+        """Parses a single name from the tokens. The `command` argument is used only for logging"""
         var = tokens.consume("Unexpected end of stream in %s command." % \
                                      command)
         if var == "(" or var == ")":
@@ -1152,32 +1153,31 @@ class SmtLibParser(object):
 
     def _cmd_assert_soft(self, current, tokens):
         """(assert-soft <term> [:id <string>] [:weight <const_term>])"""
-        param_presence = {":weight": True, ":id": True}
         expr = self.get_expression(tokens)
-        mgr = self.env.formula_manager
-        weight_value = mgr.Int(1)
-        group_clause_id = "I"  # default identifier for soft-clause
+        term_weight = None
+        term_group_id = None
         curr = tokens.consume()
-        params = []
         while curr != ")":
             tokens.add_extra_token(curr)
             curr_parse = self.parse_atom(tokens, current)
-            if curr_parse == ":weight" and param_presence[curr_parse]:
-                weight_value = self.get_expression(tokens)
-                params.append((curr_parse, weight_value))
-                param_presence[curr_parse] = False
-            elif curr_parse == ":id" and param_presence[curr_parse]:
-                group_clause_id = self.parse_atom(tokens, "assert-soft")
-                params.append((curr_parse, group_clause_id))
-                param_presence[curr_parse] = False
+            if curr_parse == ":weight" and term_weight is None:
+                term_weight = self.get_expression(tokens)
+            elif curr_parse == ":id" and term_group_id is None:
+                term_group_id = self.parse_atom(tokens, "assert-soft")
             else:
-                raise NotImplementedError("The current option is not currently implemented %s "
-                                          "or some of them are repeated" % curr_parse)
+                raise PysmtSyntaxError("Incorrect option in  'assert-soft' "
+                                       "command", tokens.pos_info)
             curr = tokens.consume()
-        if param_presence[":weight"]:
-            params.append((":weight", weight_value))
-        if param_presence[":id"]:
-            params.append((":id", group_clause_id))
+
+        # Defaults
+        if term_weight is None:
+            term_weight = self.env.formula_manager.Int(1)
+        if term_group_id is None:
+            term_group_id = "I"  # default identifier for soft-clause
+        params = [
+            (":weight", term_weight),
+            (":id", term_group_id),
+        ]
         return SmtLibCommand(current, [expr, params])
 
     def _cmd_check_allsat(self, current, tokens):
@@ -1245,26 +1245,28 @@ class SmtLibParser(object):
         return SmtLibCommand(current, [])
 
     def _cmd_objective(self, current, tokens):
-        """(maximize | minimize <term> [:id <string>] [:signed] [:lower <const_term>] [:upper <const_term>])"""
+        """(maximize | minimize <term> [:id <string>] [:signed])"""
         obj = self.get_expression(tokens)
         params = []
         curr = tokens.consume()
+        signed = False
         while curr != ")":
             tokens.add_extra_token(curr)
             curr_parse = self.parse_atom(tokens, current)
-            if curr_parse == ":lower" or curr_parse == ":upper":
-                exp = self.get_expression(tokens)
-                params.append((curr_parse, exp))
-            elif curr_parse == ":id":
+            if curr_parse == ":id":
                 id = self.parse_atom(tokens, "maximization/minimization")
                 params.append((curr_parse, id))
             elif curr_parse == ":signed":
-                params.append((curr_parse,))
+                signed = True
+                params.append((curr_parse, signed))
             else:
-                raise NotImplementedError("The current option is not currently implemented %s" % curr_parse)
+                raise PysmtSyntaxError("Incorrect option in  'maximize/minimize ' "
+                                       "command", tokens.pos_info)
             curr = tokens.consume()
         tokens.add_extra_token(")")
         self.consume_closing(tokens, current)
+        if not signed:
+            params.append((":signed", signed))
         return SmtLibCommand(current, [obj, params])
 
     def _cmd_declare_fun(self, current, tokens):

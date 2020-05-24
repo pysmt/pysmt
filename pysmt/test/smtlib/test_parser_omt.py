@@ -22,67 +22,47 @@ from six import StringIO
 from pysmt.shortcuts import reset_env
 from pysmt.test import TestCase
 from pysmt.smtlib.parser import SmtLibParser
-
+from pysmt.exceptions import PysmtSyntaxError
 
 class TestSmtLibParserOMT(TestCase):
 
     def test_parse_omt(self):
-        for file_id in range(1, 4):
-            # Parse
-            script = self.parse(file_id)
-            # Check cmds
+        for file_id, expected, script in self.examples():
             for i, cmd in enumerate(script):
-                self.assertEqual(cmd.name, TESTS[file_id][i],
+                self.assertEqual(cmd.name, expected[i],
                                  "Test %d: %s != %s " %
-                                 (file_id, cmd.name, TESTS[file_id][i]))
+                                 (file_id, cmd.name, expected[i]))
             # Serialize
             buf = StringIO()
             script.serialize(buf)
-            self.assertTrue(True)
+            parser = SmtLibParser()
+            new_script = parser.get_script(StringIO(buf.getvalue()))
+            self.assertEqual([cmd.name for cmd in script], [cmd.name for cmd in new_script])
 
     def test_omt_parsing_exception(self):
         parser = SmtLibParser()
-        with self.assertRaises(NotImplementedError):
-            _ = parser.get_script(StringIO("(assert-soft false :weight (+ 3 (- 4 2)) :id goal :id goal)"))
-        with self.assertRaises(NotImplementedError):
-            _ = parser.get_script(StringIO("(assert-soft false :weight (+ 3 (- 4 2)) :id goal :weight z )"))
-        with self.assertRaises(NotImplementedError):
-            _ = parser.get_script(StringIO("(assert-soft false :weight (+ 3 (- 4 2)) :id goal :not-implemented 12)"))
-        with self.assertRaises(NotImplementedError):
-            _ = parser.get_script(StringIO("(assert-soft false :not-implemented 12)"))
-        with self.assertRaises(NotImplementedError):
-            _ = parser.get_script(StringIO("(maximize z :upper 50 :lower 50 :not-implemented :id objective-1)"))
+        with self.assertRaises(PysmtSyntaxError):
+            parser.get_script(StringIO("(assert-soft false :weight (+ 3 (- 4 2)) :id goal :id goal)"))
+        with self.assertRaises(PysmtSyntaxError):
+            parser.get_script(StringIO("(assert-soft false :weight (+ 3 (- 4 2)) :id goal :weight z )"))
+        with self.assertRaises(PysmtSyntaxError):
+            parser.get_script(StringIO("(assert-soft false :weight (+ 3 (- 4 2)) :id goal :not-implemented 12)"))
+        with self.assertRaises(PysmtSyntaxError):
+            parser.get_script(StringIO("(assert-soft false :not-implemented 12)"))
+        with self.assertRaises(PysmtSyntaxError):
+            parser.get_script(StringIO("(maximize z :upper 50 :lower 50 :id abc"))
 
     def test_command_option_value_correctness(self):
-        parser = SmtLibParser()
-        script = parser.get_script(StringIO("(assert-soft false :weight 2 :id goal)"))
-        cmd = next(iter(script))
-        assert cmd.name == "assert-soft"
-        assert len(cmd.args) == 2
-        script = parser.get_script(StringIO("(maximize z :upper 50 :lower 10)"))
-        cmd = next(iter(script))
-        assert cmd.name == "maximize"
-        assert len(cmd.args) == 2
-        script = parser.get_script(StringIO("(maximize z :upper 50 :lower 10 :lower 10)"))
-        cmd = next(iter(script))
-        assert cmd.name == "maximize"
-        assert len(cmd.args) == 2
-        script = parser.get_script(StringIO("(check-allsat ( a b c ))"))
-        cmd = next(iter(script))
-        assert cmd.name == "check-allsat"
-        assert len(cmd.args) == 3
-        script = parser.get_script(StringIO("(load-objective-model 1)"))
-        cmd = next(iter(script))
-        assert cmd.name == "load-objective-model"
-        assert len(cmd.args) == 1
-        script = parser.get_script(StringIO("(get-objectives)"))
-        cmd = next(iter(script))
-        assert cmd.name == "get-objectives"
-        assert len(cmd.args) == 0
+        for input_str, command, len_args in self.examples_snippet():
+            parser = SmtLibParser()
+            script = parser.get_script(StringIO(input_str))
+            cmd = next(iter(script))
+            self.assertEqual(cmd.name, command)
+            self.assertEqual(len(cmd.args), len_args)
 
 
 
-    def parse(self, file_id):
+    def parse_from_file(self, file_id):
         fname = OMT_FILE_PATTERN % file_id
         reset_env()
         parser = SmtLibParser()
@@ -90,6 +70,23 @@ class TestSmtLibParserOMT(TestCase):
         self.assertIsNotNone(script)
         return script
 
+    def examples(self):
+        for file_id in TESTS:
+            script = self.parse_from_file(file_id)
+            yield file_id, TESTS[file_id], script
+
+    def examples_snippet(self):
+        for input_command, command, len_args in TEST_SAMPLES:
+            yield input_command, command, len_args
+
+TEST_SAMPLES = [
+    ("(assert-soft false :weight 2 :id goal)", "assert-soft", 2),
+    ("(maximize z)", "maximize", 2),
+    ("(maximize z :signed :id abc)", "maximize", 2),
+    ("(check-allsat ( a b c ))", "check-allsat", 3),
+    ("(load-objective-model 1)", "load-objective-model", 1),
+    ("(get-objectives)", "get-objectives", 0)
+]
 
 OMT_FILE_PATTERN = "pysmt/test/smtlib/omt/omt_test%d.smt2.bz2"
 
