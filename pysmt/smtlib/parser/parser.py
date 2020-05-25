@@ -1165,8 +1165,7 @@ class SmtLibParser(object):
             elif curr_parse == ":id" and term_group_id is None:
                 term_group_id = self.parse_atom(tokens, "assert-soft")
             else:
-                raise PysmtSyntaxError("Incorrect option in  'assert-soft' "
-                                       "command", tokens.pos_info)
+                raise PysmtSyntaxError("Incorrect option in the 'assert-soft' command", tokens.pos_info)
             curr = tokens.consume()
 
         # Defaults
@@ -1260,8 +1259,7 @@ class SmtLibParser(object):
                 signed = True
                 params.append((curr_parse, signed))
             else:
-                raise PysmtSyntaxError("Incorrect option in  'maximize/minimize ' "
-                                       "command", tokens.pos_info)
+                raise PysmtSyntaxError("Incorrect option in the 'maximize/minimize' command", tokens.pos_info)
             curr = tokens.consume()
         tokens.add_extra_token(")")
         self.consume_closing(tokens, current)
