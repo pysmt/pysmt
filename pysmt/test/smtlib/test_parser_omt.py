@@ -24,6 +24,7 @@ from pysmt.test import TestCase
 from pysmt.smtlib.parser import SmtLibParser
 from pysmt.exceptions import PysmtSyntaxError
 
+
 class TestSmtLibParserOMT(TestCase):
 
     def test_parse_omt(self):
@@ -53,14 +54,12 @@ class TestSmtLibParserOMT(TestCase):
             parser.get_script(StringIO("(maximize z :upper 50 :lower 50 :id abc"))
 
     def test_command_option_value_correctness(self):
-        for input_str, command, len_args in self.examples_snippet():
+        for input_str, command, len_args in TestSmtLibParserOMT.snippet_examples():
             parser = SmtLibParser()
             script = parser.get_script(StringIO(input_str))
             cmd = next(iter(script))
             self.assertEqual(cmd.name, command)
             self.assertEqual(len(cmd.args), len_args)
-
-
 
     def parse_from_file(self, file_id):
         fname = OMT_FILE_PATTERN % file_id
@@ -71,15 +70,19 @@ class TestSmtLibParserOMT(TestCase):
         return script
 
     def examples(self):
-        for file_id in TESTS:
+        for file_id in TEST_FILES:
             script = self.parse_from_file(file_id)
-            yield file_id, TESTS[file_id], script
+            yield file_id, TEST_FILES[file_id], script
 
-    def examples_snippet(self):
-        for input_command, command, len_args in TEST_SAMPLES:
+    @staticmethod
+    def snippet_examples():
+        for input_command, command, len_args in TEST_SNIPPETS:
             yield input_command, command, len_args
 
-TEST_SAMPLES = [
+
+OMT_FILE_PATTERN = "pysmt/test/smtlib/omt/omt_test%d.smt2.bz2"
+
+TEST_SNIPPETS = [
     ("(assert-soft false :weight 2 :id goal)", "assert-soft", 2),
     ("(maximize z)", "maximize", 2),
     ("(maximize z :signed :id abc)", "maximize", 2),
@@ -88,9 +91,7 @@ TEST_SAMPLES = [
     ("(get-objectives)", "get-objectives", 0)
 ]
 
-OMT_FILE_PATTERN = "pysmt/test/smtlib/omt/omt_test%d.smt2.bz2"
-
-TESTS = {
+TEST_FILES = {
     1: ["set-option",
         "set-logic",
         "define-fun",
