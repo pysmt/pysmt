@@ -54,9 +54,9 @@ class TestSmtLibParserOMT(TestCase):
             parser.get_script(StringIO("(maximize z :upper 50 :lower 50 :id abc"))
 
     def test_command_option_value_correctness(self):
-        for input_str, command, len_args in TestSmtLibParserOMT.snippet_examples():
+        for input_command, command, len_args in TestSmtLibParserOMT.snippet_examples():
             parser = SmtLibParser()
-            script = parser.get_script(StringIO(input_str))
+            script = parser.get_script(StringIO(input_command))
             cmd = next(iter(script))
             self.assertEqual(cmd.name, command)
             self.assertEqual(len(cmd.args), len_args)
