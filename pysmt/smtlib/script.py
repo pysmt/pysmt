@@ -89,7 +89,6 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
                     outstream.write(" %s %s" % (option_name, value))
             outstream.write(")")
 
-
         elif self.name == smtcmd.GET_VALUE:
             outstream.write("(%s (" % self.name)
             for a in self.args:
@@ -105,7 +104,7 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
                 if ":signed" != option_name:
                     outstream.write(" %s %s" % (option_name, value))
                 else:
-                    outstream.write(" %s " % (option_name))
+                    outstream.write(" %s " % option_name)
             outstream.write(")")
 
         elif self.name == smtcmd.CHECK_ALLSAT:
