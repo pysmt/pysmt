@@ -171,12 +171,14 @@ class TestOptimization(TestCase):
     def test_pareto(self):
         x = Symbol("x", INT)
         y = Symbol("y", INT)
+        obj1 = MinimizationGoal(Plus(x, y))
+        obj2 = MinimizationGoal(Minus(x, y))
         formula = And(GE(x, Int(0)), GE(y, Int(0)), LE(x, Int(10)), LE(y, Int(10)))
         for oname in get_env().factory.all_optimizers(logic=QF_LIA):
             with Optimizer(name=oname) as opt:
                 try:
                     opt.add_assertion(formula)
-                    models, costs = zip(*opt.pareto_optimize([Plus(x, y), Minus(x, y)]))
+                    models, costs = zip(*opt.pareto_optimize([obj1, obj2]))
                     self.assertEqual(len(models), 11)
                     self.assertTrue(all(m[x].constant_value() == 0 for m in models))
                     self.assertTrue(all(x[0].constant_value() == -x[1].constant_value() for x in costs))

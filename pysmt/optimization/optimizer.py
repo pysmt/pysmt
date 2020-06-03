@@ -19,7 +19,7 @@
 from pysmt.solvers.solver import Solver
 from pysmt.exceptions import PysmtValueError, GoalNotSupportedError
 from pysmt.optimization.goal import MinimizationGoal, MaximizationGoal
-from pysmt.shortcuts import Symbol, INT, REAL, BVType
+from pysmt.shortcuts import Symbol, INT, REAL, BVType, Equals
 from pysmt.logics import LIA, LRA, BV
 from pysmt.oracles import get_logic
 
@@ -127,16 +127,7 @@ class Optimizer(Solver):
             raise PysmtValueError("Invalid optimization function type: %s" % otype)
 
 
-class OptSearchInterval():
-
-    def __init__(self, goal, environment,client_data):
-        self._obj = goal
-        self._lower = None #-INF where i found this costant?
-        self._upper = None #+INF
-        self._pivot = None
-        self.environment = environment
-        self._cast, self.op_strict, self.op_ns = self._comparation_functions(goal)
-        self.client_data = client_data
+class OptComparationFunctions:
 
     def _comparation_functions(self, goal):
         """Internal utility function to get the proper cast, LT and LE
@@ -174,9 +165,20 @@ class OptSearchInterval():
                     True: (cast_bv, mgr.BVSGT, mgr.BVSGE),
                 },
             },
-
         }
         return options[goal.get_logic()][goal.opt()][goal.signed()]
+
+
+class OptSearchInterval(OptComparationFunctions):
+
+    def __init__(self, goal, environment,client_data):
+        self._obj = goal
+        self._lower = None #-INF where i found this costant?
+        self._upper = None #+INF
+        self._pivot = None
+        self.environment = environment
+        self._cast, self.op_strict, self.op_ns = self._comparation_functions(goal)
+        self.client_data = client_data
 
     def linear_search_cut(self):
         """must be called always"""
@@ -239,6 +241,25 @@ class OptSearchInterval():
             else:
                 self._upper = self._lower
 
+class OptPareto(OptComparationFunctions):
+
+    def __init__(self, goal, environment):
+        self.environment = environment
+        self.goal = goal
+        self._cast, self.op_strict, self.op_ns = self._comparation_functions(goal)
+        self.val = None
+
+    def get_costraint_strict(self):
+        if self.val is not None:
+            return self.op_strict(self.goal.term(), self.val)
+        else:
+            return None
+
+    def get_costraint_ns(self):
+        if self.val is not None:
+            return self.op_ns(self.goal.term(), self.val)
+        else:
+            return None
 
 class ExternalOptimizerMixin(Optimizer):
     """An optimizer that uses an SMT-Solver externally"""
@@ -287,20 +308,41 @@ class ExternalOptimizerMixin(Optimizer):
         """
         rt = None, None
         if goal.is_maximization_goal() or goal.is_minimization_goal():
-            rt = self._optimize(goal, strategy,
-                             feasible_solution_callback,
-                             step_size, **kwargs)
+            rt = self._optimize(goal, strategy)
         else:
             raise GoalNotSupportedError("ExternalOptimizerMixin", goal)
         return rt
 
-
-    def _optimize(self, goal, strategy,
+    def boxed_optimization(self, goals, strategy='linear',
+                 feasible_solution_callback=None,
+                 step_size=1, **kwargs):
+        rt = []
+        for goal in goals:
+            self._boxed_setup()
+            rt.append(self.optimize(goal,strategy,
                  feasible_solution_callback,
-                 step_size, **kwargs):
+                 step_size, **kwargs))
+            self._boxed_cleanup()
+        return rt
+
+    def lexicographic_optimize(self, goals, strategy='linear',
+                               feasible_solution_callback=None,
+                               step_size=1, **kwargs):
+        costraints = []
+        rt = []
+        for goal in goals:
+            next, costraints = self._lexicographic_opt(goal, costraints, strategy)
+            rt.append(next)
+        return rt
+
+    def _pareto_cleanup(self, client_data):
+        pass
+
+
+    def _optimize(self, goal, strategy):
         model = None
         client_data = self._setup()
-        current = OptSearchInterval(goal,self.environment, client_data)
+        current = OptSearchInterval(goal, self.environment, client_data)
         first_step = True
         while not current.empty():
             if not first_step:
@@ -311,18 +353,52 @@ class ExternalOptimizerMixin(Optimizer):
                 else:
                     raise PysmtValueError("Unknown optimization strategy '%s'" % strategy)
             else:
-                first_step = False
                 lin_assertions = None
             status = self._optimization_check_progress(client_data, lin_assertions, strategy)
             if status:
                 model = self.get_model()
                 current.search_is_sat(model)
             else:
+                if first_step:
+                    return None, None
                 current.search_is_unsat()
+            first_step = False
 
         self._cleanup(client_data)
 
-        return model, None
+        return model, model.get_value(goal.term())
+
+
+
+    def pareto_optimize(self, goals):
+        objs = [OptPareto(goal, self.environment) for goal in goals]
+
+        terminated = False
+        client_data = self._setup()
+        i = 0
+        while not terminated:
+            i = 0
+            last_model = None
+            optimum_found = False
+            for obj in objs:
+                 obj.val = None
+            self._pareto_setup(client_data)
+            while not optimum_found:
+                i = i+1
+                optimum_found = self._pareto_check_progress(client_data,objs)
+                if not optimum_found:
+                    last_model = self.get_model()
+                    j = -1
+                    for obj in objs:
+                        j = j+1
+                        obj.val = self.get_value(obj.goal.term())
+            self._pareto_cleanup(client_data)
+            if last_model is not None:
+                yield last_model, [obj.val for obj in objs]
+                self._pareto_block_model(client_data, objs)
+            else:
+                terminated = True
+        self._cleanup(client_data)
 
 
 class SUAOptimizerMixin(ExternalOptimizerMixin):
@@ -341,29 +417,45 @@ class SUAOptimizerMixin(ExternalOptimizerMixin):
             rt = self.solve()
         return rt
 
-
     def _pareto_setup(self, client_data):
         pass
 
     def _pareto_cleanup(self, client_data):
         pass
 
-    def _pareto_check_progress(self, client_data, cost_functions,
-                               costs_so_far, lts, les):
+    def _boxed_setup(self):
+        self.push()
+
+    def _boxed_cleanup(self):
+        self.pop()
+
+    def _lexicographic_opt(self, current_goal, costraints, strategy):
+        self.push()
+        if costraints is not None:
+            for f in costraints:
+                self.add_assertion(f)
+        else:
+            costraints = []
+        model, val = self.optimize(current_goal, strategy)
+        self.pop()
+        costraints.append(Equals(current_goal.term(), val))
+        return val, costraints
+
+
+
+    def _pareto_check_progress(self, client_data, objs):
         mgr = self.environment.formula_manager
         k = []
-        if costs_so_far is not None:
-            k = [les[i](cost_functions[i], costs_so_far[i])
-                 for i in range(len(cost_functions))]
-            k.append(mgr.Or(lts[i](cost_functions[i], costs_so_far[i])
-                            for i in range(len(cost_functions))))
+        if objs[0].val is not None:
+            k = [obj.get_costraint_ns() for obj in objs]
+            k.append(mgr.Or(obj.get_costraint_strict()for obj in objs ))
+            print(k)
         return not self.solve(assumptions=client_data + k)
 
-    def _pareto_block_model(self, client_data, cost_functions, last_model, lts, les):
+
+    def _pareto_block_model(self, client_data, objs):
         mgr = self.environment.formula_manager
-        client_data.append(mgr.Or(lts[i](cost_functions[i],
-                                         last_model[cost_functions[i]])
-                                  for i in range(len(cost_functions))))
+        client_data.append(mgr.Or(obj.get_costraint_strict() for obj in objs))
 
     def can_diverge_for_unbounded_cases(self):
         return True
@@ -398,23 +490,37 @@ class IncrementalOptimizerMixin(ExternalOptimizerMixin):
     def _pareto_cleanup(self, client_data):
         self.pop()
 
-    def _pareto_check_progress(self, client_data, cost_functions,
-                               costs_so_far, lts, les):
+    def _boxed_setup(self):
+        self.push()
+
+    def _boxed_cleanup(self):
+        self.pop()
+
+    def _lexicographic_opt(self, current_goal, costraints, strategy):
+        self.push()
+        if costraints is not None:
+            for f in costraints:
+                self.add_assertion(f)
+        else:
+            costraints = []
+        model, val = self.optimize(current_goal, strategy)
+        self.pop()
+        costraints.append(Equals(current_goal.term(), val))
+        return val, costraints
+
+    def _pareto_check_progress(self, client_data, objs):
         mgr = self.environment.formula_manager
-        if costs_so_far is not None:
-            for i in range(len(cost_functions)):
-                self.add_assertion(les[i](cost_functions[i],
-                                          costs_so_far[i]))
-            self.add_assertion(mgr.Or(lts[i](cost_functions[i],
-                                             costs_so_far[i])
-                                      for i in range(len(cost_functions))))
+        if objs[0].val is not None:
+            for obj in objs:
+                self.add_assertion(obj.get_costraint_ns())
+            self.add_assertion(mgr.Or(obj.get_costraint_strict() for obj in objs))
+        else:
+            print(">>>> " + str(objs[0].val))
         return not self.solve()
 
-    def _pareto_block_model(self, client_data, cost_functions, last_model, lts, les):
+    def _pareto_block_model(self, client_data, objs):
         mgr = self.environment.formula_manager
-        self.add_assertion(mgr.Or(lts[i](cost_functions[i],
-                                         last_model[cost_functions[i]])
-                                  for i in range(len(cost_functions))))
+        self.add_assertion(mgr.Or(obj.get_costraint_strict() for obj in objs))
 
     def can_diverge_for_unbounded_cases(self):
         return True

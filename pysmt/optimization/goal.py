@@ -65,11 +65,11 @@ class Goal(object):
 
     def get_logic(self):
         logic = get_logic(self.formula)
-        if logic.__le__(LIA):
+        if logic <= LIA:
             return LIA
-        elif logic.__le__(LRA):
+        elif logic <= LRA:
             return LRA
-        elif logic.__le__(BV):
+        elif logic <= BV:
             return BV
         else:
             return logic
