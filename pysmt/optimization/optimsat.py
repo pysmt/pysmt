@@ -108,8 +108,6 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
         else:
             raise GoalNotSupportedError("optimathsat", goal)
 
-
-
         self._msat_lib.msat_assert_objective(self.msat_env(), msat_obj)
         self.solve()
         optres = self._msat_lib.msat_objective_result(self.msat_env(), msat_obj)
@@ -140,9 +138,6 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
     def get_model(self):
         return OptiMSATModel(self.environment, self.msat_env)
 
-    def pareto_optimize(self, cost_functions):
-        # TODO
-        raise NotImplementedError
 
     def can_diverge_for_unbounded_cases(self):
         return False
