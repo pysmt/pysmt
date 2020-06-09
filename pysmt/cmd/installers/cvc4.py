@@ -94,5 +94,5 @@ class CVC4Installer(SolverInstaller):
             str_path = str_path[:backslash_place] + '\\' + str_path[backslash_place:]
             backslash_place += 2
             if backslash_place < len(str_path):
-                normal_slash_index = s[backslash_place:].find('/')
-            return str_path
+                normal_slash_index = str_path[backslash_place:].find('/')
+        return str_path
