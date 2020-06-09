@@ -63,7 +63,7 @@ class CVC4Installer(SolverInstaller):
             PYTHON_LIBRARY = sysconfig.get_config_var('LIBDIR')
         PYTHON_LIBRARY = self.__add_backslash(PYTHON_LIBRARY)
         PYTHON_INCLUDE_DIR = self.__add_backslash(sysconfig.get_python_inc())
-        SolverInstaller.run(["sed", "-i''", "-e"
+        SolverInstaller.run(["perl", "-i''", "-pe",
                              "'s/cmake_opts=\"\"/cmake_opts=\"-DPYTHON_LIBRARY=" + PYTHON_LIBRARY +  " -DPYTHON_INCLUDE_DIR=" + PYTHON_INCLUDE_DIR + "\"/g'",
                              './configure.sh'], directory=self.extract_path)
 
