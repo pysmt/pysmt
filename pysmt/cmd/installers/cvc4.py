@@ -61,9 +61,10 @@ class CVC4Installer(SolverInstaller):
         PYTHON_LIBRARY = os.environ.get('PYSMT_PYTHON_LIBDIR')
         if not PYTHON_LIBRARY:
             PYTHON_LIBRARY = sysconfig.get_config_var('LIBDIR')
-        PYTHON_INCLUDE_DIR = sysconfig.get_python_inc()
-        SolverInstaller.run(['sed', '-i',
-                             's|cmake_opts=""|cmake_opts="-DPYTHON_LIBRARY=' + PYTHON_LIBRARY + ' -DPYTHON_INCLUDE_DIR=' + PYTHON_INCLUDE_DIR + '"|g',
+        PYTHON_LIBRARY = self.__add_backslash(PYTHON_LIBRARY)
+        PYTHON_INCLUDE_DIR = self.__add_backslash(sysconfig.get_python_inc())
+        SolverInstaller.run(["sed", "-i''", "-e"
+                             "'s/cmake_opts=\"\"/cmake_opts=\"-DPYTHON_LIBRARY=" + PYTHON_LIBRARY +  " -DPYTHON_INCLUDE_DIR=" + PYTHON_INCLUDE_DIR + "\"/g'",
                              './configure.sh'], directory=self.extract_path)
 
         # Configure and build CVC4
@@ -84,3 +85,14 @@ class CVC4Installer(SolverInstaller):
 
     def get_installed_version(self):
         return self.get_installed_version_script(self.bindings_dir, "cvc4")
+
+    def __add_backslash(self, str_path):
+        backslash_place = 0
+        normal_slash_index = str_path.find('/')
+        while normal_slash_index >= 0:
+            backslash_place += normal_slash_index
+            str_path = str_path[:backslash_place] + '\\' + str_path[backslash_place:]
+            backslash_place += 2
+            if backslash_place < len(str_path):
+                normal_slash_index = s[backslash_place:].find('/')
+            return str_path
