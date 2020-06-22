@@ -544,6 +544,20 @@ class TestRegressions(TestCase):
         f = get_formula_strict(cStringIO(smt_script))
         self.assertSat(f, solver_name='yices')
 
+    def test_get_atoms_array_select(self):
+        a = Symbol("a", ArrayType(INT, BOOL))
+        x = Symbol("x", INT)
+        p = Symbol("p", BOOL)
+
+        phi = And(Iff(Select(a, x), p), Equals(x, Int(1)))
+
+        atoms = phi.get_atoms()
+
+        self.assertEqual(len(atoms), 3)
+        self.assertIn(Select(a, x), atoms)
+        self.assertIn(p, atoms)
+        self.assertIn(Equals(x, Int(1)), atoms)
+
 
 if __name__ == "__main__":
     main()
