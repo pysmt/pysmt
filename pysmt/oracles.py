@@ -389,7 +389,7 @@ class AtomsOracle(walkers.DagWalker):
     # - ITE terms
     # - Symbols
     # - Constants
-    # - Array select, e.g. a[x] because suct term it could be of Boolean type
+    # - Array select, e.g. a[x] because such term could be of Boolean type
     #
 
     def get_atoms(self, formula):
