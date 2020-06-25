@@ -46,7 +46,6 @@ class TestLIRA(TestCase):
         self.assertEqual(ToReal(Plus(b, Int(1))),
                           ToReal(ToReal(Plus(b, Int(1)))))
 
-
     def test_uflira(self):
         a = Symbol("a", REAL)
         b = Symbol("b", INT)

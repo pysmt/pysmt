@@ -173,6 +173,11 @@ class HRPrinter(TreeWalker):
         yield formula.arg(0)
         self.write(")")
 
+    def walk_realtoint(self, formula):
+        self.write("RealToInt(")
+        yield formula.arg(0)
+        self.write(")")
+
     def walk_str_constant(self, formula):
         assert (type(formula.constant_value()) == str ), \
             "The type was " + str(type(formula.constant_value()))
