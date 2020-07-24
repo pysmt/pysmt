@@ -476,7 +476,14 @@ class SmtLibParser(object):
                          smtcmd.SET_LOGIC : self._cmd_set_logic,
                          smtcmd.SET_OPTION : self._cmd_set_option,
                          smtcmd.SET_INFO : self._cmd_set_info,
-                     }
+                         # OMT Extension (http://optimathsat.disi.unitn.it/pages/smt2reference.html)
+                         smtcmd.ASSERT_SOFT: self._cmd_assert_soft,
+                         smtcmd.CHECK_ALLSAT: self._cmd_check_allsat,
+                         smtcmd.GET_OBJECTIVES: self._cmd_get_objectives,
+                         smtcmd.MAXIMIZE: self._cmd_objective,
+                         smtcmd.MINIMIZE: self._cmd_objective,
+                         smtcmd.LOAD_OBJECTIVE_MODEL: self._cmd_load_objective_model,
+                         }
 
     def _reset(self):
         """Resets the parser to the initial state"""
@@ -591,7 +598,25 @@ class SmtLibParser(object):
                 raise PysmtSyntaxError("Expected number in '_ bv' expression: "
                                        "'%s'" % op, tokens.pos_info)
             fun = mgr.BV(v, width)
-
+        elif op == "to_bv":
+            # this is necessary to the current syntax of _ to_bv, which open an empty stack
+            stack.pop()
+            try:
+                width = int(self.parse_atom(tokens, "expression"))
+            except ValueError:
+                raise PysmtSyntaxError("Expected number in '_ to_bv' expression: "
+                                       "'%s'" % op, tokens.pos_info)
+            self.consume_closing(tokens, "expression")
+            fnv = self.get_expression(tokens)
+            if fnv.is_int_constant():
+                v = fnv.constant_value()
+            else:
+                raise PysmtSyntaxError("Expected number in '_ to_bv' expression: "
+                    "'%s'" % op, tokens.pos_info)
+            if v >= 0:
+                fun = mgr.BV(v, width)
+            else:
+                fun = mgr.SBV(v, width)
         else:
             raise PysmtSyntaxError("Unexpected '_' expression '%s'" % op,
                                    tokens.pos_info)
@@ -804,12 +829,10 @@ class SmtLibParser(object):
         try:
             while True:
                 tk = tokens.consume_maybe()
-
                 if tk == "(":
                     while tk == "(":
                         stack.append([])
                         tk = tokens.consume()
-
                     if tk in self.interpreted:
                         fun = self.interpreted[tk]
                         fun(stack, tokens, tk)
@@ -1002,7 +1025,7 @@ class SmtLibParser(object):
 
 
     def parse_atom(self, tokens, command):
-        """Parses a single name from the tokens"""
+        """Parses a single name from the tokens. The `command` argument is used only for logging"""
         var = tokens.consume("Unexpected end of stream in %s command." % \
                                      command)
         if var == "(" or var == ")":
@@ -1128,6 +1151,40 @@ class SmtLibParser(object):
         self.consume_closing(tokens, current)
         return SmtLibCommand(current, [expr])
 
+    def _cmd_assert_soft(self, current, tokens):
+        """(assert-soft <term> [:id <string>] [:weight <const_term>])"""
+        expr = self.get_expression(tokens)
+        term_weight = None
+        term_group_id = None
+        curr = tokens.consume()
+        while curr != ")":
+            tokens.add_extra_token(curr)
+            curr_parse = self.parse_atom(tokens, current)
+            if curr_parse == ":weight" and term_weight is None:
+                term_weight = self.get_expression(tokens)
+            elif curr_parse == ":id" and term_group_id is None:
+                term_group_id = self.parse_atom(tokens, "assert-soft")
+            else:
+                raise PysmtSyntaxError("Incorrect option in the 'assert-soft' command", tokens.pos_info)
+            curr = tokens.consume()
+
+        # Defaults
+        if term_weight is None:
+            term_weight = self.env.formula_manager.Int(1)
+        if term_group_id is None:
+            term_group_id = "I"  # default identifier for soft-clause
+        params = [
+            (":weight", term_weight),
+            (":id", term_group_id),
+        ]
+        return SmtLibCommand(current, [expr, params])
+
+    def _cmd_check_allsat(self, current, tokens):
+        """(check-allsat <terms>)"""
+        params = self.parse_expr_list(tokens, current)
+        self.consume_closing(tokens, current)
+        return SmtLibCommand(current, params)
+
     def _cmd_check_sat(self, current, tokens):
         """(check-sat)"""
         self.parse_atoms(tokens, current, 0)
@@ -1180,6 +1237,35 @@ class SmtLibParser(object):
         params = self.parse_expr_list(tokens, current)
         self.consume_closing(tokens, current)
         return SmtLibCommand(current, params)
+
+    def _cmd_get_objectives(self, current, tokens):
+        """(get-objective)"""
+        self.parse_atoms(tokens, current, 0)
+        return SmtLibCommand(current, [])
+
+    def _cmd_objective(self, current, tokens):
+        """(maximize | minimize <term> [:id <string>] [:signed])"""
+        obj = self.get_expression(tokens)
+        params = []
+        curr = tokens.consume()
+        signed = False
+        while curr != ")":
+            tokens.add_extra_token(curr)
+            curr_parse = self.parse_atom(tokens, current)
+            if curr_parse == ":id":
+                id = self.parse_atom(tokens, "maximization/minimization")
+                params.append((curr_parse, id))
+            elif curr_parse == ":signed":
+                signed = True
+                params.append((curr_parse, signed))
+            else:
+                raise PysmtSyntaxError("Incorrect option in the 'maximize/minimize' command", tokens.pos_info)
+            curr = tokens.consume()
+        tokens.add_extra_token(")")
+        self.consume_closing(tokens, current)
+        if not signed:
+            params.append((":signed", signed))
+        return SmtLibCommand(current, [obj, params])
 
     def _cmd_declare_fun(self, current, tokens):
         """(declare-fun <symbol> (<sort>*) <sort>)"""
@@ -1323,6 +1409,14 @@ class SmtLibParser(object):
         """(reset-assertions)"""
         self.parse_atoms(tokens, current, 0)
         return SmtLibCommand(current, [])
+
+    def _cmd_load_objective_model(self, current, tokens):
+        """(load-objective-model <numeral>)"""
+        elements = self.parse_atoms(tokens, current, 0, 1)
+        levels = 1
+        if len(elements) > 0:
+            levels = int(elements[0])
+        return SmtLibCommand(current, [levels])
 
 # EOC SmtLibParser
 

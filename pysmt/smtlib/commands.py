@@ -18,6 +18,8 @@
 """Defines constants for the commands of the SMT-LIB"""
 
 ASSERT='assert'
+ASSERT_SOFT='assert-soft'
+CHECK_ALLSAT='check-allsat'
 CHECK_SAT='check-sat'
 CHECK_SAT_ASSUMING='check-sat-assuming'
 DECLARE_CONST='declare-const'
@@ -34,10 +36,16 @@ GET_ASSIGNMENT='get-assignment'
 GET_INFO='get-info'
 GET_MODEL='get-model'
 GET_OPTION='get-option'
+GET_OBJECTIVES='get-objectives'
 GET_PROOF='get-proof'
 GET_UNSAT_ASSUMPTIONS='get-unsat-assumptions'
 GET_UNSAT_CORE='get-unsat-core'
 GET_VALUE='get-value'
+LOAD_OBJECTIVE_MODEL= 'load-objective-model'
+MAXIMIZE='maximize'
+MAXMIN='maxmin'
+MINIMIZE='minimize'
+MAXMIN='minmax'
 POP='pop'
 PUSH='push'
 RESET='reset'
@@ -45,6 +53,7 @@ RESET_ASSERTIONS='reset-assertions'
 SET_INFO='set-info'
 SET_LOGIC='set-logic'
 SET_OPTION='set-option'
+
 
 #
 
@@ -82,4 +91,12 @@ SMT_LIB_2_5 = SMT_LIB_2_0 + [
     RESET_ASSERTIONS,
 ]
 
-ALL_COMMANDS = SMT_LIB_2_5
+SMT_LIB_2_5_OMT = SMT_LIB_2_5 + [
+    CHECK_ALLSAT,
+    GET_OBJECTIVES,
+    MAXIMIZE,
+    MINIMIZE,
+    LOAD_OBJECTIVE_MODEL,
+]
+
+ALL_COMMANDS = SMT_LIB_2_5_OMT

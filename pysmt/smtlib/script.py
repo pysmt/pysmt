@@ -77,6 +77,18 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
             printer.printer(self.args[0])
             outstream.write(")")
 
+        elif self.name == smtcmd.ASSERT_SOFT:
+            outstream.write("(%s " % self.name)
+            printer.printer(self.args[0])
+            for a in self.args[1]:
+                option_name, value = a
+                if option_name == ":weight":
+                    outstream.write(" %s " % option_name)
+                    printer.printer(value)
+                else:
+                    outstream.write(" %s %s" % (option_name, value))
+            outstream.write(")")
+
         elif self.name == smtcmd.GET_VALUE:
             outstream.write("(%s (" % self.name)
             for a in self.args:
@@ -84,9 +96,31 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
                 outstream.write(" ")
             outstream.write("))")
 
+        elif self.name in [smtcmd.MAXIMIZE, smtcmd.MINIMIZE]:
+            outstream.write("(%s " % self.name)
+            printer.printer(self.args[0])
+            for a in self.args[1]:
+                option_name, value = a
+                if ":signed" != option_name:
+                    outstream.write(" %s %s" % (option_name, value))
+                else:
+                    outstream.write(" %s " % option_name)
+            outstream.write(")")
+
+        elif self.name == smtcmd.CHECK_ALLSAT:
+            outstream.write("(%s " % self.name)
+            if self.args:
+                outstream.write("(")
+                for expr in self.args[:-1]:
+                    printer.printer(expr)
+                    outstream.write(" ")
+                printer.printer(self.args[-1])
+                outstream.write(")")
+            outstream.write(")")
+
         elif self.name in [smtcmd.CHECK_SAT, smtcmd.EXIT,
                            smtcmd.RESET_ASSERTIONS, smtcmd.GET_UNSAT_CORE,
-                           smtcmd.GET_ASSIGNMENT, smtcmd.GET_MODEL]:
+                           smtcmd.GET_ASSIGNMENT, smtcmd.GET_MODEL, smtcmd.GET_OBJECTIVES]:
             outstream.write("(%s)" % self.name)
 
         elif self.name == smtcmd.SET_LOGIC:
@@ -112,7 +146,7 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
             printer.printer(expr)
             outstream.write(")")
 
-        elif self.name in [smtcmd.PUSH, smtcmd.POP]:
+        elif self.name in [smtcmd.PUSH, smtcmd.POP, smtcmd.LOAD_OBJECTIVE_MODEL]:
             outstream.write("(%s %d)" % (self.name, self.args[0]))
 
         elif self.name == smtcmd.DEFINE_SORT:
