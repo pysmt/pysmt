@@ -71,7 +71,6 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
 
     def pareto_optimize(self, goals):
         self.z3.set(priority='pareto')
-        criteria = []
         for goal in goals:
             obj = self.converter.convert(goal.term())
             if goal.is_minimization_goal():
@@ -80,7 +79,6 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
                 h = self.z3.maximize(obj)
             else:
                 raise GoalNotSupportedError("z3", goal.__class__)
-            criteria.append(h)
 
         while self.z3.check() == z3.sat:
             model = Z3Model(self.environment, self.z3.model())
@@ -91,6 +89,42 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
 
     def can_diverge_for_unbounded_cases(self):
         return False
+
+    def boxed_optimization(self, goals, strategy='linear',
+                 feasible_solution_callback=None,
+                 step_size=1, **kwargs):
+        self.z3.set(priority='box')
+        models = {}
+        for goal in goals:
+            obj = self.converter.convert(goal.term())
+            if goal.is_minimization_goal():
+                h = self.z3.minimize(obj)
+            elif goal.is_maximization_goal():
+                h = self.z3.maximize(obj)
+            else:
+                raise GoalNotSupportedError("z3", goal.__class__)
+            self.z3.check() == z3.sat
+            model = Z3Model(self.environment, self.z3.model())
+            models[goal] = (model, [model.get_value(x.term()) for x in goals])
+
+        return models
+
+    def lexicographic_optimize(self, goals, strategy='linear',
+                               feasible_solution_callback=None,
+                               step_size=1, **kwargs):
+        self.z3.set(priority='lex')
+        for goal in goals:
+            obj = self.converter.convert(goal.term())
+            if goal.is_minimization_goal():
+                h = self.z3.minimize(obj)
+            elif goal.is_maximization_goal():
+                h = self.z3.maximize(obj)
+            else:
+                raise GoalNotSupportedError("z3", goal.__class__)
+
+        self.z3.check() == z3.sat
+        model = Z3Model(self.environment, self.z3.model())
+        return [model.get_value(x.term()) for x in goals]
 
 
 class Z3SUAOptimizer(Z3Solver, SUAOptimizerMixin):

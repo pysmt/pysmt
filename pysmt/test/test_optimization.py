@@ -186,6 +186,55 @@ class TestOptimization(TestCase):
                     pass # OptiMathSAT wrapping of pareto is incomplete
 
     @skipIfNoOptimizerForLogic(QF_LIA)
+    def test_boxed(self):
+        x = Symbol("x", INT)
+        y = Symbol("y", INT)
+        z = Symbol("z", INT)
+        f1 = And(LE(Int(10), x), LE(Int(10), y), LE(Int(10), z))
+        f2 = And(LE(x, Int(0)), LE(y, Int(0)), LE(z, Int(0)))
+        obj1 = MinimizationGoal(Minus(x, y))
+        obj2 = MinimizationGoal(Minus(x, y))
+        for oname in get_env().factory.all_optimizers(logic=QF_LIA):
+            with Optimizer(name=oname) as opt:
+                try:
+                    opt.add_assertion(f1)
+                    opt.add_assertion(f2)
+                    models = opt.boxed_optimization([obj1, obj2])
+                    self.assertEqual(len(models), 2)
+                    self.assertEqual(models[obj1][0](x) == 0)
+                    self.assertEqual(models[obj1][0](y) == 10)
+                    self.assertEqual(models[obj2][0](x) == 10)
+                    self.assertEqual(models[obj2][0](y) == 0)
+                except NotImplementedError:
+                    pass  # OptiMathSAT wrapping of pareto is incomplete
+
+    @skipIfNoOptimizerForLogic(QF_LIA)
+    def test_lex(self):
+        x = Symbol("x", INT)
+        y = Symbol("y", INT)
+        z = Symbol("z", INT)
+        t = Symbol("t", INT)
+        u = Symbol("u", INT)
+        f1 = And(LE(Int(10), x), LE(Int(10), y), LE(Int(10), z))
+        f2 = And(LE(x, Int(0)), LE(y, Int(0)), LE(z, Int(0)))
+        obj1 = MaximizationGoal(x)
+        obj2 = MinimizationGoal(y)
+        obj3 = MaximizationGoal(Plus(x, y, z))
+        obj4 = MinimizationGoal(t)
+        obj5 = MinimizationGoal(u)
+        for oname in get_env().factory.all_optimizers(logic=QF_LIA):
+            with Optimizer(name=oname) as opt:
+                try:
+                    opt.add_assertion(f1)
+                    opt.add_assertion(f2)
+                    values = opt.lexicographic_optimize([obj1, obj2, obj2, obj3, obj4, obj5])
+                    self.assertEqual(values[0] == 5)
+                    self.assertEqual(values[1] == 0)
+                    self.assertEqual(values[2] == 10)
+                except NotImplementedError:
+                    pass  # OptiMathSAT wrapping of pareto is incomplete
+
+    @skipIfNoOptimizerForLogic(QF_LIA)
     def test_unbounded(self):
         x = Symbol("x", INT)
         formula = LE(x, Int(10))

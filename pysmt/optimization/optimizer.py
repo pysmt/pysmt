@@ -46,7 +46,7 @@ class Optimizer(Solver):
         raise NotImplementedError
 
 
-    def pareto_optimize(self, cost_functions):
+    def pareto_optimize(self, goals):
         """This function is a generator returning *all* the pareto-optimal
         solutions for the problem of minimizing the `cost_functions`
         keeping the formulae asserted in this optimizer satisfied.
@@ -316,12 +316,12 @@ class ExternalOptimizerMixin(Optimizer):
     def boxed_optimization(self, goals, strategy='linear',
                  feasible_solution_callback=None,
                  step_size=1, **kwargs):
-        rt = []
+        rt = {}
         for goal in goals:
             self._boxed_setup()
-            rt.append(self.optimize(goal,strategy,
+            rt[goal] = self.optimize(goal,strategy,
                  feasible_solution_callback,
-                 step_size, **kwargs))
+                 step_size, **kwargs)
             self._boxed_cleanup()
         return rt
 
@@ -514,8 +514,6 @@ class IncrementalOptimizerMixin(ExternalOptimizerMixin):
             for obj in objs:
                 self.add_assertion(obj.get_costraint_ns())
             self.add_assertion(mgr.Or(obj.get_costraint_strict() for obj in objs))
-        else:
-            print(">>>> " + str(objs[0].val))
         return not self.solve()
 
     def _pareto_block_model(self, client_data, objs):
