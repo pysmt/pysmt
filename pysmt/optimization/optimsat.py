@@ -18,6 +18,7 @@
 
 from pysmt.logics import LRA, LIA
 
+
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               PysmtUnboundedOptimizationError,
                               GoalNotSupportedError)
@@ -27,6 +28,8 @@ from pysmt.optimization.optimizer import Optimizer
 from pysmt.solvers.msat import MSatEnv, MathSAT5Model, MathSATOptions
 from pysmt.solvers.msat import MathSAT5Solver, MSatConverter, MSatQuantifierEliminator
 from pysmt.solvers.msat import MSatInterpolator, MSatBoolUFRewriter
+
+from pysmt.solvers.dynmsat import MSATCreateEnv
 
 # TODO:
 # - check msat does not instantiate any MSAT class directly (use virtual override)
@@ -134,6 +137,61 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
 
             model = self.get_model()
             return model, optres
+
+    def pareto_optimize(self, goals):
+        print("start in ")
+        options = {
+            "model_generation": "true",
+            "opt.priority": "par",
+            "opt.par.mode": "incremental"
+        }
+        self.msat_config = self._msat_lib.msat_create_config()
+        for key, value in options.items():
+            self._msat_lib.msat_set_option(self.msat_config, key, value)
+        self.msat_env = MSATCreateEnv(self.__class__.__lib_name__, self.msat_config)
+        self._msat_lib.msat_destroy_config(self.msat_config)
+        msat_objs = []
+
+        for g in goals:
+            if g.is_minmax_goal() or g.is_maxmin_goal():
+                if g.is_minmax_goal():
+                    f = self._msat_lib.msat_make_minmax
+                else:
+                    f = self._msat_lib.msat_make_maxmin
+
+                cost_function = g.terms
+                obj_fun = []
+                for f in cost_function:
+                    obj_fun.append(self.converter.convert(f))
+            elif g.is_minimization_goal() or g.is_maximization_goal():
+                if g.is_minimization_goal():
+                    f = self._msat_lib.msat_make_minimize
+                else:
+                    f = self._msat_lib.msat_make_maximize
+
+                cost_function = g.term()
+                obj_fun = self.converter.convert(cost_function)
+            else:
+                raise GoalNotSupportedError("optimathsat", g)
+
+            msat_obj = f(self.msat_env(), obj_fun)
+            msat_objs.append(msat_obj)
+            self._msat_lib.msat_assert_objective(self.msat_env(), msat_obj)
+        rt = self.solve()
+        model = self.get_model()
+        print("model in name " + model.__class__.__name__)
+        print("rt in " + rt.__class__.__name__)
+        while(rt):
+            print("model in name " + model.__class__.__name__)
+            yield model
+            rt = self.solve()
+            print("rt " + str(rt))
+            model = self.get_model()
+            for g in goals:
+                print(model.get_value(g.term()))
+        print("end")
+        return None
+
 
     def get_model(self):
         return OptiMSATModel(self.environment, self.msat_env)
