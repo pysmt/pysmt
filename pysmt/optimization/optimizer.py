@@ -319,9 +319,14 @@ class ExternalOptimizerMixin(Optimizer):
         rt = {}
         for goal in goals:
             self._boxed_setup()
-            rt[goal] = self.optimize(goal,strategy,
-                 feasible_solution_callback,
-                 step_size, **kwargs)
+            if goal.is_maximization_goal() or goal.is_minimization_goal():
+                t = self._optimize(goal,strategy)
+                if t is not (None,None):
+                    rt[goal] = t
+                else:
+                    return None
+            else:
+                raise GoalNotSupportedError("ExternalOptimizerMixin", goal)
             self._boxed_cleanup()
         return rt
 
@@ -331,9 +336,9 @@ class ExternalOptimizerMixin(Optimizer):
         costraints = []
         rt = []
         for goal in goals:
-            next, costraints = self._lexicographic_opt(goal, costraints, strategy)
+            model, next, costraints = self._lexicographic_opt(goal, costraints, strategy)
             rt.append(next)
-        return rt
+        return model, rt
 
     def _pareto_cleanup(self, client_data):
         pass
@@ -439,7 +444,7 @@ class SUAOptimizerMixin(ExternalOptimizerMixin):
         model, val = self.optimize(current_goal, strategy)
         self.pop()
         costraints.append(Equals(current_goal.term(), val))
-        return val, costraints
+        return model, val, costraints
 
 
 
@@ -506,7 +511,7 @@ class IncrementalOptimizerMixin(ExternalOptimizerMixin):
         model, val = self.optimize(current_goal, strategy)
         self.pop()
         costraints.append(Equals(current_goal.term(), val))
-        return val, costraints
+        return model, val, costraints
 
     def _pareto_check_progress(self, client_data, objs):
         mgr = self.environment.formula_manager

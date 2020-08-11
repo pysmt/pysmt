@@ -90,9 +90,7 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
     def can_diverge_for_unbounded_cases(self):
         return False
 
-    def boxed_optimization(self, goals, strategy='linear',
-                 feasible_solution_callback=None,
-                 step_size=1, **kwargs):
+    def boxed_optimization(self, goals):
         self.z3.set(priority='box')
         models = {}
         for goal in goals:
@@ -103,15 +101,17 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
                 h = self.z3.maximize(obj)
             else:
                 raise GoalNotSupportedError("z3", goal.__class__)
-            self.z3.check() == z3.sat
-            model = Z3Model(self.environment, self.z3.model())
-            models[goal] = (model, [model.get_value(x.term()) for x in goals])
+
+        for goal in goals:
+            if self.z3.check() == z3.sat:
+                model = Z3Model(self.environment, self.z3.model())
+                models[goal] = (model, model.get_value(goal.term()))
+            else:
+                return None
 
         return models
 
-    def lexicographic_optimize(self, goals, strategy='linear',
-                               feasible_solution_callback=None,
-                               step_size=1, **kwargs):
+    def lexicographic_optimize(self, goals):
         self.z3.set(priority='lex')
         for goal in goals:
             obj = self.converter.convert(goal.term())
@@ -122,9 +122,11 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
             else:
                 raise GoalNotSupportedError("z3", goal.__class__)
 
-        self.z3.check() == z3.sat
-        model = Z3Model(self.environment, self.z3.model())
-        return [model.get_value(x.term()) for x in goals]
+        if self.z3.check() == z3.sat:
+            model = Z3Model(self.environment, self.z3.model())
+            return model, [model.get_value(x.term()) for x in goals]
+        else:
+            return None, None
 
 
 class Z3SUAOptimizer(Z3Solver, SUAOptimizerMixin):
