@@ -139,7 +139,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
             return model, optres
 
     def pareto_optimize(self, goals):
-        print("start in ")
+        #print("start in ")
         options = {
             "model_generation": "true",
             "opt.priority": "par",
@@ -179,17 +179,16 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
             self._msat_lib.msat_assert_objective(self.msat_env(), msat_obj)
         rt = self.solve()
         model = self.get_model()
-        print("model in name " + model.__class__.__name__)
-        print("rt in " + rt.__class__.__name__)
+        #print("model in name " + model.__class__.__name__)
+        #print("rt in " + rt.__class__.__name__)
         while(rt):
-            print("model in name " + model.__class__.__name__)
+            #print("model in name " + model.__class__.__name__)
             yield model
             rt = self.solve()
-            print("rt " + str(rt))
+            #print("rt " + str(rt))
             model = self.get_model()
-            for g in goals:
-                print(model.get_value(g.term()))
-        print("end")
+
+        #print("end")
         return None
 
 

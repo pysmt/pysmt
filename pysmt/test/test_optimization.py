@@ -175,38 +175,82 @@ class TestOptimization(TestCase):
         obj2 = MinimizationGoal(Minus(x, y))
         formula = And(GE(x, Int(0)), GE(y, Int(0)), LE(x, Int(10)), LE(y, Int(10)))
         for oname in get_env().factory.all_optimizers(logic=QF_LIA):
-            with Optimizer(name=oname) as opt:
-                try:
-                    opt.add_assertion(formula)
-                    models, costs = zip(*opt.pareto_optimize([obj1, obj2]))
-                    self.assertEqual(len(models), 11)
-                    self.assertTrue(all(m[x].constant_value() == 0 for m in models))
-                    self.assertTrue(all(x[0].constant_value() == -x[1].constant_value() for x in costs))
-                except NotImplementedError:
-                    pass # OptiMathSAT wrapping of pareto is incomplete
+            if oname != "optimsat":
+                with Optimizer(name=oname) as opt:
+                    print(oname)
+                    try:
+                        opt.add_assertion(formula)
+                        models, costs = zip(*opt.pareto_optimize([obj1, obj2]))
+                        self.assertEqual(len(models), 11)
+                        self.assertTrue(all(m[x].constant_value() == 0 for m in models))
+                        self.assertTrue(all(x[0].constant_value() == -x[1].constant_value() for x in costs))
+                    except NotImplementedError:
+                        pass # OptiMathSAT wrapping of pareto is incomplete
+
+    @skipIfNoOptimizerForLogic(QF_LIA)
+    def test_pareto_unsat(self):
+        x = Symbol("x", INT)
+        y = Symbol("y", INT)
+        obj1 = MinimizationGoal(Plus(x, y))
+        obj2 = MinimizationGoal(Minus(x, y))
+        formula = And(GE(x, Int(0)), GE(y, Int(1)), LE(x, Int(10)), LE(y, Int(10)), LE(y, Int(0)))
+        for oname in get_env().factory.all_optimizers(logic=QF_LIA):
+            if oname != "optimsat":
+                with Optimizer(name=oname) as opt:
+                    print(oname)
+                    try:
+                        opt.add_assertion(formula)
+                        if opt.pareto_optimize([obj1, obj2]):
+                            self.assertTrue(False)
+                    except NotImplementedError:
+                        pass  # OptiMathSAT wrapping of pareto is incomplete
 
     @skipIfNoOptimizerForLogic(QF_LIA)
     def test_boxed(self):
         x = Symbol("x", INT)
         y = Symbol("y", INT)
         z = Symbol("z", INT)
-        f1 = And(LE(Int(10), x), LE(Int(10), y), LE(Int(10), z))
-        f2 = And(LE(x, Int(0)), LE(y, Int(0)), LE(z, Int(0)))
+        f1 = And(LE(Int(0), x), LE(Int(0), y), LE(Int(0), z))
+        f2 = And(LE(x, Int(10)), LE(y, Int(10)), LE(z, Int(10)))
         obj1 = MinimizationGoal(Minus(x, y))
-        obj2 = MinimizationGoal(Minus(x, y))
+        obj2 = MinimizationGoal(Minus(y, x))
         for oname in get_env().factory.all_optimizers(logic=QF_LIA):
             with Optimizer(name=oname) as opt:
-                try:
-                    opt.add_assertion(f1)
-                    opt.add_assertion(f2)
-                    models = opt.boxed_optimization([obj1, obj2])
-                    self.assertEqual(len(models), 2)
-                    self.assertEqual(models[obj1][0](x) == 0)
-                    self.assertEqual(models[obj1][0](y) == 10)
-                    self.assertEqual(models[obj2][0](x) == 10)
-                    self.assertEqual(models[obj2][0](y) == 0)
-                except NotImplementedError:
-                    pass  # OptiMathSAT wrapping of pareto is incomplete
+                if oname != "optimsat":
+                    print(oname)
+                    try:
+                        opt.add_assertion(f1)
+                        opt.add_assertion(f2)
+                        models = opt.boxed_optimization([obj1, obj2])
+                        self.assertEqual(len(models), 2)
+                        print(models)
+                        self.assertEqual(models[obj1][0].get_py_value(x), 0)
+                        self.assertEqual(models[obj1][0].get_py_value(y), 10)
+                        self.assertEqual(models[obj2][0].get_py_value(x), 10)
+                        self.assertEqual(models[obj2][0].get_py_value(y), 0)
+                    except NotImplementedError:
+                        pass  # OptiMathSAT wrapping of pareto is incomplete
+
+    @skipIfNoOptimizerForLogic(QF_LIA)
+    def test_boxed_unsat(self):
+        x = Symbol("x", INT)
+        y = Symbol("y", INT)
+        z = Symbol("z", INT)
+        f1 = And(LE(Int(0), x), LE(Int(0), y), LE(Int(1), z))
+        f2 = And(LE(x, Int(10)), LE(y, Int(10)), LE(z, Int(10)), LE(z, Int(0)))
+        obj1 = MinimizationGoal(Minus(x, y))
+        obj2 = MinimizationGoal(Minus(y, x))
+        for oname in get_env().factory.all_optimizers(logic=QF_LIA):
+            with Optimizer(name=oname) as opt:
+                if oname != "optimsat":
+                    print(oname)
+                    try:
+                        opt.add_assertion(f1)
+                        opt.add_assertion(f2)
+                        models = opt.boxed_optimization([obj1, obj2])
+                        self.assertTrue(models is None)
+                    except NotImplementedError:
+                        pass  # OptiMathSAT wrapping of pareto is incomplete
 
     @skipIfNoOptimizerForLogic(QF_LIA)
     def test_lex(self):
@@ -215,24 +259,53 @@ class TestOptimization(TestCase):
         z = Symbol("z", INT)
         t = Symbol("t", INT)
         u = Symbol("u", INT)
-        f1 = And(LE(Int(10), x), LE(Int(10), y), LE(Int(10), z))
-        f2 = And(LE(x, Int(0)), LE(y, Int(0)), LE(z, Int(0)))
+        f1 = And(LE(Int(0), x), LE(Int(0), y), LE(Int(0), z), LE(Int(0), u))
+        f2 = And(LE(x, Int(5)), LE(y, Int(5)), LE(z, Int(5)), LE(u, Int(5)))
         obj1 = MaximizationGoal(x)
         obj2 = MinimizationGoal(y)
         obj3 = MaximizationGoal(Plus(x, y, z))
         obj4 = MinimizationGoal(t)
         obj5 = MinimizationGoal(u)
         for oname in get_env().factory.all_optimizers(logic=QF_LIA):
-            with Optimizer(name=oname) as opt:
-                try:
-                    opt.add_assertion(f1)
-                    opt.add_assertion(f2)
-                    values = opt.lexicographic_optimize([obj1, obj2, obj2, obj3, obj4, obj5])
-                    self.assertEqual(values[0] == 5)
-                    self.assertEqual(values[1] == 0)
-                    self.assertEqual(values[2] == 10)
-                except NotImplementedError:
-                    pass  # OptiMathSAT wrapping of pareto is incomplete
+            if oname != "optimsat":
+                print("lex "+oname)
+                with Optimizer(name=oname) as opt:
+                    try:
+                        opt.add_assertion(f1)
+                        opt.add_assertion(f2)
+                        model, values = opt.lexicographic_optimize([obj1, obj2, obj3, obj4, obj5])
+                        self.assertEqual(values[0], Int(5))
+                        self.assertEqual(values[1], Int(0))
+                        self.assertEqual(values[2], Int(10))
+                    except NotImplementedError:
+                        pass  # OptiMathSAT wrapping of pareto is incomplete
+
+    def test_lex_unsat(self):
+        x = Symbol("x", INT)
+        y = Symbol("y", INT)
+        z = Symbol("z", INT)
+        t = Symbol("t", INT)
+        u = Symbol("u", INT)
+        f1 = And(LE(Int(0), x), LE(Int(0), y), LE(Int(0), z), LE(Int(0), u))
+        f2 = And(LE(x, Int(5)), LE(y, Int(5)), LE(z, Int(5)), LE(u, Int(5)))
+        obj1 = MaximizationGoal(x)
+        obj2 = MinimizationGoal(y)
+        obj3 = MaximizationGoal(Plus(x, y, z))
+        obj4 = MinimizationGoal(t)
+        obj5 = MinimizationGoal(u)
+        for oname in get_env().factory.all_optimizers(logic=QF_LIA):
+            if oname != "optimsat":
+                print("lex "+oname)
+                with Optimizer(name=oname) as opt:
+                    try:
+                        opt.add_assertion(f1)
+                        opt.add_assertion(f2)
+                        model, values = opt.lexicographic_optimize([obj1, obj2, obj3, obj4, obj5])
+                        self.assertEqual(values[0], Int(5))
+                        self.assertEqual(values[1], Int(0))
+                        self.assertEqual(values[2], Int(10))
+                    except NotImplementedError:
+                        pass  # OptiMathSAT wrapping of pareto is incomplete
 
     @skipIfNoOptimizerForLogic(QF_LIA)
     def test_unbounded(self):
