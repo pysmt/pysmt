@@ -139,17 +139,83 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
             return model, optres
 
     def pareto_optimize(self, goals):
-        #print("start in ")
-        options = {
-            "model_generation": "true",
-            "opt.priority": "par",
-            "opt.par.mode": "incremental"
-        }
-        self.msat_config = self._msat_lib.msat_create_config()
-        for key, value in options.items():
-            self._msat_lib.msat_set_option(self.msat_config, key, value)
-        self.msat_env = MSATCreateEnv(self.__class__.__lib_name__, self.msat_config)
-        self._msat_lib.msat_destroy_config(self.msat_config)
+        self._msat_lib.msat_set_opt_priority(self.environment, "par")
+        msat_objs = []
+
+        for g in goals:
+            if g.is_minmax_goal() or g.is_maxmin_goal():
+                if g.is_minmax_goal():
+                    f = self._msat_lib.msat_make_minmax
+                else:
+                    f = self._msat_lib.msat_make_maxmin
+
+                cost_function = g.terms
+                obj_fun = []
+                for f in cost_function:
+                    obj_fun.append(self.converter.convert(f))
+            elif g.is_minimization_goal() or g.is_maximization_goal():
+                if g.is_minimization_goal():
+                    f = self._msat_lib.msat_make_minimize
+                else:
+                    f = self._msat_lib.msat_make_maximize
+
+                cost_function = g.term()
+                obj_fun = self.converter.convert(cost_function)
+            else:
+                raise GoalNotSupportedError("optimathsat", g)
+
+            msat_obj = f(self.msat_env(), obj_fun)
+            msat_objs.append(msat_obj)
+            self._msat_lib.msat_assert_objective(self.msat_env(), msat_obj)
+
+        models = {}
+        for goal in goals:
+            rt = self.solve()
+            if rt:
+                model = self.get_model()
+                models[goal] = (model, model.get_value(goal.term()))
+            else:
+                return None
+
+
+    def lexicographic_optimize(self, goals):
+        self._msat_lib.msat_set_opt_priority(self.environment, "lex")
+        msat_objs = []
+
+        for g in goals:
+            if g.is_minmax_goal() or g.is_maxmin_goal():
+                if g.is_minmax_goal():
+                    f = self._msat_lib.msat_make_minmax
+                else:
+                    f = self._msat_lib.msat_make_maxmin
+
+                cost_function = g.terms
+                obj_fun = []
+                for f in cost_function:
+                    obj_fun.append(self.converter.convert(f))
+            elif g.is_minimization_goal() or g.is_maximization_goal():
+                if g.is_minimization_goal():
+                    f = self._msat_lib.msat_make_minimize
+                else:
+                    f = self._msat_lib.msat_make_maximize
+
+                cost_function = g.term()
+                obj_fun = self.converter.convert(cost_function)
+            else:
+                raise GoalNotSupportedError("optimathsat", g)
+
+            msat_obj = f(self.msat_env(), obj_fun)
+            msat_objs.append(msat_obj)
+            self._msat_lib.msat_assert_objective(self.msat_env(), msat_obj)
+        rt = self.solve()
+        if rt:
+            model = self.get_model()
+            return model, [model.get_value(x.term()) for x in goals]
+        else:
+            return None, None
+
+    def boxed_optimization(self, goals):
+        self._msat_lib.msat_set_opt_priority(self.environment, "box")
         msat_objs = []
 
         for g in goals:
