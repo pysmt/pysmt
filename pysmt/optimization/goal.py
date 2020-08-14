@@ -138,6 +138,7 @@ class MaxMinGoal(MaximizationGoal):
 
 class MaxSMTGoal(Goal):
     """
+    TODO
     MaxSMT goal common to all solvers.
     Attention: some solvers may not support this goal
     """
