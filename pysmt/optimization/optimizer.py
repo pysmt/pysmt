@@ -264,28 +264,6 @@ class OptPareto(OptComparationFunctions):
 class ExternalOptimizerMixin(Optimizer):
     """An optimizer that uses an SMT-Solver externally"""
 
-    def _setup(self):
-        raise NotImplementedError
-
-    def _cleanup(self, client_data):
-        raise NotImplementedError
-
-    def _pareto_setup(self, client_data):
-        raise NotImplementedError
-
-    def _pareto_cleanup(self, client_data):
-        raise NotImplementedError
-
-    def _pareto_check_progress(self, client_data, cost_functions,
-                               costs_so_far, lts, les):
-        raise NotImplementedError
-
-    def _pareto_block_model(self, client_data, cost_functions, last_model, lts, les):
-        raise NotImplementedError
-
-    def _optimization_check_progress(self, client_data, formula, strategy):
-        raise NotImplementedError
-
     def optimize(self, goal, strategy='linear',
                  feasible_solution_callback=None,
                  step_size=1, **kwargs):
@@ -318,33 +296,30 @@ class ExternalOptimizerMixin(Optimizer):
                  step_size=1, **kwargs):
         rt = {}
         for goal in goals:
-            self._boxed_setup()
             if goal.is_maximization_goal() or goal.is_minimization_goal():
-                t = self._optimize(goal,strategy)
+                t = self.optimize(goal = goal,strategy = strategy)
                 if t is not (None,None):
                     rt[goal] = t
                 else:
                     return None
             else:
                 raise GoalNotSupportedError("ExternalOptimizerMixin", goal)
-            self._boxed_cleanup()
         return rt
 
     def lexicographic_optimize(self, goals, strategy='linear',
                                feasible_solution_callback=None,
                                step_size=1, **kwargs):
-        costraints = []
         rt = []
+        client_data = self._setup()
         for goal in goals:
-            model, next, costraints = self._lexicographic_opt(goal, costraints, strategy)
-            rt.append(next)
+            model, val = self._lexicographic_opt(client_data, goal, strategy)
+            rt.append(val)
+
+        self._cleanup(client_data)
         return model, rt
 
-    def _pareto_cleanup(self, client_data):
-        pass
 
-
-    def _optimize(self, goal, strategy):
+    def _optimize(self, goal, strategy, extra_assumption = None):
         model = None
         client_data = self._setup()
         current = OptSearchInterval(goal, self.environment, client_data)
@@ -359,7 +334,7 @@ class ExternalOptimizerMixin(Optimizer):
                     raise PysmtValueError("Unknown optimization strategy '%s'" % strategy)
             else:
                 lin_assertions = None
-            status = self._optimization_check_progress(client_data, lin_assertions, strategy)
+            status = self._optimization_check_progress(client_data, lin_assertions, strategy, extra_assumption)
             if status:
                 model = self.get_model()
                 current.search_is_sat(model)
@@ -380,24 +355,19 @@ class ExternalOptimizerMixin(Optimizer):
 
         terminated = False
         client_data = self._setup()
-        i = 0
         while not terminated:
-            i = 0
             last_model = None
             optimum_found = False
             for obj in objs:
                  obj.val = None
-            self._pareto_setup(client_data)
+            self._pareto_setup()
             while not optimum_found:
-                i = i+1
                 optimum_found = self._pareto_check_progress(client_data,objs)
                 if not optimum_found:
                     last_model = self.get_model()
-                    j = -1
                     for obj in objs:
-                        j = j+1
                         obj.val = self.get_value(obj.goal.term())
-            self._pareto_cleanup(client_data)
+            self._pareto_cleanup()
             if last_model is not None:
                 yield last_model, [obj.val for obj in objs]
                 self._pareto_block_model(client_data, objs)
@@ -415,36 +385,26 @@ class SUAOptimizerMixin(ExternalOptimizerMixin):
     def _cleanup(self, client_data):
         pass
 
-    def _optimization_check_progress(self, client_data, formula, strategy):
+    def _pareto_setup(self):
+        pass
+
+    def _pareto_cleanup(self):
+        pass
+
+    def _optimization_check_progress(self, client_data, formula, strategy, extra_assumption = None):
+        assum = extra_assumption if extra_assumption is not None else []
         if formula is not None:
-            rt = self.solve(assumptions=[formula])
-        else:
-            rt = self.solve()
+            assum = assum + [formula]
+        print(assum)
+        rt = self.solve(assumptions = assum)
         return rt
 
-    def _pareto_setup(self, client_data):
-        pass
 
-    def _pareto_cleanup(self, client_data):
-        pass
-
-    def _boxed_setup(self):
-        self.push()
-
-    def _boxed_cleanup(self):
-        self.pop()
-
-    def _lexicographic_opt(self, current_goal, costraints, strategy):
-        self.push()
-        if costraints is not None:
-            for f in costraints:
-                self.add_assertion(f)
-        else:
-            costraints = []
-        model, val = self.optimize(current_goal, strategy)
-        self.pop()
-        costraints.append(Equals(current_goal.term(), val))
-        return model, val, costraints
+    def _lexicographic_opt(self, client_data, current_goal, strategy):
+        print(client_data)
+        model, val = self._optimize(current_goal, strategy, extra_assumption = client_data)
+        client_data.append(Equals(current_goal.term(), val))
+        return model, val
 
 
 
@@ -454,7 +414,6 @@ class SUAOptimizerMixin(ExternalOptimizerMixin):
         if objs[0].val is not None:
             k = [obj.get_costraint_ns() for obj in objs]
             k.append(mgr.Or(obj.get_costraint_strict()for obj in objs ))
-            print(k)
         return not self.solve(assumptions=client_data + k)
 
 
@@ -471,12 +430,18 @@ class IncrementalOptimizerMixin(ExternalOptimizerMixin):
 
     def _setup(self):
         self.push()
-        return None
+        return []
 
     def _cleanup(self, client_data):
         self.pop()
 
-    def _optimization_check_progress(self, client_data, formula, strategy):
+    def _pareto_setup(self):
+        self.push()
+
+    def _pareto_cleanup(self):
+        self.pop()
+
+    def _optimization_check_progress(self, client_data, formula, strategy, extra_assumption = None):
         if strategy == 'linear':
             if formula is not None:
                 self.add_assertion(formula)
@@ -489,29 +454,14 @@ class IncrementalOptimizerMixin(ExternalOptimizerMixin):
             self.pop()
         return rt
 
-    def _pareto_setup(self, client_data):
+    def _lexicographic_opt(self, client_data, current_goal, strategy):
         self.push()
-
-    def _pareto_cleanup(self, client_data):
-        self.pop()
-
-    def _boxed_setup(self):
-        self.push()
-
-    def _boxed_cleanup(self):
-        self.pop()
-
-    def _lexicographic_opt(self, current_goal, costraints, strategy):
-        self.push()
-        if costraints is not None:
-            for f in costraints:
-                self.add_assertion(f)
-        else:
-            costraints = []
+        for t in client_data:
+            self.add_assertion(t)
         model, val = self.optimize(current_goal, strategy)
         self.pop()
-        costraints.append(Equals(current_goal.term(), val))
-        return model, val, costraints
+        client_data.append(Equals(current_goal.term(), val)) #1 3; 3 1
+        return model, val
 
     def _pareto_check_progress(self, client_data, objs):
         mgr = self.environment.formula_manager

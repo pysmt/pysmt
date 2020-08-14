@@ -139,7 +139,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
             return model, optres
 
     def pareto_optimize(self, goals):
-        self._msat_lib.msat_set_opt_priority(self.environment, "par")
+        self._msat_lib.msat_set_opt_priority(self.msat_env(), "par")
         msat_objs = []
 
         for g in goals:
@@ -168,18 +168,14 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
             msat_objs.append(msat_obj)
             self._msat_lib.msat_assert_objective(self.msat_env(), msat_obj)
 
-        models = {}
-        for goal in goals:
-            rt = self.solve()
-            if rt:
-                model = self.get_model()
-                models[goal] = (model, model.get_value(goal.term()))
-            else:
-                return None
+        while self.solve():
+            model = self.get_model()
+            yield model, [model.get_value(goal.term()) for goal in goals]
+
 
 
     def lexicographic_optimize(self, goals):
-        self._msat_lib.msat_set_opt_priority(self.environment, "lex")
+        self._msat_lib.msat_set_opt_priority(self.msat_env(), "lex")
         msat_objs = []
 
         for g in goals:
@@ -215,7 +211,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
             return None, None
 
     def boxed_optimization(self, goals):
-        self._msat_lib.msat_set_opt_priority(self.environment, "box")
+        self._msat_lib.msat_set_opt_priority(self.msat_env(), "box")
         msat_objs = []
 
         for g in goals:
@@ -243,20 +239,19 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
             msat_obj = f(self.msat_env(), obj_fun)
             msat_objs.append(msat_obj)
             self._msat_lib.msat_assert_objective(self.msat_env(), msat_obj)
-        rt = self.solve()
-        model = self.get_model()
-        #print("model in name " + model.__class__.__name__)
-        #print("rt in " + rt.__class__.__name__)
-        while(rt):
-            #print("model in name " + model.__class__.__name__)
-            yield model
-            rt = self.solve()
-            #print("rt " + str(rt))
+
+        temp = self.solve()
+        if not temp:
+            return None
+
+        rt = {}
+
+        for msat_obj, goal in zip(msat_objs, goals):
+            self._msat_lib.msat_load_objective_model(self.msat_env(), msat_obj)
             model = self.get_model()
+            rt[goal] = (model, model.get_value(goal.term()))
 
-        #print("end")
-        return None
-
+        return rt
 
     def get_model(self):
         return OptiMSATModel(self.environment, self.msat_env)
