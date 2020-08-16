@@ -86,8 +86,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
         elif otype.is_bv_type():
             return mgr.BVULE(x, y)
 
-    def optimize(self, goal, **kwargs):
-
+    def _load_goal(self, goal, msat_objs=None):
         if goal.is_minmax_goal() or goal.is_maxmin_goal():
             if goal.is_minmax_goal():
                 make_fun = self._msat_lib.msat_make_minmax
@@ -98,7 +97,6 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
             obj_fun = []
             for f in cost_function:
                 obj_fun.append(self.converter.convert(f))
-            msat_obj = make_fun(self.msat_env(), obj_fun, False)
         elif goal.is_minimization_goal() or goal.is_maximization_goal():
             if goal.is_minimization_goal():
                 make_fun = self._msat_lib.msat_make_minimize
@@ -107,11 +105,21 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
 
             cost_function = goal.term()
             obj_fun = self.converter.convert(cost_function)
-            msat_obj = make_fun(self.msat_env(), obj_fun, False)
+
         else:
             raise GoalNotSupportedError("optimathsat", goal)
 
+        msat_obj = make_fun(self.msat_env(), obj_fun, False)
         self._msat_lib.msat_assert_objective(self.msat_env(), msat_obj)
+        if msat_objs is not None:
+            msat_objs.append(msat_obj)
+        
+    def optimize(self, goal, **kwargs):
+
+        temp = []
+        self._load_goal(goal,temp)
+        msat_obj = temp.pop()
+
         self.solve()
         optres = self._msat_lib.msat_objective_result(self.msat_env(), msat_obj)
         if optres == self._msat_lib.MSAT_OPT_UNKNOWN:
@@ -140,33 +148,9 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
 
     def pareto_optimize(self, goals):
         self._msat_lib.msat_set_opt_priority(self.msat_env(), "par")
-        msat_objs = []
 
         for g in goals:
-            if g.is_minmax_goal() or g.is_maxmin_goal():
-                if g.is_minmax_goal():
-                    f = self._msat_lib.msat_make_minmax
-                else:
-                    f = self._msat_lib.msat_make_maxmin
-
-                cost_function = g.terms
-                obj_fun = []
-                for f in cost_function:
-                    obj_fun.append(self.converter.convert(f))
-            elif g.is_minimization_goal() or g.is_maximization_goal():
-                if g.is_minimization_goal():
-                    f = self._msat_lib.msat_make_minimize
-                else:
-                    f = self._msat_lib.msat_make_maximize
-
-                cost_function = g.term()
-                obj_fun = self.converter.convert(cost_function)
-            else:
-                raise GoalNotSupportedError("optimathsat", g)
-
-            msat_obj = f(self.msat_env(), obj_fun)
-            msat_objs.append(msat_obj)
-            self._msat_lib.msat_assert_objective(self.msat_env(), msat_obj)
+            self._load_goal(g)
 
         while self.solve():
             model = self.get_model()
@@ -176,33 +160,10 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
 
     def lexicographic_optimize(self, goals):
         self._msat_lib.msat_set_opt_priority(self.msat_env(), "lex")
-        msat_objs = []
 
         for g in goals:
-            if g.is_minmax_goal() or g.is_maxmin_goal():
-                if g.is_minmax_goal():
-                    f = self._msat_lib.msat_make_minmax
-                else:
-                    f = self._msat_lib.msat_make_maxmin
+            self._load_goal(g)
 
-                cost_function = g.terms
-                obj_fun = []
-                for f in cost_function:
-                    obj_fun.append(self.converter.convert(f))
-            elif g.is_minimization_goal() or g.is_maximization_goal():
-                if g.is_minimization_goal():
-                    f = self._msat_lib.msat_make_minimize
-                else:
-                    f = self._msat_lib.msat_make_maximize
-
-                cost_function = g.term()
-                obj_fun = self.converter.convert(cost_function)
-            else:
-                raise GoalNotSupportedError("optimathsat", g)
-
-            msat_obj = f(self.msat_env(), obj_fun)
-            msat_objs.append(msat_obj)
-            self._msat_lib.msat_assert_objective(self.msat_env(), msat_obj)
         rt = self.solve()
         if rt:
             model = self.get_model()
@@ -215,30 +176,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
         msat_objs = []
 
         for g in goals:
-            if g.is_minmax_goal() or g.is_maxmin_goal():
-                if g.is_minmax_goal():
-                    f = self._msat_lib.msat_make_minmax
-                else:
-                    f = self._msat_lib.msat_make_maxmin
-
-                cost_function = g.terms
-                obj_fun = []
-                for f in cost_function:
-                    obj_fun.append(self.converter.convert(f))
-            elif g.is_minimization_goal() or g.is_maximization_goal():
-                if g.is_minimization_goal():
-                    f = self._msat_lib.msat_make_minimize
-                else:
-                    f = self._msat_lib.msat_make_maximize
-
-                cost_function = g.term()
-                obj_fun = self.converter.convert(cost_function)
-            else:
-                raise GoalNotSupportedError("optimathsat", g)
-
-            msat_obj = f(self.msat_env(), obj_fun)
-            msat_objs.append(msat_obj)
-            self._msat_lib.msat_assert_objective(self.msat_env(), msat_obj)
+            self._load_goal(g, msat_objs)
 
         temp = self.solve()
         if not temp:
