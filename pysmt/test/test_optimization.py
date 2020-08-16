@@ -176,7 +176,6 @@ class TestOptimization(TestCase):
         formula = And(GE(x, Int(0)), GE(y, Int(0)), LE(x, Int(10)), LE(y, Int(10)))
         for oname in get_env().factory.all_optimizers(logic=QF_LIA):
             with Optimizer(name=oname) as opt:
-                print(oname)
                 try:
                     opt.add_assertion(formula)
                     models, costs = zip(*opt.pareto_optimize([obj1, obj2]))
@@ -195,7 +194,6 @@ class TestOptimization(TestCase):
         formula = And(GE(x, Int(0)), GE(y, Int(1)), LE(x, Int(10)), LE(y, Int(10)), LE(y, Int(0)))
         for oname in get_env().factory.all_optimizers(logic=QF_LIA):
             with Optimizer(name=oname) as opt:
-                print(oname)
                 try:
                     opt.add_assertion(formula)
                     for x in opt.pareto_optimize([obj1, obj2]):
@@ -214,14 +212,11 @@ class TestOptimization(TestCase):
         obj2 = MinimizationGoal(Minus(y, x))
         for oname in get_env().factory.all_optimizers(logic=QF_LIA):
             with Optimizer(name=oname) as opt:
-                print(oname)
                 try:
                     opt.add_assertion(f1)
                     opt.add_assertion(f2)
                     models = opt.boxed_optimization([obj1, obj2])
-                    print(models.__class__.__name__)
                     self.assertEqual(len(models), 2)
-                    print(models)
                     self.assertEqual(models[obj1][0].get_py_value(x), 0)
                     self.assertEqual(models[obj1][0].get_py_value(y), 10)
                     self.assertEqual(models[obj2][0].get_py_value(x), 10)
@@ -240,7 +235,6 @@ class TestOptimization(TestCase):
         obj2 = MinimizationGoal(Minus(y, x))
         for oname in get_env().factory.all_optimizers(logic=QF_LIA):
             with Optimizer(name=oname) as opt:
-                    print(oname)
                     try:
                         opt.add_assertion(f1)
                         opt.add_assertion(f2)
@@ -264,7 +258,6 @@ class TestOptimization(TestCase):
         obj4 = MinimizationGoal(t)
         obj5 = MinimizationGoal(u)
         for oname in get_env().factory.all_optimizers(logic=QF_LIA):
-            print("lex "+oname)
             with Optimizer(name=oname) as opt:
                 try:
                     opt.add_assertion(f1)
@@ -290,7 +283,6 @@ class TestOptimization(TestCase):
         obj4 = MinimizationGoal(t)
         obj5 = MinimizationGoal(u)
         for oname in get_env().factory.all_optimizers(logic=QF_LIA):
-            print("lex "+oname)
             with Optimizer(name=oname) as opt:
                 try:
                     opt.add_assertion(f1)

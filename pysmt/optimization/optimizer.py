@@ -298,7 +298,7 @@ class ExternalOptimizerMixin(Optimizer):
         for goal in goals:
             if goal.is_maximization_goal() or goal.is_minimization_goal():
                 t = self.optimize(goal = goal,strategy = strategy)
-                if t is not (None,None):
+                if t != (None,None):
                     rt[goal] = t
                 else:
                     return None
@@ -395,13 +395,11 @@ class SUAOptimizerMixin(ExternalOptimizerMixin):
         assum = extra_assumption if extra_assumption is not None else []
         if formula is not None:
             assum = assum + [formula]
-        print(assum)
         rt = self.solve(assumptions = assum)
         return rt
 
 
     def _lexicographic_opt(self, client_data, current_goal, strategy):
-        print(client_data)
         model, val = self._optimize(current_goal, strategy, extra_assumption = client_data)
         client_data.append(Equals(current_goal.term(), val))
         return model, val
@@ -460,7 +458,7 @@ class IncrementalOptimizerMixin(ExternalOptimizerMixin):
             self.add_assertion(t)
         model, val = self.optimize(current_goal, strategy)
         self.pop()
-        client_data.append(Equals(current_goal.term(), val)) #1 3; 3 1
+        client_data.append(Equals(current_goal.term(), val))
         return model, val
 
     def _pareto_check_progress(self, client_data, objs):
