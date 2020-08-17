@@ -68,39 +68,17 @@ class Optimizer(Solver):
         """
         raise NotImplementedError
 
-    def pareto_optimize(self, goals):
-        """This function is a generator returning *all* the pareto-optimal
-        solutions for the problem of minimizing the `cost_functions`
-        keeping the formulae asserted in this optimizer satisfied.
-
-        The solutions are returned as pairs `(model, costs)` where
-        model is the pareto-optimal assignment and costs is the list
-        of costs, one for each optimization function in
-        `cost_functions`.
-
-        `cost_functions` must be a list of terms with integer, real or
-        bit-vector types whose values have to be minimized
-
-        This function can raise a PysmtUnboundedOptimizationError if
-        the solver detects that the optimum value is either positive
-        or negative infinite or if there is no optimum value because
-        one can move arbitrarily close to the optimum without reching
-        it (e.g. "x > 5" has no minimum for x, only an infimum)
-
-        """
-        raise NotImplementedError
-
-
 
     def lexicographic_optimize(self, goals):
         """
-        This function return a pair of (model, values) where 'values' is a list of result for each goal in 'goals'
-        If there aren't any solution the function return a pair (None,None)
+        This function returns a pair of (model, values) where 'values' is a list containing the optimal values
+        (as pysmt constants) for each goal in 'goals'.
+        If there is no solution the function returns a pair (None,None)
 
         The parameter 'goals' must be a list of 'Goals'(see file goal.py).
 
         The lexicographic method consists of solving a sequence of single-objective optimization problems. The order of
-        problems are important because the result of previews goals become a costraint for subsequent goals
+        problems are important because the result of previous goals become a costraint for subsequent goals
 
         For some implemented examples see file pysmt/test/test_optimization.py
         """
@@ -109,14 +87,14 @@ class Optimizer(Solver):
 
     def boxed_optimize(self, goals):
         """
-        This function return dictionary where the keys are the goals of optimization and the values are a pair
+        This function returns dictionary where the keys are the goals of optimization. Each goal is mapped to a pair
         (model, value) of the current goal (key).
-        If there aren't any solution the function return None
+        If there is no solution the function returns None
 
         The parameter 'goals' must be a list of 'Goals'(see file goal.py).
 
-        The boxed method consists of solving a list of single-objective optimization problems independent of
-        each other. The order of problems isn't important because the result of previews goals don't change
+        The boxed method consists of solving a list of single-objective optimization problems independently of
+        each other. The order of problems isn't important because the result of previous goals don't change
         any costraint of other goals
 
         For some implemented examples see file pysmt/test/test_optimization.py
