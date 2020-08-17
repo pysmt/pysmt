@@ -40,17 +40,19 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
         Z3Solver.__init__(self, environment=environment,
                           logic=logic, **options)
         self.z3 = z3.Optimize()
-    def optimize(self, goal, **kwargs):
-        cost_function = goal.term()
-        obj = self.converter.convert(cost_function)
 
-        h = None
+    def _load_goal(self, goal):
+        obj = self.converter.convert(goal.term())
         if goal.is_minimization_goal():
             h = self.z3.minimize(obj)
         elif goal.is_maximization_goal():
             h = self.z3.maximize(obj)
         else:
             raise GoalNotSupportedError("z3", goal.__class__)
+        return  h
+
+    def optimize(self, goal, **kwargs):
+        h = self._load_goal(goal)
 
         if h is not None:
             res = self.z3.check()
@@ -59,7 +61,7 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
                 try:
                     self.converter.back(opt_value)
                     model = Z3Model(self.environment, self.z3.model())
-                    return model, model.get_value(cost_function)
+                    return model, model.get_value(goal.term())
                 except PysmtInfinityError:
                     raise PysmtUnboundedOptimizationError("The optimal value is unbounded")
                 except PysmtInfinitesimalError:
@@ -72,14 +74,7 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
     def pareto_optimize(self, goals):
         self.z3.set(priority='pareto')
         for goal in goals:
-            obj = self.converter.convert(goal.term())
-            if goal.is_minimization_goal():
-                h = self.z3.minimize(obj)
-            elif goal.is_maximization_goal():
-                h = self.z3.maximize(obj)
-            else:
-                raise GoalNotSupportedError("z3", goal.__class__)
-
+            self._load_goal(goal)
         while self.z3.check() == z3.sat:
             model = Z3Model(self.environment, self.z3.model())
             yield model, [model.get_value(x.term()) for x in goals]
@@ -94,13 +89,7 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
         self.z3.set(priority='box')
         models = {}
         for goal in goals:
-            obj = self.converter.convert(goal.term())
-            if goal.is_minimization_goal():
-                h = self.z3.minimize(obj)
-            elif goal.is_maximization_goal():
-                h = self.z3.maximize(obj)
-            else:
-                raise GoalNotSupportedError("z3", goal.__class__)
+            self._load_goal(goal)
 
         for goal in goals:
             if self.z3.check() == z3.sat:
@@ -114,13 +103,7 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
     def lexicographic_optimize(self, goals):
         self.z3.set(priority='lex')
         for goal in goals:
-            obj = self.converter.convert(goal.term())
-            if goal.is_minimization_goal():
-                h = self.z3.minimize(obj)
-            elif goal.is_maximization_goal():
-                h = self.z3.maximize(obj)
-            else:
-                raise GoalNotSupportedError("z3", goal.__class__)
+            self._load_goal(goal)
 
         if self.z3.check() == z3.sat:
             model = Z3Model(self.environment, self.z3.model())

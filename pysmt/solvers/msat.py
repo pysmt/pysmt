@@ -191,9 +191,9 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
                                            logic=logic,
                                            **options)
         self._msat_lib = MSATLibLoader(self.__class__.__lib_name__)
-        self.msat_config = self._msat_lib.msat_create_default_config(str(logic)) #
+        self.msat_config = self._msat_lib.msat_create_default_config(str(logic))
         self.options(self)
-        self.msat_env = MSATCreateEnv(self.__class__.__lib_name__, self.msat_config) #
+        self.msat_env = MSATCreateEnv(self.__class__.__lib_name__, self.msat_config)
         self._msat_lib.msat_destroy_config(self.msat_config)
         self.converter = MSATCreateConverter(self.__class__.__lib_name__, environment, self.msat_env)
 
@@ -202,7 +202,6 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
         self.intType = self._msat_lib.msat_get_integer_type(self.msat_env())
         self.boolType = self._msat_lib.msat_get_bool_type(self.msat_env())
         self.mgr = environment.formula_manager
-        self._msat_lib.msat_set_option
 
     @clear_pending_pop
     def _reset_assertions(self):
