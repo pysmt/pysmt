@@ -68,6 +68,61 @@ class Optimizer(Solver):
         """
         raise NotImplementedError
 
+    def pareto_optimize(self, goals):
+        """This function is a generator returning *all* the pareto-optimal
+        solutions for the problem of minimizing the `cost_functions`
+        keeping the formulae asserted in this optimizer satisfied.
+
+        The solutions are returned as pairs `(model, costs)` where
+        model is the pareto-optimal assignment and costs is the list
+        of costs, one for each optimization function in
+        `cost_functions`.
+
+        `cost_functions` must be a list of terms with integer, real or
+        bit-vector types whose values have to be minimized
+
+        This function can raise a PysmtUnboundedOptimizationError if
+        the solver detects that the optimum value is either positive
+        or negative infinite or if there is no optimum value because
+        one can move arbitrarily close to the optimum without reching
+        it (e.g. "x > 5" has no minimum for x, only an infimum)
+
+        """
+        raise NotImplementedError
+
+
+
+    def lexicographic_optimize(self, goals):
+        """
+        This function return a pair of (model, values) where 'values' is a list of result for each goal in 'goals'
+        If there aren't any solution the function return a pair (None,None)
+
+        The parameter 'goals' must be a list of 'Goals'(see file goal.py).
+
+        The lexicographic method consists of solving a sequence of single-objective optimization problems. The order of
+        problems are important because the result of previews goals become a costraint for subsequent goals
+
+        For some implemented examples see file pysmt/test/test_optimization.py
+        """
+        raise NotImplementedError
+
+
+    def boxed_optimize(self, goals):
+        """
+        This function return dictionary where the keys are the goals of optimization and the values are a pair
+        (model, value) of the current goal (key).
+        If there aren't any solution the function return None
+
+        The parameter 'goals' must be a list of 'Goals'(see file goal.py).
+
+        The boxed method consists of solving a list of single-objective optimization problems independent of
+        each other. The order of problems isn't important because the result of previews goals don't change
+        any costraint of other goals
+
+        For some implemented examples see file pysmt/test/test_optimization.py
+        """
+        raise NotImplementedError
+
 
     def can_diverge_for_unbounded_cases(self):
         """This function returns True if the algorithm implemented in this
@@ -291,14 +346,12 @@ class ExternalOptimizerMixin(Optimizer):
             raise GoalNotSupportedError("ExternalOptimizerMixin", goal)
         return rt
 
-    def boxed_optimization(self, goals, strategy='linear',
-                 feasible_solution_callback=None,
-                 step_size=1, **kwargs):
+    def boxed_optimize(self, goals, strategy='linear'):
         rt = {}
         for goal in goals:
             if goal.is_maximization_goal() or goal.is_minimization_goal():
                 t = self.optimize(goal = goal,strategy = strategy)
-                if t != (None,None):
+                if t != None:
                     rt[goal] = t
                 else:
                     return None
@@ -306,16 +359,18 @@ class ExternalOptimizerMixin(Optimizer):
                 raise GoalNotSupportedError("ExternalOptimizerMixin", goal)
         return rt
 
-    def lexicographic_optimize(self, goals, strategy='linear',
-                               feasible_solution_callback=None,
-                               step_size=1, **kwargs):
+    def lexicographic_optimize(self, goals, strategy='linear'):
         rt = []
         client_data = self._setup()
         for goal in goals:
-            model, val = self._lexicographic_opt(client_data, goal, strategy)
+            temp = self._lexicographic_opt(client_data, goal, strategy)
+            if temp is None:
+                self._cleanup(client_data)
+                return None, None
+            else:
+                model, val = temp
             rt.append(val)
 
-        self._cleanup(client_data)
         return model, rt
 
 
@@ -340,7 +395,8 @@ class ExternalOptimizerMixin(Optimizer):
                 current.search_is_sat(model)
             else:
                 if first_step:
-                    return None, None
+                    self._cleanup(client_data)
+                    return None
                 current.search_is_unsat()
             first_step = False
 
@@ -400,7 +456,11 @@ class SUAOptimizerMixin(ExternalOptimizerMixin):
 
 
     def _lexicographic_opt(self, client_data, current_goal, strategy):
-        model, val = self._optimize(current_goal, strategy, extra_assumption = client_data)
+        temp = self._optimize(current_goal, strategy, extra_assumption = client_data)
+        if temp is not None:
+            model, val = temp
+        else:
+            return None
         client_data.append(Equals(current_goal.term(), val))
         return model, val
 
@@ -456,8 +516,12 @@ class IncrementalOptimizerMixin(ExternalOptimizerMixin):
         self.push()
         for t in client_data:
             self.add_assertion(t)
-        model, val = self.optimize(current_goal, strategy)
+        temp = self.optimize(current_goal, strategy)
         self.pop()
+        if temp is not None:
+            model, val = temp
+        else:
+            return None
         client_data.append(Equals(current_goal.term(), val))
         return model, val
 

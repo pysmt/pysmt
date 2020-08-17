@@ -86,7 +86,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
         elif otype.is_bv_type():
             return mgr.BVULE(x, y)
 
-    def _load_goal(self, goal, msat_objs=None):
+    def _assert_msat_goal(self, goal):
         if goal.is_minmax_goal() or goal.is_maxmin_goal():
             if goal.is_minmax_goal():
                 make_fun = self._msat_lib.msat_make_minmax
@@ -111,14 +111,11 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
 
         msat_obj = make_fun(self.msat_env(), obj_fun, False)
         self._msat_lib.msat_assert_objective(self.msat_env(), msat_obj)
-        if msat_objs is not None:
-            msat_objs.append(msat_obj)
+        return msat_obj
 
     def optimize(self, goal, **kwargs):
 
-        temp = []
-        self._load_goal(goal,temp)
-        msat_obj = temp.pop()
+        msat_obj = self._assert_msat_goal(goal)
 
         self.solve()
         optres = self._msat_lib.msat_objective_result(self.msat_env(), msat_obj)
@@ -150,7 +147,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
         self._msat_lib.msat_set_opt_priority(self.msat_env(), "par")
 
         for g in goals:
-            self._load_goal(g)
+            self._assert_msat_goal(g)
 
         while self.solve():
             model = self.get_model()
@@ -162,7 +159,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
         self._msat_lib.msat_set_opt_priority(self.msat_env(), "lex")
 
         for g in goals:
-            self._load_goal(g)
+            self._assert_msat_goal(g)
 
         rt = self.solve()
         if rt:
@@ -171,12 +168,12 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
         else:
             return None, None
 
-    def boxed_optimization(self, goals):
+    def boxed_optimize(self, goals):
         self._msat_lib.msat_set_opt_priority(self.msat_env(), "box")
         msat_objs = []
 
         for g in goals:
-            self._load_goal(g, msat_objs)
+            msat_objs.append(self._assert_msat_goal(g))
 
         temp = self.solve()
         if not temp:
@@ -261,8 +258,14 @@ class OptiMSATBoolUFRewriter(MSatBoolUFRewriter):
 class OptiMSATSUAOptimizer(OptiMSATSolver, SUAOptimizerMixin):
     LOGICS = OptiMSATSolver.LOGICS
 
+    def can_diverge_for_unbounded_cases(self):
+        return True
+
 
 class OptiMSATIncrementalOptimizer(OptiMSATSolver, IncrementalOptimizerMixin):
     LOGICS = OptiMSATSolver.LOGICS
+
+    def can_diverge_for_unbounded_cases(self):
+        return True
 
 
