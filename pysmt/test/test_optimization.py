@@ -215,7 +215,7 @@ class TestOptimization(TestCase):
                 try:
                     opt.add_assertion(f1)
                     opt.add_assertion(f2)
-                    models = opt.boxed_optimization([obj1, obj2])
+                    models = opt.boxed_optimize([obj1, obj2])
                     self.assertEqual(len(models), 2)
                     self.assertEqual(models[obj1][0].get_py_value(x), 0)
                     self.assertEqual(models[obj1][0].get_py_value(y), 10)
@@ -238,7 +238,7 @@ class TestOptimization(TestCase):
                     try:
                         opt.add_assertion(f1)
                         opt.add_assertion(f2)
-                        models = opt.boxed_optimization([obj1, obj2])
+                        models = opt.boxed_optimize([obj1, obj2])
                         self.assertTrue(models is None)
                     except NotImplementedError:
                         pass  # OptiMathSAT wrapping of pareto is incomplete
@@ -275,7 +275,7 @@ class TestOptimization(TestCase):
         z = Symbol("z", INT)
         t = Symbol("t", INT)
         u = Symbol("u", INT)
-        f1 = And(LE(Int(0), x), LE(Int(0), y), LE(Int(0), z), LE(Int(0), u), LE(Int(0), t))
+        f1 = And(LE(Int(0), x), LE(Int(0), y), LE(Int(0), z), LE(Int(0), u), LE(Int(0), t), LE(t, Int(-1)))
         f2 = And(LE(x, Int(5)), LE(y, Int(5)), LE(z, Int(5)), LE(u, Int(5)), LE(t, Int(5)))
         obj1 = MaximizationGoal(x)
         obj2 = MinimizationGoal(y)
@@ -288,11 +288,28 @@ class TestOptimization(TestCase):
                     opt.add_assertion(f1)
                     opt.add_assertion(f2)
                     model, values = opt.lexicographic_optimize([obj1, obj2, obj3, obj4, obj5])
-                    self.assertEqual(values[0], Int(5))
-                    self.assertEqual(values[1], Int(0))
-                    self.assertEqual(values[2], Int(10))
+                    self.assertTrue(model is None)
+                    self.assertTrue(values is None)
                 except NotImplementedError:
                     pass  # OptiMathSAT wrapping of pareto is incomplete
+
+    @skipIfNoOptimizerForLogic(QF_LIA)
+    def test_unsat(self):
+        x = Symbol("x", INT)
+        y = Symbol("y", INT)
+        z = Symbol("z", INT)
+        f1 = And(LE(Int(0), x), LE(Int(0), y), LE(Int(1), z))
+        f2 = And(LE(x, Int(10)), LE(y, Int(10)), LE(z, Int(10)), LE(z, Int(0)))
+        obj1 = MinimizationGoal(Minus(x, y))
+        for oname in get_env().factory.all_optimizers(logic=QF_LIA):
+            with Optimizer(name=oname) as opt:
+                    try:
+                        opt.add_assertion(f1)
+                        opt.add_assertion(f2)
+                        rt = opt.optimize(obj1)
+                        self.assertTrue(rt is None)
+                    except NotImplementedError:
+                        pass  # OptiMathSAT wrapping of pareto is incomplete
 
     @skipIfNoOptimizerForLogic(QF_LIA)
     def test_unbounded(self):
@@ -306,6 +323,13 @@ class TestOptimization(TestCase):
                 opt.add_assertion(formula)
                 with self.assertRaises(PysmtUnboundedOptimizationError):
                     opt.optimize(min)
+
+    @skipIfNoOptimizerForLogic(QF_LIA)
+    def test_can_diverge_for_unbounded_cases(self):
+        for oname in get_env().factory.all_optimizers(logic=QF_LIA):
+            with Optimizer(name=oname) as opt:
+                if not opt.can_diverge_for_unbounded_cases():
+                    self.assertIn(oname, ["optimsat", "z3"])
 
     @skipIfNoOptimizerForLogic(QF_LRA)
     def test_infinitesimal(self):
