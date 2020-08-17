@@ -113,7 +113,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
         self._msat_lib.msat_assert_objective(self.msat_env(), msat_obj)
         if msat_objs is not None:
             msat_objs.append(msat_obj)
-        
+
     def optimize(self, goal, **kwargs):
 
         temp = []
