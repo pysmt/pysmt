@@ -61,14 +61,14 @@ then
     then
        echo "Skipping OSX unistall of SWIG"
     else
-        sudo apt remove --purge swig
+        sudo apt remove -y --purge swig
     fi
     os_install flex
     os_install bison
     git clone https://github.com/swig/swig.git
     cd swig
     git checkout rel-3.0.12
-    ./autogen.sh && ./configure && make
+    ./autogen.sh && ./configure --prefix=/usr && make
     sudo make install
     cd ..
 fi
