@@ -53,7 +53,7 @@ then
    os_install libgmp-dev
 fi
 
-# Install latest version of SWIG for CVC4
+# Install latest version of SWIG and CMAKE for CVC4
 # (The other solvers in isolation fall-back to the system swig)
 if [ "${PYSMT_SOLVER}" == "cvc4" ] || [ "${PYSMT_SOLVER}" == "all" ]
 then
@@ -65,6 +65,22 @@ then
     ./autogen.sh && ./configure && make
     sudo make install
     cd ..
+
+    if [ ${AGENT_OS} == "Darwin" ];
+    then
+       echo "Skipping CMake installation as CMake for OSX is sufficiently up-to-date"
+    else
+       sudo apt remove --purge cmake
+       hash -r
+
+       wget https://github.com/Kitware/CMake/releases/download/v3.16.5/cmake-3.16.5.tar.gz
+       tar -zxvf cmake-3.16.5.tar.gz
+       cd cmake-3.16.5
+       ./bootstrap
+       make
+       sudo make install
+       cd ..
+    fi
 fi
 #
 if [ "${PYSMT_SOLVER}" == "yices" ] || \
@@ -81,7 +97,7 @@ $PIP_INSTALL six
 $PIP_INSTALL wheel
 $PIP_INSTALL nose
 
-if [ "${PYSMT_SOLVER}" == "cvc4" ]
+if [ "${PYSMT_SOLVER}" == "cvc4" ] || [ "${PYSMT_SOLVER}" == "all" ]
 then
     $PIP_INSTALL toml
 fi
