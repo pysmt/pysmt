@@ -58,8 +58,8 @@ fi
 if [ "${PYSMT_SOLVER}" == "cvc4" ] || [ "${PYSMT_SOLVER}" == "all" ]
 then
     if [ ${AGENT_OS} == "Darwin" ];
-       echo "Skipping OSX unistall of SWIG"
     then
+       echo "Skipping OSX unistall of SWIG"
     else
         sudo apt remove --purge swig
     fi
