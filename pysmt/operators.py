@@ -25,7 +25,7 @@ from itertools import chain
 from six.moves import xrange
 
 
-ALL_TYPES = list(xrange(0,66))
+ALL_TYPES = list(xrange(0,77))
 
 (
 FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF, # Boolean Logic (0-6)
@@ -79,6 +79,17 @@ DIV,                                        # Arithmetic Division (62)
 POW,                                        # Arithmetic Power (63)
 ALGEBRAIC_CONSTANT,                         # Algebraic Number (64)
 BV_TONATURAL,                               # BV to Natural Conversion (65)
+STR_TO_RE,                                  # String to Regular expression (66)
+STR_IN_RE,                                  # String in Regular expression (67)
+RE_ALL,                                     # Regex accepting every string (68)
+RE_NONE,                                    # Regex accepting no string (69)
+RE_RANGE,                                   # Range of characters between ch1 and ch2 (70)
+RE_CONCAT,                                  # Concatenation of regex (71)
+RE_KLEENE_STAR,                             # Regex Kleene * (72)
+RE_KLEENE_PLUS,                             # Regex Kleene + (73)
+RE_OPT,                                     # Zero or one use of r (74)
+RE_UNION,                                   # Union of Regex (75)
+RE_INTER,                                   # Instersection of regex (76)
 ) = ALL_TYPES
 
 QUANTIFIERS = frozenset([FORALL, EXISTS])
@@ -108,13 +119,18 @@ BV_OPERATORS = frozenset([BV_NOT, BV_AND, BV_OR, BV_XOR,
                           BV_COMP, BV_SDIV, BV_SREM, BV_ASHR])
 
 STR_OPERATORS = frozenset([STR_LENGTH, STR_CONCAT, STR_INDEXOF, STR_REPLACE,
-                           STR_SUBSTR, STR_CHARAT, STR_TO_INT, INT_TO_STR,])
+                           STR_SUBSTR, STR_CHARAT, STR_TO_INT, INT_TO_STR,
+                           STR_TO_RE, STR_IN_RE])
+
+REGEX_OPERATORS = frozenset([RE_ALL, RE_NONE,
+                             RE_RANGE, RE_CONCAT, RE_KLEENE_PLUS, RE_KLEENE_STAR,
+                             RE_OPT, RE_UNION, RE_INTER])
 
 IRA_OPERATORS = frozenset([PLUS, MINUS, TIMES, TOREAL, DIV, POW, BV_TONATURAL])
 
 ARRAY_OPERATORS = frozenset([ARRAY_SELECT, ARRAY_STORE, ARRAY_VALUE])
 
-THEORY_OPERATORS = IRA_OPERATORS | BV_OPERATORS | ARRAY_OPERATORS | STR_OPERATORS
+THEORY_OPERATORS = IRA_OPERATORS | BV_OPERATORS | ARRAY_OPERATORS | STR_OPERATORS | REGEX_OPERATORS
 
 CUSTOM_NODE_TYPES = []
 
@@ -223,4 +239,15 @@ __OP_STR__ = {
     DIV: "DIV",
     POW: "POW",
     ALGEBRAIC_CONSTANT: "ALGEBRAIC_CONSTANT",
+    STR_TO_RE: "STR_TO_RE",
+    STR_IN_RE: "STR_IN_RE",
+    RE_ALL: "RE_ALL",
+    RE_NONE: "RE_NONE",
+    RE_RANGE: "RE_RANGE",
+    RE_CONCAT: "RE_CONCAT",
+    RE_KLEENE_STAR: "RE_KLEENE_STAR",
+    RE_KLEENE_PLUS: "RE_KLEENE_PLUS",
+    RE_OPT: "RE_OPT",
+    RE_UNION: "RE_UNION",
+    RE_INTER: "RE_INTER",
 }

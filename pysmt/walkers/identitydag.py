@@ -216,6 +216,39 @@ class IdentityDagWalker(DagWalker):
     def walk_str_to_int(self, formula, args, **kwargs):
         return self.mgr.StrToInt(args[0])
 
+    def walk_str_to_re(self, formula, args, **kwargs):
+        return self.mgr.StrToRe(args[0])
+
+    def walk_str_in_re(self, formula, args, **kwargs):
+        return self.mgr.StrInRe(args[0], args[1])
+
+    def walk_re_all(self, formula, args, **kwargs):
+        return self.mgr.ReAll()
+
+    def walk_re_none(self, formula, args, **kwargs):
+        return self.mgr.ReNone()
+
+    def walk_re_range(self, formula, args, **kwargs):
+        return self.mgr.ReRange(args[0], args[1])
+
+    def walk_re_concat(self, formula, args, **kwargs):
+        return self.mgr.ReConcat(args)
+
+    def walk_re_kleene_star(self, formula, args, **kwargs):
+        return self.mgr.ReKleeneStar(args[0])
+
+    def walk_re_kleene_plus(self, formula, args, **kwargs):
+        return self.mgr.ReKleenePlus(args[0])
+
+    def walk_re_opt(self, formula, args, **kwargs):
+        return self.mgr.ReOpt(args[0])
+
+    def walk_re_union(self, formula, args, **kwargs):
+        return self.mgr.ReUnion(args[0], args[1])
+
+    def walk_re_inter(self, formula, args, **kwargs):
+        return self.mgr.ReInter(args[0], args[1])
+
     def walk_int_to_str(self, formula, args, **kwargs):
         return self.mgr.IntToStr(args[0])
 

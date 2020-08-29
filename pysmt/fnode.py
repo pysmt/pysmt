@@ -48,7 +48,7 @@ from pysmt.operators import (FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF,
 
 from pysmt.operators import  (BOOL_OPERATORS, THEORY_OPERATORS,
                               BV_OPERATORS, IRA_OPERATORS, ARRAY_OPERATORS,
-                              STR_OPERATORS,
+                              STR_OPERATORS, REGEX_OPERATORS,
                               RELATIONS, CONSTANTS)
 
 from pysmt.typing import BOOL, REAL, INT, BVType, STRING
@@ -356,6 +356,10 @@ class FNode(object):
         """Test whether the node is an array operator."""
         return self.node_type() in ARRAY_OPERATORS
 
+    def is_regex_op(self):
+        """Test whether the node is a regex operation"""
+        return self.node_type() in REGEX_OPERATORS
+
     def is_bv_not(self):
         """Test whether the node is the BVNot operator."""
         return self.node_type() == BV_NOT
@@ -556,7 +560,7 @@ class FNode(object):
 
     def is_str_op(self):
         return self.node_type() in STR_OPERATORS
-
+    
     def symbol_type(self):
         """Return the type of the Symbol."""
         assert self.is_symbol()

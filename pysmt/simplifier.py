@@ -881,7 +881,7 @@ class Simplifier(pysmt.walkers.DagWalker):
         if s.is_string_constant() and i.is_int_constant():
             res = s.constant_value()[i.constant_value():i.constant_value() + 1]
             return self.manager.String(res)
-        return self.manager.StrCharat(s, i)
+        return self.manager.StrCharAt(s, i)
 
     def walk_str_contains(self, formula, args, **kwargs):
         s,t = args
@@ -919,13 +919,13 @@ class Simplifier(pysmt.walkers.DagWalker):
         s, t = args
         if s.is_string_constant() and t.is_string_constant():
             return self.manager.Bool(t.constant_value().startswith(s.constant_value()))
-        return self.manager.StrPrefixof(s, t)
+        return self.manager.StrPrefixOf(s, t)
 
     def walk_str_suffixof(self, formula, args, **kwargs):
         s, t = args
         if s.is_string_constant() and t.is_string_constant():
             return self.manager.Bool(t.constant_value().endswith(s.constant_value()))
-        return self.manager.StrSuffixof(s, t)
+        return self.manager.StrSuffixOf(s, t)
 
     def walk_str_to_int(self, formula, args, **kwargs):
         s = args[0]
@@ -935,6 +935,53 @@ class Simplifier(pysmt.walkers.DagWalker):
             except ValueError:
                 return self.manager.Int(-1)
         return self.manager.StrToInt(s)
+
+    def walk_str_to_re(self, formula, args, **kwargs):
+        s = args[0]
+        if s.is_string_constant():
+            raise NotImplementedError
+        return self.manager.StrToRe(s)
+
+    def walk_str_in_re(self, formula, args, **kwargs):
+        s, r = args
+        if s.is_string_constant() and r.is_regex_constant():
+            raise NotImplementedError
+        return self.manager.StrInRe(s, r)
+
+    def walk_re_concat(self, formula, args, **kwargs):
+        if any(r.is_regex_constant() in args):
+            raise NotImplementedError
+        return self.manager.ReConcat(*args)
+
+    def walk_re_kleene_star(self, formula, args, **kwargs):
+        r = args[0]
+        if r.is_regex_constant():
+            raise NotImplementedError
+        return self.manager.ReKleeneStar(r)
+
+    def walk_re_kleene_plus(self, formula, args, **kwargs):
+        r = args[0]
+        if r.is_regex_constant():
+            raise NotImplementedError
+        return self.manager.ReKleenePlus(r)
+
+    def walk_re_opt(self, formula, args, **kwargs):
+        r = args[0]
+        if r.is_regex_constant():
+            raise NotImplementedError
+        return self.manager.ReOpt(r)
+
+    def walk_re_union(self, formula, args, **kwargs):
+        r1, r2 = args
+        if r1.is_regex_constant() and r2.is_regex_constant():
+            raise NotImplementedError
+        return self.manager.ReUnion(r1, r2)
+
+    def walk_re_inter(self, formula, args, **kwargs):
+        r1, r2 = args
+        if r1.is_regex_constant() and r2.is_regex_constant():
+            raise NotImplementedError
+        return self.manager.ReInter(r1, r2)
 
     def walk_int_to_str(self, formula, args, **kwargs):
         i = args[0]
@@ -997,6 +1044,7 @@ class Simplifier(pysmt.walkers.DagWalker):
     @handles(op.SYMBOL)
     @handles(op.REAL_CONSTANT, op.INT_CONSTANT, op.BOOL_CONSTANT)
     @handles(op.BV_CONSTANT, op.STR_CONSTANT, op.ALGEBRAIC_CONSTANT)
+    @handles(op.RE_ALL, op.RE_NONE, op.RE_RANGE)
     def walk_identity(self, formula, args, **kwargs):
         return formula
 
