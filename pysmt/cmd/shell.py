@@ -26,8 +26,9 @@ from pysmt.shortcuts import *
 from pysmt.typing import INT, REAL, BOOL, BVType, BV32
 
 from pysmt.smtlib.parser import SmtLibParser
-from pysmt.smtlib.script import evaluate_command
-from pysmt.smtlib.commands import CHECK_SAT, GET_VALUE
+from pysmt.smtlib.script import smt_evaluate_command, omt_evaluate_command
+from pysmt.smtlib.commands import CHECK_SAT, GET_VALUE, GET_OBJECTIVES
+from pysmt.optimization.goal import Goal
 
 welcome_msg = \
 """Welcome to pySMT!!!
@@ -60,6 +61,7 @@ class PysmtShell(object):
     def __init__(self, argv):
         self.env = get_env()
         self.solvers = list(self.env.factory.all_solvers().keys())
+        self.optimizers = list(self.env.factory.all_optimizers().keys())
         self.parser = self.get_parser()
         self.args = self.parser.parse_args(argv)
 
@@ -68,7 +70,7 @@ class PysmtShell(object):
         parser = argparse.ArgumentParser(description="Command-line interface " \
                                          "for pySMT problems")
         parser.add_argument('--version', action='version',
-                        version='%(prog)s {version}'.format(version=git_version()))
+                        version='%(prog)s {version}'.format(version=git_version))
         parser.add_argument('--file', '-f', metavar='filename', type=str,
                             help='A script file to read from instead of stdin')
 
@@ -78,6 +80,10 @@ class PysmtShell(object):
 
         parser.add_argument('--solver', '-s', metavar='name', type=str,
                             choices=['auto'] + self.solvers,
+                            default=None,
+                            help='The solver to use (default: auto)')
+        parser.add_argument('--optimizer', '-o', metavar='opt_name', type=str,
+                            choices=['auto'] + self.optimizers,
                             default=None,
                             help='The solver to use (default: auto)')
         return parser
@@ -107,18 +113,32 @@ class PysmtShell(object):
             for k, r in result.iteritems():
                 print("  (%s %s)" % (k,r))
             print(")")
+        elif name == GET_OBJECTIVES:
+            print("(objectives")
+            for r in result:
+                print("  (%s %s)" % (r[0], r[1]))
+            print(")")
+
 
 
     def smtlib_solver(self, stream):
         smt_parser = SmtLibParser()
-        name = self.args.solver
-        if name == "auto":
-            solver = Solver()
+        s_name = self.args.solver
+        opt_name = self.args.optimizer
+        client_data = None
+        if opt_name is not None:
+            client_data = ([], [])
+            if opt_name == "auto":
+                solver = Optimizer()
+            else:
+                solver = Optimizer(opt_name)
         else:
-            solver = Solver(name=name)
-
+            if s_name == "auto":
+                solver = Solver()
+            else:
+                solver = Solver(name=s_name)
         for cmd in smt_parser.get_command_generator(stream):
-            r = evaluate_command(cmd, solver)
+            r = omt_evaluate_command(cmd, solver, client_data)
             self.print_result(cmd, r)
 
 

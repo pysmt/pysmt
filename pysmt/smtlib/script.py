@@ -28,6 +28,7 @@ from pysmt.smtlib.printers import SmtPrinter, SmtDagPrinter, quote
 from pysmt.oracles import get_logic
 from pysmt.logics import get_closer_smtlib_logic, Logic, SMTLIB2_LOGICS
 from pysmt.environment import get_env
+from pysmt.optimization.goal import Goal, MaximizationGoal, MinimizationGoal, MinMaxGoal, MaxMinGoal
 
 
 def check_sat_filter(log):
@@ -176,6 +177,20 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
         self.serialize(buf, daggify=daggify)
         return buf.getvalue()
 
+class GoalsManager(object):
+    def __init__(self):
+        self.goals = []
+
+    def add(self, g):
+        self.goals.append(g)
+
+    def p(self):
+        rt = None
+        if len(self.goals) > 0:
+            rt = self.goals.pop(0)
+        return None
+
+
 
 class SmtLibScript(object):
 
@@ -194,9 +209,22 @@ class SmtLibScript(object):
     def evaluate(self, solver):
         log = []
         for cmd in self.commands:
-            r = evaluate_command(cmd, solver)
+            r = omt_evaluate_command(cmd, solver)
             log.append((cmd.name, r))
+
         return log
+
+    def evaluate(self, solver, client_data):
+        log = []
+        for cmd in self.commands:
+            r = omt_evaluate_command(cmd, solver)
+            log.append((cmd.name, r))
+            if isinstance(r, Goal):
+                if client_data is None:
+                    client_data = GoalsManager()
+                client_data.add(r)
+
+        return (log, client_data)
 
     def contains_command(self, command_name):
         return any(x.name == command_name for x in self.commands)
@@ -329,7 +357,7 @@ def smtlibscript_from_formula(formula, logic=None):
     return script
 
 
-def evaluate_command(cmd, solver):
+def smt_evaluate_command(cmd, solver):
     if cmd.name == smtcmd.SET_INFO:
         return solver.set_info(cmd.args[0], cmd.args[1])
 
@@ -392,3 +420,36 @@ def evaluate_command(cmd, solver):
                                   "Please open a bug-report." % cmd.name)
     else:
         raise UnknownSmtLibCommandError(cmd.name)
+
+def omt_evaluate_command(cmd, optimizer, client_data = None):
+
+    if cmd.name == smtcmd.MAXIMIZE:
+        rt = MaximizationGoal(cmd.args[0])
+        if client_data is not None:
+            client_data[0].append(rt)
+        return rt
+    elif cmd.name == smtcmd.MINIMIZE:
+        rt = MinimizationGoal(cmd.args[0])
+        if client_data is not None:
+            client_data[0].append(rt)
+        return rt
+    elif cmd.name == smtcmd.CHECK_SAT:
+        if client_data != None:
+            client_data[1].clear()
+            for g in client_data[0]:
+                client_data[1].append((g.term(), optimizer.optimize(g)[1]))
+        return optimizer.check_sat()
+    elif cmd.name == smtcmd.MAXMIN:
+        rt = MaxMinGoal(cmd.args[0])
+        if client_data is not None:
+            client_data[0].append(rt)
+        return rt
+    elif cmd.name == smtcmd.MINMAX:
+        rt = MinMaxGoal(cmd.args[0])
+        if client_data is not None:
+            client_data[0].append(rt)
+        return rt
+    elif cmd.name == smtcmd.GET_OBJECTIVES:
+        return client_data[1]
+    else:
+        return smt_evaluate_command(cmd, optimizer)
