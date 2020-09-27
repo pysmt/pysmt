@@ -477,6 +477,8 @@ class SmtLibParser(object):
                          smtcmd.GET_OBJECTIVES: self._cmd_get_objectives,
                          smtcmd.MAXIMIZE: self._cmd_objective,
                          smtcmd.MINIMIZE: self._cmd_objective,
+                         smtcmd.MINMAX: self._cmd_minmax_maxmin_obj,
+                         smtcmd.MAXMIN: self._cmd_minmax_maxmin_obj,
                          smtcmd.LOAD_OBJECTIVE_MODEL: self._cmd_load_objective_model,
                          }
 
@@ -1240,8 +1242,15 @@ class SmtLibParser(object):
         self.parse_atoms(tokens, current, 0)
         return SmtLibCommand(current, [])
 
+    def _cmd_minmax_maxmin_obj(self, current, tokens):
+        """(minmax | maxmin (<term>+) [:id <string>] [:signed])"""
+        params = self.parse_expr_list(tokens, current)
+        self.consume_closing(tokens, current)
+        return SmtLibCommand(current, [params,None])
+
+
     def _cmd_objective(self, current, tokens):
-        """(maximize | minimize <term> [:id <string>] [:signed])"""
+        """(maximize | minimize <term>"""
         obj = self.get_expression(tokens)
         params = []
         curr = tokens.consume()

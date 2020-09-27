@@ -400,8 +400,7 @@ def smt_evaluate_command(cmd, solver):
         return solver.define_fun(var, formals, typename, body)
 
     elif cmd.name == smtcmd.ECHO:
-        print(cmd.args[0])
-        return None
+        return cmd.args[0]
 
     elif cmd.name == smtcmd.CHECK_SAT_ASSUMING:
         return solver.check_sat(cmd.args)
