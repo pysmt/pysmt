@@ -16,7 +16,6 @@
 #   limitations under the License.
 #
 
-from pysmt.shortcuts import Times, Int
 from pysmt.environment import get_env
 from pysmt.oracles import get_logic
 from pysmt.logics import LIA, LRA, BV
