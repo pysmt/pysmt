@@ -27,7 +27,7 @@ from pysmt.typing import INT, REAL, BOOL, BVType, BV32
 
 from pysmt.smtlib.parser import SmtLibParser
 from pysmt.smtlib.script import smt_evaluate_command, omt_evaluate_command
-from pysmt.smtlib.commands import CHECK_SAT, GET_VALUE, GET_OBJECTIVES
+from pysmt.smtlib.commands import CHECK_SAT, GET_VALUE, GET_OBJECTIVES, ECHO
 from pysmt.optimization.goal import Goal
 
 welcome_msg = \
@@ -103,7 +103,9 @@ class PysmtShell(object):
 
     def print_result(self, cmd, result):
         name, _ = cmd
-        if name == CHECK_SAT:
+        if name == ECHO:
+            print(result)
+        elif name == CHECK_SAT:
             if result == True:
                 print("sat")
             else:
