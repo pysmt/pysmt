@@ -177,19 +177,6 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
         self.serialize(buf, daggify=daggify)
         return buf.getvalue()
 
-class GoalsManager(object):
-    def __init__(self):
-        self.goals = []
-
-    def add(self, g):
-        self.goals.append(g)
-
-    def p(self):
-        rt = None
-        if len(self.goals) > 0:
-            rt = self.goals.pop(0)
-        return None
-
 
 
 class SmtLibScript(object):
@@ -213,18 +200,6 @@ class SmtLibScript(object):
             log.append((cmd.name, r))
 
         return log
-
-    def evaluate(self, solver, client_data):
-        log = []
-        for cmd in self.commands:
-            r = omt_evaluate_command(cmd, solver)
-            log.append((cmd.name, r))
-            if isinstance(r, Goal):
-                if client_data is None:
-                    client_data = GoalsManager()
-                client_data.add(r)
-
-        return (log, client_data)
 
     def contains_command(self, command_name):
         return any(x.name == command_name for x in self.commands)
@@ -420,35 +395,33 @@ def smt_evaluate_command(cmd, solver):
     else:
         raise UnknownSmtLibCommandError(cmd.name)
 
-def omt_evaluate_command(cmd, optimizer, client_data = None):
+def omt_evaluate_command(cmd, optimizer, optimization_goals):
 
     if cmd.name == smtcmd.MAXIMIZE:
         rt = MaximizationGoal(cmd.args[0])
-        if client_data is not None:
-            client_data[0].append(rt)
+        optimization_goals[0].append(rt)
         return rt
     elif cmd.name == smtcmd.MINIMIZE:
         rt = MinimizationGoal(cmd.args[0])
-        if client_data is not None:
-            client_data[0].append(rt)
+        optimization_goals[0].append(rt)
         return rt
     elif cmd.name == smtcmd.CHECK_SAT:
-        if client_data != None:
-            client_data[1].clear()
-            for g in client_data[0]:
-                client_data[1].append((g.term(), optimizer.optimize(g)[1]))
-        return optimizer.check_sat()
+        if optimization_goals is not None:
+            optimization_goals[1].clear()
+            for g in optimization_goals[0]:
+                optimization_goals[1].append((g.term(), optimizer.optimize(g)[1]))
+            return optimizer.check_sat()
+        else:
+            return smt_evaluate_command(cmd, optimizer)
     elif cmd.name == smtcmd.MAXMIN:
         rt = MaxMinGoal(cmd.args[0])
-        if client_data is not None:
-            client_data[0].append(rt)
+        optimization_goals[0].append(rt)
         return rt
     elif cmd.name == smtcmd.MINMAX:
         rt = MinMaxGoal(cmd.args[0])
-        if client_data is not None:
-            client_data[0].append(rt)
+        optimization_goals[0].append(rt)
         return rt
     elif cmd.name == smtcmd.GET_OBJECTIVES:
-        return client_data[1]
+        return optimization_goals[1]
     else:
         return smt_evaluate_command(cmd, optimizer)

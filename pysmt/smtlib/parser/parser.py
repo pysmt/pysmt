@@ -1243,7 +1243,8 @@ class SmtLibParser(object):
         return SmtLibCommand(current, [])
 
     def _cmd_minmax_maxmin_obj(self, current, tokens):
-        """(minmax | maxmin (<term>+) [:id <string>] [:signed])"""
+        """(minmax | maxmin (<term>+) )"""
+        """TODO: [:id <string>] [:signed]"""
         params = self.parse_expr_list(tokens, current)
         self.consume_closing(tokens, current)
         return SmtLibCommand(current, [params,None])
