@@ -354,8 +354,12 @@ class Simplifier(pysmt.walkers.DagWalker):
         new_args = sorted(new_args, key=FNode.node_id)
         return self.manager.Times(new_args)
 
-
     def walk_pow(self, formula, args, **kwargs):
+        if args[0].is_algebraic_constant():
+            from pysmt.constants import Numeral
+            l = args[0].constant_value()
+            r = args[1].constant_value()
+            return self.manager._Algebraic(Numeral(l**r))
         if args[0].is_real_constant():
             l = args[0].constant_value()
             r = args[1].constant_value()
@@ -371,6 +375,13 @@ class Simplifier(pysmt.walkers.DagWalker):
 
         sl = args[0]
         sr = args[1]
+
+        if sl.is_algebraic_constant() and \
+           sr.is_algebraic_constant():
+            from pysmt.constants import Numeral
+            l = sl.constant_value()
+            r = sr.constant_value()
+            return self.mananger._Algebraic(Numeral(l - r))
 
         if sl.is_real_constant() and sr.is_real_constant():
             l = sl.constant_value()
