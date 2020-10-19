@@ -318,7 +318,7 @@ jobs:
 #    - 'Ubuntu16Py27'
     - 'Ubuntu16PyPy2'
     - 'Ubuntu16PyPy3'
-    - 'OSX10_13'
+    - 'OSX10_15'
     - 'Win2016'
   condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/master'))
   steps:
