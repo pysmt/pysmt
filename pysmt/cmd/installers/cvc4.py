@@ -77,7 +77,7 @@ class CVC4Installer(SolverInstaller):
 
         SolverInstaller.run(config_cmd, directory=self.extract_path,
                             env_variables=pyconfig)
-        SolverInstaller.run("make", directory=self.build_path,
+        SolverInstaller.run("make -j3", directory=self.build_path,
                             env_variables=pyconfig)
         # SolverInstaller.run("make install", directory=self.build_path,
         #                     env_variables=pyconfig)

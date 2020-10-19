@@ -169,7 +169,7 @@ jobs:
   - bash: |
       mkdir pypy.tmp
       cd pypy.tmp
-      curl --location --output archive https://bitbucket.org/pypy/pypy/downloads/pypy2.7-v7.0.0-linux64.tar.bz2
+      curl --location --output archive https://downloads.python.org/pypy/pypy2.7-v7.3.2-linux64.tar.bz2
       tar xvf archive
       rm archive
       mv ./* pypy
@@ -214,7 +214,7 @@ jobs:
   - bash: |
       mkdir pypy.tmp
       cd pypy.tmp
-      curl --location --output archive https://bitbucket.org/pypy/pypy/downloads/pypy3.5-v7.0.0-linux64.tar.bz2
+      curl --location --output archive https://downloads.python.org/pypy/pypy3.7-v7.3.2-linux64.tar.bz2
       tar xvf archive
       rm archive
       mv ./* pypy
