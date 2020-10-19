@@ -235,10 +235,10 @@ jobs:
 
 
 
-- job: 'OSX10_13'
+- job: 'OSX10_15'
   condition: or(eq(variables['build.sourceBranch'], 'refs/heads/master'), eq(variables['Build.Reason'], 'PullRequest'))
   pool:
-    vmImage: 'macOS-10.14'
+    vmImage: 'macOS-10.15'
   strategy:
     matrix:
       # Py27NoSolver:
