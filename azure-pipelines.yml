@@ -2,7 +2,7 @@ jobs:
 
 - job: 'Ubuntu16Py37'
   pool:
-    vmImage: 'Ubuntu-16.04'
+    vmImage: 'ubuntu-18.04'
   strategy:
     matrix:
       Py37NoSolver:
@@ -50,7 +50,7 @@ jobs:
 - job: 'Ubuntu16All'
   condition: or(eq(variables['build.sourceBranch'], 'refs/heads/master'), eq(variables['Build.Reason'], 'PullRequest'))
   pool:
-    vmImage: 'Ubuntu-16.04'
+    vmImage: 'ubuntu-18.04'
   strategy:
     matrix:
       # Py27All:
@@ -100,7 +100,7 @@ jobs:
 # - job: 'Ubuntu16Py27'
 #   condition: or(eq(variables['build.sourceBranch'], 'refs/heads/master'), eq(variables['Build.Reason'], 'PullRequest'))
 #   pool:
-#     vmImage: 'Ubuntu-16.04'
+#     vmImage: 'ubuntu-18.04'
 #   strategy:
 #     matrix:
 #       Py27NoSolver:
@@ -148,7 +148,7 @@ jobs:
 - job: 'Ubuntu16PyPy2'
   condition: or(eq(variables['build.sourceBranch'], 'refs/heads/master'), eq(variables['Build.Reason'], 'PullRequest'))
   pool:
-    vmImage: 'Ubuntu-16.04'
+    vmImage: 'ubuntu-18.04'
   strategy:
     matrix:
       PyPy2NoSolver:
@@ -193,7 +193,7 @@ jobs:
 - job: 'Ubuntu16PyPy3'
   condition: or(eq(variables['build.sourceBranch'], 'refs/heads/master'), eq(variables['Build.Reason'], 'PullRequest'))
   pool:
-    vmImage: 'Ubuntu-16.04'
+    vmImage: 'ubuntu-18.04'
   strategy:
     matrix:
       PyPy3NoSolver:
