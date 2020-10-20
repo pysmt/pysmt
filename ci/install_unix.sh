@@ -75,6 +75,12 @@ then
     os_install swig
 fi
 
+# GPerf is needed to compile Yices
+if [ "${PYSMT_SOLVER}" == "yices" ] || [ "${PYSMT_SOLVER}" == "all" ]
+then
+    os_install gperf
+fi
+
 # Install dependencies
 $PIP_INSTALL configparser
 $PIP_INSTALL six

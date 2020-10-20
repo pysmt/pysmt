@@ -2,7 +2,7 @@ jobs:
 
 - job: 'Ubuntu16Py37'
   pool:
-    vmImage: 'Ubuntu-16.04'
+    vmImage: 'ubuntu-18.04'
   strategy:
     matrix:
       Py37NoSolver:
@@ -50,7 +50,7 @@ jobs:
 - job: 'Ubuntu16All'
   condition: or(eq(variables['build.sourceBranch'], 'refs/heads/master'), eq(variables['Build.Reason'], 'PullRequest'))
   pool:
-    vmImage: 'Ubuntu-16.04'
+    vmImage: 'ubuntu-18.04'
   strategy:
     matrix:
       # Py27All:
@@ -100,7 +100,7 @@ jobs:
 # - job: 'Ubuntu16Py27'
 #   condition: or(eq(variables['build.sourceBranch'], 'refs/heads/master'), eq(variables['Build.Reason'], 'PullRequest'))
 #   pool:
-#     vmImage: 'Ubuntu-16.04'
+#     vmImage: 'ubuntu-18.04'
 #   strategy:
 #     matrix:
 #       Py27NoSolver:
@@ -148,7 +148,7 @@ jobs:
 - job: 'Ubuntu16PyPy2'
   condition: or(eq(variables['build.sourceBranch'], 'refs/heads/master'), eq(variables['Build.Reason'], 'PullRequest'))
   pool:
-    vmImage: 'Ubuntu-16.04'
+    vmImage: 'ubuntu-18.04'
   strategy:
     matrix:
       PyPy2NoSolver:
@@ -169,7 +169,7 @@ jobs:
   - bash: |
       mkdir pypy.tmp
       cd pypy.tmp
-      curl --location --output archive https://bitbucket.org/pypy/pypy/downloads/pypy2.7-v7.0.0-linux64.tar.bz2
+      curl --location --output archive https://downloads.python.org/pypy/pypy2.7-v7.3.2-linux64.tar.bz2
       tar xvf archive
       rm archive
       mv ./* pypy
@@ -193,7 +193,7 @@ jobs:
 - job: 'Ubuntu16PyPy3'
   condition: or(eq(variables['build.sourceBranch'], 'refs/heads/master'), eq(variables['Build.Reason'], 'PullRequest'))
   pool:
-    vmImage: 'Ubuntu-16.04'
+    vmImage: 'ubuntu-18.04'
   strategy:
     matrix:
       PyPy3NoSolver:
@@ -214,7 +214,7 @@ jobs:
   - bash: |
       mkdir pypy.tmp
       cd pypy.tmp
-      curl --location --output archive https://bitbucket.org/pypy/pypy/downloads/pypy3.5-v7.0.0-linux64.tar.bz2
+      curl --location --output archive https://downloads.python.org/pypy/pypy3.7-v7.3.2-linux64.tar.bz2
       tar xvf archive
       rm archive
       mv ./* pypy
@@ -235,10 +235,10 @@ jobs:
 
 
 
-- job: 'OSX10_13'
+- job: 'OSX10_15'
   condition: or(eq(variables['build.sourceBranch'], 'refs/heads/master'), eq(variables['Build.Reason'], 'PullRequest'))
   pool:
-    vmImage: 'macOS-10.14'
+    vmImage: 'macOS-10.15'
   strategy:
     matrix:
       # Py27NoSolver:
@@ -318,7 +318,7 @@ jobs:
 #    - 'Ubuntu16Py27'
     - 'Ubuntu16PyPy2'
     - 'Ubuntu16PyPy3'
-    - 'OSX10_13'
+    - 'OSX10_15'
     - 'Win2016'
   condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/master'))
   steps:
