@@ -16,10 +16,16 @@
 #   limitations under the License.
 #
 import os
+import pytest
+
 from pysmt.test.smtlib.parser_utils import execute_script_fname, SMTLIB_TEST_FILES, SMTLIB_DIR
 
-def test_generator():
+def _get_tests():
     for (logic, f, expected_result) in SMTLIB_TEST_FILES:
         smtfile = os.path.join(SMTLIB_DIR, f)
         if logic.theory.arrays:
-            yield execute_script_fname, smtfile, logic, expected_result
+            yield smtfile, logic, expected_result
+
+@pytest.mark.parametrize("smtfile, logic, expected_result", list(_get_tests()))
+def test_qf_arrays(smtfile, logic, expected_result):
+    execute_script_fname(smtfile, logic, expected_result)

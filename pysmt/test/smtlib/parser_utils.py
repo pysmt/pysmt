@@ -29,11 +29,11 @@ from pysmt.exceptions import NoSolverAvailableError, SolverReturnedUnknownResult
 
 # We use test generation in order to be able to obtain a separate
 # test for each file.
-# This is a feature of nosetest. The correct way to invoke these
+# This is a feature of pytest. The correct way to invoke these
 # tests is, e.g.,
-#  $ nosetests pysmt/test/smtlib/test_parser_qf_lra.py
-# The function 'execute_script_fname' is a generator that
-# returns the correct arguments for the test
+#  $ python -m pytest pysmt/test/smtlib/test_parser_qf_lra.py
+# The function 'execute_script_fname' is a general checker that
+# parses and invokes a solver for the given smt file
 def execute_script_fname(smtfile, logic, expected_result):
     """Read and call a Solver to solve the instance"""
 
