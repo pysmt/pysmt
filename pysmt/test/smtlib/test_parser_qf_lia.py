@@ -15,19 +15,11 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import os
 import pytest
 
 from pysmt.logics import QF_LIA
-from pysmt.test.smtlib.parser_utils import execute_script_fname, SMTLIB_TEST_FILES, SMTLIB_DIR
+from pysmt.test.smtlib.parser_utils import execute_script_fname, smtlib_tests
 
-
-def _get_tests():
-    for (logic, f, expected_result) in SMTLIB_TEST_FILES:
-        smtfile = os.path.join(SMTLIB_DIR, f)
-        if logic == QF_LIA:
-            yield smtfile, logic, expected_result
-
-@pytest.mark.parametrize("smtfile, logic, expected_result", list(_get_tests()))
+@pytest.mark.parametrize("smtfile, logic, expected_result", smtlib_tests(lambda x: x == QF_LIA))
 def test_qf_lia(smtfile, logic, expected_result):
     execute_script_fname(smtfile, logic, expected_result)

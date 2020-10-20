@@ -27,6 +27,15 @@ from pysmt.logics import (QF_LIA, QF_LRA, LRA, QF_UFLIRA, QF_UFBV, QF_BV,
                           UFBV, BV)
 from pysmt.exceptions import NoSolverAvailableError, SolverReturnedUnknownResultError
 
+def smtlib_tests(logic_pred):
+    """Returns the smtlib instances matching the logic predicate"""
+    tests = []
+    for (logic, f, expected_result) in SMTLIB_TEST_FILES:
+        smtfile = os.path.join(SMTLIB_DIR, f)
+        if logic_pred(logic):
+            tests.append((smtfile, logic, expected_result))
+    return tests
+
 # We use test generation in order to be able to obtain a separate
 # test for each file.
 # This is a feature of pytest. The correct way to invoke these

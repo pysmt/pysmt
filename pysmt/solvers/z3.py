@@ -147,14 +147,14 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
                                            environment=environment,
                                            logic=logic,
                                            **options)
-        # try:
-        #     self.z3 = z3.SolverFor(str(logic))
-        # except z3.Z3Exception:
-        #     self.z3 = z3.Solver()
-        # except z3.z3types.Z3Exception:
-        #     self.z3 = z3.Solver()
-        # except OSError:
-        self.z3 = z3.Solver()
+        try:
+            self.z3 = z3.SolverFor(str(logic))
+        except z3.Z3Exception:
+            self.z3 = z3.Solver()
+        except z3.z3types.Z3Exception:
+            self.z3 = z3.Solver()
+        except OSError:
+            self.z3 = z3.Solver()
         self.options(self)
         self.declarations = set()
         self.converter = Z3Converter(environment, z3_ctx=self.z3.ctx)

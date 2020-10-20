@@ -23,5 +23,5 @@ export PYTHONDONTWRITEBYTECODE=True
 # Exit on error (-x)
 # Rule of thumb: if a test takes more than 10 seconds it
 #                should be marked as slow using:
-#                    @attr("slow")
+#                    @pytest.mark.slow
 python3 -m pytest -m "not slow" -x pysmt/test
