@@ -64,13 +64,13 @@ Tests in pySMT are developed using python's built-in testing framework
 and it should be possible to launch it by calling the file directly,
 e.g.: ``$ python test_formula.py``.
 
-However, the preferred way is to use nosetests, e.g.: ``$ nosetests pysmt/tests/test_formula.py``.
+However, the preferred way is to use pytest, e.g.: ``$ python -m pytest pysmt/tests/test_formula.py``.
 
 There are two utility scripts to simplify the testing of pysmt:
 ``run_tests.sh`` and ``run_all_tests.sh``.  They both exploit
-additional options for nosetests, such as parallelism and
-timeouts. ``run_all_tests.sh`` includes all the tests that are
-marked as ``slow``, and therefore might take some time to complete.
+additional options for pytest, such as timeouts. ``run_all_tests.sh``
+includes all the tests that are marked as ``slow``, and therefore
+might take some time to complete.
 
 Finally, tests are run across a wide range of solvers, versions of
 python and operating systems using Travis CI.  This happens
@@ -273,9 +273,9 @@ To test the package, we create a new hardcopy of the tests of pySMT:
 
  0. ``mkdir -p test_pkg/pysmt``
  1. ``cp -a github/pysmt/test test_pkg/pysmt/; cd test_pkg``
- 2. This should fail: ``nosetests -v pysmt``
+ 2. This should fail: ``python -m pytest pysmt``
  3. ``pip install --user github/dist/PySMT-a.b.c.tar.gz``
- 4. ``nosetests -v pysmt``
+ 4. ``python -m pytest pysmt``
  5. ``pip uninstall pysmt``
 
 All tests should pass in order to make the release. Note: It is

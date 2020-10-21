@@ -85,7 +85,7 @@ fi
 $PIP_INSTALL configparser
 $PIP_INSTALL six
 $PIP_INSTALL wheel
-$PIP_INSTALL nose
+$PIP_INSTALL pytest
 
 if [ "${PYSMT_SOLVER}" == "cvc4" ]
 then
