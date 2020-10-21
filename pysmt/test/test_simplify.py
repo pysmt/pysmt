@@ -17,29 +17,29 @@
 #
 import pytest
 
-from pysmt.test import TestCase, skipIfSolverNotAvailable, main
-from pysmt.test.examples import get_example_formulae
 from pysmt.environment import get_env
-from pysmt.shortcuts import (
-    Array,
-    Store,
-    Int,
-    Iff,
-    Symbol,
-    Plus,
-    Equals,
-    And,
-    Real,
-    Times,
-    Not,
-    FALSE,
-    Or,
-    TRUE,
-)
-from pysmt.typing import INT, REAL
-from pysmt.simplifier import BddSimplifier
-from pysmt.logics import QF_BOOL
 from pysmt.exceptions import ConvertExpressionError, NoSolverAvailableError
+from pysmt.logics import QF_BOOL
+from pysmt.shortcuts import (
+    FALSE,
+    TRUE,
+    And,
+    Array,
+    Equals,
+    Iff,
+    Int,
+    Not,
+    Or,
+    Plus,
+    Real,
+    Store,
+    Symbol,
+    Times,
+)
+from pysmt.simplifier import BddSimplifier
+from pysmt.test import TestCase, main, skipIfSolverNotAvailable
+from pysmt.test.examples import get_example_formulae
+from pysmt.typing import INT, REAL
 
 
 class TestSimplify(TestCase):

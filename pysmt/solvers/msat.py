@@ -16,43 +16,43 @@
 #   limitations under the License.
 #
 from warnings import warn
+
 from six.moves import xrange
 
-from pysmt.exceptions import SolverAPINotFound
 from pysmt.constants import Fraction, is_pysmt_fraction, is_pysmt_integer
+from pysmt.exceptions import SolverAPINotFound
 
 try:
     import mathsat
 except ImportError:
     raise SolverAPINotFound
 
-from pysmt.logics import LRA, LIA, QF_UFLIA, QF_UFLRA, QF_BV, PYSMT_QF_LOGICS
-from pysmt.oracles import get_logic
-
 import pysmt.operators as op
 from pysmt import typing as types
-from pysmt.solvers.solver import (
-    IncrementalTrackingSolver,
-    UnsatCoreSolver,
-    Model,
-    Converter,
-    SolverOptions,
-)
-from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
-from pysmt.walkers import DagWalker
+from pysmt.decorators import catch_conversion_error, clear_pending_pop
 from pysmt.exceptions import (
-    SolverReturnedUnknownResultError,
-    SolverNotConfiguredForUnsatCoresError,
-    SolverStatusError,
+    ConvertExpressionError,
     InternalSolverError,
     NonLinearError,
-    PysmtValueError,
     PysmtTypeError,
-    ConvertExpressionError,
+    PysmtValueError,
+    SolverNotConfiguredForUnsatCoresError,
+    SolverReturnedUnknownResultError,
+    SolverStatusError,
 )
-from pysmt.decorators import clear_pending_pop, catch_conversion_error
-from pysmt.solvers.qelim import QuantifierEliminator
+from pysmt.logics import LIA, LRA, PYSMT_QF_LOGICS, QF_BV, QF_UFLIA, QF_UFLRA
+from pysmt.oracles import get_logic
 from pysmt.solvers.interpolation import Interpolator
+from pysmt.solvers.qelim import QuantifierEliminator
+from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
+from pysmt.solvers.solver import (
+    Converter,
+    IncrementalTrackingSolver,
+    Model,
+    SolverOptions,
+    UnsatCoreSolver,
+)
+from pysmt.walkers import DagWalker
 from pysmt.walkers.identitydag import IdentityDagWalker
 
 

@@ -7,7 +7,7 @@
 #
 # Source: https://yurichev.com/writings/SAT_SMT_draft-EN.pdf
 #
-from pysmt.shortcuts import SBV, Symbol, is_valid, Equals
+from pysmt.shortcuts import SBV, Equals, Symbol, is_valid
 from pysmt.typing import BV16
 
 # X and Y are BV of width 16

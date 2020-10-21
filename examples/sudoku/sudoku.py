@@ -1,12 +1,20 @@
 #!/usr/bin/env python
 
-import math
 import argparse
+import math
 
-from pysmt.shortcuts import Int, FreshSymbol, Solver, Equals
-from pysmt.shortcuts import Or, get_env, BV, AllDifferent
 from pysmt import typing
-from pysmt.logics import QF_LIA, QF_BV
+from pysmt.logics import QF_BV, QF_LIA
+from pysmt.shortcuts import (
+    BV,
+    AllDifferent,
+    Equals,
+    FreshSymbol,
+    Int,
+    Or,
+    Solver,
+    get_env,
+)
 
 
 class Sudoku(object):
@@ -202,12 +210,16 @@ def main():
         constraints = read_constraints(args.problem)
         res = sudoku.solve(constraints)
         if res is None:
-            print "No solution exists"
+            print("No solution exists")
         else:
             for row in res:
-                print "\t".join(str(x) for x in row)
+                print("\t".join(str(x) for x in row))
     else:
-        print "No problem specified! Either use the gui.py script or pass" " a problem with --problem flag. Example problems are available" " in the problems/ folder."
+        print(
+            "No problem specified! Either use the gui.py script or pass"
+            " a problem with --problem flag. Example problems are available"
+            " in the problems/ folder."
+        )
 
 
 if __name__ == "__main__":

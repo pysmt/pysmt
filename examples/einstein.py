@@ -36,8 +36,20 @@
 #
 # The question is: who owns the fish?
 
-from pysmt.shortcuts import Symbol, ExactlyOne, Or, And, FALSE, TRUE, Iff, Implies
-from pysmt.shortcuts import get_model, get_unsat_core, is_sat, is_unsat
+from pysmt.shortcuts import (
+    FALSE,
+    TRUE,
+    And,
+    ExactlyOne,
+    Iff,
+    Implies,
+    Or,
+    Symbol,
+    get_model,
+    get_unsat_core,
+    is_sat,
+    is_unsat,
+)
 
 #
 # Lets start by expliciting all values for all dimensions

@@ -16,11 +16,12 @@
 #   limitations under the License.
 #
 import collections
+
 from six.moves import cStringIO
 
-from pysmt.test import TestCase, main
+from pysmt.exceptions import PysmtValueError, UnknownSmtLibCommandError
 from pysmt.smtlib.parser import SmtLibParser
-from pysmt.exceptions import UnknownSmtLibCommandError, PysmtValueError
+from pysmt.test import TestCase, main
 
 TS = collections.namedtuple("TS", ["init", "trans"])
 TSFormula = collections.namedtuple("TSFormula", ["formula", "is_init"])

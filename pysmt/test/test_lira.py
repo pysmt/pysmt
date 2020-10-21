@@ -15,10 +15,10 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from pysmt.shortcuts import *
-from pysmt.typing import INT, REAL, FunctionType
-from pysmt.test import TestCase, main
 from pysmt.logics import QF_UFLIRA, UFLIRA
+from pysmt.shortcuts import *
+from pysmt.test import TestCase, main
+from pysmt.typing import INT, REAL, FunctionType
 
 
 class TestLIRA(TestCase):

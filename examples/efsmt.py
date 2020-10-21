@@ -4,12 +4,25 @@
 #  1. How to combine 2 different solvers
 #  2. How to extract information from a model
 #
-from pysmt.shortcuts import Solver, get_model
-from pysmt.shortcuts import Symbol, Bool, Real, Implies, And, Not, Equals
-from pysmt.shortcuts import GT, LT, LE, Minus, Times
-from pysmt.logics import AUTO, QF_LRA
-from pysmt.typing import REAL
 from pysmt.exceptions import SolverReturnedUnknownResultError
+from pysmt.logics import AUTO, QF_LRA
+from pysmt.shortcuts import (
+    GT,
+    LE,
+    LT,
+    And,
+    Bool,
+    Equals,
+    Implies,
+    Minus,
+    Not,
+    Real,
+    Solver,
+    Symbol,
+    Times,
+    get_model,
+)
+from pysmt.typing import REAL
 
 
 def efsmt(

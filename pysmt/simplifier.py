@@ -17,13 +17,13 @@
 #
 from six.moves import xrange
 
-import pysmt.walkers
-from pysmt.walkers import handles
 import pysmt.operators as op
 import pysmt.typing as types
-from pysmt.utils import set_bit
+import pysmt.walkers
 from pysmt.exceptions import PysmtValueError
 from pysmt.fnode import FNode
+from pysmt.utils import set_bit
+from pysmt.walkers import handles
 
 
 class Simplifier(pysmt.walkers.DagWalker):
@@ -1052,8 +1052,8 @@ class BddSimplifier(Simplifier):
         self._validate_simplifications = value
 
     def simplify(self, formula):
-        from pysmt.oracles import get_logic
         from pysmt.logics import BOOL, QF_BOOL
+        from pysmt.oracles import get_logic
 
         if self.bool_abstraction:
             logic = get_logic(formula)

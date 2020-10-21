@@ -26,13 +26,13 @@ except ImportError:
 
 import pysmt.logics
 from pysmt import typing as types
-from pysmt.solvers.solver import Solver, Converter, SolverOptions
-from pysmt.solvers.eager import EagerModel
-from pysmt.walkers import DagWalker
-from pysmt.decorators import clear_pending_pop, catch_conversion_error
-from pysmt.exceptions import ConvertExpressionError, PysmtValueError, PysmtTypeError
+from pysmt.decorators import catch_conversion_error, clear_pending_pop
+from pysmt.exceptions import ConvertExpressionError, PysmtTypeError, PysmtValueError
 from pysmt.oracles import get_logic
+from pysmt.solvers.eager import EagerModel
 from pysmt.solvers.qelim import QuantifierEliminator
+from pysmt.solvers.solver import Converter, Solver, SolverOptions
+from pysmt.walkers import DagWalker
 
 
 class BddOptions(SolverOptions):

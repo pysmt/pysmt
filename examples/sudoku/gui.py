@@ -6,6 +6,7 @@
 # This example uses PyGObject and requires GTK3 for correctly working
 
 import sys
+
 from gi.repository import Gtk
 from sudoku import Sudoku
 
@@ -98,8 +99,8 @@ def main():
         try:
             size = int(sys.argv[1])
         except ValueError:
-            print "Unknown number %s" % sys.argv[1]
-            print "Usage: %s [number of tiles]" % sys.argv[0]
+            print("Unknown number %s" % sys.argv[1])
+            print("Usage: %s [number of tiles]" % sys.argv[0])
             exit(1)
 
     win = GridWindow(size)

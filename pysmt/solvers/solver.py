@@ -17,16 +17,16 @@
 #
 from six.moves import xrange
 
-from pysmt.typing import BOOL
-from pysmt.solvers.options import SolverOptions
 from pysmt.decorators import clear_pending_pop
 from pysmt.exceptions import (
-    SolverReturnedUnknownResultError,
+    PysmtTypeError,
     PysmtValueError,
     SolverNotConfiguredForUnsatCoresError,
-    PysmtTypeError,
+    SolverReturnedUnknownResultError,
     SolverStatusError,
 )
+from pysmt.solvers.options import SolverOptions
+from pysmt.typing import BOOL
 
 
 class Solver(object):

@@ -18,15 +18,19 @@
 from six.moves import cStringIO
 
 import pysmt.smtlib.commands as smtcmd
-from pysmt.shortcuts import And, Or, Symbol, GT, Real, Not
-from pysmt.typing import REAL
-from pysmt.test import TestCase, main
-from pysmt.smtlib.script import SmtLibScript, SmtLibCommand
-from pysmt.smtlib.script import smtlibscript_from_formula, evaluate_command
-from pysmt.smtlib.parser import get_formula_strict, get_formula, SmtLibParser
-from pysmt.solvers.smtlib import SmtLibIgnoreMixin
+from pysmt.exceptions import PysmtValueError, UndefinedLogicError
 from pysmt.logics import QF_UFLIRA
-from pysmt.exceptions import UndefinedLogicError, PysmtValueError
+from pysmt.shortcuts import GT, And, Not, Or, Real, Symbol
+from pysmt.smtlib.parser import SmtLibParser, get_formula, get_formula_strict
+from pysmt.smtlib.script import (
+    SmtLibCommand,
+    SmtLibScript,
+    evaluate_command,
+    smtlibscript_from_formula,
+)
+from pysmt.solvers.smtlib import SmtLibIgnoreMixin
+from pysmt.test import TestCase, main
+from pysmt.typing import REAL
 
 
 class TestSmtLibScript(TestCase):

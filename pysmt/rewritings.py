@@ -20,9 +20,9 @@ This module defines some rewritings for pySMT formulae.
 """
 from itertools import combinations
 
-from pysmt.walkers import DagWalker, IdentityDagWalker, handles
-import pysmt.typing as types
 import pysmt.operators as op
+import pysmt.typing as types
+from pysmt.walkers import DagWalker, IdentityDagWalker, handles
 
 
 class CNFizer(DagWalker):

@@ -14,7 +14,6 @@ from six.moves import cStringIO  # Py2-Py3 Compatibility
 
 from pysmt.smtlib.parser import SmtLibParser
 
-
 # To make the example self contained, we store the example SMT-LIB
 # script in a string.
 DEMO_SMTLIB = """

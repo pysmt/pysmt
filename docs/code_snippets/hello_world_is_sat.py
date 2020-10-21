@@ -1,17 +1,16 @@
 from pysmt.shortcuts import (
-    And,
-    Symbol,
-    LE,
     GE,
-    Int,
+    LE,
+    And,
     Equals,
+    Int,
     Plus,
+    Symbol,
     Times,
-    is_sat,
     get_model,
+    is_sat,
 )
 from pysmt.typing import INT
-
 
 hello = [Symbol(s, INT) for s in "hello"]
 world = [Symbol(s, INT) for s in "world"]

@@ -4,8 +4,7 @@
 # 1. Enable and use infix notation
 # 2. Use a solver context
 #
-from pysmt.shortcuts import Symbol, And, Plus, Int
-from pysmt.shortcuts import Solver
+from pysmt.shortcuts import And, Int, Plus, Solver, Symbol
 from pysmt.typing import INT
 
 # Infix-Notation is automatically enabled whenever you import pysmt.shortcuts.

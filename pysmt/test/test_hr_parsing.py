@@ -15,14 +15,15 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+import os
+import tempfile
 import unittest
-import tempfile, os
 
-from pysmt.parsing import HRParser, parse
-from pysmt.shortcuts import Iff, Symbol, And, Or, LE, Real, Plus, Minus
-from pysmt.test.examples import get_example_formulae
 from pysmt.exceptions import NoSolverAvailableError
+from pysmt.parsing import HRParser, parse
+from pysmt.shortcuts import LE, And, Iff, Minus, Or, Plus, Real, Symbol
 from pysmt.test import TestCase
+from pysmt.test.examples import get_example_formulae
 from pysmt.typing import REAL
 
 

@@ -181,7 +181,7 @@ IdentityDagWalker.set_handler(walk_ltl_o, LTL_O)
 IdentityDagWalker.set_handler(walk_ltl_h, LTL_H)
 # EOC IdentityDagWalker
 
-from pysmt.environment import Environment, pop_env, get_env
+from pysmt.environment import Environment, get_env, pop_env
 from pysmt.environment import push_env as pysmt_push_env
 
 

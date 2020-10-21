@@ -15,11 +15,11 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from pysmt.shortcuts import *
-from pysmt.typing import REAL, INT
-from pysmt.test import TestCase, skipIfSolverNotAvailable, main
 from pysmt.exceptions import NoSolverAvailableError
 from pysmt.logics import UFLIRA
+from pysmt.shortcuts import *
+from pysmt.test import TestCase, main, skipIfSolverNotAvailable
+from pysmt.typing import INT, REAL
 
 
 class TestInterpolation(TestCase):

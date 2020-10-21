@@ -18,17 +18,34 @@
 from six.moves import xrange
 
 import pysmt.operators as op
-from pysmt.shortcuts import FreshSymbol, Symbol, Int, Bool, ForAll
-from pysmt.shortcuts import And, Or, Iff, Not, Function, Real
-from pysmt.shortcuts import LT, GT, Plus, Minus, Equals
-from pysmt.shortcuts import get_env, substitute, TRUE
-from pysmt.typing import INT, BOOL, REAL, FunctionType
-from pysmt.walkers import TreeWalker, DagWalker, IdentityDagWalker
-from pysmt.test import TestCase, main
+from pysmt.exceptions import PysmtTypeError, UnsupportedOperatorError
 from pysmt.formula import FormulaManager
+from pysmt.shortcuts import (
+    GT,
+    LT,
+    TRUE,
+    And,
+    Bool,
+    Equals,
+    ForAll,
+    FreshSymbol,
+    Function,
+    Iff,
+    Int,
+    Minus,
+    Not,
+    Or,
+    Plus,
+    Real,
+    Symbol,
+    get_env,
+    substitute,
+)
+from pysmt.substituter import MGSubstituter, MSSubstituter
+from pysmt.test import TestCase, main
 from pysmt.test.examples import get_example_formulae
-from pysmt.exceptions import UnsupportedOperatorError, PysmtTypeError
-from pysmt.substituter import MSSubstituter, MGSubstituter
+from pysmt.typing import BOOL, INT, REAL, FunctionType
+from pysmt.walkers import DagWalker, IdentityDagWalker, TreeWalker
 
 
 class TestWalkers(TestCase):

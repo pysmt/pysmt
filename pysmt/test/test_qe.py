@@ -15,21 +15,45 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from pysmt.shortcuts import Symbol, ForAll, Exists, And, Iff, GE, LT, Real, Int
-from pysmt.shortcuts import Minus, Equals, Plus, ToReal, Implies, LE, TRUE, Not
-from pysmt.shortcuts import Times, QuantifierEliminator
-from pysmt.shortcuts import is_sat, is_valid
-from pysmt.typing import REAL, BOOL, INT
-from pysmt.test import TestCase, main
-from pysmt.test import skipIfNoSolverForLogic, skipIfNoQEForLogic, skipIfQENotAvailable
-from pysmt.test.examples import get_example_formulae
 from pysmt.exceptions import (
-    SolverReturnedUnknownResultError,
-    PysmtValueError,
-    NoSolverAvailableError,
     ConvertExpressionError,
+    NoSolverAvailableError,
+    PysmtValueError,
+    SolverReturnedUnknownResultError,
 )
-from pysmt.logics import LRA, LIA, UFLIRA
+from pysmt.logics import LIA, LRA, UFLIRA
+from pysmt.shortcuts import (
+    GE,
+    LE,
+    LT,
+    TRUE,
+    And,
+    Equals,
+    Exists,
+    ForAll,
+    Iff,
+    Implies,
+    Int,
+    Minus,
+    Not,
+    Plus,
+    QuantifierEliminator,
+    Real,
+    Symbol,
+    Times,
+    ToReal,
+    is_sat,
+    is_valid,
+)
+from pysmt.test import (
+    TestCase,
+    main,
+    skipIfNoQEForLogic,
+    skipIfNoSolverForLogic,
+    skipIfQENotAvailable,
+)
+from pysmt.test.examples import get_example_formulae
+from pysmt.typing import BOOL, INT, REAL
 
 
 class TestQE(TestCase):

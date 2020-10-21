@@ -17,22 +17,21 @@
 #
 import functools
 import itertools
-
-from warnings import warn
-from six import iteritems, PY2
-from six.moves import xrange
 from collections import deque
+from warnings import warn
+
+from six import PY2, iteritems
+from six.moves import xrange
 
 import pysmt.smtlib.commands as smtcmd
-from pysmt.environment import get_env
-from pysmt.logics import get_logic_by_name, UndefinedLogicError
-from pysmt.exceptions import UnknownSmtLibCommandError, PysmtSyntaxError
-from pysmt.exceptions import PysmtTypeError
-from pysmt.smtlib.script import SmtLibCommand, SmtLibScript
-from pysmt.smtlib.annotations import Annotations
-from pysmt.utils import interactive_char_iterator
 from pysmt.constants import Fraction
-from pysmt.typing import _TypeDecl, PartialType
+from pysmt.environment import get_env
+from pysmt.exceptions import PysmtSyntaxError, PysmtTypeError, UnknownSmtLibCommandError
+from pysmt.logics import UndefinedLogicError, get_logic_by_name
+from pysmt.smtlib.annotations import Annotations
+from pysmt.smtlib.script import SmtLibCommand, SmtLibScript
+from pysmt.typing import PartialType, _TypeDecl
+from pysmt.utils import interactive_char_iterator
 
 
 def open_(fname):

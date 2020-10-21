@@ -5,7 +5,7 @@
 #  2. How to perform substitution
 #  3. Printing
 #  4. Satisfiability checking
-from pysmt.shortcuts import Symbol, And, Not, is_sat
+from pysmt.shortcuts import And, Not, Symbol, is_sat
 
 varA = Symbol("A")  # Default type is Boolean
 varB = Symbol("B")

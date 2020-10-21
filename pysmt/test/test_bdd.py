@@ -15,12 +15,11 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from pysmt.shortcuts import And, Not, Symbol, Bool, Exists, Solver
-from pysmt.shortcuts import get_env, qelim, Or
-from pysmt.test import TestCase, skipIfSolverNotAvailable, main
-from pysmt.test.examples import get_example_formulae
-from pysmt.logics import BOOL
 from pysmt.exceptions import PysmtValueError
+from pysmt.logics import BOOL
+from pysmt.shortcuts import And, Bool, Exists, Not, Or, Solver, Symbol, get_env, qelim
+from pysmt.test import TestCase, main, skipIfSolverNotAvailable
+from pysmt.test.examples import get_example_formulae
 
 
 class TestBdd(TestCase):

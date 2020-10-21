@@ -16,13 +16,13 @@
 #   limitations under the License.
 #
 
-import sys
-import subprocess
-import pkgutil
 import os.path
+import pkgutil
+import subprocess
+import sys
 
-from pysmt.test import TestCase, main
 import pysmt
+from pysmt.test import TestCase, main
 
 
 class TestImports(TestCase):

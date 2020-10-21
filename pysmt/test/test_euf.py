@@ -15,12 +15,11 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from pysmt.shortcuts import *
-from pysmt.typing import INT, REAL, FunctionType, BV16
-from pysmt.logics import UFLRA, UFLIRA
-from pysmt.test import TestCase, main
-from pysmt.test import skipIfNoSolverForLogic
 from pysmt.exceptions import PysmtModeError, PysmtValueError
+from pysmt.logics import UFLIRA, UFLRA
+from pysmt.shortcuts import *
+from pysmt.test import TestCase, main, skipIfNoSolverForLogic
+from pysmt.typing import BV16, INT, REAL, FunctionType
 
 
 class TestEUF(TestCase):

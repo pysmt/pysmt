@@ -16,24 +16,23 @@
 #   limitations under the License.
 #
 
-from pysmt.test import TestCase, main
-from pysmt.test import skipIfNoSolverForLogic, skipIfSolverNotAvailable
-from pysmt.logics import QF_AUFLIA, QF_AUFBV
-from pysmt.typing import ARRAY_INT_INT, ArrayType, INT, REAL, BV8
-from pysmt.shortcuts import (
-    Solver,
-    Symbol,
-    Not,
-    Equals,
-    Int,
-    BV,
-    Real,
-    FreshSymbol,
-    Select,
-    Store,
-    Array,
-)
 from pysmt.exceptions import ConvertExpressionError, PysmtTypeError, PysmtValueError
+from pysmt.logics import QF_AUFBV, QF_AUFLIA
+from pysmt.shortcuts import (
+    BV,
+    Array,
+    Equals,
+    FreshSymbol,
+    Int,
+    Not,
+    Real,
+    Select,
+    Solver,
+    Store,
+    Symbol,
+)
+from pysmt.test import TestCase, main, skipIfNoSolverForLogic, skipIfSolverNotAvailable
+from pysmt.typing import ARRAY_INT_INT, BV8, INT, REAL, ArrayType
 
 
 class TestArray(TestCase):

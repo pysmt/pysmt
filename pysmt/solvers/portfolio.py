@@ -16,11 +16,10 @@
 #   limitations under the License.
 #
 import logging
-from multiprocessing import Process, Queue, Pipe
+from multiprocessing import Pipe, Process, Queue
 
-from pysmt.solvers.solver import IncrementalTrackingSolver, SolverOptions
 from pysmt.decorators import clear_pending_pop
-
+from pysmt.solvers.solver import IncrementalTrackingSolver, SolverOptions
 
 LOGGER = logging.getLogger(__name__)
 _debug = LOGGER.debug

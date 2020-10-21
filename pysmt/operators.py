@@ -22,8 +22,8 @@ they will be rewritten (during construction) in order to only use
 these operators.
 """
 from itertools import chain
-from six.moves import xrange
 
+from six.moves import xrange
 
 ALL_TYPES = list(xrange(0, 66))
 

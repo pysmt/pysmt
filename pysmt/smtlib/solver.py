@@ -14,21 +14,21 @@
 
 import time
 from io import TextIOWrapper
-from subprocess import Popen, PIPE
+from subprocess import PIPE, Popen
 
 from six import PY2
 
 import pysmt.smtlib.commands as smtcmd
-from pysmt.solvers.eager import EagerModel
-from pysmt.smtlib.parser import SmtLibParser
-from pysmt.smtlib.script import SmtLibCommand
-from pysmt.solvers.solver import Solver, SolverOptions
+from pysmt.decorators import clear_pending_pop
 from pysmt.exceptions import (
+    PysmtValueError,
     SolverReturnedUnknownResultError,
     UnknownSolverAnswerError,
-    PysmtValueError,
 )
-from pysmt.decorators import clear_pending_pop
+from pysmt.smtlib.parser import SmtLibParser
+from pysmt.smtlib.script import SmtLibCommand
+from pysmt.solvers.eager import EagerModel
+from pysmt.solvers.solver import Solver, SolverOptions
 
 
 class SmtLibOptions(SolverOptions):

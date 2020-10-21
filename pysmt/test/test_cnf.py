@@ -16,15 +16,16 @@
 #   limitations under the License.
 #
 import os
+
 import pytest
 
-from pysmt.shortcuts import Implies, is_sat, reset_env, Symbol, Iff
+from pysmt.logics import QF_BOOL, QF_LIA, QF_LRA, QF_UFLIRA
 from pysmt.rewritings import CNFizer
-from pysmt.logics import QF_BOOL, QF_LRA, QF_LIA, QF_UFLIRA
-from pysmt.test import TestCase, skipIfNoSolverForLogic, main
-from pysmt.test.examples import get_example_formulae
-from pysmt.test.smtlib.parser_utils import SMTLIB_TEST_FILES, SMTLIB_DIR
+from pysmt.shortcuts import Iff, Implies, Symbol, is_sat, reset_env
 from pysmt.smtlib.parser import get_formula_fname
+from pysmt.test import TestCase, main, skipIfNoSolverForLogic
+from pysmt.test.examples import get_example_formulae
+from pysmt.test.smtlib.parser_utils import SMTLIB_DIR, SMTLIB_TEST_FILES
 
 
 class TestCnf(TestCase):

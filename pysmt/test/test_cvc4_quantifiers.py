@@ -15,10 +15,10 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+from pysmt.logics import LIA, LRA
+from pysmt.shortcuts import LT, ForAll, Implies, Int, Real, Solver, Symbol
 from pysmt.test import TestCase, main, skipIfSolverNotAvailable
-from pysmt.shortcuts import Symbol, ForAll, Solver, LT, Real, Int, Implies
-from pysmt.typing import REAL, INT
-from pysmt.logics import LRA, LIA
+from pysmt.typing import INT, REAL
 
 
 class TestCVC4Quantifiers(TestCase):

@@ -17,15 +17,29 @@
 #
 from six import StringIO
 
-from pysmt.shortcuts import FreshSymbol, EqualsOrIff, Select, TRUE, FALSE, Function
-from pysmt.shortcuts import Array, BV
-from pysmt.typing import INT, BOOL, REAL
-from pysmt.typing import Type, ArrayType, FunctionType, BVType
-from pysmt.typing import PartialType
-from pysmt.test import TestCase, main
+from pysmt.exceptions import PysmtTypeError, PysmtValueError
+from pysmt.shortcuts import (
+    BV,
+    FALSE,
+    TRUE,
+    Array,
+    EqualsOrIff,
+    FreshSymbol,
+    Function,
+    Select,
+)
 from pysmt.smtlib.parser import SmtLibParser
-from pysmt.exceptions import PysmtValueError, PysmtTypeError
-
+from pysmt.test import TestCase, main
+from pysmt.typing import (
+    BOOL,
+    INT,
+    REAL,
+    ArrayType,
+    BVType,
+    FunctionType,
+    PartialType,
+    Type,
+)
 
 SMTLIB_SRC = """\
 (define-sort Set (T) (Array T Bool))

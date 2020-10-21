@@ -1,4 +1,4 @@
-from pysmt.shortcuts import Symbol, LE, GE, And, Int
+from pysmt.shortcuts import GE, LE, And, Int, Symbol
 from pysmt.typing import INT
 
 h = Symbol("H", INT)

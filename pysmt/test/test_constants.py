@@ -15,16 +15,25 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from six import PY2
 from fractions import Fraction as pyFraction
 
+from six import PY2
+
+from pysmt.constants import (
+    HAS_GMPY,
+    USE_GMPY,
+    Fraction,
+    Integer,
+    is_pysmt_fraction,
+    is_pysmt_integer,
+    is_python_boolean,
+    is_python_integer,
+    is_python_rational,
+    pysmt_fraction_from_rational,
+    pysmt_integer_from_integer,
+    to_python_integer,
+)
 from pysmt.test import TestCase, main, skipIf
-from pysmt.constants import Fraction, Integer, HAS_GMPY, USE_GMPY
-from pysmt.constants import is_pysmt_fraction, is_pysmt_integer
-from pysmt.constants import is_python_integer, is_python_boolean, is_python_rational
-from pysmt.constants import pysmt_integer_from_integer
-from pysmt.constants import to_python_integer
-from pysmt.constants import pysmt_fraction_from_rational
 
 
 class TestConstants(TestCase):
@@ -44,7 +53,7 @@ class TestConstants(TestCase):
             self.assertTrue(is_python_integer(mpz(1)))
 
         if HAS_GMPY:
-            from gmpy2 import mpz, mpq
+            from gmpy2 import mpq, mpz
 
             self.assertTrue(is_python_rational(mpz(1)))
             self.assertTrue(is_python_rational(mpq(1)))

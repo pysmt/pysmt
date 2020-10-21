@@ -15,12 +15,11 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from pysmt.shortcuts import Solver, Symbol, And, Real, GT, LT, Implies, FALSE
-from pysmt.shortcuts import get_env
-from pysmt.typing import BOOL, REAL
-from pysmt.test import TestCase, skipIfNoSolverForLogic, main
-from pysmt.logics import QF_UFLIRA, QF_LRA, QF_BOOL
+from pysmt.logics import QF_BOOL, QF_LRA, QF_UFLIRA
+from pysmt.shortcuts import FALSE, GT, LT, And, Implies, Real, Solver, Symbol, get_env
 from pysmt.solvers.eager import EagerModel
+from pysmt.test import TestCase, main, skipIfNoSolverForLogic
+from pysmt.typing import BOOL, REAL
 
 
 class TestModels(TestCase):

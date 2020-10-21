@@ -17,12 +17,11 @@
 #
 from six.moves import xrange
 
-from pysmt.test import TestCase, main
-from pysmt.shortcuts import And, Or, FALSE, TRUE, FreshSymbol, Solver
-from pysmt.solvers.eager import EagerModel
-from pysmt.typing import REAL, INT
-from pysmt.test import skipIfSolverNotAvailable
 from pysmt.exceptions import PysmtTypeError
+from pysmt.shortcuts import FALSE, TRUE, And, FreshSymbol, Or, Solver
+from pysmt.solvers.eager import EagerModel
+from pysmt.test import TestCase, main, skipIfSolverNotAvailable
+from pysmt.typing import INT, REAL
 
 
 class TestEagerModel(TestCase):

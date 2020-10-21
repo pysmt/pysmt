@@ -15,13 +15,13 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+from pysmt.environment import Environment
+from pysmt.exceptions import UnsupportedOperatorError
+from pysmt.operators import all_types, new_node_type
+from pysmt.printers import HRPrinter, HRSerializer
+from pysmt.shortcuts import Symbol, get_env, reset_env
 from pysmt.test import TestCase
 from pysmt.type_checker import SimpleTypeChecker
-from pysmt.printers import HRPrinter, HRSerializer
-from pysmt.shortcuts import get_env, Symbol, reset_env
-from pysmt.exceptions import UnsupportedOperatorError
-from pysmt.environment import Environment
-from pysmt.operators import new_node_type, all_types
 
 
 class TestExtendSuper(TestCase):

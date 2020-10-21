@@ -15,29 +15,53 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from six.moves import xrange
 from six import PY2
+from six.moves import xrange
 
 import pysmt.operators as op
-from pysmt.shortcuts import Symbol, FreshSymbol, And, Not, GT, Function, Plus
-from pysmt.shortcuts import Bool, TRUE, Real, LE, FALSE, Or, Equals, Implies
-from pysmt.shortcuts import Solver
-from pysmt.shortcuts import get_env, get_model, is_valid, is_sat, get_implicant
-from pysmt.typing import BOOL, REAL, FunctionType
-from pysmt.test import TestCase, skipIfSolverNotAvailable, skipIfNoSolverForLogic
-from pysmt.test import main
-from pysmt.test.examples import get_example_formulae
 from pysmt.exceptions import (
-    SolverReturnedUnknownResultError,
+    ConvertExpressionError,
     InternalSolverError,
     NoSolverAvailableError,
-    ConvertExpressionError,
-    UndefinedLogicError,
     PysmtTypeError,
     PysmtValueError,
+    SolverReturnedUnknownResultError,
+    UndefinedLogicError,
 )
-from pysmt.logics import QF_UFLIRA, QF_BOOL, QF_LRA, AUTO, QF_BV
-from pysmt.logics import convert_logic_from_string
+from pysmt.logics import (
+    AUTO,
+    QF_BOOL,
+    QF_BV,
+    QF_LRA,
+    QF_UFLIRA,
+    convert_logic_from_string,
+)
+from pysmt.shortcuts import (
+    FALSE,
+    GT,
+    LE,
+    TRUE,
+    And,
+    Bool,
+    Equals,
+    FreshSymbol,
+    Function,
+    Implies,
+    Not,
+    Or,
+    Plus,
+    Real,
+    Solver,
+    Symbol,
+    get_env,
+    get_implicant,
+    get_model,
+    is_sat,
+    is_valid,
+)
+from pysmt.test import TestCase, main, skipIfNoSolverForLogic, skipIfSolverNotAvailable
+from pysmt.test.examples import get_example_formulae
+from pysmt.typing import BOOL, REAL, FunctionType
 
 
 class TestBasic(TestCase):
@@ -498,6 +522,7 @@ class TestBasic(TestCase):
     @skipIfSolverNotAvailable("msat")
     def test_msat_converter_on_msat_error(self):
         import mathsat
+
         from pysmt.solvers.msat import MathSAT5Solver, MSatConverter
 
         env = get_env()
@@ -605,8 +630,9 @@ class TestBasic(TestCase):
 
     @skipIfSolverNotAvailable("picosat")
     def test_picosat_options(self):
-        from pysmt.solvers.pico import PicosatOptions
         from tempfile import TemporaryFile
+
+        from pysmt.solvers.pico import PicosatOptions
 
         x, y = Symbol("x"), Symbol("y")
         with TemporaryFile() as fout:

@@ -15,9 +15,9 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from pysmt.solvers.solver import Model
 from pysmt.environment import get_env
 from pysmt.exceptions import PysmtTypeError
+from pysmt.solvers.solver import Model
 
 
 class EagerModel(Model):

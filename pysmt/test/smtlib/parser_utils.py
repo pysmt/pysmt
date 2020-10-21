@@ -18,27 +18,27 @@
 import os
 import warnings
 
-from pysmt.test import SkipTest
+from pysmt.exceptions import NoSolverAvailableError, SolverReturnedUnknownResultError
+from pysmt.logics import (
+    BV,
+    LRA,
+    QF_ABV,
+    QF_ALIA,
+    QF_AUFBV,
+    QF_AUFLIA,
+    QF_BV,
+    QF_LIA,
+    QF_LRA,
+    QF_NIA,
+    QF_NRA,
+    QF_UFBV,
+    QF_UFLIRA,
+    UFBV,
+)
 from pysmt.shortcuts import get_env, reset_env
 from pysmt.smtlib.parser import SmtLibParser, get_formula_fname
 from pysmt.smtlib.script import check_sat_filter
-from pysmt.logics import (
-    QF_LIA,
-    QF_LRA,
-    LRA,
-    QF_UFLIRA,
-    QF_UFBV,
-    QF_BV,
-    QF_ALIA,
-    QF_ABV,
-    QF_AUFLIA,
-    QF_AUFBV,
-    QF_NRA,
-    QF_NIA,
-    UFBV,
-    BV,
-)
-from pysmt.exceptions import NoSolverAvailableError, SolverReturnedUnknownResultError
+from pysmt.test import SkipTest
 
 
 def smtlib_tests(logic_pred):

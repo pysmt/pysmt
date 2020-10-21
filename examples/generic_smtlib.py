@@ -11,6 +11,8 @@
 # Arrays, then you cannot represent arrays.
 #
 
+from pysmt.exceptions import NoSolverAvailableError
+
 # To define a Generic Solver you need to provide:
 #
 # - A name to associate to the solver
@@ -20,10 +22,9 @@
 # It is usually convenient to wrap the solver in a simple shell script.
 # See examples for Z3, Mathsat and Yices in pysmt/test/smtlib/bin/*.template
 #
-from pysmt.logics import QF_UFLRA, QF_UFIDL, QF_LRA, QF_IDL, QF_LIA
-from pysmt.shortcuts import get_env, GT, Solver, Symbol
-from pysmt.typing import REAL, INT
-from pysmt.exceptions import NoSolverAvailableError
+from pysmt.logics import QF_IDL, QF_LIA, QF_LRA, QF_UFIDL, QF_UFLRA
+from pysmt.shortcuts import GT, Solver, Symbol, get_env
+from pysmt.typing import INT, REAL
 
 name = "mathsat"  # Note: The API version is called 'msat'
 path = ["/tmp/mathsat"]  # Path to the solver

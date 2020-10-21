@@ -19,9 +19,9 @@ import re
 from collections import namedtuple
 
 import pysmt.typing as types
+from pysmt.constants import Fraction
 from pysmt.environment import get_env
 from pysmt.exceptions import PysmtSyntaxError, UndefinedSymbolError
-from pysmt.constants import Fraction
 
 
 def HRParser(env=None):

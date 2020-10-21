@@ -18,10 +18,10 @@
 from six.moves import cStringIO
 
 import pysmt.operators as op
+from pysmt.constants import is_pysmt_fraction, is_pysmt_integer
+from pysmt.utils import quote
 from pysmt.walkers import TreeWalker
 from pysmt.walkers.generic import handles
-from pysmt.utils import quote
-from pysmt.constants import is_pysmt_fraction, is_pysmt_integer
 
 
 class HRPrinter(TreeWalker):

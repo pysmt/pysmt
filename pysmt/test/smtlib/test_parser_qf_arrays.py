@@ -18,10 +18,10 @@
 import pytest
 
 from pysmt.test.smtlib.parser_utils import (
+    SMTLIB_DIR,
+    SMTLIB_TEST_FILES,
     execute_script_fname,
     smtlib_tests,
-    SMTLIB_TEST_FILES,
-    SMTLIB_DIR,
 )
 
 

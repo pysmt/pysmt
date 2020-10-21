@@ -16,13 +16,14 @@
 #   limitations under the License.
 #
 import os
+
 from six import StringIO
 
-from pysmt.test.smtlib.parser_utils import SMTLIB_DIR
-from pysmt.smtlib.parser import SmtLibParser
-from pysmt.smtlib.annotations import Annotations
 from pysmt.shortcuts import Symbol
+from pysmt.smtlib.annotations import Annotations
+from pysmt.smtlib.parser import SmtLibParser
 from pysmt.test import TestCase, main
+from pysmt.test.smtlib.parser_utils import SMTLIB_DIR
 
 
 class TestBasic(TestCase):

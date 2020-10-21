@@ -5,18 +5,18 @@
 # looks incremental, but internally there is no guarantee of re-using
 # the solver state.
 #
-from pysmt.shortcuts import Symbol, Implies, TRUE, FALSE, Not
+from pysmt.shortcuts import FALSE, TRUE, Implies, Not, Symbol
 
 x, y = Symbol("x"), Symbol("y")
 f = Implies(x, y)
+
+# We enable logging to see what is going on behind the scenes:
+import logging
 
 # The first example shows how to use multiple solvers in the with the
 # is_sat shortcut
 #
 from pysmt.shortcuts import is_sat
-
-# We enable logging to see what is going on behind the scenes:
-import logging
 
 _info = logging.getLogger(__name__).info
 logging.basicConfig(level=logging.DEBUG)
@@ -29,6 +29,8 @@ solvers_set = ["z3", "yices", "msat"]
 res = is_sat(f, portfolio=solvers_set)
 assert res is True
 
+from pysmt.logics import QF_UFLIRA
+
 # Behind the scenes, pySMT launched 3 processes and solved the
 # expression in parallel.
 #
@@ -37,7 +39,6 @@ assert res is True
 # behaves as a solver and as such implements most of the methods of a
 # regular solver.
 from pysmt.shortcuts import Portfolio
-from pysmt.logics import QF_UFLIRA
 
 # The options given to the Portfolio will be passed to all solvers, in
 # particular, we are enabling incrementality and model generation.

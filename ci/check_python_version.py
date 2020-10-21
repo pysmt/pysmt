@@ -1,6 +1,6 @@
 import platform
-import sys
 import re
+import sys
 
 
 def main():

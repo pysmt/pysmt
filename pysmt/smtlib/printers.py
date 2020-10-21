@@ -17,12 +17,12 @@
 #
 from functools import partial
 
-from six.moves import xrange, cStringIO
+from six.moves import cStringIO, xrange
 
 import pysmt.operators as op
 from pysmt.environment import get_env
-from pysmt.walkers import TreeWalker, DagWalker, handles
 from pysmt.utils import quote
+from pysmt.walkers import DagWalker, TreeWalker, handles
 
 
 class SmtPrinter(TreeWalker):

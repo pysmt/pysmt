@@ -28,22 +28,20 @@ except ImportError:
     raise SolverAPINotFound
 
 
-from pysmt.solvers.eager import EagerModel
-from pysmt.solvers.solver import Solver, Converter, SolverOptions
-from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
-
-from pysmt.walkers import DagWalker
-from pysmt.exceptions import SolverReturnedUnknownResultError
+import pysmt.logics
+from pysmt.constants import Fraction, is_pysmt_integer
+from pysmt.decorators import catch_conversion_error, clear_pending_pop
 from pysmt.exceptions import (
     InternalSolverError,
     NonLinearError,
-    PysmtValueError,
     PysmtTypeError,
+    PysmtValueError,
+    SolverReturnedUnknownResultError,
 )
-from pysmt.decorators import clear_pending_pop, catch_conversion_error
-from pysmt.constants import Fraction, is_pysmt_integer
-
-import pysmt.logics
+from pysmt.solvers.eager import EagerModel
+from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
+from pysmt.solvers.solver import Converter, Solver, SolverOptions
+from pysmt.walkers import DagWalker
 
 
 # Initialization

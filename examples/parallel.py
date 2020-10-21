@@ -30,9 +30,9 @@
 from multiprocessing import Pool, TimeoutError
 from time import sleep
 
+from pysmt.shortcuts import And, is_sat, is_unsat, is_valid
 from pysmt.test.examples import get_example_formulae
-from pysmt.shortcuts import is_sat, is_valid, is_unsat
-from pysmt.shortcuts import And
+
 
 # Ignore this for now
 def check_validity_and_test(args):

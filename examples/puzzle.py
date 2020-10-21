@@ -9,7 +9,7 @@
 # The goal of the puzzle is to assign a value from 1 to 10 to each letter s.t.
 #    H+E+L+L+O = W+O+R+L+D = 25
 #
-from pysmt.shortcuts import Symbol, And, GE, LT, Plus, Equals, Int, get_model
+from pysmt.shortcuts import GE, LT, And, Equals, Int, Plus, Symbol, get_model
 from pysmt.typing import INT
 
 hello = [Symbol(s, INT) for s in "hello"]

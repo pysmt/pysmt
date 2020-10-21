@@ -35,13 +35,13 @@ warnings.filterwarnings("default", module="pysmt")
 
 import pysmt.configuration as config
 import pysmt.environment
-import pysmt.typing as types
 import pysmt.smtlib.parser
-import pysmt.smtlib.script
 import pysmt.smtlib.printers
+import pysmt.smtlib.script
+import pysmt.typing as types
 
 # Import types from shortcuts
-from pysmt.typing import INT, BOOL, REAL, BVType, FunctionType, ArrayType, Type
+from pysmt.typing import BOOL, INT, REAL, ArrayType, BVType, FunctionType, Type
 
 assert INT or BOOL or REAL or BVType or FunctionType or ArrayType or Type
 

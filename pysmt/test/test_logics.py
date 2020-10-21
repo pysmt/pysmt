@@ -16,24 +16,26 @@
 #   limitations under the License.
 #
 import pysmt.logics
-from pysmt.logics import get_logic_by_name, get_logic, most_generic_logic
-from pysmt.logics import PYSMT_LOGICS
-from pysmt.logics import (
-    QF_LIA,
-    LIA,
-    UFLIRA,
-    LRA,
-    QF_UFLIRA,
-    QF_BV,
-    NRA,
-    QF_IDL,
-    QF_BOOL,
-)
-from pysmt.logics import Theory
 from pysmt.exceptions import (
-    UndefinedLogicError,
-    NoSolverAvailableError,
     NoLogicAvailableError,
+    NoSolverAvailableError,
+    UndefinedLogicError,
+)
+from pysmt.logics import (
+    LIA,
+    LRA,
+    NRA,
+    PYSMT_LOGICS,
+    QF_BOOL,
+    QF_BV,
+    QF_IDL,
+    QF_LIA,
+    QF_UFLIRA,
+    UFLIRA,
+    Theory,
+    get_logic,
+    get_logic_by_name,
+    most_generic_logic,
 )
 from pysmt.shortcuts import Solver, get_env
 from pysmt.test import TestCase, main

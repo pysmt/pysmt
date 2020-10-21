@@ -27,11 +27,9 @@ properties of formulae.
 """
 
 import pysmt
-import pysmt.walkers as walkers
 import pysmt.operators as op
-
+import pysmt.walkers as walkers
 from pysmt import typing
-
 from pysmt.logics import Logic, Theory, get_closer_pysmt_logic
 
 

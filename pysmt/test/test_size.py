@@ -15,11 +15,11 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from pysmt.shortcuts import Symbol, Int, And, Or, Not, GT
-from pysmt.typing import INT
 from pysmt.oracles import SizeOracle
+from pysmt.shortcuts import GT, And, Int, Not, Or, Symbol
 from pysmt.test import TestCase, main
 from pysmt.test.examples import get_example_formulae
+from pysmt.typing import INT
 
 
 class TestSize(TestCase):

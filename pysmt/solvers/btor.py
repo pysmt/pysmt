@@ -15,7 +15,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from math import log, ceil
+from math import ceil, log
 
 from pysmt.exceptions import SolverAPINotFound
 
@@ -25,23 +25,23 @@ except ImportError:
     raise SolverAPINotFound
 
 
-from pysmt.solvers.solver import (
-    IncrementalTrackingSolver,
-    UnsatCoreSolver,
-    Converter,
-    SolverOptions,
-)
-from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
-from pysmt.solvers.eager import EagerModel
-from pysmt.walkers import DagWalker
+from pysmt.constants import to_python_integer
+from pysmt.decorators import catch_conversion_error, clear_pending_pop
 from pysmt.exceptions import (
-    SolverReturnedUnknownResultError,
     ConvertExpressionError,
     PysmtValueError,
+    SolverReturnedUnknownResultError,
 )
-from pysmt.decorators import clear_pending_pop, catch_conversion_error
-from pysmt.logics import QF_BV, QF_UFBV, QF_ABV, QF_AUFBV, QF_AX
-from pysmt.constants import to_python_integer
+from pysmt.logics import QF_ABV, QF_AUFBV, QF_AX, QF_BV, QF_UFBV
+from pysmt.solvers.eager import EagerModel
+from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
+from pysmt.solvers.solver import (
+    Converter,
+    IncrementalTrackingSolver,
+    SolverOptions,
+    UnsatCoreSolver,
+)
+from pysmt.walkers import DagWalker
 
 
 class BoolectorOptions(SolverOptions):

@@ -15,61 +15,65 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from six.moves import xrange
-from six.moves import cStringIO
+from six.moves import cStringIO, xrange
 
 import pysmt.logics as logics
 import pysmt.smtlib.commands as smtcmd
+from pysmt.constants import Fraction
+from pysmt.environment import Environment
+from pysmt.exceptions import ConvertExpressionError, PysmtTypeError, PysmtValueError
+from pysmt.logics import get_closer_smtlib_logic
+from pysmt.rewritings import cnf_as_set
 from pysmt.shortcuts import (
-    Real,
-    Plus,
-    Symbol,
-    Equals,
-    And,
-    Bool,
-    Or,
-    Not,
-    Div,
-    LT,
-    LE,
-    Int,
-    ToReal,
-    Iff,
-    Exists,
-    Times,
-    FALSE,
-    BVLShr,
-    BVLShl,
-    BVAShr,
     BV,
-    BVAdd,
     BVULT,
-    BVMul,
-    Select,
+    FALSE,
+    LE,
+    LT,
+    TRUE,
+    And,
     Array,
-    Ite,
-    String,
+    Bool,
+    BVAdd,
+    BVAShr,
+    BVLShl,
+    BVLShr,
+    BVMul,
+    Div,
+    Equals,
+    ExactlyOne,
+    Exists,
     Function,
+    Iff,
+    Int,
+    Ite,
+    Not,
+    Or,
+    Plus,
+    Real,
+    Select,
+    Solver,
+    String,
+    Symbol,
+    Times,
+    ToReal,
+    get_env,
+    get_model,
+    qelim,
     to_smtlib,
 )
-from pysmt.shortcuts import Solver, get_env, qelim, get_model, TRUE, ExactlyOne
-from pysmt.typing import REAL, BOOL, INT, BVType, FunctionType, ArrayType
+from pysmt.smtlib.commands import DECLARE_FUN
+from pysmt.smtlib.parser import SmtLibParser
+from pysmt.smtlib.script import SmtLibCommand
 from pysmt.test import (
     TestCase,
-    skipIfSolverNotAvailable,
-    skipIfNoSolverForLogic,
+    main,
     skipIfNoQEForLogic,
+    skipIfNoSolverForLogic,
+    skipIfSolverNotAvailable,
 )
-from pysmt.test import main
-from pysmt.exceptions import ConvertExpressionError, PysmtValueError, PysmtTypeError
 from pysmt.test.examples import get_example_formulae
-from pysmt.environment import Environment
-from pysmt.rewritings import cnf_as_set
-from pysmt.smtlib.parser import SmtLibParser
-from pysmt.smtlib.commands import DECLARE_FUN
-from pysmt.smtlib.script import SmtLibCommand
-from pysmt.logics import get_closer_smtlib_logic
-from pysmt.constants import Fraction
+from pysmt.typing import BOOL, INT, REAL, ArrayType, BVType, FunctionType
 
 
 class TestRegressions(TestCase):

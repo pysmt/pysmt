@@ -15,39 +15,39 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from pysmt.typing import REAL, BOOL, INT, FunctionType, BV8
-from pysmt.type_checker import (
-    assert_no_boolean_in_args,
-    assert_boolean_args,
-    assert_same_type_args,
-    assert_args_type_in,
-)
-from pysmt.shortcuts import (
-    Symbol,
-    And,
-    Plus,
-    Minus,
-    Times,
-    Equals,
-    Or,
-    Iff,
-    LE,
-    LT,
-    Not,
-    GE,
-    GT,
-    Ite,
-    Bool,
-    Int,
-    Real,
-    Div,
-    Function,
-)
+from pysmt.decorators import typecheck_result
 from pysmt.environment import get_env
 from pysmt.exceptions import PysmtTypeError
+from pysmt.shortcuts import (
+    GE,
+    GT,
+    LE,
+    LT,
+    And,
+    Bool,
+    Div,
+    Equals,
+    Function,
+    Iff,
+    Int,
+    Ite,
+    Minus,
+    Not,
+    Or,
+    Plus,
+    Real,
+    Symbol,
+    Times,
+)
 from pysmt.test import TestCase, main
 from pysmt.test.examples import get_example_formulae
-from pysmt.decorators import typecheck_result
+from pysmt.type_checker import (
+    assert_args_type_in,
+    assert_boolean_args,
+    assert_no_boolean_in_args,
+    assert_same_type_args,
+)
+from pysmt.typing import BOOL, BV8, INT, REAL, FunctionType
 
 
 class TestSimpleTypeChecker(TestCase):

@@ -27,21 +27,20 @@ except ImportError:
     raise SolverAPINotFound
 
 import pysmt.typing as types
-from pysmt.logics import PYSMT_LOGICS, ARRAYS_CONST_LOGICS
-
-from pysmt.solvers.solver import Solver, Converter, SolverOptions
+from pysmt.constants import Fraction, is_pysmt_integer, to_python_integer
+from pysmt.decorators import catch_conversion_error
 from pysmt.exceptions import (
-    SolverReturnedUnknownResultError,
     InternalSolverError,
     NonLinearError,
-    PysmtValueError,
     PysmtTypeError,
+    PysmtValueError,
+    SolverReturnedUnknownResultError,
 )
-from pysmt.walkers import DagWalker
-from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
+from pysmt.logics import ARRAYS_CONST_LOGICS, PYSMT_LOGICS
 from pysmt.solvers.eager import EagerModel
-from pysmt.decorators import catch_conversion_error
-from pysmt.constants import Fraction, is_pysmt_integer, to_python_integer
+from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
+from pysmt.solvers.solver import Converter, Solver, SolverOptions
+from pysmt.walkers import DagWalker
 
 
 class CVC4Options(SolverOptions):

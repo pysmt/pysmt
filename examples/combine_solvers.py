@@ -6,8 +6,7 @@
 # 2. Perform quantifier elimination
 # 3. Pass results from one solver to another
 #
-from pysmt.shortcuts import Symbol, Or, ForAll, GE, LT, Real, Plus
-from pysmt.shortcuts import qelim, is_sat
+from pysmt.shortcuts import GE, LT, ForAll, Or, Plus, Real, Symbol, is_sat, qelim
 from pysmt.typing import REAL
 
 x, y, z = [Symbol(s, REAL) for s in "xyz"]

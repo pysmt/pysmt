@@ -6,10 +6,21 @@
 #  - How to extract a partial model
 #  - How to use the special operator EqualsOrIff
 #
-from pysmt.shortcuts import Solver, Not, And, Symbol, Or
-from pysmt.shortcuts import LE, GE, Int, Plus, Equals, EqualsOrIff
-from pysmt.typing import INT
 from pysmt.oracles import get_logic
+from pysmt.shortcuts import (
+    GE,
+    LE,
+    And,
+    Equals,
+    EqualsOrIff,
+    Int,
+    Not,
+    Or,
+    Plus,
+    Solver,
+    Symbol,
+)
+from pysmt.typing import INT
 
 
 def all_smt(formula, keys):

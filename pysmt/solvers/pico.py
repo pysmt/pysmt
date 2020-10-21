@@ -22,17 +22,17 @@ try:
 except ImportError:
     raise SolverAPINotFound
 
-from six.moves import xrange
 from six import iteritems
+from six.moves import xrange
 
 import pysmt.logics
 from pysmt import typing as types
-from pysmt.solvers.solver import Solver, SolverOptions
-from pysmt.solvers.eager import EagerModel
-from pysmt.rewritings import CNFizer
-from pysmt.decorators import clear_pending_pop, catch_conversion_error
-from pysmt.exceptions import ConvertExpressionError, PysmtValueError
 from pysmt.constants import is_python_integer
+from pysmt.decorators import catch_conversion_error, clear_pending_pop
+from pysmt.exceptions import ConvertExpressionError, PysmtValueError
+from pysmt.rewritings import CNFizer
+from pysmt.solvers.eager import EagerModel
+from pysmt.solvers.solver import Solver, SolverOptions
 
 
 class PicosatOptions(SolverOptions):

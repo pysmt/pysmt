@@ -19,10 +19,10 @@ import warnings
 
 from six import iteritems
 
-import pysmt.walkers
-from pysmt.walkers.generic import handles
 import pysmt.operators as op
+import pysmt.walkers
 from pysmt.exceptions import PysmtTypeError
+from pysmt.walkers.generic import handles
 
 
 class Substituter(pysmt.walkers.IdentityDagWalker):

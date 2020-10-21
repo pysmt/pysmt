@@ -22,8 +22,18 @@
 #
 from six.moves import xrange
 
-from pysmt.shortcuts import Symbol, Not, And, Or, EqualsOrIff, Implies
-from pysmt.shortcuts import is_sat, is_unsat, Solver, TRUE
+from pysmt.shortcuts import (
+    TRUE,
+    And,
+    EqualsOrIff,
+    Implies,
+    Not,
+    Or,
+    Solver,
+    Symbol,
+    is_sat,
+    is_unsat,
+)
 from pysmt.typing import BOOL
 
 

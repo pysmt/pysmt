@@ -17,9 +17,9 @@
 #
 import os
 
-from pysmt.test import TestCase, main
-from pysmt.smtlib.parser import SmtLibParser
 from pysmt.exceptions import PysmtTypeError
+from pysmt.smtlib.parser import SmtLibParser
+from pysmt.test import TestCase, main
 
 
 class TestTypeError(TestCase):

@@ -1,10 +1,9 @@
 import os
-import time
-import sys
 import random
+import sys
+import time
 
-from pysmt.shortcuts import reset_env, get_env, read_smtlib
-
+from pysmt.shortcuts import get_env, read_smtlib, reset_env
 
 SMTLIB_DIR = "./"
 

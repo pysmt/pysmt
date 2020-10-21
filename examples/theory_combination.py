@@ -10,9 +10,8 @@
 # BitVectors, Integers, Reals, and Arrays.
 #
 #
-from pysmt.shortcuts import Symbol, BV, Real, And, BVToNatural, ToReal
-from pysmt.shortcuts import get_model
-from pysmt.typing import BV8, REAL, INT, ArrayType
+from pysmt.shortcuts import BV, And, BVToNatural, Real, Symbol, ToReal, get_model
+from pysmt.typing import BV8, INT, REAL, ArrayType
 
 # We create a map from BitVectors to Reals, so that each bitvector
 # value (interpreted as unary number) is equal to the Real

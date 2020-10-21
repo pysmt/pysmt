@@ -20,8 +20,8 @@ import os
 from six import StringIO
 
 from pysmt.shortcuts import reset_env
-from pysmt.test import TestCase
 from pysmt.smtlib.parser import SmtLibParser
+from pysmt.test import TestCase
 
 
 class TestSmtLibParserGriggio(TestCase):

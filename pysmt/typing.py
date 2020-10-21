@@ -32,8 +32,7 @@ different instance of BVType.
 
 """
 import pysmt
-
-from pysmt.exceptions import PysmtValueError, PysmtModeError
+from pysmt.exceptions import PysmtModeError, PysmtValueError
 
 
 class PySMTType(object):

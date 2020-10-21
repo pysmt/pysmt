@@ -15,13 +15,13 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from pysmt.shortcuts import Symbol
 import pysmt.factory
+from pysmt import logics
+from pysmt.environment import Environment, get_env, pop_env, push_env
+from pysmt.exceptions import NoSolverAvailableError
+from pysmt.shortcuts import Symbol
 from pysmt.test import TestCase, main
 from pysmt.typing import REAL
-from pysmt.environment import Environment, pop_env, push_env, get_env
-from pysmt.exceptions import NoSolverAvailableError
-from pysmt import logics
 
 
 class TestEnvironment(TestCase):

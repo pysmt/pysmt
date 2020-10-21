@@ -1,4 +1,4 @@
-from pysmt.shortcuts import Symbol, LE, GE, Int, And, Equals, Plus, Solver
+from pysmt.shortcuts import GE, LE, And, Equals, Int, Plus, Solver, Symbol
 from pysmt.typing import INT
 
 hello = [Symbol(s, INT) for s in "hello"]

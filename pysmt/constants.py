@@ -15,7 +15,9 @@
 # limitations under the License.
 
 import os
+
 from six import PY2
+
 from pysmt.exceptions import PysmtImportError
 
 # The environment variable can be used to force the configuration

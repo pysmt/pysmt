@@ -17,17 +17,16 @@
 #   limitations under the License.
 #
 
-import sys
 import argparse
+import sys
 from warnings import warn
 
 from pysmt import git_version
 from pysmt.shortcuts import *
-from pysmt.typing import INT, REAL, BOOL, BVType, BV32
-
+from pysmt.smtlib.commands import CHECK_SAT, GET_VALUE
 from pysmt.smtlib.parser import SmtLibParser
 from pysmt.smtlib.script import evaluate_command
-from pysmt.smtlib.commands import CHECK_SAT, GET_VALUE
+from pysmt.typing import BOOL, BV32, INT, REAL, BVType
 
 welcome_msg = """Welcome to pySMT!!!
 

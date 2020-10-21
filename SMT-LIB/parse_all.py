@@ -1,13 +1,12 @@
-import os
-import time
-import sys
-import random
-import multiprocessing
 import argparse
-
+import multiprocessing
+import os
+import random
+import sys
+import time
 from itertools import islice
 
-from pysmt.shortcuts import reset_env, read_smtlib
+from pysmt.shortcuts import read_smtlib, reset_env
 
 
 def get_all_smt_files(target_dir=None):

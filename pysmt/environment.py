@@ -21,14 +21,14 @@ singleton objects that are used throughout the system, such as the
 FormulaManager, Simplifier, HRSerializer, SimpleTypeChecker.
 """
 
-import pysmt.simplifier
+import pysmt.decorators
+import pysmt.factory
+import pysmt.formula
+import pysmt.oracles
 import pysmt.printers
+import pysmt.simplifier
 import pysmt.substituter
 import pysmt.type_checker
-import pysmt.oracles
-import pysmt.formula
-import pysmt.factory
-import pysmt.decorators
 import pysmt.typing
 
 

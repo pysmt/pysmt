@@ -35,25 +35,24 @@ else:
     from collections import Iterable
 
 import warnings
+
 from six.moves import xrange
 
-import pysmt.typing as types
 import pysmt.operators as op
-
-
-from pysmt.fnode import FNode, FNodeContent
-from pysmt.exceptions import UndefinedSymbolError, PysmtValueError, PysmtTypeError
-from pysmt.walkers.identitydag import IdentityDagWalker
-from pysmt.constants import Fraction
+import pysmt.typing as types
 from pysmt.constants import (
+    Fraction,
     is_pysmt_fraction,
     is_pysmt_integer,
-    is_python_rational,
     is_python_integer,
+    is_python_rational,
     is_python_string,
     pysmt_fraction_from_rational,
     pysmt_integer_from_integer,
 )
+from pysmt.exceptions import PysmtTypeError, PysmtValueError, UndefinedSymbolError
+from pysmt.fnode import FNode, FNodeContent
+from pysmt.walkers.identitydag import IdentityDagWalker
 
 
 class FormulaManager(object):

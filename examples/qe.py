@@ -21,7 +21,7 @@
 # called Fourier-Motzkin [1]
 #
 # [1] https://en.wikipedia.org/wiki/Fourier%E2%80%93Motzkin_elimination
-from pysmt.shortcuts import Symbol, ForAll, Exists, qelim
+from pysmt.shortcuts import Exists, ForAll, Symbol, qelim
 from pysmt.typing import REAL
 
 # (x,y) is a point in a 2d space.

@@ -16,20 +16,30 @@
 #   limitations under the License.
 #
 
-from pysmt.test import TestCase, main
-from pysmt.test import skipIfSolverNotAvailable, skipIfNoSolverForLogic
-
-from pysmt.oracles import get_logic
-from pysmt.shortcuts import FreshSymbol, Times, Equals, Div, Real, Int, Pow
-from pysmt.shortcuts import Solver, Symbol, And, Not, is_sat
-from pysmt.typing import REAL, INT
+from pysmt.constants import Fraction
 from pysmt.exceptions import (
     ConvertExpressionError,
     NonLinearError,
     SolverReturnedUnknownResultError,
 )
 from pysmt.logics import QF_NRA
-from pysmt.constants import Fraction
+from pysmt.oracles import get_logic
+from pysmt.shortcuts import (
+    And,
+    Div,
+    Equals,
+    FreshSymbol,
+    Int,
+    Not,
+    Pow,
+    Real,
+    Solver,
+    Symbol,
+    Times,
+    is_sat,
+)
+from pysmt.test import TestCase, main, skipIfNoSolverForLogic, skipIfSolverNotAvailable
+from pysmt.typing import INT, REAL
 
 
 class TestNonLinear(TestCase):

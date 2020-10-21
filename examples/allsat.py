@@ -6,7 +6,8 @@
 # Our goal is to call the method msat_all_sat from the MathSAT API.
 #
 import mathsat
-from pysmt.shortcuts import Or, Symbol, Solver, And
+
+from pysmt.shortcuts import And, Or, Solver, Symbol
 
 
 def callback(model, converter, result):

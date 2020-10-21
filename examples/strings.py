@@ -8,21 +8,21 @@
 # fails.
 #
 from pysmt.shortcuts import (
-    String,
-    StrLength,
-    StrContains,
-    StrConcat,
-    StrReplace,
+    And,
+    Int,
     IntToStr,
     Ite,
-    Symbol,
-    And,
-    Or,
     Not,
-    Int,
+    Or,
+    StrConcat,
+    StrContains,
+    String,
+    StrLength,
+    StrReplace,
+    Symbol,
     get_model,
 )
-from pysmt.typing import STRING, INT
+from pysmt.typing import INT, STRING
 
 password_in = Symbol("password_in", STRING)
 password_out = Symbol("password_out", STRING)

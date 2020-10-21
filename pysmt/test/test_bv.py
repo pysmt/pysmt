@@ -16,12 +16,20 @@
 #   limitations under the License.
 #
 
-from pysmt.test import TestCase, skipIfNoSolverForLogic, main
-from pysmt.shortcuts import Symbol, And, Symbol, Equals, TRUE
-from pysmt.shortcuts import is_sat, is_valid, get_model, is_unsat
-from pysmt.typing import BVType, BV32, BV128, FunctionType, ArrayType
+from pysmt.exceptions import PysmtTypeError, PysmtValueError
 from pysmt.logics import QF_BV
-from pysmt.exceptions import PysmtValueError, PysmtTypeError
+from pysmt.shortcuts import (
+    TRUE,
+    And,
+    Equals,
+    Symbol,
+    get_model,
+    is_sat,
+    is_unsat,
+    is_valid,
+)
+from pysmt.test import TestCase, main, skipIfNoSolverForLogic
+from pysmt.typing import BV32, BV128, ArrayType, BVType, FunctionType
 
 
 class TestBV(TestCase):

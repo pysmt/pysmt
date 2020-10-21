@@ -13,18 +13,17 @@
 # limitations under the License.
 import os
 import platform
-import sys
 import shutil
-import zipfile
-import tarfile
-import six
 import struct
 import subprocess
-
+import sys
+import tarfile
+import zipfile
 from contextlib import contextmanager
 from distutils import spawn
 from distutils.dist import Distribution
 
+import six
 import six.moves
 from six.moves import xrange
 from six.moves.urllib.error import HTTPError, URLError

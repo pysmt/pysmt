@@ -15,18 +15,37 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from six.moves import cStringIO
-from six.moves import xrange
+from six.moves import cStringIO, xrange
 
-from pysmt.shortcuts import Or, And, Not, Plus, Iff, Implies
-from pysmt.shortcuts import Exists, ForAll, Ite, ExactlyOne
-from pysmt.shortcuts import Bool, Real, Int, Symbol, Function
-from pysmt.shortcuts import Times, Minus, Equals, LE, LT, ToReal, FreshSymbol
-from pysmt.typing import REAL, INT, FunctionType
-from pysmt.smtlib.printers import SmtPrinter, SmtDagPrinter
 from pysmt.printers import smart_serialize
+from pysmt.shortcuts import (
+    LE,
+    LT,
+    And,
+    Bool,
+    Equals,
+    ExactlyOne,
+    Exists,
+    ForAll,
+    FreshSymbol,
+    Function,
+    Iff,
+    Implies,
+    Int,
+    Ite,
+    Minus,
+    Not,
+    Or,
+    Plus,
+    Real,
+    Symbol,
+    Times,
+    ToReal,
+)
+from pysmt.smtlib.printers import SmtDagPrinter, SmtPrinter
 from pysmt.test import TestCase, main
 from pysmt.test.examples import get_str_example_formulae
+from pysmt.typing import INT, REAL, FunctionType
 
 
 class TestPrinting(TestCase):

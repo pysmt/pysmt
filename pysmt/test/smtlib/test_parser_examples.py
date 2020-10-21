@@ -21,13 +21,12 @@ from tempfile import mkstemp
 from six.moves import cStringIO
 
 import pysmt.logics as logics
-from pysmt.test import TestCase, skipIfNoSolverForLogic, main
-from pysmt.test.examples import get_example_formulae
+from pysmt.exceptions import PysmtSyntaxError
+from pysmt.shortcuts import Iff, get_env, read_smtlib, write_smtlib
 from pysmt.smtlib.parser import SmtLibParser, Tokenizer
 from pysmt.smtlib.script import smtlibscript_from_formula
-from pysmt.shortcuts import Iff
-from pysmt.shortcuts import read_smtlib, write_smtlib, get_env
-from pysmt.exceptions import PysmtSyntaxError
+from pysmt.test import TestCase, main, skipIfNoSolverForLogic
+from pysmt.test.examples import get_example_formulae
 
 
 class TestSMTParseExamples(TestCase):

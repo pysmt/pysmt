@@ -15,8 +15,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from functools import wraps
 import warnings
+from functools import wraps
 
 import pysmt.exceptions
 
@@ -102,6 +102,7 @@ def catch_conversion_error(f):
 def assert_infix_enabled(f):
     """Raise an exception if infix notation is not enabled."""
     from functools import wraps
+
     from pysmt.exceptions import PysmtModeError
 
     INFIX_ERROR_MSG = """Infix notation is not enabled for the current environment.

@@ -17,9 +17,8 @@
 #
 
 import pysmt.logics
-from pysmt.shortcuts import And, Symbol, Exists, FALSE, ForAll, Or, TRUE
-from pysmt.shortcuts import qelim
 from pysmt.exceptions import InternalSolverError, NoSolverAvailableError
+from pysmt.shortcuts import FALSE, TRUE, And, Exists, ForAll, Or, Symbol, qelim
 from pysmt.test import TestCase, main
 from pysmt.test.examples import get_example_formulae
 

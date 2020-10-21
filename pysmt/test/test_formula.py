@@ -19,23 +19,40 @@
 from six.moves import xrange
 
 import pysmt
-from pysmt.typing import BOOL, REAL, INT, FunctionType, BV8, BVType
-from pysmt.shortcuts import Symbol, is_sat, Not, Implies, GT, Plus, Int, Real
-from pysmt.shortcuts import Minus, Times, Xor, And, Or, TRUE, Iff, FALSE, Ite
-from pysmt.shortcuts import Equals
-from pysmt.shortcuts import get_env
+from pysmt.constants import Fraction, Integer
 from pysmt.environment import Environment
-from pysmt.test import TestCase, skipIfNoSolverForLogic, main
-from pysmt.logics import QF_BOOL
 from pysmt.exceptions import (
+    PysmtModeError,
+    PysmtTypeError,
+    PysmtValueError,
     UndefinedSymbolError,
     UnsupportedOperatorError,
-    PysmtTypeError,
-    PysmtModeError,
-    PysmtValueError,
 )
 from pysmt.formula import FormulaManager
-from pysmt.constants import Fraction, Integer
+from pysmt.logics import QF_BOOL
+from pysmt.shortcuts import (
+    FALSE,
+    GT,
+    TRUE,
+    And,
+    Equals,
+    Iff,
+    Implies,
+    Int,
+    Ite,
+    Minus,
+    Not,
+    Or,
+    Plus,
+    Real,
+    Symbol,
+    Times,
+    Xor,
+    get_env,
+    is_sat,
+)
+from pysmt.test import TestCase, main, skipIfNoSolverForLogic
+from pysmt.typing import BOOL, BV8, INT, REAL, BVType, FunctionType
 
 
 class TestFormulaManager(TestCase):
@@ -1010,6 +1027,7 @@ class TestFormulaManager(TestCase):
     def test_real(self):
         """Create Real using different constant types."""
         from fractions import Fraction as pyFraction
+
         from pysmt.constants import HAS_GMPY
 
         v1 = (1, 2)
@@ -1039,8 +1057,9 @@ class TestFormulaManager(TestCase):
 
     def test_integer(self):
         """Create Int using different constant types."""
-        from pysmt.constants import HAS_GMPY
         from six import PY2
+
+        from pysmt.constants import HAS_GMPY
 
         v_base = Integer(1)
         c_base = self.mgr.Int(v_base)

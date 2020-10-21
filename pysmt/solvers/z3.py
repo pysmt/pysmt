@@ -30,33 +30,30 @@ z3.set_param("model.compact", False)
 
 from six.moves import xrange
 
-
-import pysmt.typing as types
 import pysmt.operators as op
-from pysmt.solvers.solver import (
-    IncrementalTrackingSolver,
-    UnsatCoreSolver,
-    Model,
-    Converter,
-    SolverOptions,
-)
-from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
-from pysmt.solvers.qelim import QuantifierEliminator
-
-from pysmt.walkers import DagWalker
-from pysmt.exceptions import (
-    SolverReturnedUnknownResultError,
-    SolverNotConfiguredForUnsatCoresError,
-    SolverStatusError,
-    ConvertExpressionError,
-    UndefinedSymbolError,
-    PysmtValueError,
-)
-from pysmt.decorators import clear_pending_pop, catch_conversion_error
-from pysmt.logics import LRA, LIA, QF_UFLRA, PYSMT_LOGICS
-from pysmt.oracles import get_logic
+import pysmt.typing as types
 from pysmt.constants import Fraction, Numeral, is_pysmt_integer, to_python_integer
-
+from pysmt.decorators import catch_conversion_error, clear_pending_pop
+from pysmt.exceptions import (
+    ConvertExpressionError,
+    PysmtValueError,
+    SolverNotConfiguredForUnsatCoresError,
+    SolverReturnedUnknownResultError,
+    SolverStatusError,
+    UndefinedSymbolError,
+)
+from pysmt.logics import LIA, LRA, PYSMT_LOGICS, QF_UFLRA
+from pysmt.oracles import get_logic
+from pysmt.solvers.qelim import QuantifierEliminator
+from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
+from pysmt.solvers.solver import (
+    Converter,
+    IncrementalTrackingSolver,
+    Model,
+    SolverOptions,
+    UnsatCoreSolver,
+)
+from pysmt.walkers import DagWalker
 
 # patch z3api
 z3.is_ite = lambda x: z3.is_app_of(x, z3.Z3_OP_ITE)
@@ -614,6 +611,7 @@ class Z3Converter(Converter, DagWalker):
     def back_via_smtlib(self, expr):
         """Back convert a Z3 Expression by translation to SMT-LIB."""
         from six import StringIO
+
         from pysmt.smtlib.parser import SmtLibZ3Parser
 
         parser = SmtLibZ3Parser(self.env)

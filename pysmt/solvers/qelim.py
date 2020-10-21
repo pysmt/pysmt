@@ -16,10 +16,9 @@
 #   limitations under the License.
 #
 import pysmt.logics
-
-from pysmt.walkers.identitydag import IdentityDagWalker
-from pysmt.utils import all_assignments
 from pysmt.exceptions import InternalSolverError
+from pysmt.utils import all_assignments
+from pysmt.walkers.identitydag import IdentityDagWalker
 
 
 class QuantifierEliminator(object):

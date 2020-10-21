@@ -15,17 +15,19 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from functools import partial
-from six import with_metaclass
 import sys
+from functools import partial
+
+from six import with_metaclass
 
 if sys.version_info >= (3, 3):
     from collections.abc import Iterable
 else:
     from collections import Iterable
 
-import pysmt.operators as op
 import pysmt.exceptions
+import pysmt.operators as op
+
 
 # NodeType to Function Name
 def nt_to_fun(o):

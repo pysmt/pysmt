@@ -103,6 +103,42 @@ pySMT only to msat and z3, independently of which other solvers are
 installed. If the variable is unset or set to ``all``, it does not
 have any effect.
 
+Code Style
+==========
+
+pySMT uses black (https://github.com/psf/black) to automatically
+manage the code style; this means that each committer is supposed to
+run black on the modified files before committing them (an automatic
+check is in place to prevent non-formatted code to pass the continuous
+integration tests).
+
+Installing and running black
+----------------------------
+
+Setting up black is very easy:
+* `python3 -mpip install black`
+
+Running black on a file or directory is even simpler:
+* `python3 -m black [file or directory]`
+
+We reccommend running black on the enitr ysmt directory each time:
+`python3 -m black pysmt_repo_dir`.
+
+Automatically check code style before every commit
+--------------------------------------------------
+
+We recommend using `pre-commit` to ensure that the code is properly
+formatted before each commit.
+
+Setting up `pre-commit` for pySMT is easy:
+* `python3 -m pip install pre-commit`
+* `cd pysmt_repo_dir`
+* `python3 -m pre-commit install`
+
+In this way, each time you commit something in pySMT, black will check
+your code style and if a discrepancy is found the commit will be
+aborted giving you the possibility to run black and check its changes.
+
 How to add a new Theory within pySMT
 ====================================
 

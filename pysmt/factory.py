@@ -24,25 +24,31 @@ particular solver.
 """
 
 from functools import partial
+
 from six import iteritems
 
 from pysmt.exceptions import (
-    NoSolverAvailableError,
-    SolverRedefinitionError,
     NoLogicAvailableError,
+    NoSolverAvailableError,
     SolverAPINotFound,
+    SolverRedefinitionError,
 )
-from pysmt.logics import QF_UFLIRA, LRA, QF_UFLRA
 from pysmt.logics import AUTO as AUTO_LOGIC
-from pysmt.logics import most_generic_logic, get_closer_logic
-from pysmt.logics import convert_logic_from_string
+from pysmt.logics import (
+    LRA,
+    QF_UFLIRA,
+    QF_UFLRA,
+    convert_logic_from_string,
+    get_closer_logic,
+    most_generic_logic,
+)
 from pysmt.oracles import get_logic
+from pysmt.solvers.portfolio import Portfolio
 from pysmt.solvers.qelim import (
-    ShannonQuantifierEliminator,
     SelfSubstitutionQuantifierEliminator,
+    ShannonQuantifierEliminator,
 )
 from pysmt.solvers.solver import SolverOptions
-from pysmt.solvers.portfolio import Portfolio
 
 DEFAULT_SOLVER_PREFERENCE_LIST = [
     "msat",

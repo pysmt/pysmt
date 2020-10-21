@@ -15,38 +15,36 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from pysmt.test import TestCase, skipIfNoSolverForLogic
+from pysmt.logics import QF_SLIA
 from pysmt.shortcuts import (
-    Not,
-    Implies,
-    Equals,
-    Symbol,
+    FALSE,
     GE,
     GT,
     LT,
-    And,
-    Int,
-    Plus,
     TRUE,
-    FALSE,
-)
-from pysmt.shortcuts import (
-    String,
+    And,
+    Equals,
+    Implies,
+    Int,
+    IntToStr,
+    Not,
+    Plus,
+    Solver,
+    StrCharAt,
     StrConcat,
-    StrLength,
     StrContains,
     StrIndexOf,
+    String,
+    StrLength,
+    StrPrefixOf,
     StrReplace,
     StrSubstr,
-    StrPrefixOf,
     StrSuffixOf,
     StrToInt,
-    IntToStr,
-    StrCharAt,
-    Solver,
+    Symbol,
 )
+from pysmt.test import TestCase, skipIfNoSolverForLogic
 from pysmt.typing import INT, STRING
-from pysmt.logics import QF_SLIA
 
 
 class TestString(TestCase):

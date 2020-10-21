@@ -15,16 +15,15 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import os, sys
+import os
+import sys
 
-from pysmt.test import TestCase
-from pysmt.test import skipIfSolverNotAvailable
-from pysmt.test.examples import get_example_formulae
-from pysmt.logics import QF_LRA, QF_UFLIRA, QF_BOOL
-from pysmt.solvers.portfolio import Portfolio
+from pysmt.logics import QF_BOOL, QF_LRA, QF_UFLIRA
+from pysmt.shortcuts import FALSE, TRUE, Equals, Implies, Symbol, is_sat, reset_env
 from pysmt.smtlib.parser import get_formula_fname
-from pysmt.shortcuts import TRUE, Implies, Equals, Symbol, FALSE
-from pysmt.shortcuts import reset_env, is_sat
+from pysmt.solvers.portfolio import Portfolio
+from pysmt.test import TestCase, skipIfSolverNotAvailable
+from pysmt.test.examples import get_example_formulae
 from pysmt.typing import REAL
 
 
@@ -48,7 +47,7 @@ class PortfolioTestCase(TestCase):
     @skipIfSolverNotAvailable("cvc4")
     @skipIfSolverNotAvailable("yices")
     def test_smtlib(self):
-        from pysmt.test.smtlib.parser_utils import SMTLIB_TEST_FILES, SMTLIB_DIR
+        from pysmt.test.smtlib.parser_utils import SMTLIB_DIR, SMTLIB_TEST_FILES
 
         for (logic, f, expected_result) in SMTLIB_TEST_FILES:
             smtfile = os.path.join(SMTLIB_DIR, f)
@@ -57,7 +56,7 @@ class PortfolioTestCase(TestCase):
 
     @skipIfSolverNotAvailable("msat")
     def test_smtlib_multi_msat(self):
-        from pysmt.test.smtlib.parser_utils import SMTLIB_TEST_FILES, SMTLIB_DIR
+        from pysmt.test.smtlib.parser_utils import SMTLIB_DIR, SMTLIB_TEST_FILES
 
         # On some platforms (Windows x64) the internal pickling process requires
         # quite a lot of recursion...

@@ -12,23 +12,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from six.moves import input
-
-import os
 import argparse
-import sys
+import os
 import platform
-
+import sys
 from collections import namedtuple
 
-from pysmt.cmd.installers import MSatInstaller, Z3Installer, PicoSATInstaller
-from pysmt.cmd.installers import CVC4Installer, YicesInstaller, BtorInstaller
-from pysmt.cmd.installers import CuddInstaller
-from pysmt.cmd.installers.base import solver_install_site
+from six.moves import input
 
+from pysmt import __version__ as pysmt_version
+from pysmt.cmd.installers import (
+    BtorInstaller,
+    CuddInstaller,
+    CVC4Installer,
+    MSatInstaller,
+    PicoSATInstaller,
+    YicesInstaller,
+    Z3Installer,
+)
+from pysmt.cmd.installers.base import solver_install_site
 from pysmt.environment import get_env
 from pysmt.exceptions import PysmtException
-from pysmt import __version__ as pysmt_version
 
 # Build a list of installers, one for each solver
 Installer = namedtuple("Installer", ["InstallerClass", "version", "extra_params"])

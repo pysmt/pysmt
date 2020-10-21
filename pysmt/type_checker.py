@@ -22,11 +22,10 @@ reasoning about the type of formulae.
  * The functions assert_*_args are useful for testing the type of
    arguments of a given function.
 """
-import pysmt.walkers as walkers
 import pysmt.operators as op
-
-from pysmt.typing import BOOL, REAL, INT, BVType, ArrayType, STRING
+import pysmt.walkers as walkers
 from pysmt.exceptions import PysmtTypeError
+from pysmt.typing import BOOL, INT, REAL, STRING, ArrayType, BVType
 
 
 class SimpleTypeChecker(walkers.DagWalker):

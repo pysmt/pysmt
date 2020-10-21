@@ -1,3 +1,4 @@
 pytest
 wheel
 six
+pre-commit

@@ -15,33 +15,40 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+from pysmt.exceptions import SolverReturnedUnknownResultError
+from pysmt.logics import BOOL, QF_AUFLIA, QF_LRA, QF_NRA
+from pysmt.rewritings import (
+    Ackermannizer,
+    TimesDistributor,
+    aig,
+    conjunctive_partition,
+    disjunctive_partition,
+    nnf,
+    prenex_normal_form,
+    propagate_toplevel,
+)
 from pysmt.shortcuts import (
+    LT,
     And,
-    Iff,
-    Or,
-    Symbol,
-    Implies,
-    Not,
+    Equals,
     Exists,
     ForAll,
-    Times,
-    Plus,
-    Minus,
-    Equals,
-    Real,
-    LT,
-    is_valid,
-    is_sat,
     Function,
+    Iff,
+    Implies,
+    Minus,
+    Not,
+    Or,
+    Plus,
+    Real,
+    Symbol,
+    Times,
+    is_sat,
+    is_valid,
 )
-from pysmt.test import TestCase, skipIfNoSolverForLogic, main
-from pysmt.rewritings import prenex_normal_form, nnf, conjunctive_partition, aig
-from pysmt.rewritings import disjunctive_partition, propagate_toplevel
-from pysmt.rewritings import TimesDistributor, Ackermannizer
+from pysmt.test import TestCase, main, skipIfNoSolverForLogic
 from pysmt.test.examples import get_example_formulae
-from pysmt.exceptions import SolverReturnedUnknownResultError
-from pysmt.logics import BOOL, QF_NRA, QF_LRA, QF_AUFLIA
-from pysmt.typing import REAL, INT, FunctionType
+from pysmt.typing import INT, REAL, FunctionType
 
 
 class TestRewritings(TestCase):

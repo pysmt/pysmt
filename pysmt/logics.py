@@ -21,7 +21,7 @@ logics.
 """
 import six
 
-from pysmt.exceptions import UndefinedLogicError, NoLogicAvailableError
+from pysmt.exceptions import NoLogicAvailableError, UndefinedLogicError
 
 
 class Theory(object):

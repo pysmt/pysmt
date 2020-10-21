@@ -15,23 +15,23 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+from pysmt.exceptions import PysmtTypeError
+from pysmt.logics import QF_LIA, QF_UFLIRA
 from pysmt.shortcuts import (
-    Symbol,
-    And,
-    Iff,
-    Equals,
-    LT,
     GT,
+    LT,
+    And,
+    Equals,
+    Iff,
+    Int,
     Minus,
     Plus,
     Real,
-    Int,
+    Symbol,
     ToReal,
 )
+from pysmt.test import TestCase, main, skipIfNoSolverForLogic
 from pysmt.typing import INT, REAL
-from pysmt.test import TestCase, skipIfNoSolverForLogic, main
-from pysmt.logics import QF_LIA, QF_UFLIRA
-from pysmt.exceptions import PysmtTypeError
 
 
 class TestLIA(TestCase):

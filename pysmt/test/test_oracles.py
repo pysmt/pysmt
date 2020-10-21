@@ -15,12 +15,11 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from pysmt.shortcuts import get_env, get_free_variables
-from pysmt.shortcuts import Symbol, Implies, And, Not
-from pysmt.test.examples import get_example_formulae
-from pysmt.test import TestCase, main
 from pysmt.oracles import get_logic
-from pysmt.typing import BOOL, Type, INT, REAL, FunctionType
+from pysmt.shortcuts import And, Implies, Not, Symbol, get_env, get_free_variables
+from pysmt.test import TestCase, main
+from pysmt.test.examples import get_example_formulae
+from pysmt.typing import BOOL, INT, REAL, FunctionType, Type
 
 
 class TestOracles(TestCase):

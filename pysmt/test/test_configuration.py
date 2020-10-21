@@ -18,12 +18,10 @@
 import os
 from tempfile import NamedTemporaryFile
 
-from pysmt.shortcuts import read_configuration, write_configuration
-from pysmt.shortcuts import get_env
 from pysmt.configuration import configure_environment, write_environment_configuration
 from pysmt.environment import Environment
 from pysmt.exceptions import PysmtIOError
-
+from pysmt.shortcuts import get_env, read_configuration, write_configuration
 from pysmt.test import TestCase, main
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
