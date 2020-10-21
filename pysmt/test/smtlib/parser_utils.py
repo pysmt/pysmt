@@ -22,10 +22,24 @@ from pysmt.test import SkipTest
 from pysmt.shortcuts import get_env, reset_env
 from pysmt.smtlib.parser import SmtLibParser, get_formula_fname
 from pysmt.smtlib.script import check_sat_filter
-from pysmt.logics import (QF_LIA, QF_LRA, LRA, QF_UFLIRA, QF_UFBV, QF_BV,
-                          QF_ALIA, QF_ABV, QF_AUFLIA, QF_AUFBV, QF_NRA, QF_NIA,
-                          UFBV, BV)
+from pysmt.logics import (
+    QF_LIA,
+    QF_LRA,
+    LRA,
+    QF_UFLIRA,
+    QF_UFBV,
+    QF_BV,
+    QF_ALIA,
+    QF_ABV,
+    QF_AUFLIA,
+    QF_AUFBV,
+    QF_NRA,
+    QF_NIA,
+    UFBV,
+    BV,
+)
 from pysmt.exceptions import NoSolverAvailableError, SolverReturnedUnknownResultError
+
 
 def smtlib_tests(logic_pred):
     """Returns the smtlib instances matching the logic predicate"""
@@ -35,6 +49,7 @@ def smtlib_tests(logic_pred):
         if logic_pred(logic):
             tests.append((smtfile, logic, expected_result))
     return tests
+
 
 # We use test generation in order to be able to obtain a separate
 # test for each file.
@@ -51,13 +66,17 @@ def execute_script_fname(smtfile, logic, expected_result):
     parser = SmtLibParser()
     script = parser.get_script_fname(smtfile)
     try:
-        log = script.evaluate(Solver(logic=logic, incremental=False,
-                                     generate_models=False))
+        log = script.evaluate(
+            Solver(logic=logic, incremental=False, generate_models=False)
+        )
     except NoSolverAvailableError:
         raise SkipTest("No solver for logic %s." % logic)
     except SolverReturnedUnknownResultError:
         if not logic.quantifier_free:
-            warnings.warn("Test (%s, %s) could not be solver due to quantifiers." % (logic, smtfile))
+            warnings.warn(
+                "Test (%s, %s) could not be solver due to quantifiers."
+                % (logic, smtfile)
+            )
             return
         raise
 
@@ -80,7 +99,7 @@ def formulas_from_smtlib_test_set(logics=None):
 
 
 # Constants to make definition of the benchmarks more readable
-SAT   = True
+SAT = True
 UNSAT = False
 
 # Directory where SMT-LIB files are saved
@@ -141,7 +160,7 @@ SMTLIB_TEST_FILES = [
     #
     # QF_UFBV
     #
-    #(QF_UFBV, "small_set/QF_UFBV/btfnt_atlas_out.smt2.bz2", UNSAT),
+    # (QF_UFBV, "small_set/QF_UFBV/btfnt_atlas_out.smt2.bz2", UNSAT),
     (QF_UFBV, "small_set/QF_UFBV/calc2_sec2_bmc10.smt2.bz2", UNSAT),
     (QF_BV, "small_set/QF_BV/bench_4631_simp.smt2.bz2", SAT),
     (QF_BV, "small_set/QF_BV/bench_5200.smt2.bz2", UNSAT),
@@ -157,21 +176,38 @@ SMTLIB_TEST_FILES = [
     # Arrays
     #
     (QF_ABV, "small_set/QF_ABV/a268test0002.smt2.bz2", SAT),
-    (QF_ABV, "small_set/QF_ABV/com.galois.ecc.P384ECC64.group_add6.short.smt2.bz2", UNSAT),
-
+    (
+        QF_ABV,
+        "small_set/QF_ABV/com.galois.ecc.P384ECC64.group_add6.short.smt2.bz2",
+        UNSAT,
+    ),
     (QF_ALIA, "small_set/QF_ALIA/ios_t1_ios_np_sf_ai_00001_001.cvc.smt2.bz2", UNSAT),
     (QF_ALIA, "small_set/QF_ALIA/pointer-invalid-15.smt2.bz2", SAT),
-
-    (QF_AUFBV, "small_set/QF_AUFBV/com.galois.ecc.P384ECC64.mod_div10.short.smt2.bz2", UNSAT),
-
+    (
+        QF_AUFBV,
+        "small_set/QF_AUFBV/com.galois.ecc.P384ECC64.mod_div10.short.smt2.bz2",
+        UNSAT,
+    ),
     (QF_AUFLIA, "small_set/QF_AUFLIA/array_incompleteness1.smt2.bz2", UNSAT),
-    (QF_AUFLIA, "small_set/QF_AUFLIA/swap_invalid_t1_pp_nf_ai_00002_002.cvc.smt2.bz2", SAT),
+    (
+        QF_AUFLIA,
+        "small_set/QF_AUFLIA/swap_invalid_t1_pp_nf_ai_00002_002.cvc.smt2.bz2",
+        SAT,
+    ),
     #
     # QF_NRA
     #
-    (QF_NRA, "small_set/QF_NRA/ball_count_2d_hill_simple.05.redlog_global_6.smt2.bz2", UNSAT),
+    (
+        QF_NRA,
+        "small_set/QF_NRA/ball_count_2d_hill_simple.05.redlog_global_6.smt2.bz2",
+        UNSAT,
+    ),
     (QF_NRA, "small_set/QF_NRA/cos-problem-12-chunk-0004.smt2.bz2", SAT),
-    (QF_NRA, "small_set/QF_NRA/simple_ballistics_reach.01.seq_lazy_linear_enc_global_10.smt2.bz2", UNSAT),
+    (
+        QF_NRA,
+        "small_set/QF_NRA/simple_ballistics_reach.01.seq_lazy_linear_enc_global_10.smt2.bz2",
+        UNSAT,
+    ),
     #
     # QF_NIA
     #

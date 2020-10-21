@@ -26,8 +26,8 @@ from pysmt.test.examples import get_example_formulae
 from pysmt.test.smtlib.parser_utils import SMTLIB_TEST_FILES, SMTLIB_DIR
 from pysmt.smtlib.parser import get_formula_fname
 
-class TestCnf(TestCase):
 
+class TestCnf(TestCase):
     def do_examples(self, logic):
         conv = CNFizer()
         for example in get_example_formulae():
@@ -39,7 +39,6 @@ class TestCnf(TestCase):
 
             res = is_sat(cnf, logic=logic)
             self.assertEqual(res, example.is_sat)
-
 
     @skipIfNoSolverForLogic(QF_BOOL)
     def test_examples_solving_bool(self):
@@ -60,7 +59,7 @@ class TestCnf(TestCase):
         for (logic, f, expected_result) in SMTLIB_TEST_FILES:
             if logic != QF_LIA:
                 continue
-            self._smtlib_cnf(f, logic, expected_result=="sat")
+            self._smtlib_cnf(f, logic, expected_result == "sat")
             cnt += 1
             if cnt == max_cnt:
                 break
@@ -92,7 +91,7 @@ class TestCnf(TestCase):
 
     @skipIfNoSolverForLogic(QF_BOOL)
     def test_implies(self):
-        a,b,c,d = (Symbol(x) for x in "abcd")
+        a, b, c, d = (Symbol(x) for x in "abcd")
         f = Implies(Iff(a, b), Iff(c, d))
 
         conv = CNFizer()
@@ -100,5 +99,6 @@ class TestCnf(TestCase):
 
         self.assertValid(Implies(cnf, f), logic=QF_BOOL)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

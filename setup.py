@@ -2,8 +2,7 @@ from setuptools import setup, find_packages
 
 import pysmt
 
-long_description=\
-"""============================================================
+long_description = """============================================================
  pySMT: A library for SMT formulae manipulation and solving
 ============================================================
 
@@ -49,20 +48,20 @@ Visit http://www.pysmt.org
 
 
 setup(
-    name='PySMT',
+    name="PySMT",
     version=pysmt.__version__,
-    author='PySMT Team',
-    author_email='info@pysmt.org',
-    packages = find_packages(),
-    include_package_data = True,
-    url='http://www.pysmt.org',
-    license='APACHE',
-    description='A solver-agnostic library for SMT Formulae manipulation and solving',
+    author="PySMT Team",
+    author_email="info@pysmt.org",
+    packages=find_packages(),
+    include_package_data=True,
+    url="http://www.pysmt.org",
+    license="APACHE",
+    description="A solver-agnostic library for SMT Formulae manipulation and solving",
     long_description=long_description,
     install_requires=["six"],
     entry_points={
-        'console_scripts': [
-            'pysmt-install = pysmt.cmd.install:main',
+        "console_scripts": [
+            "pysmt-install = pysmt.cmd.install:main",
         ],
     },
 )

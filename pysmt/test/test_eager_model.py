@@ -26,7 +26,6 @@ from pysmt.exceptions import PysmtTypeError
 
 
 class TestEagerModel(TestCase):
-
     def test_construction(self):
         """Build an eager model out of a dictionary"""
 
@@ -38,7 +37,7 @@ class TestEagerModel(TestCase):
 
         self.assertEqual(model.get_value(x), TRUE())
         self.assertEqual(model.get_value(y), FALSE())
-        self.assertEqual(model.get_value(And(x,y)), FALSE())
+        self.assertEqual(model.get_value(And(x, y)), FALSE())
 
     def test_env_default_arguments(self):
         """Test use global env"""
@@ -52,39 +51,38 @@ class TestEagerModel(TestCase):
         """The result of get_value is a constant"""
 
         x, y = FreshSymbol(), FreshSymbol()
-        d = {x:TRUE()}
+        d = {x: TRUE()}
 
         model = EagerModel(assignment=d)
         with self.assertRaises(PysmtTypeError):
-            model.get_value(And(x,y), model_completion=False)
+            model.get_value(And(x, y), model_completion=False)
 
-        d2 = {x:TRUE(), y:x}
+        d2 = {x: TRUE(), y: x}
         model = EagerModel(assignment=d2)
         with self.assertRaises(PysmtTypeError):
-            model.get_value(And(x,y))
+            model.get_value(And(x, y))
 
     def test_complete_model(self):
         """Given a partial assignment, we can make a total model."""
         x, y = FreshSymbol(), FreshSymbol()
         r = FreshSymbol(REAL)
         p = FreshSymbol(INT)
-        d = {x:TRUE()}
+        d = {x: TRUE()}
 
         model = EagerModel(assignment=d)
 
         self.assertEqual(model.get_value(x), TRUE())
-        self.assertEqual(model.get_value(Or(x,y)), TRUE())
+        self.assertEqual(model.get_value(Or(x, y)), TRUE())
         self.assertTrue(model.get_value(p).is_constant(INT))
         self.assertTrue(model.get_value(r).is_constant(REAL))
 
         self.assertEqual(model.get_value(x, model_completion=False), TRUE())
         with self.assertRaises(PysmtTypeError):
-            model.get_value(And(x,y), model_completion=False)
+            model.get_value(And(x, y), model_completion=False)
         with self.assertRaises(PysmtTypeError):
             model.get_value(p, model_completion=False)
         with self.assertRaises(PysmtTypeError):
             model.get_value(r, model_completion=False)
-
 
     def test_contains(self):
         x, y, z = [FreshSymbol() for _ in xrange(3)]
@@ -96,14 +94,15 @@ class TestEagerModel(TestCase):
     @skipIfSolverNotAvailable("z3")
     def test_warp_solvermodel(self):
         x, y, z = [FreshSymbol() for _ in xrange(3)]
-        with Solver(name='z3') as solver:
-            solver.add_assertion(And(x,y,z))
+        with Solver(name="z3") as solver:
+            solver.add_assertion(And(x, y, z))
             solver.solve()
             z3_model = solver.get_model()
             eager_model = EagerModel(z3_model)
-            for var, value  in eager_model:
-                self.assertIn(var, [x,y,z])
+            for var, value in eager_model:
+                self.assertIn(var, [x, y, z])
                 self.assertEqual(value, TRUE())
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

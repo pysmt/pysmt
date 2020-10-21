@@ -25,7 +25,6 @@ from pysmt import logics
 
 
 class TestEnvironment(TestCase):
-
     def test_global_env_is_unique(self):
         env1 = get_env()
         env2 = get_env()
@@ -37,10 +36,9 @@ class TestEnvironment(TestCase):
         push_env(env1)
 
         self.assertEqual(env1, pop_env(), "Pushed environment was ignored.")
-        env2  = get_env()
+        env2 = get_env()
         self.assertIsNotNone(env2)
         self.assertNotEqual(env1, pop_env(), "New environment was not created.")
-
 
     def test_with_env(self):
         env1 = get_env()
@@ -53,8 +51,9 @@ class TestEnvironment(TestCase):
             self.assertNotEqual(a1, a2, "Symbols in different context should differ")
 
         a3 = Symbol("A", REAL)
-        self.assertEqual(a1, a3, "Exiting a context should restore the previous environment")
-
+        self.assertEqual(
+            a1, a3, "Exiting a context should restore the previous environment"
+        )
 
     def test_cannot_replace_global_walkers(self):
         env = get_env()
@@ -86,8 +85,9 @@ class TestEnvironment(TestCase):
         env = get_env()
 
         factory = env.factory
-        self.assertEqual(factory.solver_preference_list,
-                          pysmt.factory.DEFAULT_SOLVER_PREFERENCE_LIST)
+        self.assertEqual(
+            factory.solver_preference_list, pysmt.factory.DEFAULT_SOLVER_PREFERENCE_LIST
+        )
 
         for solver_name in factory.all_solvers(logic=logics.QF_UFLIRA):
             factory.set_solver_preference_list([solver_name])
@@ -95,7 +95,7 @@ class TestEnvironment(TestCase):
             solver = factory.get_solver(logic=logics.QF_UFLIRA)
             self.assertTrue(isinstance(solver, factory.all_solvers()[solver_name]))
 
-        factory.set_solver_preference_list(['nosolver'])
+        factory.set_solver_preference_list(["nosolver"])
         with self.assertRaises(NoSolverAvailableError):
             factory.get_solver()
 
@@ -103,12 +103,14 @@ class TestEnvironment(TestCase):
             factory.set_qelim_preference_list([qelim_name])
             self.assertEqual(factory.qelim_preference_list, [qelim_name])
             qelim = factory.get_quantifier_eliminator(logic=logics.BOOL)
-            self.assertTrue(isinstance(qelim, factory.all_quantifier_eliminators()[qelim_name]))
+            self.assertTrue(
+                isinstance(qelim, factory.all_quantifier_eliminators()[qelim_name])
+            )
 
-        factory.set_qelim_preference_list(['nosolver'])
+        factory.set_qelim_preference_list(["nosolver"])
         with self.assertRaises(NoSolverAvailableError):
             factory.get_quantifier_eliminator()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

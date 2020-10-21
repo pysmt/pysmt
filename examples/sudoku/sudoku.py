@@ -19,7 +19,7 @@ class Sudoku(object):
             # If BV is unspecified, check to see if a BV solver is
             # available, otherwise default to INT
             all_bv_solvers = get_env().factory.all_solvers(QF_BV)
-            use_bv = (len(all_bv_solvers) > 0)
+            use_bv = len(all_bv_solvers) > 0
         self.use_bv = use_bv
 
         # Logic selection
@@ -27,13 +27,11 @@ class Sudoku(object):
         if use_bv:
             logic = QF_BV
             # Compute the minimum BV size needed for this problem
-            self.bv_size = int(math.floor(math.log(self.size**2, 2))) + 1
+            self.bv_size = int(math.floor(math.log(self.size ** 2, 2))) + 1
 
         # Build a solver initialized with the proper assertions and
         # the matrix of SMT-variables representing each cell.
-        self.solver, self.var_table = \
-              self.get_prepared_solver(logic, solver_name)
-
+        self.solver, self.var_table = self.get_prepared_solver(logic, solver_name)
 
     def get_type(self):
         """Returns the type of variables: either INT or BV depending on the
@@ -55,18 +53,20 @@ class Sudoku(object):
         """Returns a solver initialized with the sudoku constraints and a
         matrix of SMT variables, each representing a cell of the game.
         """
-        sq_size = self.size**2
+        sq_size = self.size ** 2
         ty = self.get_type()
-        var_table = [[FreshSymbol(ty) for _ in xrange(sq_size)]
-                          for _ in xrange(sq_size)]
+        var_table = [
+            [FreshSymbol(ty) for _ in xrange(sq_size)] for _ in xrange(sq_size)
+        ]
 
         solver = Solver(logic=logic, name=solver_name)
         # Sudoku constraints
         # all variables are positive and lower or equal to than sq_size
         for row in var_table:
             for var in row:
-                solver.add_assertion(Or([Equals(var, self.const(i))
-                                         for i in xrange(1, sq_size + 1)]))
+                solver.add_assertion(
+                    Or([Equals(var, self.const(i)) for i in xrange(1, sq_size + 1)])
+                )
 
         # each row and each column contains all different numbers
         for i in xrange(sq_size):
@@ -76,8 +76,11 @@ class Sudoku(object):
         # each square contains all different numbers
         for sx in xrange(self.size):
             for sy in xrange(self.size):
-                square = [var_table[i + sx * self.size][j + sy * self.size]
-                          for i in xrange(self.size) for j in xrange(self.size)]
+                square = [
+                    var_table[i + sx * self.size][j + sy * self.size]
+                    for i in xrange(self.size)
+                    for j in xrange(self.size)
+                ]
                 solver.add_assertion(AllDifferent(square))
 
         return solver, var_table
@@ -99,8 +102,9 @@ class Sudoku(object):
             for i, row in enumerate(constraints):
                 for j, val in enumerate(row):
                     if val > 0:
-                        self.solver.add_assertion(Equals(self.var_table[i][j],
-                                                         self.const(val)))
+                        self.solver.add_assertion(
+                            Equals(self.var_table[i][j], self.const(val))
+                        )
 
         res = self.solver.solve()
 
@@ -119,11 +123,11 @@ class Sudoku(object):
             return None
 
 
-
 def read_constraints(fname):
     """reads the constraints from file
     (see problems/ folder for examples)
     """
+
     def reader(fname):
         with open(fname, "r") as f:
             for line in f:
@@ -134,9 +138,9 @@ def read_constraints(fname):
     r = reader(fname)
     size = int(next(r))
     constraints = []
-    for _ in xrange(size**2):
+    for _ in xrange(size ** 2):
         row = []
-        for _ in xrange(size**2):
+        for _ in xrange(size ** 2):
             w = next(r)
             if w != "X":
                 row.append(int(w))
@@ -149,33 +153,49 @@ def read_constraints(fname):
 def main():
     env = get_env()
 
-    parser = argparse.ArgumentParser(description="Command-line interface " \
-                                     "for solving sudoku problems")
+    parser = argparse.ArgumentParser(
+        description="Command-line interface " "for solving sudoku problems"
+    )
 
-    parser.add_argument('--size', '-n', metavar='number', type=int,
-                        help='The sudoku base size', default=3)
+    parser.add_argument(
+        "--size",
+        "-n",
+        metavar="number",
+        type=int,
+        help="The sudoku base size",
+        default=3,
+    )
 
-    parser.add_argument('--solver', '-s', metavar='name', type=str,
-                        choices=['auto'] + env.factory.all_solvers().keys(),
-                        default='auto',
-                        help='The solver to use (default: auto)')
+    parser.add_argument(
+        "--solver",
+        "-s",
+        metavar="name",
+        type=str,
+        choices=["auto"] + env.factory.all_solvers().keys(),
+        default="auto",
+        help="The solver to use (default: auto)",
+    )
 
-    parser.add_argument('--bv', '-b', action="store_true",
-                        help='Force the use of bit-vectors instead of integers')
+    parser.add_argument(
+        "--bv",
+        "-b",
+        action="store_true",
+        help="Force the use of bit-vectors instead of integers",
+    )
 
-    parser.add_argument('--lia', '-i', action="store_true",
-                        help='Force use LIA instead of bit-vectors')
+    parser.add_argument(
+        "--lia", "-i", action="store_true", help="Force use LIA instead of bit-vectors"
+    )
 
-    parser.add_argument('--problem', '-p', metavar='filename', type=str,
-                        help='The sudoku problem')
+    parser.add_argument(
+        "--problem", "-p", metavar="filename", type=str, help="The sudoku problem"
+    )
 
     args = parser.parse_args()
 
     solver = None if args.solver == "auto" else args.solver
     use_bv = True if args.bv else (False if args.lia else None)
-    sudoku = Sudoku(size=args.size,
-                    solver_name=solver,
-                    use_bv=use_bv)
+    sudoku = Sudoku(size=args.size, solver_name=solver, use_bv=use_bv)
 
     constraints = None
     if args.problem:
@@ -187,10 +207,7 @@ def main():
             for row in res:
                 print "\t".join(str(x) for x in row)
     else:
-        print "No problem specified! Either use the gui.py script or pass" \
-            " a problem with --problem flag. Example problems are available" \
-            " in the problems/ folder."
-
+        print "No problem specified! Either use the gui.py script or pass" " a problem with --problem flag. Example problems are available" " in the problems/ folder."
 
 
 if __name__ == "__main__":

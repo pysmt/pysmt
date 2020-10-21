@@ -27,14 +27,18 @@ from pysmt.shortcuts import get_env
 from pysmt.environment import Environment
 from pysmt.test import TestCase, skipIfNoSolverForLogic, main
 from pysmt.logics import QF_BOOL
-from pysmt.exceptions import (UndefinedSymbolError, UnsupportedOperatorError,
-                              PysmtTypeError, PysmtModeError, PysmtValueError)
+from pysmt.exceptions import (
+    UndefinedSymbolError,
+    UnsupportedOperatorError,
+    PysmtTypeError,
+    PysmtModeError,
+    PysmtValueError,
+)
 from pysmt.formula import FormulaManager
 from pysmt.constants import Fraction, Integer
 
 
 class TestFormulaManager(TestCase):
-
     def setUp(self):
         super(TestFormulaManager, self).setUp()
 
@@ -64,8 +68,11 @@ class TestFormulaManager(TestCase):
         self.assertNotEqual(fv1, fv2, "Fresh symbol is not new.")
 
         fv3 = self.mgr.new_fresh_symbol(BOOL, "abc_%d")
-        self.assertEqual(fv3.symbol_name()[:3], "abc",
-                          "Fresh variable doesn't have the desired prefix")
+        self.assertEqual(
+            fv3.symbol_name()[:3],
+            "abc",
+            "Fresh variable doesn't have the desired prefix",
+        )
 
     def test_get_symbol(self):
         with self.assertRaises(UndefinedSymbolError):
@@ -91,7 +98,6 @@ class TestFormulaManager(TestCase):
 
         c = self.mgr.Symbol("c")
         self.assertEqual(c.symbol_type(), BOOL, "Default Symbol Type is not BOOL")
-
 
     def test_payload_assertions(self):
         s = self.mgr.Symbol("x")
@@ -477,16 +483,19 @@ class TestFormulaManager(TestCase):
         self.assertTrue(n1.is_real_constant())
 
         n2 = self.mgr.Real((100, 10))
-        self.assertEqual(n1, n2,
-                "Generation of constant does not provide a consistent result.")
+        self.assertEqual(
+            n1, n2, "Generation of constant does not provide a consistent result."
+        )
         n3 = self.mgr.Real(10)
-        self.assertEqual(n1, n3,
-                "Generation of constant does not provide a consistent result.")
+        self.assertEqual(
+            n1, n3, "Generation of constant does not provide a consistent result."
+        )
         n4 = self.mgr.Real(10.0)
-        self.assertEqual(n1, n4,
-                "Generation of constant does not provide a consistent result.")
+        self.assertEqual(
+            n1, n4, "Generation of constant does not provide a consistent result."
+        )
 
-        nd = self.mgr.Real(Fraction(100,1))
+        nd = self.mgr.Real(Fraction(100, 1))
         self.assertNotEqual(nd, n1)
 
         with self.assertRaises(PysmtTypeError):
@@ -498,11 +507,11 @@ class TestFormulaManager(TestCase):
         self.assertTrue(nd.is_int_constant())
 
         # Memoization of constants
-        a = self.mgr.Real(Fraction(1,2))
-        b = self.mgr.Real((1,2))
-        c = self.mgr.Real(1.0/2.0)
-        self.assertEqual(a,b)
-        self.assertEqual(b,c)
+        a = self.mgr.Real(Fraction(1, 2))
+        b = self.mgr.Real((1, 2))
+        c = self.mgr.Real(1.0 / 2.0)
+        self.assertEqual(a, b)
+        self.assertEqual(b, c)
 
         # Constant's Type
         b = self.mgr.Bool(True)
@@ -550,46 +559,49 @@ class TestFormulaManager(TestCase):
         self.assertEqual(one, self.p)
 
     def test_exactly_one(self):
-        symbols = [ self.mgr.Symbol("s%d"%i, BOOL) for i in range(5) ]
+        symbols = [self.mgr.Symbol("s%d" % i, BOOL) for i in range(5)]
         c = self.mgr.ExactlyOne(symbols)
 
         self.assertTrue(len(c.args()) > 1)
 
         t = self.mgr.Bool(True)
-        c = c.substitute({symbols[0]: t,
-                          symbols[1]: t}).simplify()
-        self.assertEqual(c, self.mgr.Bool(False),
-                         "ExactlyOne should not allow 2 symbols to be True")
+        c = c.substitute({symbols[0]: t, symbols[1]: t}).simplify()
+        self.assertEqual(
+            c, self.mgr.Bool(False), "ExactlyOne should not allow 2 symbols to be True"
+        )
 
         s1 = self.mgr.Symbol("x")
         s2 = self.mgr.Symbol("x")
-        f1 = self.mgr.ExactlyOne((s for s in [s1,s2]))
-        f2 = self.mgr.ExactlyOne([s1,s2])
-        f3 = self.mgr.ExactlyOne(s1,s2)
+        f1 = self.mgr.ExactlyOne((s for s in [s1, s2]))
+        f2 = self.mgr.ExactlyOne([s1, s2])
+        f3 = self.mgr.ExactlyOne(s1, s2)
 
-        self.assertEqual(f1,f2)
-        self.assertEqual(f2,f3)
+        self.assertEqual(f1, f2)
+        self.assertEqual(f2, f3)
 
     @skipIfNoSolverForLogic(QF_BOOL)
     def test_exactly_one_is_sat(self):
-        symbols = [ self.mgr.Symbol("s%d"%i, BOOL) for i in range(5) ]
+        symbols = [self.mgr.Symbol("s%d" % i, BOOL) for i in range(5)]
         c = self.mgr.ExactlyOne(symbols)
-        all_zero = self.mgr.And([self.mgr.Iff(s, self.mgr.Bool(False))
-                                  for s in symbols])
+        all_zero = self.mgr.And(
+            [self.mgr.Iff(s, self.mgr.Bool(False)) for s in symbols]
+        )
         test_zero = self.mgr.And(c, all_zero)
-        self.assertFalse(is_sat(test_zero, logic=QF_BOOL),
-                         "ExactlyOne should not allow all symbols to be False")
+        self.assertFalse(
+            is_sat(test_zero, logic=QF_BOOL),
+            "ExactlyOne should not allow all symbols to be False",
+        )
 
     def test_at_most_one(self):
-        symbols = [ self.mgr.Symbol("s%d"%i, BOOL) for i in range(5) ]
+        symbols = [self.mgr.Symbol("s%d" % i, BOOL) for i in range(5)]
         c = self.mgr.AtMostOne(symbols)
 
         self.assertTrue(len(c.args()) > 1)
         t = self.mgr.Bool(True)
-        c = c.substitute({symbols[0]: t,
-                          symbols[1]: t}).simplify()
-        self.assertEqual(c, self.mgr.Bool(False),
-                         "AtMostOne should not allow two symbols to be True")
+        c = c.substitute({symbols[0]: t, symbols[1]: t}).simplify()
+        self.assertEqual(
+            c, self.mgr.Bool(False), "AtMostOne should not allow two symbols to be True"
+        )
 
     def test_xor(self):
         xor1 = self.mgr.Xor(self.x, self.y)
@@ -599,33 +611,39 @@ class TestFormulaManager(TestCase):
             self.mgr.Xor(self.p, self.q)
 
         xor_false = self.mgr.Xor(self.mgr.TRUE(), self.mgr.TRUE()).simplify()
-        self.assertEqual(xor_false, self.mgr.FALSE(),
-                         "Xor should be False if both arguments are True")
+        self.assertEqual(
+            xor_false,
+            self.mgr.FALSE(),
+            "Xor should be False if both arguments are True",
+        )
 
         xor_true = self.mgr.Xor(self.mgr.TRUE(), self.mgr.FALSE()).simplify()
-        self.assertEqual(xor_true, self.mgr.TRUE(),
-                         "Xor should be True if both arguments are False")
+        self.assertEqual(
+            xor_true, self.mgr.TRUE(), "Xor should be True if both arguments are False"
+        )
 
     def test_all_different(self):
         many = 5
-        symbols = [self.mgr.Symbol("s%d"%i, INT) for i in range(many) ]
+        symbols = [self.mgr.Symbol("s%d" % i, INT) for i in range(many)]
         f = self.mgr.AllDifferent(symbols)
 
         one = self.mgr.Int(1)
         for i in xrange(many):
             for j in xrange(many):
                 if i != j:
-                    c = f.substitute({symbols[i]: one,
-                                      symbols[j]: one}).simplify()
-                    self.assertEqual(c, self.mgr.Bool(False),
-                                     "AllDifferent should not allow 2 symbols "\
-                                     "to be 1")
+                    c = f.substitute({symbols[i]: one, symbols[j]: one}).simplify()
+                    self.assertEqual(
+                        c,
+                        self.mgr.Bool(False),
+                        "AllDifferent should not allow 2 symbols " "to be 1",
+                    )
 
-
-        c = f.substitute(dict((symbols[i],self.mgr.Int(i)) for i in xrange(many)))
-        self.assertEqual(c.simplify(), self.mgr.Bool(True),
-                         "AllDifferent should be tautological for a set " \
-                         "of different values")
+        c = f.substitute(dict((symbols[i], self.mgr.Int(i)) for i in xrange(many)))
+        self.assertEqual(
+            c.simplify(),
+            self.mgr.Bool(True),
+            "AllDifferent should be tautological for a set " "of different values",
+        )
 
     def test_min(self):
         min1 = self.mgr.Min(self.p, Plus(self.q, self.mgr.Int(1)))
@@ -635,12 +653,16 @@ class TestFormulaManager(TestCase):
             self.mgr.Min(self.p, self.r)
 
         min_int = self.mgr.Min(self.mgr.Int(1), self.mgr.Int(2), self.mgr.Int(3))
-        self.assertEqual(min_int.simplify(), self.mgr.Int(1),
-                         "The minimum of 1, 2 and 3 should be 1")
+        self.assertEqual(
+            min_int.simplify(), self.mgr.Int(1), "The minimum of 1, 2 and 3 should be 1"
+        )
 
         min_real = self.mgr.Min(self.mgr.Real(1), self.mgr.Real(2), self.mgr.Real(3))
-        self.assertEqual(min_real.simplify(), self.mgr.Real(1),
-                         "The minimum of 1.0, 2.0 and 3.0 should be 1.0")
+        self.assertEqual(
+            min_real.simplify(),
+            self.mgr.Real(1),
+            "The minimum of 1.0, 2.0 and 3.0 should be 1.0",
+        )
 
     def test_max(self):
         max1 = self.mgr.Max(self.p, Plus(self.q, self.mgr.Int(1)))
@@ -650,12 +672,16 @@ class TestFormulaManager(TestCase):
             self.mgr.Max(self.p, self.r)
 
         max_int = self.mgr.Max(self.mgr.Int(1), self.mgr.Int(2), self.mgr.Int(3))
-        self.assertEqual(max_int.simplify(), self.mgr.Int(3),
-                         "The maximum of 1, 2 and 3 should be 3")
+        self.assertEqual(
+            max_int.simplify(), self.mgr.Int(3), "The maximum of 1, 2 and 3 should be 3"
+        )
 
         max_real = self.mgr.Max(self.mgr.Real(1), self.mgr.Real(2), self.mgr.Real(3))
-        self.assertEqual(max_real.simplify(), self.mgr.Real(3),
-                         "The maximum of 1.0, 2.0 and 3.0 should be 3.0")
+        self.assertEqual(
+            max_real.simplify(),
+            self.mgr.Real(3),
+            "The maximum of 1.0, 2.0 and 3.0 should be 3.0",
+        )
 
     def test_pickling(self):
         import pickle
@@ -681,9 +707,11 @@ class TestFormulaManager(TestCase):
         f_new = dst_mgr.normalize(f)
 
         args = f_new.args()
-        self.assertEqual(str(args[0]), "A",
-                          "Expecting symbol A, " +
-                          "symbol %s found instead" % str(args[0]))
+        self.assertEqual(
+            str(args[0]),
+            "A",
+            "Expecting symbol A, " + "symbol %s found instead" % str(args[0]),
+        )
 
         a = dst_mgr.Symbol("A")
         b = dst_mgr.Symbol("B")
@@ -697,13 +725,13 @@ class TestFormulaManager(TestCase):
         # Normalizing a formula in the same manager should not
         # be a problem
         f_new = src_mgr.normalize(f)
-        self.assertEqual(f_new, f, "%s != %s" %(id(a),id(b)))
+        self.assertEqual(f_new, f, "%s != %s" % (id(a), id(b)))
 
         # Verify that new types do not lead to errors in pickling
         from pysmt.test.examples import get_example_formulae
+
         for (f, _, _, _) in get_example_formulae():
             pickle.dumps(f, pickle.HIGHEST_PROTOCOL)
-
 
     def test_infix(self):
         x, y, p = self.x, self.y, self.p
@@ -715,13 +743,13 @@ class TestFormulaManager(TestCase):
         with self.assertRaises(PysmtModeError):
             x[1]
         with self.assertRaises(PysmtModeError):
-            x.Ite(x,y)
+            x.Ite(x, y)
 
         get_env().enable_infix_notation = True
-        self.assertEqual(Implies(x,y), x.Implies(y))
+        self.assertEqual(Implies(x, y), x.Implies(y))
 
-        self.assertEqual(p + p, Plus(p,p))
-        self.assertEqual(p > p, GT(p,p))
+        self.assertEqual(p + p, Plus(p, p))
+        self.assertEqual(p > p, GT(p, p))
 
         with self.assertRaises(UnsupportedOperatorError):
             x[1]
@@ -764,15 +792,15 @@ class TestFormulaManager(TestCase):
         self.assertEqual(And(x, TRUE()), True & x)
 
         self.assertEqual(Iff(x, y), x.Iff(y))
-        self.assertEqual(And(x,y), x.And(y))
-        self.assertEqual(Or(x,y), x.Or(y))
+        self.assertEqual(And(x, y), x.And(y))
+        self.assertEqual(Or(x, y), x.Or(y))
 
         self.assertEqual(Ite(x, TRUE(), FALSE()), x.Ite(TRUE(), FALSE()))
         with self.assertRaises(Exception):
-            x.Ite(1,2)
+            x.Ite(1, 2)
 
         self.assertEqual(6 - r, Plus(Times(r, Real(-1)), Real(6)))
-        self.assertEqual(Not(Equals(r,s)), r.NotEquals(s))
+        self.assertEqual(Not(Equals(r, s)), r.NotEquals(s))
         # BVs
 
         # BV_CONSTANT: We use directly python numbers
@@ -800,13 +828,12 @@ class TestFormulaManager(TestCase):
         const1_8 = self.mgr.BV(3, width=8)
 
         # In actual code, one can simply create a macro for this:
-        _8bv = lambda v : self.mgr.BV(v, width=8)
+        _8bv = lambda v: self.mgr.BV(v, width=8)
         const1_8b = _8bv(3)
         self.assertEqual(const1_8, const1_8b)
 
         # Equals forces constants to have the width of the operand
-        self.assertEqual(const1_8.Equals(const1),
-                         self.mgr.Equals(const1_8, const1_8b))
+        self.assertEqual(const1_8.Equals(const1), self.mgr.Equals(const1_8, const1_8b))
 
         # Symbols
         bv8 = self.mgr.FreshSymbol(BV8)
@@ -815,29 +842,29 @@ class TestFormulaManager(TestCase):
         self.assertEqual(bv8.Equals(const1), bv8.Equals(const1_8))
 
         # BV_AND,
-        self.assertEqual(bv8 & const1,      self.mgr.BVAnd(bv8, const1_8))
+        self.assertEqual(bv8 & const1, self.mgr.BVAnd(bv8, const1_8))
         self.assertEqual(bv8.BVAnd(const1), self.mgr.BVAnd(bv8, const1_8))
-        self.assertEqual(const1 & bv8,      self.mgr.BVAnd(bv8, const1_8))
+        self.assertEqual(const1 & bv8, self.mgr.BVAnd(bv8, const1_8))
         # BV_XOR,
-        self.assertEqual(bv8 ^ const1,      self.mgr.BVXor(bv8, const1_8))
+        self.assertEqual(bv8 ^ const1, self.mgr.BVXor(bv8, const1_8))
         self.assertEqual(bv8.BVXor(const1), self.mgr.BVXor(bv8, const1_8))
-        self.assertEqual(const1 ^ bv8,      self.mgr.BVXor(bv8, const1_8))
+        self.assertEqual(const1 ^ bv8, self.mgr.BVXor(bv8, const1_8))
         # BV_OR,
-        self.assertEqual(bv8 | const1,      self.mgr.BVOr(bv8, const1_8))
-        self.assertEqual(bv8.BVOr(const1),  self.mgr.BVOr(bv8, const1_8))
-        self.assertEqual(const1 | bv8,      self.mgr.BVOr(bv8, const1_8))
+        self.assertEqual(bv8 | const1, self.mgr.BVOr(bv8, const1_8))
+        self.assertEqual(bv8.BVOr(const1), self.mgr.BVOr(bv8, const1_8))
+        self.assertEqual(const1 | bv8, self.mgr.BVOr(bv8, const1_8))
         # BV_ADD,
-        self.assertEqual(bv8 + const1,      self.mgr.BVAdd(bv8, const1_8))
+        self.assertEqual(bv8 + const1, self.mgr.BVAdd(bv8, const1_8))
         self.assertEqual(bv8.BVAdd(const1), self.mgr.BVAdd(bv8, const1_8))
-        self.assertEqual(const1 + bv8,      self.mgr.BVAdd(bv8, const1_8))
+        self.assertEqual(const1 + bv8, self.mgr.BVAdd(bv8, const1_8))
         # BV_SUB,
-        self.assertEqual(bv8 - const1,      self.mgr.BVSub(bv8, const1_8))
+        self.assertEqual(bv8 - const1, self.mgr.BVSub(bv8, const1_8))
         self.assertEqual(bv8.BVSub(const1), self.mgr.BVSub(bv8, const1_8))
-        self.assertEqual(const1 - bv8,      self.mgr.BVSub(const1_8, bv8))
+        self.assertEqual(const1 - bv8, self.mgr.BVSub(const1_8, bv8))
         # BV_MUL,
-        self.assertEqual(bv8 * const1,      self.mgr.BVMul(bv8, const1_8))
+        self.assertEqual(bv8 * const1, self.mgr.BVMul(bv8, const1_8))
         self.assertEqual(bv8.BVMul(const1), self.mgr.BVMul(bv8, const1_8))
-        self.assertEqual(const1 * bv8,      self.mgr.BVMul(bv8, const1_8))
+        self.assertEqual(const1 * bv8, self.mgr.BVMul(bv8, const1_8))
 
         # BV_NOT:
         # !!!WARNING!!! Cannot be applied to python constants!!
@@ -852,35 +879,35 @@ class TestFormulaManager(TestCase):
         self.assertEqual(-bv8, self.mgr.BVNeg(bv8))
 
         # BV_EXTRACT -- Cannot be applied to 'infix' constants
-        self.assertEqual(bv8[0:7],  self.mgr.BVExtract(bv8, 0, 7))
-        self.assertEqual(bv8[:7],   self.mgr.BVExtract(bv8, end=7))
-        self.assertEqual(bv8[0:],   self.mgr.BVExtract(bv8, start=0))
-        self.assertEqual(bv8[7],    self.mgr.BVExtract(bv8, start=7, end=7))
-        self.assertEqual(bv8.BVExtract(0,7),  self.mgr.BVExtract(bv8, 0, 7))
+        self.assertEqual(bv8[0:7], self.mgr.BVExtract(bv8, 0, 7))
+        self.assertEqual(bv8[:7], self.mgr.BVExtract(bv8, end=7))
+        self.assertEqual(bv8[0:], self.mgr.BVExtract(bv8, start=0))
+        self.assertEqual(bv8[7], self.mgr.BVExtract(bv8, start=7, end=7))
+        self.assertEqual(bv8.BVExtract(0, 7), self.mgr.BVExtract(bv8, 0, 7))
         # BV_ULT,
-        self.assertEqual(bv8 < const1,        self.mgr.BVULT(bv8, const1_8))
-        self.assertEqual(bv8.BVULT(const1),   self.mgr.BVULT(bv8, const1_8))
+        self.assertEqual(bv8 < const1, self.mgr.BVULT(bv8, const1_8))
+        self.assertEqual(bv8.BVULT(const1), self.mgr.BVULT(bv8, const1_8))
         # BV_ULE,
-        self.assertEqual(bv8 <= const1,       self.mgr.BVULE(bv8, const1_8))
-        self.assertEqual(bv8.BVULE(const1),   self.mgr.BVULE(bv8, const1_8))
+        self.assertEqual(bv8 <= const1, self.mgr.BVULE(bv8, const1_8))
+        self.assertEqual(bv8.BVULE(const1), self.mgr.BVULE(bv8, const1_8))
         # BV_UGT
-        self.assertEqual(bv8 > const1,        self.mgr.BVUGT(bv8, const1_8))
-        self.assertEqual(bv8.BVUGT(const1),    self.mgr.BVUGT(bv8, const1_8))
+        self.assertEqual(bv8 > const1, self.mgr.BVUGT(bv8, const1_8))
+        self.assertEqual(bv8.BVUGT(const1), self.mgr.BVUGT(bv8, const1_8))
         # BV_UGE
-        self.assertEqual(bv8 >= const1,       self.mgr.BVUGE(bv8, const1_8))
-        self.assertEqual(bv8.BVUGE(const1),    self.mgr.BVUGE(bv8, const1_8))
+        self.assertEqual(bv8 >= const1, self.mgr.BVUGE(bv8, const1_8))
+        self.assertEqual(bv8.BVUGE(const1), self.mgr.BVUGE(bv8, const1_8))
         # BV_LSHL,
-        self.assertEqual(bv8 << const1,       self.mgr.BVLShl(bv8, const1_8))
-        self.assertEqual(bv8.BVLShl(const1),  self.mgr.BVLShl(bv8, const1_8))
+        self.assertEqual(bv8 << const1, self.mgr.BVLShl(bv8, const1_8))
+        self.assertEqual(bv8.BVLShl(const1), self.mgr.BVLShl(bv8, const1_8))
         # BV_LSHR,
-        self.assertEqual(bv8 >> const1,       self.mgr.BVLShr(bv8, const1_8))
-        self.assertEqual(bv8.BVLShr(const1),    self.mgr.BVLShr(bv8, const1_8))
+        self.assertEqual(bv8 >> const1, self.mgr.BVLShr(bv8, const1_8))
+        self.assertEqual(bv8.BVLShr(const1), self.mgr.BVLShr(bv8, const1_8))
         # BV_UDIV,
-        self.assertEqual(bv8 / const1,        self.mgr.BVUDiv(bv8, const1_8))
-        self.assertEqual(bv8.BVUDiv(const1),  self.mgr.BVUDiv(bv8, const1_8))
+        self.assertEqual(bv8 / const1, self.mgr.BVUDiv(bv8, const1_8))
+        self.assertEqual(bv8.BVUDiv(const1), self.mgr.BVUDiv(bv8, const1_8))
         # BV_UREM,
-        self.assertEqual(bv8 % const1,        self.mgr.BVURem(bv8, const1_8))
-        self.assertEqual(bv8.BVURem(const1),  self.mgr.BVURem(bv8, const1_8))
+        self.assertEqual(bv8 % const1, self.mgr.BVURem(bv8, const1_8))
+        self.assertEqual(bv8.BVURem(const1), self.mgr.BVURem(bv8, const1_8))
 
         # The following operators only have the infix syntax:
         #    left.Operator.right
@@ -921,7 +948,6 @@ class TestFormulaManager(TestCase):
         self.assertEqual(bv8.BVRepeat(5), self.mgr.BVRepeat(bv8, count=5))
         # BVConcat
         self.assertEqual(bv8.BVConcat(bv8), self.mgr.BVConcat(bv8, bv8))
-
 
     def test_toReal(self):
         f = self.mgr.Equals(self.rconst, self.mgr.ToReal(self.p))
@@ -978,8 +1004,7 @@ class TestFormulaManager(TestCase):
 
     def test_array_value(self):
         a1 = self.mgr.Array(INT, self.mgr.Int(0))
-        a2 = self.mgr.Array(INT, self.mgr.Int(0),
-                            {self.mgr.Int(12) : self.mgr.Int(0)})
+        a2 = self.mgr.Array(INT, self.mgr.Int(0), {self.mgr.Int(12): self.mgr.Int(0)})
         self.assertEqual(a1, a2)
 
     def test_real(self):
@@ -987,10 +1012,10 @@ class TestFormulaManager(TestCase):
         from fractions import Fraction as pyFraction
         from pysmt.constants import HAS_GMPY
 
-        v1 = (1,2)
+        v1 = (1, 2)
         v2 = 0.5
-        v3 = pyFraction(1,2)
-        v4 = Fraction(1,2)
+        v3 = pyFraction(1, 2)
+        v4 = Fraction(1, 2)
 
         c1 = self.mgr.Real(v1)
         c2 = self.mgr.Real(v2)
@@ -1003,8 +1028,9 @@ class TestFormulaManager(TestCase):
 
         if HAS_GMPY:
             from gmpy2 import mpq, mpz
+
             v5 = (mpz(1), mpz(2))
-            v6 = mpq(1,2)
+            v6 = mpq(1, 2)
 
             c5 = self.mgr.Real(v5)
             c6 = self.mgr.Real(v6)
@@ -1030,6 +1056,7 @@ class TestFormulaManager(TestCase):
 
         if HAS_GMPY:
             from gmpy2 import mpz
+
             v_mpz = mpz(1)
             c_mpz = self.mgr.Int(v_mpz)
             self.assertIs(c_base, c_mpz)
@@ -1043,18 +1070,13 @@ class TestFormulaManager(TestCase):
 
 
 class TestShortcuts(TestCase):
-
     def test_shortcut_is_using_global_env(self):
         global_mgr = get_env().formula_manager
         a1 = Symbol("z", BOOL)
         a2 = global_mgr.Symbol("z", BOOL)
 
-        self.assertEqual(a1, a2,
-                          "Symbols generated by env and Symbol are not the same")
+        self.assertEqual(a1, a2, "Symbols generated by env and Symbol are not the same")
 
 
-
-
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -29,8 +29,8 @@ from pysmt.shortcuts import Iff
 from pysmt.shortcuts import read_smtlib, write_smtlib, get_env
 from pysmt.exceptions import PysmtSyntaxError
 
-class TestSMTParseExamples(TestCase):
 
+class TestSMTParseExamples(TestCase):
     def test_parse_examples(self):
         fs = get_example_formulae()
 
@@ -41,14 +41,13 @@ class TestSMTParseExamples(TestCase):
             buf = cStringIO()
             script_out = smtlibscript_from_formula(f_out)
             script_out.serialize(outstream=buf)
-            #print(buf)
+            # print(buf)
 
             buf.seek(0)
             parser = SmtLibParser()
             script_in = parser.get_script(buf)
             f_in = script_in.get_last_formula()
             self.assertEqual(f_in.simplify(), f_out.simplify())
-
 
     @skipIfNoSolverForLogic(logics.QF_BV)
     def test_parse_examples_bv(self):
@@ -128,15 +127,15 @@ class TestSMTParseExamples(TestCase):
                     else:
                         self.assertEqual(logic_in, logic, script_in)
                     break
-            else: # Loops exited normally
-                print("-"*40)
+            else:  # Loops exited normally
+                print("-" * 40)
                 print(script_in)
 
     def test_read_and_write_shortcuts(self):
         fs = get_example_formulae()
 
         fdi, tmp_fname = mkstemp()
-        os.close(fdi) # Close initial file descriptor
+        os.close(fdi)  # Close initial file descriptor
         for (f_out, _, _, _) in fs:
             write_smtlib(f_out, tmp_fname)
             # with open(tmp_fname) as fin:
@@ -180,8 +179,11 @@ class TestSMTParseExamples(TestCase):
         """
         parser = SmtLibParser()
         script = parser.get_script(cStringIO(txt))
-        self.assertEqual(len(get_env().formula_manager.get_all_symbols()),
-                         len(script.get_declared_symbols()) + len(script.get_define_fun_parameter_symbols()))
+        self.assertEqual(
+            len(get_env().formula_manager.get_all_symbols()),
+            len(script.get_declared_symbols())
+            + len(script.get_define_fun_parameter_symbols()),
+        )
 
     @skipIfNoSolverForLogic(logics.QF_ABV)
     def test_nary_bvconcat(self):
@@ -196,6 +198,7 @@ class TestSMTParseExamples(TestCase):
         script = parser.get_script(cStringIO(txt))
         f_in = script.get_last_formula()
         self.assertSat(f_in)
+
 
 if __name__ == "__main__":
     main()

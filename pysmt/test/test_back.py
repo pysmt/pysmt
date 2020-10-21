@@ -25,7 +25,6 @@ from pysmt.exceptions import NoSolverAvailableError
 
 
 class TestBasic(TestCase):
-
     @skipIfSolverNotAvailable("msat")
     def test_msat_back_simple(self):
         msat = Solver(name="msat", logic=QF_UFLIRA)
@@ -73,8 +72,9 @@ class TestBasic(TestCase):
                             res = s.converter.back(term)
                     else:
                         res = s.converter.back(term)
-                    self.assertValid(Iff(formula, res), logic=logic,
-                                     solver_name=solver_name)
+                    self.assertValid(
+                        Iff(formula, res), logic=logic, solver_name=solver_name
+                    )
                 except NoSolverAvailableError:
                     pass
 
@@ -88,5 +88,5 @@ class TestBasic(TestCase):
         self.do_back("z3", z3_string_buffer=True)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

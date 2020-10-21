@@ -23,15 +23,16 @@ from pysmt.oracles import get_logic
 from pysmt.shortcuts import FreshSymbol, Times, Equals, Div, Real, Int, Pow
 from pysmt.shortcuts import Solver, Symbol, And, Not, is_sat
 from pysmt.typing import REAL, INT
-from pysmt.exceptions import (ConvertExpressionError,
-                              NonLinearError,
-                              SolverReturnedUnknownResultError)
+from pysmt.exceptions import (
+    ConvertExpressionError,
+    NonLinearError,
+    SolverReturnedUnknownResultError,
+)
 from pysmt.logics import QF_NRA
 from pysmt.constants import Fraction
 
 
 class TestNonLinear(TestCase):
-
     @skipIfSolverNotAvailable("z3")
     def test_times(self):
         x = FreshSymbol(REAL)
@@ -69,7 +70,7 @@ class TestNonLinear(TestCase):
         f = Equals(Times(x, x), Real(2))
         for sname in self.env.factory.all_solvers():
             with Solver(name=sname) as s:
-                if sname in  ["bdd", "picosat", "btor"]:
+                if sname in ["bdd", "picosat", "btor"]:
                     with self.assertRaises(ConvertExpressionError):
                         s.is_sat(f)
                 elif sname in ["yices", "cvc4", "msat"]:
@@ -119,11 +120,10 @@ class TestNonLinear(TestCase):
 
     @skipIfNoSolverForLogic(QF_NRA)
     def test_div_by_0(self):
-        varA = Symbol('A', REAL)
-        varB = Symbol('B', REAL)
+        varA = Symbol("A", REAL)
+        varB = Symbol("B", REAL)
 
-        f = And(Equals(varA, varB),
-                Not(Equals(Div(varA, Real(0)), Div(varB, Real(0)))))
+        f = And(Equals(varA, varB), Not(Equals(Div(varA, Real(0)), Div(varB, Real(0)))))
 
         self.assertUnsat(f)
 

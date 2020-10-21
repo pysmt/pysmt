@@ -38,7 +38,7 @@ from pysmt.shortcuts import And
 def check_validity_and_test(args):
     """Checks expression and compare the outcome against a known value."""
 
-    expr, expected = args # IMPORTANT: Unpack args !!!
+    expr, expected = args  # IMPORTANT: Unpack args !!!
     local_res = is_valid(expr)
     return local_res == expected
 
@@ -56,7 +56,7 @@ res = pool.map(is_sat, f_gen)
 # The result is a list of True/False, in the same order as the input.
 print(res)
 
-sleep(1) # Have some time to look at the result
+sleep(1)  # Have some time to look at the result
 
 # Notice that all shortcuts (is_sat, qelim, etc) require only one
 # mandatory argument. To pass multiple arguments, we need to pack them
@@ -91,11 +91,14 @@ else:
 # to run multiple solvers.
 
 # Create a formula
-big_f = And(f.expr for f in get_example_formulae() \
-            if not f.logic.theory.bit_vectors and \
-               not f.logic.theory.arrays and \
-               not f.logic.theory.strings and \
-                   f.logic.theory.linear)
+big_f = And(
+    f.expr
+    for f in get_example_formulae()
+    if not f.logic.theory.bit_vectors
+    and not f.logic.theory.arrays
+    and not f.logic.theory.strings
+    and f.logic.theory.linear
+)
 
 # Create keyword arguments for the function call.
 # This is the simplest way to pass multiple arguments to apply_async.
@@ -111,7 +114,7 @@ print("This is non-blocking...")
 # See multiprocessing.pool.AsyncResult for more options
 sat_res = future_res_sat.get(10)  # Get result after 10 seconds or kill
 try:
-    unsat_res = future_res_unsat.get(0) # No wait
+    unsat_res = future_res_unsat.get(0)  # No wait
 except TimeoutError:
     print("UNSAT result was not ready!")
     unsat_res = None

@@ -21,6 +21,8 @@ from pysmt.logics import QF_LRA
 from pysmt.test.smtlib.parser_utils import execute_script_fname, smtlib_tests
 
 
-@pytest.mark.parametrize("smtfile, logic, expected_result", smtlib_tests(lambda x: x == QF_LRA))
+@pytest.mark.parametrize(
+    "smtfile, logic, expected_result", smtlib_tests(lambda x: x == QF_LRA)
+)
 def test_qf_lra(smtfile, logic, expected_result):
     execute_script_fname(smtfile, logic, expected_result)

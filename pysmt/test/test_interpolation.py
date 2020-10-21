@@ -30,13 +30,13 @@ class TestInterpolation(TestCase):
         with self.assertRaises(NoSolverAvailableError):
             Interpolator(name="nonexistent")
 
-    @skipIfSolverNotAvailable('msat')
+    @skipIfSolverNotAvailable("msat")
     def test_binary_interpolant_msat(self):
-        self._test_binary_interpolant('msat')
+        self._test_binary_interpolant("msat")
 
-    @skipIfSolverNotAvailable('msat')
+    @skipIfSolverNotAvailable("msat")
     def test_sequence_interpolant_msat(self):
-        self._test_sequence_interpolant('msat')
+        self._test_sequence_interpolant("msat")
 
     def _test_binary_interpolant(self, name):
         itp = Interpolator(name=name)
@@ -50,7 +50,7 @@ class TestInterpolation(TestCase):
         self._real_example(itp, False)
         self._int_example(itp, False)
 
-    @skipIfSolverNotAvailable('msat')
+    @skipIfSolverNotAvailable("msat")
     def test_context(self):
         with Interpolator() as itp:
             self._bool_example(itp, False)
@@ -69,14 +69,13 @@ class TestInterpolation(TestCase):
 
         self.assertTrue(i is not None)
         if not binary:
-            self.assertTrue(hasattr(i, '__len__'))
+            self.assertTrue(hasattr(i, "__len__"))
             self.assertTrue(len(i) == 1)
             i = i[0]
 
         self.assertTrue(i.get_free_variables() == set([y]))
         self.assertValid(Implies(a, i))
         self.assertUnsat(And(i, b))
-
 
     def _real_example(self, itp, binary):
         # Real Example
@@ -92,14 +91,13 @@ class TestInterpolation(TestCase):
 
         self.assertTrue(i is not None)
         if not binary:
-            self.assertTrue(hasattr(i, '__len__'))
+            self.assertTrue(hasattr(i, "__len__"))
             self.assertTrue(len(i) == 1)
             i = i[0]
 
         self.assertTrue(i.get_free_variables() == set([y]))
         self.assertValid(Implies(a, i))
         self.assertUnsat(And(i, b))
-
 
     def _int_example(self, itp, binary):
         # Int Example
@@ -115,7 +113,7 @@ class TestInterpolation(TestCase):
 
         self.assertTrue(i is not None)
         if not binary:
-            self.assertTrue(hasattr(i, '__len__'))
+            self.assertTrue(hasattr(i, "__len__"))
             self.assertTrue(len(i) == 1)
             i = i[0]
 
@@ -124,5 +122,5 @@ class TestInterpolation(TestCase):
         self.assertUnsat(And(i, b))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

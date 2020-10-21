@@ -17,8 +17,16 @@
 #
 import pytest
 
-from pysmt.test.smtlib.parser_utils import execute_script_fname, smtlib_tests, SMTLIB_TEST_FILES, SMTLIB_DIR
+from pysmt.test.smtlib.parser_utils import (
+    execute_script_fname,
+    smtlib_tests,
+    SMTLIB_TEST_FILES,
+    SMTLIB_DIR,
+)
 
-@pytest.mark.parametrize("smtfile, logic, expected_result", smtlib_tests(lambda x: x.theory.arrays))
+
+@pytest.mark.parametrize(
+    "smtfile, logic, expected_result", smtlib_tests(lambda x: x.theory.arrays)
+)
 def test_qf_arrays(smtfile, logic, expected_result):
     execute_script_fname(smtfile, logic, expected_result)

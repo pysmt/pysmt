@@ -40,7 +40,7 @@ f = And(
     # Convert the INT into REAL
     real_var.Equals(ToReal(int_var)),
     # Compare the value stored in the map with the REAL value
-    my_map.Select(bv_var).NotEquals(real_var)
-    )
+    my_map.Select(bv_var).NotEquals(real_var),
+)
 
-print(get_model(f)) # Indeed our range only gets up to 254!!!
+print(get_model(f))  # Indeed our range only gets up to 254!!!

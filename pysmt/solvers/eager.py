@@ -52,13 +52,12 @@ class EagerModel(Model):
         return res
 
     def _complete_model(self, symbols):
-        undefined_symbols = (s for s in symbols
-                             if s not in self.completed_assignment)
+        undefined_symbols = (s for s in symbols if s not in self.completed_assignment)
         mgr = self.environment.formula_manager
 
         for s in undefined_symbols:
             if not s.is_symbol():
-                raise PysmtTypeError("Was expecting a symbol but got %s" %s)
+                raise PysmtTypeError("Was expecting a symbol but got %s" % s)
 
             if s.symbol_type().is_bool_type():
                 value = mgr.Bool(False)
@@ -69,11 +68,9 @@ class EagerModel(Model):
             elif s.symbol_type().is_bv_type():
                 value = mgr.BVZero(s.bv_width())
             else:
-                raise PysmtTypeError("Unhandled type for %s: %s" %
-                                     (s, s.symbol_type()))
+                raise PysmtTypeError("Unhandled type for %s: %s" % (s, s.symbol_type()))
 
             self.completed_assignment[s] = value
-
 
     def iterator_over(self, language):
         for x in language:

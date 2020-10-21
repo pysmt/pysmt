@@ -15,11 +15,25 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from pysmt.shortcuts import (And, Iff, Or, Symbol, Implies, Not,
-                             Exists, ForAll,
-                             Times, Plus, Minus, Equals, Real,
-                             LT,
-                             is_valid, is_sat, Function)
+from pysmt.shortcuts import (
+    And,
+    Iff,
+    Or,
+    Symbol,
+    Implies,
+    Not,
+    Exists,
+    ForAll,
+    Times,
+    Plus,
+    Minus,
+    Equals,
+    Real,
+    LT,
+    is_valid,
+    is_sat,
+    Function,
+)
 from pysmt.test import TestCase, skipIfNoSolverForLogic, main
 from pysmt.rewritings import prenex_normal_form, nnf, conjunctive_partition, aig
 from pysmt.rewritings import disjunctive_partition, propagate_toplevel
@@ -31,9 +45,8 @@ from pysmt.typing import REAL, INT, FunctionType
 
 
 class TestRewritings(TestCase):
-
     def test_prenex_basic(self):
-        a,b,c = (Symbol(x) for x in "abc")
+        a, b, c = (Symbol(x) for x in "abc")
         f = Not(And(a, Exists([b], And(a, b)), ForAll([c], Or(a, c))))
         prenex = prenex_normal_form(f)
         # Two prenex normal forms are possible
@@ -43,7 +56,7 @@ class TestRewritings(TestCase):
 
     @skipIfNoSolverForLogic(BOOL)
     def test_prenex_simple_exists(self):
-        a,b = (Symbol(x) for x in "ab")
+        a, b = (Symbol(x) for x in "ab")
         f = And(b, Exists([b], Implies(a, b)))
         prenex = prenex_normal_form(f)
         self.assertTrue(prenex.is_exists())
@@ -51,7 +64,7 @@ class TestRewritings(TestCase):
 
     @skipIfNoSolverForLogic(BOOL)
     def test_prenex_simple_forall(self):
-        a,b = (Symbol(x) for x in "ab")
+        a, b = (Symbol(x) for x in "ab")
         f = Or(b, ForAll([b], Implies(a, b)))
         prenex = prenex_normal_form(f)
         self.assertTrue(prenex.is_forall())
@@ -59,7 +72,7 @@ class TestRewritings(TestCase):
 
     @skipIfNoSolverForLogic(BOOL)
     def test_prenex_negated_exists(self):
-        a,b = (Symbol(x) for x in "ab")
+        a, b = (Symbol(x) for x in "ab")
         f = Implies(Exists([b], Implies(a, b)), b)
         prenex = prenex_normal_form(f)
         self.assertTrue(prenex.is_forall())
@@ -67,7 +80,7 @@ class TestRewritings(TestCase):
 
     @skipIfNoSolverForLogic(BOOL)
     def test_prenex_negated_forall(self):
-        a,b = (Symbol(x) for x in "ab")
+        a, b = (Symbol(x) for x in "ab")
         f = Implies(ForAll([b], Implies(a, b)), b)
         prenex = prenex_normal_form(f)
         self.assertTrue(prenex.is_exists())
@@ -77,7 +90,7 @@ class TestRewritings(TestCase):
         for (f, _, _, logic) in get_example_formulae():
             if self.env.factory.has_solvers(logic=logic):
                 prenex = prenex_normal_form(f)
-                if ( prenex is not None):
+                if prenex is not None:
                     try:
                         ok = is_valid(Iff(f, prenex), logic=logic)
                     except SolverReturnedUnknownResultError:
@@ -90,8 +103,7 @@ class TestRewritings(TestCase):
         a, b = (Symbol(x, INT) for x in "ab")
         f, g, h = (Symbol(x, FunctionType(INT, [INT])) for x in "fgh")
 
-        formula1 = Not(Equals(f(g(h(a))),
-                              f(g(h(b)))))
+        formula1 = Not(Equals(f(g(h(a))), f(g(h(b)))))
         formula2 = Equals(a, b)
         formula = And(formula1, formula2)
         self._verify_ackermannization(formula)
@@ -101,24 +113,24 @@ class TestRewritings(TestCase):
         self.env.enable_infix_notation = True
         a, b, c, d = (Symbol(x, INT) for x in "abcd")
         f = Symbol("f", FunctionType(INT, [INT]))
-        formula = And(Not(Equals(f(b), f(c))),
-                      Equals(f(a), f(b)),
-                      Equals(f(c), f(d)),
-                      Equals(a, d))
+        formula = And(
+            Not(Equals(f(b), f(c))),
+            Equals(f(a), f(b)),
+            Equals(f(c), f(d)),
+            Equals(a, d),
+        )
         self.assertUnsat(formula)
         formula_ack = Ackermannizer().do_ackermannization(formula)
         self.assertUnsat(formula_ack)
 
-
     @skipIfNoSolverForLogic(QF_AUFLIA)
     def test_ackermannization_explicit(self):
         self.env.enable_infix_notation = True
-        a,b = (Symbol(x, INT) for x in "ab")
-        f,g = (Symbol(x, FunctionType(INT, [INT, INT])) for x in "fg")
+        a, b = (Symbol(x, INT) for x in "ab")
+        f, g = (Symbol(x, FunctionType(INT, [INT, INT])) for x in "fg")
         h = Symbol("h", FunctionType(INT, [INT]))
 
-        formula1 = Not(Equals(f(a, g(a, h(a))),
-                              f(b, g(b, h(b)))))
+        formula1 = Not(Equals(f(a, g(a, h(a))), f(b, g(b, h(b)))))
 
         # Explicit the Ackermanization of this expression We end up
         # with a conjunction of implications that is then conjoined
@@ -136,26 +148,24 @@ class TestRewritings(TestCase):
 
         target_ack = And(
             Equals(a, b).Implies(Equals(ack_h_a, ack_h_b)),
-            And(Equals(a, b),
-                Equals(ack_h_a, ack_h_b)).Implies(
-                    Equals(ack_g_a_h_a, ack_g_b_h_b)),
-            And(Equals(a, b),
-                Equals(ack_h_a, ack_h_b),
-                Equals(ack_g_a_h_a, ack_g_b_h_b)).Implies(
-                    Equals(ack_f_a_g_a_h_a, ack_f_b_g_b_h_b)))
-        target_ack = And(target_ack,
-                         Not(Equals(ack_f_a_g_a_h_a, ack_f_b_g_b_h_b)))
+            And(Equals(a, b), Equals(ack_h_a, ack_h_b)).Implies(
+                Equals(ack_g_a_h_a, ack_g_b_h_b)
+            ),
+            And(
+                Equals(a, b), Equals(ack_h_a, ack_h_b), Equals(ack_g_a_h_a, ack_g_b_h_b)
+            ).Implies(Equals(ack_f_a_g_a_h_a, ack_f_b_g_b_h_b)),
+        )
+        target_ack = And(target_ack, Not(Equals(ack_f_a_g_a_h_a, ack_f_b_g_b_h_b)))
         self.assertValid(target_ack.Iff(actual_ack))
 
     @skipIfNoSolverForLogic(QF_AUFLIA)
     def test_ackermannization_binary(self):
         self.env.enable_infix_notation = True
-        a,b = (Symbol(x, INT) for x in "ab")
-        f,g = (Symbol(x, FunctionType(INT, [INT, INT])) for x in "fg")
+        a, b = (Symbol(x, INT) for x in "ab")
+        f, g = (Symbol(x, FunctionType(INT, [INT, INT])) for x in "fg")
         h = Symbol("h", FunctionType(INT, [INT]))
 
-        formula1 = Not(Equals(f(a, g(a, h(a))),
-                              f(b, g(b, h(b)))))
+        formula1 = Not(Equals(f(a, g(a, h(a))), f(b, g(b, h(b)))))
 
         formula2 = Equals(a, b)
         formula = And(formula1, formula2)
@@ -169,12 +179,11 @@ class TestRewritings(TestCase):
 
     def test_ackermannization_dictionaries(self):
         self.env.enable_infix_notation = True
-        a,b = (Symbol(x, INT) for x in "ab")
-        f,g = (Symbol(x, FunctionType(INT, [INT, INT])) for x in "fg")
+        a, b = (Symbol(x, INT) for x in "ab")
+        f, g = (Symbol(x, FunctionType(INT, [INT, INT])) for x in "fg")
         h = Symbol("h", FunctionType(INT, [INT]))
 
-        formula1 = Not(Equals(f(a, g(a, h(a))),
-                              f(b, g(b, h(b)))))
+        formula1 = Not(Equals(f(a, g(a, h(a))), f(b, g(b, h(b)))))
         formula2 = Equals(a, b)
         formula = And(formula1, formula2)
         ackermannization = Ackermannizer()
@@ -194,12 +203,12 @@ class TestRewritings(TestCase):
     def _verify_ackermannization(self, formula):
         ackermannization = Ackermannizer()
         ack = ackermannization.do_ackermannization(formula)
-        #verify that there are no functions in ack
+        # verify that there are no functions in ack
         atoms = ack.get_atoms()
         for atom in atoms:
             for arg in atom.args():
                 self.assertFalse(arg.is_function_application())
-        #verify that ack and formula are equisat
+        # verify that ack and formula are equisat
         formula_sat = is_sat(formula)
         ack_sat = is_sat(ack)
         self.assertTrue(formula_sat == ack_sat)
@@ -235,7 +244,7 @@ class TestRewritings(TestCase):
                 self.assertTrue(ok)
 
     def test_propagate_toplevel_examples(self):
-       for (f, _, _, logic) in get_example_formulae():
+        for (f, _, _, logic) in get_example_formulae():
             if self.env.factory.has_solvers(logic=logic):
                 rwf = propagate_toplevel(f)
                 try:
@@ -257,7 +266,7 @@ class TestRewritings(TestCase):
             except SolverReturnedUnknownResultError:
                 ok = not logic.quantifier_free
             self.assertTrue(ok)
-        
+
         f = And(LT(Real(4), Times(x, x)), Equals(y, x), Equals(y, Real(1)))
         fp = propagate_toplevel(f)
         self.assertTrue(fp.is_false())
@@ -327,25 +336,25 @@ class TestRewritings(TestCase):
         # (r + 1) * (s-1) = r*s + (-r) + s - 1
         f = Times(Plus(r, Real(1)), Minus(s, Real(1)))
         fp = td.walk(f).simplify()
-        target = Plus(Times(r, s),
-                      Times(r, Real(-1)),
-                      s,
-                      Real(-1))
+        target = Plus(Times(r, s), Times(r, Real(-1)), s, Real(-1))
         self.assertValid(Equals(fp, target), fp)
         self.assertTrue(fp.is_plus(), fp)
 
     @skipIfNoSolverForLogic(QF_NRA)
     def test_times_distributivity_smtlib_nra(self):
         from pysmt.test.smtlib.parser_utils import formulas_from_smtlib_test_set
+
         test_set = formulas_from_smtlib_test_set(logics=[QF_LRA, QF_NRA])
         for (_, fname, f, _) in test_set:
             td = TimesDistributor()
             _ = td.walk(f)
             for (old, new) in td.memoization.items():
-                if not old.is_times(): continue
-                if old is new: continue # Nothing changed
-                self.assertValid(Equals(old, new),
-                                 (old, new), solver_name="z3")
+                if not old.is_times():
+                    continue
+                if old is new:
+                    continue  # Nothing changed
+                self.assertValid(Equals(old, new), (old, new), solver_name="z3")
+
 
 if __name__ == "__main__":
     main()

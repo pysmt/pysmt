@@ -14,10 +14,10 @@ from pysmt.typing import BV16
 x = Symbol("x", BV16)
 y = Symbol("y", BV16)
 
-r1 = y + x            # add   r1,ry,rx
-r2 = y & x            # and   r2,ry,rx
-r3 = r2 * SBV(-2, 16) # mul   r3,r2,-2
-r4 = r3 + r1          # add   r4,r3,r1
+r1 = y + x  # add   r1,ry,rx
+r2 = y & x  # and   r2,ry,rx
+r3 = r2 * SBV(-2, 16)  # mul   r3,r2,-2
+r4 = r3 + r1  # add   r4,r3,r1
 
 # x xor y == r4
 real_xor = x ^ y

@@ -45,8 +45,15 @@ class SolverInstaller(object):
 
     SOLVER = None
 
-    def __init__(self, install_dir, bindings_dir, solver_version,
-                 archive_name=None, native_link=None, mirror_link=None):
+    def __init__(
+        self,
+        install_dir,
+        bindings_dir,
+        solver_version,
+        archive_name=None,
+        native_link=None,
+        mirror_link=None,
+    ):
         self.bindings_dir = bindings_dir
         self.install_dir = install_dir
         self.solver_version = solver_version
@@ -63,11 +70,11 @@ class SolverInstaller(object):
         if self.archive_name is not None:
             self.archive_path = os.path.join(self.base_dir, self.archive_name)
             if self.archive_path.endswith(".tar.gz"):
-                self.extract_path = self.archive_path[:-7] # get rid of '.tar.gz'
+                self.extract_path = self.archive_path[:-7]  # get rid of '.tar.gz'
             elif self.archive_path.endswith(".tar.bz2"):
-                self.extract_path = self.archive_path[:-8] # get rid of '.tar.bz2'
+                self.extract_path = self.archive_path[:-8]  # get rid of '.tar.bz2'
             elif self.archive_path.endswith(".zip"):
-                self.extract_path = self.archive_path[:-4] # get rid of '.zip'
+                self.extract_path = self.archive_path[:-4]  # get rid of '.zip'
             else:
                 self.extract_path = None
         else:
@@ -95,9 +102,13 @@ class SolverInstaller(object):
 
     def download_links(self):
         if self.mirror_link is not None:
-            yield self.mirror_link.format(archive_name=self.archive_name, solver_version=self.solver_version)
+            yield self.mirror_link.format(
+                archive_name=self.archive_name, solver_version=self.solver_version
+            )
         if self.native_link is not None:
-            yield self.native_link.format(archive_name=self.archive_name, solver_version=self.solver_version)
+            yield self.native_link.format(
+                archive_name=self.archive_name, solver_version=self.solver_version
+            )
 
     def download(self):
         """Downloads the archive from one of the mirrors"""
@@ -109,11 +120,15 @@ class SolverInstaller(object):
                     except HTTPError as e:
                         if e.code != 404:
                             raise
-                        print("HTTP 404 while trying to get the archive using link" \
-                              " '%s' (trial %d/%d)" % (link, turn+1, self.trials_404))
+                        print(
+                            "HTTP 404 while trying to get the archive using link"
+                            " '%s' (trial %d/%d)" % (link, turn + 1, self.trials_404)
+                        )
                     except URLError as e:
-                        print("Error while trying to get the archive using link" \
-                              " '%s' (trial %d/%d)" % (link, turn+1, self.trials_404))
+                        print(
+                            "Error while trying to get the archive using link"
+                            " '%s' (trial %d/%d)" % (link, turn + 1, self.trials_404)
+                        )
                         raise e
 
     def unpack(self):
@@ -122,7 +137,7 @@ class SolverInstaller(object):
         if path.endswith(".zip"):
             SolverInstaller.unzip(path, directory=self.base_dir)
         elif path.endswith(".tar.bz2"):
-            SolverInstaller.untar(path, directory=self.base_dir, mode='r:bz2')
+            SolverInstaller.untar(path, directory=self.base_dir, mode="r:bz2")
         elif path.endswith(".tar.gz"):
             SolverInstaller.untar(path, directory=self.base_dir)
         else:
@@ -164,7 +179,7 @@ class SolverInstaller(object):
     def do_download(url, file_name):
         """Downloads the given url into the given file name"""
         u = six.moves.urllib.request.urlopen(url)
-        f = open(file_name, 'wb')
+        f = open(file_name, "wb")
         meta = u.info()
         if meta.get("Content-Length") and len(meta.get("Content-Length")) > 0:
             file_size = int(meta.get("Content-Length"))
@@ -178,12 +193,15 @@ class SolverInstaller(object):
                 break
 
             f.write(buff)
-            if meta.get("Content-Length") and len(meta.get("Content-Length")) > 0 \
-               and sys.stdout.isatty():
+            if (
+                meta.get("Content-Length")
+                and len(meta.get("Content-Length")) > 0
+                and sys.stdout.isatty()
+            ):
                 count += len(buff)
                 perc = (float(count) / float(file_size)) * 100.0
                 str_perc = "%.1f%%" % perc
-                sys.stdout.write('\r')
+                sys.stdout.write("\r")
                 sys.stdout.write(str_perc)
                 sys.stdout.write(" " * (10 - len(str_perc)))
 
@@ -194,44 +212,47 @@ class SolverInstaller(object):
     @staticmethod
     def run_python(script, directory=None, env_variables=None, get_output=False):
         """Executes a python script"""
-        interpreter = 'python'
+        interpreter = "python"
         if sys.executable:
             interpreter = sys.executable
 
-        cmd = '{interpreter} {script}'.format(interpreter=interpreter,
-                                              script=script)
-        return SolverInstaller.run(cmd, directory=directory,
-                                   env_variables=env_variables,
-                                   get_output=get_output)
+        cmd = "{interpreter} {script}".format(interpreter=interpreter, script=script)
+        return SolverInstaller.run(
+            cmd, directory=directory, env_variables=env_variables, get_output=get_output
+        )
 
     @staticmethod
-    def run(program, directory=None, env_variables=None, get_output=False,
-            suppress_stderr=False):
+    def run(
+        program,
+        directory=None,
+        env_variables=None,
+        get_output=False,
+        suppress_stderr=False,
+    ):
         """Executes an arbitrary program"""
         environment = os.environ.copy()
         if env_variables is not None:
-            for k,v in six.iteritems(env_variables):
+            for k, v in six.iteritems(env_variables):
                 environment[k] = v
 
         stderr = None
         if suppress_stderr:
-            stderr = open(os.devnull, 'w')
+            stderr = open(os.devnull, "w")
         if isinstance(program, str):
             program = program.split()
         if get_output:
-            output = subprocess.check_output(program,
-                                             env=environment,
-                                             cwd=directory,
-                                             stderr=stderr)
+            output = subprocess.check_output(
+                program, env=environment, cwd=directory, stderr=stderr
+            )
             if suppress_stderr:
                 stderr.close()
             return output.decode("ascii")
         else:
-            subprocess.check_call(program, env=environment,
-                                  cwd=directory, stderr=stderr)
+            subprocess.check_call(
+                program, env=environment, cwd=directory, stderr=stderr
+            )
             if suppress_stderr:
                 stderr.close()
-
 
     @staticmethod
     def clean_dir(path):
@@ -262,7 +283,7 @@ class SolverInstaller(object):
             os.unlink(source)
 
     @staticmethod
-    def untar(fname, directory, mode='r:gz'):
+    def untar(fname, directory, mode="r:gz"):
         """Extracts the tarfile using the specified mode in the given directory."""
         tfile = tarfile.open(fname, mode)
         tfile.extractall(directory)
@@ -275,10 +296,9 @@ class SolverInstaller(object):
         myzip.close()
 
     def get_installed_version_script(self, bindings_dir, package):
-        check_version_script = os.path.abspath(os.path.join(
-                                 os.path.dirname(__file__),
-                                 "..",
-                                 "check_version.py"))
+        check_version_script = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "..", "check_version.py")
+        )
         env = {}
         for k in ["LD_LIBRARY_PATH", "PATH", "PYTHONPATH"]:
             if k in os.environ:
@@ -287,9 +307,11 @@ class SolverInstaller(object):
                 env[k] = bindings_dir
 
         try:
-            output = self.run_python("%s %s" % (check_version_script, package),
-                                     env_variables=env,
-                                     get_output=True)
+            output = self.run_python(
+                "%s %s" % (check_version_script, package),
+                env_variables=env,
+                get_output=True,
+            )
             output = output.strip()
         except Exception as ex:
             print("Error while checking %s" % package)
@@ -299,10 +321,9 @@ class SolverInstaller(object):
             return None
         return output
 
-
     def find_python_config(self):
-        command_tplate = 'python%s-config'
-        alternatives = [self.python_version, '']
+        command_tplate = "python%s-config"
+        alternatives = [self.python_version, ""]
         command = None
         for alt in alternatives:
             name = command_tplate % alt
@@ -312,7 +333,7 @@ class SolverInstaller(object):
         return command
 
 
-def package_install_site(name='', user=False, plat_specific=False):
+def package_install_site(name="", user=False, plat_specific=False):
     """pip-inspired, distutils-based method for fetching the
     default install location (site-packages path).
 
@@ -325,9 +346,9 @@ def package_install_site(name='', user=False, plat_specific=False):
     to retrieve the former.
     """
 
-    dist = Distribution({'name': name})
+    dist = Distribution({"name": name})
     dist.parse_config_files()
-    inst = dist.get_command_obj('install', create=True)
+    inst = dist.get_command_obj("install", create=True)
     # NOTE: specifying user=True will create user-site
     if user:
         inst.user = user
@@ -341,7 +362,7 @@ def package_install_site(name='', user=False, plat_specific=False):
         loc = inst.install_purelib
 
     # install_lib specified in setup.cfg has highest precedence
-    if 'install_lib' in dist.get_option_dict('install'):
+    if "install_lib" in dist.get_option_dict("install"):
         loc = inst.install_lib
 
     return loc
@@ -354,7 +375,7 @@ def running_under_virtualenv():
     Note: copied from pip.
     """
 
-    if hasattr(sys, 'real_prefix'):
+    if hasattr(sys, "real_prefix"):
         return True
     elif sys.prefix != getattr(sys, "base_prefix", sys.prefix):
         return True

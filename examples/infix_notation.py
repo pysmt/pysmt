@@ -20,7 +20,7 @@ from pysmt.typing import INT
 
 hello = [Symbol(s, INT) for s in "hello"]
 world = [Symbol(s, INT) for s in "world"]
-letters = set(hello+world)
+letters = set(hello + world)
 
 # Infix notation for Theory atoms does the overloading of python
 # operator. For boolean connectors, we use e.g., x.And(y) This
@@ -30,8 +30,8 @@ letters = set(hello+world)
 # Note how you can mix prefix and infix notation.
 domains = And([(Int(1) <= l).And(Int(10) >= l) for l in letters])
 
-sum_hello = Plus(hello) # n-ary operators can take lists
-sum_world = Plus(world) # as arguments
+sum_hello = Plus(hello)  # n-ary operators can take lists
+sum_world = Plus(world)  # as arguments
 problem = (sum_hello.Equals(sum_world)).And(sum_hello.Equals(Int(25)))
 formula = domains.And(problem)
 
@@ -44,6 +44,6 @@ with Solver() as solver:
     solver.add_assertion(formula)
     if solver.solve():
         for l in letters:
-            print("%s = %s" %(l, solver.get_value(l)))
+            print("%s = %s" % (l, solver.get_value(l)))
     else:
         print("No solution found")

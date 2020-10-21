@@ -11,7 +11,6 @@ from sudoku import Sudoku
 
 
 class GridWindow(Gtk.Window):
-
     def __init__(self, size=3):
         Gtk.Window.__init__(self, title="Sudoku Example")
 
@@ -21,16 +20,17 @@ class GridWindow(Gtk.Window):
         self.sudoku = Sudoku(size)
 
         # Draw the window
-        self.table = [[Gtk.Entry() for _ in xrange(size**2)]
-                                   for _ in xrange(size**2)]
+        self.table = [
+            [Gtk.Entry() for _ in xrange(size ** 2)] for _ in xrange(size ** 2)
+        ]
         vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.add(vbox)
 
         grid = Gtk.Grid()
         vbox.add(grid)
 
-        for row,lst in enumerate(self.table):
-            for col,entry in enumerate(lst):
+        for row, lst in enumerate(self.table):
+            for col, entry in enumerate(lst):
                 entry.set_max_length(3)
                 entry.set_hexpand(True)
                 entry.set_vexpand(True)
@@ -47,18 +47,15 @@ class GridWindow(Gtk.Window):
         vbox.add(self.clear_button)
         self.clear_button.connect("clicked", self.clear)
 
-
-    def clear(self, c): # pylint: disable=unused-argument
+    def clear(self, c):  # pylint: disable=unused-argument
         """Reset the view emptying all cells"""
         for lst in self.table:
             for entry in lst:
                 entry.set_text("")
 
-
     def solve(self, c):
         """Solve the problem using the currently-entered values"""
-        sq_size = self.size**2
-
+        sq_size = self.size ** 2
 
         # First, we compute the user constraints to feed into the Sudoku solver
         constraints = []
@@ -84,13 +81,15 @@ class GridWindow(Gtk.Window):
 
         else:
             # The problem is unsolvable, show a message
-            dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.INFO,
-                                       Gtk.ButtonsType.OK,
-                                       "The problem is unsolvable!")
+            dialog = Gtk.MessageDialog(
+                self,
+                0,
+                Gtk.MessageType.INFO,
+                Gtk.ButtonsType.OK,
+                "The problem is unsolvable!",
+            )
             dialog.run()
             dialog.destroy()
-
-
 
 
 def main():

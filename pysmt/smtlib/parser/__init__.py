@@ -18,6 +18,7 @@
 import os
 
 from pysmt.exceptions import PysmtImportError
+
 #
 # Try to import the Cython version of the parser.
 # Fall-back on the pure-python version if:
@@ -32,6 +33,7 @@ if ENV_USE_CYTHON is not None:
 HAS_CYTHON = False
 try:
     import pyximport
+
     HAS_CYTHON = True
 except ImportError as ex:
     if ENV_USE_CYTHON:
@@ -81,14 +83,14 @@ else:
     # cython version is by the so_path that targets .pyxbld .
     #
     import imp
+
     pyx = pyximport.install()
     pyximport.uninstall(*pyx)
-    build_dir = os.path.join(os.path.expanduser('~'), '.pyxbld')
+    build_dir = os.path.join(os.path.expanduser("~"), ".pyxbld")
     path = os.path.join(os.path.dirname(__file__), "parser.py")
-    name="pysmt.smtlib.parser.parser"
+    name = "pysmt.smtlib.parser.parser"
 
-    so_path = pyximport.build_module(name, path,
-                                     pyxbuild_dir=build_dir)
+    so_path = pyximport.build_module(name, path, pyxbuild_dir=build_dir)
     mod = imp.load_dynamic(name, so_path)
     assert mod.__file__ == so_path, (mod.__file__, so_path)
     # print(so_path)
@@ -121,4 +123,5 @@ if __name__ == "__main__":
         print("Done")
         if out is not None:
             res.to_file(out, daggify=True)
+
     main()

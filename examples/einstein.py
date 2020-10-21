@@ -36,8 +36,7 @@
 #
 # The question is: who owns the fish?
 
-from pysmt.shortcuts import (Symbol, ExactlyOne, Or, And, FALSE, TRUE,
-                             Iff, Implies)
+from pysmt.shortcuts import Symbol, ExactlyOne, Or, And, FALSE, TRUE, Iff, Implies
 from pysmt.shortcuts import get_model, get_unsat_core, is_sat, is_unsat
 
 #
@@ -45,10 +44,10 @@ from pysmt.shortcuts import get_model, get_unsat_core, is_sat, is_unsat
 
 Color = "white", "yellow", "blue", "red", "green"
 Nat = "german", "swedish", "british", "norwegian", "danish"
-Pet =  "birds", "cats", "horses", "fish", "dogs"
+Pet = "birds", "cats", "horses", "fish", "dogs"
 Drink = "beer", "water", "tea", "milk", "coffee"
 Smoke = "blends", "pall_mall", "prince", "bluemasters", "dunhill"
-Houses = range(0,5)
+Houses = range(0, 5)
 #
 # We number the houses from 0 to 4, and create the macros to assert
 # properties of the i-th house:
@@ -64,11 +63,13 @@ def color(number, name):
         return Symbol("%d_color_%s" % (number, name))
     return FALSE()
 
+
 def nat(number, name):
     assert name in Nat
     if number in Houses:
         return Symbol("%d_nat_%s" % (number, name))
     return FALSE()
+
 
 def pet(number, name):
     assert name in Pet
@@ -76,11 +77,13 @@ def pet(number, name):
         return Symbol("%d_pet_%s" % (number, name))
     return FALSE()
 
+
 def drink(number, name):
     assert name in Drink
     if number in Houses:
         return Symbol("%d_drink_%s" % (number, name))
     return FALSE()
+
 
 def smoke(number, name):
     assert name in Smoke
@@ -88,60 +91,63 @@ def smoke(number, name):
         return Symbol("%d_smoke_%s" % (number, name))
     return FALSE()
 
+
 #
 # We can encode the facts
 #
 
 facts = TRUE()
 for i in Houses:
-    facts = (facts &
+    facts = (
+        facts
+        &
         # The Brit lives in the red house.
-        nat(i, "british").Iff(color(i, "red")) &
-
+        nat(i, "british").Iff(color(i, "red"))
+        &
         # The Swede keeps dogs as pets.
-        nat(i, "swedish").Iff(pet(i, "dogs")) &
-
+        nat(i, "swedish").Iff(pet(i, "dogs"))
+        &
         # The Dane drinks tea.
-        nat(i, "danish").Iff(drink(i, "tea")) &
-
+        nat(i, "danish").Iff(drink(i, "tea"))
+        &
         # The green house is on the immediate left of the white house.
-        color(i, "green").Iff(color(i+1, "white")) &
-
+        color(i, "green").Iff(color(i + 1, "white"))
+        &
         # The green house owner drinks coffee.
-        color(i, "green").Iff(drink(i, "coffee")) &
-
+        color(i, "green").Iff(drink(i, "coffee"))
+        &
         # The owner who smokes Pall Mall rears birds.
-        smoke(i, "pall_mall").Iff(pet(i, "birds")) &
-
+        smoke(i, "pall_mall").Iff(pet(i, "birds"))
+        &
         # The owner of the yellow house smokes Dunhill.
-        color(i, "yellow").Iff(smoke(i, "dunhill")) &
-
+        color(i, "yellow").Iff(smoke(i, "dunhill"))
+        &
         # The owner who smokes Bluemasters drinks beer.
-        smoke(i, "bluemasters").Iff(drink(i, "beer")) &
-
+        smoke(i, "bluemasters").Iff(drink(i, "beer"))
+        &
         # The German smokes Prince.
-        nat(i, "german").Iff(smoke(i, "prince")) &
-
+        nat(i, "german").Iff(smoke(i, "prince"))
+        &
         # The owner who smokes Blends lives next to the one who keeps cats.
-        smoke(i, "blends").Implies(pet(i-1, "cats") | pet(i+1, "cats")) &
-
+        smoke(i, "blends").Implies(pet(i - 1, "cats") | pet(i + 1, "cats"))
+        &
         # The owner who keeps the horse lives next to the one who smokes Dunhill.
-        pet(i, "horses").Implies(smoke(i-1, "dunhill") | smoke(i+1, "dunhill")) &
-
+        pet(i, "horses").Implies(smoke(i - 1, "dunhill") | smoke(i + 1, "dunhill"))
+        &
         # The Norwegian lives next to the blue house.
         # Carefull with this one!
-        nat(i, "norwegian").Iff(color(i-1, "blue") | color(i+1, "blue")) &
-
+        nat(i, "norwegian").Iff(color(i - 1, "blue") | color(i + 1, "blue"))
+        &
         # The owner who smokes Blends lives next to the one who drinks water.
-        smoke(i, "blends").Implies(drink(i-1, "water") | drink(i+1, "water"))
+        smoke(i, "blends").Implies(drink(i - 1, "water") | drink(i + 1, "water"))
     )
 
-facts = And(facts,
-            # The owner living in the center house drinks milk.
-            drink(2, "milk"),
-
-            # The Norwegian lives in the first house.
-            nat(0, "norwegian")
+facts = And(
+    facts,
+    # The owner living in the center house drinks milk.
+    drink(2, "milk"),
+    # The Norwegian lives in the first house.
+    nat(0, "norwegian"),
 )
 
 
@@ -157,7 +163,7 @@ domain = And(
     And(ExactlyOne(pet(i, c) for c in Pet) for i in Houses),
     And(ExactlyOne(drink(i, c) for c in Drink) for i in Houses),
     And(ExactlyOne(smoke(i, c) for c in Smoke) for i in Houses),
-    )
+)
 
 problem = domain.And(facts)
 
@@ -179,6 +185,7 @@ if model is None:
     # structure, i.e., a list of conjuncts.
     #
     from pysmt.rewritings import conjunctive_partition
+
     conj = conjunctive_partition(problem)
     ucore = get_unsat_core(conj)
     print("UNSAT-Core size '%d'" % len(ucore))

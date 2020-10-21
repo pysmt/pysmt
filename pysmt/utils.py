@@ -31,8 +31,10 @@ def powerset(elements):
 
     E.g., powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)
     """
-    return itertools.chain.from_iterable(itertools.combinations(elements, r)
-                                         for r in range(len(elements)+1))
+    return itertools.chain.from_iterable(
+        itertools.combinations(elements, r) for r in range(len(elements) + 1)
+    )
+
 
 #
 # Bit Operations
@@ -49,14 +51,15 @@ def set_bit(v, index, x):
 
 def twos_complement(val, bits):
     """Retuns the 2-complemented value of val assuming bits word width"""
-    if (val & (1 << (bits - 1))) != 0: # if sign bit is set
-        val = val - (2 ** bits)        # compute negative value
+    if (val & (1 << (bits - 1))) != 0:  # if sign bit is set
+        val = val - (2 ** bits)  # compute negative value
     return val
 
 
 #
 # Python Compatibility Functions
 #
+
 
 def interactive_char_iterator(handle):
     c = handle.read(1)
@@ -68,10 +71,13 @@ def interactive_char_iterator(handle):
 #
 # Symbol (un)quoting
 #
-_simple_symbol_prog = re.compile(r"^[~!@\$%\^&\*_\-+=<>\.\?\/A-Za-z][~!@\$%\^&\*_\-+=<>\.\?\/A-Za-z0-9]*$")
+_simple_symbol_prog = re.compile(
+    r"^[~!@\$%\^&\*_\-+=<>\.\?\/A-Za-z][~!@\$%\^&\*_\-+=<>\.\?\/A-Za-z0-9]*$"
+)
 _keywords = set(["Int", "Real", "Bool"])
 
-def quote(name, style='|'):
+
+def quote(name, style="|"):
     if name in _keywords or _simple_symbol_prog.match(name) is None:
         name = name.replace("\\", "\\\\").replace("%s" % style, "\\%s" % style)
         return "%s%s%s" % (style, name, style)
@@ -83,6 +89,7 @@ def open_(fname):
     """Transparently handle .bz2 files."""
     if fname.endswith(".bz2"):
         import bz2
+
         if PY2:
             return bz2.BZ2File(fname, "r")
         else:

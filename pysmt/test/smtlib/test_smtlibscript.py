@@ -29,13 +29,10 @@ from pysmt.logics import QF_UFLIRA
 from pysmt.exceptions import UndefinedLogicError, PysmtValueError
 
 
-
 class TestSmtLibScript(TestCase):
-
     def test_basic_operations(self):
         script = SmtLibScript()
-        script.add(name=smtcmd.SET_LOGIC,
-                   args=[None])
+        script.add(name=smtcmd.SET_LOGIC, args=[None])
 
         self.assertIsNotNone(SmtLibScript())
         self.assertTrue(len(script) > 0)
@@ -55,19 +52,23 @@ class TestSmtLibScript(TestCase):
         res = script.filter_by_command_name([smtcmd.SET_LOGIC])
         self.assertEqual(len(list(res)), 1)
 
-
     def test_declare_sort(self):
         class SmtLibIgnore(SmtLibIgnoreMixin):
             declare_sort_history = []
+
             def declare_sort(self, name, arity):
                 self.declare_sort_history.append((name, arity))
 
         mock = SmtLibIgnore()
         parser = SmtLibParser()
-        smtlib_script = '\n'.join(['(declare-sort s0 0)', \
-                                   '(declare-sort s1 1)', \
-                                   '(declare-const c0 s0)', \
-                                   '(declare-const c1 (s1 Int))'])
+        smtlib_script = "\n".join(
+            [
+                "(declare-sort s0 0)",
+                "(declare-sort s1 1)",
+                "(declare-const c0 s0)",
+                "(declare-const c1 (s1 Int))",
+            ]
+        )
         outstream = cStringIO(smtlib_script)
         script = parser.get_script(outstream)
         script.evaluate(solver=mock)
@@ -79,7 +80,6 @@ class TestSmtLibScript(TestCase):
         self.assertEqual(s0_arity, 0)
         self.assertEqual(s1_name, "s1")
         self.assertEqual(s1_arity, 1)
-
 
     def test_from_formula(self):
         x, y = Symbol("x"), Symbol("y")
@@ -113,7 +113,6 @@ class TestSmtLibScript(TestCase):
         with self.assertRaises(UndefinedLogicError):
             smtlibscript_from_formula(f, logic=4)
 
-
     def test_get_strict_formula(self):
 
         smtlib_single = """
@@ -125,10 +124,13 @@ class TestSmtLibScript(TestCase):
 (assert x)
 (check-sat)
 """
-        smtlib_double = smtlib_single + """
+        smtlib_double = (
+            smtlib_single
+            + """
 (assert (not y))
 (check-sat)
 """
+        )
 
         r = Symbol("r", REAL)
         x, y = Symbol("x"), Symbol("y")
@@ -147,54 +149,56 @@ class TestSmtLibScript(TestCase):
         with self.assertRaises(PysmtValueError):
             f = get_formula_strict(stream_in)
 
-
     def test_define_funs_same_args(self):
         # n is defined once as an Int and once as a Real
-        smtlib_script = "\n".join(['(define-fun f ((n Int)) Int n)', '(define-fun f ((n Real)) Real n)'])
+        smtlib_script = "\n".join(
+            ["(define-fun f ((n Int)) Int n)", "(define-fun f ((n Real)) Real n)"]
+        )
         stream = cStringIO(smtlib_script)
         parser = SmtLibParser()
         _ = parser.get_script(stream)
         # No exceptions are thrown
         self.assertTrue(True)
-
 
     def test_define_funs_arg_and_fun(self):
-        smtlib_script = "\n".join(['(define-fun f ((n Int)) Int n)', '(declare-fun n () Real)'])
+        smtlib_script = "\n".join(
+            ["(define-fun f ((n Int)) Int n)", "(declare-fun n () Real)"]
+        )
         stream = cStringIO(smtlib_script)
         parser = SmtLibParser()
         _ = parser.get_script(stream)
         # No exceptions are thrown
         self.assertTrue(True)
-
 
     def test_evaluate_command(self):
         class SmtLibIgnore(SmtLibIgnoreMixin):
             pass
 
         mock = SmtLibIgnore()
-        for cmd_name in [ smtcmd.SET_INFO,
-                          smtcmd.ASSERT,
-                          smtcmd.CHECK_SAT,
-                          smtcmd.EXIT,
-                          smtcmd.SET_LOGIC,
-                          smtcmd.DECLARE_CONST,
-                          smtcmd.PUSH,
-                          smtcmd.POP]:
+        for cmd_name in [
+            smtcmd.SET_INFO,
+            smtcmd.ASSERT,
+            smtcmd.CHECK_SAT,
+            smtcmd.EXIT,
+            smtcmd.SET_LOGIC,
+            smtcmd.DECLARE_CONST,
+            smtcmd.PUSH,
+            smtcmd.POP,
+        ]:
 
-            evaluate_command(SmtLibCommand(cmd_name, [None, None]),
-                             solver=mock)
+            evaluate_command(SmtLibCommand(cmd_name, [None, None]), solver=mock)
 
-        evaluate_command(SmtLibCommand(smtcmd.DECLARE_FUN,
-                                       [None, None, None]),
-                         solver=mock)
+        evaluate_command(
+            SmtLibCommand(smtcmd.DECLARE_FUN, [None, None, None]), solver=mock
+        )
 
-        evaluate_command(SmtLibCommand(smtcmd.DEFINE_FUN,
-                                       [None, None, None, None]),
-                         solver=mock)
-
+        evaluate_command(
+            SmtLibCommand(smtcmd.DEFINE_FUN, [None, None, None, None]), solver=mock
+        )
 
     def test_smtlibignore_mixin(self):
         """In SmtLibIgnoreMixin, all SMT-LIB methods return None."""
+
         class SmtLibIgnore(SmtLibIgnoreMixin):
             pass
 
@@ -233,58 +237,60 @@ class TestSmtLibScript(TestCase):
         # There are currently 3 not-implemented commands
         self.assertEqual(nie, 3)
 
-DEMO_SMTSCRIPT = [ "(declare-fun a () Bool)",
-                   "(declare-fun b () Bool)",
-                   "(declare-fun c () Bool)",
-                   "(assert true)",
-                   "(assert (not a))",
-                   "(check-sat)",
-                   "(check-sat-assuming (a b c))",
-                   "(check-sat-assuming ((not a) b (not c)))",
-                   "(declare-const d Bool)",
-                   "(declare-fun abc () Int)",
-                   "(declare-sort A 0)",
-                   "(declare-sort B 0)",
-                   "(declare-sort C 0)",
-                   "(declare-sort D 1)",
-                   "(define-sort E () (D Int))",
-                   "(declare-sort F 2)",
-                   "(define-sort G (H) (F Int H))",
-                   "(define-fun f ((a Bool)) B a)",
-                   "(define-fun g ((a Bool)) B (f a))",
-                   "(define-fun h ((a Int)) Int a)",
-                   "(declare-const x Bool)",
-                   "(declare-const y Int)",
-                   "(assert (= (h y) y))",
-                   "(assert (= (f x) x))",
-                   "(check-sat)",
-                   "(define-fun-rec f ((a A)) B a)",
-                   "(define-fun-rec g ((a A)) B (g a))",
-                   """(define-funs-rec ((h ((a A)) B) (i ((a A)) B) )
+
+DEMO_SMTSCRIPT = [
+    "(declare-fun a () Bool)",
+    "(declare-fun b () Bool)",
+    "(declare-fun c () Bool)",
+    "(assert true)",
+    "(assert (not a))",
+    "(check-sat)",
+    "(check-sat-assuming (a b c))",
+    "(check-sat-assuming ((not a) b (not c)))",
+    "(declare-const d Bool)",
+    "(declare-fun abc () Int)",
+    "(declare-sort A 0)",
+    "(declare-sort B 0)",
+    "(declare-sort C 0)",
+    "(declare-sort D 1)",
+    "(define-sort E () (D Int))",
+    "(declare-sort F 2)",
+    "(define-sort G (H) (F Int H))",
+    "(define-fun f ((a Bool)) B a)",
+    "(define-fun g ((a Bool)) B (f a))",
+    "(define-fun h ((a Int)) Int a)",
+    "(declare-const x Bool)",
+    "(declare-const y Int)",
+    "(assert (= (h y) y))",
+    "(assert (= (f x) x))",
+    "(check-sat)",
+    "(define-fun-rec f ((a A)) B a)",
+    "(define-fun-rec g ((a A)) B (g a))",
+    """(define-funs-rec ((h ((a A)) B) (i ((a A)) B) )
                                        ( (i a) (h a))
                    )
                    """,
-                   "(define-sort A () B)",
-                   "(define-sort A (B C) (Array B C))",
-                   "(echo \"hello world\")",
-                   "(exit)",
-                   "(get-assertions)",
-                   "(get-assignment)",
-                   "(get-info :name)",
-                   "(get-model)",
-                   "(get-option :keyword)",
-                   "(get-proof)",
-                   "(get-unsat-assumptions)",
-                   "(get-unsat-core)",
-                   "(get-value (x y z))",
-                   "(pop 42)",
-                   "(push 42)",
-                   "(reset)",
-                   "(reset-assertions)",
-                   "(set-info :number 42)",
-                   "(set-logic QF_LIA)",
-                   "(set-option :produce-models true)",
-               ]
+    "(define-sort A () B)",
+    "(define-sort A (B C) (Array B C))",
+    '(echo "hello world")',
+    "(exit)",
+    "(get-assertions)",
+    "(get-assignment)",
+    "(get-info :name)",
+    "(get-model)",
+    "(get-option :keyword)",
+    "(get-proof)",
+    "(get-unsat-assumptions)",
+    "(get-unsat-core)",
+    "(get-value (x y z))",
+    "(pop 42)",
+    "(push 42)",
+    "(reset)",
+    "(reset-assertions)",
+    "(set-info :number 42)",
+    "(set-logic QF_LIA)",
+    "(set-option :produce-models true)",
+]
 
 if __name__ == "__main__":
     main()

@@ -22,8 +22,8 @@ from pysmt.test import TestCase, skipIfNoSolverForLogic, main
 from pysmt.logics import QF_UFLIRA, QF_LRA, QF_BOOL
 from pysmt.solvers.eager import EagerModel
 
-class TestModels(TestCase):
 
+class TestModels(TestCase):
     @skipIfNoSolverForLogic(QF_LRA)
     def test_get_model(self):
         varA = Symbol("A", BOOL)
@@ -54,12 +54,11 @@ class TestModels(TestCase):
             model = s.get_model()
             self.assertTrue(model.get_py_value(varA))
 
-
     @skipIfNoSolverForLogic(QF_BOOL)
     def test_eager_model_iterator(self):
         x, y, z = [Symbol(s) for s in "xyz"]
         with Solver(logic=QF_BOOL) as s:
-            s.add_assertion(And(x,y))
+            s.add_assertion(And(x, y))
             assert s.solve()
             d = {}
             d[x] = s.get_value(x)
@@ -67,7 +66,7 @@ class TestModels(TestCase):
         m = EagerModel(assignment=d)
 
         # The model does not talk about 'z'
-        for (k,_) in m:
+        for (k, _) in m:
             self.assertFalse(k == z)
 
     @skipIfNoSolverForLogic(QF_BOOL)
@@ -76,10 +75,11 @@ class TestModels(TestCase):
 
         x, y = Symbol("x"), Symbol("y")
         with Solver(logic=QF_BOOL) as s:
-            s.add_assertion(And(x,y))
+            s.add_assertion(And(x, y))
             assert s.solve()
             model = list(s.get_model())
             self.assertIsNotNone(pickle.dumps(model, -1))
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

@@ -41,16 +41,17 @@ class Environment(object):
     of classes for the different services, by changing the class
     attributes.
     """
+
     TypeCheckerClass = pysmt.type_checker.SimpleTypeChecker
     FormulaManagerClass = pysmt.formula.FormulaManager
     TypeManagerClass = pysmt.typing.TypeManager
     SimplifierClass = pysmt.simplifier.Simplifier
-    #SubstituterClass = pysmt.substituter.MSSubstituter
+    # SubstituterClass = pysmt.substituter.MSSubstituter
     SubstituterClass = pysmt.substituter.MGSubstituter
     HRSerializerClass = pysmt.printers.HRSerializer
     QuantifierOracleClass = pysmt.oracles.QuantifierOracle
     TheoryOracleClass = pysmt.oracles.TheoryOracle
-    FreeVarsOracleClass= pysmt.oracles.FreeVarsOracle
+    FreeVarsOracleClass = pysmt.oracles.FreeVarsOracle
     SizeOracleClass = pysmt.oracles.SizeOracle
     AtomsOracleClass = pysmt.oracles.AtomsOracle
     TypesOracleClass = pysmt.oracles.TypesOracle
@@ -168,14 +169,17 @@ class Environment(object):
         """Remove environment from global stack."""
         pop_env()
 
+
 # EOC Environment
 
 #### GLOBAL ENVIRONMENTS STACKS ####
 ENVIRONMENTS_STACK = []
 
+
 def get_env():
     """Returns the Environment at the head of the stack."""
     return ENVIRONMENTS_STACK[-1]
+
 
 def push_env(env=None):
     """Push a env in the stack. If env is None, a new Environment is created."""
@@ -183,15 +187,18 @@ def push_env(env=None):
         env = Environment()
     ENVIRONMENTS_STACK.append(env)
 
+
 def pop_env():
     """Pop an env from the stack."""
     return ENVIRONMENTS_STACK.pop()
+
 
 def reset_env():
     """Destroys and recreate the head environment."""
     pop_env()
     push_env()
     return get_env()
+
 
 # Create the default environment
 push_env()

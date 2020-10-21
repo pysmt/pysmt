@@ -11,9 +11,16 @@ from pysmt.logics import AUTO, QF_LRA
 from pysmt.typing import REAL
 from pysmt.exceptions import SolverReturnedUnknownResultError
 
-def efsmt(y, phi, logic=AUTO, maxloops=None,
-          esolver_name=None, fsolver_name=None,
-          verbose=False):
+
+def efsmt(
+    y,
+    phi,
+    logic=AUTO,
+    maxloops=None,
+    esolver_name=None,
+    fsolver_name=None,
+    verbose=False,
+):
     """Solves exists x. forall y. phi(x, y)"""
 
     y = set(y)
@@ -32,16 +39,17 @@ def efsmt(y, phi, logic=AUTO, maxloops=None,
             else:
                 tau = {v: esolver.get_value(v) for v in x}
                 sub_phi = phi.substitute(tau).simplify()
-                if verbose: print("%d: Tau = %s" % (loops, tau))
+                if verbose:
+                    print("%d: Tau = %s" % (loops, tau))
 
-                fmodel = get_model(Not(sub_phi),
-                                   logic=logic, solver_name=fsolver_name)
+                fmodel = get_model(Not(sub_phi), logic=logic, solver_name=fsolver_name)
                 if fmodel is None:
                     return tau
                 else:
                     sigma = {v: fmodel[v] for v in y}
                     sub_phi = phi.substitute(sigma).simplify()
-                    if verbose: print("%d: Sigma = %s" % (loops, sigma))
+                    if verbose:
+                        print("%d: Sigma = %s" % (loops, sigma))
                     esolver.add_assertion(sub_phi)
 
         raise SolverReturnedUnknownResultError
@@ -61,14 +69,16 @@ def run_test(y, f):
 
 
 def main():
-    x,y = [Symbol(n, REAL) for n in "xy"]
-    f_sat = Implies(And(GT(y, Real(0)), LT(y, Real(10))),
-                    LT(Minus(y, Times(x, Real(2))), Real(7)))
+    x, y = [Symbol(n, REAL) for n in "xy"]
+    f_sat = Implies(
+        And(GT(y, Real(0)), LT(y, Real(10))), LT(Minus(y, Times(x, Real(2))), Real(7))
+    )
 
-    f_incomplete = And(GT(x, Real(0)), LE(x, Real(10)),
-                       Implies(And(GT(y, Real(0)), LE(y, Real(10)),
-                                   Not(Equals(x, y))),
-                               GT(y, x)))
+    f_incomplete = And(
+        GT(x, Real(0)),
+        LE(x, Real(10)),
+        Implies(And(GT(y, Real(0)), LE(y, Real(10)), Not(Equals(x, y))), GT(y, x)),
+    )
 
     run_test([y], f_sat)
     run_test([y], f_incomplete)

@@ -52,7 +52,7 @@ class TestExtendSuper(TestCase):
         create_node = get_env().formula_manager.create_node
         # Create a test node (This implicitly calls the Type-checker)
         x = Symbol("x")
-        f1 = create_node(node_type=XOR, args=(x,x))
+        f1 = create_node(node_type=XOR, args=(x, x))
         self.assertIsNotNone(f1)
 
         # String conversion should use the function defined above.
@@ -85,7 +85,7 @@ class TestExtendSuper(TestCase):
             create_node = myenv.formula_manager.create_node
             # Create a test node (This implicitly calls the Type-checker)
             x = Symbol("x")
-            f1 = create_node(node_type=XOR, args=(x,x))
+            f1 = create_node(node_type=XOR, args=(x, x))
             self.assertIsNotNone(f1)
 
             # String conversion should use the function defined above.

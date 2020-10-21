@@ -11,6 +11,7 @@ from pysmt.shortcuts import LE, GE, Int, Plus, Equals, EqualsOrIff
 from pysmt.typing import INT
 from pysmt.oracles import get_logic
 
+
 def all_smt(formula, keys):
     target_logic = get_logic(formula)
     print("Target Logic: %s" % target_logic)
@@ -26,16 +27,21 @@ A0 = Symbol("A0", INT)
 A1 = Symbol("A1", INT)
 A2 = Symbol("A2", INT)
 
-f = And(GE(A0, Int(0)), LE(A0, Int(5)),
-        GE(A1, Int(0)), LE(A1, Int(5)),
-        GE(A2, Int(0)), LE(A2, Int(5)),
-        Equals(Plus(A0, A1, A2), Int(8)))
+f = And(
+    GE(A0, Int(0)),
+    LE(A0, Int(5)),
+    GE(A1, Int(0)),
+    LE(A1, Int(5)),
+    GE(A2, Int(0)),
+    LE(A2, Int(5)),
+    Equals(Plus(A0, A1, A2), Int(8)),
+)
 
 all_smt(f, [A0, A1, A2])
 
 # By using the operator EqualsOrIff, we can mix theory and bool variables
 x = Symbol("x")
 y = Symbol("y")
-f = And(f, Or(x,y))
+f = And(f, Or(x, y))
 
 all_smt(f, [A0, A1, A2, x])

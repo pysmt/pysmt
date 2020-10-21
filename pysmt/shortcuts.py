@@ -30,7 +30,8 @@ environment is used (this is the default behavior of
 
 # Enable default deprecation warnings!
 import warnings
-warnings.filterwarnings('default', module='pysmt')
+
+warnings.filterwarnings("default", module="pysmt")
 
 import pysmt.configuration as config
 import pysmt.environment
@@ -41,6 +42,7 @@ import pysmt.smtlib.printers
 
 # Import types from shortcuts
 from pysmt.typing import INT, BOOL, REAL, BVType, FunctionType, ArrayType, Type
+
 assert INT or BOOL or REAL or BVType or FunctionType or ArrayType or Type
 
 
@@ -111,8 +113,8 @@ def serialize(formula, threshold=None):
     :returns: A string representing the formula
     :rtype: string
     """
-    return get_env().serializer.serialize(formula,
-                                          threshold=threshold)
+    return get_env().serializer.serialize(formula, threshold=threshold)
+
 
 def get_free_variables(formula):
     """Returns the free variables of the formula.
@@ -148,6 +150,7 @@ def get_formula_size(formula, measure=None):
 
 
 ##### Nodes Creation #####
+
 
 def ForAll(variables, formula):
     r""".. math:: \forall v_1, \cdots, v_n . \varphi(v_1, \cdots, v_n)"""
@@ -212,6 +215,7 @@ def Equals(left, right):
 def NotEquals(left, right):
     r""".. math:: l != r"""
     return get_env().formula_manager.NotEquals(left, right)
+
 
 def GT(left, right):
     r""".. math:: l > r"""
@@ -764,6 +768,7 @@ def BVComp(left, right):
     """
     return get_env().formula_manager.BVComp(left, right)
 
+
 def BVToNatural(formula):
     """Returns the Natural number represented by the BitVector.
 
@@ -773,10 +778,12 @@ def BVToNatural(formula):
     """
     return get_env().formula_manager.BVToNatural(formula)
 
+
 # Strings
 def StrLength(string):
     """Returns the length of a formula resulting a String"""
     return get_env().formula_manager.StrLength(string)
+
 
 def StrCharAt(string, index):
     """Returns a single character String at position i.
@@ -784,6 +791,7 @@ def StrCharAt(string, index):
     s is a string term and i is an integer term. i is the position.
     """
     return get_env().formula_manager.StrCharAt(string, index)
+
 
 def StrConcat(*args):
     """Returns the concatenation of n Strings.
@@ -793,12 +801,14 @@ def StrConcat(*args):
     """
     return get_env().formula_manager.StrConcat(*args)
 
+
 def StrContains(string, target):
     """Returns wether string contains the target.
 
     s and t are String terms.
     """
     return get_env().formula_manager.StrContains(string, target)
+
 
 def StrIndexOf(string, target, offset):
     """Returns the position of the first occurrence of target in string after the offset.
@@ -808,12 +818,14 @@ def StrIndexOf(string, target, offset):
     """
     return get_env().formula_manager.StrIndexOf(string, target, offset)
 
+
 def StrReplace(s, t1, t2):
     """Returns a new string where the first occurrence of t1 is replace by t2.
 
     where s, t1 and t2 are string terms, t1 is non-empty.
     """
     return get_env().formula_manager.StrReplace(s, t1, t2)
+
 
 def StrSubstr(s, i, j):
     """Returns a substring of s starting at i and ending at j+i.
@@ -822,12 +834,14 @@ def StrSubstr(s, i, j):
     """
     return get_env().formula_manager.StrSubstr(s, i, j)
 
+
 def StrPrefixOf(s, t):
     """Returns whether the s is a prefix of the string t.
 
     where s and t are string terms.
     """
     return get_env().formula_manager.StrPrefixOf(s, t)
+
 
 def StrSuffixOf(s, t):
     """Returns whether the string s is a suffix of the string t.
@@ -836,12 +850,14 @@ def StrSuffixOf(s, t):
     """
     return get_env().formula_manager.StrSuffixOf(s, t)
 
+
 def StrToInt(x):
     """Returns the corresponding natural number of s is valid;
 
     If s is not valid, it returns -1.
     """
     return get_env().formula_manager.StrToInt(x)
+
 
 def IntToStr(x):
     """Returns the corresponding String representing the natural number x.
@@ -850,6 +866,7 @@ def IntToStr(x):
     returns the empty String.
     """
     return get_env().formula_manager.IntToStr(x)
+
 
 #
 # Arrays
@@ -906,9 +923,8 @@ def Solver(name=None, logic=None, **kwargs):
     :param logic: Specify the logic that is going to be used.
     :rtype: Solver
     """
-    return get_env().factory.Solver(name=name,
-                                    logic=logic,
-                                    **kwargs)
+    return get_env().factory.Solver(name=name, logic=logic, **kwargs)
+
 
 def UnsatCoreSolver(name=None, logic=None, unsat_cores_mode="all"):
     """Returns a solver supporting unsat core extraction.
@@ -919,9 +935,9 @@ def UnsatCoreSolver(name=None, logic=None, unsat_cores_mode="all"):
     :returns: A solver supporting unsat core extraction.
     :rtype: Solver
     """
-    return get_env().factory.UnsatCoreSolver(name=name,
-                                             logic=logic,
-                                             unsat_cores_mode=unsat_cores_mode)
+    return get_env().factory.UnsatCoreSolver(
+        name=name, logic=logic, unsat_cores_mode=unsat_cores_mode
+    )
 
 
 def QuantifierEliminator(name=None, logic=None):
@@ -973,14 +989,14 @@ def Portfolio(solvers_set, logic, **options):
     :rtype: Portfolio
     """
     import pysmt.solvers.portfolio as pf
-    return pf.Portfolio(solvers_set=solvers_set,
-                        logic=logic,
-                        environment=get_env(),
-                        **options)
+
+    return pf.Portfolio(
+        solvers_set=solvers_set, logic=logic, environment=get_env(), **options
+    )
 
 
 def is_sat(formula, solver_name=None, logic=None, portfolio=None):
-    """ Returns whether a formula is satisfiable.
+    """Returns whether a formula is satisfiable.
 
     :param formula: The formula to check satisfiability
     :type  formula: FNode
@@ -997,14 +1013,13 @@ def is_sat(formula, solver_name=None, logic=None, portfolio=None):
         warnings.warn("Warning: Contextualizing formula during is_sat")
         formula = env.formula_manager.normalize(formula)
 
-    return env.factory.is_sat(formula,
-                              solver_name=solver_name,
-                              logic=logic,
-                              portfolio=portfolio)
+    return env.factory.is_sat(
+        formula, solver_name=solver_name, logic=logic, portfolio=portfolio
+    )
 
 
 def get_model(formula, solver_name=None, logic=None):
-    """ Similar to :py:func:`is_sat` but returns a model if the formula is
+    """Similar to :py:func:`is_sat` but returns a model if the formula is
     satisfiable, otherwise None
 
     :param formula: The target formula
@@ -1018,9 +1033,7 @@ def get_model(formula, solver_name=None, logic=None):
         warnings.warn("Warning: Contextualizing formula during get_model")
         formula = env.formula_manager.normalize(formula)
 
-    return env.factory.get_model(formula,
-                                 solver_name=solver_name,
-                                 logic=logic)
+    return env.factory.get_model(formula, solver_name=solver_name, logic=logic)
 
 
 def get_implicant(formula, solver_name=None, logic=None):
@@ -1041,9 +1054,7 @@ def get_implicant(formula, solver_name=None, logic=None):
         warnings.warn("Warning: Contextualizing formula during get_model")
         formula = env.formula_manager.normalize(formula)
 
-    return env.factory.get_implicant(formula,
-                                     solver_name=solver_name,
-                                     logic=logic)
+    return env.factory.get_implicant(formula, solver_name=solver_name, logic=logic)
 
 
 def get_unsat_core(clauses, solver_name=None, logic=None):
@@ -1061,9 +1072,7 @@ def get_unsat_core(clauses, solver_name=None, logic=None):
         warnings.warn("Warning: Contextualizing formula during get_model")
         clauses = [env.formula_manager.normalize(c) for c in clauses]
 
-    return env.factory.get_unsat_core(clauses,
-                                      solver_name=solver_name,
-                                      logic=logic)
+    return env.factory.get_unsat_core(clauses, solver_name=solver_name, logic=logic)
 
 
 def is_valid(formula, solver_name=None, logic=None, portfolio=None):
@@ -1082,10 +1091,9 @@ def is_valid(formula, solver_name=None, logic=None, portfolio=None):
         warnings.warn("Warning: Contextualizing formula during is_valid")
         formula = env.formula_manager.normalize(formula)
 
-    return env.factory.is_valid(formula,
-                                solver_name=solver_name,
-                                logic=logic,
-                                portfolio=portfolio)
+    return env.factory.is_valid(
+        formula, solver_name=solver_name, logic=logic, portfolio=portfolio
+    )
 
 
 def is_unsat(formula, solver_name=None, logic=None, portfolio=None):
@@ -1104,10 +1112,9 @@ def is_unsat(formula, solver_name=None, logic=None, portfolio=None):
         warnings.warn("Warning: Contextualizing formula during is_unsat")
         formula = env.formula_manager.normalize(formula)
 
-    return env.factory.is_unsat(formula,
-                                solver_name=solver_name,
-                                logic=logic,
-                                portfolio=portfolio)
+    return env.factory.is_unsat(
+        formula, solver_name=solver_name, logic=logic, portfolio=portfolio
+    )
 
 
 def qelim(formula, solver_name=None, logic=None):
@@ -1124,9 +1131,7 @@ def qelim(formula, solver_name=None, logic=None):
         warnings.warn("Warning: Contextualizing formula during is_unsat")
         formula = env.formula_manager.normalize(formula)
 
-    return env.factory.qelim(formula,
-                             solver_name=solver_name,
-                             logic=logic)
+    return env.factory.qelim(formula, solver_name=solver_name, logic=logic)
 
 
 def binary_interpolant(formula_a, formula_b, solver_name=None, logic=None):
@@ -1146,13 +1151,14 @@ def binary_interpolant(formula_a, formula_b, solver_name=None, logic=None):
     formulas = [formula_a, formula_b]
     for i, f in enumerate(formulas):
         if f not in env.formula_manager:
-            warnings.warn("Warning: Contextualizing formula during "
-                          "binary_interpolant")
+            warnings.warn(
+                "Warning: Contextualizing formula during " "binary_interpolant"
+            )
             formulas[i] = env.formula_manager.normalize(f)
 
-    return env.factory.binary_interpolant(formulas[0], formulas[1],
-                                          solver_name=solver_name,
-                                          logic=logic)
+    return env.factory.binary_interpolant(
+        formulas[0], formulas[1], solver_name=solver_name, logic=logic
+    )
 
 
 def sequence_interpolant(formulas, solver_name=None, logic=None):
@@ -1171,13 +1177,14 @@ def sequence_interpolant(formulas, solver_name=None, logic=None):
     formulas = list(formulas)
     for i, f in enumerate(formulas):
         if f not in env.formula_manager:
-            warnings.warn("Warning: Contextualizing formula during "
-                          "sequence_interpolant")
+            warnings.warn(
+                "Warning: Contextualizing formula during " "sequence_interpolant"
+            )
             formulas[i] = env.formula_manager.normalize(f)
 
-    return env.factory.sequence_interpolant(formulas,
-                                            solver_name=solver_name,
-                                            logic=logic)
+    return env.factory.sequence_interpolant(
+        formulas, solver_name=solver_name, logic=logic
+    )
 
 
 def read_configuration(config_filename, environment=None):

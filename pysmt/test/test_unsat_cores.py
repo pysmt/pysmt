@@ -15,29 +15,46 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from pysmt.test import (TestCase, skipIfSolverNotAvailable,
-                        skipIfNoUnsatCoreSolverForLogic, main)
-from pysmt.shortcuts import (get_unsat_core, And, Not, Symbol, UnsatCoreSolver,
-                             Solver, is_unsat)
+from pysmt.test import (
+    TestCase,
+    skipIfSolverNotAvailable,
+    skipIfNoUnsatCoreSolverForLogic,
+    main,
+)
+from pysmt.shortcuts import (
+    get_unsat_core,
+    And,
+    Not,
+    Symbol,
+    UnsatCoreSolver,
+    Solver,
+    is_unsat,
+)
 from pysmt.logics import QF_BOOL, QF_BV
-from pysmt.exceptions import (SolverStatusError, SolverReturnedUnknownResultError,
-                              SolverNotConfiguredForUnsatCoresError)
+from pysmt.exceptions import (
+    SolverStatusError,
+    SolverReturnedUnknownResultError,
+    SolverNotConfiguredForUnsatCoresError,
+)
 from pysmt.test.examples import get_example_formulae
 
-class TestUnsatCores(TestCase):
 
+class TestUnsatCores(TestCase):
     def _helper_check_examples(self, solver_name):
         for (f, _, satisfiability, logic) in get_example_formulae():
-            if not logic.quantifier_free: continue
+            if not logic.quantifier_free:
+                continue
             if satisfiability == False:
-                with UnsatCoreSolver(name=solver_name,
-                                     unsat_cores_mode="named") as solver:
-                    if logic not in solver.LOGICS: continue
+                with UnsatCoreSolver(
+                    name=solver_name, unsat_cores_mode="named"
+                ) as solver:
+                    if logic not in solver.LOGICS:
+                        continue
                     clauses = [f]
                     if f.is_and():
                         clauses = f.args()
 
-                    for i,c in enumerate(clauses):
+                    for i, c in enumerate(clauses):
                         solver.add_assertion(c, "a%d" % i)
 
                     try:
@@ -45,8 +62,8 @@ class TestUnsatCores(TestCase):
                         self.assertFalse(r)
                     except SolverReturnedUnknownResultError:
                         if QF_BV <= logic:
-                            continue # Unsat-core support for QF_UFBV might be
-                                     # incomplete
+                            continue  # Unsat-core support for QF_UFBV might be
+                            # incomplete
                         else:
                             raise
 
@@ -57,7 +74,6 @@ class TestUnsatCores(TestCase):
                         self.assertIn(k, clauses)
 
                     self.assertTrue(is_unsat(And(core.values()), logic=logic))
-
 
     @skipIfNoUnsatCoreSolverForLogic(QF_BOOL)
     def test_basic(self):
@@ -78,7 +94,6 @@ class TestUnsatCores(TestCase):
             self.assertIn(x, named_core.values())
             self.assertIn(Not(x), named_core.values())
 
-
     @skipIfNoUnsatCoreSolverForLogic(QF_BOOL)
     def test_shortcut(self):
         x = Symbol("x")
@@ -93,7 +108,6 @@ class TestUnsatCores(TestCase):
         gen_f = (x for x in flist)
         ucore = get_unsat_core(gen_f)
         self.assertEqual(len(ucore), 2)
-
 
     @skipIfNoUnsatCoreSolverForLogic(QF_BOOL)
     def test_basic_named(self):
@@ -116,7 +130,6 @@ class TestUnsatCores(TestCase):
             self.assertEqual(named_core["a1"], x)
             self.assertEqual(named_core["a2"], Not(x))
 
-
     @skipIfNoUnsatCoreSolverForLogic(QF_BOOL)
     def test_modify_state(self):
         x = Symbol("x")
@@ -130,7 +143,6 @@ class TestUnsatCores(TestCase):
             with self.assertRaises(SolverStatusError):
                 s.get_unsat_core()
 
-
     @skipIfNoUnsatCoreSolverForLogic(QF_BOOL)
     def test_modify_state_assert(self):
         x = Symbol("x")
@@ -143,16 +155,13 @@ class TestUnsatCores(TestCase):
             with self.assertRaises(SolverStatusError):
                 s.get_unsat_core()
 
-
     @skipIfSolverNotAvailable("msat")
     def test_examples_msat(self):
         self._helper_check_examples("msat")
 
-
     @skipIfSolverNotAvailable("z3")
     def test_examples_z3(self):
         self._helper_check_examples("z3")
-
 
     @skipIfSolverNotAvailable("msat")
     def test_unsat_core_on_regular_solver(self):
@@ -166,5 +175,5 @@ class TestUnsatCores(TestCase):
                 s.get_unsat_core()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

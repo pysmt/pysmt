@@ -21,8 +21,8 @@ from pysmt.oracles import SizeOracle
 from pysmt.test import TestCase, main
 from pysmt.test.examples import get_example_formulae
 
-class TestSize(TestCase):
 
+class TestSize(TestCase):
     def test_leaf(self):
         varA = Symbol("A")
         self.assertEqual(varA.size(), 1)
@@ -79,5 +79,5 @@ class TestSize(TestCase):
             varA.size("non-existent")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

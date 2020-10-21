@@ -20,14 +20,46 @@ from six.moves import cStringIO
 
 import pysmt.logics as logics
 import pysmt.smtlib.commands as smtcmd
-from pysmt.shortcuts import (Real, Plus, Symbol, Equals, And, Bool, Or, Not,
-                             Div, LT, LE, Int, ToReal, Iff, Exists, Times, FALSE,
-                             BVLShr, BVLShl, BVAShr, BV, BVAdd, BVULT, BVMul,
-                             Select, Array, Ite, String, Function, to_smtlib)
+from pysmt.shortcuts import (
+    Real,
+    Plus,
+    Symbol,
+    Equals,
+    And,
+    Bool,
+    Or,
+    Not,
+    Div,
+    LT,
+    LE,
+    Int,
+    ToReal,
+    Iff,
+    Exists,
+    Times,
+    FALSE,
+    BVLShr,
+    BVLShl,
+    BVAShr,
+    BV,
+    BVAdd,
+    BVULT,
+    BVMul,
+    Select,
+    Array,
+    Ite,
+    String,
+    Function,
+    to_smtlib,
+)
 from pysmt.shortcuts import Solver, get_env, qelim, get_model, TRUE, ExactlyOne
 from pysmt.typing import REAL, BOOL, INT, BVType, FunctionType, ArrayType
-from pysmt.test import (TestCase, skipIfSolverNotAvailable, skipIfNoSolverForLogic,
-                        skipIfNoQEForLogic)
+from pysmt.test import (
+    TestCase,
+    skipIfSolverNotAvailable,
+    skipIfNoSolverForLogic,
+    skipIfNoQEForLogic,
+)
 from pysmt.test import main
 from pysmt.exceptions import ConvertExpressionError, PysmtValueError, PysmtTypeError
 from pysmt.test.examples import get_example_formulae
@@ -41,7 +73,6 @@ from pysmt.constants import Fraction
 
 
 class TestRegressions(TestCase):
-
     @skipIfSolverNotAvailable("msat")
     @skipIfSolverNotAvailable("z3")
     def test_plus_converts_correctly_n_ary_functions(self):
@@ -54,28 +85,32 @@ class TestRegressions(TestCase):
         b = Symbol("b", REAL)
         c = Symbol("c", REAL)
 
-        p1 = Plus(a, Real((1,6)), b,c,)
-        p2 = Plus(a, b, c, Real((1,6)))
-
+        p1 = Plus(
+            a,
+            Real((1, 6)),
+            b,
+            c,
+        )
+        p2 = Plus(a, b, c, Real((1, 6)))
 
         self.assertValid(Equals(p1, p2))
-        self.assertValid(Equals(p1, p2), solver_name='z3')
-        self.assertValid(Equals(p1, p2), solver_name='msat')
+        self.assertValid(Equals(p1, p2), solver_name="z3")
+        self.assertValid(Equals(p1, p2), solver_name="msat")
 
     def test_substitute_memoization(self):
         a = Symbol("A", BOOL)
         b = Symbol("B", BOOL)
 
         f = And(a, b)
-        g = f.substitute({a:Bool(True)})
-        h = f.substitute({a:Bool(False)})
+        g = f.substitute({a: Bool(True)})
+        h = f.substitute({a: Bool(False)})
 
         self.assertNotEqual(h, g)
 
     @skipIfSolverNotAvailable("msat")
     def test_msat_bool_back_conversion(self):
         f = Symbol("A")
-        with Solver(name='msat') as solver:
+        with Solver(name="msat") as solver:
             solver.solve()
             val = solver.get_value(Symbol("A"))
             self.assertTrue(val.is_bool_constant())
@@ -83,12 +118,12 @@ class TestRegressions(TestCase):
     @skipIfSolverNotAvailable("msat")
     @skipIfSolverNotAvailable("z3")
     def test_conversion_of_fractions_in_z3(self):
-        self.assertValid(Equals(Real(Fraction(1,9)),
-                                Div(Real(1), Real(9))),
-                         solver_name="msat")
-        self.assertValid(Equals(Real(Fraction(1,9)),
-                                Div(Real(1), Real(9))),
-                         solver_name="z3")
+        self.assertValid(
+            Equals(Real(Fraction(1, 9)), Div(Real(1), Real(9))), solver_name="msat"
+        )
+        self.assertValid(
+            Equals(Real(Fraction(1, 9)), Div(Real(1), Real(9))), solver_name="z3"
+        )
 
     def test_simplifying_int_plus_changes_type_of_expression(self):
         varA = Symbol("At", INT)
@@ -109,10 +144,10 @@ class TestRegressions(TestCase):
         f_or_one = Or(x)
         f_plus_one = LT(Plus(r), Real(0))
 
-        ten_x = [x,x,x,x,x,x,x,x,x,x]
+        ten_x = [x, x, x, x, x, x, x, x, x, x]
         f_and_many = And(ten_x)
         f_or_many = Or(ten_x)
-        f_plus_many = LT(Plus(r,r,r,r,r,r,r,r,r,r,r), Real(0))
+        f_plus_many = LT(Plus(r, r, r, r, r, r, r, r, r, r, r), Real(0))
 
         for name in get_env().factory.all_solvers(logic=logics.QF_BOOL):
             self.assertSat(f_and_one, solver_name=name)
@@ -136,7 +171,6 @@ class TestRegressions(TestCase):
         p = Symbol("p", INT)
         get_env().enable_infix_notation = True
         self.assertEqual(LE(p, Int(2)), p <= Int(2))
-
 
     def test_multiple_declaration_w_same_functiontype(self):
         ft1 = FunctionType(REAL, [REAL])
@@ -169,7 +203,6 @@ class TestRegressions(TestCase):
         # Mathsat can reorder variables...
         self.assertTrue(Iff(x, y) == back or Iff(y, x) == back)
 
-
     def test_multiple_exit(self):
         for sname in get_env().factory.all_solvers():
             # Multiple exits should be ignored
@@ -190,8 +223,9 @@ class TestRegressions(TestCase):
             qelim(f)
         except ConvertExpressionError as ex:
             # The modulus operator must be there
-            self.assertTrue("%2" in str(ex.expression) or \
-                            "int_mod_congr" in str(ex.expression))
+            self.assertTrue(
+                "%2" in str(ex.expression) or "int_mod_congr" in str(ex.expression)
+            )
 
     @skipIfSolverNotAvailable("msat")
     def test_msat_partial_model(self):
@@ -218,7 +252,7 @@ class TestRegressions(TestCase):
     def test_exactlyone_w_generator(self):
         x, y = Symbol("x"), Symbol("y")
 
-        elems = [x,y]
+        elems = [x, y]
         f1 = ExactlyOne(elems)
         f2 = ExactlyOne(e for e in elems)
 
@@ -246,7 +280,7 @@ class TestRegressions(TestCase):
                 l_test = list(get_set(new_env))
 
                 # The ordering of the sets should be the same...
-                for i,f in enumerate(l1):
+                for i, f in enumerate(l1):
                     nf = new_env.formula_manager.normalize(f)
                     self.assertEqual(nf, l_test[i])
 
@@ -277,15 +311,17 @@ class TestRegressions(TestCase):
         self.assertEqual(output, "(set-info :source |This\nis\nmultiline!|)")
 
     def test_parse_define_fun(self):
-        smtlib_input = "(declare-fun z () Bool)"\
-                       "(define-fun .def_1 ((z Bool)) Bool (and z z))"
+        smtlib_input = (
+            "(declare-fun z () Bool)" "(define-fun .def_1 ((z Bool)) Bool (and z z))"
+        )
         parser = SmtLibParser()
         buffer_ = cStringIO(smtlib_input)
         parser.get_script(buffer_)
 
     def test_parse_define_fun_bind(self):
-        smtlib_input = "(declare-fun y () Bool)"\
-                       "(define-fun .def_1 ((z Bool)) Bool (and z z))"
+        smtlib_input = (
+            "(declare-fun y () Bool)" "(define-fun .def_1 ((z Bool)) Bool (and z z))"
+        )
         parser = SmtLibParser()
         buffer_ = cStringIO(smtlib_input)
         parser.get_script(buffer_)
@@ -307,14 +343,12 @@ class TestRegressions(TestCase):
         self.assertEqual(bv1.symbol_type().width, 8)
         cmd = next(iscript)
         parsed_f = cmd.args[0]
-        target_f = BVULT(BV(0, 8),
-                         BVMul(BVAdd(bv1, BV(1, 8)), BV(5, 8)))
+        target_f = BVULT(BV(0, 8), BVMul(BVAdd(bv1, BV(1, 8)), BV(5, 8)))
         self.assertEqual(parsed_f, target_f)
 
-
     def test_simplify_times(self):
-        a,b = Real(5), Real((1,5))
-        f = Times(a,b).simplify()
+        a, b = Real(5), Real((1, 5))
+        f = Times(a, b).simplify()
         self.assertEqual(f.constant_value(), 1)
 
     @skipIfSolverNotAvailable("yices")
@@ -339,13 +373,13 @@ class TestRegressions(TestCase):
         self.assertEqual(close_l, logics.LRA)
 
     def test_exactly_one_unpacking(self):
-        s1,s2 = Symbol("x"), Symbol("y")
-        f1 = ExactlyOne((s for s in [s1,s2]))
-        f2 = ExactlyOne([s1,s2])
-        f3 = ExactlyOne(s1,s2)
+        s1, s2 = Symbol("x"), Symbol("y")
+        f1 = ExactlyOne((s for s in [s1, s2]))
+        f2 = ExactlyOne([s1, s2])
+        f3 = ExactlyOne(s1, s2)
 
-        self.assertEqual(f1,f2)
-        self.assertEqual(f2,f3)
+        self.assertEqual(f1, f2)
+        self.assertEqual(f2, f3)
 
     @skipIfSolverNotAvailable("btor")
     def test_btor_bitwidth_bug_in_shift(self):
@@ -385,7 +419,6 @@ class TestRegressions(TestCase):
             self.assertEqual(s.get_value(Select(x, BV(1, 16))), BV(1, 16))
             self.assertIsNotNone(s.get_value(x))
 
-
     def test_smtlib_define_fun_serialization(self):
         smtlib_input = "(define-fun init ((x Bool)) Bool (and x (and x (and x (and x (and x (and x x)))))))"
         parser = SmtLibParser()
@@ -393,36 +426,38 @@ class TestRegressions(TestCase):
         s = parser.get_script(buffer_)
         for c in s:
             res = c.serialize_to_string(daggify=False)
-        self.assertEqual(res.replace('__x0', 'x'), smtlib_input)
+        self.assertEqual(res.replace("__x0", "x"), smtlib_input)
 
     @skipIfSolverNotAvailable("z3")
     def test_z3_nary_back(self):
         from z3 import Tactic
+
         r = Symbol("r", REAL)
         s = Symbol("s", REAL)
         t = Symbol("t", REAL)
-        f = Equals(Times(r,s,t), Real(0))
+        f = Equals(Times(r, s, t), Real(0))
 
         with Solver(name="z3") as solver:
             z3_f = solver.converter.convert(f)
-            z3_f = Tactic('simplify', solver.z3.ctx)(z3_f).as_expr()
+            z3_f = Tactic("simplify", solver.z3.ctx)(z3_f).as_expr()
             fp = solver.converter.back(z3_f)
             self.assertValid(Iff(f, fp), (f, fp))
 
     def test_array_initialization_printing(self):
-        self.assertEqual(str(Array(INT, Int(0), {Int(1):Int(2)})), "Array{Int, Int}(0)[1 := 2]")
+        self.assertEqual(
+            str(Array(INT, Int(0), {Int(1): Int(2)})), "Array{Int, Int}(0)[1 := 2]"
+        )
 
     @skipIfSolverNotAvailable("btor")
     def test_boolector_assumptions(self):
-        with Solver(name='btor') as solver:
-            x = Symbol('x')
-            y = Symbol('y')
+        with Solver(name="btor") as solver:
+            x = Symbol("x")
+            y = Symbol("y")
             solver.add_assertion(Or(x, y))
             solver.solve([Not(x), Not(y)])
             btor_notx = solver.converter.convert(Not(x))
             btor_noty = solver.converter.convert(Not(y))
-            self.assertEqual(solver.btor.Failed(btor_notx, btor_noty),
-                             [True, True])
+            self.assertEqual(solver.btor.Failed(btor_notx, btor_noty), [True, True])
 
     def test_parse_declare_const(self):
         smtlib_input = """
@@ -435,17 +470,17 @@ class TestRegressions(TestCase):
 
     @skipIfSolverNotAvailable("z3")
     def test_z3_conversion_ite(self):
-        with Solver(name='z3') as solver:
-            x = Symbol('x')
-            y = Symbol('y')
+        with Solver(name="z3") as solver:
+            x = Symbol("x")
+            y = Symbol("y")
             f = Ite(x, y, FALSE())
             solver.add_assertion(f)
             self.assertTrue(solver.solve())
 
     def test_parse_exception(self):
         from pysmt.exceptions import PysmtSyntaxError
-        smtlib_input = "(declare-const x x x Int)" +\
-                       "(check-sat)"
+
+        smtlib_input = "(declare-const x x x Int)" + "(check-sat)"
         parser = SmtLibParser()
         buffer_ = cStringIO(smtlib_input)
         try:
@@ -464,8 +499,8 @@ class TestRegressions(TestCase):
         self.assertEqual(const.bv_width(), 8, const.bv_width())
 
     def test_equality_typing(self):
-        x = Symbol('x', BOOL)
-        y = Symbol('y', BOOL)
+        x = Symbol("x", BOOL)
+        y = Symbol("y", BOOL)
         with self.assertRaises(PysmtTypeError):
             Equals(x, y)
         with self.assertRaises(PysmtTypeError):
@@ -504,45 +539,48 @@ class TestRegressions(TestCase):
 
     def test_pysmt_syntax_error(self):
         from pysmt.exceptions import PysmtSyntaxError
+
         try:
-            raise PysmtSyntaxError("'define-fun' expected", (5,5))
+            raise PysmtSyntaxError("'define-fun' expected", (5, 5))
         except PysmtSyntaxError as ex:
             self.assertEqual(str(ex), "Line 5, Col 5: 'define-fun' expected")
 
     def test_function_smtlib_print(self):
         f_t = FunctionType(BOOL, [BOOL])
-        f0 = Symbol('f 0', f_t)
+        f0 = Symbol("f 0", f_t)
         f0_of_false = Function(f0, [Bool(False)])
         s = to_smtlib(f0_of_false, False)
-        self.assertEqual(s, '(|f 0| false)')
+        self.assertEqual(s, "(|f 0| false)")
 
     @skipIfSolverNotAvailable("yices")
     def test_yices_bv_overflow(self):
-        smt_script = '''
+        smt_script = """
         (set-logic QF_BV)
         (declare-fun s0 () (_ BitVec 64))
         (define-fun s1 () (_ BitVec 64) #xFFFFFFFFFFFFFFFF)
         (define-fun s2 () Bool (= s1 s0))
         (assert s2)
         (check-sat)
-        '''
+        """
         from pysmt.smtlib.parser import get_formula_strict
+
         f = get_formula_strict(cStringIO(smt_script))
-        self.assertSat(f, solver_name='yices')
+        self.assertSat(f, solver_name="yices")
 
     @skipIfSolverNotAvailable("yices")
     def test_yices_bv_no_overflow(self):
-        smt_script = '''
+        smt_script = """
         (set-logic QF_BV)
         (declare-fun s0 () (_ BitVec 64))
         (define-fun s1 () (_ BitVec 64) #x7FFFFFFFFFFFFFFF)
         (define-fun s2 () Bool (= s1 s0))
         (assert s2)
         (check-sat)
-        '''
+        """
         from pysmt.smtlib.parser import get_formula_strict
+
         f = get_formula_strict(cStringIO(smt_script))
-        self.assertSat(f, solver_name='yices')
+        self.assertSat(f, solver_name="yices")
 
     def test_get_atoms_array_select(self):
         a = Symbol("a", ArrayType(INT, BOOL))

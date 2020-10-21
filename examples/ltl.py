@@ -19,9 +19,7 @@ LTL_O = new_node_type(node_str="LTL_O")
 LTL_H = new_node_type(node_str="LTL_H")
 LTL_U = new_node_type(node_str="LTL_U")
 LTL_S = new_node_type(node_str="LTL_S")
-ALL_LTL = (LTL_X, LTL_Y, LTL_Z,
-           LTL_F, LTL_G, LTL_O, LTL_H,
-           LTL_U, LTL_S)
+ALL_LTL = (LTL_X, LTL_Y, LTL_Z, LTL_F, LTL_G, LTL_O, LTL_H, LTL_U, LTL_S)
 
 # The FormulaManager needs to be extended to be able to use these
 # operators. Notice that additional checks, and some simplifications
@@ -29,8 +27,10 @@ ALL_LTL = (LTL_X, LTL_Y, LTL_Z,
 import pysmt.environment
 import pysmt.formula
 
+
 class FormulaManager(pysmt.formula.FormulaManager):
     """Extension of FormulaManager to handle LTL Operators."""
+
     def X(self, formula):
         return self.create_node(node_type=LTL_X, args=(formula,))
 
@@ -67,6 +67,7 @@ class FormulaManager(pysmt.formula.FormulaManager):
             res = X_(res)
         return res
 
+
 #
 # For the system to work, we need to extend a few walkers.
 #
@@ -80,9 +81,11 @@ class FormulaManager(pysmt.formula.FormulaManager):
 # (SimpleTypeChecker) in order to deal with new node-types, by calling
 # an existing method (walk_bool_to_bool).
 from pysmt.type_checker import SimpleTypeChecker
+
 SimpleTypeChecker.set_handler(SimpleTypeChecker.walk_bool_to_bool, *ALL_LTL)
 
 from pysmt.oracles import FreeVarsOracle
+
 FreeVarsOracle.set_handler(FreeVarsOracle.walk_simple_args, *ALL_LTL)
 
 # An alternative approach is to subclass the walker that we are
@@ -94,8 +97,17 @@ FreeVarsOracle.set_handler(FreeVarsOracle.walk_simple_args, *ALL_LTL)
 
 import pysmt.printers
 from pysmt.walkers.generic import handles
-LTL_TYPE_TO_STR = { LTL_X: "X", LTL_Y: "Y", LTL_Z: "Z",
-                    LTL_F: "F", LTL_G: "F", LTL_O: "O", LTL_H: "H"}
+
+LTL_TYPE_TO_STR = {
+    LTL_X: "X",
+    LTL_Y: "Y",
+    LTL_Z: "Z",
+    LTL_F: "F",
+    LTL_G: "F",
+    LTL_O: "O",
+    LTL_H: "H",
+}
+
 
 class HRPrinter(pysmt.printers.HRPrinter):
     def walk_ltl_s(self, formula):
@@ -112,10 +124,13 @@ class HRPrinter(pysmt.printers.HRPrinter):
         yield formula.arg(0)
         self.stream.write(")")
 
+
 # EOC HRPrinter
+
 
 class HRSerializer(pysmt.printers.HRSerializer):
     PrinterClass = HRPrinter
+
 
 # EOC HRSerialize
 
@@ -123,14 +138,38 @@ class HRSerializer(pysmt.printers.HRSerializer):
 # existing classes. We do so for the IdentityDagWalker
 from pysmt.walkers import IdentityDagWalker
 
-def walk_ltl_x(self, formula, args, **kwargs): return self.mgr.X(args[0])
-def walk_ltl_y(self, formula, args, **kwargs): return self.mgr.Y(args[0])
-def walk_ltl_u(self, formula, args, **kwargs): return self.mgr.U(args[0], args[1])
-def walk_ltl_s(self, formula, args, **kwargs): return self.mgr.S(args[0], args[1])
-def walk_ltl_f(self, formula, args, **kwargs): return self.mgr.F(args[0])
-def walk_ltl_g(self, formula, args, **kwargs): return self.mgr.G(args[0])
-def walk_ltl_o(self, formula, args, **kwargs): return self.mgr.O(args[0])
-def walk_ltl_h(self, formula, args, **kwargs): return self.mgr.H(args[0])
+
+def walk_ltl_x(self, formula, args, **kwargs):
+    return self.mgr.X(args[0])
+
+
+def walk_ltl_y(self, formula, args, **kwargs):
+    return self.mgr.Y(args[0])
+
+
+def walk_ltl_u(self, formula, args, **kwargs):
+    return self.mgr.U(args[0], args[1])
+
+
+def walk_ltl_s(self, formula, args, **kwargs):
+    return self.mgr.S(args[0], args[1])
+
+
+def walk_ltl_f(self, formula, args, **kwargs):
+    return self.mgr.F(args[0])
+
+
+def walk_ltl_g(self, formula, args, **kwargs):
+    return self.mgr.G(args[0])
+
+
+def walk_ltl_o(self, formula, args, **kwargs):
+    return self.mgr.O(args[0])
+
+
+def walk_ltl_h(self, formula, args, **kwargs):
+    return self.mgr.H(args[0])
+
 
 IdentityDagWalker.set_handler(walk_ltl_x, LTL_X)
 IdentityDagWalker.set_handler(walk_ltl_y, LTL_Y)
@@ -145,12 +184,15 @@ IdentityDagWalker.set_handler(walk_ltl_h, LTL_H)
 from pysmt.environment import Environment, pop_env, get_env
 from pysmt.environment import push_env as pysmt_push_env
 
+
 class EnvironmentLTL(Environment):
     """Extension of pySMT environment."""
+
     # Only specify new classes. Classes that have been extended
     # directly do not need to be redefined here (e.g., TypeChecker)
     FormulaManagerClass = FormulaManager
     HRSerializerClass = HRSerializer
+
 
 # EOC EnvironmentLTL
 
@@ -161,11 +203,13 @@ def push_env(env=None):
         env = EnvironmentLTL()
     return pysmt_push_env(env=env)
 
+
 def reset_env():
     """Overload reset_env to use the new push_env()."""
     pop_env()
     push_env()
     return get_env()
+
 
 # Create the default environment
 reset_env()

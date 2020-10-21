@@ -20,8 +20,14 @@ class BtorInstaller(SolverInstaller):
 
     SOLVER = "btor"
 
-    def __init__(self, install_dir, bindings_dir, solver_version,
-                 mirror_link=None, git_version=None):
+    def __init__(
+        self,
+        install_dir,
+        bindings_dir,
+        solver_version,
+        mirror_link=None,
+        git_version=None,
+    ):
         native_link = "https://github.com/Boolector/boolector/archive/%s.tar.gz"
         archive_name = "boolector-%s.tar.gz"
 
@@ -32,12 +38,15 @@ class BtorInstaller(SolverInstaller):
             native_link = native_link % solver_version
             archive_name = archive_name % solver_version
 
-        SolverInstaller.__init__(self, install_dir=install_dir,
-                                 bindings_dir=bindings_dir,
-                                 solver_version=solver_version,
-                                 archive_name=archive_name,
-                                 native_link=native_link,
-                                 mirror_link=mirror_link)
+        SolverInstaller.__init__(
+            self,
+            install_dir=install_dir,
+            bindings_dir=bindings_dir,
+            solver_version=solver_version,
+            archive_name=archive_name,
+            native_link=native_link,
+            mirror_link=mirror_link,
+        )
 
     def compile(self):
         # Override default Python library, include, and interpreter
@@ -46,43 +55,47 @@ class BtorInstaller(SolverInstaller):
         # vs python 3.
         import distutils.sysconfig as sysconfig
         import sys
-        PYTHON_LIBRARY = os.environ.get('PYSMT_PYTHON_LIBDIR')
+
+        PYTHON_LIBRARY = os.environ.get("PYSMT_PYTHON_LIBDIR")
         if not PYTHON_LIBRARY:
-            PYTHON_LIBRARY = sysconfig.get_config_var('LIBDIR')
+            PYTHON_LIBRARY = sysconfig.get_config_var("LIBDIR")
         PYTHON_INCLUDE_DIR = sysconfig.get_python_inc()
         PYTHON_EXECUTABLE = sys.executable
-        CMAKE_OPTS = ' -DPYTHON_LIBRARY=' + PYTHON_LIBRARY
-        CMAKE_OPTS += ' -DPYTHON_INCLUDE_DIR=' + PYTHON_INCLUDE_DIR
-        CMAKE_OPTS += ' -DPYTHON_EXECUTABLE=' + PYTHON_EXECUTABLE
+        CMAKE_OPTS = " -DPYTHON_LIBRARY=" + PYTHON_LIBRARY
+        CMAKE_OPTS += " -DPYTHON_INCLUDE_DIR=" + PYTHON_INCLUDE_DIR
+        CMAKE_OPTS += " -DPYTHON_EXECUTABLE=" + PYTHON_EXECUTABLE
 
         # Unpack
-        SolverInstaller.untar(os.path.join(self.base_dir, self.archive_name),
-                              self.extract_path)
+        SolverInstaller.untar(
+            os.path.join(self.base_dir, self.archive_name), self.extract_path
+        )
 
         # Build lingeling
-        SolverInstaller.run("bash ./contrib/setup-lingeling.sh",
-                            directory=self.extract_path)
+        SolverInstaller.run(
+            "bash ./contrib/setup-lingeling.sh", directory=self.extract_path
+        )
 
         # Build Btor
-        SolverInstaller.run("bash ./contrib/setup-btor2tools.sh",
-                            directory=self.extract_path)
-
+        SolverInstaller.run(
+            "bash ./contrib/setup-btor2tools.sh", directory=self.extract_path
+        )
 
         # Build Boolector Solver
-        SolverInstaller.run("bash ./configure.sh --python",
-                            directory=self.extract_path,
-                            env_variables={"CMAKE_OPTS": CMAKE_OPTS})
+        SolverInstaller.run(
+            "bash ./configure.sh --python",
+            directory=self.extract_path,
+            env_variables={"CMAKE_OPTS": CMAKE_OPTS},
+        )
 
-        SolverInstaller.run("make -j2",
-                            directory=os.path.join(self.extract_path, "build"))
+        SolverInstaller.run(
+            "make -j2", directory=os.path.join(self.extract_path, "build")
+        )
 
     def move(self):
         libdir = os.path.join(self.extract_path, "build", "lib")
         for f in os.listdir(libdir):
             if f.startswith("pyboolector") and f.endswith(".so"):
-                SolverInstaller.mv(os.path.join(libdir, f),
-                                   self.bindings_dir)
-
+                SolverInstaller.mv(os.path.join(libdir, f), self.bindings_dir)
 
     def get_installed_version(self):
         import re

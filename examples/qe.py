@@ -34,8 +34,7 @@ y = Symbol("y", REAL)
 # coordinate (0,0), the top-right has coordinate (5, 10).
 #
 
-rect = (x >= 0.0) & (x <= 5.0) & \
-      (y >= 0.0) & (y <= 10.0)
+rect = (x >= 0.0) & (x <= 5.0) & (y >= 0.0) & (y <= 10.0)
 
 # The first expression that we build asks if for any value of x we can
 # define a value of y that would satisfy the expression above.
@@ -64,7 +63,7 @@ print(qf_f2)
 # represents the grid distance (aka Manhattan distance) of (x,y) from
 # the origin.
 z = Symbol("z", REAL)
-distance= z.Equals(x + y)
+distance = z.Equals(x + y)
 
 # We want to characterize the set of points in the rectangle, in terms
 # of their grid distance from the origin. In other words, we want to
@@ -73,7 +72,7 @@ distance= z.Equals(x + y)
 # is a value for z s.t.  exists a value for x,y within the rectangle.
 # An example of the type of information that we expect to see is the
 # maximum and minimum value of z.
-f3 = Exists([x,y], rect & distance)
+f3 = Exists([x, y], rect & distance)
 qe_f3 = qelim(f3)
 print(qe_f3.serialize())
 
@@ -90,4 +89,5 @@ print(qe_f3.serialize())
 # solver that does not support quantifiers natively to solve the new
 # formula.
 from pysmt.oracles import get_logic
+
 print(get_logic(f3), get_logic(qe_f3))

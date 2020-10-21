@@ -26,8 +26,11 @@ from pysmt.shortcuts import LE, LT, Real, GT, Int, Symbol, And, Not, Type
 from pysmt.shortcuts import FunctionType, Equals, Function, TRUE, Implies, Plus
 from pysmt.typing import BOOL, REAL, INT
 from pysmt.logics import QF_UFLIRA, QF_UFLRA, QF_UFLIA, QF_BOOL, QF_UFBV, QF_LRA
-from pysmt.exceptions import (SolverRedefinitionError, NoSolverAvailableError,
-                              UnknownSolverAnswerError)
+from pysmt.exceptions import (
+    SolverRedefinitionError,
+    NoSolverAvailableError,
+    UnknownSolverAnswerError,
+)
 
 from pysmt.test.examples import get_example_formulae
 
@@ -43,19 +46,15 @@ for _, _, fnames in os.walk(BASE_DIR):
 
 
 class TestGenericWrapper(TestCase):
-
     def setUp(self):
         TestCase.setUp(self)
 
         self.all_solvers = []
         for (name, path) in ALL_WRAPPERS:
-            self.env.factory.add_generic_solver(name,
-                                           [path],
-                                           [QF_UFLRA,
-                                            QF_UFLIA,
-                                            QF_UFBV])
+            self.env.factory.add_generic_solver(
+                name, [path], [QF_UFLRA, QF_UFLIA, QF_UFBV]
+            )
             self.all_solvers.append(name)
-
 
     @skipIf(len(ALL_WRAPPERS) == 0, "No wrapper available")
     def test_generic_wrapper_basic(self):
@@ -74,12 +73,12 @@ class TestGenericWrapper(TestCase):
         f = And(a, Not(a))
 
         for n in self.all_solvers:
-            with Solver(name=n, logic=QF_BOOL,
-                        solver_options={'debug_interaction':True}) as s:
+            with Solver(
+                name=n, logic=QF_BOOL, solver_options={"debug_interaction": True}
+            ) as s:
                 s.add_assertion(f)
                 res = s.solve()
                 self.assertFalse(res)
-
 
     @skipIf(len(ALL_WRAPPERS) == 0, "No wrapper available")
     def test_generic_wrapper_model(self):
@@ -112,7 +111,6 @@ class TestGenericWrapper(TestCase):
 
             self.assertFalse(model.get_value(b).is_true())
             self.assertTrue(model.get_value(a).is_true())
-
 
     @skipIf(len(ALL_WRAPPERS) == 0, "No wrapper available")
     def test_custom_types(self):
@@ -149,18 +147,17 @@ class TestGenericWrapper(TestCase):
 
     def test_redefinition(self):
         env = get_env()
-        env.factory.add_generic_solver("test__redefinition",
-                                       ["/tmp/nonexistent"],
-                                       [QF_UFLIRA])
+        env.factory.add_generic_solver(
+            "test__redefinition", ["/tmp/nonexistent"], [QF_UFLIRA]
+        )
         with self.assertRaises(SolverRedefinitionError):
-            env.factory.add_generic_solver("test__redefinition",
-                                           ["/tmp/nonexistent"],
-                                           [QF_UFLIRA])
+            env.factory.add_generic_solver(
+                "test__redefinition", ["/tmp/nonexistent"], [QF_UFLIRA]
+            )
 
     @skipIf(len(ALL_WRAPPERS) == 0, "No wrapper available")
     def test_reals(self):
-        f = And(LT(Symbol("x", REAL), Real(2)),
-                LE(Symbol("x", REAL), Real(3)))
+        f = And(LT(Symbol("x", REAL), Real(2)), LE(Symbol("x", REAL), Real(3)))
         for n in self.all_solvers:
             with Solver(name=n, logic=QF_UFLRA) as s:
                 s.add_assertion(f)
@@ -169,21 +166,19 @@ class TestGenericWrapper(TestCase):
 
     @skipIf(len(ALL_WRAPPERS) == 0, "No wrapper available")
     def test_ints(self):
-        f = And(LT(Symbol("x", INT), Int(2)),
-                GT(Symbol("x", INT), Int(2)))
+        f = And(LT(Symbol("x", INT), Int(2)), GT(Symbol("x", INT), Int(2)))
         for n in self.all_solvers:
             with Solver(name=n, logic=QF_UFLIA) as s:
                 s.add_assertion(f)
                 res = s.solve()
                 self.assertFalse(res)
 
-
     @skipIf(len(ALL_WRAPPERS) == 0, "No wrapper available")
     def test_clear_pop_smtlibsolver(self):
         for n in self.all_solvers:
             with Solver(name=n, logic=QF_LRA) as s:
                 x1, x2 = [Symbol(var, REAL) for var in ["x1", "x2"]]
-                init = LT(Plus(x1, Real(-1), x2), Real(Fraction(1,4)))
+                init = LT(Plus(x1, Real(-1), x2), Real(Fraction(1, 4)))
                 invar = TRUE()
                 safe = LT(Plus(x1, x2), Real(8))
                 invar_init = And(invar, init)

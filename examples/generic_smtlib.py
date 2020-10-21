@@ -25,9 +25,9 @@ from pysmt.shortcuts import get_env, GT, Solver, Symbol
 from pysmt.typing import REAL, INT
 from pysmt.exceptions import NoSolverAvailableError
 
-name = "mathsat" # Note: The API version is called 'msat'
-path = ["/tmp/mathsat"] # Path to the solver
-logics = [QF_UFLRA, QF_UFIDL] # Some of the supported logics
+name = "mathsat"  # Note: The API version is called 'msat'
+path = ["/tmp/mathsat"]  # Path to the solver
+logics = [QF_UFLRA, QF_UFIDL]  # Some of the supported logics
 
 env = get_env()
 

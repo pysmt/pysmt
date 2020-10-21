@@ -70,8 +70,10 @@ class DagWalker(Walker):
             except KeyError:
                 f = self.walk_error
 
-            args = [self.memoization[self._get_key(s, **kwargs)] \
-                    for s in self._get_children(formula)]
+            args = [
+                self.memoization[self._get_key(s, **kwargs)]
+                for s in self._get_children(formula)
+            ]
             self.memoization[key] = f(formula, args=args, **kwargs)
         else:
             pass
@@ -112,37 +114,39 @@ class DagWalker(Walker):
     def _get_key(self, formula, **kwargs):
         if not kwargs:
             return formula
-        raise NotImplementedError("DagWalker should redefine '_get_key'" +
-                                  " when using keywords arguments")
+        raise NotImplementedError(
+            "DagWalker should redefine '_get_key'" + " when using keywords arguments"
+        )
 
     def walk_true(self, formula, args, **kwargs):
-        #pylint: disable=unused-argument
+        # pylint: disable=unused-argument
         """ Returns True, independently from the children's value."""
         return True
 
     def walk_false(self, formula, args, **kwargs):
-        #pylint: disable=unused-argument
+        # pylint: disable=unused-argument
         """ Returns False, independently from the children's value."""
         return False
 
     def walk_none(self, formula, args, **kwargs):
-        #pylint: disable=unused-argument
+        # pylint: disable=unused-argument
         """ Returns None, independently from the children's value."""
         return None
 
     def walk_identity(self, formula, **kwargs):
-        #pylint: disable=unused-argument
+        # pylint: disable=unused-argument
         """ Returns formula, independently from the childrens's value."""
         return formula
 
     def walk_any(self, formula, args, **kwargs):
-        #pylint: disable=unused-argument
+        # pylint: disable=unused-argument
         """ Returns True if any of the children returned True. """
         return any(args)
 
     def walk_all(self, formula, args, **kwargs):
-        #pylint: disable=unused-argument
+        # pylint: disable=unused-argument
         """ Returns True if all the children returned True. """
         return all(args)
+
 
 # EOC DagWalker

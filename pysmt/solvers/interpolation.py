@@ -16,8 +16,8 @@
 #   limitations under the License.
 #
 
-class Interpolator(object):
 
+class Interpolator(object):
     def __init__(self):
         self._destroyed = False
 

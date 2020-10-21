@@ -28,7 +28,6 @@ from pysmt.constants import pysmt_fraction_from_rational
 
 
 class TestConstants(TestCase):
-
     def test_is_methods(self):
         self.assertFalse(is_pysmt_fraction(4))
         self.assertTrue(is_pysmt_fraction(Fraction(4)))
@@ -41,10 +40,12 @@ class TestConstants(TestCase):
             self.assertTrue(is_python_integer(long(2)))
         if HAS_GMPY:
             from gmpy2 import mpz
+
             self.assertTrue(is_python_integer(mpz(1)))
 
         if HAS_GMPY:
             from gmpy2 import mpz, mpq
+
             self.assertTrue(is_python_rational(mpz(1)))
             self.assertTrue(is_python_rational(mpq(1)))
         if PY2:
@@ -66,13 +67,17 @@ class TestConstants(TestCase):
         res = long(4) if PY2 else int(4)
         self.assertEqual(res, to_python_integer(pysmt_integer_from_integer(4)))
         self.assertEqual(res, to_python_integer(pysmt_integer_from_integer(Integer(4))))
-        self.assertEqual(res, to_python_integer(pysmt_integer_from_integer(Fraction(4))))
-        self.assertEqual(res, to_python_integer(pysmt_integer_from_integer(pyFraction(4))))
+        self.assertEqual(
+            res, to_python_integer(pysmt_integer_from_integer(Fraction(4)))
+        )
+        self.assertEqual(
+            res, to_python_integer(pysmt_integer_from_integer(pyFraction(4)))
+        )
 
     def test_pysmt_fraction_from_rational(self):
-        self.assertEqual(Fraction(4,5), pysmt_fraction_from_rational("4/5"))
-        self.assertEqual(Fraction(4,5), pysmt_fraction_from_rational(pyFraction(4,5)))
-        self.assertEqual(Fraction(4,5), pysmt_fraction_from_rational(Fraction(4,5)))
+        self.assertEqual(Fraction(4, 5), pysmt_fraction_from_rational("4/5"))
+        self.assertEqual(Fraction(4, 5), pysmt_fraction_from_rational(pyFraction(4, 5)))
+        self.assertEqual(Fraction(4, 5), pysmt_fraction_from_rational(Fraction(4, 5)))
         self.assertEqual(Fraction(4), pysmt_fraction_from_rational(4))
         self.assertEqual(Fraction(4), pysmt_fraction_from_rational(Integer(4)))
 
@@ -120,5 +125,5 @@ class TestConstants(TestCase):
         self.assertEqual(type_5a, type_6a)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

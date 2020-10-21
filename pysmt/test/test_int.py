@@ -15,26 +15,37 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from pysmt.shortcuts import (Symbol, And, Iff, Equals, LT, GT, Minus,
-                             Plus, Real, Int, ToReal)
+from pysmt.shortcuts import (
+    Symbol,
+    And,
+    Iff,
+    Equals,
+    LT,
+    GT,
+    Minus,
+    Plus,
+    Real,
+    Int,
+    ToReal,
+)
 from pysmt.typing import INT, REAL
 from pysmt.test import TestCase, skipIfNoSolverForLogic, main
 from pysmt.logics import QF_LIA, QF_UFLIRA
 from pysmt.exceptions import PysmtTypeError
 
-class TestLIA(TestCase):
 
+class TestLIA(TestCase):
     @skipIfNoSolverForLogic(QF_LIA)
     def test_eq(self):
         varA = Symbol("At", INT)
         varB = Symbol("Bt", INT)
 
-        f = And(LT(varA, Plus(varB, Int(1))),
-                GT(varA, Minus(varB, Int(1))))
+        f = And(LT(varA, Plus(varB, Int(1))), GT(varA, Minus(varB, Int(1))))
         g = Equals(varA, varB)
 
-        self.assertValid(Iff(f, g), "Formulae were expected to be equivalent",
-                         logic=QF_LIA)
+        self.assertValid(
+            Iff(f, g), "Formulae were expected to be equivalent", logic=QF_LIA
+        )
 
     @skipIfNoSolverForLogic(QF_LIA)
     def test_lira(self):
@@ -42,18 +53,17 @@ class TestLIA(TestCase):
         varB = Symbol("B", INT)
 
         with self.assertRaises(PysmtTypeError):
-            f = And(LT(varA, Plus(varA, Real(1))),
-                    GT(varA, Minus(varB, Int(1))))
+            f = And(LT(varA, Plus(varA, Real(1))), GT(varA, Minus(varB, Int(1))))
 
-        f = And(LT(varA, Plus(varA, Real(1))),
-                GT(varA, ToReal(Minus(varB, Int(1)))))
+        f = And(LT(varA, Plus(varA, Real(1))), GT(varA, ToReal(Minus(varB, Int(1)))))
         g = Equals(varA, ToReal(varB))
 
-        self.assertUnsat(And(f, g, Equals(varA, Real(1.2))),
-                         "Formula was expected to be unsat",
-                         logic=QF_UFLIRA)
+        self.assertUnsat(
+            And(f, g, Equals(varA, Real(1.2))),
+            "Formula was expected to be unsat",
+            logic=QF_UFLIRA,
+        )
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

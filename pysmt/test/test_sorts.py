@@ -27,7 +27,7 @@ from pysmt.smtlib.parser import SmtLibParser
 from pysmt.exceptions import PysmtValueError, PysmtTypeError
 
 
-SMTLIB_SRC="""\
+SMTLIB_SRC = """\
 (define-sort Set (T) (Array T Bool))
 (define-sort I () Int)
 
@@ -40,8 +40,8 @@ SMTLIB_SRC="""\
 (check-sat)
 """
 
-class TestSorts(TestCase):
 
+class TestSorts(TestCase):
     def test_smtlib_sort(self):
         # parser = SmtLibParser()
         # buf = StringIO(SMTLIB_SRC)
@@ -139,8 +139,8 @@ class TestSorts(TestCase):
         ty = C(C(C(C(C(A)))))
         self.assertIsNotNone(FreshSymbol(ty))
 
-        pty = PartialType("pty", lambda S,T: S(S(S(S(S(T))))))
-        self.assertEqual(pty(C,A), ty)
+        pty = PartialType("pty", lambda S, T: S(S(S(S(S(T))))))
+        self.assertEqual(pty(C, A), ty)
 
     def test_normalization(self):
         from pysmt.environment import Environment
@@ -169,10 +169,8 @@ class TestSorts(TestCase):
         # Test ArrayValue
         h = Array(BVType(4), BV(0, 4))
         h2 = mgr2.normalize(h)
-        self.assertEqual(h.array_value_index_type(),
-                         h2.array_value_index_type())
-        self.assertFalse(h.array_value_index_type() is \
-                         h2.array_value_index_type())
+        self.assertEqual(h.array_value_index_type(), h2.array_value_index_type())
+        self.assertFalse(h.array_value_index_type() is h2.array_value_index_type())
 
     def test_check_types_in_constructors(self):
         with self.assertRaises(PysmtValueError):
@@ -187,5 +185,6 @@ class TestSorts(TestCase):
         with self.assertRaises(PysmtValueError):
             FunctionType(REAL, (BV,))
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

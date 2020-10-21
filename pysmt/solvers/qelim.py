@@ -23,7 +23,6 @@ from pysmt.exceptions import InternalSolverError
 
 
 class QuantifierEliminator(object):
-
     def __init__(self):
         self._destroyed = False
 
@@ -44,7 +43,7 @@ class QuantifierEliminator(object):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        """ Manage exiting from Context (i.e., with statement)
+        """Manage exiting from Context (i.e., with statement)
 
         The default behaviour is to explicitely destroy the qelim to free
         the associated resources.
@@ -79,9 +78,10 @@ class ShannonQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
         for v in var_set:
             if not v.symbol_type().is_bool_type():
                 raise InternalSolverError(
-                    "Shannon Quantifier Elimination only supports "\
-                    "quantification over Boolean variables: "\
-                    "(%s is %s)" % (v, v.symbol_type()))
+                    "Shannon Quantifier Elimination only supports "
+                    "quantification over Boolean variables: "
+                    "(%s is %s)" % (v, v.symbol_type())
+                )
 
     def _expand(self, formula, args):
         """Returns the list of elements from the Shannon expansion."""
@@ -102,7 +102,9 @@ class ShannonQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
     def _exit(self):
         pass
 
+
 # EOC ShannonQuantifierEliminator
+
 
 class SelfSubstitutionQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
     """Boolean Quantifier Elimination based on Self-Substitution.
@@ -112,6 +114,7 @@ class SelfSubstitutionQuantifierEliminator(QuantifierEliminator, IdentityDagWalk
      Dror Fried, Lucas M. Tabajara, and Moshe Y. Vardi,
      CAV 2016
     """
+
     LOGICS = [pysmt.logics.BOOL]
 
     def __init__(self, environment, logic=None):

@@ -27,15 +27,18 @@ class TestDwf(TestCase):
     # NOTE: We enforce order of execution of the tests, since in the
     # other test we define a custom type.
     def test_00_new_node_type(self):
-        self.assertNotIn(199, CUSTOM_NODE_TYPES,
-                        "Initially there should be no custom node with id 199")
+        self.assertNotIn(
+            199,
+            CUSTOM_NODE_TYPES,
+            "Initially there should be no custom node with id 199",
+        )
         idx = new_node_type(node_id=199)
         self.assertIsNotNone(idx)
         with self.assertRaises(AssertionError):
             new_node_type(idx)
 
-        n = new_node_type(idx+100)
-        self.assertEqual(n, idx+100)
+        n = new_node_type(idx + 100)
+        self.assertEqual(n, idx + 100)
 
     def test_01_dwf(self):
         # Ad-hoc method to handle printing of the new node
@@ -57,7 +60,7 @@ class TestDwf(TestCase):
 
         # Create a test node (This implicitely calls the Type-checker)
         x = Symbol("x")
-        f1 = create_node(node_type=XOR, args=(x,x))
+        f1 = create_node(node_type=XOR, args=(x, x))
         self.assertIsNotNone(f1)
 
         # String conversion should use the function defined above.

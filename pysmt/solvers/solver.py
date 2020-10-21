@@ -20,9 +20,13 @@ from six.moves import xrange
 from pysmt.typing import BOOL
 from pysmt.solvers.options import SolverOptions
 from pysmt.decorators import clear_pending_pop
-from pysmt.exceptions import (SolverReturnedUnknownResultError, PysmtValueError,
-                              SolverNotConfiguredForUnsatCoresError,
-                              PysmtTypeError, SolverStatusError)
+from pysmt.exceptions import (
+    SolverReturnedUnknownResultError,
+    PysmtValueError,
+    SolverNotConfiguredForUnsatCoresError,
+    PysmtTypeError,
+    SolverStatusError,
+)
 
 
 class Solver(object):
@@ -84,7 +88,6 @@ class Solver(object):
         """
         raise NotImplementedError
 
-
     def is_sat(self, formula):
         """Checks satisfiability of the formula w.r.t. the current state of
         the solver.
@@ -95,15 +98,19 @@ class Solver(object):
         :returns: Whether formula is satisfiable
         :rtype: bool
         """
-        assert formula in self.environment.formula_manager, \
-               "Formula does not belong to the current Formula Manager"
+        assert (
+            formula in self.environment.formula_manager
+        ), "Formula does not belong to the current Formula Manager"
 
         if not self.options.incremental:
             # If not incremental, we only need to assert and solve.
             self.add_assertion(formula)
             # We do not allow two calls to solve()
             def solve_error(*args, **kwargs):
-                raise SolverStatusError("Cannot call is_sat twice when incrementality is disable")
+                raise SolverStatusError(
+                    "Cannot call is_sat twice when incrementality is disable"
+                )
+
             res = self.solve()
             self.solve = solve_error
             self.is_sat = solve_error
@@ -414,13 +421,14 @@ class UnsatCoreSolver(object):
             raise SolverNotConfiguredForUnsatCoresError
 
         if self.last_result is None or self.last_result:
-            raise SolverStatusError("The last call to solve() was not" \
-                                    " unsatisfiable")
+            raise SolverStatusError("The last call to solve() was not" " unsatisfiable")
 
         if self.last_command != "solve":
-            raise SolverStatusError("The solver status has been modified by a" \
-                                    " '%s' command after the last call to" \
-                                    " solve()" % self.last_command)
+            raise SolverStatusError(
+                "The solver status has been modified by a"
+                " '%s' command after the last call to"
+                " solve()" % self.last_command
+            )
 
     def get_unsat_core(self):
         """Returns the unsat core as a set of formulae.
@@ -429,7 +437,6 @@ class UnsatCoreSolver(object):
         as a set of formulae
         """
         raise NotImplementedError
-
 
     def get_named_unsat_core(self):
         """Returns the unsat core as a dict of names to formulae.
@@ -511,10 +518,10 @@ class Model(object):
             return False
 
         free_vars = simp.get_free_variables()
-        if  len(free_vars) > 0:
+        if len(free_vars) > 0:
             # Partial model
             return False
-        
+
         if self.environment.enable_div_by_0 and solver is not None:
             # Models might not be simplified to a constant value
             # if there is a division by zero. We find the
@@ -548,7 +555,7 @@ class Model(object):
         return self.get_value(idx, model_completion=True)
 
     def __str__(self):
-        return "\n".join([ "%s := %s" % (var, value) for (var, value) in self])
+        return "\n".join(["%s := %s" % (var, value) for (var, value) in self])
 
 
 class Converter(object):

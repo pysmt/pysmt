@@ -23,8 +23,16 @@ class Z3Installer(SolverInstaller):
 
     SOLVER = "z3"
 
-    def __init__(self, install_dir, bindings_dir, solver_version,
-                 mirror_link=None, osx=None, git_version=None, commit=None):
+    def __init__(
+        self,
+        install_dir,
+        bindings_dir,
+        solver_version,
+        mirror_link=None,
+        osx=None,
+        git_version=None,
+        commit=None,
+    ):
         arch = self.architecture
         if arch == "x86_64":
             arch = "x64"
@@ -40,34 +48,51 @@ class Z3Installer(SolverInstaller):
         if git_version is None:
             # Stable versions template
             if commit:
-                archive_name = "z3-%s.%s-%s-%s.zip" % (solver_version, commit, arch, system)
+                archive_name = "z3-%s.%s-%s-%s.zip" % (
+                    solver_version,
+                    commit,
+                    arch,
+                    system,
+                )
             else:
-                archive_name = "z3-%s-%s-%s.zip"  % (solver_version, arch, system)
-            native_link = "https://github.com/Z3Prover/z3/releases/download/z3-" + solver_version + "/{archive_name}"
+                archive_name = "z3-%s-%s-%s.zip" % (solver_version, arch, system)
+            native_link = (
+                "https://github.com/Z3Prover/z3/releases/download/z3-"
+                + solver_version
+                + "/{archive_name}"
+            )
             # print(native_link)
         else:
             # Nightly build template
-            archive_name = "z3-%s.%s-%s-%s.zip" % (solver_version, git_version, arch, system)
+            archive_name = "z3-%s.%s-%s-%s.zip" % (
+                solver_version,
+                git_version,
+                arch,
+                system,
+            )
             native_link = "https://github.com/pysmt/Z3bin/blob/master/nightly/{archive_name}?raw=true"
 
-        SolverInstaller.__init__(self, install_dir=install_dir,
-                                 bindings_dir=bindings_dir,
-                                 solver_version=solver_version,
-                                 archive_name=archive_name,
-                                 native_link=native_link,
-                                 mirror_link=mirror_link)
+        SolverInstaller.__init__(
+            self,
+            install_dir=install_dir,
+            bindings_dir=bindings_dir,
+            solver_version=solver_version,
+            archive_name=archive_name,
+            native_link=native_link,
+            mirror_link=mirror_link,
+        )
 
     def move(self):
         bpath = os.path.join(self.extract_path, "bin")
         libfiles = []
         if self.os_name == "linux":
-            libfiles += glob.glob(bpath + '/*.so')
+            libfiles += glob.glob(bpath + "/*.so")
         elif self.os_name == "darwin":
-            libfiles += glob.glob(bpath + '/*.a')
-            libfiles += glob.glob(bpath + '/*.dylib')
+            libfiles += glob.glob(bpath + "/*.a")
+            libfiles += glob.glob(bpath + "/*.dylib")
         elif self.os_name == "windows":
-            libfiles += glob.glob(bpath + '/*.dll')
-            libfiles += glob.glob(bpath + '/*.lib')
+            libfiles += glob.glob(bpath + "/*.dll")
+            libfiles += glob.glob(bpath + "/*.lib")
 
         SolverInstaller.mv(os.path.join(bpath, "python/z3"), self.bindings_dir)
 

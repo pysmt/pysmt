@@ -32,22 +32,20 @@ from pysmt.substituter import MSSubstituter, MGSubstituter
 
 
 class TestWalkers(TestCase):
-
     def test_subst(self):
         varA = Symbol("At", INT)
         varB = Symbol("Bt", INT)
 
-        f = And(LT(varA, Plus(varB, Int(1))),
-                GT(varA, Minus(varB, Int(1))))
+        f = And(LT(varA, Plus(varB, Int(1))), GT(varA, Minus(varB, Int(1))))
         g = Equals(varA, varB)
         h = Iff(f, g)
 
-        res = substitute(h, subs={varA:varB})
+        res = substitute(h, subs={varA: varB})
 
-        self.assertEqual(res, h.substitute({varA:varB}))
+        self.assertEqual(res, h.substitute({varA: varB}))
 
-        res = substitute(h, subs={varA:Int(1)})
-        self.assertEqual(res, h.substitute({varA:Int(1)}))
+        res = substitute(h, subs={varA: Int(1)})
+        self.assertEqual(res, h.substitute({varA: Int(1)}))
 
     def test_substituter_conditions(self):
         x = Symbol("x")
@@ -57,8 +55,8 @@ class TestWalkers(TestCase):
         f = Symbol("f", ftype)
 
         # 1. All arguments must be terms
-        args_good = {x:y}
-        args_bad = {x:f}
+        args_good = {x: y}
+        args_bad = {x: f}
 
         substitute(and_x_x, args_good)
         with self.assertRaisesRegex(PysmtTypeError, " substitutions"):
@@ -71,14 +69,14 @@ class TestWalkers(TestCase):
         args_1 = {x: new_x}
         args_2 = {new_x: new_x}
 
-        with self.assertRaisesRegex(PysmtTypeError, "Formula Manager" ):
+        with self.assertRaisesRegex(PysmtTypeError, "Formula Manager"):
             substitute(and_x_x, args_1)
 
         with self.assertRaisesRegex(PysmtTypeError, "Formula Manager."):
             substitute(and_x_x, args_2)
 
         with self.assertRaisesRegex(PysmtTypeError, "substitute()"):
-            substitute(f, {x:x})
+            substitute(f, {x: x})
 
     def test_undefined_node(self):
         varA = Symbol("At", INT)
@@ -106,12 +104,11 @@ class TestWalkers(TestCase):
 
         class IdentityDagWalker2(IdentityDagWalker, FancyNewNodeWalkerMixin):
             pass
+
         walkerC = IdentityDagWalker2(env=self.env)
-        self.assertEqual(walkerC.functions[idx],
-                         walkerC.walk_fancy_new_node)
+        self.assertEqual(walkerC.functions[idx], walkerC.walk_fancy_new_node)
 
     def test_identity_walker_simple(self):
-
         def walk_and_to_or(formula, args, **kwargs):
             return Or(args)
 
@@ -123,10 +120,10 @@ class TestWalkers(TestCase):
         walker.set_function(walk_and_to_or, op.AND)
         walker.set_function(walk_or_to_and, op.OR)
 
-        x, y, z = Symbol('x'), Symbol('y'), Symbol('z')
+        x, y, z = Symbol("x"), Symbol("y"), Symbol("z")
 
-        cnf = And(Or(x,y,z), Or(z, Not(y)))
-        fake_dnf = Or(And(x,y,z), And(z, Not(y)))
+        cnf = And(Or(x, y, z), Or(z, Not(y)))
+        fake_dnf = Or(And(x, y, z), And(z, Not(y)))
         result = walker.walk(cnf)
         self.assertEqual(result, fake_dnf)
 
@@ -160,11 +157,9 @@ class TestWalkers(TestCase):
     def test_substitution_complex(self):
         x, y = Symbol("x", REAL), Symbol("y", REAL)
         # y = 0 /\ (Forall x. x > 3 /\ y < 2)
-        f = And(Equals(y, Real(0)),
-                ForAll([x], And(GT(x, Real(3)), LT(y, Real(2)))))
+        f = And(Equals(y, Real(0)), ForAll([x], And(GT(x, Real(3)), LT(y, Real(2)))))
 
-        subs = {y: Real(0),
-                ForAll([x], And(GT(x, Real(3)), LT(y, Real(2)))): TRUE()}
+        subs = {y: Real(0), ForAll([x], And(GT(x, Real(3)), LT(y, Real(2)))): TRUE()}
         f_subs = substitute(f, subs).simplify()
         if self.env.SubstituterClass == MGSubstituter:
             self.assertEqual(f_subs, TRUE())
@@ -178,10 +173,11 @@ class TestWalkers(TestCase):
     def test_substitution_complex_mss(self):
         x, y = FreshSymbol(REAL), FreshSymbol(REAL)
         # y = 0 /\ (Forall x. x > 3 /\ y < 2)
-        f = And(Equals(y, Real(0)),
-                ForAll([x], And(GT(x, Real(3)), LT(y, Real(2)))))
-        subs = {y: Real(0),
-                ForAll([x], And(GT(x, Real(3)), LT(Real(0), Real(2)))): TRUE()}
+        f = And(Equals(y, Real(0)), ForAll([x], And(GT(x, Real(3)), LT(y, Real(2)))))
+        subs = {
+            y: Real(0),
+            ForAll([x], And(GT(x, Real(3)), LT(Real(0), Real(2)))): TRUE(),
+        }
         f_subs = MSSubstituter(env=self.env).substitute(f, subs).simplify()
         self.assertEqual(f_subs, TRUE())
 
@@ -232,15 +228,18 @@ class TestWalkers(TestCase):
 
     def test_walker_super(self):
         from pysmt.walkers import DagWalker
+
         class WalkA(DagWalker):
             def __init__(self):
                 DagWalker.__init__(self)
+
             def walk_symbol(self, formula, args, **kwargs):
                 return "A" + str(formula)
 
         class WalkB(WalkA):
             def __init__(self):
                 WalkA.__init__(self)
+
             def walk_symbol(self, formula, args, **kwargs):
                 s = WalkA.super(self, formula, args, **kwargs)
                 return "B" + str(s)
@@ -248,6 +247,7 @@ class TestWalkers(TestCase):
         class WalkC(WalkB):
             def __init__(self):
                 WalkB.__init__(self)
+
             def walk_symbol(self, formula, args, **kwargs):
                 s = WalkB.walk_symbol(self, formula, args, **kwargs)
                 return "C" + str(s)
@@ -258,8 +258,10 @@ class TestWalkers(TestCase):
 
     def test_substituter_instance(self):
         from pysmt.substituter import Substituter
+
         with self.assertRaises(NotImplementedError):
             Substituter(env=self.env)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

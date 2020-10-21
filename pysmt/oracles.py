@@ -45,25 +45,26 @@ class SizeOracle(walkers.DagWalker):
     # - DEPTH      : counts the maximum number of levels in the formula
     # - SYMBOLS    : counts the number of different symbols occurring in the formula
     # - BOOL_DAG   : counts the dag size by considering theory atoms as leaf
-    (MEASURE_TREE_NODES,
-     MEASURE_DAG_NODES,
-     MEASURE_LEAVES,
-     MEASURE_DEPTH,
-     MEASURE_SYMBOLS,
-     MEASURE_BOOL_DAG) = range(6)
+    (
+        MEASURE_TREE_NODES,
+        MEASURE_DAG_NODES,
+        MEASURE_LEAVES,
+        MEASURE_DEPTH,
+        MEASURE_SYMBOLS,
+        MEASURE_BOOL_DAG,
+    ) = range(6)
 
     def __init__(self, env=None):
         walkers.DagWalker.__init__(self, env=env)
 
-        self.measure_to_fun = \
-                        {SizeOracle.MEASURE_TREE_NODES: self.walk_count_tree,
-                         SizeOracle.MEASURE_DAG_NODES: self.walk_count_dag,
-                         SizeOracle.MEASURE_LEAVES: self.walk_count_leaves,
-                         SizeOracle.MEASURE_DEPTH: self.walk_count_depth,
-                         SizeOracle.MEASURE_SYMBOLS: self.walk_count_symbols,
-                         SizeOracle.MEASURE_BOOL_DAG: self.walk_count_bool_dag,
-                        }
-
+        self.measure_to_fun = {
+            SizeOracle.MEASURE_TREE_NODES: self.walk_count_tree,
+            SizeOracle.MEASURE_DAG_NODES: self.walk_count_dag,
+            SizeOracle.MEASURE_LEAVES: self.walk_count_leaves,
+            SizeOracle.MEASURE_DEPTH: self.walk_count_depth,
+            SizeOracle.MEASURE_SYMBOLS: self.walk_count_symbols,
+            SizeOracle.MEASURE_BOOL_DAG: self.walk_count_bool_dag,
+        }
 
     def set_walking_measure(self, measure):
         if measure not in self.measure_to_fun:
@@ -86,32 +87,34 @@ class SizeOracle(walkers.DagWalker):
         self.set_walking_measure(measure)
         res = self.walk(formula, measure=measure)
 
-        if measure == SizeOracle.MEASURE_DAG_NODES or \
-           measure == SizeOracle.MEASURE_SYMBOLS or \
-           measure == SizeOracle.MEASURE_BOOL_DAG :
+        if (
+            measure == SizeOracle.MEASURE_DAG_NODES
+            or measure == SizeOracle.MEASURE_SYMBOLS
+            or measure == SizeOracle.MEASURE_BOOL_DAG
+        ):
             return len(res)
         return res
 
     def walk_count_tree(self, formula, args, **kwargs):
-        #pylint: disable=unused-argument
+        # pylint: disable=unused-argument
         return 1 + sum(args)
 
     def walk_count_dag(self, formula, args, measure, **kwargs):
-        #pylint: disable=unused-argument
+        # pylint: disable=unused-argument
         return frozenset([formula]) | frozenset([x for s in args for x in s])
 
     def walk_count_leaves(self, formula, args, measure, **kwargs):
-        #pylint: disable=unused-argument
-        is_leaf = (len(args) == 0)
+        # pylint: disable=unused-argument
+        is_leaf = len(args) == 0
         return (1 if is_leaf else 0) + sum(args)
 
     def walk_count_depth(self, formula, args, measure, **kwargs):
-        #pylint: disable=unused-argument
-        is_leaf = (len(args) == 0)
+        # pylint: disable=unused-argument
+        is_leaf = len(args) == 0
         return 1 + (0 if is_leaf else max(args))
 
     def walk_count_symbols(self, formula, args, measure, **kwargs):
-        #pylint: disable=unused-argument
+        # pylint: disable=unused-argument
         is_sym = formula.is_symbol()
         a_res = frozenset([x for s in args for x in s])
         if is_sym:
@@ -119,7 +122,7 @@ class SizeOracle(walkers.DagWalker):
         return a_res
 
     def walk_count_bool_dag(self, formula, args, measure, **kwargs):
-        #pylint: disable=unused-argument
+        # pylint: disable=unused-argument
         if formula.is_theory_relation():
             return frozenset([formula])
         return frozenset([formula]) | frozenset([x for s in args for x in s])
@@ -139,11 +142,11 @@ class QuantifierOracle(walkers.DagWalker):
     def walk_false(self, formula, args, **kwargs):
         return walkers.DagWalker.walk_false(self, formula, args, **kwargs)
 
+
 # EOC QuantifierOracle
 
 
 class TheoryOracle(walkers.DagWalker):
-
     def get_theory(self, formula):
         """Returns the thoery for the formula."""
         return self.walk(formula)
@@ -176,12 +179,13 @@ class TheoryOracle(walkers.DagWalker):
     @walkers.handles(op.RELATIONS)
     @walkers.handles(op.BOOL_OPERATORS)
     @walkers.handles(op.BV_OPERATORS)
-    @walkers.handles(op.STR_OPERATORS -\
-                     set([op.STR_LENGTH, op.STR_INDEXOF, op.STR_TO_INT]))
+    @walkers.handles(
+        op.STR_OPERATORS - set([op.STR_LENGTH, op.STR_INDEXOF, op.STR_TO_INT])
+    )
     @walkers.handles(op.ITE, op.ARRAY_SELECT, op.ARRAY_STORE, op.MINUS)
     def walk_combine(self, formula, args, **kwargs):
         """Combines the current theory value of the children"""
-        #pylint: disable=unused-argument
+        # pylint: disable=unused-argument
         if len(args) == 1:
             return args[0].copy()
         theory_out = args[0]
@@ -194,7 +198,7 @@ class TheoryOracle(walkers.DagWalker):
     @walkers.handles(op.STR_CONSTANT)
     def walk_constant(self, formula, args, **kwargs):
         """Returns a new theory object with the type of the constant."""
-        #pylint: disable=unused-argument
+        # pylint: disable=unused-argument
         theory_out = Theory()
         if formula.is_real_constant():
             theory_out.real_arithmetic = True
@@ -212,14 +216,14 @@ class TheoryOracle(walkers.DagWalker):
 
     def walk_symbol(self, formula, args, **kwargs):
         """Returns a new theory object with the type of the symbol."""
-        #pylint: disable=unused-argument
+        # pylint: disable=unused-argument
         f_type = formula.symbol_type()
         theory_out = self._theory_from_type(f_type)
         return theory_out
 
     def walk_function(self, formula, args, **kwargs):
         """Extends the Theory with UF."""
-        #pylint: disable=unused-argument
+        # pylint: disable=unused-argument
         if len(args) == 1:
             theory_out = args[0].copy()
         elif len(args) > 1:
@@ -235,9 +239,9 @@ class TheoryOracle(walkers.DagWalker):
         return theory_out
 
     def walk_toreal(self, formula, args, **kwargs):
-        #pylint: disable=unused-argument
+        # pylint: disable=unused-argument
         """Extends the Theory with LIRA."""
-        theory_out = args[0].set_lira() # This makes a copy of args[0]
+        theory_out = args[0].set_lira()  # This makes a copy of args[0]
         return theory_out
         rtype = formula.symbol_name()
 
@@ -249,7 +253,7 @@ class TheoryOracle(walkers.DagWalker):
         return theory_out
 
     def walk_bv_tonatural(self, formula, args, **kwargs):
-        #pylint: disable=unused-argument
+        # pylint: disable=unused-argument
         """Extends the Theory with Integer."""
         theory_out = args[0].copy()
         theory_out.integer_arithmetic = True
@@ -283,11 +287,11 @@ class TheoryOracle(walkers.DagWalker):
 
     def walk_strings(self, formula, args, **kwargs):
         """Extends the Theory with Strings."""
-        #pylint: disable=unused-argument
+        # pylint: disable=unused-argument
         if formula.is_string_constant():
             theory_out = Theory(strings=True)
         else:
-            theory_out = args[0].set_strings() # This makes a copy of args[0]
+            theory_out = args[0].set_strings()  # This makes a copy of args[0]
         return theory_out
 
     def walk_array_value(self, formula, args, **kwargs):
@@ -312,8 +316,7 @@ class TheoryOracle(walkers.DagWalker):
             theory_out = theory_out.combine(t)
         # Check for non-linear
         left, right = formula.args()
-        if len(left.get_free_variables()) != 0 and \
-           len(right.get_free_variables()) != 0:
+        if len(left.get_free_variables()) != 0 and len(right.get_free_variables()) != 0:
             theory_out = theory_out.set_linear(False)
         elif formula.arg(1).is_zero():
             # DivBy0 is non-linear
@@ -326,12 +329,14 @@ class TheoryOracle(walkers.DagWalker):
         theory_out = theory_out.set_difference_logic(False)
         return theory_out
 
+
 # EOC TheoryOracle
 
 
 # Operators for which Args is an FNode
-DEPENDENCIES_SIMPLE_ARGS = (set(op.ALL_TYPES) - \
-                           (set([op.SYMBOL, op.FUNCTION]) | op.QUANTIFIERS | op.CONSTANTS))
+DEPENDENCIES_SIMPLE_ARGS = set(op.ALL_TYPES) - (
+    set([op.SYMBOL, op.FUNCTION]) | op.QUANTIFIERS | op.CONSTANTS
+)
 
 
 class FreeVarsOracle(walkers.DagWalker):
@@ -348,7 +353,7 @@ class FreeVarsOracle(walkers.DagWalker):
 
     @walkers.handles(DEPENDENCIES_SIMPLE_ARGS)
     def walk_simple_args(self, formula, args, **kwargs):
-        #pylint: disable=unused-argument
+        # pylint: disable=unused-argument
         res = set()
         for arg in args:
             res.update(arg)
@@ -356,16 +361,16 @@ class FreeVarsOracle(walkers.DagWalker):
 
     @walkers.handles(op.QUANTIFIERS)
     def walk_quantifier(self, formula, args, **kwargs):
-        #pylint: disable=unused-argument
+        # pylint: disable=unused-argument
         return args[0].difference(formula.quantifier_vars())
 
     def walk_symbol(self, formula, args, **kwargs):
-        #pylint: disable=unused-argument
+        # pylint: disable=unused-argument
         return frozenset([formula])
 
     @walkers.handles(op.CONSTANTS)
     def walk_constant(self, formula, args, **kwargs):
-        #pylint: disable=unused-argument
+        # pylint: disable=unused-argument
         return frozenset()
 
     def walk_function(self, formula, args, **kwargs):
@@ -374,6 +379,7 @@ class FreeVarsOracle(walkers.DagWalker):
             res.update(arg)
         return frozenset(res)
 
+
 # EOC FreeVarsOracle
 
 
@@ -381,6 +387,7 @@ class AtomsOracle(walkers.DagWalker):
     """This class returns the set of Boolean atoms involved in a formula
     A boolean atom is either a boolean variable or a theory atom
     """
+
     # We have the following categories for this walker.
     #
     # - Boolean operators, e.g. and, or, not...
@@ -399,28 +406,28 @@ class AtomsOracle(walkers.DagWalker):
     @walkers.handles(op.BOOL_CONNECTIVES)
     @walkers.handles(op.QUANTIFIERS)
     def walk_bool_op(self, formula, args, **kwargs):
-        #pylint: disable=unused-argument
+        # pylint: disable=unused-argument
         return frozenset(x for a in args for x in a)
 
     @walkers.handles(op.RELATIONS)
     def walk_theory_relation(self, formula, **kwargs):
-        #pylint: disable=unused-argument
+        # pylint: disable=unused-argument
         return frozenset([formula])
 
     @walkers.handles(op.THEORY_OPERATORS - {op.ARRAY_SELECT})
     def walk_theory_op(self, formula, **kwargs):
-        #pylint: disable=unused-argument
+        # pylint: disable=unused-argument
         return None
 
     def walk_array_select(self, formula, **kwargs):
-        #pylint: disable=unused-argument
+        # pylint: disable=unused-argument
         if self.env.stc.get_type(formula).is_bool_type():
             return frozenset([formula])
         return None
 
     @walkers.handles(op.CONSTANTS)
     def walk_constant(self, formula, **kwargs):
-        #pylint: disable=unused-argument
+        # pylint: disable=unused-argument
         if formula.is_bool_constant():
             return frozenset()
         return None
@@ -436,18 +443,18 @@ class AtomsOracle(walkers.DagWalker):
         return None
 
     def walk_ite(self, formula, args, **kwargs):
-        #pylint: disable=unused-argument
+        # pylint: disable=unused-argument
         if any(a is None for a in args):
             # Theory ITE
             return None
         else:
             return frozenset(x for a in args for x in a)
 
+
 # EOC AtomsOracle
 
 
 class TypesOracle(walkers.DagWalker):
-
     def get_types(self, formula, custom_only=False):
         """Returns the types appearing in the formula.
 
@@ -460,13 +467,15 @@ class TypesOracle(walkers.DagWalker):
         assert len(types) <= len(exp_types)
         # Base types filtering
         if custom_only:
-            exp_types = [x for x in exp_types
-                         if not x.is_bool_type() and
-                         not x.is_int_type() and
-                         not x.is_real_type() and
-                         not x.is_bv_type() and
-                         not x.is_array_type() and
-                         not x.is_string_type()
+            exp_types = [
+                x
+                for x in exp_types
+                if not x.is_bool_type()
+                and not x.is_int_type()
+                and not x.is_real_type()
+                and not x.is_bv_type()
+                and not x.is_array_type()
+                and not x.is_string_type()
             ]
         return exp_types
 
@@ -493,11 +502,14 @@ class TypesOracle(walkers.DagWalker):
         expanded.reverse()
         return expanded
 
-    @walkers.handles(set(op.ALL_TYPES) - \
-                     set([op.SYMBOL, op.FUNCTION]) -\
-                     op.QUANTIFIERS - op.CONSTANTS)
+    @walkers.handles(
+        set(op.ALL_TYPES)
+        - set([op.SYMBOL, op.FUNCTION])
+        - op.QUANTIFIERS
+        - op.CONSTANTS
+    )
     def walk_combine(self, formula, args, **kwargs):
-        #pylint: disable=unused-argument
+        # pylint: disable=unused-argument
         res = set()
         for arg in args:
             res.update(arg)
@@ -514,12 +526,12 @@ class TypesOracle(walkers.DagWalker):
 
     @walkers.handles(op.QUANTIFIERS)
     def walk_quantifier(self, formula, args, **kwargs):
-        return frozenset([x.symbol_type()
-                          for x in formula.quantifier_vars()]) | args[0]
+        return frozenset([x.symbol_type() for x in formula.quantifier_vars()]) | args[0]
 
     @walkers.handles(op.CONSTANTS)
     def walk_constant(self, formula, args, **kwargs):
         return frozenset([formula.constant_type()])
+
 
 # EOC TypesOracle
 
@@ -530,7 +542,8 @@ def get_logic(formula, env=None):
     # Get Quantifier Information
     qf = env.qfo.is_qf(formula)
     theory = env.theoryo.get_theory(formula)
-    logic = Logic(name="Detected Logic", description="",
-                  quantifier_free=qf, theory=theory)
+    logic = Logic(
+        name="Detected Logic", description="", quantifier_free=qf, theory=theory
+    )
     # Return a logic supported by PySMT that is close to the one computed
     return get_closer_pysmt_logic(logic)

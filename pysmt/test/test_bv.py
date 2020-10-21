@@ -25,7 +25,6 @@ from pysmt.exceptions import PysmtValueError, PysmtTypeError
 
 
 class TestBV(TestCase):
-
     @skipIfNoSolverForLogic(QF_BV)
     def test_bv(self):
         mgr = self.env.formula_manager
@@ -37,7 +36,7 @@ class TestBV(TestCase):
         big = BV(127, 128)
         binary = BV("111")
         binary2 = BV("#b111")
-        binary3 = BV(0b111, 3) # In this case we need to explicit the width
+        binary3 = BV(0b111, 3)  # In this case we need to explicit the width
 
         self.assertEqual(binary, binary2)
         self.assertEqual(binary2, binary3)
@@ -58,7 +57,7 @@ class TestBV(TestCase):
             BV(10, 2)
 
         # Variables
-        b128 = Symbol("b", BV128) # BV1, BV8 etc. are defined in pysmt.typing
+        b128 = Symbol("b", BV128)  # BV1, BV8 etc. are defined in pysmt.typing
         b32 = Symbol("b32", BV32)
         hexample = BV(0x10, 32)
         bcustom = Symbol("bc", BVType(42))
@@ -109,13 +108,12 @@ class TestBV(TestCase):
 
         zero_one_64 = mgr.BVConcat(zero, one)
         one_zero_64 = mgr.BVConcat(one, zero)
-        one_one_64  = mgr.BVConcat(one, one)
+        one_one_64 = mgr.BVConcat(one, one)
         self.assertTrue(one_one_64.is_bv_concat())
         self.assertFalse(one_one_64.is_bv_and())
 
         self.assertTrue(zero_one_64.bv_width() == 64)
-        f1 = Equals(mgr.BVXor(one_zero_64, zero_one_64),
-                    one_one_64)
+        f1 = Equals(mgr.BVXor(one_zero_64, zero_one_64), one_one_64)
 
         self.assertTrue(is_sat(f1, logic=QF_BV), f1)
 
@@ -141,7 +139,9 @@ class TestBV(TestCase):
         self.assertTrue(udiv.is_bv_udiv())
 
         self.assertTrue(is_valid(Equals(addition, one), logic=QF_BV), addition)
-        self.assertTrue(is_valid(Equals(multiplication, zero), logic=QF_BV), multiplication)
+        self.assertTrue(
+            is_valid(Equals(multiplication, zero), logic=QF_BV), multiplication
+        )
         self.assertTrue(is_valid(Equals(udiv, zero), logic=QF_BV), udiv)
 
         three = mgr.BV(3, 32)
@@ -256,45 +256,47 @@ class TestBV(TestCase):
         bvx = mgr.Symbol("bv", BVType(8))
         bvy = mgr.Symbol("dividend", BVType(8))
 
-        fudiv = mgr.Equals(mgr.BVUDiv(bvx, mgr.BV(0, 8)),
-                           mgr.BV(255, 8))
+        fudiv = mgr.Equals(mgr.BVUDiv(bvx, mgr.BV(0, 8)), mgr.BV(255, 8))
         self.assertValid(fudiv)
 
-        fsdiv = mgr.Equals(mgr.BVSDiv(bvx, mgr.BV(0, 8)),
-                           mgr.Ite(mgr.BVSGE(bvx, mgr.BV(0, 8)),
-                                   mgr.BV(255, 8),
-                                   mgr.BV(1, 8)))
+        fsdiv = mgr.Equals(
+            mgr.BVSDiv(bvx, mgr.BV(0, 8)),
+            mgr.Ite(mgr.BVSGE(bvx, mgr.BV(0, 8)), mgr.BV(255, 8), mgr.BV(1, 8)),
+        )
         self.assertValid(fsdiv)
 
-        furem = mgr.Equals(mgr.BVURem(bvx, mgr.BV(0, 8)),
-                           bvx)
+        furem = mgr.Equals(mgr.BVURem(bvx, mgr.BV(0, 8)), bvx)
         self.assertValid(furem)
 
-        fsrem = mgr.Equals(mgr.BVSRem(bvx, mgr.BV(0, 8)),
-                           bvx)
+        fsrem = mgr.Equals(mgr.BVSRem(bvx, mgr.BV(0, 8)), bvx)
         self.assertValid(fsrem)
 
         # Repeat tests with symbolic dividend
-        fudiv = mgr.Implies(mgr.Equals(bvy, mgr.BV(0, 8)),
-                            mgr.Equals(mgr.BVUDiv(bvx, bvy),
-                                       mgr.BV(255, 8)))
+        fudiv = mgr.Implies(
+            mgr.Equals(bvy, mgr.BV(0, 8)),
+            mgr.Equals(mgr.BVUDiv(bvx, bvy), mgr.BV(255, 8)),
+        )
         self.assertValid(fudiv)
 
-        fsdiv = mgr.Implies(mgr.Equals(bvy, mgr.BV(0, 8)),
-                            mgr.Equals(mgr.BVSDiv(bvx, mgr.BV(0, 8)),
-                                       mgr.Ite(mgr.BVSGE(bvx, mgr.BV(0, 8)),
-                                               mgr.BV(255, 8),
-                                               mgr.BV(1, 8))))
+        fsdiv = mgr.Implies(
+            mgr.Equals(bvy, mgr.BV(0, 8)),
+            mgr.Equals(
+                mgr.BVSDiv(bvx, mgr.BV(0, 8)),
+                mgr.Ite(mgr.BVSGE(bvx, mgr.BV(0, 8)), mgr.BV(255, 8), mgr.BV(1, 8)),
+            ),
+        )
         self.assertValid(fsdiv)
 
-        furem = mgr.Implies(mgr.Equals(bvy, mgr.BV(0, 8)),
-                            mgr.Equals(mgr.BVURem(bvx, mgr.BV(0, 8)),
-                                       bvx))
+        furem = mgr.Implies(
+            mgr.Equals(bvy, mgr.BV(0, 8)),
+            mgr.Equals(mgr.BVURem(bvx, mgr.BV(0, 8)), bvx),
+        )
         self.assertValid(furem)
 
-        fsrem = mgr.Implies(mgr.Equals(bvy, mgr.BV(0, 8)),
-                            mgr.Equals(mgr.BVSRem(bvx, mgr.BV(0, 8)),
-                                       bvx))
+        fsrem = mgr.Implies(
+            mgr.Equals(bvy, mgr.BV(0, 8)),
+            mgr.Equals(mgr.BVSRem(bvx, mgr.BV(0, 8)), bvx),
+        )
         self.assertValid(fsrem)
 
     def test_is_bv_constant(self):
@@ -306,7 +308,7 @@ class TestBV(TestCase):
         self.assertTrue(bvconst.is_bv_constant(value=4, width=8))
         self.assertFalse(bvconst.is_bv_constant(value=4, width=9))
         self.assertFalse(bvconst.is_bv_constant(value=5, width=8))
-        self.assertFalse(bvconst.is_bv_constant(3,9))
+        self.assertFalse(bvconst.is_bv_constant(3, 9))
         self.assertFalse(bvconst.is_bv_constant(3))
 
     def test_infix_with_function(self):
@@ -316,8 +318,7 @@ class TestBV(TestCase):
         ftype = FunctionType(BV128, (BV32,))
         g = mgr.Symbol("g", ftype)
         f = mgr.Function(g, (mgr.BV(1, 32),))
-        self.assertEqual(f.Equals(5),
-                         f.Equals(mgr.BV(5, 128)))
+        self.assertEqual(f.Equals(5), f.Equals(mgr.BV(5, 128)))
 
     def test_infix_with_array(self):
         mgr = self.env.formula_manager
@@ -326,27 +327,24 @@ class TestBV(TestCase):
         atype = ArrayType(BV32, BV128)
         g = mgr.Symbol("g", atype)
         f = mgr.Select(g, mgr.BV(1, 32))
-        self.assertEqual(f.Equals(5),
-                         f.Equals(mgr.BV(5, 128)))
+        self.assertEqual(f.Equals(5), f.Equals(mgr.BV(5, 128)))
 
     def test_bv_to_natural(self):
         mgr = self.env.formula_manager
         c1 = mgr.BVToNatural(mgr.BV(1, 32)).simplify()
         self.assertEqual(c1.constant_value(), 1)
 
-
     def test_bv_str(self):
         mgr = self.env.formula_manager
         c1 = mgr.BV(17, 8)
-        self.assertEqual(c1.bv_str('b'), '00010001')
-        self.assertEqual(c1.bv_str('d'), '17')
-        self.assertEqual(c1.bv_str('x'), '11')
+        self.assertEqual(c1.bv_str("b"), "00010001")
+        self.assertEqual(c1.bv_str("d"), "17")
+        self.assertEqual(c1.bv_str("x"), "11")
 
         c1 = mgr.BV(255, 8)
-        self.assertEqual(c1.bv_str('b'), '11111111')
-        self.assertEqual(c1.bv_str('d'), '255')
-        self.assertEqual(c1.bv_str('x'), 'ff')
-
+        self.assertEqual(c1.bv_str("b"), "11111111")
+        self.assertEqual(c1.bv_str("d"), "255")
+        self.assertEqual(c1.bv_str("x"), "ff")
 
 
 if __name__ == "__main__":

@@ -26,11 +26,12 @@ VERSION = (0, 9, 1, "dev", 1)
 # See: https://git-scm.com/docs/git-describe
 if len(VERSION) == 5:
     import subprocess
+
     try:
-        git_version = subprocess.check_output(["git", "describe",
-                                               "--dirty=-wip"],
-                                              stderr=subprocess.STDOUT)
-        commits_from_tag = git_version.strip().decode('ascii')
+        git_version = subprocess.check_output(
+            ["git", "describe", "--dirty=-wip"], stderr=subprocess.STDOUT
+        )
+        commits_from_tag = git_version.strip().decode("ascii")
         commits_from_tag = commits_from_tag.split("-")[1]
         commits_from_tag = int(commits_from_tag)
         VERSION = VERSION[:4] + (commits_from_tag,)
@@ -38,5 +39,4 @@ if len(VERSION) == 5:
         pass
 
 # PEP440 Format
-__version__ = "%d.%d.%d.%s%d" % VERSION if len(VERSION) == 5 else \
-              "%d.%d.%d" % VERSION
+__version__ = "%d.%d.%d.%s%d" % VERSION if len(VERSION) == 5 else "%d.%d.%d" % VERSION

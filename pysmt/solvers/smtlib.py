@@ -20,7 +20,7 @@ class SmtLibSolver(object):
     # SMT-LIB 2 Interface
     #
     def set_logic(self, logic):
-        """ Defines the logic in use.
+        """Defines the logic in use.
 
         E.g., set_logic("QF_LIA")
 
@@ -34,7 +34,7 @@ class SmtLibSolver(object):
         raise NotImplementedError
 
     def declare_fun(self, symbol):
-        """ Declare a function symbol.
+        """Declare a function symbol.
 
         Restrictions: Only after set-logic.
 
@@ -45,7 +45,7 @@ class SmtLibSolver(object):
         raise NotImplementedError
 
     def declare_const(self, symbol):
-        """ Declares a constant symbol.
+        """Declares a constant symbol.
 
         Restrictions: Only after set-logic.
 
@@ -56,7 +56,7 @@ class SmtLibSolver(object):
         raise NotImplementedError
 
     def define_fun(self, name, args, rtype, expr):
-        """ Declare an interpreted function. Can be used to build abbreviations.
+        """Declare an interpreted function. Can be used to build abbreviations.
 
         Restrictions: Only after set-logic.
 
@@ -73,7 +73,7 @@ class SmtLibSolver(object):
         raise NotImplementedError
 
     def declare_sort(self, name, cardinality):
-        """ Declares a new sort with the given name and cardinality.
+        """Declares a new sort with the given name and cardinality.
 
         Restrictions: Only after set-logic.
 
@@ -82,7 +82,7 @@ class SmtLibSolver(object):
         raise NotImplementedError
 
     def define_sort(self, name, args, sort_expr):
-        """ Declares a symbol as an abreviation for a sort-expression.
+        """Declares a symbol as an abreviation for a sort-expression.
 
         Restrictions: Only after set-logic.
         :returns: None - might raise exception
@@ -90,7 +90,7 @@ class SmtLibSolver(object):
         raise NotImplementedError
 
     def assert_(self, expr, named=None):
-        """ Assert the given expression.
+        """Assert the given expression.
 
         Optionally provides a name to the terms.
 
@@ -100,14 +100,14 @@ class SmtLibSolver(object):
         raise NotImplementedError
 
     def get_assertions(self):
-        """ Returns a list of asserted expressions.
+        """Returns a list of asserted expressions.
 
         Restrictions: Only after set-logic.
         """
         raise NotImplementedError
 
     def check_sat(self):
-        """ Checks the satisfiability of the formula.
+        """Checks the satisfiability of the formula.
 
         Restrictions: Only after set-logic.
 
@@ -116,7 +116,7 @@ class SmtLibSolver(object):
         raise NotImplementedError
 
     def get_proof(self):
-        """ Returns a proof of unsatisfiability.
+        """Returns a proof of unsatisfiability.
 
         Restrictions: Requires option :produce-proofs to be set and can be
                       called only after check-sat returned unsat, if no
@@ -128,7 +128,7 @@ class SmtLibSolver(object):
         raise NotImplementedError
 
     def get_unsat_core(self):
-        """ Returns the unsat cores.
+        """Returns the unsat cores.
 
         Restrictions: Requires option :produce-unsat-cores to be set true and can
                       be called only after check-sat returned unsat, if no
@@ -139,7 +139,7 @@ class SmtLibSolver(object):
         raise NotImplementedError
 
     def get_values(self, exprs):
-        """ Returns the value of the expressions if a model was found.
+        """Returns the value of the expressions if a model was found.
 
         Restrictions: Requires option :produce-models to be set to true and can
                       be called only after check-sat returned sat or unknown,
@@ -152,7 +152,7 @@ class SmtLibSolver(object):
         raise NotImplementedError
 
     def get_assignment(self):
-        """ Returns an assignment for the named terms.
+        """Returns an assignment for the named terms.
 
         Restrictions: Requires option :produce-assignments to be set to true and
                       can be called only after check-sat returned sat or unknown
@@ -163,14 +163,14 @@ class SmtLibSolver(object):
         raise NotImplementedError
 
     def push(self, levels=1):
-        """ Push the current context of the given number of levels.
+        """Push the current context of the given number of levels.
 
         Restrictions: after set-logic
         """
         raise NotImplementedError
 
     def pop(self, levels=1):
-        """ Pop the context of the given number of levels.
+        """Pop the context of the given number of levels.
 
         Restrictions: after set-logic
         """
@@ -181,7 +181,7 @@ class SmtLibSolver(object):
         raise NotImplementedError
 
     def set_option(self, name, value):
-        """ Sets the given value for the option in the solver.
+        """Sets the given value for the option in the solver.
 
         SMTLIB-defined Options:
 
@@ -208,7 +208,7 @@ class SmtLibSolver(object):
         raise NotImplementedError
 
     def set_info(self, name, value):
-        """ Sets the value for a given information.
+        """Sets the value for a given information.
 
         Required (by SMT):
         * :name <string>

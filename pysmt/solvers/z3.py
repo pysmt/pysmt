@@ -26,24 +26,32 @@ except ImportError:
 
 # Keep array models expressed as values instead of Lambdas
 # (see https://github.com/Z3Prover/z3/issues/1769)
-z3.set_param('model.compact', False)
+z3.set_param("model.compact", False)
 
 from six.moves import xrange
 
 
 import pysmt.typing as types
 import pysmt.operators as op
-from pysmt.solvers.solver import (IncrementalTrackingSolver, UnsatCoreSolver,
-                                  Model, Converter, SolverOptions)
+from pysmt.solvers.solver import (
+    IncrementalTrackingSolver,
+    UnsatCoreSolver,
+    Model,
+    Converter,
+    SolverOptions,
+)
 from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 from pysmt.solvers.qelim import QuantifierEliminator
 
 from pysmt.walkers import DagWalker
-from pysmt.exceptions import (SolverReturnedUnknownResultError,
-                              SolverNotConfiguredForUnsatCoresError,
-                              SolverStatusError,
-                              ConvertExpressionError,
-                              UndefinedSymbolError, PysmtValueError)
+from pysmt.exceptions import (
+    SolverReturnedUnknownResultError,
+    SolverNotConfiguredForUnsatCoresError,
+    SolverStatusError,
+    ConvertExpressionError,
+    UndefinedSymbolError,
+    PysmtValueError,
+)
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
 from pysmt.logics import LRA, LIA, QF_UFLRA, PYSMT_LOGICS
 from pysmt.oracles import get_logic
@@ -54,25 +62,28 @@ from pysmt.constants import Fraction, Numeral, is_pysmt_integer, to_python_integ
 z3.is_ite = lambda x: z3.is_app_of(x, z3.Z3_OP_ITE)
 z3.is_function = lambda x: z3.is_app_of(x, z3.Z3_OP_UNINTERPRETED)
 z3.is_array_store = lambda x: z3.is_app_of(x, z3.Z3_OP_STORE)
-z3.get_payload = lambda node,i : z3.Z3_get_decl_int_parameter(node.ctx.ref(),
-                                                              node.decl().ast, i)
+z3.get_payload = lambda node, i: z3.Z3_get_decl_int_parameter(
+    node.ctx.ref(), node.decl().ast, i
+)
+
 
 class AstRefKey:
     def __init__(self, n):
         self.n = n
+
     def __hash__(self):
         return self.n.hash()
+
     def __eq__(self, other):
         return self.n.eq(other.n)
+
 
 def askey(n):
     assert isinstance(n, z3.AstRef)
     return AstRefKey(n)
 
 
-
 class Z3Model(Model):
-
     def __init__(self, environment, z3_model):
         Model.__init__(self, environment)
         self.z3_model = z3_model
@@ -104,49 +115,49 @@ class Z3Model(Model):
         """Returns whether the model contains a value for 'x'."""
         return x in (v for v, _ in self)
 
+
 # EOC Z3Model
 
 
 class Z3Options(SolverOptions):
-
     @staticmethod
     def _set_option(z3solver, name, value):
         try:
             z3solver.set(name, value)
         except z3.Z3Exception:
-            raise PysmtValueError("Error setting the option '%s=%s'" \
-                                  % (name, value))
+            raise PysmtValueError("Error setting the option '%s=%s'" % (name, value))
         except z3.z3types.Z3Exception:
-            raise PysmtValueError("Error setting the option '%s=%s'" \
-                                  % (name, value))
+            raise PysmtValueError("Error setting the option '%s=%s'" % (name, value))
 
     def __call__(self, solver):
-        self._set_option(solver.z3, 'model', self.generate_models)
+        self._set_option(solver.z3, "model", self.generate_models)
         if self.unsat_cores_mode is not None:
-            self._set_option(solver.z3, 'unsat_core', True)
+            self._set_option(solver.z3, "unsat_core", True)
         if self.random_seed is not None:
-            self._set_option(solver.z3, 'random_seed', self.random_seed)
-        for k,v in self.solver_options.items():
+            self._set_option(solver.z3, "random_seed", self.random_seed)
+        for k, v in self.solver_options.items():
             try:
                 self._set_option(solver.z3, str(k), v)
             except z3.Z3Exception:
-                raise PysmtValueError("Error setting the option '%s=%s'" % (k,v))
+                raise PysmtValueError("Error setting the option '%s=%s'" % (k, v))
             except z3.z3types.Z3Exception:
-                raise PysmtValueError("Error setting the option '%s=%s'" % (k,v))
+                raise PysmtValueError("Error setting the option '%s=%s'" % (k, v))
+
+
 # EOC Z3Options
 
 
-class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
-               SmtLibBasicSolver, SmtLibIgnoreMixin):
+class Z3Solver(
+    IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolver, SmtLibIgnoreMixin
+):
 
     LOGICS = PYSMT_LOGICS - set(x for x in PYSMT_LOGICS if x.theory.strings)
     OptionsClass = Z3Options
 
     def __init__(self, environment, logic, **options):
-        IncrementalTrackingSolver.__init__(self,
-                                           environment=environment,
-                                           logic=logic,
-                                           **options)
+        IncrementalTrackingSolver.__init__(
+            self, environment=environment, logic=logic, **options
+        )
         try:
             self.z3 = z3.SolverFor(str(logic))
         except z3.Z3Exception:
@@ -211,10 +222,10 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
             res = self.z3.check()
 
         sres = str(res)
-        assert sres in ['unknown', 'sat', 'unsat']
-        if sres == 'unknown':
+        assert sres in ["unknown", "sat", "unsat"]
+        if sres == "unknown":
             raise SolverReturnedUnknownResultError
-        return (sres == 'sat')
+        return sres == "sat"
 
     def get_unsat_core(self):
         """After a call to solve() yielding UNSAT, returns the unsat core as a
@@ -223,7 +234,7 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
 
     def _named_assertions_map(self):
         if self.options.unsat_cores_mode is not None:
-            return dict((t[0], (t[1],t[2])) for t in self.assertions)
+            return dict((t[0], (t[1], t[2])) for t in self.assertions)
         return None
 
     def get_named_unsat_core(self):
@@ -233,13 +244,14 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
             raise SolverNotConfiguredForUnsatCoresError
 
         if self.last_result is not False:
-            raise SolverStatusError("The last call to solve() was not" \
-                                    " unsatisfiable")
+            raise SolverStatusError("The last call to solve() was not" " unsatisfiable")
 
         if self.last_command != "solve":
-            raise SolverStatusError("The solver status has been modified by a" \
-                                    " '%s' command after the last call to" \
-                                    " solve()" % self.last_command)
+            raise SolverStatusError(
+                "The solver status has been modified by a"
+                " '%s' command after the last call to"
+                " solve()" % self.last_command
+            )
 
         assumptions = self.z3.unsat_core()
         pysmt_assumptions = set(self.converter.back(t) for t in assumptions)
@@ -296,7 +308,6 @@ BITVECREF_SET = op.BV_OPERATORS
 
 
 class Z3Converter(Converter, DagWalker):
-
     def __init__(self, environment, z3_ctx):
         DagWalker.__init__(self, environment)
         self.mgr = environment.formula_manager
@@ -312,7 +323,7 @@ class Z3Converter(Converter, DagWalker):
             z3.Z3_OP_ADD: lambda args, expr: self.mgr.Plus(args),
             z3.Z3_OP_DIV: lambda args, expr: self.mgr.Div(args[0], args[1]),
             z3.Z3_OP_IFF: lambda args, expr: self.mgr.Iff(args[0], args[1]),
-            z3.Z3_OP_XOR: lambda args, expr:  self.mgr.Xor(args[0], args[1]),
+            z3.Z3_OP_XOR: lambda args, expr: self.mgr.Xor(args[0], args[1]),
             z3.Z3_OP_FALSE: lambda args, expr: self.mgr.FALSE(),
             z3.Z3_OP_TRUE: lambda args, expr: self.mgr.TRUE(),
             z3.Z3_OP_GT: lambda args, expr: self.mgr.GT(args[0], args[1]),
@@ -324,53 +335,67 @@ class Z3Converter(Converter, DagWalker):
             z3.Z3_OP_IMPLIES: lambda args, expr: self.mgr.Implies(args[0], args[1]),
             z3.Z3_OP_ITE: lambda args, expr: self.mgr.Ite(args[0], args[1], args[2]),
             z3.Z3_OP_TO_REAL: lambda args, expr: self.mgr.ToReal(args[0]),
-            z3.Z3_OP_BAND : lambda args, expr: self.mgr.BVAnd(args[0], args[1]),
-            z3.Z3_OP_BOR : lambda args, expr: self.mgr.BVOr(args[0], args[1]),
-            z3.Z3_OP_BXOR : lambda args, expr: self.mgr.BVXor(args[0], args[1]),
-            z3.Z3_OP_BNOT : lambda args, expr: self.mgr.BVNot(args[0]),
-            z3.Z3_OP_BNEG : lambda args, expr: self.mgr.BVNeg(args[0]),
-            z3.Z3_OP_CONCAT : lambda args, expr: self.mgr.BVConcat(args[0], args[1]),
-            z3.Z3_OP_ULT : lambda args, expr: self.mgr.BVULT(args[0], args[1]),
-            z3.Z3_OP_ULEQ : lambda args, expr: self.mgr.BVULE(args[0], args[1]),
-            z3.Z3_OP_SLT : lambda args, expr: self.mgr.BVSLT(args[0], args[1]),
-            z3.Z3_OP_SLEQ : lambda args, expr: self.mgr.BVSLE(args[0], args[1]),
-            z3.Z3_OP_UGT : lambda args, expr: self.mgr.BVUGT(args[0], args[1]),
-            z3.Z3_OP_UGEQ : lambda args, expr: self.mgr.BVUGE(args[0], args[1]),
-            z3.Z3_OP_SGT : lambda args, expr: self.mgr.BVSGT(args[0], args[1]),
-            z3.Z3_OP_SGEQ : lambda args, expr: self.mgr.BVSGE(args[0], args[1]),
-            z3.Z3_OP_BADD : lambda args, expr: self.mgr.BVAdd(args[0], args[1]),
-            z3.Z3_OP_BMUL : lambda args, expr: self.mgr.BVMul(args[0], args[1]),
-            z3.Z3_OP_BUDIV : lambda args, expr: self.mgr.BVUDiv(args[0], args[1]),
-            z3.Z3_OP_BSDIV : lambda args, expr: self.mgr.BVSDiv(args[0], args[1]),
-            z3.Z3_OP_BUREM : lambda args, expr: self.mgr.BVURem(args[0], args[1]),
-            z3.Z3_OP_BSREM : lambda args, expr: self.mgr.BVSRem(args[0], args[1]),
-            z3.Z3_OP_BSHL : lambda args, expr: self.mgr.BVLShl(args[0], args[1]),
-            z3.Z3_OP_BLSHR : lambda args, expr: self.mgr.BVLShr(args[0], args[1]),
-            z3.Z3_OP_BASHR : lambda args, expr: self.mgr.BVAShr(args[0], args[1]),
-            z3.Z3_OP_BSUB : lambda args, expr: self.mgr.BVSub(args[0], args[1]),
-            z3.Z3_OP_EXT_ROTATE_LEFT : lambda args, expr: self.mgr.BVRol(args[0], args[1].bv_unsigned_value()),
-            z3.Z3_OP_EXT_ROTATE_RIGHT: lambda args, expr: self.mgr.BVRor(args[0], args[1].bv_unsigned_value()),
+            z3.Z3_OP_BAND: lambda args, expr: self.mgr.BVAnd(args[0], args[1]),
+            z3.Z3_OP_BOR: lambda args, expr: self.mgr.BVOr(args[0], args[1]),
+            z3.Z3_OP_BXOR: lambda args, expr: self.mgr.BVXor(args[0], args[1]),
+            z3.Z3_OP_BNOT: lambda args, expr: self.mgr.BVNot(args[0]),
+            z3.Z3_OP_BNEG: lambda args, expr: self.mgr.BVNeg(args[0]),
+            z3.Z3_OP_CONCAT: lambda args, expr: self.mgr.BVConcat(args[0], args[1]),
+            z3.Z3_OP_ULT: lambda args, expr: self.mgr.BVULT(args[0], args[1]),
+            z3.Z3_OP_ULEQ: lambda args, expr: self.mgr.BVULE(args[0], args[1]),
+            z3.Z3_OP_SLT: lambda args, expr: self.mgr.BVSLT(args[0], args[1]),
+            z3.Z3_OP_SLEQ: lambda args, expr: self.mgr.BVSLE(args[0], args[1]),
+            z3.Z3_OP_UGT: lambda args, expr: self.mgr.BVUGT(args[0], args[1]),
+            z3.Z3_OP_UGEQ: lambda args, expr: self.mgr.BVUGE(args[0], args[1]),
+            z3.Z3_OP_SGT: lambda args, expr: self.mgr.BVSGT(args[0], args[1]),
+            z3.Z3_OP_SGEQ: lambda args, expr: self.mgr.BVSGE(args[0], args[1]),
+            z3.Z3_OP_BADD: lambda args, expr: self.mgr.BVAdd(args[0], args[1]),
+            z3.Z3_OP_BMUL: lambda args, expr: self.mgr.BVMul(args[0], args[1]),
+            z3.Z3_OP_BUDIV: lambda args, expr: self.mgr.BVUDiv(args[0], args[1]),
+            z3.Z3_OP_BSDIV: lambda args, expr: self.mgr.BVSDiv(args[0], args[1]),
+            z3.Z3_OP_BUREM: lambda args, expr: self.mgr.BVURem(args[0], args[1]),
+            z3.Z3_OP_BSREM: lambda args, expr: self.mgr.BVSRem(args[0], args[1]),
+            z3.Z3_OP_BSHL: lambda args, expr: self.mgr.BVLShl(args[0], args[1]),
+            z3.Z3_OP_BLSHR: lambda args, expr: self.mgr.BVLShr(args[0], args[1]),
+            z3.Z3_OP_BASHR: lambda args, expr: self.mgr.BVAShr(args[0], args[1]),
+            z3.Z3_OP_BSUB: lambda args, expr: self.mgr.BVSub(args[0], args[1]),
+            z3.Z3_OP_EXT_ROTATE_LEFT: lambda args, expr: self.mgr.BVRol(
+                args[0], args[1].bv_unsigned_value()
+            ),
+            z3.Z3_OP_EXT_ROTATE_RIGHT: lambda args, expr: self.mgr.BVRor(
+                args[0], args[1].bv_unsigned_value()
+            ),
             z3.Z3_OP_BV2INT: lambda args, expr: self.mgr.BVToNatural(args[0]),
-            z3.Z3_OP_POWER : lambda args, expr: self.mgr.Pow(args[0], args[1]),
-            z3.Z3_OP_SELECT : lambda args, expr: self.mgr.Select(args[0], args[1]),
-            z3.Z3_OP_STORE : lambda args, expr: self.mgr.Store(args[0], args[1], args[2]),
+            z3.Z3_OP_POWER: lambda args, expr: self.mgr.Pow(args[0], args[1]),
+            z3.Z3_OP_SELECT: lambda args, expr: self.mgr.Select(args[0], args[1]),
+            z3.Z3_OP_STORE: lambda args, expr: self.mgr.Store(
+                args[0], args[1], args[2]
+            ),
             # Actually use both args, expr
-            z3.Z3_OP_SIGN_EXT: lambda args, expr: self.mgr.BVSExt(args[0], z3.get_payload(expr, 0)),
-            z3.Z3_OP_ZERO_EXT: lambda args, expr: self.mgr.BVZExt(args[0], z3.get_payload(expr, 0)),
-            z3.Z3_OP_ROTATE_LEFT: lambda args, expr: self.mgr.BVRol(args[0], z3.get_payload(expr, 0)),
-            z3.Z3_OP_ROTATE_RIGHT: lambda args, expr: self.mgr.BVRor(args[0], z3.get_payload(expr, 0)),
-            z3.Z3_OP_EXTRACT: lambda args, expr: self.mgr.BVExtract(args[0],
-                                                              z3.get_payload(expr, 1),
-                                                              z3.get_payload(expr, 0)),
+            z3.Z3_OP_SIGN_EXT: lambda args, expr: self.mgr.BVSExt(
+                args[0], z3.get_payload(expr, 0)
+            ),
+            z3.Z3_OP_ZERO_EXT: lambda args, expr: self.mgr.BVZExt(
+                args[0], z3.get_payload(expr, 0)
+            ),
+            z3.Z3_OP_ROTATE_LEFT: lambda args, expr: self.mgr.BVRol(
+                args[0], z3.get_payload(expr, 0)
+            ),
+            z3.Z3_OP_ROTATE_RIGHT: lambda args, expr: self.mgr.BVRor(
+                args[0], z3.get_payload(expr, 0)
+            ),
+            z3.Z3_OP_EXTRACT: lambda args, expr: self.mgr.BVExtract(
+                args[0], z3.get_payload(expr, 1), z3.get_payload(expr, 0)
+            ),
             # Complex Back Translation
-            z3.Z3_OP_EQ : self._back_z3_eq,
-            z3.Z3_OP_UMINUS : self._back_z3_uminus,
-            z3.Z3_OP_CONST_ARRAY : self._back_z3_const_array,
+            z3.Z3_OP_EQ: self._back_z3_eq,
+            z3.Z3_OP_UMINUS: self._back_z3_uminus,
+            z3.Z3_OP_CONST_ARRAY: self._back_z3_const_array,
         }
         # Unique reference to Sorts
         self.z3RealSort = z3.RealSort(self.ctx)
         self.z3BoolSort = z3.BoolSort(self.ctx)
-        self.z3IntSort  = z3.IntSort(self.ctx)
+        self.z3IntSort = z3.IntSort(self.ctx)
         self._z3ArraySorts = {}
         self._z3BitVecSorts = {}
         self._z3Sorts = {}
@@ -390,12 +415,10 @@ class Z3Converter(Converter, DagWalker):
     def z3ArraySort(self, key, value):
         """Return the z3 ArraySort for the given key value."""
         try:
-            return self._z3ArraySorts[(askey(key),
-                                      askey(value))]
+            return self._z3ArraySorts[(askey(key), askey(value))]
         except KeyError:
             sort = z3.ArraySort(key, value)
-            self._z3ArraySorts[(askey(key),
-                               askey(value))] = sort
+            self._z3ArraySorts[(askey(key), askey(value))] = sort
         return sort
 
     def z3Sort(self, name):
@@ -476,8 +499,10 @@ class Z3Converter(Converter, DagWalker):
                 for c in current.children():
                     stack.append(c)
             elif self._back_memoization[key] is None:
-                args = [self._back_memoization[(askey(c), model)]
-                        for c in current.children()]
+                args = [
+                    self._back_memoization[(askey(c), model)]
+                    for c in current.children()
+                ]
                 res = self._back_single_term(current, args, model)
                 self._back_memoization[key] = res
             else:
@@ -490,13 +515,16 @@ class Z3Converter(Converter, DagWalker):
 
         if z3.is_quantifier(expr):
             raise NotImplementedError(
-                "Quantified back conversion is currently not supported")
+                "Quantified back conversion is currently not supported"
+            )
 
-        assert not len(args) > 2 or \
-            (z3.is_and(expr) or z3.is_or(expr) or
-             z3.is_add(expr) or z3.is_mul(expr) or
-             (len(args) == 3 and (z3.is_ite(expr) or z3.is_array_store(expr)))),\
-            "Unexpected n-ary term: %s" % expr
+        assert not len(args) > 2 or (
+            z3.is_and(expr)
+            or z3.is_or(expr)
+            or z3.is_add(expr)
+            or z3.is_mul(expr)
+            or (len(args) == 3 and (z3.is_ite(expr) or z3.is_array_store(expr)))
+        ), ("Unexpected n-ary term: %s" % expr)
 
         res = None
         try:
@@ -524,9 +552,11 @@ class Z3Converter(Converter, DagWalker):
                 return self.mgr.BV(n, w)
             elif z3.is_as_array(expr):
                 if model is None:
-                    raise NotImplementedError("As-array expressions cannot be" \
-                                              " handled as they are not " \
-                                              "self-contained")
+                    raise NotImplementedError(
+                        "As-array expressions cannot be"
+                        " handled as they are not "
+                        "self-contained"
+                    )
                 else:
                     interp_decl = z3.get_as_array_func(expr)
                     interp = model[interp_decl]
@@ -549,19 +579,19 @@ class Z3Converter(Converter, DagWalker):
                     return self.mgr.get_symbol(str(expr))
                 except UndefinedSymbolError:
                     import warnings
+
                     symb_type = self._z3_to_type(expr.sort())
                     warnings.warn("Defining new symbol: %s" % str(expr))
-                    return self.mgr.FreshSymbol(symb_type,
-                                                template="__z3_%d")
+                    return self.mgr.FreshSymbol(symb_type, template="__z3_%d")
         elif z3.is_function(expr):
             # This needs to be after we try to convert regular Symbols
             fsymbol = self.mgr.get_symbol(expr.decl().name())
             return self.mgr.Function(fsymbol, args)
 
         # If we reach this point, we did not manage to translate the expression
-        raise ConvertExpressionError(message=("Unsupported expression: %s" %
-                                              (str(expr))),
-                                     expression=expr)
+        raise ConvertExpressionError(
+            message=("Unsupported expression: %s" % (str(expr))), expression=expr
+        )
 
     def _back_z3_eq(self, args, expr):
         if self._get_type(args[0]).is_bool_type():
@@ -585,14 +615,13 @@ class Z3Converter(Converter, DagWalker):
         """Back convert a Z3 Expression by translation to SMT-LIB."""
         from six import StringIO
         from pysmt.smtlib.parser import SmtLibZ3Parser
+
         parser = SmtLibZ3Parser(self.env)
 
         z3.Z3_set_ast_print_mode(expr.ctx.ref(), z3.Z3_PRINT_SMTLIB2_COMPLIANT)
-        s = z3.Z3_benchmark_to_smtlib_string(expr.ctx.ref(),
-                                             None, None,
-                                             None, None,
-                                             0, None,
-                                             expr.ast)
+        s = z3.Z3_benchmark_to_smtlib_string(
+            expr.ctx.ref(), None, None, None, None, 0, None, expr.ast
+        )
         stream_in = StringIO(s)
         r = parser.get_script(stream_in).get_last_formula(self.mgr)
         key = (askey(expr), None)
@@ -626,9 +655,10 @@ class Z3Converter(Converter, DagWalker):
         elif symbol_type.is_array_type():
             sort_ast = self._type_to_z3(symbol_type).ast
         elif symbol_type.is_string_type():
-            raise ConvertExpressionError(message=("Unsupported string symbol: %s" %
-                                                  str(formula)),
-                                         expression=formula)
+            raise ConvertExpressionError(
+                message=("Unsupported string symbol: %s" % str(formula)),
+                expression=formula,
+            )
         else:
             sort_ast = self._type_to_z3(symbol_type).ast
         # Create const with given sort
@@ -662,20 +692,16 @@ class Z3Converter(Converter, DagWalker):
 
     def walk_real_constant(self, formula, **kwargs):
         frac = formula.constant_value()
-        n,d = frac.numerator, frac.denominator
+        n, d = frac.numerator, frac.denominator
         rep = str(n) + "/" + str(d)
-        z3term = z3.Z3_mk_numeral(self.ctx.ref(),
-                                  rep,
-                                  self.z3RealSort.ast)
+        z3term = z3.Z3_mk_numeral(self.ctx.ref(), rep, self.z3RealSort.ast)
         z3.Z3_inc_ref(self.ctx.ref(), z3term)
         return z3term
 
     def walk_int_constant(self, formula, **kwargs):
         assert is_pysmt_integer(formula.constant_value())
         const = str(formula.constant_value())
-        z3term = z3.Z3_mk_numeral(self.ctx.ref(),
-                                  const,
-                                  self.z3IntSort.ast)
+        z3term = z3.Z3_mk_numeral(self.ctx.ref(), const, self.z3IntSort.ast)
         z3.Z3_inc_ref(self.ctx.ref(), z3term)
         return z3term
 
@@ -687,15 +713,22 @@ class Z3Converter(Converter, DagWalker):
 
     def walk_quantifier(self, formula, args, **kwargs):
         qvars = formula.quantifier_vars()
-        qvars, qvars_sz = self._to_ast_array([self.walk_symbol(x)\
-                                              for x in qvars])
+        qvars, qvars_sz = self._to_ast_array([self.walk_symbol(x) for x in qvars])
         empty_str = z3.Z3_mk_string_symbol(self.ctx.ref(), "")
-        z3term = z3.Z3_mk_quantifier_const_ex(self.ctx.ref(),
-                                              formula.is_forall(),
-                                              1, empty_str, empty_str,
-                                              qvars_sz, qvars,
-                                              0, None, 0, None,
-                                              args[0])
+        z3term = z3.Z3_mk_quantifier_const_ex(
+            self.ctx.ref(),
+            formula.is_forall(),
+            1,
+            empty_str,
+            empty_str,
+            qvars_sz,
+            qvars,
+            0,
+            None,
+            0,
+            None,
+            args[0],
+        )
         z3.Z3_inc_ref(self.ctx.ref(), z3term)
         return z3term
 
@@ -715,10 +748,8 @@ class Z3Converter(Converter, DagWalker):
             for i, t in enumerate(tp.param_types):
                 z3dom[i] = self._type_to_z3(t).ast
             z3ret = self._type_to_z3(tp.return_type).ast
-            z3name = z3.Z3_mk_string_symbol(self.ctx.ref(),
-                                            func_name.symbol_name())
-            z3func = z3.Z3_mk_func_decl(self.ctx.ref(), z3name,
-                                        arity, z3dom, z3ret)
+            z3name = z3.Z3_mk_string_symbol(self.ctx.ref(), func_name.symbol_name())
+            z3func = z3.Z3_mk_func_decl(self.ctx.ref(), z3name, arity, z3dom, z3ret)
             self._z3_func_decl_cache[func_name] = z3func
             return z3func
 
@@ -731,17 +762,19 @@ class Z3Converter(Converter, DagWalker):
 
     def walk_bv_constant(self, formula, **kwargs):
         value = formula.constant_value()
-        z3term = z3.Z3_mk_numeral(self.ctx.ref(),
-                                  str(value),
-                                  self.z3BitVecSort(formula.bv_width()).ast)
+        z3term = z3.Z3_mk_numeral(
+            self.ctx.ref(), str(value), self.z3BitVecSort(formula.bv_width()).ast
+        )
         z3.Z3_inc_ref(self.ctx.ref(), z3term)
         return z3term
 
     def walk_bv_extract(self, formula, args, **kwargs):
-        z3term = z3.Z3_mk_extract(self.ctx.ref(),
-                                  formula.bv_extract_end(),
-                                  formula.bv_extract_start(),
-                                  args[0])
+        z3term = z3.Z3_mk_extract(
+            self.ctx.ref(),
+            formula.bv_extract_end(),
+            formula.bv_extract_start(),
+            args[0],
+        )
         z3.Z3_inc_ref(self.ctx.ref(), z3term)
         return z3term
 
@@ -757,33 +790,29 @@ class Z3Converter(Converter, DagWalker):
 
     def walk_bv_rol(self, formula, args, **kwargs):
         bvsort = self.z3BitVecSort(formula.bv_width())
-        step = z3.Z3_mk_numeral(self.ctx.ref(),
-                                str(formula.bv_rotation_step()),
-                                bvsort.ast)
-        z3term = z3.Z3_mk_ext_rotate_left(self.ctx.ref(),
-                                          args[0], step)
+        step = z3.Z3_mk_numeral(
+            self.ctx.ref(), str(formula.bv_rotation_step()), bvsort.ast
+        )
+        z3term = z3.Z3_mk_ext_rotate_left(self.ctx.ref(), args[0], step)
         z3.Z3_inc_ref(self.ctx.ref(), z3term)
         return z3term
 
     def walk_bv_ror(self, formula, args, **kwargs):
         bvsort = self.z3BitVecSort(formula.bv_width())
-        step = z3.Z3_mk_numeral(self.ctx.ref(),
-                                str(formula.bv_rotation_step()),
-                                bvsort.ast)
-        z3term = z3.Z3_mk_ext_rotate_right(self.ctx.ref(),
-                                          args[0], step)
+        step = z3.Z3_mk_numeral(
+            self.ctx.ref(), str(formula.bv_rotation_step()), bvsort.ast
+        )
+        z3term = z3.Z3_mk_ext_rotate_right(self.ctx.ref(), args[0], step)
         z3.Z3_inc_ref(self.ctx.ref(), z3term)
         return z3term
 
     def walk_bv_zext(self, formula, args, **kwargs):
-        z3term = z3.Z3_mk_zero_ext(self.ctx.ref(),
-                                   formula.bv_extend_step(), args[0])
+        z3term = z3.Z3_mk_zero_ext(self.ctx.ref(), formula.bv_extend_step(), args[0])
         z3.Z3_inc_ref(self.ctx.ref(), z3term)
         return z3term
 
-    def walk_bv_sext (self, formula, args, **kwargs):
-        z3term = z3.Z3_mk_sign_ext(self.ctx.ref(),
-                                   formula.bv_extend_step(), args[0])
+    def walk_bv_sext(self, formula, args, **kwargs):
+        z3term = z3.Z3_mk_sign_ext(self.ctx.ref(), formula.bv_extend_step(), args[0])
         z3.Z3_inc_ref(self.ctx.ref(), z3term)
         return z3term
 
@@ -825,7 +854,7 @@ class Z3Converter(Converter, DagWalker):
 
         for i in xrange(1, len(args), 2):
             c = args[i]
-            z3term = self.walk_array_store(None, (z3term, c, args[i+1]))
+            z3term = self.walk_array_store(None, (z3term, c, args[i + 1]))
             z3.Z3_inc_ref(self.ctx.ref(), z3term)
         return z3term
 
@@ -837,8 +866,9 @@ class Z3Converter(Converter, DagWalker):
         elif sort.kind() == z3.Z3_REAL_SORT:
             return types.REAL
         elif sort.kind() == z3.Z3_ARRAY_SORT:
-            return types.ArrayType(self._z3_to_type(sort.domain()),
-                                   self._z3_to_type(sort.range()))
+            return types.ArrayType(
+                self._z3_to_type(sort.domain()), self._z3_to_type(sort.range())
+            )
         elif sort.kind() == z3.Z3_BV_SORT:
             return types.BVType(sort.size())
         else:
@@ -850,6 +880,7 @@ class Z3Converter(Converter, DagWalker):
             z3term = func(self.ctx.ref(), sz, _args)
             z3.Z3_inc_ref(self.ctx.ref(), z3term)
             return z3term
+
         return walk_nary
 
     def make_walk_binary(func):
@@ -857,31 +888,32 @@ class Z3Converter(Converter, DagWalker):
             z3term = func(self.ctx.ref(), args[0], args[1])
             z3.Z3_inc_ref(self.ctx.ref(), z3term)
             return z3term
+
         return walk_binary
 
-    walk_and     = make_walk_nary(z3.Z3_mk_and)
-    walk_or      = make_walk_nary(z3.Z3_mk_or)
-    walk_plus    = make_walk_nary(z3.Z3_mk_add)
-    walk_times   = make_walk_nary(z3.Z3_mk_mul)
-    walk_minus   = make_walk_nary(z3.Z3_mk_sub)
+    walk_and = make_walk_nary(z3.Z3_mk_and)
+    walk_or = make_walk_nary(z3.Z3_mk_or)
+    walk_plus = make_walk_nary(z3.Z3_mk_add)
+    walk_times = make_walk_nary(z3.Z3_mk_mul)
+    walk_minus = make_walk_nary(z3.Z3_mk_sub)
     walk_implies = make_walk_binary(z3.Z3_mk_implies)
-    walk_le      = make_walk_binary(z3.Z3_mk_le)
-    walk_lt      = make_walk_binary(z3.Z3_mk_lt)
-    walk_equals  = make_walk_binary(z3.Z3_mk_eq)
-    walk_iff     = make_walk_binary(z3.Z3_mk_eq)
-    walk_pow     = make_walk_binary(z3.Z3_mk_power)
-    walk_div     = make_walk_binary(z3.Z3_mk_div)
-    walk_bv_ult  = make_walk_binary(z3.Z3_mk_bvult)
-    walk_bv_ule  = make_walk_binary(z3.Z3_mk_bvule)
-    walk_bv_slt  = make_walk_binary(z3.Z3_mk_bvslt)
-    walk_bv_sle  = make_walk_binary(z3.Z3_mk_bvsle)
+    walk_le = make_walk_binary(z3.Z3_mk_le)
+    walk_lt = make_walk_binary(z3.Z3_mk_lt)
+    walk_equals = make_walk_binary(z3.Z3_mk_eq)
+    walk_iff = make_walk_binary(z3.Z3_mk_eq)
+    walk_pow = make_walk_binary(z3.Z3_mk_power)
+    walk_div = make_walk_binary(z3.Z3_mk_div)
+    walk_bv_ult = make_walk_binary(z3.Z3_mk_bvult)
+    walk_bv_ule = make_walk_binary(z3.Z3_mk_bvule)
+    walk_bv_slt = make_walk_binary(z3.Z3_mk_bvslt)
+    walk_bv_sle = make_walk_binary(z3.Z3_mk_bvsle)
     walk_bv_concat = make_walk_binary(z3.Z3_mk_concat)
-    walk_bv_or   = make_walk_binary(z3.Z3_mk_bvor)
-    walk_bv_and  = make_walk_binary(z3.Z3_mk_bvand)
-    walk_bv_xor  = make_walk_binary(z3.Z3_mk_bvxor)
-    walk_bv_add  = make_walk_binary(z3.Z3_mk_bvadd)
-    walk_bv_sub  = make_walk_binary(z3.Z3_mk_bvsub)
-    walk_bv_mul  = make_walk_binary(z3.Z3_mk_bvmul)
+    walk_bv_or = make_walk_binary(z3.Z3_mk_bvor)
+    walk_bv_and = make_walk_binary(z3.Z3_mk_bvand)
+    walk_bv_xor = make_walk_binary(z3.Z3_mk_bvxor)
+    walk_bv_add = make_walk_binary(z3.Z3_mk_bvadd)
+    walk_bv_sub = make_walk_binary(z3.Z3_mk_bvsub)
+    walk_bv_mul = make_walk_binary(z3.Z3_mk_bvmul)
     walk_bv_udiv = make_walk_binary(z3.Z3_mk_bvudiv)
     walk_bv_urem = make_walk_binary(z3.Z3_mk_bvurem)
     walk_bv_lshl = make_walk_binary(z3.Z3_mk_bvshl)
@@ -920,7 +952,9 @@ class Z3Converter(Converter, DagWalker):
             for t in self.memoization.values():
                 z3.Z3_dec_ref(self.ctx.ref(), t)
 
+
 # EOC Z3Converter
+
 
 class Z3QuantifierEliminator(QuantifierEliminator):
 
@@ -935,17 +969,19 @@ class Z3QuantifierEliminator(QuantifierEliminator):
     def eliminate_quantifiers(self, formula):
         logic = get_logic(formula, self.environment)
         if not logic <= LRA and not logic <= LIA:
-            raise PysmtValueError("Z3 quantifier elimination only "\
-                                  "supports LRA or LIA without combination."\
-                                  "(detected logic is: %s)" % str(logic))
+            raise PysmtValueError(
+                "Z3 quantifier elimination only "
+                "supports LRA or LIA without combination."
+                "(detected logic is: %s)" % str(logic)
+            )
 
-        simplifier = z3.Tactic('simplify')
-        eliminator = z3.Tactic('qe')
+        simplifier = z3.Tactic("simplify")
+        eliminator = z3.Tactic("qe")
 
         f = self.converter.convert(formula)
-        s = simplifier(f, elim_and=True,
-                       pull_cheap_ite=True,
-                       ite_extra_rules=True).as_expr()
+        s = simplifier(
+            f, elim_and=True, pull_cheap_ite=True, ite_extra_rules=True
+        ).as_expr()
         res = eliminator(f).as_expr()
 
         pysmt_res = None
@@ -954,13 +990,17 @@ class Z3QuantifierEliminator(QuantifierEliminator):
         except ConvertExpressionError:
             if logic <= LRA:
                 raise
-            raise ConvertExpressionError(message=("Unable to represent" \
-                "expression %s in pySMT: the quantifier elimination for " \
-                "LIA is incomplete as it requires the modulus. You can " \
-                "find the Z3 expression representing the quantifier " \
-                "elimination as the attribute 'expression' of this " \
-                "exception object" % str(res)),
-                                          expression=res)
+            raise ConvertExpressionError(
+                message=(
+                    "Unable to represent"
+                    "expression %s in pySMT: the quantifier elimination for "
+                    "LIA is incomplete as it requires the modulus. You can "
+                    "find the Z3 expression representing the quantifier "
+                    "elimination as the attribute 'expression' of this "
+                    "exception object" % str(res)
+                ),
+                expression=res,
+            )
 
         return pysmt_res
 

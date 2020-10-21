@@ -17,6 +17,7 @@
 #
 from pysmt.walkers.dag import DagWalker
 
+
 class IdentityDagWalker(DagWalker):
     """This class traverses a formula and rebuilds it recursively
     identically.
@@ -27,14 +28,11 @@ class IdentityDagWalker(DagWalker):
     """
 
     def __init__(self, env=None, invalidate_memoization=None):
-        DagWalker.__init__(self,
-                           env=env,
-                           invalidate_memoization=invalidate_memoization)
+        DagWalker.__init__(self, env=env, invalidate_memoization=invalidate_memoization)
         self.mgr = self.env.formula_manager
 
     def walk_symbol(self, formula, args, **kwargs):
-        return self.mgr.Symbol(formula.symbol_name(),
-                               formula.symbol_type())
+        return self.mgr.Symbol(formula.symbol_name(), formula.symbol_type())
 
     def walk_real_constant(self, formula, args, **kwargs):
         return self.mgr.Real(formula.constant_value())
@@ -76,13 +74,11 @@ class IdentityDagWalker(DagWalker):
         return self.mgr.LT(args[0], args[1])
 
     def walk_forall(self, formula, args, **kwargs):
-        qvars = [self.walk_symbol(v, args, **kwargs)
-                 for v in formula.quantifier_vars()]
+        qvars = [self.walk_symbol(v, args, **kwargs) for v in formula.quantifier_vars()]
         return self.mgr.ForAll(qvars, args[0])
 
     def walk_exists(self, formula, args, **kwargs):
-        qvars = [self.walk_symbol(v, args, **kwargs)
-                 for v in formula.quantifier_vars()]
+        qvars = [self.walk_symbol(v, args, **kwargs) for v in formula.quantifier_vars()]
         return self.mgr.Exists(qvars, args[0])
 
     def walk_plus(self, formula, args, **kwargs):
@@ -146,9 +142,9 @@ class IdentityDagWalker(DagWalker):
         return self.mgr.BVULE(args[0], args[1])
 
     def walk_bv_extract(self, formula, args, **kwargs):
-        return self.mgr.BVExtract(args[0],
-                                  start=formula.bv_extract_start(),
-                                  end=formula.bv_extract_end())
+        return self.mgr.BVExtract(
+            args[0], start=formula.bv_extract_start(), end=formula.bv_extract_end()
+        )
 
     def walk_bv_ror(self, formula, args, **kwargs):
         return self.mgr.BVRor(args[0], formula.bv_rotation_step())
@@ -233,9 +229,7 @@ class IdentityDagWalker(DagWalker):
 
     def walk_array_value(self, formula, args, **kwargs):
         assign = dict(zip(args[1::2], args[2::2]))
-        return self.mgr.Array(formula.array_value_index_type(),
-                              args[0],
-                              assign)
+        return self.mgr.Array(formula.array_value_index_type(), args[0], assign)
 
     def walk_div(self, formula, args, **kwargs):
         return self.mgr.Div(args[0], args[1])

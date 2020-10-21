@@ -22,8 +22,9 @@ from pysmt.test import TestCase, main
 from pysmt.smtlib.parser import SmtLibParser
 from pysmt.exceptions import UnknownSmtLibCommandError, PysmtValueError
 
-TS = collections.namedtuple('TS', ['init', 'trans'])
-TSFormula = collections.namedtuple('TSFormula', ['formula', "is_init"])
+TS = collections.namedtuple("TS", ["init", "trans"])
+TSFormula = collections.namedtuple("TSFormula", ["formula", "is_init"])
+
 
 class TSSmtLibParser(SmtLibParser):
     def __init__(self, env=None, interactive=False):
@@ -74,12 +75,11 @@ class TSSmtLibParser(SmtLibParser):
         return TS(init, trans)
 
     def get_ts_fname(self, ts_fname):
-        with open(ts_fname, 'r') as script:
+        with open(ts_fname, "r") as script:
             return self.get_ts(script)
 
 
 class TestParserExtensibility(TestCase):
-
     def setUp(self):
         self.ts_parser = TSSmtLibParser()
         self.smt_parser = SmtLibParser()
@@ -111,5 +111,5 @@ class TestParserExtensibility(TestCase):
         self.assertIsNotNone(ts)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

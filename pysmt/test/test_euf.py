@@ -24,7 +24,6 @@ from pysmt.exceptions import PysmtModeError, PysmtValueError
 
 
 class TestEUF(TestCase):
-
     @skipIfNoSolverForLogic(UFLIRA)
     def test_euf(self):
         ftype1 = FunctionType(REAL, [REAL])
@@ -35,9 +34,7 @@ class TestEUF(TestCase):
 
         check = Equals(Function(f, [Real(1)]), Function(g, (Real(2), Int(4))))
 
-        self.assertSat(check, logic=UFLIRA,
-                       msg="Formula was expected to be sat")
-
+        self.assertSat(check, logic=UFLIRA, msg="Formula was expected to be sat")
 
     def test_infix(self):
         ftype1 = FunctionType(REAL, [REAL])
@@ -75,9 +72,9 @@ class TestEUF(TestCase):
         ftype1 = FunctionType(REAL, [REAL, REAL])
 
         plus = Symbol("plus", ftype1)
-        x = Symbol('x', REAL)
-        y = Symbol('y', REAL)
-        z = Symbol('z', REAL)
+        x = Symbol("x", REAL)
+        y = Symbol("y", REAL)
+        z = Symbol("z", REAL)
 
         axiom = ForAll([x, y], Equals(Function(plus, (x, y)), Plus(x, y)))
 
@@ -86,22 +83,19 @@ class TestEUF(TestCase):
 
         check = Implies(axiom, And(test1, test2))
 
-        self.assertValid(check, logic=UFLRA,
-                        msg="Formula was expected to be valid")
-
+        self.assertValid(check, logic=UFLRA, msg="Formula was expected to be valid")
 
     def test_simplify(self):
         ftype1 = FunctionType(REAL, [REAL, REAL])
 
         plus = Symbol("plus", ftype1)
-        x = Symbol('x', REAL)
-        y = Symbol('y', REAL)
-        z = Symbol('z', REAL)
+        x = Symbol("x", REAL)
+        y = Symbol("y", REAL)
+        z = Symbol("z", REAL)
 
-        f = Function(plus, (Minus(Real(5), Real(5)),
-                            Plus(y, Minus(z, z))))
-        self.assertEqual(Function(plus, (Real(0), y)),
-                          f.simplify())
+        f = Function(plus, (Minus(Real(5), Real(5)), Plus(y, Minus(z, z))))
+        self.assertEqual(Function(plus, (Real(0), y)), f.simplify())
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

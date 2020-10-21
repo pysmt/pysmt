@@ -29,29 +29,35 @@ def execute_script_fname(smtfile):
     start = time.clock()
     read_smtlib(smtfile)
     end = time.clock()
-    return ( (end - start), smtfile)
+    return ((end - start), smtfile)
 
 
 def dump_stats(timings, fname):
     if fname is None:
         fname = "stats.out"
     with open(fname, "w") as f:
-        f.write('filename, time\n')
+        f.write("filename, time\n")
         for k in timings:
             f.write('%f, "%s"\n' % k)
 
 
 def main():
-    parser = argparse.ArgumentParser(description='SMT-LIB Parser Benchmarking')
-    parser.add_argument('--base', type=str, nargs='?',
-                        help='top-directory of the benchmarks')
+    parser = argparse.ArgumentParser(description="SMT-LIB Parser Benchmarking")
+    parser.add_argument(
+        "--base", type=str, nargs="?", help="top-directory of the benchmarks"
+    )
 
-    parser.add_argument('--count', type=int, nargs='?',
-                        default=-1,
-                        help='number of files to benchmark')
+    parser.add_argument(
+        "--count", type=int, nargs="?", default=-1, help="number of files to benchmark"
+    )
 
-    parser.add_argument('--out', type=str, default="stats.out", nargs='?',
-                        help='Where to save the statistics')
+    parser.add_argument(
+        "--out",
+        type=str,
+        default="stats.out",
+        nargs="?",
+        help="Where to save the statistics",
+    )
 
     args = parser.parse_args()
 
@@ -76,5 +82,5 @@ def main():
     print("The statistics file has been generated in '%s'" % outfile)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

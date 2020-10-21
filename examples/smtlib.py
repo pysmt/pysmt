@@ -10,15 +10,14 @@
 # 4. How to access annotations from SMT-LIB files
 # 5. How to extend the parser with custom commands
 #
-from six.moves import cStringIO # Py2-Py3 Compatibility
+from six.moves import cStringIO  # Py2-Py3 Compatibility
 
 from pysmt.smtlib.parser import SmtLibParser
 
 
 # To make the example self contained, we store the example SMT-LIB
 # script in a string.
-DEMO_SMTLIB=\
-"""
+DEMO_SMTLIB = """
 (set-logic QF_LIA)
 (declare-fun p () Int)
 (declare-fun q () Int)
@@ -51,7 +50,7 @@ script = parser.get_script(cStringIO(DEMO_SMTLIB))
 # Printing a summary of the issued commands
 for cmd in script:
     print(cmd.name)
-print("*"*50)
+print("*" * 50)
 
 # SmtLibScript provides some utilities to perform common operations: e.g,
 #
@@ -63,7 +62,7 @@ assert script.count_command_occurrences("assert") == 3
 decls = script.filter_by_command_name("declare-fun")
 for d in decls:
     print(d)
-print("*"*50)
+print("*" * 50)
 
 # Most SMT-LIB scripts define a single SAT call. In these cases, the
 # result can be obtained by conjoining multiple assertions.  The
@@ -83,7 +82,7 @@ buf_out = cStringIO()
 script.serialize(buf_out, daggify=True)
 print(buf_out.getvalue())
 
-print("*"*50)
+print("*" * 50)
 # Expressions can be annotated in order to provide additional
 # information. The semantic of annotations is solver/problem
 # dependent. For example, VMT uses annotations to identify two
@@ -98,7 +97,7 @@ print("*"*50)
 ann = script.annotations
 print(ann.all_annotated_formulae("cost"))
 
-print("*"*50)
+print("*" * 50)
 
 # Annotations are part of the SMT-LIB standard, and are the
 # recommended way to perform inter-operable operations. However, in
@@ -110,7 +109,7 @@ print("*"*50)
 # (A more complete version of this example can be found in :
 #    pysmt.tests.smtlib.test_parser_extensibility.py)
 #
-EXT_SMTLIB="""\
+EXT_SMTLIB = """\
 (declare-fun A () Bool)
 (declare-fun B () Bool)
 (init (and A B))
@@ -123,6 +122,7 @@ EXT_SMTLIB="""\
 # sub-class of the SmtLibParser, and add handlers for he new commands
 # and operators.
 from pysmt.smtlib.script import SmtLibCommand
+
 
 class TSSmtLibParser(SmtLibParser):
     def __init__(self, env=None, interactive=False):
@@ -196,15 +196,16 @@ class TSSmtLibParser(SmtLibParser):
         trans = self.env.formula_manager.TRUE()
 
         for cmd in self.get_command_generator(script):
-            if cmd.name=="init":
+            if cmd.name == "init":
                 init = cmd.args[0]
-            elif cmd.name=="trans":
+            elif cmd.name == "trans":
                 trans = cmd.args[0]
             else:
                 # Ignore other commands
                 pass
 
         return (init, trans)
+
 
 # Time to try out the parser !!!
 #

@@ -27,14 +27,13 @@ from pysmt.smtlib.parser import SmtLibParser
 
 
 class TestSmtLibParserFuzzer(TestCase):
-
     @pytest.mark.slow
     def test_fuzzed(self):
         for fname in FUZZED_FILES:
             script = self.parse(os.path.join(SMTLIB_DIR, fname))
             buf = StringIO()
             script.serialize(buf)
-            #print(buf.getvalue())
+            # print(buf.getvalue())
             self.assertTrue(len(buf.getvalue()) > 1)
 
     def parse(self, fname):
@@ -43,28 +42,31 @@ class TestSmtLibParserFuzzer(TestCase):
         script = parser.get_script_fname(fname)
         self.assertIsNotNone(script)
         return script
+
+
 #
 
 
 SMTLIB_DIR = "pysmt/test/smtlib/fuzzed"
-FUZZED_FILES = ["AUFLIA.smt2.bz2",
-                "QF_AUFBV.smt2.bz2",
-                "QF_LRA.smt2.bz2",
-                "QF_UFLIA.smt2.bz2",
-                "AUFLIRA.smt2.bz2",
-                "QF_AUFLIA.smt2.bz2",
-                "QF_NIA.smt2.bz2",
-                "QF_UFLRA.smt2.bz2",
-                "AUFNIRA.smt2.bz2",
-                "QF_AX.smt2.bz2",
-                "QF_NRA.smt2.bz2",
-                "QF_UFNRA.smt2.bz2",
-                "QF_BV.smt2.bz2",
-                "QF_RDL.smt2.bz2",
-                "QF_UFRDL.smt2.bz2",
-                "QF_IDL.smt2.bz2",
-                "QF_UFBV.smt2.bz2",
-                "QF_UF.smt2.bz2",
-                "QF_LIA.smt2.bz2",
-                "QF_UFIDL.smt2.bz2",
-                ]
+FUZZED_FILES = [
+    "AUFLIA.smt2.bz2",
+    "QF_AUFBV.smt2.bz2",
+    "QF_LRA.smt2.bz2",
+    "QF_UFLIA.smt2.bz2",
+    "AUFLIRA.smt2.bz2",
+    "QF_AUFLIA.smt2.bz2",
+    "QF_NIA.smt2.bz2",
+    "QF_UFLRA.smt2.bz2",
+    "AUFNIRA.smt2.bz2",
+    "QF_AX.smt2.bz2",
+    "QF_NRA.smt2.bz2",
+    "QF_UFNRA.smt2.bz2",
+    "QF_BV.smt2.bz2",
+    "QF_RDL.smt2.bz2",
+    "QF_UFRDL.smt2.bz2",
+    "QF_IDL.smt2.bz2",
+    "QF_UFBV.smt2.bz2",
+    "QF_UF.smt2.bz2",
+    "QF_LIA.smt2.bz2",
+    "QF_UFIDL.smt2.bz2",
+]

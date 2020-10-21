@@ -17,6 +17,7 @@
 #
 from pysmt.walkers.generic import Walker
 
+
 class TreeWalker(Walker):
     """TreeWalker treats the formula as a Tree and does not perform memoization.
 
