@@ -1,5 +1,17 @@
 jobs:
 
+- job: 'BlackCheck'
+  pool:
+    vmImage: 'ubuntu-18.04'
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.7'
+      architecture: 'x64'
+  - bash: ci/black_check.sh
+    displayName: 'Check Code Formatting'
+
+
 - job: 'Ubuntu16Py37'
   pool:
     vmImage: 'ubuntu-18.04'
