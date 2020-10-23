@@ -195,8 +195,9 @@ class SmtLibScript(object):
 
     def evaluate(self, solver):
         log = []
+        inter = InterpreterOMT()
         for cmd in self.commands:
-            r = omt_evaluate_command(cmd, solver)
+            r = inter.evaluate(cmd, solver)
             log.append((cmd.name, r))
 
         return log
@@ -332,96 +333,129 @@ def smtlibscript_from_formula(formula, logic=None):
     return script
 
 
-def smt_evaluate_command(cmd, solver):
-    if cmd.name == smtcmd.SET_INFO:
-        return solver.set_info(cmd.args[0], cmd.args[1])
+class InterpreterSMT(object):
 
-    if cmd.name == smtcmd.SET_OPTION:
-        return solver.set_option(cmd.args[0], cmd.args[1])
+    def evaluate(self, cmd, solver):
+        return self._smt_evaluate(cmd, solver)
 
-    elif cmd.name == smtcmd.ASSERT:
-        return solver.assert_(cmd.args[0])
+    def _smt_evaluate(self, cmd, solver):
+        if cmd.name == smtcmd.SET_INFO:
+            return solver.set_info(cmd.args[0], cmd.args[1])
 
-    elif cmd.name == smtcmd.CHECK_SAT:
-        return solver.check_sat()
+        if cmd.name == smtcmd.SET_OPTION:
+            return solver.set_option(cmd.args[0], cmd.args[1])
 
-    elif cmd.name == smtcmd.RESET_ASSERTIONS:
-        return solver.reset_assertions()
+        elif cmd.name == smtcmd.ASSERT:
+            return solver.assert_(cmd.args[0])
 
-    elif cmd.name == smtcmd.GET_VALUE:
-        return solver.get_values(cmd.args)
+        elif cmd.name == smtcmd.CHECK_SAT:
+            return solver.check_sat()
 
-    elif cmd.name == smtcmd.PUSH:
-        return solver.push(cmd.args[0])
+        elif cmd.name == smtcmd.RESET_ASSERTIONS:
+            return solver.reset_assertions()
 
-    elif cmd.name == smtcmd.POP:
-        return solver.pop(cmd.args[0])
+        elif cmd.name == smtcmd.GET_VALUE:
+            return solver.get_values(cmd.args)
 
-    elif cmd.name == smtcmd.EXIT:
-        return solver.exit()
+        elif cmd.name == smtcmd.PUSH:
+            return solver.push(cmd.args[0])
 
-    elif cmd.name == smtcmd.SET_LOGIC:
-        name = cmd.args[0]
-        return solver.set_logic(name)
+        elif cmd.name == smtcmd.POP:
+            return solver.pop(cmd.args[0])
 
-    elif cmd.name == smtcmd.DECLARE_FUN:
-        return solver.declare_fun(cmd.args[0])
+        elif cmd.name == smtcmd.EXIT:
+            return solver.exit()
 
-    elif cmd.name == smtcmd.DECLARE_CONST:
-        return solver.declare_const(cmd.args[0])
+        elif cmd.name == smtcmd.SET_LOGIC:
+            name = cmd.args[0]
+            return solver.set_logic(name)
 
-    elif cmd.name == smtcmd.DEFINE_FUN:
-        (var, formals, typename, body) = cmd.args
-        return solver.define_fun(var, formals, typename, body)
+        elif cmd.name == smtcmd.DECLARE_FUN:
+            return solver.declare_fun(cmd.args[0])
 
-    elif cmd.name == smtcmd.ECHO:
-        return cmd.args[0]
+        elif cmd.name == smtcmd.DECLARE_CONST:
+            return solver.declare_const(cmd.args[0])
 
-    elif cmd.name == smtcmd.CHECK_SAT_ASSUMING:
-        return solver.check_sat(cmd.args)
+        elif cmd.name == smtcmd.DEFINE_FUN:
+            (var, formals, typename, body) = cmd.args
+            return solver.define_fun(var, formals, typename, body)
 
-    elif cmd.name == smtcmd.GET_UNSAT_CORE:
-        return solver.get_unsat_core()
+        elif cmd.name == smtcmd.ECHO:
+            return cmd.args[0]
 
-    elif cmd.name == smtcmd.DECLARE_SORT:
-        name = cmd.args[0].name
-        arity = cmd.args[0].arity
-        return solver.declare_sort(name, arity)
+        elif cmd.name == smtcmd.CHECK_SAT_ASSUMING:
+            return solver.check_sat(cmd.args)
 
-    elif cmd.name in smtcmd.ALL_COMMANDS:
-        raise NotImplementedError("'%s' is a valid SMT-LIB command "\
-                                  "but it is currently not supported. "\
-                                  "Please open a bug-report." % cmd.name)
-    else:
-        raise UnknownSmtLibCommandError(cmd.name)
+        elif cmd.name == smtcmd.GET_UNSAT_CORE:
+            return solver.get_unsat_core()
 
-def omt_evaluate_command(cmd, optimizer, optimization_goals):
+        elif cmd.name == smtcmd.DECLARE_SORT:
+            name = cmd.args[0].name
+            arity = cmd.args[0].arity
+            return solver.declare_sort(name, arity)
 
-    if cmd.name == smtcmd.MAXIMIZE:
-        rt = MaximizationGoal(cmd.args[0])
-        optimization_goals[0].append(rt)
-        return rt
-    elif cmd.name == smtcmd.MINIMIZE:
-        rt = MinimizationGoal(cmd.args[0])
-        optimization_goals[0].append(rt)
-        return rt
-    elif cmd.name == smtcmd.CHECK_SAT:
-        if optimization_goals is not None:
-            optimization_goals[1].clear()
-            for g in optimization_goals[0]:
-                optimization_goals[1].append((g.term(), optimizer.optimize(g)[1]))
-            return optimizer.check_sat()
+        elif cmd.name in smtcmd.ALL_COMMANDS:
+            raise NotImplementedError("'%s' is a valid SMT-LIB command "\
+                                      "but it is currently not supported. "\
+                                      "Please open a bug-report." % cmd.name)
         else:
-            return smt_evaluate_command(cmd, optimizer)
-    elif cmd.name == smtcmd.MAXMIN:
-        rt = MaxMinGoal(cmd.args[0])
-        optimization_goals[0].append(rt)
-        return rt
-    elif cmd.name == smtcmd.MINMAX:
-        rt = MinMaxGoal(cmd.args[0])
-        optimization_goals[0].append(rt)
-        return rt
-    elif cmd.name == smtcmd.GET_OBJECTIVES:
-        return optimization_goals[1]
-    else:
-        return smt_evaluate_command(cmd, optimizer)
+            raise UnknownSmtLibCommandError(cmd.name)
+
+
+class InterpreterOMT(InterpreterSMT):
+
+    def __init__(self):
+        self.optimization_goals = ([],[])
+        self.opt_priority = "single-obj"
+
+    def evaluate(self, cmd, solver):
+        return self._omt_evaluate(cmd, solver)
+
+    def _omt_evaluate(self, cmd, optimizer):
+
+        if cmd.name == smtcmd.SET_OPTION:
+            if cmd.args[0] == ":opt.priority":
+                self.opt_priority = cmd.args[1]
+
+        if cmd.name == smtcmd.MAXIMIZE:
+            rt = MaximizationGoal(cmd.args[0])
+            self.optimization_goals[0].append(rt)
+            return rt
+        elif cmd.name == smtcmd.MINIMIZE:
+            rt = MinimizationGoal(cmd.args[0])
+            self.optimization_goals[0].append(rt)
+            return rt
+        elif cmd.name == smtcmd.CHECK_SAT:
+            self.optimization_goals[1].clear()
+            rt = False
+            if self.opt_priority == "single-obj":
+                for g in self.optimization_goals[0]:
+                    self.optimization_goals[1].append((g.term(), optimizer.optimize(g)[1]))
+                rt = optimizer.check_sat()
+            elif self.opt_priority == "pareto":
+                pass
+            elif self.opt_priority == "box":
+                models = optimizer.boxed_optimize(self.optimization_goals[0])
+                if models is not None:
+                    rt = True
+                    for g in self.optimization_goals[0]:
+                        self.optimization_goals[1].append((g.term(), models.get(g)[1]))
+            elif self.opt_priority == "lex":
+                model, values = optimizer.lexicographic_optimize(self.optimization_goals[0])
+                if model is not None:
+                    rt = True
+                    for (g,v) in zip(self.optimization_goals[0], values):
+                        self.optimization_goals[1].append((g.term(), v))
+            return rt
+        elif cmd.name == smtcmd.MAXMIN:
+            rt = MaxMinGoal(cmd.args[0])
+            self.optimization_goals[0].append(rt)
+            return rt
+        elif cmd.name == smtcmd.MINMAX:
+            rt = MinMaxGoal(cmd.args[0])
+            self.optimization_goals[0].append(rt)
+            return rt
+        elif cmd.name == smtcmd.GET_OBJECTIVES:
+            return self.optimization_goals[1]
+        else:
+            return self._smt_evaluate(cmd, optimizer)

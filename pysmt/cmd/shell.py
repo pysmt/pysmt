@@ -26,7 +26,7 @@ from pysmt.shortcuts import *
 from pysmt.typing import INT, REAL, BOOL, BVType, BV32
 
 from pysmt.smtlib.parser import SmtLibParser
-from pysmt.smtlib.script import smt_evaluate_command, omt_evaluate_command
+from pysmt.smtlib.script import InterpreterOMT, InterpreterSMT
 from pysmt.smtlib.commands import CHECK_SAT, GET_VALUE, GET_OBJECTIVES, ECHO
 from pysmt.optimization.goal import Goal
 
@@ -101,47 +101,53 @@ class PysmtShell(object):
             code.interact(welcome_msg)
 
 
-    def print_result(self, cmd, result):
+    def _print(self, val, stream_out):
+        stream_out.write(val)
+        stream_out.write("\n")
+        stream_out.flush()
+
+
+    def print_result(self, stream_out, cmd, result):
         name, _ = cmd
         if name == ECHO:
-            print(result)
+            self._print(result, stream_out)
         elif name == CHECK_SAT:
             if result == True:
-                print("sat")
+                self._print("sat", stream_out)
             else:
-                print("unsat")
+                self._print("unsat", stream_out)
         elif name == GET_VALUE:
-            print("(")
+            self._print("(", stream_out)
             for k, r in result.iteritems():
-                print("  (%s %s)" % (k,r))
-            print(")")
+                self._print("  (%s %s)" % (k,r), stream_out)
+            self._print(")", stream_out)
         elif name == GET_OBJECTIVES:
-            print("(objectives")
+            self._print("(objectives", stream_out)
             for r in result:
-                print("  (%s %s)" % (r[0], r[1]))
-            print(")")
+                self._print("  (%s %s)" % (r[0], r[1]), stream_out)
+            self._print(")", stream_out)
 
 
 
-    def smtlib_solver(self, stream):
+    def smtlib_solver(self, stream_in, stream_out):
         smt_parser = SmtLibParser()
         s_name = self.args.solver
         opt_name = self.args.optimizer
-        client_data = None
         if opt_name is not None:
-            client_data = ([], [])
             if opt_name == "auto":
                 solver = Optimizer()
             else:
                 solver = Optimizer(opt_name)
+            inter = InterpreterOMT()
         else:
             if s_name == "auto":
                 solver = Solver()
             else:
                 solver = Solver(name=s_name)
-        for cmd in smt_parser.get_command_generator(stream):
-            r = omt_evaluate_command(cmd, solver, client_data)
-            self.print_result(cmd, r)
+            inter = InterpreterSMT()
+        for cmd in smt_parser.get_command_generator(stream_in):
+            r = inter.evaluate(cmd, solver)
+            self.print_result(stream_out, cmd, r)
 
 
     def main(self):
@@ -154,9 +160,10 @@ class PysmtShell(object):
             self.interactive()
         else:
             input_stream = sys.stdin
+            output_stream = sys.stdout
             if self.args.file is not None:
                 input_stream = open(self.args.file, "r")
-            self.smtlib_solver(input_stream)
+            self.smtlib_solver(input_stream, output_stream)
 
 def main_interactive():
     shell = PysmtShell(sys.argv[1:])
