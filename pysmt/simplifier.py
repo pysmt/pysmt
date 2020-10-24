@@ -395,19 +395,22 @@ class Simplifier(pysmt.walkers.DagWalker):
         return self.manager.Times(new_args)
 
     def walk_pow(self, formula, args, **kwargs):
+        if args[0].is_real_constant():
+            l = args[0].constant_value()
+            r = args[1].constant_value()
+            return self.manager.Real(l**r)
+
+        if args[0].is_int_constant():
+            l = args[0].constant_value()
+            r = args[1].constant_value()
+            return self.manager.Int(l**r)
+
         if args[0].is_algebraic_constant():
             from pysmt.constants import Numeral
             l = args[0].constant_value()
             r = args[1].constant_value()
             return self.manager._Algebraic(Numeral(l**r))
-        if args[0].is_real_constant():
-            l = args[0].constant_value()
-            r = args[1].constant_value()
-            return self.manager.Real(l**r)
-        elif args[0].is_int_constant():
-            l = args[0].constant_value()
-            r = args[1].constant_value()
-            return self.manager.Int(l**r)
+
         return self.manager.Pow(args[0], args[1])
 
     def walk_minus(self, formula, args, **kwargs):
@@ -415,13 +418,6 @@ class Simplifier(pysmt.walkers.DagWalker):
 
         sl = args[0]
         sr = args[1]
-
-        if sl.is_algebraic_constant() and \
-           sr.is_algebraic_constant():
-            from pysmt.constants import Numeral
-            l = sl.constant_value()
-            r = sr.constant_value()
-            return self.mananger._Algebraic(Numeral(l - r))
 
         if sl.is_real_constant() and sr.is_real_constant():
             l = sl.constant_value()
@@ -432,6 +428,13 @@ class Simplifier(pysmt.walkers.DagWalker):
             l = sl.constant_value()
             r = sr.constant_value()
             return self.manager.Int(l - r)
+
+        if sl.is_algebraic_constant() and \
+           sr.is_algebraic_constant():
+            from pysmt.constants import Numeral
+            l = sl.constant_value()
+            r = sr.constant_value()
+            return self.mananger._Algebraic(Numeral(l - r))
 
         if sr.is_constant() and sr.is_zero():
             return sl
