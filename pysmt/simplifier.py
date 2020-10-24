@@ -15,6 +15,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+from collections import defaultdict
+
 from six.moves import xrange
 
 import pysmt.walkers
@@ -280,37 +282,75 @@ class Simplifier(pysmt.walkers.DagWalker):
         return self.manager.Exists(varset, sf)
 
     def walk_plus(self, formula, args, **kwargs):
-        new_args = []
+        new_pos_args = []
+        new_neg_args = []
         constant_add = 0
         stack = list(args)
         ttype = self.env.stc.get_type(args[0])
         is_algebraic = False
+        symb_to_coef = defaultdict(int)
         while len(stack) > 0:
             x = stack.pop()
             if x.is_constant():
                 if x.is_algebraic_constant():
                     is_algebraic = True
                 constant_add += x.constant_value()
+            elif x.is_symbol():
+                symb_to_coef[x] += 1
             elif x.is_plus():
                 stack += x.args()
+            elif x.is_times():
+                coef = 1
+                symbs = []
+                factors = list(x.args())
+                for arg in factors:
+                    if arg.is_times():
+                        factors.extend(arg.args())
+                    elif arg.is_constant():
+                        coef *= arg.constant_value()
+                    else:
+                        symbs.append(arg)
+                symbs.sort()
+                symbs = self.manager.Times(symbs)
+                symb_to_coef[symbs] += coef
             else:
-                new_args.append(x)
+                new_pos_args.append(x)
+
+        pysmt_num = self.manager.Real if ttype.is_real_type() \
+            else self.manager.Int
+
+        new_pos_args.extend([self.manager.Times(k, pysmt_num(v))
+                             if v != 1 else k
+                             for k, v in symb_to_coef.items() if v > 0])
+        new_neg_args.extend([self.manager.Times(k, pysmt_num(-v))
+                             if v != -1 else k
+                             for k, v in symb_to_coef.items() if v < 0])
 
         const = None
         if is_algebraic:
             from pysmt.constants import Numeral
             const = self.manager._Algebraic(Numeral(constant_add))
-        elif ttype.is_real_type():
-            const = self.manager.Real(constant_add)
         else:
-            assert ttype.is_int_type()
-            const = self.manager.Int(constant_add)
+            const = pysmt_num(constant_add)
 
-        if len(new_args) == 0:
+        if len(new_pos_args) == 0 and len(new_neg_args) == 0:
             return const
-        elif not const.is_zero():
-            new_args.append(const)
-        return self.manager.Plus(new_args)
+        elif constant_add != 0:
+            new_pos_args.append(const)
+
+        res = None
+        if new_pos_args:
+            res = self.manager.Plus(new_pos_args)
+        if new_neg_args:
+            neg = self.manager.Plus(new_neg_args)
+            if res:
+                res = self.manager.Minus(res, neg)
+            else:
+                m_one = self.manager.Real(-1) if ttype.is_real_type() \
+                        else self.manager.Int(-1)
+                res = self.manager.Times(m_one, neg)
+
+        return res
 
     def walk_times(self, formula, args, **kwargs):
         new_args = []
