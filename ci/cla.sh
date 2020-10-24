@@ -5,6 +5,9 @@ LC_COLLATE=C # Enforce known sort order
 
 committers=$(git shortlog -se HEAD | cut -f2,3 | sort)
 missing_authors=$(echo "$committers" | comm -13 CONTRIBUTORS -)
+missing_authors=$(echo ${missing_authors} | grep -v "Caleb Donovick <donovick@cs.stanford.edu>")
+missing_authors=$(echo ${missing_authors} | grep -v "Guillem Francès <guillem.frances@upf.edu>")
+missing_authors=$(echo ${missing_authors} | grep -v "Matthew Fernandez <matthew.fernandez@gmail.com>")
 
 if [ "$missing_authors" ]
 then
