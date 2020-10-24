@@ -47,13 +47,12 @@ class BtorInstaller(SolverInstaller):
         import distutils.sysconfig as sysconfig
         import sys
         PYTHON_LIBRARY = os.environ.get('PYSMT_PYTHON_LIBDIR')
-        if not PYTHON_LIBRARY:
-            PYTHON_LIBRARY = sysconfig.get_config_var('LIBDIR')
         PYTHON_INCLUDE_DIR = sysconfig.get_python_inc()
         PYTHON_EXECUTABLE = sys.executable
-        CMAKE_OPTS = ' -DPYTHON_LIBRARY=' + PYTHON_LIBRARY
-        CMAKE_OPTS += ' -DPYTHON_INCLUDE_DIR=' + PYTHON_INCLUDE_DIR
+        CMAKE_OPTS = ' -DPYTHON_INCLUDE_DIR=' + PYTHON_INCLUDE_DIR
         CMAKE_OPTS += ' -DPYTHON_EXECUTABLE=' + PYTHON_EXECUTABLE
+        if PYTHON_LIBRARY:
+            CMAKE_OPTS += ' -DPYTHON_LIBRARY=' + PYTHON_LIBRARY
 
         # Unpack
         SolverInstaller.untar(os.path.join(self.base_dir, self.archive_name),
