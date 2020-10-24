@@ -12,7 +12,7 @@ fi
 ${PYTHON} install.py --check
 
 # Run the test suite
-${PYTHON} -m nose pysmt -v # --with-coverage --cover-package=pysmt
+${PYTHON} -m pytest pysmt -v # --with-coverage --cover-package=pysmt
 
 
 # Test examples in examples/ folder

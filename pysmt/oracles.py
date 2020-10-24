@@ -389,6 +389,7 @@ class AtomsOracle(walkers.DagWalker):
     # - ITE terms
     # - Symbols
     # - Constants
+    # - Array select, e.g. a[x] because such term could be of Boolean type
     #
 
     def get_atoms(self, formula):
@@ -406,9 +407,15 @@ class AtomsOracle(walkers.DagWalker):
         #pylint: disable=unused-argument
         return frozenset([formula])
 
-    @walkers.handles(op.THEORY_OPERATORS)
+    @walkers.handles(op.THEORY_OPERATORS - {op.ARRAY_SELECT})
     def walk_theory_op(self, formula, **kwargs):
         #pylint: disable=unused-argument
+        return None
+
+    def walk_array_select(self, formula, **kwargs):
+        #pylint: disable=unused-argument
+        if self.env.stc.get_type(formula).is_bool_type():
+            return frozenset([formula])
         return None
 
     @walkers.handles(op.CONSTANTS)

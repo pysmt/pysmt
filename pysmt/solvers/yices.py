@@ -409,7 +409,7 @@ class YicesConverter(Converter, DagWalker):
         variables have been replaced by the new variables in the list.
         """
         new_vars = [self._bound_symbol(x) for x in variables]
-        old_vars = [self.walk_symbol(x, []) for x in variables]
+        old_vars = [self.walk_symbol(x) for x in variables]
         new_formula = yicespy.yices_subst_term(len(variables), new_vars,
                                                 old_vars, formula)
         return (new_formula, new_vars)

@@ -15,7 +15,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from nose.plugins.attrib import attr
+import pytest
+
 from pysmt.test import TestCase, skipIfSolverNotAvailable, main
 from pysmt.test.examples import get_example_formulae
 from pysmt.environment import get_env
@@ -29,7 +30,7 @@ from pysmt.exceptions import ConvertExpressionError, NoSolverAvailableError
 
 class TestSimplify(TestCase):
 
-    @attr("slow")
+    @pytest.mark.slow
     @skipIfSolverNotAvailable("z3")
     @skipIfSolverNotAvailable("cvc4")
     def test_simplify_qf(self):
@@ -44,7 +45,7 @@ class TestSimplify(TestCase):
                              msg="Simplification did not provide equivalent "+
                                 "result:\n f= %s\n sf = %s" % (f, sf))
 
-    @attr("slow")
+    @pytest.mark.slow
     @skipIfSolverNotAvailable("z3")
     def test_simplify_q(self):
         simp = get_env().simplifier

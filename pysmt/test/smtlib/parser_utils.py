@@ -27,13 +27,22 @@ from pysmt.logics import (QF_LIA, QF_LRA, LRA, QF_UFLIRA, QF_UFBV, QF_BV,
                           UFBV, BV)
 from pysmt.exceptions import NoSolverAvailableError, SolverReturnedUnknownResultError
 
+def smtlib_tests(logic_pred):
+    """Returns the smtlib instances matching the logic predicate"""
+    tests = []
+    for (logic, f, expected_result) in SMTLIB_TEST_FILES:
+        smtfile = os.path.join(SMTLIB_DIR, f)
+        if logic_pred(logic):
+            tests.append((smtfile, logic, expected_result))
+    return tests
+
 # We use test generation in order to be able to obtain a separate
 # test for each file.
-# This is a feature of nosetest. The correct way to invoke these
+# This is a feature of pytest. The correct way to invoke these
 # tests is, e.g.,
-#  $ nosetests pysmt/test/smtlib/test_parser_qf_lra.py
-# The function 'execute_script_fname' is a generator that
-# returns the correct arguments for the test
+#  $ python -m pytest pysmt/test/smtlib/test_parser_qf_lra.py
+# The function 'execute_script_fname' is a general checker that
+# parses and invokes a solver for the given smt file
 def execute_script_fname(smtfile, logic, expected_result):
     """Read and call a Solver to solve the instance"""
 
