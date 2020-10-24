@@ -21,6 +21,6 @@ then
   exit 1
 else
   echo "== Note: The following contributors were checked"
-  echo "$(echo $committers | comm -12 CONTRIBUTORS -)"
+  echo "$committers" | comm -12 CONTRIBUTORS -
   echo "All good!"
 fi
