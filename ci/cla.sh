@@ -5,11 +5,11 @@ LC_COLLATE=C # Enforce known sort order
 
 committers=$(git shortlog -se HEAD | cut -f2,3 | sort)
 missing_authors=$(echo "$committers" | comm -13 CONTRIBUTORS -)
-missing_authors=$(echo ${missing_authors} | grep -v "Caleb Donovick <donovick@cs.stanford.edu>")
-missing_authors=$(echo ${missing_authors} | grep -v "Guillem Francès <guillem.frances@upf.edu>")
-missing_authors=$(echo ${missing_authors} | grep -v "Matthew Fernandez <matthew.fernandez@gmail.com>")
+missing_authors=$(echo ${missing_authors} | sed 's/Caleb Donovick <donovick@cs.stanford.edu>//' )
+missing_authors=$(echo ${missing_authors} | sed 's/Guillem Francès <guillem.frances@upf.edu>//' )
+missing_authors=$(echo ${missing_authors} | sed 's/Matthew Fernandez <matthew.fernandez@gmail.com>//' )
 
-if [ "$missing_authors" ]
+if [ -n "$missing_authors" ]
 then
   echo "$missing_authors" | awk '{print "::error file=CONTRIBUTORS,line=0::💥 MISSING: " $0}'
 
@@ -23,5 +23,4 @@ else
   echo "== Note: The following contributors were checked"
   echo "$(echo $committers | comm -12 CONTRIBUTORS -)"
   echo "All good!"
-  exit 0
 fi
