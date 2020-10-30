@@ -285,12 +285,10 @@ class Simplifier(pysmt.walkers.DagWalker):
         new_pos_args = []
         new_neg_args = []
         constant_add = 0
+        stack = list(args)
         ttype = self.env.stc.get_type(args[0])
-        pysmt_num = self.manager.Real if ttype.is_real_type() \
-            else self.manager.Int
         is_algebraic = False
         symb_to_coef = defaultdict(int)
-        stack = list(args)
         while len(stack) > 0:
             x = stack.pop()
             if x.is_constant():
@@ -300,10 +298,7 @@ class Simplifier(pysmt.walkers.DagWalker):
             elif x.is_symbol():
                 symb_to_coef[x] += 1
             elif x.is_plus():
-                stack.extend(x.args())
-            elif x.is_minus():
-                stack.append(x.arg(0))
-                stack.append(self.manager.Times(pysmt_num(-1), x.arg(1)))
+                stack += x.args()
             elif x.is_times():
                 coef = 1
                 symbs = []
@@ -320,6 +315,9 @@ class Simplifier(pysmt.walkers.DagWalker):
                 symb_to_coef[symbs] += coef
             else:
                 new_pos_args.append(x)
+
+        pysmt_num = self.manager.Real if ttype.is_real_type() \
+            else self.manager.Int
 
         new_pos_args.extend([self.manager.Times(k, pysmt_num(v))
                              if v != 1 else k
