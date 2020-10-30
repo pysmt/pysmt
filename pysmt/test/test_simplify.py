@@ -20,8 +20,8 @@ import pytest
 from pysmt.test import TestCase, skipIfSolverNotAvailable, main
 from pysmt.test.examples import get_example_formulae
 from pysmt.environment import get_env
-from pysmt.shortcuts import (Array, Store, Int, Iff, Symbol, Plus, Equals, And,
-                             Real, Times, Not, FALSE, Or, TRUE)
+from pysmt.shortcuts import (Array, Store, Int, Symbol, Plus, Minus, Times,
+                             Real, Equals, Iff, And, Or, Not, FALSE, TRUE)
 from pysmt.typing import INT, REAL
 from pysmt.simplifier import BddSimplifier
 from pysmt.logics import QF_BOOL
@@ -114,6 +114,41 @@ class TestSimplify(TestCase):
         f = Times(r, r, Real(1))
         f = f.simplify()
         self.assertNotIn(Real(1), f.args())
+
+
+    def test_simplify_times_minus_one_in_plus(self):
+        r0 = Symbol("r0", REAL)
+        r1 = Symbol("r1", REAL)
+        m_1 = Real(-1)
+        orig = Plus(r0, Times(r1, m_1))
+        simpl = orig.simplify()
+        self.assertEqual(simpl, Minus(r0, r1))
+
+
+    def test_simplify_coefficients_to_zero(self):
+        r0 = Symbol("r0", REAL)
+        m_2 = Real(-2)
+        p_2 = Real(2)
+        orig = Plus(Times(p_2, r0), Times(m_2, r0))
+        simpl = orig.simplify()
+        self.assertEqual(simpl, Real(0))
+
+    def test_simplify_coefficients(self):
+        r0 = Symbol("r0", REAL)
+        r1 = Symbol("r1", REAL)
+        r0r1 = Symbol("r0r1", REAL)
+        m_4 = Real(-5)
+        p_2 = Real(2)
+        p_3 = Real(3)
+        p_8 = Real(8)
+        orig = Plus(Times(m_4, r0), Times(p_3, r1))
+        orig = Plus(orig, Times(p_2, p_3, r0))
+        orig = Minus(orig, Times(p_3, r0r1))
+        orig = Plus(orig, Times(m_4, r0r1))
+        simpl = orig.simplify()
+        expected = Minus(Plus(Times(r1, p_3), r0), Times(r0r1, p_8))
+        self.assertEquals(simpl, expected)
+        self.assertValid(Equals(simpl, orig))
 
 
     def test_and_flattening(self):
