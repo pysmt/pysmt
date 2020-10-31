@@ -257,7 +257,7 @@ class TestRewritings(TestCase):
             except SolverReturnedUnknownResultError:
                 ok = not logic.quantifier_free
             self.assertTrue(ok)
-        
+
         f = And(LT(Real(4), Times(x, x)), Equals(y, x), Equals(y, Real(1)))
         fp = propagate_toplevel(f)
         self.assertTrue(fp.is_false())
@@ -332,7 +332,6 @@ class TestRewritings(TestCase):
                       s,
                       Real(-1))
         self.assertValid(Equals(fp, target), fp)
-        self.assertTrue(fp.is_plus(), fp)
 
     @skipIfNoSolverForLogic(QF_NRA)
     def test_times_distributivity_smtlib_nra(self):
