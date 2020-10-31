@@ -280,7 +280,8 @@ class Simplifier(pysmt.walkers.DagWalker):
         return self.manager.Exists(varset, sf)
 
     def walk_plus(self, formula, args, **kwargs):
-        new_args = []
+        to_sum = []
+        to_sub = []
         constant_add = 0
         stack = list(args)
         ttype = self.env.stc.get_type(args[0])
@@ -293,8 +294,31 @@ class Simplifier(pysmt.walkers.DagWalker):
                 constant_add += x.constant_value()
             elif x.is_plus():
                 stack += x.args()
+            elif x.is_minus():
+                to_sum.append(x.arg(0))
+                to_sub.append(x.arg(1))
+            elif x.is_times() and x.args()[-1].is_constant():
+                const = x.args()[-1]
+                const_val = const.constant_value()
+                if const_val < 0:
+                    new_times = list(x.args()[:-1])
+                    if const_val != -1:
+                        const_val = -const_val
+                        if const.is_algebraic_constant():
+                            from pysmt.constants import Numeral
+                            const = self.manager._Algebraic(Numeral(const_val))
+                        elif ttype.is_real_type():
+                            const = self.manager.Real(const_val)
+                        else:
+                            assert ttype.is_int_type()
+                            const = self.manager.Int(const_val)
+                        new_times.append(const)
+                    new_times = self.manager.Times(new_times)
+                    to_sub.append(new_times)
+                else:
+                    to_sum.append(x)
             else:
-                new_args.append(x)
+                to_sum.append(x)
 
         const = None
         if is_algebraic:
@@ -306,11 +330,17 @@ class Simplifier(pysmt.walkers.DagWalker):
             assert ttype.is_int_type()
             const = self.manager.Int(constant_add)
 
-        if len(new_args) == 0:
+        if len(to_sum) == 0 and len(to_sub) == 0:
             return const
-        elif not const.is_zero():
-            new_args.append(const)
-        return self.manager.Plus(new_args)
+        if not const.is_zero():
+            to_sum.append(const)
+
+        res = self.manager.Plus(to_sum)
+
+        if to_sub:
+            sub = self.manager.Plus(to_sub)
+            res = self.manager.Minus(res, sub)
+        return res
 
     def walk_times(self, formula, args, **kwargs):
         new_args = []
