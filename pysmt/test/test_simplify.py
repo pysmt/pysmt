@@ -145,6 +145,22 @@ class TestSimplify(TestCase):
                 # unexpected expression type.
                 self.assertTrue(False)
 
+    @skipIfSolverNotAvailable("z3")
+    def test_plus_algebraic(self):
+        from pysmt.constants import Numeral
+        env = get_env()
+        mgr = env.formula_manager
+        r0 = Symbol("r0", REAL)
+        p_2 = Real(2)
+        m_5 = mgr._Algebraic(Numeral(-5))
+        m_3 = mgr._Algebraic(Numeral(-3))
+
+        # r0 + 2 - 5
+        expr = Plus(r0, p_2, m_5)
+        res = expr.simplify()
+        self.assertValid(Equals(expr, res))
+        self.assertIn(m_3, res.args())
+
     def test_and_flattening(self):
         x,y,z = (Symbol(name) for name in "xyz")
         f1 = And(x, y, z)
