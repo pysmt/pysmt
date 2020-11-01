@@ -827,6 +827,14 @@ class MSatConverter(Converter, DagWalker):
         rep = str(formula.constant_value())
         return mathsat.msat_make_number(self.msat_env(), rep)
 
+    def walk_algebraic_constant(self, formula, **kwargs):
+        val = formula.constant_value()
+        if val.is_irrational():
+            raise ConvertExpressionError("Cannot convert irrational constant")
+        num, den = val.numerator(), val.denominator()
+        rep = "{}/{}".format(str(num), str(den))
+        return mathsat.msat_make_number(self.msat_env(), rep)
+
     def walk_bool_constant(self, formula, **kwargs):
         if formula.constant_value():
             return mathsat.msat_make_true(self.msat_env())
