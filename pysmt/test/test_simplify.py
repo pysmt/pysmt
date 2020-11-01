@@ -115,6 +115,35 @@ class TestSimplify(TestCase):
         f = f.simplify()
         self.assertNotIn(Real(1), f.args())
 
+    def test_plus_negatives(self):
+        r0 = Symbol("r0", REAL)
+        r1 = Symbol("r1", REAL)
+        p_1 = Real(1)
+        m_1 = Real(-1)
+        p_2 = Real(2)
+        m_4 = Real(-4)
+
+        # 4 * r0 + (-1) * r1 + 2 - 4
+        neg_r1 = Times(m_1, r1)
+        m_4_r0 = Times(Real(4), r0)
+        expr = Plus(m_4_r0, neg_r1, p_2, m_4)
+        res = expr.simplify()
+        self.assertValid(Equals(expr, res))
+        stack = [res]
+        while stack:
+            curr = stack.pop()
+            if curr.is_plus():
+                stack.extend(curr.args())
+            elif curr.is_minus():
+                stack.extend(curr.args())
+            elif curr.is_times():
+                stack.extend(curr.args())
+            elif curr.is_constant():
+                self.assertNotEqual(curr, m_1)
+                self.assertNotEqual(curr, p_1)
+            elif not curr.is_symbol():
+                # unexpected expression type.
+                self.assertTrue(False)
 
     def test_and_flattening(self):
         x,y,z = (Symbol(name) for name in "xyz")
