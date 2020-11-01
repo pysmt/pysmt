@@ -191,12 +191,13 @@ class TheoryOracle(walkers.DagWalker):
 
     @walkers.handles(op.REAL_CONSTANT, op.BOOL_CONSTANT)
     @walkers.handles(op.INT_CONSTANT, op.BV_CONSTANT)
+    @walkers.handles(op.ALGEBRAIC_CONSTANT)
     @walkers.handles(op.STR_CONSTANT)
     def walk_constant(self, formula, args, **kwargs):
         """Returns a new theory object with the type of the constant."""
         #pylint: disable=unused-argument
         theory_out = Theory()
-        if formula.is_real_constant():
+        if formula.is_real_constant() or formula.is_algebraic_constant():
             theory_out.real_arithmetic = True
             theory_out.real_difference = True
         elif formula.is_int_constant():
