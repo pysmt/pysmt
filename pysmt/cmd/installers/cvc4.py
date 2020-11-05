@@ -83,7 +83,7 @@ class CVC4Installer(SolverInstaller):
 
         SolverInstaller.run(config_cmd, directory=self.extract_path,
                             env_variables=pyconfig)
-        SolverInstaller.run(f"make -j{multiprocessing.cpu_count()}", directory=self.build_path,
+        SolverInstaller.run("make -j {}".format(multiprocessing.cpu_count()), directory=self.build_path,
                             env_variables=pyconfig)
         # SolverInstaller.run("make install", directory=self.build_path,
         #                     env_variables=pyconfig)
