@@ -335,11 +335,21 @@ class Simplifier(pysmt.walkers.DagWalker):
         if not const.is_zero():
             to_sum.append(const)
 
-        res = self.manager.Plus(to_sum)
+        assert to_sum or to_sub
+
+        res = self.manager.Plus(to_sum) if to_sum else None
 
         if to_sub:
             sub = self.manager.Plus(to_sub)
-            res = self.manager.Minus(res, sub)
+            if res:
+                res = self.manager.Minus(res, sub)
+            else:
+                if ttype.is_int_type():
+                    m_1 = self.manager.Int(-1)
+                else:
+                    assert ttype.is_real_type()
+                    m_1 = self.manager.Real(-1)
+                res = self.manager.Times(m_1, sub)
         return res
 
     def walk_times(self, formula, args, **kwargs):

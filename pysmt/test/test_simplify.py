@@ -115,6 +115,7 @@ class TestSimplify(TestCase):
         f = f.simplify()
         self.assertNotIn(Real(1), f.args())
 
+    @skipIfSolverNotAvailable("z3")
     def test_plus_negatives(self):
         r0 = Symbol("r0", REAL)
         r1 = Symbol("r1", REAL)
@@ -144,6 +145,19 @@ class TestSimplify(TestCase):
             elif not curr.is_symbol():
                 # unexpected expression type.
                 self.assertTrue(False)
+
+    @skipIfSolverNotAvailable("z3")
+    def test_sum_all_negatives(self):
+        r0 = Symbol("r0", REAL)
+        r1 = Symbol("r1", REAL)
+        m_1 = Real(-1)
+
+        # -4 * r0 + (-1) * r1
+        neg_r1 = Times(m_1, r1)
+        m_4_r0 = Times(Real(-4), r0)
+        expr = Plus(m_4_r0, neg_r1)
+        res = expr.simplify()
+        self.assertValid(Equals(expr, res))
 
     @skipIfSolverNotAvailable("z3")
     def test_plus_algebraic(self):
