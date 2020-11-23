@@ -405,6 +405,7 @@ class MSatConverter(Converter, DagWalker):
             mathsat.MSAT_TAG_LEQ: self._back_adapter(self.mgr.LE),
             mathsat.MSAT_TAG_PLUS: self._back_adapter(self.mgr.Plus),
             mathsat.MSAT_TAG_TIMES: self._back_adapter(self.mgr.Times),
+            mathsat.MSAT_TAG_DIVIDE: self._back_adapter(self.mgr.Div),
             mathsat.MSAT_TAG_BV_MUL: self._back_adapter(self.mgr.BVMul),
             mathsat.MSAT_TAG_BV_ADD: self._back_adapter(self.mgr.BVAdd),
             mathsat.MSAT_TAG_BV_UDIV: self._back_adapter(self.mgr.BVUDiv),
@@ -460,6 +461,7 @@ class MSatConverter(Converter, DagWalker):
             mathsat.MSAT_TAG_LEQ: self._sig_most_generic_bool_binary,
             mathsat.MSAT_TAG_PLUS:  self._sig_most_generic_bool_binary,
             mathsat.MSAT_TAG_TIMES: self._sig_most_generic_bool_binary,
+            mathsat.MSAT_TAG_DIVIDE: self._sig_most_generic_bool_binary,
             mathsat.MSAT_TAG_BV_MUL: self._sig_binary,
             mathsat.MSAT_TAG_BV_ADD: self._sig_binary,
             mathsat.MSAT_TAG_BV_UDIV:self._sig_binary,
@@ -979,6 +981,26 @@ class MSatConverter(Converter, DagWalker):
             else:
                 res = mathsat.msat_make_times(self.msat_env(), res, x)
         return res
+
+    def walk_div(self, formula, args, **kwargs):
+        if self.env.stc.get_type(args[0]).is_real_type():
+            return mathsat.msat_make_divide(self.msat_env(), args[0], args[1])
+        assert self.env.stc.get_type(args[0]).is_int_type()
+        # smtlib2 semantics: den >= 0 ? floor(num / den) : ceil(num / den)
+        # In the following we rewrite ceil(a) as -floor(-a)
+        num = args[0]
+        den = args[1]
+        zero = mathsat.make_number(0)
+        neg = mathsat.make_number(-1)
+        n_den = mathsat.msat_make_times(neg, den)
+        cond = mathsat.msat_make_leq(zero, num)
+        div = mathsat.msat_make_divide(num, den)
+        div = mathsat.msat_make_floor(div)  # floor(num / den)
+        n_div = mathsat.msat_make_divide(num, n_den)
+        n_div = mathsat.msat_make_floor(n_div)  # floor(num / -den)
+        n_div = mathsat.msat_make_times(neg, n_div)
+        # den >= 0 ? floor(num / den) : - floor(num / -den)
+        return mathsat.msat_make_term_ite(cond, div, n_div)
 
     def walk_function(self, formula, args, **kwargs):
         name = formula.function_name()
