@@ -262,7 +262,9 @@ class FormulaManager(object):
 
     def Div(self, left, right):
         """ Creates an expression of the form: left / right """
-        if right.is_constant(types.REAL, 0) and self.env.enable_div_by_0:
+        if (right.is_constant(types.REAL, 0) or
+            right.is_constant(types.INT, 0)) \
+           and self.env.enable_div_by_0:
             # Allow division by 0 byt warn the user
             # This can only happen in non-linear logics
             warnings.warn("Warning: Division by 0")
@@ -270,8 +272,6 @@ class FormulaManager(object):
             # If right is a constant we rewrite as left * 1/right
             inverse = Fraction(1) / right.constant_value()
             return self.Times(left, self.Real(inverse))
-        elif right.is_constant(types.INT):
-            raise NotImplementedError
 
         # This is a non-linear expression
         return self.create_node(node_type=op.DIV,
