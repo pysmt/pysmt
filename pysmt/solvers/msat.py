@@ -983,24 +983,27 @@ class MSatConverter(Converter, DagWalker):
         return res
 
     def walk_div(self, formula, args, **kwargs):
-        if self.env.stc.get_type(args[0]).is_real_type():
+        if self.env.stc.get_type(formula).is_real_type():
             return mathsat.msat_make_divide(self.msat_env(), args[0], args[1])
-        assert self.env.stc.get_type(args[0]).is_int_type()
+        assert self.env.stc.get_type(formula).is_int_type()
         # smtlib2 semantics: den >= 0 ? floor(num / den) : ceil(num / den)
         # In the following we rewrite ceil(a) as -floor(-a)
         num = args[0]
         den = args[1]
-        zero = mathsat.make_number(0)
-        neg = mathsat.make_number(-1)
-        n_den = mathsat.msat_make_times(neg, den)
-        cond = mathsat.msat_make_leq(zero, num)
-        div = mathsat.msat_make_divide(num, den)
-        div = mathsat.msat_make_floor(div)  # floor(num / den)
-        n_div = mathsat.msat_make_divide(num, n_den)
-        n_div = mathsat.msat_make_floor(n_div)  # floor(num / -den)
-        n_div = mathsat.msat_make_times(neg, n_div)
+        zero = mathsat.msat_make_number(self.msat_env(), "0")
+        neg = mathsat.msat_make_number(self.msat_env(), "-1")
+        # den >= 0
+        cond = mathsat.msat_make_leq(self.msat_env(), zero, den)
+        # floor(num / den)
+        div = mathsat.msat_make_divide(self.msat_env(), num, den)
+        div = mathsat.msat_make_floor(self.msat_env(), div)
+        # - floor(num / -den)
+        n_div = mathsat.msat_make_times(self.msat_env(), neg, den)
+        n_div = mathsat.msat_make_divide(self.msat_env(), num, n_div)
+        n_div = mathsat.msat_make_floor(self.msat_env(), n_div)
+        n_div = mathsat.msat_make_times(self.msat_env(), neg, n_div)
         # den >= 0 ? floor(num / den) : - floor(num / -den)
-        return mathsat.msat_make_term_ite(cond, div, n_div)
+        return mathsat.msat_make_term_ite(self.msat_env(), cond, div, n_div)
 
     def walk_function(self, formula, args, **kwargs):
         name = formula.function_name()
