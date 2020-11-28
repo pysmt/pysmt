@@ -103,7 +103,7 @@ def main():
     # Compute stats
     total = sum(x[0] for x in timings)
     mean = total / len(timings)
-    print("The total execution time was %0.2f seconds", total)
+    print("The total execution time was %0.2f seconds" % total)
     print("The mean execution time was %0.2f seconds" % mean)
     print("The max execution time was %0.2f seconds" % max(x[0] for x in timings))
 
