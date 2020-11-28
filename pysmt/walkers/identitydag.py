@@ -36,6 +36,9 @@ class IdentityDagWalker(DagWalker):
         return self.mgr.Symbol(formula.symbol_name(),
                                formula.symbol_type())
 
+    def walk_algebraic_constant(self, formula, args, **kwargs):
+        return self.mgr._Algebraic(formula.constant_value())
+
     def walk_real_constant(self, formula, args, **kwargs):
         return self.mgr.Real(formula.constant_value())
 
