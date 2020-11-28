@@ -281,47 +281,77 @@ class Simplifier(pysmt.walkers.DagWalker):
         return self.manager.Exists(varset, sf)
 
     def walk_plus(self, formula, args, **kwargs):
-        is_real = any(x.is_real_constant() for x in args)
-        is_int = any(x.is_int_constant() for x in args)
-        assert not (is_real and is_int)
-
-        if all(x.is_constant() for x in args):
-            res = sum(x.constant_value() for x in args)
-            if is_real:
-                return self.manager.Real(res)
-            else:
-                return self.manager.Int(res)
-
-        ns = [x for x in args if not x.is_constant()]
-        if len(ns) < len(args):
-            num = sum(x.constant_value() for x in args if x.is_constant())
-            if num != 0:
-                if is_real:
-                    ns.append(self.manager.Real(num))
+        to_sum = []
+        to_sub = []
+        constant_add = 0
+        stack = list(args)
+        ttype = self.env.stc.get_type(args[0])
+        is_algebraic = False
+        while len(stack) > 0:
+            x = stack.pop()
+            if x.is_constant():
+                if x.is_algebraic_constant():
+                    is_algebraic = True
+                constant_add += x.constant_value()
+            elif x.is_plus():
+                stack += x.args()
+            elif x.is_minus():
+                to_sum.append(x.arg(0))
+                to_sub.append(x.arg(1))
+            elif x.is_times() and x.args()[-1].is_constant():
+                const = x.args()[-1]
+                const_val = const.constant_value()
+                if const_val < 0:
+                    new_times = list(x.args()[:-1])
+                    if const_val != -1:
+                        const_val = -const_val
+                        if const.is_algebraic_constant():
+                            from pysmt.constants import Numeral
+                            const = self.manager._Algebraic(Numeral(const_val))
+                        elif ttype.is_real_type():
+                            const = self.manager.Real(const_val)
+                        else:
+                            assert ttype.is_int_type()
+                            const = self.manager.Int(const_val)
+                        new_times.append(const)
+                    new_times = self.manager.Times(new_times)
+                    to_sub.append(new_times)
                 else:
-                    ns.append(self.manager.Int(num))
+                    to_sum.append(x)
+            else:
+                to_sum.append(x)
 
-        if len(ns) == 2:
-            minus_one = self.manager.Real(-1) if is_real else \
-                        self.manager.Int(-1)
-            # (+ (* -1 X) Y) => (- Y X)
-            if ns[0].is_times() and len(ns[0].args()) == 2:
-                t = ns[0]
-                if t.arg(0) == minus_one:
-                    return self.manager.Minus(ns[1], t.arg(1))
-                if t.arg(1) == minus_one:
-                    return self.manager.Minus(ns[1], t.arg(0))
-            # (+ Y (* -1 X)) => (- Y X)
-            if ns[1].is_times() and len(ns[0].args()) == 2:
-                t = ns[1]
-                if t.arg(0) == minus_one:
-                    return self.manager.Minus(ns[0], t.arg(1))
-                if t.arg(1) == minus_one:
-                    return self.manager.Minus(ns[0], t.arg(0))
+        const = None
+        if is_algebraic:
+            from pysmt.constants import Numeral
+            const = self.manager._Algebraic(Numeral(constant_add))
+        elif ttype.is_real_type():
+            const = self.manager.Real(constant_add)
+        else:
+            assert ttype.is_int_type()
+            const = self.manager.Int(constant_add)
 
-        if len(ns) == 1:
-            return ns[0]
-        return self.manager.Plus(ns)
+        if len(to_sum) == 0 and len(to_sub) == 0:
+            return const
+        if not const.is_zero():
+            to_sum.append(const)
+
+        assert to_sum or to_sub
+
+        res = self.manager.Plus(to_sum) if to_sum else None
+
+        if to_sub:
+            sub = self.manager.Plus(to_sub)
+            if res:
+                res = self.manager.Minus(res, sub)
+            else:
+                if ttype.is_int_type():
+                    m_1 = self.manager.Int(-1)
+                else:
+                    assert ttype.is_real_type()
+                    m_1 = self.manager.Real(-1)
+                res = self.manager.Times(m_1, sub)
+        return res
 
     def walk_times(self, formula, args, **kwargs):
         new_args = []
@@ -365,16 +395,23 @@ class Simplifier(pysmt.walkers.DagWalker):
         new_args = sorted(new_args, key=FNode.node_id)
         return self.manager.Times(new_args)
 
-
     def walk_pow(self, formula, args, **kwargs):
         if args[0].is_real_constant():
             l = args[0].constant_value()
             r = args[1].constant_value()
             return self.manager.Real(l**r)
-        elif args[0].is_int_constant():
+
+        if args[0].is_int_constant():
             l = args[0].constant_value()
             r = args[1].constant_value()
             return self.manager.Int(l**r)
+
+        if args[0].is_algebraic_constant():
+            from pysmt.constants import Numeral
+            l = args[0].constant_value()
+            r = args[1].constant_value()
+            return self.manager._Algebraic(Numeral(l**r))
+
         return self.manager.Pow(args[0], args[1])
 
     def walk_minus(self, formula, args, **kwargs):
@@ -392,6 +429,13 @@ class Simplifier(pysmt.walkers.DagWalker):
             l = sl.constant_value()
             r = sr.constant_value()
             return self.manager.Int(l - r)
+
+        if sl.is_algebraic_constant() and \
+           sr.is_algebraic_constant():
+            from pysmt.constants import Numeral
+            l = sl.constant_value()
+            r = sr.constant_value()
+            return self.mananger._Algebraic(Numeral(l - r))
 
         if sr.is_constant() and sr.is_zero():
             return sl

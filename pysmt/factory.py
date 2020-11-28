@@ -102,7 +102,7 @@ class Factory(object):
 
 
     def get_unsat_core_solver(self, name=None, logic=None,
-                              unsat_cores_mode="all"):
+                              unsat_cores_mode="all", **options):
         SolverClass, closer_logic = \
            self._get_solver_class(solver_list=self._all_unsat_core_solvers,
                                   solver_type="Solver supporting Unsat Cores",
@@ -113,7 +113,8 @@ class Factory(object):
         return SolverClass(environment=self.environment,
                            logic=closer_logic,
                            generate_models=True,
-                           unsat_cores_mode=unsat_cores_mode)
+                           unsat_cores_mode=unsat_cores_mode,
+                           **options)
 
     def get_quantifier_eliminator(self, name=None, logic=None):
         SolverClass, closer_logic = \
@@ -439,10 +440,11 @@ class Factory(object):
                                **options)
 
     def UnsatCoreSolver(self, name=None, logic=None,
-                        unsat_cores_mode="all"):
+                        unsat_cores_mode="all", **options):
         return self.get_unsat_core_solver(name=name,
                                           logic=logic,
-                                          unsat_cores_mode=unsat_cores_mode)
+                                          unsat_cores_mode=unsat_cores_mode,
+                                          **options)
 
     def QuantifierEliminator(self, name=None, logic=None):
         return self.get_quantifier_eliminator(name=name, logic=logic)

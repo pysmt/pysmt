@@ -660,6 +660,14 @@ class Z3Converter(Converter, DagWalker):
         z3.Z3_inc_ref(self.ctx.ref(), z3term)
         return z3term
 
+    def walk_algebraic_constant(self, formula, **kwargs):
+        rep = str(formula.constant_value())
+        z3term = z3.Z3_mk_numeral(self.ctx.ref(),
+                                  rep,
+                                  self.z3RealSort.ast)
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
+        return z3term
+
     def walk_real_constant(self, formula, **kwargs):
         frac = formula.constant_value()
         n,d = frac.numerator, frac.denominator
