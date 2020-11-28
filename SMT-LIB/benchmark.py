@@ -56,6 +56,14 @@ def simplify(smtfile):
     f = read_smtlib(smtfile)
     f.simplify()
 
+@register
+def simplify_validate(smtfile):
+    """Validate a simplification."""
+    from pysmt.shortcuts import is_valid, Iff
+    f = read_smtlib(smtfile)
+    g = f.simplify()
+    assert is_valid(Iff(f,g))
+
 def dump_stats(timings, fname):
     if fname is None:
         fname = "stats.out"
@@ -79,12 +87,19 @@ def main():
 
     parser.add_argument('--bench', type=str, help="Which benchmark to run", default="parse")
 
+    parser.add_argument('--file-list', type=str, help="Consider only the files in the file list")
+
     args = parser.parse_args()
     benchmark = args.bench
 
     # Prepare files
-    file_list = list(get_all_smt_files(args.base))
-    random.shuffle(file_list)
+    if args.file_list:
+        with open(args.file_list, "r") as fin:
+            file_list = [f.split(",")[1].replace('"','').strip() for f in fin.readlines()[1:]]
+    else:
+        print("Computing file list")
+        file_list = list(get_all_smt_files(args.base))
+        random.shuffle(file_list)
     files_cnt = len(file_list)
     if args.count:
         if args.count > files_cnt:
