@@ -559,22 +559,22 @@ class FormulaManager(object):
         le = self.BVULE
         if sign:
             le = self.BVSLE
-        return self.MinWrap( le, args)
+        return self.MinWrap( le, *args)
 
     def MaxBV(self, sign, *args):
         """Returns the encoding of the maximum expression within args"""
         le = self.BVULE
         if sign:
             le = self.BVSLE
-        return self.MaxWrap( le, args)
+        return self.MaxWrap( le, *args)
 
     def Min(self, *args):
         """Returns the encoding of the minimum expression within args"""
-        return self.MinWrap(self.LE, args)
+        return self.MinWrap(self.LE, *args)
 
     def Max(self, *args):
         """Returns the encoding of the maximum expression within args"""
-        return self.MaxWrap(self.LE, args)
+        return self.MaxWrap(self.LE, *args)
 
     def EqualsOrIff(self, left, right):
         """Returns Equals() or Iff() depending on the type of the arguments.
