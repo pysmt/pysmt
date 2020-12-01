@@ -88,13 +88,13 @@ class MaximizationGoal(Goal):
     Attention: some Optimizer may not support this goal
     """
 
-    def __init__(self, formula):
+    def __init__(self, formula, sign = True):
         """
         :param formula: The target formula
         :type  formula: FNode
         """
         self.formula = formula
-        self.bv_signed = True
+        self.bv_signed = sign
 
     def opt(self):
         return MaximizationGoal
@@ -111,13 +111,13 @@ class MinimizationGoal(Goal):
     Attention: some Optimizer may not support this goal
     """
 
-    def __init__(self, formula):
+    def __init__(self, formula, sign = True):
         """
         :param formula: The target formula
         :type  formula: FNode
         """
         self.formula = formula
-        self.bv_signed = True
+        self.bv_signed = sign
 
     def opt(self):
         return MinimizationGoal
@@ -131,7 +131,7 @@ class MinMaxGoal(MinimizationGoal):
 
     def __init__(self, terms, sign = True):
         if len(terms) > 0:
-            if(terms[0].is_bv_constant()):
+            if get_env().stc.get_type(terms[0]).is_bv_type():
                 formula = get_env().formula_manager.MaxBV(sign, terms)
             else:
                 formula = get_env().formula_manager.Max(terms)
@@ -145,7 +145,7 @@ class MaxMinGoal(MaximizationGoal):
 
     def __init__(self, terms, sign = True):
         if len(terms) > 0:
-            if(terms[0].is_bv_constant()):
+            if get_env().stc.get_type(terms[0]).is_bv_type():
                 formula = get_env().formula_manager.MinBV(sign, terms)
             else:
                 formula = get_env().formula_manager.Min(terms)
@@ -165,12 +165,12 @@ class MaxSMTGoal(Goal):
 
     _instance_id = 0
 
-    def __init__(self):
+    def __init__(self, sign = True):
         """Accepts soft clauses and the relative weights"""
         self._my_id = MaxSMTGoal._instance_id
         MaxSMTGoal._instance_id = MaxSMTGoal._instance_id + 1
         self.soft = []
-        self.bv_signed = True
+        self.bv_signed = sign
 
     def add_soft_clause(self, clause, weight):
         """Accepts soft clauses and the relative weights"""

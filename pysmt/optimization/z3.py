@@ -42,7 +42,12 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
         self.z3 = z3.Optimize()
 
     def _assert_z3_goal(self, goal):
-        obj = self.converter.convert(goal.term())
+        term = goal.term()
+        ty = self.environment.stc.get_type(term)
+        if goal.signed() and ty.is_bv_type():
+            width = ty.width
+            term = self.mgr.BVAdd(term, self.mgr.BV(2**(width-1), width))
+        obj = self.converter.convert(term)
         if goal.is_minimization_goal():
             h = self.z3.minimize(obj)
         elif goal.is_maximization_goal():
