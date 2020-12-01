@@ -74,7 +74,10 @@ class Goal(object):
             return logic
 
     def signed(self):
-        return True
+        return self.bv_signed
+
+    def set_signed(self, sign):
+        self.bv_signed = sign
 
 
 
@@ -91,6 +94,7 @@ class MaximizationGoal(Goal):
         :type  formula: FNode
         """
         self.formula = formula
+        self.bv_signed = True
 
     def opt(self):
         return MaximizationGoal
@@ -113,6 +117,7 @@ class MinimizationGoal(Goal):
         :type  formula: FNode
         """
         self.formula = formula
+        self.bv_signed = True
 
     def opt(self):
         return MinimizationGoal
@@ -124,15 +129,31 @@ class MinimizationGoal(Goal):
 
 class MinMaxGoal(MinimizationGoal):
 
-    def __init__(self, terms):
-        MinimizationGoal.__init__(self, get_env().formula_manager.Max(terms))
+    def __init__(self, terms, sign = True):
+        if len(terms) > 0:
+            if(terms[0].is_bv_constant()):
+                formula = get_env().formula_manager.MaxBV(sign, terms)
+            else:
+                formula = get_env().formula_manager.Max(terms)
+        else:
+            formula = get_env().formula_manager.Max(terms)
+        MinimizationGoal.__init__(self, formula)
         self.terms = terms
+        self.bv_signed = sign
 
 class MaxMinGoal(MaximizationGoal):
 
-    def __init__(self, terms):
-        MaximizationGoal.__init__(self, get_env().formula_manager.Min(terms))
+    def __init__(self, terms, sign = True):
+        if len(terms) > 0:
+            if(terms[0].is_bv_constant()):
+                formula = get_env().formula_manager.MinBV(sign, terms)
+            else:
+                formula = get_env().formula_manager.Min(terms)
+        else:
+            formula = get_env().formula_manager.Min(terms)
+        MaximizationGoal.__init__(self, formula)
         self.terms = terms
+        self.bv_signed = sign
 
 
 class MaxSMTGoal(Goal):
@@ -142,10 +163,14 @@ class MaxSMTGoal(Goal):
     Attention: some solvers may not support this goal
     """
 
-    def __init__(self, clause, weight):
-        raise NotImplementedError
+    _instance_id = 0
+
+    def __init__(self):
         """Accepts soft clauses and the relative weights"""
-        self.soft =  zip(clause, weight)
+        self._my_id = MaxSMTGoal._instance_id
+        MaxSMTGoal._instance_id = MaxSMTGoal._instance_id + 1
+        self.soft = []
+        self.bv_signed = True
 
     def add_soft_clause(self, clause, weight):
         """Accepts soft clauses and the relative weights"""

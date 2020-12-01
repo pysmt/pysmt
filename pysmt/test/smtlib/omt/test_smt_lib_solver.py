@@ -82,7 +82,6 @@ class TestSmtLibSolver(TestCase):
 """)
 
 
-
     def test_omt_box(self):
         txt = """(set-option :opt.priority box)
 (declare-fun x () Int)
@@ -166,6 +165,98 @@ class TestSmtLibSolver(TestCase):
 (objectives
   ((x - y) -10)
   ((y - x) 10)
+)
+""")
+
+    def test_omt_int_01(self):
+        txt = """(set-option :opt.priority lex)
+(declare-fun x () Int)
+(declare-fun y () Int)
+(declare-fun z () Int)
+(assert (and
+        (<= x 10)
+        (<= 0 x)
+        (<= y 10)
+        (<= 0 y)
+        (<= z 10)
+        (<= 0 z)
+))
+(minimize (- x y))
+(minimize (- y x))
+(check-sat)
+(get-objectives)
+(set-option :opt.priority box)
+(check-sat)
+(get-objectives)
+(maxmin (x y))
+(check-sat)
+(get-objectives)"""
+        f_in = cStringIO(txt)
+        f_out = cStringIO()
+        args = ['-o', 'auto']
+        pysmtshell = PysmtShell(args)
+        pysmtshell.smtlib_solver(f_in, f_out)
+        self.assertEqual(f_out.getvalue(), """sat
+(objectives
+  ((x - y) -10)
+  ((y - x) 10)
+)
+sat
+(objectives
+  ((x - y) -10)
+  ((y - x) -10)
+)
+sat
+(objectives
+  ((x - y) -10)
+  ((y - x) -10)
+  (((x <= y) ? x : y) 0)
+)
+""")
+
+    def test_omt_real_01(self):
+        txt = """(set-option :opt.priority lex)
+(declare-fun x () Real)
+(declare-fun y () Real)
+(declare-fun z () Real)
+(assert (and
+        (<= x 10.0)
+        (<= 0.0 x)
+        (<= y 10.0)
+        (<= 0.0 y)
+        (<= z 10.0)
+        (<= 0.0 z)
+))
+(minimize (- x y))
+(minimize (- y x))
+(check-sat)
+(get-objectives)
+(set-option :opt.priority box)
+(check-sat)
+(get-objectives)
+(maxmin (x y))
+(check-sat)
+(get-objectives)"""
+        f_in = cStringIO(txt)
+        f_out = cStringIO()
+        args = ['-o', 'auto']
+        pysmtshell = PysmtShell(args)
+        pysmtshell.smtlib_solver(f_in, f_out)
+        self.assertEqual(f_out.getvalue(), """sat
+(objectives
+  ((x - y) -10.0)
+  ((y - x) 10.0)
+)
+sat
+(objectives
+  ((x - y) -10.0)
+  ((y - x) -10.0)
+)
+sat
+(objectives
+  ((x - y) -10.0)
+  ((y - x) -10.0)
+  (((x <= y) ? x : y) 0.0)
 )
 """)
 

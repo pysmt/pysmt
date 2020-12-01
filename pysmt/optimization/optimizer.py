@@ -320,7 +320,7 @@ class ExternalOptimizerMixin(Optimizer):
         rt = None, None
         if goal.is_maximization_goal() or goal.is_minimization_goal():
             rt = self._optimize(goal, strategy)
-        else:
+        else:#elif maxsmt => gestione maxsmt()
             raise GoalNotSupportedError("ExternalOptimizerMixin", goal)
         return rt
 
