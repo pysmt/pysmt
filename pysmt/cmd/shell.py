@@ -85,7 +85,7 @@ class PysmtShell(object):
         parser.add_argument('--optimizer', '-o', metavar='opt_name', type=str,
                             choices=['auto'] + self.optimizers,
                             default=None,
-                            help='The solver to use (default: auto)')
+                            help='TODO')
         return parser
 
 
