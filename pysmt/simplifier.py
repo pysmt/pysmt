@@ -16,6 +16,7 @@
 #   limitations under the License.
 #
 from six.moves import xrange
+import math
 
 import pysmt.walkers
 from pysmt.walkers import handles
@@ -1026,7 +1027,13 @@ class Simplifier(pysmt.walkers.DagWalker):
                 return self.manager.Real(l / r)
             else:
                 assert sl.is_int_constant()
-                return self.manager.Int(l / r)
+                # smtlib2 semantics of integer division:
+                # l > 0 : l / r == floor(float(l) / r)
+                # l < 0 : l / r == ceil(float(l) / r)
+                if l > 0:
+                    return self.manager.Int(math.floor(float(l) / r))
+                if l < 0:
+                    return self.manager.Int(math.ceil(float(l) / r))
 
         if sl.is_constant():
             if sl.is_zero():
