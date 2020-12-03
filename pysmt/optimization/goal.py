@@ -23,7 +23,7 @@ from pysmt.logics import LIA, LRA, BV
 class Goal(object):
     """
     This class defines goals for solvers.
-    Attention: this class is not instantiable
+    Warning: this class is not instantiable
 
     Examples:
 
@@ -85,16 +85,16 @@ class MaximizationGoal(Goal):
     """
     Maximization goal common to all solvers.
     The object can be passed as an argument to the optimize method of any Optimizer
-    Attention: some Optimizer may not support this goal
+    Warning: some Optimizer may not support this goal
     """
 
-    def __init__(self, formula, sign = True):
+    def __init__(self, formula, signed = True):
         """
         :param formula: The target formula
         :type  formula: FNode
         """
         self.formula = formula
-        self.bv_signed = sign
+        self.bv_signed = signed
 
     def opt(self):
         return MaximizationGoal
@@ -108,10 +108,10 @@ class MinimizationGoal(Goal):
     """
     Minimization goal common to all solvers.
     The object can be passed as an argument to the optimize method of any Optimizer
-    Attention: some Optimizer may not support this goal
+    Warning: some Optimizer may not support this goal
     """
 
-    def __init__(self, formula, sign = True):
+    def __init__(self, formula, sign = False):
         """
         :param formula: The target formula
         :type  formula: FNode
@@ -128,8 +128,17 @@ class MinimizationGoal(Goal):
 
 
 class MinMaxGoal(MinimizationGoal):
+    """
+    Minimize the maximum expression within 'terms'
+    This goal is common to all solvers.
+    The object can be passed as an argument to the optimize method of any Optimizer
+    Warning: some Optimizer may not support this goal
+    """
 
     def __init__(self, terms, sign = True):
+        """
+        :param terms: List of FNode
+        """
         if len(terms) > 0:
             if get_env().stc.get_type(terms[0]).is_bv_type():
                 formula = get_env().formula_manager.MaxBV(sign, terms)
@@ -142,8 +151,17 @@ class MinMaxGoal(MinimizationGoal):
         self.bv_signed = sign
 
 class MaxMinGoal(MaximizationGoal):
+    """
+    Maximize the minimum expression within 'terms'
+    This goal is common to all solvers.
+    The object can be passed as an argument to the optimize method of any Optimizer
+    Warning: some Optimizer may not support this goal
+    """
 
     def __init__(self, terms, sign = True):
+        """
+        :param terms: List of FNode
+        """
         if len(terms) > 0:
             if get_env().stc.get_type(terms[0]).is_bv_type():
                 formula = get_env().formula_manager.MinBV(sign, terms)
@@ -160,7 +178,7 @@ class MaxSMTGoal(Goal):
     """
     TODO
     MaxSMT goal common to all solvers.
-    Attention: some solvers may not support this goal
+    Warning: some solvers may not support this goal
     """
 
     _instance_id = 0

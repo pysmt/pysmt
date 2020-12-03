@@ -106,7 +106,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
             cost_function = goal.term()
             obj_fun = self.converter.convert(cost_function)
 
-        else: #elif maxsmt
+        else:
             raise GoalNotSupportedError("optimathsat", goal)
 
         msat_obj = make_fun(self.msat_env(), obj_fun, signed = goal.signed())
@@ -114,7 +114,6 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
         return msat_obj
 
     def optimize(self, goal, **kwargs):
-        #if goal esiste fai altrimenti ...
         msat_obj = self._assert_msat_goal(goal)
 
         self.solve()
