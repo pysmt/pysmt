@@ -529,7 +529,7 @@ class FormulaManager(object):
         return self.Not(self.Iff(left, right))
 
     def MinWrap(self, le, *args):
-        """Returns the encoding of the minimum expression within args"""
+        """Returns the encoding of the minimum expression within args using the specified 'Lower-Equal' operator"""
         exprs = self._polymorph_args_to_tuple(args)
         assert len(exprs) > 0
         if len(exprs) == 1:
@@ -542,7 +542,7 @@ class FormulaManager(object):
             return self.MinWrap(le, self.MinWrap(le, exprs[0:h]), self.MinWrap(le, exprs[h:]))
 
     def MaxWrap(self, le, *args):
-        """Returns the encoding of the maximum expression within args"""
+        """Returns the encoding of the maximum expression within args using the specified 'Lower-Equal' operator"""
         exprs = self._polymorph_args_to_tuple(args)
         assert len(exprs) > 0
         if len(exprs) == 1:
