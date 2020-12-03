@@ -73,12 +73,13 @@ class Goal(object):
         else:
             return logic
 
+    @property
     def signed(self):
-        return self.bv_signed
+        return self._bv_signed
 
-    def set_signed(self, sign):
-        self.bv_signed = sign
-
+    @signed.setter
+    def signed(self, value):
+        self._bv_signed = value
 
 
 class MaximizationGoal(Goal):
@@ -94,7 +95,7 @@ class MaximizationGoal(Goal):
         :type  formula: FNode
         """
         self.formula = formula
-        self.bv_signed = signed
+        self._bv_signed = signed
 
     def opt(self):
         return MaximizationGoal
@@ -117,7 +118,7 @@ class MinimizationGoal(Goal):
         :type  formula: FNode
         """
         self.formula = formula
-        self.bv_signed = sign
+        self._bv_signed = sign
 
     def opt(self):
         return MinimizationGoal
@@ -148,7 +149,7 @@ class MinMaxGoal(MinimizationGoal):
             formula = get_env().formula_manager.Max(terms)
         MinimizationGoal.__init__(self, formula)
         self.terms = terms
-        self.bv_signed = sign
+        self._bv_signed = sign
 
 class MaxMinGoal(MaximizationGoal):
     """
@@ -171,7 +172,7 @@ class MaxMinGoal(MaximizationGoal):
             formula = get_env().formula_manager.Min(terms)
         MaximizationGoal.__init__(self, formula)
         self.terms = terms
-        self.bv_signed = sign
+        self._bv_signed = sign
 
 
 class MaxSMTGoal(Goal):
@@ -188,7 +189,7 @@ class MaxSMTGoal(Goal):
         self._my_id = MaxSMTGoal._instance_id
         MaxSMTGoal._instance_id = MaxSMTGoal._instance_id + 1
         self.soft = []
-        self.bv_signed = sign
+        self._bv_signed = sign
 
     def add_soft_clause(self, clause, weight):
         """Accepts soft clauses and the relative weights"""
