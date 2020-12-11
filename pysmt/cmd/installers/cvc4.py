@@ -15,6 +15,7 @@ from __future__ import absolute_import
 
 import os
 import sys
+import multiprocessing
 
 from pysmt.cmd.installers.base import SolverInstaller
 
@@ -59,11 +60,16 @@ class CVC4Installer(SolverInstaller):
         # system can be fooled in some systems
         import distutils.sysconfig as sysconfig
         PYTHON_LIBRARY = os.environ.get('PYSMT_PYTHON_LIBDIR')
-        if not PYTHON_LIBRARY:
-            PYTHON_LIBRARY = sysconfig.get_config_var('LIBDIR')
         PYTHON_INCLUDE_DIR = sysconfig.get_python_inc()
+        PYTHON_EXECUTABLE = sys.executable
+
+        CMAKE_OPTS = '-DPYTHON_INCLUDE_DIR=' + PYTHON_INCLUDE_DIR
+        CMAKE_OPTS += ' -DPYTHON_EXECUTABLE=' + PYTHON_EXECUTABLE
+        if PYTHON_LIBRARY:
+            CMAKE_OPTS += ' -DPYTHON_LIBRARY=' + PYTHON_LIBRARY
+
         SolverInstaller.run(['sed', '-i',
-                             's|cmake_opts=""|cmake_opts="-DPYTHON_LIBRARY=' + PYTHON_LIBRARY + ' -DPYTHON_INCLUDE_DIR=' + PYTHON_INCLUDE_DIR + '"|g',
+                             's|cmake_opts=""|cmake_opts="' + CMAKE_OPTS + '"|g',
                              './configure.sh'], directory=self.extract_path)
 
         # Configure and build CVC4
@@ -77,7 +83,7 @@ class CVC4Installer(SolverInstaller):
 
         SolverInstaller.run(config_cmd, directory=self.extract_path,
                             env_variables=pyconfig)
-        SolverInstaller.run("make -j3", directory=self.build_path,
+        SolverInstaller.run("make -j {}".format(multiprocessing.cpu_count()), directory=self.build_path,
                             env_variables=pyconfig)
         # SolverInstaller.run("make install", directory=self.build_path,
         #                     env_variables=pyconfig)
