@@ -19,6 +19,7 @@ from pysmt.shortcuts import (And, Iff, Or, Symbol, Implies, Not,
                              Exists, ForAll,
                              Times, Plus, Minus, Equals, Real,
                              LT,
+                             Int,
                              is_valid, is_sat, Function)
 from pysmt.test import TestCase, skipIfNoSolverForLogic, main
 from pysmt.rewritings import prenex_normal_form, nnf, conjunctive_partition, aig
@@ -26,7 +27,7 @@ from pysmt.rewritings import disjunctive_partition, propagate_toplevel
 from pysmt.rewritings import TimesDistributor, Ackermannizer
 from pysmt.test.examples import get_example_formulae
 from pysmt.exceptions import SolverReturnedUnknownResultError
-from pysmt.logics import BOOL, QF_NRA, QF_LRA, QF_AUFLIA
+from pysmt.logics import BOOL, QF_NRA, QF_LRA, QF_LIA, QF_AUFLIA
 from pysmt.typing import REAL, INT, FunctionType
 
 
@@ -345,6 +346,21 @@ class TestRewritings(TestCase):
                 if old is new: continue # Nothing changed
                 self.assertValid(Equals(old, new),
                                  (old, new), solver_name="z3")
+
+    @skipIfNoSolverForLogic(QF_LIA)
+    def test_minus(self):
+        x = Symbol("x", INT)
+        y = Symbol("y", INT)
+        i_0 = Int(0)
+        m_1 = Int(-1)
+        src = Plus(x, y)
+        src = Minus(x, src)
+        src = LT(src, i_0)
+        td = TimesDistributor()
+        res = td.walk(src)
+        self.assertValid(Iff(src, res))
+
+
 
 if __name__ == "__main__":
     main()
