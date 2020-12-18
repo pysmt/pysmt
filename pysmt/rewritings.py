@@ -608,6 +608,7 @@ class AIGer(DagWalker):
 
 from itertools import product
 
+
 class TimesDistributor(IdentityDagWalker):
     """Normalize the use of multiplication by pushing it into the leafs.
 
@@ -667,9 +668,8 @@ class TimesDistributor(IdentityDagWalker):
         if not rhs.is_plus():
             return self.Plus(lhs, Times(minus_one, rhs))
         new_args = [lhs]
-        for r in rhs.args():
-            new_args.append(Times(minus_one, r))
-            return self.Plus(new_args)
+        new_args.extend(Times(minus_one, r) for r in rhs.args())
+        return self.Plus(new_args)
 
 # EOC TimesDistributivity
 
@@ -770,12 +770,12 @@ class Ackermannizer(IdentityDagWalker):
 
 class DisjointSet(object):
     """A simple implementation of the DisjointSet data-structure.
-    
+
     It supports also ranking-based DisjointSet and it can be enabled
-    by: 
+    by:
 
     1. defining a binary compare function for the  to be stored in
-    a DisjointSet. 
+    a DisjointSet.
 
     2. Set the compare function while creating the DisjointSet object.
     """
@@ -915,7 +915,7 @@ def propagate_toplevel(formula, env=None, do_simplify=True, preserve_equivalence
 
     disjoint_set = DisjointSet(compare_fun=compare)
     relevant = set()
-    
+
     for c in conjunctive_partition(formula):
         if c.is_equals():
             l, r = c.args()
