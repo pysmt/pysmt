@@ -630,8 +630,6 @@ class TimesDistributor(IdentityDagWalker):
            Compute the cartesian product (itertools.product)
 
         """
-        import pdb
-        pdb.set_trace()
         # Check if there is at least one Plus to distribute over,
         # otherwise we are done. Note that walk_minus rewrites the
         # minus as a plus
