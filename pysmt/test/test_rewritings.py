@@ -348,11 +348,10 @@ class TestRewritings(TestCase):
                                  (old, new), solver_name="z3")
 
     @skipIfNoSolverForLogic(QF_LIA)
-    def test_minus(self):
+    def test_minus_0(self):
         x = Symbol("x", INT)
         y = Symbol("y", INT)
         i_0 = Int(0)
-        m_1 = Int(-1)
         src = Plus(x, y)
         src = Minus(x, src)
         src = LT(src, i_0)
@@ -360,6 +359,34 @@ class TestRewritings(TestCase):
         res = td.walk(src)
         self.assertValid(Iff(src, res))
 
+    @skipIfNoSolverForLogic(QF_LIA)
+    def test_minus_1(self):
+        """walk_minus should not create nested Plus nodes"""
+        x = Symbol("x", INT)
+        y = Symbol("y", INT)
+        oldx = Symbol("oldx", INT)
+        m_1 = Int(-1)
+        i_2 = Int(2)
+        i_4 = Int(4)
+        src = Times(i_2, oldx)
+        src = Plus(src, x)
+        src = Minus(src, Times(i_4, y))
+        src = Times(m_1, src)
+        td = TimesDistributor()
+        res = td.walk(src)
+        self.assertValid(Equals(src, res))
+        # root is Plus.
+        self.assertTrue(res.is_plus(),
+                        "Expeted summation, got: {}".format(res))
+        # no other Plus in children: only Times of symbs and constants.
+        stack = list(res.args())
+        while stack:
+            curr = stack.pop()
+            if curr.is_times():
+                stack.extend(curr.args())
+            else:
+                self.assertTrue(curr.is_symbol() or curr.is_constant(),
+                                "Expected leaf, got: {}".format(res))
 
 
 if __name__ == "__main__":
