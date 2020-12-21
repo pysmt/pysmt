@@ -175,17 +175,21 @@ class OptComparationFunctions:
             LIA: {
                 MinimizationGoal: {
                     True: (mgr.Int, mgr.LT, mgr.LE),
+                    False: (mgr.Int, mgr.LT, mgr.LE),
                 },
                 MaximizationGoal: {
                     True: (mgr.Int, mgr.GT, mgr.GE),
+                    False: (mgr.Int, mgr.GT, mgr.GE),
                 },
             },
             LRA: {
                 MinimizationGoal: {
                     True: (mgr.Real, mgr.LT, mgr.LE),
+                    False: (mgr.Real, mgr.LT, mgr.LE),
                 },
                 MaximizationGoal: {
                     True: (mgr.Real, mgr.GT, mgr.GE),
+                    False: (mgr.Real, mgr.GT, mgr.GE),
                 },
             },
             BV: {
