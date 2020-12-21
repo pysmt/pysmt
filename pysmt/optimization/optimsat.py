@@ -109,7 +109,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
         else:
             raise GoalNotSupportedError("optimathsat", goal)
 
-        msat_obj = make_fun(self.msat_env(), obj_fun, signed = goal.signed())
+        msat_obj = make_fun(self.msat_env(), obj_fun, signed = goal.signed)
         self._msat_lib.msat_assert_objective(self.msat_env(), msat_obj)
         return msat_obj
 

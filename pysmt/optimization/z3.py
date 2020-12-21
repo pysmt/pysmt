@@ -44,7 +44,7 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
     def _assert_z3_goal(self, goal):
         term = goal.term()
         ty = self.environment.stc.get_type(term)
-        if goal.signed() and ty.is_bv_type():
+        if goal.signed and ty.is_bv_type():
             width = ty.width
             term = self.mgr.BVAdd(term, self.mgr.BV(2**(width-1), width))
         obj = self.converter.convert(term)

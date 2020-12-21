@@ -199,7 +199,7 @@ class OptComparationFunctions:
                 },
             },
         }
-        return options[goal.get_logic()][goal.opt()][goal.signed()]
+        return options[goal.get_logic()][goal.opt()][goal.signed]
 
 
 class OptSearchInterval(OptComparationFunctions):
