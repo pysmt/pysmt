@@ -89,7 +89,7 @@ class MaximizationGoal(Goal):
     Warning: some Optimizer may not support this goal
     """
 
-    def __init__(self, formula, signed = True):
+    def __init__(self, formula, signed = False):
         """
         :param formula: The target formula
         :type  formula: FNode
@@ -136,7 +136,7 @@ class MinMaxGoal(MinimizationGoal):
     Warning: some Optimizer may not support this goal
     """
 
-    def __init__(self, terms, sign = True):
+    def __init__(self, terms, sign = False):
         """
         :param terms: List of FNode
         """
@@ -159,7 +159,7 @@ class MaxMinGoal(MaximizationGoal):
     Warning: some Optimizer may not support this goal
     """
 
-    def __init__(self, terms, sign = True):
+    def __init__(self, terms, sign = False):
         """
         :param terms: List of FNode
         """
@@ -184,7 +184,7 @@ class MaxSMTGoal(Goal):
 
     _instance_id = 0
 
-    def __init__(self, sign = True):
+    def __init__(self, sign = False):
         """Accepts soft clauses and the relative weights"""
         self._my_id = MaxSMTGoal._instance_id
         MaxSMTGoal._instance_id = MaxSMTGoal._instance_id + 1
