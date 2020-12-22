@@ -359,6 +359,7 @@ class TestOptimization(TestCase):
     def test_maximization_basic_BV(self):
         x = Symbol("x", BVType(32))
         max = MaximizationGoal(x)
+        max.signed = True
         formula = BVSLT(x, BV(10, 32))
         for oname in get_env().factory.all_optimizers(logic=QF_BV):
             with Optimizer(name=oname, logic=QF_BV) as opt:
