@@ -202,26 +202,6 @@ class Solver(object):
         """Add assertion to the solver."""
         raise NotImplementedError
 
-    def solve(self, assumptions=None):
-        """Returns the satisfiability value of the asserted formulas.
-
-        Assumptions is a list of Boolean variables or negations of
-        boolean variables. If assumptions is specified, the
-        satisfiability result is computed assuming that all the
-        specified literals are True.
-
-        A call to solve([a1, ..., an]) is functionally equivalent to:
-
-        push()
-        add_assertion(And(a1, ..., an))
-        res = solve()
-        pop()
-        return res
-
-        but is in general more efficient.
-        """
-        raise NotImplementedError
-
     def print_model(self, name_filter=None):
         """Prints the model (if one exists).
 
@@ -349,6 +329,7 @@ class IncrementalTrackingSolver(Solver):
 
     def reset_assertions(self):
         self._reset_assertions()
+        self._assertion_stack = []
         self._last_command = "reset_assertions"
 
     def _add_assertion(self, formula, named=None):
@@ -514,7 +495,7 @@ class Model(object):
         if  len(free_vars) > 0:
             # Partial model
             return False
-        
+
         if self.environment.enable_div_by_0 and solver is not None:
             # Models might not be simplified to a constant value
             # if there is a division by zero. We find the
