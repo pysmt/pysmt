@@ -185,8 +185,7 @@ class MaxSMTGoal(Goal):
     _instance_id = 0
 
     def __init__(self, sign = False):
-        """Accepts soft clauses and the relative weights"""
-        self._my_id = MaxSMTGoal._instance_id
+        self.my_id = MaxSMTGoal._instance_id
         MaxSMTGoal._instance_id = MaxSMTGoal._instance_id + 1
         self.soft = []
         self._bv_signed = sign
