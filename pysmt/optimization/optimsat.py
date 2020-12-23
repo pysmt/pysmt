@@ -111,11 +111,12 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
                 make_fun = self._msat_lib.msat_make_maximize
 
             if goal.is_maxsmt_goal():
-                cost_function = self._msat_lib.msat_from_string(self.msat_env(),"__pysmt_"+str(goal.my_id))
+                obj_fun = self._msat_lib.msat_from_string(self.msat_env(),"__pysmt_"+str(goal.my_id))
             else:
                 cost_function = goal.term()
+                obj_fun = self.converter.convert(cost_function)
 
-            obj_fun = self.converter.convert(cost_function)
+
         else:
             raise GoalNotSupportedError("optimathsat", goal)
 
