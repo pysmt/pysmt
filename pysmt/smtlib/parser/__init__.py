@@ -80,7 +80,7 @@ else:
     # no ambiguity when importing the parser: the only way to load the
     # cython version is by the so_path that targets .pyxbld .
     #
-    import implib
+    import impl
     pyx = pyximport.install()
     pyximport.uninstall(*pyx)
     build_dir = os.path.join(os.path.expanduser('~'), '.pyxbld')
