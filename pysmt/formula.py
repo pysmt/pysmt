@@ -488,7 +488,7 @@ class FormulaManager(object):
         """ At most one of the bool expressions can be true at anytime.
 
         This using a quadratic encoding:
-           A -> !(B \/ C)
+           A -> !(B \\/ C)
            B -> !(C)
         """
         bool_exprs = self._polymorph_args_to_tuple(args)
@@ -503,8 +503,8 @@ class FormulaManager(object):
         """ Encodes an exactly-one constraint on the boolean symbols.
 
         This using a quadratic encoding:
-           A \/ B \/ C
-           A -> !(B \/ C)
+           A \\/ B \\/ C
+           A -> !(B \\/ C)
            B -> !(C)
         """
         args = self._polymorph_args_to_tuple(args)

@@ -117,7 +117,7 @@ class TestSmtLibScript(TestCase):
     def test_get_strict_formula(self):
 
         smtlib_single = """
-(set-logic UF_LIRA)
+(set-logic UFLIRA)
 (declare-fun x () Bool)
 (declare-fun y () Bool)
 (declare-fun r () Real)
