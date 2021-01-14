@@ -209,8 +209,12 @@ class SmtLibSolver(Solver):
             print("%s = %s" % (v, self.get_value(v)))
 
     def get_model(self):
-        self._send_command(SmtLibCommand(smtcmd.GET_MODEL, []))
-        return EagerModel(assignment=dict(self._get_value_answer()), environment=self.environment)
+        assignment = {}
+        for s in self.declared_vars[-1]:
+            if s.is_term():
+                v = self.get_value(s)
+                assignment[s] = v
+        return EagerModel(assignment=assignment, environment=self.environment)
 
     def _exit(self):
         self._send_command(SmtLibCommand(smtcmd.EXIT, []))
