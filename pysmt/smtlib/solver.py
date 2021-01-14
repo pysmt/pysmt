@@ -209,12 +209,8 @@ class SmtLibSolver(Solver):
             print("%s = %s" % (v, self.get_value(v)))
 
     def get_model(self):
-        assignment = {}
-        for s in self.environment.formula_manager.get_all_symbols():
-            if s.is_term():
-                v = self.get_value(s)
-                assignment[s] = v
-        return EagerModel(assignment=assignment, environment=self.environment)
+        self._send_command(SmtLibCommand(smtcmd.GET_MODEL, []))
+        return EagerModel(assignment=dict(self._get_value_answer()), environment=self.environment)
 
     def _exit(self):
         self._send_command(SmtLibCommand(smtcmd.EXIT, []))
