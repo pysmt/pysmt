@@ -48,8 +48,8 @@ DEFAULT_PREFERENCES = {'Solver': ['msat', 'optimsat', 'z3', 'cvc4', 'yices', 'bt
                                                  'optimsat_fm', 'optimsat_lw',
                                                  'bdd', 'shannon', 'selfsub'],
                        'Optimizer': ['optimsat', 'z3',
-                                     'msat_incr', 'optimsat_incr', 'yices_incr', 'z3_incr',
-                                     'msat_sua', 'optimsat_sua', 'yices_sua', 'z3_sua'
+                                     'msat_incr', 'yices_incr', 'z3_incr',
+                                     'msat_sua', 'yices_sua', 'z3_sua'
                                     ],
                        'Interpolator': ['msat', 'optimsat', 'z3']}
 DEFAULT_LOGIC = QF_UFLIRA
@@ -387,11 +387,8 @@ class Factory(object):
         try:
             from pysmt.solvers.dynmsat import MSATLibLoader
             MSATLibLoader("optimathsat")
-            from pysmt.optimization.optimsat import OptiMSATSolver, \
-                OptiMSATSUAOptimizer, OptiMSATIncrementalOptimizer
+            from pysmt.optimization.optimsat import OptiMSATSolver
             self._all_optimizers['optimsat'] = OptiMSATSolver
-            self._all_optimizers['optimsat_sua'] = OptiMSATSUAOptimizer
-            self._all_optimizers['optimsat_incr'] = OptiMSATIncrementalOptimizer
         except SolverAPINotFound:
             pass
         except SolverAPINotFound:

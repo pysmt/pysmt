@@ -266,17 +266,6 @@ class OptiMSATBoolUFRewriter(MSatBoolUFRewriter):
     def __init__(self, environment):
         MSatBoolUFRewriter.__init__(self, environment=environment)
 
-
-class OptiMSATSUAOptimizer(OptiMSATSolver, SUAOptimizerMixin):
-    LOGICS = OptiMSATSolver.LOGICS
-
-    def can_diverge_for_unbounded_cases(self):
-        return True
-
-
-class OptiMSATIncrementalOptimizer(OptiMSATSolver, IncrementalOptimizerMixin):
-    LOGICS = OptiMSATSolver.LOGICS
-
     def can_diverge_for_unbounded_cases(self):
         return True
 

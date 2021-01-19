@@ -193,3 +193,6 @@ class MaxSMTGoal(Goal):
     def add_soft_clause(self, clause, weight):
         """Accepts soft clauses and the relative weights"""
         self.soft.append((clause, weight))
+
+    def get_soft(self):
+        return self.soft
