@@ -40,8 +40,11 @@ import pysmt.smtlib.script
 import pysmt.smtlib.printers
 
 # Import types from shortcuts
-from pysmt.typing import INT, BOOL, REAL, BVType, FunctionType, ArrayType, Type
-assert INT or BOOL or REAL or BVType or FunctionType or ArrayType or Type
+from pysmt.typing import INT, BOOL, REAL, BVType, FunctionType, ArrayType, \
+    Type, FPType, RM
+
+assert INT or BOOL or REAL or BVType or FunctionType or ArrayType or Type \
+    or FPType or RM
 
 
 def get_env():

@@ -38,14 +38,14 @@ from pysmt.solvers.solver import (IncrementalTrackingSolver, UnsatCoreSolver,
 from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 from pysmt.solvers.qelim import QuantifierEliminator
 
-from pysmt.walkers import DagWalker
+from pysmt.walkers import DagWalker, handles
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               SolverNotConfiguredForUnsatCoresError,
                               SolverStatusError,
                               ConvertExpressionError,
                               UndefinedSymbolError, PysmtValueError)
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
-from pysmt.logics import LRA, LIA, QF_UFLRA, PYSMT_LOGICS
+from pysmt.logics import LRA, LIA, QF_UFLRA, PYSMT_LOGICS, QF_FP
 from pysmt.oracles import get_logic
 from pysmt.constants import Fraction, Numeral, is_pysmt_integer, to_python_integer
 
@@ -140,6 +140,7 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
                SmtLibBasicSolver, SmtLibIgnoreMixin):
 
     LOGICS = PYSMT_LOGICS - set(x for x in PYSMT_LOGICS if x.theory.strings)
+    LOGICS = LOGICS | frozenset([QF_FP])
     OptionsClass = Z3Options
 
     def __init__(self, environment, logic, **options):
@@ -376,6 +377,38 @@ class Z3Converter(Converter, DagWalker):
         self._z3Sorts = {}
         # Unique reference to Function Declaration
         self._z3_func_decl_cache = {}
+        self.fp_rm_map = {
+        }
+        self.fp_op_map = {
+            op.FP_CONSTANT:          z3.Z3_mk_fpa_fp,
+            op.FP_RNE:               z3.Z3_mk_fpa_rne,
+            op.FP_RNA:               z3.Z3_mk_fpa_rna,
+            op.FP_RNA:               z3.Z3_mk_fpa_rtp,
+            op.FP_RNA:               z3.Z3_mk_fpa_rtn,
+            op.FP_RNA:               z3.Z3_mk_fpa_rtz,
+            op.FP_ABS:               z3.Z3_mk_fpa_abs,
+            op.FP_NEG:               z3.Z3_mk_fpa_neg,
+            op.FP_SQRT:              z3.Z3_mk_fpa_sqrt,
+            op.FP_ROUND_TO_INTEGRAL: z3.Z3_mk_fpa_round_to_integral,
+            op.FP_ADD:               z3.Z3_mk_fpa_add,
+            op.FP_SUB:               z3.Z3_mk_fpa_sub,
+            op.FP_MUL:               z3.Z3_mk_fpa_mul,
+            op.FP_DIV:               z3.Z3_mk_fpa_div,
+            op.FP_FMA:               z3.Z3_mk_fpa_fma,
+            op.FP_REM:               z3.Z3_mk_fpa_rem,
+            op.FP_MIN:               z3.Z3_mk_fpa_min,
+            op.FP_MAX:               z3.Z3_mk_fpa_max,
+            op.FP_LEQ:               z3.Z3_mk_fpa_leq,
+            op.FP_LT:                z3.Z3_mk_fpa_lt,
+            op.FP_EQ:                z3.Z3_mk_fpa_eq,
+            op.FP_IS_NORMAL:         z3.Z3_mk_fpa_is_normal,
+            op.FP_IS_SUBNORMAL:      z3.Z3_mk_fpa_is_subnormal,
+            op.FP_IS_ZERO:           z3.Z3_mk_fpa_is_zero,
+            op.FP_IS_INFINITE:       z3.Z3_mk_fpa_is_infinite,
+            op.FP_IS_NAN:            z3.Z3_mk_fpa_is_nan,
+            op.FP_IS_NEGATIVE:       z3.Z3_mk_fpa_is_negative,
+            op.FP_IS_POSITIVE:       z3.Z3_mk_fpa_is_positive,
+        }
         return
 
     def z3BitVecSort(self, width):
@@ -835,6 +868,13 @@ class Z3Converter(Converter, DagWalker):
             c = args[i]
             z3term = self.walk_array_store(None, (z3term, c, args[i+1]))
             z3.Z3_inc_ref(self.ctx.ref(), z3term)
+        return z3term
+
+    @handles(op.FP_OPERATORS | op.FP_RELATIONS | op.FP_PREDICATES | \
+             op.FP_CONSTANTS)
+    def walk_fp_op(self, formula, args, **kwargs):
+        z3term = self.fp_op_map[formula.node_type()](self.ctx.ref(), *tuple(args))
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
         return z3term
 
     def _z3_to_type(self, sort):

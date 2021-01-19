@@ -25,7 +25,7 @@ from itertools import chain
 from six.moves import xrange
 
 
-ALL_TYPES = list(xrange(0,66))
+ALL_TYPES = list(xrange(0,94))
 
 (
 FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF, # Boolean Logic (0-6)
@@ -79,6 +79,21 @@ DIV,                                        # Arithmetic Division (62)
 POW,                                        # Arithmetic Power (63)
 ALGEBRAIC_CONSTANT,                         # Algebraic Number (64)
 BV_TONATURAL,                               # BV to Natural Conversion (65)
+#
+# FLOATING-POINTS
+#
+FP_CONSTANT,                                # Floating-Point constant (66)
+FP_RNE, FP_RNA, FP_RTP, FP_RTN, FP_RTZ,     # Floating-Point rounding modes (67-71)
+FP_ABS, FP_NEG,                             # Floating-Point unary operations w.o. rounding (72-73)
+FP_SQRT, FP_ROUND_TO_INTEGRAL,              # Floating-Point unary operations w. rounding (74-75)
+FP_ADD, FP_SUB, FP_MUL, FP_DIV,             # Floating-Point binary operations w. rounding (76-79)
+FP_FMA,                                     # Floating-Point fma operation (80)
+FP_REM,                                     # Floating-Point rem operation (81)
+FP_MIN, FP_MAX,                             # Floating-Point mim/max operations (82-83)
+FP_LEQ, FP_LT, FP_EQ,                       # Floating-Point binary relations (84-86)
+FP_IS_NORMAL, FP_IS_SUBNORMAL,              # Floating-Point normality tests (87- 88)
+FP_IS_ZERO, FP_IS_INFINITE, FP_IS_NAN,      # Floating-Point special value tests (89-91)
+FP_IS_NEGATIVE, FP_IS_POSITIVE,             # Floating-Point sign tests (92-93)
 ) = ALL_TYPES
 
 QUANTIFIERS = frozenset([FORALL, EXISTS])
@@ -87,8 +102,10 @@ BOOL_CONNECTIVES = frozenset([AND, OR, NOT, IMPLIES, IFF])
 
 BOOL_OPERATORS = frozenset(QUANTIFIERS | BOOL_CONNECTIVES)
 
+FP_CONSTANTS = frozenset([FP_CONSTANT, FP_RNE, FP_RNA, FP_RTP, FP_RTN, FP_RTZ])
 CONSTANTS = frozenset([BOOL_CONSTANT, REAL_CONSTANT, INT_CONSTANT,
-                       BV_CONSTANT, STR_CONSTANT, ALGEBRAIC_CONSTANT])
+                       BV_CONSTANT, STR_CONSTANT, ALGEBRAIC_CONSTANT]) | \
+            FP_CONSTANTS
 
 # Relations are predicates on theory atoms.
 # Relations have boolean type. They are a subset of the operators for a theory
@@ -98,7 +115,10 @@ IRA_RELATIONS = frozenset([LE, LT])
 
 STR_RELATIONS = frozenset([STR_CONTAINS, STR_PREFIXOF, STR_SUFFIXOF])
 
-RELATIONS = frozenset((EQUALS,)) | BV_RELATIONS | IRA_RELATIONS | STR_RELATIONS
+FP_RELATIONS = frozenset([FP_LEQ, FP_LT, FP_EQ])
+
+RELATIONS = frozenset((EQUALS,)) | BV_RELATIONS | IRA_RELATIONS | \
+            STR_RELATIONS | FP_RELATIONS
 
 # Operators are functions that return a Theory object
 BV_OPERATORS = frozenset([BV_NOT, BV_AND, BV_OR, BV_XOR,
@@ -114,12 +134,22 @@ IRA_OPERATORS = frozenset([PLUS, MINUS, TIMES, TOREAL, DIV, POW, BV_TONATURAL])
 
 ARRAY_OPERATORS = frozenset([ARRAY_SELECT, ARRAY_STORE, ARRAY_VALUE])
 
-THEORY_OPERATORS = IRA_OPERATORS | BV_OPERATORS | ARRAY_OPERATORS | STR_OPERATORS
+FP_OPERATORS = frozenset([FP_ABS, FP_NEG, FP_SQRT, FP_ROUND_TO_INTEGRAL,
+                          FP_ADD, FP_SUB, FP_MUL, FP_DIV, FP_FMA, FP_REM,
+                          FP_MIN, FP_MAX])
+
+THEORY_OPERATORS = IRA_OPERATORS | BV_OPERATORS | ARRAY_OPERATORS | \
+                   STR_OPERATORS | FP_OPERATORS
 
 CUSTOM_NODE_TYPES = []
 
-assert (BOOL_OPERATORS | THEORY_OPERATORS | RELATIONS | \
-        CONSTANTS | frozenset((SYMBOL, FUNCTION, ITE))) == frozenset(ALL_TYPES)
+FP_PREDICATES = frozenset([FP_IS_NORMAL, FP_IS_SUBNORMAL, FP_IS_ZERO,
+                           FP_IS_INFINITE, FP_IS_NAN, FP_IS_NEGATIVE,
+                           FP_IS_POSITIVE])
+
+assert (BOOL_OPERATORS | THEORY_OPERATORS | RELATIONS | CONSTANTS | \
+        frozenset((SYMBOL, FUNCTION, ITE)) | FP_PREDICATES) == \
+        frozenset(ALL_TYPES)
 
 assert len(BOOL_OPERATORS & THEORY_OPERATORS) == 0
 assert len(BOOL_OPERATORS & RELATIONS) == 0
@@ -223,4 +253,32 @@ __OP_STR__ = {
     DIV: "DIV",
     POW: "POW",
     ALGEBRAIC_CONSTANT: "ALGEBRAIC_CONSTANT",
+    FP_CONSTANT: "FP_CONSTANT",
+    FP_RNE: "FP_RNE",
+    FP_RNA: "FP_RNA",
+    FP_RTP: "FP_RTP",
+    FP_RTN: "FP_RTN",
+    FP_RTZ: "FP_RTZ",
+    FP_ABS: "FP_ABS",
+    FP_NEG: "FP_NEG",
+    FP_SQRT: "FP_SQRT",
+    FP_ROUND_TO_INTEGRAL: "FP_ROUND_TO_INTEGRAL",
+    FP_ADD: "FP_ADD",
+    FP_SUB: "FP_SUB",
+    FP_MUL: "FP_MUL",
+    FP_DIV: "FP_DIV",
+    FP_FMA: "FP_FMA",
+    FP_REM: "FP_REM",
+    FP_MIN: "FP_MIN",
+    FP_MAX: "FP_MAX",
+    FP_LEQ: "FP_LEQ",
+    FP_LT: "FP_LT",
+    FP_EQ: "FP_EQ",
+    FP_IS_NORMAL: "FP_IS_NORMAL",
+    FP_IS_SUBNORMAL: "FP_IS_SUBNORMAL",
+    FP_IS_ZERO: "FP_IS_ZERO",
+    FP_IS_INFINITE: "FP_IS_INFINITE",
+    FP_IS_NAN: "FP_IS_NAN",
+    FP_IS_NEGATIVE: "FP_IS_NEGATIVE",
+    FP_IS_POSITIVE: "FP_IS_POSITIVE",
 }

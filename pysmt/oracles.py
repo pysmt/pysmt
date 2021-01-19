@@ -168,6 +168,8 @@ class TheoryOracle(walkers.DagWalker):
             theory.strings = True
         elif ty.is_custom_type():
             theory.custom_type = True
+        elif ty.is_fp_type() or ty.is_rm_type():
+            theory.floating_point = True
         else:
             # ty is either a function type
             theory.uninterpreted = True
@@ -179,6 +181,7 @@ class TheoryOracle(walkers.DagWalker):
     @walkers.handles(op.STR_OPERATORS -\
                      set([op.STR_LENGTH, op.STR_INDEXOF, op.STR_TO_INT]))
     @walkers.handles(op.ITE, op.ARRAY_SELECT, op.ARRAY_STORE, op.MINUS)
+    @walkers.handles(op.FP_OPERATORS)
     def walk_combine(self, formula, args, **kwargs):
         """Combines the current theory value of the children"""
         #pylint: disable=unused-argument
@@ -325,6 +328,12 @@ class TheoryOracle(walkers.DagWalker):
 
         # This is  not in DL anymore
         theory_out = theory_out.set_difference_logic(False)
+        return theory_out
+
+    @walkers.handles(op.FP_CONSTANTS)
+    def walk_fp_constants(self, formula, args, **kwargs):
+        theory_out = Theory()
+        theory_out.floating_point = True
         return theory_out
 
 # EOC TheoryOracle

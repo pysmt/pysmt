@@ -25,7 +25,7 @@ reasoning about the type of formulae.
 import pysmt.walkers as walkers
 import pysmt.operators as op
 
-from pysmt.typing import BOOL, REAL, INT, BVType, ArrayType, STRING
+from pysmt.typing import BOOL, REAL, INT, BVType, ArrayType, STRING, FPType, RM
 from pysmt.exceptions import PysmtTypeError
 
 
@@ -328,6 +328,47 @@ class SimpleTypeChecker(walkers.DagWalker):
         if args[0].is_int_type() and formula.arg(1).constant_value() < 0 :
             return None
         return args[0]
+
+    def walk_fp_constant(self, formula, args, **kwargs):
+        sign = args[0]
+        eb = args[1]
+        i = args[2]
+        if sign.is_bv_type(1) and eb.is_bv_type() and i.is_bv_type():
+            return FPType(eb.width, i.width + 1)
+        else:
+            return None
+
+    @walkers.handles(op.FP_RNE, op.FP_RNA, op.FP_RTP, op.FP_RTN, op.FP_RTZ)
+    def walk_fp_rm_const(self, formula, args, **kwargs):
+        return RM
+
+    def walk_fp_to_fp(self, args, ret_ty=None):
+        target_type = args[0]
+        for a in args[1:]:
+            if not a == target_type:
+                return None
+        if target_type.is_fp_type():
+            return target_type if ret_ty is None else ret_ty
+        else:
+            return None
+
+    @walkers.handles(op.FP_ABS, op.FP_NEG, op.FP_REM, op.FP_MIN, op.FP_MAX)
+    def walk_fp_op_wo_rnd(self, formula, args, **kwargs):
+        return self.walk_fp_to_fp(args)
+
+    @walkers.handles(op.FP_SQRT, op.FP_ROUND_TO_INTEGRAL, op.FP_ADD, op.FP_SUB,
+                     op.FP_MUL, op.FP_DIV, op.FP_FMA)
+    def walk_fp_op_w_rnd(self, formula, args, **kwargs):
+        if not args[0].is_rm_type():
+            return None
+
+        return self.walk_fp_to_fp(args[1:])
+
+    @walkers.handles(op.FP_LEQ, op.FP_LT, op.FP_EQ, op.FP_IS_NORMAL,
+                     op.FP_IS_SUBNORMAL, op.FP_IS_ZERO, op.FP_IS_INFINITE,
+                     op.FP_IS_NAN, op.FP_IS_NEGATIVE, op.FP_IS_POSITIVE)
+    def walk_fp_pred(self, formula, args, **kwargs):
+        return self.walk_fp_to_fp(args, BOOL)
 
 # EOC SimpleTypeChecker
 
