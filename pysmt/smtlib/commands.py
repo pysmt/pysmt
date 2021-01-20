@@ -32,6 +32,7 @@ EXIT='exit'
 GET_ASSERTIONS='get-assertions'
 GET_ASSIGNMENT='get-assignment'
 GET_INFO='get-info'
+GET_INTERPOLANTS = 'get-interpolants'
 GET_MODEL='get-model'
 GET_OPTION='get-option'
 GET_PROOF='get-proof'
@@ -66,6 +67,7 @@ SMT_LIB_2_0 = [
     GET_PROOF,
     GET_UNSAT_CORE,
     GET_INFO,
+    GET_INTERPOLANTS,
     GET_OPTION,
     EXIT,
 ]

@@ -96,6 +96,9 @@ class SmtLibSolver(Solver):
             self.solver_stdout = TextIOWrapper(self.solver.stdout)
 
         # Initialize solver
+        if "produce_interpolants" in options and options["produce_interpolants"]:
+            self.set_option(":print-success", "true")
+            self.set_option(":produce-interpolants", "true")
         self.options(self)
         self.set_logic(logic)
 
