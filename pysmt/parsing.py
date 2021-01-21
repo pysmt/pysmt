@@ -162,6 +162,8 @@ class HRLexer(Lexer):
             Rule(r"(u/)", InfixOpAdapter(self.mgr.BVUDiv, 80), False),# udiv
             Rule(r"(s/)", InfixOpAdapter(self.mgr.BVSDiv, 80), False),# sdiv
             Rule(r"(/)", InfixOpAdapter(self.mgr.Div, 80), False),# div
+            Rule(r"(//)", InfixOpAdapter(self.mgr.FloorDiv, 80), False),# floordiv
+            Rule(r"(mod)", InfixOpAdapter(self.mgr.Mod, 80), False),# mod
             Rule(r"(s%)", InfixOpAdapter(self.mgr.BVSRem, 80), False),# srem
             Rule(r"(u%)", InfixOpAdapter(self.mgr.BVURem, 80), False),# urem
             Rule(r"(\?)", ExprIf(), False), # question

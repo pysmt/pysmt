@@ -1,2 +1,5 @@
 *.pyc
 *~
+PySMT.egg-info
+dist
+build

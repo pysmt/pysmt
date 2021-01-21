@@ -242,3 +242,9 @@ class IdentityDagWalker(DagWalker):
 
     def walk_div(self, formula, args, **kwargs):
         return self.mgr.Div(args[0], args[1])
+
+    def walk_floordiv(self, formula, args, **kwargs):
+        return self.mgr.FloorDiv(args[0], args[1])
+
+    def walk_mod(self, formula, args, **kwargs):
+        return self.mgr.Mod(args[0], args[1])

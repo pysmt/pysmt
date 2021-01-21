@@ -886,6 +886,12 @@ class FNode(object):
     def __div__(self, right):
         return self._apply_infix(right, _mgr().Div, _mgr().BVUDiv)
 
+    def __floordiv__(self, right):
+        return self._apply_infix(right, _mgr().FloorDiv, None)
+
+    def __mod__(self, right):
+        return self._apply_infix(right, _mgr().Mod, _mgr().BVURem)
+
     def __truediv__(self, right):
         return self.__div__(right)
 
@@ -950,9 +956,6 @@ class FNode(object):
 
     def __rshift__(self, right):
         return self._apply_infix(right, None, bv_function=_mgr().BVLShr)
-
-    def __mod__(self, right):
-        return self._apply_infix(right, None, bv_function=_mgr().BVURem)
 
     @assert_infix_enabled
     def __call__(self, *args):
