@@ -349,9 +349,9 @@ class IncrementalTrackingSolver(Solver):
         self._assertion_stack.append(tracked)
         self._last_command = "assert"
 
-    def add_assertions(self, formulae, names=None):
-        for idx, formula in enumerate(formulae):
-            self.add_assertion(formula, names[idx] if names else None)
+    def add_assertions(self, formulae):
+        for formula in formulae:
+            self.add_assertion(formula)
 
     def _solve(self, assumptions=None):
         raise NotImplementedError
