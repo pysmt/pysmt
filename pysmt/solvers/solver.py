@@ -202,6 +202,10 @@ class Solver(object):
         """Add assertion to the solver."""
         raise NotImplementedError
 
+    def add_assertions(self, formulae):
+        for formula in formulae:
+            self.add_assertion(formula)
+
     def print_model(self, name_filter=None):
         """Prints the model (if one exists).
 
@@ -348,10 +352,6 @@ class IncrementalTrackingSolver(Solver):
         tracked = self._add_assertion(formula, named=named)
         self._assertion_stack.append(tracked)
         self._last_command = "assert"
-
-    def add_assertions(self, formulae):
-        for formula in formulae:
-            self.add_assertion(formula)
 
     def _solve(self, assumptions=None):
         raise NotImplementedError
