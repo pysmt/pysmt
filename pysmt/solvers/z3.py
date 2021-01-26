@@ -254,6 +254,10 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
                     name = "_a_%d" % cnt
                     cnt += 1
                 res[name] = formula
+            else:
+                name = "_a_%d" % cnt
+                cnt += 1
+                res[name] = key
         return res
 
     @clear_pending_pop
