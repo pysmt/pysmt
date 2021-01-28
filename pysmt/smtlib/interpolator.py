@@ -28,7 +28,7 @@ class SmtLibInterpolator(Interpolator):
     def __init__(self, args, environment, logic, LOGICS=None, **options):
         Interpolator.__init__(self)
         options["produce_interpolants"] = True
-        self._solver = SmtLibSolver(args, environment, logic, LOGICS, **options)
+        self.options = (args, environment, logic, LOGICS, options)
 
     def binary_interpolant(self, a, b):
         res = self.sequence_interpolant([a, b])
@@ -37,25 +37,26 @@ class SmtLibInterpolator(Interpolator):
         return res[0]
 
     def sequence_interpolant(self, formulas):
+        solver = SmtLibSolver(self.options[0], self.options[1], self.options[2], self.options[3], **self.options[4])
         for f in formulas:
-            sorts = self._solver.to.get_types(f, custom_only=True)
+            sorts = solver.to.get_types(f, custom_only=True)
             for s in sorts:
-                if all(s not in ds for ds in self._solver.declared_sorts):
-                    self._solver._declare_sort(s)
+                if all(s not in ds for ds in solver.declared_sorts):
+                    solver._declare_sort(s)
             deps = f.get_free_variables()
             for d in deps:
-                if all(d not in dv for dv in self._solver.declared_vars):
-                    self._solver._declare_variable(d)
+                if all(d not in dv for dv in solver.declared_vars):
+                    solver._declare_variable(d)
 
         names = []
         i = 0
         for f in formulas:
-            self._send_named_assert_command(f, "IP_%d" % i)
-            names.append("IP_%d" %i)
+            self._send_named_assert_command(f, "IP_%d" % i, solver)
+            names.append("IP_%d" % i)
             i += 1
 
-        self._solver._send_command(SmtLibCommand(smtcmd.CHECK_SAT, []))
-        ans = self._solver._get_answer()
+        solver._send_command(SmtLibCommand(smtcmd.CHECK_SAT, []))
+        ans = solver._get_answer()
         if ans == "sat":
             return None
         elif ans == "unsat":
@@ -64,13 +65,15 @@ class SmtLibInterpolator(Interpolator):
             raise SolverReturnedUnknownResultError
         else:
             raise UnknownSolverAnswerError("Solver returned: " + ans)
-        self._solver._send_command(SmtLibCommand(smtcmd.GET_INTERPOLANTS, names))
-        return self._solver.parser.get_interpolant_list(self._solver.solver_stdout)
+        solver._send_command(SmtLibCommand(smtcmd.GET_INTERPOLANTS, names))
+        res = solver.parser.get_interpolant_list(solver.solver_stdout)
+        solver._exit()
+        return res
 
-    def _send_named_assert_command(self, f, assert_name):
+    def _send_named_assert_command(self, f, assert_name, solver):
         cmd = SmtLibCommand(smtcmd.ASSERT, [f])
         cmd.assert_name = assert_name
-        self._solver._send_silent_command(cmd)
+        solver._send_silent_command(cmd)
 
     def _exit(self):
-        self._solver.exit()
+        pass
