@@ -1095,11 +1095,15 @@ class SmtLibParser(object):
         return res
 
     def get_interpolant_list(self, script):
+        """
+        Parse an list of interpolants produced by get-interpolants
+        commands in SmtLib
+        """
         symbols = self.env.formula_manager.symbols
         self.cache.update(symbols)
         tokens = Tokenizer(script, interactive=self.interactive)
         res = []
-        current = tokens.consume()
+        tokens.consume()
         while True:
             current = tokens.consume()
             if current != "(":

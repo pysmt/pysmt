@@ -31,12 +31,20 @@ class SmtLibInterpolator(Interpolator):
         self.options = (args, environment, logic, LOGICS, options)
 
     def binary_interpolant(self, a, b):
+        """Returns a binary interpolant for the pair (a, b), if And(a, b) is
+        unsatisfaiable, or None if And(a, b) is satisfiable.
+
+        """
         res = self.sequence_interpolant([a, b])
         if res is None:
             return res
         return res[0]
 
     def sequence_interpolant(self, formulas):
+        """Returns a sequence interpolant for the conjunction of formulas, or
+        None if the problem is satisfiable.
+
+        """
         solver = SmtLibSolver(self.options[0], self.options[1], self.options[2], self.options[3], **self.options[4])
         for f in formulas:
             sorts = solver.to.get_types(f, custom_only=True)
