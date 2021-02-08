@@ -24,7 +24,7 @@ from pysmt.smtlib.parser import SmtLibParser, get_formula_fname
 from pysmt.smtlib.script import check_sat_filter
 from pysmt.logics import (QF_LIA, QF_LRA, LRA, QF_UFLIRA, QF_UFBV, QF_BV,
                           QF_ALIA, QF_ABV, QF_AUFLIA, QF_AUFBV, QF_NRA, QF_NIA,
-                          UFBV, BV)
+                          UFBV, BV, QF_UF)
 from pysmt.exceptions import NoSolverAvailableError, SolverReturnedUnknownResultError
 
 def smtlib_tests(logic_pred):
@@ -178,4 +178,8 @@ SMTLIB_TEST_FILES = [
     (QF_NIA, "small_set/QF_NIA/aproveSMT3509292547826641386.smt2.bz2", SAT),
     (QF_NIA, "small_set/QF_NIA/problem-000158.cvc.2.smt2.bz2", UNSAT),
     (QF_NIA, "small_set/QF_NIA/term-DtOD2C.smt2.bz2", SAT),
+    #
+    # QF_UF
+    #
+    (QF_UF, "small_set/QF_UF/test0.smt2.bz2", SAT),
 ]

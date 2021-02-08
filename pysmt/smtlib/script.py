@@ -346,6 +346,9 @@ def evaluate_command(cmd, solver):
     elif cmd.name == smtcmd.GET_UNSAT_CORE:
         return solver.get_unsat_core()
 
+    elif cmd.name == smtcmd.GET_MODEL:
+        return solver.get_model()
+
     elif cmd.name == smtcmd.DECLARE_SORT:
         name = cmd.args[0].name
         arity = cmd.args[0].arity
