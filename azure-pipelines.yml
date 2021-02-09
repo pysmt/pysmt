@@ -184,7 +184,6 @@ jobs:
   dependsOn:
     - 'Ubuntu16Py37'
     - 'Ubuntu16All'
-    - 'Ubuntu16PyPy2'
     - 'Ubuntu16PyPy3'
     - 'OSX10_15'
     - 'Win2016'
