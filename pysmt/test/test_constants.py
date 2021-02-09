@@ -15,7 +15,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from six import PY2
 from fractions import Fraction as pyFraction
 
 from pysmt.test import TestCase, main, skipIf
@@ -37,8 +36,6 @@ class TestConstants(TestCase):
         self.assertTrue(is_pysmt_integer(Integer(4)))
 
         self.assertTrue(is_python_integer(int(2)))
-        if PY2:
-            self.assertTrue(is_python_integer(long(2)))
         if HAS_GMPY:
             from gmpy2 import mpz
             self.assertTrue(is_python_integer(mpz(1)))
@@ -47,8 +44,6 @@ class TestConstants(TestCase):
             from gmpy2 import mpz, mpq
             self.assertTrue(is_python_rational(mpz(1)))
             self.assertTrue(is_python_rational(mpq(1)))
-        if PY2:
-            self.assertTrue(is_python_rational(long(1)))
 
         self.assertTrue(is_python_rational(pyFraction(5)))
         self.assertTrue(is_python_rational(3))
@@ -63,7 +58,7 @@ class TestConstants(TestCase):
         self.assertEqual(Integer(4), pysmt_integer_from_integer(pyFraction(4)))
 
     def test_to_python_integer(self):
-        res = long(4) if PY2 else int(4)
+        res = int(4)
         self.assertEqual(res, to_python_integer(pysmt_integer_from_integer(4)))
         self.assertEqual(res, to_python_integer(pysmt_integer_from_integer(Integer(4))))
         self.assertEqual(res, to_python_integer(pysmt_integer_from_integer(Fraction(4))))

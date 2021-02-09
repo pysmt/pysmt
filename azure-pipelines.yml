@@ -201,7 +201,6 @@ jobs:
     displayName: 'Install Twine'
   - script: './make_distrib.sh'
     displayName: 'Make Distrib'
-  - script: 'cd dist; zip PySMT*.whl six.py'
   - task: TwineAuthenticate@0
     inputs:
       externalFeeds: PyPI

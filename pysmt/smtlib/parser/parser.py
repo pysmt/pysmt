@@ -19,8 +19,6 @@ import functools
 import itertools
 
 from warnings import warn
-from six import iteritems, PY2
-from six.moves import xrange
 from collections import deque
 
 import pysmt.smtlib.commands as smtcmd
@@ -39,10 +37,7 @@ def open_(fname):
     """Transparently handle .bz2 files."""
     if fname.endswith(".bz2"):
         import bz2
-        if PY2:
-            return bz2.BZ2File(fname, "r")
-        else:
-            return bz2.open(fname, "rt")
+        return bz2.open(fname, "rt")
     return open(fname)
 
 
@@ -131,7 +126,7 @@ class SmtLibExecutionCache(object):
 
     def update(self, value_map):
         """Binds all the symbols in 'value_map'"""
-        for k, val in iteritems(value_map):
+        for k, val in value_map.items():
             self.bind(k, val)
 
     def unbind_all(self, values):
@@ -885,7 +880,7 @@ class SmtLibParser(object):
 
         res = []
         current = None
-        for _ in xrange(min_size):
+        for _ in range(min_size):
             current = tokens.consume("Unexpected end of stream in %s "
                                              "command." % command)
             if current == ")":
@@ -898,7 +893,7 @@ class SmtLibParser(object):
                                        "command." % command,
                                        tokens.pos_info)
             res.append(current)
-        for _ in xrange(min_size, max_size + 1):
+        for _ in range(min_size, max_size + 1):
             current = tokens.consume("Unexpected end of stream in %s "
                                              "command." % command)
             if current == ")":

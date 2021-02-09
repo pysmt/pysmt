@@ -15,7 +15,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from six.moves import xrange
 import math
 
 import pysmt.walkers
@@ -903,7 +902,7 @@ class Simplifier(pysmt.walkers.DagWalker):
                 if width > r.bv_unsigned_value():
                     padlen = r.bv_unsigned_value()
 
-                for i in xrange(width-padlen, width):
+                for i in range(width-padlen, width):
                     n = set_bit(n, i, True)
                 ret = self.manager.BV(n, width)
             return ret

@@ -15,8 +15,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from six.moves import xrange
-
 from pysmt.typing import BOOL
 from pysmt.solvers.options import SolverOptions
 from pysmt.decorators import clear_pending_pop
@@ -374,7 +372,7 @@ class IncrementalTrackingSolver(Solver):
     def push(self, levels=1):
         self._push(levels=levels)
         point = len(self._assertion_stack)
-        for _ in xrange(levels):
+        for _ in range(levels):
             self._backtrack_points.append(point)
         self._last_command = "push"
 
@@ -383,7 +381,7 @@ class IncrementalTrackingSolver(Solver):
 
     def pop(self, levels=1):
         self._pop(levels=levels)
-        for _ in xrange(levels):
+        for _ in range(levels):
             point = self._backtrack_points.pop()
             self._assertion_stack = self._assertion_stack[0:point]
         self._last_command = "pop"

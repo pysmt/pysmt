@@ -17,8 +17,6 @@
 #
 import warnings
 
-from six import iteritems
-
 import pysmt.walkers
 from pysmt.walkers.generic import handles
 import pysmt.operators as op
@@ -74,7 +72,7 @@ class Substituter(pysmt.walkers.IdentityDagWalker):
             #    bound variables from the substitution map
             substitutions = kwargs["substitutions"]
             new_subs = {}
-            for k,v in iteritems(substitutions):
+            for k,v in substitutions.items():
                 # If at least one bound variable is in the cone of k,
                 # we do not consider this substitution in the body of
                 # the quantifier.

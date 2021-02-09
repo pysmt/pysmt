@@ -77,14 +77,3 @@ def quote(name, style='|'):
         return "%s%s%s" % (style, name, style)
     else:
         return name
-
-
-def open_(fname):
-    """Transparently handle .bz2 files."""
-    if fname.endswith(".bz2"):
-        import bz2
-        if PY2:
-            return bz2.BZ2File(fname, "r")
-        else:
-            return bz2.open(fname, "rt")
-    return open(fname)
