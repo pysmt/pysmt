@@ -218,6 +218,6 @@ except UnknownSmtLibCommandError as ex:
 
 # The new parser can parse our example, and returns the (init, trans) pair
 ts_parser = TSSmtLibParser()
-init, trans = ts_parser.get_ts(cStringIO(EXT_SMTLIB))
+init, trans = ts_parser.get_ts(StringIO(EXT_SMTLIB))
 print("INIT: %s" % init.serialize())
 print("TRANS: %s" % trans.serialize())
