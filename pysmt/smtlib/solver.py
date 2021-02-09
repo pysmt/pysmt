@@ -210,7 +210,7 @@ class SmtLibSolver(Solver):
 
     def get_model(self):
         assignment = {}
-        for s in self.environment.formula_manager.get_all_symbols():
+        for s in self.declared_vars[-1]:
             if s.is_term():
                 v = self.get_value(s)
                 assignment[s] = v
