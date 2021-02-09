@@ -299,7 +299,10 @@ def evaluate_command(cmd, solver):
         return solver.set_info(cmd.args[0], cmd.args[1])
 
     if cmd.name == smtcmd.SET_OPTION:
-        return solver.set_option(cmd.args[0], cmd.args[1])
+        opt = cmd.args[0]
+        if opt[0] == ':':
+            opt = opt[1:]
+        return solver.set_option(opt, cmd.args[1])
 
     elif cmd.name == smtcmd.ASSERT:
         return solver.assert_(cmd.args[0])

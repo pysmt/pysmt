@@ -97,7 +97,7 @@ class FormulaManager(object):
             return n
 
     def _create_symbol(self, name, typename=types.BOOL):
-        if len(name) == 0:
+        if len(name) == 0 and not self.env.allow_empty_var_names:
             raise PysmtValueError("Empty string is not a valid name")
         if not isinstance(typename, types.PySMTType):
             raise PysmtValueError("typename must be a PySMTType.")

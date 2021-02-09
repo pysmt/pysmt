@@ -51,13 +51,20 @@ def execute_script_fname(smtfile, logic, expected_result):
     parser = SmtLibParser()
     script = parser.get_script_fname(smtfile)
     try:
-        log = script.evaluate(Solver(logic=logic, incremental=False,
-                                     generate_models=False))
+        solver = Solver(logic=logic, incremental=False,
+                        generate_models=False)
+        if logic == QF_UF and type(solver).__name__ == 'CVC4Solver':
+            warnings.warn("Test (%s, %s) skipped because CVC4 can't handle QF_UF." % (logic, smtfile))
+            return
+        if logic == QF_UF and type(solver).__name__ == 'BoolectorSolver':
+            warnings.warn("Test (%s, %s) skipped because Boolector can't handle QF_UF." % (logic, smtfile))
+            return
+        log = script.evaluate(solver)
     except NoSolverAvailableError:
         raise SkipTest("No solver for logic %s." % logic)
     except SolverReturnedUnknownResultError:
         if not logic.quantifier_free:
-            warnings.warn("Test (%s, %s) could not be solver due to quantifiers." % (logic, smtfile))
+            warnings.warn("Test (%s, %s) could not be solved due to quantifiers." % (logic, smtfile))
             return
         raise
 
