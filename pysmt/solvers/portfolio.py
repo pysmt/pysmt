@@ -77,7 +77,7 @@ class Portfolio(IncrementalTrackingSolver):
         self.solvers = []
         self._process_solver_set(solvers_set)
         # Check that the names are valid ?
-        all_solvers = set(self.environment.factory.all_solvers())
+        all_solvers = set(self.environment.factory.all_solvers(logic=logic))
         not_found = set(s for s,_ in self.solvers) - all_solvers
         if len(not_found) != 0:
             raise ValueError("Cannot find solvers %s" % not_found)
@@ -143,7 +143,7 @@ class Portfolio(IncrementalTrackingSolver):
             _p = Process(name="%d (%s)" % (idx, sname),
                          target=_run_solver,
                          args=("%d (%s)" % (idx, sname),
-                               sname, options, formula,
+                               sname, self.logic, options, formula,
                                signaling_queue, child_ctrl_pipe))
             processes.append(_p)
             _p.start()
@@ -212,7 +212,7 @@ class Portfolio(IncrementalTrackingSolver):
 # EOC Portfolio
 
 # Function to pass to the solver
-def _run_solver(idx, solver, options, formula, signaling_queue, ctrl_pipe):
+def _run_solver(idx, solver, logic, options, formula, signaling_queue, ctrl_pipe):
     """Function used by the child Process to handle Portfolio requests.
 
     solver  : name of the solver
@@ -224,7 +224,7 @@ def _run_solver(idx, solver, options, formula, signaling_queue, ctrl_pipe):
     from pysmt.environment import get_env
 
     Solver = get_env().factory.Solver
-    with Solver(name=solver, **options) as s:
+    with Solver(name=solver, logic=logic, **options) as s:
         s.add_assertion(formula)
         try:
             local_res = s.solve()
