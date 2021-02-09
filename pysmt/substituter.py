@@ -25,8 +25,44 @@ from pysmt.exceptions import PysmtTypeError, PysmtValueError
 
 
 class FunctionInterpretation:
+    """This class represents the interpretation of an uninterpreted
+    function symbol and is intended to be used in substitutions.
+
+    For example, let `phi` be the formula `phi = Equals(Function(f,
+    [Int(2), Int(3)]), a)` where `a` is a Symbol of type INT and `f`
+    is an uninterpreted function with two INT parameters that returns
+    INT. A possible interpretation for `f` could be `f(x, y) = x + y`
+    and a model for `a` could be `5`.
+
+    To represent a model in pysmt we simply use a dict from symbols to
+    constant values, but for interpretations we need a map from
+    symbols to instances of FunctionInterpretation. Each instance of
+    FunctionInterpretation represents the interpretation of a
+    function.
+
+    A FunctionInterpretation is represented as a list of symbols, each
+    having the type corresponding to the parameter typres of the
+    function to be interpreted, plus a function body that is an
+    expression that can only depend on the formal parameters. So to
+    represent the interpretation `f(x, y) = x + y` we construct the
+    instance as follows:
+
+    ```
+    x, y = Symbol('x', INT), Symbol('y', INT)
+    FunctionInterpretation([x, y], Plus(x, y))
+    ```
+    """
 
     def __init__(self, formal_params, function_body, allow_free_vars=False):
+        """Constructor, taking in input the list of formal parameters and the
+        function body.
+
+        The parameter `allow_free_vars` is used to skip the check that
+        the function body has no free variables other than formal
+        parameter and is used in the SmtLib model-validation utility
+        because functions with uninterpreted return value return
+        special symbols (e.g. @val1) in SmtLib.
+        """
         if any(not x.is_symbol() or not x.is_term() for x in formal_params):
             raise PysmtValueError('Formal parameters of a function '
                                   'interpretation must be non-function symbols')
@@ -40,6 +76,10 @@ class FunctionInterpretation:
 
 
     def interpret(self, env, actual_params):
+        """Given a set of actual parameter, returns the 'value' of the
+        function by substitutiong formal parameters with their actual
+        values.
+        """
         if len(actual_params) !=  len(self.formal_params):
             raise ValueError('The numbe of actual parameters does not match '
                              'with the number of formal parameters')
@@ -125,7 +165,33 @@ class Substituter(pysmt.walkers.IdentityDagWalker):
                                                                          **kwargs)
 
     def substitute(self, formula, subs=None, interpretations=None):
-        """Replaces any subformula in formula with the definition in subs."""
+        """Replaces any subformula in formula with the definition in subs (if
+        any) and interprets function symbols with the interpretations
+        in `interpretations`
+
+        For example, let `phi` be the formula `phi = Equals(Function(f,
+        [Int(2), Int(3)]), Plus(a, Int(1)))` where `a` is a Symbol of type INT and `f`
+        is an uninterpreted function with two INT parameters that returns
+        INT.
+
+        Examples:
+
+        - Basic substitution:
+        `self.substitute(phi, {a: Int(5)})`
+        will give `Equals(Function(f, [Int(2), Int(3)]), Plus(Int(5), Int(1)))`
+
+        - Interpretation:
+        ```
+        x, y = Symbol('x', INT), Symbol('y', INT)
+        i = FunctionInterpretation([x, y], Plus(x, y))
+        self.substitute(phi, interpretations={f:i})
+        ```
+        will give `Equals(Int(5), Plus(a, Int(1)))`
+
+        - Term substitution
+        `self.substitute(phi, {Plus(a, Int(1)): Int(5)})`
+        will give `Equals(Function(f, [Int(2), Int(3)]), Int(6))`
+        """
 
         # Check that formula is a term
         if not formula.is_term():

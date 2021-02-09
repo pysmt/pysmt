@@ -19,7 +19,23 @@
 from pysmt.simplifier import Simplifier
 
 class SmtLibModelValidationSimplifier(Simplifier):
+    """This class is useful to valudate SmtLib models produced by
+    `(get-model)` and parsed by `SmtLibParser.parse_model()`.
 
+    This works just like a normal Simplifier, but treats specially the
+    symbols starting with @ that are used in SmtLib models to
+    represent unique objects (i.e. @XXX is equal to @YYY iff XXX == YYY).
+
+    For example:
+    ```
+    parser = SmtLibParser(env)
+    simplifier = SmtLibModelValidationSimplifier(env)
+    formula = parser.get_script(buffer).get_last_formula()
+    model, interpretations = parser.parse_model(model_buffer)
+    simp = simplifier.simplify(formula.substitute(model, interpretations))
+    assert simp == TRUE()
+    ```
+    """
     def walk_equals(self, formula, args, **kwargs):
         assert len(args) == 2
 
