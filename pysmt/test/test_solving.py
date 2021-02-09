@@ -156,6 +156,19 @@ class TestBasic(TestCase):
             self.assertTrue(s.get_py_value(varA))
 
     @skipIfNoSolverForLogic(QF_BOOL)
+    def test_add_assertions(self):
+        varA = Symbol("A", BOOL)
+        varB = Symbol("B", BOOL)
+        varC = Symbol("C", BOOL)
+
+        assertions = [varA, Implies(varA, varB), Implies(varB, varC)]
+        for name in get_env().factory.all_solvers(logic=QF_BOOL):
+            with Solver(name) as solver:
+                solver.add_assertions(assertions)
+                solver.solve()
+                self.assertTrue(solver.get_py_value(And(assertions)))
+
+    @skipIfNoSolverForLogic(QF_BOOL)
     def test_incremental(self):
         a = Symbol('a', BOOL)
         b = Symbol('b', BOOL)
