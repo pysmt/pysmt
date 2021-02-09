@@ -1096,7 +1096,7 @@ class SmtLibParser(object):
 
     def get_interpolant_list(self, script):
         """
-        Parse an list of interpolants produced by get-interpolants
+        Parse a list of interpolants produced by get-interpolants
         commands in SmtLib
         """
         symbols = self.env.formula_manager.symbols
