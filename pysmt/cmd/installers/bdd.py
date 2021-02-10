@@ -41,7 +41,6 @@ class CuddInstaller(SolverInstaller):
 
         swig = "swig"
         swig_version = SolverInstaller.run("swig -version", get_output=True)
-        print(swig_version)
         if '4.0.1' in swig_version or '4.0.0' in swig_version:
             print("WARNING: the BDD solver does not work with Swig4 < 4.0.2. Fallback to Swig3")
             swig = "swig3.0" # This is the Ubuntu naming of the executable
