@@ -869,11 +869,31 @@ class SmtLibParser(object):
         return
 
     def parse_model(self, script):
-        """
-        TODO
+        """This function pasres the result of a `(get-model)` command and
+        returns a model as a dictionary from non-fuction symbols to
+        constant values and an interpretation for uninterpreted
+        functions as a map from the function symbol to a
+        FunctionInterpretation object.
+
+        Example:
+        ```
+        model_source ="(model
+          (define-fun b () Int 5)
+          (define-fun a () Real 2)
+          (define-fun f ((x0 Int)) Real (ite (> x0 5) 1 0.5))
+        )"
+        model_buf = StringIO(model_source)
+        parser = SmtLibParser()
+        model, interpretations = parser.parse_model(model_buf)
+        ```
+        gives:
+
+        `model = {Symbol('a', INT): Int(5), Symbol('b', Real): Real(2)}`
+        `interpretations = {Symbol('f', FunctionType(REAL, [INT])): fi}`
+
+        where `fi = FunctionInterpretation([Symbol('x0', Int)], ITE(GT(Symbol('x0', Int), Int(5)), Real(1), Real(0.5)))`
         """
         mgr = self.env.formula_manager
-        self.cache.update(mgr.symbols)
         self.cache.update(self.env.type_manager._custom_types_decl)
         tokens = Tokenizer(script, interactive=self.interactive)
         current = tokens.consume()
@@ -894,18 +914,20 @@ class SmtLibParser(object):
             cmd = next(cmd_gen)
             if cmd.name != 'define-fun':
                 raise PysmtSyntaxError("Unsupported model command type: %s" % cmd.name)
-            if len(cmd.args[1]) == 0: # Constant assignment
-                model[mgr.get_symbol(cmd.args[0])] = cmd.args[3]
+            vname, formal, rtype, ebody = cmd.args
+            if len(formal) == 0: # Constant assignment
+                model[mgr.Symbol(vname, rtype)] = ebody
             else: # A function interpretation
-                for v in cmd.args[3].get_free_variables():
+                for v in ebody.get_free_variables():
                     if not v.symbol_name().startswith('@') and v not in cmd.args[1]:
                         raise PysmtSyntaxError("Found a non-solver-defined free"
                                                " variable in the definion of "
                                                "function %s: %s" % (cmd.args[0],
                                                                     cmd.args[3]))
-                interpretation[mgr.get_symbol(cmd.args[0])] = \
-                    FunctionInterpretation(cmd.args[1], cmd.args[3],
-                                           allow_free_vars=True)
+                tmgr = self.env.type_manager
+                ftype = tmgr.FunctionType(rtype, [x.symbol_type() for x in formal])
+                interpretation[mgr.Symbol(vname, ftype)] = \
+                    FunctionInterpretation(formal, ebody, allow_free_vars=True)
             current = tokens.consume()
         return model, interpretation
 
