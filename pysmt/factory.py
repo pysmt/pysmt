@@ -24,7 +24,6 @@ particular solver.
 """
 
 from functools import partial
-from six import iteritems
 
 from pysmt.exceptions import (NoSolverAvailableError, SolverRedefinitionError,
                               NoLogicAvailableError,
@@ -272,7 +271,7 @@ class Factory(object):
         else:
             self._all_solvers = installed_solvers
 
-        for k,s in iteritems(self._all_solvers):
+        for k,s in self._all_solvers.items():
             try:
                 if s.UNSAT_CORE_SUPPORT:
                     self._all_unsat_core_solvers[k] = s
@@ -357,7 +356,7 @@ class Factory(object):
         """
         res = {}
         if logic is not None:
-            for s, v in iteritems(solver_list):
+            for s, v in solver_list.items():
                 for l in v.LOGICS:
                     if logic <= l:
                         res[s] = v

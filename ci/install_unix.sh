@@ -83,7 +83,6 @@ fi
 
 # Install dependencies
 $PIP_INSTALL configparser
-$PIP_INSTALL six
 $PIP_INSTALL wheel
 $PIP_INSTALL pytest
 

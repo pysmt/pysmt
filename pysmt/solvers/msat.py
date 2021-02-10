@@ -16,7 +16,6 @@
 #   limitations under the License.
 #
 from warnings import warn
-from six.moves import xrange
 
 from pysmt.exceptions import SolverAPINotFound
 from pysmt.constants import Fraction, is_pysmt_fraction, is_pysmt_integer
@@ -325,12 +324,12 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
 
     @clear_pending_pop
     def _push(self, levels=1):
-        for _ in xrange(levels):
+        for _ in range(levels):
             mathsat.msat_push_backtrack_point(self.msat_env())
 
     @clear_pending_pop
     def _pop(self, levels=1):
-        for _ in xrange(levels):
+        for _ in range(levels):
             mathsat.msat_pop_backtrack_point(self.msat_env())
 
     def _var2term(self, var):
@@ -734,12 +733,12 @@ class MSatConverter(Converter, DagWalker):
             if current not in self.back_memoization:
                 self.back_memoization[current] = None
                 stack.append(current)
-                for i in xrange(arity):
+                for i in range(arity):
                     son = mathsat.msat_term_get_arg(current, i)
                     stack.append(son)
             elif self.back_memoization[current] is None:
                 args=[self.back_memoization[mathsat.msat_term_get_arg(current,i)]
-                      for i in xrange(arity)]
+                      for i in range(arity)]
 
                 signature = self._get_signature(current, args)
                 new_args = []
@@ -1257,7 +1256,7 @@ class MSatInterpolator(Interpolator):
                 return None
 
             pysmt_ret = []
-            for i in xrange(1, len(groups)):
+            for i in range(1, len(groups)):
                 itp = mathsat.msat_get_interpolant(env, groups[:i])
                 f = self.converter.back(itp)
                 pysmt_ret.append(f)
@@ -1310,7 +1309,7 @@ class MSatBoolUFRewriter(IdentityDagWalker):
 
         # Base-case
         stack = []
-        for i in xrange(2**len(bool_args)):
+        for i in range(2**len(bool_args)):
             fname = self.mgr.Symbol("%s#%i" % (formula.function_name(),i), ftype)
             if len(ptype) == 0:
                 stack.append(fname)

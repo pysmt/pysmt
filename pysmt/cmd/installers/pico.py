@@ -15,7 +15,7 @@ import sys, os
 import json
 import codecs
 
-from six.moves.urllib import request as urllib2
+import urllib.request
 
 from pysmt.cmd.installers.base import SolverInstaller, TemporaryPath
 
@@ -39,7 +39,7 @@ class PicoSATInstaller(SolverInstaller):
         self.complete_version = "%s.%s" % (self.solver_version,
                                            self.pypicosat_minor_version)
         pypi_link = "https://pypi.python.org/pypi/pyPicoSAT/%s/json" % self.complete_version
-        response = urllib2.urlopen(pypi_link)
+        response = urllib.request.urlopen(pypi_link)
         reader = codecs.getreader("utf-8")
         pypi_json = json.load(reader(response))
 
