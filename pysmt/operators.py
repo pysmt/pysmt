@@ -22,10 +22,9 @@ they will be rewritten (during construction) in order to only use
 these operators.
 """
 from itertools import chain
-from six.moves import xrange
 
 
-ALL_TYPES = list(xrange(0,66))
+ALL_TYPES = list(range(0,66))
 
 (
 FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF, # Boolean Logic (0-6)

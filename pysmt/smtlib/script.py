@@ -18,8 +18,7 @@
 
 import warnings
 from collections import namedtuple
-from six.moves import cStringIO
-from six.moves import xrange
+from io import StringIO
 
 import pysmt.smtlib.commands as smtcmd
 from pysmt.exceptions import (UnknownSmtLibCommandError, NoLogicAvailableError,
@@ -138,7 +137,7 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
             raise UnknownSmtLibCommandError(self.name)
 
     def serialize_to_string(self, daggify=True):
-        buf = cStringIO()
+        buf = StringIO()
         self.serialize(buf, daggify=daggify)
         return buf.getvalue()
 
@@ -212,10 +211,10 @@ class SmtLibScript(object):
                 stack = []
                 backtrack = []
             elif cmd.name == smtcmd.PUSH:
-                for _ in xrange(cmd.args[0]):
+                for _ in range(cmd.args[0]):
                     backtrack.append(len(stack))
             elif cmd.name == smtcmd.POP:
-                for _ in xrange(cmd.args[0]):
+                for _ in range(cmd.args[0]):
                     l = backtrack.pop()
                     stack = stack[:l]
 

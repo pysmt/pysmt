@@ -53,33 +53,17 @@ jobs:
     vmImage: 'ubuntu-18.04'
   strategy:
     matrix:
-      # Py27All:
-        # PYTHON_VERSION: '2.7'
-        # PYSMT_SOLVER: "all"
       Py37All:
         PYTHON_VERSION: '3.7'
         PYSMT_SOLVER: "all"
-      # Py27Cython:
-      #   PYTHON_VERSION: '2.7'
-      #   PYSMT_SOLVER: "None"
-      #   PYSMT_CYTHON: "TRUE"
       Py37Cython:
         PYTHON_VERSION: '3.7'
         PYSMT_SOLVER: "None"
         PYSMT_CYTHON: "TRUE"
-      # Py27GMPy:
-      #   PYTHON_VERSION: '2.7'
-      #   PYSMT_SOLVER: "None"
-      #   PYSMT_GMPY: "TRUE"
       Py37GMPy:
         PYTHON_VERSION: '3.7'
         PYSMT_SOLVER: "None"
         PYSMT_GMPY: "TRUE"
-      # Py27CythonGMPy:
-      #   PYTHON_VERSION: '2.7'
-      #   PYSMT_SOLVER: "None"
-      #   PYSMT_CYTHON: "TRUE"
-      #   PYSMT_GMPY: "TRUE"
       Py37CythonGMPy:
         PYTHON_VERSION: '3.7'
         PYSMT_SOLVER: "None"
@@ -94,100 +78,6 @@ jobs:
     displayName: 'Prepare System'
   - bash: ci/run_unix.sh
     displayName: 'Testing'
-
-
-
-# - job: 'Ubuntu16Py27'
-#   condition: or(eq(variables['build.sourceBranch'], 'refs/heads/master'), eq(variables['Build.Reason'], 'PullRequest'))
-#   pool:
-#     vmImage: 'ubuntu-18.04'
-#   strategy:
-#     matrix:
-#       Py27NoSolver:
-#         PYTHON_VERSION: '2.7'
-#         PYSMT_SOLVER: "None"
-#       Py27Msat:
-#         PYTHON_VERSION: '2.7'
-#         PYSMT_SOLVER: "msat"
-#       Py27Z3:
-#         PYTHON_VERSION: '2.7'
-#         PYSMT_SOLVER: "z3"
-#       Py27Yices:
-#         PYTHON_VERSION: '2.7'
-#         PYSMT_SOLVER: "yices"
-#       Py27CVC4:
-#         PYTHON_VERSION: '2.7'
-#         PYSMT_SOLVER: "cvc4"
-#       Py27Btor:
-#         PYTHON_VERSION: '2.7'
-#         PYSMT_SOLVER: "btor"
-#       Py27Picosat:
-#         PYTHON_VERSION: '2.7'
-#         PYSMT_SOLVER: "picosat"
-#       Py27Bdd:
-#         PYTHON_VERSION: '2.7'
-#         PYSMT_SOLVER: "bdd"
-#       Py27MsatWrap:
-#         PYTHON_VERSION: '2.7'
-#         PYSMT_SOLVER: "msat_wrap"
-#       Py27Z3Wrap:
-#         PYTHON_VERSION: '2.7'
-#         PYSMT_SOLVER: "z3_wrap"
-#   steps:
-#   - task: UsePythonVersion@0
-#     inputs:
-#       versionSpec: '$(PYTHON_VERSION)'
-#       architecture: 'x64'
-#   - bash: ci/install_unix.sh
-#     displayName: 'Prepare System'
-#   - bash: ci/run_unix.sh
-#     displayName: 'Testing'
-
-
-
-- job: 'Ubuntu16PyPy2'
-  condition: or(eq(variables['build.sourceBranch'], 'refs/heads/master'), eq(variables['Build.Reason'], 'PullRequest'))
-  pool:
-    vmImage: 'ubuntu-18.04'
-  strategy:
-    matrix:
-      PyPy2NoSolver:
-        pypy_binary: 'pypy'
-        PYTHON_VERSION: 'pypy'
-        PYSMT_SOLVER: "None"
-      PyPy2MsatWrap:
-        pypy_binary: 'pypy'
-        PYTHON_VERSION: 'pypy'
-        PYSMT_SOLVER: "msat_wrap"
-      PyPy2Z3Wrap:
-        pypy_binary: 'pypy'
-        PYTHON_VERSION: 'pypy'
-        PYSMT_SOLVER: "z3_wrap"
-  steps:
-  - bash: |
-      echo "##vso[task.setvariable variable=PATH]$(System.DefaultWorkingDirectory)/pypy.tmp/pypy/bin:$(PATH)"
-  - bash: |
-      mkdir pypy.tmp
-      cd pypy.tmp
-      curl --location --output archive https://downloads.python.org/pypy/pypy2.7-v7.3.2-linux64.tar.bz2
-      tar xvf archive
-      rm archive
-      mv ./* pypy
-      cd ..
-    displayName: 'Get PyPy'
-  - bash: |
-      type $(pypy_binary)
-      $(pypy_binary) --version
-    displayName: 'Check for PyPy'
-  - bash: |
-      curl --output pypy.tmp/get-pip.py https://bootstrap.pypa.io/get-pip.py
-      $(pypy_binary) pypy.tmp/get-pip.py
-    displayName: 'Get PIP'
-  - bash: ci/install_unix.sh
-    displayName: 'Prepare System'
-  - bash: ci/run_unix.sh
-    displayName: 'Testing'
-
 
 
 - job: 'Ubuntu16PyPy3'
@@ -241,27 +131,15 @@ jobs:
     vmImage: 'macOS-10.15'
   strategy:
     matrix:
-      # Py27NoSolver:
-      #   PYTHON_VERSION: '2.7'
-      #   PYSMT_SOLVER: "None"
       Py37NoSolver:
         PYTHON_VERSION: '3.7'
         PYSMT_SOLVER: "None"
-      # Py27Msat:
-      #   PYTHON_VERSION: '2.7'
-      #   PYSMT_SOLVER: "msat"
       Py37Msat:
         PYTHON_VERSION: '3.7'
         PYSMT_SOLVER: "msat"
-      # Py27Z3:
-      #   PYTHON_VERSION: '2.7'
-      #   PYSMT_SOLVER: "z3"
       Py37Z3:
         PYTHON_VERSION: '3.7'
         PYSMT_SOLVER: "z3"
-      # Py27Yices:
-      #   PYTHON_VERSION: '2.7'
-      #   PYSMT_SOLVER: "yices"
       Py37Yices:
         PYTHON_VERSION: '3.7'
         PYSMT_SOLVER: "yices"
@@ -283,21 +161,12 @@ jobs:
     vmImage: 'vs2017-win2016'
   strategy:
     matrix:
-      # Py27NoSolver:
-      #   PYTHON_VERSION: '2.7'
-      #   PYSMT_SOLVER: "None"
       Py37NoSolver:
         PYTHON_VERSION: '3.7'
         PYSMT_SOLVER: "None"
-      # Py27Msat:
-      #   PYTHON_VERSION: '2.7'
-      #   PYSMT_SOLVER: "msat"
       Py37Msat:
         PYTHON_VERSION: '3.7'
         PYSMT_SOLVER: "msat"
-      # Py27Z3:
-      #   PYTHON_VERSION: '2.7'
-      #   PYSMT_SOLVER: "z3"
       Py37Z3:
         PYTHON_VERSION: '3.7'
         PYSMT_SOLVER: "z3"
@@ -315,8 +184,6 @@ jobs:
   dependsOn:
     - 'Ubuntu16Py37'
     - 'Ubuntu16All'
-#    - 'Ubuntu16Py27'
-    - 'Ubuntu16PyPy2'
     - 'Ubuntu16PyPy3'
     - 'OSX10_15'
     - 'Win2016'
@@ -334,7 +201,6 @@ jobs:
     displayName: 'Install Twine'
   - script: './make_distrib.sh'
     displayName: 'Make Distrib'
-  - script: 'cd dist; zip PySMT*.whl six.py'
   - task: TwineAuthenticate@0
     inputs:
       externalFeeds: PyPI

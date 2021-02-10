@@ -15,8 +15,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from six.moves import xrange
-
 from pysmt.exceptions import SolverAPINotFound
 
 try:
@@ -229,12 +227,12 @@ class BddSolver(Solver):
 
     @clear_pending_pop
     def push(self, levels=1):
-        for _ in xrange(levels):
+        for _ in range(levels):
             self.backtrack.append(len(self.assertions_stack))
 
     @clear_pending_pop
     def pop(self, levels=1):
-        for _ in xrange(levels):
+        for _ in range(levels):
             l = self.backtrack.pop()
             self.assertions_stack = self.assertions_stack[:l]
 

@@ -10,7 +10,7 @@
 # 4. How to access annotations from SMT-LIB files
 # 5. How to extend the parser with custom commands
 #
-from six.moves import cStringIO # Py2-Py3 Compatibility
+from io import StringIO
 
 from pysmt.smtlib.parser import SmtLibParser
 
@@ -41,9 +41,9 @@ DEMO_SMTLIB=\
 parser = SmtLibParser()
 
 # The method SmtLibParser.get_script takes a buffer in input. We use
-# cStringIO to simulate an open file.
+# StringIO to simulate an open file.
 # See SmtLibParser.get_script_fname() if to pass the path of a file.
-script = parser.get_script(cStringIO(DEMO_SMTLIB))
+script = parser.get_script(StringIO(DEMO_SMTLIB))
 
 # The SmtLibScript provides an iterable representation of the commands
 # that are present in the SMT-LIB file.
@@ -79,7 +79,7 @@ print(f)
 # be dumped into a file (see SmtLibScript.to_file).  The flag daggify,
 # specifies whether the printing is done as a DAG or as a tree.
 
-buf_out = cStringIO()
+buf_out = StringIO()
 script.serialize(buf_out, daggify=True)
 print(buf_out.getvalue())
 
@@ -212,12 +212,12 @@ class TSSmtLibParser(SmtLibParser):
 from pysmt.exceptions import UnknownSmtLibCommandError
 
 try:
-    parser.get_script(cStringIO(EXT_SMTLIB))
+    parser.get_script(StringIO(EXT_SMTLIB))
 except UnknownSmtLibCommandError as ex:
     print("Unsupported command: %s" % ex)
 
 # The new parser can parse our example, and returns the (init, trans) pair
 ts_parser = TSSmtLibParser()
-init, trans = ts_parser.get_ts(cStringIO(EXT_SMTLIB))
+init, trans = ts_parser.get_ts(StringIO(EXT_SMTLIB))
 print("INIT: %s" % init.serialize())
 print("TRANS: %s" % trans.serialize())

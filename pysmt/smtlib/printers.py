@@ -16,8 +16,7 @@
 #   limitations under the License.
 #
 from functools import partial
-
-from six.moves import xrange, cStringIO
+from io import StringIO
 
 import pysmt.operators as op
 from pysmt.environment import get_env
@@ -254,7 +253,7 @@ class SmtPrinter(TreeWalker):
 
     def walk_array_value(self, formula):
         assign = formula.array_value_assigned_values_map()
-        for _ in xrange(len(assign)):
+        for _ in range(len(assign)):
             self.write("(store ")
 
         self.write("((as const %s) " % formula.get_type().as_smtlib(False))
@@ -607,7 +606,7 @@ class SmtDagPrinter(DagWalker):
         self.openings += 1
         self.write("(let ((%s " % sym)
 
-        for _ in xrange((len(args) - 1) // 2):
+        for _ in range((len(args) - 1) // 2):
             self.write("(store ")
 
         self.write("((as const %s) " % formula.get_type().as_smtlib(False))
@@ -634,7 +633,7 @@ def to_smtlib(formula, daggify=True):
 
     See :py:class:`SmtPrinter`
     """
-    buf = cStringIO()
+    buf = StringIO()
     p = None
     if daggify:
         p = SmtDagPrinter(buf)

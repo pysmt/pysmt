@@ -38,8 +38,6 @@ Additionally, you can use any SMT-LIB 2 compliant solver.
 PySMT assumes that the python bindings for the SMT Solver are installed and
 accessible from your PYTHONPATH.
 
-pySMT works on both Python 3 and Python 2.
-
 
 Wanna know more?
 ================
@@ -59,7 +57,6 @@ setup(
     license='APACHE',
     description='A solver-agnostic library for SMT Formulae manipulation and solving',
     long_description=long_description,
-    install_requires=["six"],
     entry_points={
         'console_scripts': [
             'pysmt-install = pysmt.cmd.install:main',

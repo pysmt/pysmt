@@ -15,7 +15,7 @@
 # limitations under the License.
 
 import os
-from six import PY2
+
 from pysmt.exceptions import PysmtImportError
 # The environment variable can be used to force the configuration
 # of the Fraction class.
@@ -83,10 +83,7 @@ def is_pysmt_fraction(var):
 if USE_GMPY:
     Integer = mpz
 else:
-    if PY2:
-        Integer = long
-    else:
-        Integer = int
+    Integer = int
 IntegerClass = type(Integer(1))
 
 
@@ -105,8 +102,6 @@ def is_python_integer(var):
     """
     if type(var) == mpz_type:
         return True
-    if PY2 and type(var) == long:
-        return True
     if type(var) == int:
         return True
     return False
@@ -120,8 +115,6 @@ def is_python_rational(var):
     if type(var) == mpz_type or type(var) == mpq_type:
         return True
     if type(var) == pyFraction:
-        return True
-    if PY2 and type(var) == long:
         return True
     if type(var) == int:
         return True
@@ -143,14 +136,9 @@ def pysmt_integer_from_integer(value):
     return Integer(value)
 
 
-if PY2:
-    def to_python_integer(value):
-        """Return the python integer value."""
-        return long(value)
-else:
-    def to_python_integer(value):
-        """Return the python integer value."""
-        return int(value)
+def to_python_integer(value):
+    """Return the python integer value."""
+    return int(value)
 
 
 if USE_GMPY:
