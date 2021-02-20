@@ -393,7 +393,7 @@ class BTORConverter(Converter, DagWalker):
             res = self._btor.Var(self._btor.BitVecSort(formula.bv_width()),
                                  formula.symbol_name())
         else:
-            raise SolverReturnedUnknownResultError("Unknown type fro BTOR")
+            raise SolverReturnedUnknownResultError("Unknown type for BTOR")
         self.declared_vars[formula] = res
         return res
 

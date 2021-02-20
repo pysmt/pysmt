@@ -69,8 +69,8 @@ class FunctionInterpretation:
         if not allow_free_vars and \
            not function_body.get_free_variables().issubset(set(formal_params)):
             raise PysmtValueError('the body of a function interpretation cannot'
-                                  ' contain free varibales other than formal '
-                                  'paramteters')
+                                  ' contain free variables other than formal '
+                                  'parameters')
         self.formal_params = list(formal_params)
         self.function_body = function_body
 

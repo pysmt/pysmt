@@ -913,7 +913,7 @@ class SmtLibParser(object):
             tokens.add_extra_token(current)
             cmd = next(cmd_gen)
             if cmd.name != 'define-fun':
-                raise PysmtSyntaxError("Unsupported model command type: %s" % cmd.name)
+                raise PysmtSyntaxError("Unsupported model command: %s" % cmd.name)
             vname, formal, rtype, ebody = cmd.args
             if len(formal) == 0: # Constant assignment
                 model[mgr.Symbol(vname, rtype)] = ebody

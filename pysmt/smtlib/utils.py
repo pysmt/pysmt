@@ -52,6 +52,5 @@ class SmtLibModelValidationSimplifier(Simplifier):
              sl.symbol_name().startswith('@') and \
              sr.symbol_name().startswith('@'):
             return self.manager.Bool(sl == sr)
-
         else:
             return self.manager.Equals(sl, sr)

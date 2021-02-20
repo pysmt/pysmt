@@ -126,6 +126,7 @@ class FNode(object):
 
         subs is a dictionary mapping terms to be subtituted with their
         substitution.
+        interpretations is a dictionary mapping function symbols to an FunctionInterpretation objects describing the semantics of the function.
         """
         return _env().substituter.substitute(self, subs=subs,
                                              interpretations=interpretations)
