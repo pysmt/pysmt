@@ -568,5 +568,6 @@ class TestRegressions(TestCase):
                 s.add_assertion(f)
                 self.assertFalse(s.solve())
 
+
 if __name__ == "__main__":
     main()

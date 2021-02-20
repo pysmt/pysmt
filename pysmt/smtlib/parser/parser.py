@@ -1269,12 +1269,25 @@ class SmtLibParser(object):
         bindings = []
         for (x,t) in namedparams:
             v = self.env.formula_manager.FreshSymbol(typename=t,
-                                                        template="__"+x+"%d")
+                                                     template="__"+x+"%d")
             self.cache.bind(x, v)
             formal.append(v) #remember the variable
             bindings.append(x) #remember the name
         # Parse expression using also parameters
         ebody = self.get_expression(tokens)
+        ebody_type = self.env.stc.get_type(ebody)
+        ebody_vars = self.env.fvo.get_free_variables(ebody)
+        # Promote constant integer expression to real
+        if ebody_type.is_int_type() and rtype.is_real_type() and \
+           len(ebody_vars) == 0:
+            ebody = self.env.formula_manager.ToReal(ebody)
+            ebody_type = rtype
+        # Check that ebody has the right type
+        if ebody_type != rtype:
+            raise PysmtSyntaxError("Typyng error in define-fun command. "
+                                   "The expected type is %s, but the detected "
+                                   "expression type is %s" % (rtype, ebody_type))
+
         #Discard parameters
         for x in bindings:
             self.cache.unbind(x)

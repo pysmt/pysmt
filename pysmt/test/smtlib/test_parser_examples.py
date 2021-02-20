@@ -197,5 +197,29 @@ class TestSMTParseExamples(TestCase):
         f_in = script.get_last_formula()
         self.assertSat(f_in)
 
+
+    def test_int_promotion_define_fun(self):
+        script = """
+        (define-fun x () Int 8)
+        (define-fun y () Real 8)
+        """
+        p = SmtLibParser()
+        buffer = StringIO(script)
+        s = p.get_script(buffer)
+
+        get_type = get_env().stc.get_type
+        for cmd in s:
+            self.assertEqual(cmd.args[2], get_type(cmd.args[3]))
+
+    def test_typing_define_fun(self):
+        script = """
+        (define-fun x () Int 8.2)
+        """
+        p = SmtLibParser()
+        buffer = StringIO(script)
+        with self.assertRaises(PysmtSyntaxError):
+            p.get_script(buffer)
+
+
 if __name__ == "__main__":
     main()
