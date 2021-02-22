@@ -32,6 +32,7 @@ EXIT='exit'
 GET_ASSERTIONS='get-assertions'
 GET_ASSIGNMENT='get-assignment'
 GET_INFO='get-info'
+GET_INTERPOLANTS = 'get-interpolants'
 GET_MODEL='get-model'
 GET_OPTION='get-option'
 GET_PROOF='get-proof'
@@ -82,4 +83,8 @@ SMT_LIB_2_5 = SMT_LIB_2_0 + [
     RESET_ASSERTIONS,
 ]
 
-ALL_COMMANDS = SMT_LIB_2_5
+EXTENSIONS = [
+    GET_INTERPOLANTS
+]
+
+ALL_COMMANDS = SMT_LIB_2_5 + EXTENSIONS

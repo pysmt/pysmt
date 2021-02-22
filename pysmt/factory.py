@@ -67,6 +67,7 @@ class Factory(object):
         self._all_qelims = None
         self._all_interpolators = None
         self._generic_solvers = {}
+        self._generic_interpolators = {}
 
         #
         if solver_preference_list is None:
@@ -207,11 +208,28 @@ class Factory(object):
         # Extend preference list accordingly
         self.solver_preference_list.append(name)
 
+    def add_generic_interpolator(self, name, args, logics):
+        from pysmt.smtlib.interpolator import SmtLibInterpolator
+        if name in self._all_solvers:
+            raise SolverRedefinitionError("Solver %s already defined" % name)
+        self._generic_interpolators[name] = (args, logics)
+        interpolator = partial(SmtLibInterpolator, args, LOGICS=logics)
+        interpolator.LOGICS = logics
+        self._all_interpolators[name] = interpolator
+        # Extend preference list accordingly
+        self.interpolation_preference_list.append(name)
+
     def is_generic_solver(self, name):
         return name in self._generic_solvers
 
     def get_generic_solver_info(self, name):
         return self._generic_solvers[name]
+
+    def is_generic_interpolator(self, name):
+        return name in self._generic_interpolators
+
+    def get_generic_interpolator_info(self, name):
+        return self._generic_interpolators[name]
 
     def _get_available_solvers(self):
         installed_solvers = {}

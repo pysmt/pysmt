@@ -59,7 +59,7 @@ class SolverOptions(object):
 
     def __init__(self, generate_models=True, incremental=True,
                  unsat_cores_mode=None, random_seed=None,
-                 solver_options=None):
+                 solver_options=None, produce_interpolants=False):
 
         if generate_models not in (True, False):
             raise ValueError("Invalid value %s for 'generate_models'" \
@@ -90,6 +90,8 @@ class SolverOptions(object):
         else:
             solver_options = dict()
         self.solver_options = solver_options
+
+        self.produce_interpolants = produce_interpolants
 
     @abc.abstractmethod
     def __call__(self, solver):
