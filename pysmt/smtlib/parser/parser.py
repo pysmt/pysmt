@@ -31,6 +31,7 @@ from pysmt.smtlib.annotations import Annotations
 from pysmt.utils import interactive_char_iterator
 from pysmt.constants import Fraction
 from pysmt.typing import _TypeDecl, PartialType
+from pysmt.substituter import FunctionInterpretation
 
 
 def open_(fname):
@@ -502,17 +503,19 @@ class SmtLibParser(object):
     def _enter_smtlib_as(self, stack, tokens, key):
         """Utility function that handles 'as' that is a special function in SMTLIB"""
         #pylint: disable=unused-argument
-        const = self.parse_atom(tokens, "expression")
-        if const != "const":
-            raise PysmtSyntaxError("expected 'const' in expression after 'as'",
-                                   tokens.pos_info)
+        what = self.parse_atom(tokens, "expression")
         ty = self.parse_type(tokens, "expression")
-
-        def res(expr):
-            return self.env.formula_manager.Array(ty.index_type, expr)
-        def handler():
-            return res
-        stack[-1].append(handler)
+        if what == "const":
+            assert ty.is_array_type(), "(as const x) is supported only for array constants"
+            def res(expr):
+                return self.env.formula_manager.Array(ty.index_type, expr)
+            def handler():
+                return res
+            stack[-1].append(handler)
+        else:
+            def handler():
+                return self.env.formula_manager.Symbol(what, ty)
+            stack[-1].append(handler)
 
     def _smtlib_underscore(self, stack, tokens, key):
         #pylint: disable=unused-argument
@@ -865,6 +868,69 @@ class SmtLibParser(object):
             yield cmd
         return
 
+    def parse_model(self, script):
+        """This function pasres the result of a `(get-model)` command and
+        returns a model as a dictionary from non-fuction symbols to
+        constant values and an interpretation for uninterpreted
+        functions as a map from the function symbol to a
+        FunctionInterpretation object.
+
+        Example:
+        ```
+        model_source ="(model
+          (define-fun b () Int 5)
+          (define-fun a () Real 2)
+          (define-fun f ((x0 Int)) Real (ite (> x0 5) 1 0.5))
+        )"
+        model_buf = StringIO(model_source)
+        parser = SmtLibParser()
+        model, interpretations = parser.parse_model(model_buf)
+        ```
+        gives:
+
+        `model = {Symbol('a', INT): Int(5), Symbol('b', Real): Real(2)}`
+        `interpretations = {Symbol('f', FunctionType(REAL, [INT])): fi}`
+
+        where `fi = FunctionInterpretation([Symbol('x0', Int)], ITE(GT(Symbol('x0', Int), Int(5)), Real(1), Real(0.5)))`
+        """
+        mgr = self.env.formula_manager
+        self.cache.update(self.env.type_manager._custom_types_decl)
+        tokens = Tokenizer(script, interactive=self.interactive)
+        current = tokens.consume()
+        if (current != "("):
+            raise PysmtSyntaxError("'(' expected", tokens.pos_info)
+        current = tokens.consume()
+
+        # Backwards compatibility: skip optional model keyword
+        if (current == "model"):
+            current = tokens.consume()
+
+        cmd_gen = self.get_command(tokens)
+        model, interpretation = {}, {}
+        while current != ")":
+            if (current != "("):
+                raise PysmtSyntaxError("'(' expected", tokens.pos_info)
+            tokens.add_extra_token(current)
+            cmd = next(cmd_gen)
+            if cmd.name != 'define-fun':
+                raise PysmtSyntaxError("Unsupported model command: %s" % cmd.name)
+            vname, formal, rtype, ebody = cmd.args
+            if len(formal) == 0: # Constant assignment
+                model[mgr.Symbol(vname, rtype)] = ebody
+            else: # A function interpretation
+                for v in ebody.get_free_variables():
+                    if not v.symbol_name().startswith('@') and v not in cmd.args[1]:
+                        raise PysmtSyntaxError("Found a non-solver-defined free"
+                                               " variable in the definion of "
+                                               "function %s: %s" % (cmd.args[0],
+                                                                    cmd.args[3]))
+                tmgr = self.env.type_manager
+                ftype = tmgr.FunctionType(rtype, [x.symbol_type() for x in formal])
+                interpretation[mgr.Symbol(vname, ftype)] = \
+                    FunctionInterpretation(formal, ebody, allow_free_vars=True)
+            current = tokens.consume()
+        return model, interpretation
+
     def get_script_fname(self, script_fname):
         """Given a filename and a Solver, executes the solver on the file."""
         with open_(script_fname) as script:
@@ -991,7 +1057,7 @@ class SmtLibParser(object):
                                        tokens.pos_info)
 
         if isinstance(res, _TypeDecl):
-            return res()
+            return self.env.type_manager.get_type_instance(res)
         else:
             return res
 
@@ -1203,12 +1269,25 @@ class SmtLibParser(object):
         bindings = []
         for (x,t) in namedparams:
             v = self.env.formula_manager.FreshSymbol(typename=t,
-                                                        template="__"+x+"%d")
+                                                     template="__"+x+"%d")
             self.cache.bind(x, v)
             formal.append(v) #remember the variable
             bindings.append(x) #remember the name
         # Parse expression using also parameters
         ebody = self.get_expression(tokens)
+        ebody_type = self.env.stc.get_type(ebody)
+        ebody_vars = self.env.fvo.get_free_variables(ebody)
+        # Promote constant integer expression to real
+        if ebody_type.is_int_type() and rtype.is_real_type() and \
+           len(ebody_vars) == 0:
+            ebody = self.env.formula_manager.ToReal(ebody)
+            ebody_type = rtype
+        # Check that ebody has the right type
+        if ebody_type != rtype:
+            raise PysmtSyntaxError("Typyng error in define-fun command. "
+                                   "The expected type is %s, but the detected "
+                                   "expression type is %s" % (rtype, ebody_type))
+
         #Discard parameters
         for x in bindings:
             self.cache.unbind(x)
