@@ -27,7 +27,7 @@ import pysmt.operators as op
 
 from pysmt.typing import BOOL, REAL, INT, BVType, ArrayType, STRING
 from pysmt.exceptions import PysmtTypeError
-
+from pysmt.constants import is_pysmt_integer, is_python_integer
 
 class SimpleTypeChecker(walkers.DagWalker):
 
@@ -56,6 +56,16 @@ class SimpleTypeChecker(walkers.DagWalker):
     @walkers.handles(op.AND, op.OR, op.NOT, op.IMPLIES, op.IFF)
     def walk_bool_to_bool(self, formula, args, **kwargs):
         #pylint: disable=unused-argument
+        return self.walk_type_to_type(formula, args, BOOL, BOOL)
+
+    @walkers.handles(op.PBLE, op.PBGE, op.PBEQ)
+    def walk_pb(self, formula, args, **kwargs):
+        assert formula is not None
+        for x in formula.pb_coeffs():
+            if isinstance(x, int) or (not x.is_int_constant()):
+                return None
+        if isinstance(formula.pb_k(), int) or (not formula.pb_k().is_int_constant()):
+            return None
         return self.walk_type_to_type(formula, args, BOOL, BOOL)
 
     def walk_real_to_bool(self, formula, args, **kwargs):

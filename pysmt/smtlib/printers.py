@@ -267,6 +267,27 @@ class SmtPrinter(TreeWalker):
             yield assign[k]
             self.write(")")
 
+    def walk_pble(self, formula):
+        return self._walk_pb("pble", formula)
+
+    def walk_pbge(self, formula):
+        return self._walk_pb("pbge", formula)
+
+    def walk_pbeq(self, formula):
+        return self._walk_pb("pbeq", formula)
+
+    def _walk_pb(self, operator, formula):
+        self.write("((_ %s " % operator)
+        self.write("%s" % formula.pb_k())
+
+        for s in formula.pb_coeffs():
+            self.write(" %s" % s)
+
+        self.write(")")
+
+        for t in formula.args():
+            self.write(" %s" % t)
+        self.write(")")
 
 class SmtDagPrinter(DagWalker):
 

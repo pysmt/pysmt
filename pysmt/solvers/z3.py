@@ -28,6 +28,7 @@ except ImportError:
 # (see https://github.com/Z3Prover/z3/issues/1769)
 z3.set_param('model.compact', False)
 
+import ctypes
 
 import pysmt.typing as types
 import pysmt.operators as op
@@ -897,6 +898,45 @@ class Z3Converter(Converter, DagWalker):
     walk_bv_ashr = make_walk_binary(z3.Z3_mk_bvashr)
     walk_exists = walk_quantifier
     walk_forall = walk_quantifier
+
+    def walk_pble(self, formula, args, **kwargs):
+        coeffslen = len(formula.pb_coeffs())
+        coeffsArray = ctypes.c_int * coeffslen
+        co_array = [i.constant_value() for i in formula.pb_coeffs()]
+        co_array_c = coeffsArray(*co_array)
+
+        pbk = formula.pb_k().constant_value()
+
+        pbargs, pbargs_sz = self._to_ast_array(args)
+        z3term = z3.Z3_mk_pble(self.ctx.ref(), pbargs_sz, pbargs, co_array_c, pbk)
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
+        return z3term
+
+    def walk_pbge(self, formula, args, **kwargs):
+        coeffslen = len(formula.pb_coeffs())
+        coeffsArray = ctypes.c_int * coeffslen
+        co_array = [i.constant_value() for i in formula.pb_coeffs()]
+        co_array_c = coeffsArray(*co_array)
+
+        pbk = formula.pb_k().constant_value()
+
+        pbargs, pbargs_sz = self._to_ast_array(args)
+        z3term = z3.Z3_mk_pbge(self.ctx.ref(), pbargs_sz, pbargs, co_array_c, pbk)
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
+        return z3term
+
+    def walk_pbeq(self, formula, args, **kwargs):
+        coeffslen = len(formula.pb_coeffs())
+        coeffsArray = ctypes.c_int * coeffslen
+        co_array = [i.constant_value() for i in formula.pb_coeffs()]
+        co_array_c = coeffsArray(*co_array)
+
+        pbk = formula.pb_k().constant_value()
+
+        pbargs, pbargs_sz = self._to_ast_array(args)
+        z3term = z3.Z3_mk_pbeq(self.ctx.ref(), pbargs_sz, pbargs, co_array_c, pbk)
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
+        return z3term
 
     def _type_to_z3(self, tp):
         """Convert a pySMT type into the corresponding Z3 sort."""

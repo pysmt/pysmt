@@ -44,9 +44,10 @@ from pysmt.operators import (FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF,
                              STR_TO_INT, INT_TO_STR,
                              STR_CHARAT,
                              ARRAY_SELECT, ARRAY_STORE, ARRAY_VALUE,
-                             ALGEBRAIC_CONSTANT)
+                             ALGEBRAIC_CONSTANT,
+                             PBLE, PBGE, PBEQ)
 
-from pysmt.operators import  (BOOL_OPERATORS, THEORY_OPERATORS,
+from pysmt.operators import  (BOOL_OPERATORS, PSEUDO_BOOLEAN, THEORY_OPERATORS,
                               BV_OPERATORS, IRA_OPERATORS, ARRAY_OPERATORS,
                               STR_OPERATORS,
                               RELATIONS, CONSTANTS)
@@ -328,6 +329,18 @@ class FNode(object):
     def is_lt(self):
         """Test whether the node is the LT (less than) relation."""
         return self.node_type() == LT
+
+    def is_pble(self):
+        """Test whether the node is the PbLe operator."""
+        return self.node_type() == PBLE
+
+    def is_pbge(self):
+        """Test whether the node is the PbGe operator."""
+        return self.node_type() == PBGE
+
+    def is_pbeq(self):
+        """Test whether the node is the PbEq operator."""
+        return self.node_type() == PBEQ
 
     def is_bool_op(self):
         """Test whether the node is a Boolean operator."""
@@ -681,6 +694,14 @@ class FNode(object):
         """Return the list of quantified variables."""
         assert self.is_quantifier()
         return self._content.payload
+
+    def pb_coeffs(self):
+        """Return the tuple of the coefficients"""
+        return self._content.payload[0]
+
+    def pb_k(self):
+        """Return constant k"""
+        return self._content.payload[1]
 
     def algebraic_approx_value(self, precision=10):
         value = self.constant_value()
