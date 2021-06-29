@@ -17,9 +17,10 @@
 #
 from pysmt.test import (TestCase, skipIfSolverNotAvailable,
                         skipIfNoUnsatCoreSolverForLogic, main)
-from pysmt.shortcuts import (get_unsat_core, And, Not, Symbol, UnsatCoreSolver,
-                             Solver, is_unsat)
-from pysmt.logics import QF_BOOL, QF_BV
+from pysmt.shortcuts import (get_unsat_core, And, Or, Not, Symbol, UnsatCoreSolver,
+                             Solver, is_unsat, Int, GT)
+from pysmt.typing import INT
+from pysmt.logics import QF_BOOL, QF_BV, QF_LIA
 from pysmt.exceptions import (SolverStatusError, SolverReturnedUnknownResultError,
                               SolverNotConfiguredForUnsatCoresError)
 from pysmt.test.examples import get_example_formulae
@@ -142,6 +143,24 @@ class TestUnsatCores(TestCase):
             s.add_assertion(Symbol("y"))
             with self.assertRaises(SolverStatusError):
                 s.get_unsat_core()
+
+
+    @skipIfNoUnsatCoreSolverForLogic(QF_LIA)
+    def test_named_unsat_core_with_assumptions(self):
+        i0 = Int(0)
+        a = GT(Symbol("a", INT), i0)
+        b = GT(Symbol("b", INT), i0)
+        c = GT(Symbol("c", INT), i0)
+
+        n_a = Not(a)
+        n_b = Not(b)
+        n_c = Not(c)
+        formulae = [Or(b, n_a), Or(c, n_a), Or(n_a, n_b, n_c)]
+        with UnsatCoreSolver(logic=QF_LIA, unsat_cores_mode="named") as solver:
+            for i, f in enumerate(formulae):
+                solver.add_assertion(f, named=f"f{i}")
+            sat = solver.solve([a])
+            self.assertFalse(sat)
 
 
     @skipIfSolverNotAvailable("msat")
