@@ -238,33 +238,30 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
     @clear_pending_pop
     def _solve(self, assumptions=None):
         res = None
+        bool_ass = []
+        other_ass = []
+        for x in assumptions if assumptions is not None else []:
+            if x.is_literal():
+                bool_ass.append(self.converter.convert(x))
+            else:
+                other_ass.append(x)
+        if len(other_ass) > 0:
+            self.push()
+            # this introduces new named assertions if named unsat cores.
+            self.add_assertion(self.mgr.And(other_ass))
 
         n_ass = self._named_assertions()
         if n_ass is not None and len(n_ass) > 0:
-            if assumptions is None:
-                assumptions = n_ass
-            else:
-                assumptions += n_ass
+            assert all(s.is_literal() for s in n_ass)
+            bool_ass.extend(self.converter.convert(x) for x in n_ass)
 
-        if assumptions is not None:
-            bool_ass = []
-            other_ass = []
-            for x in assumptions:
-                if x.is_literal():
-                    bool_ass.append(self.converter.convert(x))
-                else:
-                    other_ass.append(x)
+        if len(other_ass) > 0:
+            # we do this after getting the named_assertions because
+            # attribute assertions has annotation clear_pending_pop
+            self.pending_pop = True
 
-            if len(other_ass) > 0:
-                self.push()
-                self.add_assertion(self.mgr.And(other_ass))
-                self.pending_pop = True
-
-            if len(bool_ass) > 0:
-                res = mathsat.msat_solve_with_assumptions(self.msat_env(), bool_ass)
-            else:
-                res = mathsat.msat_solve(self.msat_env())
-
+        if len(bool_ass) > 0:
+            res = mathsat.msat_solve_with_assumptions(self.msat_env(), bool_ass)
         else:
             res = mathsat.msat_solve(self.msat_env())
 
