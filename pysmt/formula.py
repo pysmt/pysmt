@@ -75,6 +75,7 @@ class FormulaManager(object):
         self.false_formula = self.create_node(node_type=op.BOOL_CONSTANT,
                                               args=tuple(),
                                               payload=False)
+        self._normalizer = None
         return
 
     def _do_type_check_real(self, formula):
@@ -1093,8 +1094,9 @@ class FormulaManager(object):
               obtain f_b that is the formula f_a expressed on the
               FormulaManager b : f_b = b.normalize(f_a)
         """
-        normalizer = FormulaContextualizer(self.env)
-        return normalizer.walk(formula)
+        if self._normalizer is None:
+            self._normalizer = FormulaContextualizer(self.env)
+        return self._normalizer.walk(formula)
 
     def _polymorph_args_to_tuple(self, args):
         """ Helper function to return a tuple of arguments from args.
