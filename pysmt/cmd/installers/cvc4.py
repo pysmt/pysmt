@@ -26,8 +26,8 @@ class CVC4Installer(SolverInstaller):
 
     def __init__(self, install_dir, bindings_dir, solver_version,
                  mirror_link=None, git_version='HEAD'):
-        archive_name = "CVC4-%s.tar.gz" % git_version
-        native_link = "https://codeload.github.com/CVC4/CVC4/tar.gz/%s" % (git_version)
+        archive_name = "CVC4-archived-%s.tar.gz" % git_version
+        native_link = "https://codeload.github.com/CVC4/CVC4-archived/tar.gz/%s" % (git_version)
         SolverInstaller.__init__(self, install_dir=install_dir,
                                  bindings_dir=bindings_dir,
                                  solver_version=solver_version,
