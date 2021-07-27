@@ -341,9 +341,10 @@ class _TypeDecl(object):
         self.arity = arity
         self.custom_type = False
 
-    def __call__(self, *args):
-        env = pysmt.environment.get_env()
-        # Note: This uses the global type manager
+    def __call__(self, *args, env=None):
+        if env is None:
+            env = pysmt.environment.get_env()
+
         if not env.enable_infix_notation:
             raise PysmtModeError("Infix notation disabled. "
                                  "Use type_manager.get_type_instance instead.")
@@ -391,7 +392,7 @@ ARRAY_INT_INT = _ArrayType(INT,INT)
 
 class TypeManager(object):
 
-    def __init__(self, environment):
+    def __init__(self, env):
         self._bv_types = {}
         self._function_types = {}
         self._array_types = {}
@@ -403,7 +404,7 @@ class TypeManager(object):
         self._string = None
         #
         self.load_global_types()
-        self.environment = environment
+        self.env = env
 
     def load_global_types(self):
         """Register basic global types within the TypeManager."""
@@ -573,23 +574,31 @@ def assert_are_types(targets, func_name):
         assert_is_type(target, func_name)
 
 
-
-def BVType(width=32):
+def BVType(width=32, env=None):
     """Returns the BV type for the given width."""
-    mgr = pysmt.environment.get_env().type_manager
-    return mgr.BVType(width=width)
+    if env is None:
+        env = pysmt.environment.get_env()
+    return env.type_manager.BVType(width=width)
 
-def FunctionType(return_type, param_types):
+
+def FunctionType(return_type, param_types, env=None):
     """Returns Function Type with the given arguments."""
-    mgr = pysmt.environment.get_env().type_manager
-    return mgr.FunctionType(return_type=return_type, param_types=param_types)
+    if env is None:
+        env = pysmt.environment.get_env()
+    return env.type_manager.FunctionType(return_type=return_type,
+                                         param_types=param_types)
 
-def ArrayType(index_type, elem_type):
+
+def ArrayType(index_type, elem_type, env=None):
     """Returns the Array type with the given arguments."""
-    mgr = pysmt.environment.get_env().type_manager
-    return mgr.ArrayType(index_type=index_type, elem_type=elem_type)
+    if env is None:
+        env = pysmt.environment.get_env()
+    return env.type_manager.ArrayType(index_type=index_type,
+                                      elem_type=elem_type)
 
-def Type(name, arity=0):
+
+def Type(name, arity=0, env=None):
     """Returns the Type Declaration with the given name (sort declaration)."""
-    mgr = pysmt.environment.get_env().type_manager
-    return mgr.Type(name=name, arity=arity)
+    if env is None:
+        env = pysmt.environment.get_env()
+    return env.type_manager.Type(name=name, arity=arity)

@@ -42,22 +42,22 @@ def open_(fname):
     return open(fname)
 
 
-def get_formula(script_stream, environment=None):
+def get_formula(script_stream, env=None):
     """
     Returns the formula asserted at the end of the given script
 
     script_stream is a file descriptor.
     """
     mgr = None
-    if environment is not None:
-        mgr = environment.formula_manager
+    if env is not None:
+        mgr = env.formula_manager
 
-    parser = SmtLibParser(environment)
+    parser = SmtLibParser(env=env)
     script = parser.get_script(script_stream)
-    return script.get_last_formula(mgr)
+    return script.get_last_formula(mgr=mgr)
 
 
-def get_formula_strict(script_stream, environment=None):
+def get_formula_strict(script_stream, env=None):
     """Returns the formula defined in the SMTScript.
 
     This function assumes that only one formula is defined in the
@@ -66,21 +66,21 @@ def get_formula_strict(script_stream, environment=None):
     than once.
     """
     mgr = None
-    if environment is not None:
-        mgr = environment.formula_manager
+    if env is not None:
+        mgr = env.formula_manager
 
-    parser = SmtLibParser(environment)
+    parser = SmtLibParser(env=env)
     script = parser.get_script(script_stream)
-    return script.get_strict_formula(mgr)
+    return script.get_strict_formula(mgr=mgr)
 
 
-def get_formula_fname(script_fname, environment=None, strict=True):
+def get_formula_fname(script_fname, env=None, strict=True):
     """Returns the formula asserted at the end of the given script."""
     with open_(script_fname) as script:
         if strict:
-            return get_formula_strict(script, environment)
+            return get_formula_strict(script, env=env)
         else:
-            return get_formula(script, environment)
+            return get_formula(script, env=env)
 
 
 class SmtLibExecutionCache(object):
@@ -192,7 +192,7 @@ class Tokenizer(object):
                 t = self.consume_maybe()
             except StopIteration:
                 if msg:
-                    raise PysmtSyntaxError (msg, self.pos_info)
+                    raise PysmtSyntaxError(msg, self.pos_info)
                 else:
                     raise PysmtSyntaxError("Unexpected end of stream.",
                                            self.pos_info)
@@ -320,8 +320,8 @@ class SmtLibParser(object):
     for example with a SMT-Lib2-compliant solver
     """
 
-    def __init__(self, environment=None, interactive=False):
-        self.env = get_env() if environment is None else environment
+    def __init__(self, env=None, interactive=False):
+        self.env = get_env() if env is None else env
         self.interactive = interactive
 
         # Placeholders for fields filled by self._reset
@@ -480,7 +480,7 @@ class SmtLibParser(object):
         self.cache = SmtLibExecutionCache(self.env)
         self.logic = None
         mgr = self.env.formula_manager
-        self.cache.update({'false':mgr.FALSE(), 'true':mgr.TRUE()})
+        self.cache.update({'false': mgr.FALSE(), 'true': mgr.TRUE()})
 
     def _minus_or_uminus(self, *args):
         """Utility function that handles both unary and binary minus"""
@@ -1404,8 +1404,8 @@ class SmtLibParser(object):
 class SmtLib20Parser(SmtLibParser):
     """Parser for SMT-LIB 2.0."""
 
-    def __init__(self, environment=None, interactive=False):
-        SmtLibParser.__init__(self, environment, interactive)
+    def __init__(self, env=None, interactive=False):
+        SmtLibParser.__init__(self, env=env, interactive=interactive)
 
         # Remove commands that were introduced in SMT-LIB 2.5
         del self.commands["check-sat-assuming"]
@@ -1425,8 +1425,8 @@ class SmtLibZ3Parser(SmtLibParser):
     """
     Parses extended Z3 SmtLib Syntax
     """
-    def __init__(self, environment=None, interactive=False):
-        SmtLibParser.__init__(self, environment, interactive)
+    def __init__(self, env=None, interactive=False):
+        SmtLibParser.__init__(self, env=env, interactive=interactive)
 
         # Z3 prints Pow as "^"
         self.interpreted["^"] = self.interpreted["pow"]
@@ -1438,9 +1438,13 @@ class SmtLibZ3Parser(SmtLibParser):
         self.interpreted['bv2int'] = self._operator_adapter(mgr.BVToNatural)
 
     def _ext_rotate_left(self, x, y):
-        return self.env.formula_manager.BVRol(x, y.simplify().constant_value())
+        mgr = self.env.formula_manager
+        simplify = self.env.simplifier.simplify
+        return mgr.BVRol(x, simplify(y).constant_value())
 
     def _ext_rotate_right(self, x, y):
-        return self.env.formula_manager.BVRor(x, y.simplify().constant_value())
+        mgr = self.env.formula_manager
+        simplify = self.env.simplifier.simplify
+        return mgr.BVRor(x, simplify(y).constant_value())
 
 # EOC SmtLibZ3Parser

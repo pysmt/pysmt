@@ -331,8 +331,8 @@ class HRSerializer(object):
 
     PrinterClass = HRPrinter
 
-    def __init__(self, environment=None):
-        self.environment = environment
+    def __init__(self, env=None):
+        self.env = env
 
     def serialize(self, formula, printer=None, threshold=None):
         """Returns a string with the human-readable version of the formula.
@@ -342,7 +342,7 @@ class HRSerializer(object):
         """
         buf = StringIO()
         if printer is None:
-            p = self.PrinterClass(buf)
+            p = self.PrinterClass(buf, env=self.env)
         else:
             p = printer(buf)
 
@@ -366,8 +366,8 @@ class SmartPrinter(HRPrinter):
     subformulae, and provide better human-readable representation.
     """
 
-    def __init__(self, stream, subs=None):
-        HRPrinter.__init__(self, stream)
+    def __init__(self, stream, env=None, subs=None):
+        HRPrinter.__init__(self, stream, env=env)
         if subs is None:
             self.subs = {}
         else:
@@ -387,10 +387,10 @@ class SmartPrinter(HRPrinter):
 
 # EOC SmartPrinter
 
-def smart_serialize(formula, subs=None, threshold=None):
+def smart_serialize(formula, subs=None, threshold=None, env=None):
     """Creates and calls a SmartPrinter to perform smart serialization."""
     buf = StringIO()
-    p = SmartPrinter(buf, subs=subs)
+    p = SmartPrinter(buf, subs=subs, env=env)
     p.printer(formula, threshold=threshold)
     res = buf.getvalue()
     buf.close()

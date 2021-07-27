@@ -41,7 +41,7 @@ def check_sat_filter(log):
 
 
 class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
-    def serialize(self, outstream=None, printer=None, daggify=True):
+    def serialize(self, outstream=None, printer=None, daggify=True, env=None):
         """Serializes the SmtLibCommand into outstream using the given printer.
 
         Exactly one of outstream or printer must be specified. When
@@ -56,9 +56,9 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
             outstream = printer.stream
         elif (outstream is not None) and (printer is None):
             if daggify:
-                printer = SmtDagPrinter(outstream)
+                printer = SmtDagPrinter(outstream, env)
             else:
-                printer = SmtPrinter(outstream)
+                printer = SmtPrinter(outstream, env)
         else:
             assert (outstream is not None and printer is not None) or \
                    (outstream is None and printer is None), \
@@ -136,9 +136,9 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
         else:
             raise UnknownSmtLibCommandError(self.name)
 
-    def serialize_to_string(self, daggify=True):
+    def serialize_to_string(self, daggify=True, env=None):
         buf = StringIO()
-        self.serialize(buf, daggify=daggify)
+        self.serialize(buf, daggify=daggify, env=env)
         return buf.getvalue()
 
 
@@ -220,19 +220,19 @@ class SmtLibScript(object):
 
         return _And(stack)
 
-    def to_file(self, fname, daggify=True):
+    def to_file(self, fname, daggify=True, env=None):
         with open(fname, "w") as outstream:
-            self.serialize(outstream, daggify=daggify)
+            self.serialize(outstream, daggify=daggify, env=env)
 
-    def serialize(self, outstream, daggify=True):
+    def serialize(self, outstream, daggify=True, env=None):
         """Serializes the SmtLibScript expanding commands"""
         if daggify:
-            printer = SmtDagPrinter(outstream)
+            printer = SmtDagPrinter(outstream, env=env)
         else:
-            printer = SmtPrinter(outstream)
+            printer = SmtPrinter(outstream, env=env)
 
         for cmd in self.commands:
-            cmd.serialize(printer=printer)
+            cmd.serialize(printer=printer, env=env)
             outstream.write("\n")
 
     def __len__(self):
@@ -245,12 +245,14 @@ class SmtLibScript(object):
         return "\n".join((str(cmd) for cmd in self.commands))
 
 
-def smtlibscript_from_formula(formula, logic=None):
+def smtlibscript_from_formula(formula, logic=None, env=None):
     script = SmtLibScript()
+    if env is None:
+        env = get_env()
 
     if logic is None:
         # Get the simplest SmtLib logic that contains the formula
-        f_logic = get_logic(formula)
+        f_logic = get_logic(formula, env=env)
 
         smt_logic = None
         try:
@@ -275,11 +277,11 @@ def smtlibscript_from_formula(formula, logic=None):
                args=[smt_logic])
 
     # Declare all types
-    types = get_env().typeso.get_types(formula, custom_only=True)
+    types = env.typeso.get_types(formula, custom_only=True)
     for type_ in types:
         script.add(name=smtcmd.DECLARE_SORT, args=[type_.decl])
 
-    deps = formula.get_free_variables()
+    deps = env.fvo.get_free_variables(formula)
     # Declare all variables
     for symbol in deps:
         assert symbol.is_symbol()
