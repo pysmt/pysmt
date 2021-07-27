@@ -32,8 +32,8 @@ class CNFizer(DagWalker):
     TRUE_CNF = frozenset()
     FALSE_CNF = frozenset([frozenset()])
 
-    def __init__(self, environment=None):
-        DagWalker.__init__(self, environment)
+    def __init__(self, env=None):
+        DagWalker.__init__(self, env=env)
 
         self.mgr = self.env.formula_manager
         self._introduced_variables = {}
@@ -85,7 +85,7 @@ class CNFizer(DagWalker):
     def serialize(self, _cnf):
         clauses = []
         for clause in _cnf:
-            clauses +=[" { " + " ".join(str(lit) for lit in clause) + "} "]
+            clauses += [" { " + " ".join(str(lit) for lit in clause) + "} "]
         res = ["{"] + clauses + ["}"]
         return "".join(res)
 
@@ -97,9 +97,10 @@ class CNFizer(DagWalker):
         if len(args) == 1:
             return args[0]
 
+        simplify = self.env.simplifier.simplify
         k = self._key_var(formula)
-        _cnf = [frozenset([k] + [self.mgr.Not(a).simplify() for a,_ in args])]
-        for a,c in args:
+        _cnf = [frozenset([k] + [simplify(self.mgr.Not(a)) for a, _ in args])]
+        for a, c in args:
             _cnf.append(frozenset([a, self.mgr.Not(k)]))
             for clause in c:
                 _cnf.append(clause)
@@ -110,7 +111,7 @@ class CNFizer(DagWalker):
             return args[0]
         k = self._key_var(formula)
         _cnf = [frozenset([self.mgr.Not(k)] + [a for a,_ in args])]
-        for a,c in args:
+        for a, c in args:
             _cnf.append(frozenset([k, self.mgr.Not(a)]))
             for clause in c:
                 _cnf.append(clause)
@@ -123,19 +124,21 @@ class CNFizer(DagWalker):
         elif a.is_false():
             return self.mgr.TRUE(), CNFizer.TRUE_CNF
         else:
+            simplify = self.env.simplifier.simplify
             k = self._key_var(formula)
             return k, _cnf | frozenset([frozenset([self.mgr.Not(k),
-                                                  self.mgr.Not(a).simplify()]),
+                                                   simplify(self.mgr.Not(a))]),
                                        frozenset([k, a])])
 
     def walk_implies(self, formula,  args, **kwargs):
         a, cnf_a = args[0]
         b, cnf_b = args[1]
 
+        simplify = self.env.simplifier.simplify
         k = self._key_var(formula)
-        not_a = self.mgr.Not(a).simplify()
-        not_b = self.mgr.Not(b).simplify()
-        not_k = self.mgr.Not(k)
+        not_a = simplify(self.mgr.Not(a))
+        not_b = simplify(self.mgr.Not(b))
+        not_k = simplify(self.mgr.Not(k))
 
         return k, (cnf_a | cnf_b | frozenset([frozenset([not_a, b, not_k]),
                                               frozenset([a, k]),
@@ -144,11 +147,11 @@ class CNFizer(DagWalker):
     def walk_iff(self, formula, args, **kwargs):
         a, cnf_a = args[0]
         b, cnf_b = args[1]
-
+        simplify = self.env.simplifier.simplify
         k = self._key_var(formula)
-        not_a = self.mgr.Not(a).simplify()
-        not_b = self.mgr.Not(b).simplify()
-        not_k = self.mgr.Not(k)
+        not_a = simplify(self.mgr.Not(a))
+        not_b = simplify(self.mgr.Not(b))
+        not_k = simplify(self.mgr.Not(k))
 
         return k, (cnf_a | cnf_b | frozenset([frozenset([not_a, not_b, k]),
                                               frozenset([not_a, b, not_k]),
@@ -172,11 +175,12 @@ class CNFizer(DagWalker):
         if any(a == CNFizer.THEORY_PLACEHOLDER for a in args):
             return CNFizer.THEORY_PLACEHOLDER
         else:
-            (i,cnf_i),(t,cnf_t),(e,cnf_e) = args
+            (i, cnf_i), (t, cnf_t), (e, cnf_e) = args
+            simplify = self.env.simplifier.simplify
             k = self._key_var(formula)
-            not_i = self.mgr.Not(i).simplify()
-            not_t = self.mgr.Not(t).simplify()
-            not_e = self.mgr.Not(e).simplify()
+            not_i = simplify(self.mgr.Not(i))
+            not_t = simplify(self.mgr.Not(t))
+            not_e = simplify(self.mgr.Not(e))
             not_k = self.mgr.Not(k)
 
             return k, (cnf_i | cnf_t | cnf_e |
@@ -233,8 +237,8 @@ class NNFizer(DagWalker):
 
     """
 
-    def __init__(self, environment=None):
-        DagWalker.__init__(self, env=environment)
+    def __init__(self, env=None):
+        DagWalker.__init__(self, env=env)
         self.mgr = self.env.formula_manager
 
     def convert(self, formula):
@@ -414,6 +418,7 @@ class PrenexNormalizer(DagWalker):
     def walk_conj_disj(self, formula, args, **kwargs):
         #pylint: disable=unused-argument
 
+        substitute = self.env.substituter.substitute
         # Hold the final result
         quantifiers = []
         matrix = []
@@ -422,7 +427,7 @@ class PrenexNormalizer(DagWalker):
         # matrix. If we find a quantifier over a variable in this set
         # we need to alpha-rename before adding the quantifier to the
         # final list and accumulate the matrix.
-        reserved = formula.get_free_variables()
+        reserved = self.env.fvo.get_free_variables(formula)
 
         # We iterate to each argument, each could have a sequence of
         # quantifiers that we need to merge
@@ -435,7 +440,7 @@ class PrenexNormalizer(DagWalker):
                     # we need alpha-renaming: prepare the substitution map
                     sub = dict((v,self.mgr.FreshSymbol(v.symbol_type()))
                                for v in needs_rename)
-                    sub_matrix = sub_matrix.substitute(sub)
+                    sub_matrix = substitute(sub_matrix, sub)
 
                     # The new variables for this quantifiers will be
                     # its old variables, minus the one needing
@@ -538,8 +543,8 @@ class PrenexNormalizer(DagWalker):
 class AIGer(DagWalker):
     """Converts a formula into an And-Inverted-Graph."""
 
-    def __init__(self, environment=None):
-        DagWalker.__init__(self, env=environment)
+    def __init__(self, env=None):
+        DagWalker.__init__(self, env=env)
         self.mgr = self.env.formula_manager
 
     def convert(self, formula):
@@ -675,8 +680,8 @@ class TimesDistributor(IdentityDagWalker):
 
 
 class Ackermannizer(IdentityDagWalker):
-    def __init__(self, environment=None):
-        IdentityDagWalker.__init__(self, environment)
+    def __init__(self, env=None):
+        IdentityDagWalker.__init__(self, env=env)
         # funs_to_args keeps for every function symbol f,
         # a set of lists of arguments.
         # if f(g(x),y) and f(x,g(y)) occur in a formula, then we
@@ -823,33 +828,33 @@ class DisjointSet(object):
 
 
 
-def nnf(formula, environment=None):
+def nnf(formula, env=None):
     """Converts the given formula in NNF"""
-    nnfizer = NNFizer(environment)
+    nnfizer = NNFizer(env=env)
     return nnfizer.convert(formula)
 
 
-def cnf(formula, environment=None):
+def cnf(formula, env=None):
     """Converts the given formula in CNF represented as a formula"""
-    cnfizer = CNFizer(environment)
+    cnfizer = CNFizer(env=env)
     return cnfizer.convert_as_formula(formula)
 
 
-def cnf_as_set(formula, environment=None):
+def cnf_as_set(formula, env=None):
     """Converts the given formula in CNF represented as a set of sets"""
-    cnfizer = CNFizer(environment)
+    cnfizer = CNFizer(env=env)
     return cnfizer.convert(formula)
 
 
-def prenex_normal_form(formula, environment=None):
+def prenex_normal_form(formula, env=None):
     """Converts the given formula in Prenex Normal Form"""
-    normalizer = PrenexNormalizer(environment)
+    normalizer = PrenexNormalizer(env=env)
     return normalizer.normalize(formula)
 
 
-def aig(formula, environment=None):
+def aig(formula, env=None):
     """Converts the given formula in AIG"""
-    aiger = AIGer(environment)
+    aiger = AIGer(env=env)
     return aiger.convert(formula)
 
 
@@ -900,6 +905,7 @@ def propagate_toplevel(formula, env=None, do_simplify=True, preserve_equivalence
         import pysmt.environment
         env = pysmt.environment.get_env()
     mgr = env.formula_manager
+    simplify = env.simplifier.simplfy if do_simplify else lambda x: x
 
     # comparison function for ranking
     def compare(a, b):
@@ -940,7 +946,7 @@ def propagate_toplevel(formula, env=None, do_simplify=True, preserve_equivalence
             else:
                 sigma[k] = v
 
-    res = formula.substitute(sigma)
+    res = env.substituter.substitute(formula, sigma)
     if preserve_equivalence:
         res = mgr.And(res, mgr.And([mgr.Equals(k, sigma[k]) for k in sigma]))
-    return res.simplify() if do_simplify else res
+    return simplify(res)
