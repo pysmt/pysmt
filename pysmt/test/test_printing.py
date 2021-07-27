@@ -167,7 +167,7 @@ class TestPrinting(TestCase):
         self.assertTrue(len(short_f_str) < len(long_f_str))
 
     def test_examples(self):
-        for s, f, logic in get_str_example_formulae(environment=None):
+        for s, f, logic in get_str_example_formulae(env=None):
             str_f = f.serialize()
             self.assertTrue(len(str_f) >= 1, str_f)
             self.assertEqual(str_f, s)

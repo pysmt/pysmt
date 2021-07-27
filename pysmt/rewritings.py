@@ -905,7 +905,7 @@ def propagate_toplevel(formula, env=None, do_simplify=True, preserve_equivalence
         import pysmt.environment
         env = pysmt.environment.get_env()
     mgr = env.formula_manager
-    simplify = env.simplifier.simplfy if do_simplify else lambda x: x
+    simplify = env.simplifier.simplify if do_simplify else lambda x: x
 
     # comparison function for ranking
     def compare(a, b):

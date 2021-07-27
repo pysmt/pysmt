@@ -85,7 +85,7 @@ class ShannonQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
 
     def _expand(self, formula, args):
         """Returns the list of elements from the Shannon expansion."""
-        substitute = self.substituter.substitute
+        substitute = self.env.substituter.substitute
         qvars = formula.quantifier_vars()
         self._assert_vars_boolean(qvars)
         res = []
