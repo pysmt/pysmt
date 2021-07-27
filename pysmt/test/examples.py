@@ -51,13 +51,13 @@ SExample = namedtuple('SimpleExample',
                       ['expr', 'is_valid', 'is_sat', 'logic'])
 
 
-def get_full_example_formulae(environment=None):
+def get_full_example_formulae(env=None):
     """Return a list of Examples using the given environment."""
 
-    if environment is None:
-        environment = get_env()
+    if env is None:
+        env = get_env()
 
-    with environment:
+    with env:
         x = Symbol("x", BOOL)
         y = Symbol("y", BOOL)
         p = Symbol("p", INT)
@@ -84,7 +84,7 @@ def get_full_example_formulae(environment=None):
         bv16 = Symbol("bv16", BV16)
 
         unary_sort = Type("S", 1)
-        tmgr = environment.type_manager
+        tmgr = env.type_manager
         unary_sort_bool = tmgr.get_type_instance(unary_sort, BOOL)
         usb1 = Symbol("usb1", unary_sort_bool)
 
@@ -989,13 +989,13 @@ def get_full_example_formulae(environment=None):
     return result
 
 
-def get_example_formulae(environment=None):
+def get_example_formulae(env=None):
     """Generates a stream of SExample using the given environment."""
-    for (hr, expr, is_valid, is_sat, logic) in get_full_example_formulae(environment):
+    for (hr, expr, is_valid, is_sat, logic) in get_full_example_formulae(env):
         yield SExample(expr, is_valid, is_sat, logic)
 
 
-def get_str_example_formulae(environment=None):
+def get_str_example_formulae(env=None):
     """Returns a triple from each Example."""
-    for (hr, expr, is_valid, is_sat, logic) in get_full_example_formulae(environment):
+    for (hr, expr, is_valid, is_sat, logic) in get_full_example_formulae(env):
         yield (hr, expr, logic)

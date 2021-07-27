@@ -976,7 +976,7 @@ def Portfolio(solvers_set, logic, **options):
     import pysmt.solvers.portfolio as pf
     return pf.Portfolio(solvers_set=solvers_set,
                         logic=logic,
-                        environment=get_env(),
+                        env=get_env(),
                         **options)
 
 
@@ -1181,7 +1181,7 @@ def sequence_interpolant(formulas, solver_name=None, logic=None):
                                             logic=logic)
 
 
-def read_configuration(config_filename, environment=None):
+def read_configuration(config_filename, env=None):
     """Reads the pysmt configuration of the given file path and applies
     it on the specified environment. If no environment is specified,
     the top-level environment will be used.
@@ -1189,20 +1189,20 @@ def read_configuration(config_filename, environment=None):
     :param config_filename: Specify the name of the config file
     :param environment: Specify the environment
     """
-    if environment is None:
-        environment = get_env()
-    config.configure_environment(config_filename, environment)
+    if env is None:
+        env = get_env()
+    config.configure_environment(config_filename, env)
 
 
-def write_configuration(config_filename, environment=None):
+def write_configuration(config_filename, env=None):
     """Dumps the current pysmt configuration to the specified file path
 
     :param config_filename: Specify the name of the config file
     :param environment: Specify the environment
     """
-    if environment is None:
-        environment = get_env()
-    config.write_environment_configuration(config_filename, environment)
+    if env is None:
+        env = get_env()
+    config.write_environment_configuration(config_filename, env)
 
 
 def read_smtlib(fname):
