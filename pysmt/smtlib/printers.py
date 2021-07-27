@@ -257,7 +257,8 @@ class SmtPrinter(TreeWalker):
         for _ in range(len(assign)):
             self.write("(store ")
 
-        self.write("((as const %s) " % formula.get_type().as_smtlib(False))
+        self.write("((as const %s) " %
+                   self.env.stc.get_type(formula).as_smtlib(False))
         yield formula.array_value_default()
         self.write(")")
 
