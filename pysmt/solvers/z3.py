@@ -71,10 +71,10 @@ def askey(n):
 
 class Z3Model(Model):
 
-    def __init__(self, environment, z3_model):
-        Model.__init__(self, environment)
+    def __init__(self, env, z3_model):
+        Model.__init__(self, env)
         self.z3_model = z3_model
-        self.converter = Z3Converter(environment, z3_model.ctx)
+        self.converter = Z3Converter(env, z3_model.ctx)
 
     def get_value(self, formula, model_completion=True):
         titem = self.converter.convert(formula)
@@ -140,9 +140,9 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
     LOGICS = PYSMT_LOGICS - set(x for x in PYSMT_LOGICS if x.theory.strings)
     OptionsClass = Z3Options
 
-    def __init__(self, environment, logic, **options):
+    def __init__(self, env, logic, **options):
         IncrementalTrackingSolver.__init__(self,
-                                           environment=environment,
+                                           env=env,
                                            logic=logic,
                                            **options)
         try:
@@ -155,8 +155,8 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
             self.z3 = z3.Solver()
         self.options(self)
         self.declarations = set()
-        self.converter = Z3Converter(environment, z3_ctx=self.z3.ctx)
-        self.mgr = environment.formula_manager
+        self.converter = Z3Converter(env, z3_ctx=self.z3.ctx)
+        self.mgr = env.formula_manager
 
         self._name_cnt = 0
         return
@@ -187,7 +187,7 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
             return formula
 
     def get_model(self):
-        return Z3Model(self.environment, self.z3.model())
+        return Z3Model(self.env, self.z3.model())
 
     @clear_pending_pop
     def _solve(self, assumptions=None):
@@ -280,7 +280,7 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
         z3_res = self.z3.model().eval(titem, model_completion=True)
         res = self.converter.back(z3_res, self.z3.model())
         if not res.is_constant():
-            return res.simplify()
+            return self.env.simplifier.simplify(res)
         return res
 
     def _exit(self):
@@ -295,10 +295,10 @@ BITVECREF_SET = op.BV_OPERATORS
 
 class Z3Converter(Converter, DagWalker):
 
-    def __init__(self, environment, z3_ctx):
-        DagWalker.__init__(self, environment)
-        self.mgr = environment.formula_manager
-        self._get_type = environment.stc.get_type
+    def __init__(self, env, z3_ctx):
+        DagWalker.__init__(self, env)
+        self.mgr = env.formula_manager
+        self._get_type = env.stc.get_type
         self._back_memoization = {}
         self.ctx = z3_ctx
 
@@ -932,14 +932,14 @@ class Z3QuantifierEliminator(QuantifierEliminator):
 
     LOGICS = [LIA, LRA]
 
-    def __init__(self, environment, logic=None):
+    def __init__(self, env, logic=None):
         QuantifierEliminator.__init__(self)
-        self.environment = environment
+        self.env = env
         self.logic = logic
-        self.converter = Z3Converter(environment, z3.main_ctx())
+        self.converter = Z3Converter(env, z3.main_ctx())
 
     def eliminate_quantifiers(self, formula):
-        logic = get_logic(formula, self.environment)
+        logic = get_logic(formula, self.env)
         if not logic <= LRA and not logic <= LIA:
             raise PysmtValueError("Z3 quantifier elimination only "\
                                   "supports LRA or LIA without combination."\

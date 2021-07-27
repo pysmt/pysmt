@@ -32,11 +32,11 @@ class Solver(object):
     # Class defining options for the Solver
     OptionsClass = SolverOptions
 
-    def __init__(self, environment, logic, **options):
+    def __init__(self, env, logic, **options):
         if logic is None:
             raise PysmtValueError("Cannot provide 'None' as logic")
 
-        self.environment = environment
+        self.env = env
         self.pending_pop = False
         self.logic = logic
         self.options = self.OptionsClass(**options)
@@ -93,7 +93,7 @@ class Solver(object):
         :returns: Whether formula is satisfiable
         :rtype: bool
         """
-        assert formula in self.environment.formula_manager, \
+        assert formula in self.env.formula_manager, \
                "Formula does not belong to the current Formula Manager"
 
         if not self.options.incremental:
@@ -134,7 +134,7 @@ class Solver(object):
         :returns: Whether formula is valid
         :rtype: bool
         """
-        Not = self.environment.formula_manager.Not
+        Not = self.env.formula_manager.Not
         return not self.is_sat(Not(formula))
 
     def is_unsat(self, formula):
@@ -265,7 +265,7 @@ class Solver(object):
 
         Raises TypeError.
         """
-        if formula.get_type() != BOOL:
+        if self.env.stc.get_type(formula) != BOOL:
             raise PysmtTypeError("Argument must be boolean.")
 
 
@@ -291,9 +291,9 @@ class IncrementalTrackingSolver(Solver):
     self.assertions list.
     """
 
-    def __init__(self, environment, logic, **options):
+    def __init__(self, env, logic, **options):
         """See py:func:`Solver.__init__()`."""
-        Solver.__init__(self, environment, logic, **options)
+        Solver.__init__(self, env, logic, **options)
 
         self._last_result = None
         self._last_command = None
@@ -431,8 +431,8 @@ class Model(object):
     Models, that are solver dependent or by the EagerModel class.
     """
 
-    def __init__(self, environment):
-        self.environment = environment
+    def __init__(self, env):
+        self.env = env
         self._converter = None
 
     def get_value(self, formula, model_completion=True):
@@ -485,20 +485,22 @@ class Model(object):
         The optional solver argument is used to complete partial
         models.
         """
-
-        subs = self.get_values(formula.get_free_variables())
-        simp = formula.substitute(subs).simplify()
+        get_free_vars = self.env.fvo.get_free_variables
+        substitute = self.env.substituter.substitute
+        simplify = self.env.simplifier.simplify
+        subs = self.get_values(get_free_vars(formula))
+        simp = simplify(substitute(formula, subs))
         if simp.is_true():
             return True
         if simp.is_false():
             return False
 
-        free_vars = simp.get_free_variables()
-        if  len(free_vars) > 0:
+        free_vars = get_free_vars(simp)
+        if len(free_vars) > 0:
             # Partial model
             return False
 
-        if self.environment.enable_div_by_0 and solver is not None:
+        if self.env.enable_div_by_0 and solver is not None:
             # Models might not be simplified to a constant value
             # if there is a division by zero. We find the
             # division(s) and ask the solver for a replacement
@@ -514,7 +516,7 @@ class Model(object):
                 stack += x.args()
 
             subs = self.get_values(div_0)
-            simp = simp.substitute(subs).simplify()
+            simp = simplify(substitute(simp, subs))
             return simp.is_true()
         return False
 

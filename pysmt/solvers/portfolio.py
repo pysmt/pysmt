@@ -51,7 +51,7 @@ class Portfolio(IncrementalTrackingSolver):
     """Create a portfolio instance of multiple Solvers."""
     OptionsClass = PortfolioOptions
 
-    def __init__(self, solvers_set, environment, logic, **options):
+    def __init__(self, solvers_set, env, logic, **options):
         """Creates a portfolio using the specified solvers.
 
         Solver_set is an iterable. Elements of solver_set can be
@@ -71,14 +71,14 @@ class Portfolio(IncrementalTrackingSolver):
         One process will be used for each of the solvers.
         """
         IncrementalTrackingSolver.__init__(self,
-                                           environment=environment,
+                                           env=env,
                                            logic=logic,
                                            **options)
         self.solvers = []
         self._process_solver_set(solvers_set)
         # Check that the names are valid ?
-        all_solvers = set(self.environment.factory.all_solvers(logic=logic))
-        not_found = set(s for s,_ in self.solvers) - all_solvers
+        all_solvers = set(self.env.factory.all_solvers(logic=logic))
+        not_found = set(s for s, _ in self.solvers) - all_solvers
         if len(not_found) != 0:
             raise ValueError("Cannot find solvers %s" % not_found)
 
@@ -130,7 +130,7 @@ class Portfolio(IncrementalTrackingSolver):
         # instead of in one shot!)
         self._close_existing()
 
-        formula = self.environment.formula_manager.And(self.assertions)
+        formula = self.env.formula_manager.And(self.assertions)
         _debug("Creating Queue and Pipe")
         signaling_queue = Queue()
         child_ctrl_pipe, my_ctrl_pipe = Pipe()
@@ -178,7 +178,7 @@ class Portfolio(IncrementalTrackingSolver):
 
         self._ctrl_pipe.send(("get_value", formula))
         res = self._ctrl_pipe.recv()
-        return self.environment.formula_manager.normalize(res)
+        return self.env.formula_manager.normalize(res)
 
     def get_model(self):
         from pysmt.solvers.eager import EagerModel
@@ -188,7 +188,7 @@ class Portfolio(IncrementalTrackingSolver):
 
         self._ctrl_pipe.send("get_model")
         # Contextualize the result within the calling process
-        _normalize = self.environment.formula_manager.normalize
+        _normalize = self.env.formula_manager.normalize
         model_list = self._ctrl_pipe.recv()
         model = {}
         for k,v in model_list:
@@ -212,7 +212,8 @@ class Portfolio(IncrementalTrackingSolver):
 # EOC Portfolio
 
 # Function to pass to the solver
-def _run_solver(idx, solver, logic, options, formula, signaling_queue, ctrl_pipe):
+def _run_solver(idx, solver, logic, options, formula, signaling_queue, ctrl_pipe,
+                env=None):
     """Function used by the child Process to handle Portfolio requests.
 
     solver  : name of the solver
@@ -221,9 +222,11 @@ def _run_solver(idx, solver, logic, options, formula, signaling_queue, ctrl_pipe
     signaling_queue: queue in which to write to indicate completion of solve
     ctrl_pipe: Pipe to communicate with parent process *after* solve
     """
-    from pysmt.environment import get_env
+    if env is None:
+        from pysmt.environment import get_env
+        env = get_env()
 
-    Solver = get_env().factory.Solver
+    Solver = env.factory.Solver
     with Solver(name=solver, logic=logic, **options) as s:
         s.add_assertion(formula)
         try:
@@ -249,7 +252,7 @@ def _run_solver(idx, solver, logic, options, formula, signaling_queue, ctrl_pipe
                 model = list(s.get_model())
                 ctrl_pipe.send(model)
             elif cmd == "get_value":
-                args = get_env().formula_manager.normalize(args)
+                args = env.formula_manager.normalize(args)
                 ctrl_pipe.send(s.get_value(args))
             else:
                 raise ValueError("Unknown command '%s'" % cmd)

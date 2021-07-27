@@ -29,24 +29,26 @@ class EagerModel(Model):
     define a model.
     """
 
-    def __init__(self, assignment, environment=None):
-        if environment is None:
-            environment = get_env()
-        Model.__init__(self, environment)
-        self.environment = environment
+    def __init__(self, assignment, env=None):
+        if env is None:
+            env = get_env()
+        Model.__init__(self, env)
+        self.env = env
         self.assignment = dict(assignment)
         # Create a copy of the assignments to memoize completions
         self.completed_assignment = dict(self.assignment)
 
     def get_value(self, formula, model_completion=True):
+        substitute = self.env.substituter.substitute
+        simplify = self.env.simplifier.simplify
+        get_free_vars = self.env.fvo.get_free_variables
+        substs = self.assignment
         if model_completion:
-            syms = formula.get_free_variables()
+            syms = get_free_vars(formula)
             self._complete_model(syms)
-            r = formula.substitute(self.completed_assignment)
-        else:
-            r = formula.substitute(self.assignment)
+            substs = self.completed_assignment
 
-        res = r.simplify()
+        res = simplify(substitute(formula, substs))
         if not res.is_constant():
             raise PysmtTypeError("Was expecting a constant but got %s" % res)
         return res
@@ -54,7 +56,7 @@ class EagerModel(Model):
     def _complete_model(self, symbols):
         undefined_symbols = (s for s in symbols
                              if s not in self.completed_assignment)
-        mgr = self.environment.formula_manager
+        mgr = self.env.formula_manager
 
         for s in undefined_symbols:
             if not s.is_symbol():

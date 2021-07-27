@@ -174,16 +174,16 @@ class PicosatSolver(Solver):
     LOGICS = [ pysmt.logics.QF_BOOL ]
     OptionsClass = PicosatOptions
 
-    def __init__(self, environment, logic, **options):
+    def __init__(self, env, logic, **options):
         Solver.__init__(self,
-                        environment=environment,
+                        env=env,
                         logic=logic,
                         **options)
 
-        self.mgr = environment.formula_manager
+        self.mgr = env.formula_manager
         self.pico = picosat.picosat_init()
         self.converter = None
-        self.cnfizer = CNFizer(environment=environment)
+        self.cnfizer = CNFizer(env=env)
         self.latest_model = None
         self._var_ids = {}
         self._log_file_handler = None
@@ -227,7 +227,7 @@ class PicosatSolver(Solver):
     @catch_conversion_error
     def add_assertion(self, formula, named=None):
         # First, we get rid of True/False constants
-        formula = formula.simplify()
+        formula = self.env.simplifier.simplify(formula)
         if formula.is_false():
             picosat.picosat_add(self.pico, 0)
         elif not formula.is_true():
@@ -287,7 +287,7 @@ class PicosatSolver(Solver):
             assignment[var] = value
 
         return EagerModel(assignment=assignment,
-                          environment=self.environment)
+                          env=self.env)
 
     @clear_pending_pop
     def push(self, levels=1):

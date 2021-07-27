@@ -134,9 +134,9 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
                  if not l.theory.linear or l.theory.strings)
     OptionsClass = YicesOptions
 
-    def __init__(self, environment, logic, **options):
+    def __init__(self, env, logic, **options):
         Solver.__init__(self,
-                        environment=environment,
+                        env=env,
                         logic=logic,
                         **options)
 
@@ -149,8 +149,8 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         self.yices = yicespy.yices_new_context(self.yices_config)
         self.options.set_params(self)
         yicespy.yices_free_config(self.yices_config)
-        self.converter = YicesConverter(environment)
-        self.mgr = environment.formula_manager
+        self.converter = YicesConverter(env)
+        self.mgr = env.formula_manager
         self.model = None
         self.failed_pushes = 0
         return
@@ -182,7 +182,7 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         # defined symbols have a type that is compatible with this
         # solver.  In this case, the problem occurs with Arrays and
         # Strings that are not supported.
-        for s in self.environment.formula_manager.get_all_symbols():
+        for s in self.env.formula_manager.get_all_symbols():
             if s.is_symbol() and s.symbol_type().is_string_type():
                 continue
             if s.is_term():
@@ -190,7 +190,7 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
                 if s.symbol_type().is_custom_type(): continue
                 v = self.get_value(s)
                 assignment[s] = v
-        return EagerModel(assignment=assignment, environment=self.environment)
+        return EagerModel(assignment=assignment, env=self.env)
 
     @clear_pending_pop
     def solve(self, assumptions=None):
@@ -259,7 +259,7 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         self._assert_no_function_type(item)
 
         titem = self.converter.convert(item)
-        ty = self.environment.stc.get_type(item)
+        ty = self.env.stc.get_type(item)
         if ty.is_bool_type():
             status, res = yicespy.yices_get_bool_value(self.model, titem)
             self._check_error(status)
@@ -288,11 +288,11 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
 class YicesConverter(Converter, DagWalker):
 
-    def __init__(self, environment):
-        DagWalker.__init__(self, environment)
+    def __init__(self, env):
+        DagWalker.__init__(self, env)
         self.backconversion = {}
-        self.mgr = environment.formula_manager
-        self._get_type = environment.stc.get_type
+        self.mgr = env.formula_manager
+        self._get_type = env.stc.get_type
 
         # Maps a Symbol into the corresponding internal yices instance
         self.symbol_to_decl = {}
