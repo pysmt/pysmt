@@ -39,7 +39,7 @@ from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               SolverNotConfiguredForUnsatCoresError,
                               SolverStatusError,
                               InternalSolverError,
-                              PysmtValueError, PysmtTypeError,
+                              NonLinearError, PysmtValueError, PysmtTypeError,
                               ConvertExpressionError)
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
 from pysmt.solvers.qelim import QuantifierEliminator
@@ -174,8 +174,8 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
                      SmtLibBasicSolver, SmtLibIgnoreMixin):
 
     LOGICS = PYSMT_QF_LOGICS -\
-             set(l for l in PYSMT_QF_LOGICS \
-                 if l.theory.strings)
+             set(l for l in PYSMT_QF_LOGICS
+                 if not l.theory.linear or l.theory.strings)
 
     OptionsClass = MathSATOptions
 
@@ -985,28 +985,22 @@ class MSatConverter(Converter, DagWalker):
 
     def walk_times(self, formula, args, **kwargs):
         res = args[0]
+        nl_count = 0 if mathsat.msat_term_is_number(self.msat_env(), res) else 1
         for x in args[1:]:
-            res = mathsat.msat_make_times(self.msat_env(), res, x)
-        return res
-
-    def walk_pow(self, formula, args, **kwargs):
-        n = to_python_integer(formula.args()[1].constant_value())
-        if n == 0:
-            return mathsat.msat_make_number(self.msat_env(), "1")
-        is_neg = (n < 0)
-        n = abs(n)
-        res = args[0]
-        for i in range(2, n):
-            res = mathsat.msat_make_times(self.msat_env(), res, args[0])
-        if is_neg:
-            one = mathsat.msat_make_number(self.msat_env(), "1")
-            res = mathsat.msat_make_divide(self.msat_env(), one, res)
-        return res
+            if not mathsat.msat_term_is_number(self.msat_env(), x):
+                nl_count += 1
+            if nl_count >= 2:
+                raise NonLinearError(formula)
+            else:
+                res = mathsat.msat_make_times(self.msat_env(), res, x)
 
     def walk_div(self, formula, args, **kwargs):
         menv = self.msat_env()
         num = args[0]
         den = args[1]
+        if not mathsat.msat_term_is_number(self.msat_env(), den):
+            raise NonLinearError(formula)
+
         div = mathsat.msat_make_divide(menv, num, den)
         if self.env.stc.get_type(formula).is_real_type():
             return div
