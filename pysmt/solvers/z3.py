@@ -844,9 +844,10 @@ class Z3Converter(Converter, DagWalker):
             return types.REAL
         elif sort.kind() == z3.Z3_ARRAY_SORT:
             return types.ArrayType(self._z3_to_type(sort.domain()),
-                                   self._z3_to_type(sort.range()))
+                                   self._z3_to_type(sort.range()),
+                                   env=self.env)
         elif sort.kind() == z3.Z3_BV_SORT:
-            return types.BVType(sort.size())
+            return types.BVType(sort.size(), env=self.env)
         else:
             raise NotImplementedError("Unsupported sort in conversion: %s" % sort)
 

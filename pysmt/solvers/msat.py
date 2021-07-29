@@ -520,66 +520,71 @@ class MSatConverter(Converter, DagWalker):
 
     def _sig_binary(self, term, args):
         t = self.env.stc.get_type(args[0])
-        return types.FunctionType(t, [t, t])
+        return types.FunctionType(t, [t, t], env=self.env)
 
     def _sig_bool_binary(self, term, args):
         t = self.env.stc.get_type(args[0])
-        return types.FunctionType(types.BOOL, [t, t])
+        return types.FunctionType(types.BOOL, [t, t], env=self.env)
 
     def _sig_most_generic_bool_binary(self, term, args):
         t1 = self.env.stc.get_type(args[0])
         t2 = self.env.stc.get_type(args[1])
         t = self._most_generic(t1, t2)
-        return types.FunctionType(types.BOOL, [t, t])
+        return types.FunctionType(types.BOOL, [t, t], env=self.env)
 
     def _sig_unary(self, term, args):
         t = self.env.stc.get_type(args[0])
-        return types.FunctionType(t, [t])
+        return types.FunctionType(t, [t], env=self.env)
 
     def _sig_ite(self, term, args):
         t1 = self.env.stc.get_type(args[1])
         t2 = self.env.stc.get_type(args[2])
         t = self._most_generic(t1, t2)
-        return types.FunctionType(t, [types.BOOL, t, t])
+        return types.FunctionType(t, [types.BOOL, t, t], env=self.env)
 
     def _sig_bv_comp(self, term,  args):
         t = self.env.stc.get_type(args[0])
-        return types.FunctionType(types.BVType(1), [t, t])
+        return types.FunctionType(types.BVType(1), [t, t], env=self.env)
 
     def _sig_bv_sext(self, term, args):
         _, amount = mathsat.msat_term_is_bv_sext(self.msat_env(), term)
         t = self.env.stc.get_type(args[0])
-        return types.FunctionType(types.BVType(amount + t.width), [t])
+        return types.FunctionType(types.BVType(amount + t.width, env=self.env),
+                                  [t], env=self.env)
 
     def _sig_bv_zext(self, term, args):
         _, amount = mathsat.msat_term_is_bv_zext(self.msat_env(), term)
         t = self.env.stc.get_type(args[0])
-        return types.FunctionType(types.BVType(amount + t.width), [t])
+        return types.FunctionType(types.BVType(amount + t.width, env=self.env),
+                                  [t], env=self.env)
 
     def _sig_bv_extract(self, term, args):
         _, msb, lsb = mathsat.msat_term_is_bv_extract(self.msat_env(), term)
         t = self.env.stc.get_type(args[0])
-        return types.FunctionType(types.BVType(msb - lsb + 1), [t])
+        return types.FunctionType(types.BVType(msb - lsb + 1, env=self.env),
+                                  [t], env=self.env)
 
     def _sig_bv_concat(self, term, args):
         t1 = self.env.stc.get_type(args[0])
         t2 = self.env.stc.get_type(args[1])
-        return types.FunctionType(types.BVType(t1.width + t2.width), [t1, t2])
+        return types.FunctionType(types.BVType(t1.width + t2.width, env=self.env),
+                                  [t1, t2], env=self.env)
 
     def _sig_array_read(self, term, args):
         t1 = self.env.stc.get_type(args[0])
         t = t1.elem_type
-        return types.FunctionType(t, [t1, t1.index_type])
+        return types.FunctionType(t, [t1, t1.index_type], env=self.env)
 
     def _sig_array_write(self, term, args):
         ty = mathsat.msat_term_get_type(term)
         at = self._msat_type_to_type(ty)
-        return types.FunctionType(at, [at, at.index_type, at.elem_type])
+        return types.FunctionType(at, [at, at.index_type, at.elem_type],
+                                  env=self.env)
 
     def _sig_array_const(self, term,  args):
         ty = mathsat.msat_term_get_type(term)
         pyty = self._msat_type_to_type(ty)
-        return types.FunctionType(pyty, [pyty.elem_type])
+        return types.FunctionType(pyty, [pyty.elem_type], env=self.env)
 
     def _sig_unknown(self, term, args):
         if mathsat.msat_term_is_boolean_constant(self.msat_env(), term):
@@ -593,7 +598,7 @@ class MSatConverter(Converter, DagWalker):
             else:
                 assert "_" in str(term), "Unrecognized type for '%s'" % str(term)
                 width = int(str(term).split("_")[1])
-                res = types.BVType(width)
+                res = types.BVType(width, env=self.env)
             return res
         elif mathsat.msat_term_is_constant(self.msat_env(), term):
             ty = mathsat.msat_term_get_type(term)
@@ -1064,11 +1069,11 @@ class MSatConverter(Converter, DagWalker):
             if check_arr != 0:
                 i = self._msat_type_to_type(idx_type)
                 e = self._msat_type_to_type(val_type)
-                return types.ArrayType(i, e)
+                return types.ArrayType(i, e, env=self.env)
 
             check_bv, bv_width = mathsat.msat_is_bv_type(self.msat_env(), tp)
             if check_bv != 0:
-                return types.BVType(bv_width)
+                return types.BVType(bv_width, env=self.env)
 
             # It must be a function type, currently unsupported
             raise NotImplementedError("Function types are unsupported")
