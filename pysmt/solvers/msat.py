@@ -18,8 +18,7 @@
 from warnings import warn
 
 from pysmt.exceptions import SolverAPINotFound
-from pysmt.constants import (Fraction, is_pysmt_fraction, is_pysmt_integer,
-                             to_python_integer)
+from pysmt.constants import Fraction, is_pysmt_fraction, is_pysmt_integer
 
 try:
     import mathsat
