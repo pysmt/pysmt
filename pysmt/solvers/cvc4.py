@@ -598,17 +598,17 @@ class CVC4Converter(Converter, DagWalker):
             # Recursively convert the types of index and elem
             idx_type = self._cvc4_type_to_type(type_.getIndexType())
             elem_type = self._cvc4_type_to_type(type_.getConstituentType())
-            return types.ArrayType(idx_type, elem_type, env=self.env)
+            return self.env.type_manager.ArrayType(idx_type, elem_type)
         elif type_.isBitVector():
             # Casting Type into BitVectorType
             type_ = CVC4.BitVectorType(type_)
-            return types.BVType(type_.getSize(), env=self.env)
+            return self.env.type_manager.BVType(type_.getSize())
         elif type_.isFunction():
             # Casting Type into FunctionType
             type_ = CVC4.FunctionType(type_)
             return_type = type_.getRangeType()
             param_types = tuple(self._cvc4_type_to_type(ty) for ty in type_.getArgTypes())
-            return types.FunctionType(return_type, param_types, env=self.env)
+            return self.env.type_manager.FunctionType(return_type, param_types)
         else:
             raise NotImplementedError("Unsupported type: %s" % type_)
 

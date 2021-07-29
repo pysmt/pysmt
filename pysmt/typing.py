@@ -32,7 +32,6 @@ different instance of BVType.
 
 """
 import pysmt
-
 from pysmt.exceptions import PysmtValueError, PysmtModeError
 
 
@@ -118,7 +117,7 @@ class PySMTType(object):
     def as_smtlib(self, funstyle=True):
         name = self.name
         if self.args:
-            args = " ".join([arg.as_smtlib(funstyle=False) \
+            args = " ".join([arg.as_smtlib(funstyle=False)
                              for arg in self.args])
             name = "(" + self.basename + " " + args + ")"
         if funstyle:
@@ -354,7 +353,7 @@ class _TypeDecl(object):
         return "%s/%s" % (self.name, self.arity)
 
     def set_custom_type_flag(self):
-        assert self.custom_type == False
+        assert self.custom_type is False
         self.custom_type = True
 
 # EOC _TypeDecl
@@ -387,7 +386,7 @@ PYSMT_TYPES = frozenset([BOOL, REAL, INT])
 
 # Helper Constants
 BV1, BV8, BV16, BV32, BV64, BV128 = [_BVType(i) for i in [1, 8, 16, 32, 64, 128]]
-ARRAY_INT_INT = _ArrayType(INT,INT)
+ARRAY_INT_INT = _ArrayType(INT, INT)
 
 
 class TypeManager(object):
@@ -538,7 +537,7 @@ class TypeManager(object):
                     myty = self.Type(ty.basename, arity=0)
                 typemap[ty] = myty
             else:
-                missing = [subtype for subtype in ty.args\
+                missing = [subtype for subtype in ty.args
                            if subtype not in typemap]
                 if missing:
                     # At least one type still needs to be converted
@@ -574,31 +573,23 @@ def assert_are_types(targets, func_name):
         assert_is_type(target, func_name)
 
 
-def BVType(width=32, env=None):
+def BVType(width=32):
     """Returns the BV type for the given width."""
-    if env is None:
-        env = pysmt.environment.get_env()
-    return env.type_manager.BVType(width=width)
+    return pysmt.environment.get_env().type_manager.BVType(width=width)
 
 
-def FunctionType(return_type, param_types, env=None):
+def FunctionType(return_type, param_types):
     """Returns Function Type with the given arguments."""
-    if env is None:
-        env = pysmt.environment.get_env()
-    return env.type_manager.FunctionType(return_type=return_type,
-                                         param_types=param_types)
+    return pysmt.environment.get_env().type_manager.FunctionType(return_type=return_type,
+                                                                 param_types=param_types)
 
 
-def ArrayType(index_type, elem_type, env=None):
+def ArrayType(index_type, elem_type):
     """Returns the Array type with the given arguments."""
-    if env is None:
-        env = pysmt.environment.get_env()
-    return env.type_manager.ArrayType(index_type=index_type,
-                                      elem_type=elem_type)
+    return pysmt.environment.get_env().type_manager.ArrayType(index_type=index_type,
+                                                              elem_type=elem_type)
 
 
-def Type(name, arity=0, env=None):
+def Type(name, arity=0):
     """Returns the Type Declaration with the given name (sort declaration)."""
-    if env is None:
-        env = pysmt.environment.get_env()
-    return env.type_manager.Type(name=name, arity=arity)
+    return pysmt.environment.get_env().type_manager.Type(name=name, arity=arity)

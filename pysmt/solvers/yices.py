@@ -629,9 +629,7 @@ class YicesConverter(Converter, DagWalker):
             stps = [self._type_to_yices(x) for x in tp.param_types]
             rtp = self._type_to_yices(tp.return_type)
             #arr = (yicespy.type_t * len(stps))(*stps)
-            return yicespy.yices_function_type(len(stps),
-                                              stps,
-                                              rtp)
+            return yicespy.yices_function_type(len(stps), stps, rtp)
         elif tp.is_bv_type():
             return yicespy.yices_bv_type(tp.width)
         elif tp.is_custom_type():

@@ -22,10 +22,10 @@ reasoning about the type of formulae.
  * The functions assert_*_args are useful for testing the type of
    arguments of a given function.
 """
-import pysmt.walkers as walkers
+from pysmt import walkers
 import pysmt.operators as op
 
-from pysmt.typing import BOOL, REAL, INT, BVType, ArrayType, STRING
+from pysmt.typing import BOOL, REAL, INT, STRING
 from pysmt.exceptions import PysmtTypeError
 
 
@@ -86,7 +86,7 @@ class SimpleTypeChecker(walkers.DagWalker):
     def walk_bv_to_bv(self, formula, args, **kwargs):
         #pylint: disable=unused-argument
         # We check that all children are BV and the same size
-        target_bv_type = BVType(formula.bv_width())
+        target_bv_type = self.env.type_manager.BVType(formula.bv_width())
         for a in args:
             if not a == target_bv_type:
                 return None
@@ -117,7 +117,7 @@ class SimpleTypeChecker(walkers.DagWalker):
         a,b = args
         if a != b or (not a.is_bv_type()):
             return None
-        return BVType(1)
+        return self.env.type_manager.BVType(1)
 
     @walkers.handles(op.BV_ULT, op.BV_ULE, op.BV_SLT, op.BV_SLE)
     def walk_bv_to_bool(self, formula, args, **kwargs):
@@ -146,7 +146,7 @@ class SimpleTypeChecker(walkers.DagWalker):
             return None
         if not l_width + r_width == target_width:
             return None
-        return BVType(target_width)
+        return self.env.type_manager.BVType(target_width)
 
     def walk_bv_extract(self, formula, args, **kwargs):
         arg = args[0]
@@ -162,7 +162,7 @@ class SimpleTypeChecker(walkers.DagWalker):
             return None
         if target_width != (end-start+1):
             return None
-        return BVType(target_width)
+        return self.env.type_manager.BVType(target_width)
 
     @walkers.handles(op.BV_ROL, op.BV_ROR)
     def walk_bv_rotate(self, formula, args, **kwargs):
@@ -172,7 +172,7 @@ class SimpleTypeChecker(walkers.DagWalker):
             return None
         if target_width != args[0].width:
             return None
-        return BVType(target_width)
+        return self.env.type_manager.BVType(target_width)
 
     @walkers.handles(op.BV_ZEXT, op.BV_SEXT)
     def walk_bv_extend(self, formula, args, **kwargs):
@@ -180,7 +180,7 @@ class SimpleTypeChecker(walkers.DagWalker):
         target_width = formula.bv_width()
         if target_width < args[0].width or target_width < 0:
             return None
-        return BVType(target_width)
+        return self.env.type_manager.BVType(target_width)
 
     def walk_equals(self, formula, args, **kwargs):
         #pylint: disable=unused-argument
@@ -240,7 +240,7 @@ class SimpleTypeChecker(walkers.DagWalker):
         #pylint: disable=unused-argument
         assert formula is not None
         assert len(args) == 0
-        return BVType(formula.bv_width())
+        return self.env.type_manager.BVType(formula.bv_width())
 
     def walk_symbol(self, formula, args, **kwargs):
         assert formula is not None
@@ -310,7 +310,8 @@ class SimpleTypeChecker(walkers.DagWalker):
 
     def walk_array_value(self, formula, args, **kwargs):
         assert formula is not None
-        if None in args: return None
+        if None in args:
+            return None
 
         default_type = args[0]
         idx_type = formula.array_value_index_type()
@@ -319,7 +320,7 @@ class SimpleTypeChecker(walkers.DagWalker):
                 return None # Wrong index type
             elif i % 2 == 1 and c != default_type:
                 return None
-        return ArrayType(idx_type, default_type)
+        return self.env.type_manager.ArrayType(idx_type, default_type)
 
     def walk_pow(self, formula, args, **kwargs):
         if args[0] != args[1]:
