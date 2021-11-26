@@ -23,6 +23,7 @@ from pysmt.shortcuts import Bool, Real, Int, Symbol, Function
 from pysmt.shortcuts import Times, Minus, Equals, LE, LT, ToReal, FreshSymbol
 from pysmt.typing import REAL, INT, FunctionType
 from pysmt.smtlib.printers import SmtPrinter, SmtDagPrinter
+from pysmt.smtlib.annotations import Annotations
 from pysmt.printers import smart_serialize
 from pysmt.test import TestCase, main
 from pysmt.test.examples import get_str_example_formulae
@@ -204,6 +205,29 @@ class TestPrinting(TestCase):
         self.assertTrue(f.size() >= limit)
         s = f.serialize()
         self.assertIsNotNone(s)
+
+    def test_annotations(self):
+        x = Symbol('x')
+        x_next = Symbol('x.next')
+        f = Iff(x, Not(x_next))
+
+        ann = Annotations()
+        ann.add(x, 'next', x_next.symbol_name())
+        ann.add(f, 'trans', 'true')
+        ann.add(x, 'init', 'true')
+
+        tree_buf = StringIO()
+        dag_buf = StringIO()
+        tree_printer = SmtPrinter(tree_buf, annotations=ann)
+        dag_printer = SmtDagPrinter(dag_buf, annotations=ann)
+
+        dag_printer.printer(f)
+        tree_printer.printer(f)
+
+        self.assertEqual(tree_buf.getvalue(),
+                         "(! (= (! x :next x.next :init true) (not x.next)) :trans true)")
+        self.assertEqual(dag_buf.getvalue(),
+                         "(let ((.def_0 (not x.next))) (let ((.def_1 (= (! x :next x.next :init true) .def_0))) (! .def_1 :trans true)))")
 
 if __name__ == '__main__':
     main()
