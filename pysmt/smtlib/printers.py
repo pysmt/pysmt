@@ -190,8 +190,8 @@ class SmtPrinter(TreeWalker):
         yield formula.arg(0)
         self.write(")")
 
-    @write_annotations
     @handles(op.BV_ROR, op.BV_ROL)
+    @write_annotations
     def walk_bv_rotate(self, formula):
         if formula.is_bv_ror():
             rotate_type = "rotate_right"
@@ -203,8 +203,8 @@ class SmtPrinter(TreeWalker):
         yield formula.arg(0)
         self.write(")")
 
-    @write_annotations
     @handles(op.BV_ZEXT, op.BV_SEXT)
+    @write_annotations
     def walk_bv_extend(self, formula):
         if formula.is_bv_zext():
             extend_type = "zero_extend"
@@ -587,8 +587,8 @@ class SmtDagPrinter(DagWalker):
         self.write("))) ")
         return sym
 
-    @write_annotations_dag
     @handles(op.BV_SEXT, op.BV_ZEXT)
+    @write_annotations_dag
     def walk_bv_extend(self, formula, args, **kwargs):
         #pylint: disable=unused-argument
         if formula.is_bv_zext():
@@ -607,8 +607,8 @@ class SmtDagPrinter(DagWalker):
         self.write("))) ")
         return sym
 
-    @write_annotations_dag
     @handles(op.BV_ROR, op.BV_ROL)
+    @write_annotations_dag
     def walk_bv_rotate(self, formula, args, **kwargs):
         #pylint: disable=unused-argument
         if formula.is_bv_ror():
