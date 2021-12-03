@@ -25,15 +25,16 @@ from pysmt.utils import quote
 
 def write_annotations(f):
     def resf(self, formula, *args, **kwargs):
-        if self.annotations is not None and formula in self.annotations:
+        annots = self.annotations
+        if annots is not None and formula in annots:
             self.write("(! ")
         res = f(self, formula, *args, **kwargs)
         # all of the items must be yielded to avoid printing out of order
         if res is not None:
             for item in res:
                 yield item
-        if self.annotations is not None and formula in self.annotations:
-            for key, values in self.annotations[formula].items():
+        if annots is not None and formula in annots:
+            for key, values in annots[formula].items():
                 self.write(f" :{key}")
                 for value in values:
                     self.write(f" {value}")
@@ -42,16 +43,16 @@ def write_annotations(f):
 
 def write_annotations_dag(f):
     def resf(self, formula, *args, **kwargs):
-        if self.annotations is not None and formula in self.annotations:
-            res = ["(! "]
-            res.append(f(self, formula, *args, **kwargs))
-            for key, values in self.annotations[formula].items():
-                res.append(f" :{key}")
-                for value in values:
-                    res.append(f" {value}")
-            res.append(")")
-            return ''.join(res)
-        return f(self, formula, *args, **kwargs)
+        annots = self.annotations
+        res = f(self, formula, *args, **kwargs)
+        if annots is None or formula not in annots:
+            return res
+        items = list()
+        for key, values in annots[formula].items():
+            items.append(f' :{key}')
+            items.extend(f' {v}' for v in values)
+        kv = ''.join(items)
+        return f'(! {res}{kv})'
     return resf
 
 class SmtPrinter(TreeWalker):
