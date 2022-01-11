@@ -227,9 +227,9 @@ class SmtLibScript(object):
     def serialize(self, outstream, daggify=True):
         """Serializes the SmtLibScript expanding commands"""
         if daggify:
-            printer = SmtDagPrinter(outstream)
+            printer = SmtDagPrinter(outstream, annotations=self.annotations)
         else:
-            printer = SmtPrinter(outstream)
+            printer = SmtPrinter(outstream, annotations=self.annotations)
 
         for cmd in self.commands:
             cmd.serialize(printer=printer)
