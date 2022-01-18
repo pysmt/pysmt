@@ -73,8 +73,8 @@ class Walker(object, metaclass=MetaNodeTypeHandler):
 
     def __init__(self, env=None):
         if env is None:
-            import pysmt.environment
-            env = pysmt.environment.get_env()
+            from pysmt.environment import get_env
+            env = get_env()
         self.env = env
 
         self.functions = {}
