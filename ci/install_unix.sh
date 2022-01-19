@@ -55,7 +55,7 @@ fi
 
 # Install latest version of SWIG for CVC4 and BDD
 # (The other solvers in isolation fall-back to the system swig)
-if [ "${PYSMT_SOLVER}" == "cvc4" ] || [ "${PYSMT_SOLVER}" == "bdd" || [ "${PYSMT_SOLVER}" == "all" ]
+if [ "${PYSMT_SOLVER}" == "cvc4" ] || [ "${PYSMT_SOLVER}" == "bdd"] || [ "${PYSMT_SOLVER}" == "all" ]
 then
     os_install flex
     os_install bison
