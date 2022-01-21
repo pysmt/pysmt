@@ -1,8 +1,8 @@
 jobs:
 
-- job: 'Ubuntu16Py37'
+- job: 'UbuntuPy37'
   pool:
-    vmImage: 'ubuntu-18.04'
+    vmImage: 'ubuntu-latest'
   strategy:
     matrix:
       Py37NoSolver:
@@ -47,10 +47,10 @@ jobs:
 
 
 
-- job: 'Ubuntu16All'
+- job: 'UbuntuAll'
   condition: or(eq(variables['build.sourceBranch'], 'refs/heads/master'), eq(variables['Build.Reason'], 'PullRequest'))
   pool:
-    vmImage: 'ubuntu-18.04'
+    vmImage: 'ubuntu-latest'
   strategy:
     matrix:
       Py37All:
@@ -80,10 +80,10 @@ jobs:
     displayName: 'Testing'
 
 
-- job: 'Ubuntu16PyPy3'
+- job: 'UbuntuPyPy3'
   condition: or(eq(variables['build.sourceBranch'], 'refs/heads/master'), eq(variables['Build.Reason'], 'PullRequest'))
   pool:
-    vmImage: 'ubuntu-18.04'
+    vmImage: 'ubuntu-latest'
   strategy:
     matrix:
       PyPy3NoSolver:
@@ -125,10 +125,10 @@ jobs:
 
 
 
-- job: 'OSX10_15'
+- job: 'OSX'
   condition: or(eq(variables['build.sourceBranch'], 'refs/heads/master'), eq(variables['Build.Reason'], 'PullRequest'))
   pool:
-    vmImage: 'macOS-10.15'
+    vmImage: 'macOS-latest'
   strategy:
     matrix:
       Py37NoSolver:
@@ -155,10 +155,10 @@ jobs:
 
 
 
-- job: 'Win2016'
+- job: 'Windows'
   condition: or(eq(variables['build.sourceBranch'], 'refs/heads/master'), eq(variables['Build.Reason'], 'PullRequest'))
   pool:
-    vmImage: 'vs2017-win2016'
+    vmImage: 'windows-latest'
   strategy:
     matrix:
       Py37NoSolver:
@@ -182,11 +182,11 @@ jobs:
 
 - job: PyPi
   dependsOn:
-    - 'Ubuntu16Py37'
-    - 'Ubuntu16All'
-    - 'Ubuntu16PyPy3'
-    - 'OSX10_15'
-    - 'Win2016'
+    - 'UbuntuPy37'
+    - 'UbuntuAll'
+    - 'UbuntuPyPy3'
+    - 'OSX'
+    - 'Windows'
   condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/master'))
   steps:
   - task: UsePythonVersion@0

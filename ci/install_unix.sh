@@ -53,15 +53,15 @@ then
    os_install libgmp-dev
 fi
 
-# Install latest version of SWIG for CVC4
+# Install latest version of SWIG for CVC4 and BDD
 # (The other solvers in isolation fall-back to the system swig)
-if [ "${PYSMT_SOLVER}" == "cvc4" ] || [ "${PYSMT_SOLVER}" == "all" ]
+if [ "${PYSMT_SOLVER}" == "cvc4" ] || [ "${PYSMT_SOLVER}" == "bdd" ] || [ "${PYSMT_SOLVER}" == "all" ]
 then
     os_install flex
     os_install bison
     git clone https://github.com/swig/swig.git
     cd swig
-    git checkout rel-3.0.12
+    git checkout v4.0.2
     ./autogen.sh && ./configure && make
     sudo make install
     cd ..
