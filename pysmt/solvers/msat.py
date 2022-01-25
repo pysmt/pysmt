@@ -39,8 +39,6 @@ from pysmt.decorators import clear_pending_pop, catch_conversion_error
 from pysmt.solvers.qelim import QuantifierEliminator
 from pysmt.solvers.interpolation import Interpolator
 from pysmt.walkers.identitydag import IdentityDagWalker
-from pysmt.optimization.optimizer import SUAOptimizerMixin, IncrementalOptimizerMixin
-from pysmt.optimization.optimizer import Optimizer
 
 class MSatEnv():
     """A wrapper for the msat_env object.
@@ -143,8 +141,6 @@ class MathSATOptions(SolverOptions):
         SolverOptions.__init__(self, **base_options)
         self._msat_lib = MSATLibLoader(self.__class__.__lib_name__)
 
-# NOTE(PT): why is this method static?
-#    @staticmethod
     def _set_option(self, msat_config, name, value):
         """Sets the given option. Might raise a ValueError."""
         check = self._msat_lib.msat_set_option(msat_config, name, value)

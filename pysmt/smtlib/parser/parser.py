@@ -328,6 +328,7 @@ class SmtLibParser(object):
         self._reset()
 
         mgr = self.env.formula_manager
+        self.get_type = self.env.stc.get_type
 
         # Fixing the issue with integer/real numbers on arithmetic
         # operators.
@@ -339,12 +340,10 @@ class SmtLibParser(object):
             try:
                 return op(*args)
             except PysmtTypeError:
-                get_type = self.env.stc.get_type
                 get_free_variables = self.env.fvo.get_free_variables
                 new_args = []
                 for x in args:
-                    if get_type(x).is_int_type() and \
-                            len(get_free_variables(x)) == 0:
+                    if self.get_type(x).is_int_type():
                         new_args.append(mgr.ToReal(x))
                     else:
                         new_args.append(x)
@@ -493,7 +492,7 @@ class SmtLibParser(object):
         """Utility function that handles both unary and binary minus"""
         mgr = self.env.formula_manager
         if len(args) == 1:
-            lty = self.env.stc.get_type(args[0])
+            lty = self.get_type(args[0])
             mult = None
             if lty == self.env.type_manager.INT():
                 if args[0].is_int_constant():
@@ -625,7 +624,7 @@ class SmtLibParser(object):
     def _equals_or_iff(self, left, right):
         """Utility function that treats = between booleans as <->"""
         mgr = self.env.formula_manager
-        lty = self.env.stc.get_type(left)
+        lty = self.get_type(left)
         if lty == self.env.type_manager.BOOL():
             return mgr.Iff(left, right)
         else:

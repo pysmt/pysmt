@@ -118,7 +118,7 @@ class PysmtShell(object):
                 self._print("unsat", stream_out)
         elif name == GET_VALUE:
             self._print("(", stream_out)
-            for k, r in result.iteritems():
+            for k, r in result.items():
                 self._print("  (%s %s)" % (k,r), stream_out)
             self._print(")", stream_out)
         elif name == GET_OBJECTIVES:
@@ -159,11 +159,12 @@ class PysmtShell(object):
                 warn("The solver option will be ignored in interactive mode")
             self.interactive()
         else:
-            input_stream = sys.stdin
-            output_stream = sys.stdout
-            if self.args.file is not None:
-                input_stream = open(self.args.file, "r")
-            self.smtlib_solver(input_stream, output_stream)
+            if self.args.file is None:
+                self.smtlib_solver(sys.stdin, sys.stdout)
+            else:
+                with open(self.args.file, "r") as input_stream:
+                    self.smtlib_solver(input_stream, sys.stdout)
+
 
 def main_interactive():
     shell = PysmtShell(sys.argv[1:])

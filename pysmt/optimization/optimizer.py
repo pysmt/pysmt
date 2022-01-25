@@ -168,31 +168,20 @@ class OptComparationFunctions:
         """
         mgr = self.environment.formula_manager
         cast_bv = None
-        if goal.get_logic() is BV:
+        options = {
+            MinimizationGoal: {
+                True: (mgr.Int, mgr.LT, mgr.LE),
+                False: (mgr.Int, mgr.LT, mgr.LE),
+            },
+            MaximizationGoal: {
+                True: (mgr.Int, mgr.GT, mgr.GE),
+                False: (mgr.Int, mgr.GT, mgr.GE),
+            }
+        } 
+        if goal.get_logic() >= BV:
             otype = self.environment.stc.get_type(goal.term())
             cast_bv = lambda x: mgr.BV(x, otype.width)
-        options = {
-            LIA: {
-                MinimizationGoal: {
-                    True: (mgr.Int, mgr.LT, mgr.LE),
-                    False: (mgr.Int, mgr.LT, mgr.LE),
-                },
-                MaximizationGoal: {
-                    True: (mgr.Int, mgr.GT, mgr.GE),
-                    False: (mgr.Int, mgr.GT, mgr.GE),
-                },
-            },
-            LRA: {
-                MinimizationGoal: {
-                    True: (mgr.Real, mgr.LT, mgr.LE),
-                    False: (mgr.Real, mgr.LT, mgr.LE),
-                },
-                MaximizationGoal: {
-                    True: (mgr.Real, mgr.GT, mgr.GE),
-                    False: (mgr.Real, mgr.GT, mgr.GE),
-                },
-            },
-            BV: {
+            options = {
                 MinimizationGoal: {
                     False: (cast_bv, mgr.BVULT, mgr.BVULE),
                     True: (cast_bv, mgr.BVSLT, mgr.BVSLE),
@@ -200,10 +189,9 @@ class OptComparationFunctions:
                 MaximizationGoal: {
                     False: (cast_bv, mgr.BVUGT, mgr.BVUGE),
                     True: (cast_bv, mgr.BVSGT, mgr.BVSGE),
-                },
-            },
-        }
-        return options[goal.get_logic()][goal.opt()][goal.signed]
+                }
+            }
+        return options[goal.opt()][goal.signed]
 
 
 class OptSearchInterval(OptComparationFunctions):
