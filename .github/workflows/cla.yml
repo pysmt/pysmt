@@ -1,3 +1,5 @@
+name: CLA
+
 on: 
  push:
    branches: master
