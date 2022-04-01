@@ -37,3 +37,5 @@ mathsat.msat_all_sat(msat.msat_env(),
 
 print("'exists y . %s' is equivalent to '%s'" %(f, Or(result)))
 #exists y . (x | y) is equivalent to ((! x) | x)
+
+msat.exit()
