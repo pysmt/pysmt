@@ -1033,6 +1033,39 @@ class TestFormulaManager(TestCase):
         self.assertEqual(x.node_id(), xx.node_id())
         self.assertNotEqual(x.node_id(), y.node_id())
 
+    def test_left_associative_bv(self):
+        """Test that the left-associative bv operators work properly"""
+        bva = self.mgr.Symbol('a', BV8)
+        bvb = self.mgr.Symbol('b', BV8)
+        bvc = self.mgr.BV('10101010')
+        self.assertEqual(
+            self.mgr.BVAnd(bva, bvb, bvc),
+            self.mgr.BVAnd(
+                self.mgr.BVAnd(bva, bvb),
+                bvc
+            )
+        )
+        self.assertEqual(
+            self.mgr.BVOr(bva, bvb, bvc),
+            self.mgr.BVOr(
+                self.mgr.BVOr(bva, bvb),
+                bvc
+            )
+        )
+        self.assertEqual(
+            self.mgr.BVAdd(bva, bvb, bvc),
+            self.mgr.BVAdd(
+                self.mgr.BVAdd(bva, bvb),
+                bvc
+            )
+        )
+        self.assertEqual(
+            self.mgr.BVMul(bva, bvb, bvc),
+            self.mgr.BVMul(
+                self.mgr.BVMul(bva, bvb),
+                bvc
+            )
+        )
 
 class TestShortcuts(TestCase):
 

@@ -439,26 +439,30 @@ def BVNot(formula):
     return get_env().formula_manager.BVNot(formula)
 
 
-def BVAnd(left, right):
+def BVAnd(left, right, *args):
     """Returns the Bit-wise AND of two bitvectors of the same size.
+    If more than 2 arguments are passed, a left-associative formula is generated.
 
     :param left: Specify the left bitvector
     :param right: Specify the right bitvector
-    :returns: The bit-wise AND of left and right
+    :param *args: Specify any other bitvector
+    :returns: The bit-wise AND of the bitvectors using left association
     :rtype: FNode
     """
-    return get_env().formula_manager.BVAnd(left, right)
+    return get_env().formula_manager.BVAnd(left, right, *args)
 
 
-def BVOr(left, right):
+def BVOr(left, right, *args):
     """Returns the Bit-wise OR of two bitvectors of the same size.
+    If more than 2 arguments are passed, a left-associative formula is generated.
 
     :param left: Specify the left bitvector
     :param right: Specify the right bitvector
-    :returns: The bit-wise OR of left and right
+    :param *args: Specify any other bitvector
+    :returns: The bit-wise OR of the bitvectors using left association
     :rtype: FNode
     """
-    return get_env().formula_manager.BVOr(left, right)
+    return get_env().formula_manager.BVOr(left, right, *args)
 
 
 def BVXor(left, right):
@@ -547,16 +551,17 @@ def BVNeg(formula):
     """
     return get_env().formula_manager.BVNeg(formula)
 
-
-def BVAdd(left, right):
+def BVAdd(left, right, *args):
     """Returns the sum of two BV.
+    If more than 2 arguments are passed, a left-associative formula is generated.
 
     :param left: Specify the left bitvector
     :param right: Specify the right bitvector
-    :returns: The sum of the two BVs.
+    :param *args: Specify any other bitvector
+    :returns: The sum of the bitvectors using left association.
     :rtype: FNode
     """
-    return get_env().formula_manager.BVAdd(left, right)
+    return get_env().formula_manager.BVAdd(left, right, *args)
 
 
 def BVSub(left, right):
@@ -570,15 +575,17 @@ def BVSub(left, right):
     return get_env().formula_manager.BVSub(left, right)
 
 
-def BVMul(left, right):
+def BVMul(left, right, *args):
     """Returns the product of two BV.
+    If more than 2 arguments are passed, a left-associative formula is generated.
 
     :param left: Specify the left bitvector
     :param right: Specify the right bitvector
-    :returns: The product of the two BV
+    :param *args: Specify any other bitvector
+    :returns: The product of the the bitvectors using left association
     :rtype: FNode
     """
-    return get_env().formula_manager.BVMul(left, right)
+    return get_env().formula_manager.BVMul(left, right, *args)
 
 
 def BVUDiv(left, right):
