@@ -666,7 +666,7 @@ class FormulaManager(object):
 
         res = left
         for arg in [right, *args]:
-            self.create_node(node_type=op.BV_AND,
+            res = self.create_node(node_type=op.BV_AND,
                              args=(res,arg),
                              payload=(left.bv_width(),))
         return res
@@ -676,7 +676,7 @@ class FormulaManager(object):
         If more than 2 arguments are passed, a left-associative formula is generated."""
         res = left
         for arg in [right, *args]:
-            self.create_node(node_type=op.BV_OR,
+            res = self.create_node(node_type=op.BV_OR,
                              args=(res,arg),
                              payload=(left.bv_width(),))
         return res
@@ -744,7 +744,7 @@ class FormulaManager(object):
         If more than 2 arguments are passed, a left-associative formula is generated."""
         res = left
         for arg in [right, *args]:
-            self.create_node(node_type=op.BV_ADD,
+            res = self.create_node(node_type=op.BV_ADD,
                              args=(res,arg),
                              payload=(left.bv_width(),))
         return res
@@ -760,7 +760,7 @@ class FormulaManager(object):
         If more than 2 arguments are passed, a left-associative formula is generated."""
         res = left
         for arg in [right, *args]:
-            self.create_node(node_type=op.BV_MUL,
+            res = self.create_node(node_type=op.BV_MUL,
                              args=(res,arg),
                              payload=(left.bv_width(),))
         return res
