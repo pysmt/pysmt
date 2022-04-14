@@ -181,6 +181,8 @@ jobs:
     displayName: 'Testing'
 
 - job: PyPi
+  pool:
+    vmImage: 'ubuntu-latest'
   dependsOn:
     - 'UbuntuPy37'
     - 'UbuntuAll'
