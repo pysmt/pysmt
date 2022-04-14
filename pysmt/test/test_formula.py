@@ -1039,13 +1039,15 @@ class TestFormulaManager(TestCase):
         bvb = self.mgr.Symbol('b', BV8)
         bvc = self.mgr.BV('10101010')
         self.assertEqual(
-            self.mgr.BVAnd(bva, bvb, bvc),
+            # passing a list of elements
+            self.mgr.BVAnd([bva, bvb, bvc]),
             self.mgr.BVAnd(
                 self.mgr.BVAnd(bva, bvb),
                 bvc
             )
         )
         self.assertEqual(
+            # passing n elements
             self.mgr.BVOr(bva, bvb, bvc),
             self.mgr.BVOr(
                 self.mgr.BVOr(bva, bvb),
@@ -1066,6 +1068,22 @@ class TestFormulaManager(TestCase):
                 bvc
             )
         )
+
+        # passing a single element
+        self.assertEqual(self.mgr.BVAnd(bva), bva)
+        self.assertEqual(self.mgr.BVOr(bva), bva)
+        self.assertEqual(self.mgr.BVAdd(bva), bva)
+        self.assertEqual(self.mgr.BVMul(bva), bva)
+
+        # passing no elements
+        self.assertRaises(PysmtValueError,
+            lambda: self.mgr.BVAnd([]))
+        self.assertRaises(PysmtValueError,
+            lambda: self.mgr.BVOr([]))
+        self.assertRaises(PysmtValueError,
+            lambda: self.mgr.BVAdd([]))
+        self.assertRaises(PysmtValueError,
+            lambda: self.mgr.BVMul([]))
 
 class TestShortcuts(TestCase):
 

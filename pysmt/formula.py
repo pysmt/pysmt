@@ -660,25 +660,30 @@ class FormulaManager(object):
                                 args=(formula,),
                                 payload=(formula.bv_width(),))
 
-    def BVAnd(self, left, right, *args):
-        """Returns the Bit-wise AND of two bitvectors of the same size.
+    def BVAnd(self, *args):
+        """Returns the Bit-wise AND of bitvectors of the same size.
         If more than 2 arguments are passed, a left-associative formula is generated."""
-
-        res = left
-        for arg in [right, *args]:
+        args = self._polymorph_args_to_tuple(args)
+        if len(args) == 0:
+            raise PysmtValueError("BVAnd expects at least one argument to be passed")
+        res = args[0]
+        for arg in args[1:]:
             res = self.create_node(node_type=op.BV_AND,
                              args=(res,arg),
-                             payload=(left.bv_width(),))
+                             payload=(res.bv_width(),))
         return res
 
-    def BVOr(self, left, right, *args):
-        """Returns the Bit-wise OR of two bitvectors of the same size.
+    def BVOr(self,  *args):
+        """Returns the Bit-wise OR of bitvectors of the same size.
         If more than 2 arguments are passed, a left-associative formula is generated."""
-        res = left
-        for arg in [right, *args]:
+        args = self._polymorph_args_to_tuple(args)
+        if len(args) == 0:
+            raise PysmtValueError("BVOr expects at least one argument to be passed")
+        res = args[0]
+        for arg in args[1:]:
             res = self.create_node(node_type=op.BV_OR,
                              args=(res,arg),
-                             payload=(left.bv_width(),))
+                             payload=(res.bv_width(),))
         return res
 
     def BVXor(self, left, right):
@@ -739,14 +744,17 @@ class FormulaManager(object):
                                 args=(formula,),
                                 payload=(formula.bv_width(),))
 
-    def BVAdd(self, left, right, *args):
-        """Returns the sum of two BV.
+    def BVAdd(self, *args):
+        """Returns the sum of BV.
         If more than 2 arguments are passed, a left-associative formula is generated."""
-        res = left
-        for arg in [right, *args]:
+        args = self._polymorph_args_to_tuple(args)
+        if len(args) == 0:
+            raise PysmtValueError("BVAdd expects at least one argument to be passed")
+        res = args[0]
+        for arg in args[1:]:
             res = self.create_node(node_type=op.BV_ADD,
                              args=(res,arg),
-                             payload=(left.bv_width(),))
+                             payload=(res.bv_width(),))
         return res
 
     def BVSub(self, left, right):
@@ -755,14 +763,17 @@ class FormulaManager(object):
                                 args=(left, right),
                                 payload=(left.bv_width(),))
 
-    def BVMul(self, left, right, *args):
-        """Returns the product of two BV.
+    def BVMul(self, *args):
+        """Returns the product of BV.
         If more than 2 arguments are passed, a left-associative formula is generated."""
-        res = left
-        for arg in [right, *args]:
+        args = self._polymorph_args_to_tuple(args)
+        if len(args) == 0:
+            raise PysmtValueError("BVMul expects at least one argument to be passed")
+        res = args[0]
+        for arg in args[1:]:
             res = self.create_node(node_type=op.BV_MUL,
                              args=(res,arg),
-                             payload=(left.bv_width(),))
+                             payload=(res.bv_width(),))
         return res
 
     def BVUDiv(self, left, right):
