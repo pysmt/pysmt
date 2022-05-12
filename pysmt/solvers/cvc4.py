@@ -30,14 +30,14 @@ from pysmt.logics import PYSMT_LOGICS, ARRAYS_CONST_LOGICS
 from pysmt.solvers.solver import Solver, Converter, SolverOptions
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               InternalSolverError,
-                              NonLinearError, PysmtValueError,
+                              PysmtValueError,
                               PysmtTypeError)
 from pysmt.walkers import DagWalker
 from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 from pysmt.solvers.eager import EagerModel
 from pysmt.decorators import catch_conversion_error
-from pysmt.constants import Fraction, is_pysmt_integer, to_python_integer
-
+from pysmt.constants import Fraction, is_pysmt_integer
+from pysmt.decorators import clear_pending_pop
 
 class CVC4Options(SolverOptions):
 
@@ -77,8 +77,7 @@ class CVC4Options(SolverOptions):
 class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
     LOGICS = PYSMT_LOGICS -\
-             ARRAYS_CONST_LOGICS -\
-             set(l for l in PYSMT_LOGICS if not l.theory.linear)
+             ARRAYS_CONST_LOGICS
 
     OptionsClass = CVC4Options
 
@@ -104,6 +103,7 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         self.converter = CVC4Converter(environment, cvc4_exprMgr=self.em)
         return
 
+    @clear_pending_pop
     def reset_assertions(self):
         del self.cvc4
         # CVC4's SWIG interface is not acquiring ownership of the
@@ -113,9 +113,11 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         self.declarations = set()
         self.cvc4.setLogic(self.logic_name)
 
+    @clear_pending_pop
     def declare_variable(self, var):
         raise NotImplementedError
 
+    @clear_pending_pop
     def add_assertion(self, formula, named=None):
         self._assert_is_boolean(formula)
         term = self.converter.convert(formula)
@@ -131,6 +133,7 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
                 assignment[s] = v
         return EagerModel(assignment=assignment, environment=self.environment)
 
+    @clear_pending_pop
     def solve(self, assumptions=None):
         if assumptions is not None:
             conj_assumptions = self.environment.formula_manager.And(assumptions)
@@ -150,6 +153,7 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
             return res_type == CVC4.Result.SAT
         return
 
+    @clear_pending_pop
     def push(self, levels=1):
         if not self.options.incremental:
             # The exceptions from CVC4 are not raised correctly
@@ -161,6 +165,7 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
             self.cvc4.push()
         return
 
+    @clear_pending_pop
     def pop(self, levels=1):
         for _ in range(levels):
             self.cvc4.pop()
@@ -344,12 +349,16 @@ class CVC4Converter(Converter, DagWalker):
         return self.mkExpr(CVC4.EQUAL, args[0], args[1])
 
     def walk_times(self, formula, args, **kwargs):
-        if sum(1 for x in formula.args() if x.get_free_variables()) > 1:
-            raise NonLinearError(formula)
         res = args[0]
         for x in args[1:]:
             res = self.mkExpr(CVC4.MULT, res, x)
         return res
+
+    def walk_pow(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.POW, args[0], args[1])
+
+    def walk_div(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.DIVISION, args[0], args[1])
 
     def walk_toreal(self, formula, args, **kwargs):
         return self.mkExpr(CVC4.TO_REAL, args[0])

@@ -26,31 +26,31 @@ from pysmt.typing import REAL, INT
 from pysmt.exceptions import (ConvertExpressionError,
                               NonLinearError,
                               SolverReturnedUnknownResultError)
-from pysmt.logics import QF_NRA
+from pysmt.logics import QF_NRA, QF_NIA
 from pysmt.constants import Fraction
 
 
 class TestNonLinear(TestCase):
 
-    @skipIfSolverNotAvailable("z3")
     def test_times(self):
         x = FreshSymbol(REAL)
         f = Equals(Times(x, x), x)
-        with Solver(name="z3") as s:
-            self.assertTrue(s.is_sat(f))
+        for sname in self.env.factory.all_solvers(QF_NRA):
+            with Solver(name=sname, logic=QF_NRA) as s:
+                self.assertTrue(s.is_sat(f))
 
     @skipIfSolverNotAvailable("z3")
     def test_div(self):
         x = FreshSymbol(REAL)
         f = Equals(Div(x, x), x)
-        with Solver(name="z3") as s:
+        with Solver(name="z3", logic=QF_NRA) as s:
             self.assertTrue(s.is_sat(f))
 
     @skipIfSolverNotAvailable("z3")
     def test_irrational(self):
         x = FreshSymbol(REAL)
         f = Equals(Times(x, x), Real(2))
-        with Solver(name="z3") as s:
+        with Solver(name="z3", logic=QF_NRA) as s:
             self.assertTrue(s.is_sat(f))
             model = s.get_model()
             xval = model[x]
@@ -66,35 +66,37 @@ class TestNonLinear(TestCase):
 
     def test_unknownresult(self):
         x = FreshSymbol(REAL)
-        f = Equals(Times(x, x), Real(2))
+        f = Equals(Times(x, x), Real(4))
         for sname in self.env.factory.all_solvers():
-            with Solver(name=sname) as s:
-                if sname in  ["bdd", "picosat", "btor"]:
+            if sname in ["bdd", "picosat", "btor"]:
+                with Solver(name=sname) as s:
                     with self.assertRaises(ConvertExpressionError):
                         s.is_sat(f)
-                elif sname in ["yices", "cvc4", "msat"]:
+            elif sname == "yices":
+                with Solver(name=sname) as s:
                     with self.assertRaises(NonLinearError):
                         s.is_sat(f)
-                else:
+            else:
+                with Solver(name=sname, logic=QF_NRA) as s:
                     res = s.is_sat(f)
-                    self.assertTrue(res, sname)
+                    self.assertTrue(res)
                     self.assertIn(QF_NRA, s.LOGICS, sname)
 
-    @skipIfSolverNotAvailable("z3")
     def test_integer(self):
         x = FreshSymbol(INT)
-        f = Equals(Times(x, x), Int(2))
-        with Solver(name="z3") as s:
-            self.assertFalse(s.is_sat(f))
+        f1 = Equals(Times(x, x), Int(2))
+        f2 = Equals(Times(x, x), Int(16))
+        for sname in self.env.factory.all_solvers(QF_NIA):
+            with Solver(name=sname, logic=QF_NIA) as s:
+                try:
+                    self.assertFalse(s.is_sat(f1))
+                except SolverReturnedUnknownResultError:
+                    pass
 
-        # f = Equals(Times(Int(4), Pow(x, Int(-1))), Int(2))
-        # self.assertTrue(is_sat(f, solver_name="z3"))
-
-        # f = Equals(Div(Int(4), x), Int(2))
-        # self.assertTrue(is_sat(f, solver_name="z3"))
-
-        f = Equals(Times(x, x), Int(16))
-        self.assertTrue(is_sat(f, solver_name="z3"))
+                try:
+                    self.assertTrue(s.is_sat(f2))
+                except SolverReturnedUnknownResultError:
+                    pass
 
     @skipIfSolverNotAvailable("z3")
     def test_div_pow(self):

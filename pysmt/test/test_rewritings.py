@@ -344,8 +344,7 @@ class TestRewritings(TestCase):
             for (old, new) in td.memoization.items():
                 if not old.is_times(): continue
                 if old is new: continue # Nothing changed
-                self.assertValid(Equals(old, new),
-                                 (old, new), solver_name="z3")
+                self.assertValid(Equals(old, new), (old, new))
 
     @skipIfNoSolverForLogic(QF_LIA)
     def test_minus_0(self):

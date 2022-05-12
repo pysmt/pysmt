@@ -22,7 +22,7 @@ from pysmt.environment import get_env
 from pysmt.shortcuts import (Symbol, Function,
                              Int, Real, FALSE, TRUE,
                              And, Iff, Or, Not, Implies, Ite,
-                             LT, LE, GT, GE,
+                             LT, LE, GT, GE, NotEquals,
                              Times, Pow, Equals, Plus, Minus, Div, ToReal,
                              ForAll, Exists,
                              BV, SBV, BVOne, BVZero,
@@ -884,15 +884,16 @@ def get_full_example_formulae(environment=None):
                     logic=pysmt.logics.QF_ABV
                 ),
 
-            Example(hr="((r / s) = (r * s))",
-                    expr=Equals(Div(r, s), Times(r,s)),
+            Example(hr="(((r / s) = (r * s)) & (! (s = 0.0)))",
+                    expr=And(Equals(Div(r, s), Times(r,s)),
+                             NotEquals(s, Real(0))),
                     is_valid=False,
                     is_sat=True,
                     logic=pysmt.logics.QF_NRA
                 ),
 
-            Example(hr="(2.0 = (r * r))",
-                    expr=Equals(Real(2), Times(r,r)),
+            Example(hr="(4.0 = (r * r))",
+                    expr=Equals(Real(4), Times(r,r)),
                     is_valid=False,
                     is_sat=True,
                     logic=pysmt.logics.QF_NRA
@@ -912,8 +913,8 @@ def get_full_example_formulae(environment=None):
                     logic=pysmt.logics.QF_NRA
                 ),
 
-            Example(hr="((r * r * r) = 25.0)",
-                    expr=Equals(Times(r, r, r), Real(25)),
+            Example(hr="((r * r * r) = 27.0)",
+                    expr=Equals(Times(r, r, r), Real(27)),
                     is_valid=False,
                     is_sat=True,
                     logic=pysmt.logics.QF_NRA

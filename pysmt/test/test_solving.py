@@ -198,7 +198,6 @@ class TestBasic(TestCase):
     def test_examples_msat(self):
         for (f, validity, satisfiability, logic) in get_example_formulae():
             if not logic.quantifier_free: continue
-            if not logic.theory.linear: continue
             if logic.theory.strings: continue
 
             v = is_valid(f, solver_name='msat', logic=logic)
@@ -334,9 +333,10 @@ class TestBasic(TestCase):
                 except SolverReturnedUnknownResultError:
                     s = Solver(logic=logic)
                     print(s, logic, f.serialize())
-                    self.assertFalse(logic.quantifier_free,
+                    self.assertFalse(logic.quantifier_free and\
+                                     logic.theory.linear,
                                      "Unkown result are accepted only on "\
-                                     "Quantified formulae")
+                                     "Quantified or nonlinear formulae")
 
     def test_examples_get_implicant(self):
         for (f, _, satisfiability, logic) in get_example_formulae():
