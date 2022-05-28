@@ -11,7 +11,6 @@ DEV_VERSION=`git describe | sed  's/v\(.*\)-\(.*\)-\(.*\)/\2/'`
 sed -i "s/\"dev\", 1/\"dev\", $DEV_VERSION/" pysmt/__init__.py
 
 # Create package files
-python setup.py bdist --format=gztar
 python setup.py sdist --format=gztar
 
 # Wheel file
