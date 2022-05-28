@@ -167,6 +167,14 @@ class TestSmtLibScript(TestCase):
         # No exceptions are thrown
         self.assertTrue(True)
 
+    def test_define_fun_serialize_complex_type(self):
+        smtlib_script = '(define-fun f ((var (_ BitVec 32))) (_ BitVec 32) var)'
+        stream = StringIO(smtlib_script)
+        parser = SmtLibParser()
+        script = parser.get_script(stream)
+        # No exceptions are thrown
+        self.assertEqual(smtlib_script.replace('var', '__var0'), script.commands[0].serialize_to_string())
+
 
     def test_evaluate_command(self):
         class SmtLibIgnore(SmtLibIgnoreMixin):

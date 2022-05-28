@@ -101,13 +101,13 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
         elif self.name == smtcmd.DEFINE_FUN:
             name = self.args[0]
             params_list = self.args[1]
-            params = " ".join(["(%s %s)" % (v, v.symbol_type()) for v in params_list])
+            params = " ".join(["(%s %s)" % (v, v.symbol_type().as_smtlib(funstyle=False)) for v in params_list])
             rtype = self.args[2]
             expr = self.args[3]
             outstream.write("(%s %s (%s) %s " % (self.name,
                                                 name,
                                                 params,
-                                                rtype))
+                                                rtype.as_smtlib(funstyle=False)))
             printer.printer(expr)
             outstream.write(")")
 
@@ -117,12 +117,12 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
         elif self.name == smtcmd.DEFINE_SORT:
             name = self.args[0]
             params_list = self.args[1]
-            params = " ".join(params_list)
+            params = " ".join(x.as_smtlib(funstyle=False) for x in params_list)
             rtype = self.args[2]
             outstream.write("(%s %s (%s) %s)" % (self.name,
                                                  name,
                                                  params,
-                                                 rtype))
+                                                 rtype.as_smtlib(funstyle=False)))
         elif self.name == smtcmd.DECLARE_SORT:
             type_decl = self.args[0]
             outstream.write("(%s %s %d)" % (self.name,
