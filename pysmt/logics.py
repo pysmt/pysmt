@@ -322,7 +322,7 @@ arrays.""",
 AUFLIRA = Logic(name="AUFLIRA",
                 description=\
 """Closed linear formulas with free sort and function symbols over
-one- and two-dimentional arrays of integer index and real value.""",
+one- and two-dimensional arrays of integer index and real value.""",
                 arrays=True,
                 integer_arithmetic=True,
                 real_arithmetic=True,

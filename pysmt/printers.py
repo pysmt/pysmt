@@ -356,12 +356,12 @@ class SmartPrinter(HRPrinter):
     """Better serialization allowing special printing of subformula.
 
     The formula is serialized according to the format defined in the
-    HRPrinter. However, everytime a formula that is present in
+    HRPrinter. However, every time a formula that is present in
     'subs' is found, this is replaced.
 
     E.g., subs  = {And(a,b): "ab"}
 
-    Everytime that the subformula And(a,b) is found, "ab" will be
+    Every time that the subformula And(a,b) is found, "ab" will be
     printed instead of "a & b". This makes it possible to rename big
     subformulae, and provide better human-readable representation.
     """

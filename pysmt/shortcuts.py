@@ -957,7 +957,7 @@ def Portfolio(solvers_set, logic, **options):
     E.g.,
       Portfolio(["msat", "z3"], incremental=True)
     or
-      Porfolio([("msat", {"random_seed": 1}), ("msat", {"random_seed": 2})],
+      Portfolio([("msat", {"random_seed": 1}), ("msat", {"random_seed": 2})],
                incremental=True)
 
     Options specified in the Portfolio are shared among all

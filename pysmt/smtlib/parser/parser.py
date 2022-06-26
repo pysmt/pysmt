@@ -143,7 +143,7 @@ class Tokenizer(object):
     """Takes a file-like object and produces a stream of tokens following
     the LISP rules.
 
-    If interative is True, the file reading proceeds char-by-char with
+    If interactive is True, the file reading proceeds char-by-char with
     no buffering. This is useful for interactive use for example with
     a SMT-Lib2-compliant solver
 
@@ -871,7 +871,7 @@ class SmtLibParser(object):
 
     def parse_model(self, script):
         """This function pasres the result of a `(get-model)` command and
-        returns a model as a dictionary from non-fuction symbols to
+        returns a model as a dictionary from non-function symbols to
         constant values and an interpretation for uninterpreted
         functions as a map from the function symbol to a
         FunctionInterpretation object.

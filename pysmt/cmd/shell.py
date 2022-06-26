@@ -32,7 +32,7 @@ from pysmt.smtlib.commands import CHECK_SAT, GET_VALUE
 welcome_msg = \
 """Welcome to pySMT!!!
 
-You are within a Python shell enhanched with pySMT functionalities.
+You are within a Python shell enhanced with pySMT functionalities.
 
 First time here? Try:
 

@@ -44,7 +44,7 @@ class BddOptions(SolverOptions):
       Enable dynamic reordering
 
     * reordering_algorithm: BddOptions.CUDD_ALL_REORDERING_ALGORITHMS
-      Specify which reordering algorithm to use when dynamic_reording
+      Specify which reordering algorithm to use when dynamic_reordering
       is enabled.
 
     """

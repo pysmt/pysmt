@@ -41,7 +41,7 @@ class FunctionInterpretation:
     function.
 
     A FunctionInterpretation is represented as a list of symbols, each
-    having the type corresponding to the parameter typres of the
+    having the type corresponding to the parameter types of the
     function to be interpreted, plus a function body that is an
     expression that can only depend on the formal parameters. So to
     represent the interpretation `f(x, y) = x + y` we construct the
@@ -77,11 +77,11 @@ class FunctionInterpretation:
 
     def interpret(self, env, actual_params):
         """Given a set of actual parameter, returns the 'value' of the
-        function by substitutiong formal parameters with their actual
+        function by substituting formal parameters with their actual
         values.
         """
         if len(actual_params) !=  len(self.formal_params):
-            raise ValueError('The numbe of actual parameters does not match '
+            raise ValueError('The number of actual parameters does not match '
                              'with the number of formal parameters')
         subs = dict(zip(self.formal_params, actual_params))
         SubsClass = type(env.substituter)
@@ -296,7 +296,7 @@ class MGSubstituter(Substituter):
 class MSSubstituter(Substituter):
     """Performs Most Specific Substitution.
 
-    This was the default beahvior before version 0.5
+    This was the default behavior before version 0.5
     """
 
     def __init__(self, env):
