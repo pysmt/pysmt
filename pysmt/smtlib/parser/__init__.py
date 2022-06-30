@@ -62,7 +62,7 @@ else:
     #
     # To avoid code duplication, we tell cython to compile the .py file
     # and load the resulting .so file. Cython does not support this flow,
-    # therfore we need to have a couple of work-arounds.
+    # therefore we need to have a couple of work-arounds.
     #
     # 1. Call to pyximport.install(): Functions in pyximport expect to
     # find a global object called pyxargs. This is created within
@@ -74,14 +74,14 @@ else:
     #
     # 3. load_dynamic will load the module but not extend the globald
     # directory. We rely on the fact that the loading has been already
-    # performed and call the import * explicitely
+    # performed and call the import * explicitly
     #
     # Since the .so is compiled outside of the PYTHON_PATH, there is
     # no ambiguity when importing the parser: the only way to load the
     # cython version is by the so_path that targets .pyxbld .
     #
     import imp
-    
+
     pyx = pyximport.install()
     pyximport.uninstall(*pyx)
     build_dir = os.path.join(os.path.expanduser('~'), '.pyxbld')

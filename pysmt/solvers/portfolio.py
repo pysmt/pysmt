@@ -126,7 +126,7 @@ class Portfolio(IncrementalTrackingSolver):
         # We destroy the last solver before solving again. Note: We
         # might be able to do something smarter by keeping track of
         # the state of the solver. This, however, requires more
-        # booking (e.g., we need to assert expressions incrementaly,
+        # booking (e.g., we need to assert expressions incrementally,
         # instead of in one shot!)
         self._close_existing()
 

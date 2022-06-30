@@ -66,7 +66,7 @@ class SmtLibSolver(object):
         :type args: List of tuples (name, type)
         :param rtype: Return type
         :type rtype: Sort
-        :param expr: Expression to associate with the functino
+        :param expr: Expression to associate with the function
         :type expr: FNode
         :returns: None - might raise exceptions
         """
@@ -82,7 +82,7 @@ class SmtLibSolver(object):
         raise NotImplementedError
 
     def define_sort(self, name, args, sort_expr):
-        """ Declares a symbol as an abreviation for a sort-expression.
+        """ Declares a symbol as an abbreviation for a sort-expression.
 
         Restrictions: Only after set-logic.
         :returns: None - might raise exception

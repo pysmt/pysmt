@@ -224,7 +224,7 @@ class FormulaManager(object):
     def Times(self, *args):
         """ Creates a multiplication of terms
 
-        This function has polimorphic n-arguments:
+        This function has polymorphic n-arguments:
           - Times(a,b,c)
           - Times([a,b,c])
 
@@ -412,7 +412,7 @@ class FormulaManager(object):
     def And(self, *args):
         """ Returns a conjunction of terms.
 
-        This function has polimorphic arguments:
+        This function has polymorphic arguments:
           - And(a,b,c)
           - And([a,b,c])
 
@@ -431,7 +431,7 @@ class FormulaManager(object):
     def Or(self, *args):
         """ Returns an disjunction of terms.
 
-        This function has polimorphic n-arguments:
+        This function has polymorphic n-arguments:
           - Or(a,b,c)
           - Or([a,b,c])
 
@@ -450,7 +450,7 @@ class FormulaManager(object):
     def Plus(self, *args):
         """ Returns an sum of terms.
 
-        This function has polimorphic n-arguments:
+        This function has polymorphic n-arguments:
           - Plus(a,b,c)
           - Plus([a,b,c])
 
