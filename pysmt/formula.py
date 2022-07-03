@@ -252,11 +252,7 @@ class FormulaManager(object):
 
         if base.is_constant():
             val = base.constant_value() ** exponent.constant_value()
-            if base.is_constant(types.REAL):
-                return self.Real(val)
-            else:
-                assert base.is_constant(types.INT)
-                return self.Int(val)
+            return self.Real(val)
         return self.create_node(node_type=op.POW, args=(base, exponent))
 
     def Div(self, left, right):
