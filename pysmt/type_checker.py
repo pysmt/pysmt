@@ -33,8 +33,8 @@ class SimpleTypeChecker(walkers.DagWalker):
 
     def __init__(self, env=None):
         walkers.DagWalker.__init__(self, env=env)
-        # Return None if the type cannot be computed rather than
-        # raising an exception.
+        # If `be_nice` is true, the `get_type` method will return None if 
+        # the type cannot be computed instead of than raising an exception.
         self.be_nice = False
 
     def _get_key(self, formula, **kwargs):

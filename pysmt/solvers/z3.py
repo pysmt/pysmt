@@ -595,8 +595,6 @@ class Z3Converter(Converter, DagWalker):
                                              None, None,
                                              0, None,
                                              expr.ast)
-        print("Z3: SMTLIB")
-        print(s)
         stream_in = StringIO(s)
         r = parser.get_script(stream_in).get_last_formula(self.mgr)
         key = (askey(expr), None)

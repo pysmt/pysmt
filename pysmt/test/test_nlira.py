@@ -55,7 +55,7 @@ class TestNonLinear(TestCase):
             model = s.get_model()
             xval = model[x]
             self.assertTrue(xval.is_algebraic_constant())
-            # There are two solutions, thad only differ by sign
+            # There are two solutions, that only differ by sign
             # we take the positive one
             x_approx_val = abs(xval.algebraic_approx_value())
             approx = Fraction(3109888511975, 2199023255552)
