@@ -55,10 +55,10 @@ class TestBasic(TestCase):
         res = msat.converter.back(term)
         self.assertFalse(f == res)
 
-    def do_back(self, solver_name, z3_string_buffer=False):
+    def do_back(self, solver_name, via_smtlib=False):
         for formula, _, _, logic in get_example_formulae():
             if logic.quantifier_free:
-                if logic.theory.custom_type and z3_string_buffer:
+                if logic.theory.custom_type and via_smtlib:
                     # Printing of declare-sort from Z3 is not conformant
                     # with the SMT-LIB. We might consider extending our
                     # parser.
@@ -67,7 +67,7 @@ class TestBasic(TestCase):
                     s = Solver(name=solver_name, logic=logic)
                     term = s.converter.convert(formula)
                     if solver_name == "z3":
-                        if z3_string_buffer:
+                        if via_smtlib:
                             res = s.converter.back_via_smtlib(term)
                         else:
                             res = s.converter.back(term)
@@ -84,8 +84,8 @@ class TestBasic(TestCase):
 
     @skipIfSolverNotAvailable("z3")
     def test_z3_back_formulae(self):
-        self.do_back("z3", z3_string_buffer=False)
-        self.do_back("z3", z3_string_buffer=True)
+        self.do_back("z3", via_smtlib=True)
+        self.do_back("z3", via_smtlib=False)
 
 
 if __name__ == '__main__':
