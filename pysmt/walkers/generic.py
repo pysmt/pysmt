@@ -87,9 +87,6 @@ class Walker(object, metaclass=MetaNodeTypeHandler):
                 self.functions[o] = self.walk_error
 
     def set_function(self, _, *__):
-        """Instance-based walkers (<=0.6.0) walkers are deprecated.
-        You should use new-style/class based walkers.
-        """
         raise NotImplementedError(
             "Instance-based walkers (<=0.6.0) walkers are deprecated."
             "You should use new-style/class based walkers.")

@@ -21,7 +21,7 @@ from pysmt.shortcuts import And, Or, Iff, Not, Function, Real
 from pysmt.shortcuts import LT, GT, Plus, Minus, Equals
 from pysmt.shortcuts import get_env, substitute, TRUE
 from pysmt.typing import INT, BOOL, REAL, FunctionType
-from pysmt.walkers import TreeWalker, DagWalker, IdentityDagWalker
+from pysmt.walkers import TreeWalker, DagWalker, IdentityDagWalker, handles
 from pysmt.test import TestCase, main
 from pysmt.formula import FormulaManager
 from pysmt.test.examples import get_example_formulae
@@ -110,16 +110,16 @@ class TestWalkers(TestCase):
 
     def test_identity_walker_simple(self):
 
-        def walk_and_to_or(formula, args, **kwargs):
-            return Or(args)
+        class MyWalker(IdentityDagWalker):
+            @handles(op.AND)
+            def walk_and_to_or(self, formula, args, **kwargs):
+                return Or(args)
 
-        def walk_or_to_and(formula, args, **kwargs):
-            return And(args)
+            @handles(op.OR)
+            def walk_or_to_and(self, formula, args, **kwargs):
+                return And(args)
 
-        walker = IdentityDagWalker(env=get_env())
-
-        walker.set_function(walk_and_to_or, op.AND)
-        walker.set_function(walk_or_to_and, op.OR)
+        walker = MyWalker(env=get_env())
 
         x, y, z = Symbol('x'), Symbol('y'), Symbol('z')
 

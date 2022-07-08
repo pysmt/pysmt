@@ -1174,8 +1174,8 @@ if hasattr(mathsat, "MSAT_EXIST_ELIM_ALLSMT_FM"):
             return self.exist_elim(variables, subf)
 
         @handles(op.SYMBOL, op.REAL_CONSTANT, op.BOOL_CONSTANT, op.INT_CONSTANT)
-        def walk_identity(self, formula, _, **kwargs):
-            return super(MSatQuantifierEliminator, self).walk_identity(formula, **kwargs)
+        def walk_identity(self, formula, args, **kwargs):
+            return super(IdentityDagWalker, self).walk_identity(formula, **kwargs)
 
         def _exit(self):
             del self.msat_env
