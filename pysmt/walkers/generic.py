@@ -77,15 +77,6 @@ class Walker(object, metaclass=MetaNodeTypeHandler):
             env = pysmt.environment.get_env()
         self.env = env
 
-        self.functions = {}
-        for o in op.all_types():
-            try:
-                # getattr will raise an AttributeError exception if a
-                # method does not exist
-                self.functions[o] = getattr(self, nt_to_fun(o))
-            except AttributeError:
-                self.functions[o] = self.walk_error
-
     def set_function(self, _, *__):
         raise NotImplementedError(
             "Instance-based walkers (<=0.6.0) walkers are deprecated."
@@ -100,26 +91,17 @@ class Walker(object, metaclass=MetaNodeTypeHandler):
     @classmethod
     def super(cls, self, formula, *args, **kwargs):
         """Call the correct walk_* function of cls for the given formula."""
-        f = getattr(cls, nt_to_fun(formula.node_type()))
+        nt = formula.node_type()
+        try:
+            f = getattr(cls, nt_to_fun(nt))
+        except AttributeError as ex:
+            raise pysmt.exceptions.UnsupportedOperatorError(node_type=nt,
+                                                            expression=formula) from ex
         return f(self, formula, *args, **kwargs)
 
     @handles(op.ALL_TYPES)
     def walk_error(self, formula, **kwargs):
-        """Default function for a node that is not handled by the Walker.
-
-        This tries to handle the node using the Dynamic Walker
-        Function information from the environment. If this fails, then
-        an UnsupportedOperatorError exception is given.
-
-        """
-        node_type = formula.node_type()
-        if node_type in self.env.dwf:
-            dwf = self.env.dwf[node_type]
-            walker_class = type(self)
-            if type(self) in dwf:
-                self.functions[node_type] = partial(dwf[walker_class], self)
-                return self.functions[node_type](formula, **kwargs)
-
+        """Default function for a node that is not handled by the Walker."""
         node_type = formula.node_type()
         raise pysmt.exceptions.UnsupportedOperatorError(node_type=node_type,
                                                         expression=formula)
