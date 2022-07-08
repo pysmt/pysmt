@@ -20,6 +20,7 @@ from multiprocessing import Process, Queue, Pipe
 
 from pysmt.solvers.solver import IncrementalTrackingSolver, SolverOptions
 from pysmt.decorators import clear_pending_pop
+from pysmt.logics import convert_logic_from_string
 
 
 LOGGER = logging.getLogger(__name__)
@@ -70,6 +71,7 @@ class Portfolio(IncrementalTrackingSolver):
 
         One process will be used for each of the solvers.
         """
+        logic = convert_logic_from_string(logic)
         IncrementalTrackingSolver.__init__(self,
                                            environment=environment,
                                            logic=logic,
