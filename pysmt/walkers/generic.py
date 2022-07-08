@@ -59,7 +59,7 @@ class MetaNodeTypeHandler(type):
     """Metaclass used to intepret the nodehandler decorator. """
     def __new__(cls, name, bases, dct):
         obj = type.__new__(cls, name, bases, dct)
-        for k,v in dct.items():
+        for _, v in dct.items():
             if hasattr(v, "nodetypes"):
                 obj.set_handler(v, *v.nodetypes)
         return obj
@@ -86,15 +86,13 @@ class Walker(object, metaclass=MetaNodeTypeHandler):
             except AttributeError:
                 self.functions[o] = self.walk_error
 
-    def set_function(self, function, *node_types):
-        """Overrides the default walking function for each of the specified
-        node_types with the given function
+    def set_function(self, _, *__):
+        """Instance-based walkers (<=0.6.0) walkers are deprecated.
+        You should use new-style/class based walkers.
         """
-        from warnings import warn
-        warn("Instance-based walkers (<=0.6.0) walkers are deprecated. "
-             "You should use new-style/class based walkers", stacklevel=2)
-        for nt in node_types:
-            self.functions[nt] = function
+        raise NotImplementedError(
+            "Instance-based walkers (<=0.6.0) walkers are deprecated."
+            "You should use new-style/class based walkers.")
 
     @classmethod
     def set_handler(cls, function, *node_types):
