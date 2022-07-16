@@ -799,7 +799,7 @@ class DisjointSet(object):
                     a, leadera, groupa, b, leaderb, groupb = b, leaderb, groupb,\
                                                              a, leadera, groupa
                 groupa |= groupb
-                del group[leaderb]
+                del self.group[leaderb]
                 for k in groupb:
                     self.leader[k] = leadera
             else:
