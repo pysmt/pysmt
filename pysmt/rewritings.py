@@ -902,8 +902,8 @@ def propagate_toplevel(formula, env=None, do_simplify=True, preserve_equivalence
     3) constant = constant
     """
     if env is None:
-        import pysmt.environment
-        env = pysmt.environment.get_env()
+        from pysmt.environment import get_env
+        env = get_env()
     mgr = env.formula_manager
     simplify = env.simplifier.simplify if do_simplify else lambda x: x
 

@@ -19,7 +19,6 @@ from functools import partial
 from io import StringIO
 
 import pysmt.operators as op
-from pysmt.environment import get_env
 from pysmt.walkers import TreeWalker, DagWalker, handles
 from pysmt.utils import quote
 
@@ -59,7 +58,10 @@ class SmtPrinter(TreeWalker):
 
     def __init__(self, stream, env=None, annotations=None):
         TreeWalker.__init__(self)
-        self.env = env if env is not None else get_env()
+        if env is None:
+            from pysmt.environment import get_env
+            env = get_env()
+        self.env = env
         self.stream = stream
         self.write = self.stream.write
         self.mgr = self.env.formula_manager

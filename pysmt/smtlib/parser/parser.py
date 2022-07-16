@@ -22,7 +22,6 @@ from warnings import warn
 from collections import deque
 
 import pysmt.smtlib.commands as smtcmd
-from pysmt.environment import get_env
 from pysmt.logics import get_logic_by_name, UndefinedLogicError
 from pysmt.exceptions import UnknownSmtLibCommandError, PysmtSyntaxError
 from pysmt.exceptions import PysmtTypeError
@@ -321,7 +320,10 @@ class SmtLibParser(object):
     """
 
     def __init__(self, env=None, interactive=False):
-        self.env = get_env() if env is None else env
+        if env is None:
+            from pysmt.environment import get_env
+            env = get_env()
+        self.env = env
         self.interactive = interactive
 
         # Placeholders for fields filled by self._reset

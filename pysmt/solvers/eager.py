@@ -16,7 +16,6 @@
 #   limitations under the License.
 #
 from pysmt.solvers.solver import Model
-from pysmt.environment import get_env
 from pysmt.exceptions import PysmtTypeError
 
 
@@ -31,6 +30,7 @@ class EagerModel(Model):
 
     def __init__(self, assignment, env=None):
         if env is None:
+            from pysmt.environment import get_env
             env = get_env()
         Model.__init__(self, env)
         self.env = env

@@ -27,8 +27,8 @@ properties of formulae.
 """
 
 import pysmt
-import pysmt.walkers as walkers
-import pysmt.operators as op
+from pysmt import walkers
+from pysmt import operators as op
 
 from pysmt import typing
 
@@ -86,9 +86,9 @@ class SizeOracle(walkers.DagWalker):
         self.set_walking_measure(measure)
         res = self.walk(formula, measure=measure)
 
-        if measure == SizeOracle.MEASURE_DAG_NODES or \
-           measure == SizeOracle.MEASURE_SYMBOLS or \
-           measure == SizeOracle.MEASURE_BOOL_DAG :
+        if measure in (SizeOracle.MEASURE_DAG_NODES,
+                       SizeOracle.MEASURE_SYMBOLS,
+                       SizeOracle.MEASURE_BOOL_DAG):
             return len(res)
         return res
 
@@ -176,7 +176,7 @@ class TheoryOracle(walkers.DagWalker):
     @walkers.handles(op.RELATIONS)
     @walkers.handles(op.BOOL_OPERATORS)
     @walkers.handles(op.BV_OPERATORS)
-    @walkers.handles(op.STR_OPERATORS -\
+    @walkers.handles(op.STR_OPERATORS -
                      set([op.STR_LENGTH, op.STR_INDEXOF, op.STR_TO_INT]))
     @walkers.handles(op.ITE, op.ARRAY_SELECT, op.ARRAY_STORE, op.MINUS)
     def walk_combine(self, formula, args, **kwargs):
@@ -333,8 +333,9 @@ class TheoryOracle(walkers.DagWalker):
 
 
 # Operators for which Args is an FNode
-DEPENDENCIES_SIMPLE_ARGS = (set(op.ALL_TYPES) - \
-                           (set([op.SYMBOL, op.FUNCTION]) | op.QUANTIFIERS | op.CONSTANTS))
+DEPENDENCIES_SIMPLE_ARGS = (set(op.ALL_TYPES) -
+                            (set([op.SYMBOL, op.FUNCTION]) |
+                             op.QUANTIFIERS | op.CONSTANTS))
 
 
 class FreeVarsOracle(walkers.DagWalker):
