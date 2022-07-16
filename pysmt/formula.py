@@ -282,7 +282,7 @@ class FormulaManager(object):
         For the boolean case use Iff
         """
         return self.create_node(node_type=op.EQUALS,
-                                args=tuple(self._sort_nodes((left, right)))
+                                args=tuple(self._sort_nodes((left, right))))
 
     def NotEquals(self, left, right):
         """ Creates an expression of the form: left != right"""
