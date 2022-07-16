@@ -34,9 +34,9 @@ class TestPrinting(TestCase):
         return formula.to_smtlib(daggify=False)
 
     def test_real(self):
-        f = Plus([ Real(1),
-                   Symbol("x", REAL),
-                   Symbol("y", REAL)])
+        f = Plus([Real(1),
+                  Symbol("x", REAL),
+                  Symbol("y", REAL)])
 
         self.assertEqual(f.to_smtlib(daggify=False), "(+ 1.0 x y)")
         self.assertEqual(f.to_smtlib(daggify=True), "(let ((.def_0 (+ 1.0 x y))) .def_0)")
@@ -46,9 +46,9 @@ class TestPrinting(TestCase):
         f = Or(And(Not(x), Iff(x, y)), Implies(x, z))
 
         self.assertEqual(f.to_smtlib(daggify=False),
-                          "(or (and (not x) (= x y)) (=> x z))")
+                         "(or (and (not x) (= x y)) (=> x z))")
         self.assertEqual(f.to_smtlib(daggify=True),
-                          "(let ((.def_0 (=> x z))) (let ((.def_1 (= x y))) (let ((.def_2 (not x))) (let ((.def_3 (and .def_2 .def_1))) (let ((.def_4 (or .def_3 .def_0))) .def_4)))))")
+                         "(let ((.def_0 (not x))) (let ((.def_1 (= x y))) (let ((.def_2 (and .def_0 .def_1))) (let ((.def_3 (=> x z))) (let ((.def_4 (or .def_2 .def_3))) .def_4)))))")
 
     def test_int(self):
         p, q = Symbol("p", INT), Symbol("q", INT)
@@ -58,7 +58,7 @@ class TestPrinting(TestCase):
         self.assertEqual(f.to_smtlib(daggify=False),
                           "(or (= (* p 5) (- p q)) (< p q) (<= 6 1))")
         self.assertEqual(f.to_smtlib(daggify=True),
-                          "(let ((.def_0 (<= 6 1))) (let ((.def_1 (< p q))) (let ((.def_2 (- p q))) (let ((.def_3 (* p 5))) (let ((.def_4 (= .def_3 .def_2))) (let ((.def_5 (or .def_4 .def_1 .def_0))) .def_5))))))")
+                         "(let ((.def_0 (* p 5))) (let ((.def_1 (- p q))) (let ((.def_2 (= .def_0 .def_1))) (let ((.def_3 (< p q))) (let ((.def_4 (<= 6 1))) (let ((.def_5 (or .def_2 .def_3 .def_4))) .def_5))))))")
 
     def test_ite(self):
         x = Symbol("x")
