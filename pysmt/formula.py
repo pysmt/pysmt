@@ -215,7 +215,7 @@ class FormulaManager(object):
 
         Restriction: Left and Right must be of boolean type
         """
-        return self.create_node(node_type=op.IFF, args=tuple(self._sort_nodes((left, right)))
+        return self.create_node(node_type=op.IFF, args=tuple(self._sort_nodes((left, right))))
 
     def Minus(self, left, right):
         """ Creates an expression of the form:
