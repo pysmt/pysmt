@@ -31,7 +31,7 @@ class Z3Installer(SolverInstaller):
 
         system = self.os_name
         if system == "linux":
-            system = "ubuntu-16.04"
+            system = "glibc-2.31"
         elif system == "darwin":
             system = "osx-%s" % osx
         elif system == "windows":

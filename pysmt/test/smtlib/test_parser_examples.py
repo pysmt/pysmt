@@ -29,6 +29,7 @@ from pysmt.shortcuts import Iff
 from pysmt.shortcuts import read_smtlib, write_smtlib, get_env
 from pysmt.exceptions import PysmtSyntaxError
 
+
 class TestSMTParseExamples(TestCase):
 
     def test_parse_examples(self):
@@ -41,14 +42,12 @@ class TestSMTParseExamples(TestCase):
             buf = StringIO()
             script_out = smtlibscript_from_formula(f_out)
             script_out.serialize(outstream=buf)
-            #print(buf)
 
             buf.seek(0)
             parser = SmtLibParser()
             script_in = parser.get_script(buf)
             f_in = script_in.get_last_formula()
             self.assertEqual(f_in.simplify(), f_out.simplify())
-
 
     @skipIfNoSolverForLogic(logics.QF_BV)
     def test_parse_examples_bv(self):
@@ -108,7 +107,18 @@ class TestSMTParseExamples(TestCase):
             self.assertValid(Iff(f_in, f_out), f_in.serialize())
 
     def test_dumped_logic(self):
-        # Dumped logic matches the logic in the example
+        # Dumped logic matches the logic in the example.
+        #
+        # There are a few cases where we use a logic
+        # that does not exist in SMT-LIB, and the SMT-LIB
+        # serialization logic will find a logic that
+        # is more expressive. We need to adjust the test
+        # for those cases (see rewrite dict below).
+        rewrite = {
+            logics.QF_BOOL: logics.QF_UF,
+            logics.BOOL: logics.LRA,
+            logics.QF_NIRA: logics.AUFNIRA,
+        }
         fs = get_example_formulae()
 
         for (f_out, _, _, logic) in fs:
@@ -121,14 +131,9 @@ class TestSMTParseExamples(TestCase):
             for cmd in script_in:
                 if cmd.name == "set-logic":
                     logic_in = cmd.args[0]
-                    if logic == logics.QF_BOOL:
-                        self.assertEqual(logic_in, logics.QF_UF)
-                    elif logic == logics.BOOL:
-                        self.assertEqual(logic_in, logics.LRA)
-                    else:
-                        self.assertEqual(logic_in, logic, script_in)
+                    self.assertEqual(logic_in, rewrite.get(logic, logic))
                     break
-            else: # Loops exited normally
+            else:  # Loops exited normally
                 print("-"*40)
                 print(script_in)
 
@@ -136,7 +141,7 @@ class TestSMTParseExamples(TestCase):
         fs = get_example_formulae()
 
         fdi, tmp_fname = mkstemp()
-        os.close(fdi) # Close initial file descriptor
+        os.close(fdi)  # Close initial file descriptor
         for (f_out, _, _, _) in fs:
             write_smtlib(f_out, tmp_fname)
             # with open(tmp_fname) as fin:
@@ -196,7 +201,6 @@ class TestSMTParseExamples(TestCase):
         script = parser.get_script(StringIO(txt))
         f_in = script.get_last_formula()
         self.assertSat(f_in)
-
 
     def test_int_promotion_define_fun(self):
         script = """

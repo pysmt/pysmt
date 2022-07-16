@@ -106,6 +106,9 @@ class PDR(object):
             return True
         return False
 
+    def __del__(self):
+        self.solver.exit()
+
 
 class BMCInduction(object):
 

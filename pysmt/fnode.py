@@ -67,7 +67,7 @@ class FNode(object):
     r"""FNode represent the basic structure for representing a formula.
 
     FNodes are built using the FormulaManager, and should not be
-    explicitely instantiated, since the FormulaManager takes care of
+    explicitly instantiated, since the FormulaManager takes care of
     memoization, thus guaranteeing that equivalent are represented by
     the same object.
 
@@ -124,7 +124,7 @@ class FNode(object):
     def substitute(self, subs, interpretations=None):
         """Return a formula in which subformula have been substituted.
 
-        subs is a dictionary mapping terms to be subtituted with their
+        subs is a dictionary mapping terms to be substituted with their
         substitution.
         interpretations is a dictionary mapping function symbols to an FunctionInterpretation objects describing the semantics of the function.
         """
@@ -685,14 +685,7 @@ class FNode(object):
     def algebraic_approx_value(self, precision=10):
         value = self.constant_value()
         approx = value.approx(precision)
-        # MG: This is a workaround python 3 since Z3 mixes int and long.
-        #     The bug was fixed in master of Z3, but no official relase
-        #     has been done containing it.
-        # In the most recent version of z3, this can be done with:
-        #   return approx.as_fraction()
-        n = int(str(approx.numerator()))
-        d = int(str(approx.denominator()))
-        return Fraction(n,d)
+        return approx.as_fraction()
 
     # Infix Notation
     @assert_infix_enabled

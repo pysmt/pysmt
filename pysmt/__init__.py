@@ -16,7 +16,7 @@
 #   limitations under the License.
 #
 
-VERSION = (0, 9, 1, "dev", 1)
+VERSION = (0, 9, 6, "dev", 1)
 
 # Try to provide human-readable version of latest commit for dev versions
 # E.g. v0.5.1-4-g49a49f2-wip

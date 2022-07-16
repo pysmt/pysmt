@@ -23,7 +23,7 @@ class Interpolator(object):
 
     def binary_interpolant(self, a, b):
         """Returns a binary interpolant for the pair (a, b), if And(a, b) is
-        unsatisfaiable, or None if And(a, b) is satisfiable.
+        unsatisfiable, or None if And(a, b) is satisfiable.
 
         """
         raise NotImplementedError
@@ -42,7 +42,7 @@ class Interpolator(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Manage exiting from Context (i.e., with statement)
 
-        The default behaviour is to explicitely destroy the interpolator to
+        The default behaviour is to explicitly destroy the interpolator to
         free the associated resources.
 
         """

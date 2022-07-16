@@ -322,7 +322,7 @@ arrays.""",
 AUFLIRA = Logic(name="AUFLIRA",
                 description=\
 """Closed linear formulas with free sort and function symbols over
-one- and two-dimentional arrays of integer index and real value.""",
+one- and two-dimensional arrays of integer index and real value.""",
                 arrays=True,
                 integer_arithmetic=True,
                 real_arithmetic=True,
@@ -495,6 +495,12 @@ QF_NRA = Logic(name="QF_NRA",
                real_arithmetic=True,
                linear=False)
 
+QF_NIRA = Logic(name="QF_NIRA",
+                description="""Quantifier-free integer and real arithmetic.""",
+                quantifier_free=True,
+                integer_arithmetic=True,
+                real_arithmetic=True,
+                linear=False)
 
 QF_RDL = Logic(name="QF_RDL",
                description=\
@@ -619,41 +625,41 @@ QF_AUFBVLIRA = Logic(name="QF_AUFBVLIRA",
 AUTO = Logic(name="Auto",
              description="Special logic used to indicate that the logic to be used depends on the formula.")
 
-SMTLIB2_LOGICS = frozenset([ AUFLIA,
-                             AUFLIRA,
-                             AUFNIRA,
-                             ALIA,
-                             LRA,
-                             LIA,
-                             NIA,
-                             NRA,
-                             UFLRA,
-                             UFNIA,
-                             UFLIRA,
-                             QF_ABV,
-                             QF_AUFBV,
-                             QF_AUFLIA,
-                             QF_ALIA,
-                             QF_AX,
-                             QF_BV,
-                             QF_IDL,
-                             QF_LIA,
-                             QF_LRA,
-                             QF_NIA,
-                             QF_NRA,
-                             QF_RDL,
-                             QF_UF,
-                             QF_UFBV ,
-                             QF_UFIDL,
-                             QF_UFLIA,
-                             QF_UFLRA,
-                             QF_UFNRA,
-                             QF_UFNIA,
-                             QF_UFLIRA,
-                             QF_SLIA
-                         ])
+SMTLIB2_LOGICS = frozenset([AUFLIA,
+                            AUFLIRA,
+                            AUFNIRA,
+                            ALIA,
+                            LRA,
+                            LIA,
+                            NIA,
+                            NRA,
+                            UFLRA,
+                            UFNIA,
+                            UFLIRA,
+                            QF_ABV,
+                            QF_AUFBV,
+                            QF_AUFLIA,
+                            QF_ALIA,
+                            QF_AX,
+                            QF_BV,
+                            QF_IDL,
+                            QF_LIA,
+                            QF_LRA,
+                            QF_NIA,
+                            QF_NRA,
+                            QF_RDL,
+                            QF_UF,
+                            QF_UFBV,
+                            QF_UFIDL,
+                            QF_UFLIA,
+                            QF_UFLRA,
+                            QF_UFNRA,
+                            QF_UFNIA,
+                            QF_UFLIRA,
+                            QF_SLIA
+                            ])
 
-LOGICS = SMTLIB2_LOGICS | frozenset([ QF_BOOL, BOOL, QF_AUFBVLIRA])
+LOGICS = SMTLIB2_LOGICS | frozenset([QF_BOOL, BOOL, QF_AUFBVLIRA, QF_NIRA])
 
 QF_LOGICS = frozenset(_l for _l in LOGICS if _l.quantifier_free)
 
@@ -668,8 +674,8 @@ PYSMT_LOGICS = frozenset([QF_BOOL, QF_IDL, QF_LIA, QF_LRA, QF_RDL, QF_UF, QF_UFI
                           QF_BV, QF_UFBV,
                           QF_ABV, QF_AUFBV, QF_AUFLIA, QF_ALIA, QF_AX,
                           QF_AUFBVLIRA,
-                          QF_NRA, QF_NIA, UFBV, BV,
-                      ])
+                          QF_NRA, QF_NIA, QF_NIRA, UFBV, BV,
+                          ])
 
 # PySMT Logics includes additional features:
 #  - constant arrays: QF_AUFBV  becomes QF_AUFBV*
@@ -695,7 +701,6 @@ for l in PYSMT_LOGICS:
                    quantifier_free=l.quantifier_free,
                    theory=new_theory)
         ext_logics.add(nl)
-
 
 
 LOGICS = LOGICS | frozenset(ext_logics)

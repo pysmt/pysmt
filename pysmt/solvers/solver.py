@@ -303,7 +303,7 @@ class IncrementalTrackingSolver(Solver):
 
     @property
     def last_command(self):
-        """Returns the name of the laste executed command"""
+        """Returns the name of the last executed command"""
         return self._last_command
 
     @property
@@ -441,7 +441,7 @@ class Model(object):
         If model_completion is True, then variables not appearing in the
         assignment are given a default value, otherwise an error is generated.
 
-        This is a simplified version of the SMT-LIB funtion get_values .
+        This is a simplified version of the SMT-LIB function get_values .
         """
         raise NotImplementedError
 

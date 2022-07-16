@@ -19,7 +19,7 @@
 from pysmt.simplifier import Simplifier
 
 class SmtLibModelValidationSimplifier(Simplifier):
-    """This class is useful to valudate SmtLib models produced by
+    """This class is useful to validate SmtLib models produced by
     `(get-model)` and parsed by `SmtLibParser.parse_model()`.
 
     This works just like a normal Simplifier, but treats specially the

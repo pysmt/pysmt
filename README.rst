@@ -2,9 +2,9 @@
 pySMT: a Python API for SMT
 ===========================
 
-.. image:: https://dev.azure.com/micheliandrea/PySMT/_apis/build/status/pysmt.pysmt?branchName=master
-           :target: https://dev.azure.com/micheliandrea/PySMT/_build/latest?definitionId=1&branchName=master
-           :alt: Build Status
+.. image:: https://github.com/pysmt/pysmt/actions/workflows/test.yml/badge.svg
+           :target: https://github.com/pysmt/pysmt/actions
+           :alt: CI Status
 
 .. image:: https://coveralls.io/repos/github/pysmt/pysmt/badge.svg
            :target: https://coveralls.io/github/pysmt/pysmt
@@ -237,7 +237,7 @@ each of the available solvers.
  +==================+===========+================================+=============+========================+============+==============+
  | MathSAT          |  msat     | UF, LIA, LRA, BV, AX           |  No         | msat-fm, msat-lw       | Yes        | Yes          |
  +------------------+-----------+--------------------------------+-------------+------------------------+------------+--------------+
- | Z3               |  z3       | UF, LIA, LRA, BV, AX, NRA, NIA |  z3         | z3                     | Yes        | Yes          |
+ | Z3               |  z3       | UF, LIA, LRA, BV, AX, NRA, NIA |  Yes        | z3                     | Yes        | No           |
  +------------------+-----------+--------------------------------+-------------+------------------------+------------+--------------+
  | CVC4             |  cvc4     | UF, LIA, LRA, BV, AX, S        |  Yes        | No                     | No         | No           |
  +------------------+-----------+--------------------------------+-------------+------------------------+------------+--------------+

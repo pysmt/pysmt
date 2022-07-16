@@ -140,18 +140,22 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
     LOGICS = PYSMT_LOGICS - set(x for x in PYSMT_LOGICS if x.theory.strings)
     OptionsClass = Z3Options
 
+    SOLVERFOR_LOGIC_NAMES=['AUFLIA', 'ALIA', 'AUFLIRA', 'AUFNIRA', 'LRA', 'LIA', 'NIA',
+                           'NRA', 'QF_ABV', 'QF_AUFBV', 'QF_AUFLIA', 'QF_ALIA', 'QF_AX',
+                           'QF_BV', 'BV', 'UFBV', 'QF_IDL', 'QF_LIA', 'QF_LRA', 'QF_NIA',
+                           'QF_NRA', 'QF_RDL', 'QF_UF', 'UF', 'QF_UFBV', 'QF_UFIDL',
+                           'QF_UFLIA', 'QF_UFLRA', 'QF_UFNRA', 'QF_UFNIA', 'UFLRA', 'UFNIA']
+
     def __init__(self, env, logic, **options):
         IncrementalTrackingSolver.__init__(self,
                                            env=env,
                                            logic=logic,
                                            **options)
-        try:
+        # LBYL to avoid a possible segmentation fault caused by z3.SolverFor
+        # See issue #465 (https://github.com/pysmt/pysmt/issues/465)
+        if str(logic) in Z3Solver.SOLVERFOR_LOGIC_NAMES:
             self.z3 = z3.SolverFor(str(logic))
-        except z3.Z3Exception:
-            self.z3 = z3.Solver()
-        except z3.z3types.Z3Exception:
-            self.z3 = z3.Solver()
-        except OSError:
+        else:
             self.z3 = z3.Solver()
         self.options(self)
         self.declarations = set()

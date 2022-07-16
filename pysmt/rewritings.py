@@ -246,7 +246,7 @@ class NNFizer(DagWalker):
         return self.walk(formula)
 
     def _get_children(self, formula):
-        """Returns the arguments of the node on which an hypotetical recursion
+        """Returns the arguments of the node on which an hypothetical recursion
         would be made, possibly negating them.
         """
         mgr = self.mgr

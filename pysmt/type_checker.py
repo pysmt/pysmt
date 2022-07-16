@@ -33,6 +33,8 @@ class SimpleTypeChecker(walkers.DagWalker):
 
     def __init__(self, env=None):
         walkers.DagWalker.__init__(self, env=env)
+        # If `be_nice` is true, the `get_type` method will return None if 
+        # the type cannot be computed instead of than raising an exception.
         self.be_nice = False
 
     def _get_key(self, formula, **kwargs):
@@ -42,7 +44,7 @@ class SimpleTypeChecker(walkers.DagWalker):
         """ Returns the pysmt.types type of the formula """
         res = self.walk(formula)
         if not self.be_nice and res is None:
-            raise PysmtTypeError("The formula '%s' is not well-formed" \
+            raise PysmtTypeError("The formula '%s' is not well-formed"
                                  % str(formula))
         return res
 
@@ -114,7 +116,7 @@ class SimpleTypeChecker(walkers.DagWalker):
 
     def walk_bv_comp(self, formula, args, **kwargs):
         # We check that all children are BV and the same size
-        a,b = args
+        a, b = args
         if a != b or (not a.is_bv_type()):
             return None
         return self.env.type_manager.BVType(1)
@@ -187,7 +189,7 @@ class SimpleTypeChecker(walkers.DagWalker):
         if args[0].is_bool_type():
             raise PysmtTypeError("The formula '%s' is not well-formed."
                                  "Equality operator is not supported for Boolean"
-                                 " terms. Use Iff instead." \
+                                 " terms. Use Iff instead."
                                  % str(formula))
         elif args[0].is_bv_type():
             return self.walk_bv_to_bool(formula, args)
@@ -325,10 +327,7 @@ class SimpleTypeChecker(walkers.DagWalker):
     def walk_pow(self, formula, args, **kwargs):
         if args[0] != args[1]:
             return None
-        # Exponent must be positive for INT
-        if args[0].is_int_type() and formula.arg(1).constant_value() < 0 :
-            return None
-        return args[0]
+        return REAL
 
 # EOC SimpleTypeChecker
 

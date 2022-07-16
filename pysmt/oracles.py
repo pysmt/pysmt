@@ -145,7 +145,7 @@ class QuantifierOracle(walkers.DagWalker):
 class TheoryOracle(walkers.DagWalker):
 
     def get_theory(self, formula):
-        """Returns the thoery for the formula."""
+        """Returns the theory for the formula."""
         return self.walk(formula)
 
     def _theory_from_type(self, ty):

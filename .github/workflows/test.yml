@@ -1,0 +1,117 @@
+name: Test and Deploy
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  run-tests:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ ubuntu-latest ]
+        pysmt_solver: [ none, msat, z3, yices, cvc4, btor, picosat, bdd, msat_wrap, z3_wrap ]
+
+    env:
+      PYTHON_VERSION: 3.8
+      PYSMT_SOLVER: ${{ matrix.pysmt_solver }}
+      AGENT_OS: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: 3.8
+
+      - name: Prepare System
+        run: |
+          bash ci/install.sh
+
+      - name: Run Tests
+        run: |
+          bash ci/run.sh
+
+
+  run-tests-master:
+    runs-on: ${{ matrix.os }}
+    if: (github.ref == 'refs/heads/master') || (github.event_name == 'pull_request') # We only run these tests on master or in pull-requests
+    strategy:
+      matrix:
+        os: [ ubuntu-latest ]
+        pysmt_solver: [ none ]
+        pysmt_cython: ["TRUE", "FALSE"]
+        pysmt_gmpy: ["TRUE", "FALSE"]
+        include:
+          - os: ubuntu-latest
+            pysmt_solver: all
+          - os: macos-latest
+            pysmt_solver: none
+          - os: macos-latest
+            pysmt_solver: msat
+          - os: macos-latest
+            pysmt_solver: z3
+          - os: macos-latest
+            pysmt_solver: yices
+          - os: windows-latest
+            pysmt_solver: none
+          - os: windows-latest
+            pysmt_solver: msat
+          - os: windows-latest
+            pysmt_solver: z3
+
+    env:
+      PYTHON_VERSION: 3.8
+      PYSMT_SOLVER: ${{ matrix.pysmt_solver }}
+      AGENT_OS: ${{ matrix.os }}
+      PYSMT_CYTHON: ${{ matrix.pysmt_cython }}
+      PYSMT_GMPY: ${{ matrix.pysmt_gmpy }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: 3.8
+
+      - name: Prepare System
+        run: |
+          bash ci/install.sh
+
+      - name: Run Tests
+        run: |
+          bash ci/run.sh
+
+
+  deploy-pypi:
+    runs-on: ubuntu-latest
+    needs: [run-tests, run-tests-master] # We only deploy if the tests were successful
+    if: github.ref == 'refs/heads/master' # We only deploy on master commits
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@master
+      with:
+        fetch-depth: 0
+
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.8
+
+    - name: Make distrib
+      run: |
+        python3 -m pip install wheel
+        bash make_distrib.sh
+
+    - name: Upload to PyPI
+      uses: pypa/gh-action-pypi-publish@master
+      with:
+        password: ${{ secrets.PYPI_API_TOKEN }}

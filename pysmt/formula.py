@@ -75,6 +75,7 @@ class FormulaManager(object):
         self.false_formula = self.create_node(node_type=op.BOOL_CONSTANT,
                                               args=tuple(),
                                               payload=False)
+        self._normalizer = None
         return
 
     def _do_type_check_real(self, formula):
@@ -224,7 +225,7 @@ class FormulaManager(object):
     def Times(self, *args):
         """ Creates a multiplication of terms
 
-        This function has polimorphic n-arguments:
+        This function has polymorphic n-arguments:
           - Times(a,b,c)
           - Times([a,b,c])
 
@@ -252,11 +253,7 @@ class FormulaManager(object):
 
         if base.is_constant():
             val = base.constant_value() ** exponent.constant_value()
-            if base.is_constant(types.REAL):
-                return self.Real(val)
-            else:
-                assert base.is_constant(types.INT)
-                return self.Int(val)
+            return self.Real(val)
         return self.create_node(node_type=op.POW, args=(base, exponent))
 
     def Div(self, left, right):
@@ -412,7 +409,7 @@ class FormulaManager(object):
     def And(self, *args):
         """ Returns a conjunction of terms.
 
-        This function has polimorphic arguments:
+        This function has polymorphic arguments:
           - And(a,b,c)
           - And([a,b,c])
 
@@ -431,7 +428,7 @@ class FormulaManager(object):
     def Or(self, *args):
         """ Returns an disjunction of terms.
 
-        This function has polimorphic n-arguments:
+        This function has polymorphic n-arguments:
           - Or(a,b,c)
           - Or([a,b,c])
 
@@ -450,7 +447,7 @@ class FormulaManager(object):
     def Plus(self, *args):
         """ Returns an sum of terms.
 
-        This function has polimorphic n-arguments:
+        This function has polymorphic n-arguments:
           - Plus(a,b,c)
           - Plus([a,b,c])
 
@@ -660,17 +657,31 @@ class FormulaManager(object):
                                 args=(formula,),
                                 payload=(formula.bv_width(),))
 
-    def BVAnd(self, left, right):
-        """Returns the Bit-wise AND of two bitvectors of the same size."""
-        return self.create_node(node_type=op.BV_AND,
-                                args=(left,right),
-                                payload=(left.bv_width(),))
+    def BVAnd(self, *args):
+        """Returns the Bit-wise AND of bitvectors of the same size.
+        If more than 2 arguments are passed, a left-associative formula is generated."""
+        args = self._polymorph_args_to_tuple(args)
+        if len(args) == 0:
+            raise PysmtValueError("BVAnd expects at least one argument to be passed")
+        res = args[0]
+        for arg in args[1:]:
+            res = self.create_node(node_type=op.BV_AND,
+                             args=(res,arg),
+                             payload=(res.bv_width(),))
+        return res
 
-    def BVOr(self, left, right):
-        """Returns the Bit-wise OR of two bitvectors of the same size."""
-        return self.create_node(node_type=op.BV_OR,
-                                args=(left,right),
-                                payload=(left.bv_width(),))
+    def BVOr(self,  *args):
+        """Returns the Bit-wise OR of bitvectors of the same size.
+        If more than 2 arguments are passed, a left-associative formula is generated."""
+        args = self._polymorph_args_to_tuple(args)
+        if len(args) == 0:
+            raise PysmtValueError("BVOr expects at least one argument to be passed")
+        res = args[0]
+        for arg in args[1:]:
+            res = self.create_node(node_type=op.BV_OR,
+                             args=(res,arg),
+                             payload=(res.bv_width(),))
+        return res
 
     def BVXor(self, left, right):
         """Returns the Bit-wise XOR of two bitvectors of the same size."""
@@ -730,11 +741,18 @@ class FormulaManager(object):
                                 args=(formula,),
                                 payload=(formula.bv_width(),))
 
-    def BVAdd(self, left, right):
-        """Returns the sum of two BV."""
-        return self.create_node(node_type=op.BV_ADD,
-                                args=(left, right),
-                                payload=(left.bv_width(),))
+    def BVAdd(self, *args):
+        """Returns the sum of BV.
+        If more than 2 arguments are passed, a left-associative formula is generated."""
+        args = self._polymorph_args_to_tuple(args)
+        if len(args) == 0:
+            raise PysmtValueError("BVAdd expects at least one argument to be passed")
+        res = args[0]
+        for arg in args[1:]:
+            res = self.create_node(node_type=op.BV_ADD,
+                             args=(res,arg),
+                             payload=(res.bv_width(),))
+        return res
 
     def BVSub(self, left, right):
         """Returns the difference of two BV."""
@@ -742,11 +760,18 @@ class FormulaManager(object):
                                 args=(left, right),
                                 payload=(left.bv_width(),))
 
-    def BVMul(self, left, right):
-        """Returns the product of two BV."""
-        return self.create_node(node_type=op.BV_MUL,
-                                args=(left, right),
-                                payload=(left.bv_width(),))
+    def BVMul(self, *args):
+        """Returns the product of BV.
+        If more than 2 arguments are passed, a left-associative formula is generated."""
+        args = self._polymorph_args_to_tuple(args)
+        if len(args) == 0:
+            raise PysmtValueError("BVMul expects at least one argument to be passed")
+        res = args[0]
+        for arg in args[1:]:
+            res = self.create_node(node_type=op.BV_MUL,
+                             args=(res,arg),
+                             payload=(res.bv_width(),))
+        return res
 
     def BVUDiv(self, left, right):
         """Returns the division of the two BV."""
@@ -1069,8 +1094,9 @@ class FormulaManager(object):
               obtain f_b that is the formula f_a expressed on the
               FormulaManager b : f_b = b.normalize(f_a)
         """
-        normalizer = FormulaContextualizer(self.env)
-        return normalizer.walk(formula)
+        if self._normalizer is None:
+            self._normalizer = FormulaContextualizer(self.env)
+        return self._normalizer.walk(formula)
 
     def _polymorph_args_to_tuple(self, args):
         """ Helper function to return a tuple of arguments from args.

@@ -107,7 +107,7 @@ class YicesOptions(SolverOptions):
     def set_params(self, solver):
         """Set Search Parameters.
 
-        Yices makes a distinction between configuratin and search
+        Yices makes a distinction between configuration and search
         parameters.  The first are fixed for the lifetime of a
         context, while the latter can be different for every call to
         check_context.

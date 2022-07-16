@@ -24,16 +24,16 @@ def callback(model, converter, result):
 x, y = Symbol("x"), Symbol("y")
 f = Or(x, y)
 
-msat = Solver(name="msat")
-converter = msat.converter # .converter is a property implemented by all solvers
-msat.add_assertion(f) # This is still at pySMT level
+with Solver(name="msat") as msat:
+    converter = msat.converter # .converter is a property implemented by all solvers
+    msat.add_assertion(f) # This is still at pySMT level
 
-result = []
-# Directly invoke the mathsat API !!!
-# The second term is a list of "important variables"
-mathsat.msat_all_sat(msat.msat_env(),
-      [converter.convert(x)],      # Convert the pySMT term into a MathSAT term
-      lambda model : callback(model, converter, result))
+    result = []
+    # Directly invoke the mathsat API !!!
+    # The second term is a list of "important variables"
+    mathsat.msat_all_sat(msat.msat_env(),
+        [converter.convert(x)],      # Convert the pySMT term into a MathSAT term
+        lambda model : callback(model, converter, result))
 
-print("'exists y . %s' is equivalent to '%s'" %(f, Or(result)))
-#exists y . (x | y) is equivalent to ((! x) | x)
+    print("'exists y . %s' is equivalent to '%s'" %(f, Or(result)))
+    #exists y . (x | y) is equivalent to ((! x) | x)

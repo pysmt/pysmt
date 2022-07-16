@@ -898,12 +898,12 @@ def get_full_example_formulae(env=None):
                     logic=pysmt.logics.QF_NRA
                 ),
 
-            Example(hr="((p ^ 2) = 0)",
-                    expr=Equals(Pow(p, Int(2)), Int(0)),
+            Example(hr="((p ^ 2) = 0.0)",
+                    expr=Equals(Pow(p, Int(2)), Real(0)),
                     is_valid=False,
                     is_sat=True,
-                    logic=pysmt.logics.QF_NIA
-                ),
+                    logic=pysmt.logics.QF_NIRA
+                    ),
 
             Example(hr="((r ^ 2.0) = 0.0)",
                     expr=Equals(Pow(r, Real(2)), Real(0)),
