@@ -87,6 +87,8 @@ class FormulaManager(object):
         return self._do_type_check(formula)
 
     def _sort_nodes(self, nodes):
+        if len(nodes) == 1 and isinstance(next(iter(nodes)), Iterable):
+            nodes = nodes[0]
         return sorted(nodes, key=lambda p: p.node_id())
 
     def create_node(self, node_type, args, payload=None):
