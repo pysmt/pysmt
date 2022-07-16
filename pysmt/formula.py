@@ -86,6 +86,9 @@ class FormulaManager(object):
         self._do_type_check = self._do_type_check_real
         return self._do_type_check(formula)
 
+    def _sort_nodes(self, nodes):
+        return sorted(nodes, key=lambda p: p.node_id())
+
     def create_node(self, node_type, args, payload=None):
         content = FNodeContent(node_type, args, payload)
         if content in self.formulae:
@@ -160,7 +163,7 @@ class FormulaManager(object):
             return formula
         return self.create_node(node_type=op.FORALL,
                                 args=(formula,),
-                                payload=tuple(variables))
+                                payload=tuple(self._sort_nodes(variables)))
 
     def Exists(self, variables, formula):
         """ Creates an expression of the form:
@@ -174,7 +177,7 @@ class FormulaManager(object):
             return formula
         return self.create_node(node_type=op.EXISTS,
                                 args=(formula,),
-                                payload=tuple(variables))
+                                payload=tuple(self._sort_nodes(variables)))
 
     def Function(self, vname, params):
         """Returns the function application of vname to params.
@@ -212,7 +215,7 @@ class FormulaManager(object):
 
         Restriction: Left and Right must be of boolean type
         """
-        return self.create_node(node_type=op.IFF, args=(left, right))
+        return self.create_node(node_type=op.IFF, args=tuple(self._sort_nodes((left, right)))
 
     def Minus(self, left, right):
         """ Creates an expression of the form:
@@ -233,7 +236,7 @@ class FormulaManager(object):
          - Arguments must be all of the same type
          - Arguments must be INT or REAL
         """
-        tuple_args = self._polymorph_args_to_tuple(args)
+        tuple_args = self._polymorph_args_to_tuple(self._sort_nodes(args))
         if len(tuple_args) == 0:
             raise PysmtTypeError("Cannot create a Times without arguments.")
 
@@ -279,7 +282,7 @@ class FormulaManager(object):
         For the boolean case use Iff
         """
         return self.create_node(node_type=op.EQUALS,
-                                args=(left, right))
+                                args=tuple(self._sort_nodes((left, right)))
 
     def NotEquals(self, left, right):
         """ Creates an expression of the form: left != right"""
@@ -342,12 +345,12 @@ class FormulaManager(object):
 
         if is_pysmt_fraction(value):
             val = value
-        elif type(value) == tuple:
+        elif isinstance(value, tuple):
             val = Fraction(value[0], value[1])
         elif is_python_rational(value):
             val = pysmt_fraction_from_rational(value)
         else:
-            raise PysmtTypeError("Invalid type in constant. The type was:" + \
+            raise PysmtTypeError("Invalid type in constant. The type was:" +
                                  str(type(value)))
 
         n = self.create_node(node_type=op.REAL_CONSTANT,
@@ -366,7 +369,7 @@ class FormulaManager(object):
         elif is_python_integer(value):
             val = pysmt_integer_from_integer(value)
         else:
-            raise PysmtTypeError("Invalid type in constant. The type was:" + \
+            raise PysmtTypeError("Invalid type in constant. The type was:" +
                                  str(type(value)))
         n = self.create_node(node_type=op.INT_CONSTANT,
                              args=tuple(),
@@ -386,7 +389,7 @@ class FormulaManager(object):
             self.string_constants[value] = n
             return n
         else:
-            raise TypeError("Invalid type in constant. The type was:" + \
+            raise TypeError("Invalid type in constant. The type was:" +
                             str(type(value)))
 
     def TRUE(self):
@@ -401,10 +404,7 @@ class FormulaManager(object):
         if type(value) != bool:
             raise PysmtTypeError("Expecting bool, got %s" % type(value))
 
-        if value:
-            return self.true_formula
-        else:
-            return self.false_formula
+        return self.true_formula if value else self.false_formula
 
     def And(self, *args):
         """ Returns a conjunction of terms.
@@ -415,8 +415,7 @@ class FormulaManager(object):
 
         Restriction: Arguments must be boolean
         """
-        tuple_args = self._polymorph_args_to_tuple(args)
-
+        tuple_args = self._polymorph_args_to_tuple(self._sort_nodes(args))
         if len(tuple_args) == 0:
             return self.TRUE()
         elif len(tuple_args) == 1:
@@ -434,7 +433,7 @@ class FormulaManager(object):
 
         Restriction: Arguments must be boolean
         """
-        tuple_args = self._polymorph_args_to_tuple(args)
+        tuple_args = self._polymorph_args_to_tuple(self._sort_nodes(args))
 
         if len(tuple_args) == 0:
             return self.FALSE()
@@ -455,7 +454,7 @@ class FormulaManager(object):
          - Arguments must be all of the same type
          - Arguments must be INT or REAL
         """
-        tuple_args = self._polymorph_args_to_tuple(args)
+        tuple_args = self._polymorph_args_to_tuple(self._sort_nodes(args))
         if len(tuple_args) == 0:
             raise PysmtTypeError("Cannot create a Plus without arguments.")
 
@@ -526,7 +525,7 @@ class FormulaManager(object):
 
     def Min(self, *args):
         """Returns the encoding of the minimum expression within args"""
-        exprs = self._polymorph_args_to_tuple(args)
+        exprs = self._polymorph_args_to_tuple(self._sort_nodes(args))
         assert len(exprs) > 0
         if len(exprs) == 1:
             return exprs[0]
@@ -539,7 +538,7 @@ class FormulaManager(object):
 
     def Max(self, *args):
         """Returns the encoding of the maximum expression within args"""
-        exprs = self._polymorph_args_to_tuple(args)
+        exprs = self._polymorph_args_to_tuple(self._sort_nodes(args))
         assert len(exprs) > 0
         if len(exprs) == 1:
             return exprs[0]
@@ -577,8 +576,8 @@ class FormulaManager(object):
 
         if type(value) is str:
             if value.startswith("#b"):
-                str_width = len(value)-2
-                value = int(value[2:],2)
+                str_width = len(value) - 2
+                value = int(value[2:], 2)
             elif all(v in ["0", "1"] for v in value):
                 str_width = len(value)
                 value = int(value, 2)
@@ -638,7 +637,7 @@ class FormulaManager(object):
             if value >= 0:
                 return self.BV(value, width)
             else:
-                comp_value = (2**width) + value # value is negative!
+                comp_value = (2**width) + value  # value is negative!
                 return self.BV(comp_value, width)
         else:
             return self.BV(value, width=width)
