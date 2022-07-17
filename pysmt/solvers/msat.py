@@ -992,6 +992,7 @@ class MSatConverter(Converter, DagWalker):
                 raise NonLinearError(formula)
             else:
                 res = mathsat.msat_make_times(self.msat_env(), res, x)
+        return res
 
     def walk_div(self, formula, args, **kwargs):
         menv = self.msat_env()
