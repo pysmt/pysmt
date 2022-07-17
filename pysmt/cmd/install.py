@@ -32,19 +32,18 @@ from pysmt import __version__ as pysmt_version
 Installer = namedtuple("Installer",
                        ["InstallerClass", "version", "extra_params"])
 INSTALLERS = [
-    Installer(MSatInstaller,    "5.6.7", {}),
-    Installer(CVC4Installer,    "1.7-prerelease",
-              {"git_version" : "391ab9df6c3fd9a3771864900c1718534c1e4666"}),
-    Installer(Z3Installer,      "4.8.17", {"osx": "10.16"}),
-    Installer(YicesInstaller,   "2.6.2",
+    Installer(MSatInstaller,      "5.6.8", {}),
+    Installer(CVC4Installer,      "1.7-prerelease",
+              {"git_version":     "391ab9df6c3fd9a3771864900c1718534c1e4666"}),
+    Installer(Z3Installer,        "4.9.1", {"osx": "10.16"}),
+    Installer(YicesInstaller,     "2.6.2",
               {"yicespy_version": "f0768ffeec15ea310f830d10878971c9998454ac"}),
-    Installer(BtorInstaller,    "3.2.1", {}),
-    Installer(PicoSATInstaller, "965",
-              {"pypicosat_minor_version" : "1708010052"}),
-    Installer(CuddInstaller,    "2.0.3",
-              {"git_version" : "ecb03d6d231273343178f566cc4d7258dcce52b4"}),
+    Installer(BtorInstaller,      "3.2.1", {}),
+    Installer(PicoSATInstaller,   "965",
+              {"pypicosat_minor_version": "1708010052"}),
+    Installer(CuddInstaller,      "2.0.3",
+              {"git_version":     "ecb03d6d231273343178f566cc4d7258dcce52b4"}),
 ]
-
 
 
 def get_requested_solvers():
