@@ -86,11 +86,6 @@ class FormulaManager(object):
         self._do_type_check = self._do_type_check_real
         return self._do_type_check(formula)
 
-    def _sort_nodes(self, nodes):
-        if len(nodes) == 1 and isinstance(next(iter(nodes)), Iterable):
-            nodes = nodes[0]
-        return sorted(nodes, key=lambda p: p.node_id())
-
     def create_node(self, node_type, args, payload=None):
         content = FNodeContent(node_type, args, payload)
         if content in self.formulae:
@@ -165,7 +160,7 @@ class FormulaManager(object):
             return formula
         return self.create_node(node_type=op.FORALL,
                                 args=(formula,),
-                                payload=tuple(self._sort_nodes(variables)))
+                                payload=self._sorted_tuple(variables))
 
     def Exists(self, variables, formula):
         """ Creates an expression of the form:
@@ -179,7 +174,7 @@ class FormulaManager(object):
             return formula
         return self.create_node(node_type=op.EXISTS,
                                 args=(formula,),
-                                payload=tuple(self._sort_nodes(variables)))
+                                payload=self._sorted_tuple(variables))
 
     def Function(self, vname, params):
         """Returns the function application of vname to params.
@@ -217,7 +212,8 @@ class FormulaManager(object):
 
         Restriction: Left and Right must be of boolean type
         """
-        return self.create_node(node_type=op.IFF, args=tuple(self._sort_nodes((left, right))))
+        return self.create_node(node_type=op.IFF,
+                                args=self._sorted_tuple((left, right)))
 
     def Minus(self, left, right):
         """ Creates an expression of the form:
@@ -238,15 +234,14 @@ class FormulaManager(object):
          - Arguments must be all of the same type
          - Arguments must be INT or REAL
         """
-        tuple_args = self._polymorph_args_to_tuple(self._sort_nodes(args))
+        tuple_args = self._polymorph_args_to_tuple(args, sort=True)
         if len(tuple_args) == 0:
             raise PysmtTypeError("Cannot create a Times without arguments.")
 
         if len(tuple_args) == 1:
             return tuple_args[0]
         else:
-            return self.create_node(node_type=op.TIMES,
-                                    args=tuple_args)
+            return self.create_node(node_type=op.TIMES, args=tuple_args)
 
     def Pow(self, base, exponent):
         """ Creates the n-th power of the base.
@@ -284,7 +279,7 @@ class FormulaManager(object):
         For the boolean case use Iff
         """
         return self.create_node(node_type=op.EQUALS,
-                                args=tuple(self._sort_nodes((left, right))))
+                                args=self._sorted_tuple((left, right)))
 
     def NotEquals(self, left, right):
         """ Creates an expression of the form: left != right"""
@@ -417,7 +412,7 @@ class FormulaManager(object):
 
         Restriction: Arguments must be boolean
         """
-        tuple_args = self._polymorph_args_to_tuple(self._sort_nodes(args))
+        tuple_args = self._polymorph_args_to_tuple(args, sort=True)
         if len(tuple_args) == 0:
             return self.TRUE()
         elif len(tuple_args) == 1:
@@ -435,7 +430,7 @@ class FormulaManager(object):
 
         Restriction: Arguments must be boolean
         """
-        tuple_args = self._polymorph_args_to_tuple(self._sort_nodes(args))
+        tuple_args = self._polymorph_args_to_tuple(args, sort=True)
 
         if len(tuple_args) == 0:
             return self.FALSE()
@@ -456,7 +451,7 @@ class FormulaManager(object):
          - Arguments must be all of the same type
          - Arguments must be INT or REAL
         """
-        tuple_args = self._polymorph_args_to_tuple(self._sort_nodes(args))
+        tuple_args = self._polymorph_args_to_tuple(args, sort=True)
         if len(tuple_args) == 0:
             raise PysmtTypeError("Cannot create a Plus without arguments.")
 
@@ -488,7 +483,7 @@ class FormulaManager(object):
            A -> !(B \\/ C)
            B -> !(C)
         """
-        bool_exprs = self._polymorph_args_to_tuple(args)
+        bool_exprs = self._polymorph_args_to_tuple(args, sort=True)
         constraints = []
         for (i, elem) in enumerate(bool_exprs[:-1], start=1):
             constraints.append(self.Implies(elem,
@@ -514,7 +509,7 @@ class FormulaManager(object):
 
         AllDifferent(x, y, z) := (x != y) & (x != z) & (y != z)
         """
-        exprs = self._polymorph_args_to_tuple(args)
+        exprs = self._polymorph_args_to_tuple(args, sort=True)
         res = []
         for i, a in enumerate(exprs):
             for b in exprs[i+1:]:
@@ -527,7 +522,7 @@ class FormulaManager(object):
 
     def Min(self, *args):
         """Returns the encoding of the minimum expression within args"""
-        exprs = self._polymorph_args_to_tuple(self._sort_nodes(args))
+        exprs = self._polymorph_args_to_tuple(args, sort=True)
         assert len(exprs) > 0
         if len(exprs) == 1:
             return exprs[0]
@@ -540,7 +535,7 @@ class FormulaManager(object):
 
     def Max(self, *args):
         """Returns the encoding of the maximum expression within args"""
-        exprs = self._polymorph_args_to_tuple(self._sort_nodes(args))
+        exprs = self._polymorph_args_to_tuple(args, sort=True)
         assert len(exprs) > 0
         if len(exprs) == 1:
             return exprs[0]
@@ -667,8 +662,8 @@ class FormulaManager(object):
         res = args[0]
         for arg in args[1:]:
             res = self.create_node(node_type=op.BV_AND,
-                             args=(res,arg),
-                             payload=(res.bv_width(),))
+                                   args=(res, arg),
+                                   payload=(res.bv_width(),))
         return res
 
     def BVOr(self,  *args):
@@ -680,14 +675,14 @@ class FormulaManager(object):
         res = args[0]
         for arg in args[1:]:
             res = self.create_node(node_type=op.BV_OR,
-                             args=(res,arg),
-                             payload=(res.bv_width(),))
+                                   args=(res, arg),
+                                   payload=(res.bv_width(),))
         return res
 
     def BVXor(self, left, right):
         """Returns the Bit-wise XOR of two bitvectors of the same size."""
         return self.create_node(node_type=op.BV_XOR,
-                                args=(left,right),
+                                args=(left, right),
                                 payload=(left.bv_width(),))
 
     def BVConcat(self, *args):
@@ -704,10 +699,11 @@ class FormulaManager(object):
 
     def BVExtract(self, formula, start=0, end=None):
         """Returns the slice of formula from start to end (inclusive)."""
-        if end is None: end = formula.bv_width()-1
+        if end is None:
+            end = formula.bv_width() - 1
         assert is_python_integer(start) and is_python_integer(end)
-        assert end >= start and start >= 0, "Start: %d ; End: %d" % (start,end)
-        size = end-start+1
+        assert 0 <= start <= end, "Start: %d ; End: %d" % (start,end)
+        size = end - start + 1
 
         assert size <= formula.bv_width(), \
             "Invalid size: start=%d, end=%d, width=%d" % \
@@ -751,8 +747,8 @@ class FormulaManager(object):
         res = args[0]
         for arg in args[1:]:
             res = self.create_node(node_type=op.BV_ADD,
-                             args=(res,arg),
-                             payload=(res.bv_width(),))
+                                   args=(res, arg),
+                                   payload=(res.bv_width(),))
         return res
 
     def BVSub(self, left, right):
@@ -770,8 +766,8 @@ class FormulaManager(object):
         res = args[0]
         for arg in args[1:]:
             res = self.create_node(node_type=op.BV_MUL,
-                             args=(res,arg),
-                             payload=(res.bv_width(),))
+                                   args=(res, arg),
+                                   payload=(res.bv_width(),))
         return res
 
     def BVUDiv(self, left, right):
@@ -1098,17 +1094,22 @@ class FormulaManager(object):
             self._normalizer = FormulaContextualizer(self.env)
         return self._normalizer.walk(formula)
 
-    def _polymorph_args_to_tuple(self, args):
+    def _sorted_tuple(self, nodes):
+        return tuple(sorted(nodes, key=lambda p: p.node_id()))
+
+    def _polymorph_args_to_tuple(self, args, sort=False):
         """ Helper function to return a tuple of arguments from args.
 
         This function is used to allow N-ary operators to express their arguments
         both as a list of arguments or as a tuple of arguments: e.g.,
            And([a,b,c]) and And(a,b,c)
-        are both valid, and they are converted into a tuple (a,b,c) """
+        are both valid, and they are converted into a tuple (a,b,c).
+        If `sort` is true, then the generated tuple contains the nodes in
+        non-decreasing node_id order."""
 
         if len(args) == 1 and isinstance(args[0], Iterable):
             args = args[0]
-        return tuple(args)
+        return tuple(args) if not sort else self._sorted_tuple(args)
 
     def __contains__(self, node):
         """Checks whether the given node belongs to this formula manager.
