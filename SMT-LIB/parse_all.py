@@ -26,7 +26,7 @@ def execute_script_fname(smtfile):
     reset_env()
     assert os.path.exists(smtfile)
     start = time.time()
-    read_smtlib(smtfile)
+    read_smtlib(smtfile, False)
     end = time.time()
     return ((end - start), smtfile)
 
