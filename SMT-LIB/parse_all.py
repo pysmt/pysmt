@@ -82,7 +82,7 @@ def main():
     mean = sum(x[0] for x in timings) / len(timings)
     print(f"The mean execution time was {mean:.2f} seconds")
     print(f"The max execution time was {max(x[0] for x in timings):.2f} seconds")
-    print(f"Found {len(errors)} errors: {[el[1] for el in errors]}")
+    print(f"Found {len(errors)} errors in : {[x[1] for x in errors]}")
 
     outfile = args.out
     dump_stats(timings, outfile)
