@@ -480,6 +480,14 @@ variables.""",
                quantifier_free=True,
                real_arithmetic=True)
 
+QF_LIRA = Logic(name="QF_LIRA",
+                description=\
+"""Unquantified linear integer and real arithmetic""",
+                integer_arithmetic=True,
+                real_arithmetic=True,
+                linear=True,
+                quantifier_free=True)
+
 QF_NIA = Logic(name="QF_NIA",
                description=\
 """Quantifier-free integer arithmetic.""",
@@ -667,7 +675,7 @@ QF_LOGICS = frozenset(_l for _l in LOGICS if _l.quantifier_free)
 # This is the set of logics supported by the current version of pySMT
 #
 PYSMT_LOGICS = frozenset([QF_BOOL, QF_IDL, QF_LIA, QF_LRA, QF_RDL, QF_UF, QF_UFIDL,
-                          QF_UFLIA, QF_UFLRA, QF_UFLIRA,
+                          QF_UFLIA, QF_UFLRA, QF_UFLIRA, QF_LIRA,
                           BOOL, LRA, LIA, UFLIRA, UFLRA,
                           QF_BV, QF_UFBV,
                           QF_SLIA,
