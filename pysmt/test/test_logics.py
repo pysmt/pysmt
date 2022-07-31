@@ -16,9 +16,9 @@
 #   limitations under the License.
 #
 import pysmt.logics
-from pysmt.logics import get_logic_by_name, get_logic, most_generic_logic
+from pysmt.logics import get_closer_logic, get_logic_by_name, get_logic, most_generic_logic
 from pysmt.logics import PYSMT_LOGICS
-from pysmt.logics import QF_LIA, LIA, UFLIRA, LRA, QF_UFLIRA, QF_BV, NRA, QF_IDL, QF_BOOL
+from pysmt.logics import QF_LIA, LIA, UFLIRA, LRA, QF_UFLIRA, QF_BV, NRA, QF_IDL, QF_BOOL, QF_NIRA, QF_LIRA
 from pysmt.logics import Theory
 from pysmt.exceptions import (UndefinedLogicError, NoSolverAvailableError,
                               NoLogicAvailableError)
@@ -141,6 +141,11 @@ class TestLogic(TestCase):
                    arrays_const=True,
                    integer_arithmetic=True)
         self.assertIsNotNone(t)
+
+    def test_get_closer_logic_is_deterministic(self):
+        l1 = get_closer_logic([QF_UFLIRA, QF_NIRA], QF_LIRA)
+        l2 = get_closer_logic([QF_NIRA, QF_UFLIRA], QF_LIRA)
+        self.assertEqual(l1, l2)
 
 if __name__ == "__main__":
     main()
