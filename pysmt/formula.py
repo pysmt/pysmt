@@ -234,7 +234,7 @@ class FormulaManager(object):
          - Arguments must be all of the same type
          - Arguments must be INT or REAL
         """
-        tuple_args = self._polymorph_args_to_tuple(args, sort=True)
+        tuple_args = self._args_to_sorted_tuple(args)
         if len(tuple_args) == 0:
             raise PysmtTypeError("Cannot create a Times without arguments.")
 
@@ -412,7 +412,7 @@ class FormulaManager(object):
 
         Restriction: Arguments must be boolean
         """
-        tuple_args = self._polymorph_args_to_tuple(args, sort=True)
+        tuple_args = self._args_to_sorted_tuple(args)
         if len(tuple_args) == 0:
             return self.TRUE()
         elif len(tuple_args) == 1:
@@ -430,7 +430,7 @@ class FormulaManager(object):
 
         Restriction: Arguments must be boolean
         """
-        tuple_args = self._polymorph_args_to_tuple(args, sort=True)
+        tuple_args = self._args_to_sorted_tuple(args)
 
         if len(tuple_args) == 0:
             return self.FALSE()
@@ -451,7 +451,7 @@ class FormulaManager(object):
          - Arguments must be all of the same type
          - Arguments must be INT or REAL
         """
-        tuple_args = self._polymorph_args_to_tuple(args, sort=True)
+        tuple_args = self._args_to_sorted_tuple(args)
         if len(tuple_args) == 0:
             raise PysmtTypeError("Cannot create a Plus without arguments.")
 
@@ -483,7 +483,7 @@ class FormulaManager(object):
            A -> !(B \\/ C)
            B -> !(C)
         """
-        bool_exprs = self._polymorph_args_to_tuple(args, sort=True)
+        bool_exprs = self._args_to_sorted_tuple(args)
         constraints = []
         for (i, elem) in enumerate(bool_exprs[:-1], start=1):
             constraints.append(self.Implies(elem,
@@ -499,7 +499,7 @@ class FormulaManager(object):
            A -> !(B \\/ C)
            B -> !(C)
         """
-        args = self._polymorph_args_to_tuple(args)
+        args = self._args_to_sorted_tuple(args)
         return self.And(self.Or(*args),
                         self.AtMostOne(*args))
 
@@ -509,7 +509,7 @@ class FormulaManager(object):
 
         AllDifferent(x, y, z) := (x != y) & (x != z) & (y != z)
         """
-        exprs = self._polymorph_args_to_tuple(args, sort=True)
+        exprs = self._args_to_sorted_tuple(args)
         res = []
         for i, a in enumerate(exprs):
             for b in exprs[i+1:]:
@@ -522,7 +522,7 @@ class FormulaManager(object):
 
     def Min(self, *args):
         """Returns the encoding of the minimum expression within args"""
-        exprs = self._polymorph_args_to_tuple(args, sort=True)
+        exprs = self._args_to_sorted_tuple(args)
         assert len(exprs) > 0
         if len(exprs) == 1:
             return exprs[0]
@@ -535,7 +535,7 @@ class FormulaManager(object):
 
     def Max(self, *args):
         """Returns the encoding of the maximum expression within args"""
-        exprs = self._polymorph_args_to_tuple(args, sort=True)
+        exprs = self._args_to_sorted_tuple(args)
         assert len(exprs) > 0
         if len(exprs) == 1:
             return exprs[0]
@@ -571,7 +571,7 @@ class FormulaManager(object):
         the SBV() method shall be used.
         """
 
-        if type(value) is str:
+        if isinstance(value, str):
             if value.startswith("#b"):
                 str_width = len(value) - 2
                 value = int(value[2:], 2)
@@ -656,7 +656,7 @@ class FormulaManager(object):
     def BVAnd(self, *args):
         """Returns the Bit-wise AND of bitvectors of the same size.
         If more than 2 arguments are passed, a left-associative formula is generated."""
-        args = self._polymorph_args_to_tuple(args)
+        args = self._args_to_sorted_tuple(args)
         if len(args) == 0:
             raise PysmtValueError("BVAnd expects at least one argument to be passed")
         res = args[0]
@@ -669,7 +669,7 @@ class FormulaManager(object):
     def BVOr(self,  *args):
         """Returns the Bit-wise OR of bitvectors of the same size.
         If more than 2 arguments are passed, a left-associative formula is generated."""
-        args = self._polymorph_args_to_tuple(args)
+        args = self._args_to_sorted_tuple(args)
         if len(args) == 0:
             raise PysmtValueError("BVOr expects at least one argument to be passed")
         res = args[0]
@@ -682,12 +682,12 @@ class FormulaManager(object):
     def BVXor(self, left, right):
         """Returns the Bit-wise XOR of two bitvectors of the same size."""
         return self.create_node(node_type=op.BV_XOR,
-                                args=(left, right),
+                                args=self._sorted_tuple((left, right)),
                                 payload=(left.bv_width(),))
 
     def BVConcat(self, *args):
         """Returns the Concatenation of the given BVs"""
-        ex = self._polymorph_args_to_tuple(args)
+        ex = self._args_to_tuple(args)
         base = self.create_node(node_type=op.BV_CONCAT,
                                 args=(ex[0], ex[1]),
                                 payload=(ex[0].bv_width() + ex[1].bv_width(),))
@@ -741,7 +741,7 @@ class FormulaManager(object):
     def BVAdd(self, *args):
         """Returns the sum of BV.
         If more than 2 arguments are passed, a left-associative formula is generated."""
-        args = self._polymorph_args_to_tuple(args)
+        args = self._args_to_sorted_tuple(args)
         if len(args) == 0:
             raise PysmtValueError("BVAdd expects at least one argument to be passed")
         res = args[0]
@@ -760,7 +760,7 @@ class FormulaManager(object):
     def BVMul(self, *args):
         """Returns the product of BV.
         If more than 2 arguments are passed, a left-associative formula is generated."""
-        args = self._polymorph_args_to_tuple(args)
+        args = self._args_to_sorted_tuple(args)
         if len(args) == 0:
             raise PysmtValueError("BVMul expects at least one argument to be passed")
         res = args[0]
@@ -962,7 +962,7 @@ class FormulaManager(object):
         s1, s2, ..., and sn are String terms.
         String concatenation takes at least 2 arguments.
         """
-        tuple_args = self._polymorph_args_to_tuple(args)
+        tuple_args = self._args_to_tuple(args)
         if len(tuple_args) <= 1:
             raise TypeError("Cannot create a Str_Concat without arguments.")
         return self.create_node(node_type=op.STR_CONCAT, args=tuple_args)
@@ -1097,19 +1097,33 @@ class FormulaManager(object):
     def _sorted_tuple(self, nodes):
         return tuple(sorted(nodes, key=lambda p: p.node_id()))
 
-    def _polymorph_args_to_tuple(self, args, sort=False):
+    def _polymorph_args_to_iterable(self, args):
+        """ Helper function to return a iterable of arguments from args.
+
+        This function is used to allow N-ary operators to express their arguments
+        both as a list of arguments or as a tuple of arguments: e.g.,
+           And([a,b,c]) and And(a,b,c)
+        are both valid, and they are converted into a iterable (a,b,c)."""
+        return args[0] if len(args) == 1 and isinstance(args[0], Iterable) \
+            else args
+
+    def _args_to_tuple(self, args):
         """ Helper function to return a tuple of arguments from args.
 
         This function is used to allow N-ary operators to express their arguments
         both as a list of arguments or as a tuple of arguments: e.g.,
            And([a,b,c]) and And(a,b,c)
-        are both valid, and they are converted into a tuple (a,b,c).
-        If `sort` is true, then the generated tuple contains the nodes in
-        non-decreasing node_id order."""
+        are both valid, and they are converted into a tuple (a,b,c)."""
+        return tuple(self._polymorph_args_to_iterable(args))
 
-        if len(args) == 1 and isinstance(args[0], Iterable):
-            args = args[0]
-        return tuple(args) if not sort else self._sorted_tuple(args)
+    def _args_to_sorted_tuple(self, args):
+        """ Helper function to return a sorted tuple of arguments from args.
+
+        This function is used to allow N-ary commutative operators to express
+        their arguments both as a list of arguments or as a tuple of arguments:
+          e.g. And([a,b,c]) and And(a,b,c)
+        are both valid, and they are converted into a sorted tuple (a,b,c)."""
+        return self._sorted_tuple(self._polymorph_args_to_iterable(args))
 
     def __contains__(self, node):
         """Checks whether the given node belongs to this formula manager.
