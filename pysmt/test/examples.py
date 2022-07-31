@@ -306,7 +306,7 @@ def get_full_example_formulae(environment=None):
                     logic=pysmt.logics.QF_BV
                 ),
 
-            Example(hr="((7_3 xor bv3) = (6_3 xor bv3))",
+            Example(hr="((bv3 xor 7_3) = (bv3 xor 6_3))",
                     expr=Equals(BVXor(BV("111"), bv3),
                                 BVXor(BV("110"), bv3)),
                     is_valid=False,
