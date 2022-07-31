@@ -1,3 +1,8 @@
+import sys
+
+if sys.version_info < (3, 6):
+    raise Exception("parse_all script requires python version >= 3.6")
+
 import os
 from timeit import timeit
 import random
