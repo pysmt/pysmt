@@ -174,9 +174,8 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
             msg = yices_api.yices_error_string()
             if code == -1 and "non-linear arithmetic" in msg:
                 raise NonLinearError(formula)
-            raise InternalSolverError("Yices returned non-zero code upon assert"\
-                                      ": %s (code: %s)" % \
-                                      (msg, code))
+            raise InternalSolverError("Yices returned non-zero code upon assert"
+                                      ": %s (code: %s)" % (msg, code))
 
     def get_model(self):
         assignment = {}
@@ -188,8 +187,9 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
             if s.is_symbol() and s.symbol_type().is_string_type():
                 continue
             if s.is_term():
-                if s.symbol_type().is_array_type(): continue
-                if s.symbol_type().is_custom_type(): continue
+                if s.symbol_type().is_array_type() or \
+                   s.symbol_type().is_custom_type():
+                    continue
                 v = self.get_value(s)
                 assignment[s] = v
         return EagerModel(assignment=assignment, environment=self.environment)
@@ -233,7 +233,7 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
                     # spurious push calls
                     self.failed_pushes += 1
                 else:
-                    raise InternalSolverError("Error in push: %s" % \
+                    raise InternalSolverError("Error in push: %s" %
                                               yices_api.yices_error_string())
 
     @clear_pending_pop
@@ -244,7 +244,7 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
             else:
                 c = yices_api.yices_pop(self.yices)
                 if c != 0:
-                    raise InternalSolverError("Error in pop: %s" % \
+                    raise InternalSolverError("Error in pop: %s" %
                                               yices_api.yices_error_string())
 
     def print_model(self, name_filter=None):
@@ -473,7 +473,6 @@ class YicesConverter(Converter, DagWalker):
         res = yices_api.yices_application(decl, len(args), arr)
         self._check_term_result(res)
         return res
-
 
     def walk_bv_constant(self, formula, **kwargs):
         width = formula.bv_width()
