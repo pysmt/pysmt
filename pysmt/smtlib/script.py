@@ -72,9 +72,14 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
                                             quote(self.args[1])))
 
         elif self.name == smtcmd.ASSERT:
-            outstream.write("(%s " % self.name)
-            printer.printer(self.args[0])
-            outstream.write(")")
+            if hasattr(self, 'assert_name'):
+                outstream.write("(%s (! " % self.name)
+                printer.printer(self.args[0])
+                outstream.write(" :named %s))" % self.assert_name)
+            else:
+                outstream.write("(%s " % self.name)
+                printer.printer(self.args[0])
+                outstream.write(")")
 
         elif self.name == smtcmd.GET_VALUE:
             outstream.write("(%s (" % self.name)
@@ -82,6 +87,13 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
                 printer.printer(a)
                 outstream.write(" ")
             outstream.write("))")
+
+        elif self.name == smtcmd.GET_INTERPOLANTS:
+            outstream.write("(%s " % self.name)
+            for a in self.args:
+                outstream.write(a)
+                outstream.write(" ")
+            outstream.write(")")
 
         elif self.name in [smtcmd.CHECK_SAT, smtcmd.EXIT,
                            smtcmd.RESET_ASSERTIONS, smtcmd.GET_UNSAT_CORE,

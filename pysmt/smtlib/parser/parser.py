@@ -1155,6 +1155,27 @@ class SmtLibParser(object):
         self.cache.unbind_all(symbols)
         return res
 
+    def get_interpolant_list(self, script):
+        """
+        Parse a list of interpolants produced by get-interpolants
+        commands in SmtLib
+        """
+        symbols = self.env.formula_manager.symbols
+        self.cache.update(symbols)
+        tokens = Tokenizer(script, interactive=self.interactive)
+        res = []
+        tokens.consume()
+        while True:
+            current = tokens.consume()
+            if current != "(":
+                break
+            else:
+                tokens.add_extra_token(current)
+            expr = self.get_expression(tokens)
+            res.append(expr)
+        self.cache.unbind_all(symbols)
+        return res
+
     def get_command(self, tokens):
         """Builds an SmtLibCommand instance out of a parsed term."""
         while True:
