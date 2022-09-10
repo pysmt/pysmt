@@ -26,12 +26,14 @@ else:
 import pysmt.operators as op
 import pysmt.exceptions
 
+
 # NodeType to Function Name
 def nt_to_fun(o):
     """Returns the name of the walk function for the given nodetype."""
     return "walk_%s" % op.op_to_str(o).lower()
 
-class handles(object):
+
+class handles:
     """Decorator for walker functions.
 
     Use it by specifying the nodetypes that need to be handled by the
@@ -55,17 +57,18 @@ class handles(object):
         func.nodetypes = nodetypes
         return func
 
+
 class MetaNodeTypeHandler(type):
     """Metaclass used to intepret the nodehandler decorator. """
     def __new__(cls, name, bases, dct):
         obj = type.__new__(cls, name, bases, dct)
-        for k,v in dct.items():
+        for k, v in dct.items():
             if hasattr(v, "nodetypes"):
                 obj.set_handler(v, *v.nodetypes)
         return obj
 
 
-class Walker(object, metaclass=MetaNodeTypeHandler):
+class Walker(metaclass=MetaNodeTypeHandler):
     """Base Abstract Walker class.
 
     Do not subclass directly, use DagWalker or TreeWalker, instead.
@@ -121,11 +124,10 @@ class Walker(object, metaclass=MetaNodeTypeHandler):
         if node_type in self.env.dwf:
             dwf = self.env.dwf[node_type]
             walker_class = type(self)
-            if type(self) in dwf:
+            if walker_class in dwf:
                 self.functions[node_type] = partial(dwf[walker_class], self)
                 return self.functions[node_type](formula, **kwargs)
 
-        node_type = formula.node_type()
         raise pysmt.exceptions.UnsupportedOperatorError(node_type=node_type,
                                                         expression=formula)
 

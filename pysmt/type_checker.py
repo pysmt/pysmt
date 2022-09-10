@@ -22,8 +22,8 @@ reasoning about the type of formulae.
  * The functions assert_*_args are useful for testing the type of
    arguments of a given function.
 """
-import pysmt.walkers as walkers
-import pysmt.operators as op
+from pysmt import walkers
+from pysmt import operators as op
 
 from pysmt.typing import BOOL, REAL, INT, BVType, ArrayType, STRING
 from pysmt.exceptions import PysmtTypeError
@@ -33,7 +33,7 @@ class SimpleTypeChecker(walkers.DagWalker):
 
     def __init__(self, env=None):
         walkers.DagWalker.__init__(self, env=env)
-        # If `be_nice` is true, the `get_type` method will return None if 
+        # If `be_nice` is true, the `get_type` method will return None if
         # the type cannot be computed instead of than raising an exception.
         self.be_nice = False
 
@@ -50,10 +50,9 @@ class SimpleTypeChecker(walkers.DagWalker):
 
     def walk_type_to_type(self, formula, args, type_in, type_out):
         assert formula is not None
-        for x in args:
-            if x is None or x != type_in:
-                return None
-        return type_out
+        if all(x is not None and x == type_in for x in args):
+            return type_out
+        return None
 
     @walkers.handles(op.AND, op.OR, op.NOT, op.IMPLIES, op.IFF)
     def walk_bool_to_bool(self, formula, args, **kwargs):
@@ -89,10 +88,9 @@ class SimpleTypeChecker(walkers.DagWalker):
         #pylint: disable=unused-argument
         # We check that all children are BV and the same size
         target_bv_type = BVType(formula.bv_width())
-        for a in args:
-            if not a == target_bv_type:
-                return None
-        return target_bv_type
+        if all(a == target_bv_type for a in args):
+            return target_bv_type
+        return None
 
     @walkers.handles(op.STR_CONCAT, op.STR_REPLACE)
     def walk_str_to_str(self, formula, args, **kwargs):
@@ -125,10 +123,9 @@ class SimpleTypeChecker(walkers.DagWalker):
     def walk_bv_to_bool(self, formula, args, **kwargs):
         #pylint: disable=unused-argument
         width = args[0].width
-        for a in args[1:]:
-            if (not a.is_bv_type()) or width != a.width:
-                return None
-        return BOOL
+        if all(a.is_bv_type() and width == a.width for a in args[1:]):
+            return BOOL
+        return None
 
     def walk_bv_tonatural(self, formula, args, **kwargs):
         #pylint: disable=unused-argument
@@ -141,12 +138,12 @@ class SimpleTypeChecker(walkers.DagWalker):
         # The type-checker only verifies that they are indeed
         # correct.
         try:
-            l_width = args[0].width
-            r_width = args[1].width
+            expected_width = sum(arg.width for arg in args)
             target_width = formula.bv_width()
         except AttributeError:
             return None
-        if not l_width + r_width == target_width:
+
+        if target_width != expected_width:
             return None
         return BVType(target_width)
 
@@ -204,8 +201,9 @@ class SimpleTypeChecker(walkers.DagWalker):
 
     def walk_ite(self, formula, args, **kwargs):
         assert formula is not None
-        if None in args: return None
-        if (args[0] == BOOL and args[1]==args[2]):
+        if None in args:
+            return None
+        if args[0] == BOOL and args[1] == args[2]:
             return args[1]
         return None
 
@@ -267,11 +265,10 @@ class SimpleTypeChecker(walkers.DagWalker):
         if len(args) != len(tp.param_types):
             return None
 
-        for (arg, p_type) in zip(args, tp.param_types):
-            if arg != p_type:
-                return None
+        if all(arg == p_type for arg, p_type in zip(args, tp.param_types)):
+            return tp.return_type
 
-        return tp.return_type
+        return None
 
     def walk_str_charat(self, formula, args, **kwargs):
         assert formula is not None
@@ -297,31 +294,34 @@ class SimpleTypeChecker(walkers.DagWalker):
 
     def walk_array_select(self, formula, args, **kwargs):
         assert formula is not None
-        if None in args: return None
-        if (args[0].is_array_type() and args[0].index_type==args[1]):
+        if None in args:
+            return None
+        if (args[0].is_array_type() and args[0].index_type == args[1]):
             return args[0].elem_type
         return None
 
     def walk_array_store(self, formula, args, **kwargs):
         assert formula is not None
-        if None in args: return None
-        if (args[0].is_array_type() and args[0].index_type==args[1] and
-            args[0].elem_type==args[2]):
+        if None in args:
+            return None
+        if (args[0].is_array_type() and args[0].index_type == args[1] and
+            args[0].elem_type == args[2]):
             return args[0]
         return None
 
     def walk_array_value(self, formula, args, **kwargs):
         assert formula is not None
-        if None in args: return None
+        if None in args:
+            return None
 
         default_type = args[0]
         idx_type = formula.array_value_index_type()
-        for i, c in enumerate(args[1:]):
-            if i % 2 == 0 and c != idx_type:
-                return None # Wrong index type
-            elif i % 2 == 1 and c != default_type:
-                return None
-        return ArrayType(idx_type, default_type)
+
+        if all(c == (idx_type if i % 2 == 0 else default_type)
+               for i, c in enumerate(args[1:])):
+            return ArrayType(idx_type, default_type)
+
+        return None
 
     def walk_pow(self, formula, args, **kwargs):
         if args[0] != args[1]:
