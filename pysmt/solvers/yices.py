@@ -236,7 +236,6 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
                 else:
                     raise InternalSolverError("Error in push: %s" %
                                               yices_api.yices_error_string())
-
     @clear_pending_pop
     def pop(self, levels=1):
         for _ in range(levels):
@@ -507,9 +506,9 @@ class YicesConverter(Converter, DagWalker):
         return res
 
     def walk_bv_extract(self, formula, args, **kwargs):
-        res = yices_api.yices_bvextract(args[0],
-                                       formula.bv_extract_start(),
-                                       formula.bv_extract_end())
+        res = yicespy.yices_bvextract(args[0],
+                                      formula.bv_extract_start(),
+                                      formula.bv_extract_end())
         self._check_term_result(res)
         return res
 
