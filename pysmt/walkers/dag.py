@@ -43,7 +43,6 @@ class DagWalker(Walker):
         self.memoization = {}
         self.invalidate_memoization = invalidate_memoization
         self.stack = []
-        return
 
     def _get_children(self, formula):
         return formula.args()
@@ -70,7 +69,7 @@ class DagWalker(Walker):
             except KeyError:
                 f = self.walk_error
 
-            args = [self.memoization[self._get_key(s, **kwargs)] \
+            args = [self.memoization[self._get_key(s, **kwargs)]
                     for s in self._get_children(formula)]
             self.memoization[key] = f(formula, args=args, **kwargs)
         else:
