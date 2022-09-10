@@ -1048,9 +1048,9 @@ class TestFormulaManager(TestCase):
         )
         self.assertValid(
             self.mgr.Equals(
-            # passing n elements
-            self.mgr.BVOr(bva, bvb, bvc),
-            self.mgr.BVOr(self.mgr.BVOr(bva, bvb), bvc)
+                # passing n elements
+                self.mgr.BVOr(bva, bvb, bvc),
+                self.mgr.BVOr(self.mgr.BVOr(bva, bvb), bvc)
             )
         )
         self.assertValid(
