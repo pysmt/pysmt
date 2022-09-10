@@ -172,9 +172,8 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
             msg = yicespy.yices_error_string()
             if code == -1 and "non-linear arithmetic" in msg:
                 raise NonLinearError(formula)
-            raise InternalSolverError("Yices returned non-zero code upon assert"\
-                                      ": %s (code: %s)" % \
-                                      (msg, code))
+            raise InternalSolverError("Yices returned non-zero code upon assert"
+                                      ": %s (code: %s)" % (msg, code))
 
     def get_model(self):
         assignment = {}
@@ -186,8 +185,9 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
             if s.is_symbol() and s.symbol_type().is_string_type():
                 continue
             if s.is_term():
-                if s.symbol_type().is_array_type(): continue
-                if s.symbol_type().is_custom_type(): continue
+                if s.symbol_type().is_array_type() or \
+                   s.symbol_type().is_custom_type():
+                    continue
                 v = self.get_value(s)
                 assignment[s] = v
         return EagerModel(assignment=assignment, environment=self.environment)
@@ -231,7 +231,7 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
                     # spurious push calls
                     self.failed_pushes += 1
                 else:
-                    raise InternalSolverError("Error in push: %s" % \
+                    raise InternalSolverError("Error in push: %s" %
                                               yicespy.yices_error_string())
 
     @clear_pending_pop
@@ -242,7 +242,7 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
             else:
                 c = yicespy.yices_pop(self.yices)
                 if c != 0:
-                    raise InternalSolverError("Error in pop: %s" % \
+                    raise InternalSolverError("Error in pop: %s" %
                                               yicespy.yices_error_string())
 
     def print_model(self, name_filter=None):
@@ -409,9 +409,8 @@ class YicesConverter(Converter, DagWalker):
         new_vars = [self._bound_symbol(x) for x in variables]
         old_vars = [self.walk_symbol(x) for x in variables]
         new_formula = yicespy.yices_subst_term(len(variables), new_vars,
-                                                old_vars, formula)
+                                               old_vars, formula)
         return (new_formula, new_vars)
-
 
     def walk_plus(self, formula, args, **kwargs):
         res = yicespy.yices_sum(len(args), args)
@@ -455,7 +454,6 @@ class YicesConverter(Converter, DagWalker):
         self._check_term_result(res)
         return res
 
-
     def walk_bv_constant(self, formula, **kwargs):
         width = formula.bv_width()
         res = None
@@ -482,19 +480,19 @@ class YicesConverter(Converter, DagWalker):
         return res
 
     def walk_bv_concat(self, formula, args, **kwargs):
-        res = yicespy.yices_bvconcat2(args[0], args[1])
+        res = yicespy.yices_bvconcat(len(args), args)
         self._check_term_result(res)
         return res
 
     def walk_bv_extract(self, formula, args, **kwargs):
         res = yicespy.yices_bvextract(args[0],
-                                       formula.bv_extract_start(),
-                                       formula.bv_extract_end())
+                                      formula.bv_extract_start(),
+                                      formula.bv_extract_end())
         self._check_term_result(res)
         return res
 
     def walk_bv_or(self, formula, args, **kwargs):
-        res = yicespy.yices_bvor2(args[0], args[1])
+        res = yicespy.yices_bvor(len(args), args)
         self._check_term_result(res)
         return res
 
@@ -504,7 +502,7 @@ class YicesConverter(Converter, DagWalker):
         return res
 
     def walk_bv_and(self, formula, args, **kwargs):
-        res = yicespy.yices_bvand2(args[0], args[1])
+        res = yicespy.yices_bvand(len(args), args)
         self._check_term_result(res)
         return res
 
@@ -514,7 +512,7 @@ class YicesConverter(Converter, DagWalker):
         return res
 
     def walk_bv_add(self, formula, args, **kwargs):
-        res = yicespy.yices_bvadd(args[0], args[1])
+        res = yicespy.yices_bvsum(len(args), args)
         self._check_term_result(res)
         return res
 
@@ -529,7 +527,7 @@ class YicesConverter(Converter, DagWalker):
         return res
 
     def walk_bv_mul(self, formula, args, **kwargs):
-        res = yicespy.yices_bvmul(args[0], args[1])
+        res = yicespy.yices_bvproduct(len(args), args)
         self._check_term_result(res)
         return res
 
@@ -568,7 +566,7 @@ class YicesConverter(Converter, DagWalker):
         self._check_term_result(res)
         return res
 
-    def walk_bv_sext (self, formula, args, **kwargs):
+    def walk_bv_sext(self, formula, args, **kwargs):
         res = yicespy.yices_sign_extend(args[0], formula.bv_extend_step())
         self._check_term_result(res)
         return res
@@ -578,14 +576,13 @@ class YicesConverter(Converter, DagWalker):
         self._check_term_result(res)
         return res
 
-    def walk_bv_sle (self, formula, args, **kwargs):
+    def walk_bv_sle(self, formula, args, **kwargs):
         res = yicespy.yices_bvsle_atom(args[0], args[1])
         self._check_term_result(res)
         return res
 
-    def walk_bv_comp (self, formula, args, **kwargs):
-        a,b = args
-        eq = yicespy.yices_bveq_atom(a, b)
+    def walk_bv_comp(self, formula, args, **kwargs):
+        eq = yicespy.yices_bveq_atom(args[0], args[1])
         self._check_term_result(eq)
         one = yicespy.yices_bvconst_int32(1, 1)
         zero = yicespy.yices_bvconst_int32(1, 0)
@@ -593,17 +590,17 @@ class YicesConverter(Converter, DagWalker):
         self._check_term_result(res)
         return res
 
-    def walk_bv_sdiv (self, formula, args, **kwargs):
+    def walk_bv_sdiv(self, formula, args, **kwargs):
         res = yicespy.yices_bvsdiv(args[0], args[1])
         self._check_term_result(res)
         return res
 
-    def walk_bv_srem (self, formula, args, **kwargs):
+    def walk_bv_srem(self, formula, args, **kwargs):
         res = yicespy.yices_bvsrem(args[0], args[1])
         self._check_term_result(res)
         return res
 
-    def walk_bv_ashr (self, formula, args, **kwargs):
+    def walk_bv_ashr(self, formula, args, **kwargs):
         res = yicespy.yices_bvashr(args[0], args[1])
         self._check_term_result(res)
         return res
@@ -628,10 +625,8 @@ class YicesConverter(Converter, DagWalker):
         elif tp.is_function_type():
             stps = [self._type_to_yices(x) for x in tp.param_types]
             rtp = self._type_to_yices(tp.return_type)
-            #arr = (yicespy.type_t * len(stps))(*stps)
-            return yicespy.yices_function_type(len(stps),
-                                              stps,
-                                              rtp)
+            # arr = (yicespy.type_t * len(stps))(*stps)
+            return yicespy.yices_function_type(len(stps), stps, rtp)
         elif tp.is_bv_type():
             return yicespy.yices_bv_type(tp.width)
         elif tp.is_custom_type():

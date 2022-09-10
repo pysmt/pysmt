@@ -143,9 +143,9 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
     SOLVERFOR_LOGIC_NAMES=['AUFLIA', 'ALIA', 'AUFLIRA', 'AUFNIRA', 'LRA', 'LIA', 'NIA',
                            'NRA', 'QF_ABV', 'QF_AUFBV', 'QF_AUFLIA', 'QF_ALIA', 'QF_AX',
                            'QF_BV', 'BV', 'UFBV', 'QF_IDL', 'QF_LIA', 'QF_LRA', 'QF_NIA',
-                           'QF_NRA', 'QF_RDL', 'QF_UF', 'UF', 'QF_UFBV', 'QF_UFIDL', 
+                           'QF_NRA', 'QF_RDL', 'QF_UF', 'UF', 'QF_UFBV', 'QF_UFIDL',
                            'QF_UFLIA', 'QF_UFLRA', 'QF_UFNRA', 'QF_UFNIA', 'UFLRA', 'UFNIA']
-    
+
     def __init__(self, environment, logic, **options):
         IncrementalTrackingSolver.__init__(self,
                                            environment=environment,
@@ -326,12 +326,12 @@ class Z3Converter(Converter, DagWalker):
             z3.Z3_OP_IMPLIES: lambda args, expr: self.mgr.Implies(args[0], args[1]),
             z3.Z3_OP_ITE: lambda args, expr: self.mgr.Ite(args[0], args[1], args[2]),
             z3.Z3_OP_TO_REAL: lambda args, expr: self.mgr.ToReal(args[0]),
-            z3.Z3_OP_BAND : lambda args, expr: self.mgr.BVAnd(args[0], args[1]),
-            z3.Z3_OP_BOR : lambda args, expr: self.mgr.BVOr(args[0], args[1]),
+            z3.Z3_OP_BAND: lambda args, expr: self.mgr.BVAnd(args),
+            z3.Z3_OP_BOR : lambda args, expr: self.mgr.BVOr(args),
             z3.Z3_OP_BXOR : lambda args, expr: self.mgr.BVXor(args[0], args[1]),
             z3.Z3_OP_BNOT : lambda args, expr: self.mgr.BVNot(args[0]),
             z3.Z3_OP_BNEG : lambda args, expr: self.mgr.BVNeg(args[0]),
-            z3.Z3_OP_CONCAT : lambda args, expr: self.mgr.BVConcat(args[0], args[1]),
+            z3.Z3_OP_CONCAT : lambda args, expr: self.mgr.BVConcat(args),
             z3.Z3_OP_ULT : lambda args, expr: self.mgr.BVULT(args[0], args[1]),
             z3.Z3_OP_ULEQ : lambda args, expr: self.mgr.BVULE(args[0], args[1]),
             z3.Z3_OP_SLT : lambda args, expr: self.mgr.BVSLT(args[0], args[1]),
@@ -340,8 +340,8 @@ class Z3Converter(Converter, DagWalker):
             z3.Z3_OP_UGEQ : lambda args, expr: self.mgr.BVUGE(args[0], args[1]),
             z3.Z3_OP_SGT : lambda args, expr: self.mgr.BVSGT(args[0], args[1]),
             z3.Z3_OP_SGEQ : lambda args, expr: self.mgr.BVSGE(args[0], args[1]),
-            z3.Z3_OP_BADD : lambda args, expr: self.mgr.BVAdd(args[0], args[1]),
-            z3.Z3_OP_BMUL : lambda args, expr: self.mgr.BVMul(args[0], args[1]),
+            z3.Z3_OP_BADD : lambda args, expr: self.mgr.BVAdd(args),
+            z3.Z3_OP_BMUL : lambda args, expr: self.mgr.BVMul(args),
             z3.Z3_OP_BUDIV : lambda args, expr: self.mgr.BVUDiv(args[0], args[1]),
             z3.Z3_OP_BSDIV : lambda args, expr: self.mgr.BVSDiv(args[0], args[1]),
             z3.Z3_OP_BUREM : lambda args, expr: self.mgr.BVURem(args[0], args[1]),
@@ -697,7 +697,7 @@ class Z3Converter(Converter, DagWalker):
 
     def walk_quantifier(self, formula, args, **kwargs):
         qvars = formula.quantifier_vars()
-        qvars, qvars_sz = self._to_ast_array([self.walk_symbol(x)\
+        qvars, qvars_sz = self._to_ast_array([self.walk_symbol(x)
                                               for x in qvars])
         empty_str = z3.Z3_mk_string_symbol(self.ctx.ref(), "")
         z3term = z3.Z3_mk_quantifier_const_ex(self.ctx.ref(),
@@ -781,7 +781,7 @@ class Z3Converter(Converter, DagWalker):
                                 str(formula.bv_rotation_step()),
                                 bvsort.ast)
         z3term = z3.Z3_mk_ext_rotate_right(self.ctx.ref(),
-                                          args[0], step)
+                                           args[0], step)
         z3.Z3_inc_ref(self.ctx.ref(), z3term)
         return z3term
 
@@ -791,7 +791,7 @@ class Z3Converter(Converter, DagWalker):
         z3.Z3_inc_ref(self.ctx.ref(), z3term)
         return z3term
 
-    def walk_bv_sext (self, formula, args, **kwargs):
+    def walk_bv_sext(self, formula, args, **kwargs):
         z3term = z3.Z3_mk_sign_ext(self.ctx.ref(),
                                    formula.bv_extend_step(), args[0])
         z3.Z3_inc_ref(self.ctx.ref(), z3term)
@@ -869,6 +869,15 @@ class Z3Converter(Converter, DagWalker):
             return z3term
         return walk_binary
 
+    def make_walk_nary_to_binary(func):
+        def walk_n_to_b(self, formula, args, **kwargs):
+            z3term = args[0]
+            for arg in args[1:]:
+                z3term = func(self.ctx.ref(), z3term, arg)
+                z3.Z3_inc_ref(self.ctx.ref(), z3term)
+            return z3term
+        return walk_n_to_b
+
     walk_and     = make_walk_nary(z3.Z3_mk_and)
     walk_or      = make_walk_nary(z3.Z3_mk_or)
     walk_plus    = make_walk_nary(z3.Z3_mk_add)
@@ -885,13 +894,13 @@ class Z3Converter(Converter, DagWalker):
     walk_bv_ule  = make_walk_binary(z3.Z3_mk_bvule)
     walk_bv_slt  = make_walk_binary(z3.Z3_mk_bvslt)
     walk_bv_sle  = make_walk_binary(z3.Z3_mk_bvsle)
-    walk_bv_concat = make_walk_binary(z3.Z3_mk_concat)
-    walk_bv_or   = make_walk_binary(z3.Z3_mk_bvor)
-    walk_bv_and  = make_walk_binary(z3.Z3_mk_bvand)
+    walk_bv_concat = make_walk_nary_to_binary(z3.Z3_mk_concat)
+    walk_bv_or   = make_walk_nary_to_binary(z3.Z3_mk_bvor)
+    walk_bv_and  = make_walk_nary_to_binary(z3.Z3_mk_bvand)
     walk_bv_xor  = make_walk_binary(z3.Z3_mk_bvxor)
-    walk_bv_add  = make_walk_binary(z3.Z3_mk_bvadd)
+    walk_bv_add  = make_walk_nary_to_binary(z3.Z3_mk_bvadd)
     walk_bv_sub  = make_walk_binary(z3.Z3_mk_bvsub)
-    walk_bv_mul  = make_walk_binary(z3.Z3_mk_bvmul)
+    walk_bv_mul  = make_walk_nary_to_binary(z3.Z3_mk_bvmul)
     walk_bv_udiv = make_walk_binary(z3.Z3_mk_bvudiv)
     walk_bv_urem = make_walk_binary(z3.Z3_mk_bvurem)
     walk_bv_lshl = make_walk_binary(z3.Z3_mk_bvshl)
@@ -945,8 +954,8 @@ class Z3QuantifierEliminator(QuantifierEliminator):
     def eliminate_quantifiers(self, formula):
         logic = get_logic(formula, self.environment)
         if not logic <= LRA and not logic <= LIA:
-            raise PysmtValueError("Z3 quantifier elimination only "\
-                                  "supports LRA or LIA without combination."\
+            raise PysmtValueError("Z3 quantifier elimination only "
+                                  "supports LRA or LIA without combination."
                                   "(detected logic is: %s)" % str(logic))
 
         simplifier = z3.Tactic('simplify')
@@ -964,13 +973,13 @@ class Z3QuantifierEliminator(QuantifierEliminator):
         except ConvertExpressionError:
             if logic <= LRA:
                 raise
-            raise ConvertExpressionError(message=("Unable to represent" \
-                "expression %s in pySMT: the quantifier elimination for " \
-                "LIA is incomplete as it requires the modulus. You can " \
-                "find the Z3 expression representing the quantifier " \
-                "elimination as the attribute 'expression' of this " \
+            raise ConvertExpressionError(message=("Unable to represent"
+                "expression %s in pySMT: the quantifier elimination for "
+                "LIA is incomplete as it requires the modulus. You can "
+                "find the Z3 expression representing the quantifier "
+                "elimination as the attribute 'expression' of this "
                 "exception object" % str(res)),
-                                          expression=res)
+                                         expression=res)
 
         return pysmt_res
 
