@@ -216,6 +216,160 @@ class CNFizer(DagWalker):
 # EOC CNFizer
 
 
+class PolarityCNFizer(CNFizer):
+    """
+    Convert formula into an Equisatisfiable CNF using the polarity-based transformation.
+    """
+
+    def _get_children(self, formula, pol=None):
+        if formula.is_not():
+            return [(formula.arg(0), not pol)]
+
+        elif formula.is_implies():
+            return [(formula.arg(0), not pol), (formula.arg(1), pol)]
+
+        elif formula.is_iff():
+            return [(formula.arg(0), pol), (formula.arg(1), pol),
+                    (formula.arg(0), not pol), (formula.arg(1), not pol)]
+
+        elif formula.is_and() or formula.is_or() or formula.is_quantifier():
+            return [(a, pol) for a in formula.args()]
+
+        elif formula.is_ite():
+            # This must be a boolean ITE as we do not recur within
+            # theory atoms
+            assert self.env.stc.get_type(formula).is_bool_type()
+            i, t, e = formula.args()
+            return [(i, pol), (i, not pol), (t, pol), (e, not pol)]
+
+        else:
+            assert formula.is_str_op() or \
+                   formula.is_symbol() or \
+                   formula.is_function_application() or \
+                   formula.is_bool_constant() or \
+                   formula.is_theory_relation(), str(formula)
+            return []
+
+    def _push_with_children_to_stack(self, formula, pol=None, **kwargs):
+        self.stack.append((True, formula, pol))
+
+        for s, p in self._get_children(formula, pol):
+            # Add only if not memoized already
+            key = self._get_key(s, p, **kwargs)
+            if key not in self.memoization:
+                self.stack.append((False, s, p))
+
+    def _compute_node_result(self, formula, pol=None, **kwargs):
+        key = self._get_key(formula, pol, **kwargs)
+        if key not in self.memoization:
+            try:
+                f = self.functions[formula.node_type()]
+            except KeyError:
+                f = self.walk_error
+
+            args = [self.memoization[self._get_key(s, p, **kwargs)] \
+                    for s, p in self._get_children(formula, pol)]
+
+            self.memoization[key] = f(formula, args=args, pol=pol, **kwargs)
+        else:
+            pass
+
+    def _process_stack(self, **kwargs):
+        while self.stack:
+            (was_expanded, formula, pol) = self.stack.pop()
+            if was_expanded:
+                self._compute_node_result(formula, pol, **kwargs)
+            else:
+                self._push_with_children_to_stack(formula, pol, **kwargs)
+
+    def iter_walk(self, formula, **kwargs):
+        self.stack.append((False, formula, True))
+        self._process_stack(**kwargs)
+        res_key = self._get_key(formula, pol=True, **kwargs)
+        return self.memoization[res_key]
+
+    def _get_key(self, formula, pol=None, **kwargs):
+        return formula, pol
+
+    def walk_and(self, formula, args, pol=None, **kwargs):
+        if len(args) == 1:
+            return args[0]
+
+        k = self._key_var(formula)
+        _cnf = [clause for a, c in args for clause in c]
+        if pol:
+            _cnf.extend(frozenset([a, self.mgr.Not(k)]) for a, _ in args)
+        else:
+            _cnf.extend([frozenset([k] + [self.mgr.Not(a).simplify() for a, _ in args])])
+
+        return k, frozenset(_cnf)
+
+    def walk_or(self, formula, args, pol=None, **kwargs):
+        if len(args) == 1:
+            return args[0]
+        k = self._key_var(formula)
+        _cnf = [clause for a, c in args for clause in c]
+        if pol:
+            _cnf.extend(frozenset([k, self.mgr.Not(a).simplify()]) for a, c in args)
+        else:
+            _cnf.extend([frozenset([self.mgr.Not(k)] + [a for a, _ in args])])
+
+        return k, frozenset(_cnf)
+
+    def walk_implies(self, formula, args, pol=None, **kwargs):
+        a, cnf_a = args[0]
+        b, cnf_b = args[1]
+
+        k = self._key_var(formula)
+        not_a = self.mgr.Not(a).simplify()
+        not_b = self.mgr.Not(b).simplify()
+        not_k = self.mgr.Not(k)
+        _cnf = []
+        if pol:
+            _cnf.extend([frozenset([not_a, b, not_k])])
+        else:
+            _cnf.extend([frozenset([a, k]), frozenset([not_b, k])])
+
+        return k, (cnf_a | cnf_b | frozenset(_cnf))
+
+    def walk_iff(self, formula, args, pol=None, **kwargs):
+        a, cnf_ap = args[0]
+        b, cnf_bp = args[1]
+        _, cnf_an = args[2]
+        _, cnf_bn = args[3]
+
+        k = self._key_var(formula)
+        not_a = self.mgr.Not(a).simplify()
+        not_b = self.mgr.Not(b).simplify()
+        not_k = self.mgr.Not(k)
+
+        return k, (cnf_ap | cnf_an | cnf_bp | cnf_bn
+                   | frozenset([frozenset([not_a, not_b, k]),
+                                frozenset([not_a, b, not_k]),
+                                frozenset([a, not_b, not_k]),
+                                frozenset([a, b, k])]))
+
+    def walk_ite(self, formula, args, pol=None, **kwargs):
+        if any(a == CNFizer.THEORY_PLACEHOLDER for a in args):
+            return CNFizer.THEORY_PLACEHOLDER
+        (i, cnf_ip), (_, cnf_in), (t, cnf_t), (e, cnf_e) = args
+        k = self._key_var(formula)
+        not_i = self.mgr.Not(i).simplify()
+        not_t = self.mgr.Not(t).simplify()
+        not_e = self.mgr.Not(e).simplify()
+        not_k = self.mgr.Not(k)
+
+        _cnf = []
+        if pol:
+            _cnf.extend([frozenset([not_i, t, not_k]), frozenset([i, e, not_k])])
+        else:
+            _cnf.extend([frozenset([not_i, not_t, k]), frozenset([i, not_e, k])])
+
+        return k, (cnf_ip | cnf_in | cnf_t | cnf_e | frozenset(_cnf))
+
+# EOC PolarityCNFizer
+
+
 class NNFizer(DagWalker):
     """Converts a formula into Negation Normal Form.
 
