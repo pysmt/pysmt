@@ -123,10 +123,7 @@ class CNFizer(DagWalker):
         elif a.is_false():
             return self.mgr.TRUE(), CNFizer.TRUE_CNF
         else:
-            k = self._key_var(formula)
-            return k, _cnf | frozenset([frozenset([self.mgr.Not(k),
-                                                  self.mgr.Not(a).simplify()]),
-                                       frozenset([k, a])])
+            return self.mgr.Not(a).simplify(), _cnf
 
     def walk_implies(self, formula,  args, **kwargs):
         a, cnf_a = args[0]
