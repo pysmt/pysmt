@@ -307,12 +307,13 @@ class PolarityCNFizer(CNFizer):
     def walk_or(self, formula, args, pol=None, **kwargs):
         if len(args) == 1:
             return args[0]
+
         k = self._key_var(formula)
         _cnf = [clause for a, c in args for clause in c]
         if pol:
-            _cnf.extend(frozenset([k, self.mgr.Not(a).simplify()]) for a, c in args)
-        else:
             _cnf.extend([frozenset([self.mgr.Not(k)] + [a for a, _ in args])])
+        else:
+            _cnf.extend(frozenset([k, self.mgr.Not(a).simplify()]) for a, c in args)
 
         return k, frozenset(_cnf)
 
