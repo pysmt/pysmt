@@ -75,30 +75,30 @@ class TestCnf(TestCase):
 
     def _smtlib_cnf(self, filename, logic, res_is_sat):
         reset_env()
-        conv = CNFizer()
         smtfile = os.path.join(SMTLIB_DIR, filename)
         assert os.path.exists(smtfile)
 
         expr = get_formula_fname(smtfile)
-        if not logic.quantifier_free:
-            with self.assertRaises(NotImplementedError):
-                conv.convert_as_formula(expr)
-            return
-        cnf = conv.convert_as_formula(expr)
-        self.assertValid(Implies(cnf, expr), logic=logic)
+        for conv in (CNFizer(), PolarityCNFizer()):
+            if not logic.quantifier_free:
+                with self.assertRaises(NotImplementedError):
+                    conv.convert_as_formula(expr)
+                return
+            cnf = conv.convert_as_formula(expr)
+            self.assertValid(Implies(cnf, expr), logic=logic)
 
-        res = is_sat(cnf, logic=logic)
-        self.assertEqual(res, res_is_sat)
+            res = is_sat(cnf, logic=logic)
+            self.assertEqual(res, res_is_sat)
 
     @skipIfNoSolverForLogic(QF_BOOL)
     def test_implies(self):
         a,b,c,d = (Symbol(x) for x in "abcd")
         f = Implies(Iff(a, b), Iff(c, d))
 
-        conv = CNFizer()
-        cnf = conv.convert_as_formula(f)
+        for conv in [CNFizer(), PolarityCNFizer()]:
+            cnf = conv.convert_as_formula(f)
 
-        self.assertValid(Implies(cnf, f), logic=QF_BOOL)
+            self.assertValid(Implies(cnf, f), logic=QF_BOOL)
 
 if __name__ == '__main__':
     main()
