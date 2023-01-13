@@ -54,7 +54,7 @@ class CNFizer(DagWalker):
         """
         tl, _cnf = self.walk(formula)
         if len(_cnf) == 0:
-            return [frozenset([tl])]
+            return frozenset([frozenset([tl])])
         res = []
         for clause in _cnf:
             if len(clause) == 0:
