@@ -182,7 +182,7 @@ Installation
 ============
 You can install the latest stable release of pySMT from PyPI::
 
-  # pip install pysmt
+  $ pip install pysmt
 
 this will additionally install the *pysmt-install* command, that can
 be used to install the solvers: e.g., ::
