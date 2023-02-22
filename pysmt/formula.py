@@ -893,8 +893,7 @@ class FormulaManager(object):
 
     def BVXnor(self, left, right):
         """Returns the XNOR composition of left and right."""
-        return self.BVOr(self.BVAnd(left, self.BVNot(right)),
-                         self.BVAnd(self.BVNot(left), right))
+        return self.BVNot(self.BVXor(left, right))
 
     def BVSGT(self, left, right):
         """Returns the SIGNED GREATER-THAN comparison for BV."""
