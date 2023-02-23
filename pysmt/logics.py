@@ -803,16 +803,16 @@ def get_closer_logic(supported_logics, logic):
     does not support the given logic.
 
     """
-    res = [l for l in supported_logics if logic <= l]
-    if len(res) == 0:
+    candidates = [l for l in supported_logics if logic <= l]
+    if len(candidates) == 0:
         raise NoLogicAvailableError("Logic %s is not supported" % logic)
-    # There might be multiple logics that are close.
-    # Instead of throwing an exception (as we do in most_generic_logic),
-    # we enforce a deterministic answer, as we expect this case to be
-    # fairly common.
-    # Note: we could refine this with more heuristics to identify
-    # which logics are preferable, but making this deterministic makes
-    # it easier to spot cases where specifying the logic might be needed.
+
+    # We remove from the candidates, the logics that subsume another candidate
+    # (i.e. that are more general) because we are looking for the closer logic
+    res = [l for l in candidates if not any(l != k and k <= l for k in candidates)]
+
+    # There might be multiple incomparable logics that are closer, we
+    # deterministically select the one having a lexicographically smaller name
     return sorted(res, key=lambda x:str(x))[0]
 
 
