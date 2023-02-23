@@ -19,7 +19,7 @@
 from pysmt.solvers.solver import Solver
 from pysmt.exceptions import PysmtValueError, GoalNotSupportedError
 from pysmt.optimization.goal import MinimizationGoal, MaximizationGoal
-from pysmt.shortcuts import Symbol, INT, REAL, BVType, Equals
+from pysmt.shortcuts import Symbol, INT, REAL, BVType, Equals, Ite, Int, Plus
 from pysmt.logics import LIA, LRA, BV
 from pysmt.oracles import get_logic
 
@@ -168,20 +168,31 @@ class OptComparationFunctions:
         """
         mgr = self.environment.formula_manager
         cast_bv = None
-        options = {
-            MinimizationGoal: {
-                True: (mgr.Int, mgr.LT, mgr.LE),
-                False: (mgr.Int, mgr.LT, mgr.LE),
-            },
-            MaximizationGoal: {
-                True: (mgr.Int, mgr.GT, mgr.GE),
-                False: (mgr.Int, mgr.GT, mgr.GE),
-            }
-        } 
-        if goal.get_logic() >= BV:
+        if goal.get_logic() is BV:
             otype = self.environment.stc.get_type(goal.term())
             cast_bv = lambda x: mgr.BV(x, otype.width)
-            options = {
+        options = {
+            LIA: {
+                MinimizationGoal: {
+                    True: (mgr.Int, mgr.LT, mgr.LE),
+                    False: (mgr.Int, mgr.LT, mgr.LE),
+                },
+                MaximizationGoal: {
+                    True: (mgr.Int, mgr.GT, mgr.GE),
+                    False: (mgr.Int, mgr.GT, mgr.GE),
+                },
+            },
+            LRA: {
+                MinimizationGoal: {
+                    True: (mgr.Real, mgr.LT, mgr.LE),
+                    False: (mgr.Real, mgr.LT, mgr.LE),
+                },
+                MaximizationGoal: {
+                    True: (mgr.Real, mgr.GT, mgr.GE),
+                    False: (mgr.Real, mgr.GT, mgr.GE),
+                },
+            },
+            BV: {
                 MinimizationGoal: {
                     False: (cast_bv, mgr.BVULT, mgr.BVULE),
                     True: (cast_bv, mgr.BVSLT, mgr.BVSLE),
@@ -189,9 +200,10 @@ class OptComparationFunctions:
                 MaximizationGoal: {
                     False: (cast_bv, mgr.BVUGT, mgr.BVUGE),
                     True: (cast_bv, mgr.BVSGT, mgr.BVSGE),
-                }
-            }
-        return options[goal.opt()][goal.signed]
+                },
+            },
+        }
+        return options[goal.get_logic()][goal.opt()][goal.signed]
 
 
 class OptSearchInterval(OptComparationFunctions):
@@ -310,7 +322,7 @@ class ExternalOptimizerMixin(Optimizer):
         optimum will be found in the proximity of `step_size`
         """
         rt = None, None
-        if goal.is_maximization_goal() or goal.is_minimization_goal():
+        if goal.is_maximization_goal() or goal.is_minimization_goal() or goal.is_maxsmt_goal():
             rt = self._optimize(goal, strategy)
         else:
             raise GoalNotSupportedError("ExternalOptimizerMixin", goal)
@@ -319,7 +331,7 @@ class ExternalOptimizerMixin(Optimizer):
     def boxed_optimize(self, goals, strategy='linear'):
         rt = {}
         for goal in goals:
-            if goal.is_maximization_goal() or goal.is_minimization_goal():
+            if goal.is_maximization_goal() or goal.is_minimization_goal() or goal.is_maxsmt_goal():
                 t = self.optimize(goal = goal,strategy = strategy)
                 if t != None:
                     rt[goal] = t
@@ -345,6 +357,16 @@ class ExternalOptimizerMixin(Optimizer):
 
 
     def _optimize(self, goal, strategy, extra_assumption = None):
+        if goal.is_maxsmt_goal():
+            soft = goal.get_soft()
+            formula = None
+            for (c, w) in soft:
+                if formula is not None:
+                    formula = Plus(formula, Ite(c, Int(w), Int(0)))
+                else:
+                    formula = Ite(c, Int(w), Int(0))
+            if formula is not None:
+                goal = MaximizationGoal(formula)
         model = None
         client_data = self._setup()
         current = OptSearchInterval(goal, self.environment, client_data)

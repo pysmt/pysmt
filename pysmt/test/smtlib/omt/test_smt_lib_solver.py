@@ -260,7 +260,7 @@ sat
 )
 """)
 
-    def test_omt_blex_unsat(self):
+    def test_omt_lex_unsat(self):
         txt = """(set-option :opt.priority lex)
 (declare-fun x () Int)
 (declare-fun y () Int)

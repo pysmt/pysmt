@@ -407,6 +407,7 @@ class InterpreterOMT(InterpreterSMT):
     def __init__(self):
         self.optimization_goals = ([],[])
         self.opt_priority = "single-obj"
+        self.paretogen = None
 
     def evaluate(self, cmd, solver):
         return self._omt_evaluate(cmd, solver)
@@ -433,7 +434,15 @@ class InterpreterOMT(InterpreterSMT):
                     self.optimization_goals[1].append((g.term(), optimizer.optimize(g)[1]))
                 rt = optimizer.check_sat()
             elif self.opt_priority == "pareto":
-                pass
+                if self.paretogen is None:
+                    self.paretogen = optimizer.pareto_optimize(self.optimization_goals[0])
+                try:
+                    model, values = next(self.paretogen)
+                    rt = True
+                    for (g, v) in zip(self.optimization_goals[0], values):
+                        self.optimization_goals[1].append((g.term(), v))
+                except StopIteration:
+                    rt = False
             elif self.opt_priority == "box":
                 models = optimizer.boxed_optimize(self.optimization_goals[0])
                 if models is not None:

@@ -84,6 +84,13 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
             return mgr.BVULE(x, y)
 
     def _assert_msat_goal(self, goal):
+
+        if goal.is_maxsmt_goal():
+            for tcons, weight in goal.soft:
+                obj_tcons = self.converter.convert(tcons)
+                obj_weight = self.converter.convert(weight)
+                self._msat_lib.msat_assert_soft_formula(self.msat_env(), obj_tcons, obj_weight, "__pysmt_" + str(goal.my_id))
+
         if goal.is_minmax_goal() or goal.is_maxmin_goal():
             if goal.is_minmax_goal():
                 make_fun = self._msat_lib.msat_make_minmax
@@ -94,14 +101,18 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
             obj_fun = []
             for f in cost_function:
                 obj_fun.append(self.converter.convert(f))
-        elif goal.is_minimization_goal() or goal.is_maximization_goal():
-            if goal.is_minimization_goal():
+        elif goal.is_minimization_goal() or goal.is_maximization_goal() or goal.is_maxsmt_goal():
+            if goal.is_minimization_goal() or goal.is_maxsmt_goal():
                 make_fun = self._msat_lib.msat_make_minimize
             else:
                 make_fun = self._msat_lib.msat_make_maximize
 
-            cost_function = goal.term()
-            obj_fun = self.converter.convert(cost_function)
+            if goal.is_maxsmt_goal():
+                obj_fun = self._msat_lib.msat_from_string(self.msat_env(),"__pysmt_"+str(goal.my_id))
+            else:
+                cost_function = goal.term()
+                obj_fun = self.converter.convert(cost_function)
+
 
         else:
             raise GoalNotSupportedError("optimathsat", goal)

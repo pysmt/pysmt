@@ -340,7 +340,6 @@ class SmtLibParser(object):
             try:
                 return op(*args)
             except PysmtTypeError:
-                get_free_variables = self.env.fvo.get_free_variables
                 new_args = []
                 for x in args:
                     if self.get_type(x).is_int_type():
