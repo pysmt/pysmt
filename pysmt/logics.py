@@ -480,6 +480,14 @@ variables.""",
                quantifier_free=True,
                real_arithmetic=True)
 
+QF_LIRA = Logic(name="QF_LIRA",
+                description=\
+"""Unquantified linear integer and real arithmetic""",
+                integer_arithmetic=True,
+                real_arithmetic=True,
+                linear=True,
+                quantifier_free=True)
+
 QF_NIA = Logic(name="QF_NIA",
                description=\
 """Quantifier-free integer arithmetic.""",
@@ -667,7 +675,7 @@ QF_LOGICS = frozenset(_l for _l in LOGICS if _l.quantifier_free)
 # This is the set of logics supported by the current version of pySMT
 #
 PYSMT_LOGICS = frozenset([QF_BOOL, QF_IDL, QF_LIA, QF_LRA, QF_RDL, QF_UF, QF_UFIDL,
-                          QF_UFLIA, QF_UFLRA, QF_UFLIRA,
+                          QF_UFLIA, QF_UFLRA, QF_UFLIRA, QF_LIRA,
                           BOOL, LRA, LIA, UFLIRA, UFLRA,
                           QF_BV, QF_UFBV,
                           QF_SLIA,
@@ -795,10 +803,17 @@ def get_closer_logic(supported_logics, logic):
     does not support the given logic.
 
     """
-    res = [l for l in supported_logics if logic <= l]
-    if len(res) == 0:
+    candidates = [l for l in supported_logics if logic <= l]
+    if len(candidates) == 0:
         raise NoLogicAvailableError("Logic %s is not supported" % logic)
-    return min(res)
+
+    # We remove from the candidates, the logics that subsume another candidate
+    # (i.e. that are more general) because we are looking for the closer logic
+    res = [l for l in candidates if not any(l != k and k <= l for k in candidates)]
+
+    # There might be multiple incomparable logics that are closer, we
+    # deterministically select the one having a lexicographically smaller name
+    return sorted(res, key=lambda x:str(x))[0]
 
 
 def get_closer_pysmt_logic(target_logic):
