@@ -337,8 +337,9 @@ class SmtLibParser(object):
                 return op(*args)
             except PysmtTypeError:
                 new_args = []
+                get_free_variables = self.env.fvo.get_free_variables
                 for x in args:
-                    if self.get_type(x).is_int_type():
+                    if self.get_type(x).is_int_type() and len(get_free_variables(x)) == 0:
                         new_args.append(mgr.ToReal(x))
                     else:
                         new_args.append(x)
