@@ -524,7 +524,7 @@ class FormulaManager(object):
         """Returns the xor of left and right: left XOR right """
         return self.Not(self.Iff(left, right))
 
-    def MinWrap(self, le, *args):
+    def _MinWrap(self, le, *args):
         """Returns the encoding of the minimum expression within args using the specified 'Lower-Equal' operator"""
         exprs = self._polymorph_args_to_tuple(args)
         assert len(exprs) > 0
@@ -535,9 +535,9 @@ class FormulaManager(object):
             return self.Ite(le(a, b), a, b)
         else:
             h = len(exprs) // 2
-            return self.MinWrap(le, self.MinWrap(le, exprs[0:h]), self.MinWrap(le, exprs[h:]))
+            return self._MinWrap(le, self._MinWrap(le, exprs[0:h]), self._MinWrap(le, exprs[h:]))
 
-    def MaxWrap(self, le, *args):
+    def _MaxWrap(self, le, *args):
         """Returns the encoding of the maximum expression within args using the specified 'Lower-Equal' operator"""
         exprs = self._polymorph_args_to_tuple(args)
         assert len(exprs) > 0
@@ -548,29 +548,29 @@ class FormulaManager(object):
             return self.Ite(le(a, b), b, a)
         else:
             h = len(exprs) // 2
-            return self.MaxWrap(le, self.MaxWrap(le,exprs[0:h]), self.MaxWrap(le,exprs[h:]))
+            return self._MaxWrap(le, self._MaxWrap(le,exprs[0:h]), self._MaxWrap(le,exprs[h:]))
 
     def MinBV(self, sign, *args):
         """Returns the encoding of the minimum expression within args"""
         le = self.BVULE
         if sign:
             le = self.BVSLE
-        return self.MinWrap( le, *args)
+        return self._MinWrap( le, *args)
 
     def MaxBV(self, sign, *args):
         """Returns the encoding of the maximum expression within args"""
         le = self.BVULE
         if sign:
             le = self.BVSLE
-        return self.MaxWrap( le, *args)
+        return self._MaxWrap( le, *args)
 
     def Min(self, *args):
         """Returns the encoding of the minimum expression within args"""
-        return self.MinWrap(self.LE, *args)
+        return self._MinWrap(self.LE, *args)
 
     def Max(self, *args):
         """Returns the encoding of the maximum expression within args"""
-        return self.MaxWrap(self.LE, *args)
+        return self._MaxWrap(self.LE, *args)
 
     def EqualsOrIff(self, left, right):
         """Returns Equals() or Iff() depending on the type of the arguments.
