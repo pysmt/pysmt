@@ -263,7 +263,7 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
             self.pending_pop = True
 
         if len(bool_ass) > 0:
-            res = mathsat.msat_solve_with_assumptions(self.msat_env(), bool_ass)
+            res = self._msat_lib.msat_solve_with_assumptions(self.msat_env(), bool_ass)
         else:
             res = self._msat_lib.msat_solve(self.msat_env())
 
@@ -737,12 +737,12 @@ class MSatConverter(Converter, DagWalker):
             if current not in self.back_memoization:
                 self.back_memoization[current] = None
                 stack.append(current)
-                for i in xrange(arity):
+                for i in range(arity):
                     son = self._msat_lib.msat_term_get_arg(current, i)
                     stack.append(son)
             elif self.back_memoization[current] is None:
                 args=[self.back_memoization[self._msat_lib.msat_term_get_arg(current,i)]
-                      for i in xrange(arity)]
+                      for i in range(arity)]
 
                 signature = self._get_signature(current, args)
                 new_args = []
