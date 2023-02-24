@@ -21,7 +21,7 @@ import sys
 import argparse
 from warnings import warn
 
-from pysmt import git_version
+from pysmt import __version__
 from pysmt.shortcuts import *
 from pysmt.typing import INT, REAL, BOOL, BVType, BV32
 
@@ -70,7 +70,7 @@ class PysmtShell(object):
         parser = argparse.ArgumentParser(description="Command-line interface " \
                                          "for pySMT problems")
         parser.add_argument('--version', action='version',
-                        version='%(prog)s {version}'.format(version=git_version))
+                        version='%(prog)s {version}'.format(version=__version__))
         parser.add_argument('--file', '-f', metavar='filename', type=str,
                             help='A script file to read from instead of stdin')
 
