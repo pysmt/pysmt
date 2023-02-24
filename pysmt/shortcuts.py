@@ -979,12 +979,12 @@ def Portfolio(solvers_set, logic, **options):
                         **options)
 
 def Optimizer(name=None, logic=None):
-    """Returns an interpolator
+    """Returns an Optimizer
 
     :param name: Specify the name of the solver
     :param logic: Specify the logic that is going to be used.
-    :returns: An interpolator
-    :rtype: Interpolator
+    :returns: An Optimizer
+    :rtype: Optimizer
     """
     return get_env().factory.Optimizer(name=name, logic=logic)
 
