@@ -15,10 +15,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from six.moves import xrange
-from six import PY2
-
 import pysmt.operators as op
+
 from pysmt.shortcuts import Symbol, FreshSymbol, And, Not, GT, Function, Plus
 from pysmt.shortcuts import Bool, TRUE, Real, LE, FALSE, Or, Equals, Implies
 from pysmt.shortcuts import Solver
@@ -154,6 +152,19 @@ class TestBasic(TestCase):
             s.add_assertion(varA)
             s.solve()
             self.assertTrue(s.get_py_value(varA))
+
+    @skipIfNoSolverForLogic(QF_BOOL)
+    def test_add_assertions(self):
+        varA = Symbol("A", BOOL)
+        varB = Symbol("B", BOOL)
+        varC = Symbol("C", BOOL)
+
+        assertions = [varA, Implies(varA, varB), Implies(varB, varC)]
+        for name in get_env().factory.all_solvers(logic=QF_BOOL):
+            with Solver(name) as solver:
+                solver.add_assertions(assertions)
+                solver.solve()
+                self.assertTrue(solver.get_py_value(And(assertions)))
 
     @skipIfNoSolverForLogic(QF_BOOL)
     def test_incremental(self):
@@ -338,7 +349,7 @@ class TestBasic(TestCase):
                         self.assertIsNone(f_i)
 
     def test_solving_under_assumption(self):
-        v1, v2 = [FreshSymbol() for _ in xrange(2)]
+        v1, v2 = [FreshSymbol() for _ in range(2)]
         xor = Or(And(v1, Not(v2)), And(Not(v1), v2))
 
         for name in get_env().factory.all_solvers():
@@ -536,9 +547,6 @@ class TestBasic(TestCase):
     @skipIfNoSolverForLogic(QF_LRA)
     def test_logic_as_string(self):
         self.assertEqual(convert_logic_from_string("QF_LRA"), QF_LRA)
-        if PY2:
-            self.assertEqual(convert_logic_from_string(unicode("QF_LRA")),
-                             QF_LRA)
         with self.assertRaises(UndefinedLogicError):
             convert_logic_from_string("PAPAYA")
         self.assertIsNone(convert_logic_from_string(None))

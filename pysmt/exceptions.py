@@ -57,7 +57,7 @@ class NoLogicAvailableError(PysmtException):
     pass
 
 class SolverRedefinitionError(PysmtException):
-    """Exception representing errors caused by multiple defintion of solvers
+    """Exception representing errors caused by multiple definition of solvers
        having the same name."""
     pass
 

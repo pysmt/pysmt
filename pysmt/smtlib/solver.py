@@ -16,8 +16,6 @@ import time
 from io import TextIOWrapper
 from subprocess import Popen, PIPE
 
-from six import PY2
-
 import pysmt.smtlib.commands as smtcmd
 from pysmt.solvers.eager import EagerModel
 from pysmt.smtlib.parser import SmtLibParser
@@ -88,12 +86,8 @@ class SmtLibSolver(Solver):
         # Give time to the process to start-up
         time.sleep(0.01)
         self.parser = SmtLibParser(interactive=True)
-        if PY2:
-            self.solver_stdin = self.solver.stdin
-            self.solver_stdout = self.solver.stdout
-        else:
-            self.solver_stdin = TextIOWrapper(self.solver.stdin)
-            self.solver_stdout = TextIOWrapper(self.solver.stdout)
+        self.solver_stdin = TextIOWrapper(self.solver.stdin)
+        self.solver_stdout = TextIOWrapper(self.solver.stdout)
 
         # Initialize solver
         self.options(self)
@@ -210,7 +204,7 @@ class SmtLibSolver(Solver):
 
     def get_model(self):
         assignment = {}
-        for s in self.environment.formula_manager.get_all_symbols():
+        for s in self.declared_vars[-1]:
             if s.is_term():
                 v = self.get_value(s)
                 assignment[s] = v

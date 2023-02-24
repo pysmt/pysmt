@@ -15,7 +15,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from six.moves import cStringIO
+from io import StringIO
 
 import pysmt.operators as op
 from pysmt.walkers import TreeWalker
@@ -340,7 +340,7 @@ class HRSerializer(object):
         'printer' is the printer to call to perform the serialization.
         'threshold' is the thresholding value for the printing function.
         """
-        buf = cStringIO()
+        buf = StringIO()
         if printer is None:
             p = self.PrinterClass(buf)
         else:
@@ -356,12 +356,12 @@ class SmartPrinter(HRPrinter):
     """Better serialization allowing special printing of subformula.
 
     The formula is serialized according to the format defined in the
-    HRPrinter. However, everytime a formula that is present in
+    HRPrinter. However, every time a formula that is present in
     'subs' is found, this is replaced.
 
     E.g., subs  = {And(a,b): "ab"}
 
-    Everytime that the subformula And(a,b) is found, "ab" will be
+    Every time that the subformula And(a,b) is found, "ab" will be
     printed instead of "a & b". This makes it possible to rename big
     subformulae, and provide better human-readable representation.
     """
@@ -389,7 +389,7 @@ class SmartPrinter(HRPrinter):
 
 def smart_serialize(formula, subs=None, threshold=None):
     """Creates and calls a SmartPrinter to perform smart serialization."""
-    buf = cStringIO()
+    buf = StringIO()
     p = SmartPrinter(buf, subs=subs)
     p.printer(formula, threshold=threshold)
     res = buf.getvalue()

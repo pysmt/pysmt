@@ -4,11 +4,13 @@ set -ev
 # This script directory
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
+APT_UPDATED="false"
+
 # Utility function to install packages in the OS
 function os_install {
     PKG=${1}
 
-    if [ ${AGENT_OS} == "Darwin" ];
+    if [[ "${AGENT_OS}" == *"macos"* ]];
     then
         # Convert package names from apt to brew naming
         case ${PKG} in
@@ -24,6 +26,11 @@ function os_install {
         esac
         brew install "${PKG}" || (brew upgrade "${PKG}" && brew cleanup "${PKG}")
     else
+        if [ "${APT_UPDATED}" == "false" ]
+        then
+            sudo apt update
+            APT_UPDATED="true"
+        fi
         sudo apt install -y ${PKG}
     fi
 }
@@ -37,10 +44,6 @@ then
     PYTHON="${PYTHON_VERSION}"
 fi
 
-# Fix problem with LIBDIR of Azure Pipelines
-VRS=`python -c 'import platform;print(platform.python_version())'`
-export PYSMT_PYTHON_LIBDIR="/opt/hostedtoolcache/Python/${VRS}/x64/lib/"
-
 # 'pip install' command
 PIP_INSTALL="${PYTHON} -m pip install --upgrade"
 
@@ -53,15 +56,15 @@ then
    os_install libgmp-dev
 fi
 
-# Install latest version of SWIG for CVC4
+# Install latest version of SWIG for CVC4 and BDD
 # (The other solvers in isolation fall-back to the system swig)
-if [ "${PYSMT_SOLVER}" == "cvc4" ] || [ "${PYSMT_SOLVER}" == "all" ]
+if [ "${PYSMT_SOLVER}" == "cvc4" ] || [ "${PYSMT_SOLVER}" == "bdd" ] || [ "${PYSMT_SOLVER}" == "all" ]
 then
     os_install flex
     os_install bison
     git clone https://github.com/swig/swig.git
     cd swig
-    git checkout rel-3.0.12
+    git checkout v4.0.2
     ./autogen.sh && ./configure && make
     sudo make install
     cd ..
@@ -83,7 +86,6 @@ fi
 
 # Install dependencies
 $PIP_INSTALL configparser
-$PIP_INSTALL six
 $PIP_INSTALL wheel
 $PIP_INSTALL pytest
 
@@ -91,6 +93,12 @@ if [ "${PYSMT_SOLVER}" == "cvc4" ]
 then
     $PIP_INSTALL toml
 fi
+
+# Needed only when using "act" locally
+# if [ "${PYSMT_SOLVER}" == "cvc4" ] || [ "${PYSMT_SOLVER}" == "btor" ] || [ "${PYSMT_SOLVER}" == "all" ]
+# then
+#     os_install cmake
+# fi
 
 # Install gmpy if needed
 if [ "${PYSMT_GMPY}" == "TRUE" ]

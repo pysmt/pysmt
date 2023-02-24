@@ -113,6 +113,26 @@ class TestGenericWrapper(TestCase):
             self.assertFalse(model.get_value(b).is_true())
             self.assertTrue(model.get_value(a).is_true())
 
+    @skipIf(len(ALL_WRAPPERS) == 0, "No wrapper available")
+    def test_generic_wrapper_model_env_unused_vars(self):
+        a = Symbol("A", BOOL)
+        b = Symbol("B", BOOL)
+        c = Symbol("C", BOOL)
+        d = Symbol("D", BOOL)
+        unused = And(c, d)
+        f = And(a, Not(b))
+
+        for n in self.all_solvers:
+            model = None
+            with Solver(name=n, logic=QF_BOOL) as s:
+                s.add_assertion(f)
+                res = s.solve()
+                self.assertTrue(res)
+                model = s.get_model()
+
+            self.assertFalse(model.get_value(b).is_true())
+            self.assertTrue(model.get_value(a).is_true())
+
 
     @skipIf(len(ALL_WRAPPERS) == 0, "No wrapper available")
     def test_custom_types(self):

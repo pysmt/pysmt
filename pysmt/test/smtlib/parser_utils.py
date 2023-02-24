@@ -24,7 +24,7 @@ from pysmt.smtlib.parser import SmtLibParser, get_formula_fname
 from pysmt.smtlib.script import check_sat_filter
 from pysmt.logics import (QF_LIA, QF_LRA, LRA, QF_UFLIRA, QF_UFBV, QF_BV,
                           QF_ALIA, QF_ABV, QF_AUFLIA, QF_AUFBV, QF_NRA, QF_NIA,
-                          UFBV, BV)
+                          UFBV, BV, QF_UF)
 from pysmt.exceptions import NoSolverAvailableError, SolverReturnedUnknownResultError
 
 def smtlib_tests(logic_pred):
@@ -51,13 +51,20 @@ def execute_script_fname(smtfile, logic, expected_result):
     parser = SmtLibParser()
     script = parser.get_script_fname(smtfile)
     try:
-        log = script.evaluate(Solver(logic=logic, incremental=False,
-                                     generate_models=False))
+        solver = Solver(logic=logic, incremental=False,
+                        generate_models=False)
+        if logic == QF_UF and type(solver).__name__ == 'CVC4Solver':
+            warnings.warn("Test (%s, %s) skipped because CVC4 can't handle QF_UF." % (logic, smtfile))
+            return
+        if logic == QF_UF and type(solver).__name__ == 'BoolectorSolver':
+            warnings.warn("Test (%s, %s) skipped because Boolector can't handle QF_UF." % (logic, smtfile))
+            return
+        log = script.evaluate(solver)
     except NoSolverAvailableError:
         raise SkipTest("No solver for logic %s." % logic)
     except SolverReturnedUnknownResultError:
         if not logic.quantifier_free:
-            warnings.warn("Test (%s, %s) could not be solver due to quantifiers." % (logic, smtfile))
+            warnings.warn("Test (%s, %s) could not be solved due to quantifiers." % (logic, smtfile))
             return
         raise
 
@@ -178,4 +185,8 @@ SMTLIB_TEST_FILES = [
     (QF_NIA, "small_set/QF_NIA/aproveSMT3509292547826641386.smt2.bz2", SAT),
     (QF_NIA, "small_set/QF_NIA/problem-000158.cvc.2.smt2.bz2", UNSAT),
     (QF_NIA, "small_set/QF_NIA/term-DtOD2C.smt2.bz2", SAT),
+    #
+    # QF_UF
+    #
+    (QF_UF, "small_set/QF_UF/test0.smt2.bz2", SAT),
 ]

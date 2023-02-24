@@ -1,4 +1,9 @@
-on: [push]
+name: CLA
+
+on: 
+ push:
+   branches: master
+ pull_request:
 
 jobs:
   CheckCLA:

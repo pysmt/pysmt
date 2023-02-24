@@ -18,8 +18,6 @@
 import atexit
 from warnings import warn
 
-from six.moves import xrange
-
 from pysmt.exceptions import SolverAPINotFound
 
 try:
@@ -110,7 +108,7 @@ class YicesOptions(SolverOptions):
     def set_params(self, solver):
         """Set Search Parameters.
 
-        Yices makes a distinction between configuratin and search
+        Yices makes a distinction between configuration and search
         parameters.  The first are fixed for the lifetime of a
         context, while the latter can be different for every call to
         check_context.
@@ -223,7 +221,7 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
     @clear_pending_pop
     def push(self, levels=1):
-        for _ in xrange(levels):
+        for _ in range(levels):
             c = yicespy.yices_push(self.yices)
             if c != 0:
                 # 4 is STATUS_UNSAT
@@ -239,7 +237,7 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
     @clear_pending_pop
     def pop(self, levels=1):
-        for _ in xrange(levels):
+        for _ in range(levels):
             if self.failed_pushes > 0:
                 self.failed_pushes -= 1
             else:

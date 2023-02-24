@@ -19,8 +19,6 @@ import functools
 import itertools
 
 from warnings import warn
-from six import iteritems, PY2
-from six.moves import xrange
 from collections import deque
 
 import pysmt.smtlib.commands as smtcmd
@@ -33,16 +31,14 @@ from pysmt.smtlib.annotations import Annotations
 from pysmt.utils import interactive_char_iterator
 from pysmt.constants import Fraction
 from pysmt.typing import _TypeDecl, PartialType
+from pysmt.substituter import FunctionInterpretation
 
 
 def open_(fname):
     """Transparently handle .bz2 files."""
     if fname.endswith(".bz2"):
         import bz2
-        if PY2:
-            return bz2.BZ2File(fname, "r")
-        else:
-            return bz2.open(fname, "rt")
+        return bz2.open(fname, "rt")
     return open(fname)
 
 
@@ -87,8 +83,8 @@ def get_formula_fname(script_fname, environment=None, strict=True):
 
 class SmtLibExecutionCache(object):
     """Execution environment for SMT2 script execution"""
-
-    def __init__(self):
+    def __init__(self, env):
+        self.substitute = env.substituter.substitute
         self.keys = {}
         self.definitions = {}
         self.annotations = Annotations()
@@ -109,8 +105,7 @@ class SmtLibExecutionCache(object):
         def res(*actual_parameters):
             assert len(formal_parameters) == len(actual_parameters)
             submap = dict(zip(formal_parameters, actual_parameters))
-            return expression.substitute(submap)
-
+            return self.substitute(expression, submap)
         return res
 
     def get(self, name):
@@ -131,7 +126,7 @@ class SmtLibExecutionCache(object):
 
     def update(self, value_map):
         """Binds all the symbols in 'value_map'"""
-        for k, val in iteritems(value_map):
+        for k, val in value_map.items():
             self.bind(k, val)
 
     def unbind_all(self, values):
@@ -146,7 +141,8 @@ class SmtLibExecutionCache(object):
 class Tokenizer(object):
     """Takes a file-like object and produces a stream of tokens following
     the LISP rules.
-    If interative is True, the file reading proceeds char-by-char with
+
+    If interactive is True, the file reading proceeds char-by-char with
     no buffering. This is useful for interactive use for example with
     a SMT-Lib2-compliant solver
     The method add_extra_token allows to "push-back" a token, so that
@@ -482,7 +478,7 @@ class SmtLibParser(object):
 
     def _reset(self):
         """Resets the parser to the initial state"""
-        self.cache = SmtLibExecutionCache()
+        self.cache = SmtLibExecutionCache(self.env)
         self.logic = None
         mgr = self.env.formula_manager
         self.cache.update({'false': mgr.FALSE(), 'true': mgr.TRUE()})
@@ -508,20 +504,20 @@ class SmtLibParser(object):
 
     def _enter_smtlib_as(self, stack, tokens, key):
         """Utility function that handles 'as' that is a special function in SMTLIB"""
-        # pylint: disable=unused-argument
-        const = self.parse_atom(tokens, "expression")
-        if const != "const":
-            raise PysmtSyntaxError("expected 'const' in expression after 'as'",
-                                   tokens.pos_info)
+        #pylint: disable=unused-argument
+        what = self.parse_atom(tokens, "expression")
         ty = self.parse_type(tokens, "expression")
-
-        def res(expr):
-            return self.env.formula_manager.Array(ty.index_type, expr)
-
-        def handler():
-            return res
-
-        stack[-1].append(handler)
+        if what == "const":
+            assert ty.is_array_type(), "(as const x) is supported only for array constants"
+            def res(expr):
+                return self.env.formula_manager.Array(ty.index_type, expr)
+            def handler():
+                return res
+            stack[-1].append(handler)
+        else:
+            def handler():
+                return self.env.formula_manager.Symbol(what, ty)
+            stack[-1].append(handler)
 
     def _smtlib_underscore(self, stack, tokens, key):
         # pylint: disable=unused-argument
@@ -633,7 +629,7 @@ class SmtLibParser(object):
         """Utility function that builds a division"""
         mgr = self.env.formula_manager
         if left.is_constant() and right.is_constant():
-            return mgr.Real(Fraction(left.constant_value()) / \
+            return mgr.Real(Fraction(left.constant_value()) /
                             Fraction(right.constant_value()))
         return self.Div(left, right)
 
@@ -890,6 +886,70 @@ class SmtLibParser(object):
             yield cmd
         return
 
+    def parse_model(self, script):
+        """This function pasres the result of a `(get-model)` command and
+        returns a model as a dictionary from non-function symbols to
+        constant values and an interpretation for uninterpreted
+        functions as a map from the function symbol to a
+        FunctionInterpretation object.
+
+        Example:
+        ```
+        model_source ="(model
+          (define-fun b () Int 5)
+          (define-fun a () Real 2)
+          (define-fun f ((x0 Int)) Real (ite (> x0 5) 1 0.5))
+        )"
+        model_buf = StringIO(model_source)
+        parser = SmtLibParser()
+        model, interpretations = parser.parse_model(model_buf)
+        ```
+        gives:
+
+        `model = {Symbol('a', INT): Int(5), Symbol('b', Real): Real(2)}`
+        `interpretations = {Symbol('f', FunctionType(REAL, [INT])): fi}`
+
+        where `fi = FunctionInterpretation([Symbol('x0', Int)], ITE(GT(Symbol('x0', Int), Int(5)), Real(1), Real(0.5)))`
+        """
+        mgr = self.env.formula_manager
+        self.cache.update(self.env.type_manager._custom_types_decl)
+        tokens = Tokenizer(script, interactive=self.interactive)
+        current = tokens.consume()
+        if (current != "("):
+            raise PysmtSyntaxError("'(' expected", tokens.pos_info)
+        current = tokens.consume()
+
+        # Backwards compatibility: skip optional model keyword
+        if (current == "model"):
+            current = tokens.consume()
+
+        cmd_gen = self.get_command(tokens)
+        model, interpretation = {}, {}
+        while current != ")":
+            if (current != "("):
+                raise PysmtSyntaxError("'(' expected", tokens.pos_info)
+            tokens.add_extra_token(current)
+            cmd = next(cmd_gen)
+            if cmd.name != 'define-fun':
+                raise PysmtSyntaxError("Unsupported model command: %s" % cmd.name)
+            vname, formal, rtype, ebody = cmd.args
+            if len(formal) == 0: # Constant assignment
+                model[mgr.Symbol(vname, rtype)] = ebody
+            else: # A function interpretation
+                ebody_free_vars = self.env.fvo.get_free_variables(ebody)
+                for v in ebody_free_vars:
+                    if not v.symbol_name().startswith('@') and v not in cmd.args[1]:
+                        raise PysmtSyntaxError("Found a non-solver-defined free"
+                                               " variable in the definion of "
+                                               "function %s: %s" % (cmd.args[0],
+                                                                    cmd.args[3]))
+                tmgr = self.env.type_manager
+                ftype = tmgr.FunctionType(rtype, [x.symbol_type() for x in formal])
+                interpretation[mgr.Symbol(vname, ftype)] = \
+                    FunctionInterpretation(formal, ebody, allow_free_vars=True)
+            current = tokens.consume()
+        return model, interpretation
+
     def get_script_fname(self, script_fname):
         """Given a filename and a Solver, executes the solver on the file."""
         with open_(script_fname) as script:
@@ -905,12 +965,12 @@ class SmtLibParser(object):
 
         res = []
         current = None
-        for _ in xrange(min_size):
+        for _ in range(min_size):
             current = tokens.consume("Unexpected end of stream in %s "
                                      "command." % command)
             if current == ")":
                 raise PysmtSyntaxError("Expected at least %d arguments in "
-                                       "%s command." % \
+                                       "%s command." %
                                        (min_size, command),
                                        tokens.pos_info)
             if current == "(":
@@ -918,7 +978,7 @@ class SmtLibParser(object):
                                        "command." % command,
                                        tokens.pos_info)
             res.append(current)
-        for _ in xrange(min_size, max_size + 1):
+        for _ in range(min_size, max_size + 1):
             current = tokens.consume("Unexpected end of stream in %s "
                                      "command." % command)
             if current == ")":
@@ -928,8 +988,8 @@ class SmtLibParser(object):
                                        "command." % command,
                                        tokens.pos_info)
             res.append(current)
-        raise PysmtSyntaxError("Unexpected token '%s' in %s command. Expected " \
-                               "at most %d arguments." % \
+        raise PysmtSyntaxError("Unexpected token '%s' in %s command. Expected "
+                               "at most %d arguments." %
                                (current, command, max_size),
                                tokens.pos_info)
 
@@ -938,14 +998,14 @@ class SmtLibParser(object):
         if additional_token is not None:
             var = additional_token
         else:
-            var = tokens.consume("Unexpected end of stream in %s command." % \
-                                 command)
+            var = tokens.consume("Unexpected end of stream in %s command." %
+                                         command)
         res = None
         if type_params and var in type_params:
             return (var,)  # This is a type parameter, it is handled recursively
         elif var == "(":
-            op = tokens.consume("Unexpected end of stream in %s command." % \
-                                command)
+            op = tokens.consume("Unexpected end of stream in %s command." %
+                                        command)
             if op == "Array":
                 idxtype = self.parse_type(tokens, command)
                 elemtype = self.parse_type(tokens, command)
@@ -953,10 +1013,10 @@ class SmtLibParser(object):
                 res = self.env.type_manager.ArrayType(idxtype, elemtype)
 
             elif op == "_":
-                ts = tokens.consume("Unexpected end of stream in %s command." % \
-                                    command)
+                ts = tokens.consume("Unexpected end of stream in %s command." %
+                                            command)
                 if ts != "BitVec":
-                    raise PysmtSyntaxError("Unexpected token '%s' in %s command." % \
+                    raise PysmtSyntaxError("Unexpected token '%s' in %s command." %
                                            (ts, command),
                                            tokens.pos_info)
 
@@ -965,7 +1025,7 @@ class SmtLibParser(object):
                 try:
                     size = int(dim)
                 except ValueError:
-                    raise PysmtSyntaxError("Unexpected token '%s' in %s command." % \
+                    raise PysmtSyntaxError("Unexpected token '%s' in %s command." %
                                            (dim, command),
                                            tokens.pos_info)
 
@@ -975,7 +1035,7 @@ class SmtLibParser(object):
                 # It must be a custom-defined type
                 base_type = self.cache.get(op)
                 if base_type is None or not isinstance(base_type, _TypeDecl):
-                    raise PysmtSyntaxError("Unexpected token '%s' in %s command." % \
+                    raise PysmtSyntaxError("Unexpected token '%s' in %s command." %
                                            (op, command),
                                            tokens.pos_info)
                 pparams = []
@@ -1008,25 +1068,23 @@ class SmtLibParser(object):
         elif var == "String":
             res = self.env.type_manager.STRING()
         else:
-            cached = self.cache.get(var)
-            if cached is not None:
-                res = self.cache.get(var)
-            else:
-                raise PysmtSyntaxError("Unexpected token '%s' in %s command." % \
+            res = self.cache.get(var)
+            if res is None:
+                raise PysmtSyntaxError("Unexpected token '%s' in %s command." %
                                        (var, command),
                                        tokens.pos_info)
 
         if isinstance(res, _TypeDecl):
-            return res()
+            return self.env.type_manager.get_type_instance(res)
         else:
             return res
 
     def parse_atom(self, tokens, command):
-        """Parses a single name from the tokens. The `command` argument is used only for logging"""
-        var = tokens.consume("Unexpected end of stream in %s command." % \
-                             command)
+        """Parses a single name from the tokens"""
+        var = tokens.consume("Unexpected end of stream in %s command." %
+                                     command)
         if var == "(" or var == ")":
-            raise PysmtSyntaxError("Unexpected token '%s' in %s command." % \
+            raise PysmtSyntaxError("Unexpected token '%s' in %s command." %
                                    (var, command),
                                    tokens.pos_info)
         return var
@@ -1034,28 +1092,28 @@ class SmtLibParser(object):
     def parse_params(self, tokens, command):
         """Parses a list of types from the tokens"""
         self.consume_opening(tokens, command)
-        current = tokens.consume("Unexpected end of stream in %s command." % \
-                                 command)
+        current = tokens.consume("Unexpected end of stream in %s command." %
+                                         command)
         res = []
         while current != ")":
             res.append(self.parse_type(tokens, command, additional_token=current))
-            current = tokens.consume("Unexpected end of stream in %s command." % \
-                                     command)
+            current = tokens.consume("Unexpected end of stream in %s command." %
+                                             command)
         return res
 
     def parse_named_params(self, tokens, command):
         """Parses a list of names and type from the tokens"""
         self.consume_opening(tokens, command)
-        current = tokens.consume("Unexpected end of stream in %s command." % \
-                                 command)
+        current = tokens.consume("Unexpected end of stream in %s command." %
+                                         command)
         res = []
         while current != ")":
             vname = self.parse_atom(tokens, command)
             typename = self.parse_type(tokens, command)
             res.append((vname, typename))
             self.consume_closing(tokens, command)
-            current = tokens.consume("Unexpected end of stream in %s command." % \
-                                     command)
+            current = tokens.consume("Unexpected end of stream in %s command." %
+                                             command)
         return res
 
     def parse_expr_list(self, tokens, command):
@@ -1076,7 +1134,7 @@ class SmtLibParser(object):
         except StopIteration:
             raise  # Re-raise execption for higher-level management, see get_command()
         if p != "(":
-            raise PysmtSyntaxError("Unexpected token '%s' in %s command. " \
+            raise PysmtSyntaxError("Unexpected token '%s' in %s command. "
                                    "Expected '('" %
                                    (p, command), tokens.pos_info)
 
@@ -1084,7 +1142,7 @@ class SmtLibParser(object):
         """ Consumes a single ')' """
         p = tokens.consume("Unexpected end of stream. Expected ')'")
         if p != ")":
-            raise PysmtSyntaxError("Unexpected token '%s' in %s command. " \
+            raise PysmtSyntaxError("Unexpected token '%s' in %s command. "
                                    "Expected ')'" %
                                    (p, command), tokens.pos_info)
 
@@ -1216,7 +1274,7 @@ class SmtLibParser(object):
             self.logic = get_logic_by_name(name)
             return SmtLibCommand(current, [self.logic])
         except UndefinedLogicError:
-            warn("Unknown logic '" + name + \
+            warn("Unknown logic '" + name +
                  "'. Ignoring set-logic command.")
             return SmtLibCommand(current, [None])
 
@@ -1290,8 +1348,8 @@ class SmtLibParser(object):
 
         v = self._get_var(var, typename)
         if v.symbol_type().is_function_type():
-            self.cache.bind(var, \
-                            functools.partial(self._function_call_helper, v))
+            self.cache.bind(var,
+                    functools.partial(self._function_call_helper, v))
         else:
             self.cache.bind(var, v)
         return SmtLibCommand(current, [v])
@@ -1311,7 +1369,20 @@ class SmtLibParser(object):
             bindings.append(x)  # remember the name
         # Parse expression using also parameters
         ebody = self.get_expression(tokens)
-        # Discard parameters
+        ebody_type = self.env.stc.get_type(ebody)
+        ebody_vars = self.env.fvo.get_free_variables(ebody)
+        # Promote constant integer expression to real
+        if ebody_type.is_int_type() and rtype.is_real_type() and \
+           len(ebody_vars) == 0:
+            ebody = self.env.formula_manager.ToReal(ebody)
+            ebody_type = rtype
+        # Check that ebody has the right type
+        if ebody_type != rtype:
+            raise PysmtSyntaxError("Typyng error in define-fun command. "
+                                   "The expected type is %s, but the detected "
+                                   "expression type is %s" % (rtype, ebody_type))
+
+        #Discard parameters
         for x in bindings:
             self.cache.unbind(x)
         # Finish Parsing
@@ -1325,7 +1396,7 @@ class SmtLibParser(object):
         try:
             type_ = self.env.type_manager.Type(typename, int(arity))
         except ValueError:
-            raise PysmtSyntaxError("Expected an integer as arity of type %s." % \
+            raise PysmtSyntaxError("Expected an integer as arity of type %s."%
                                    typename, tokens.pos_info)
         self.cache.bind(typename, type_)
         return SmtLibCommand(current, [type_])

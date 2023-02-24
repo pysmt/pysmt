@@ -15,10 +15,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-
-from six.moves import xrange
-
 import pysmt
+
 from pysmt.typing import BOOL, REAL, INT, FunctionType, BV8, BVType
 from pysmt.shortcuts import Symbol, is_sat, Not, Implies, GT, Plus, Int, Real
 from pysmt.shortcuts import Minus, Times, Xor, And, Or, TRUE, Iff, FALSE, Ite
@@ -612,8 +610,8 @@ class TestFormulaManager(TestCase):
         f = self.mgr.AllDifferent(symbols)
 
         one = self.mgr.Int(1)
-        for i in xrange(many):
-            for j in xrange(many):
+        for i in range(many):
+            for j in range(many):
                 if i != j:
                     c = f.substitute({symbols[i]: one,
                                       symbols[j]: one}).simplify()
@@ -622,7 +620,7 @@ class TestFormulaManager(TestCase):
                                      "to be 1")
 
 
-        c = f.substitute(dict((symbols[i],self.mgr.Int(i)) for i in xrange(many)))
+        c = f.substitute(dict((symbols[i],self.mgr.Int(i)) for i in range(many)))
         self.assertEqual(c.simplify(), self.mgr.Bool(True),
                          "AllDifferent should be tautological for a set " \
                          "of different values")
@@ -1014,7 +1012,6 @@ class TestFormulaManager(TestCase):
     def test_integer(self):
         """Create Int using different constant types."""
         from pysmt.constants import HAS_GMPY
-        from six import PY2
 
         v_base = Integer(1)
         c_base = self.mgr.Int(v_base)
@@ -1022,11 +1019,6 @@ class TestFormulaManager(TestCase):
         v_int = int(1)
         c_int = self.mgr.Int(v_int)
         self.assertIs(c_base, c_int)
-
-        if PY2:
-            v_long = long(1)
-            c_long = self.mgr.Int(v_long)
-            self.assertIs(c_base, c_long)
 
         if HAS_GMPY:
             from gmpy2 import mpz
@@ -1041,6 +1033,57 @@ class TestFormulaManager(TestCase):
         self.assertEqual(x.node_id(), xx.node_id())
         self.assertNotEqual(x.node_id(), y.node_id())
 
+    def test_left_associative_bv(self):
+        """Test that the left-associative bv operators work properly"""
+        bva = self.mgr.Symbol('a', BV8)
+        bvb = self.mgr.Symbol('b', BV8)
+        bvc = self.mgr.BV('10101010')
+        self.assertEqual(
+            # passing a list of elements
+            self.mgr.BVAnd([bva, bvb, bvc]),
+            self.mgr.BVAnd(
+                self.mgr.BVAnd(bva, bvb),
+                bvc
+            )
+        )
+        self.assertEqual(
+            # passing n elements
+            self.mgr.BVOr(bva, bvb, bvc),
+            self.mgr.BVOr(
+                self.mgr.BVOr(bva, bvb),
+                bvc
+            )
+        )
+        self.assertEqual(
+            self.mgr.BVAdd(bva, bvb, bvc),
+            self.mgr.BVAdd(
+                self.mgr.BVAdd(bva, bvb),
+                bvc
+            )
+        )
+        self.assertEqual(
+            self.mgr.BVMul(bva, bvb, bvc),
+            self.mgr.BVMul(
+                self.mgr.BVMul(bva, bvb),
+                bvc
+            )
+        )
+
+        # passing a single element
+        self.assertEqual(self.mgr.BVAnd(bva), bva)
+        self.assertEqual(self.mgr.BVOr(bva), bva)
+        self.assertEqual(self.mgr.BVAdd(bva), bva)
+        self.assertEqual(self.mgr.BVMul(bva), bva)
+
+        # passing no elements
+        self.assertRaises(PysmtValueError,
+            lambda: self.mgr.BVAnd([]))
+        self.assertRaises(PysmtValueError,
+            lambda: self.mgr.BVOr([]))
+        self.assertRaises(PysmtValueError,
+            lambda: self.mgr.BVAdd([]))
+        self.assertRaises(PysmtValueError,
+            lambda: self.mgr.BVMul([]))
 
 class TestShortcuts(TestCase):
 

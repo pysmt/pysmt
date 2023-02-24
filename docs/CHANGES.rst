@@ -1,6 +1,53 @@
 Change Log
 ==========
 
+0.9.5: 2022-05-28 -- 2 years of bugfixes
+----------------------------------------
+
+Intermediate release that collects 2 years of bugfixes and improvements.
+
+Python 2 was deprecated in version 0.9.0, and this version removes the use of compatible code for that version.
+
+## What's Changed
+
+* Add support for boolean-typed array in the AtomsOracle by @mikand in https://github.com/pysmt/pysmt/pull/644
+* Switched from nosetests to pytest by @mikand in https://github.com/pysmt/pysmt/pull/662
+* Fixed a bug in yices quantifier support and added regression test by @mikand in https://github.com/pysmt/pysmt/pull/657
+* Fix Boolector install script by @4tXJ7f in https://github.com/pysmt/pysmt/pull/656
+* BUG: define UFNIA as logic with integer arithmetic by @johnyf in https://github.com/pysmt/pysmt/pull/659
+* Handling of algebraic constants in simplify by @EnricoMagnago in https://github.com/pysmt/pysmt/pull/658
+* Integer div by @EnricoMagnago in https://github.com/pysmt/pysmt/pull/667
+* Fix CVC4 installation on macOS by @kammoh in https://github.com/pysmt/pysmt/pull/666
+* Bug in times distributor by @EnricoMagnago in https://github.com/pysmt/pysmt/pull/671
+* Fixed reset_assertion method for incremental-tracking solvers by @mikand in https://github.com/pysmt/pysmt/pull/672
+* Minor Corrections by @mfarif in https://github.com/pysmt/pysmt/pull/673
+* implement add_assertions method for solver. by @EnricoMagnago in https://github.com/pysmt/pysmt/pull/679
+* Fix "get_model" when called from a generic solver (Fix #674) by @btwael in https://github.com/pysmt/pysmt/pull/675
+* Remove six and python 2 compatibility code by @marcogario in https://github.com/pysmt/pysmt/pull/684
+* Added fallback to Swig3 to address as much as possible issue #682 by @mikand in https://github.com/pysmt/pysmt/pull/685
+* Fix to correctly pass logic to solvers started by Portfolio by @ekilmer in https://github.com/pysmt/pysmt/pull/683
+* SmtLib model validation support by @mikand in https://github.com/pysmt/pysmt/pull/681
+* Fix iss694 by @EnricoMagnago in https://github.com/pysmt/pysmt/pull/695
+* Fixed CVC4 installer after upstream repository renaming by @mikand in https://github.com/pysmt/pysmt/pull/697
+* Remove call to `FNode.substitute` in SmtLibExecutionCache by @EnricoMagnago in https://github.com/pysmt/pysmt/pull/699
+* Added printing of annotations to smt lib printers by @agirardi-fbk in https://github.com/pysmt/pysmt/pull/703
+* Integer div by @EnricoMagnago in https://github.com/pysmt/pysmt/pull/705
+* Updated docker images to solve deprecation issue on azure pipelines by @mikand in https://github.com/pysmt/pysmt/pull/706
+* Workaround to fix Z3 segfault by @mikand in https://github.com/pysmt/pysmt/pull/713
+* Add possibility to use several BV operators as left associative by @agirardi-fbk in https://github.com/pysmt/pysmt/pull/714
+* Fixed issue #613 by @mikand in https://github.com/pysmt/pysmt/pull/710
+
+## New Contributors
+* @4tXJ7f made their first contribution in https://github.com/pysmt/pysmt/pull/656
+* @johnyf made their first contribution in https://github.com/pysmt/pysmt/pull/659
+* @kammoh made their first contribution in https://github.com/pysmt/pysmt/pull/666
+* @mfarif made their first contribution in https://github.com/pysmt/pysmt/pull/673
+* @btwael made their first contribution in https://github.com/pysmt/pysmt/pull/675
+* @ekilmer made their first contribution in https://github.com/pysmt/pysmt/pull/683
+* @agirardi-fbk made their first contribution in https://github.com/pysmt/pysmt/pull/703
+
+**Full Changelog**: https://github.com/pysmt/pysmt/compare/v0.9.0...v0.9.5
+
 0.9.0: 2020-04-26 -- PySMT as module
 ------------------------------------
 

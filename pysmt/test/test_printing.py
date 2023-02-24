@@ -15,8 +15,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from six.moves import cStringIO
-from six.moves import xrange
+from io import StringIO
 
 from pysmt.shortcuts import Or, And, Not, Plus, Iff, Implies
 from pysmt.shortcuts import Exists, ForAll, Ite, ExactlyOne
@@ -24,6 +23,7 @@ from pysmt.shortcuts import Bool, Real, Int, Symbol, Function
 from pysmt.shortcuts import Times, Minus, Equals, LE, LT, ToReal, FreshSymbol
 from pysmt.typing import REAL, INT, FunctionType
 from pysmt.smtlib.printers import SmtPrinter, SmtDagPrinter
+from pysmt.smtlib.annotations import Annotations
 from pysmt.printers import smart_serialize
 from pysmt.test import TestCase, main
 from pysmt.test.examples import get_str_example_formulae
@@ -142,7 +142,7 @@ class TestPrinting(TestCase):
     def test_threshold_printing(self):
         x = Symbol("x")
         f = And(x,x)
-        for _ in xrange(10):
+        for _ in range(10):
             f = And(f,f)
 
         short_f_str = str(f)
@@ -152,11 +152,11 @@ class TestPrinting(TestCase):
     def test_daggify(self):
         x = Symbol("x")
         f = And(x,x)
-        for _ in xrange(10):
+        for _ in range(10):
             f = And(f,f)
 
-        tree_buf = cStringIO()
-        dag_buf = cStringIO()
+        tree_buf = StringIO()
+        dag_buf = StringIO()
         tree_printer = SmtPrinter(tree_buf)
         dag_printer = SmtDagPrinter(dag_buf)
 
@@ -187,7 +187,7 @@ class TestPrinting(TestCase):
         self.assertIsNotNone(res)
         self.assertEqual(str(f), res)
 
-        fvars = [Symbol("x%d" % i) for i in xrange(5)]
+        fvars = [Symbol("x%d" % i) for i in range(5)]
         ex = ExactlyOne(fvars)
         substitutions = {ex: "ExactlyOne(%s)" % ",".join(str(v) for v in fvars)}
         old_str = ex.serialize()
@@ -200,11 +200,34 @@ class TestPrinting(TestCase):
         limit = sys.getrecursionlimit()
         f = FreshSymbol()
         p = FreshSymbol()
-        for _ in xrange(limit):
+        for _ in range(limit):
             f = Or(p, And(f, p))
         self.assertTrue(f.size() >= limit)
         s = f.serialize()
         self.assertIsNotNone(s)
+
+    def test_annotations(self):
+        x = Symbol('x')
+        x_next = Symbol('x.next')
+        f = Iff(x, Not(x_next))
+
+        ann = Annotations()
+        ann.add(x, 'next', x_next.symbol_name())
+        ann.add(f, 'trans', 'true')
+        ann.add(x, 'init', 'true')
+
+        tree_buf = StringIO()
+        dag_buf = StringIO()
+        tree_printer = SmtPrinter(tree_buf, annotations=ann)
+        dag_printer = SmtDagPrinter(dag_buf, annotations=ann)
+
+        dag_printer.printer(f)
+        tree_printer.printer(f)
+
+        self.assertEqual(tree_buf.getvalue(),
+                         "(! (= (! x :next x.next :init true) (not x.next)) :trans true)")
+        self.assertEqual(dag_buf.getvalue(),
+                         "(let ((.def_0 (not x.next))) (let ((.def_1 (= (! x :next x.next :init true) .def_0))) (! .def_1 :trans true)))")
 
 if __name__ == '__main__':
     main()

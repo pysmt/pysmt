@@ -76,6 +76,16 @@ class Environment(object):
         self.enable_infix_notation = False
         self.enable_div_by_0 = True
 
+        # This option allows the construction of a symbol with empty
+        # name (i.e. `Symbol("", INT)`). This feature is allowed by
+        # SmtLib, but not all solvers support this and the machinery
+        # needed to rename this one symbol is simply not worth the
+        # effort given that such a name is simply bad
+        # practice. However to validate pathological models we can
+        # allow this on the pysmt side to use walkers
+        # (e.g. substitution and simplification).
+        self.allow_empty_var_names = False
+
         # Dynamic Walker Configuration Map
         # See: add_dynamic_walker_function
         self.dwf = {}

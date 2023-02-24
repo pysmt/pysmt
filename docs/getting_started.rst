@@ -11,7 +11,7 @@ simple problem using it.
 Installation
 ------------
 
-To run pySMT you need Python 3.5+ or Python 2.7 installed.
+To run pySMT you need Python 3.5+ installed.
 If no solver is installed, pySMT can still create and dump the SMT
 problem in SMT-LIB format. pySMT works with any SMT-LIB compatible
 solver. Moreover, pySMT can leverage the API of the following solvers:

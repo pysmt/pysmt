@@ -15,8 +15,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from six.moves import xrange
-
 from pysmt.typing import BOOL
 from pysmt.solvers.options import SolverOptions
 from pysmt.decorators import clear_pending_pop
@@ -202,6 +200,10 @@ class Solver(object):
         """Add assertion to the solver."""
         raise NotImplementedError
 
+    def add_assertions(self, formulae):
+        for formula in formulae:
+            self.add_assertion(formula)
+
     def print_model(self, name_filter=None):
         """Prints the model (if one exists).
 
@@ -301,7 +303,7 @@ class IncrementalTrackingSolver(Solver):
 
     @property
     def last_command(self):
-        """Returns the name of the laste executed command"""
+        """Returns the name of the last executed command"""
         return self._last_command
 
     @property
@@ -370,7 +372,7 @@ class IncrementalTrackingSolver(Solver):
     def push(self, levels=1):
         self._push(levels=levels)
         point = len(self._assertion_stack)
-        for _ in xrange(levels):
+        for _ in range(levels):
             self._backtrack_points.append(point)
         self._last_command = "push"
 
@@ -379,7 +381,7 @@ class IncrementalTrackingSolver(Solver):
 
     def pop(self, levels=1):
         self._pop(levels=levels)
-        for _ in xrange(levels):
+        for _ in range(levels):
             point = self._backtrack_points.pop()
             self._assertion_stack = self._assertion_stack[0:point]
         self._last_command = "pop"
@@ -439,7 +441,7 @@ class Model(object):
         If model_completion is True, then variables not appearing in the
         assignment are given a default value, otherwise an error is generated.
 
-        This is a simplified version of the SMT-LIB funtion get_values .
+        This is a simplified version of the SMT-LIB function get_values .
         """
         raise NotImplementedError
 

@@ -15,7 +15,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from six.moves import xrange
 import math
 
 import pysmt.walkers
@@ -903,7 +902,7 @@ class Simplifier(pysmt.walkers.DagWalker):
                 if width > r.bv_unsigned_value():
                     padlen = r.bv_unsigned_value()
 
-                for i in xrange(width-padlen, width):
+                for i in range(width-padlen, width):
                     n = set_bit(n, i, True)
                 ret = self.manager.BV(n, width)
             return ret
@@ -1028,11 +1027,11 @@ class Simplifier(pysmt.walkers.DagWalker):
             else:
                 assert sl.is_int_constant()
                 # smtlib2 semantics of integer division:
-                # l > 0 : l / r == floor(float(l) / r)
-                # l < 0 : l / r == ceil(float(l) / r)
-                if l > 0:
+                # r > 0 : l / r == floor(float(l) / r)
+                # r < 0 : l / r == ceil(float(l) / r)
+                if r > 0:
                     return self.manager.Int(math.floor(float(l) / r))
-                if l < 0:
+                if r < 0:
                     return self.manager.Int(math.ceil(float(l) / r))
 
         if sl.is_constant():

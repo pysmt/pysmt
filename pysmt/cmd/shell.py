@@ -33,7 +33,7 @@ from pysmt.optimization.goal import Goal
 welcome_msg = \
 """Welcome to pySMT!!!
 
-You are within a Python shell enhanched with pySMT functionalities.
+You are within a Python shell enhanced with pySMT functionalities.
 
 First time here? Try:
 
@@ -126,7 +126,6 @@ class PysmtShell(object):
             for r in result:
                 self._print("  (%s %s)" % (r[0], r[1]), stream_out)
             self._print(")", stream_out)
-
 
 
     def smtlib_solver(self, stream_in, stream_out):

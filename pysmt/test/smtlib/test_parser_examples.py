@@ -18,7 +18,7 @@
 import os
 from tempfile import mkstemp
 
-from six.moves import cStringIO
+from io import StringIO
 
 import pysmt.logics as logics
 from pysmt.test import TestCase, skipIfNoSolverForLogic, main
@@ -29,6 +29,7 @@ from pysmt.shortcuts import Iff
 from pysmt.shortcuts import read_smtlib, write_smtlib, get_env
 from pysmt.exceptions import PysmtSyntaxError
 
+
 class TestSMTParseExamples(TestCase):
 
     def test_parse_examples(self):
@@ -38,17 +39,15 @@ class TestSMTParseExamples(TestCase):
             if logic == logics.QF_BV:
                 # See test_parse_examples_bv
                 continue
-            buf = cStringIO()
+            buf = StringIO()
             script_out = smtlibscript_from_formula(f_out)
             script_out.serialize(outstream=buf)
-            #print(buf)
 
             buf.seek(0)
             parser = SmtLibParser()
             script_in = parser.get_script(buf)
             f_in = script_in.get_last_formula()
             self.assertEqual(f_in.simplify(), f_out.simplify())
-
 
     @skipIfNoSolverForLogic(logics.QF_BV)
     def test_parse_examples_bv(self):
@@ -63,11 +62,11 @@ class TestSMTParseExamples(TestCase):
         for (f_out, _, _, logic) in fs:
             if logic != logics.QF_BV:
                 continue
-            buf_out = cStringIO()
+            buf_out = StringIO()
             script_out = smtlibscript_from_formula(f_out)
             script_out.serialize(outstream=buf_out)
 
-            buf_in = cStringIO(buf_out.getvalue())
+            buf_in = StringIO(buf_out.getvalue())
             parser = SmtLibParser()
             script_in = parser.get_script(buf_in)
             f_in = script_in.get_last_formula()
@@ -81,10 +80,10 @@ class TestSMTParseExamples(TestCase):
             if logic == logics.QF_BV:
                 # See test_parse_examples_daggified_bv
                 continue
-            buf_out = cStringIO()
+            buf_out = StringIO()
             script_out = smtlibscript_from_formula(f_out)
             script_out.serialize(outstream=buf_out, daggify=True)
-            buf_in = cStringIO(buf_out.getvalue())
+            buf_in = StringIO(buf_out.getvalue())
             parser = SmtLibParser()
             script_in = parser.get_script(buf_in)
             f_in = script_in.get_last_formula()
@@ -98,37 +97,43 @@ class TestSMTParseExamples(TestCase):
             if logic != logics.QF_BV:
                 # See test_parse_examples_daggified
                 continue
-            buf_out = cStringIO()
+            buf_out = StringIO()
             script_out = smtlibscript_from_formula(f_out)
             script_out.serialize(outstream=buf_out, daggify=True)
-            buf_in = cStringIO(buf_out.getvalue())
+            buf_in = StringIO(buf_out.getvalue())
             parser = SmtLibParser()
             script_in = parser.get_script(buf_in)
             f_in = script_in.get_last_formula()
             self.assertValid(Iff(f_in, f_out), f_in.serialize())
 
     def test_dumped_logic(self):
-        # Dumped logic matches the logic in the example
+        # Dumped logic matches the logic in the example.
+        #
+        # There are a few cases where we use a logic
+        # that does not exist in SMT-LIB, and the SMT-LIB
+        # serialization logic will find a logic that
+        # is more expressive. We need to adjust the test
+        # for those cases (see rewrite dict below).
+        rewrite = {
+            logics.QF_BOOL: logics.QF_UF,
+            logics.BOOL: logics.LRA,
+            logics.QF_NIRA: logics.AUFNIRA,
+        }
         fs = get_example_formulae()
 
         for (f_out, _, _, logic) in fs:
-            buf_out = cStringIO()
+            buf_out = StringIO()
             script_out = smtlibscript_from_formula(f_out)
             script_out.serialize(outstream=buf_out)
-            buf_in = cStringIO(buf_out.getvalue())
+            buf_in = StringIO(buf_out.getvalue())
             parser = SmtLibParser()
             script_in = parser.get_script(buf_in)
             for cmd in script_in:
                 if cmd.name == "set-logic":
                     logic_in = cmd.args[0]
-                    if logic == logics.QF_BOOL:
-                        self.assertEqual(logic_in, logics.QF_UF)
-                    elif logic == logics.BOOL:
-                        self.assertEqual(logic_in, logics.LRA)
-                    else:
-                        self.assertEqual(logic_in, logic, script_in)
+                    self.assertEqual(logic_in, rewrite.get(logic, logic))
                     break
-            else: # Loops exited normally
+            else:  # Loops exited normally
                 print("-"*40)
                 print(script_in)
 
@@ -136,7 +141,7 @@ class TestSMTParseExamples(TestCase):
         fs = get_example_formulae()
 
         fdi, tmp_fname = mkstemp()
-        os.close(fdi) # Close initial file descriptor
+        os.close(fdi)  # Close initial file descriptor
         for (f_out, _, _, _) in fs:
             write_smtlib(f_out, tmp_fname)
             # with open(tmp_fname) as fin:
@@ -155,7 +160,7 @@ class TestSMTParseExamples(TestCase):
         """
         parser = SmtLibParser()
         with self.assertRaises(PysmtSyntaxError):
-            parser.get_script(cStringIO(txt))
+            parser.get_script(StringIO(txt))
 
     def test_parse_consume(self):
         smt_script = """
@@ -163,7 +168,7 @@ class TestSMTParseExamples(TestCase):
         (define-fun STRING_cmd_line_arg_1_1000 () String "AAAAAAAAAAAA")
         )
         """
-        tokens = Tokenizer(cStringIO(smt_script), interactive=True)
+        tokens = Tokenizer(StringIO(smt_script), interactive=True)
         parser = SmtLibParser()
         tokens.consume()
         tokens.consume()
@@ -179,7 +184,7 @@ class TestSMTParseExamples(TestCase):
         (assert (and y (x z)))
         """
         parser = SmtLibParser()
-        script = parser.get_script(cStringIO(txt))
+        script = parser.get_script(StringIO(txt))
         self.assertEqual(len(get_env().formula_manager.get_all_symbols()),
                          len(script.get_declared_symbols()) + len(script.get_define_fun_parameter_symbols()))
 
@@ -193,9 +198,32 @@ class TestSMTParseExamples(TestCase):
         (assert (=  A B))
         (check-sat)"""
         parser = SmtLibParser()
-        script = parser.get_script(cStringIO(txt))
+        script = parser.get_script(StringIO(txt))
         f_in = script.get_last_formula()
         self.assertSat(f_in)
+
+    def test_int_promotion_define_fun(self):
+        script = """
+        (define-fun x () Int 8)
+        (define-fun y () Real 8)
+        """
+        p = SmtLibParser()
+        buffer = StringIO(script)
+        s = p.get_script(buffer)
+
+        get_type = get_env().stc.get_type
+        for cmd in s:
+            self.assertEqual(cmd.args[2], get_type(cmd.args[3]))
+
+    def test_typing_define_fun(self):
+        script = """
+        (define-fun x () Int 8.2)
+        """
+        p = SmtLibParser()
+        buffer = StringIO(script)
+        with self.assertRaises(PysmtSyntaxError):
+            p.get_script(buffer)
+
 
 if __name__ == "__main__":
     main()

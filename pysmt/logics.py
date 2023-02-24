@@ -19,7 +19,6 @@
 the SMTLIB and provides methods to compare and search for particular
 logics.
 """
-import six
 
 from pysmt.exceptions import UndefinedLogicError, NoLogicAvailableError
 
@@ -323,7 +322,7 @@ arrays.""",
 AUFLIRA = Logic(name="AUFLIRA",
                 description=\
 """Closed linear formulas with free sort and function symbols over
-one- and two-dimentional arrays of integer index and real value.""",
+one- and two-dimensional arrays of integer index and real value.""",
                 arrays=True,
                 integer_arithmetic=True,
                 real_arithmetic=True,
@@ -481,6 +480,14 @@ variables.""",
                quantifier_free=True,
                real_arithmetic=True)
 
+QF_LIRA = Logic(name="QF_LIRA",
+                description=\
+"""Unquantified linear integer and real arithmetic""",
+                integer_arithmetic=True,
+                real_arithmetic=True,
+                linear=True,
+                quantifier_free=True)
+
 QF_NIA = Logic(name="QF_NIA",
                description=\
 """Quantifier-free integer arithmetic.""",
@@ -496,6 +503,12 @@ QF_NRA = Logic(name="QF_NRA",
                real_arithmetic=True,
                linear=False)
 
+QF_NIRA = Logic(name="QF_NIRA",
+                description="""Quantifier-free integer and real arithmetic.""",
+                quantifier_free=True,
+                integer_arithmetic=True,
+                real_arithmetic=True,
+                linear=False)
 
 QF_RDL = Logic(name="QF_RDL",
                description=\
@@ -620,41 +633,41 @@ QF_AUFBVLIRA = Logic(name="QF_AUFBVLIRA",
 AUTO = Logic(name="Auto",
              description="Special logic used to indicate that the logic to be used depends on the formula.")
 
-SMTLIB2_LOGICS = frozenset([ AUFLIA,
-                             AUFLIRA,
-                             AUFNIRA,
-                             ALIA,
-                             LRA,
-                             LIA,
-                             NIA,
-                             NRA,
-                             UFLRA,
-                             UFNIA,
-                             UFLIRA,
-                             QF_ABV,
-                             QF_AUFBV,
-                             QF_AUFLIA,
-                             QF_ALIA,
-                             QF_AX,
-                             QF_BV,
-                             QF_IDL,
-                             QF_LIA,
-                             QF_LRA,
-                             QF_NIA,
-                             QF_NRA,
-                             QF_RDL,
-                             QF_UF,
-                             QF_UFBV ,
-                             QF_UFIDL,
-                             QF_UFLIA,
-                             QF_UFLRA,
-                             QF_UFNRA,
-                             QF_UFNIA,
-                             QF_UFLIRA,
-                             QF_SLIA
-                         ])
+SMTLIB2_LOGICS = frozenset([AUFLIA,
+                            AUFLIRA,
+                            AUFNIRA,
+                            ALIA,
+                            LRA,
+                            LIA,
+                            NIA,
+                            NRA,
+                            UFLRA,
+                            UFNIA,
+                            UFLIRA,
+                            QF_ABV,
+                            QF_AUFBV,
+                            QF_AUFLIA,
+                            QF_ALIA,
+                            QF_AX,
+                            QF_BV,
+                            QF_IDL,
+                            QF_LIA,
+                            QF_LRA,
+                            QF_NIA,
+                            QF_NRA,
+                            QF_RDL,
+                            QF_UF,
+                            QF_UFBV,
+                            QF_UFIDL,
+                            QF_UFLIA,
+                            QF_UFLRA,
+                            QF_UFNRA,
+                            QF_UFNIA,
+                            QF_UFLIRA,
+                            QF_SLIA
+                            ])
 
-LOGICS = SMTLIB2_LOGICS | frozenset([ QF_BOOL, BOOL, QF_AUFBVLIRA])
+LOGICS = SMTLIB2_LOGICS | frozenset([QF_BOOL, BOOL, QF_AUFBVLIRA, QF_NIRA])
 
 QF_LOGICS = frozenset(_l for _l in LOGICS if _l.quantifier_free)
 
@@ -662,15 +675,15 @@ QF_LOGICS = frozenset(_l for _l in LOGICS if _l.quantifier_free)
 # This is the set of logics supported by the current version of pySMT
 #
 PYSMT_LOGICS = frozenset([QF_BOOL, QF_IDL, QF_LIA, QF_LRA, QF_RDL, QF_UF, QF_UFIDL,
-                          QF_UFLIA, QF_UFLRA, QF_UFLIRA,
+                          QF_UFLIA, QF_UFLRA, QF_UFLIRA, QF_LIRA,
                           BOOL, LRA, LIA, UFLIRA, UFLRA,
                           QF_BV, QF_UFBV,
                           QF_SLIA,
                           QF_BV, QF_UFBV,
                           QF_ABV, QF_AUFBV, QF_AUFLIA, QF_ALIA, QF_AX,
                           QF_AUFBVLIRA,
-                          QF_NRA, QF_NIA, UFBV, BV,
-                      ])
+                          QF_NRA, QF_NIA, QF_NIRA, UFBV, BV,
+                          ])
 
 # PySMT Logics includes additional features:
 #  - constant arrays: QF_AUFBV  becomes QF_AUFBV*
@@ -698,7 +711,6 @@ for l in PYSMT_LOGICS:
         ext_logics.add(nl)
 
 
-
 LOGICS = LOGICS | frozenset(ext_logics)
 PYSMT_LOGICS = PYSMT_LOGICS | frozenset(ext_logics)
 
@@ -723,7 +735,7 @@ def convert_logic_from_string(name):
 
     This takes a logic or a string or None, and returns a logic or None.
     """
-    if name is not None and isinstance(name, six.string_types):
+    if name is not None and isinstance(name, str):
         name = get_logic_by_name(name)
     return name
 
@@ -791,10 +803,17 @@ def get_closer_logic(supported_logics, logic):
     does not support the given logic.
 
     """
-    res = [l for l in supported_logics if logic <= l]
-    if len(res) == 0:
+    candidates = [l for l in supported_logics if logic <= l]
+    if len(candidates) == 0:
         raise NoLogicAvailableError("Logic %s is not supported" % logic)
-    return min(res)
+
+    # We remove from the candidates, the logics that subsume another candidate
+    # (i.e. that are more general) because we are looking for the closer logic
+    res = [l for l in candidates if not any(l != k and k <= l for k in candidates)]
+
+    # There might be multiple incomparable logics that are closer, we
+    # deterministically select the one having a lexicographically smaller name
+    return sorted(res, key=lambda x:str(x))[0]
 
 
 def get_closer_pysmt_logic(target_logic):

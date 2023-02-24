@@ -20,8 +20,6 @@
 #     "Efficient implementation of property directed reachability",
 #     FMCAD 2011
 #
-from six.moves import xrange
-
 from pysmt.shortcuts import Symbol, Not, And, Or, EqualsOrIff, Implies
 from pysmt.shortcuts import is_sat, is_unsat, Solver, TRUE
 from pysmt.typing import BOOL
@@ -108,6 +106,9 @@ class PDR(object):
             return True
         return False
 
+    def __del__(self):
+        self.solver.exit()
+
 
 class BMCInduction(object):
 
@@ -128,7 +129,7 @@ class BMCInduction(object):
         E.g. T(0,1) & T(1,2) & ... & T(k-1,k)
         """
         res = []
-        for i in xrange(k+1):
+        for i in range(k+1):
             subs_i = self.get_subs(i)
             res.append(self.system.trans.substitute(subs_i))
         return And(res)
@@ -138,9 +139,9 @@ class BMCInduction(object):
         each time encodes a different state
         """
         res = []
-        for i in xrange(k+1):
+        for i in range(k+1):
             subs_i = self.get_subs(i)
-            for j in xrange(i+1, k+1):
+            for j in range(i+1, k+1):
                 state = []
                 subs_j = self.get_subs(j)
                 for v in self.system.variables:
@@ -153,7 +154,7 @@ class BMCInduction(object):
     def get_k_hypothesis(self, prop, k):
         """Hypothesis for k-induction: each state up to k-1 fulfills the property"""
         res = []
-        for i in xrange(k):
+        for i in range(k):
             subs_i = self.get_subs(i)
             res.append(prop.substitute(subs_i))
         return And(res)
@@ -176,7 +177,7 @@ class BMCInduction(object):
     def check_property(self, prop):
         """Interleaves BMC and K-Ind to verify the property."""
         print("Checking property %s..." % prop)
-        for b in xrange(100):
+        for b in range(100):
             f = self.get_bmc(prop, b)
             print("   [BMC]    Checking bound %d..." % (b+1))
             if is_sat(f):

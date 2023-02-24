@@ -2,9 +2,9 @@
 pySMT: a Python API for SMT
 ===========================
 
-.. image:: https://dev.azure.com/micheliandrea/PySMT/_apis/build/status/pysmt.pysmt?branchName=master
-           :target: https://dev.azure.com/micheliandrea/PySMT/_build/latest?definitionId=1&branchName=master
-           :alt: Build Status
+.. image:: https://github.com/pysmt/pysmt/actions/workflows/test.yml/badge.svg
+           :target: https://github.com/pysmt/pysmt/actions
+           :alt: CI Status
 
 .. image:: https://coveralls.io/repos/github/pysmt/pysmt/badge.svg
            :target: https://coveralls.io/github/pysmt/pysmt
@@ -178,13 +178,11 @@ Additionally, you can use any SMT-LIB 2 compliant solver.
 PySMT assumes that the python bindings for the SMT Solver are
 installed and accessible from your ``PYTHONPATH``.
 
-pySMT works on both Python 3.5 and Python 2.7.
-
 Installation
 ============
 You can install the latest stable release of pySMT from PyPI::
 
-  # pip install pysmt
+  $ pip install pysmt
 
 this will additionally install the *pysmt-install* command, that can
 be used to install the solvers: e.g., ::
@@ -207,7 +205,7 @@ By default the solvers are downloaded, unpacked and built in your home directory
 in the ``.smt_solvers`` folder. Compiled libraries and actual solver packages are
 installed in the relevant ``site-packages`` directory (e.g. virtual environment's
 packages root or local user-site). ``pysmt-install`` has many options to
-customize its behavior. If you have multiple versions of python in your system, 
+customize its behavior. If you have multiple versions of python in your system,
 we recommend the following syntax to run pysmt-install: ``python -m pysmt install``.
 
 
@@ -239,7 +237,7 @@ each of the available solvers.
  +==================+===========+================================+=============+========================+============+==============+
  | MathSAT          |  msat     | UF, LIA, LRA, BV, AX           |  No         | msat-fm, msat-lw       | Yes        | Yes          |
  +------------------+-----------+--------------------------------+-------------+------------------------+------------+--------------+
- | Z3               |  z3       | UF, LIA, LRA, BV, AX, NRA, NIA |  z3         | z3                     | Yes        | Yes          |
+ | Z3               |  z3       | UF, LIA, LRA, BV, AX, NRA, NIA |  Yes        | z3                     | Yes        | No           |
  +------------------+-----------+--------------------------------+-------------+------------------------+------------+--------------+
  | CVC4             |  cvc4     | UF, LIA, LRA, BV, AX, S        |  Yes        | No                     | No         | No           |
  +------------------+-----------+--------------------------------+-------------+------------------------+------------+--------------+

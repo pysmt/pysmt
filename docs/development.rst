@@ -258,7 +258,7 @@ Package creation and local testing
 
 The utility script ``make_distrib.sh`` to create a distribution
 package is located in the root directory of the project. This will
-create various formats, and download the latest version of six.
+create various formats.
 
 After running this script, the package ``dist/PySMT-a.b.c.tar.gz``
 (where a.b.c are the release number), needs to be uploaded to
@@ -291,8 +291,7 @@ finally push the tag to github ``git push origin va.b.c``.
 
 Now on github, it is possible to create the release associated with
 this tag. The description of the release is the copy-paste of the
-Changelog. Additionally, we include the wheel file (remember to
-include six!) and the tar.gz .
+Changelog. Additionally, we include the wheel file and the tar.gz .
 
 Immediately after tagging, make a commit on master bumping the
 version. By default we use ``(a, b, c+1, "dev", 1)``.

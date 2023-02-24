@@ -15,8 +15,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from six.moves import xrange
-from six.moves import cStringIO
+from io import StringIO
 
 import pysmt.logics as logics
 import pysmt.smtlib.commands as smtcmd
@@ -228,7 +227,7 @@ class TestRegressions(TestCase):
     def test_determinism(self):
         def get_set(env):
             mgr = env.formula_manager
-            r = set(mgr.Symbol("x%d" % i) for i in xrange(1000))
+            r = set(mgr.Symbol("x%d" % i) for i in range(1000))
             for (f, _, _, _) in get_example_formulae(env):
                 r |= set([f])
             return r
@@ -237,9 +236,9 @@ class TestRegressions(TestCase):
         l1 = list(get_set(get_env()))
 
         # We try this ten times...
-        for _ in xrange(10):
+        for _ in range(10):
             # Do something to screw up memory layout...
-            for y in (Symbol("y%d" % i) for i in xrange(1000)):
+            for y in (Symbol("y%d" % i) for i in range(1000)):
                 self.assertIsNotNone(y)
 
             with Environment() as new_env:
@@ -281,14 +280,14 @@ class TestRegressions(TestCase):
         smtlib_input = "(declare-fun z () Bool)"\
                        "(define-fun .def_1 ((z Bool)) Bool (and z z))"
         parser = SmtLibParser()
-        buffer_ = cStringIO(smtlib_input)
+        buffer_ = StringIO(smtlib_input)
         parser.get_script(buffer_)
 
     def test_parse_define_fun_bind(self):
         smtlib_input = "(declare-fun y () Bool)"\
                        "(define-fun .def_1 ((z Bool)) Bool (and z z))"
         parser = SmtLibParser()
-        buffer_ = cStringIO(smtlib_input)
+        buffer_ = StringIO(smtlib_input)
         parser.get_script(buffer_)
 
     def test_parse_bvx_var(self):
@@ -298,7 +297,7 @@ class TestRegressions(TestCase):
         (assert (bvult (_ bv0 8) (bvmul (bvadd bv1 (_ bv1 8)) (_ bv5 8))))
         (check-sat)"""
         parser = SmtLibParser()
-        buffer_ = cStringIO(smtlib_input)
+        buffer_ = StringIO(smtlib_input)
         script = parser.get_script(buffer_)
         # Check Parsed result
         iscript = iter(script)
@@ -390,7 +389,7 @@ class TestRegressions(TestCase):
     def test_smtlib_define_fun_serialization(self):
         smtlib_input = "(define-fun init ((x Bool)) Bool (and x (and x (and x (and x (and x (and x x)))))))"
         parser = SmtLibParser()
-        buffer_ = cStringIO(smtlib_input)
+        buffer_ = StringIO(smtlib_input)
         s = parser.get_script(buffer_)
         for c in s:
             res = c.serialize_to_string(daggify=False)
@@ -430,7 +429,7 @@ class TestRegressions(TestCase):
         (declare-const s Int)
         (check-sat)"""
         parser = SmtLibParser()
-        buffer_ = cStringIO(smtlib_input)
+        buffer_ = StringIO(smtlib_input)
         script = parser.get_script(buffer_)
         self.assertIsNotNone(script)
 
@@ -448,7 +447,7 @@ class TestRegressions(TestCase):
         smtlib_input = "(declare-const x x x Int)" +\
                        "(check-sat)"
         parser = SmtLibParser()
-        buffer_ = cStringIO(smtlib_input)
+        buffer_ = StringIO(smtlib_input)
         try:
             parser.get_script(buffer_)
             self.assertFalse(True)
@@ -459,7 +458,7 @@ class TestRegressions(TestCase):
     def test_parse_bvconst_width(self):
         smtlib_input = "(assert (> #x10 #x10))"
         parser = SmtLibParser()
-        buffer_ = cStringIO(smtlib_input)
+        buffer_ = StringIO(smtlib_input)
         expr = parser.get_script(buffer_).get_last_formula()
         const = expr.args()[0]
         self.assertEqual(const.bv_width(), 8, const.bv_width())
@@ -497,7 +496,7 @@ class TestRegressions(TestCase):
         """
 
         p = SmtLibParser()
-        buffer = cStringIO(script)
+        buffer = StringIO(script)
         s = p.get_script(buffer)
         self.assertEqual('a"b', s.commands[1].args[0].arg(1).constant_value())
         self.assertEqual('"', s.commands[2].args[0].arg(1).constant_value())
@@ -528,7 +527,7 @@ class TestRegressions(TestCase):
         (check-sat)
         '''
         from pysmt.smtlib.parser import get_formula_strict
-        f = get_formula_strict(cStringIO(smt_script))
+        f = get_formula_strict(StringIO(smt_script))
         self.assertSat(f, solver_name='yices')
 
     @skipIfSolverNotAvailable("yices")
@@ -542,7 +541,7 @@ class TestRegressions(TestCase):
         (check-sat)
         '''
         from pysmt.smtlib.parser import get_formula_strict
-        f = get_formula_strict(cStringIO(smt_script))
+        f = get_formula_strict(StringIO(smt_script))
         self.assertSat(f, solver_name='yices')
 
     def test_get_atoms_array_select(self):
@@ -568,6 +567,7 @@ class TestRegressions(TestCase):
             with Solver(name='yices') as s:
                 s.add_assertion(f)
                 self.assertFalse(s.solve())
+
 
 if __name__ == "__main__":
     main()

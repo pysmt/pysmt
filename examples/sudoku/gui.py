@@ -21,8 +21,8 @@ class GridWindow(Gtk.Window):
         self.sudoku = Sudoku(size)
 
         # Draw the window
-        self.table = [[Gtk.Entry() for _ in xrange(size**2)]
-                                   for _ in xrange(size**2)]
+        self.table = [[Gtk.Entry() for _ in range(size**2)]
+                                   for _ in range(size**2)]
         vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.add(vbox)
 
@@ -62,9 +62,9 @@ class GridWindow(Gtk.Window):
 
         # First, we compute the user constraints to feed into the Sudoku solver
         constraints = []
-        for i in xrange(sq_size):
+        for i in range(sq_size):
             row = []
-            for j in xrange(sq_size):
+            for j in range(sq_size):
                 txt = self.table[i][j].get_text()
                 try:
                     n = int(txt)

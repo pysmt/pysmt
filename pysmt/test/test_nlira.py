@@ -55,8 +55,15 @@ class TestNonLinear(TestCase):
             model = s.get_model()
             xval = model[x]
             self.assertTrue(xval.is_algebraic_constant())
-            approx = Fraction(-3109888511975, 2199023255552)
-            self.assertEqual(xval.algebraic_approx_value(), approx)
+            # There are two solutions, that only differ by sign
+            # we take the positive one
+            x_approx_val = abs(xval.algebraic_approx_value())
+            approx = Fraction(3109888511975, 2199023255552)
+            # We only get an approximation of the actual value.
+            # We check that the error of the approximation is within
+            # the precision (default is 10 digits)
+            err = abs(x_approx_val - approx)
+            self.assertTrue(err < 0.00000000001, err)
 
     def test_oracle(self):
         x = FreshSymbol(REAL)
@@ -69,7 +76,7 @@ class TestNonLinear(TestCase):
         f = Equals(Times(x, x), Real(2))
         for sname in self.env.factory.all_solvers():
             with Solver(name=sname) as s:
-                if sname in  ["bdd", "picosat", "btor"]:
+                if sname in ["bdd", "picosat", "btor"]:
                     with self.assertRaises(ConvertExpressionError):
                         s.is_sat(f)
                 elif sname in ["yices", "cvc4", "msat", "optimsat"]:

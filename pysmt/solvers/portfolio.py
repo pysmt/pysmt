@@ -20,6 +20,7 @@ from multiprocessing import Process, Queue, Pipe
 
 from pysmt.solvers.solver import IncrementalTrackingSolver, SolverOptions
 from pysmt.decorators import clear_pending_pop
+from pysmt.logics import convert_logic_from_string
 
 
 LOGGER = logging.getLogger(__name__)
@@ -70,6 +71,7 @@ class Portfolio(IncrementalTrackingSolver):
 
         One process will be used for each of the solvers.
         """
+        logic = convert_logic_from_string(logic)
         IncrementalTrackingSolver.__init__(self,
                                            environment=environment,
                                            logic=logic,
@@ -77,7 +79,7 @@ class Portfolio(IncrementalTrackingSolver):
         self.solvers = []
         self._process_solver_set(solvers_set)
         # Check that the names are valid ?
-        all_solvers = set(self.environment.factory.all_solvers())
+        all_solvers = set(self.environment.factory.all_solvers(logic=logic))
         not_found = set(s for s,_ in self.solvers) - all_solvers
         if len(not_found) != 0:
             raise ValueError("Cannot find solvers %s" % not_found)
@@ -126,7 +128,7 @@ class Portfolio(IncrementalTrackingSolver):
         # We destroy the last solver before solving again. Note: We
         # might be able to do something smarter by keeping track of
         # the state of the solver. This, however, requires more
-        # booking (e.g., we need to assert expressions incrementaly,
+        # booking (e.g., we need to assert expressions incrementally,
         # instead of in one shot!)
         self._close_existing()
 
@@ -143,7 +145,7 @@ class Portfolio(IncrementalTrackingSolver):
             _p = Process(name="%d (%s)" % (idx, sname),
                          target=_run_solver,
                          args=("%d (%s)" % (idx, sname),
-                               sname, options, formula,
+                               sname, self.logic, options, formula,
                                signaling_queue, child_ctrl_pipe))
             processes.append(_p)
             _p.start()
@@ -212,7 +214,7 @@ class Portfolio(IncrementalTrackingSolver):
 # EOC Portfolio
 
 # Function to pass to the solver
-def _run_solver(idx, solver, options, formula, signaling_queue, ctrl_pipe):
+def _run_solver(idx, solver, logic, options, formula, signaling_queue, ctrl_pipe):
     """Function used by the child Process to handle Portfolio requests.
 
     solver  : name of the solver
@@ -224,7 +226,7 @@ def _run_solver(idx, solver, options, formula, signaling_queue, ctrl_pipe):
     from pysmt.environment import get_env
 
     Solver = get_env().factory.Solver
-    with Solver(name=solver, **options) as s:
+    with Solver(name=solver, logic=logic, **options) as s:
         s.add_assertion(formula)
         try:
             local_res = s.solve()
