@@ -48,19 +48,19 @@ class Goal(object):
     """
 
     def is_maximization_goal(self):
-        return isinstance(self, MaximizationGoal)
+        return False
 
     def is_minimization_goal(self):
-        return isinstance(self, MinimizationGoal)
+        return False
 
     def is_minmax_goal(self):
-        return isinstance(self, MinMaxGoal)
+        return False
 
     def is_maxmin_goal(self):
-        return isinstance(self, MaxMinGoal)
+        return False
 
     def is_maxsmt_goal(self):
-        return isinstance(self, MaxSMTGoal)
+        return False
 
     def get_logic(self):
         logic = get_logic(self.formula)
@@ -103,6 +103,9 @@ class MaximizationGoal(Goal):
     def term(self):
         return self.formula
 
+    def is_maximization_goal(self):
+        return True
+
 
 
 class MinimizationGoal(Goal):
@@ -123,9 +126,11 @@ class MinimizationGoal(Goal):
     def opt(self):
         return MinimizationGoal
 
-
     def term(self):
         return self.formula
+
+    def is_minimization_goal(self):
+        return True
 
 
 class MinMaxGoal(MinimizationGoal):
@@ -151,6 +156,10 @@ class MinMaxGoal(MinimizationGoal):
         self.terms = terms
         self._bv_signed = sign
 
+    def is_minmax_goal(self):
+        return True
+
+
 class MaxMinGoal(MaximizationGoal):
     """
     Maximize the minimum expression within 'terms'
@@ -174,23 +183,27 @@ class MaxMinGoal(MaximizationGoal):
         self.terms = terms
         self._bv_signed = sign
 
+    def is_maxmin_goal(self):
+        return True
+
 
 class MaxSMTGoal(Goal):
     """
-    TODO
     MaxSMT goal common to all solvers.
-    Warning: some solvers may not support this goal
     """
 
     _instance_id = 0
 
-    def __init__(self, sign = False):
+    def __init__(self):
         """Accepts soft clauses and the relative weights"""
-        self._my_id = MaxSMTGoal._instance_id
+        self.id = MaxSMTGoal._instance_id
         MaxSMTGoal._instance_id = MaxSMTGoal._instance_id + 1
         self.soft = []
-        self._bv_signed = sign
+        self._bv_signed = False
 
     def add_soft_clause(self, clause, weight):
         """Accepts soft clauses and the relative weights"""
         self.soft.append((clause, weight))
+
+    def is_maxsmt_goal(self):
+        return True

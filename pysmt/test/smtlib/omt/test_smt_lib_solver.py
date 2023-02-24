@@ -53,7 +53,7 @@ class TestSmtLibSolver(TestCase):
         pysmtshell.smtlib_solver(f_in, f_out)
         self.assertEqual(f_out.getvalue(), """sat
 (objectives
-  (x 0.0)
+  (x 0)
 )
 """)
 
@@ -67,7 +67,7 @@ class TestSmtLibSolver(TestCase):
         (<= y 11)
         (<= 4 y)
 ))
-(maxmin (x y))
+(minmax x y)
 (check-sat)
 (get-objectives)"""
         f_in = cStringIO(txt)
@@ -77,7 +77,7 @@ class TestSmtLibSolver(TestCase):
         pysmtshell.smtlib_solver(f_in, f_out)
         self.assertEqual(f_out.getvalue(), """sat
 (objectives
-  (((x <= y) ? x : y) 10.0)
+  (((x <= y) ? y : x) 4)
 )
 """)
 
@@ -188,7 +188,7 @@ class TestSmtLibSolver(TestCase):
 (set-option :opt.priority box)
 (check-sat)
 (get-objectives)
-(maxmin (x y))
+(maxmin x y)
 (check-sat)
 (get-objectives)"""
         f_in = cStringIO(txt)
@@ -210,7 +210,7 @@ sat
 (objectives
   ((x - y) -10)
   ((y - x) -10)
-  (((x <= y) ? x : y) 0)
+  (((x <= y) ? x : y) 10)
 )
 """)
 
@@ -234,7 +234,7 @@ sat
 (set-option :opt.priority box)
 (check-sat)
 (get-objectives)
-(maxmin (x y))
+(maxmin x y)
 (check-sat)
 (get-objectives)"""
         f_in = cStringIO(txt)
@@ -256,7 +256,7 @@ sat
 (objectives
   ((x - y) -10.0)
   ((y - x) -10.0)
-  (((x <= y) ? x : y) 0.0)
+  (((x <= y) ? x : y) 10.0)
 )
 """)
 

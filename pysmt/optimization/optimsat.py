@@ -60,6 +60,7 @@ class OptiMSATOptions(MathSATOptions):
 
     def __init__(self, **base_options):
         MathSATOptions.__init__(self, **base_options)
+        self.solver_options['debug.api_call_trace_filename'] = "/tmp/omt.smt2"
 
 
 class OptiMSATSolver(MathSAT5Solver, Optimizer):
@@ -72,6 +73,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
     def __init__(self, environment, logic, **options):
         MathSAT5Solver.__init__(self, environment=environment,
                                 logic=logic, **options)
+
 
     def _le(self, x, y):
         # TODO: support FP
@@ -88,31 +90,29 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
         if goal.is_maxsmt_goal():
             for tcons, weight in goal.soft:
                 obj_tcons = self.converter.convert(tcons)
-                obj_weight = self.converter.convert(weight)
-                self._msat_lib.msat_assert_soft_formula(self.msat_env(), obj_tcons, obj_weight, "__pysmt_" + str(goal.my_id))
+                obj_weight = self._msat_lib.msat_make_number(self.msat_env(), str(weight))
+                self._msat_lib.msat_assert_soft_formula(self.msat_env(), obj_tcons, obj_weight, "__pysmt_" + str(goal.id))
+            obj_fun = self._msat_lib.msat_from_string(self.msat_env(),"__pysmt_"+str(goal.id))
+            make_fun = self._msat_lib.msat_make_minimize
 
-        if goal.is_minmax_goal() or goal.is_maxmin_goal():
+        elif goal.is_minmax_goal() or goal.is_maxmin_goal():
             if goal.is_minmax_goal():
                 make_fun = self._msat_lib.msat_make_minmax
             else:
                 make_fun = self._msat_lib.msat_make_maxmin
 
-            cost_function = goal.terms
             obj_fun = []
-            for f in cost_function:
+            for f in goal.terms:
                 obj_fun.append(self.converter.convert(f))
-        elif goal.is_minimization_goal() or goal.is_maximization_goal() or goal.is_maxsmt_goal():
-            if goal.is_minimization_goal() or goal.is_maxsmt_goal():
+
+        elif goal.is_minimization_goal() or goal.is_maximization_goal():
+            if goal.is_minimization_goal():
                 make_fun = self._msat_lib.msat_make_minimize
             else:
                 make_fun = self._msat_lib.msat_make_maximize
 
-            if goal.is_maxsmt_goal():
-                obj_fun = self._msat_lib.msat_from_string(self.msat_env(),"__pysmt_"+str(goal.my_id))
-            else:
-                cost_function = goal.term()
-                obj_fun = self.converter.convert(cost_function)
-
+            cost_function = goal.term()
+            obj_fun = self.converter.convert(cost_function)
 
         else:
             raise GoalNotSupportedError("optimathsat", goal)
@@ -148,7 +148,10 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
                 raise ValueError()
 
             model = self.get_model()
-            return model, optres
+            value = self._msat_lib.msat_objective_value_term(self.msat_env(),
+                                                             msat_obj,
+                                                             self._msat_lib.MSAT_OPTIMUM)
+            return model, self.converter.back(value)
 
     def pareto_optimize(self, goals):
         self._msat_lib.msat_set_opt_priority(self.msat_env(), "par")

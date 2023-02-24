@@ -43,25 +43,23 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
 
     def _assert_z3_goal(self, goal):
         h = None
-        if (goal.is_maxsmt_goal()):
-            term = goal.get_soft()[0][0]
+        if goal.is_maxsmt_goal():
+            for soft, w in goal.soft:
+                obj_soft = self.converter.convert(soft)
+                h = self.z3.add_soft(obj_soft, w, "__pysmt_" + str(goal.id))
         else:
             term = goal.term()
-        ty = self.environment.stc.get_type(term)
-        if goal.signed and ty.is_bv_type():
-            width = ty.width
-            term = self.mgr.BVAdd(term, self.mgr.BV(2**(width-1), width))
-        obj = self.converter.convert(term)
-        if goal.is_minimization_goal():
-            h = self.z3.minimize(obj)
-        elif goal.is_maximization_goal():
-            h = self.z3.maximize(obj)
-        elif goal.is_maxsmt_goal():
-            for soft, w in goal.get_soft():
-                obj_soft = self.converter.convert(soft)
-                self.z3.add_soft(obj_soft,w,"__pysmt_" + str(goal.my_id))
-        else:
-            raise GoalNotSupportedError("z3", goal.__class__)
+            ty = self.environment.stc.get_type(term)
+            if goal.signed and ty.is_bv_type():
+                width = ty.width
+                term = self.mgr.BVAdd(term, self.mgr.BV(2**(width-1), width))
+            obj = self.converter.convert(term)
+            if goal.is_minimization_goal():
+                h = self.z3.minimize(obj)
+            elif goal.is_maximization_goal():
+                h = self.z3.maximize(obj)
+            else:
+                raise GoalNotSupportedError("z3", goal.__class__)
         return  h
 
     def optimize(self, goal, **kwargs):

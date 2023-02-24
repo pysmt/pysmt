@@ -358,15 +358,14 @@ class ExternalOptimizerMixin(Optimizer):
 
     def _optimize(self, goal, strategy, extra_assumption = None):
         if goal.is_maxsmt_goal():
-            soft = goal.get_soft()
             formula = None
-            for (c, w) in soft:
+            for (c, w) in goal.soft:
                 if formula is not None:
                     formula = Plus(formula, Ite(c, Int(w), Int(0)))
                 else:
                     formula = Ite(c, Int(w), Int(0))
-            if formula is not None:
-                goal = MaximizationGoal(formula)
+            assert formula is not None, "Empty MaxSMT goal passed"
+            goal = MaximizationGoal(formula)
         model = None
         client_data = self._setup()
         current = OptSearchInterval(goal, self.environment, client_data)

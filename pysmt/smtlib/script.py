@@ -432,7 +432,7 @@ class InterpreterOMT(InterpreterSMT):
             if self.opt_priority == "single-obj":
                 for g in self.optimization_goals[0]:
                     self.optimization_goals[1].append((g.term(), optimizer.optimize(g)[1]))
-                rt = optimizer.check_sat()
+                rt = True
             elif self.opt_priority == "pareto":
                 if self.paretogen is None:
                     self.paretogen = optimizer.pareto_optimize(self.optimization_goals[0])

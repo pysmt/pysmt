@@ -432,13 +432,9 @@ class TestOptimization(TestCase):
         formula = GE(x, Int(9))
         for oname in get_env().factory.all_optimizers(logic=QF_LIA):
             with Optimizer(name=oname) as opt:
-                if oname == "optimsat":
-                    self.assertEqual(True, True)
-                else:
-                    print(oname)
-                    opt.add_assertion(formula)
-                    model, cost = opt.optimize(maxsmt)
-                    self.assertEqual(model[x], Int(9))
+                opt.add_assertion(formula)
+                model, cost = opt.optimize(maxsmt)
+                self.assertEqual(model[x], Int(9))
 
 if __name__ == '__main__':
     main()
