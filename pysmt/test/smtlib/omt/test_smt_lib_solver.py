@@ -15,9 +15,10 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+from io import StringIO
+
 from pysmt.test import TestCase
 from pysmt.test import main
-from six.moves import cStringIO
 from  pysmt.cmd.shell import PysmtShell
 
 class TestSmtLibSolver(TestCase):
@@ -26,8 +27,8 @@ class TestSmtLibSolver(TestCase):
         txt = """(declare-fun x () Real)
         (assert (> x 0))
         (check-sat)"""
-        f_in = cStringIO(txt)
-        f_out = cStringIO()
+        f_in = StringIO(txt)
+        f_out = StringIO()
         args = ""
         pysmtshell = PysmtShell(args)
         pysmtshell.smtlib_solver(f_in, f_out)
@@ -46,8 +47,8 @@ class TestSmtLibSolver(TestCase):
 (minimize x)
 (check-sat)
 (get-objectives)"""
-        f_in = cStringIO(txt)
-        f_out = cStringIO()
+        f_in = StringIO(txt)
+        f_out = StringIO()
         args = ['-o', 'auto']
         pysmtshell = PysmtShell(args)
         pysmtshell.smtlib_solver(f_in, f_out)
@@ -70,8 +71,8 @@ class TestSmtLibSolver(TestCase):
 (minmax x y)
 (check-sat)
 (get-objectives)"""
-        f_in = cStringIO(txt)
-        f_out = cStringIO()
+        f_in = StringIO(txt)
+        f_out = StringIO()
         args = ['-o', 'auto']
         pysmtshell = PysmtShell(args)
         pysmtshell.smtlib_solver(f_in, f_out)
@@ -99,8 +100,8 @@ class TestSmtLibSolver(TestCase):
 (minimize (- y x))
 (check-sat)
 (get-objectives)"""
-        f_in = cStringIO(txt)
-        f_out = cStringIO()
+        f_in = StringIO(txt)
+        f_out = StringIO()
         args = ['-o', 'auto']
         pysmtshell = PysmtShell(args)
         pysmtshell.smtlib_solver(f_in, f_out)
@@ -128,8 +129,8 @@ class TestSmtLibSolver(TestCase):
 (minimize (- y x))
 (check-sat)
 (get-objectives)"""
-        f_in = cStringIO(txt)
-        f_out = cStringIO()
+        f_in = StringIO(txt)
+        f_out = StringIO()
         args = ['-o', 'auto']
         pysmtshell = PysmtShell(args)
         pysmtshell.smtlib_solver(f_in, f_out)
@@ -156,8 +157,8 @@ class TestSmtLibSolver(TestCase):
 (minimize (- y x))
 (check-sat)
 (get-objectives)"""
-        f_in = cStringIO(txt)
-        f_out = cStringIO()
+        f_in = StringIO(txt)
+        f_out = StringIO()
         args = ['-o', 'auto']
         pysmtshell = PysmtShell(args)
         pysmtshell.smtlib_solver(f_in, f_out)
@@ -191,8 +192,8 @@ class TestSmtLibSolver(TestCase):
 (maxmin x y)
 (check-sat)
 (get-objectives)"""
-        f_in = cStringIO(txt)
-        f_out = cStringIO()
+        f_in = StringIO(txt)
+        f_out = StringIO()
         args = ['-o', 'auto']
         pysmtshell = PysmtShell(args)
         pysmtshell.smtlib_solver(f_in, f_out)
@@ -237,8 +238,8 @@ sat
 (maxmin x y)
 (check-sat)
 (get-objectives)"""
-        f_in = cStringIO(txt)
-        f_out = cStringIO()
+        f_in = StringIO(txt)
+        f_out = StringIO()
         args = ['-o', 'auto']
         pysmtshell = PysmtShell(args)
         pysmtshell.smtlib_solver(f_in, f_out)
@@ -277,8 +278,8 @@ sat
 (minimize (- y x))
 (check-sat)
 (get-objectives)"""
-        f_in = cStringIO(txt)
-        f_out = cStringIO()
+        f_in = StringIO(txt)
+        f_out = StringIO()
         args = ['-o', 'auto']
         pysmtshell = PysmtShell(args)
         pysmtshell.smtlib_solver(f_in, f_out)
