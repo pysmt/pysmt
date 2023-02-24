@@ -16,13 +16,15 @@
 #   limitations under the License.
 #
 from io import StringIO
+from pysmt.logics import QF_LIA, QF_LRA
 
-from pysmt.test import TestCase
+from pysmt.test import TestCase, skipIfNoOptimizerForLogic
 from pysmt.test import main
-from  pysmt.cmd.shell import PysmtShell
+from pysmt.cmd.shell import PysmtShell
+
 
 class TestSmtLibSolver(TestCase):
-
+    @skipIfNoOptimizerForLogic(QF_LRA)
     def test_base(self):
         txt = """(declare-fun x () Real)
         (assert (> x 0))
@@ -34,6 +36,7 @@ class TestSmtLibSolver(TestCase):
         pysmtshell.smtlib_solver(f_in, f_out)
         self.assertEqual(f_out.getvalue(), "sat\n")
 
+    @skipIfNoOptimizerForLogic(QF_LRA)
     def test_omt_minimize(self):
         txt = """(declare-fun x () Real)
 (declare-fun y () Real)
@@ -49,15 +52,19 @@ class TestSmtLibSolver(TestCase):
 (get-objectives)"""
         f_in = StringIO(txt)
         f_out = StringIO()
-        args = ['-o', 'auto']
+        args = ["-o", "auto"]
         pysmtshell = PysmtShell(args)
         pysmtshell.smtlib_solver(f_in, f_out)
-        self.assertEqual(f_out.getvalue(), """sat
+        self.assertEqual(
+            f_out.getvalue(),
+            """sat
 (objectives
   (x 0)
 )
-""")
+""",
+        )
 
+    @skipIfNoOptimizerForLogic(QF_LRA)
     def test_omt_minmax(self):
         txt = """(declare-fun x () Real)
 (declare-fun y () Real)
@@ -73,16 +80,19 @@ class TestSmtLibSolver(TestCase):
 (get-objectives)"""
         f_in = StringIO(txt)
         f_out = StringIO()
-        args = ['-o', 'auto']
+        args = ["-o", "auto"]
         pysmtshell = PysmtShell(args)
         pysmtshell.smtlib_solver(f_in, f_out)
-        self.assertEqual(f_out.getvalue(), """sat
+        self.assertEqual(
+            f_out.getvalue(),
+            """sat
 (objectives
   (((x <= y) ? y : x) 4)
 )
-""")
+""",
+        )
 
-
+    @skipIfNoOptimizerForLogic(QF_LIA)
     def test_omt_box(self):
         txt = """(set-option :opt.priority box)
 (declare-fun x () Int)
@@ -102,16 +112,20 @@ class TestSmtLibSolver(TestCase):
 (get-objectives)"""
         f_in = StringIO(txt)
         f_out = StringIO()
-        args = ['-o', 'auto']
+        args = ["-o", "auto"]
         pysmtshell = PysmtShell(args)
         pysmtshell.smtlib_solver(f_in, f_out)
-        self.assertEqual(f_out.getvalue(), """sat
+        self.assertEqual(
+            f_out.getvalue(),
+            """sat
 (objectives
   ((x - y) -10)
   ((y - x) -10)
 )
-""")
+""",
+        )
 
+    @skipIfNoOptimizerForLogic(QF_LIA)
     def test_omt_box_unsat(self):
         txt = """(set-option :opt.priority box)
 (declare-fun x () Int)
@@ -131,15 +145,18 @@ class TestSmtLibSolver(TestCase):
 (get-objectives)"""
         f_in = StringIO(txt)
         f_out = StringIO()
-        args = ['-o', 'auto']
+        args = ["-o", "auto"]
         pysmtshell = PysmtShell(args)
         pysmtshell.smtlib_solver(f_in, f_out)
-        self.assertEqual(f_out.getvalue(), """unsat
+        self.assertEqual(
+            f_out.getvalue(),
+            """unsat
 (objectives
 )
-""")
+""",
+        )
 
-
+    @skipIfNoOptimizerForLogic(QF_LIA)
     def test_omt_lex(self):
         txt = """(set-option :opt.priority lex)
 (declare-fun x () Int)
@@ -159,16 +176,20 @@ class TestSmtLibSolver(TestCase):
 (get-objectives)"""
         f_in = StringIO(txt)
         f_out = StringIO()
-        args = ['-o', 'auto']
+        args = ["-o", "auto"]
         pysmtshell = PysmtShell(args)
         pysmtshell.smtlib_solver(f_in, f_out)
-        self.assertEqual(f_out.getvalue(), """sat
+        self.assertEqual(
+            f_out.getvalue(),
+            """sat
 (objectives
   ((x - y) -10)
   ((y - x) 10)
 )
-""")
+""",
+        )
 
+    @skipIfNoOptimizerForLogic(QF_LIA)
     def test_omt_int_01(self):
         txt = """(set-option :opt.priority lex)
 (declare-fun x () Int)
@@ -194,10 +215,12 @@ class TestSmtLibSolver(TestCase):
 (get-objectives)"""
         f_in = StringIO(txt)
         f_out = StringIO()
-        args = ['-o', 'auto']
+        args = ["-o", "auto"]
         pysmtshell = PysmtShell(args)
         pysmtshell.smtlib_solver(f_in, f_out)
-        self.assertEqual(f_out.getvalue(), """sat
+        self.assertEqual(
+            f_out.getvalue(),
+            """sat
 (objectives
   ((x - y) -10)
   ((y - x) 10)
@@ -213,8 +236,10 @@ sat
   ((y - x) -10)
   (((x <= y) ? x : y) 10)
 )
-""")
+""",
+        )
 
+    @skipIfNoOptimizerForLogic(QF_LRA)
     def test_omt_real_01(self):
         txt = """(set-option :opt.priority lex)
 (declare-fun x () Real)
@@ -240,10 +265,12 @@ sat
 (get-objectives)"""
         f_in = StringIO(txt)
         f_out = StringIO()
-        args = ['-o', 'auto']
+        args = ["-o", "auto"]
         pysmtshell = PysmtShell(args)
         pysmtshell.smtlib_solver(f_in, f_out)
-        self.assertEqual(f_out.getvalue(), """sat
+        self.assertEqual(
+            f_out.getvalue(),
+            """sat
 (objectives
   ((x - y) -10.0)
   ((y - x) 10.0)
@@ -259,8 +286,10 @@ sat
   ((y - x) -10.0)
   (((x <= y) ? x : y) 10.0)
 )
-""")
+""",
+        )
 
+    @skipIfNoOptimizerForLogic(QF_LIA)
     def test_omt_lex_unsat(self):
         txt = """(set-option :opt.priority lex)
 (declare-fun x () Int)
@@ -280,13 +309,17 @@ sat
 (get-objectives)"""
         f_in = StringIO(txt)
         f_out = StringIO()
-        args = ['-o', 'auto']
+        args = ["-o", "auto"]
         pysmtshell = PysmtShell(args)
         pysmtshell.smtlib_solver(f_in, f_out)
-        self.assertEqual(f_out.getvalue(), """unsat
+        self.assertEqual(
+            f_out.getvalue(),
+            """unsat
 (objectives
 )
-""")
+""",
+        )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
