@@ -259,7 +259,7 @@ class MGSubstituter(Substituter):
     def __init__(self, env):
         Substituter.__init__(self, env=env)
 
-    @handles(set(op.ALL_TYPES) - op.QUANTIFIERS - {op.FUNCTION})
+    @handles(set(op.ALL_TYPES) - {op.FUNCTION})
     def walk_identity_or_replace(self, formula, args, **kwargs):
         """
         If the formula appears in the substitution, return the substitution.
@@ -270,25 +270,6 @@ class MGSubstituter(Substituter):
         if res is None:
             res = Substituter.super(self, formula, args=args, **kwargs)
         return res
-
-    def walk_forall(self, formula, args, **kwargs):
-        substitutions = kwargs['substitutions']
-        res = substitutions.get(formula, None)
-        if res is None:
-            qvars = [pysmt.walkers.IdentityDagWalker.walk_symbol(self, v, args, **kwargs)
-                     for v in formula.quantifier_vars()]
-            res = self.mgr.ForAll(qvars, args[0])
-        return res
-
-    def walk_exists(self, formula, args, **kwargs):
-        substitutions = kwargs['substitutions']
-        res = substitutions.get(formula, None)
-        if res is None:
-            qvars = [pysmt.walkers.IdentityDagWalker.walk_symbol(self, v, args, **kwargs)
-                     for v in formula.quantifier_vars()]
-            res = self.mgr.Exists(qvars, args[0])
-        return res
-
 
 # EOC MGSubstituter
 
@@ -314,23 +295,8 @@ class MSSubstituter(Substituter):
         """
         return substitutions.get(formula, formula)
 
-    @handles(set(op.ALL_TYPES) - op.QUANTIFIERS - {op.FUNCTION})
+    @handles(set(op.ALL_TYPES) - {op.FUNCTION})
     def walk_replace(self, formula, args, **kwargs):
         new_f =  Substituter.super(self, formula, args=args, **kwargs)
         return self._substitute(new_f, kwargs['substitutions'])
-
-    def walk_forall(self, formula, args, **kwargs):
-        substitutions = kwargs['substitutions']
-        qvars = [pysmt.walkers.IdentityDagWalker.walk_symbol(self, v, args, **kwargs)
-                 for v in formula.quantifier_vars()]
-        new_f = self.mgr.ForAll(qvars, args[0])
-        return self._substitute(new_f, substitutions)
-
-    def walk_exists(self, formula, args, **kwargs):
-        substitutions = kwargs['substitutions']
-        qvars = [pysmt.walkers.IdentityDagWalker.walk_symbol(self, v, args, **kwargs)
-                 for v in formula.quantifier_vars()]
-        new_f = self.mgr.Exists(qvars, args[0])
-        return self._substitute(new_f, substitutions)
-
 # EOC MSSSubstituter
