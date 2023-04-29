@@ -50,7 +50,7 @@ pool = Pool(4)
 # This generator iterates over all the expressions
 f_gen = (f.expr for f in get_example_formulae())
 
-# Call the functino is_sat on each expression
+# Call the function is_sat on each expression
 res = pool.map(is_sat, f_gen)
 
 # The result is a list of True/False, in the same order as the input.
