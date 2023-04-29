@@ -4,7 +4,7 @@
 # the multiprocessing library.
 #
 # All shortcuts (is_sat, is_unsat, get_model, etc.) can be easily
-# used. We sho two techniques: map and apply_async.
+# used. We show two techniques: map and apply_async.
 #
 # Map applies a given function to a list of elements, and returns a
 # list of results. We show an example using is_sat.
