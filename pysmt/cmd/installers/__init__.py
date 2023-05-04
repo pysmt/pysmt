@@ -19,6 +19,7 @@ from pysmt.cmd.installers.yices import YicesInstaller
 from pysmt.cmd.installers.btor import BtorInstaller
 from pysmt.cmd.installers.pico import PicoSATInstaller
 from pysmt.cmd.installers.bdd import CuddInstaller
+from pysmt.cmd.installers.optimsat import OptiMSatInstaller
 
 assert MSatInstaller and Z3Installer and CVC4Installer and YicesInstaller
-assert BtorInstaller and PicoSATInstaller and CuddInstaller
+assert BtorInstaller and PicoSATInstaller and CuddInstaller and OptiMSatInstaller

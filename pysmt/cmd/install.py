@@ -21,7 +21,7 @@ from collections import namedtuple
 
 from pysmt.cmd.installers import MSatInstaller, Z3Installer, PicoSATInstaller
 from pysmt.cmd.installers import CVC4Installer, YicesInstaller, BtorInstaller
-from pysmt.cmd.installers import CuddInstaller
+from pysmt.cmd.installers import CuddInstaller, OptiMSatInstaller
 from pysmt.cmd.installers.base import solver_install_site
 
 from pysmt.environment import get_env
@@ -43,8 +43,8 @@ INSTALLERS = [
               {"pypicosat_minor_version" : "1708010052"}),
     Installer(CuddInstaller,    "2.0.3",
               {"git_version" : "ecb03d6d231273343178f566cc4d7258dcce52b4"}),
+    Installer(OptiMSatInstaller, "1.7.2", {})
 ]
-
 
 
 def get_requested_solvers():

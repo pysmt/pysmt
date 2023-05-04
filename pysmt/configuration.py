@@ -122,7 +122,7 @@ def write_environment_configuration(config_filename, environment):
 
     config.add_section("global")
     inf = "true" if environment.enable_infix_notation else "false"
-    pl = " ".join(factory.solver_preference_list)
+    pl = " ".join(factory.preferences['Solver'])
     config.set("global", "use_infix_notation", inf)
     config.set("global", "solver_preference_list", pl)
 
