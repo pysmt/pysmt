@@ -1,41 +1,47 @@
-# Perform ALL-SMT on Theory atoms
-#
-# This example shows:
-#  - How to get the logic of a formula
-#  - How to enumerate models
-#  - How to extract a partial model
-#  - How to use the special operator EqualsOrIff
-#
-from pysmt.shortcuts import Solver, Not, And, Symbol, Or
-from pysmt.shortcuts import LE, GE, Int, Plus, Equals, EqualsOrIff
+# This example requires MathSAT to be installed.
+from pysmt.shortcuts import LE, GE, Int, Plus, Equals, Solver, And, Symbol, Or, get_atoms
 from pysmt.typing import INT
-from pysmt.oracles import get_logic
 
-def all_smt(formula, keys):
-    target_logic = get_logic(formula)
-    print("Target Logic: %s" % target_logic)
-    with Solver(logic=target_logic) as solver:
-        solver.add_assertion(formula)
-        while solver.solve():
-            partial_model = [EqualsOrIff(k, solver.get_value(k)) for k in keys]
-            print(partial_model)
-            solver.add_assertion(Not(And(partial_model)))
+
+def callback(model, converter, result):
+    """Callback for msat.all_sat.
+
+    This function is called by the MathSAT API everytime a new model
+    is found. If the function returns 1, the search continues,
+    otherwise it stops.
+    """
+    # Elements in model are msat_term .
+    # Converter.back() provides the pySMT representation of a solver term.
+    py_model = [converter.back(v) for v in model]
+    result.append(And(py_model))
+    return 1  # go on
+
+
+def all_smt(formula, important):
+    result = []
+    with Solver(name="msat",
+                solver_options={
+                    "dpll.allsat_minimize_model": "false",  # enumerate total models
+                    "dpll.allsat_allow_duplicates": "false",  # enumerate disjoint models
+                    "preprocessor.toplevel_propagation": "false",  # necessary to avoid non-validity preserving steps
+                }
+                ) as msat:
+        msat.add_assertion(formula)
+        msat.all_sat(important, lambda model: callback(model, msat.converter, result))
+    return result
 
 
 A0 = Symbol("A0", INT)
 A1 = Symbol("A1", INT)
-A2 = Symbol("A2", INT)
+x = Symbol("x")
+y = Symbol("y")
 
 f = And(GE(A0, Int(0)), LE(A0, Int(5)),
         GE(A1, Int(0)), LE(A1, Int(5)),
-        GE(A2, Int(0)), LE(A2, Int(5)),
-        Equals(Plus(A0, A1, A2), Int(8)))
+        Equals(Plus(A0, A1), Int(8)),
+        Or(x, y))
 
-all_smt(f, [A0, A1, A2])
+important = get_atoms(f) - {y}
+result = all_smt(f, important)
 
-# By using the operator EqualsOrIff, we can mix theory and bool variables
-x = Symbol("x")
-y = Symbol("y")
-f = And(f, Or(x,y))
-
-all_smt(f, [A0, A1, A2, x])
+print("'exists y . %s'\nis equivalent to\n'%s'" % (f, Or(result).serialize()))
