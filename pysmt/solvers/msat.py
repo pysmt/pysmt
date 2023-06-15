@@ -322,7 +322,7 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolv
     def all_sat(self, important, callback):
         self.push()
         self._msat_lib.msat_all_sat(self.msat_env(),
-                             [self._var2term(x) for x in important],
+                             [self.converter.convert(x) for x in important],
                              callback)
         self.pop()
 
@@ -335,11 +335,6 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolv
     def _pop(self, levels: int=1):
         for _ in range(levels):
             self._msat_lib.msat_pop_backtrack_point(self.msat_env())
-
-    def _var2term(self, var):
-        decl = self._msat_lib.msat_find_decl(self.msat_env(), var.symbol_name())
-        titem = self._msat_lib.msat_make_term(self.msat_env(), decl, [])
-        return titem
 
     def set_preferred_var(self, var, val=None):
         tvar = self.converter.convert(var)
