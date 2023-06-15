@@ -191,6 +191,7 @@ class BoolectorSolver(IncrementalTrackingSolver, UnsatCoreSolver,
         self.mgr = environment.formula_manager
         self.declarations = {}
         self._named_assertions = {}
+        self._last_assumptions = []
         return
 
 # EOC BoolectorOptions
@@ -230,9 +231,11 @@ class BoolectorSolver(IncrementalTrackingSolver, UnsatCoreSolver,
 
     @clear_pending_pop
     def _solve(self, assumptions=None):
+        self._last_assumptions = []
         if assumptions is not None:
             btor_assumptions = [self.converter.convert(a) for a in assumptions]
             self.btor.Assume(*btor_assumptions)
+            self._last_assumptions = list(assumptions)
 
         res = self.btor.Sat()
 
@@ -258,9 +261,10 @@ class BoolectorSolver(IncrementalTrackingSolver, UnsatCoreSolver,
             unsat_core = set()
             # relies on this assertion stack being ordered
             assert isinstance(self._assertion_stack, list)
-            btor_assertions = [self.converter.convert(a) for a in self._assertion_stack]
+            lst = self._assertion_stack + self._last_assumptions
+            btor_assertions = [self.converter.convert(a) for a in lst]
             in_unsat_core = self.btor.Failed(*btor_assertions)
-            for a, in_core in zip(self._assertion_stack, in_unsat_core):
+            for a, in_core in zip(lst, in_unsat_core):
                 if in_core:
                     unsat_core.add(a)
             return unsat_core
@@ -275,13 +279,16 @@ class BoolectorSolver(IncrementalTrackingSolver, UnsatCoreSolver,
         if self.options.unsat_cores_mode == "named":
             unsat_core = {}
             # relies on this assertion stack being ordered
+            lst = list(self._named_assertions.keys()) + self._last_assumptions
             assert isinstance(self._assertion_stack, list)
-            btor_named_assertions = [self.converter.convert(a) for a in self._named_assertions.keys()]
+            btor_named_assertions = [self.converter.convert(a) for a in lst]
             in_unsat_core = self.btor.Failed(*btor_named_assertions)
-            for a, in_core in zip(self._assertion_stack, in_unsat_core):
+            cnt = 0
+            for a, in_core in zip(lst, in_unsat_core):
                 if in_core:
-                    name = self._named_assertions[a]
+                    name = self._named_assertions.get(a, '_a_%d' % cnt)
                     unsat_core[name] = a
+                    cnt += 1
             return unsat_core
         else:
             return dict(("_a%d" % i, f)
