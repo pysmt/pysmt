@@ -206,21 +206,21 @@ class TestBasic(TestCase):
             self.assertEqual(validity, v, f)
             self.assertEqual(satisfiability, s, f)
 
-    @skipIfSolverNotAvailable("cvc4")
-    def test_examples_cvc4(self):
+    @skipIfSolverNotAvailable("cvc")
+    def test_examples_cvc(self):
         for (f, validity, satisfiability, logic) in get_example_formulae():
             if not logic.theory.linear: continue
             if logic.theory.arrays_const: continue
             try:
-                v = is_valid(f, solver_name='cvc4', logic=logic)
-                s = is_sat(f, solver_name='cvc4', logic=logic)
+                v = is_valid(f, solver_name='cvc', logic=logic)
+                s = is_sat(f, solver_name='cvc', logic=logic)
                 self.assertEqual(validity, v, f)
                 self.assertEqual(satisfiability, s, f)
             except SolverReturnedUnknownResultError:
-                # CVC4 does not handle quantifiers in a complete way
+                # CVC does not handle quantifiers in a complete way
                 self.assertFalse(logic.quantifier_free)
             except NoSolverAvailableError:
-                # Logic is not supported by CVC4
+                # Logic is not supported by CVC
                 pass
 
     @skipIfSolverNotAvailable("yices")
@@ -267,9 +267,9 @@ class TestBasic(TestCase):
                 except NoSolverAvailableError:
                     pass
 
-    @skipIfSolverNotAvailable("cvc4")
-    def test_model_cvc4(self):
-        self.do_model("cvc4")
+    @skipIfSolverNotAvailable("cvc")
+    def test_model_cvc(self):
+        self.do_model("cvc")
 
     @skipIfSolverNotAvailable("z3")
     def test_model_z3(self):
@@ -568,11 +568,6 @@ class TestBasic(TestCase):
         solver = Solver(logic=QF_BOOL, incremental=True)
         self.assertIsNotNone(solver)
         # Options are enforced at construction time
-        if type(solver).__name__ == 'CVC4Solver':
-            # We skip the rest of the test on CVC4 1.7 because its
-            # python wrapper crashes if an unknown option is provided.
-            # See: https://github.com/CVC4/CVC4/issues/2810
-            return
         with self.assertRaises(TypeError):
             Solver(logic=QF_BOOL, invalid_option=False)
         with self.assertRaises(PysmtValueError):

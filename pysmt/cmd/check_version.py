@@ -41,9 +41,10 @@ def check_version(module):
             import pyboolector
             version = "OK" # Just checking if import succeeds
 
-        elif module == "cvc4":
-            import CVC4
-            version = CVC4.Configuration_getVersionString()
+        elif module == "cvc":
+            import cvc5
+            solver = cvc5.Solver()
+            version = solver.getVersion().decode('ascii')
 
         elif module == "picosat":
             import picosat
