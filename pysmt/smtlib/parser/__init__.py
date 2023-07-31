@@ -42,6 +42,8 @@ if HAS_CYTHON and (ENV_USE_CYTHON or ENV_USE_CYTHON is None):
 else:
     USE_CYTHON = False
 
+USE_CYTHON = False # Temporarily disable cython
+
 if USE_CYTHON:
     try:
         pyximport.install()
