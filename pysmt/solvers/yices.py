@@ -62,6 +62,7 @@ STATUS_UNSAT = 4
 
 PRINTING_WIDTH = 999999999
 
+
 def yices_logic(pysmt_logic):
     """Return a Yices String representing the given pySMT logic."""
     ylogic = str(pysmt_logic)
@@ -500,7 +501,8 @@ class YicesConverter(Converter, DagWalker):
         return res
 
     def walk_bv_concat(self, formula, args, **kwargs):
-        res = yices_api.yices_bvconcat2(args[0], args[1])
+        values = (yices_api.term_t * len(args))(*args)
+        res = yices_api.yices_bvconcat(len(args), values)
         self._check_term_result(res)
         return res
 
@@ -512,7 +514,8 @@ class YicesConverter(Converter, DagWalker):
         return res
 
     def walk_bv_or(self, formula, args, **kwargs):
-        res = yices_api.yices_bvor2(args[0], args[1])
+        values = (yices_api.term_t * len(args))(*args)
+        res = yices_api.yices_bvor(len(args), values)
         self._check_term_result(res)
         return res
 
@@ -522,7 +525,8 @@ class YicesConverter(Converter, DagWalker):
         return res
 
     def walk_bv_and(self, formula, args, **kwargs):
-        res = yices_api.yices_bvand2(args[0], args[1])
+        values = (yices_api.term_t * len(args))(*args)
+        res = yices_api.yices_bvand(len(args), values)
         self._check_term_result(res)
         return res
 
@@ -532,7 +536,8 @@ class YicesConverter(Converter, DagWalker):
         return res
 
     def walk_bv_add(self, formula, args, **kwargs):
-        res = yices_api.yices_bvadd(args[0], args[1])
+        values = (yices_api.term_t * len(args))(*args)
+        res = yices_api.yices_bvsum(len(args), values)
         self._check_term_result(res)
         return res
 
@@ -547,7 +552,8 @@ class YicesConverter(Converter, DagWalker):
         return res
 
     def walk_bv_mul(self, formula, args, **kwargs):
-        res = yices_api.yices_bvmul(args[0], args[1])
+        values = (yices_api.term_t * len(args))(*args)
+        res = yices_api.yices_bvproduct(len(args), values)
         self._check_term_result(res)
         return res
 
@@ -586,7 +592,7 @@ class YicesConverter(Converter, DagWalker):
         self._check_term_result(res)
         return res
 
-    def walk_bv_sext (self, formula, args, **kwargs):
+    def walk_bv_sext(self, formula, args, **kwargs):
         res = yices_api.yices_sign_extend(args[0], formula.bv_extend_step())
         self._check_term_result(res)
         return res
@@ -596,12 +602,12 @@ class YicesConverter(Converter, DagWalker):
         self._check_term_result(res)
         return res
 
-    def walk_bv_sle (self, formula, args, **kwargs):
+    def walk_bv_sle(self, formula, args, **kwargs):
         res = yices_api.yices_bvsle_atom(args[0], args[1])
         self._check_term_result(res)
         return res
 
-    def walk_bv_comp (self, formula, args, **kwargs):
+    def walk_bv_comp(self, formula, args, **kwargs):
         a,b = args
         eq = yices_api.yices_bveq_atom(a, b)
         self._check_term_result(eq)
@@ -611,17 +617,17 @@ class YicesConverter(Converter, DagWalker):
         self._check_term_result(res)
         return res
 
-    def walk_bv_sdiv (self, formula, args, **kwargs):
+    def walk_bv_sdiv(self, formula, args, **kwargs):
         res = yices_api.yices_bvsdiv(args[0], args[1])
         self._check_term_result(res)
         return res
 
-    def walk_bv_srem (self, formula, args, **kwargs):
+    def walk_bv_srem(self, formula, args, **kwargs):
         res = yices_api.yices_bvsrem(args[0], args[1])
         self._check_term_result(res)
         return res
 
-    def walk_bv_ashr (self, formula, args, **kwargs):
+    def walk_bv_ashr(self, formula, args, **kwargs):
         res = yices_api.yices_bvashr(args[0], args[1])
         self._check_term_result(res)
         return res
