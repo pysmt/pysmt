@@ -42,8 +42,6 @@ if HAS_CYTHON and (ENV_USE_CYTHON or ENV_USE_CYTHON is None):
 else:
     USE_CYTHON = False
 
-USE_CYTHON = False # Temporarily disable cython
-
 if USE_CYTHON:
     try:
         pyximport.install()
@@ -83,6 +81,14 @@ else:
     # cython version is by the so_path that targets .pyxbld .
     #
     import imp
+
+    if not hasattr(pyximport, "build_module"):
+        import sys
+        if sys.version_info < (3, 5):
+            # _pyximport3 module requires at least Python 3.5
+            import pyximport._pyximport2 as pyximport
+        else:
+            import pyximport._pyximport3 as pyximport
 
     pyx = pyximport.install()
     pyximport.uninstall(*pyx)
