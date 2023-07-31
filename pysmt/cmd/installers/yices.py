@@ -50,9 +50,9 @@ class YicesInstaller(SolverInstaller):
         SolverInstaller.run("make install", directory=self.extract_path)
 
         if self.yices_api_version is None:
-            SolverInstaller.run_python("-m pip install yices")
+            SolverInstaller.run_python("-m pip install --target=%s yices" % self.bindings_dir)
         else:
-            SolverInstaller.run_python("-m pip install yices==%s" % self.yices_api_version)
+            SolverInstaller.run_python("-m pip install --target=%s yices==%s" % (self.bindings_dir, self.yices_api_version))
 
         libdir = os.path.join(self.yices_path, "lib")
         yices_api_file = os.path.join(self.bindings_dir, "yices_api.py")
