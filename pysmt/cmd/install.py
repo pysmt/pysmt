@@ -20,7 +20,7 @@ import platform
 from collections import namedtuple
 
 from pysmt.cmd.installers import MSatInstaller, Z3Installer, PicoSATInstaller
-from pysmt.cmd.installers import CVC4Installer, YicesInstaller, BtorInstaller
+from pysmt.cmd.installers import CVC5Installer, YicesInstaller, BtorInstaller
 from pysmt.cmd.installers import CuddInstaller
 from pysmt.cmd.installers.base import solver_install_site
 
@@ -33,8 +33,7 @@ Installer = namedtuple("Installer",
                        ["InstallerClass", "version", "extra_params"])
 INSTALLERS = [
     Installer(MSatInstaller,    "5.6.10", {}),
-    Installer(CVC4Installer,    "1.7-prerelease",
-              {"git_version" : "391ab9df6c3fd9a3771864900c1718534c1e4666"}),
+    Installer(CVC5Installer,    "1.0.5", {"git_tag" : "cvc5-1.0.5"}),
     Installer(Z3Installer,      "4.12.2", {"osx": "10.16"}),
     Installer(YicesInstaller,   "2.6.4", {"yices_api_version": "1.1.5"}),
     Installer(BtorInstaller,    "3.2.2", {}),

@@ -98,7 +98,7 @@ class SolverInstaller(object):
 
     def download(self):
         """Downloads the archive from one of the mirrors"""
-        if not os.path.exists(self.archive_path):
+        if self.archive_path and not os.path.exists(self.archive_path):
             for turn in range(self.trials_404):
                 for i, link in enumerate(self.download_links()):
                     try:
@@ -115,15 +115,16 @@ class SolverInstaller(object):
 
     def unpack(self):
         """Unpacks the archive"""
-        path = self.archive_path
-        if path.endswith(".zip"):
-            SolverInstaller.unzip(path, directory=self.base_dir)
-        elif path.endswith(".tar.bz2"):
-            SolverInstaller.untar(path, directory=self.base_dir, mode='r:bz2')
-        elif path.endswith(".tar.gz"):
-            SolverInstaller.untar(path, directory=self.base_dir)
-        else:
-            raise ValueError("Unsupported archive for extraction: %s" % path)
+        if self.archive_path:
+            path = self.archive_path
+            if path.endswith(".zip"):
+                SolverInstaller.unzip(path, directory=self.base_dir)
+            elif path.endswith(".tar.bz2"):
+                SolverInstaller.untar(path, directory=self.base_dir, mode='r:bz2')
+            elif path.endswith(".tar.gz"):
+                SolverInstaller.untar(path, directory=self.base_dir)
+            else:
+                raise ValueError("Unsupported archive for extraction: %s" % path)
 
     def compile(self):
         """Performs the compilation if needed"""
