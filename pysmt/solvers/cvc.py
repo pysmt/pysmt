@@ -343,7 +343,7 @@ class CVC5Converter(Converter, DagWalker):
     def walk_bv_constant(self, formula, **kwargs):
         v = formula.constant_value()
         width = formula.bv_width()
-        return self.cvc5.mkBitVector(width, v)
+        return self.cvc5.mkBitVector(width, str(v), 10)
 
     def walk_bv_ult(self, formula, args, **kwargs):
         return self.cvc5.mkTerm(Kind.BITVECTOR_ULT, args[0], args[1])
