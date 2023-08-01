@@ -52,7 +52,7 @@ jobs:
             pysmt_solver: all
           - os: macos-latest
             pysmt_solver: none
-          - os: macos-latest
+          - os: macos-11
             pysmt_solver: msat
           - os: macos-latest
             pysmt_solver: z3
