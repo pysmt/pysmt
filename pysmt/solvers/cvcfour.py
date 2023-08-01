@@ -68,7 +68,7 @@ class CVC5Options(SolverOptions):
                          "incremental", str(self.incremental).lower())
         if self.random_seed is not None:
             self._set_option(solver.cvc5,
-                             "random-seed", str(self.random_seed))
+                             "seed", str(self.random_seed))
 
         for k,v in self.solver_options.items():
             self._set_option(solver.cvc5, str(k), str(v))
@@ -128,9 +128,8 @@ class CVC5Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
     def solve(self, assumptions=None):
         if assumptions is not None:
-            conj_assumptions = self.environment.formula_manager.And(assumptions)
-            cvc5_assumption = self.converter.convert(conj_assumptions)
-            res = self.cvc5.checkSat(cvc5_assumption)
+            cvc5_assumptions = [self.converter.convert(a) for a in assumptions]
+            res = self.cvc5.checkSatAssuming(*cvc5_assumptions)
         else:
             try:
                 res = self.cvc5.checkSat()
@@ -227,19 +226,17 @@ class CVC5Converter(Converter, DagWalker):
             res = self.mgr.Real(Fraction(v))
         elif expr.isBitVectorValue():
             w = expr.getSort().getBitVectorSize()
-            v = expr.getBitVectorValue(w)
-            res = self.mgr.BV(int(v), w)
+            res = self.mgr.BV(str(expr), w)
         elif expr.isStringValue():
-            v = expr.getStringValue()
-            res = self.mgr.String(v)
-        # elif expr.isArrayValue():
-        #     const_ = expr.getConstArrayStoreAll()
-        #     array_type = self._cvc5_type_to_type(const_.getType())
-        #     base_value = self.back(const_.getExpr())
-        #     res = self.mgr.Array(array_type.index_type,
-        #                             base_value)
+            s = expr.getStringValue()
+            res = self.mgr.String(s)
+        elif expr.isConstArray():
+            const_ = expr.getConstArrayBase()
+            array_type = self._cvc5_type_to_type(expr.getSort())
+            base_value = self.back(const_)
+            res = self.mgr.Array(array_type.index_type, base_value)
         else:
-            raise PysmtTypeError("Unsupported expression:", expr.toString())
+            raise PysmtTypeError("Unsupported expression:", str(expr))
 
         return res
 
@@ -294,7 +291,7 @@ class CVC5Converter(Converter, DagWalker):
     def walk_exists(self, formula, args, **kwargs):
         (bound_formula, var_list) = \
                  self._rename_bound_variables(args[0], formula.quantifier_vars())
-        bound_vars_list = self.cvc5.mkTerm(Kind.BOUND_VAR_LIST, var_list)
+        bound_vars_list = self.cvc5.mkTerm(Kind.VARIABLE_LIST, *var_list)
         return self.cvc5.mkTerm(Kind.EXISTS,
                            bound_vars_list,
                            bound_formula)
@@ -302,13 +299,13 @@ class CVC5Converter(Converter, DagWalker):
     def walk_forall(self, formula, args, **kwargs):
         (bound_formula, var_list) = \
                  self._rename_bound_variables(args[0], formula.quantifier_vars())
-        bound_vars_list = self.cvc5.mkTerm(Kind.BOUND_VAR_LIST, var_list)
+        bound_vars_list = self.cvc5.mkTerm(Kind.VARIABLE_LIST, *var_list)
         return self.cvc5.mkTerm(Kind.FORALL,
                            bound_vars_list,
                            bound_formula)
 
     def walk_plus(self, formula, args, **kwargs):
-        res = self.cvc5.mkTerm(Kind.PLUS, args)
+        res = self.cvc5.mkTerm(Kind.ADD, *args)
         return res
 
     def walk_array_store(self, formula, args, **kwargs):
@@ -318,7 +315,9 @@ class CVC5Converter(Converter, DagWalker):
         return self.cvc5.mkTerm(Kind.SELECT, args[0], args[1])
 
     def walk_minus(self, formula, args, **kwargs):
-        return self.cvc5.mkTerm(Kind.MINUS, args[0], args[1])
+        minus_one = self.cvc5.mkInteger("-1")
+        return self.cvc5.mkTerm(Kind.ADD, args[0],
+                                self.cvc5.mkTerm(Kind.MULT, args[1], minus_one))
 
     def walk_equals(self, formula, args, **kwargs):
         return self.cvc5.mkTerm(Kind.EQUAL, args[0], args[1])
@@ -339,12 +338,12 @@ class CVC5Converter(Converter, DagWalker):
         if name not in self.declared_vars:
             self.declare_variable(name)
         decl = self.declared_vars[name]
-        return self.cvc5.mkTerm(Kind.APPLY_UF, decl, args)
+        return self.cvc5.mkTerm(Kind.APPLY_UF, decl, *args)
 
     def walk_bv_constant(self, formula, **kwargs):
-        vrepr = str(formula.constant_value())
+        v = formula.constant_value()
         width = formula.bv_width()
-        return self.mkBitVector(width, cvc5.Integer(vrepr))
+        return self.cvc5.mkBitVector(width, v)
 
     def walk_bv_ult(self, formula, args, **kwargs):
         return self.cvc5.mkTerm(Kind.BITVECTOR_ULT, args[0], args[1])
@@ -356,8 +355,9 @@ class CVC5Converter(Converter, DagWalker):
         return self.cvc5.mkTerm(Kind.BITVECTOR_CONCAT, args)
 
     def walk_bv_extract(self, formula, args, **kwargs):
-        ext = self.mkOp(Kind.BITVECTOR_EXTRACT, formula.bv_extract_end(),
-                                                formula.bv_extract_start())
+        ext = self.cvc5.mkOp(Kind.BITVECTOR_EXTRACT,
+                             formula.bv_extract_end(),
+                             formula.bv_extract_start())
         return self.cvc5.mkTerm(ext, args[0])
 
     def walk_bv_or(self, formula, args, **kwargs):
@@ -373,7 +373,7 @@ class CVC5Converter(Converter, DagWalker):
         return self.cvc5.mkTerm(Kind.BITVECTOR_XOR, args[0], args[1])
 
     def walk_bv_add(self, formula, args, **kwargs):
-        return self.cvc5.mkTerm(Kind.BITVECTOR_PLUS, args)
+        return self.cvc5.mkTerm(Kind.BITVECTOR_ADD, *args)
 
     def walk_bv_sub(self, formula, args, **kwargs):
         return self.cvc5.mkTerm(Kind.BITVECTOR_SUB, args[0], args[1])
@@ -388,41 +388,10 @@ class CVC5Converter(Converter, DagWalker):
         return self.cvc5.mkTerm(Kind.BITVECTOR_TO_NAT, args[0])
 
     def walk_bv_udiv(self, formula, args, **kwargs):
-        # Force deterministic semantics of division by 0
-        # If the denominator is bv0, then the result is ~0
-        n,d = args
-        if d.isConst():
-            bv = d.getConstBitVector()
-            v = bv.getValue().toString()
-            if v == "0":
-                return self.cvc5.mkTerm(Kind.BITVECTOR_NOT, d)
-            else:
-                return self.cvc5.mkTerm(Kind.BITVECTOR_UDIV, n, d)
-        else:
-            # (d == 0) ? ~0 : n bvudiv d
-            base = self.cvc5.mkTerm(Kind.BITVECTOR_UDIV, n, d)
-            zero = self.cvc5.mkBitVector(formula.bv_width(), self.cvc5.mkInteger("0"))
-            notzero = self.cvc5.mkTerm(Kind.BITVECTOR_NOT, zero)
-            test = self.cvc5.mkTerm(Kind.EQUAL, d, zero)
-            return self.cvc5.mkTerm(Kind.ITE, test, notzero, base)
+        return self.cvc5.mkTerm(Kind.BITVECTOR_UDIV, *args)
 
     def walk_bv_urem(self, formula, args, **kwargs):
-        # Force deterministic semantics of reminder by 0
-        # If the denominator is bv0, then the result is the numerator
-        n,d = args
-        if d.isConst():
-            bv = d.getConstBitVector()
-            v = bv.getValue().toString()
-            if v == "0":
-                return n
-            else:
-                return self.cvc5.mkTerm(Kind.BITVECTOR_UREM, n, d)
-        else:
-            # (d == 0) ? n : n bvurem d
-            base = self.cvc5.mkTerm(Kind.BITVECTOR_UREM, n, d)
-            zero = self.cvc5.mkBitVector(formula.bv_width(), self.cvc5.Integer("0"))
-            test = self.cvc5.mkTerm(Kind.EQUAL, d, zero)
-            return self.cvc5.mkTerm(Kind.ITE, test, n, base)
+        return self.cvc5.mkTerm(Kind.BITVECTOR_UREM, *args)
 
     def walk_bv_lshl(self, formula, args, **kwargs):
         return self.cvc5.mkTerm(Kind.BITVECTOR_SHL, args[0], args[1])
@@ -456,45 +425,10 @@ class CVC5Converter(Converter, DagWalker):
         return self.cvc5.mkTerm(Kind.BITVECTOR_COMP, args[0], args[1])
 
     def walk_bv_sdiv(self, formula, args, **kwargs):
-        # Force deterministic semantics of division by 0
-        # If the denominator is bv0, then the result is:
-        #   * ~0 (if the numerator is signed >= 0)
-        #   * 1 (if the numerator is signed < 0)
-        n,d = args
-        # sign_expr : ( 0 s<= n ) ? ~0 : 1 )
-        zero = self.mkBitVector(formula.bv_width(), cvc5.Integer("0"))
-        notzero = self.cvc5.mkTerm(Kind.BITVECTOR_NOT, zero)
-        one = self.mkBitVector(formula.bv_width(), cvc5.Integer("1"))
-        is_gt_zero = self.cvc5.mkTerm(Kind.BITVECTOR_SLE, zero, n)
-        sign_expr = self.cvc5.mkTerm(Kind.ITE, is_gt_zero, notzero, one)
-        base = self.cvc5.mkTerm(Kind.BITVECTOR_SDIV, n, d)
-        if d.isConst():
-            v = d.getConstBitVector().getValue().toString()
-            if v == "0":
-                return sign_expr
-            else:
-                return base
-        else:
-            # (d == 0) ? sign_expr : base
-            is_zero = self.cvc5.mkTerm(Kind.EQUAL, d, zero)
-            return self.cvc5.mkTerm(Kind.ITE, is_zero, sign_expr, base)
+        return self.cvc5.mkTerm(Kind.BITVECTOR_SDIV, *args)
 
     def walk_bv_srem(self, formula, args, **kwargs):
-        # Force deterministic semantics of reminder by 0
-        # If the denominator is bv0, then the result is the numerator
-        n,d = args
-        if d.isConst():
-            v = d.getConstBitVector().getValue().toString()
-            if v == "0":
-                return n
-            else:
-                return self.cvc5.mkTerm(Kind.BITVECTOR_SREM, n, d)
-        else:
-            # (d == 0) ? n : n bvurem d
-            base = self.cvc5.mkTerm(Kind.BITVECTOR_SREM, n, d)
-            zero = self.mkBitVector(formula.bv_width(), cvc5.Integer("0"))
-            test = self.cvc5.mkTerm(Kind.EQUAL, d, zero)
-            return self.cvc5.mkTerm(Kind.ITE, test, n, base)
+        return self.cvc5.mkTerm(Kind.BITVECTOR_SREM, *args)
 
     def walk_bv_ashr(self, formula, args, **kwargs):
         return self.cvc5.mkTerm(Kind.BITVECTOR_ASHR, args[0], args[1])
@@ -509,13 +443,13 @@ class CVC5Converter(Converter, DagWalker):
         return self.cvc5.mkTerm(Kind.STRING_CONCAT, *args)
 
     def walk_str_contains(self, formula, args, **kwargs):
-        return self.cvc5.mkTerm(Kind.STRING_STRCTN, args[0], args[1])
+        return self.cvc5.mkTerm(Kind.STRING_CONTAINS, args[0], args[1])
 
     def walk_str_indexof(self, formula, args, **kwargs):
-        return self.cvc5.mkTerm(Kind.STRING_STRIDOF, args[0], args[1], args[2])
+        return self.cvc5.mkTerm(Kind.STRING_INDEXOF, args[0], args[1], args[2])
 
     def walk_str_replace(self, formula, args, **kwargs):
-        return self.cvc5.mkTerm(Kind.STRING_STRREPL, args[0], args[1], args[2])
+        return self.cvc5.mkTerm(Kind.STRING_REPLACE, args[0], args[1], args[2])
 
     def walk_str_substr(self, formula, args, **kwargs):
         return self.cvc5.mkTerm(Kind.STRING_SUBSTR, args[0], args[1], args[2])
@@ -527,10 +461,10 @@ class CVC5Converter(Converter, DagWalker):
         return self.cvc5.mkTerm(Kind.STRING_SUFFIX, args[0], args[1])
 
     def walk_str_to_int(self, formula, args, **kwargs):
-        return self.cvc5.mkTerm(Kind.STRING_STOI, args[0])
+        return self.cvc5.mkTerm(Kind.STRING_TO_INT, args[0])
 
     def walk_int_to_str(self, formula, args, **kwargs):
-        return self.cvc5.mkTerm(Kind.STRING_ITOS, args[0])
+        return self.cvc5.mkTerm(Kind.STRING_FROM_INT, args[0])
 
     def walk_str_charat(self, formula, args, **kwargs):
         return self.cvc5.mkTerm(Kind.STRING_CHARAT, args[0], args[1])
@@ -552,7 +486,7 @@ class CVC5Converter(Converter, DagWalker):
             elem_cvc_type = self._type_to_cvc5(tp.elem_type)
             return self.cvc5.mkArraySort(idx_cvc_type, elem_cvc_type)
         elif tp.is_bv_type():
-            return self.cvc5.mkBitVectorType(tp.width)
+            return self.cvc5.mkBitVectorSort(tp.width)
         elif tp.is_string_type():
             return self.cvc5.getStringSort()
         elif tp.is_custom_type():
@@ -568,16 +502,12 @@ class CVC5Converter(Converter, DagWalker):
         elif type_.isReal():
             return types.REAL
         elif type_.isArray():
-            # Casting Type into ArrayType
-            type_ = cvc5.ArrayType(type_)
             # Recursively convert the types of index and elem
-            idx_type = self._cvc5_type_to_type(type_.getIndexType())
-            elem_type = self._cvc5_type_to_type(type_.getConstituentType())
+            idx_type = self._cvc5_type_to_type(type_.getArrayIndexSort())
+            elem_type = self._cvc5_type_to_type(type_.getArrayElementSort())
             return types.ArrayType(idx_type, elem_type)
         elif type_.isBitVector():
-            # Casting Type into BitVectorType
-            type_ = cvc5.BitVectorType(type_)
-            return types.BVType(type_.getSize())
+            return types.BVType(type_.getBitVectorSize())
         elif type_.isFunction():
             # Casting Type into FunctionType
             type_ = cvc5.FunctionType(type_)
@@ -593,9 +523,9 @@ class CVC5Converter(Converter, DagWalker):
         Returns a tuple (new_formula, new_var_list) in which the old
         variables have been replaced by the new variables in the list.
         """
-        mkBoundVar = self.cvc5_exprMgr.mkBoundVar
-        new_var_list = [mkBoundVar(x.symbol_name(),
-                                   self._type_to_cvc5(x.symbol_type()))
+        mkBoundVar = self.cvc5.mkVar
+        new_var_list = [mkBoundVar(self._type_to_cvc5(x.symbol_type()),
+                                   x.symbol_name())
                         for x in variables]
         old_var_list = [self.walk_symbol(x, []) for x in variables]
         new_formula = formula.substitute(old_var_list, new_var_list)
