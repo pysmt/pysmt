@@ -23,7 +23,8 @@ def all_smt(formula, important):
                 solver_options={
                     "dpll.allsat_minimize_model": "false",  # enumerate total models
                     "dpll.allsat_allow_duplicates": "false",  # enumerate disjoint models
-                    "preprocessor.toplevel_propagation": "false",  # necessary to avoid non-validity preserving steps
+                    "preprocessor.toplevel_propagation": "false",  # these two options are necessary
+                    "preprocessor.simplification": "0",  # to avoid non-validity-preserving simplifications
                 }
                 ) as msat:
         msat.add_assertion(formula)
