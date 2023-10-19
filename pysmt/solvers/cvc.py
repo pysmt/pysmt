@@ -70,6 +70,8 @@ class CVC5Options(SolverOptions):
             self._set_option(solver.cvc5,
                              "seed", str(self.random_seed))
 
+        self._set_option(solver.cvc5, "ite-simp", "true")
+
         for k,v in self.solver_options.items():
             self._set_option(solver.cvc5, str(k), str(v))
 
