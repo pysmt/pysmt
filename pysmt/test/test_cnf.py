@@ -58,7 +58,7 @@ class TestCnf(TestCase):
         cnt = 0
         max_cnt = 3
         for (logic, f, expected_result) in SMTLIB_TEST_FILES:
-            if logic != QF_LRA:
+            if logic != QF_LIA:
                 continue
             self._smtlib_cnf(f, logic, expected_result)
             cnt += 1
