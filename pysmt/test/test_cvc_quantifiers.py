@@ -23,29 +23,29 @@ from pysmt.logics import LRA, LIA
 
 class TestCVCQuantifiers(TestCase):
 
-    @skipIfSolverNotAvailable('cvc')
+    @skipIfSolverNotAvailable('cvc5')
     def test_bool(self):
         x, y = Symbol("x"), Symbol("y")
         f = ForAll([x], Implies(x,y))
-        with Solver(name='cvc', logic=LIA) as s:
+        with Solver(name='cvc5', logic=LIA) as s:
             s.add_assertion(f)
             res = s.solve()
             self.assertTrue(res)
 
-    @skipIfSolverNotAvailable('cvc')
+    @skipIfSolverNotAvailable('cvc5')
     def test_int(self):
         p, q = Symbol("p", INT), Symbol("q", INT)
         f = ForAll([p], Implies(LT(Int(0), p), LT(q, p)))
-        with Solver(name='cvc', logic=LIA) as s:
+        with Solver(name='cvc5', logic=LIA) as s:
             s.add_assertion(f)
             res = s.solve()
             self.assertTrue(res)
 
-    @skipIfSolverNotAvailable('cvc')
+    @skipIfSolverNotAvailable('cvc5')
     def test_real(self):
         r, s = Symbol("r", REAL), Symbol("s", REAL)
         f = ForAll([r], Implies(LT(Real(0), r), LT(s, r)))
-        with Solver(name='cvc', logic=LRA) as s:
+        with Solver(name='cvc5', logic=LRA) as s:
             s.add_assertion(f)
             res = s.solve()
             self.assertTrue(res)

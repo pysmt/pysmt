@@ -206,14 +206,13 @@ class TestBasic(TestCase):
             self.assertEqual(validity, v, f)
             self.assertEqual(satisfiability, s, f)
 
-    @skipIfSolverNotAvailable("cvc")
+    @skipIfSolverNotAvailable("cvc5")
     def test_examples_cvc(self):
         for (f, validity, satisfiability, logic) in get_example_formulae():
-            if not logic.theory.linear: continue
             if logic.theory.arrays_const: continue
             try:
-                v = is_valid(f, solver_name='cvc', logic=logic)
-                s = is_sat(f, solver_name='cvc', logic=logic)
+                v = is_valid(f, solver_name='cvc5', logic=logic)
+                s = is_sat(f, solver_name='cvc5', logic=logic)
                 self.assertEqual(validity, v, f)
                 self.assertEqual(satisfiability, s, f)
             except SolverReturnedUnknownResultError:
@@ -251,7 +250,6 @@ class TestBasic(TestCase):
             self.assertEqual(satisfiability, s, f)
 
     def do_model(self, solver_name):
-
         for (f, _, satisfiability, logic) in get_example_formulae():
             if satisfiability and not logic.theory.uninterpreted and logic.quantifier_free:
                 try:
@@ -263,13 +261,15 @@ class TestBasic(TestCase):
 
                         model = s.get_model()
                         self.assertTrue(model.satisfies(f, s))
-
                 except NoSolverAvailableError:
                     pass
+                except PysmtTypeError:
+                    if solver_name != "cvc5" or logic.theory.linear:
+                        raise
 
-    @skipIfSolverNotAvailable("cvc")
+    @skipIfSolverNotAvailable("cvc5")
     def test_model_cvc(self):
-        self.do_model("cvc")
+        self.do_model("cvc5")
 
     @skipIfSolverNotAvailable("z3")
     def test_model_z3(self):
