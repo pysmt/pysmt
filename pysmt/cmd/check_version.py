@@ -41,7 +41,7 @@ def check_version(module):
             import pyboolector
             version = "OK" # Just checking if import succeeds
 
-        elif module == "cvc":
+        elif module == "cvc5":
             import cvc5
             solver = cvc5.Solver()
             version = solver.getVersion().decode('ascii')
