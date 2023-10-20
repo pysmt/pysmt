@@ -204,7 +204,7 @@ Solver      pySMT name
 =========   ==========
 MathSAT     msat
 Z3          z3
-cvc5        cvc
+cvc5        cvc5
 Yices       yices
 Boolector   btor
 Picosat     picosat

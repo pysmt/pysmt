@@ -32,9 +32,9 @@ class PortfolioTestCase(TestCase):
 
     @skipIfSolverNotAvailable("z3")
     @skipIfSolverNotAvailable("msat")
-    @skipIfSolverNotAvailable("cvc")
+    @skipIfSolverNotAvailable("cvc5")
     def test_basic(self):
-        with Portfolio(["z3", "msat", "cvc"],
+        with Portfolio(["z3", "msat", "cvc5"],
                        environment=self.env,
                        logic=QF_LRA) as p:
             for example in get_example_formulae():
@@ -45,7 +45,7 @@ class PortfolioTestCase(TestCase):
                     self.assertTrue(p.get_model().get_value(example.expr).is_true())
 
     @skipIfSolverNotAvailable("msat")
-    @skipIfSolverNotAvailable("cvc")
+    @skipIfSolverNotAvailable("cvc5")
     @skipIfSolverNotAvailable("yices")
     def test_smtlib(self):
         from pysmt.test.smtlib.parser_utils import SMTLIB_TEST_FILES, SMTLIB_DIR
@@ -88,7 +88,7 @@ class PortfolioTestCase(TestCase):
     def run_smtlib(self, smtfile, logic, expected_result):
         env = reset_env()
         formula = get_formula_fname(smtfile, env)
-        with Portfolio(["cvc", "msat", "yices"],
+        with Portfolio(["cvc5", "msat", "yices"],
                        logic=logic,
                        environment=env,
                        incremental=False,
@@ -97,21 +97,21 @@ class PortfolioTestCase(TestCase):
             self.assertEqual(expected_result, res, smtfile)
 
     @skipIfSolverNotAvailable("msat")
-    @skipIfSolverNotAvailable("cvc")
+    @skipIfSolverNotAvailable("cvc5")
     @skipIfSolverNotAvailable("z3")
     def test_shortcuts(self):
         for (expr, _, sat_res, logic) in get_example_formulae():
             if not logic <= QF_UFLIRA: continue
-            res = is_sat(expr, portfolio=["z3", "cvc", "msat"])
+            res = is_sat(expr, portfolio=["z3", "cvc5", "msat"])
             self.assertEqual(res, sat_res, expr)
 
         with self.assertRaises(ValueError):
             is_sat(TRUE(), portfolio=["supersolver"])
 
     @skipIfSolverNotAvailable("msat")
-    @skipIfSolverNotAvailable("cvc")
+    @skipIfSolverNotAvailable("cvc5")
     def test_get_value(self):
-        with Portfolio(["msat", "cvc"],
+        with Portfolio(["msat", "cvc5"],
                        logic=QF_UFLIRA,
                        environment=self.env,
                        incremental=False,
@@ -125,10 +125,10 @@ class PortfolioTestCase(TestCase):
             self.assertTrue(v, TRUE())
 
     @skipIfSolverNotAvailable("msat")
-    @skipIfSolverNotAvailable("cvc")
+    @skipIfSolverNotAvailable("cvc5")
     @skipIfSolverNotAvailable("yices")
     def test_incrementality(self):
-        with Portfolio(["cvc", "msat", "yices"],
+        with Portfolio(["cvc5", "msat", "yices"],
                        logic=QF_UFLIRA,
                        environment=self.env,
                        incremental=True,
