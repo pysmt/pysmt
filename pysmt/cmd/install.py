@@ -33,7 +33,7 @@ Installer = namedtuple("Installer",
                        ["InstallerClass", "version", "extra_params"])
 INSTALLERS = [
     Installer(MSatInstaller,    "5.6.10", {}),
-    Installer(CVC5Installer,    "1.0.5", {"git_tag" : "cvc5-1.0.5"}),
+    Installer(CVC5Installer,    "1.0.8", {"git_tag" : "cvc5-1.0.8"}),
     Installer(Z3Installer,      "4.12.2", {"osx": "10.16"}),
     Installer(YicesInstaller,   "2.6.4", {"yices_api_version": "1.1.5"}),
     Installer(BtorInstaller,    "3.2.2", {}),
