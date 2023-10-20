@@ -58,7 +58,7 @@ fi
 
 # Install latest version of SWIG for CVC and BDD
 # (The other solvers in isolation fall-back to the system swig)
-if [ "${PYSMT_SOLVER}" == "cvc" ] || [ "${PYSMT_SOLVER}" == "bdd" ] || [ "${PYSMT_SOLVER}" == "all" ]
+if [ "${PYSMT_SOLVER}" == "cvc5" ] || [ "${PYSMT_SOLVER}" == "bdd" ] || [ "${PYSMT_SOLVER}" == "all" ]
 then
     os_install flex
     os_install bison
@@ -89,13 +89,13 @@ $PIP_INSTALL configparser
 $PIP_INSTALL wheel
 $PIP_INSTALL pytest
 
-if [ "${PYSMT_SOLVER}" == "cvc" ]
+if [ "${PYSMT_SOLVER}" == "cvc5" ]
 then
     $PIP_INSTALL toml
 fi
 
 # Needed only when using "act" locally
-# if [ "${PYSMT_SOLVER}" == "cvc" ] || [ "${PYSMT_SOLVER}" == "btor" ] || [ "${PYSMT_SOLVER}" == "all" ]
+# if [ "${PYSMT_SOLVER}" == "cvc5" ] || [ "${PYSMT_SOLVER}" == "btor" ] || [ "${PYSMT_SOLVER}" == "all" ]
 # then
 #     os_install cmake
 # fi
