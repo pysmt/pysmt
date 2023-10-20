@@ -81,8 +81,7 @@ class CVC5Options(SolverOptions):
 class CVC5Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
     LOGICS = PYSMT_LOGICS -\
-             ARRAYS_CONST_LOGICS -\
-             set(l for l in PYSMT_LOGICS if not l.theory.linear)
+             ARRAYS_CONST_LOGICS
 
     OptionsClass = CVC5Options
 
@@ -134,8 +133,8 @@ class CVC5Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         else:
             try:
                 res = self.cvc5.checkSat()
-            except:
-                raise InternalSolverError()
+            except Exception as ex:
+                raise InternalSolverError(str(ex))
 
         # Convert returned type
         if res.isUnknown():
@@ -307,8 +306,7 @@ class CVC5Converter(Converter, DagWalker):
                            bound_formula)
 
     def walk_plus(self, formula, args, **kwargs):
-        res = self.cvc5.mkTerm(Kind.ADD, *args)
-        return res
+        return self.cvc5.mkTerm(Kind.ADD, *args)
 
     def walk_array_store(self, formula, args, **kwargs):
         return self.cvc5.mkTerm(Kind.STORE, args[0], args[1], args[2])
@@ -317,20 +315,22 @@ class CVC5Converter(Converter, DagWalker):
         return self.cvc5.mkTerm(Kind.SELECT, args[0], args[1])
 
     def walk_minus(self, formula, args, **kwargs):
-        minus_one = self.cvc5.mkInteger("-1")
-        return self.cvc5.mkTerm(Kind.ADD, args[0],
-                                self.cvc5.mkTerm(Kind.MULT, args[1], minus_one))
+        return self.cvc5.mkTerm(Kind.SUB, args[0], args[1])
 
     def walk_equals(self, formula, args, **kwargs):
         return self.cvc5.mkTerm(Kind.EQUAL, args[0], args[1])
 
     def walk_times(self, formula, args, **kwargs):
-        if sum(1 for x in formula.args() if x.get_free_variables()) > 1:
-            raise NonLinearError(formula)
-        res = args[0]
-        for x in args[1:]:
-            res = self.cvc5.mkTerm(Kind.MULT, res, x)
-        return res
+        return self.cvc5.mkTerm(Kind.MULT, *args)
+
+    def walk_div(self, formula, args, **kwargs):
+        if self.env.stc.get_type(formula).is_int_type():
+            return self.cvc5.mkTerm(Kind.INTS_DIVISION, *args)
+        else:
+            return self.cvc5.mkTerm(Kind.DIVISION, *args)
+
+    def walk_pow(self, formula, args, **kwargs):
+        return self.cvc5.mkTerm(Kind.POW, args[0], self.cvc5.mkTerm(Kind.TO_REAL, args[1]))
 
     def walk_toreal(self, formula, args, **kwargs):
         return self.cvc5.mkTerm(Kind.TO_REAL, args[0])

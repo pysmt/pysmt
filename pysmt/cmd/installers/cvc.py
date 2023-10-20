@@ -22,7 +22,7 @@ from pysmt.cmd.installers.base import SolverInstaller
 
 class CVC5Installer(SolverInstaller):
 
-    SOLVER = "cvc"
+    SOLVER = "cvc5"
 
     def __init__(self, install_dir, bindings_dir, solver_version,
                  mirror_link=None, git_tag='master'):

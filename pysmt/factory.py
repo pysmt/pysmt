@@ -38,7 +38,7 @@ from pysmt.solvers.qelim import (ShannonQuantifierEliminator,
 from pysmt.solvers.solver import SolverOptions
 from pysmt.solvers.portfolio import Portfolio
 
-DEFAULT_SOLVER_PREFERENCE_LIST = ['msat', 'z3', 'cvc', 'yices', 'btor',
+DEFAULT_SOLVER_PREFERENCE_LIST = ['msat', 'z3', 'cvc5', 'yices', 'btor',
                                   'picosat', 'bdd']
 DEFAULT_QELIM_PREFERENCE_LIST = ['z3', 'msat_fm', 'msat_lw', 'bdd',
                                  'shannon', 'selfsub']
@@ -231,7 +231,7 @@ class Factory(object):
 
         try:
             from pysmt.solvers.cvc import CVC5Solver
-            installed_solvers['cvc'] = CVC5Solver
+            installed_solvers['cvc5'] = CVC5Solver
         except SolverAPINotFound:
             pass
 
@@ -598,7 +598,7 @@ class Factory(object):
 # If PYSMT_SOLVER is "None" (literal None), the preference list will be empty
 #
 # Otherwise PYSMT_SOLVER is treated as  a comma-separated list: e.g.
-#   "msat, z3, cvc"
+#   "msat, z3, cvc5"
 #
 import os
 ENV_SOLVER_LIST = os.environ.get("PYSMT_SOLVER")
