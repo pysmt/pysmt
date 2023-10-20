@@ -61,7 +61,6 @@ STATUS_SAT = 3
 STATUS_UNSAT = 4
 
 PRINTING_WIDTH = 999999999
-PRINTING_HEIGHT = 999999999
 
 def yices_logic(pysmt_logic):
     """Return a Yices String representing the given pySMT logic."""
@@ -274,14 +273,14 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
             errcode = yices_api.yices_get_mpz_value(self.model, titem, mpz)
             self._check_error(errcode)
             mpz_term = yices_api.yices_mpz(mpz)
-            s = yices_api.yices_term_to_string(mpz_term, PRINTING_WIDTH, PRINTING_HEIGHT, 0)
+            s = yices_api.yices_term_to_string(mpz_term, PRINTING_WIDTH, 1, 0)
             return self.mgr.Int(int(s))
         elif ty.is_real_type():
             mpq = yices_api.mpq_t()
             errcode = yices_api.yices_get_mpq_value(self.model, titem, mpq)
             self._check_error(errcode)
             mpq_term = yices_api.yices_mpq(mpq)
-            s = yices_api.yices_term_to_string(mpq_term, PRINTING_WIDTH, PRINTING_HEIGHT, 0)
+            s = yices_api.yices_term_to_string(mpq_term, PRINTING_WIDTH, 1, 0)
             return self.mgr.Real(Fraction(s))
         elif ty.is_bv_type():
             yval = yices_api.yval_t()
