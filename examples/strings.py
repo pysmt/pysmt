@@ -1,4 +1,4 @@
-# The example requires CVC4 or Z3 to be installed
+# The example requires cvc5 or Z3 to be installed
 #
 # The theory of strings defines a way to operate on sequences of ASCII
 # characters.

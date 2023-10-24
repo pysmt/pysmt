@@ -60,7 +60,7 @@ class TestCnf(TestCase):
         for (logic, f, expected_result) in SMTLIB_TEST_FILES:
             if logic != QF_LIA:
                 continue
-            self._smtlib_cnf(f, logic, expected_result=="sat")
+            self._smtlib_cnf(f, logic, expected_result)
             cnt += 1
             if cnt == max_cnt:
                 break
@@ -84,6 +84,7 @@ class TestCnf(TestCase):
             with self.assertRaises(NotImplementedError):
                 conv.convert_as_formula(expr)
             return
+
         cnf = conv.convert_as_formula(expr)
         self.assertValid(Implies(cnf, expr), logic=logic)
 

@@ -32,12 +32,12 @@ class TestSimplify(TestCase):
 
     @pytest.mark.slow
     @skipIfSolverNotAvailable("z3")
-    @skipIfSolverNotAvailable("cvc4")
+    @skipIfSolverNotAvailable("cvc5")
     def test_simplify_qf(self):
         simp = get_env().simplifier
         for (f, _, _, logic) in get_example_formulae():
             if logic.is_quantified(): continue
-            sname = "z3" if not logic.theory.strings else "cvc4"
+            sname = "z3" if not logic.theory.strings else "cvc5"
             simp.validate_simplifications = sname
             sf = f.simplify()
             simp.validate_simplifications = None

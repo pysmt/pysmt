@@ -68,7 +68,7 @@ _info("Example 3: Portfolio w options")
 with Portfolio([("msat", {"random_seed": 1}),
                 ("msat", {"random_seed": 17}),
                 ("msat", {"random_seed": 42}),
-                "cvc4", "yices"],
+                "cvc5", "yices"],
                logic=QF_UFLIRA,
                incremental=False,
                generate_models=False) as s:

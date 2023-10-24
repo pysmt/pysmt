@@ -105,7 +105,7 @@ solving using multiple solvers and multiple solver configurations.
    x, y = Symbol("x"), Symbol("y")
    f = x.Implies(y)
 
-   with Portfolio(["cvc4",
+   with Portfolio(["cvc5",
                    "yices",
                    ("msat", {"random_seed": 1}),
                    ("msat", {"random_seed": 17}),
@@ -167,7 +167,7 @@ combinations. The following solvers are supported through native APIs:
 
 * MathSAT (http://mathsat.fbk.eu/)
 * Z3 (https://github.com/Z3Prover/z3/)
-* CVC4 (http://cvc4.cs.nyu.edu/web/)
+* cvc5 (https://cvc5.github.io/)
 * Yices 2 (http://yices.csl.sri.com/)
 * CUDD (http://vlsi.colorado.edu/~fabio/CUDD/)
 * PicoSAT (http://fmv.jku.at/picosat/)
@@ -239,7 +239,7 @@ each of the available solvers.
  +------------------+-----------+--------------------------------+-------------+------------------------+------------+--------------+
  | Z3               |  z3       | UF, LIA, LRA, BV, AX, NRA, NIA |  Yes        | z3                     | Yes        | No           |
  +------------------+-----------+--------------------------------+-------------+------------------------+------------+--------------+
- | CVC4             |  cvc4     | UF, LIA, LRA, BV, AX, S        |  Yes        | No                     | No         | No           |
+ | cvc5             |  cvc5     | UF, LIA, LRA, BV, AX, S        |  Yes        | No                     | No         | No           |
  +------------------+-----------+--------------------------------+-------------+------------------------+------------+--------------+
  | Yices            |  yices    | UF, LIA, LRA, BV               |  No         | No                     | No         | No           |
  +------------------+-----------+--------------------------------+-------------+------------------------+------------+--------------+
