@@ -45,8 +45,8 @@ class CuddInstaller(SolverInstaller):
             print("WARNING: the BDD solver does not work with Swig4 < 4.0.2. Fallback to Swig3")
             swig = "swig3.0" # This is the Ubuntu naming of the executable
 
-        import distutils.sysconfig as sysconfig
-        PYTHON_INCLUDE_DIR = sysconfig.get_python_inc()
+        import sysconfig
+        PYTHON_INCLUDE_DIR = sysconfig.get_path("include")
         SolverInstaller.run("make -C %s -f %s PYTHON_INCL=-I%s SWIG=%s" %
                             (self.extract_path, makefile, PYTHON_INCLUDE_DIR, swig))
 
