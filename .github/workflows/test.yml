@@ -22,10 +22,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 #v4.1.1
 
       - name: Set up Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236 #v4.7.1
         with:
           python-version: 3.8
 
@@ -74,10 +74,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 #v4.1.1
 
       - name: Set up Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236 #v4.7.1
         with:
           python-version: 3.8
 
@@ -97,12 +97,12 @@ jobs:
 
     steps:
     - name: Checkout repo
-      uses: actions/checkout@master
+      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 #v4.1.1
       with:
         fetch-depth: 0
 
     - name: Set up Python 3.8
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236 #v4.7.1
       with:
         python-version: 3.8
 
@@ -112,6 +112,6 @@ jobs:
         bash make_distrib.sh
 
     - name: Upload to PyPI
-      uses: pypa/gh-action-pypi-publish@master
+      uses: pypa/gh-action-pypi-publish@b7f401de30cb6434a1e19f805ff006643653240e
       with:
         password: ${{ secrets.PYPI_API_TOKEN }}
