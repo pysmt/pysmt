@@ -44,10 +44,11 @@ class BtorInstaller(SolverInstaller):
         # path into Boolector's CMake because CMake can get confused
         # if multiple interpreters are available, especially python 2
         # vs python 3.
-        import distutils.sysconfig as sysconfig
+        import sysconfig
         import sys
         PYTHON_LIBRARY = os.environ.get('PYSMT_PYTHON_LIBDIR')
-        PYTHON_INCLUDE_DIR = sysconfig.get_python_inc()
+        PYTHON_INCLUDE_DIR = sysconfig.get_path("include")
+
         PYTHON_EXECUTABLE = sys.executable
         CMAKE_OPTS = ' -DPYTHON_INCLUDE_DIR=' + PYTHON_INCLUDE_DIR
         CMAKE_OPTS += ' -DPYTHON_EXECUTABLE=' + PYTHON_EXECUTABLE
