@@ -1085,6 +1085,20 @@ class TestFormulaManager(TestCase):
         self.assertRaises(PysmtValueError,
             lambda: self.mgr.BVMul([]))
 
+    def test_function_substitute(self):
+        FunTy = FunctionType(BOOL, [INT])
+        f = self.mgr.Symbol(f"myf", FunTy)
+        g = self.mgr.Symbol(f"myg", FunTy)
+        v = self.mgr.Symbol("v", INT)
+        w = self.mgr.Symbol("w", INT)
+
+        f_v = self.mgr.Function(f, [v])
+        f_w = self.mgr.Function(f, [w])
+        g_v = self.mgr.Function(g, [v])
+
+        phi = Iff(f_v, f_w)
+        self.assertEqual(phi.substitute({f_w: g_v}), Iff(f_v, g_v))
+
 class TestShortcuts(TestCase):
 
     def test_shortcut_is_using_global_env(self):
