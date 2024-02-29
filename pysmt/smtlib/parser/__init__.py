@@ -80,10 +80,10 @@ else:
     # no ambiguity when importing the parser: the only way to load the
     # cython version is by the so_path that targets .pyxbld .
     #
-    import imp
+    import importlib
+    import sys
 
     if not hasattr(pyximport, "build_module"):
-        import sys
         if sys.version_info < (3, 5):
             # _pyximport3 module requires at least Python 3.5
             import pyximport._pyximport2 as pyximport
@@ -98,7 +98,12 @@ else:
 
     so_path = pyximport.build_module(name, path,
                                      pyxbuild_dir=build_dir)
-    mod = imp.load_dynamic(name, so_path)
+    spec = importlib.util.spec_from_file_location(name, so_path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    mod = sys.modules[name]
+
     assert mod.__file__ == so_path, (mod.__file__, so_path)
     # print(so_path)
     from pysmt.smtlib.parser.parser import *
