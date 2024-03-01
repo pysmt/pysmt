@@ -355,16 +355,14 @@ class BTORConverter(Converter, DagWalker):
         return decl
 
     def walk_and(self, formula, args, **kwargs):
-        assert len(args) >= 2
-        res = self._btor.And(args[0], args[1])
-        for conj in args[2:]:
+        res = args[0]
+        for conj in args[1:]:
             res = self._btor.And(res, conj)
         return res
 
     def walk_or(self, formula, args, **kwargs):
-        assert len(args) >= 2
-        res = self._btor.Or(args[0], args[1])
-        for disj in args[2:]:
+        res = args[0]
+        for disj in args[1:]:
             res = self._btor.Or(res, disj)
         return res
 
@@ -384,7 +382,7 @@ class BTORConverter(Converter, DagWalker):
             index_type = symbol_type.index_type
             elem_type = symbol_type.elem_type
             if not (index_type.is_bv_type() and elem_type.is_bv_type()):
-                raise ConvertExpressionError("BTOR supports only Array(BV,BV). "\
+                raise ConvertExpressionError("BTOR supports only Array(BV,BV). "
                                              "Type '%s' was given." % str(symbol_type))
             res = self._btor.Array(self._btor.ArraySort(self._btor.BitVecSort(index_type.width),
                                                         self._btor.BitVecSort(elem_type.width)),
@@ -429,7 +427,10 @@ class BTORConverter(Converter, DagWalker):
         return self._btor.Ulte(args[0], args[1])
 
     def walk_bv_concat(self, formula, args, **kwargs):
-        return self._btor.Concat(args[0], args[1])
+        res = args[0]
+        for arg in args[1:]:
+            res = self._btor.Concat(res, arg)
+        return res
 
     def walk_bv_extract(self, formula, args, **kwargs):
         start = formula.bv_extract_start()
@@ -449,7 +450,10 @@ class BTORConverter(Converter, DagWalker):
         return self._btor.Xor(*args)
 
     def walk_bv_add(self, formula, args, **kwargs):
-        return self._btor.Add(args[0], args[1])
+        res = args[0]
+        for arg in args[1:]:
+            res = self._btor.Add(res, arg)
+        return res
 
     def walk_bv_sub(self, formula, args, **kwargs):
         return self._btor.Sub(args[0], args[1])
@@ -458,7 +462,10 @@ class BTORConverter(Converter, DagWalker):
         return -args[0]
 
     def walk_bv_mul(self, formula, args, **kwargs):
-        return args[0]*args[1]
+        res = args[0]
+        for arg in args[1:]:
+            res *= arg
+        return res
 
     def walk_bv_udiv(self, formula, args, **kwargs):
         return args[0] / args[1]
@@ -501,7 +508,7 @@ class BTORConverter(Converter, DagWalker):
     def walk_bv_srem(self, formula, args, **kwargs):
         return self._btor.Srem(args[0], args[1])
 
-    def walk_bv_ashr (self, formula, args, **kwargs):
+    def walk_bv_ashr(self, formula, args, **kwargs):
         return self._btor.Sra(args[0], args[1])
 
     def walk_array_store(self, formula, args, **kwargs):
@@ -525,7 +532,7 @@ class BTORConverter(Converter, DagWalker):
         elif tp.is_array_type():
             raise ConvertExpressionError("Unsupported Array Type")
         else:
-            assert tp.is_function_type() , "Unsupported type '%s'" % tp
+            assert tp.is_function_type(), "Unsupported type '%s'" % tp
             stps = [self._type_to_btor(x) for x in tp.param_types]
             rtp = self._type_to_btor(tp.return_type)
             return self._btor.FunSort(stps, rtp)
