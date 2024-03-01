@@ -131,19 +131,19 @@ class Substituter(pysmt.walkers.IdentityDagWalker):
 
     def _push_with_children_to_stack(self, formula, **kwargs):
         """Add children to the stack."""
-
         # Deal with quantifiers
         if formula.is_quantifier():
+            get_free_vars = self.env.fvo.get_free_variables
             # 1. We create a new substitution in which we remove the
             #    bound variables from the substitution map
             substitutions = kwargs["substitutions"]
             new_subs = {}
-            for k,v in substitutions.items():
+            for k, v in substitutions.items():
                 # If at least one bound variable is in the cone of k,
                 # we do not consider this substitution in the body of
                 # the quantifier.
                 if all(m not in formula.quantifier_vars()
-                       for m in k.get_free_variables()):
+                       for m in get_free_vars(k)):
                     new_subs[k] = v
 
             # 2. We apply the substitution on the quantifier body with

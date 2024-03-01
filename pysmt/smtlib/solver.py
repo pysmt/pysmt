@@ -71,12 +71,12 @@ class SmtLibSolver(Solver):
 
     OptionsClass = SmtLibOptions
 
-    def __init__(self, args, environment, logic, LOGICS=None, **options):
+    def __init__(self, args, env, logic, LOGICS=None, **options):
         Solver.__init__(self,
-                        environment,
+                        env,
                         logic=logic,
                         **options)
-        self.to = self.environment.typeso
+        self.to = self.env.typeso
         if LOGICS is not None: self.LOGICS = LOGICS
         self.args = args
         self.declared_vars = [set()]
@@ -166,12 +166,12 @@ class SmtLibSolver(Solver):
     def add_assertion(self, formula, named=None):
         # This is needed because Z3 (and possibly other solvers) incorrectly
         # recognize N * M * x as a non-linear term
-        formula = formula.simplify()
+        formula = self.env.simplifier.simplify(formula)
         sorts = self.to.get_types(formula, custom_only=True)
         for s in sorts:
             if all(s not in ds for ds in self.declared_sorts):
                 self._declare_sort(s)
-        deps = formula.get_free_variables()
+        deps = self.env.fvo.get_free_variables(formula)
         for d in deps:
             if all(d not in dv for dv in self.declared_vars):
                 self._declare_variable(d)
@@ -208,7 +208,7 @@ class SmtLibSolver(Solver):
             if s.is_term():
                 v = self.get_value(s)
                 assignment[s] = v
-        return EagerModel(assignment=assignment, environment=self.environment)
+        return EagerModel(assignment=assignment, env=self.env)
 
     def _exit(self):
         self._send_command(SmtLibCommand(smtcmd.EXIT, []))

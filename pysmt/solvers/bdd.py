@@ -139,15 +139,15 @@ class BddSolver(Solver):
     LOGICS = [ pysmt.logics.QF_BOOL, pysmt.logics.BOOL ]
     OptionsClass = BddOptions
 
-    def __init__(self, environment, logic, **options):
+    def __init__(self, env, logic, **options):
         Solver.__init__(self,
-                        environment=environment,
+                        env=env,
                         logic=logic,
                         **options)
 
-        self.mgr = environment.formula_manager
+        self.mgr = env.formula_manager
         self.ddmanager = repycudd.DdManager()
-        self.converter = BddConverter(environment=self.environment,
+        self.converter = BddConverter(env=self.env,
                                       ddmanager=self.ddmanager)
         self.options(self)
 
@@ -222,7 +222,7 @@ class BddSolver(Solver):
                 assignment[key] = value
 
             self.latest_model = EagerModel(assignment=assignment,
-                                           environment=self.environment)
+                                           env=self.env)
         return self.latest_model
 
     @clear_pending_pop
@@ -242,11 +242,11 @@ class BddSolver(Solver):
 
 class BddConverter(Converter, DagWalker):
 
-    def __init__(self, environment, ddmanager):
+    def __init__(self, env, ddmanager):
         DagWalker.__init__(self)
 
-        self.environment = environment
-        self.fmgr = self.environment.formula_manager
+        self.env = env
+        self.fmgr = self.env.formula_manager
         self.ddmanager = ddmanager
         # Note: Nodes in repycudd are not shared, but they overload all
         # methods to perform comparison. This means that for two
@@ -265,7 +265,7 @@ class BddConverter(Converter, DagWalker):
         return self.walk(formula)
 
     def back(self, bdd_expr):
-        return self._walk_back(bdd_expr, self.fmgr).simplify()
+        return self.env.simplifier.simplify(self._walk_back(bdd_expr, self.fmgr))
 
     def get_all_vars_array(self):
         # NOTE: This way of building the var_array does not look
@@ -398,16 +398,16 @@ class BddQuantifierEliminator(QuantifierEliminator):
 
     LOGICS = [pysmt.logics.BOOL]
 
-    def __init__(self, environment, logic=None):
+    def __init__(self, env, logic=None):
         QuantifierEliminator.__init__(self)
-        self.environment = environment
+        self.env = env
         self.logic = logic
         self.ddmanager = repycudd.DdManager()
-        self.converter = BddConverter(environment=environment,
+        self.converter = BddConverter(env=env,
                                       ddmanager=self.ddmanager)
 
     def eliminate_quantifiers(self, formula):
-        logic = get_logic(formula, self.environment)
+        logic = get_logic(formula, self.env)
         if not logic <= pysmt.logics.BOOL:
             raise NotImplementedError("BDD-based quantifier elimination only "\
                                       "supports pure-boolean formulae."\

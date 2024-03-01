@@ -35,7 +35,7 @@ class PortfolioTestCase(TestCase):
     @skipIfSolverNotAvailable("cvc4")
     def test_basic(self):
         with Portfolio(["z3", "msat", "cvc4"],
-                       environment=self.env,
+                       env=self.env,
                        logic=QF_LRA) as p:
             for example in get_example_formulae():
                 if not example.logic <= QF_LRA: continue
@@ -63,7 +63,7 @@ class PortfolioTestCase(TestCase):
         # quite a lot of recursion...
         old_recursion_limit = sys.getrecursionlimit()
         sys.setrecursionlimit(999999)
-        
+
         for (logic, f, expected_result) in SMTLIB_TEST_FILES:
             smtfile = os.path.join(SMTLIB_DIR, f)
             if logic <= QF_UFLIRA:
@@ -76,7 +76,7 @@ class PortfolioTestCase(TestCase):
                                 ("msat", {"random_seed": 17}),
                                 ("msat", {"random_seed": 42})],
                                logic=logic,
-                               environment=env,
+                               env=env,
                                incremental=False,
                                generate_models=False) as s:
                     res = s.is_sat(formula)
@@ -90,7 +90,7 @@ class PortfolioTestCase(TestCase):
         formula = get_formula_fname(smtfile, env)
         with Portfolio(["cvc4", "msat", "yices"],
                        logic=logic,
-                       environment=env,
+                       env=env,
                        incremental=False,
                        generate_models=False) as s:
             res = s.is_sat(formula)
@@ -113,7 +113,7 @@ class PortfolioTestCase(TestCase):
     def test_get_value(self):
         with Portfolio(["msat", "cvc4"],
                        logic=QF_UFLIRA,
-                       environment=self.env,
+                       env=self.env,
                        incremental=False,
                        generate_models=True) as s:
             x, y = Symbol("x"), Symbol("y")
@@ -130,7 +130,7 @@ class PortfolioTestCase(TestCase):
     def test_incrementality(self):
         with Portfolio(["cvc4", "msat", "yices"],
                        logic=QF_UFLIRA,
-                       environment=self.env,
+                       env=self.env,
                        incremental=True,
                        generate_models=True) as s:
             x, y = Symbol("x"), Symbol("y")
@@ -153,7 +153,7 @@ class PortfolioTestCase(TestCase):
     def test_exceptions(self):
         with Portfolio(["bdd", "z3"],
                        logic=QF_BOOL,
-                       environment=self.env,
+                       env=self.env,
                        incremental=True,
                        generate_models=True,
                        solver_options={"exit_on_exception":False}) as s:
@@ -166,7 +166,7 @@ class PortfolioTestCase(TestCase):
             # It should be so, but this is non-deterministic by nature
             with Portfolio(["bdd", "z3"],
                            logic=QF_BOOL,
-                           environment=self.env,
+                           env=self.env,
                            incremental=True,
                            generate_models=True,
                            solver_options={"exit_on_exception":True}) as s:

@@ -27,8 +27,8 @@ properties of formulae.
 """
 
 import pysmt
-import pysmt.walkers as walkers
-import pysmt.operators as op
+from pysmt import walkers
+from pysmt import operators as op
 
 from pysmt import typing
 
@@ -86,9 +86,9 @@ class SizeOracle(walkers.DagWalker):
         self.set_walking_measure(measure)
         res = self.walk(formula, measure=measure)
 
-        if measure == SizeOracle.MEASURE_DAG_NODES or \
-           measure == SizeOracle.MEASURE_SYMBOLS or \
-           measure == SizeOracle.MEASURE_BOOL_DAG :
+        if measure in (SizeOracle.MEASURE_DAG_NODES,
+                       SizeOracle.MEASURE_SYMBOLS,
+                       SizeOracle.MEASURE_BOOL_DAG):
             return len(res)
         return res
 
@@ -176,7 +176,7 @@ class TheoryOracle(walkers.DagWalker):
     @walkers.handles(op.RELATIONS)
     @walkers.handles(op.BOOL_OPERATORS)
     @walkers.handles(op.BV_OPERATORS)
-    @walkers.handles(op.STR_OPERATORS -\
+    @walkers.handles(op.STR_OPERATORS -
                      set([op.STR_LENGTH, op.STR_INDEXOF, op.STR_TO_INT]))
     @walkers.handles(op.ITE, op.ARRAY_SELECT, op.ARRAY_STORE, op.MINUS)
     def walk_combine(self, formula, args, **kwargs):
@@ -264,7 +264,8 @@ class TheoryOracle(walkers.DagWalker):
             theory_out = theory_out.combine(t)
         # Check for non-linear counting the arguments having at least
         # one free variable
-        if sum(1 for x in formula.args() if x.get_free_variables()) > 1:
+        if sum(1 for x in formula.args()
+               if self.env.fvo.get_free_variables(x)) > 1:
             theory_out = theory_out.set_linear(False)
         # This is  not in DL anymore
         theory_out = theory_out.set_difference_logic(False)
@@ -308,13 +309,14 @@ class TheoryOracle(walkers.DagWalker):
     def walk_div(self, formula, args, **kwargs):
         """Extends the Theory with Non-Linear, if needed."""
         assert len(args) == 2
+        get_free_vars = self.env.fvo.get_free_variables
         theory_out = args[0]
         for t in args[1:]:
             theory_out = theory_out.combine(t)
         # Check for non-linear
         left, right = formula.args()
-        if len(left.get_free_variables()) != 0 and \
-           len(right.get_free_variables()) != 0:
+        if len(get_free_vars(left)) != 0 and \
+           len(get_free_vars(right)) != 0:
             theory_out = theory_out.set_linear(False)
         elif formula.arg(1).is_zero():
             # DivBy0 is non-linear
@@ -331,8 +333,9 @@ class TheoryOracle(walkers.DagWalker):
 
 
 # Operators for which Args is an FNode
-DEPENDENCIES_SIMPLE_ARGS = (set(op.ALL_TYPES) - \
-                           (set([op.SYMBOL, op.FUNCTION]) | op.QUANTIFIERS | op.CONSTANTS))
+DEPENDENCIES_SIMPLE_ARGS = (set(op.ALL_TYPES) -
+                            (set([op.SYMBOL, op.FUNCTION]) |
+                             op.QUANTIFIERS | op.CONSTANTS))
 
 
 class FreeVarsOracle(walkers.DagWalker):

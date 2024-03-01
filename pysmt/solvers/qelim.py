@@ -67,8 +67,8 @@ class ShannonQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
 
     LOGICS = [pysmt.logics.BOOL]
 
-    def __init__(self, environment, logic=None):
-        IdentityDagWalker.__init__(self, env=environment)
+    def __init__(self, env, logic=None):
+        IdentityDagWalker.__init__(self, env=env)
         QuantifierEliminator.__init__(self)
         self.logic = logic
 
@@ -85,12 +85,13 @@ class ShannonQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
 
     def _expand(self, formula, args):
         """Returns the list of elements from the Shannon expansion."""
+        substitute = self.env.substituter.substitute
         qvars = formula.quantifier_vars()
         self._assert_vars_boolean(qvars)
         res = []
         f = args[0]
         for subs in all_assignments(qvars, self.env):
-            res.append(f.substitute(subs))
+            res.append(substitute(f, subs))
         return res
 
     def walk_forall(self, formula, args, **kwargs):
@@ -114,8 +115,8 @@ class SelfSubstitutionQuantifierEliminator(QuantifierEliminator, IdentityDagWalk
     """
     LOGICS = [pysmt.logics.BOOL]
 
-    def __init__(self, environment, logic=None):
-        IdentityDagWalker.__init__(self, env=environment)
+    def __init__(self, env, logic=None):
+        IdentityDagWalker.__init__(self, env=env)
         QuantifierEliminator.__init__(self)
         self.logic = logic
 
@@ -123,9 +124,10 @@ class SelfSubstitutionQuantifierEliminator(QuantifierEliminator, IdentityDagWalk
         return self.walk(formula)
 
     def self_substitute(self, formula, qvars, token):
+        substitute = self.env.substituter.substitute
         for v in qvars[::-1]:
-            inner_sub = formula.substitute({v: token})
-            formula = formula.substitute({v: inner_sub})
+            inner_sub = substitute(formula, {v: token})
+            formula = substitute(formula, {v: inner_sub})
         return formula
 
     def walk_forall(self, formula, args, **kwargs):

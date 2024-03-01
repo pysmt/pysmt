@@ -972,4 +972,4 @@ def _env():
 
 def _mgr():
     """Aux function to obtain the formula manager."""
-    return pysmt.environment.get_env().formula_manager
+    return _env().formula_manager

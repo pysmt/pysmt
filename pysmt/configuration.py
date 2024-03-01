@@ -45,12 +45,12 @@ from warnings import warn
 from pysmt.logics import get_logic_by_name
 from pysmt.exceptions import PysmtIOError
 
-def configure_environment(config_filename, environment):
+def configure_environment(config_filename, env):
     """
     Reads a configuration file from the given path and configures the
     given environment accordingly.
     """
-    factory = environment.factory
+    factory = env.factory
 
     if not os.path.exists(config_filename):
         raise PysmtIOError("File '%s' does not exists." % config_filename)
@@ -85,9 +85,9 @@ def configure_environment(config_filename, environment):
         pref_list = config.get("global", "solver_preference_list")
         if infix is not None:
             if infix.lower() == "true":
-                environment.enable_infix_notation = True
+                env.enable_infix_notation = True
             elif infix.lower() == "false":
-                environment.enable_infix_notation = True
+                env.enable_infix_notation = True
             else:
                 warn("Unknown value for 'use_infix_notation': %s" % infix,
                      stacklevel=2)
@@ -109,19 +109,19 @@ def configure_environment(config_filename, environment):
 
 
 
-def write_environment_configuration(config_filename, environment):
+def write_environment_configuration(config_filename, env):
     """
     Dumps the configuration of the given environment to the specified
     file. The file can then be re-read with the :py:func:`configure_environment`
     function.
 
     """
-    factory = environment.factory
+    factory = env.factory
 
     config = cp.RawConfigParser()
 
     config.add_section("global")
-    inf = "true" if environment.enable_infix_notation else "false"
+    inf = "true" if env.enable_infix_notation else "false"
     pl = " ".join(factory.solver_preference_list)
     config.set("global", "use_infix_notation", inf)
     config.set("global", "solver_preference_list", pl)

@@ -180,15 +180,15 @@ class BoolectorSolver(IncrementalTrackingSolver, UnsatCoreSolver,
     LOGICS = [QF_BV, QF_UFBV, QF_ABV, QF_AUFBV, QF_AX]
     OptionsClass = BoolectorOptions
 
-    def __init__(self, environment, logic, **options):
+    def __init__(self, env, logic, **options):
         IncrementalTrackingSolver.__init__(self,
-                                           environment=environment,
+                                           env=env,
                                            logic=logic,
                                            **options)
         self.btor = pyboolector.Boolector()
         self.options(self)
-        self.converter = BTORConverter(environment, self.btor)
-        self.mgr = environment.formula_manager
+        self.converter = BTORConverter(env, self.btor)
+        self.mgr = env.formula_manager
         self.declarations = {}
         self._named_assertions = {}
         return
@@ -201,7 +201,7 @@ class BoolectorSolver(IncrementalTrackingSolver, UnsatCoreSolver,
     def _reset_assertions(self):
         self.btor = pyboolector.Boolector()
         self.options(self)
-        self.converter = BTORConverter(self.environment, self.btor)
+        self.converter = BTORConverter(self.env, self.btor)
         self.declarations = {}
 
     @clear_pending_pop
@@ -226,7 +226,7 @@ class BoolectorSolver(IncrementalTrackingSolver, UnsatCoreSolver,
         assignment = {}
         for s, _ in self.converter.declared_vars.items():
             assignment[s] = self.get_value(s)
-        return EagerModel(assignment=assignment, environment=self.environment)
+        return EagerModel(assignment=assignment, env=self.env)
 
     @clear_pending_pop
     def _solve(self, assumptions=None):
@@ -302,7 +302,7 @@ class BoolectorSolver(IncrementalTrackingSolver, UnsatCoreSolver,
 
     def get_value(self, item):
         self._assert_no_function_type(item)
-        itype = item.get_type()
+        itype = self.env.stc.get_type(item)
         titem = self.converter.convert(item)
         if itype.is_bv_type():
             return self.mgr.BV(titem.assignment, item.bv_width())
@@ -327,10 +327,10 @@ class BoolectorSolver(IncrementalTrackingSolver, UnsatCoreSolver,
 
 class BTORConverter(Converter, DagWalker):
 
-    def __init__(self, environment, btor):
-        DagWalker.__init__(self, environment)
-        self.mgr = environment.formula_manager
-        self._get_type = environment.stc.get_type
+    def __init__(self, env, btor):
+        DagWalker.__init__(self, env)
+        self.mgr = env.formula_manager
+        self._get_type = env.stc.get_type
         self._back_memoization = {}
         self._btor = btor
         self.declared_vars = {}

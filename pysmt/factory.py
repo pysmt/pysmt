@@ -56,11 +56,11 @@ class Factory(object):
     is_sat, is_unsat etc.
 
     """
-    def __init__(self, environment,
+    def __init__(self, env,
                  solver_preference_list=None,
                  qelim_preference_list=None,
                  interpolation_preference_list=None):
-        self.environment = environment
+        self.env = env
         self._all_solvers = None
         self._all_unsat_core_solvers = None
         self._all_qelims = None
@@ -95,7 +95,7 @@ class Factory(object):
                                   name=name,
                                   logic=logic)
 
-        return SolverClass(environment=self.environment,
+        return SolverClass(env=self.env,
                            logic=closer_logic,
                            **options)
 
@@ -109,7 +109,7 @@ class Factory(object):
                                   default_logic=self.default_logic,
                                   name=name,
                                   logic=logic)
-        return SolverClass(environment=self.environment,
+        return SolverClass(env=self.env,
                            logic=closer_logic,
                            generate_models=True,
                            unsat_cores_mode=unsat_cores_mode,
@@ -124,7 +124,7 @@ class Factory(object):
                                   name=name,
                                   logic=logic)
 
-        return SolverClass(environment=self.environment,
+        return SolverClass(env=self.env,
                            logic=closer_logic)
 
     def get_interpolator(self, name=None, logic=None):
@@ -136,7 +136,7 @@ class Factory(object):
                                   name=name,
                                   logic=logic)
 
-        return SolverClass(environment=self.environment,
+        return SolverClass(env=self.env,
                            logic=closer_logic)
 
 
@@ -453,10 +453,10 @@ class Factory(object):
 
     def is_sat(self, formula, solver_name=None, logic=None, portfolio=None):
         if logic is None or logic == AUTO_LOGIC:
-            logic = get_logic(formula, self.environment)
+            logic = get_logic(formula, self.env)
         if portfolio is not None:
             solver = Portfolio(solvers_set=portfolio,
-                               environment=self.environment,
+                               env=self.env,
                                logic=logic,
                                generate_models=False, incremental=False)
         else:
@@ -467,7 +467,7 @@ class Factory(object):
 
     def get_model(self, formula, solver_name=None, logic=None):
         if logic is None or logic == AUTO_LOGIC:
-            logic = get_logic(formula, self.environment)
+            logic = get_logic(formula, self.env)
         with self.Solver(name=solver_name, logic=logic,
                          generate_models=True,
                          incremental=False) as solver:
@@ -478,9 +478,9 @@ class Factory(object):
 
     def get_implicant(self, formula, solver_name=None,
                       logic=None):
-        mgr = self.environment.formula_manager
+        mgr = self.env.formula_manager
         if logic is None or logic == AUTO_LOGIC:
-            logic = get_logic(formula, self.environment)
+            logic = get_logic(formula, self.env)
 
         with self.Solver(name=solver_name, logic=logic) \
              as solver:
@@ -493,7 +493,7 @@ class Factory(object):
                 atoms = formula.get_atoms()
                 res = []
                 for a in atoms:
-                    fv = a.get_free_variables()
+                    fv = self.env.fvo.get_free_variables(a)
                     if any(v in model for v in fv):
                         if solver.get_value(a).is_true():
                             res.append(a)
@@ -504,8 +504,8 @@ class Factory(object):
 
     def get_unsat_core(self, clauses, solver_name=None, logic=None):
         if logic is None or logic == AUTO_LOGIC:
-            logic = get_logic(self.environment.formula_manager.And(clauses),
-                              self.environment)
+            logic = get_logic(self.env.formula_manager.And(clauses),
+                              self.env)
 
         with self.UnsatCoreSolver(name=solver_name, logic=logic) \
              as solver:
@@ -519,10 +519,10 @@ class Factory(object):
 
     def is_valid(self, formula, solver_name=None, logic=None, portfolio=None):
         if logic is None or logic == AUTO_LOGIC:
-            logic = get_logic(formula, self.environment)
+            logic = get_logic(formula, self.env)
         if portfolio is not None:
             solver = Portfolio(solvers_set=portfolio,
-                               environment=self.environment,
+                               env=self.env,
                                logic=logic,
                                generate_models=False, incremental=False)
         else:
@@ -533,10 +533,10 @@ class Factory(object):
 
     def is_unsat(self, formula, solver_name=None, logic=None, portfolio=None):
         if logic is None or logic == AUTO_LOGIC:
-            logic = get_logic(formula, self.environment)
+            logic = get_logic(formula, self.env)
         if portfolio is not None:
             solver = Portfolio(solvers_set=portfolio,
-                               environment=self.environment,
+                               env=self.env,
                                logic=logic,
                                generate_models=False, incremental=False)
         else:
@@ -547,7 +547,7 @@ class Factory(object):
 
     def qelim(self, formula, solver_name=None, logic=None):
         if logic is None or logic == AUTO_LOGIC:
-            logic = get_logic(formula, self.environment)
+            logic = get_logic(formula, self.env)
 
         with self.QuantifierEliminator(name=solver_name, logic=logic) as qe:
             return qe.eliminate_quantifiers(formula)
@@ -556,7 +556,7 @@ class Factory(object):
     def binary_interpolant(self, formula_a, formula_b,
                            solver_name=None, logic=None):
         if logic is None or logic == AUTO_LOGIC:
-            _And = self.environment.formula_manager.And
+            _And = self.env.formula_manager.And
             logic = get_logic(_And(formula_a, formula_b))
 
         with self.Interpolator(name=solver_name, logic=logic) as itp:
@@ -565,7 +565,7 @@ class Factory(object):
 
     def sequence_interpolant(self, formulas, solver_name=None, logic=None):
         if logic is None or logic == AUTO_LOGIC:
-            _And = self.environment.formula_manager.And
+            _And = self.env.formula_manager.And
             logic = get_logic(_And(formulas))
 
         with self.Interpolator(name=solver_name, logic=logic) as itp:
