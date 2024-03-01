@@ -343,8 +343,7 @@ class SmtDagPrinter(DagWalker):
         if formula.is_quantifier():
             # 1. We invoke the relevant function (walk_exists or
             #    walk_forall) to print the formula
-            fun = self.functions[formula.node_type()]
-            res = fun(formula, args=None, **kwargs)
+            res = self.__class__.super(self, formula, args=None, **kwargs)
 
             # 2. We memoize the result
             key = self._get_key(formula, **kwargs)
