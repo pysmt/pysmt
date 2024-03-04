@@ -210,7 +210,6 @@ class TestBasic(TestCase):
     def test_examples_cvc4(self):
         for (f, validity, satisfiability, logic) in get_example_formulae():
             if not logic.theory.linear: continue
-            if logic.theory.arrays_const: continue
             try:
                 v = is_valid(f, solver_name='cvc4', logic=logic)
                 s = is_sat(f, solver_name='cvc4', logic=logic)

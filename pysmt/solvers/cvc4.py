@@ -25,7 +25,7 @@ except ImportError:
     raise SolverAPINotFound
 
 import pysmt.typing as types
-from pysmt.logics import PYSMT_LOGICS, ARRAYS_CONST_LOGICS
+from pysmt.logics import PYSMT_LOGICS
 
 from pysmt.solvers.solver import Solver, Converter, SolverOptions
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
@@ -77,7 +77,6 @@ class CVC4Options(SolverOptions):
 class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
     LOGICS = PYSMT_LOGICS -\
-             ARRAYS_CONST_LOGICS -\
              set(l for l in PYSMT_LOGICS if not l.theory.linear)
 
     OptionsClass = CVC4Options
@@ -111,7 +110,9 @@ class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         self.cvc4 = CVC4.SmtEngine(self.em); self.cvc4.thisown=1
         self.options(self)
         self.declarations = set()
-        self.cvc4.setLogic(self.logic_name)
+        # remove extra characters from logic_name
+        logic = self.logic_name.replace("*", "")
+        self.cvc4.setLogic(logic)
 
     def declare_variable(self, var):
         raise NotImplementedError
@@ -250,11 +251,7 @@ class CVC4Converter(Converter, DagWalker):
                 v = expr.getConstString()
                 res = self.mgr.String(v.toString())
             elif expr.getType().isArray():
-                const_ = expr.getConstArrayStoreAll()
-                array_type = self._cvc4_type_to_type(const_.getType())
-                base_value = self.back(const_.getExpr())
-                res = self.mgr.Array(array_type.index_type,
-                                     base_value)
+                res  = self.__arrays_back(expr)
             else:
                 raise PysmtTypeError("Unsupported constant type:",
                                      expr.getType().toString())
@@ -262,6 +259,43 @@ class CVC4Converter(Converter, DagWalker):
             raise PysmtTypeError("Unsupported expression:", expr.toString())
 
         return res
+
+    def __arrays_back(self, arr_expr):
+        '''
+        Helper function to take a CVC4 array and make an Array
+        '''
+        assert arr_expr.getType().isArray(), "Expecting a CVC4 array"
+        to_visit = [arr_expr]
+        visited = set()
+        pysmt_expr = dict()
+        while to_visit:
+            expr = to_visit.pop()
+            if expr not in visited:
+                to_visit.append(expr)
+                visited.add(expr)
+                for c in expr.getChildren():
+                    to_visit.append(c)
+            else:
+                if expr.getType().isArray():
+                    if expr.getNumChildren() == 3:
+                        children = expr.getChildren()
+                        pysmt_expr[expr.getId()] = self.mgr.Store(pysmt_expr[children[0].getId()],
+                                                                  pysmt_expr[children[1].getId()],
+                                                                  pysmt_expr[children[2].getId()])
+                    else:
+                        # CVC4 stores arrays as a sequence of stores on a StoreAll node
+                        # the StoreAll node keeps a constant of the element type at every index
+                        # this is base_value below
+                        const_ = expr.getConstArrayStoreAll()
+                        array_type = self._cvc4_type_to_type(const_.getType())
+                        base_value = self.back(const_.getExpr())
+                        pysmt_expr[expr.getId()] = self.mgr.Array(array_type.index_type,
+                                                                  base_value)
+                else:
+                    pysmt_expr[expr.getId()] = self.back(expr)
+
+        return pysmt_expr[arr_expr.getId()]
+
 
     @catch_conversion_error
     def convert(self, formula):
@@ -336,6 +370,13 @@ class CVC4Converter(Converter, DagWalker):
 
     def walk_array_select(self, formula, args, **kwargs):
         return self.mkExpr(CVC4.SELECT, args[0], args[1])
+
+    def walk_array_value(self, formula, args, **kwargs):
+        arr_type = self.env.stc.get_type(formula)
+        rval = self.mkConst(CVC4.ArrayStoreAll(self._type_to_cvc4(arr_type), args[0]))
+        for i, c in enumerate(args[1::2]):
+            rval = self.mkExpr(CVC4.STORE, rval, c, args[(i*2)+2])
+        return rval
 
     def walk_minus(self, formula, args, **kwargs):
         return self.mkExpr(CVC4.MINUS, args[0], args[1])
