@@ -24,7 +24,7 @@ these operators.
 from itertools import chain
 
 
-ALL_TYPES = list(range(0,66))
+ALL_TYPES = list(range(0,69))
 
 (
 FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF, # Boolean Logic (0-6)
@@ -78,13 +78,18 @@ DIV,                                        # Arithmetic Division (62)
 POW,                                        # Arithmetic Power (63)
 ALGEBRAIC_CONSTANT,                         # Algebraic Number (64)
 BV_TONATURAL,                               # BV to Natural Conversion (65)
+PBLE,                                       # Pseudo-Boolean LE (66)
+PBGE,                                       # Pseudo-Boolean GE (67)
+PBEQ,                                       # Pseudo-Boolean EQUAL (68)
 ) = ALL_TYPES
 
 QUANTIFIERS = frozenset([FORALL, EXISTS])
 
 BOOL_CONNECTIVES = frozenset([AND, OR, NOT, IMPLIES, IFF])
 
-BOOL_OPERATORS = frozenset(QUANTIFIERS | BOOL_CONNECTIVES)
+PSEUDO_BOOLEAN = frozenset([PBLE, PBGE, PBEQ])
+
+BOOL_OPERATORS = frozenset(QUANTIFIERS | PSEUDO_BOOLEAN | BOOL_CONNECTIVES)
 
 CONSTANTS = frozenset([BOOL_CONSTANT, REAL_CONSTANT, INT_CONSTANT,
                        BV_CONSTANT, STR_CONSTANT, ALGEBRAIC_CONSTANT])
@@ -222,4 +227,7 @@ __OP_STR__ = {
     DIV: "DIV",
     POW: "POW",
     ALGEBRAIC_CONSTANT: "ALGEBRAIC_CONSTANT",
+    PBLE: "PBLE",
+    PBGE: "PBGE",
+    PBEQ: "PBEQ"
 }
