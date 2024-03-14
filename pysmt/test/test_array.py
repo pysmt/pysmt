@@ -77,11 +77,10 @@ class TestArray(TestCase):
             btor.add_assertion(formula)
 
     @skipIfSolverNotAvailable("btor")
-    def test_btor_does_not_support_const_arryas(self):
-        with self.assertRaises(ConvertExpressionError):
-            btor = Solver(name="btor")
-            btor.add_assertion(Equals(Array(BV8, BV(0, 8)),
-                                      FreshSymbol(ArrayType(BV8, BV8))))
+    def test_btor_supports_const_arryas(self):
+        formula = Equals(Array(BV8, BV(0, 8)),
+                                    FreshSymbol(ArrayType(BV8, BV8)))
+        self.assertSat(formula, logic=QF_AUFBV, solver_name="btor")
 
     def test_complex_types(self):
         with self.assertRaises(PysmtTypeError):

@@ -33,7 +33,7 @@ from pysmt.walkers import DagWalker
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               ConvertExpressionError, PysmtValueError)
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
-from pysmt.logics import QF_BV, QF_UFBV, QF_ABV, QF_AUFBV, QF_AX
+from pysmt.logics import QF_BV, QF_UFBV, QF_ABV, QF_AUFBV, QF_AX, ARRAYS_CONST_LOGICS
 from pysmt.constants import to_python_integer
 
 
@@ -177,7 +177,7 @@ class BoolectorOptions(SolverOptions):
 class BoolectorSolver(IncrementalTrackingSolver, UnsatCoreSolver,
                       SmtLibBasicSolver, SmtLibIgnoreMixin):
 
-    LOGICS = [QF_BV, QF_UFBV, QF_ABV, QF_AUFBV, QF_AX]
+    LOGICS = [QF_BV, QF_UFBV, QF_ABV, QF_AUFBV, QF_AX] + list(filter(lambda l: l.name in {'QF_ABV*', 'QF_AUFBV*', 'QF_AX*'}, ARRAYS_CONST_LOGICS))
     OptionsClass = BoolectorOptions
 
     def __init__(self, environment, logic, **options):
@@ -511,7 +511,14 @@ class BTORConverter(Converter, DagWalker):
         return self._btor.Read(args[0], args[1])
 
     def walk_array_value(self, formula, args, **kwargs):
-        raise ConvertExpressionError("btor does not support constant arrays")
+        arr_type = self.env.stc.get_type(formula)
+        arr_sort = self._type_to_btor(arr_type)
+        term = self._btor.ConstArray(arr_sort, args[0])
+
+        for i in range(1, len(args), 2):
+            term = self.walk_array_store(None, (term, args[i], args[i+1]))
+
+        return term
 
     def _type_to_btor(self, tp):
         if tp.is_bool_type():
@@ -523,7 +530,8 @@ class BTORConverter(Converter, DagWalker):
         elif tp.is_bv_type():
             return self._btor.BitVecSort(tp.width)
         elif tp.is_array_type():
-            raise ConvertExpressionError("Unsupported Array Type")
+            return self._btor.ArraySort(self._type_to_btor(tp.index_type),
+                                   self._type_to_btor(tp.elem_type))
         else:
             assert tp.is_function_type() , "Unsupported type '%s'" % tp
             stps = [self._type_to_btor(x) for x in tp.param_types]
