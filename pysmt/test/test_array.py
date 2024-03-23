@@ -19,10 +19,10 @@
 from pysmt.test import TestCase, main
 from pysmt.test import skipIfNoSolverForLogic, skipIfSolverNotAvailable
 from pysmt.logics import QF_AUFLIA, QF_AUFBV
-from pysmt.typing import ARRAY_INT_INT, ArrayType, INT, REAL, BV8
+from pysmt.typing import ARRAY_INT_INT, ArrayType, INT, REAL, BV8, BOOL
 from pysmt.shortcuts import (Solver,
                              Symbol, Not, Equals, Int, BV, Real, FreshSymbol,
-                             Select, Store, Array)
+                             Select, Store, Array, TRUE)
 from pysmt.exceptions import ConvertExpressionError, PysmtTypeError, PysmtValueError
 
 
@@ -80,6 +80,16 @@ class TestArray(TestCase):
     def test_btor_supports_const_arrays(self):
         formula = Equals(Array(BV8, BV(0, 8)),
                                     FreshSymbol(ArrayType(BV8, BV8)))
+        self.assertSat(formula, logic=QF_AUFBV, solver_name="btor")
+
+    @skipIfSolverNotAvailable("btor")
+    def test_btor_support_bool_as_array_indices(self):
+        formula = Equals(Array(BOOL, BV(0, 8)), FreshSymbol(ArrayType(BOOL, BV8)))
+        self.assertSat(formula, logic=QF_AUFBV, solver_name="btor")
+
+    @skipIfSolverNotAvailable("btor")
+    def test_btor_support_bool_as_array_elements(self):
+        formula = Equals(Array(BV8, TRUE()), FreshSymbol(ArrayType(BV8, BOOL)))
         self.assertSat(formula, logic=QF_AUFBV, solver_name="btor")
 
     def test_complex_types(self):
