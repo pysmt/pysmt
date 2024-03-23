@@ -77,7 +77,7 @@ class TestArray(TestCase):
             btor.add_assertion(formula)
 
     @skipIfSolverNotAvailable("btor")
-    def test_btor_supports_const_arryas(self):
+    def test_btor_supports_const_arrays(self):
         formula = Equals(Array(BV8, BV(0, 8)),
                                     FreshSymbol(ArrayType(BV8, BV8)))
         self.assertSat(formula, logic=QF_AUFBV, solver_name="btor")
