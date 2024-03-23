@@ -322,7 +322,7 @@ class BoolectorSolver(IncrementalTrackingSolver, UnsatCoreSolver,
         else:
             assert itype.is_array_type()
             assert itype.index_type.is_bv_type() or itype.index_type.is_bool_type()
-            assert itype.elem_type.is_bv_type() or itype.index_type.is_bool_type()
+            assert itype.elem_type.is_bv_type() or itype.elem_type.is_bool_type()
 
             if itype.index_type.is_bv_type():
                 _back_index = _back_bv_func(itype.index_type.width)
