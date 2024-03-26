@@ -33,7 +33,7 @@ from pysmt.walkers import DagWalker
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               ConvertExpressionError, PysmtValueError)
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
-from pysmt.logics import QF_BV, QF_UFBV, QF_ABV, QF_AUFBV, QF_AX
+from pysmt.logics import QF_BV, QF_UFBV, QF_ABV, QF_AUFBV, QF_AX, ARRAYS_CONST_LOGICS
 from pysmt.constants import to_python_integer
 
 
@@ -140,22 +140,20 @@ class BoolectorOptions(SolverOptions):
                                  pyboolector.BTOR_OPT_RW_ZERO_LOWER_SLICE,
                                  pyboolector.BTOR_OPT_NONDESTR_SUBST]
 
-
-
     def _set_option(self, btor, name, value):
-        available_options = {pyboolector.BoolectorOpt(btor, io).lng : io
+        available_options = {pyboolector.BoolectorOpt(btor, io).lng: io
                              for io in self.internal_options}
         try:
             btor.Set_opt(available_options[name], value)
         except TypeError:
-            raise PysmtValueError("Error setting the option '%s=%s'" \
-                                  % (name,value))
+            raise PysmtValueError("Error setting the option '%s=%s'"
+                                  % (name, value))
         except pyboolector.BoolectorException:
-            raise PysmtValueError("Error setting the option '%s=%s'" \
-                                  % (name,value))
+            raise PysmtValueError("Error setting the option '%s=%s'"
+                                  % (name, value))
         except KeyError:
             raise PysmtValueError("Unable to set non-existing option '%s'. "
-                                  "The accepted options options are: %s" \
+                                  "The accepted options options are: %s"
                                   % (name, ", ".join(pyboolector.BoolectorOpt(btor, io).lng
                                                      for io in self.internal_options)))
 
@@ -167,7 +165,7 @@ class BoolectorOptions(SolverOptions):
         if self.incrementality:
             self._set_option(solver.btor, "incremental", 1)
 
-        for k,v in self.solver_options.items():
+        for k, v in self.solver_options.items():
             # Note: Options values in btor are mostly integers
             self._set_option(solver.btor, str(k), v)
 
@@ -177,7 +175,9 @@ class BoolectorOptions(SolverOptions):
 class BoolectorSolver(IncrementalTrackingSolver, UnsatCoreSolver,
                       SmtLibBasicSolver, SmtLibIgnoreMixin):
 
-    LOGICS = [QF_BV, QF_UFBV, QF_ABV, QF_AUFBV, QF_AX]
+    LOGICS = [QF_BV, QF_UFBV, QF_ABV, QF_AUFBV, QF_AX] + \
+        list(filter(lambda l: l.name in {
+             'QF_ABV*', 'QF_AUFBV*', 'QF_AX*'}, ARRAYS_CONST_LOGICS))
     OptionsClass = BoolectorOptions
 
     def __init__(self, environment, logic, **options):
@@ -258,7 +258,8 @@ class BoolectorSolver(IncrementalTrackingSolver, UnsatCoreSolver,
             unsat_core = set()
             # relies on this assertion stack being ordered
             assert isinstance(self._assertion_stack, list)
-            btor_assertions = [self.converter.convert(a) for a in self._assertion_stack]
+            btor_assertions = [self.converter.convert(
+                a) for a in self._assertion_stack]
             in_unsat_core = self.btor.Failed(*btor_assertions)
             for a, in_core in zip(self._assertion_stack, in_unsat_core):
                 if in_core:
@@ -276,7 +277,8 @@ class BoolectorSolver(IncrementalTrackingSolver, UnsatCoreSolver,
             unsat_core = {}
             # relies on this assertion stack being ordered
             assert isinstance(self._assertion_stack, list)
-            btor_named_assertions = [self.converter.convert(a) for a in self._named_assertions.keys()]
+            btor_named_assertions = [self.converter.convert(
+                a) for a in self._named_assertions.keys()]
             in_unsat_core = self.btor.Failed(*btor_named_assertions)
             for a, in_core in zip(self._assertion_stack, in_unsat_core):
                 if in_core:
@@ -304,22 +306,46 @@ class BoolectorSolver(IncrementalTrackingSolver, UnsatCoreSolver,
         self._assert_no_function_type(item)
         itype = item.get_type()
         titem = self.converter.convert(item)
+
+        def _back_bv_func(width):
+            def _back_bv(assignment):
+                return self.mgr.BV(assignment, width)
+            return _back_bv
+
+        def _back_bool(assignment):
+            return self.mgr.Bool(bool(int(assignment)))
+
         if itype.is_bv_type():
-            return self.mgr.BV(titem.assignment, item.bv_width())
+            return _back_bv_func(item.bv_width())(titem.assignment)
         elif itype.is_bool_type():
-            return self.mgr.Bool(bool(int(titem.assignment)))
+            return _back_bool(titem.assignment)
         else:
             assert itype.is_array_type()
-            assert itype.index_type.is_bv_type()
-            assert itype.elem_type.is_bv_type()
+            assert itype.index_type.is_bv_type() or itype.index_type.is_bool_type()
+            assert itype.elem_type.is_bv_type() or itype.elem_type.is_bool_type()
 
-            idx_width = itype.index_type.width
-            val_width = itype.elem_type.width
+            if itype.index_type.is_bv_type():
+                _back_index = _back_bv_func(itype.index_type.width)
+            else:
+                _back_index = _back_bool
+
+            if itype.elem_type.is_bv_type():
+                _back_elem = _back_bv_func(itype.elem_type.width)
+                default_elem = self.mgr.BV(0, itype.elem_type.width)
+            else:
+                _back_elem = _back_bool
+                default_elem = self.mgr.Bool(False)
+
             assign = {}
             for (idx, val) in titem.assignment:
-                assign[self.mgr.BV(idx, idx_width)] = self.mgr.BV(val, val_width)
+                elem_value = _back_elem(val)
+                if idx == '*':
+                    default_elem = elem_value
+                else:
+                    assign[_back_index(idx)] = elem_value
+
             return self.mgr.Array(itype.index_type,
-                                  self.mgr.BV(0, val_width), assign)
+                                  default_elem, assign)
 
     def _exit(self):
         del self.btor
@@ -374,7 +400,8 @@ class BTORConverter(Converter, DagWalker):
     def walk_symbol(self, formula, **kwargs):
         symbol_type = formula.symbol_type()
         if symbol_type.is_bool_type():
-            res = self._btor.Var(self._btor.BitVecSort(1), formula.symbol_name())
+            res = self._btor.Var(self._btor.BitVecSort(1),
+                                 formula.symbol_name())
         elif symbol_type.is_real_type():
             raise ConvertExpressionError
         elif symbol_type.is_int_type():
@@ -383,11 +410,13 @@ class BTORConverter(Converter, DagWalker):
             # BTOR supports only Arrays of Type (BV, BV)
             index_type = symbol_type.index_type
             elem_type = symbol_type.elem_type
-            if not (index_type.is_bv_type() and elem_type.is_bv_type()):
-                raise ConvertExpressionError("BTOR supports only Array(BV,BV). "\
+            if not (index_type.is_bv_type() or index_type.is_bool_type()) or not (elem_type.is_bv_type() or elem_type.is_bool_type()):
+                raise ConvertExpressionError("BTOR supports only Array(BV,BV). "
                                              "Type '%s' was given." % str(symbol_type))
-            res = self._btor.Array(self._btor.ArraySort(self._btor.BitVecSort(index_type.width),
-                                                        self._btor.BitVecSort(elem_type.width)),
+            index_width = index_type.width if index_type.is_bv_type() else 1
+            elem_width = elem_type.width if elem_type.is_bv_type() else 1
+            res = self._btor.Array(self._btor.ArraySort(self._btor.BitVecSort(index_width),
+                                                        self._btor.BitVecSort(elem_width)),
                                    formula.symbol_name())
         elif symbol_type.is_bv_type():
             res = self._btor.Var(self._btor.BitVecSort(formula.bv_width()),
@@ -474,11 +503,11 @@ class BTORConverter(Converter, DagWalker):
 
     def walk_bv_rol(self, formula, args, **kwargs):
         return self._btor.Rol(args[0],
-                             formula.bv_rotation_step())
+                              formula.bv_rotation_step())
 
     def walk_bv_ror(self, formula, args, **kwargs):
         return self._btor.Ror(args[0],
-                             formula.bv_rotation_step())
+                              formula.bv_rotation_step())
 
     def walk_bv_zext(self, formula, args, **kwargs):
         return self._btor.Uext(args[0], formula.bv_extend_step())
@@ -501,7 +530,7 @@ class BTORConverter(Converter, DagWalker):
     def walk_bv_srem(self, formula, args, **kwargs):
         return self._btor.Srem(args[0], args[1])
 
-    def walk_bv_ashr (self, formula, args, **kwargs):
+    def walk_bv_ashr(self, formula, args, **kwargs):
         return self._btor.Sra(args[0], args[1])
 
     def walk_array_store(self, formula, args, **kwargs):
@@ -511,7 +540,14 @@ class BTORConverter(Converter, DagWalker):
         return self._btor.Read(args[0], args[1])
 
     def walk_array_value(self, formula, args, **kwargs):
-        raise ConvertExpressionError("btor does not support constant arrays")
+        arr_type = self.env.stc.get_type(formula)
+        arr_sort = self._type_to_btor(arr_type)
+        term = self._btor.ConstArray(arr_sort, args[0])
+
+        for i in range(1, len(args), 2):
+            term = self.walk_array_store(None, (term, args[i], args[i+1]))
+
+        return term
 
     def _type_to_btor(self, tp):
         if tp.is_bool_type():
@@ -523,9 +559,10 @@ class BTORConverter(Converter, DagWalker):
         elif tp.is_bv_type():
             return self._btor.BitVecSort(tp.width)
         elif tp.is_array_type():
-            raise ConvertExpressionError("Unsupported Array Type")
+            return self._btor.ArraySort(self._type_to_btor(tp.index_type),
+                                        self._type_to_btor(tp.elem_type))
         else:
-            assert tp.is_function_type() , "Unsupported type '%s'" % tp
+            assert tp.is_function_type(), "Unsupported type '%s'" % tp
             stps = [self._type_to_btor(x) for x in tp.param_types]
             rtp = self._type_to_btor(tp.return_type)
             return self._btor.FunSort(stps, rtp)

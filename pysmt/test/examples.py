@@ -864,6 +864,12 @@ def get_full_example_formulae(environment=None):
                     logic=pysmt.logics.get_logic_by_name("QF_AUFBVLIRA*")
                 ),
 
+            Example(hr="((Array{BV{8}, BV{8}}(0_8)[1_8 := 42_8] = abb) & (abb[1_8] = 42_8))",
+                    expr=And(Equals(Array(BV8, BV(0, 8), {BV(1, 8) : BV(42, 8)}), abb), Equals(Select(abb, BV(1, 8)), BV(42, 8))),
+                    is_valid=False,
+                    is_sat=True,
+                    logic=pysmt.logics.get_logic_by_name("QF_ABV*")
+                ),
 
             Example(hr="((a_arb_aii = Array{Array{Real, BV{8}}, Array{Int, Int}}(Array{Int, Int}(7))) -> (a_arb_aii[arb][42] = 7))",
                     expr=Implies(Equals(nested_a, Array(ArrayType(REAL, BV8),
