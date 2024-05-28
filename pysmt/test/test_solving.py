@@ -287,6 +287,10 @@ class TestBasic(TestCase):
     def test_model_picosat(self):
         self.do_model("picosat")
 
+    @skipIfSolverNotAvailable("btor")
+    def test_model_btor(self):
+        self.do_model("btor")
+
     @skipIfSolverNotAvailable("z3")
     def test_tactics_z3(self):
         from z3 import Tactic, Then

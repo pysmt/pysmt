@@ -802,7 +802,7 @@ class FormulaManager(object):
                                 payload=(left.bv_width(),))
 
     def BVURem(self, left, right):
-        """Returns the reminder of the two BV."""
+        """Returns the remainder of the two BV."""
         return self.create_node(node_type=op.BV_UREM,
                                 args=(left, right),
                                 payload=(left.bv_width(),))

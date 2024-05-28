@@ -22,8 +22,7 @@ import subprocess
 import urllib.request
 
 from contextlib import contextmanager
-from distutils import spawn
-from distutils.dist import Distribution
+from setuptools import Distribution
 
 from urllib.error import HTTPError, URLError
 
@@ -304,14 +303,14 @@ class SolverInstaller(object):
         command = None
         for alt in alternatives:
             name = command_tplate % alt
-            command = spawn.find_executable(name)
+            command = shutil.which(name)
             if command is not None:
                 break
         return command
 
 
 def package_install_site(name='', user=False, plat_specific=False):
-    """pip-inspired, distutils-based method for fetching the
+    """pip-inspired method for fetching the
     default install location (site-packages path).
 
     Returns virtual environment or system site-packages, unless
