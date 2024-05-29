@@ -417,7 +417,6 @@ class InterpreterOMT(InterpreterSMT):
     def __init__(self):
         self.optimization_goals = ([],[])
         self.opt_priority = "single-obj"
-        self.paretogen = None
 
     def evaluate(self, cmd, solver):
         return self._omt_evaluate(cmd, solver)
@@ -428,53 +427,66 @@ class InterpreterOMT(InterpreterSMT):
             if cmd.args[0] == ":opt.priority":
                 self.opt_priority = cmd.args[1]
 
-        if cmd.name == smtcmd.MAXIMIZE:
+        elif cmd.name == smtcmd.MAXIMIZE:
             rt = MaximizationGoal(cmd.args[0])
             self.optimization_goals[0].append(rt)
             return rt
+
         elif cmd.name == smtcmd.MINIMIZE:
             rt = MinimizationGoal(cmd.args[0])
             self.optimization_goals[0].append(rt)
             return rt
+
         elif cmd.name == smtcmd.CHECK_SAT:
+            if len(self.optimization_goals[0]) == 0:
+                # If there are no optimization objectives, then we default to normal SMT check-sat
+                return self._smt_evaluate(cmd, optimizer)
+
             self.optimization_goals[1].clear()
             rt = False
             if self.opt_priority == "single-obj":
-                for g in self.optimization_goals[0]:
-                    self.optimization_goals[1].append((g.term(), optimizer.optimize(g)[1]))
                 rt = True
+                for g in self.optimization_goals[0]:
+                    solver_res = optimizer.optimize(g)
+                    if solver_res is None:
+                        rt = False
+                        break
+                    self.optimization_goals[1].append((g.term(), solver_res[1]))
+
             elif self.opt_priority == "pareto":
-                if self.paretogen is None:
-                    self.paretogen = optimizer.pareto_optimize(self.optimization_goals[0])
-                try:
-                    model, values = next(self.paretogen)
+                for model, values in optimizer.pareto_optimize(self.optimization_goals[0]):
                     rt = True
                     for (g, v) in zip(self.optimization_goals[0], values):
                         self.optimization_goals[1].append((g.term(), v))
-                except StopIteration:
-                    rt = False
+
             elif self.opt_priority == "box":
-                models = optimizer.boxed_optimize(self.optimization_goals[0])
-                if models is not None:
+                results = optimizer.boxed_optimize(self.optimization_goals[0])
+                if results is not None:
                     rt = True
                     for g in self.optimization_goals[0]:
-                        self.optimization_goals[1].append((g.term(), models.get(g)[1]))
+                        self.optimization_goals[1].append((g.term(), results[g][1]))
+
             elif self.opt_priority == "lex":
-                model, values = optimizer.lexicographic_optimize(self.optimization_goals[0])
-                if model is not None:
+                results = optimizer.lexicographic_optimize(self.optimization_goals[0])
+                if results is not None:
+                    _, values = results
                     rt = True
                     for (g,v) in zip(self.optimization_goals[0], values):
                         self.optimization_goals[1].append((g.term(), v))
             return rt
+
         elif cmd.name == smtcmd.MAXMIN:
             rt = MaxMinGoal(cmd.args[0])
             self.optimization_goals[0].append(rt)
             return rt
+
         elif cmd.name == smtcmd.MINMAX:
             rt = MinMaxGoal(cmd.args[0])
             self.optimization_goals[0].append(rt)
             return rt
+
         elif cmd.name == smtcmd.GET_OBJECTIVES:
             return self.optimization_goals[1]
+
         else:
             return self._smt_evaluate(cmd, optimizer)

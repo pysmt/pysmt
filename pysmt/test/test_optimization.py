@@ -271,9 +271,8 @@ class TestOptimization(TestCase):
             with Optimizer(name=oname) as opt:
                 opt.add_assertion(f1)
                 opt.add_assertion(f2)
-                model, values = opt.lexicographic_optimize([obj1, obj2, obj3, obj4, obj5])
-                self.assertTrue(model is None)
-                self.assertTrue(values is None)
+                res = opt.lexicographic_optimize([obj1, obj2, obj3, obj4, obj5])
+                self.assertIsNone(res)
 
     @skipIfNoOptimizerForLogic(QF_LIA)
     def test_unsat(self):

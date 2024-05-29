@@ -333,7 +333,7 @@ class ExternalOptimizerMixin(Optimizer):
         for goal in goals:
             if goal.is_maximization_goal() or goal.is_minimization_goal() or goal.is_maxsmt_goal():
                 t = self.optimize(goal = goal,strategy = strategy)
-                if t != None:
+                if t is not None:
                     rt[goal] = t
                 else:
                     return None
@@ -348,7 +348,7 @@ class ExternalOptimizerMixin(Optimizer):
             temp = self._lexicographic_opt(client_data, goal, strategy)
             if temp is None:
                 self._cleanup(client_data)
-                return None, None
+                return None
             else:
                 model, val = temp
             rt.append(val)
@@ -393,7 +393,9 @@ class ExternalOptimizerMixin(Optimizer):
 
         self._cleanup(client_data)
 
-        return model, model.get_value(goal.term())
+        if model:
+            return model, model.get_value(goal.term())
+        return None
 
 
 

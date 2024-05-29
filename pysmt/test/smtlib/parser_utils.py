@@ -60,6 +60,7 @@ def execute_script_fname(smtfile, logic, expected_result):
             warnings.warn("Test (%s, %s) skipped because Boolector can't handle QF_UF." % (logic, smtfile))
             return
         log = script.evaluate(solver)
+        print(log)
     except NoSolverAvailableError:
         raise SkipTest("No solver for logic %s." % logic)
     except SolverReturnedUnknownResultError:
@@ -69,7 +70,7 @@ def execute_script_fname(smtfile, logic, expected_result):
         raise
 
     res = check_sat_filter(log)
-    assert expected_result == res
+    assert expected_result == res, (expected_result, res)
 
 
 def formulas_from_smtlib_test_set(logics=None):

@@ -55,13 +55,17 @@ class TestSmtLibSolver(TestCase):
         args = ["-o", "auto"]
         pysmtshell = PysmtShell(args)
         pysmtshell.smtlib_solver(f_in, f_out)
-        self.assertEqual(
+        self.assertIn(
             f_out.getvalue(),
-            """sat
+            ["""sat
+(objectives
+  (x 0.0)
+)
+""", """sat
 (objectives
   (x 0)
 )
-""",
+"""]
         )
 
     @skipIfNoOptimizerForLogic(QF_LRA)
@@ -83,13 +87,17 @@ class TestSmtLibSolver(TestCase):
         args = ["-o", "auto"]
         pysmtshell = PysmtShell(args)
         pysmtshell.smtlib_solver(f_in, f_out)
-        self.assertEqual(
+        self.assertIn(
             f_out.getvalue(),
-            """sat
+            ["""sat
+(objectives
+  (((x <= y) ? y : x) 4.0)
+)
+""", """sat
 (objectives
   (((x <= y) ? y : x) 4)
 )
-""",
+"""]
         )
 
     @skipIfNoOptimizerForLogic(QF_LIA)

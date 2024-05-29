@@ -118,7 +118,7 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
             model = Z3Model(self.environment, self.z3.model())
             return model, [model.get_value(x.term()) for x in goals]
         else:
-            return None, None
+            return None
 
 
 class Z3SUAOptimizer(Z3Solver, SUAOptimizerMixin):

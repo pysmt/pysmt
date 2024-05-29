@@ -176,7 +176,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
             model = self.get_model()
             return model, [model.get_value(x.term()) for x in goals]
         else:
-            return None, None
+            return None
 
     def boxed_optimize(self, goals):
         self._msat_lib.msat_set_opt_priority(self.msat_env(), "box")
@@ -185,8 +185,8 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
         for g in goals:
             msat_objs.append(self._assert_msat_goal(g))
 
-        temp = self.solve()
-        if not temp:
+        check = self.solve()
+        if not check:
             return None
 
         rt = {}
