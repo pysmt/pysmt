@@ -33,10 +33,10 @@ Installer = namedtuple("Installer",
                        ["InstallerClass", "version", "extra_params"])
 INSTALLERS = [
     Installer(MSatInstaller,    "5.6.10", {}),
-    Installer(CVC5Installer,    "1.0.8", {}),
-    Installer(Z3Installer,      "4.12.2", {"osx": "10.16"}),
+    Installer(CVC5Installer,    "1.1.2", {}),
+    Installer(Z3Installer,      "4.13.0", {"osx": "11.7.10"}),
     Installer(YicesInstaller,   "2.6.4", {"yices_api_version": "1.1.5"}),
-    Installer(BtorInstaller,    "3.2.2", {}),
+    Installer(BtorInstaller,    "3.2.3", {}),
     Installer(PicoSATInstaller, "965",
               {"pypicosat_minor_version" : "1708010052"}),
     Installer(CuddInstaller,    "2.0.3",
