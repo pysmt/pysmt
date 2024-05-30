@@ -122,13 +122,13 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
 
 
 class Z3SUAOptimizer(Z3Solver, SUAOptimizerMixin):
-    LOGICS = Z3Solver.LOGICS
+    LOGICS = set(x for x in Z3Solver.LOGICS if not x.theory.real_arithmetic and not x.theory.real_difference)
 
     def can_diverge_for_unbounded_cases(self):
         return True
 
 class Z3IncrementalOptimizer(Z3Solver, IncrementalOptimizerMixin):
-    LOGICS = Z3Solver.LOGICS
+    LOGICS = set(x for x in Z3Solver.LOGICS if not x.theory.real_arithmetic and not x.theory.real_difference)
 
     def can_diverge_for_unbounded_cases(self):
         return True

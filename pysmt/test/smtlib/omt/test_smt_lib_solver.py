@@ -31,7 +31,7 @@ class TestSmtLibSolver(TestCase):
         (check-sat)"""
         f_in = StringIO(txt)
         f_out = StringIO()
-        args = ""
+        args = ["-l", "QF_LRA"]
         pysmtshell = PysmtShell(args)
         pysmtshell.smtlib_solver(f_in, f_out)
         self.assertEqual(f_out.getvalue(), "sat\n")
@@ -84,7 +84,7 @@ class TestSmtLibSolver(TestCase):
 (get-objectives)"""
         f_in = StringIO(txt)
         f_out = StringIO()
-        args = ["-o", "auto"]
+        args = ["-o", "auto", "-l", "QF_LRA"]
         pysmtshell = PysmtShell(args)
         pysmtshell.smtlib_solver(f_in, f_out)
         self.assertIn(
@@ -273,7 +273,7 @@ sat
 (get-objectives)"""
         f_in = StringIO(txt)
         f_out = StringIO()
-        args = ["-o", "auto"]
+        args = ["-o", "auto", '-l', 'QF_LRA']
         pysmtshell = PysmtShell(args)
         pysmtshell.smtlib_solver(f_in, f_out)
         self.assertEqual(

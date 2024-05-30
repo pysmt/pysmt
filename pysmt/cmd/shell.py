@@ -28,7 +28,7 @@ from pysmt.typing import INT, REAL, BOOL, BVType, BV32
 from pysmt.smtlib.parser import SmtLibParser
 from pysmt.smtlib.script import InterpreterOMT, InterpreterSMT
 from pysmt.smtlib.commands import CHECK_SAT, GET_VALUE, GET_OBJECTIVES, ECHO
-from pysmt.optimization.goal import Goal
+from pysmt.logics import PYSMT_LOGICS
 
 welcome_msg = \
 """Welcome to pySMT!!!
@@ -85,7 +85,11 @@ class PysmtShell(object):
         parser.add_argument('--optimizer', '-o', metavar='opt_name', type=str,
                             choices=['auto'] + self.optimizers,
                             default=None,
-                            help='TODO')
+                            help='The OMT optimizer to use (default: auto)')
+        parser.add_argument('--logic', '-l', metavar='logic_name', type=str,
+                            choices=['auto'] + [str(l) for l in PYSMT_LOGICS],
+                            default=None,
+                            help='The logic to use for solver/optimizer selection (default: auto)')
         return parser
 
 
@@ -132,17 +136,21 @@ class PysmtShell(object):
         smt_parser = SmtLibParser()
         s_name = self.args.solver
         opt_name = self.args.optimizer
+        logic = self.args.logic
+        if logic == "auto":
+            logic = None
+
         if opt_name is not None:
             if opt_name == "auto":
-                solver = Optimizer()
+                solver = Optimizer(logic=logic)
             else:
-                solver = Optimizer(opt_name)
+                solver = Optimizer(name=opt_name, logic=logic)
             inter = InterpreterOMT()
         else:
             if s_name == "auto":
-                solver = Solver()
+                solver = Solver(logic=logic)
             else:
-                solver = Solver(name=s_name)
+                solver = Solver(name=s_name, logic=logic)
             inter = InterpreterSMT()
         for cmd in smt_parser.get_command_generator(stream_in):
             r = inter.evaluate(cmd, solver)

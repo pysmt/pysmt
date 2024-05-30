@@ -106,6 +106,9 @@ class MaximizationGoal(Goal):
     def is_maximization_goal(self):
         return True
 
+    def __repr__(self):
+        return "Maximize{%s}" % self.formula.serialize()
+
 
 
 class MinimizationGoal(Goal):
@@ -131,6 +134,9 @@ class MinimizationGoal(Goal):
 
     def is_minimization_goal(self):
         return True
+
+    def __repr__(self):
+        return "Minimize{%s}" % self.formula.serialize()
 
 
 class MinMaxGoal(MinimizationGoal):
@@ -159,6 +165,9 @@ class MinMaxGoal(MinimizationGoal):
     def is_minmax_goal(self):
         return True
 
+    def __repr__(self):
+        return "Minimize{Max{%s}}" % (", ".join(x.serialize() for x in self.terms))
+
 
 class MaxMinGoal(MaximizationGoal):
     """
@@ -186,6 +195,9 @@ class MaxMinGoal(MaximizationGoal):
     def is_maxmin_goal(self):
         return True
 
+    def __repr__(self):
+        return "Maximize{Min{%s}}" % (", ".join(x.serialize() for x in self.terms))
+
 
 class MaxSMTGoal(Goal):
     """
@@ -207,3 +219,6 @@ class MaxSMTGoal(Goal):
 
     def is_maxsmt_goal(self):
         return True
+
+    def __repr__(self):
+        return "MaxSMT{%s}" % (", ".join(x.serialize() for x in self.soft))
