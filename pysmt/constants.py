@@ -182,6 +182,15 @@ if USE_Z3:
         def __hash__(self):
             return hash(self.sexpr())
 
+        def __del__(self):
+            # This might be a small memory leak, but it seems that Z3 does not
+            # like subclassing z3.z3num.Numeral
+            #
+            # For some reason, it performs a double free, we need to investigate
+            # if this is a pysmt issue or a z3 issue. For now, we accept the
+            # minimal memory leak of the algebraic constants
+            pass
+
 else:
     class Numeral(object):
         """Represents a Number (Algebraic)"""
