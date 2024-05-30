@@ -50,9 +50,9 @@ jobs:
         include:
           - os: ubuntu-latest
             pysmt_solver: all
-          - os: macos-13
-            pysmt_solver: none
           - os: macos-latest
+            pysmt_solver: none
+          - os: macos-13
             pysmt_solver: msat
           - os: macos-13
             pysmt_solver: z3
