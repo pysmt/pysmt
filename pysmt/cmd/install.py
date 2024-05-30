@@ -36,7 +36,7 @@ INSTALLERS = [
     Installer(CVC5Installer,    "1.1.2", {}),
     Installer(CVC4Installer,    "1.7-prerelease",
               {"git_version" : "391ab9df6c3fd9a3771864900c1718534c1e4666"}),
-    Installer(Z3Installer,      "4.13.0", {"osx": "11.7.10"}),
+    Installer(Z3Installer,      "4.13.0", {}),
     Installer(YicesInstaller,   "2.6.4", {"yices_api_version": "1.1.5"}),
     Installer(BtorInstaller,    "3.2.3", {}),
     Installer(PicoSATInstaller, "965",
