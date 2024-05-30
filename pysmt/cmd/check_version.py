@@ -46,6 +46,10 @@ def check_version(module):
             solver = cvc5.Solver()
             version = solver.getVersion().decode('ascii')
 
+        elif module == "cvc4":
+            import CVC4
+            version = CVC4.Configuration_getVersionString()
+
         elif module == "picosat":
             import picosat
             version = picosat.picosat_version()

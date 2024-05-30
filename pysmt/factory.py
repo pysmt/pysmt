@@ -39,7 +39,7 @@ from pysmt.solvers.solver import SolverOptions
 from pysmt.solvers.portfolio import Portfolio
 
 DEFAULT_SOLVER_PREFERENCE_LIST = ['msat', 'z3', 'cvc5', 'yices', 'btor',
-                                  'picosat', 'bdd']
+                                  'picosat', 'bdd', 'cvc4']
 DEFAULT_QELIM_PREFERENCE_LIST = ['z3', 'msat_fm', 'msat_lw', 'bdd',
                                  'shannon', 'selfsub']
 DEFAULT_INTERPOLATION_PREFERENCE_LIST = ['msat']
@@ -232,6 +232,12 @@ class Factory(object):
         try:
             from pysmt.solvers.cvcfive import CVC5Solver
             installed_solvers['cvc5'] = CVC5Solver
+        except SolverAPINotFound:
+            pass
+
+        try:
+            from pysmt.solvers.cvcfour import CVC4Solver
+            installed_solvers['cvc4'] = CVC4Solver
         except SolverAPINotFound:
             pass
 
