@@ -230,7 +230,7 @@ class Factory(object):
             pass
 
         try:
-            from pysmt.solvers.cvc import CVC5Solver
+            from pysmt.solvers.cvcfive import CVC5Solver
             installed_solvers['cvc5'] = CVC5Solver
         except SolverAPINotFound:
             pass
