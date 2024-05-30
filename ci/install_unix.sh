@@ -6,6 +6,14 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 APT_UPDATED="false"
 
+if [[ "${AGENT_OS}" == *"macos"* ]];
+then
+    export PATH="/opt/homebrew/bin:$PATH"
+    export LD_LIBRARY_PATH="/opt/homebrew/lib:$LD_LIBRARY_PATH"
+    export LIBRARY_PATH="/opt/homebrew/lib:$LIBRARY_PATH"
+    export CPATH="/opt/homebrew/include:$CPATH"
+fi
+
 # Utility function to install packages in the OS
 function os_install {
     PKG=${1}
