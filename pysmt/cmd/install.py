@@ -56,7 +56,7 @@ def get_requested_solvers():
         keys = requested_solvers_str.split(",")
         requested_solvers = [x.lower().strip() for x in keys]
         if "all" in requested_solvers:
-            requested_solvers = [x.InstallerClass.SOLVER for x in INSTALLERS]
+            requested_solvers = [x.InstallerClass.SOLVER for x in INSTALLERS if x != "cvc4"]
     return requested_solvers
 
 
@@ -206,7 +206,7 @@ def main():
     all_solvers = options.all_solvers
     for i in INSTALLERS:
         name = i.InstallerClass.SOLVER
-        if all_solvers or getattr(options, name):
+        if (all_solvers and name != "cvc4") or getattr(options, name):
             solvers_to_install.append(i)
 
     # Env variable controlling the solvers to be installed or checked

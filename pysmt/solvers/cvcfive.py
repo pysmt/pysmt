@@ -70,7 +70,21 @@ class CVC5Options(SolverOptions):
             self._set_option(solver.cvc5,
                              "seed", str(self.random_seed))
 
+        # self._set_option(solver.cvc5, "miplib-trick", "true")
+        # self._set_option(solver.cvc5, "miplib-trick-subs", "4")
+        # self._set_option(solver.cvc5, "use-approx", "true")
+        # self._set_option(solver.cvc5, "lemmas-on-replay-failure", "true")
+        # self._set_option(solver.cvc5, "replay-early-close-depth", "4")
+        # self._set_option(solver.cvc5, "replay-lemma-reject-cut", "128")
+        # self._set_option(solver.cvc5, "replay-reject-cut", "512")
+        # self._set_option(solver.cvc5, "unconstrained-simp", "true")
+        # self._set_option(solver.cvc5, "use-soi", "true")
+        # self._set_option(solver.cvc5, "pb-rewrites", "true")
         self._set_option(solver.cvc5, "ite-simp", "true")
+        self._set_option(solver.cvc5, "simp-ite-compress", "true")
+
+        #self._set_option(solver.cvc5, "nl-ext-tplanes", "true")
+
 
         for k,v in self.solver_options.items():
             self._set_option(solver.cvc5, str(k), str(v))
@@ -188,7 +202,7 @@ class CVC5Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         :type name: String
         :type value: String
         """
-        self.cvc5.setOption(name, cvc5.SExpr(value))
+        self.cvc5.setOption(name, value)
 
 
 
