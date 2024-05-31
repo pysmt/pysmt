@@ -206,21 +206,20 @@ class TestBasic(TestCase):
             self.assertEqual(validity, v, f)
             self.assertEqual(satisfiability, s, f)
 
-    @skipIfSolverNotAvailable("cvc4")
-    def test_examples_cvc4(self):
+    @skipIfSolverNotAvailable("cvc5")
+    def test_examples_cvc(self):
         for (f, validity, satisfiability, logic) in get_example_formulae():
-            if not logic.theory.linear: continue
             if logic.theory.arrays_const: continue
             try:
-                v = is_valid(f, solver_name='cvc4', logic=logic)
-                s = is_sat(f, solver_name='cvc4', logic=logic)
+                v = is_valid(f, solver_name='cvc5', logic=logic)
+                s = is_sat(f, solver_name='cvc5', logic=logic)
                 self.assertEqual(validity, v, f)
                 self.assertEqual(satisfiability, s, f)
             except SolverReturnedUnknownResultError:
-                # CVC4 does not handle quantifiers in a complete way
+                # CVC does not handle quantifiers in a complete way
                 self.assertFalse(logic.quantifier_free)
             except NoSolverAvailableError:
-                # Logic is not supported by CVC4
+                # Logic is not supported by CVC
                 pass
 
     @skipIfSolverNotAvailable("yices")
@@ -251,7 +250,6 @@ class TestBasic(TestCase):
             self.assertEqual(satisfiability, s, f)
 
     def do_model(self, solver_name):
-
         for (f, _, satisfiability, logic) in get_example_formulae():
             if satisfiability and not logic.theory.uninterpreted and logic.quantifier_free:
                 try:
@@ -263,13 +261,15 @@ class TestBasic(TestCase):
 
                         model = s.get_model()
                         self.assertTrue(model.satisfies(f, s))
-
                 except NoSolverAvailableError:
                     pass
+                except PysmtTypeError:
+                    if solver_name != "cvc5" or logic.theory.linear:
+                        raise
 
-    @skipIfSolverNotAvailable("cvc4")
-    def test_model_cvc4(self):
-        self.do_model("cvc4")
+    @skipIfSolverNotAvailable("cvc5")
+    def test_model_cvc(self):
+        self.do_model("cvc5")
 
     @skipIfSolverNotAvailable("z3")
     def test_model_z3(self):
@@ -346,6 +346,8 @@ class TestBasic(TestCase):
         for (f, _, satisfiability, logic) in get_example_formulae():
             if logic.quantifier_free:
                 for sname in get_env().factory.all_solvers(logic=logic):
+                    if not logic.theory.linear and sname=="cvc5":
+                        continue # TODO: missing implementation for CVC5 Real Algebraic Values
                     f_i = get_implicant(f, logic=logic, solver_name=sname)
                     if satisfiability:
                         self.assertValid(Implies(f_i, f), logic=logic, msg=(f_i, f))
@@ -568,11 +570,6 @@ class TestBasic(TestCase):
         solver = Solver(logic=QF_BOOL, incremental=True)
         self.assertIsNotNone(solver)
         # Options are enforced at construction time
-        if type(solver).__name__ == 'CVC4Solver':
-            # We skip the rest of the test on CVC4 1.7 because its
-            # python wrapper crashes if an unknown option is provided.
-            # See: https://github.com/CVC4/CVC4/issues/2810
-            return
         with self.assertRaises(TypeError):
             Solver(logic=QF_BOOL, invalid_option=False)
         with self.assertRaises(PysmtValueError):

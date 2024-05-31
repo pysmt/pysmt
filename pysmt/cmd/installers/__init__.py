@@ -14,12 +14,14 @@
 
 from pysmt.cmd.installers.msat import MSatInstaller
 from pysmt.cmd.installers.z3 import Z3Installer
-from pysmt.cmd.installers.cvc4 import CVC4Installer
+from pysmt.cmd.installers.cvcfive import CVC5Installer
+from pysmt.cmd.installers.cvcfour import CVC4Installer
 from pysmt.cmd.installers.yices import YicesInstaller
 from pysmt.cmd.installers.btor import BtorInstaller
 from pysmt.cmd.installers.pico import PicoSATInstaller
 from pysmt.cmd.installers.bdd import CuddInstaller
 from pysmt.cmd.installers.optimsat import OptiMSatInstaller
 
-assert MSatInstaller and Z3Installer and CVC4Installer and YicesInstaller
-assert BtorInstaller and PicoSATInstaller and CuddInstaller and OptiMSatInstaller
+assert MSatInstaller and Z3Installer and CVC5Installer and YicesInstaller
+assert BtorInstaller and PicoSATInstaller and CuddInstaller and CVC4Installer
+assert OptiMSatInstaller

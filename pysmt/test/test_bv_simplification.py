@@ -70,9 +70,11 @@ class TestBvSimplification(TestCase):
                     try:
                         self.check(op(l, r))
                     except AssertionError:
-                        if op in [BVUDiv, BVSDiv] and r == BV(0, r.bv_width()):
-                            print("Warning: Division value mismatch.")
+                        if op in [BVUDiv, BVSDiv, BVSRem, BVURem] and r == BV(0, r.bv_width()):
+                            print("Warning: Division/Reminder value mismatch. (Not an error because division by 0)")
                             print(l,op,r)
+                        else:
+                            raise
 
     def all_unary(self):
         for l in self.all_bv_numbers():

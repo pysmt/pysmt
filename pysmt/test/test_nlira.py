@@ -24,7 +24,7 @@ from pysmt.shortcuts import FreshSymbol, Times, Equals, Div, Real, Int, Pow
 from pysmt.shortcuts import Solver, Symbol, And, Not, is_sat
 from pysmt.typing import REAL, INT
 from pysmt.exceptions import (ConvertExpressionError,
-                              NonLinearError,
+                              NonLinearError, InternalSolverError,
                               SolverReturnedUnknownResultError)
 from pysmt.logics import QF_NRA
 from pysmt.constants import Fraction
@@ -81,6 +81,9 @@ class TestNonLinear(TestCase):
                         s.is_sat(f)
                 elif sname in ["yices", "cvc4", "msat", "optimsat"]:
                     with self.assertRaises(NonLinearError):
+                        s.is_sat(f)
+                elif sname in ["cvc5"]:
+                    with self.assertRaises(InternalSolverError):
                         s.is_sat(f)
                 else:
                     res = s.is_sat(f)

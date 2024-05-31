@@ -14,25 +14,29 @@
 from __future__ import absolute_import
 
 import os
-import glob
+import sys
+import multiprocessing
 
 from pysmt.cmd.installers.base import SolverInstaller
 
 
-class Z3Installer(SolverInstaller):
+class CVC5Installer(SolverInstaller):
 
-    SOLVER = "z3"
+    SOLVER = "cvc5"
 
     def __init__(self, install_dir, bindings_dir, solver_version,
-                 mirror_link=None):
-
+                 mirror_link=None, git_tag='master'):
         SolverInstaller.__init__(self, install_dir=install_dir,
                                  bindings_dir=bindings_dir,
                                  solver_version=solver_version,
                                  mirror_link=mirror_link)
 
+    def move(self):
+        pass
+
     def compile(self):
-        SolverInstaller.run_python("-m pip install --upgrade --target=%s z3-solver==%s" % (self.bindings_dir, self.solver_version))
+        print(self.bindings_dir)
+        SolverInstaller.run_python("-m pip install --upgrade --target=%s cvc5==%s" % (self.bindings_dir, self.solver_version))
 
     def get_installed_version(self):
-        return self.get_installed_version_script(self.bindings_dir, "z3")
+        return self.get_installed_version_script(self.bindings_dir, "cvc5")

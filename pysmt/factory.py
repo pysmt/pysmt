@@ -39,10 +39,10 @@ from pysmt.solvers.portfolio import Portfolio
 
 SOLVER_TYPES = ['Solver', 'Solver supporting Unsat Cores',
                 'Quantifier Eliminator', 'Interpolator', 'Optimizer']
-DEFAULT_PREFERENCES = {'Solver': ['msat', 'optimsat', 'z3', 'cvc4', 'yices', 'btor',
-                                  'picosat', 'bdd'],
-                       'Solver supporting Unsat Cores': ['optimsat', 'msat', 'z3', 'cvc4',
-                                                         'yices', 'btor', 'picosat', 'bdd'],
+DEFAULT_PREFERENCES = {'Solver': ['msat', 'optimsat', 'z3', 'cvc5', 'yices', 'btor',
+                                  'picosat', 'bdd', 'cvc4'],
+                       'Solver supporting Unsat Cores': ['optimsat', 'msat', 'z3', 'cvc5',
+                                                         'yices', 'btor', 'picosat', 'bdd', 'cvc4'],
                        'Quantifier Eliminator': ['z3', 'msat_fm', 'msat_lw',
                                                  'optimsat_fm', 'optimsat_lw',
                                                  'bdd', 'shannon', 'selfsub'],
@@ -251,7 +251,13 @@ class Factory(object):
             pass
 
         try:
-            from pysmt.solvers.cvc4 import CVC4Solver
+            from pysmt.solvers.cvcfive import CVC5Solver
+            installed_solvers['cvc5'] = CVC5Solver
+        except SolverAPINotFound:
+            pass
+
+        try:
+            from pysmt.solvers.cvcfour import CVC4Solver
             installed_solvers['cvc4'] = CVC4Solver
         except SolverAPINotFound:
             pass
@@ -716,7 +722,7 @@ class Factory(object):
 # If PYSMT_SOLVER is "None" (literal None), the preference list will be empty
 #
 # Otherwise PYSMT_SOLVER is treated as  a comma-separated list: e.g.
-#   "msat, z3, cvc4"
+#   "msat, z3, cvc5"
 #
 import os
 ENV_SOLVER_LIST = os.environ.get("PYSMT_SOLVER")
