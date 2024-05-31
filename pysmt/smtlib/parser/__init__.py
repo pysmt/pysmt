@@ -90,6 +90,14 @@ else:
         else:
             import pyximport._pyximport3 as pyximport
 
+    if not hasattr(pyximport, "build_module"):
+        import sys
+        if sys.version_info < (3, 5):
+            # _pyximport3 module requires at least Python 3.5
+            import pyximport._pyximport2 as pyximport
+        else:
+            import pyximport._pyximport3 as pyximport
+
     pyx = pyximport.install()
     pyximport.uninstall(*pyx)
     build_dir = os.path.join(os.path.expanduser('~'), '.pyxbld')

@@ -6,6 +6,14 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 APT_UPDATED="false"
 
+if [[ "${AGENT_OS}" == *"macos"* ]];
+then
+    export PATH="/opt/homebrew/bin:$PATH"
+    export LD_LIBRARY_PATH="/opt/homebrew/lib:$LD_LIBRARY_PATH"
+    export LIBRARY_PATH="/opt/homebrew/lib:$LIBRARY_PATH"
+    export CPATH="/opt/homebrew/include:$CPATH"
+fi
+
 # Utility function to install packages in the OS
 function os_install {
     PKG=${1}
@@ -56,9 +64,9 @@ then
    os_install libgmp-dev
 fi
 
-# Install latest version of SWIG for CVC4 and BDD
+# Install latest version of SWIG for CVC and BDD
 # (The other solvers in isolation fall-back to the system swig)
-if [ "${PYSMT_SOLVER}" == "cvc4" ] || [ "${PYSMT_SOLVER}" == "bdd" ] || [ "${PYSMT_SOLVER}" == "all" ]
+if [ "${PYSMT_SOLVER}" == "cvc5" ] || [ "${PYSMT_SOLVER}" == "bdd" ] || [ "${PYSMT_SOLVER}" == "all" ]
 then
     os_install flex
     os_install bison
@@ -89,13 +97,13 @@ $PIP_INSTALL configparser
 $PIP_INSTALL wheel
 $PIP_INSTALL pytest
 
-if [ "${PYSMT_SOLVER}" == "cvc4" ]
+if [ "${PYSMT_SOLVER}" == "cvc5" ]
 then
     $PIP_INSTALL toml
 fi
 
 # Needed only when using "act" locally
-# if [ "${PYSMT_SOLVER}" == "cvc4" ] || [ "${PYSMT_SOLVER}" == "btor" ] || [ "${PYSMT_SOLVER}" == "all" ]
+# if [ "${PYSMT_SOLVER}" == "cvc5" ] || [ "${PYSMT_SOLVER}" == "btor" ] || [ "${PYSMT_SOLVER}" == "all" ]
 # then
 #     os_install cmake
 # fi
@@ -121,8 +129,14 @@ ${PYTHON} install.py --confirm-agreement
 
 # Install the binaries for the *_wrap case
 if [ "${PYSMT_SOLVER}" == "all" ] || [ "${PYSMT_SOLVER}" == *"z3_wrap"* ]; then
-    ${PYTHON} install.py --z3 --conf --force;
-    cp -v $(find ~/.smt_solvers/ -name z3 -type f) pysmt/test/smtlib/bin/z3;
+    if [[ "${AGENT_OS}" == *"macos"* ]];
+    then
+        wget -O /tmp/z3.zip https://github.com/Z3Prover/z3/releases/download/z3-4.13.0/z3-4.13.0-x64-osx-11.7.10.zip
+    else
+        wget -O /tmp/z3.zip https://github.com/Z3Prover/z3/releases/download/z3-4.13.0/z3-4.13.0-x64-glibc-2.31.zip
+    fi
+    unzip /tmp/z3.zip -d /tmp/z3
+    cp -v /tmp/z3/*/bin/z3 pysmt/test/smtlib/bin/z3;
     chmod +x pysmt/test/smtlib/bin/z3;
     mv pysmt/test/smtlib/bin/z3.solver.sh.template pysmt/test/smtlib/bin/z3.solver.sh ;
 fi

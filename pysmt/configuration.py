@@ -21,7 +21,7 @@ The following is an example of configuration file.
 
 [global]
 use_infix_notation: true
-solver_preference_list: msat z3 cvc4 z3-smt mathsat-smt
+solver_preference_list: msat z3 cvc5 z3-smt mathsat-smt
 
 [smtlibsolver z3-smt]
 command: z3 -smt2 -in

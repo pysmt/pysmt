@@ -13,7 +13,7 @@ jobs:
     strategy:
       matrix:
         os: [ ubuntu-latest ]
-        pysmt_solver: [ none, msat, z3, yices, cvc4, btor, picosat, bdd, msat_wrap, z3_wrap ]
+        pysmt_solver: [ none, msat, z3, yices, cvc5, btor, picosat, bdd, msat_wrap, z3_wrap ]
 
     env:
       PYTHON_VERSION: 3.8
@@ -52,11 +52,11 @@ jobs:
             pysmt_solver: all
           - os: macos-latest
             pysmt_solver: none
-          - os: macos-latest
+          - os: macos-13
             pysmt_solver: msat
-          - os: macos-latest
+          - os: macos-13
             pysmt_solver: z3
-          - os: macos-latest
+          - os: macos-13
             pysmt_solver: yices
           - os: windows-latest
             pysmt_solver: none

@@ -18,7 +18,7 @@ solver. Moreover, pySMT can leverage the API of the following solvers:
 
 * MathSAT (http://mathsat.fbk.eu/)
 * Z3 (https://github.com/Z3Prover/z3/)
-* CVC4 (http://cvc4.cs.nyu.edu/web/)
+* cvc5 (https://cvc5.github.io/)
 * Yices 2 (http://yices.csl.sri.com/)
 * CUDD (http://vlsi.colorado.edu/~fabio/CUDD/)
 * PicoSAT (http://fmv.jku.at/picosat/)
@@ -204,7 +204,7 @@ Solver      pySMT name
 =========   ==========
 MathSAT     msat
 Z3          z3
-CVC4        cvc4
+cvc5        cvc5
 Yices       yices
 Boolector   btor
 Picosat     picosat

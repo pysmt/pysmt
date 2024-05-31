@@ -41,6 +41,11 @@ def check_version(module):
             import pyboolector
             version = "OK" # Just checking if import succeeds
 
+        elif module == "cvc5":
+            import cvc5
+            solver = cvc5.Solver()
+            version = solver.getVersion().decode('ascii')
+
         elif module == "cvc4":
             import CVC4
             version = CVC4.Configuration_getVersionString()
@@ -50,11 +55,8 @@ def check_version(module):
             version = picosat.picosat_version()
 
         elif module == "yices":
-            import yicespy
-            v = yicespy.__dict__['__YICES_VERSION']
-            m = yicespy.__dict__['__YICES_VERSION_MAJOR']
-            p = yicespy.__dict__['__YICES_VERSION_PATCHLEVEL']
-            version = "%d.%d.%d" % (v, m, p)
+            import yices_api
+            version = yices_api.yices_python_version
         else:
             print("Invalid argument '%s'"  % module)
             exit(-2)
