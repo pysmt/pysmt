@@ -16,6 +16,7 @@
 #   limitations under the License.
 #
 
+from pysmt.decorators import clear_pending_pop
 from pysmt.logics import LRA, LIA
 
 
@@ -121,6 +122,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
         self._msat_lib.msat_assert_objective(self.msat_env(), msat_obj)
         return msat_obj
 
+    @clear_pending_pop
     def optimize(self, goal, **kwargs):
         msat_obj = self._assert_msat_goal(goal)
 
@@ -153,6 +155,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
                                                              self._msat_lib.MSAT_OPTIMUM)
             return model, self.converter.back(value)
 
+    @clear_pending_pop
     def pareto_optimize(self, goals):
         self._msat_lib.msat_set_opt_priority(self.msat_env(), "par")
 
@@ -163,8 +166,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
             model = self.get_model()
             yield model, [model.get_value(goal.term()) for goal in goals]
 
-
-
+    @clear_pending_pop
     def lexicographic_optimize(self, goals):
         self._msat_lib.msat_set_opt_priority(self.msat_env(), "lex")
 
@@ -178,6 +180,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
         else:
             return None
 
+    @clear_pending_pop
     def boxed_optimize(self, goals):
         self._msat_lib.msat_set_opt_priority(self.msat_env(), "box")
         msat_objs = []
@@ -200,7 +203,6 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
 
     def get_model(self):
         return OptiMSATModel(self.environment, self.msat_env)
-
 
     def can_diverge_for_unbounded_cases(self):
         return False

@@ -106,6 +106,9 @@ def check_installed(required_solvers, install_dir, bindings_dir, mirror_link):
     interps = get_env().factory.all_interpolators()
     print("Interpolators: %s" % ", ".join(name for name in interps))
 
+    opts = get_env().factory.all_optimizers()
+    print("Optimizers: %s" % ", ".join(name for name in opts))
+
 
 
 def parse_options():

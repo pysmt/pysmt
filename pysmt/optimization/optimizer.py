@@ -429,16 +429,17 @@ class SUAOptimizerMixin(ExternalOptimizerMixin):
     """Optimizer mixin using solving under assumptions"""
 
     def _setup(self):
+        self.push()
         return []
 
     def _cleanup(self, client_data):
-        pass
+        self.pop()
 
     def _pareto_setup(self):
-        pass
+        self.push()
 
     def _pareto_cleanup(self):
-        pass
+        self.pop()
 
     def _optimization_check_progress(self, client_data, formula, strategy, extra_assumption = None):
         assum = extra_assumption if extra_assumption is not None else []

@@ -18,6 +18,9 @@
 
 from __future__ import absolute_import
 
+from warnings import warn
+
+from pysmt.decorators import clear_pending_pop
 from pysmt.solvers.z3 import Z3Solver, Z3Model
 
 from pysmt.exceptions import PysmtInfinityError, \
@@ -62,63 +65,93 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
                 raise GoalNotSupportedError("z3", goal.__class__)
         return  h
 
+    @clear_pending_pop
     def optimize(self, goal, **kwargs):
-        h = self._assert_z3_goal(goal)
+        self.push()
+        try:
+            h = self._assert_z3_goal(goal)
 
-        res = self.z3.check()
-        if res == z3.sat:
-            try:
-                if goal.is_maxsmt_goal():
-                    model = Z3Model(self.environment, self.z3.model())
-                    return model, None
-                else:
-                    opt_value = self.z3.lower(h)
-                    self.converter.back(opt_value)
-                    model = Z3Model(self.environment, self.z3.model())
-                    return model, model.get_value(goal.term())
-            except PysmtInfinityError:
-                raise PysmtUnboundedOptimizationError("The optimal value is unbounded")
-            except PysmtInfinitesimalError:
-                raise PysmtUnboundedOptimizationError("The optimal value is infinitesimal")
-        else:
-            return None
+            res = self.z3.check()
+            if res == z3.sat:
+                try:
+                    if goal.is_maxsmt_goal():
+                        model = Z3Model(self.environment, self.z3.model())
+                        return model, None
+                    else:
+                        opt_value = self.z3.lower(h)
+                        self.converter.back(opt_value)
+                        model = Z3Model(self.environment, self.z3.model())
+                        return model, model.get_value(goal.term())
+                except PysmtInfinityError:
+                    raise PysmtUnboundedOptimizationError("The optimal value is unbounded")
+                except PysmtInfinitesimalError:
+                    raise PysmtUnboundedOptimizationError("The optimal value is infinitesimal")
+            else:
+                return None
+        finally:
+            self.pop()
 
+    @clear_pending_pop
     def pareto_optimize(self, goals):
-        self.z3.set(priority='pareto')
-        for goal in goals:
-            self._assert_z3_goal(goal)
-        while self.z3.check() == z3.sat:
-            model = Z3Model(self.environment, self.z3.model())
-            yield model, [model.get_value(x.term()) for x in goals]
+        self.push()
+        try:
+            self.z3.set(priority='pareto')
+            for goal in goals:
+                self._assert_z3_goal(goal)
+            while self.z3.check() == z3.sat:
+                model = Z3Model(self.environment, self.z3.model())
+                yield model, [model.get_value(x.term()) for x in goals]
+        finally:
+            self.pop()
 
     def can_diverge_for_unbounded_cases(self):
         return False
 
+    @clear_pending_pop
     def boxed_optimize(self, goals):
-        self.z3.set(priority='box')
+        # This implementation is a naive simulation of a box optimization,
+        # but is needed to cope with an upstream Z3 issue:
+        # https://github.com/Z3Prover/z3/issues/7240
+        #
+        # A properer implementation would be as follows.
+        # '''python
+        # self.z3.set(priority='box')
+        # models = {}
+        # for goal in goals:
+        #     self._assert_z3_goal(goal)
+        # for goal in goals:
+        #     if self.z3.check() == z3.sat:
+        #         model = Z3Model(self.environment, self.z3.model())
+        #         models[goal] = (model, model.get_value(goal.term()))
+        #     else:
+        #         return None
+        # return models
+        # '''
+        warn("Boxed optimization is not working in Z3 (see https://github.com/Z3Prover/z3/issues/7240). "
+             "PySMT will simulate the correct behavior, but the performance will be sub-optimal")
         models = {}
-        for goal in goals:
-            self._assert_z3_goal(goal)
-
-        for goal in goals:
-            if self.z3.check() == z3.sat:
-                model = Z3Model(self.environment, self.z3.model())
-                models[goal] = (model, model.get_value(goal.term()))
-            else:
+        for g in goals:
+            r = self.optimize(g)
+            if r is None:
                 return None
-
+            models[g] = r
         return models
 
+    @clear_pending_pop
     def lexicographic_optimize(self, goals):
-        self.z3.set(priority='lex')
-        for goal in goals:
-            self._assert_z3_goal(goal)
+        self.push()
+        try:
+            self.z3.set(priority='lex')
+            for goal in goals:
+                self._assert_z3_goal(goal)
 
-        if self.z3.check() == z3.sat:
-            model = Z3Model(self.environment, self.z3.model())
-            return model, [model.get_value(x.term()) for x in goals]
-        else:
-            return None
+            if self.z3.check() == z3.sat:
+                model = Z3Model(self.environment, self.z3.model())
+                return model, [model.get_value(x.term()) for x in goals]
+            else:
+                return None
+        finally:
+            self.pop()
 
 
 class Z3SUAOptimizer(Z3Solver, SUAOptimizerMixin):
