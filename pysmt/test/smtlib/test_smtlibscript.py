@@ -23,7 +23,7 @@ from pysmt.shortcuts import And, Or, Symbol, GT, Real, Not
 from pysmt.typing import REAL
 from pysmt.test import TestCase, main
 from pysmt.smtlib.script import SmtLibScript, SmtLibCommand
-from pysmt.smtlib.script import smtlibscript_from_formula, evaluate_command
+from pysmt.smtlib.script import smtlibscript_from_formula, InterpreterOMT
 from pysmt.smtlib.parser import get_formula_strict, get_formula, SmtLibParser
 from pysmt.solvers.smtlib import SmtLibIgnoreMixin
 from pysmt.logics import QF_UFLIRA
@@ -181,6 +181,7 @@ class TestSmtLibScript(TestCase):
             pass
 
         mock = SmtLibIgnore()
+        inter = InterpreterOMT()
         for cmd_name in [ smtcmd.SET_INFO,
                           smtcmd.ASSERT,
                           smtcmd.CHECK_SAT,
@@ -190,14 +191,14 @@ class TestSmtLibScript(TestCase):
                           smtcmd.PUSH,
                           smtcmd.POP]:
 
-            evaluate_command(SmtLibCommand(cmd_name, [None, None]),
+            inter.evaluate(SmtLibCommand(cmd_name, [None, None]),
                              solver=mock)
 
-        evaluate_command(SmtLibCommand(smtcmd.DECLARE_FUN,
+        inter.evaluate(SmtLibCommand(smtcmd.DECLARE_FUN,
                                        [None, None, None]),
                          solver=mock)
 
-        evaluate_command(SmtLibCommand(smtcmd.DEFINE_FUN,
+        inter.evaluate(SmtLibCommand(smtcmd.DEFINE_FUN,
                                        [None, None, None, None]),
                          solver=mock)
 

@@ -30,6 +30,13 @@ def check_version(module):
             if m is not None:
                 version = m.group(1)
 
+        elif module == "optimsat":
+            import optimathsat
+            version_str = optimathsat.msat_get_version()
+            m = re.match(r"^MathSAT5 version (\d+\.\d+\.\d+) .*$", version_str)
+            if m is not None:
+                version = m.group(1)
+
         elif module == "cudd":
             import repycudd
             doc = repycudd.DOCSTRING
