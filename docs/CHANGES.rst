@@ -27,7 +27,8 @@ Change Log
 * [Boolector] Add support for const arrays and boolean indices/elements by @nbailluet in https://github.com/pysmt/pysmt/pull/771
 * Update of all solvers  by @mikand in https://github.com/pysmt/pysmt/pull/761
 
-## New Contributors
+**New Contributors**
+
 * @jayvdb made their first contribution in https://github.com/pysmt/pysmt/pull/724
 * @akumm2k made their first contribution in https://github.com/pysmt/pysmt/pull/734
 * @YikeZhou made their first contribution in https://github.com/pysmt/pysmt/pull/748
