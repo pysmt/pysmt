@@ -4,7 +4,8 @@ Change Log
 0.9.6: 2022-06-24 -- CVC5 and upgraded solvers
 ----------------------------------------------
 
-## What's Changed
+**What's Changed**:
+
 * Fixed issue #613 by @mikand in https://github.com/pysmt/pysmt/pull/710 - Thanks @ekiwi for reporting
 * Fix missing file in Manifest by @marcogario in https://github.com/pysmt/pysmt/pull/718
 * Upgrade MathSAT to 5.6.6 by @marcogario in https://github.com/pysmt/pysmt/pull/720
@@ -44,7 +45,7 @@ Intermediate release that collects 2 years of bugfixes and improvements.
 
 Python 2 was deprecated in version 0.9.0, and this version removes the use of compatible code for that version.
 
-## What's Changed
+**What's Changed**:
 
 * Add support for boolean-typed array in the AtomsOracle by @mikand in https://github.com/pysmt/pysmt/pull/644
 * Switched from nosetests to pytest by @mikand in https://github.com/pysmt/pysmt/pull/662
