@@ -87,9 +87,9 @@ class YicesOptions(SolverOptions):
             # We raise the exception only if the parameter exists but the value
             # provided to the parameter is invalid.
             err = yices_api.yices_error_code()
-            if err == 502: # CTX_INVALID_PARAMETER_VALUE:
+            if err == 502:  # CTX_INVALID_PARAMETER_VALUE:
                 raise PysmtValueError("Error setting the option "
-                                      "'%s=%s'" % (name,value))
+                                      "'%s=%s'" % (name, value))
 
     def __call__(self, solver):
         if self.generate_models:
@@ -236,6 +236,7 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
                 else:
                     raise InternalSolverError("Error in push: %s" %
                                               yices_api.yices_error_string())
+
     @clear_pending_pop
     def pop(self, levels=1):
         for _ in range(levels):
@@ -506,9 +507,9 @@ class YicesConverter(Converter, DagWalker):
         return res
 
     def walk_bv_extract(self, formula, args, **kwargs):
-        res = yicespy.yices_bvextract(args[0],
-                                      formula.bv_extract_start(),
-                                      formula.bv_extract_end())
+        res = yices_api.yices_bvextract(args[0],
+                                        formula.bv_extract_start(),
+                                        formula.bv_extract_end())
         self._check_term_result(res)
         return res
 
@@ -607,7 +608,7 @@ class YicesConverter(Converter, DagWalker):
         return res
 
     def walk_bv_comp(self, formula, args, **kwargs):
-        a,b = args
+        a, b = args
         eq = yices_api.yices_bveq_atom(a, b)
         self._check_term_result(eq)
         one = yices_api.yices_bvconst_int32(1, 1)

@@ -368,7 +368,7 @@ class CVC5Converter(Converter, DagWalker):
         return self.cvc5.mkTerm(Kind.BITVECTOR_ULE, args[0], args[1])
 
     def walk_bv_concat(self, formula, args, **kwargs):
-        return self.cvc5.mkTerm(Kind.BITVECTOR_CONCAT, args[0], args[1])
+        return self.cvc5.mkTerm(Kind.BITVECTOR_CONCAT, *args)
 
     def walk_bv_extract(self, formula, args, **kwargs):
         ext = self.cvc5.mkOp(Kind.BITVECTOR_EXTRACT,
@@ -377,13 +377,13 @@ class CVC5Converter(Converter, DagWalker):
         return self.cvc5.mkTerm(ext, args[0])
 
     def walk_bv_or(self, formula, args, **kwargs):
-        return self.cvc5.mkTerm(Kind.BITVECTOR_OR, args[0], args[1])
+        return self.cvc5.mkTerm(Kind.BITVECTOR_OR, *args)
 
     def walk_bv_not(self, formula, args, **kwargs):
         return self.cvc5.mkTerm(Kind.BITVECTOR_NOT, args[0])
 
     def walk_bv_and(self, formula, args, **kwargs):
-        return self.cvc5.mkTerm(Kind.BITVECTOR_AND, args[0], args[1])
+        return self.cvc5.mkTerm(Kind.BITVECTOR_AND, *args)
 
     def walk_bv_xor(self, formula, args, **kwargs):
         return self.cvc5.mkTerm(Kind.BITVECTOR_XOR, args[0], args[1])
@@ -398,7 +398,7 @@ class CVC5Converter(Converter, DagWalker):
         return self.cvc5.mkTerm(Kind.BITVECTOR_NEG, args[0])
 
     def walk_bv_mul(self, formula, args, **kwargs):
-        return self.cvc5.mkTerm(Kind.BITVECTOR_MULT, args[0], args[1])
+        return self.cvc5.mkTerm(Kind.BITVECTOR_MULT, *args)
 
     def walk_bv_tonatural(self, formula, args, **kwargs):
         return self.cvc5.mkTerm(Kind.BITVECTOR_TO_NAT, args[0])
