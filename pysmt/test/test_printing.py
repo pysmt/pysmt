@@ -98,9 +98,9 @@ class TestPrinting(TestCase):
         self.assertEqual(b1.to_smtlib(daggify=True), "true")
         self.assertEqual(b2.to_smtlib(daggify=True), "false")
 
-        self.assertEqual(r1.to_smtlib(daggify=True), "(/ 11 2)")
+        self.assertEqual(r1.to_smtlib(daggify=True), "(/ 11.0 2.0)")
         self.assertEqual(r2.to_smtlib(daggify=True), "5.0")
-        self.assertEqual(r3.to_smtlib(daggify=True), "(- (/ 11 2))")
+        self.assertEqual(r3.to_smtlib(daggify=True), "(- (/ 11.0 2.0))")
 
         self.assertEqual(i1.to_smtlib(daggify=True), "4")
         self.assertEqual(i2.to_smtlib(daggify=True), "(- 4)")
@@ -108,9 +108,9 @@ class TestPrinting(TestCase):
         self.assertEqual(b1.to_smtlib(daggify=False), "true")
         self.assertEqual(b2.to_smtlib(daggify=False), "false")
 
-        self.assertEqual(r1.to_smtlib(daggify=False), "(/ 11 2)")
+        self.assertEqual(r1.to_smtlib(daggify=False), "(/ 11.0 2.0)")
         self.assertEqual(r2.to_smtlib(daggify=False), "5.0")
-        self.assertEqual(r3.to_smtlib(daggify=False), "(- (/ 11 2))")
+        self.assertEqual(r3.to_smtlib(daggify=False), "(- (/ 11.0 2.0))")
 
         self.assertEqual(i1.to_smtlib(daggify=False), "4")
         self.assertEqual(i2.to_smtlib(daggify=False), "(- 4)")
