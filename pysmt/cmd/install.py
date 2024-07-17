@@ -34,7 +34,9 @@ Installer = namedtuple("Installer",
 INSTALLERS = [
     Installer(MSatInstaller,    "5.6.10", {}),
     Installer(CVC5Installer,    "1.1.2", {}),
-    Installer(Z3Installer,      "4.13.0", {"osx": "11.7.10"}),
+    Installer(CVC4Installer,    "1.7-prerelease",
+              {"git_version" : "391ab9df6c3fd9a3771864900c1718534c1e4666"}),
+    Installer(Z3Installer,      "4.13.0", {}),
     Installer(YicesInstaller,   "2.6.4", {"yices_api_version": "1.1.5"}),
     Installer(BtorInstaller,    "3.2.3", {}),
     Installer(PicoSATInstaller, "965",
@@ -227,7 +229,7 @@ def main():
         exit(0)
 
     elif options.env:
-        bindings_dir= os.path.expanduser(options.bindings_path)
+        bindings_dir = os.path.expanduser(options.bindings_path)
         if platform.system().lower() == "windows":
             if options.powershell:
                 print('$env:PythonPath += ";%s"' % bindings_dir)
