@@ -143,7 +143,7 @@ class SmtPrinter(TreeWalker):
         (n,d) = abs(formula.constant_value().numerator), \
                     formula.constant_value().denominator
         if d != 1:
-            res = template % ( "(/ " + str(n) + " " + str(d) + ")" )
+            res = template % ( "(/ " + str(n) + ".0 " + str(d) + ".0)" )
         else:
             res = template % (str(n) + ".0")
 
