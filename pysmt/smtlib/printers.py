@@ -521,7 +521,7 @@ class SmtDagPrinter(DagWalker):
         (n,d) = abs(formula.constant_value().numerator), \
                     formula.constant_value().denominator
         if d != 1:
-            return template % ( "(/ " + str(n) + " " + str(d) + ")" )
+            return template % ( "(/ " + str(n) + ".0 " + str(d) + ".0)" )
         else:
             return template % (str(n) + ".0")
 
