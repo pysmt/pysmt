@@ -126,8 +126,6 @@ class CVC5Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         raise NotImplementedError
 
     def add_assertion(self, formula, named=None):
-        from pysmt.typing import BOOL
-        assert self.environment.stc.get_type(formula) == BOOL
         self._assert_is_boolean(formula)
         term = self.converter.convert(formula)
         self.cvc5.assertFormula(term)
