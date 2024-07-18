@@ -32,13 +32,13 @@ from pysmt.logics import PYSMT_LOGICS, ARRAYS_CONST_LOGICS
 from pysmt.solvers.solver import Solver, Converter, SolverOptions
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               InternalSolverError,
-                              NonLinearError, PysmtValueError,
+                              PysmtValueError,
                               PysmtTypeError)
 from pysmt.walkers import DagWalker
 from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 from pysmt.solvers.eager import EagerModel
 from pysmt.decorators import catch_conversion_error
-from pysmt.constants import Fraction, is_pysmt_integer, to_python_integer
+from pysmt.constants import Fraction, is_pysmt_integer
 
 
 class CVC5Options(SolverOptions):
@@ -85,8 +85,7 @@ class CVC5Options(SolverOptions):
 
         #self._set_option(solver.cvc5, "nl-ext-tplanes", "true")
 
-
-        for k,v in self.solver_options.items():
+        for k, v in self.solver_options.items():
             self._set_option(solver.cvc5, str(k), str(v))
 
 # EOC CVC5Options
@@ -109,7 +108,7 @@ class CVC5Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         self.logic_name = str(logic)
         if "t" in self.logic_name:
             # Custom Type extension
-            self.logic_name = self.logic_name.replace("t","")
+            self.logic_name = self.logic_name.replace("t", "")
         if self.logic_name == "QF_BOOL":
             self.logic_name = "QF_LRA"
         elif self.logic_name == "BOOL":
@@ -127,6 +126,8 @@ class CVC5Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         raise NotImplementedError
 
     def add_assertion(self, formula, named=None):
+        from pysmt.typing import BOOL
+        assert self.environment.stc.get_type(formula) == BOOL
         self._assert_is_boolean(formula)
         term = self.converter.convert(formula)
         self.cvc5.assertFormula(term)
@@ -135,7 +136,8 @@ class CVC5Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         assignment = {}
         for s in self.environment.formula_manager.get_all_symbols():
             if s.is_term():
-                if s.symbol_type().is_custom_type(): continue
+                if s.symbol_type().is_custom_type():
+                    continue
                 v = self.get_value(s)
                 assignment[s] = v
         return EagerModel(assignment=assignment, environment=self.environment)
@@ -176,8 +178,7 @@ class CVC5Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         if name_filter is None:
             var_set = self.declarations
         else:
-            var_set = (var for var in self.declarations\
-                       if name_filter(var))
+            var_set = (var for var in self.declarations if name_filter(var))
         for var in var_set:
             print("%s = %s", (var.symbol_name(), self.get_value(var)))
         return
@@ -269,7 +270,7 @@ class CVC5Converter(Converter, DagWalker):
         return self.cvc5.mkTerm(Kind.NOT, *args)
 
     def walk_symbol(self, formula, args, **kwargs):
-        #pylint: disable=unused-argument
+        # pylint: disable=unused-argument
         if formula not in self.declared_vars:
             self.declare_variable(formula)
         return self.declared_vars[formula]
@@ -291,7 +292,7 @@ class CVC5Converter(Converter, DagWalker):
 
     def walk_real_constant(self, formula, **kwargs):
         frac = formula.constant_value()
-        n,d = frac.numerator, frac.denominator
+        n, d = frac.numerator, frac.denominator
         rep = str(n) + "/" + str(d)
         return self.cvc5.mkReal(rep)
 
@@ -368,7 +369,10 @@ class CVC5Converter(Converter, DagWalker):
         return self.cvc5.mkTerm(Kind.BITVECTOR_ULE, args[0], args[1])
 
     def walk_bv_concat(self, formula, args, **kwargs):
-        return self.cvc5.mkTerm(Kind.BITVECTOR_CONCAT, *args)
+        res = args[0]
+        for arg in args[1:]:
+            res = self.cvc5.mkTerm(Kind.BITVECTOR_CONCAT, res, arg)
+        return res
 
     def walk_bv_extract(self, formula, args, **kwargs):
         ext = self.cvc5.mkOp(Kind.BITVECTOR_EXTRACT,
@@ -377,13 +381,19 @@ class CVC5Converter(Converter, DagWalker):
         return self.cvc5.mkTerm(ext, args[0])
 
     def walk_bv_or(self, formula, args, **kwargs):
-        return self.cvc5.mkTerm(Kind.BITVECTOR_OR, *args)
+        res = args[0]
+        for arg in args[1:]:
+            res = self.cvc5.mkTerm(Kind.BITVECTOR_OR, res, arg)
+        return res
 
     def walk_bv_not(self, formula, args, **kwargs):
         return self.cvc5.mkTerm(Kind.BITVECTOR_NOT, args[0])
 
     def walk_bv_and(self, formula, args, **kwargs):
-        return self.cvc5.mkTerm(Kind.BITVECTOR_AND, *args)
+        res = args[0]
+        for arg in args[1:]:
+            res = self.cvc5.mkTerm(Kind.BITVECTOR_AND, res, arg)
+        return res
 
     def walk_bv_xor(self, formula, args, **kwargs):
         return self.cvc5.mkTerm(Kind.BITVECTOR_XOR, args[0], args[1])
