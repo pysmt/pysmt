@@ -408,7 +408,10 @@ class CVC5Converter(Converter, DagWalker):
         return self.cvc5.mkTerm(Kind.BITVECTOR_NEG, args[0])
 
     def walk_bv_mul(self, formula, args, **kwargs):
-        return self.cvc5.mkTerm(Kind.BITVECTOR_MULT, *args)
+        res = args[0]
+        for arg in args[1:]:
+            res = self.cvc5.mkTerm(Kind.BITVECTOR_MULT, res, arg)
+        return res
 
     def walk_bv_tonatural(self, formula, args, **kwargs):
         return self.cvc5.mkTerm(Kind.BITVECTOR_TO_NAT, args[0])
