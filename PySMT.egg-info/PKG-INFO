@@ -1,0 +1,51 @@
+Metadata-Version: 2.1
+Name: PySMT
+Version: 0.9.7.dev132
+Summary: A solver-agnostic library for SMT Formulae manipulation and solving
+Home-page: http://www.pysmt.org
+Author: PySMT Team
+Author-email: info@pysmt.org
+License: APACHE
+License-File: LICENSE
+License-File: NOTICE
+
+============================================================
+ pySMT: A library for SMT formulae manipulation and solving
+============================================================
+
+pySMT makes working with Satisfiability Modulo Theory simple.
+
+Among others, you can:
+
+* Define formulae in a solver independent way in a simple and
+  inutitive way,
+* Write ad-hoc simplifiers and operators,
+* Dump your problems in the SMT-Lib format,
+* Solve them using one of the native solvers, or by wrapping any
+  SMT-Lib complaint solver.
+
+Supported Theories and Solvers
+==============================
+pySMT provides methods to define a formula in Linear Real Arithmetic (LRA),
+Real Difference Logic (RDL), their combination (LIRA),
+Equalities and Uninterpreted Functions (EUF), Bit-Vectors (BV), and Arrays (A).
+The following solvers are supported through native APIs:
+
+* MathSAT (http://mathsat.fbk.eu/)
+* Z3 (https://github.com/Z3Prover/z3/)
+* cvc5 (https://cvc5.github.io/)
+* Yices 2 (http://yices.csl.sri.com/)
+* CUDD (http://vlsi.colorado.edu/~fabio/CUDD/)
+* PicoSAT (http://fmv.jku.at/picosat/)
+* Boolector (http://fmv.jku.at/boolector/)
+
+Additionally, you can use any SMT-LIB 2 compliant solver.
+
+PySMT assumes that the python bindings for the SMT Solver are installed and
+accessible from your PYTHONPATH.
+
+
+Wanna know more?
+================
+
+Visit http://www.pysmt.org

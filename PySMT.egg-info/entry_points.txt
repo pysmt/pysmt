@@ -1,0 +1,2 @@
+[console_scripts]
+pysmt-install = pysmt.cmd.install:main

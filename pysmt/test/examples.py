@@ -144,8 +144,8 @@ def get_full_example_formulae(environment=None):
                     logic=pysmt.logics.QF_IDL
                 ),
 
-            Example(hr="(((p + q) = 5) & (q < p))",
-                    expr=And(Equals(Plus(p,q),Int(5)) , GT(p, q)),
+            Example(hr="((q < p) & ((p + q) = 5))",
+                    expr=And(Equals(Plus(p, q), Int(5)), GT(p, q)),
                     is_valid=False,
                     is_sat=True,
                     logic=pysmt.logics.QF_LIA
@@ -172,7 +172,7 @@ def get_full_example_formulae(environment=None):
                     logic=pysmt.logics.QF_IDL
                 ),
 
-            Example(hr="((x ? 7 : ((p + -1) * 3)) = q)",
+            Example(hr="(q = (x ? 7 : ((p + -1) * 3)))",
                     expr=Equals(Ite(x,
                                     Int(7),
                                     Times(Plus(p, Int(-1)), Int(3))), q),
@@ -191,15 +191,16 @@ def get_full_example_formulae(environment=None):
             #
             # LRA
             #
-            Example(hr="((s < r) & (x -> y))",
+            Example(hr="((x -> y) & (s < r))",
                     expr=And(GT(r, s), Implies(x, y)),
                     is_valid=False,
                     is_sat=True,
                     logic=pysmt.logics.QF_RDL
                 ),
 
-            Example(hr="(((r + s) = 28/5) & (s < r))",
-                    expr=And(Equals(Plus(r,s), Real(Fraction("5.6"))) , GT(r, s)),
+            Example(hr="((s < r) & ((r + s) = 28/5))",
+                    expr=And(Equals(Plus(r, s), Real(Fraction("5.6"))),
+                             GT(r, s)),
                     is_valid=False,
                     is_sat=True,
                     logic=pysmt.logics.QF_LRA
@@ -226,8 +227,10 @@ def get_full_example_formulae(environment=None):
                     logic=pysmt.logics.QF_RDL
                 ),
 
-            Example(hr="((x ? 7.0 : ((s + -1.0) * 3.0)) = r)",
-                    expr=Equals( Ite(x, Real(7), Times(Plus(s, Real(-1)), Real(3))), r),
+            Example(hr="(r = (x ? 7.0 : ((s + -1.0) * 3.0)))",
+                    expr=Equals(Ite(x, Real(7),
+                                    Times(Plus(s, Real(-1)), Real(3))),
+                                r),
                     is_valid=False,
                     is_sat=True,
                     logic=pysmt.logics.QF_LRA
@@ -250,7 +253,7 @@ def get_full_example_formulae(environment=None):
                     logic=pysmt.logics.QF_UFLRA
                 ),
 
-            Example(hr="((rg(r) = (5.0 + 2.0)) <-> (rg(r) = 7.0))",
+            Example(hr="((rg(r) = (2.0 + 5.0)) <-> (7.0 = rg(r)))",
                     expr=Iff(Equals(Function(rg, [r]), Plus(Real(5), Real(2))),
                              Equals(Function(rg, [r]), Real(7))),
                     is_valid=True,
@@ -258,7 +261,7 @@ def get_full_example_formulae(environment=None):
                     logic=pysmt.logics.QF_UFLRA
                 ),
 
-            Example(hr="((r = (s + 1.0)) & (rg(s) = 5.0) & (rg((r - 1.0)) = 7.0))",
+            Example(hr="((r = (s + 1.0)) & (5.0 = rg(s)) & (7.0 = rg((r - 1.0))))",
                     expr=And([Equals(r, Plus(s, Real(1))),
                               Equals(Function(rg, [s]), Real(5)),
                               Equals(
@@ -271,7 +274,7 @@ def get_full_example_formulae(environment=None):
             #
             # BV
             #
-            Example(hr="((1_32 & 0_32) = 0_32)",
+            Example(hr="(0_32 = (1_32 & 0_32))",
                     expr=Equals(BVAnd(BVOne(32), BVZero(32)),
                                 BVZero(32)),
                     is_valid=True,
@@ -287,7 +290,7 @@ def get_full_example_formulae(environment=None):
                     logic=pysmt.logics.QF_BV
                 ),
 
-            Example(hr="((! bv3) = 5_3)",
+            Example(hr="(5_3 = (! bv3))",
                     expr=Equals(BVNot(bv3),
                                 BV("101")),
                     is_valid=False,
@@ -295,7 +298,7 @@ def get_full_example_formulae(environment=None):
                     logic=pysmt.logics.QF_BV
                 ),
 
-            Example(hr="((7_3 xor 0_3) = 0_3)",
+            Example(hr="(0_3 = (7_3 xor 0_3))",
                     expr=Equals(BVXor(BV("111"), BV("000")),
                                 BV("000")),
                     is_valid=False,
@@ -303,7 +306,7 @@ def get_full_example_formulae(environment=None):
                     logic=pysmt.logics.QF_BV
                 ),
 
-            Example(hr="((7_3 xor bv3) = (6_3 xor bv3))",
+            Example(hr="((bv3 xor 7_3) = (bv3 xor 6_3))",
                     expr=Equals(BVXor(BV("111"), bv3),
                                 BVXor(BV("110"), bv3)),
                     is_valid=False,
@@ -366,7 +369,7 @@ def get_full_example_formulae(environment=None):
                     logic=pysmt.logics.QF_BV
                 ),
 
-            Example(hr="((((1_32 + (- 1_32)) << 1_32) >> 1_32) = 1_32)",
+            Example(hr="(1_32 = (((1_32 + (- 1_32)) << 1_32) >> 1_32))",
                     expr=Equals(BVLShr(BVLShl(BVAdd(BVOne(32),
                                                     BVNeg(BVOne(32))),
                                               1), 1),
@@ -376,7 +379,7 @@ def get_full_example_formulae(environment=None):
                     logic=pysmt.logics.QF_BV
                 ),
 
-            Example(hr="((1_32 - 1_32) = 0_32)",
+            Example(hr="(0_32 = (1_32 - 1_32))",
                     expr=Equals(BVSub(BVOne(32), BVOne(32)), BVZero(32)),
                     is_valid=True,
                     is_sat=True,
@@ -384,7 +387,7 @@ def get_full_example_formulae(environment=None):
                 ),
 
             # Rotations
-            Example(hr="(((1_32 ROL 1) ROR 1) = 1_32)",
+            Example(hr="(1_32 = ((1_32 ROL 1) ROR 1))",
                     expr=Equals(BVRor(BVRol(BVOne(32), 1),1), BVOne(32)),
                     is_valid=True,
                     is_sat=True,
@@ -416,14 +419,14 @@ def get_full_example_formulae(environment=None):
                     logic=pysmt.logics.QF_BV
                 ),
 
-            Example(hr="((bv16 - bv16) = 0_16)",
+            Example(hr="(0_16 = (bv16 - bv16))",
                     expr=Equals(BVSub(bv16, bv16), BVZero(16)),
                     is_valid=True,
                     is_sat=True,
                     logic=pysmt.logics.QF_BV
                 ),
 
-            Example(hr="((bv16 - bv16)[0:7] = bv8)",
+            Example(hr="(bv8 = (bv16 - bv16)[0:7])",
                     expr=Equals(BVExtract(BVSub(bv16, bv16), 0, 7), bv8),
                     is_valid=False,
                     is_sat=True,
@@ -437,7 +440,7 @@ def get_full_example_formulae(environment=None):
                     logic=pysmt.logics.QF_BV
                 ),
 
-            Example(hr="((bv16 bvcomp bv16) = 0_1)",
+            Example(hr="(0_1 = (bv16 bvcomp bv16))",
                     expr=Equals(BVComp(bv16, bv16), BVZero(1)),
                     is_valid=False,
                     is_sat=False,
@@ -458,7 +461,7 @@ def get_full_example_formulae(environment=None):
                     logic=pysmt.logics.QF_BV
                 ),
 
-            Example(hr="((bv16 s< 0_16) | (0_16 s<= bv16))",
+            Example(hr="((0_16 s<= bv16) | (bv16 s< 0_16))",
                     expr=Or(BVSGT(BVZero(16), bv16), BVSGE(bv16, BVZero(16))),
                     is_valid=True,
                     is_sat=True,
@@ -479,28 +482,28 @@ def get_full_example_formulae(environment=None):
                     logic=pysmt.logics.QF_BV
                 ),
 
-            Example(hr="((bv16 | 0_16) = bv16)",
+            Example(hr="(bv16 = (bv16 | 0_16))",
                     expr=Equals(BVOr(bv16, BVZero(16)), bv16),
                     is_valid=True,
                     is_sat=True,
                     logic=pysmt.logics.QF_BV
                 ),
 
-            Example(hr="((bv16 | 5_16) = bv16)",
+            Example(hr="(bv16 = (bv16 | 5_16))",
                     expr=Equals(BVOr(bv16, BV(5, 16)), bv16),
                     is_valid=False,
                     is_sat=True,
                     logic=pysmt.logics.QF_BV
                 ),
 
-            Example(hr="((bv16 & 0_16) = 0_16)",
+            Example(hr="(0_16 = (bv16 & 0_16))",
                     expr=Equals(BVAnd(bv16, BVZero(16)), BVZero(16)),
                     is_valid=True,
                     is_sat=True,
                     logic=pysmt.logics.QF_BV
                 ),
 
-            Example(hr="((bv16 & 7_16) = 0_16)",
+            Example(hr="(0_16 = (bv16 & 7_16))",
                     expr=Equals(BVAnd(bv16, BV(7, 16)), BVZero(16)),
                     is_valid=False,
                     is_sat=True,
@@ -523,35 +526,35 @@ def get_full_example_formulae(environment=None):
                     logic=pysmt.logics.QF_BV
                 ),
 
-            Example(hr="((bv16 u% 1_16) = 0_16)",
+            Example(hr="(0_16 = (bv16 u% 1_16))",
                     expr=Equals(BVURem(bv16, BVOne(16)), BVZero(16)),
                     is_valid=True,
                     is_sat=True,
                     logic=pysmt.logics.QF_BV
                 ),
 
-            Example(hr="((bv16 u% bv16) = 0_16)",
+            Example(hr="(0_16 = (bv16 u% bv16))",
                     expr=Equals(BVURem(bv16, bv16), BVZero(16)),
                     is_valid=True,
                     is_sat=True,
                     logic=pysmt.logics.QF_BV
                 ),
 
-            Example(hr="((bv16 s% 1_16) = 0_16)",
+            Example(hr="(0_16 = (bv16 s% 1_16))",
                     expr=Equals(BVSRem(bv16, BVOne(16)), BVZero(16)),
                     is_valid=True,
                     is_sat=True,
                     logic=pysmt.logics.QF_BV
                 ),
 
-            Example(hr="((bv16 s% bv16) = 0_16)",
+            Example(hr="(0_16 = (bv16 s% bv16))",
                     expr=Equals(BVSRem(bv16, bv16), BVZero(16)),
                     is_valid=True,
                     is_sat=True,
                     logic=pysmt.logics.QF_BV
                 ),
 
-            Example(hr="((bv16 s% (- 1_16)) = 0_16)",
+            Example(hr="(0_16 = (bv16 s% (- 1_16)))",
                     expr=Equals(BVSRem(bv16, BVNeg(BVOne(16))), BVZero(16)),
                     is_valid=True,
                     is_sat=True,
@@ -565,7 +568,7 @@ def get_full_example_formulae(environment=None):
                     logic=pysmt.logics.QF_BV
                 ),
 
-            Example(hr="((bv16 a>> 0_16) = bv16)",
+            Example(hr="(bv16 = (bv16 a>> 0_16))",
                     expr=Equals(BVAShr(bv16, BVZero(16)), bv16),
                     is_valid=True,
                     is_sat=True,
@@ -581,7 +584,7 @@ def get_full_example_formulae(environment=None):
                     logic=pysmt.logics.QF_BV
                 ),
 
-            Example(hr="(bv2nat(1_8) = 1)",
+            Example(hr="(1 = bv2nat(1_8))",
                     expr=Equals(BVToNatural(BVOne(8)), Int(1)),
                     is_valid=True,
                     is_sat=True,
@@ -659,14 +662,14 @@ def get_full_example_formulae(environment=None):
             #
             # UFLIRA
             #
-            Example(hr="((p < ih(r, q)) & (x -> y))",
+            Example(hr="((x -> y) & (p < ih(r, q)))",
                     expr=And(GT(Function(ih, (r, q)), p), Implies(x, y)),
                     is_valid=False,
                     is_sat=True,
                     logic=pysmt.logics.QF_UFLIRA
                 ),
 
-            Example(hr="(((p - 3) = q) -> ((p < ih(r, (q + 3))) | (ih(r, p) <= p)))",
+            Example(hr="((q = (p - 3)) -> ((p < ih(r, (q + 3))) | (ih(r, p) <= p)))",
                     expr=Implies(Equals(Minus(p, Int(3)), q),
                                  Or(GT(Function(ih, (r, Plus(q, Int(3)))), p),
                                     LE(Function(ih, (r, p)), p))),
@@ -675,7 +678,7 @@ def get_full_example_formulae(environment=None):
                     logic=pysmt.logics.QF_UFLIRA
                 ),
 
-            Example(hr="(((ToReal((p - 3)) = r) & (ToReal(q) = r)) -> ((p < ih(ToReal((p - 3)), (q + 3))) | (ih(r, p) <= p)))",
+            Example(hr="(((r = ToReal((p - 3))) & (r = ToReal(q))) -> ((ih(r, p) <= p) | (p < ih(ToReal((p - 3)), (q + 3)))))",
                     expr=Implies(And(Equals(ToReal(Minus(p, Int(3))), r),
                                      Equals(ToReal(q), r)),
                                  Or(GT(Function(ih, (ToReal(Minus(p, Int(3))),
@@ -686,7 +689,7 @@ def get_full_example_formulae(environment=None):
                     logic=pysmt.logics.QF_UFLIRA
                 ),
 
-            Example(hr="(! (((ToReal((p - 3)) = r) & (ToReal(q) = r)) -> ((p < ih(ToReal((p - 3)), (q + 3))) | (ih(r, p) <= p))))",
+            Example(hr="(! (((r = ToReal((p - 3))) & (r = ToReal(q))) -> ((ih(r, p) <= p) | (p < ih(ToReal((p - 3)), (q + 3))))))",
                     expr=Not(Implies(And(Equals(ToReal(Minus(p, Int(3))), r),
                                          Equals(ToReal(q), r)),
                                      Or(GT(Function(ih, (ToReal(Minus(p, Int(3))),
@@ -699,14 +702,14 @@ def get_full_example_formulae(environment=None):
             #
             # STR
             #
-            Example(hr='("mystr" = str1)',
+            Example(hr='(str1 = "mystr")',
                     expr=Equals(String("mystr"), str1),
                     is_valid=False,
                     is_sat=True,
                     logic=pysmt.logics.QF_SLIA
                 ),
 
-            Example(hr='((5 < str.len(str1)) & ("mystr" = str1))',
+            Example(hr='((str1 = "mystr") & (5 < str.len(str1)))',
                     expr=And(LT(Int(5), StrLength(str1)),
                              Equals(String("mystr"), str1)),
                     is_valid=False,
@@ -714,7 +717,7 @@ def get_full_example_formulae(environment=None):
                     logic=pysmt.logics.QF_SLIA
                 ),
 
-            Example(hr='((5 = str.len(str1)) & (str.++("my", "str") = str1))',
+            Example(hr='((5 = str.len(str1)) & (str1 = str.++("my", "str")))',
                     expr=And(Equals(Int(5), StrLength(str1)),
                              Equals(StrConcat(String("my"),String("str")), str1)),
                     is_valid=False,
@@ -736,14 +739,14 @@ def get_full_example_formulae(environment=None):
                     logic=pysmt.logics.QF_SLIA
                 ),
 
-            Example(hr='(str.indexof("mystr", "str", 1) = 2)',
+            Example(hr='(2 = str.indexof("mystr", "str", 1))',
                     expr=Equals(StrIndexOf(String("mystr"),String("str"),Int(1)),Int(2)),
                     is_valid=True,
                     is_sat=True,
                     logic=pysmt.logics.QF_SLIA
                 ),
 
-            Example(hr='(str.indexof(str1, "str", 1) = 2)',
+            Example(hr='(2 = str.indexof(str1, "str", 1))',
                     expr=Equals(StrIndexOf(str1,String("str"),Int(1)),Int(2)),
                     is_valid=False,
                     is_sat=True,
@@ -783,7 +786,7 @@ def get_full_example_formulae(environment=None):
                     is_sat=True,
                     logic=pysmt.logics.QF_SLIA),
 
-            Example(hr='(str.to.int("9") = 9)',
+            Example(hr='(9 = str.to.int("9"))',
                     expr=Equals(StrToInt(String("9")), Int(9)),
                     is_valid=True,
                     is_sat=True,
@@ -810,7 +813,7 @@ def get_full_example_formulae(environment=None):
                     is_sat=True,
                     logic=pysmt.logics.QF_ALIA),
 
-            Example(hr="(aii[0 := 0][0] = 0)",
+            Example(hr="(0 = aii[0 := 0][0])",
                     expr=Equals(Select(Store(aii, Int(0), Int(0)), Int(0)),
                                 Int(0)),
                     is_valid=True,
@@ -818,28 +821,28 @@ def get_full_example_formulae(environment=None):
                     logic=pysmt.logics.QF_ALIA
                 ),
 
-            Example(hr="((Array{Int, Int}(0)[1 := 1] = aii) & (aii[1] = 0))",
+            Example(hr="((aii = Array{Int, Int}(0)[1 := 1]) & (0 = aii[1]))",
                     expr=And(Equals(Array(INT, Int(0), {Int(1) : Int(1)}), aii), Equals(Select(aii, Int(1)), Int(0))),
                     is_valid=False,
                     is_sat=False,
                     logic=pysmt.logics.get_logic_by_name("QF_ALIA*")
                 ),
 
-            Example(hr="((Array{Int, Int}(0)[1 := 3] = aii) & (aii[1] = 3))",
+            Example(hr="((aii = Array{Int, Int}(0)[1 := 3]) & (3 = aii[1]))",
                     expr=And(Equals(Array(INT, Int(0), {Int(1) : Int(3)}), aii), Equals(Select(aii, Int(1)), Int(3))),
                     is_valid=False,
                     is_sat=True,
                     logic=pysmt.logics.get_logic_by_name("QF_ALIA*")
                 ),
 
-            Example(hr="((Array{Real, Int}(10) = ari) & (ari[6/5] = 0))",
+            Example(hr="((ari = Array{Real, Int}(10)) & (0 = ari[6/5]))",
                     expr=And(Equals(Array(REAL, Int(10)), ari), Equals(Select(ari, Real((6, 5))), Int(0))),
                     is_valid=False,
                     is_sat=False,
                     logic=pysmt.logics.get_logic_by_name("QF_AUFBVLIRA*")
                 ),
 
-            Example(hr="((Array{Real, Int}(0)[1.0 := 10][2.0 := 20][3.0 := 30][4.0 := 40] = ari) & (! ((ari[0.0] = 0) & (ari[1.0] = 10) & (ari[2.0] = 20) & (ari[3.0] = 30) & (ari[4.0] = 40))))",
+            Example(hr="((ari = Array{Real, Int}(0)[1.0 := 10][2.0 := 20][3.0 := 30][4.0 := 40]) & (! ((0 = ari[0.0]) & (10 = ari[1.0]) & (20 = ari[2.0]) & (30 = ari[3.0]) & (40 = ari[4.0]))))",
                     expr=And(Equals(Array(REAL, Int(0), {Real(1) : Int(10), Real(2) : Int(20), Real(3) : Int(30), Real(4) : Int(40)}), ari),
                              Not(And(Equals(Select(ari, Real(0)), Int(0)),
                                      Equals(Select(ari, Real(1)), Int(10)),
@@ -851,7 +854,7 @@ def get_full_example_formulae(environment=None):
                     logic=pysmt.logics.get_logic_by_name("QF_AUFBVLIRA*")
                 ),
 
-            Example(hr="((Array{Real, Int}(0)[1.0 := 10][2.0 := 20][3.0 := 30][4.0 := 40][5.0 := 50] = ari) & (! ((ari[0.0] = 0) & (ari[1.0] = 10) & (ari[2.0] = 20) & (ari[3.0] = 30) & (ari[4.0] = 40) & (ari[5.0] = 50))))",
+            Example(hr="((ari = Array{Real, Int}(0)[1.0 := 10][2.0 := 20][3.0 := 30][4.0 := 40][5.0 := 50]) & (! ((0 = ari[0.0]) & (10 = ari[1.0]) & (20 = ari[2.0]) & (30 = ari[3.0]) & (40 = ari[4.0]) & (50 = ari[5.0]))))",
                     expr=And(Equals(Array(REAL, Int(0), {Real(1) : Int(10), Real(2) : Int(20), Real(3) : Int(30), Real(4) : Int(40), Real(5) : Int(50)}), ari),
                              Not(And(Equals(Select(ari, Real(0)), Int(0)),
                                      Equals(Select(ari, Real(1)), Int(10)),
@@ -864,14 +867,14 @@ def get_full_example_formulae(environment=None):
                     logic=pysmt.logics.get_logic_by_name("QF_AUFBVLIRA*")
                 ),
 
-            Example(hr="((Array{BV{8}, BV{8}}(0_8)[1_8 := 42_8] = abb) & (abb[1_8] = 42_8))",
+            Example(hr="((abb = Array{BV{8}, BV{8}}(0_8)[1_8 := 42_8]) & (42_8 = abb[1_8]))",
                     expr=And(Equals(Array(BV8, BV(0, 8), {BV(1, 8) : BV(42, 8)}), abb), Equals(Select(abb, BV(1, 8)), BV(42, 8))),
                     is_valid=False,
                     is_sat=True,
                     logic=pysmt.logics.get_logic_by_name("QF_ABV*")
                 ),
 
-            Example(hr="((a_arb_aii = Array{Array{Real, BV{8}}, Array{Int, Int}}(Array{Int, Int}(7))) -> (a_arb_aii[arb][42] = 7))",
+            Example(hr="((a_arb_aii = Array{Array{Real, BV{8}}, Array{Int, Int}}(Array{Int, Int}(7))) -> (7 = a_arb_aii[arb][42]))",
                     expr=Implies(Equals(nested_a, Array(ArrayType(REAL, BV8),
                                                         Array(INT, Int(7)))),
                                  Equals(Select(Select(nested_a, arb), Int(42)),
@@ -904,14 +907,14 @@ def get_full_example_formulae(environment=None):
                     logic=pysmt.logics.QF_NRA
                 ),
 
-            Example(hr="((p ^ 2) = 0.0)",
+            Example(hr="(0.0 = (p ^ 2))",
                     expr=Equals(Pow(p, Int(2)), Real(0)),
                     is_valid=False,
                     is_sat=True,
                     logic=pysmt.logics.QF_NIRA
                     ),
 
-            Example(hr="((r ^ 2.0) = 0.0)",
+            Example(hr="(0.0 = (r ^ 2.0))",
                     expr=Equals(Pow(r, Real(2)), Real(0)),
                     is_valid=False,
                     is_sat=True,
@@ -925,7 +928,7 @@ def get_full_example_formulae(environment=None):
                     logic=pysmt.logics.QF_NRA
                 ),
 
-            Example(hr="((5.0 * r * 5.0) = 25.0)",
+            Example(hr="(25.0 = (r * 5.0 * 5.0))",
                     expr=Equals(Times(Real(5), r, Real(5)), Real(25)),
                     is_valid=False,
                     is_sat=True,
@@ -939,14 +942,14 @@ def get_full_example_formulae(environment=None):
                     logic=pysmt.logics.QF_NIA
                 ),
 
-            Example(hr="((5 * p * 5) = 25)",
+            Example(hr="(25 = (p * 5 * 5))",
                     expr=Equals(Times(Int(5), p, Int(5)), Int(25)),
                     is_valid=False,
                     is_sat=True,
                     logic=pysmt.logics.QF_LIA
                 ),
 
-            Example(hr="(((1 - 1) * p * 1) = 0)",
+            Example(hr="(0 = (p * 1 * (1 - 1)))",
                     expr=Equals(Times(Minus(Int(1), Int(1)), p, Int(1)),
                                 Int(0)),
                     is_valid=True,
@@ -963,7 +966,7 @@ def get_full_example_formulae(environment=None):
                     logic=pysmt.logics.QF_LRA
                 ),
 
-            Example(hr="(((r + 5.0 + s) * (s + 2.0 + r)) = 0.0)",
+            Example(hr="(0.0 = ((r + s + 5.0) * (r + s + 2.0)))",
                     expr=Equals(Times(Plus(r, Real(5), s),
                                       Plus(s, Real(2), r)),
                                 Real(0)),
@@ -971,7 +974,7 @@ def get_full_example_formulae(environment=None):
                     is_sat=True,
                     logic=pysmt.logics.QF_NRA),
 
-            Example(hr="(((p + 5 + q) * (p - (q - 5))) = ((p * p) + (10 * p) + 25 + (-1 * q * q)))",
+            Example(hr="(((p + q + 5) * (p - (q - 5))) = (25 + (p * p) + (p * 10) + (q * q * -1)))",
                     expr=Equals(Times(Plus(p, Int(5), q),
                                       Minus(p, Minus(q, Int(5)))),
                                 Plus(Times(p, p),
