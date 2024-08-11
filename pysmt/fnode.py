@@ -17,13 +17,8 @@
 #
 """FNode are the building blocks of formulae."""
 from __future__ import annotations
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from typing import Self, Optional, TypeAlias, Callable
-    from pysmt.environment import Environment
-    from pysmt.formula import FormulaManager
+from typing import NamedTuple, TYPE_CHECKING
 
-from typing import NamedTuple
 import pysmt
 import pysmt.smtlib
 from pysmt.operators import (FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF,
@@ -60,10 +55,14 @@ from pysmt.constants import (Integer, Fraction, is_python_integer)
 from pysmt.exceptions import (PysmtValueError, PysmtModeError,
                               UnsupportedOperatorError)
 
-# TODO: we may want to turn the constants in operators.py into an enum class.
-FNodeOp: TypeAlias = int
-# Union of: string, int, real, bit-vector.
-ContentPayload: TypeAlias = str | Integer | Fraction | tuple[Integer, int]
+if TYPE_CHECKING:
+    from typing import Self, Optional, TypeAlias, Callable
+    from pysmt.environment import Environment
+    from pysmt.formula import FormulaManager
+    # TODO: we may want to turn the constants in operators.py into an enum class.
+    FNodeOp: TypeAlias = int
+    # Union of: string, int, real, bit-vector.
+    ContentPayload: TypeAlias = str | Integer | Fraction | tuple[Integer, int]
 
 
 class FNodeContent(NamedTuple):
