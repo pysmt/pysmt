@@ -58,8 +58,13 @@ from pysmt.constants import (Integer,
 class FormulaManager(object):
     """FormulaManager is responsible for the creation of all formulae."""
 
+    @staticmethod
+    def _get_env() -> Environment:
+        from pysmt.environment import get_env
+        return get_env()
+
     def __init__(self: Self, env: Optional[Environment] = None) -> None:
-        self.env: Environment = env if env else get_env()
+        self.env: Environment = env if env else FormulaManager._get_env()
         # Attributes for handling symbols and formulae
         self.formulae: dict[FNodeContent, FNode] = {}
         self.symbols: dict[str, FNode] = {}
@@ -246,11 +251,11 @@ class FormulaManager(object):
         The exponent must be a constant.
         """
         if not exponent.is_constant():
-            raise PysmtValueError("The exponent of POW must be a constant.", exponent)
+            raise PysmtValueError("The exponent of POW must be a constant.",
+                                  exponent)
 
         if base.is_constant():
-            assert isinstance(base.constant_value, int | Integer | Fraction)
-            val = base.constant_value() ** exponent.constant_value()
+            val = base.constant_value() ** exponent.constant_value()  # type: ignore
             return self.Real(val)
         return self.create_node(node_type=op.POW, args=(base, exponent))
 

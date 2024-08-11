@@ -47,12 +47,15 @@ class SimpleTypeChecker(walkers.DagWalker):
     def _get_key(self: Self, formula: FNode, **kwargs) -> FNode:
         return formula
 
+    def _serialize(self: Self, formula: FNode) -> str:
+        return self.env.serializer.serialize(formula)
+
     def get_type(self: Self, formula: FNode) -> PySMTType:
         """ Returns the pysmt.types type of the formula """
         res = self.walk(formula)
         if not self.be_nice and res is None:
             raise PysmtTypeError("The formula '%s' is not well-formed"
-                                 % str(formula))
+                                 % self._serialize(formula))
         return res
 
     def walk_type_to_type(self, formula, args, type_in, type_out):
@@ -197,7 +200,7 @@ class SimpleTypeChecker(walkers.DagWalker):
             raise PysmtTypeError("The formula '%s' is not well-formed."
                                  "Equality operator is not supported for Boolean"
                                  " terms. Use Iff instead."
-                                 % str(formula))
+                                 % self._serialize(formula))
         elif args[0].is_bv_type():
             return self.walk_bv_to_bool(formula, args)
         return self.walk_type_to_type(formula, args, args[0], BOOL)
@@ -311,21 +314,23 @@ class SimpleTypeChecker(walkers.DagWalker):
 
     def walk_array_store(self, formula, args, **kwargs):
         assert formula is not None
-        if None in args: return None
-        if (args[0].is_array_type() and args[0].index_type==args[1] and
-            args[0].elem_type==args[2]):
+        if None in args:
+            return None
+        if (args[0].is_array_type() and args[0].index_type == args[1]
+                and args[0].elem_type == args[2]):
             return args[0]
         return None
 
     def walk_array_value(self, formula, args, **kwargs):
         assert formula is not None
-        if None in args: return None
+        if None in args:
+            return None
 
         default_type = args[0]
         idx_type = formula.array_value_index_type()
         for i, c in enumerate(args[1:]):
             if i % 2 == 0 and c != idx_type:
-                return None # Wrong index type
+                return None  # Wrong index type
             elif i % 2 == 1 and c != default_type:
                 return None
         return ArrayType(idx_type, default_type)

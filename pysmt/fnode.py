@@ -59,6 +59,7 @@ if TYPE_CHECKING:
     from typing import Self, Optional, TypeAlias, Callable
     from pysmt.environment import Environment
     from pysmt.formula import FormulaManager
+    from pysmt.typing import PySMTType
     # TODO: we may want to turn the constants in operators.py into an enum class.
     FNodeOp: TypeAlias = int
     # Union of: string, int, real, bit-vector.
@@ -101,7 +102,8 @@ class FNode(object):
                  environment currently at the top of the env-stack.
         """
         env = pysmt.environment.get_env()
-        assert self in env.formula_manager.formulae.values()
+        assert self in env.formula_manager, \
+            "Formula `self` does not belong to the current Formula Manager"
         return env
 
     @property
