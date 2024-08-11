@@ -427,7 +427,7 @@ class CVC5Converter(Converter, DagWalker):
         ext = self.cvc5.mkOp(Kind.BITVECTOR_ZERO_EXTEND, formula.bv_extend_step())
         return self.cvc5.mkTerm(ext, args[0])
 
-    def walk_bv_sext (self, formula, args, **kwargs):
+    def walk_bv_sext(self, formula, args, **kwargs):
         ext = self.cvc5.mkOp(Kind.BITVECTOR_SIGN_EXTEND, formula.bv_extend_step())
         return self.cvc5.mkTerm(ext, args[0])
 
@@ -452,8 +452,8 @@ class CVC5Converter(Converter, DagWalker):
     def walk_str_constant(self, formula, args, **kwargs):
         return self.cvc5.mkString(formula.constant_value())
 
-    def walk_str_length (self, formula, args, **kwargs):
-        return self.cvc5.mkTerm(Kind.STRING_LENGTH , args[0])
+    def walk_str_length(self, formula, args, **kwargs):
+        return self.cvc5.mkTerm(Kind.STRING_LENGTH, args[0])
 
     def walk_str_concat(self, formula, args, **kwargs):
         return self.cvc5.mkTerm(Kind.STRING_CONCAT, *args)
