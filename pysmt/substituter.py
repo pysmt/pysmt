@@ -15,7 +15,11 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import warnings
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import Self
+    from pysmt.fnode import FNode
 
 import pysmt.walkers
 from pysmt.walkers.generic import handles
@@ -75,7 +79,7 @@ class FunctionInterpretation:
         self.function_body = function_body
 
 
-    def interpret(self, env, actual_params):
+    def interpret(self, env, actual_params) -> FNode:
         """Given a set of actual parameter, returns the 'value' of the
         function by substituting formal parameters with their actual
         values.
@@ -164,7 +168,8 @@ class Substituter(pysmt.walkers.IdentityDagWalker):
                                                                          formula,
                                                                          **kwargs)
 
-    def substitute(self, formula, subs=None, interpretations=None):
+    def substitute(self: Self, formula: FNode, subs: dict[FNode, FNode] = None,
+                   interpretations=None) -> FNode:
         """Replaces any subformula in formula with the definition in subs (if
         any) and interprets function symbols with the interpretations
         in `interpretations`
@@ -302,10 +307,10 @@ class MSSubstituter(Substituter):
     def __init__(self, env):
         Substituter.__init__(self, env=env)
 
-    def substitute(self, formula, subs):
+    def substitute(self: Self, formula: FNode, subs: dict[FNode, FNode]) -> FNode:
         return Substituter.substitute(self, formula, subs)
 
-    def _substitute(self, formula, substitutions):
+    def _substitute(self: Self, formula: FNode, substitutions: dict[FNode, FNode]) -> FNode:
         """Returns the substitution for formula, if one is defined, otherwise
         returns the formula unchanged.
 

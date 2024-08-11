@@ -95,7 +95,7 @@ def is_pysmt_integer(var):
     return type(var) == IntegerClass
 
 
-def is_python_integer(var):
+def is_python_integer(var) -> bool:
     """Checks whether var is Python Integer.
 
     This accounts for: long, int and mpz (if available).
@@ -107,7 +107,7 @@ def is_python_integer(var):
     return False
 
 
-def is_python_rational(var):
+def is_python_rational(var) -> bool:
     """Tests whether var is a Rational.
 
     This accounts for: long, int, float, Fraction, mpz, mpq (if available).
