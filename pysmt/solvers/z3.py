@@ -137,15 +137,15 @@ class Z3Options(SolverOptions):
 class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
                SmtLibBasicSolver, SmtLibIgnoreMixin):
 
-    LOGICS = PYSMT_LOGICS
+    LOGICS = PYSMT_LOGICS - set(x for x in PYSMT_LOGICS if x.theory.strings)
     OptionsClass = Z3Options
 
     SOLVERFOR_LOGIC_NAMES=['AUFLIA', 'ALIA', 'AUFLIRA', 'AUFNIRA', 'LRA', 'LIA', 'NIA',
                            'NRA', 'QF_ABV', 'QF_AUFBV', 'QF_AUFLIA', 'QF_ALIA', 'QF_AX',
                            'QF_BV', 'BV', 'UFBV', 'QF_IDL', 'QF_LIA', 'QF_LRA', 'QF_NIA',
-                           'QF_NRA', 'QF_RDL', 'QF_UF', 'UF', 'QF_UFBV', 'QF_UFIDL',
+                           'QF_NRA', 'QF_RDL', 'QF_UF', 'UF', 'QF_UFBV', 'QF_UFIDL', 
                            'QF_UFLIA', 'QF_UFLRA', 'QF_UFNRA', 'QF_UFNIA', 'UFLRA', 'UFNIA']
-
+    
     def __init__(self, environment, logic, **options):
         IncrementalTrackingSolver.__init__(self,
                                            environment=environment,
@@ -356,18 +356,6 @@ class Z3Converter(Converter, DagWalker):
             z3.Z3_OP_POWER : lambda args, expr: self.mgr.Pow(args[0], args[1]),
             z3.Z3_OP_SELECT : lambda args, expr: self.mgr.Select(args[0], args[1]),
             z3.Z3_OP_STORE : lambda args, expr: self.mgr.Store(args[0], args[1], args[2]),
-            # string ops, TODO: seq may not be a string.
-            z3.Z3_OP_SEQ_LENGTH: lambda args, expr: self.mgr.StrLength(args[0]),
-            z3.Z3_OP_SEQ_CONCAT: lambda args, expr: self.mgr.StrConcat(args),
-            z3.Z3_OP_SEQ_CONTAINS: lambda args, expr: self.mgr.StrContains(args[0], args[1]),
-            z3.Z3_OP_SEQ_INDEX: lambda args, expr: self.mgr.StrIndexOf(args[0], args[1], args[2]),
-            z3.Z3_OP_SEQ_REPLACE: lambda args, expr: self.mgr.StrReplace(args[0], args[1], args[2]),
-            z3.Z3_OP_SEQ_EXTRACT: lambda args, expr: self.mgr.StrSubstr(args[0], args[1], args[2]),
-            z3.Z3_OP_SEQ_PREFIX: lambda args, expr: self.mgr.StrPrefixOf(args[0], args[1]),
-            z3.Z3_OP_SEQ_SUFFIX: lambda args, expr: self.mgr.StrSuffixOf(args[0], args[1]),
-            z3.Z3_OP_STR_TO_INT: lambda args, expr: self.mgr.StrToInt(args[0]),
-            z3.Z3_OP_INT_TO_STR: lambda args, expr: self.mgr.IntToStr(args[0]),
-            z3.Z3_OP_SEQ_AT: lambda args, expr: self.mgr.StrCharAt(args[0], args[1]),
             # Actually use both args, expr
             z3.Z3_OP_SIGN_EXT: lambda args, expr: self.mgr.BVSExt(args[0], z3.get_payload(expr, 0)),
             z3.Z3_OP_ZERO_EXT: lambda args, expr: self.mgr.BVZExt(args[0], z3.get_payload(expr, 0)),
@@ -384,8 +372,7 @@ class Z3Converter(Converter, DagWalker):
         # Unique reference to Sorts
         self.z3RealSort = z3.RealSort(self.ctx)
         self.z3BoolSort = z3.BoolSort(self.ctx)
-        self.z3IntSort = z3.IntSort(self.ctx)
-        self.z3StringSort = z3.StringSort(self.ctx)
+        self.z3IntSort  = z3.IntSort(self.ctx)
         self._z3ArraySorts = {}
         self._z3BitVecSorts = {}
         self._z3Sorts = {}
@@ -441,15 +428,14 @@ class Z3Converter(Converter, DagWalker):
 
             if type_.is_bool_type():
                 return z3.BoolRef
-            if type_.is_real_type() or type_.is_int_type():
+            elif type_.is_real_type() or type_.is_int_type():
                 return z3.ArithRef
-            if type_.is_array_type():
+            elif type_.is_array_type():
                 return z3.ArrayRef
-            if type_.is_bv_type():
+            elif type_.is_bv_type():
                 return z3.BitVecRef
-            if type_.is_string_type():
-                return z3.SeqRef
-            raise NotImplementedError(formula)
+            else:
+                raise NotImplementedError(formula)
         elif formula.node_type() in op.ARRAY_OPERATORS:
             return z3.ArrayRef
         elif formula.is_ite():
@@ -538,9 +524,6 @@ class Z3Converter(Converter, DagWalker):
                 n = expr.as_long()
                 w = expr.size()
                 return self.mgr.BV(n, w)
-            elif z3.is_string_value(expr):
-                val = expr.as_string()
-                return self.mgr.String(val)
             elif z3.is_as_array(expr):
                 if model is None:
                     raise NotImplementedError("As-array expressions cannot be" \
@@ -645,7 +628,9 @@ class Z3Converter(Converter, DagWalker):
         elif symbol_type.is_array_type():
             sort_ast = self._type_to_z3(symbol_type).ast
         elif symbol_type.is_string_type():
-            sort_ast = self.z3StringSort.ast
+            raise ConvertExpressionError(message=("Unsupported string symbol: %s" %
+                                                  str(formula)),
+                                         expression=formula)
         else:
             sort_ast = self._type_to_z3(symbol_type).ast
         # Create const with given sort
@@ -674,14 +659,6 @@ class Z3Converter(Converter, DagWalker):
             z3.Z3_dec_ref(self.ctx.ref(), or2)
             return z3term
         z3term = z3.Z3_mk_ite(self.ctx.ref(), i, t, e)
-        z3.Z3_inc_ref(self.ctx.ref(), z3term)
-        return z3term
-
-    def walk_str_constant(self, formula, **kwargs):
-        assert formula.is_constant()
-        assert formula.node_type() == op.STR_CONSTANT
-        _t = z3.StringVal(formula.constant_value(), ctx=self.ctx)
-        z3term = _t.as_ast()
         z3.Z3_inc_ref(self.ctx.ref(), z3term)
         return z3term
 
@@ -732,6 +709,11 @@ class Z3Converter(Converter, DagWalker):
         z3.Z3_inc_ref(self.ctx.ref(), z3term)
         return z3term
 
+    def walk_toreal(self, formula, args, **kwargs):
+        z3term = z3.Z3_mk_int2real(self.ctx.ref(), args[0])
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
+        return z3term
+
     def _z3_func_decl(self, func_name):
         """Create a Z3 Function Declaration for the given function."""
         try:
@@ -773,6 +755,16 @@ class Z3Converter(Converter, DagWalker):
         z3.Z3_inc_ref(self.ctx.ref(), z3term)
         return z3term
 
+    def walk_bv_not(self, formula, args, **kwargs):
+        z3term = z3.Z3_mk_bvnot(self.ctx.ref(), args[0])
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
+        return z3term
+
+    def walk_bv_neg(self, formula, args, **kwargs):
+        z3term = z3.Z3_mk_bvneg(self.ctx.ref(), args[0])
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
+        return z3term
+
     def walk_bv_rol(self, formula, args, **kwargs):
         bvsort = self.z3BitVecSort(formula.bv_width())
         step = z3.Z3_mk_numeral(self.ctx.ref(),
@@ -799,7 +791,7 @@ class Z3Converter(Converter, DagWalker):
         z3.Z3_inc_ref(self.ctx.ref(), z3term)
         return z3term
 
-    def walk_bv_sext(self, formula, args, **kwargs):
+    def walk_bv_sext (self, formula, args, **kwargs):
         z3term = z3.Z3_mk_sign_ext(self.ctx.ref(),
                                    formula.bv_extend_step(), args[0])
         z3.Z3_inc_ref(self.ctx.ref(), z3term)
@@ -850,40 +842,17 @@ class Z3Converter(Converter, DagWalker):
     def _z3_to_type(self, sort):
         if sort.kind() == z3.Z3_BOOL_SORT:
             return types.BOOL
-        if sort.kind() == z3.Z3_INT_SORT:
+        elif sort.kind() == z3.Z3_INT_SORT:
             return types.INT
-        if sort.kind() == z3.Z3_REAL_SORT:
+        elif sort.kind() == z3.Z3_REAL_SORT:
             return types.REAL
-        if sort.kind() == z3.Z3_SEQ_SORT and sort.is_string():
-            return types.STRING
-        if sort.kind() == z3.Z3_ARRAY_SORT:
+        elif sort.kind() == z3.Z3_ARRAY_SORT:
             return types.ArrayType(self._z3_to_type(sort.domain()),
                                    self._z3_to_type(sort.range()))
-        if sort.kind() == z3.Z3_BV_SORT:
+        elif sort.kind() == z3.Z3_BV_SORT:
             return types.BVType(sort.size())
-
-        raise NotImplementedError("Unsupported sort in conversion: %s" % sort)
-
-    def make_walk_unary(func):
-        def walk_unary(self, formula, args, **kwargs):
-            z3term = func(self.ctx.ref(), args[0])
-            z3.Z3_inc_ref(self.ctx.ref(), z3term)
-            return z3term
-        return walk_unary
-
-    def make_walk_binary(func):
-        def walk_binary(self, formula, args, **kwargs):
-            z3term = func(self.ctx.ref(), args[0], args[1])
-            z3.Z3_inc_ref(self.ctx.ref(), z3term)
-            return z3term
-        return walk_binary
-
-    def make_walk_ternary(func):
-        def walk_ternary(self, formula, args, **kwargs):
-            z3term = func(self.ctx.ref(), args[0], args[1], args[2])
-            z3.Z3_inc_ref(self.ctx.ref(), z3term)
-            return z3term
-        return walk_ternary
+        else:
+            raise NotImplementedError("Unsupported sort in conversion: %s" % sort)
 
     def make_walk_nary(func):
         def walk_nary(self, formula, args, **kwargs):
@@ -893,7 +862,13 @@ class Z3Converter(Converter, DagWalker):
             return z3term
         return walk_nary
 
-    walk_toreal  = make_walk_unary(z3.Z3_mk_int2real)
+    def make_walk_binary(func):
+        def walk_binary(self, formula, args, **kwargs):
+            z3term = func(self.ctx.ref(), args[0], args[1])
+            z3.Z3_inc_ref(self.ctx.ref(), z3term)
+            return z3term
+        return walk_binary
+
     walk_and     = make_walk_nary(z3.Z3_mk_and)
     walk_or      = make_walk_nary(z3.Z3_mk_or)
     walk_plus    = make_walk_nary(z3.Z3_mk_add)
@@ -911,8 +886,6 @@ class Z3Converter(Converter, DagWalker):
     walk_bv_slt  = make_walk_binary(z3.Z3_mk_bvslt)
     walk_bv_sle  = make_walk_binary(z3.Z3_mk_bvsle)
     walk_bv_concat = make_walk_binary(z3.Z3_mk_concat)
-    walk_bv_not  = make_walk_unary(z3.Z3_mk_bvnot)
-    walk_bv_neg  = make_walk_unary(z3.Z3_mk_bvneg)
     walk_bv_or   = make_walk_binary(z3.Z3_mk_bvor)
     walk_bv_and  = make_walk_binary(z3.Z3_mk_bvand)
     walk_bv_xor  = make_walk_binary(z3.Z3_mk_bvxor)
@@ -926,17 +899,6 @@ class Z3Converter(Converter, DagWalker):
     walk_bv_sdiv = make_walk_binary(z3.Z3_mk_bvsdiv)
     walk_bv_srem = make_walk_binary(z3.Z3_mk_bvsrem)
     walk_bv_ashr = make_walk_binary(z3.Z3_mk_bvashr)
-    walk_str_length = make_walk_unary(z3.Z3_mk_seq_length)
-    walk_str_concat = make_walk_nary(z3.Z3_mk_seq_concat)
-    walk_str_contains = make_walk_binary(z3.Z3_mk_seq_contains)
-    walk_str_indexof = make_walk_ternary(z3.Z3_mk_seq_index)
-    walk_str_replace = make_walk_ternary(z3.Z3_mk_seq_replace)
-    walk_str_substr = make_walk_ternary(z3.Z3_mk_seq_extract)
-    walk_str_prefixof = make_walk_binary(z3.Z3_mk_seq_prefix)
-    walk_str_suffixof = make_walk_binary(z3.Z3_mk_seq_suffix)
-    walk_str_to_int = make_walk_unary(z3.Z3_mk_str_to_int)
-    walk_int_to_str = make_walk_unary(z3.Z3_mk_int_to_str)
-    walk_str_charat = make_walk_binary(z3.Z3_mk_seq_at)
     walk_exists = walk_quantifier
     walk_forall = walk_quantifier
 
@@ -948,8 +910,6 @@ class Z3Converter(Converter, DagWalker):
             return self.z3RealSort
         elif tp.is_int_type():
             return self.z3IntSort
-        elif tp.is_string_type():
-            return self.z3StringSort
         elif tp.is_array_type():
             key_sort = self._type_to_z3(tp.index_type)
             val_sort = self._type_to_z3(tp.elem_type)

@@ -84,7 +84,7 @@ class TestString(TestCase):
                 GT(StrLength(s3), Int(0)),
                 Not(StrContains(s1, s2)),
                 Not(StrContains(s1, s3)),
-                Not(Equals(StrReplace(StrReplace(s1, s2, s3), s3, s2), s1)))
+                Not(Equals(StrReplace(StrReplace(s1, s2,s3), s3, s2), s1)))
         self.assertUnsat(f)
 
         # Replace first v Replace First
@@ -206,7 +206,6 @@ class TestString(TestCase):
                 And(StrSuffixOf(s2, s1), StrContains(s2, s1)))
         theory = get_logic(f).theory
         self.assertTrue(theory.strings, theory)
-
 
 if __name__ == "__main__":
     from pysmt.test import main
