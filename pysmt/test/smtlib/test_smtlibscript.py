@@ -175,6 +175,17 @@ class TestSmtLibScript(TestCase):
         # No exceptions are thrown
         self.assertEqual(smtlib_script.replace('var', '__var0'), script.commands[0].serialize_to_string())
 
+    def test_twice_fix_real(self):
+        smtlib_script = "\n".join([
+            '(declare-fun r () Real)',
+            '(assert (< (* 1 r) 0))',
+            '(assert (< 2 (* 1 r)))'
+        ])
+        stream = StringIO(smtlib_script)
+        parser = SmtLibParser()
+        _ = parser.get_script(stream)
+        # No exceptions are thrown
+        self.assertTrue(True)
 
     def test_evaluate_command(self):
         class SmtLibIgnore(SmtLibIgnoreMixin):
