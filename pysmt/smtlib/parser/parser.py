@@ -344,13 +344,15 @@ class SmtLibParser(object):
                 get_type = self.env.stc.get_type
                 get_free_variables = self.env.fvo.get_free_variables
                 new_args = []
+                changed = False
                 for x in args:
                     if get_type(x).is_int_type() and\
                        len(get_free_variables(x)) == 0:
                         new_args.append(mgr.ToReal(x))
+                        changed = True
                     else:
                         new_args.append(x)
-                if args == new_args:
+                if not changed:
                     raise
                 return op(*new_args)
 
