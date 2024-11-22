@@ -153,8 +153,7 @@ class Substituter(pysmt.walkers.IdentityDagWalker):
 
             # 3. We invoke the relevant function (walk_exists or
             #    walk_forall) to compute the substitution
-            fun = self.functions[formula.node_type()]
-            res = fun(formula, args=[res_formula], **kwargs)
+            res = self.__class__.super(self, formula, args=[res_formula], **kwargs)
 
             # 4. We memoize the result
             key = self._get_key(formula, **kwargs)

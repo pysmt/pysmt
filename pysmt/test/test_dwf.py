@@ -73,3 +73,4 @@ class TestDwf(TestCase):
         new_t = new_node_type()
         new_types_set = set(all_types())
         self.assertEqual(new_types_set - old_types_set, set([new_t]))
+

@@ -37,19 +37,14 @@ class TreeWalker(Walker):
         return
 
     def walk(self, formula, threshold=None):
-        """Generic walk method, will apply the function defined by the map
-        self.functions.
+        """Generic walk method, will apply the function associated with
+        the node.
 
         If threshold parameter is specified, the walk_threshold
         function will be called for all nodes with depth >= threshold.
         """
 
-        try:
-            f = self.functions[formula.node_type()]
-        except KeyError:
-            f = self.walk_error
-
-        iterator = f(formula)
+        iterator = self.__class__.super(self, formula)
         if iterator is None:
             return
 
@@ -63,11 +58,7 @@ class TreeWalker(Walker):
                     if iterator is not None:
                         stack.append(iterator)
                 else:
-                    try:
-                        cf = self.functions[child.node_type()]
-                    except KeyError:
-                        cf = self.walk_error
-                    iterator = cf(child)
+                    iterator = self.__class__.super(self, child)
                     if iterator is not None:
                         stack.append(iterator)
             except StopIteration:
