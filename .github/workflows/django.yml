@@ -1,0 +1,107 @@
+from pysmt.shortcuts import Symbol, get_env, Solver
+from pysmt.logics import QF_UFLRA
+
+name = "mathsat-smtlib" # Note: The API version is called 'msat'
+
+# Path to the solver. The solver needs to take the smtlib file from
+# stdin. This might require creating a tiny shell script to set the
+# solver options.
+path = ["/tmp/mathsat"]
+logics = [QF_UFLRA,]    # List of the supported logics
+
+# Add the solver to the environment
+env = get_env()
+env.factory.add_generic_solver(name, path, logics)
+
+# The solver name of the SMT-LIB solver can be now used anywhere
+# where pySMT would accept an API solver name
+with Solver(name=name, logic="QF_UFLRA") as s:
+  print(s.is_sat(Symbol("x"))) # Truepysmt.shortcutsfrom pysmt.shortcuts import Portfolio, Symbol, Not
+
+x, y = Symbol("x"), Symbol("y")
+f = x.Implies(y)
+
+with Portfolio(["cvc5",
+                "yices",
+                ("msat", {"random_seed": 1}),
+                ("msat", {"random_seed": 17}),
+                ("msat", {"random_seed": 42})],
+               logic="QF_UFLIRA",
+               incremental=False,
+               generate_models=False) as s:
+  s.add_assertion(f)
+  s.push()
+  s.add_assertion(x)
+  res = s.solve()
+  v_y = s.get_value(y)
+  print(v_y) # TRUE
+
+  s.pop()
+  s.add_assertion(Not(y))
+  res = s.solve()
+  v_x = s.get_value(x)
+  print(v_x) # FALSEpysmt.logicspysmt.typingfrom pysmt.shortcuts import Symbol, And, GE, LT, Plus, Equals, Int, get_model
+from pysmt.typing import INT
+
+hello = [Symbol(s, INT) for s in "hello"]
+world = [Symbol(s, INT) for s in "world"]
+letters = set(hello+world)
+domains = And([And(GE(l, Int(1)),
+                   LT(l, Int(10))) for l in letters])
+
+sum_hello = Plus(hello) # n-ary operators can take lists
+sum_world = Plus(world) # as arguments
+problem = And(Equals(sum_hello, sum_world),
+              Equals(sum_hello, Int(25)))
+formula = And(domains, problem)
+
+print("Serialization of the formula:")
+print(formula)
+
+model = get_model(formula)
+if model:
+  print(model)
+else:
+  print("No solution found")https://github.com/github/codeql-action.git>>> from pysmt.shortcuts import Symbol, And, Not, is_sat
+>>>
+>>> varA = Symbol("A") # Default type is Boolean
+>>> varB = Symbol("B")
+>>> f = And(varA, Not(varB))
+>>> f
+(A & (! B))
+>>> is_sat(f)
+True
+>>> g = f.substitute({varB: varA})
+>>> g
+(A & (! A))
+>>> is_sat(g)
+Falsename: Django CI
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 4
+      matrix:
+        python-version: [3.7, 3.8, 3.9]
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    - name: Run Tests
+      run: |
+        python manage.py test
