@@ -107,6 +107,13 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
                     outstream.write(" %s " % option_name)
             outstream.write(")")
 
+        elif self.name in [smtcmd.MINMAX, smtcmd.MAXMIN]:
+            outstream.write("(%s" % self.name)
+            for a in self.args:
+                outstream.write(" ")
+                printer.printer(a)
+            outstream.write(")")
+
         elif self.name == smtcmd.CHECK_ALLSAT:
             outstream.write("(%s " % self.name)
             if self.args:
