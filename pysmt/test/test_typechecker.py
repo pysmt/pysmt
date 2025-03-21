@@ -212,6 +212,15 @@ class TestSimpleTypeChecker(TestCase):
         with self.assertRaises(PysmtTypeError):
             super_bad_function()
 
+    def test_multiple_creations(self):
+        def bad_formula():
+            return Times(self.p, self.r)
+        with self.assertRaises(PysmtTypeError):
+            bad_formula()
+        # When building the same formula a second time, should raise again.
+        with self.assertRaises(PysmtTypeError):
+            bad_formula()
+
     def test_examples(self):
         for (f, _, _, _) in get_example_formulae():
             self.assertIs(f.get_type(), BOOL, f)

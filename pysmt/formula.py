@@ -89,7 +89,9 @@ class FormulaManager(object):
     def create_node(self, node_type, args, payload=None):
         content = FNodeContent(node_type, args, payload)
         if content in self.formulae:
-            return self.formulae[content]
+            n = self.formulae[content]
+            self._do_type_check(n)
+            return n
         else:
             n = FNode(content, self._next_free_id)
             self._next_free_id += 1
