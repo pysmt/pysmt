@@ -86,12 +86,11 @@ class TestEnvironment(TestCase):
         env = get_env()
 
         factory = env.factory
-        self.assertEqual(factory.solver_preference_list,
-                          pysmt.factory.DEFAULT_SOLVER_PREFERENCE_LIST)
+        self.assertEqual(factory.preferences, pysmt.factory.DEFAULT_PREFERENCES)
 
         for solver_name in factory.all_solvers(logic=logics.QF_UFLIRA):
             factory.set_solver_preference_list([solver_name])
-            self.assertEqual(factory.solver_preference_list, [solver_name])
+            self.assertEqual(factory.preferences['Solver'], [solver_name])
             solver = factory.get_solver(logic=logics.QF_UFLIRA)
             self.assertTrue(isinstance(solver, factory.all_solvers()[solver_name]))
 
@@ -101,7 +100,7 @@ class TestEnvironment(TestCase):
 
         for qelim_name in factory.all_quantifier_eliminators():
             factory.set_qelim_preference_list([qelim_name])
-            self.assertEqual(factory.qelim_preference_list, [qelim_name])
+            self.assertEqual(factory.preferences['Quantifier Eliminator'], [qelim_name])
             qelim = factory.get_quantifier_eliminator(logic=logics.BOOL)
             self.assertTrue(isinstance(qelim, factory.all_quantifier_eliminators()[qelim_name]))
 
