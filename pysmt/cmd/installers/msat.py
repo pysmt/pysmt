@@ -45,7 +45,7 @@ class MSatInstaller(SolverInstaller):
 
         archive_name = archive_name_template.format(**format)
 
-        native_link = "http://mathsat.fbk.eu/download.php?file={archive_name}"
+        native_link = "https://mathsat.fbk.eu/release/{archive_name}"
 
         SolverInstaller.__init__(self, install_dir=install_dir,
                                  bindings_dir=bindings_dir,
