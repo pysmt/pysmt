@@ -20,16 +20,20 @@ The Environment is a key structure in pySMT. It contains multiple
 singleton objects that are used throughout the system, such as the
 FormulaManager, Simplifier, HRSerializer, SimpleTypeChecker.
 """
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import Self, Optional
 
-import pysmt.simplifier
-import pysmt.printers
-import pysmt.substituter
-import pysmt.type_checker
-import pysmt.oracles
-import pysmt.formula
-import pysmt.factory
-import pysmt.decorators
-import pysmt.typing
+from pysmt.simplifier import Simplifier
+from pysmt.printers import HRSerializer
+from pysmt.substituter import Substituter, MGSubstituter
+from pysmt.type_checker import SimpleTypeChecker
+from pysmt.oracles import (QuantifierOracle, TheoryOracle, FreeVarsOracle,
+                           SizeOracle, AtomsOracle, TypesOracle)
+from pysmt.formula import FormulaManager
+from pysmt.factory import Factory
+from pysmt.typing import TypeManager
 
 
 class Environment(object):
@@ -41,40 +45,40 @@ class Environment(object):
     of classes for the different services, by changing the class
     attributes.
     """
-    TypeCheckerClass = pysmt.type_checker.SimpleTypeChecker
-    FormulaManagerClass = pysmt.formula.FormulaManager
-    TypeManagerClass = pysmt.typing.TypeManager
-    SimplifierClass = pysmt.simplifier.Simplifier
+    TypeCheckerClass = SimpleTypeChecker
+    FormulaManagerClass = FormulaManager
+    TypeManagerClass = TypeManager
+    SimplifierClass = Simplifier
     #SubstituterClass = pysmt.substituter.MSSubstituter
-    SubstituterClass = pysmt.substituter.MGSubstituter
-    HRSerializerClass = pysmt.printers.HRSerializer
-    QuantifierOracleClass = pysmt.oracles.QuantifierOracle
-    TheoryOracleClass = pysmt.oracles.TheoryOracle
-    FreeVarsOracleClass= pysmt.oracles.FreeVarsOracle
-    SizeOracleClass = pysmt.oracles.SizeOracle
-    AtomsOracleClass = pysmt.oracles.AtomsOracle
-    TypesOracleClass = pysmt.oracles.TypesOracle
+    SubstituterClass = MGSubstituter
+    HRSerializerClass = HRSerializer
+    QuantifierOracleClass = QuantifierOracle
+    TheoryOracleClass = TheoryOracle
+    FreeVarsOracleClass = FreeVarsOracle
+    SizeOracleClass = SizeOracle
+    AtomsOracleClass = AtomsOracle
+    TypesOracleClass = TypesOracle
 
-    def __init__(self):
-        self._stc = self.TypeCheckerClass(self)
-        self._formula_manager = self.FormulaManagerClass(self)
+    def __init__(self: Self) -> None:
+        self._stc: SimpleTypeChecker = self.TypeCheckerClass(self)
+        self._formula_manager: FormulaManager = self.FormulaManagerClass(self)
         # NOTE: Both Simplifier and Substituter keep an internal copy
         # of the Formula Manager and need to be initialized afterwards
-        self._simplifier = self.SimplifierClass(self)
-        self._substituter = self.SubstituterClass(self)
-        self._serializer = self.HRSerializerClass(self)
-        self._qfo = self.QuantifierOracleClass(self)
-        self._theoryo = self.TheoryOracleClass(self)
-        self._fvo = self.FreeVarsOracleClass(self)
-        self._sizeo = self.SizeOracleClass(self)
-        self._ao = self.AtomsOracleClass(self)
-        self._typeso = self.TypesOracleClass(self)
-        self._type_manager = self.TypeManagerClass(self)
+        self._simplifier: Simplifier = self.SimplifierClass(self)
+        self._substituter: Substituter = self.SubstituterClass(self)
+        self._serializer: HRSerializer = self.HRSerializerClass(self)
+        self._qfo: QuantifierOracle = self.QuantifierOracleClass(self)
+        self._theoryo: TheoryOracle = self.TheoryOracleClass(self)
+        self._fvo: FreeVarsOracle = self.FreeVarsOracleClass(self)
+        self._sizeo: SizeOracle = self.SizeOracleClass(self)
+        self._ao: AtomsOracle = self.AtomsOracleClass(self)
+        self._typeso: TypesOracle = self.TypesOracleClass(self)
+        self._type_manager: TypeManager = self.TypeManagerClass(self)
 
-        self._factory = None
+        self._factory: Optional[Factory] = None
         # Configurations
-        self.enable_infix_notation = False
-        self.enable_div_by_0 = True
+        self.enable_infix_notation: bool = False
+        self.enable_div_by_0: bool = True
 
         # This option allows the construction of a symbol with empty
         # name (i.e. `Symbol("", INT)`). This feature is allowed by
@@ -84,64 +88,64 @@ class Environment(object):
         # practice. However to validate pathological models we can
         # allow this on the pysmt side to use walkers
         # (e.g. substitution and simplification).
-        self.allow_empty_var_names = False
+        self.allow_empty_var_names: bool = False
 
         # Dynamic Walker Configuration Map
         # See: add_dynamic_walker_function
-        self.dwf = {}
+        self.dwf: dict = {}
 
     @property
-    def formula_manager(self):
+    def formula_manager(self) -> FormulaManager:
         return self._formula_manager
 
     @property
-    def type_manager(self):
+    def type_manager(self: Self) -> TypeManager:
         return self._type_manager
 
     @property
-    def simplifier(self):
+    def simplifier(self: Self) -> Simplifier:
         return self._simplifier
 
     @property
-    def serializer(self):
+    def serializer(self: Self) -> HRSerializer:
         return self._serializer
 
     @property
-    def substituter(self):
+    def substituter(self: Self) -> Substituter:
         return self._substituter
 
     @property
-    def stc(self):
+    def stc(self: Self) -> SimpleTypeChecker:
         """ Get the Simple Type Checker """
         return self._stc
 
     @property
-    def qfo(self):
+    def qfo(self: Self) -> QuantifierOracle:
         """ Get the Quantifier Oracle """
         return self._qfo
 
     @property
-    def ao(self):
+    def ao(self: Self) -> AtomsOracle:
         """ Get the Atoms Oracle """
         return self._ao
 
     @property
-    def theoryo(self):
+    def theoryo(self: Self) -> TheoryOracle:
         """ Get the Theory Oracle """
         return self._theoryo
 
     @property
-    def typeso(self):
+    def typeso(self: Self) -> TypesOracle:
         """ Get the Types Oracle """
         return self._typeso
 
     @property
-    def fvo(self):
+    def fvo(self: Self) -> FreeVarsOracle:
         """ Get the FreeVars Oracle """
         return self._fvo
 
     @property
-    def sizeo(self):
+    def sizeo(self: Self) -> SizeOracle:
         """ Get the Size Oracle """
         return self._sizeo
 
@@ -164,40 +168,40 @@ class Environment(object):
         self.dwf[nodetype][walker] = function
 
     @property
-    def factory(self):
+    def factory(self: Self) -> Factory:
         if self._factory is None:
-            self._factory = pysmt.factory.Factory(self)
+            self._factory = Factory(self)
         return self._factory
 
-    def __enter__(self):
+    def __enter__(self: Self) -> Self:
         """Entering a Context """
         push_env(self)
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self: Self, exc_type, exc_val, exc_tb) -> None:
         """Remove environment from global stack."""
         pop_env()
 
 # EOC Environment
 
 #### GLOBAL ENVIRONMENTS STACKS ####
-ENVIRONMENTS_STACK = []
+ENVIRONMENTS_STACK: list[Environment] = []
 
-def get_env():
+def get_env() -> Environment:
     """Returns the Environment at the head of the stack."""
     return ENVIRONMENTS_STACK[-1]
 
-def push_env(env=None):
+def push_env(env: Optional[Environment] = None) -> None:
     """Push a env in the stack. If env is None, a new Environment is created."""
     if env is None:
         env = Environment()
     ENVIRONMENTS_STACK.append(env)
 
-def pop_env():
+def pop_env() -> Environment:
     """Pop an env from the stack."""
     return ENVIRONMENTS_STACK.pop()
 
-def reset_env():
+def reset_env() -> Environment:
     """Destroys and recreate the head environment."""
     pop_env()
     push_env()
