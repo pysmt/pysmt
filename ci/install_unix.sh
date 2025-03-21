@@ -73,7 +73,7 @@ then
     git clone https://github.com/swig/swig.git
     cd swig
     git checkout v4.0.2
-    ./autogen.sh && ./configure && make
+    ./autogen.sh && ./configure --without-pcre && make
     sudo make install
     cd ..
 fi

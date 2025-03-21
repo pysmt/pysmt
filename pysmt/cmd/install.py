@@ -56,7 +56,8 @@ def get_requested_solvers():
         keys = requested_solvers_str.split(",")
         requested_solvers = [x.lower().strip() for x in keys]
         if "all" in requested_solvers:
-            requested_solvers = [x.InstallerClass.SOLVER for x in INSTALLERS if x != "cvc4"]
+            requested_solvers = [x.InstallerClass.SOLVER for x in INSTALLERS
+                                 if x.InstallerClass.SOLVER != "cvc4"]
     return requested_solvers
 
 
