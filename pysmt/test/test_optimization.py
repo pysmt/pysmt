@@ -15,13 +15,14 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+from itertools import chain
 from pysmt.test import TestCase, skipIfNoOptimizerForLogic
 from pysmt.test import main
 
-from pysmt.shortcuts import Optimizer, GE, Int, Symbol, INT, LE, GT, REAL, Real
+from pysmt.shortcuts import Optimizer, GE, Int, Symbol, INT, LE, GT, REAL, Real, Equals, Times, Solver, Or
 from pysmt.shortcuts import BVType, BVUGE, BVSGE, BVULE, BVSLE, BVUGT, BVSGT, BVULT, BVSLT, BVZero, BVOne, BV
 from pysmt.shortcuts import And, Plus, Minus, get_env
-from pysmt.logics import QF_LIA, QF_LRA, QF_BV
+from pysmt.logics import QF_LIA, QF_LRA, QF_BV, QF_NRA, QF_NIA
 from pysmt.optimization.goal import MaximizationGoal, MinimizationGoal, \
     MinMaxGoal, MaxMinGoal, MaxSMTGoal
 
@@ -434,6 +435,172 @@ class TestOptimization(TestCase):
                 opt.add_assertion(formula)
                 model, cost = opt.optimize(maxsmt)
                 self.assertEqual(model[x], Int(9))
+
+    @skipIfNoOptimizerForLogic(QF_NRA)
+    def test_box_volume(self):
+        length = Symbol("length", REAL)
+        width = Symbol("width", REAL)
+        height = Symbol("height", REAL)
+        volume = Symbol("volume", REAL)
+
+        height_times_2 = Times(height, Real(2.0))
+
+        length_value = Minus(Real(36.0), height_times_2)
+        width_value = Minus(Real(24.0), height_times_2)
+        length_value = Real(36.0)
+        width_value = Real(24.0)
+        # volume_value = Times(length, width, height)
+        volume_value = Plus(length, width, height)
+
+        length_formula = Equals(length, length_value)
+        width_formula = Equals(width, width_value)
+        volume_formula = Equals(volume, volume_value)
+
+        positive_length = GE(length, Real(0.0))
+        positive_width = GE(width, Real(0.0))
+        positive_height = GE(height, Real(0.0))
+
+        # extra_ass = [GE(height, Real(1.0)), LE(height, Real(4.0))]
+        # extra_ass = [Or(GE(height, Real(1.0)), LE(height, Real(2.0)), Equals(height, Real(1.0)), Equals(height, Real(3.5)), Equals(height, Real(10)))]
+        extra_ass = [Or(Equals(height, Real(2.0)), Equals(height, Real(1.0)), Equals(height, Real(3.5)), Equals(height, Real(10)))]
+
+        assertions = [length_formula, width_formula, volume_formula, positive_length, positive_width, positive_height] + extra_ass
+
+        goal = MaximizationGoal(volume)
+
+        for oname in get_env().factory.all_solvers(logic=QF_NRA):
+            # test only z3 for now
+            if oname != "z3":
+                continue
+            with Solver(name=oname) as opt:
+                for assertion in assertions:
+                    opt.add_assertion(assertion)
+                print(oname)
+                retval = opt.solve()
+                self.assertIsNotNone(retval)
+                print(type(retval))
+                print(retval)
+                print(opt.get_model())
+
+        for oname in get_env().factory.all_optimizers(logic=QF_NRA):
+            if oname != "z3":
+                continue
+            with Optimizer(name=oname) as opt:
+                for assertion in assertions:
+                    opt.add_assertion(assertion)
+                print(oname)
+                retval = opt.optimize(goal)
+                self.assertIsNotNone(retval)
+                print(type(retval))
+                print(retval)
+                if retval is not None:
+                    model, cost = retval
+                    print(model)
+                    self.assertEqual(model[volume], Int(10))
+                # model, cost = opt.optimize(goal)
+                self.assertEqual(model[volume], Int(10))
+
+        assert False
+
+    @skipIfNoOptimizerForLogic(QF_NIA)
+    def test_maximize_revenue(self):
+        cost_per_rented_car = Symbol("cost_per_rented_car", INT)
+        numbers_of_car_rented = Symbol("numbers_of_car_rented", INT)
+        revenue = Symbol("renevue", INT)
+
+        numbers_of_car_rented_value = Minus(Int(1000), Times(Int(5), cost_per_rented_car))
+        revenue_value = Times(cost_per_rented_car, numbers_of_car_rented)
+
+        cost_per_rented_car_boundaries = And(GE(cost_per_rented_car, Int(50)), LE(cost_per_rented_car, Int(200)))
+        numbers_of_car_rented_formula = Equals(numbers_of_car_rented, numbers_of_car_rented_value)
+        revenue_formula = Equals(revenue, revenue_value)
+
+        maximize_revenue_goal = MaximizationGoal(revenue)
+
+        assertions = [cost_per_rented_car_boundaries, numbers_of_car_rented_formula, revenue_formula]
+
+        # for oname in get_env().factory.all_solvers(logic=QF_NRA):
+        #     # test only z3 for now
+        #     if oname != "z3":
+        #         continue
+        #     with Solver(name=oname) as opt:
+        #         for assertion in assertions:
+        #             opt.add_assertion(assertion)
+        #         print(oname)
+        #         retval = opt.solve()
+        #         self.assertIsNotNone(retval)
+        #         print(type(retval))
+        #         print(retval)
+        #         print(opt.get_model())
+
+        # WORKING TEST
+        # for oname in get_env().factory.all_optimizers(logic=QF_NIA):
+        #     # if oname != "z3":
+        #     #     continue
+        #     with Optimizer(name=oname) as opt:
+        #         for assertion in assertions:
+        #             opt.add_assertion(assertion)
+        #         retval = opt.optimize(maximize_revenue_goal)
+        #         self.assertIsNotNone(retval)
+        #         if retval is not None:
+        #             model, cost = retval
+        #             self.assertEqual(cost, Int(50000))
+
+        # multiple objective optimization
+
+        length = Symbol("length", INT)
+        width = Symbol("width", INT)
+        area = Symbol("area", INT)
+        perimeter = Symbol("perimeter", INT)
+
+        area_value = Times(length, width)
+        perimeter_value = Times(Plus(length, width), Int(2))
+
+        area_formula = Equals(area, area_value)
+        perimeter_formula = Equals(perimeter, perimeter_value)
+
+        perimeter_boundaries = LE(perimeter, cost_per_rented_car)
+
+        set_cost_per_rented_car_to_100 = Equals(cost_per_rented_car, Int(100))
+        multiple_objective_optimization_assertions = [area_formula, perimeter_formula, perimeter_boundaries]
+
+        maximize_area_goal = MaximizationGoal(area)
+
+        # test_part_2 of problem
+        for oname in get_env().factory.all_optimizers(logic=QF_NIA):
+            # if oname == "z3":
+            #     continue
+            with Optimizer(name=oname) as opt:
+                print(oname)
+                for assertion in chain([set_cost_per_rented_car_to_100], multiple_objective_optimization_assertions):
+                    opt.add_assertion(assertion)
+                retval = opt.optimize(maximize_area_goal)
+                self.assertIsNotNone(retval)
+                if retval is not None:
+                    model, cost = retval
+                    print(model)
+                    print(cost)
+                    self.assertEqual(cost, Int(50000))
+
+        # currently commented for efficiency
+        # lexicographic optimize
+        # for oname in get_env().factory.all_optimizers(logic=QF_NIA):
+        #     # if oname == "z3":
+        #     #     continue
+        #     with Optimizer(name=oname) as opt:
+        #         print(oname)
+        #         for assertion in chain(assertions, multiple_objective_optimization_assertions):
+        #             opt.add_assertion(assertion)
+        #         retval = opt.lexicographic_optimize([maximize_revenue_goal, maximize_area_goal])
+        #         self.assertIsNotNone(retval)
+        #         if retval is not None:
+        #             model, cost = retval
+        #             print(model)
+        #             print(cost)
+        #             self.assertEqual(cost, Int(50000))
+
+        assert False
+
 
 if __name__ == '__main__':
     main()
