@@ -15,11 +15,12 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+from fractions import Fraction
 from itertools import chain
 from pysmt.test import TestCase, skipIfNoOptimizerForLogic
 from pysmt.test import main
 
-from pysmt.shortcuts import Optimizer, GE, Int, Symbol, INT, LE, GT, REAL, Real, Equals, Times, Solver, Or
+from pysmt.shortcuts import Optimizer, GE, Int, Symbol, INT, LE, GT, REAL, Real, Equals, Times, Solver, Or, Div
 from pysmt.shortcuts import BVType, BVUGE, BVSGE, BVULE, BVSLE, BVUGT, BVSGT, BVULT, BVSLT, BVZero, BVOne, BV
 from pysmt.shortcuts import And, Plus, Minus, get_env
 from pysmt.logics import QF_LIA, QF_LRA, QF_BV, QF_NRA, QF_NIA
@@ -436,7 +437,7 @@ class TestOptimization(TestCase):
                 model, cost = opt.optimize(maxsmt)
                 self.assertEqual(model[x], Int(9))
 
-    @skipIfNoOptimizerForLogic(QF_NRA)
+    @skipIfNoOptimizerForLogic(QF_LRA)
     def test_box_volume(self):
         length = Symbol("length", REAL)
         width = Symbol("width", REAL)
@@ -447,9 +448,10 @@ class TestOptimization(TestCase):
 
         length_value = Minus(Real(36.0), height_times_2)
         width_value = Minus(Real(24.0), height_times_2)
-        length_value = Real(36.0)
-        width_value = Real(24.0)
+        # length_value = Real(36.0)
+        # width_value = Real(24.0)
         # volume_value = Times(length, width, height)
+        # switch to sum in order to have a linear problem
         volume_value = Plus(length, width, height)
 
         length_formula = Equals(length, length_value)
@@ -462,18 +464,63 @@ class TestOptimization(TestCase):
 
         # extra_ass = [GE(height, Real(1.0)), LE(height, Real(4.0))]
         # extra_ass = [Or(GE(height, Real(1.0)), LE(height, Real(2.0)), Equals(height, Real(1.0)), Equals(height, Real(3.5)), Equals(height, Real(10)))]
-        extra_ass = [Or(Equals(height, Real(2.0)), Equals(height, Real(1.0)), Equals(height, Real(3.5)), Equals(height, Real(10)))]
+        # extra_ass = [Or(Equals(height, Real(2.0)), Equals(height, Real(1.0)), Equals(height, Real(3.5)), Equals(height, Real(10)))]
 
-        assertions = [length_formula, width_formula, volume_formula, positive_length, positive_width, positive_height] + extra_ass
+        assertions = [length_formula, width_formula, volume_formula, positive_length, positive_width, positive_height] # + extra_ass
 
-        goal = MaximizationGoal(volume)
+        maximize_volume_goal = MaximizationGoal(volume)
+
+        # for oname in get_env().factory.all_solvers(logic=QF_NRA):
+        #     # test only z3 for now
+        #     if oname != "z3":
+        #         continue
+        #     with Solver(name=oname) as opt:
+        #         for assertion in assertions:
+        #             opt.add_assertion(assertion)
+        #         print(oname)
+        #         retval = opt.solve()
+        #         self.assertIsNotNone(retval)
+        #         print(type(retval))
+        #         print(retval)
+        #         print(opt.get_model())
+
+        # WORKING TEST
+        # for oname in get_env().factory.all_optimizers(logic=QF_LRA):
+        #     # if oname != "z3":
+        #     #     continue
+        #     with Optimizer(name=oname) as opt:
+        #         for assertion in assertions:
+        #             opt.add_assertion(assertion)
+        #         print(oname)
+        #         retval = opt.optimize(maximize_volume_goal)
+        #         self.assertIsNotNone(retval)
+        #         print(type(retval))
+        #         print(retval)
+        #         if retval is not None:
+        #             model, cost = retval
+        #             self.assertTrue(model[volume] in {Real(60.0), Int(60)})
+        #             # print(type(cost))
+        #             # self.assertEqual(model[volume], cost)
+
+        # as a second objective, maximize y, with y inversely proportional to the volume
+        x = Symbol("x", REAL)
+        y = Symbol("y", REAL)
+
+        line_1_constraint = Equals(x, y)
+        # Commented to make it linear, but this removes the connection between the first objective and the second one
+        # line_2_constraint = Equals(y, Minus(Real(10.0), Div(x, volume)))
+        line_2_constraint = Equals(y, Minus(Real(10.0), Div(x, Real(60.0))))
+
+        multiple_objective_assertions = [line_1_constraint, line_2_constraint]
+
+        maximize_y_goal = MaximizationGoal(y)
 
         for oname in get_env().factory.all_solvers(logic=QF_NRA):
             # test only z3 for now
-            if oname != "z3":
-                continue
+            # if oname != "z3":
+            #     continue
             with Solver(name=oname) as opt:
-                for assertion in assertions:
+                for assertion in chain(assertions, multiple_objective_assertions):
                     opt.add_assertion(assertion)
                 print(oname)
                 retval = opt.solve()
@@ -482,23 +529,25 @@ class TestOptimization(TestCase):
                 print(retval)
                 print(opt.get_model())
 
-        for oname in get_env().factory.all_optimizers(logic=QF_NRA):
-            if oname != "z3":
+        for oname in get_env().factory.all_optimizers(logic=QF_LRA):
+            if oname == "z3":
                 continue
             with Optimizer(name=oname) as opt:
-                for assertion in assertions:
+                for assertion in chain(assertions, multiple_objective_assertions):
                     opt.add_assertion(assertion)
                 print(oname)
-                retval = opt.optimize(goal)
+                retval = opt.lexicographic_optimize([maximize_volume_goal, maximize_y_goal])
                 self.assertIsNotNone(retval)
                 print(type(retval))
                 print(retval)
                 if retval is not None:
                     model, cost = retval
-                    print(model)
-                    self.assertEqual(model[volume], Int(10))
+                    print(cost)
+                    self.assertTrue(model[volume] in {Real(60.0), Int(60)})
+                    self.assertEquals(model[y].constant_value(), Fraction(600, 61))
+                    # self.assertEqual(model[y], Real(600/61))
+                    # self.assertEqual(model[volume], cost)
                 # model, cost = opt.optimize(goal)
-                self.assertEqual(model[volume], Int(10))
 
         assert False
 
@@ -600,6 +649,36 @@ class TestOptimization(TestCase):
         #             self.assertEqual(cost, Int(50000))
 
         assert False
+
+    @skipIfNoOptimizerForLogic(QF_LIA)
+    def test_simple_multiple_optimization(self):
+        x = Symbol("x", INT)
+        y = Symbol("y", INT)
+
+        int_0, int_3 = Int(0), Int(3)
+
+        x_boundaries = And(GE(x, int_0), LE(x, int_3))
+        y_boundaries = And(GE(y, int_0), LE(y, int_3))
+
+        x_y_bound = Equals(Plus(x, y), int_3)
+
+        assertions = [x_boundaries, y_boundaries, x_y_bound]
+
+        maximize_x = MaximizationGoal(x)
+        maximize_y = MaximizationGoal(y)
+
+        for oname in get_env().factory.all_optimizers(logic=QF_LIA):
+            # if oname != "z3":
+            #     continue
+            with Optimizer(name=oname) as opt:
+                for assertion in assertions:
+                    opt.add_assertion(assertion)
+                retval = opt.lexicograpic_optimize([maximize_x, maximize_y])
+                self.assertIsNotNone(retval)
+                if retval is not None:
+                    model, _ = retval
+                    self.assertEqual(model[x]
+
 
 
 if __name__ == '__main__':
