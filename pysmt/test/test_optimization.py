@@ -650,36 +650,6 @@ class TestOptimization(TestCase):
 
         assert False
 
-    @skipIfNoOptimizerForLogic(QF_LIA)
-    def test_simple_multiple_optimization(self):
-        x = Symbol("x", INT)
-        y = Symbol("y", INT)
-
-        int_0, int_3 = Int(0), Int(3)
-
-        x_boundaries = And(GE(x, int_0), LE(x, int_3))
-        y_boundaries = And(GE(y, int_0), LE(y, int_3))
-
-        x_y_bound = Equals(Plus(x, y), int_3)
-
-        assertions = [x_boundaries, y_boundaries, x_y_bound]
-
-        maximize_x = MaximizationGoal(x)
-        maximize_y = MaximizationGoal(y)
-
-        for oname in get_env().factory.all_optimizers(logic=QF_LIA):
-            # if oname != "z3":
-            #     continue
-            with Optimizer(name=oname) as opt:
-                for assertion in assertions:
-                    opt.add_assertion(assertion)
-                retval = opt.lexicograpic_optimize([maximize_x, maximize_y])
-                self.assertIsNotNone(retval)
-                if retval is not None:
-                    model, _ = retval
-                    self.assertEqual(model[x]
-
-
 
 if __name__ == '__main__':
     main()
