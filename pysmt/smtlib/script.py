@@ -249,6 +249,8 @@ class SmtLibScript(object):
         """
         stack = []
         backtrack = []
+        goals = []
+        goals_backtrack = []
         _And = mgr.And if mgr else get_env().formula_manager.And
 
         for cmd in self.commands:
@@ -257,14 +259,28 @@ class SmtLibScript(object):
             if cmd.name == smtcmd.RESET_ASSERTIONS:
                 stack = []
                 backtrack = []
+                goals = []
+                goals_backtrack = []
             elif cmd.name == smtcmd.PUSH:
                 for _ in range(cmd.args[0]):
                     backtrack.append(len(stack))
+                    goals_backtrack.append(len(goals))
             elif cmd.name == smtcmd.POP:
                 for _ in range(cmd.args[0]):
                     l = backtrack.pop()
                     stack = stack[:l]
+                    l = goals_backtrack.pop()
+                    goals = goals[:l]
+            elif cmd.name in (
+                smtcmd.MAXIMIZE,
+                smtcmd.MINIMIZE,
+                smtcmd.MAXMIN,
+                smtcmd.MINMAX
+            ):
+                goals.append(_parse_goal(cmd))
 
+        if return_optimizations:
+            return _And(stack), tuple(goals)
         return _And(stack)
 
     def to_file(self, fname, daggify=True):
@@ -290,6 +306,24 @@ class SmtLibScript(object):
 
     def __str__(self):
         return "\n".join((str(cmd) for cmd in self.commands))
+
+def _parse_goal(command):
+    assert len(command.args) == 2, f"Command {command.name} must have 2 arguments"
+    singed = False
+    if len(command.args) >= 2:
+        options = command.args[1]
+        for arg in options:
+            if arg[0] == ":signed":
+                singed = arg[1]
+            break
+    if command.name == smtcmd.MAXIMIZE:
+        return MaximizationGoal(command.args[0], singed)
+    elif command.name == smtcmd.MINIMIZE:
+        return MinimizationGoal(command.args[0], singed)
+    else:
+        # TODO check if those are all the types of goals
+        raise ValueError(f"Unknown goal command {command.name}")
+
 
 
 def smtlibscript_from_formula(formula, logic=None):
