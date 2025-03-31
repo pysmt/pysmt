@@ -251,6 +251,7 @@ class OptSearchInterval(OptComparationFunctions):
 
     def search_is_sat(self, model):
         self._pivot = None
+        # TODO add support to bv here
         model_value = model.get_value(self._obj.term()).constant_value()
         if self._obj.is_minimization_goal():
             if self._upper is None:

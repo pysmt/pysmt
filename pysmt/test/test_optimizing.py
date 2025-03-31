@@ -33,62 +33,51 @@ class TestOptimization(TestCase):
     def test_minimization_basic(self):
         optimization_examples = get_full_example_omt_formuale()
 
+        test_to_skip = {
+            ("QF_BV - smtlib2_bitvector.smt2", OptimizationTypes.BASIC, "msat_sua"), # blocks
+            ("QF_BV - smtlib2_bitvector.smt2", OptimizationTypes.BASIC, "msat_incr"), # blocks
+            ("QF_BV - smtlib2_bitvector.smt2", OptimizationTypes.BOXED, "msat_sua"), # blocks
+            ("QF_BV - smtlib2_bitvector.smt2", OptimizationTypes.BOXED, "msat_incr"), # blocks
+            ("QF_BV - smtlib2_bitvector.smt2", OptimizationTypes.PARETO, "z3_sua"), # blocks
+            ("QF_BV - smtlib2_bitvector.smt2", OptimizationTypes.PARETO, "z3_incr"), # blocks
+            ("QF_BV - smtlib2_bitvector.smt2", OptimizationTypes.BASIC, "z3_sua"), # error TODO check
+            ("QF_BV - smtlib2_bitvector.smt2", OptimizationTypes.BASIC, "z3_incr"), # error TODO check
+            ("QF_BV - smtlib2_bitvector.smt2", OptimizationTypes.BOXED, "z3_incr"), # error TODO check
+            ("QF_BV - smtlib2_bitvector.smt2", OptimizationTypes.BOXED, "z3_sua"), # error TODO check
+            ("QF_BV - smtlib2_bitvector.smt2", OptimizationTypes.LEXICOGRAPHIC, "z3_sua"), # error TODO check
+            ("QF_BV - smtlib2_bitvector.smt2", OptimizationTypes.LEXICOGRAPHIC, "z3_incr"), # error TODO check
+            # TODO skip automatically sua and incr engines when unbound or infinitesimal
+        }
+
         for test_case in optimization_examples:
             for oname in get_env().factory.all_optimizers(logic=QF_LIA):
                 for (goals, optimization_type), goals_values in test_case.goals.items():
-                    test_id_str = f"test: {test_case.name}; solver: {oname}"
-                    if test_case.name == "QF_BV - smtlib2_bitvector.smt2":
-                        engines = ["z3", "z3_sua", "z3_incr", "msat_sua", "msat_incr", "optimsat", "optimsat_sua", "optimsat_incr"]
-                        engines_to_skip = set(engines) - set([
-                            # "z3", "z3_sua", "z3_incr", # working fast
-                            # "msat_sua", # blocks with boxed
-                            # "msat_incr", # blocks with boxed
-                            "optimsat", # works fast
-                            "optimsat_sua", #works fast
-                            "optimsat_incr" #works fast
-                        ])
-                        ot_to_not_skip = set([
-                            OptimizationTypes.BOXED,
-                            OptimizationTypes.LEXICOGRAPHIC,
-                            OptimizationTypes.PARETO,
-                            OptimizationTypes.BASIC
-                        ])
-                        if oname in engines_to_skip or optimization_type not in ot_to_not_skip:
-                            continue
-
-                        # print(oname)
-                        # continue
-                        if "z3" in oname:
-                            continue
-                    else:
+                    # TODO decomment
+                    if (test_case.name, optimization_type, oname) in test_to_skip:
                         continue
+                    # COde to test only 1 case. Comment above
+                    # if (
+                    #     (test_case.name, optimization_type, oname) !=
+                    #     ("QF_BV - smtlib2_bitvector.smt2", OptimizationTypes.BASIC, "z3_sua")
+                    # ):
+                    #     continue
+                    test_id_str = f"test: {test_case.name}; solver: {oname}"
+                    print(test_id_str, optimization_type.name)
                     with Optimizer(name=oname) as opt:
                         for assertion in test_case.assertions:
                             opt.add_assertion(assertion)
                         if optimization_type == OptimizationTypes.LEXICOGRAPHIC:
-                            if oname == "z3_sua":
-                                # TODO: check that this is correct
-                                # z3 does not support boxed optimization
-                                continue
                             self._test_lexicographic(opt, goals, goals_values, test_id_str)
                         elif optimization_type == OptimizationTypes.PARETO:
                             self._test_pareto(opt, goals, goals_values, test_id_str)
                         elif optimization_type == OptimizationTypes.BOXED:
-                            if oname == "z3":
-                                # TODO: check that this is correct
-                                # z3 does not support boxed optimization
-                                continue
                             self._test_boxed(opt, goals, goals_values, test_id_str)
                         elif optimization_type == OptimizationTypes.BASIC:
-                            # if oname == "z3":
-                            #     continue
-                            # TODO creating an optimizer, adding assertions and then using it for all the optimizing calls fails on the basic the second time it gets called
-                            # (at least z3 fails, didn't check other optimizers); check why and if it is normal
                             self._test_basic(opt, goals, goals_values, test_id_str)
                         else:
                             raise NotImplementedError(f"Unknown optimization type: {optimization_type}")
 
-        assert False
+        # assert False
 
     def _check_oracle_goals(self, goals, goals_values, costs, test_id_str):
         assert len(goals) == len(goals_values) == len(costs), test_id_str

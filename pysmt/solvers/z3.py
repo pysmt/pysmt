@@ -143,15 +143,15 @@ class Z3Options(SolverOptions):
 class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
                SmtLibBasicSolver, SmtLibIgnoreMixin):
 
-    LOGICS = PYSMT_LOGICS - set(x for x in PYSMT_LOGICS if x.theory.strings)
+    LOGICS = PYSMT_LOGICS - set(x for x in PYSMT_LOGICS if x.theory.strings or not x.theory.linear)
     OptionsClass = Z3Options
 
     SOLVERFOR_LOGIC_NAMES=['AUFLIA', 'ALIA', 'AUFLIRA', 'AUFNIRA', 'LRA', 'LIA', 'NIA',
                            'NRA', 'QF_ABV', 'QF_AUFBV', 'QF_AUFLIA', 'QF_ALIA', 'QF_AX',
                            'QF_BV', 'BV', 'UFBV', 'QF_IDL', 'QF_LIA', 'QF_LRA', 'QF_NIA',
-                           'QF_NRA', 'QF_RDL', 'QF_UF', 'UF', 'QF_UFBV', 'QF_UFIDL', 
+                           'QF_NRA', 'QF_RDL', 'QF_UF', 'UF', 'QF_UFBV', 'QF_UFIDL',
                            'QF_UFLIA', 'QF_UFLRA', 'QF_UFNRA', 'QF_UFNIA', 'UFLRA', 'UFNIA']
-    
+
     def __init__(self, environment, logic, **options):
         IncrementalTrackingSolver.__init__(self,
                                            environment=environment,

@@ -239,7 +239,9 @@ class SmtLibScript(object):
                 res.add(s)
         return res
 
-    def get_last_formula(self, mgr=None):
+    # TODO modify method to check if return_optimizations is True and parse
+    # the opt goals and return the opt goals
+    def get_last_formula(self, mgr=None, return_optimizations=False):
         """Returns the last formula of the execution of the Script.
 
         This coincides with the conjunction of the assertions that are

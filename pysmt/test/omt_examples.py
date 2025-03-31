@@ -32,7 +32,9 @@ class OMTTestCase:
     # assertions: List[FNode]
     # logic: Logic
     # solvable: bool
-    # goals: Optional[Dict[Tuple[Tuple[Goal, ...], OptimizationTypes], List[Union[FNode, List[FNode]]]]]
+    # goals: Optional[Dict[Tuple[Tuple[Goal, ...], OptimizationTypes], List[Union[FNode, List[FNode],
+    #                                               "unbounded", "infinitesimal"]]]] -> if there is the string expect an exception
+    #
     def __init__(self, name, assertions, logic, solvable, goals):
         self._name = name
         self._assertions = assertions
@@ -81,6 +83,7 @@ class OMTTestCase:
     @property
     def goals(self):
         return self._goals
+
 
 def get_full_example_omt_formuale(environment=None):
     """Return a list of OMTTestCases using the given environment."""
@@ -195,6 +198,59 @@ def get_full_example_omt_formuale(environment=None):
             )
         )
 
+        # QF_LRA
+        parser = SmtLib20Parser()
+        file_name = "smtlib2_boxed.smt2" # TODO change this with bz2 compression before PR is ready
+        script = parser.get_script_fname(path.join(omt_smt2_files_folder, file_name))
+        assumptions, parsed_goals = _extract_assumptions_and_objectives(script, file_name)
+
+        real_x = Symbol("real_x", REAL)
+        real_y = Symbol("real_y", REAL)
+        real_z = Symbol("real_z", REAL)
+
+        minimize_real_x = MinimizationGoal(real_x)
+        maximize_real_y = MaximizationGoal(real_y)
+        maximize_real_z = MaximizationGoal(real_z)
+
+        goals = (minimize_real_x, maximize_real_y, maximize_real_z)
+
+        assert str(parsed_goals) == str(goals), f"Wrong goals parsed from {file_name}: {parsed_goals}, {(maximize_x, maximize_y)}"
+
+        goals_dict = {}
+
+        real_42, real_24 = Real(42.0), Real(24.0)
+
+        # # lexicographic
+        # goal_values = [real_42, real_42, real_24]
+        # goals_dict[(goals, OptimizationTypes.LEXICOGRAPHIC)] = goal_values
+
+        # # pareto
+        # goal_values = [(bv_8_8_constant, bv_8_8_constant), (bv_minus_105_8_constant, bv_minus_105_8_constant)]
+        # goals_dict[(goals, OptimizationTypes.PARETO)] = goal_values
+
+        # boxed
+        goal_values =  [real_42, real_42, real_24]
+        goals_dict[(goals, OptimizationTypes.BOXED)] = goal_values
+
+        # basic
+        goal_values = [real_42]
+        goals_dict[((minimize_real_x, ), OptimizationTypes.BASIC)] = goal_values
+        goal_values = [real_42]
+        goals_dict[((maximize_real_y, ), OptimizationTypes.BASIC)] = goal_values
+        goal_values = [real_24]
+        goals_dict[((maximize_real_z, ), OptimizationTypes.BASIC)] = goal_values
+
+        # TODO decomment after understanding how to handle unbound objectives
+        # omt_examples.append(
+        #     OMTTestCase(
+        #         f"QF_LRA - {file_name}",
+        #         assumptions,
+        #         QF_LRA,
+        #         True,
+        #         goals_dict
+        #     )
+        # )
+
         # QF_BV
         parser = SmtLib20Parser()
         file_name = "smtlib2_bitvector.smt2" # TODO change this with bz2 compression before PR is ready
@@ -215,23 +271,23 @@ def get_full_example_omt_formuale(environment=None):
         bv_8_8_constant = BV(8, 8)
         bv_minus_105_8_constant = SBV(-105, 8)
 
-        # # lexicographic
-        # goal_values = [bv_8_8_constant, bv_8_8_constant]
-        # goals_dict[(goals, OptimizationTypes.LEXICOGRAPHIC)] = goal_values
+        # lexicographic
+        goal_values = [bv_8_8_constant, bv_8_8_constant]
+        goals_dict[(goals, OptimizationTypes.LEXICOGRAPHIC)] = goal_values
 
-        # # pareto
-        # goal_values = [(bv_8_8_constant, bv_8_8_constant), (bv_minus_105_8_constant, bv_minus_105_8_constant)]
-        # goals_dict[(goals, OptimizationTypes.PARETO)] = goal_values
+        # pareto
+        goal_values = [(bv_8_8_constant, bv_8_8_constant), (bv_minus_105_8_constant, bv_minus_105_8_constant)]
+        goals_dict[(goals, OptimizationTypes.PARETO)] = goal_values
 
         # boxed
         goal_values = [bv_8_8_constant, bv_minus_105_8_constant]
         goals_dict[(goals, OptimizationTypes.BOXED)] = goal_values
 
-        # # basic
-        # goal_values = [bv_8_8_constant]
-        # goals_dict[((minimize_bv_8_unsigned, ), OptimizationTypes.BASIC)] = goal_values
-        # goal_values = [bv_minus_105_8_constant]
-        # goals_dict[((minimize_bv_8_signed, ), OptimizationTypes.BASIC)] = goal_values
+        # basic
+        goal_values = [bv_8_8_constant]
+        goals_dict[((minimize_bv_8_unsigned, ), OptimizationTypes.BASIC)] = goal_values
+        goal_values = [bv_minus_105_8_constant]
+        goals_dict[((minimize_bv_8_signed, ), OptimizationTypes.BASIC)] = goal_values
 
         omt_examples.append(
             OMTTestCase(
@@ -242,6 +298,8 @@ def get_full_example_omt_formuale(environment=None):
                 goals_dict
             )
         )
+        # TODO notice: boxed can also represent basic with different calls
+        (QF_LIA, "small_set/QF_LIA/prp-23-47.smt2.bz2", SAT/UNSAT, {BOXED: (7, 8, 4, 5), LEX: "unbound"}),
 
     return omt_examples
 

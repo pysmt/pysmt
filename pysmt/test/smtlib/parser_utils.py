@@ -26,6 +26,8 @@ from pysmt.logics import (QF_LIA, QF_LRA, LRA, QF_UFLIRA, QF_UFBV, QF_BV,
                           QF_ALIA, QF_ABV, QF_AUFLIA, QF_AUFBV, QF_NRA, QF_NIA,
                           UFBV, BV, QF_UF)
 from pysmt.exceptions import NoSolverAvailableError, SolverReturnedUnknownResultError
+from pysmt.test.omt_examples import OptimizationTypes
+
 
 def smtlib_tests(logic_pred):
     """Returns the smtlib instances matching the logic predicate"""
@@ -193,4 +195,26 @@ SMTLIB_TEST_FILES = [
     # QF_UF
     #
     (QF_UF, "small_set/QF_UF/test0.smt2.bz2", SAT),
+]
+
+
+# Directory with the optimal SMT-LIB test files
+OMTLIB_DIR = "pysmt/test/smtlib/omt/"
+OMTLIB_TEST_FILES = [
+    #
+    # QF_LIA
+    #
+    (QF_LIA, "smtlib2_allsat.smt2", SAT, {
+        OptimizationTypes.LEXICOGRAPHIC: [100, 100],
+        OptimizationTypes.PARETO: [(100, 100)],
+        OptimizationTypes.BOXED: [100, 100],
+}),
+    (QF_LRA, "smtlib2_boxed.smt2", SAT, {
+        OptimizationTypes.BOXED: [42, 42, 24]
+    }),
+    (QF_BV, "smtlib2_bitvector.smt2", SAT, {
+        OptimizationTypes.LEXICOGRAPHIC: [8, 8],
+        OptimizationTypes.PARETO: [(8, 8), (-105, -105)],
+        OptimizationTypes.BOXED: [8 -105],
+    }),
 ]
