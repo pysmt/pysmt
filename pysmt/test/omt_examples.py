@@ -14,6 +14,7 @@ from pysmt.optimization.goal import MaximizationGoal, MinimizationGoal, \
 from pysmt.smtlib.script import InterpreterOMT
 from pysmt.smtlib.parser.parser import SmtLib20Parser
 from pysmt.smtlib.commands import ASSERT, CHECK_SAT, CHECK_ALLSAT, MAXIMIZE, MINIMIZE
+from pysmt.exceptions import PysmtUnboundedOptimizationError, PysmtInfinitesimalError
 
 
 test_folder = path.dirname(path.abspath(__file__))
@@ -99,6 +100,148 @@ def get_full_example_omt_formuale(environment=None):
     return omt_examples
 
 
+# method to solve the given examples
+def solve_given_examples(pytest_test_case, optimization_examples, test_to_skip):
+    for test_case in optimization_examples:
+        # test basic in boxed only if there is no basic optimization explicitly specified
+        test_basic_in_boxed = all(ot != OptimizationTypes.BASIC for _, ot in test_case.goals.keys())
+        for oname in get_env().factory.all_optimizers(logic=test_case.logic):
+            # is_sua_or_incr is passed to the methods to skip the unbound or infinitesimal cases
+            is_sua_or_incr = "_sua" in oname or "_incr" in oname
+            # skip sua and incr algorithms for logics with real
+            if test_case.logic.theory.real_arithmetic and is_sua_or_incr:
+                continue
+            for (goals, optimization_type), goals_values in test_case.goals.items():
+                if (test_case.name, optimization_type, oname) in test_to_skip:
+                    continue
+                test_id_str = f"test: {test_case.name}; solver: {oname}"
+                with Optimizer(name=oname) as opt:
+                    for assertion in test_case.assertions:
+                        opt.add_assertion(assertion)
+                    if optimization_type == OptimizationTypes.LEXICOGRAPHIC:
+                        _test_lexicographic(pytest_test_case, opt, goals, goals_values, test_id_str, is_sua_or_incr)
+                    elif optimization_type == OptimizationTypes.PARETO:
+                        _test_pareto(pytest_test_case, opt, goals, goals_values, test_id_str, is_sua_or_incr)
+                    elif optimization_type == OptimizationTypes.BOXED:
+                        _test_boxed(pytest_test_case, opt, goals, goals_values, test_id_str, test_basic_in_boxed, is_sua_or_incr)
+                    elif optimization_type == OptimizationTypes.BASIC:
+                        _test_basic(pytest_test_case, opt, goals, goals_values, test_id_str, is_sua_or_incr)
+                    else:
+                        raise NotImplementedError(f"Unknown optimization type: {optimization_type}")
+
+
+def _check_oracle_goal(pytest_test_case, goal, goal_value, cost, test_id_str):
+    # converts the goal value and cost to constants and then checks if they are equal
+    assert goal_value.is_constant() and cost.is_constant(), f"test: {test_id_str}, goal: {goal}, goal_value: {goal_value}, cost: {cost}"
+    if goal_value.is_bv_constant():
+        assert cost.is_bv_constant(), f"test: {test_id_str}, goal: {goal}, goal_value: {goal_value}, cost: {cost}"
+        if goal.signed:
+            goal_value_constant = goal_value.bv_signed_value()
+            cost_constant = cost.bv_signed_value()
+        else:
+            goal_value_constant = goal_value.bv_unsigned_value()
+            cost_constant = cost.bv_unsigned_value()
+    else:
+        assert goal_value.is_real_constant() or goal_value.is_int_constant(), f"test: {test_id_str}, goal: {goal}, goal_value: {goal_value}, cost: {cost}"
+        assert cost.is_real_constant() or cost.is_int_constant(), f"test: {test_id_str}, goal: {goal}, goal_value: {goal_value}, cost: {cost}"
+        goal_value_constant = goal_value.constant_value()
+        cost_constant = cost.constant_value()
+    pytest_test_case.assertEqual(
+        goal_value_constant,
+        cost_constant,
+        f"test_id: {test_id_str}, goal: {goal}, oracle value: {goal_value}, cost returned: {cost}"
+    )
+
+
+def _get_expected_raised_class(goals_value):
+    raised_class = None
+    if isinstance(goals_value, str):
+        if goals_value == "unbounded":
+            raised_class = PysmtUnboundedOptimizationError
+        elif goals_value == "infinitesimal":
+            raised_class = PysmtInfinitesimalError
+        else:
+            raise ValueError("Unknown value for goals_values")
+    return raised_class
+
+
+def _test_lexicographic(pytest_test_case, optimizer, goals, goals_values, test_id_str, is_sua_or_incr):
+    raised_class = _get_expected_raised_class(goals_values[0])
+    assert raised_class is None or len(goals_values) == 1, f"test: {test_id_str}, goals_values: {goals_values}"
+    if raised_class is None:
+        retval = optimizer.lexicographic_optimize(goals)
+        pytest_test_case.assertIsNotNone(retval, test_id_str)
+        _, costs = retval
+        assert len(goals) == len(goals_values) == len(costs), test_id_str
+        for goal, goal_value, cost in zip(goals, goals_values, costs):
+            _check_oracle_goal(pytest_test_case, goal, goal_value, cost, test_id_str)
+    elif not is_sua_or_incr:
+        with pytest_test_case.assertRaises(raised_class, msg=test_id_str):
+            optimizer.lexicographic_optimize(goals)
+
+
+def _test_pareto(pytest_test_case, optimizer, goals, goals_values, test_id_str, is_sua_or_incr):
+    raised_class = _get_expected_raised_class(goals_values[0])
+    assert raised_class is None or len(goals_values) == 1, f"test: {test_id_str}, goals_values: {goals_values}"
+    if raised_class is None:
+        retval = optimizer.pareto_optimize(goals)
+        pytest_test_case.assertIsNotNone(retval, test_id_str)
+        sorted_costs = sorted((costs for _, costs in retval), key=str)
+        sorted_goals_values = sorted(goals_values, key=str)
+        pytest_test_case.assertEqual(len(sorted_costs), len(sorted_goals_values), test_id_str)
+        for costs, goals_values in zip(sorted_costs, sorted_goals_values):
+            assert len(goals) == len(goals_values) == len(costs), test_id_str
+            for goal, goal_value, cost in zip(goals, goals_values, costs):
+                _check_oracle_goal(pytest_test_case, goal, goal_value, cost, test_id_str)
+    elif not is_sua_or_incr:
+        with pytest_test_case.assertRaises(raised_class, msg=test_id_str):
+            optimizer.pareto_optimize(goals)
+
+
+def _test_boxed(pytest_test_case, optimizer, goals, goals_values, test_id_str, test_basic, is_sua_or_incr):
+    # extract which class should be raised by the boxed optimization
+    raised_class = None
+    for goal_value in goals_values:
+        current_raised_class = _get_expected_raised_class(goal_value)
+        if current_raised_class is not None:
+            raised_class = current_raised_class
+            break
+
+    # check the boxed optimization
+    if raised_class is None:
+        retval = optimizer.boxed_optimize(goals)
+        pytest_test_case.assertIsNotNone(retval, test_id_str)
+        for goal, goal_value in zip(goals, goals_values):
+            _, cost = retval[goal]
+            _check_oracle_goal(pytest_test_case, goal, goal_value, cost, test_id_str)
+    elif not is_sua_or_incr:
+        with pytest_test_case.assertRaises(raised_class, msg=test_id_str):
+            retval = optimizer.boxed_optimize(goals)
+            for goal, model in retval.items():
+                print(goal)
+                print(model)
+                print("------------")
+
+
+    # test single optimizations separately
+    if test_basic:
+        for goal, goal_value in zip(goals, goals_values):
+            _test_basic(pytest_test_case, optimizer, goal, goal_value, test_id_str, is_sua_or_incr)
+
+
+def _test_basic(pytest_test_case, optimizer, goal, goal_value, test_id_str, is_sua_or_incr):
+    raised_class = _get_expected_raised_class(goal_value)
+    if raised_class is None:
+        retval = optimizer.optimize(goal)
+        pytest_test_case.assertIsNotNone(retval, test_id_str)
+        _, cost = retval
+        _check_oracle_goal(pytest_test_case, goal, goal_value, cost, test_id_str)
+    elif not is_sua_or_incr:
+        with pytest_test_case.assertRaises(raised_class, msg=test_id_str):
+            optimizer.optimize(goal)
+
+
+# Methods that create an OMTTestCase
 def qf_lia_two_variables_multi_obj_example():
     x = Symbol("x", INT)
     y = Symbol("y", INT)

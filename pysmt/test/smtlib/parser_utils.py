@@ -19,6 +19,7 @@ import os
 import warnings
 
 from pysmt.test import SkipTest
+from pysmt.test.omt_examples import OMTTestCase
 from pysmt.shortcuts import get_env, reset_env, Int, Real, BV, SBV
 from pysmt.smtlib.parser import SmtLibParser, get_formula_fname
 from pysmt.smtlib.script import check_sat_filter
@@ -228,7 +229,7 @@ def omt_test_cases_from_smtlib_test_set(logics=None):
             assert expected_result is None
             expected_goals = None
 
-        yield (test_name, assumptions, logic, is_sat, expected_goals)
+        yield OMTTestCase(test_name, assumptions, logic, is_sat, expected_goals)
 
 
 # Directory with the optimal SMT-LIB test files
@@ -239,11 +240,10 @@ OMTLIB_TEST_FILES = [ # TODO at end PR change files from .smt2 to .bz2
         OptimizationTypes.PARETO: [(Int(100), Int(100))],
         OptimizationTypes.BOXED: [Int(100), Int(100)],
     }),
-    # (QF_LRA, "smtlib2_boxed.smt2", SAT, { # NEEDS SUPPORT TO UNBOUD/INFINITESIMAL
-    #     OptimizationTypes.BOXED: [Real(42.0), Real(42.0), Real(24.0)],
-    #     OptimizationTypes.LEXICOGRAPHIC: [Real(42.0), Real(42.0), Real(24.0)],
-    #     # OptimizationTypes.PARETO: [(Real(42.0), Real(42.0), Real(24.0))], # TODO test this
-    # }),
+    (QF_LRA, "smtlib2_boxed.smt2", SAT, {
+        OptimizationTypes.BOXED: [Real(42.0), "unbounded", Real(24.0)],
+        OptimizationTypes.LEXICOGRAPHIC: [Real(42.0), Real(42.0), Real(24.0)],
+    }),
     (QF_BV, "smtlib2_bitvector.smt2", SAT, {
         OptimizationTypes.LEXICOGRAPHIC: [BV(8, 8), BV(8, 8)],
         OptimizationTypes.PARETO: [(BV(8, 8), BV(8, 8)), (SBV(-105, 8), SBV(-105, 8))],
