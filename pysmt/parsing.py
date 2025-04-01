@@ -126,9 +126,6 @@ class HRLexer(Lexer):
             Rule(r"\"(.*?)\"", self.string_constant, True), # String Constant
             Rule(r"BV\{(\d+)\}", self.bv_type, True),# BV Type
             Rule(r"(Array\{)", OpenArrayTypeTok(), False),# Array Type
-            Rule(r"(Int)", IntTypeTok(), False),# Int Type
-            Rule(r"(Real)", RealTypeTok(), False),# Real Type
-            Rule(r"(Bool)", BoolTypeTok(), False),# Bool Type
             Rule(r"(&)", InfixOpAdapter(self.AndOrBVAnd, 40), False),# conjunction
             Rule(r"(\|)", InfixOpAdapter(self.OrOrBVOr, 30), False),# disjunction
             Rule(r"(!)", UnaryOpAdapter(self.NotOrBVNot, 50), False),# negation
@@ -168,19 +165,10 @@ class HRLexer(Lexer):
             Rule(r"(:=)", ArrStore(), False),# ArrStore
             Rule(r"(::)", InfixOpAdapter(self.mgr.BVConcat, 90), False),# BVXor
             Rule(r"(:)", ExprElse(), False),# colon
-            Rule(r"(False)", Constant(self.mgr.FALSE()), False), # False
-            Rule(r"(True)", Constant(self.mgr.TRUE()), False),# True
             Rule(r"(,)", ExprComma(), False),# comma
             Rule(r"(\.)", ExprDot(), False),# dot
-            Rule(r"(xor)", InfixOpAdapter(self.mgr.BVXor, 10), False),# BVXor
-            Rule(r"(ROR)", InfixOpAdapter(self.BVHack(self.mgr.BVRor), 90), False),# BVRor
-            Rule(r"(ROL)", InfixOpAdapter(self.BVHack(self.mgr.BVRol), 90), False),# BVRol
-            Rule(r"(ZEXT)", InfixOpAdapter(self.BVHack(self.mgr.BVZExt), 90), False),# BVZext
-            Rule(r"(SEXT)", InfixOpAdapter(self.BVHack(self.mgr.BVSExt), 90), False),# BVSext
-            Rule(r"(bvcomp)", InfixOpAdapter(self.mgr.BVComp, 90), False),#
-            Rule(r"(forall)", Quantifier(self.mgr.ForAll, 20), False),#
-            Rule(r"(exists)", Quantifier(self.mgr.Exists, 20), False),#
-            Rule(r"(ToReal)", UnaryOpAdapter(self.mgr.ToReal, 100), False),#
+            Rule(r"(forall\s+)", Quantifier(self.mgr.ForAll, 20), False),#
+            Rule(r"(exists\s+)", Quantifier(self.mgr.Exists, 20), False),#
             Rule(r"(str\.len)", FunctionCallAdapter(self.mgr.StrLength, 100), False), # str_length
             Rule(r"(str\.\+\+)", FunctionCallAdapter(self.mgr.StrConcat, 100), False), # str_concat
             Rule(r"(str\.at)", FunctionCallAdapter(self.mgr.StrCharAt, 100), False), # str_charat
@@ -192,13 +180,27 @@ class HRLexer(Lexer):
             Rule(r"(str\.suffixof)", FunctionCallAdapter(self.mgr.StrSuffixOf, 100), False), # str_suffixof
             Rule(r"(str\.to\.int)", FunctionCallAdapter(self.mgr.StrToInt, 100), False), # str_to_int
             Rule(r"(int\.to\.str)", FunctionCallAdapter(self.mgr.IntToStr, 100), False), # int_to_str
-            Rule(r"(bv2nat)", UnaryOpAdapter(self.mgr.BVToNatural, 100), False),#
             Rule(r"'(.*?)'", self.identifier, True), # quoted identifiers
             Rule(r"([A-Za-z_][A-Za-z0-9_]*)", self.identifier, True),# identifiers
             Rule(r"(.)", self.lexing_error, True), # input error
         ]
-
         self.rules += hr_rules
+
+        self._identifier_map = {
+            "False": Constant(self.mgr.FALSE()), # False
+            "True": Constant(self.mgr.TRUE()),# True
+            "xor": InfixOpAdapter(self.mgr.BVXor, 10),# BVXor
+            "bv2nat": UnaryOpAdapter(self.mgr.BVToNatural, 100),#
+            "bvcomp": InfixOpAdapter(self.mgr.BVComp, 90),#
+            "ROR": InfixOpAdapter(self.BVHack(self.mgr.BVRor), 90),# BVRor
+            "ROL": InfixOpAdapter(self.BVHack(self.mgr.BVRol), 90),# BVRol
+            "ZEXT": InfixOpAdapter(self.BVHack(self.mgr.BVZExt), 90),# BVZext
+            "SEXT": InfixOpAdapter(self.BVHack(self.mgr.BVSExt), 90),# BVSext
+            "ToReal": UnaryOpAdapter(self.mgr.ToReal, 100),#
+            "Int": IntTypeTok(),# Int Type
+            "Real": RealTypeTok(),# Real Type
+            "Bool": BoolTypeTok(),# Bool Type
+        }
 
         self.compile()
 
@@ -219,6 +221,9 @@ class HRLexer(Lexer):
         return Constant(self.mgr.String(read))
 
     def identifier(self, read):
+        res = self._identifier_map.get(read, None)
+        if res is not None:
+            return res
         return Identifier(read, env=self.env)
 
     def UMinusOrBvNeg(self, x):
