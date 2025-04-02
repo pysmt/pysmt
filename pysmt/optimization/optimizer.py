@@ -48,15 +48,15 @@ class Optimizer(Solver):
 
     def pareto_optimize(self, goals):
         """This function is a generator returning *all* the pareto-optimal
-        solutions for the problem of minimizing the `cost_functions`
+        solutions for the problem of minimizing the `goals`
         keeping the formulae asserted in this optimizer satisfied.
 
         The solutions are returned as pairs `(model, costs)` where
         model is the pareto-optimal assignment and costs is the list
         of costs, one for each optimization function in
-        `cost_functions`.
+        `goals`.
 
-        `cost_functions` must be a list of terms with integer, real or
+        `goals` must be a list of terms with integer, real or
         bit-vector types whose values have to be minimized
 
         This function can raise a PysmtUnboundedOptimizationError if
@@ -251,6 +251,7 @@ class OptSearchInterval(OptComparationFunctions):
 
     def search_is_sat(self, model):
         self._pivot = None
+        # TODO add support to bv here
         model_value = model.get_value(self._obj.term()).constant_value()
         if self._obj.is_minimization_goal():
             if self._upper is None:

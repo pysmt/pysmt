@@ -19,13 +19,22 @@ import os
 import warnings
 
 from pysmt.test import SkipTest
-from pysmt.shortcuts import get_env, reset_env
+from pysmt.test.omt_examples import OMTTestCase
+from pysmt.shortcuts import get_env, reset_env, Int, Real, BV, SBV
 from pysmt.smtlib.parser import SmtLibParser, get_formula_fname
 from pysmt.smtlib.script import check_sat_filter
 from pysmt.logics import (QF_LIA, QF_LRA, LRA, QF_UFLIRA, QF_UFBV, QF_BV,
                           QF_ALIA, QF_ABV, QF_AUFLIA, QF_AUFBV, QF_NRA, QF_NIA,
-                          UFBV, BV, QF_UF)
+                          UFBV, BV as BV_logic, QF_UF)
 from pysmt.exceptions import NoSolverAvailableError, SolverReturnedUnknownResultError
+from pysmt.test.omt_examples import OptimizationTypes
+from pysmt.optimization.goal import MaximizationGoal, MinimizationGoal, \
+    MinMaxGoal, MaxMinGoal, MaxSMTGoal
+from pysmt.smtlib.script import InterpreterOMT
+from pysmt.smtlib.parser.parser import SmtLib20Parser
+from pysmt.smtlib.commands import ASSERT, CHECK_SAT, CHECK_ALLSAT, MAXIMIZE, MINIMIZE
+
+
 
 def smtlib_tests(logic_pred):
     """Returns the smtlib instances matching the logic predicate"""
@@ -160,8 +169,8 @@ SMTLIB_TEST_FILES = [
     #
     # UFBV
     #
-    (BV, "small_set/BV/AR-fixpoint-1.smt2.bz2", UNSAT),
-    (BV, "small_set/BV/audio_ac97_common.cpp.smt2.bz2", SAT),
+    (BV_logic, "small_set/BV/AR-fixpoint-1.smt2.bz2", UNSAT),
+    (BV_logic, "small_set/BV/audio_ac97_common.cpp.smt2.bz2", SAT),
     (UFBV, "small_set/UFBV/small-swap2-fixpoint-5.smt2.bz2", SAT),
     (UFBV, "small_set/UFBV/small-seq-fixpoint-10.smt2.bz2", UNSAT),
     #
@@ -193,4 +202,86 @@ SMTLIB_TEST_FILES = [
     # QF_UF
     #
     (QF_UF, "small_set/QF_UF/test0.smt2.bz2", SAT),
+]
+
+
+def omt_test_cases_from_smtlib_test_set(logics=None):
+    # TODO check & improve doc
+    """Returns a generator over the test-set of SMT-LIB files.
+
+    Note: This resets the Environment at each call.
+    """
+    for (logic, fname, is_sat, expected_result) in OMTLIB_TEST_FILES:
+        if logics is not None and logic not in logics:
+            continue
+        reset_env()
+        smtfile = os.path.join(OMTLIB_DIR, fname)
+        parser = SmtLib20Parser()
+        test_name = f"{logic.name} - {fname}"
+        script = parser.get_script_fname(smtfile)
+        assumptions, parsed_goals = _extract_assumptions_and_objectives(script, fname)
+        if is_sat:
+            expected_goals = {}
+            for optimization_type, expected_values in expected_result.items():
+                if optimization_type == OptimizationTypes.BASIC:
+                    assert len(parsed_goals) == len(expected_values)
+                    for parsed_goal, expected_value in zip(parsed_goals, expected_values):
+                        key = (parsed_goal, ), optimization_type
+                        expected_goals[key] = [expected_value]
+                else:
+                    key = parsed_goals, optimization_type
+                    expected_goals[key] = expected_values
+        else:
+            assert expected_result is None
+            expected_goals = None
+        yield OMTTestCase(test_name, assumptions, logic, is_sat, expected_goals)
+
+
+def _extract_assumptions_and_objectives(script, file_name):
+    check_sat_found = False
+    goals = []
+    formula, goals = script.get_last_formula(return_optimizations=True)
+    assumptions = list(formula.args()) if formula.is_and() else [formula]
+    for command in script.commands:
+        if command.name == CHECK_SAT:
+            assert not check_sat_found, f"Multiple check-sat commands found in file {file_name}"
+            check_sat_found = True
+        elif command.name == CHECK_ALLSAT:
+            # TODO understand if this is the correct interpretation
+            assumptions.extend(command.args)
+    if not check_sat_found:
+        raise ValueError("No check-sat command found in the script")
+
+    return assumptions, tuple(goals)
+
+
+# Directory with the optimal SMT-LIB test files
+OMTLIB_DIR = "pysmt/test/smtlib/omt/"
+OMTLIB_TEST_FILES = [ # TODO at end PR change files from .smt2 to .bz2
+    (QF_LIA, "smtlib2_allsat.smt2", SAT, {# WORKS
+        OptimizationTypes.LEXICOGRAPHIC: [Int(100), Int(100)],
+        OptimizationTypes.PARETO: [(Int(100), Int(100))],
+        OptimizationTypes.BOXED: [Int(100), Int(100)],
+    }),
+    (QF_LRA, "smtlib2_boxed.smt2", SAT, {
+        OptimizationTypes.BOXED: [Real(42.0), "unbounded", Real(24.0)],
+        OptimizationTypes.LEXICOGRAPHIC: [Real(42.0), Real(42.0), Real(24.0)],
+    }),
+    (QF_BV, "smtlib2_bitvector.smt2", SAT, {
+        OptimizationTypes.LEXICOGRAPHIC: [BV(8, 8), BV(8, 8)],
+        OptimizationTypes.PARETO: [(BV(8, 8), BV(8, 8)), (SBV(-105, 8), SBV(-105, 8))],
+        OptimizationTypes.BOXED: [BV(8, 8), SBV(-105, 8)],
+    }),
+    # (QF_LIA, "smtlib2_combination.smt2", SAT, {
+    #     OptimizationTypes.LEXICOGRAPHIC: [Int(8300), Int(632)],
+    #     OptimizationTypes.PARETO: [(BV(8, 8), BV(8, 8)), (SBV(-105, 8), SBV(-105, 8))],
+    #     OptimizationTypes.BOXED: [Int(8300), Int(632)],
+    #     OptimizationTypes.BASIC: [Int(8300), Int(632)],
+    # }),
+    # (QF_LIA, "smtlib2_combination.smt2", SAT, {
+    #     OptimizationTypes.LEXICOGRAPHIC: [Int(8300), Int(632)],
+    #     OptimizationTypes.PARETO: [(BV(8, 8), BV(8, 8)), (SBV(-105, 8), SBV(-105, 8))],
+    #     OptimizationTypes.BOXED: [Int(8300), Int(632)],
+    #     OptimizationTypes.BASIC: [Int(8300), Int(632)],
+    # }),
 ]
