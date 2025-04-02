@@ -223,13 +223,36 @@ def omt_test_cases_from_smtlib_test_set(logics=None):
         if is_sat:
             expected_goals = {}
             for optimization_type, expected_values in expected_result.items():
-                key = parsed_goals, optimization_type
-                expected_goals[key] = expected_values
+                if optimization_type == OptimizationTypes.BASIC:
+                    assert len(parsed_goals) == len(expected_values)
+                    for parsed_goal, expected_value in zip(parsed_goals, expected_values):
+                        key = (parsed_goal, ), optimization_type
+                        expected_goals[key] = [expected_value]
+                else:
+                    key = parsed_goals, optimization_type
+                    expected_goals[key] = expected_values
         else:
             assert expected_result is None
             expected_goals = None
-
         yield OMTTestCase(test_name, assumptions, logic, is_sat, expected_goals)
+
+
+def _extract_assumptions_and_objectives(script, file_name):
+    check_sat_found = False
+    goals = []
+    formula, goals = script.get_last_formula(return_optimizations=True)
+    assumptions = list(formula.args()) if formula.is_and() else [formula]
+    for command in script.commands:
+        if command.name == CHECK_SAT:
+            assert not check_sat_found, f"Multiple check-sat commands found in file {file_name}"
+            check_sat_found = True
+        elif command.name == CHECK_ALLSAT:
+            # TODO understand if this is the correct interpretation
+            assumptions.extend(command.args)
+    if not check_sat_found:
+        raise ValueError("No check-sat command found in the script")
+
+    return assumptions, tuple(goals)
 
 
 # Directory with the optimal SMT-LIB test files
@@ -249,22 +272,16 @@ OMTLIB_TEST_FILES = [ # TODO at end PR change files from .smt2 to .bz2
         OptimizationTypes.PARETO: [(BV(8, 8), BV(8, 8)), (SBV(-105, 8), SBV(-105, 8))],
         OptimizationTypes.BOXED: [BV(8, 8), SBV(-105, 8)],
     }),
+    # (QF_LIA, "smtlib2_combination.smt2", SAT, {
+    #     OptimizationTypes.LEXICOGRAPHIC: [Int(8300), Int(632)],
+    #     OptimizationTypes.PARETO: [(BV(8, 8), BV(8, 8)), (SBV(-105, 8), SBV(-105, 8))],
+    #     OptimizationTypes.BOXED: [Int(8300), Int(632)],
+    #     OptimizationTypes.BASIC: [Int(8300), Int(632)],
+    # }),
+    # (QF_LIA, "smtlib2_combination.smt2", SAT, {
+    #     OptimizationTypes.LEXICOGRAPHIC: [Int(8300), Int(632)],
+    #     OptimizationTypes.PARETO: [(BV(8, 8), BV(8, 8)), (SBV(-105, 8), SBV(-105, 8))],
+    #     OptimizationTypes.BOXED: [Int(8300), Int(632)],
+    #     OptimizationTypes.BASIC: [Int(8300), Int(632)],
+    # }),
 ]
-
-
-def _extract_assumptions_and_objectives(script, file_name):
-    check_sat_found = False
-    goals = []
-    formula, goals = script.get_last_formula(return_optimizations=True)
-    assumptions = list(formula.args()) if formula.is_and() else [formula]
-    for command in script.commands:
-        if command.name == CHECK_SAT:
-            assert not check_sat_found, f"Multiple check-sat commands found in file {file_name}"
-            check_sat_found = True
-        elif command.name == CHECK_ALLSAT:
-            # TODO understand if this is the correct interpretation
-            assumptions.extend(command.args)
-    if not check_sat_found:
-        raise ValueError("No check-sat command found in the script")
-
-    return assumptions, tuple(goals)

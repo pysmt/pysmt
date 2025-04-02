@@ -27,11 +27,12 @@
 ;
 ; PROBLEM
 ;
-(declare-fun production_cost () Real)
-(declare-fun q0 () Real)           ; machine 'i' production load
-(declare-fun q1 () Real) 
-(declare-fun q2 () Real) 
-(declare-fun q3 () Real)
+(declare-fun production_cost () Int)
+(declare-fun used_machines () Int)
+(declare-fun q0 () Int)           ; machine 'i' production load
+(declare-fun q1 () Int)
+(declare-fun q2 () Int)
+(declare-fun q3 () Int)
 (declare-fun m0 () Bool)           ; machine 'i' is used
 (declare-fun m1 () Bool)
 (declare-fun m2 () Bool)
@@ -55,15 +56,15 @@
 ; - 'total_cost' is a combination of 'production_cost'
 ;   and 'used_machines'
 ;
-(minimize 
-    (+ (* q0 8) (* q1 9) (* q2 9) (* q3 5)) 
+(minimize
+    (+ (* q0 8) (* q1 9) (* q2 9) (* q3 5))
     :id production_cost
 )
-(minimize (+ production_cost 
-             (* (/ 785 10) (+ (* 2 used_machines) 8))
+(minimize (+ production_cost
+             (* 79 (+ (* 2 used_machines) 8)) ; (* (/ 785 10) (+ (* 2 used_machines) 8))
           )
           :id total_cost
-) 
+)
 
 ;
 ; OPTIMIZATION + MODEL VALUES

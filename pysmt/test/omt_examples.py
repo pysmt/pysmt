@@ -1,4 +1,5 @@
 from enum import Enum, auto
+from fractions import Fraction
 import os.path as path
 
 from pysmt.environment import get_env
@@ -6,7 +7,7 @@ from pysmt.optimization.goal import Goal
 from pysmt.logics import Logic
 from pysmt.fnode import FNode
 from pysmt.shortcuts import Optimizer, GE, Int, Symbol, INT, LE, GT, REAL, Real, Equals, Times, Solver, Or, Div
-from pysmt.shortcuts import BVType, BVUGE, BVSGE, BVULE, BVSLE, BVUGT, BVSGT, BVULT, BVSLT, BVZero, BVOne, BV
+from pysmt.shortcuts import BVType, BVUGE, BVSGE, BVULE, BVSLE, BVUGT, BVSGT, BVULT, BVSLT, BVZero, BVOne, BV, Ite
 from pysmt.shortcuts import And, Plus, Minus, get_env, BOOL, Implies, SBV
 from pysmt.logics import QF_LIA, QF_LRA, QF_BV, QF_NRA, QF_NIA
 from pysmt.optimization.goal import MaximizationGoal, MinimizationGoal, \
@@ -96,6 +97,9 @@ def get_full_example_omt_formuale(environment=None):
         omt_examples = [
             qf_lia_two_variables_multi_obj_example(),
             qf_lia_2_int_2_bools_multiple_objective(),
+            qf_lra_box_volume(),
+            qf_lia_box_volume(),
+            test_maximize_revenue(),
         ]
     return omt_examples
 
@@ -114,7 +118,8 @@ def solve_given_examples(pytest_test_case, optimization_examples, test_to_skip):
             for (goals, optimization_type), goals_values in test_case.goals.items():
                 if (test_case.name, optimization_type, oname) in test_to_skip:
                     continue
-                test_id_str = f"test: {test_case.name}; solver: {oname}"
+                test_id_str = f"test: {test_case.name}; solver: {oname}; optimization: {optimization_type.name}"
+                print(test_id_str)
                 with Optimizer(name=oname) as opt:
                     for assertion in test_case.assertions:
                         opt.add_assertion(assertion)
@@ -125,7 +130,7 @@ def solve_given_examples(pytest_test_case, optimization_examples, test_to_skip):
                     elif optimization_type == OptimizationTypes.BOXED:
                         _test_boxed(pytest_test_case, opt, goals, goals_values, test_id_str, test_basic_in_boxed, is_sua_or_incr)
                     elif optimization_type == OptimizationTypes.BASIC:
-                        _test_basic(pytest_test_case, opt, goals, goals_values, test_id_str, is_sua_or_incr)
+                        _test_basic(pytest_test_case, opt, goals[0], goals_values[0], test_id_str, is_sua_or_incr)
                     else:
                         raise NotImplementedError(f"Unknown optimization type: {optimization_type}")
 
@@ -188,6 +193,8 @@ def _test_pareto(pytest_test_case, optimizer, goals, goals_values, test_id_str, 
         pytest_test_case.assertIsNotNone(retval, test_id_str)
         sorted_costs = sorted((costs for _, costs in retval), key=str)
         sorted_goals_values = sorted(goals_values, key=str)
+        print(sorted_goals_values)
+        print(sorted_costs)
         pytest_test_case.assertEqual(len(sorted_costs), len(sorted_goals_values), test_id_str)
         for costs, goals_values in zip(sorted_costs, sorted_goals_values):
             assert len(goals) == len(goals_values) == len(costs), test_id_str
@@ -216,12 +223,7 @@ def _test_boxed(pytest_test_case, optimizer, goals, goals_values, test_id_str, t
             _check_oracle_goal(pytest_test_case, goal, goal_value, cost, test_id_str)
     elif not is_sua_or_incr:
         with pytest_test_case.assertRaises(raised_class, msg=test_id_str):
-            retval = optimizer.boxed_optimize(goals)
-            for goal, model in retval.items():
-                print(goal)
-                print(model)
-                print("------------")
-
+            optimizer.boxed_optimize(goals)
 
     # test single optimizations separately
     if test_basic:
@@ -338,4 +340,159 @@ def qf_lia_2_int_2_bools_multiple_objective():
         QF_LIA,
         True,
         goals_dict
+    )
+
+
+def qf_lra_box_volume():
+    length = Symbol("length_real", REAL)
+    width = Symbol("width_real", REAL)
+    height = Symbol("height_real", REAL)
+    volume = Symbol("volume_real", REAL)
+
+    # as a second objective, maximize y, with y inversely proportional to the volume
+    x = Symbol("x_real", REAL)
+    y = Symbol("y_real", REAL)
+
+    height_times_2 = Times(height, Real(2.0))
+
+    length_value = Minus(Real(36.0), height_times_2)
+    width_value = Minus(Real(24.0), height_times_2)
+
+    # volume_value = Times(length, width, height)
+    # switch to sum in order to have a linear problem
+    volume_value = Plus(length, width, height)
+
+    length_formula = Equals(length, length_value)
+    width_formula = Equals(width, width_value)
+    volume_formula = Equals(volume, volume_value)
+
+    positive_length = GE(length, Real(0.0))
+    positive_width = GE(width, Real(0.0))
+    minimum_height = GE(height, Real(2.0))
+
+    line_1_constraint = Equals(x, y)
+    line_2_constraint = Equals(y, Minus(height, x))
+
+    assertions = [length_formula, width_formula, volume_formula, positive_length, positive_width, minimum_height, line_1_constraint, line_2_constraint]
+
+    maximize_volume_goal = MaximizationGoal(volume)
+    maximize_y_goal = MaximizationGoal(y)
+
+    return OMTTestCase(
+        "QF_LRA Box Volume",
+        assertions,
+        QF_LRA,
+        True,
+        {
+            ((maximize_volume_goal, maximize_y_goal), OptimizationTypes.LEXICOGRAPHIC): [Real(54.0), Real(1.0)],
+            ((maximize_volume_goal, maximize_y_goal), OptimizationTypes.BOXED): [Real(54.0), Real(6.0)],
+        }
+    )
+
+
+def qf_lia_box_volume():
+    length = Symbol("length", INT)
+    width = Symbol("width", INT)
+    height = Symbol("height", INT)
+    volume = Symbol("volume", INT)
+
+    # as a second objective, maximize y, with y inversely proportional to the volume
+    x = Symbol("x", INT)
+    y = Symbol("y", INT)
+
+    height_times_2 = Times(height, Int(2))
+
+    length_value = Minus(Int(36), height_times_2)
+    width_value = Minus(Int(24), height_times_2)
+
+    # volume_value = Times(length, width, height)
+    # switch to sum in order to have a linear problem
+    volume_value = Plus(length, width, height)
+
+    length_formula = Equals(length, length_value)
+    width_formula = Equals(width, width_value)
+    volume_formula = Equals(volume, volume_value)
+
+    positive_length = GE(length, Int(0))
+    positive_width = GE(width, Int(0))
+    minimum_height = GE(height, Int(2))
+
+    line_1_constraint = Equals(x, y)
+    line_2_constraint = Equals(y, Minus(height, x))
+
+    assertions = [length_formula, width_formula, volume_formula, positive_length, positive_width, minimum_height, line_1_constraint, line_2_constraint]
+
+    maximize_volume_goal = MaximizationGoal(volume)
+    maximize_y_goal = MaximizationGoal(y)
+
+    return OMTTestCase(
+        "QF_LIA Box Volume",
+        assertions,
+        QF_LIA,
+        True,
+        {
+            ((maximize_volume_goal, maximize_y_goal), OptimizationTypes.LEXICOGRAPHIC): [Int(54), Int(1)],
+            ((maximize_volume_goal, maximize_y_goal), OptimizationTypes.PARETO): [
+                # all the possible values of the pareto front
+                (Int(60-6*h), Int(h))
+                for h in range(1, 7)
+            ],
+            ((maximize_volume_goal, maximize_y_goal), OptimizationTypes.BOXED): [Int(54), Int(6)],
+        }
+    )
+
+
+def test_maximize_revenue():
+    cost_per_rented_car = Symbol("cost_per_rented_car", INT)
+    numbers_of_car_rented = Symbol("numbers_of_car_rented", INT)
+    revenue = Symbol("renevue", INT)
+
+    numbers_of_car_rented_value = Minus(Int(1000), Times(Int(5), cost_per_rented_car))
+    # revenue_value = Times(cost_per_rented_car, numbers_of_car_rented)
+    # make it linear
+    revenue_value = Plus(cost_per_rented_car, numbers_of_car_rented)
+
+    cost_per_rented_car_boundaries = And(GE(cost_per_rented_car, Int(50)), LE(cost_per_rented_car, Int(200)))
+    numbers_of_car_rented_formula = Equals(numbers_of_car_rented, numbers_of_car_rented_value)
+    revenue_formula = Equals(revenue, revenue_value)
+
+    length = Symbol("length", INT)
+    width = Symbol("width", INT)
+    area = Symbol("area", INT)
+    perimeter = Symbol("perimeter", INT)
+
+    # comment to make it linear
+    # area_value = Times(length, width)
+    width_times_2 = Times(width, Int(2))
+    area_value = Plus(
+        length,
+        Ite(LE(width, Int(200)),
+            width_times_2,
+            Times(width_times_2, Int(-1))
+        )
+    )
+    perimeter_value = Times(Plus(length, width), Int(2))
+
+    area_formula = Equals(area, area_value)
+    perimeter_formula = Equals(perimeter, perimeter_value)
+
+    perimeter_boundaries = LE(perimeter, revenue)
+
+
+    maximize_area_goal = MaximizationGoal(area)
+
+    maximize_revenue_goal = MaximizationGoal(revenue)
+
+    assertions = [cost_per_rented_car_boundaries, numbers_of_car_rented_formula, revenue_formula, area_formula, perimeter_formula, perimeter_boundaries]
+
+    return OMTTestCase(
+        "QF_LIA max revenue",
+        assertions,
+        QF_LIA,
+        True,
+        {
+            ((maximize_revenue_goal, maximize_area_goal), OptimizationTypes.LEXICOGRAPHIC): [Int(800), Int(600)],
+            ((maximize_revenue_goal, maximize_area_goal), OptimizationTypes.PARETO): [(Int(800), Int(600))],
+            ((maximize_revenue_goal, maximize_area_goal), OptimizationTypes.BOXED): [Int(800), Int(600)],
+        }
     )

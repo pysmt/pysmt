@@ -15,11 +15,11 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from pysmt.test import TestCase, skipIfNoOptimizerForLogic
-from pysmt.test import main
-from pysmt.test.omt_examples import get_full_example_omt_formuale, solve_given_examples
+from pysmt.test import TestCase
+from pysmt.test.omt_examples import get_full_example_omt_formuale, solve_given_examples, OptimizationTypes
 
 class TestOptimization(TestCase):
     def test_given_examples(self):
         optimization_examples = get_full_example_omt_formuale()
-        solve_given_examples(self, optimization_examples, {})
+        test_to_skip = {}
+        solve_given_examples(self, optimization_examples, test_to_skip)

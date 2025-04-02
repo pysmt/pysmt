@@ -353,8 +353,6 @@ sat
                 ("QF_LRA - smtlib2_boxed.smt2", OptimizationTypes.BOXED, "optimsat"), # error return wrong maximization of y (should be unbound, returns 1000000000.0) TODO check
                 ("QF_LRA - smtlib2_boxed.smt2", OptimizationTypes.BOXED, "optimsat_sua"), # error return wrong maximization of y (should be unbound, returns 1000000000.0) TODO check
                 ("QF_LRA - smtlib2_boxed.smt2", OptimizationTypes.BOXED, "optimsat_incr"), # error return wrong maximization of y (should be unbound, returns 1000000000.0) TODO check
-                ("QF_LRA - smtlib2_boxed.smt2", OptimizationTypes.PARETO, "z3"), # blocks
-                ("QF_LRA - smtlib2_boxed.smt2", OptimizationTypes.PARETO, "optimsat"), # blocks
         }
 
         solve_given_examples(self, test_cases, test_to_skip)
