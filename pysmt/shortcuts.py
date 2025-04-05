@@ -371,6 +371,26 @@ def EqualsOrIff(left, right):
     """
     return get_env().formula_manager.EqualsOrIff(left, right)
 
+#
+# Pseudo-Booleans
+#
+def PbLe(vals, coeffs, k):
+    """Returns Pseudo-Boolean function.
+        coeffs[0]*vals[0] + ... + coeffs[n]*vals[n] <= k
+    """
+    return get_env().formula_manager.PbLe(vals, coeffs, k)
+
+def PbGe(vals, coeffs, k):
+    """Returns Pseudo-Boolean function.
+        coeffs[0]*vals[0] + ... + coeffs[n]*vals[n] >= k
+    """
+    return get_env().formula_manager.PbGe(vals, coeffs, k)
+
+def PbEq(vals, coeffs, k):
+    """Returns Pseudo-Boolean function.
+        coeffs[0]*vals[0] + ... + coeffs[n]*vals[n] = k
+    """
+    return get_env().formula_manager.PbEq(vals, coeffs, k)
 
 #
 # Bit Vectors
