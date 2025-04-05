@@ -265,7 +265,7 @@ class Solver(object):
 
         Raises TypeError.
         """
-        if formula.get_type() != BOOL:
+        if self.environment.stc.get_type(formula) != BOOL:
             raise PysmtTypeError("Argument must be boolean.")
 
 

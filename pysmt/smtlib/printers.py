@@ -14,14 +14,19 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
-#
-from functools import partial
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from pysmt.fnode import FNode
+
+
 from io import StringIO
 
 import pysmt.operators as op
 from pysmt.environment import get_env
 from pysmt.walkers import TreeWalker, DagWalker, handles
 from pysmt.utils import quote
+
 
 def write_annotations(f):
     def resf(self, formula, *args, **kwargs):
@@ -702,7 +707,7 @@ class SmtDagPrinter(DagWalker):
         return sym
 
 
-def to_smtlib(formula, daggify=True):
+def to_smtlib(formula: FNode, daggify: bool = True) -> str:
     """Returns a Smt-Lib string representation of the formula.
 
     The daggify parameter can be used to switch from a linear-size

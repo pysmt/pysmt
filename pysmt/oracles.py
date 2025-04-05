@@ -25,11 +25,14 @@ properties of formulae.
  * AtomsOracle provides the set of boolean atoms in the formula
  * TypesOracle provides the list of types in the formula
 """
-
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import Self, Iterable, Optional
+    from pysmt.fnode import FNode
 import pysmt
 import pysmt.walkers as walkers
 import pysmt.operators as op
-
 from pysmt import typing
 
 from pysmt.logics import Logic, Theory, get_closer_pysmt_logic
@@ -331,8 +334,10 @@ class TheoryOracle(walkers.DagWalker):
 
 
 # Operators for which Args is an FNode
-DEPENDENCIES_SIMPLE_ARGS = (set(op.ALL_TYPES) - \
-                           (set([op.SYMBOL, op.FUNCTION]) | op.QUANTIFIERS | op.CONSTANTS))
+DEPENDENCIES_SIMPLE_ARGS = (frozenset(op.ALL_TYPES)
+                            - (frozenset([op.SYMBOL, op.FUNCTION])
+                               | op.QUANTIFIERS
+                               | op.CONSTANTS))
 
 
 class FreeVarsOracle(walkers.DagWalker):
@@ -343,33 +348,32 @@ class FreeVarsOracle(walkers.DagWalker):
     # - Quantifiers need to exclude bounded variables
     # - Constants have no impact
 
-    def get_free_variables(self, formula):
+    def get_free_variables(self: Self, formula: FNode) -> frozenset[FNode]:
         """Returns the set of Symbols appearing free in the formula."""
-        return self.walk(formula)
+        res = self.walk(formula)
+        assert isinstance(res, frozenset)
+        return res
 
     @walkers.handles(DEPENDENCIES_SIMPLE_ARGS)
-    def walk_simple_args(self, formula, args, **kwargs):
+    def walk_simple_args(self: Self, formula: FNode, args: Iterable[frozenset[FNode]], **kwargs) -> frozenset[FNode]:
         #pylint: disable=unused-argument
-        res = set()
-        for arg in args:
-            res.update(arg)
-        return frozenset(res)
+        return frozenset(x for arg in args for x in arg)
 
     @walkers.handles(op.QUANTIFIERS)
-    def walk_quantifier(self, formula, args, **kwargs):
+    def walk_quantifier(self: Self, formula: FNode, args, **kwargs) -> frozenset[FNode]:
         #pylint: disable=unused-argument
-        return args[0].difference(formula.quantifier_vars())
+        return frozenset(args[0].difference(formula.quantifier_vars()))
 
-    def walk_symbol(self, formula, args, **kwargs):
+    def walk_symbol(self: Self, formula: FNode, args, **kwargs) -> frozenset[FNode]:
         #pylint: disable=unused-argument
         return frozenset([formula])
 
     @walkers.handles(op.CONSTANTS)
-    def walk_constant(self, formula, args, **kwargs):
+    def walk_constant(self: Self, formula: FNode, args, **kwargs) -> frozenset[FNode]:
         #pylint: disable=unused-argument
         return frozenset()
 
-    def walk_function(self, formula, args, **kwargs):
+    def walk_function(self: Self, formula: FNode, args, **kwargs) -> frozenset[FNode]:
         res = set([formula.function_name()])
         for arg in args:
             res.update(arg)
@@ -393,50 +397,52 @@ class AtomsOracle(walkers.DagWalker):
     # - Array select, e.g. a[x] because such term could be of Boolean type
     #
 
-    def get_atoms(self, formula):
+    def get_atoms(self: Self, formula: FNode) -> frozenset[FNode]:
         """Returns the set of atoms appearing in the formula."""
-        return self.walk(formula)
+        res = self.walk(formula)
+        assert isinstance(res, frozenset)
+        return res
 
     @walkers.handles(op.BOOL_CONNECTIVES)
     @walkers.handles(op.QUANTIFIERS)
-    def walk_bool_op(self, formula, args, **kwargs):
+    def walk_bool_op(self: Self, formula: FNode, args: Iterable[frozenset[FNode]], **kwargs) -> frozenset[FNode]:
         #pylint: disable=unused-argument
         return frozenset(x for a in args for x in a)
 
     @walkers.handles(op.RELATIONS)
-    def walk_theory_relation(self, formula, **kwargs):
+    def walk_theory_relation(self: Self, formula: FNode, **kwargs) -> frozenset[FNode]:
         #pylint: disable=unused-argument
         return frozenset([formula])
 
     @walkers.handles(op.THEORY_OPERATORS - {op.ARRAY_SELECT})
-    def walk_theory_op(self, formula, **kwargs):
+    def walk_theory_op(self: Self, formula: FNode, **kwargs) -> None:
         #pylint: disable=unused-argument
         return None
 
-    def walk_array_select(self, formula, **kwargs):
+    def walk_array_select(self: Self, formula: FNode, **kwargs) -> Optional[frozenset[FNode]]:
         #pylint: disable=unused-argument
         if self.env.stc.get_type(formula).is_bool_type():
             return frozenset([formula])
         return None
 
     @walkers.handles(op.CONSTANTS)
-    def walk_constant(self, formula, **kwargs):
+    def walk_constant(self: Self, formula: FNode, **kwargs) -> Optional[frozenset[FNode]]:
         #pylint: disable=unused-argument
         if formula.is_bool_constant():
             return frozenset()
         return None
 
-    def walk_symbol(self, formula, **kwargs):
+    def walk_symbol(self: Self, formula: FNode, **kwargs) -> Optional[frozenset[FNode]]:
         if formula.is_symbol(typing.BOOL):
             return frozenset([formula])
         return None
 
-    def walk_function(self, formula, **kwargs):
+    def walk_function(self: Self, formula: FNode, **kwargs) -> Optional[frozenset[FNode]]:
         if formula.function_name().symbol_type().return_type.is_bool_type():
             return frozenset([formula])
         return None
 
-    def walk_ite(self, formula, args, **kwargs):
+    def walk_ite(self: Self, formula: FNode, args, **kwargs) -> Optional[frozenset[FNode]]:
         #pylint: disable=unused-argument
         if any(a is None for a in args):
             # Theory ITE

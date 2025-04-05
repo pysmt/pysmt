@@ -67,11 +67,12 @@ def clear_pending_pop(f):
 
 def typecheck_result(f):
     """Performs type checking on the return value using the global environment"""
+    from pysmt.environment import get_env
 
     @wraps(f)
     def typecheck_result_wrap(*args, **kwargs):
         res = f(*args, **kwargs)
-        res.get_type() # This raises an exception if an invalid type is found
+        get_env().stc.get_type(res)  # This raises an exception if an invalid type is found
     return typecheck_result_wrap
 
 
