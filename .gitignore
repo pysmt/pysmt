@@ -1,2 +1,5 @@
 *.pyc
 *~
+
+SMT-LIB
+!SMT-LIB/*.py
