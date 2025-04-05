@@ -44,6 +44,7 @@ from pysmt.decorators import clear_pending_pop, catch_conversion_error
 from pysmt.solvers.qelim import QuantifierEliminator
 from pysmt.solvers.interpolation import Interpolator
 from pysmt.walkers.identitydag import IdentityDagWalker
+from pysmt.walkers.generic import handles
 
 
 class MSatEnv(object):
@@ -1115,10 +1116,7 @@ if hasattr(mathsat, "MSAT_EXIST_ELIM_ALLSMT_FM"):
             self.msat_env = MSatEnv(self.msat_config)
             mathsat.msat_destroy_config(self.msat_config)
 
-            self.set_function(self.walk_identity, op.SYMBOL, op.REAL_CONSTANT,
-                              op.BOOL_CONSTANT, op.INT_CONSTANT)
             self.logic = logic
-
             self.algorithm = algorithm
             self.converter = MSatConverter(environment, self.msat_env)
 
@@ -1174,6 +1172,10 @@ if hasattr(mathsat, "MSAT_EXIST_ELIM_ALLSMT_FM"):
             variables = formula.quantifier_vars()
             subf = args[0]
             return self.exist_elim(variables, subf)
+
+        @handles(op.SYMBOL, op.REAL_CONSTANT, op.BOOL_CONSTANT, op.INT_CONSTANT)
+        def walk_identity(self, formula, args, **kwargs):
+            return super(IdentityDagWalker, self).walk_identity(formula, **kwargs)
 
         def _exit(self):
             del self.msat_env
