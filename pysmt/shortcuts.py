@@ -1204,7 +1204,7 @@ def write_configuration(config_filename, environment=None):
     config.write_environment_configuration(config_filename, environment)
 
 
-def read_smtlib(fname):
+def read_smtlib(fname, strict=True):
     """Reads the SMT formula from the given file.
 
     This supports compressed files, if the fname ends in .bz2 .
@@ -1213,7 +1213,7 @@ def read_smtlib(fname):
     :returns: An SMT formula
     :rtype: FNode
     """
-    return pysmt.smtlib.parser.get_formula_fname(fname)
+    return pysmt.smtlib.parser.get_formula_fname(fname, strict=strict)
 
 
 def write_smtlib(formula, fname):

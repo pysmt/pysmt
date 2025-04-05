@@ -17,6 +17,7 @@
 #
 from pysmt.walkers.dag import DagWalker
 
+
 class IdentityDagWalker(DagWalker):
     """This class traverses a formula and rebuilds it recursively
     identically.
@@ -100,6 +101,9 @@ class IdentityDagWalker(DagWalker):
     def walk_minus(self, formula, args, **kwargs):
         return self.mgr.Minus(args[0], args[1])
 
+    def walk_div(self, formula, args, **kwargs):
+        return self.mgr.Div(args[0], args[1])
+
     def walk_function(self, formula, args, **kwargs):
         # We re-create the symbol name
         old_name = formula.function_name()
@@ -113,7 +117,7 @@ class IdentityDagWalker(DagWalker):
         return self.mgr.BV(formula.constant_value(), formula.bv_width())
 
     def walk_bv_and(self, formula, args, **kwargs):
-        return self.mgr.BVAnd(args[0], args[1])
+        return self.mgr.BVAnd(args)
 
     def walk_bv_not(self, formula, args, **kwargs):
         return self.mgr.BVNot(args[0])
@@ -122,19 +126,19 @@ class IdentityDagWalker(DagWalker):
         return self.mgr.BVNeg(args[0])
 
     def walk_bv_or(self, formula, args, **kwargs):
-        return self.mgr.BVOr(args[0], args[1])
+        return self.mgr.BVOr(args)
 
     def walk_bv_xor(self, formula, args, **kwargs):
         return self.mgr.BVXor(args[0], args[1])
 
     def walk_bv_add(self, formula, args, **kwargs):
-        return self.mgr.BVAdd(args[0], args[1])
+        return self.mgr.BVAdd(args)
 
     def walk_bv_sub(self, formula, args, **kwargs):
         return self.mgr.BVSub(args[0], args[1])
 
     def walk_bv_mul(self, formula, args, **kwargs):
-        return self.mgr.BVMul(args[0], args[1])
+        return self.mgr.BVMul(args)
 
     def walk_bv_udiv(self, formula, args, **kwargs):
         return self.mgr.BVUDiv(args[0], args[1])
@@ -166,7 +170,7 @@ class IdentityDagWalker(DagWalker):
         return self.mgr.BVZExt(args[0], formula.bv_extend_step())
 
     def walk_bv_concat(self, formula, args, **kwargs):
-        return self.mgr.BVConcat(args[0], args[1])
+        return self.mgr.BVConcat(args)
 
     def walk_bv_lshl(self, formula, args, **kwargs):
         return self.mgr.BVLShl(args[0], args[1])
@@ -239,6 +243,3 @@ class IdentityDagWalker(DagWalker):
         return self.mgr.Array(formula.array_value_index_type(),
                               args[0],
                               assign)
-
-    def walk_div(self, formula, args, **kwargs):
-        return self.mgr.Div(args[0], args[1])

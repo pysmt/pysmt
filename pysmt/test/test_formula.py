@@ -24,7 +24,7 @@ from pysmt.shortcuts import Equals
 from pysmt.shortcuts import get_env
 from pysmt.environment import Environment
 from pysmt.test import TestCase, skipIfNoSolverForLogic, main
-from pysmt.logics import QF_BOOL
+from pysmt.logics import QF_BOOL, QF_BV
 from pysmt.exceptions import (UndefinedSymbolError, UnsupportedOperatorError,
                               PysmtTypeError, PysmtModeError, PysmtValueError)
 from pysmt.formula import FormulaManager
@@ -1033,39 +1033,36 @@ class TestFormulaManager(TestCase):
         self.assertEqual(x.node_id(), xx.node_id())
         self.assertNotEqual(x.node_id(), y.node_id())
 
+    @skipIfNoSolverForLogic(QF_BV)
     def test_left_associative_bv(self):
         """Test that the left-associative bv operators work properly"""
         bva = self.mgr.Symbol('a', BV8)
         bvb = self.mgr.Symbol('b', BV8)
         bvc = self.mgr.BV('10101010')
-        self.assertEqual(
-            # passing a list of elements
-            self.mgr.BVAnd([bva, bvb, bvc]),
-            self.mgr.BVAnd(
-                self.mgr.BVAnd(bva, bvb),
-                bvc
+        self.assertValid(
+            self.mgr.Equals(
+                # passing a list of elements
+                self.mgr.BVAnd([bva, bvb, bvc]),
+                self.mgr.BVAnd(self.mgr.BVAnd(bva, bvb), bvc)
             )
         )
-        self.assertEqual(
-            # passing n elements
-            self.mgr.BVOr(bva, bvb, bvc),
-            self.mgr.BVOr(
-                self.mgr.BVOr(bva, bvb),
-                bvc
+        self.assertValid(
+            self.mgr.Equals(
+                # passing n elements
+                self.mgr.BVOr(bva, bvb, bvc),
+                self.mgr.BVOr(self.mgr.BVOr(bva, bvb), bvc)
             )
         )
-        self.assertEqual(
-            self.mgr.BVAdd(bva, bvb, bvc),
-            self.mgr.BVAdd(
-                self.mgr.BVAdd(bva, bvb),
-                bvc
+        self.assertValid(
+            self.mgr.Equals(
+                self.mgr.BVAdd(bva, bvb, bvc),
+                self.mgr.BVAdd(self.mgr.BVAdd(bva, bvb), bvc)
             )
         )
-        self.assertEqual(
-            self.mgr.BVMul(bva, bvb, bvc),
-            self.mgr.BVMul(
-                self.mgr.BVMul(bva, bvb),
-                bvc
+        self.assertValid(
+            self.mgr.Equals(
+                self.mgr.BVMul(bva, bvb, bvc),
+                self.mgr.BVMul(self.mgr.BVMul(bva, bvb), bvc)
             )
         )
 

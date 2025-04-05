@@ -230,7 +230,7 @@ def main():
         exit(0)
 
     elif options.env:
-        bindings_dir= os.path.expanduser(options.bindings_path)
+        bindings_dir = os.path.expanduser(options.bindings_path)
         if platform.system().lower() == "windows":
             if options.powershell:
                 print('$env:PythonPath += ";%s"' % bindings_dir)
@@ -238,7 +238,6 @@ def main():
                 print("set PYTHONPATH=" + bindings_dir + ";%PYTHONPATH%")
         else:
             print("export PYTHONPATH=\"" + bindings_dir + ":${PYTHONPATH}\"")
-
 
     else:
         if len(solvers_to_install) == 0:
