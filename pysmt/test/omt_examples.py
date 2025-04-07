@@ -118,8 +118,12 @@ def solve_given_examples(pytest_test_case, optimization_examples, test_to_skip):
             for (goals, optimization_type), goals_values in test_case.goals.items():
                 if (test_case.name, optimization_type, oname) in test_to_skip:
                     continue
-                # # #TODO part to skip all tests different from this
-                # if (test_case.name, optimization_type, oname) != ("QF_BV - smtlib2_bitvector.smt2", OptimizationTypes.BOXED, "z3_sua"):
+                # #TODO part to skip all tests different from this
+                # if (test_case.name, optimization_type, oname) not in (
+                #     ("QF_LIA - smtlib2_allsat.smt2", OptimizationTypes.PARETO, "optimsat"),
+                #     # ("QF_LIA - smtlib2_load_objective_model.smt2", OptimizationTypes.PARETO, "optimsat"),
+                #     # ("QF_LIA - smtlib2_lexicographic.smt2", OptimizationTypes.BOXED, "optimsat"),
+                # ):
                 #     continue
                 test_id_str = f"test: {test_case.name}; solver: {oname}; optimization: {optimization_type.name}"
                 print(test_id_str)
@@ -194,8 +198,10 @@ def _test_pareto(pytest_test_case, optimizer, goals, goals_values, test_id_str, 
     if raised_class is None:
         retval = optimizer.pareto_optimize(goals)
         pytest_test_case.assertIsNotNone(retval, test_id_str)
+
         sorted_costs = sorted((costs for _, costs in retval), key=str)
         sorted_goals_values = sorted(goals_values, key=str)
+
         pytest_test_case.assertEqual(len(sorted_costs), len(sorted_goals_values), test_id_str)
         for costs, goals_values in zip(sorted_costs, sorted_goals_values):
             assert len(goals) == len(goals_values) == len(costs), test_id_str

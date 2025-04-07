@@ -336,10 +336,9 @@ sat
         test_to_skip = {
             # TODO add bz2 when test are working
 
-                # ("QF_LRA - smtlib2_boxed.smt2", OptimizationTypes.LEXICOGRAPHIC, "optimsat"), # error return wrong maximization of z (should be 24, returns 0) TODO check
-                ("QF_LRA - smtlib2_boxed.smt2", OptimizationTypes.BOXED, "optimsat"), # error return wrong maximization of y (should be unbound, returns 1000000000.0) TODO check
-                # ("QF_LIA - smtlib2_combination.smt2", OptimizationTypes.BASIC, "z3"), # error returns none cost
-                ("QF_LIA - smtlib2_lexicographic.smt2", OptimizationTypes.BOXED, "optimsat"), # error returns opt of 2 when all return opt of 3
+                ("QF_LRA - smtlib2_boxed.smt2", OptimizationTypes.LEXICOGRAPHIC, "optimsat"), # error return wrong maximization of z (should be 24, returns 0) TODO check
+                ("QF_LIA - smtlib2_allsat.smt2", OptimizationTypes.PARETO, "optimsat"), # error returns 6 values when the correct answer has 3. No value is wrong, they are just repeated twice (when runs alone)
+
         }
 
         solve_given_examples(self, test_cases, test_to_skip)

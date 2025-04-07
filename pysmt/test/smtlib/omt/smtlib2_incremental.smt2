@@ -17,9 +17,10 @@
 ;
 (declare-fun x () Real)
 
+(minimize x)
+(assert (<= 2 x))
 (push 1)
 (assert (<= 5 x))
-(minimize x)
 (check-sat)
 (get-objectives)
 (pop 1)

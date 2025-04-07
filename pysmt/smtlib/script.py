@@ -332,19 +332,26 @@ class SmtLibScript(object):
     def __str__(self):
         return "\n".join((str(cmd) for cmd in self.commands))
 
+
 def _parse_goal(command, max_smt_goals=None, goal_position=None):
     assert len(command.args) == 2, f"Command {command.name} must have 2 arguments"
     singed = False
     if len(command.args) >= 2:
         options = command.args[1]
-        for arg in options:
-            if arg[0] == ":signed":
-                singed = arg[1]
-            break
+        if options is not None:
+            for arg in options:
+                if arg[0] == ":signed":
+                    singed = arg[1]
+                break
     if command.name == smtcmd.MAXIMIZE:
         return MaximizationGoal(command.args[0], singed)
     elif command.name == smtcmd.MINIMIZE:
         return MinimizationGoal(command.args[0], singed)
+    elif command.name == smtcmd.MINMAX:
+        print(command.args[0])
+        return MinMaxGoal(command.args[0], singed)
+    elif command.name == smtcmd.MAXMIN:
+        return MaxMinGoal(command.args[0], singed)
     elif command.name == smtcmd.ASSERT_SOFT:
         assert max_smt_goals is not None
         assert goal_position is not None
@@ -363,7 +370,6 @@ def _parse_goal(command, max_smt_goals=None, goal_position=None):
     else:
         # TODO check if those are all the types of goals
         raise ValueError(f"Unknown goal command {command.name}")
-
 
 
 def smtlibscript_from_formula(formula, logic=None):

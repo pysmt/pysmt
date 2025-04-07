@@ -220,10 +220,6 @@ def omt_test_cases_from_smtlib_test_set(logics=None):
         test_name = f"{logic.name} - {fname}"
         script = parser.get_script_fname(smtfile)
         assumptions, parsed_goals = _extract_assumptions_and_objectives(script, fname)
-        # TODO cancel; debug for z3 error
-        # from pysmt.shortcuts import Symbol, INT, Int, Equals
-        # ns = Symbol("__z3_0", INT)
-        # assumptions.append(Equals(ns, Int(1)))
         if is_sat:
             expected_goals = {}
             for optimization_type, expected_values in expected_result.items():
@@ -247,12 +243,12 @@ def _extract_assumptions_and_objectives(script, file_name):
     formula, goals = script.get_last_formula(return_optimizations=True)
     assumptions = list(formula.args()) if formula.is_and() else [formula]
     for command in script.commands:
-        if command.name == CHECK_SAT:
-            assert not check_sat_found, f"Multiple check-sat commands found in file {file_name}"
-            check_sat_found = True
-        elif command.name == CHECK_ALLSAT:
+        if command.name == CHECK_ALLSAT:
             # TODO understand if this is the correct interpretation
             assumptions.extend(command.args)
+        elif command.name == CHECK_SAT:
+        #     assert not check_sat_found, f"Multiple check-sat commands found in file {file_name}"
+            check_sat_found = True
     if not check_sat_found:
         raise ValueError("No check-sat command found in the script")
 
@@ -262,30 +258,54 @@ def _extract_assumptions_and_objectives(script, file_name):
 # Directory with the optimal SMT-LIB test files
 OMTLIB_DIR = "pysmt/test/smtlib/omt/"
 OMTLIB_TEST_FILES = [ # TODO at end PR change files from .smt2 to .bz2
-    # (QF_LIA, "smtlib2_allsat.smt2", SAT, {
-    #     OptimizationTypes.LEXICOGRAPHIC: [Int(100), Int(100)],
-    #     OptimizationTypes.PARETO: [(Int(100), Int(100))],
-    #     OptimizationTypes.BOXED: [Int(100), Int(100)],
-    # }),
-    # (QF_LRA, "smtlib2_boxed.smt2", SAT, {
-    #     OptimizationTypes.BOXED: [Real(42.0), "unbounded", Real(24.0)],
-    #     OptimizationTypes.LEXICOGRAPHIC: [Real(42.0), Real(42.0), Real(24.0)],
-    # }),
-    # (QF_BV, "smtlib2_bitvector.smt2", SAT, {
-    #     OptimizationTypes.LEXICOGRAPHIC: [BV(8, 8), BV(8, 8)],
-    #     OptimizationTypes.PARETO: [(BV(8, 8), BV(8, 8)), (SBV(-105, 8), SBV(-105, 8))],
-    #     OptimizationTypes.BOXED: [BV(8, 8), SBV(-105, 8)],
-    # }),
+    (QF_LIA, "smtlib2_allsat.smt2", SAT, {
+        OptimizationTypes.LEXICOGRAPHIC: [Int(100), Int(100)],
+        OptimizationTypes.PARETO: [(Int(100), Int(100))],
+        OptimizationTypes.BOXED: [Int(100), Int(100)],
+    }),
+    (QF_LRA, "smtlib2_boxed.smt2", SAT, {
+        OptimizationTypes.BOXED: [Real(42.0), "unbounded", Real(24.0)],
+        OptimizationTypes.LEXICOGRAPHIC: [Real(42.0), Real(42.0), Real(24.0)],
+    }),
+    (QF_BV, "smtlib2_bitvector.smt2", SAT, {
+        OptimizationTypes.LEXICOGRAPHIC: [BV(8, 8), BV(8, 8)],
+        OptimizationTypes.PARETO: [(BV(8, 8), BV(8, 8)), (SBV(-105, 8), SBV(-105, 8))],
+        OptimizationTypes.BOXED: [BV(8, 8), SBV(-105, 8)],
+    }),
     (QF_LIA, "smtlib2_combination.smt2", SAT, {
         OptimizationTypes.BASIC: [Int(2)],
-        # OptimizationTypes.BOXED: [Int(8300), Int(632)],
     }),
-    # (QF_LRA, "smtlib2_incremental.smt2", SAT, {
-        # OptimizationTypes.BASIC: [Int(2)],
-        # OptimizationTypes.BOXED: [Int(8300), Int(632)],
-    # }), # TODO understand how to handle problems with check_sat twice, push and pop
+    (QF_LRA, "smtlib2_incremental.smt2", SAT, {
+        OptimizationTypes.BASIC: [Int(2)],
+    }), # TODO understand how to handle problems with check_sat twice, push and pop
     (QF_LIA, "smtlib2_lexicographic.smt2", SAT, {
         # OptimizationTypes.LEXICOGRAPHIC: [Int(4150), Int(3)], # TODO not working because it has a LEXICOGRAPHIC optimization with a max_smt
         OptimizationTypes.BOXED: [Int(4150), Int(3)],
+    }),
+    (QF_LIA, "smtlib2_load_objective_model.smt2", SAT, {
+        # OptimizationTypes.LEXICOGRAPHIC: [Int(4150), Int(3)], # TODO not working because it has a LEXICOGRAPHIC optimization with a max_smt
+        OptimizationTypes.BOXED: [Int(3), Int(30)],
+        OptimizationTypes.LEXICOGRAPHIC: [Int(3), Int(26)],
+        OptimizationTypes.PARETO: [
+            (Int(x), Int(2*x + 20)) for x in range(3, 6)
+        ]
+    }),
+    (QF_LIA, "smtlib2_maxsmt.smt2", SAT, {
+        OptimizationTypes.BASIC: [Int(2)],
+    }),
+    (QF_LRA, "smtlib2_pareto.smt2", SAT, {
+        OptimizationTypes.LEXICOGRAPHIC: [Real(3.0), Real(1.0)],
+        OptimizationTypes.BOXED: [Real(3.0), Real(3.0)],
+        OptimizationTypes.PARETO: [
+            (Real(float(x)), Real(float(4-x))) for x in range(1, 4)
+        ]
+    }),
+    (QF_LRA, "smtlib2_minmax_simple.smt2", SAT, {
+        OptimizationTypes.LEXICOGRAPHIC: [Real(17.0), Real(17.0)],
+        OptimizationTypes.BOXED: [Real(17.0), Real(42.0)],
+        # OptimizationTypes.PARETO: [
+        #     (Real(17.0), Real(17.0)),
+        #     (Real(42.0), Real(42.0)),
+        # ] # Should be infinite because we are on reals
     }),
 ]

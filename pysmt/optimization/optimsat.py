@@ -130,6 +130,9 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
         if self._check_unsat_unbound_infinitesimal(msat_obj):
 
             model = self.get_model()
+            if goal.is_maxsmt_goal():
+                cost = self._compute_max_smt_cost(model, goal)
+                return model, cost
             value = self._msat_lib.msat_objective_value_term(self.msat_env(),
                                                              msat_obj,
                                                              self._msat_lib.MSAT_OPTIMUM)
@@ -141,16 +144,17 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
     def pareto_optimize(self, goals):
         self._msat_lib.msat_set_opt_priority(self.msat_env(), "par")
 
+        msat_objs = {}
+
         for g in goals:
-            self._assert_msat_goal(g)
+            msat_objs[g] = self._assert_msat_goal(g)
 
         while self.solve():
-            for g in goals:
-                if self._check_unsat_unbound_infinitesimal(g):
-                    model = self.get_model()
-                    yield model, [model.get_value(goal.term()) for goal in goals]
-                else:
-                    break
+            if all(self._check_unsat_unbound_infinitesimal(msat_objs[g]) for g in goals):
+                model = self.get_model()
+                yield model, [model.get_value(goal.term()) for goal in goals]
+            else:
+                break
 
     @clear_pending_pop
     def lexicographic_optimize(self, goals):
@@ -183,6 +187,8 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
         rt = {}
 
         for msat_obj, goal in zip(msat_objs, goals):
+            if not self._check_unsat_unbound_infinitesimal(msat_obj):
+                return None
             self._msat_lib.msat_load_objective_model(self.msat_env(), msat_obj)
             model = self.get_model()
             if goal.is_maxsmt_goal():
@@ -205,6 +211,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
         elif optres == self._msat_lib.MSAT_OPT_UNSAT:
             return False
         else:
+
             unbounded = self._msat_lib.msat_objective_value_is_unbounded(self.msat_env(),
                                                                   msat_obj,
                                                                   self._msat_lib.MSAT_OPTIMUM)

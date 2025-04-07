@@ -110,7 +110,6 @@ class MaximizationGoal(Goal):
         return "Maximize{%s}" % self.formula.serialize()
 
 
-
 class MinimizationGoal(Goal):
     """
     Minimization goal common to all solvers.
@@ -151,11 +150,8 @@ class MinMaxGoal(MinimizationGoal):
         """
         :param terms: List of FNode
         """
-        if len(terms) > 0:
-            if get_env().stc.get_type(terms[0]).is_bv_type():
-                formula = get_env().formula_manager.MaxBV(sign, terms)
-            else:
-                formula = get_env().formula_manager.Max(terms)
+        if len(terms) > 0 and get_env().stc.get_type(terms[0]).is_bv_type():
+            formula = get_env().formula_manager.MaxBV(sign, terms)
         else:
             formula = get_env().formula_manager.Max(terms)
         MinimizationGoal.__init__(self, formula)
@@ -181,11 +177,8 @@ class MaxMinGoal(MaximizationGoal):
         """
         :param terms: List of FNode
         """
-        if len(terms) > 0:
-            if get_env().stc.get_type(terms[0]).is_bv_type():
-                formula = get_env().formula_manager.MinBV(sign, terms)
-            else:
-                formula = get_env().formula_manager.Min(terms)
+        if len(terms) > 0 and get_env().stc.get_type(terms[0]).is_bv_type():
+            formula = get_env().formula_manager.MinBV(sign, terms)
         else:
             formula = get_env().formula_manager.Min(terms)
         MaximizationGoal.__init__(self, formula)

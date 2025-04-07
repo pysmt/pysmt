@@ -166,6 +166,7 @@ class Z3SUAOptimizer(Z3Solver, SUAOptimizerMixin):
     def can_diverge_for_unbounded_cases(self):
         return True
 
+
 class Z3IncrementalOptimizer(Z3Solver, IncrementalOptimizerMixin):
     LOGICS = set(x for x in Z3Solver.LOGICS if not x.theory.real_arithmetic and not x.theory.real_difference)
 
