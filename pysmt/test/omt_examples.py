@@ -118,9 +118,12 @@ def solve_given_examples(pytest_test_case, optimization_examples, test_to_skip):
             for (goals, optimization_type), goals_values in test_case.goals.items():
                 if (test_case.name, optimization_type, oname) in test_to_skip:
                     continue
+                # # #TODO part to skip all tests different from this
+                # if (test_case.name, optimization_type, oname) != ("QF_BV - smtlib2_bitvector.smt2", OptimizationTypes.BOXED, "z3_sua"):
+                #     continue
                 test_id_str = f"test: {test_case.name}; solver: {oname}; optimization: {optimization_type.name}"
                 print(test_id_str)
-                with Optimizer(name=oname) as opt:
+                with Optimizer(name=oname, logic=test_case.logic) as opt:
                     for assertion in test_case.assertions:
                         opt.add_assertion(assertion)
                     if optimization_type == OptimizationTypes.LEXICOGRAPHIC:
@@ -193,8 +196,6 @@ def _test_pareto(pytest_test_case, optimizer, goals, goals_values, test_id_str, 
         pytest_test_case.assertIsNotNone(retval, test_id_str)
         sorted_costs = sorted((costs for _, costs in retval), key=str)
         sorted_goals_values = sorted(goals_values, key=str)
-        print(sorted_goals_values)
-        print(sorted_costs)
         pytest_test_case.assertEqual(len(sorted_costs), len(sorted_goals_values), test_id_str)
         for costs, goals_values in zip(sorted_costs, sorted_goals_values):
             assert len(goals) == len(goals_values) == len(costs), test_id_str

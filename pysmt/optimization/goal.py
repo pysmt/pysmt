@@ -221,4 +221,4 @@ class MaxSMTGoal(Goal):
         return True
 
     def __repr__(self):
-        return "MaxSMT{%s}" % (", ".join(x.serialize() for x in self.soft))
+        return "MaxSMT{%s}" % (", ".join(f"{x.serialize()}: {w}" for x, w in self.soft))

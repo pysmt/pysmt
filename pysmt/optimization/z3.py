@@ -76,7 +76,7 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
                 try:
                     if goal.is_maxsmt_goal():
                         model = Z3Model(self.environment, self.z3.model())
-                        return model, None
+                        return model, self._compute_max_smt_cost(model, goal)
                     else:
                         opt_value = self.z3.lower(h)
                         self.converter.back(opt_value)
@@ -147,7 +147,13 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
 
             if self.z3.check() == z3.sat:
                 model = Z3Model(self.environment, self.z3.model())
-                return model, [model.get_value(x.term()) for x in goals]
+                costs = []
+                for goal in goals:
+                    if goal.is_maxsmt_goal():
+                        costs.append(self._compute_max_smt_cost(model, goal))
+                    else:
+                        costs.append(model.get_value(goal.term()))
+                return model, costs
             else:
                 return None
         finally:

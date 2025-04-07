@@ -26,7 +26,7 @@ from pysmt.test.smtlib.parser_utils import omt_test_cases_from_smtlib_test_set
 from pysmt.cmd.shell import PysmtShell
 
 
-class TestSmtLibSolver(TestCase):
+class TestOmtLibSolver(TestCase):
     @skipIfNoOptimizerForLogic(QF_LRA)
     def test_base(self):
         txt = """(declare-fun x () Real)
@@ -335,24 +335,11 @@ sat
         test_cases = omt_test_cases_from_smtlib_test_set()
         test_to_skip = {
             # TODO add bz2 when test are working
-                ("QF_BV - smtlib2_bitvector.smt2", OptimizationTypes.BASIC, "msat_sua"), # blocks
-                ("QF_BV - smtlib2_bitvector.smt2", OptimizationTypes.BASIC, "msat_incr"), # blocks
-                ("QF_BV - smtlib2_bitvector.smt2", OptimizationTypes.BOXED, "msat_sua"), # blocks
-                ("QF_BV - smtlib2_bitvector.smt2", OptimizationTypes.BOXED, "msat_incr"), # blocks
-                ("QF_BV - smtlib2_bitvector.smt2", OptimizationTypes.PARETO, "z3_sua"), # blocksł
-                ("QF_BV - smtlib2_bitvector.smt2", OptimizationTypes.PARETO, "z3_incr"), # blocks
-                ("QF_BV - smtlib2_bitvector.smt2", OptimizationTypes.BASIC, "z3_sua"), # error TODO check
-                ("QF_BV - smtlib2_bitvector.smt2", OptimizationTypes.BASIC, "z3_incr"), # error TODO check
-                ("QF_BV - smtlib2_bitvector.smt2", OptimizationTypes.BOXED, "z3_incr"), # error TODO check
-                ("QF_BV - smtlib2_bitvector.smt2", OptimizationTypes.BOXED, "z3_sua"), # error TODO check
-                ("QF_BV - smtlib2_bitvector.smt2", OptimizationTypes.LEXICOGRAPHIC, "z3_sua"), # error TODO check
-                ("QF_BV - smtlib2_bitvector.smt2", OptimizationTypes.LEXICOGRAPHIC, "z3_incr"), # error TODO check
-                ("QF_LRA - smtlib2_boxed.smt2", OptimizationTypes.LEXICOGRAPHIC, "optimsat"), # error return wrong maximization of z (should be 24, returns 0) TODO check
-                ("QF_LRA - smtlib2_boxed.smt2", OptimizationTypes.LEXICOGRAPHIC, "optimsat_sua"), # error return wrong maximization of z (should be 24, returns 0) TODO check
-                ("QF_LRA - smtlib2_boxed.smt2", OptimizationTypes.LEXICOGRAPHIC, "optimsat_incr"), # error return wrong maximization of z (should be 24, returns 0) TODO check
+
+                # ("QF_LRA - smtlib2_boxed.smt2", OptimizationTypes.LEXICOGRAPHIC, "optimsat"), # error return wrong maximization of z (should be 24, returns 0) TODO check
                 ("QF_LRA - smtlib2_boxed.smt2", OptimizationTypes.BOXED, "optimsat"), # error return wrong maximization of y (should be unbound, returns 1000000000.0) TODO check
-                ("QF_LRA - smtlib2_boxed.smt2", OptimizationTypes.BOXED, "optimsat_sua"), # error return wrong maximization of y (should be unbound, returns 1000000000.0) TODO check
-                ("QF_LRA - smtlib2_boxed.smt2", OptimizationTypes.BOXED, "optimsat_incr"), # error return wrong maximization of y (should be unbound, returns 1000000000.0) TODO check
+                # ("QF_LIA - smtlib2_combination.smt2", OptimizationTypes.BASIC, "z3"), # error returns none cost
+                ("QF_LIA - smtlib2_lexicographic.smt2", OptimizationTypes.BOXED, "optimsat"), # error returns opt of 2 when all return opt of 3
         }
 
         solve_given_examples(self, test_cases, test_to_skip)

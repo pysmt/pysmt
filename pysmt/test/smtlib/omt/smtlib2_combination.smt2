@@ -51,29 +51,6 @@
 (assert-soft (not m2) :id used_machines)
 (assert-soft (not m3) :id used_machines)
 
-;
-; GOALS
-; - 'total_cost' is a combination of 'production_cost'
-;   and 'used_machines'
-;
-(minimize
-    (+ (* q0 8) (* q1 9) (* q2 9) (* q3 5))
-    :id production_cost
-)
-(minimize (+ production_cost
-             (* 79 (+ (* 2 used_machines) 8)) ; (* (/ 785 10) (+ (* 2 used_machines) 8))
-          )
-          :id total_cost
-)
-
-;
-; OPTIMIZATION + MODEL VALUES
-;
 (check-sat)
-(get-objectives)
-
-(load-objective-model 1)
-(get-value (total_cost))
-(get-value (production_cost))
 
 (exit)

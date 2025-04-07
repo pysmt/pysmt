@@ -17,7 +17,7 @@
 #
 
 import warnings
-from collections import namedtuple
+from collections import defaultdict, namedtuple
 from io import StringIO
 
 import pysmt.smtlib.commands as smtcmd
@@ -27,7 +27,7 @@ from pysmt.smtlib.printers import SmtPrinter, SmtDagPrinter, quote
 from pysmt.oracles import get_logic
 from pysmt.logics import get_closer_smtlib_logic, Logic, SMTLIB2_LOGICS
 from pysmt.environment import get_env
-from pysmt.optimization.goal import Goal, MaximizationGoal, MinimizationGoal, MinMaxGoal, MaxMinGoal
+from pysmt.optimization.goal import Goal, MaximizationGoal, MinimizationGoal, MinMaxGoal, MaxMinGoal, MaxSMTGoal
 
 
 def check_sat_filter(log):
@@ -249,6 +249,8 @@ class SmtLibScript(object):
         backtrack = []
         goals = []
         goals_backtrack = []
+        max_smt_goals = {}
+        max_smt_goals_backtrack = defaultdict(list)
         _And = mgr.And if mgr else get_env().formula_manager.And
 
         for cmd in self.commands:
@@ -259,16 +261,33 @@ class SmtLibScript(object):
                 backtrack = []
                 goals = []
                 goals_backtrack = []
+                max_smt_goals = {}
+                max_smt_goals_backtrack = defaultdict(list)
             elif cmd.name == smtcmd.PUSH:
                 for _ in range(cmd.args[0]):
                     backtrack.append(len(stack))
                     goals_backtrack.append(len(goals))
+                    for k, (_, goal) in max_smt_goals.items():
+                        max_smt_goals_backtrack[k].append(len(goal.soft))
             elif cmd.name == smtcmd.POP:
                 for _ in range(cmd.args[0]):
                     l = backtrack.pop()
                     stack = stack[:l]
                     l = goals_backtrack.pop()
                     goals = goals[:l]
+                    # a max_smt_goal might be removed from the goals completely with the pop
+                    # so we remove it from the dict, otherwise we can just remove the
+                    # last l elements from the list of formulae
+                    goals_to_remove = []
+                    for k, (goal_position, goal) in max_smt_goals.items():
+                        if goal_position >= len(goals):
+                            goals_to_remove.append(k)
+                        else:
+                            l = max_smt_goals_backtrack[k].pop()
+                            goal.soft = goal.soft[:l]
+                    for k in goals_to_remove:
+                        del max_smt_goals[k]
+                        del max_smt_goals_backtrack[k]
             elif cmd.name in (
                 smtcmd.MAXIMIZE,
                 smtcmd.MINIMIZE,
@@ -276,6 +295,14 @@ class SmtLibScript(object):
                 smtcmd.MINMAX
             ):
                 goals.append(_parse_goal(cmd))
+            elif cmd.name == smtcmd.ASSERT_SOFT:
+                goal =_parse_goal(
+                    cmd,
+                    max_smt_goals,
+                    len(goals)
+                )
+                if goal is not None:
+                    goals.append(goal)
 
         if return_optimizations:
             return _And(stack), tuple(goals)
@@ -305,7 +332,7 @@ class SmtLibScript(object):
     def __str__(self):
         return "\n".join((str(cmd) for cmd in self.commands))
 
-def _parse_goal(command):
+def _parse_goal(command, max_smt_goals=None, goal_position=None):
     assert len(command.args) == 2, f"Command {command.name} must have 2 arguments"
     singed = False
     if len(command.args) >= 2:
@@ -318,6 +345,21 @@ def _parse_goal(command):
         return MaximizationGoal(command.args[0], singed)
     elif command.name == smtcmd.MINIMIZE:
         return MinimizationGoal(command.args[0], singed)
+    elif command.name == smtcmd.ASSERT_SOFT:
+        assert max_smt_goals is not None
+        assert goal_position is not None
+        formula = command.args[0]
+        cmd_annotations = dict(command.args[1])
+        max_smt_id = cmd_annotations.get(":id", "")
+        max_smt_weight = cmd_annotations.get(":weight", 1)
+        if not isinstance(max_smt_weight, int):
+            max_smt_weight = max_smt_weight.constant_value()
+        _, goal = max_smt_goals.setdefault(max_smt_id, (goal_position, MaxSMTGoal()))
+        goal.add_soft_clause(formula, max_smt_weight)
+        if len(goal.soft) == 1:
+            return goal
+        # Return None because the max_smt_goal is already in the goal list
+        return None
     else:
         # TODO check if those are all the types of goals
         raise ValueError(f"Unknown goal command {command.name}")

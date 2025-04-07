@@ -45,7 +45,6 @@ class Optimizer(Solver):
         """
         raise NotImplementedError
 
-
     def pareto_optimize(self, goals):
         """This function is a generator returning *all* the pareto-optimal
         solutions for the problem of minimizing the `goals`
@@ -68,7 +67,6 @@ class Optimizer(Solver):
         """
         raise NotImplementedError
 
-
     def lexicographic_optimize(self, goals):
         """
         This function returns a pair of (model, values) where 'values' is a list containing the optimal values
@@ -83,7 +81,6 @@ class Optimizer(Solver):
         For some implemented examples see file pysmt/test/test_optimization.py
         """
         raise NotImplementedError
-
 
     def boxed_optimize(self, goals):
         """
@@ -101,14 +98,12 @@ class Optimizer(Solver):
         """
         raise NotImplementedError
 
-
     def can_diverge_for_unbounded_cases(self):
         """This function returns True if the algorithm implemented in this
         optimizer can diverge (i.e. not terminate) if the objective is
         unbounded (infinite or infinitesimal).
         """
         raise NotImplementedError
-
 
     def _get_symbol_type(self, objective_formula):
         otype = self.environment.stc.get_type(objective_formula)
@@ -133,7 +128,6 @@ class Optimizer(Solver):
         else:
             raise PysmtValueError("Invalid optimization function type: %s" % otype)
 
-
     def _get_le(self, objective_formula):
         otype = self.environment.stc.get_type(objective_formula)
         mgr = self.environment.formula_manager
@@ -145,7 +139,6 @@ class Optimizer(Solver):
             return mgr.BVULE
         else:
             raise PysmtValueError("Invalid optimization function type: %s" % otype)
-
 
     def _get_lt(self, objective_formula):
         otype = self.environment.stc.get_type(objective_formula)
@@ -159,6 +152,15 @@ class Optimizer(Solver):
         else:
             raise PysmtValueError("Invalid optimization function type: %s" % otype)
 
+    def _compute_max_smt_cost(self, model, goal):
+        assert goal.is_maxsmt_goal()
+        max_smt_weight = 0
+        for soft_goal, weight in goal.soft:
+            soft_goal_value = model.get_value(soft_goal)
+            assert soft_goal_value.is_bool_constant()
+            if soft_goal_value.constant_value():
+                max_smt_weight += weight
+        return self.mgr.Int(max_smt_weight)
 
 class OptComparationFunctions:
 
@@ -170,7 +172,11 @@ class OptComparationFunctions:
         cast_bv = None
         if goal.get_logic() is BV:
             otype = self.environment.stc.get_type(goal.term())
-            cast_bv = lambda x: mgr.BV(x, otype.width)
+            if goal.signed:
+                cast_bv = lambda x: mgr.SBV(x, otype.width)
+            else:
+                cast_bv = lambda x: mgr.BV(x, otype.width)
+
         options = {
             LIA: {
                 MinimizationGoal: {
@@ -251,17 +257,17 @@ class OptSearchInterval(OptComparationFunctions):
 
     def search_is_sat(self, model):
         self._pivot = None
-        # TODO add support to bv here
-        model_value = model.get_value(self._obj.term()).constant_value()
+        obj_value = model.get_value(self._obj.term())
+        # TODO consider adding a signed flag to the constant_value call
+        if obj_value.is_bv_constant() and self._obj.signed:
+            model_value = obj_value.bv_signed_value()
+        else:
+            model_value = obj_value.constant_value()
         if self._obj.is_minimization_goal():
-            if self._upper is None:
-                self._upper = model_value
-            elif self._upper > model_value:
+            if self._upper is None or self._upper > model_value:
                 self._upper = model_value
         elif self._obj.is_maximization_goal():
-            if self._lower is None:
-                self._lower = model_value
-            elif self._lower < model_value:
+            if self._lower is None or self._lower < model_value:
                 self._lower = model_value
         else:
             pass  # this may happen in boxed multi-independent optimization
@@ -289,12 +295,14 @@ class OptPareto(OptComparationFunctions):
 
     def get_costraint_strict(self):
         if self.val is not None:
+            assert self.val.is_constant()
             return self.op_strict(self.goal.term(), self.val)
         else:
             return None
 
     def get_costraint_ns(self):
         if self.val is not None:
+            assert self.val.is_constant(), self.val
             return self.op_ns(self.goal.term(), self.val)
         else:
             return None
@@ -412,7 +420,7 @@ class ExternalOptimizerMixin(Optimizer):
                  obj.val = None
             self._pareto_setup()
             while not optimum_found:
-                optimum_found = self._pareto_check_progress(client_data,objs)
+                optimum_found = self._pareto_check_progress(client_data, objs)
                 if not optimum_found:
                     last_model = self.get_model()
                     for obj in objs:
@@ -449,26 +457,23 @@ class SUAOptimizerMixin(ExternalOptimizerMixin):
         rt = self.solve(assumptions = assum)
         return rt
 
-
     def _lexicographic_opt(self, client_data, current_goal, strategy):
         temp = self._optimize(current_goal, strategy, extra_assumption = client_data)
         if temp is not None:
             model, val = temp
         else:
             return None
+
         client_data.append(Equals(current_goal.term(), val))
         return model, val
-
-
 
     def _pareto_check_progress(self, client_data, objs):
         mgr = self.environment.formula_manager
         k = []
         if objs[0].val is not None:
             k = [obj.get_costraint_ns() for obj in objs]
-            k.append(mgr.Or(obj.get_costraint_strict()for obj in objs ))
+            k.append(mgr.Or(obj.get_costraint_strict() for obj in objs ))
         return not self.solve(assumptions=client_data + k)
-
 
     def _pareto_block_model(self, client_data, objs):
         mgr = self.environment.formula_manager

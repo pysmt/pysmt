@@ -571,7 +571,7 @@ class FNode(object):
 
     def constant_value(self):
         """Return the value of the Constant."""
-        assert self.is_constant()
+        assert self.is_constant(), self
         if self.node_type() == BV_CONSTANT:
             return self._content.payload[0]
         return self._content.payload
