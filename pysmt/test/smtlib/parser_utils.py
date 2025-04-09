@@ -257,7 +257,7 @@ def _extract_assumptions_and_objectives(script, file_name):
 
 # Directory with the optimal SMT-LIB test files
 OMTLIB_DIR = "pysmt/test/smtlib/omt/"
-OMTLIB_TEST_FILES = [ # TODO at end PR change files from .smt2 to .bz2
+OMTLIB_TEST_FILES = [
     (QF_LIA, "smtlib2_allsat.smt2", SAT, {
         OptimizationTypes.LEXICOGRAPHIC: [Int(100), Int(100)],
         OptimizationTypes.PARETO: [(Int(100), Int(100))],
@@ -266,6 +266,14 @@ OMTLIB_TEST_FILES = [ # TODO at end PR change files from .smt2 to .bz2
     (QF_LRA, "smtlib2_boxed.smt2", SAT, {
         OptimizationTypes.BOXED: [Real(42.0), "unbounded", Real(24.0)],
         OptimizationTypes.LEXICOGRAPHIC: [Real(42.0), Real(42.0), Real(24.0)],
+    }),
+    (QF_LRA, "smtlib2_boxed_variant.smt2", SAT, {
+        OptimizationTypes.BOXED: [Real(42.0), Real(24.0), Real(24.0)],
+        OptimizationTypes.LEXICOGRAPHIC: [Real(42.0), Real(24.0), Real(24.0)],
+    }),
+    (QF_LIA, "smtlib2_boxed_int.smt2", SAT, {
+        OptimizationTypes.BOXED: [Int(42), "unbounded", Int(24)],
+        OptimizationTypes.LEXICOGRAPHIC: [Int(42), Int(42), Int(24)],
     }),
     (QF_BV, "smtlib2_bitvector.smt2", SAT, {
         OptimizationTypes.LEXICOGRAPHIC: [BV(8, 8), BV(8, 8)],
@@ -279,16 +287,14 @@ OMTLIB_TEST_FILES = [ # TODO at end PR change files from .smt2 to .bz2
         OptimizationTypes.BASIC: [Int(2)],
     }), # TODO understand how to handle problems with check_sat twice, push and pop
     (QF_LIA, "smtlib2_lexicographic.smt2", SAT, {
-        # OptimizationTypes.LEXICOGRAPHIC: [Int(4150), Int(3)], # TODO not working because it has a LEXICOGRAPHIC optimization with a max_smt
         OptimizationTypes.BOXED: [Int(4150), Int(3)],
     }),
     (QF_LIA, "smtlib2_load_objective_model.smt2", SAT, {
-        # OptimizationTypes.LEXICOGRAPHIC: [Int(4150), Int(3)], # TODO not working because it has a LEXICOGRAPHIC optimization with a max_smt
         OptimizationTypes.BOXED: [Int(3), Int(30)],
-        OptimizationTypes.LEXICOGRAPHIC: [Int(3), Int(26)],
-        OptimizationTypes.PARETO: [
+        OptimizationTypes.PARETO: [ # TODO weird. if pareto is tested before boxed in optimsat it works, otherwise it fails
             (Int(x), Int(2*x + 20)) for x in range(3, 6)
-        ]
+        ],
+        OptimizationTypes.LEXICOGRAPHIC: [Int(3), Int(26)],
     }),
     (QF_LIA, "smtlib2_maxsmt.smt2", SAT, {
         OptimizationTypes.BASIC: [Int(2)],
@@ -303,9 +309,20 @@ OMTLIB_TEST_FILES = [ # TODO at end PR change files from .smt2 to .bz2
     (QF_LRA, "smtlib2_minmax_simple.smt2", SAT, {
         OptimizationTypes.LEXICOGRAPHIC: [Real(17.0), Real(17.0)],
         OptimizationTypes.BOXED: [Real(17.0), Real(42.0)],
-        # OptimizationTypes.PARETO: [
-        #     (Real(17.0), Real(17.0)),
-        #     (Real(42.0), Real(42.0)),
-        # ] # Should be infinite because we are on reals
+    }),
+    (QF_LIA, "clique.smt2", SAT, {
+        OptimizationTypes.BASIC: [Int(3)],
+    }),
+    (QF_LIA, "clique_bool.smt2", SAT, {
+        OptimizationTypes.BASIC: [Int(3)],
+    }),
+    (QF_LIA, "shortpath.smt2", SAT, {
+        OptimizationTypes.BASIC: [Int(17)],
+    }),
+    (QF_LIA, "coloring.smt2", SAT, {
+        OptimizationTypes.BASIC: [Int(7)],
+    }),
+    (QF_LIA, "vertex_cover.smt2", SAT, {
+        OptimizationTypes.BASIC: [Int(4)],
     }),
 ]

@@ -15,11 +15,19 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+import pytest
+
 from pysmt.test import TestCase
 from pysmt.test.omt_examples import get_full_example_omt_formuale, solve_given_examples, OptimizationTypes
 
 class TestOptimization(TestCase):
-    def test_given_examples(self):
-        optimization_examples = get_full_example_omt_formuale()
+    def test_fast_examples(self):
+        optimization_examples = get_full_example_omt_formuale(slow=False)
+        test_to_skip = {}
+        solve_given_examples(self, optimization_examples, test_to_skip)
+
+    @pytest.mark.slow
+    def test_slow_examples(self):
+        optimization_examples = get_full_example_omt_formuale(fast=False)
         test_to_skip = {}
         solve_given_examples(self, optimization_examples, test_to_skip)

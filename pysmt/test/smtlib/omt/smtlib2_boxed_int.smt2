@@ -26,21 +26,21 @@
 ;
 ; PROBLEM
 ;
-(declare-fun real_x () Real)
-(declare-fun real_y () Real)
-(declare-fun real_z () Real)
+(declare-fun x () Int)
+(declare-fun y () Int)
+(declare-fun z () Int)
 (assert (and
-        (<= 42 real_x)
-        (<= real_y real_x)
-        (<= real_z 24)
+        (<= 42 x)
+        (<= y x)
+        (<= z 24)
 ))
 
 ;
 ; GOALS
 ;
-(minimize real_x)
-(maximize real_y)
-(maximize real_z)
+(minimize x)
+(maximize y)
+(maximize z)
 
 ;
 ; OPTIMIZATION + OPTIMUM VALUES

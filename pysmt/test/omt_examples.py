@@ -1,6 +1,6 @@
 from enum import Enum, auto
-from fractions import Fraction
 import os.path as path
+import warnings
 
 from pysmt.environment import get_env
 from pysmt.optimization.goal import Goal
@@ -87,59 +87,74 @@ class OMTTestCase:
         return self._goals
 
 
-def get_full_example_omt_formuale(environment=None):
+def _fast_examples():
+    yield qf_lia_two_variables_multi_obj_example()
+    yield qf_lia_2_int_2_bools_multiple_objective()
+    yield qf_lra_box_volume()
+    yield qf_lia_box_volume()
+
+
+def _slow_examples():
+    yield test_maximize_revenue()
+
+
+def get_full_example_omt_formuale(environment=None, fast=True, slow=True):
     """Return a list of OMTTestCases using the given environment."""
 
     if environment is None:
         environment = get_env()
+    assert fast or slow, "If neither fast or slow are True this method returns no test cases"
 
     with environment:
-        omt_examples = [
-            qf_lia_two_variables_multi_obj_example(),
-            qf_lia_2_int_2_bools_multiple_objective(),
-            qf_lra_box_volume(),
-            qf_lia_box_volume(),
-            test_maximize_revenue(),
-        ]
+        omt_examples = []
+        if fast:
+            omt_examples.extend(_fast_examples())
+        if slow:
+            omt_examples.extend(_slow_examples())
     return omt_examples
 
 
 # method to solve the given examples
 def solve_given_examples(pytest_test_case, optimization_examples, test_to_skip):
-    for test_case in optimization_examples:
-        # test basic in boxed only if there is no basic optimization explicitly specified
-        test_basic_in_boxed = all(ot != OptimizationTypes.BASIC for _, ot in test_case.goals.keys())
-        for oname in get_env().factory.all_optimizers(logic=test_case.logic):
-            # is_sua_or_incr is passed to the methods to skip the unbound or infinitesimal cases
-            is_sua_or_incr = "_sua" in oname or "_incr" in oname
-            # skip sua and incr algorithms for logics with real
-            if test_case.logic.theory.real_arithmetic and is_sua_or_incr:
-                continue
-            for (goals, optimization_type), goals_values in test_case.goals.items():
-                if (test_case.name, optimization_type, oname) in test_to_skip:
+    with warnings.catch_warnings():
+        # ignore the z3 defining a new symbol warning, since it is raised many times
+        warnings.filterwarnings("ignore", r"Defining new symbol: z3name!\d+")
+        # ignore the z3 warning on boxed optimization being suboptimal
+        warnings.filterwarnings("ignore", r"Boxed optimization is not working in Z3 .*")
+        for test_case in optimization_examples:
+            # test basic in boxed only if there is no basic optimization explicitly specified
+            test_basic_in_boxed = all(ot != OptimizationTypes.BASIC for _, ot in test_case.goals.keys())
+            for oname in get_env().factory.all_optimizers(logic=test_case.logic):
+                # is_sua_or_incr is passed to the methods to skip the unbound or infinitesimal cases
+                is_sua_or_incr = "_sua" in oname or "_incr" in oname
+                # skip sua and incr algorithms for logics with real
+                if test_case.logic.theory.real_arithmetic and is_sua_or_incr:
                     continue
-                # #TODO part to skip all tests different from this
-                # if (test_case.name, optimization_type, oname) not in (
-                #     ("QF_LIA - smtlib2_allsat.smt2", OptimizationTypes.PARETO, "optimsat"),
-                #     # ("QF_LIA - smtlib2_load_objective_model.smt2", OptimizationTypes.PARETO, "optimsat"),
-                #     # ("QF_LIA - smtlib2_lexicographic.smt2", OptimizationTypes.BOXED, "optimsat"),
-                # ):
-                #     continue
-                test_id_str = f"test: {test_case.name}; solver: {oname}; optimization: {optimization_type.name}"
-                print(test_id_str)
-                with Optimizer(name=oname, logic=test_case.logic) as opt:
-                    for assertion in test_case.assertions:
-                        opt.add_assertion(assertion)
-                    if optimization_type == OptimizationTypes.LEXICOGRAPHIC:
-                        _test_lexicographic(pytest_test_case, opt, goals, goals_values, test_id_str, is_sua_or_incr)
-                    elif optimization_type == OptimizationTypes.PARETO:
-                        _test_pareto(pytest_test_case, opt, goals, goals_values, test_id_str, is_sua_or_incr)
-                    elif optimization_type == OptimizationTypes.BOXED:
-                        _test_boxed(pytest_test_case, opt, goals, goals_values, test_id_str, test_basic_in_boxed, is_sua_or_incr)
-                    elif optimization_type == OptimizationTypes.BASIC:
-                        _test_basic(pytest_test_case, opt, goals[0], goals_values[0], test_id_str, is_sua_or_incr)
-                    else:
-                        raise NotImplementedError(f"Unknown optimization type: {optimization_type}")
+                for (goals, optimization_type), goals_values in test_case.goals.items():
+                    if (test_case.name, optimization_type, oname) in test_to_skip:
+                        continue
+                    # #TODO part to skip all tests different from this
+                    # if (test_case.name, optimization_type, oname) not in (
+                    #     ("QF_LIA - smtlib2_allsat.smt2", OptimizationTypes.PARETO, "optimsat"),
+                    #     # ("QF_LIA - smtlib2_load_objective_model.smt2", OptimizationTypes.PARETO, "optimsat"),
+                    #     # ("QF_LIA - smtlib2_lexicographic.smt2", OptimizationTypes.BOXED, "optimsat"),
+                    # ):
+                    #     continue
+                    test_id_str = f"test: {test_case.name}; solver: {oname}; optimization: {optimization_type.name}"
+                    print(test_id_str)
+                    with Optimizer(name=oname, logic=test_case.logic) as opt:
+                        for assertion in test_case.assertions:
+                            opt.add_assertion(assertion)
+                        if optimization_type == OptimizationTypes.LEXICOGRAPHIC:
+                            _test_lexicographic(pytest_test_case, opt, goals, goals_values, test_id_str, is_sua_or_incr)
+                        elif optimization_type == OptimizationTypes.PARETO:
+                            _test_pareto(pytest_test_case, opt, goals, goals_values, test_id_str, is_sua_or_incr)
+                        elif optimization_type == OptimizationTypes.BOXED:
+                            _test_boxed(pytest_test_case, opt, goals, goals_values, test_id_str, test_basic_in_boxed, is_sua_or_incr)
+                        elif optimization_type == OptimizationTypes.BASIC:
+                            _test_basic(pytest_test_case, opt, goals[0], goals_values[0], test_id_str, is_sua_or_incr)
+                        else:
+                            raise NotImplementedError(f"Unknown optimization type: {optimization_type}")
 
 
 def _check_oracle_goal(pytest_test_case, goal, goal_value, cost, test_id_str):
@@ -204,7 +219,8 @@ def _test_pareto(pytest_test_case, optimizer, goals, goals_values, test_id_str, 
 
         pytest_test_case.assertEqual(len(sorted_costs), len(sorted_goals_values), test_id_str)
         for costs, goals_values in zip(sorted_costs, sorted_goals_values):
-            assert len(goals) == len(goals_values) == len(costs), test_id_str
+            assert len(goals) == len(costs) == len(goals_values), test_id_str
+
             for goal, goal_value, cost in zip(goals, goals_values, costs):
                 _check_oracle_goal(pytest_test_case, goal, goal_value, cost, test_id_str)
     elif not is_sua_or_incr:

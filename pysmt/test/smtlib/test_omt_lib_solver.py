@@ -334,11 +334,9 @@ sat
     def test_parsed_examples(self):
         test_cases = omt_test_cases_from_smtlib_test_set()
         test_to_skip = {
-            # TODO add bz2 when test are working
-
-                ("QF_LRA - smtlib2_boxed.smt2", OptimizationTypes.LEXICOGRAPHIC, "optimsat"), # error return wrong maximization of z (should be 24, returns 0) TODO check
-                ("QF_LIA - smtlib2_allsat.smt2", OptimizationTypes.PARETO, "optimsat"), # error returns 6 values when the correct answer has 3. No value is wrong, they are just repeated twice (when runs alone)
-
+                ("QF_LRA - smtlib2_boxed.smt2", OptimizationTypes.LEXICOGRAPHIC, "optimsat"), # error return wrong maximization of z (should be 24, returns 0); seems like a bug in optimsat; have to try optimsat alone; with integers instead of reals it works
+                ("QF_LIA - smtlib2_allsat.smt2", OptimizationTypes.PARETO, "optimsat"), # error wrong maximization of x (should be 100, return 15)
+                ("QF_LIA - smtlib2_load_objective_model.smt2", OptimizationTypes.PARETO, "optimsat"), # error with the BOXED same optimization. If both are tested this fails. Only if pareto is tested after boxed.
         }
 
         solve_given_examples(self, test_cases, test_to_skip)

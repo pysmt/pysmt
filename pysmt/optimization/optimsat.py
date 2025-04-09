@@ -142,6 +142,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
 
     @clear_pending_pop
     def pareto_optimize(self, goals):
+        self._check_pareto_lexicographic_goals(goals)
         self._msat_lib.msat_set_opt_priority(self.msat_env(), "par")
 
         msat_objs = {}
@@ -158,15 +159,17 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
 
     @clear_pending_pop
     def lexicographic_optimize(self, goals):
+        self._check_pareto_lexicographic_goals(goals)
         self._msat_lib.msat_set_opt_priority(self.msat_env(), "lex")
+        msat_objs = {}
 
         for g in goals:
-            self._assert_msat_goal(g)
+            msat_objs[g] = self._assert_msat_goal(g)
 
         rt = self.solve()
-        # TODO understand how _check_unsat_unbound_infinitesimal should
-        # be used here
-        if rt:
+
+        # TODO understand if this interpretation is correct
+        if rt and all(self._check_unsat_unbound_infinitesimal(msat_objs[g]) for g in goals):
             model = self.get_model()
             return model, [model.get_value(x.term()) for x in goals]
         else:

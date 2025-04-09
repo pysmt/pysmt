@@ -348,7 +348,6 @@ def _parse_goal(command, max_smt_goals=None, goal_position=None):
     elif command.name == smtcmd.MINIMIZE:
         return MinimizationGoal(command.args[0], singed)
     elif command.name == smtcmd.MINMAX:
-        print(command.args[0])
         return MinMaxGoal(command.args[0], singed)
     elif command.name == smtcmd.MAXMIN:
         return MaxMinGoal(command.args[0], singed)

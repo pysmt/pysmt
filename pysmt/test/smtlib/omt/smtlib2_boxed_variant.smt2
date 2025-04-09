@@ -5,9 +5,9 @@
 ; This file is part of OptiMathSAT.
 ;
 ; WARNING:
-;     OptiMathSAT and z3 have different default behaviours
+;     OptiMathSAT and real_z3 have different default behaviours
 ;     when multiple objectives are optimized in the same
-;     formula. z3 handles them lexicographically, whereas
+;     formula. real_z3 handles them lexicographically, whereas
 ;     OptiMathSAT handles them in boxed (multi-independent) mode.
 ;     Therefore, the following option should be correctly
 ;     set on any boxed/multi-independent formula:
@@ -31,7 +31,7 @@
 (declare-fun real_z () Real)
 (assert (and
         (<= 42 real_x)
-        (<= real_y real_x)
+        (<= real_y real_z)
         (<= real_z 24)
 ))
 

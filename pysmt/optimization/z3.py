@@ -93,6 +93,7 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
 
     @clear_pending_pop
     def pareto_optimize(self, goals):
+        self._check_pareto_lexicographic_goals(goals)
         self.push()
         try:
             self.z3.set(priority='pareto')
@@ -139,6 +140,7 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
 
     @clear_pending_pop
     def lexicographic_optimize(self, goals):
+        self._check_pareto_lexicographic_goals(goals)
         self.push()
         try:
             self.z3.set(priority='lex')
