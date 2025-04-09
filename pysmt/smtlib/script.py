@@ -367,7 +367,6 @@ def _parse_goal(command, max_smt_goals=None, goal_position=None):
         # Return None because the max_smt_goal is already in the goal list
         return None
     else:
-        # TODO check if those are all the types of goals
         raise ValueError(f"Unknown goal command {command.name}")
 
 

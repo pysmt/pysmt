@@ -133,13 +133,6 @@ def solve_given_examples(pytest_test_case, optimization_examples, test_to_skip):
                 for (goals, optimization_type), goals_values in test_case.goals.items():
                     if (test_case.name, optimization_type, oname) in test_to_skip:
                         continue
-                    # #TODO part to skip all tests different from this
-                    # if (test_case.name, optimization_type, oname) not in (
-                    #     ("QF_LIA - smtlib2_allsat.smt2", OptimizationTypes.PARETO, "optimsat"),
-                    #     # ("QF_LIA - smtlib2_load_objective_model.smt2", OptimizationTypes.PARETO, "optimsat"),
-                    #     # ("QF_LIA - smtlib2_lexicographic.smt2", OptimizationTypes.BOXED, "optimsat"),
-                    # ):
-                    #     continue
                     test_id_str = f"test: {test_case.name}; solver: {oname}; optimization: {optimization_type.name}"
                     print(test_id_str)
                     with Optimizer(name=oname, logic=test_case.logic) as opt:

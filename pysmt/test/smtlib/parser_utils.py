@@ -285,7 +285,7 @@ OMTLIB_TEST_FILES = [
     }),
     (QF_LRA, "smtlib2_incremental.smt2", SAT, {
         OptimizationTypes.BASIC: [Int(2)],
-    }), # TODO understand how to handle problems with check_sat twice, push and pop
+    }),
     (QF_LIA, "smtlib2_lexicographic.smt2", SAT, {
         OptimizationTypes.BOXED: [Int(4150), Int(3)],
     }),

@@ -133,9 +133,11 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
             if goal.is_maxsmt_goal():
                 cost = self._compute_max_smt_cost(model, goal)
                 return model, cost
-            value = self._msat_lib.msat_objective_value_term(self.msat_env(),
-                                                             msat_obj,
-                                                             self._msat_lib.MSAT_OPTIMUM)
+            value = self._msat_lib.msat_objective_value_term(
+                self.msat_env(),
+                msat_obj,
+                self._msat_lib.MSAT_OPTIMUM
+            )
             return model, self.converter.back(value)
 
         return None
@@ -215,17 +217,19 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
             return False
         else:
 
-            unbounded = self._msat_lib.msat_objective_value_is_unbounded(self.msat_env(),
-                                                                  msat_obj,
-                                                                  self._msat_lib.MSAT_OPTIMUM)
-            # TODO check if it breaks here for optimsat not returning unbound
-            # add this to lòexic and pareto
+            unbounded = self._msat_lib.msat_objective_value_is_unbounded(
+                self.msat_env(),
+                msat_obj,
+                self._msat_lib.MSAT_OPTIMUM
+            )
             if unbounded > 0:
                 raise PysmtUnboundedOptimizationError("The optimal value is unbounded")
 
-            is_strict = self._msat_lib.msat_objective_value_is_strict(self.msat_env(),
-                                                                      msat_obj,
-                                                                      self._msat_lib.MSAT_OPTIMUM)
+            is_strict = self._msat_lib.msat_objective_value_is_strict(
+                self.msat_env(),
+                msat_obj,
+                self._msat_lib.MSAT_OPTIMUM
+            )
             if is_strict:
                 raise PysmtUnboundedOptimizationError("The optimal value is infinitesimal")
 
