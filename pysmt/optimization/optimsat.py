@@ -163,6 +163,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
     def lexicographic_optimize(self, goals):
         self._check_pareto_lexicographic_goals(goals)
         self._msat_lib.msat_set_opt_priority(self.msat_env(), "lex")
+
         msat_objs = {}
 
         for g in goals:

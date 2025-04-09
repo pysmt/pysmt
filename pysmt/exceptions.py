@@ -172,3 +172,5 @@ class GoalNotSupportedError(PysmtException):
 
     def goal(self):
         return self.goal
+
+    # TODO add __str__ method

@@ -26,7 +26,7 @@
 ;     (allsat ...), both in MathSAT5 and in OptiMathSAT, is a
 ;     non-incremental command which alters the state of the solver
 ;     in an irreversible way. If you want to use this command within
-;     an incremental context, surround it with (push 1)/(pop 1) 
+;     an incremental context, surround it with (push 1)/(pop 1)
 ;     commands.
 ;
 ; NOTE:
@@ -63,6 +63,10 @@
 (assert (<= x 100))
 (assert (<= y 100))
 
+(assert a)
+(assert b)
+(assert e)
+
 ;; enumerate all the consistent assignments (i.e. solutions) for the given
 ;; list of predicates. Notice that the arguments to check-allsat can only be
 ;; Boolean constants. If you need to enumerate over arbitrary theory atoms,
@@ -72,12 +76,11 @@
 ;
 ; GOALS
 ;
+
 (maximize x)
 (maximize y)
 
-(check-allsat (a b e))
-(get-objectives)
-
 (check-sat)
+(get-objectives)
 
 (exit)

@@ -219,7 +219,7 @@ def omt_test_cases_from_smtlib_test_set(logics=None):
         parser = SmtLib20Parser()
         test_name = f"{logic.name} - {fname}"
         script = parser.get_script_fname(smtfile)
-        assumptions, parsed_goals = _extract_assumptions_and_objectives(script, fname)
+        assumptions, parsed_goals = _extract_assumptions_and_objectives(script)
         if is_sat:
             expected_goals = {}
             for optimization_type, expected_values in expected_result.items():
@@ -237,20 +237,10 @@ def omt_test_cases_from_smtlib_test_set(logics=None):
         yield OMTTestCase(test_name, assumptions, logic, is_sat, expected_goals)
 
 
-def _extract_assumptions_and_objectives(script, file_name):
-    check_sat_found = False
+def _extract_assumptions_and_objectives(script):
     goals = []
     formula, goals = script.get_last_formula(return_optimizations=True)
     assumptions = list(formula.args()) if formula.is_and() else [formula]
-    for command in script.commands:
-        if command.name == CHECK_ALLSAT:
-            # TODO understand if this is the correct interpretation
-            assumptions.extend(command.args)
-        elif command.name == CHECK_SAT:
-        #     assert not check_sat_found, f"Multiple check-sat commands found in file {file_name}"
-            check_sat_found = True
-    if not check_sat_found:
-        raise ValueError("No check-sat command found in the script")
 
     return assumptions, tuple(goals)
 
