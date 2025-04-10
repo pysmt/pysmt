@@ -53,14 +53,6 @@ class OMTTestCase:
     If the expected value is a FNode, it must be a constant value.
     If the expected value is a string, it must be either "unbounded" or "infinitesimal".
     """
-    # TODO add doc
-    # name: str
-    # assertions: List[FNode]
-    # logic: Logic
-    # solvable: bool
-    # goals: Optional[Dict[Tuple[Tuple[Goal, ...], OptimizationTypes], List[Union[FNode, List[FNode],
-    #                                               "unbounded", "infinitesimal"]]]] -> if there is the string expect an exception
-    #
     def __init__(self, name, assertions, logic, solvable, goals):
         self._name = name
         self._assertions = assertions

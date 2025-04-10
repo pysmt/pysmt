@@ -160,7 +160,9 @@ class Optimizer(Solver):
             assert soft_goal_value.is_bool_constant()
             if soft_goal_value.constant_value():
                 max_smt_weight += weight
-        return self.mgr.Int(max_smt_weight)
+        if isinstance(max_smt_weight, int):
+            return self.mgr.Int(max_smt_weight)
+        return self.mgr.Real(max_smt_weight)
 
     def _check_pareto_lexicographic_goals(self, goals, mode):
         for goal in goals:
@@ -264,7 +266,6 @@ class OptSearchInterval(OptComparationFunctions):
     def search_is_sat(self, model):
         self._pivot = None
         obj_value = model.get_value(self._obj.term())
-        # TODO consider adding a signed flag to the constant_value call
         if obj_value.is_bv_constant() and self._obj.signed:
             model_value = obj_value.bv_signed_value()
         else:

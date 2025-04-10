@@ -63,7 +63,7 @@ class OptiMSATOptions(MathSATOptions):
         MathSATOptions.__init__(self, **base_options)
         # enables the dump of the interaction with optimathsat on the file
         # useful for debugging
-        #self.solver_options['debug.api_call_trace_filename'] = "/tmp/omt.smt2"
+        # self.solver_options['debug.api_call_trace_filename'] = "/tmp/omt.smt2"
 
 
 class OptiMSATSolver(MathSAT5Solver, Optimizer):
@@ -173,7 +173,6 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
 
         rt = self.solve()
 
-        # TODO understand if this interpretation is correct
         if rt and all(self._check_unsat_unbound_infinitesimal(msat_objs[g]) for g in goals):
             model = self.get_model()
             return model, [model.get_value(x.term()) for x in goals]
