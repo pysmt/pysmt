@@ -62,7 +62,7 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
             elif goal.is_maximization_goal():
                 h = self.z3.maximize(obj)
             else:
-                raise GoalNotSupportedError("z3", goal.__class__)
+                raise GoalNotSupportedError(self, goal)
         return  h
 
     @clear_pending_pop
@@ -93,7 +93,7 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
 
     @clear_pending_pop
     def pareto_optimize(self, goals):
-        self._check_pareto_lexicographic_goals(goals)
+        self._check_pareto_lexicographic_goals(goals, "pareto")
         self.push()
         try:
             self.z3.set(priority='pareto')
@@ -140,7 +140,7 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
 
     @clear_pending_pop
     def lexicographic_optimize(self, goals):
-        self._check_pareto_lexicographic_goals(goals)
+        self._check_pareto_lexicographic_goals(goals, "lexicographic")
         self.push()
         try:
             self.z3.set(priority='lex')

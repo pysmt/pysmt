@@ -52,9 +52,8 @@ def smtlib_tests(logic_pred):
 #  $ python -m pytest pysmt/test/smtlib/test_parser_qf_lra.py
 # The function 'execute_script_fname' is a general checker that
 # parses and invokes a solver for the given smt file
-def execute_script_fname(smtfile, logic, expected_result):
+def execute_script_fname(self, smtfile, logic, expected_result):
     """Read and call a Solver to solve the instance"""
-
     reset_env()
     Solver = get_env().factory.Solver
     parser = SmtLibParser()
@@ -206,8 +205,11 @@ SMTLIB_TEST_FILES = [
 
 
 def omt_test_cases_from_smtlib_test_set(logics=None):
-    # TODO check & improve doc
-    """Returns a generator over the test-set of SMT-LIB files.
+    """
+    Returns a generator over the test-set of OMT-LIB test files.
+    The method accepts a set of logics; only the test cases
+    with a logic inside the logics set will be returned.
+    If logics is None, all the test cases will be returned.
 
     Note: This resets the Environment at each call.
     """

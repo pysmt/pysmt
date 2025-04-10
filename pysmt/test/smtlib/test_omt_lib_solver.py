@@ -15,12 +15,14 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+import pytest
 from io import StringIO
-from pysmt.logics import QF_LIA, QF_LRA
 
+from pysmt.environment import push_env, pop_env
+from pysmt.logics import QF_LIA, QF_LRA
 from pysmt.test import TestCase, skipIfNoOptimizerForLogic
 from pysmt.test import main
-from pysmt.test.test_optimizing import solve_given_examples
+from pysmt.test.omt_examples import generate_examples_with_solvers, solve_given_example
 from pysmt.test.omt_examples import OptimizationTypes, OMTTestCase
 from pysmt.test.smtlib.parser_utils import omt_test_cases_from_smtlib_test_set
 from pysmt.cmd.shell import PysmtShell
@@ -331,15 +333,29 @@ sat
 """,
         )
 
-    def test_parsed_examples(self):
-        test_cases = omt_test_cases_from_smtlib_test_set()
-        test_to_skip = {
-                ("QF_LRA - smtlib2_boxed.smt2", OptimizationTypes.LEXICOGRAPHIC, "optimsat"), # error return wrong maximization of z (should be 24, returns 0); seems like a bug in optimsat; have to try optimsat alone; with integers instead of reals it works
-                ("QF_LIA - smtlib2_allsat.smt2", OptimizationTypes.PARETO, "optimsat"), # error wrong maximization of x (should be 100, return 15)
-                ("QF_LIA - smtlib2_load_objective_model.smt2", OptimizationTypes.PARETO, "optimsat"), # error with the BOXED same optimization. If both are tested this fails. Only if pareto is tested after boxed.
-        }
 
-        solve_given_examples(self, test_cases, test_to_skip)
+# define a dummy to have access to the assertEqual etc. methods
+# inside the parametrized tests
+dummy = TestCase()
+# define the tests that have to be skipped
+test_to_skip = {
+        ("QF_LRA - smtlib2_boxed.smt2", OptimizationTypes.LEXICOGRAPHIC, "optimsat"), # error return wrong maximization of z (should be 24, returns 0); seems like a bug in optimsat; have to try optimsat alone; with integers instead of reals it works
+        ("QF_LIA - smtlib2_allsat.smt2", OptimizationTypes.PARETO, "optimsat"), # error wrong maximization of x (should be 100, return 15)
+        ("QF_LIA - smtlib2_load_objective_model.smt2", OptimizationTypes.PARETO, "optimsat"), # error with the BOXED same optimization. If both are tested this fails. Only if pareto is tested after boxed.
+}
+@pytest.mark.parametrize(
+    "optimization_example, solver_name",
+    generate_examples_with_solvers(omt_test_cases_from_smtlib_test_set()),
+)
+def test_parsed_examples(optimization_example, solver_name):
+    push_env()
+    solve_given_example(
+        dummy,
+        optimization_example,
+        solver_name,
+        test_to_skip,
+    )
+    pop_env()
 
 
 if __name__ == "__main__":

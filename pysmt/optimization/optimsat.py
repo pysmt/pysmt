@@ -61,7 +61,9 @@ class OptiMSATOptions(MathSATOptions):
 
     def __init__(self, **base_options):
         MathSATOptions.__init__(self, **base_options)
-        self.solver_options['debug.api_call_trace_filename'] = "/tmp/omt.smt2"
+        # enables the dump of the interaction with optimathsat on the file
+        # useful for debugging
+        #self.solver_options['debug.api_call_trace_filename'] = "/tmp/omt.smt2"
 
 
 class OptiMSATSolver(MathSAT5Solver, Optimizer):
@@ -115,7 +117,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
             obj_fun = self.converter.convert(cost_function)
 
         else:
-            raise GoalNotSupportedError("optimathsat", goal)
+            raise GoalNotSupportedError(self, goal)
 
         msat_obj = make_fun(self.msat_env(), obj_fun, signed = goal.signed)
         self._msat_lib.msat_assert_objective(self.msat_env(), msat_obj)
@@ -144,7 +146,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
 
     @clear_pending_pop
     def pareto_optimize(self, goals):
-        self._check_pareto_lexicographic_goals(goals)
+        self._check_pareto_lexicographic_goals(goals, "pareto")
         self._msat_lib.msat_set_opt_priority(self.msat_env(), "par")
 
         msat_objs = {}
@@ -161,7 +163,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
 
     @clear_pending_pop
     def lexicographic_optimize(self, goals):
-        self._check_pareto_lexicographic_goals(goals)
+        self._check_pareto_lexicographic_goals(goals, "lexicographic")
         self._msat_lib.msat_set_opt_priority(self.msat_env(), "lex")
 
         msat_objs = {}

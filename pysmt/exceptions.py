@@ -163,14 +163,23 @@ class PysmtUnboundedOptimizationError(PysmtException):
 
 class GoalNotSupportedError(PysmtException):
     """Goal not supported by the solver."""
-    def __init__(self, current_solver, goal):
-        self.current_solver = current_solver
-        self.goal = goal
+    def __init__(self, solver, goal, mode=None):
+        self._solver = solver
+        self._goal = goal
+        self._mode = mode
 
+    @property
     def solver(self):
-        return self.current_solver
+        return self._solver
 
+    @property
     def goal(self):
-        return self.goal
+        return self._goal
 
-    # TODO add __str__ method
+    @property
+    def mode(self):
+        return self._mode
+
+    def __str__(self):
+        mode_str = f" in mode '{self.mode}'" if self.mode else ""
+        return f"Optimizer '{type(self.solver).__name__}' does not support goal '{self.goal}'{mode_str}"

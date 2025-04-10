@@ -162,11 +162,10 @@ class Optimizer(Solver):
                 max_smt_weight += weight
         return self.mgr.Int(max_smt_weight)
 
-    def _check_pareto_lexicographic_goals(self, goals):
+    def _check_pareto_lexicographic_goals(self, goals, mode):
         for goal in goals:
             if goal.is_maxsmt_goal():
-                # TODO understand if this is the correct exception
-                raise GoalNotSupportedError(self, goal)
+                raise GoalNotSupportedError(self, goal, mode)
 
 
 class OptComparationFunctions:
@@ -341,7 +340,7 @@ class ExternalOptimizerMixin(Optimizer):
         if goal.is_maximization_goal() or goal.is_minimization_goal() or goal.is_maxsmt_goal():
             rt = self._optimize(goal, strategy)
         else:
-            raise GoalNotSupportedError("ExternalOptimizerMixin", goal)
+            raise GoalNotSupportedError(self, goal)
         return rt
 
     def boxed_optimize(self, goals, strategy='linear'):
@@ -354,11 +353,11 @@ class ExternalOptimizerMixin(Optimizer):
                 else:
                     return None
             else:
-                raise GoalNotSupportedError("ExternalOptimizerMixin", goal)
+                raise GoalNotSupportedError(self, goal)
         return rt
 
     def lexicographic_optimize(self, goals, strategy='linear'):
-        self._check_pareto_lexicographic_goals(goals)
+        self._check_pareto_lexicographic_goals(goals, "lexicographic")
         rt = []
         client_data = self._setup()
         for goal in goals:
@@ -417,7 +416,7 @@ class ExternalOptimizerMixin(Optimizer):
 
 
     def pareto_optimize(self, goals):
-        self._check_pareto_lexicographic_goals(goals)
+        self._check_pareto_lexicographic_goals(goals, "pareto")
         objs = [OptPareto(goal, self.environment) for goal in goals]
 
         terminated = False
