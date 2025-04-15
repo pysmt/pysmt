@@ -1,21 +1,14 @@
 from enum import Enum, auto
+from itertools import chain
 import os.path as path
-import warnings
 
 from pysmt.environment import get_env
-from pysmt.optimization.goal import Goal
-from pysmt.logics import Logic
 from pysmt.fnode import FNode
-from pysmt.shortcuts import Optimizer, GE, Int, Symbol, INT, LE, GT, REAL, Real, Equals, Times, Solver, Or, Div
-from pysmt.shortcuts import BVType, BVUGE, BVSGE, BVULE, BVSLE, BVUGT, BVSGT, BVULT, BVSLT, BVZero, BVOne, BV, Ite
-from pysmt.shortcuts import And, Plus, Minus, get_env, BOOL, Implies, SBV
-from pysmt.logics import QF_LIA, QF_LRA, QF_BV, QF_NRA, QF_NIA
-from pysmt.optimization.goal import MaximizationGoal, MinimizationGoal, \
-    MinMaxGoal, MaxMinGoal, MaxSMTGoal
-from pysmt.smtlib.script import InterpreterOMT
-from pysmt.smtlib.parser.parser import SmtLib20Parser
-from pysmt.smtlib.commands import ASSERT, CHECK_SAT, CHECK_ALLSAT, MAXIMIZE, MINIMIZE
-from pysmt.exceptions import PysmtUnboundedOptimizationError, PysmtInfinitesimalError
+from pysmt.shortcuts import Optimizer, GE, Int, Symbol, INT, LE, REAL, Real, Equals, Times, Or,Ite
+from pysmt.shortcuts import And, Plus, Minus, get_env, BOOL, Implies
+from pysmt.logics import QF_LIA, QF_LRA
+from pysmt.optimization.goal import MaximizationGoal
+from pysmt.exceptions import PysmtUnboundedOptimizationError, PysmtInfinitesimalError, PysmtValueError
 
 
 test_folder = path.dirname(path.abspath(__file__))
@@ -61,24 +54,35 @@ class OMTTestCase:
         self._goals = goals
 
         # consistency checks
-        assert bool(goals) == solvable, "Goals must be specified if and only if the test case is solvable"
+        if bool(goals) != solvable:
+            raise PysmtValueError(
+                "Goals must be specified if and only if the test case is solvable"
+            )
 
         for (current_goals, optimization_type), goals_oracle_values in goals.items():
             if optimization_type == OptimizationTypes.BASIC:
-                assert len(current_goals) == 1, f"{optimization_type.name} optimization accept only one goal"
-                assert len(goals_oracle_values) == 1, f"{optimization_type.name} optimization accept only one goal"
+                if len(current_goals) != 1 or len(goals_oracle_values) != 1:
+                    raise PysmtValueError(f"{optimization_type.name} optimization accept only one goal")
                 single_goal = goals_oracle_values[0]
-                assert isinstance(single_goal, FNode), "Wrong type of the goals data structure"
+                if not isinstance(single_goal, FNode):
+                    raise PysmtValueError("Wrong type of the goals data structure")
             elif optimization_type in (OptimizationTypes.LEXICOGRAPHIC, OptimizationTypes.BOXED):
                 goals_number = len(current_goals)
-                assert goals_number > 0, f"{optimization_type.name} needs at least one goal"
-                assert len(goals_oracle_values) == goals_number, f"In {optimization_type.name} optimization the number of goals values must be the same of the number of the given goals: {goals_oracle_values}, {goals_number}"
+                if goals_number == 0:
+                    raise PysmtValueError(f"{optimization_type.name} needs at least one goal")
+                if len(goals_oracle_values) != goals_number:
+                    raise PysmtValueError(
+                        f"In {optimization_type.name} optimization the number of goals values must be the same of the number of the given goals: {goals_oracle_values}, {goals_number}"
+                    )
             elif optimization_type == OptimizationTypes.PARETO:
                 goals_number = len(current_goals)
-                assert goals_number > 0, f"{optimization_type.name} needs at least one goal"
+                if goals_number == 0:
+                    raise PysmtValueError(f"{optimization_type.name} needs at least one goal")
                 for pareto_goals in goals_oracle_values:
-                    assert isinstance(pareto_goals, (list, tuple)), f"In {optimization_type.name} optimization the goals oracle value must be a list or a tuple of FNode"
-                    assert len(pareto_goals) == goals_number, f"In {optimization_type.name} optimization the goals number of goal values must equal the number of given goals"
+                    if not isinstance(pareto_goals, (list, tuple)):
+                        raise PysmtValueError(f"In {optimization_type.name} optimization the goals oracle value must be a list or a tuple of FNode")
+                    if len(pareto_goals) != goals_number:
+                        raise PysmtValueError(f"In {optimization_type.name} optimization the goals number of goal values must equal the number of given goals")
             else:
                 raise NotImplementedError(f"{optimization_type.name} optimization is not supported yet")
 
@@ -119,15 +123,18 @@ def get_full_example_omt_formuale(environment=None, fast=True, slow=True):
 
     if environment is None:
         environment = get_env()
-    assert fast or slow, "If neither fast or slow are True this method returns no test cases"
 
     with environment:
-        omt_examples = []
-        if fast:
-            omt_examples.extend(_fast_examples())
-        if slow:
-            omt_examples.extend(_slow_examples())
-    return omt_examples
+        if fast and slow:
+            return chain(_fast_examples(), _slow_examples())
+        elif fast:
+            return _fast_examples()
+        elif slow:
+            return _slow_examples()
+        else:
+            raise PysmtValueError(
+                "If neither fast or slow are True this method returns no test cases"
+            )
 
 
 # method to solve the given examples
@@ -151,40 +158,27 @@ def solve_given_example(pytest_test_case, optimization_example, solver_name, tes
     """
     Method to solve a single OMTTestCase using the given solver.
     """
-    with warnings.catch_warnings():
+    # test basic in boxed only if there is no basic optimization explicitly specified
+    test_basic_in_boxed = all(ot != OptimizationTypes.BASIC for _, ot in optimization_example.goals.keys())
 
-        # ignore the z3 defining a new symbol warning, since it is raised many times
-        warnings.filterwarnings("ignore", r"Defining new symbol: z3name!\d+")
-
-        # ignore the z3 warning on boxed optimization being suboptimal
-        warnings.filterwarnings("ignore", r"Boxed optimization is not working in Z3 .*")
-
-        # ignore the MathSAT warning on UF with bool arguments
-        warnings.filterwarnings("ignore", r"MathSAT convert\(\): UF with bool arguments have been .*")
-
-        # test basic in boxed only if there is no basic optimization explicitly specified
-        test_basic_in_boxed = all(ot != OptimizationTypes.BASIC for _, ot in optimization_example.goals.keys())
-
-        is_sua_or_incr = "_sua" in solver_name or "_incr" in solver_name
-        for (goals, optimization_type), goals_values in optimization_example.goals.items():
-            if test_to_skip is not None and (optimization_example.name, optimization_type, solver_name) in test_to_skip:
-                continue
-            test_id_str = f"test: {optimization_example.name}; solver: {solver_name}; optimization: {optimization_type.name}"
-            print(test_id_str)
-            with Optimizer(name=solver_name, logic=optimization_example.logic) as opt:
-                for assertion in optimization_example.assertions:
-                    opt.add_assertion(assertion)
-                if optimization_type == OptimizationTypes.LEXICOGRAPHIC:
-                    _test_lexicographic(pytest_test_case, opt, goals, goals_values, test_id_str, is_sua_or_incr)
-                elif optimization_type == OptimizationTypes.PARETO:
-                    _test_pareto(pytest_test_case, opt, goals, goals_values, test_id_str, is_sua_or_incr)
-                elif optimization_type == OptimizationTypes.BOXED:
-                    _test_boxed(pytest_test_case, opt, goals, goals_values, test_id_str, test_basic_in_boxed, is_sua_or_incr)
-                elif optimization_type == OptimizationTypes.BASIC:
-                    _test_basic(pytest_test_case, opt, goals[0], goals_values[0], test_id_str, is_sua_or_incr)
-                else:
-                    raise NotImplementedError(f"Unknown optimization type: {optimization_type}")
-
+    for (goals, optimization_type), goals_values in optimization_example.goals.items():
+        if test_to_skip is not None and (optimization_example.name, optimization_type, solver_name) in test_to_skip:
+            continue
+        test_id_str = f"test: {optimization_example.name}; solver: {solver_name}; optimization: {optimization_type.name}"
+        print(test_id_str)
+        with Optimizer(name=solver_name, logic=optimization_example.logic) as opt:
+            for assertion in optimization_example.assertions:
+                opt.add_assertion(assertion)
+            if optimization_type == OptimizationTypes.LEXICOGRAPHIC:
+                _test_lexicographic(pytest_test_case, opt, goals, goals_values, test_id_str)
+            elif optimization_type == OptimizationTypes.PARETO:
+                _test_pareto(pytest_test_case, opt, goals, goals_values, test_id_str)
+            elif optimization_type == OptimizationTypes.BOXED:
+                _test_boxed(pytest_test_case, opt, goals, goals_values, test_id_str, test_basic_in_boxed)
+            elif optimization_type == OptimizationTypes.BASIC:
+                _test_basic(pytest_test_case, opt, goals[0], goals_values[0], test_id_str)
+            else:
+                raise NotImplementedError(f"Unknown optimization type: {optimization_type}")
 
 
 def _check_oracle_goal(pytest_test_case, goal, goal_value, cost, test_id_str):
@@ -222,7 +216,7 @@ def _get_expected_raised_class(goals_value):
     return raised_class
 
 
-def _test_lexicographic(pytest_test_case, optimizer, goals, goals_values, test_id_str, is_sua_or_incr):
+def _test_lexicographic(pytest_test_case, optimizer, goals, goals_values, test_id_str):
     raised_class = _get_expected_raised_class(goals_values[0])
     assert raised_class is None or len(goals_values) == 1, f"test: {test_id_str}, goals_values: {goals_values}"
     if raised_class is None:
@@ -232,12 +226,12 @@ def _test_lexicographic(pytest_test_case, optimizer, goals, goals_values, test_i
         assert len(goals) == len(goals_values) == len(costs), test_id_str
         for goal, goal_value, cost in zip(goals, goals_values, costs):
             _check_oracle_goal(pytest_test_case, goal, goal_value, cost, test_id_str)
-    elif not is_sua_or_incr:
+    elif not optimizer.can_diverge_for_unbounded_cases():
         with pytest_test_case.assertRaises(raised_class, msg=test_id_str):
             optimizer.lexicographic_optimize(goals)
 
 
-def _test_pareto(pytest_test_case, optimizer, goals, goals_values, test_id_str, is_sua_or_incr):
+def _test_pareto(pytest_test_case, optimizer, goals, goals_values, test_id_str):
     raised_class = _get_expected_raised_class(goals_values[0])
     assert raised_class is None or len(goals_values) == 1, f"test: {test_id_str}, goals_values: {goals_values}"
     if raised_class is None:
@@ -253,12 +247,12 @@ def _test_pareto(pytest_test_case, optimizer, goals, goals_values, test_id_str, 
 
             for goal, goal_value, cost in zip(goals, goals_values, costs):
                 _check_oracle_goal(pytest_test_case, goal, goal_value, cost, test_id_str)
-    elif not is_sua_or_incr:
+    elif not optimizer.can_diverge_for_unbounded_cases():
         with pytest_test_case.assertRaises(raised_class, msg=test_id_str):
             optimizer.pareto_optimize(goals)
 
 
-def _test_boxed(pytest_test_case, optimizer, goals, goals_values, test_id_str, test_basic, is_sua_or_incr):
+def _test_boxed(pytest_test_case, optimizer, goals, goals_values, test_id_str, test_basic):
     # extract which class should be raised by the boxed optimization
     raised_class = None
     for goal_value in goals_values:
@@ -274,24 +268,24 @@ def _test_boxed(pytest_test_case, optimizer, goals, goals_values, test_id_str, t
         for goal, goal_value in zip(goals, goals_values):
             _, cost = retval[goal]
             _check_oracle_goal(pytest_test_case, goal, goal_value, cost, test_id_str)
-    elif not is_sua_or_incr:
+    elif not optimizer.can_diverge_for_unbounded_cases():
         with pytest_test_case.assertRaises(raised_class, msg=test_id_str):
             optimizer.boxed_optimize(goals)
 
     # test single optimizations separately
     if test_basic:
         for goal, goal_value in zip(goals, goals_values):
-            _test_basic(pytest_test_case, optimizer, goal, goal_value, test_id_str, is_sua_or_incr)
+            _test_basic(pytest_test_case, optimizer, goal, goal_value, test_id_str)
 
 
-def _test_basic(pytest_test_case, optimizer, goal, goal_value, test_id_str, is_sua_or_incr):
+def _test_basic(pytest_test_case, optimizer, goal, goal_value, test_id_str):
     raised_class = _get_expected_raised_class(goal_value)
     if raised_class is None:
         retval = optimizer.optimize(goal)
         pytest_test_case.assertIsNotNone(retval, test_id_str)
         _, cost = retval
         _check_oracle_goal(pytest_test_case, goal, goal_value, cost, test_id_str)
-    elif not is_sua_or_incr:
+    elif not optimizer.can_diverge_for_unbounded_cases():
         with pytest_test_case.assertRaises(raised_class, msg=test_id_str):
             optimizer.optimize(goal)
 

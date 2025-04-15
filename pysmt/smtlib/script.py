@@ -27,7 +27,7 @@ from pysmt.smtlib.printers import SmtPrinter, SmtDagPrinter, quote
 from pysmt.oracles import get_logic
 from pysmt.logics import get_closer_smtlib_logic, Logic, SMTLIB2_LOGICS
 from pysmt.environment import get_env
-from pysmt.optimization.goal import Goal, MaximizationGoal, MinimizationGoal, MinMaxGoal, MaxMinGoal, MaxSMTGoal
+from pysmt.optimization.goal import MaximizationGoal, MinimizationGoal, MinMaxGoal, MaxMinGoal, MaxSMTGoal
 
 
 def check_sat_filter(log):
@@ -244,6 +244,11 @@ class SmtLibScript(object):
 
         This coincides with the conjunction of the assertions that are
         left on the assertion stack at the end of the SMTLibScript.
+
+        If the parameter `return_optimizations` is set to `True` the method will
+        return a couple where the first element is the last formula of the
+        script and the second element is the tuple containing the last goals
+        defined.
         """
         stack = []
         backtrack = []
@@ -251,7 +256,8 @@ class SmtLibScript(object):
         goals_backtrack = []
         max_smt_goals = {}
         max_smt_goals_backtrack = defaultdict(list)
-        _And = mgr.And if mgr else get_env().formula_manager.And
+        if mgr is None:
+            mgr = get_env().formula_manager
 
         for cmd in self.commands:
             if cmd.name == smtcmd.ASSERT:
@@ -288,25 +294,28 @@ class SmtLibScript(object):
                     for k in goals_to_remove:
                         del max_smt_goals[k]
                         del max_smt_goals_backtrack[k]
-            elif cmd.name in (
-                smtcmd.MAXIMIZE,
-                smtcmd.MINIMIZE,
-                smtcmd.MAXMIN,
-                smtcmd.MINMAX
-            ):
-                goals.append(_parse_goal(cmd))
+            elif cmd.name == smtcmd.MAXIMIZE:
+                goals.append(MaximizationGoal(cmd.args[0], _command_is_signed(cmd)))
+            elif cmd.name == smtcmd.MINIMIZE:
+                goals.append(MinimizationGoal(cmd.args[0], _command_is_signed(cmd)))
+            elif cmd.name == smtcmd.MINMAX:
+                goals.append(MinMaxGoal(cmd.args[0], _command_is_signed(cmd)))
+            elif cmd.name == smtcmd.MAXMIN:
+                goals.append(MaxMinGoal(cmd.args[0], _command_is_signed(cmd)))
             elif cmd.name == smtcmd.ASSERT_SOFT:
-                goal =_parse_goal(
-                    cmd,
-                    max_smt_goals,
-                    len(goals)
-                )
-                if goal is not None:
+                formula = cmd.args[0]
+                cmd_annotations = dict(cmd.args[1])
+                max_smt_id = cmd_annotations.get(":id", "")
+                max_smt_weight = cmd_annotations.get(":weight", mgr.Int(1))
+                _, goal = max_smt_goals.setdefault(max_smt_id, (len(goals), MaxSMTGoal()))
+                goal.add_soft_clause(formula, max_smt_weight.constant_value())
+                # if len(goal.soft) > 1 the goal is already in goals
+                if len(goal.soft) == 1:
                     goals.append(goal)
 
         if return_optimizations:
-            return _And(stack), tuple(goals)
-        return _And(stack)
+            return mgr.And(stack), tuple(goals)
+        return mgr.And(stack)
 
     def to_file(self, fname, daggify=True):
         with open(fname, "w") as outstream:
@@ -333,8 +342,7 @@ class SmtLibScript(object):
         return "\n".join((str(cmd) for cmd in self.commands))
 
 
-def _parse_goal(command, max_smt_goals=None, goal_position=None):
-    assert len(command.args) == 2, f"Command {command.name} must have 2 arguments"
+def _command_is_signed(command):
     singed = False
     if len(command.args) >= 2:
         options = command.args[1]
@@ -342,32 +350,10 @@ def _parse_goal(command, max_smt_goals=None, goal_position=None):
             for arg in options:
                 if arg[0] == ":signed":
                     singed = arg[1]
+                    if not isinstance(singed, bool):
+                        raise PysmtValueError(f":signed annotation to a command must be a bool, {singed} is not")
                 break
-    if command.name == smtcmd.MAXIMIZE:
-        return MaximizationGoal(command.args[0], singed)
-    elif command.name == smtcmd.MINIMIZE:
-        return MinimizationGoal(command.args[0], singed)
-    elif command.name == smtcmd.MINMAX:
-        return MinMaxGoal(command.args[0], singed)
-    elif command.name == smtcmd.MAXMIN:
-        return MaxMinGoal(command.args[0], singed)
-    elif command.name == smtcmd.ASSERT_SOFT:
-        assert max_smt_goals is not None
-        assert goal_position is not None
-        formula = command.args[0]
-        cmd_annotations = dict(command.args[1])
-        max_smt_id = cmd_annotations.get(":id", "")
-        max_smt_weight = cmd_annotations.get(":weight", 1)
-        if not isinstance(max_smt_weight, int):
-            max_smt_weight = max_smt_weight.constant_value()
-        _, goal = max_smt_goals.setdefault(max_smt_id, (goal_position, MaxSMTGoal()))
-        goal.add_soft_clause(formula, max_smt_weight)
-        if len(goal.soft) == 1:
-            return goal
-        # Return None because the max_smt_goal is already in the goal list
-        return None
-    else:
-        raise ValueError(f"Unknown goal command {command.name}")
+    return singed
 
 
 def smtlibscript_from_formula(formula, logic=None):

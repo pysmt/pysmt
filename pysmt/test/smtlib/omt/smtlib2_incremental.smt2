@@ -1,13 +1,6 @@
 ; -*- SMT2 -*-
 ;
-; Author: Patrick Trentin <patrick.trentin@unitn.it>
-;
-; This file is part of OptiMathSAT.
-;
-
-; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ;
-; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ;
-; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ;
+; This file comes from the optimathsat distribution with the permission of the authors.
 
 (set-option :produce-models true)
 (set-option :config preprocessor.toplevel_propagation=false)

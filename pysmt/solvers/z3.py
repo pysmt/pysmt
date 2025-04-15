@@ -35,7 +35,6 @@ from pysmt.solvers.solver import (IncrementalTrackingSolver, UnsatCoreSolver,
                                   Model, Converter, SolverOptions)
 from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 from pysmt.solvers.qelim import QuantifierEliminator
-from pysmt.optimization.optimizer import Optimizer, SUAOptimizerMixin, IncrementalOptimizerMixin
 from pysmt.solvers.interpolation import Interpolator
 
 from pysmt.walkers import DagWalker
@@ -44,8 +43,7 @@ from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               SolverStatusError,
                               ConvertExpressionError,
                               UndefinedSymbolError, PysmtValueError,
-                              PysmtInfinityError, PysmtInfinitesimalError,
-                              PysmtUnboundedOptimizationError)
+                              PysmtInfinityError, PysmtInfinitesimalError)
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
 from pysmt.logics import LRA, LIA, QF_UFLRA, QF_UFLIA, PYSMT_LOGICS
 from pysmt.oracles import get_logic
@@ -143,7 +141,7 @@ class Z3Options(SolverOptions):
 class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
                SmtLibBasicSolver, SmtLibIgnoreMixin):
 
-    LOGICS = PYSMT_LOGICS - set(x for x in PYSMT_LOGICS if x.theory.strings or not x.theory.linear)
+    LOGICS = PYSMT_LOGICS - set(x for x in PYSMT_LOGICS if x.theory.strings)
     OptionsClass = Z3Options
 
     SOLVERFOR_LOGIC_NAMES=['AUFLIA', 'ALIA', 'AUFLIRA', 'AUFNIRA', 'LRA', 'LIA', 'NIA',

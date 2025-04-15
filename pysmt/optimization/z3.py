@@ -37,7 +37,8 @@ except ImportError:
 
 
 class Z3NativeOptimizer(Optimizer, Z3Solver):
-    LOGICS = Z3Solver.LOGICS
+    # remove all theories that are not linear
+    LOGICS = set(filter(lambda x: x.theory.linear, Z3Solver.LOGICS))
 
     def __init__(self, environment, logic, **options):
         Z3Solver.__init__(self, environment=environment,

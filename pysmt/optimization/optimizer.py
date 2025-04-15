@@ -19,9 +19,8 @@
 from pysmt.solvers.solver import Solver
 from pysmt.exceptions import PysmtValueError, GoalNotSupportedError
 from pysmt.optimization.goal import MinimizationGoal, MaximizationGoal
-from pysmt.shortcuts import Symbol, INT, REAL, BVType, Equals, Ite, Int, Plus
+from pysmt.shortcuts import INT, REAL, BVType, Equals, Ite, Int, Plus
 from pysmt.logics import LIA, LRA, BV
-from pysmt.oracles import get_logic
 
 class Optimizer(Solver):
     """
@@ -160,9 +159,9 @@ class Optimizer(Solver):
             assert soft_goal_value.is_bool_constant()
             if soft_goal_value.constant_value():
                 max_smt_weight += weight
-        if isinstance(max_smt_weight, int):
-            return self.mgr.Int(max_smt_weight)
-        return self.mgr.Real(max_smt_weight)
+        if goal.allow_real_weights():
+            return self.mgr.Real(max_smt_weight)
+        return self.mgr.Int(max_smt_weight)
 
     def _check_pareto_lexicographic_goals(self, goals, mode):
         for goal in goals:
@@ -292,6 +291,7 @@ class OptSearchInterval(OptComparationFunctions):
             else:
                 self._upper = self._lower
 
+
 class OptPareto(OptComparationFunctions):
 
     def __init__(self, goal, environment):
@@ -300,19 +300,16 @@ class OptPareto(OptComparationFunctions):
         self._cast, self.op_strict, self.op_ns = self._comparation_functions(goal)
         self.val = None
 
-    def get_costraint_strict(self):
+    def get_constraint(self, strict):
         if self.val is not None:
-            assert self.val.is_constant()
-            return self.op_strict(self.goal.term(), self.val)
+            assert self.val.is_constant(), f"Value {self.val} is not a constant"
+            correct_operator = self.op_ns
+            if strict:
+                correct_operator = self.op_strict
+            return correct_operator(self.goal.term(), self.val)
         else:
             return None
 
-    def get_costraint_ns(self):
-        if self.val is not None:
-            assert self.val.is_constant(), self.val
-            return self.op_ns(self.goal.term(), self.val)
-        else:
-            return None
 
 class ExternalOptimizerMixin(Optimizer):
     """An optimizer that uses an SMT-Solver externally"""
@@ -372,7 +369,6 @@ class ExternalOptimizerMixin(Optimizer):
 
         return model, rt
 
-
     def _optimize(self, goal, strategy, extra_assumption = None):
         if goal.is_maxsmt_goal():
             formula = None
@@ -413,8 +409,6 @@ class ExternalOptimizerMixin(Optimizer):
         if model:
             return model, model.get_value(goal.term())
         return None
-
-
 
     def pareto_optimize(self, goals):
         self._check_pareto_lexicographic_goals(goals, "pareto")
@@ -480,13 +474,13 @@ class SUAOptimizerMixin(ExternalOptimizerMixin):
         mgr = self.environment.formula_manager
         k = []
         if objs[0].val is not None:
-            k = [obj.get_costraint_ns() for obj in objs]
-            k.append(mgr.Or(obj.get_costraint_strict() for obj in objs ))
+            k = [obj.get_constraint(False) for obj in objs]
+            k.append(mgr.Or(obj.get_constraint(True) for obj in objs ))
         return not self.solve(assumptions=client_data + k)
 
     def _pareto_block_model(self, client_data, objs):
         mgr = self.environment.formula_manager
-        client_data.append(mgr.Or(obj.get_costraint_strict() for obj in objs))
+        client_data.append(mgr.Or(obj.get_constraint(True) for obj in objs))
 
     def can_diverge_for_unbounded_cases(self):
         return True
@@ -538,13 +532,13 @@ class IncrementalOptimizerMixin(ExternalOptimizerMixin):
         mgr = self.environment.formula_manager
         if objs[0].val is not None:
             for obj in objs:
-                self.add_assertion(obj.get_costraint_ns())
-            self.add_assertion(mgr.Or(obj.get_costraint_strict() for obj in objs))
+                self.add_assertion(obj.get_constraint(False))
+            self.add_assertion(mgr.Or((obj.get_constraint(True) for obj in objs)))
         return not self.solve()
 
     def _pareto_block_model(self, client_data, objs):
         mgr = self.environment.formula_manager
-        self.add_assertion(mgr.Or(obj.get_costraint_strict() for obj in objs))
+        self.add_assertion(mgr.Or((obj.get_constraint(True) for obj in objs)))
 
     def can_diverge_for_unbounded_cases(self):
         return True

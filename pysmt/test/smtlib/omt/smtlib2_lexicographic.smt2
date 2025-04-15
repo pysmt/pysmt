@@ -1,31 +1,6 @@
 ; -*- SMT2 -*-
 ;
-; Author: Patrick Trentin <patrick.trentin@unitn.it>
-;
-; This file is part of OptiMathSAT.
-;
-; WARNING:
-;     OptiMathSAT and Z3 have different default behaviours
-;     when multiple objectives are optimized in the same
-;     formula. Z3 handles them lexicographically, whereas
-;     OptiMathSAT handles them in boxed (multi-independent) mode.
-;     Therefore, the following option should be correctly
-;     set on any lexicographic formula:
-;
-;         (set-option :opt.priority lex)
-;
-;     When model-generation is enabled, the lexicographic
-;     search ends with the optimum model stored in the
-;     environment and ready for inspection.
-;     It is also possible to view the partially-optimized
-;     model associated with each objective on the stack
-;     by means of the '(load-objective-model <numeral>)' command.
-;     (for more details, see: smtlib2_load_objective_model.smt2)
-;
-
-; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ;
-; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ;
-; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ;
+; This file comes from the optimathsat distribution with the permission of the authors.
 
 (set-option :produce-models true)
 (set-option :opt.priority lex)
@@ -75,15 +50,3 @@
 (get-objectives)
 
 (exit)
-
-;
-; LEXICOGRAPHIC OPTIMIZATION OPTIONS
-;     The SMT-based Unified Lex Algorithm is not guaranteed to converge
-;     towards an optimal solution when dealing with Real cost functions.
-;     
-; -opt.lex.engine=STR
-;          Configures the engine for Lexicographic optimization. Possible values 
-;          are:  
-;           - uni: SMT-based Unified Lex Algorithm
-;           - ite: OMT-based Iterated Lex Algorithm (default)
-;

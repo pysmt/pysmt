@@ -15,15 +15,14 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from fractions import Fraction
-from itertools import chain
+
 from pysmt.test import TestCase, skipIfNoOptimizerForLogic
 from pysmt.test import main
 
-from pysmt.shortcuts import Optimizer, GE, Int, Symbol, INT, LE, GT, REAL, Real, Equals, Times, Solver, Or, Div
-from pysmt.shortcuts import BVType, BVUGE, BVSGE, BVULE, BVSLE, BVUGT, BVSGT, BVULT, BVSLT, BVZero, BVOne, BV
+from pysmt.shortcuts import Optimizer, GE, Int, Symbol, INT, LE, GT, REAL, Real
+from pysmt.shortcuts import BVType, BVSGE, BVSLE, BVSGT, BVSLT, BV
 from pysmt.shortcuts import And, Plus, Minus, get_env
-from pysmt.logics import QF_LIA, QF_LRA, QF_BV, QF_NRA, QF_NIA
+from pysmt.logics import QF_LIA, QF_LRA, QF_BV
 from pysmt.optimization.goal import MaximizationGoal, MinimizationGoal, \
     MinMaxGoal, MaxMinGoal, MaxSMTGoal
 

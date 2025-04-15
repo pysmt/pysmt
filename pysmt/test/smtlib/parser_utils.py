@@ -28,12 +28,6 @@ from pysmt.logics import (QF_LIA, QF_LRA, LRA, QF_UFLIRA, QF_UFBV, QF_BV,
                           UFBV, BV as BV_logic, QF_UF)
 from pysmt.exceptions import NoSolverAvailableError, SolverReturnedUnknownResultError
 from pysmt.test.omt_examples import OptimizationTypes
-from pysmt.optimization.goal import MaximizationGoal, MinimizationGoal, \
-    MinMaxGoal, MaxMinGoal, MaxSMTGoal
-from pysmt.smtlib.script import InterpreterOMT
-from pysmt.smtlib.parser.parser import SmtLib20Parser
-from pysmt.smtlib.commands import ASSERT, CHECK_SAT, CHECK_ALLSAT, MAXIMIZE, MINIMIZE
-
 
 
 def smtlib_tests(logic_pred):
@@ -218,7 +212,7 @@ def omt_test_cases_from_smtlib_test_set(logics=None):
             continue
         reset_env()
         smtfile = os.path.join(OMTLIB_DIR, fname)
-        parser = SmtLib20Parser()
+        parser = SmtLibParser()
         test_name = f"{logic.name} - {fname}"
         script = parser.get_script_fname(smtfile)
         assumptions, parsed_goals = _extract_assumptions_and_objectives(script)

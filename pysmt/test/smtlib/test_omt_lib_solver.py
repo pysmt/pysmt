@@ -23,7 +23,7 @@ from pysmt.logics import QF_LIA, QF_LRA
 from pysmt.test import TestCase, skipIfNoOptimizerForLogic
 from pysmt.test import main
 from pysmt.test.omt_examples import generate_examples_with_solvers, solve_given_example
-from pysmt.test.omt_examples import OptimizationTypes, OMTTestCase
+from pysmt.test.omt_examples import OptimizationTypes
 from pysmt.test.smtlib.parser_utils import omt_test_cases_from_smtlib_test_set
 from pysmt.cmd.shell import PysmtShell
 
@@ -340,8 +340,8 @@ dummy = TestCase()
 # define the tests that have to be skipped
 test_to_skip = {
         ("QF_LRA - smtlib2_boxed.smt2", OptimizationTypes.LEXICOGRAPHIC, "optimsat"), # error return wrong maximization of z (should be 24, returns 0); seems like a bug in optimsat; have to try optimsat alone; with integers instead of reals it works
-        ("QF_LIA - smtlib2_allsat.smt2", OptimizationTypes.PARETO, "optimsat"), # error wrong maximization of x (should be 100, return 15)
-        ("QF_LIA - smtlib2_load_objective_model.smt2", OptimizationTypes.PARETO, "optimsat"), # error with the BOXED same optimization. If both are tested this fails. Only if pareto is tested after boxed.
+        # ("QF_LIA - smtlib2_allsat.smt2", OptimizationTypes.PARETO, "optimsat"), # error wrong maximization of x (should be 100, return 15)
+        # ("QF_LIA - smtlib2_load_objective_model.smt2", OptimizationTypes.PARETO, "optimsat"), # error with the BOXED same optimization. If both are tested this fails. Only if pareto is tested after boxed.
 }
 @pytest.mark.parametrize(
     "optimization_example, solver_name",

@@ -1,24 +1,6 @@
 ; -*- SMT2 -*-
 ;
-; Author: Patrick Trentin <patrick.trentin@unitn.it>
-;
-; This file is part of OptiMathSAT.
-;
-; LINEAR OBJECTIVE COMBINATION:
-;     In OptiMathSAT, an objective can be given a name
-;     which can then be used to:
-;     - express constraints that involve an objective function
-;     - formulate new objectives defined in terms of another
-;       objective.
-;     - retrieve the value of an objective function from
-;       the optimal model using '(get-value ...)'
-;     A label remains in scope as long as the associated
-;     objective is in scope.
-;
-
-; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ;
-; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ;
-; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ;
+; This file comes from the optimathsat distribution with the permission of the authors.
 
 (set-option :produce-models true)
 (set-option :config opt.priority=box)

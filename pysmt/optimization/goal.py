@@ -16,7 +16,9 @@
 #   limitations under the License.
 #
 
+from fractions import Fraction
 from pysmt.environment import get_env
+from pysmt.exceptions import PysmtValueError
 from pysmt.oracles import get_logic
 from pysmt.logics import LIA, LRA, BV
 
@@ -199,19 +201,27 @@ class MaxSMTGoal(Goal):
 
     _instance_id = 0
 
-    def __init__(self):
+    def __init__(self, allow_real_weights=True):
         """Accepts soft clauses and the relative weights"""
         self.id = MaxSMTGoal._instance_id
         MaxSMTGoal._instance_id = MaxSMTGoal._instance_id + 1
         self.soft = []
         self._bv_signed = False
+        self._allow_real_weights = allow_real_weights
 
     def add_soft_clause(self, clause, weight):
         """Accepts soft clauses and the relative weights"""
+        if not isinstance(weight, (int, float, Fraction)):
+            raise PysmtValueError(f"Weight {weight} has to be an int, a float or a Fraction; given value has type: {type(weight)}")
+        if not self._allow_real_weights and isinstance(weight, (float, Fraction)):
+            raise PysmtValueError(f"Weight {weight} has to be an int because the flag 'allow_real_weights' is set to 'False'; given value has type: {type(weight)}")
         self.soft.append((clause, weight))
 
     def is_maxsmt_goal(self):
         return True
+
+    def allow_real_weights(self):
+        return self._allow_real_weights
 
     def __repr__(self):
         return "MaxSMT{%s}" % (", ".join(f"{x.serialize()}: {w}" for x, w in self.soft))
