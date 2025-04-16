@@ -351,7 +351,7 @@ def _command_is_signed(command):
                 if arg[0] == ":signed":
                     singed = arg[1]
                     if not isinstance(singed, bool):
-                        raise PysmtValueError(f":signed annotation to a command must be a bool, {singed} is not")
+                        raise PysmtValueError(":signed annotation to a command must be a bool, %s is not" % str(singed))
                 break
     return singed
 
