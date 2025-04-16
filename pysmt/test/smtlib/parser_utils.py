@@ -19,7 +19,7 @@ import os
 import warnings
 
 from pysmt.test import SkipTest
-from pysmt.test.omt_examples import OMTTestCase
+from pysmt.test.optimization_utils import OMTTestCase, OptimizationTypes
 from pysmt.shortcuts import get_env, reset_env, Int, Real, BV, SBV
 from pysmt.smtlib.parser import SmtLibParser, get_formula_fname
 from pysmt.smtlib.script import check_sat_filter
@@ -27,7 +27,6 @@ from pysmt.logics import (QF_LIA, QF_LRA, LRA, QF_UFLIRA, QF_UFBV, QF_BV,
                           QF_ALIA, QF_ABV, QF_AUFLIA, QF_AUFBV, QF_NRA, QF_NIA,
                           UFBV, BV as BV_logic, QF_UF)
 from pysmt.exceptions import NoSolverAvailableError, SolverReturnedUnknownResultError
-from pysmt.test.omt_examples import OptimizationTypes
 
 
 def smtlib_tests(logic_pred):
@@ -213,7 +212,7 @@ def omt_test_cases_from_smtlib_test_set(logics=None):
         reset_env()
         smtfile = os.path.join(OMTLIB_DIR, fname)
         parser = SmtLibParser()
-        test_name = f"{logic.name} - {fname}"
+        test_name = "%s - %s" % (logic.name, fname)
         script = parser.get_script_fname(smtfile)
         assumptions, parsed_goals = _extract_assumptions_and_objectives(script)
         if is_sat:

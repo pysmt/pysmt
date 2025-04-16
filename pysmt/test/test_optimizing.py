@@ -18,13 +18,9 @@
 import pytest
 
 from pysmt.environment import push_env, pop_env
-from pysmt.test import TestCase
-from pysmt.test.omt_examples import get_full_example_omt_formuale, generate_examples_with_solvers, solve_given_example
+from pysmt.test.omt_examples import get_full_example_omt_formuale
+from pysmt.test.optimization_utils import generate_examples_with_solvers, solve_given_example
 
-# define a dummy to have access to the assertEqual etc. methods
-# inside the parametrized tests
-dummy = TestCase()
-# define the tests that have to be skipped
 test_to_skip = set()
 
 @pytest.mark.parametrize(
@@ -34,7 +30,6 @@ test_to_skip = set()
 def test_fast_examples(optimization_example, solver_name):
     push_env()
     solve_given_example(
-        dummy,
         optimization_example,
         solver_name,
         test_to_skip,
@@ -50,7 +45,6 @@ def test_fast_examples(optimization_example, solver_name):
 def test_slow_examples(optimization_example, solver_name):
     push_env()
     solve_given_example(
-        dummy,
         optimization_example,
         solver_name,
         test_to_skip,

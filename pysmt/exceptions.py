@@ -191,5 +191,5 @@ class GoalNotSupportedError(PysmtException):
         return self._mode
 
     def __str__(self):
-        mode_str = f" in mode '{self.mode}'" if self.mode else ""
-        return f"Optimizer '{type(self.solver).__name__}' does not support goal '{self.goal}'{mode_str}"
+        mode_str = (" in mode '%s'" % self.mode) if self.mode else ""
+        return "Optimizer '%s' does not support goal '%s'%s" % tuple(map(str, (type(self.solver).__name__, self.goal, mode_str)))

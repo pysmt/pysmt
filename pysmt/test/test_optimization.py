@@ -26,7 +26,7 @@ from pysmt.logics import QF_LIA, QF_LRA, QF_BV
 from pysmt.optimization.goal import MaximizationGoal, MinimizationGoal, \
     MinMaxGoal, MaxMinGoal, MaxSMTGoal
 
-from pysmt.exceptions import PysmtUnboundedOptimizationError
+from pysmt.exceptions import PysmtUnboundedOptimizationError, PysmtInfinitesimalError
 
 class TestOptimization(TestCase):
 
@@ -320,7 +320,7 @@ class TestOptimization(TestCase):
                 if opt.can_diverge_for_unbounded_cases():
                     continue
                 opt.add_assertion(formula)
-                with self.assertRaises(PysmtUnboundedOptimizationError):
+                with self.assertRaises(PysmtInfinitesimalError):
                     opt.optimize(min)
 
     @skipIfNoOptimizerForLogic(QF_LIA)

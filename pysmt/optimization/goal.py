@@ -212,9 +212,9 @@ class MaxSMTGoal(Goal):
     def add_soft_clause(self, clause, weight):
         """Accepts soft clauses and the relative weights"""
         if not isinstance(weight, (int, float, Fraction)):
-            raise PysmtValueError(f"Weight {weight} has to be an int, a float or a Fraction; given value has type: {type(weight)}")
+            raise PysmtValueError("Weight %s has to be an int, a float or a Fraction; given value has type: %s" % (str(weight), str(type(weight))))
         if not self._allow_real_weights and isinstance(weight, (float, Fraction)):
-            raise PysmtValueError(f"Weight {weight} has to be an int because the flag 'allow_real_weights' is set to 'False'; given value has type: {type(weight)}")
+            raise PysmtValueError("Weight %s has to be an int because the flag 'allow_real_weights' is set to 'False'; given value has type: %s" % (str(weight), str(type(weight))))
         self.soft.append((clause, weight))
 
     def is_maxsmt_goal(self):
@@ -224,4 +224,4 @@ class MaxSMTGoal(Goal):
         return self._allow_real_weights
 
     def __repr__(self):
-        return "MaxSMT{%s}" % (", ".join(f"{x.serialize()}: {w}" for x, w in self.soft))
+        return "MaxSMT{%s}" % (", ".join(("%s: %s" % (x.serialize(), str(w)) for x, w in self.soft)))

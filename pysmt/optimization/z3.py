@@ -86,7 +86,7 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
                 except PysmtInfinityError:
                     raise PysmtUnboundedOptimizationError("The optimal value is unbounded")
                 except PysmtInfinitesimalError:
-                    raise PysmtUnboundedOptimizationError("The optimal value is infinitesimal")
+                    raise PysmtInfinitesimalError("The optimal value is infinitesimal")
             else:
                 return None
         finally:
