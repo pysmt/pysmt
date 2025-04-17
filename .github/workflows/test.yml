@@ -3,8 +3,7 @@ name: Test and Deploy
 on:
   push:
     branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
+  pull_request
 
 jobs:
   run-tests:
