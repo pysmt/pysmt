@@ -22,7 +22,7 @@ from pysmt.test.omt_examples import get_full_example_omt_formuale
 from pysmt.test.optimization_utils import generate_examples_with_solvers, solve_given_example, OptimizationTypes
 
 test_to_skip = {
-        ("QF_LIA 2 int 2 bools multiple objective", OptimizationTypes.PARETO, "optimsat"), # weird error, this test fails only if executed test_omt_lib_solver (skipping ("QF_LIA - smtlib2_load_objective_model.smt2", OptimizationTypes.PARETO, "optimsat") this skip becomes necessary, otherwise not). The cost returned is 0 when it should be 1
+        # ("QF_LIA 2 int 2 bools multiple objective", OptimizationTypes.PARETO, "optimsat"), # weird error, this test fails only if executed test_omt_lib_solver (skipping ("QF_LIA - smtlib2_load_objective_model.smt2", OptimizationTypes.PARETO, "optimsat") this skip becomes necessary, otherwise not). The cost returned is 0 when it should be 1
 }
 
 @pytest.mark.parametrize(
