@@ -199,7 +199,7 @@ accepted_integer_numbers_class = (int, )
 accepted_real_numbers_class = (float, Fraction)
 try:
     import gmpy2
-    accepted_integer_numbers_class += (gmpy2.mpz)
+    accepted_integer_numbers_class += (gmpy2.mpz, )
     accepted_real_numbers_class += (gmpy2.mpq, gmpy2.mpfr)
 except ImportError:
     pass
