@@ -47,6 +47,7 @@ def smtlib_tests(logic_pred):
 # parses and invokes a solver for the given smt file
 def execute_script_fname(smtfile, logic, expected_result):
     """Read and call a Solver to solve the instance"""
+    reset_env()
     Solver = get_env().factory.Solver
     parser = SmtLibParser()
     script = parser.get_script_fname(smtfile)
