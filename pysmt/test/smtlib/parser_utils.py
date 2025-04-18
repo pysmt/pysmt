@@ -47,7 +47,6 @@ def smtlib_tests(logic_pred):
 # parses and invokes a solver for the given smt file
 def execute_script_fname(smtfile, logic, expected_result):
     """Read and call a Solver to solve the instance"""
-    reset_env()
     Solver = get_env().factory.Solver
     parser = SmtLibParser()
     script = parser.get_script_fname(smtfile)
@@ -209,12 +208,14 @@ def omt_test_cases_from_smtlib_test_set(logics=None):
     for (logic, fname, is_sat, expected_result) in OMTLIB_TEST_FILES:
         if logics is not None and logic not in logics:
             continue
-        reset_env()
+
+        env = reset_env()
+        mgr = env.formula_manager
         smtfile = os.path.join(OMTLIB_DIR, fname)
         parser = SmtLibParser()
         test_name = "%s - %s" % (logic.name, fname)
         script = parser.get_script_fname(smtfile)
-        assumptions, parsed_goals = _extract_assumptions_and_objectives(script)
+        assumptions, parsed_goals = _extract_assumptions_and_objectives(mgr, script)
         if is_sat:
             expected_goals = {}
             for optimization_type, expected_values in expected_result.items():
@@ -229,12 +230,12 @@ def omt_test_cases_from_smtlib_test_set(logics=None):
         else:
             assert expected_result is None
             expected_goals = None
-        yield OMTTestCase(test_name, assumptions, logic, is_sat, expected_goals)
+        yield OMTTestCase(test_name, assumptions, logic, is_sat, expected_goals, env)
 
 
-def _extract_assumptions_and_objectives(script):
+def _extract_assumptions_and_objectives(mgr, script):
     goals = []
-    formula, goals = script.get_last_formula(return_optimizations=True)
+    formula, goals = script.get_last_formula(mgr, return_optimizations=True)
     assumptions = list(formula.args()) if formula.is_and() else [formula]
 
     return assumptions, tuple(goals)

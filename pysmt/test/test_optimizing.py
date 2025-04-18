@@ -17,7 +17,6 @@
 #
 import pytest
 
-from pysmt.environment import push_env, pop_env
 from pysmt.test.omt_examples import get_full_example_omt_formuale
 from pysmt.test.optimization_utils import generate_examples_with_solvers, solve_given_example, OptimizationTypes
 
@@ -30,13 +29,11 @@ test_to_skip = {
     generate_examples_with_solvers(get_full_example_omt_formuale(slow=False)),
 )
 def test_fast_examples(optimization_example, solver_name):
-    push_env()
     solve_given_example(
         optimization_example,
         solver_name,
         test_to_skip,
     )
-    pop_env()
 
 
 @pytest.mark.slow
@@ -45,10 +42,8 @@ def test_fast_examples(optimization_example, solver_name):
     generate_examples_with_solvers(get_full_example_omt_formuale(fast=False)),
 )
 def test_slow_examples(optimization_example, solver_name):
-    push_env()
     solve_given_example(
         optimization_example,
         solver_name,
         test_to_skip,
     )
-    pop_env()

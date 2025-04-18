@@ -343,13 +343,11 @@ test_to_skip = {
     generate_examples_with_solvers(omt_test_cases_from_smtlib_test_set()),
 )
 def test_parsed_examples(optimization_example, solver_name):
-    push_env()
     solve_given_example(
         optimization_example,
         solver_name,
         test_to_skip,
     )
-    pop_env()
 
 
 if __name__ == "__main__":

@@ -29,6 +29,7 @@ def get_full_example_omt_formuale(environment=None, fast=True, slow=True):
 
     if environment is None:
         environment = get_env()
+        # TODO maybe reset env here
 
     with environment:
         if fast and slow:
@@ -84,7 +85,8 @@ def qf_lia_two_variables_multi_obj_example():
         assertions,
         QF_LIA,
         True,
-        goals_dict
+        goals_dict,
+        get_env()
     )
 
 
@@ -138,7 +140,8 @@ def qf_lia_2_int_2_bools_multiple_objective():
         assertions,
         QF_LIA,
         True,
-        goals_dict
+        goals_dict,
+        get_env()
     )
 
 
@@ -185,7 +188,8 @@ def qf_lra_box_volume():
         {
             ((maximize_volume_goal, maximize_y_goal), OptimizationTypes.LEXICOGRAPHIC): [Real(54.0), Real(1.0)],
             ((maximize_volume_goal, maximize_y_goal), OptimizationTypes.BOXED): [Real(54.0), Real(6.0)],
-        }
+        },
+        get_env()
     )
 
 
@@ -237,7 +241,8 @@ def qf_lia_box_volume():
                 for h in range(1, 7)
             ],
             ((maximize_volume_goal, maximize_y_goal), OptimizationTypes.BOXED): [Int(54), Int(6)],
-        }
+        },
+        get_env()
     )
 
 
@@ -293,5 +298,6 @@ def test_maximize_revenue():
             ((maximize_revenue_goal, maximize_area_goal), OptimizationTypes.LEXICOGRAPHIC): [Int(800), Int(600)],
             ((maximize_revenue_goal, maximize_area_goal), OptimizationTypes.PARETO): [(Int(800), Int(600))],
             ((maximize_revenue_goal, maximize_area_goal), OptimizationTypes.BOXED): [Int(800), Int(600)],
-        }
+        },
+        get_env()
     )

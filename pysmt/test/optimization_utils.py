@@ -3,7 +3,7 @@ from itertools import chain
 import pytest
 
 from pysmt.fnode import FNode
-from pysmt.shortcuts import Optimizer, get_env
+from pysmt.shortcuts import get_env
 from pysmt.exceptions import PysmtUnboundedOptimizationError, PysmtInfinitesimalError, PysmtValueError
 
 class OptimizationTypes(Enum):
@@ -38,12 +38,15 @@ class OMTTestCase:
     If the expected value is a FNode, it must be a constant value.
     If the expected value is a string, it must be either "unbounded" or "infinitesimal".
     """
-    def __init__(self, name, assertions, logic, solvable, goals):
+    def __init__(self, name, assertions, logic, solvable, goals, env):
         self._name = name
         self._assertions = assertions
         self._logic = logic
         self._solvable = solvable
         self._goals = goals
+        self._env = env
+        if env is None:
+            self._env = get_env(env)
 
         # consistency checks
         if bool(goals) != solvable:
@@ -98,6 +101,10 @@ class OMTTestCase:
     def goals(self):
         return self._goals
 
+    @property
+    def environment(self):
+        return self._env
+
 
 # method to solve the given examples
 def generate_examples_with_solvers(optimization_examples):
@@ -106,8 +113,8 @@ def generate_examples_with_solvers(optimization_examples):
     combinations of an OMTTestCase and the name of a solver that support
     the logic of said test.
     """
-    env = get_env()
     for optimization_example in optimization_examples:
+        env = optimization_example.environment
         for solver_name, solver_class in env.factory.all_optimizers(logic=optimization_example.logic).items():
             if optimization_example.logic.theory.real_arithmetic:
                 solver = solver_class(env, optimization_example.logic)
@@ -128,7 +135,9 @@ def solve_given_example(optimization_example, solver_name, test_to_skip=None):
             continue
         test_id_str = "test: %s; solver: %s; optimization: %s" % (optimization_example.name, solver_name, optimization_type.name)
         print(test_id_str)
-        with Optimizer(name=solver_name, logic=optimization_example.logic) as opt:
+        with optimization_example.environment.factory.Optimizer(
+            name=solver_name, logic=optimization_example.logic
+        ) as opt:
             for assertion in optimization_example.assertions:
                 opt.add_assertion(assertion)
             if optimization_type == OptimizationTypes.LEXICOGRAPHIC:
