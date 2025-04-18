@@ -194,6 +194,17 @@ class MaxMinGoal(MaximizationGoal):
         return "Maximize{Min{%s}}" % (", ".join(x.serialize() for x in self.terms))
 
 
+# check if gmpy2 is installed or not and decide which numeric classes are supported
+accepted_integer_numbers_class = (int, )
+accepted_real_numbers_class = (float, Fraction)
+try:
+    import gmpy2
+    accepted_integer_numbers_class += (gmpy2.mpz)
+    accepted_real_numbers_class += (gmpy2.mpq, gmpy2.mpfr)
+except ImportError:
+    pass
+accepted_numbers_class = accepted_integer_numbers_class + accepted_real_numbers_class
+
 class MaxSMTGoal(Goal):
     """
     MaxSMT goal common to all solvers.
@@ -211,10 +222,10 @@ class MaxSMTGoal(Goal):
 
     def add_soft_clause(self, clause, weight):
         """Accepts soft clauses and the relative weights"""
-        if not isinstance(weight, (int, float, Fraction)):
-            raise PysmtValueError("Weight %s has to be an int, a float or a Fraction; given value has type: %s" % (str(weight), str(type(weight))))
-        if not self._allow_real_weights and isinstance(weight, (float, Fraction)):
-            raise PysmtValueError("Weight %s has to be an int because the flag 'allow_real_weights' is set to 'False'; given value has type: %s" % (str(weight), str(type(weight))))
+        if not isinstance(weight, accepted_numbers_class):
+            raise PysmtValueError("Weight '%s' has to be one of '%s'; given value has type: '%s'" % (str(weight), str(accepted_numbers_class), str(type(weight))))
+        if not self._allow_real_weights and isinstance(weight, accepted_real_numbers_class):
+            raise PysmtValueError("Weight '%s' type has to be one of '%s' because the flag 'allow_real_weights' is set to 'False'; given value has type: '%s'" % (str(weight), str(accepted_integer_numbers_class), str(type(weight))))
         self.soft.append((clause, weight))
 
     def is_maxsmt_goal(self):
