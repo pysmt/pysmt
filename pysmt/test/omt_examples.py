@@ -29,7 +29,6 @@ def get_full_example_omt_formuale(environment=None, fast=True, slow=True):
 
     if environment is None:
         environment = get_env()
-        # TODO maybe reset env here
 
     with environment:
         if fast and slow:
