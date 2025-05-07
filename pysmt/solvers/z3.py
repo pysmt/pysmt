@@ -326,12 +326,12 @@ class Z3Converter(Converter, DagWalker):
             z3.Z3_OP_IMPLIES: lambda args, expr: self.mgr.Implies(args[0], args[1]),
             z3.Z3_OP_ITE: lambda args, expr: self.mgr.Ite(args[0], args[1], args[2]),
             z3.Z3_OP_TO_REAL: lambda args, expr: self.mgr.ToReal(args[0]),
-            z3.Z3_OP_BAND : lambda args, expr: self.mgr.BVAnd(args[0], args[1]),
-            z3.Z3_OP_BOR : lambda args, expr: self.mgr.BVOr(args[0], args[1]),
+            z3.Z3_OP_BAND : lambda args, expr: self.mgr.BVAnd(args),
+            z3.Z3_OP_BOR : lambda args, expr: self.mgr.BVOr(args),
             z3.Z3_OP_BXOR : lambda args, expr: self.mgr.BVXor(args[0], args[1]),
             z3.Z3_OP_BNOT : lambda args, expr: self.mgr.BVNot(args[0]),
             z3.Z3_OP_BNEG : lambda args, expr: self.mgr.BVNeg(args[0]),
-            z3.Z3_OP_CONCAT : lambda args, expr: self.mgr.BVConcat(args[0], args[1]),
+            z3.Z3_OP_CONCAT : lambda args, expr: self.mgr.BVConcat(args),
             z3.Z3_OP_ULT : lambda args, expr: self.mgr.BVULT(args[0], args[1]),
             z3.Z3_OP_ULEQ : lambda args, expr: self.mgr.BVULE(args[0], args[1]),
             z3.Z3_OP_SLT : lambda args, expr: self.mgr.BVSLT(args[0], args[1]),
@@ -340,8 +340,8 @@ class Z3Converter(Converter, DagWalker):
             z3.Z3_OP_UGEQ : lambda args, expr: self.mgr.BVUGE(args[0], args[1]),
             z3.Z3_OP_SGT : lambda args, expr: self.mgr.BVSGT(args[0], args[1]),
             z3.Z3_OP_SGEQ : lambda args, expr: self.mgr.BVSGE(args[0], args[1]),
-            z3.Z3_OP_BADD : lambda args, expr: self.mgr.BVAdd(args[0], args[1]),
-            z3.Z3_OP_BMUL : lambda args, expr: self.mgr.BVMul(args[0], args[1]),
+            z3.Z3_OP_BADD : lambda args, expr: self.mgr.BVAdd(args),
+            z3.Z3_OP_BMUL : lambda args, expr: self.mgr.BVMul(args),
             z3.Z3_OP_BUDIV : lambda args, expr: self.mgr.BVUDiv(args[0], args[1]),
             z3.Z3_OP_BSDIV : lambda args, expr: self.mgr.BVSDiv(args[0], args[1]),
             z3.Z3_OP_BUREM : lambda args, expr: self.mgr.BVURem(args[0], args[1]),
@@ -497,6 +497,9 @@ class Z3Converter(Converter, DagWalker):
         assert not len(args) > 2 or \
             (z3.is_and(expr) or z3.is_or(expr) or
              z3.is_add(expr) or z3.is_mul(expr) or
+             z3.is_app_of(expr, z3.Z3_OP_BAND) or z3.is_app_of(expr, z3.Z3_OP_BOR) or
+             z3.is_app_of(expr, z3.Z3_OP_BADD) or z3.is_app_of(expr, z3.Z3_OP_BMUL) or
+             z3.is_app_of(expr, z3.Z3_OP_CONCAT) or
              (len(args) == 3 and (z3.is_ite(expr) or z3.is_array_store(expr)))),\
             "Unexpected n-ary term: %s" % expr
 
