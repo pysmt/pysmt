@@ -1438,6 +1438,7 @@ class SmtLibZ3Parser(SmtLibParser):
                                 self._operator_adapter(self._ext_rotate_right)
         mgr = self.env.formula_manager
         self.interpreted['bv2int'] = self._operator_adapter(mgr.BVToNatural)
+        self.interpreted['ubv_to_int'] = self._operator_adapter(mgr.BVToNatural)
 
     def _ext_rotate_left(self, x, y):
         return self.env.formula_manager.BVRol(x, y.simplify().constant_value())
