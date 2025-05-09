@@ -21,6 +21,7 @@ from pysmt.environment import get_env
 from pysmt.exceptions import PysmtValueError
 from pysmt.oracles import get_logic
 from pysmt.logics import LIA, LRA, BV
+from pysmt.fnode import FNode
 
 class Goal(object):
     """
@@ -152,7 +153,9 @@ class MinMaxGoal(MinimizationGoal):
         """
         :param terms: List of FNode
         """
-        if len(terms) > 0 and get_env().stc.get_type(terms[0]).is_bv_type():
+        if len(terms) == 0:
+            raise PysmtValueError("MinMaxGoal requires at least one term")
+        elif terms[0].get_type().is_bv_type():
             formula = get_env().formula_manager.MaxBV(sign, terms)
         else:
             formula = get_env().formula_manager.Max(terms)
@@ -179,7 +182,9 @@ class MaxMinGoal(MaximizationGoal):
         """
         :param terms: List of FNode
         """
-        if len(terms) > 0 and get_env().stc.get_type(terms[0]).is_bv_type():
+        if len(terms) == 0:
+            raise PysmtValueError("MaxMinGoal requires at least one term")
+        elif terms[0].get_type().is_bv_type():
             formula = get_env().formula_manager.MinBV(sign, terms)
         else:
             formula = get_env().formula_manager.Min(terms)
@@ -205,6 +210,7 @@ except ImportError:
     pass
 accepted_numbers_class = accepted_integer_numbers_class + accepted_real_numbers_class
 
+
 class MaxSMTGoal(Goal):
     """
     MaxSMT goal common to all solvers.
@@ -212,27 +218,55 @@ class MaxSMTGoal(Goal):
 
     _instance_id = 0
 
-    def __init__(self, allow_real_weights=True):
+    def __init__(self, real_weights=True):
         """Accepts soft clauses and the relative weights"""
         self.id = MaxSMTGoal._instance_id
         MaxSMTGoal._instance_id = MaxSMTGoal._instance_id + 1
         self.soft = []
         self._bv_signed = False
-        self._allow_real_weights = allow_real_weights
+        self._real_weights = real_weights
 
     def add_soft_clause(self, clause, weight):
         """Accepts soft clauses and the relative weights"""
-        if not isinstance(weight, accepted_numbers_class):
-            raise PysmtValueError("Weight '%s' has to be one of '%s'; given value has type: '%s'" % (str(weight), str(accepted_numbers_class), str(type(weight))))
-        if not self._allow_real_weights and isinstance(weight, accepted_real_numbers_class):
-            raise PysmtValueError("Weight '%s' type has to be one of '%s' because the flag 'allow_real_weights' is set to 'False'; given value has type: '%s'" % (str(weight), str(accepted_integer_numbers_class), str(type(weight))))
-        self.soft.append((clause, weight))
+        mgr = get_env().formula_manager
+        if not clause.get_type().is_bool_type():
+            raise PysmtValueError(
+                "Clause '%s' has to be a boolean formula; given type is: '%s'" %
+                (str(clause), str(clause.get_type()))
+            )
+        if isinstance(weight, FNode):
+            if not weight.is_constant():
+                raise PysmtValueError(
+                    "Weight '%s' has to be a constant; given type is: '%s'" %
+                    (str(weight), str(weight.get_type()))
+                )
+            weight_type = weight.get_type()
+            if not weight_type.is_real_type() and not weight_type.is_int_type():
+                raise PysmtValueError(
+                    "Weight '%s' has to be a real or integer type; given type is: '%s'" %
+                    (str(weight), str(weight_type))
+                )
+            if weight_type.is_real_type() and not self._real_weights:
+                raise PysmtValueError(
+                    "Weight '%s' has to be an integer because the flag 'real_weights' is set to 'False'; given type is: '%s'" %
+                    (str(weight), str(weight.get_type()))
+                )
+            if weight_type.is_int_type() and self._real_weights:
+                weight = mgr.Real(weight.constant_value())
+            self.soft.append((clause, weight))
+        else:
+            if not isinstance(weight, accepted_numbers_class):
+                raise PysmtValueError("Weight '%s' has to be one of '%s'; given value has type: '%s'" % (str(weight), str(accepted_numbers_class), str(type(weight))))
+            if not self._real_weights and isinstance(weight, accepted_real_numbers_class):
+                raise PysmtValueError("Weight '%s' type has to be one of '%s' because the flag 'real_weights' is set to 'False'; given value has type: '%s'" % (str(weight), str(accepted_integer_numbers_class), str(type(weight))))
+            WeightFnodeClass = mgr.Real if self.real_weights() else mgr.Int
+            self.soft.append((clause, WeightFnodeClass(weight)))
 
     def is_maxsmt_goal(self):
         return True
 
-    def allow_real_weights(self):
-        return self._allow_real_weights
+    def real_weights(self):
+        return self._real_weights
 
     def __repr__(self):
         return "MaxSMT{%s}" % (", ".join(("%s: %s" % (x.serialize(), str(w)) for x, w in self.soft)))

@@ -21,7 +21,7 @@ from pysmt.solvers.solver import Solver
 from pysmt.exceptions import PysmtValueError, GoalNotSupportedError
 from pysmt.optimization.goal import MinimizationGoal, MaximizationGoal
 from pysmt.shortcuts import INT, REAL, BVType, Equals, Ite, Int, Plus, Real
-from pysmt.logics import LIA, LRA, BV
+from pysmt.logics import LIA, LRA, BV, QF_LIRA
 
 class Optimizer(Solver):
     """
@@ -159,8 +159,8 @@ class Optimizer(Solver):
             soft_goal_value = model.get_value(soft_goal)
             assert soft_goal_value.is_bool_constant()
             if soft_goal_value.constant_value():
-                max_smt_weight += weight
-        if goal.allow_real_weights():
+                max_smt_weight += weight.constant_value()
+        if goal.real_weights():
             return self.mgr.Real(max_smt_weight)
         return self.mgr.Int(max_smt_weight)
 
@@ -217,6 +217,7 @@ class OptComparationFunctions:
                 },
             },
         }
+        options[QF_LIRA] = options[LRA]
         return options[goal.get_logic()][goal.opt()][goal.signed]
 
 
@@ -379,12 +380,12 @@ class ExternalOptimizerMixin(Optimizer):
         _warn_diverge_real_goal(goal)
         if goal.is_maxsmt_goal():
             formula = None
-            W_class = Real if goal.allow_real_weights() else Int
+            zero = Real(0) if goal.real_weights() else Int(0)
             for (c, w) in goal.soft:
                 if formula is not None:
-                    formula = Plus(formula, Ite(c, W_class(w), W_class(0)))
+                    formula = Plus(formula, Ite(c, w, zero))
                 else:
-                    formula = Ite(c, W_class(w), W_class(0))
+                    formula = Ite(c, w, zero)
             assert formula is not None, "Empty MaxSMT goal passed"
             goal = MaximizationGoal(formula)
         model = None

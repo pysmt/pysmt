@@ -91,7 +91,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
         if goal.is_maxsmt_goal():
             for tcons, weight in goal.soft:
                 obj_tcons = self.converter.convert(tcons)
-                obj_weight = self._msat_lib.msat_make_number(self.msat_env(), str(weight))
+                obj_weight = self._msat_lib.msat_make_number(self.msat_env(), str(weight.constant_value()))
                 self._msat_lib.msat_assert_soft_formula(self.msat_env(), obj_tcons, obj_weight, "__pysmt_" + str(goal.id))
             obj_fun = self._msat_lib.msat_from_string(self.msat_env(),"__pysmt_"+str(goal.id))
             make_fun = self._msat_lib.msat_make_minimize

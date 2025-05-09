@@ -424,7 +424,7 @@ class TestOptimization(TestCase):
 
     def test_maxsmt_basic(self):
         x = Symbol("x", INT)
-        maxsmt = MaxSMTGoal()
+        maxsmt = MaxSMTGoal(real_weights=False)
         maxsmt.add_soft_clause(GE(x, Int(5)), 8)
         maxsmt.add_soft_clause(GE(x, Int(30)), 20)
         maxsmt.add_soft_clause(LE(x, Int(10)), 100)

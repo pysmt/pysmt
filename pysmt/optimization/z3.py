@@ -51,6 +51,7 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
         if goal.is_maxsmt_goal():
             for soft, w in goal.soft:
                 obj_soft = self.converter.convert(soft)
+                w = w.constant_value()
                 if isinstance(w, Fraction):
                     w = float(w)
                 h = self.z3.add_soft(obj_soft, w, "__pysmt_" + str(goal.id))

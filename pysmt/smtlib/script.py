@@ -308,7 +308,7 @@ class SmtLibScript(object):
                 max_smt_id = cmd_annotations.get(":id", "")
                 max_smt_weight = cmd_annotations.get(":weight", mgr.Int(1))
                 _, goal = max_smt_goals.setdefault(max_smt_id, (len(goals), MaxSMTGoal()))
-                goal.add_soft_clause(formula, max_smt_weight.constant_value())
+                goal.add_soft_clause(formula, max_smt_weight)
                 # if len(goal.soft) > 1 the goal is already in goals
                 if len(goal.soft) == 1:
                     goals.append(goal)
