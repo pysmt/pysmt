@@ -113,10 +113,15 @@ def generate_examples_with_solvers(optimization_examples):
     combinations of an OMTTestCase and the name of a solver that support
     the logic of said test.
     """
+    has_real_minimization_or_maximization = lambda opt_example: any(
+        (g.is_maximization_goal() or g.is_minimization_goal()) and g.term().get_type().is_real_type()
+        for goals, _ in opt_example.goals.keys()
+        for g in goals
+    )
     for optimization_example in optimization_examples:
         env = optimization_example.environment
         for solver_name, solver_class in env.factory.all_optimizers(logic=optimization_example.logic).items():
-            if optimization_example.logic.theory.real_arithmetic:
+            if optimization_example.logic.theory.real_arithmetic and has_real_minimization_or_maximization(optimization_example):
                 solver = solver_class(env, optimization_example.logic)
                 if solver.can_diverge_for_unbounded_cases():
                     continue

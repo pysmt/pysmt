@@ -20,7 +20,7 @@ from pysmt.solvers.yices import YicesSolver
 from pysmt.optimization.optimizer import SUAOptimizerMixin, IncrementalOptimizerMixin
 
 class YicesSUAOptimizer(YicesSolver, SUAOptimizerMixin):
-    LOGICS = set(x for x in YicesSolver.LOGICS if not x.theory.real_arithmetic and not x.theory.real_difference)
+    pass
 
 class YicesIncrementalOptimizer(YicesSolver, IncrementalOptimizerMixin):
-    LOGICS = set(x for x in YicesSolver.LOGICS if not x.theory.real_arithmetic and not x.theory.real_difference)
+    pass

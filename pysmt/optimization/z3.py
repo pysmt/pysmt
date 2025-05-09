@@ -18,6 +18,7 @@
 
 from __future__ import absolute_import
 
+from fractions import Fraction
 from warnings import warn
 
 from pysmt.decorators import clear_pending_pop
@@ -50,6 +51,8 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
         if goal.is_maxsmt_goal():
             for soft, w in goal.soft:
                 obj_soft = self.converter.convert(soft)
+                if isinstance(w, Fraction):
+                    w = float(w)
                 h = self.z3.add_soft(obj_soft, w, "__pysmt_" + str(goal.id))
         else:
             term = goal.term()
@@ -164,14 +167,10 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
 
 
 class Z3SUAOptimizer(Z3Solver, SUAOptimizerMixin):
-    LOGICS = set(x for x in Z3Solver.LOGICS if not x.theory.real_arithmetic and not x.theory.real_difference)
-
     def can_diverge_for_unbounded_cases(self):
         return True
 
 
 class Z3IncrementalOptimizer(Z3Solver, IncrementalOptimizerMixin):
-    LOGICS = set(x for x in Z3Solver.LOGICS if not x.theory.real_arithmetic and not x.theory.real_difference)
-
     def can_diverge_for_unbounded_cases(self):
         return True

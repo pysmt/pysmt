@@ -20,7 +20,7 @@ from pysmt.solvers.msat import MathSAT5Solver
 from pysmt.optimization.optimizer import SUAOptimizerMixin, IncrementalOptimizerMixin
 
 class MSatSUAOptimizer(MathSAT5Solver, SUAOptimizerMixin):
-    LOGICS = set(x for x in MathSAT5Solver.LOGICS if not x.theory.real_arithmetic and not x.theory.real_difference)
+    pass
 
 class MSatIncrementalOptimizer(MathSAT5Solver, IncrementalOptimizerMixin):
-    LOGICS = set(x for x in MathSAT5Solver.LOGICS if not x.theory.real_arithmetic and not x.theory.real_difference)
+    pass

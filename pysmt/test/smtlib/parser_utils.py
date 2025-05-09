@@ -286,6 +286,9 @@ OMTLIB_TEST_FILES = [
     (QF_LIA, "smtlib2_maxsmt.smt2", SAT, {
         OptimizationTypes.BASIC: [Int(2)],
     }),
+    (QF_LRA, "smtlib2_maxsmt_real_weight.smt2", SAT, {
+        OptimizationTypes.BASIC: [Real(1.0)],
+    }),
     (QF_LRA, "smtlib2_pareto.smt2", SAT, {
         OptimizationTypes.LEXICOGRAPHIC: [Real(3.0), Real(1.0)],
         OptimizationTypes.BOXED: [Real(3.0), Real(3.0)],

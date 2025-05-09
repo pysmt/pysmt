@@ -15,11 +15,12 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+import warnings
 
 from pysmt.solvers.solver import Solver
 from pysmt.exceptions import PysmtValueError, GoalNotSupportedError
 from pysmt.optimization.goal import MinimizationGoal, MaximizationGoal
-from pysmt.shortcuts import INT, REAL, BVType, Equals, Ite, Int, Plus
+from pysmt.shortcuts import INT, REAL, BVType, Equals, Ite, Int, Plus, Real
 from pysmt.logics import LIA, LRA, BV
 
 class Optimizer(Solver):
@@ -311,6 +312,11 @@ class OptPareto(OptComparationFunctions):
             return None
 
 
+def _warn_diverge_real_goal(goal):
+    if (goal.is_maximization_goal() or goal.is_minimization_goal()) and goal.term().get_type().is_real_type():
+        warnings.warn("Algorithm might diverge on Real minimization/maximization objectives.")
+
+
 class ExternalOptimizerMixin(Optimizer):
     """An optimizer that uses an SMT-Solver externally"""
 
@@ -370,13 +376,15 @@ class ExternalOptimizerMixin(Optimizer):
         return model, rt
 
     def _optimize(self, goal, strategy, extra_assumption = None):
+        _warn_diverge_real_goal(goal)
         if goal.is_maxsmt_goal():
             formula = None
+            W_class = Real if goal.allow_real_weights() else Int
             for (c, w) in goal.soft:
                 if formula is not None:
-                    formula = Plus(formula, Ite(c, Int(w), Int(0)))
+                    formula = Plus(formula, Ite(c, W_class(w), W_class(0)))
                 else:
-                    formula = Ite(c, Int(w), Int(0))
+                    formula = Ite(c, W_class(w), W_class(0))
             assert formula is not None, "Empty MaxSMT goal passed"
             goal = MaximizationGoal(formula)
         model = None
@@ -413,6 +421,9 @@ class ExternalOptimizerMixin(Optimizer):
     def pareto_optimize(self, goals):
         self._check_pareto_lexicographic_goals(goals, "pareto")
         objs = [OptPareto(goal, self.environment) for goal in goals]
+
+        for g in goals:
+            _warn_diverge_real_goal(g)
 
         terminated = False
         client_data = self._setup()
