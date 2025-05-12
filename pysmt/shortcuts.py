@@ -233,6 +233,31 @@ def Ite(iff, left, right):
     return get_env().formula_manager.Ite(iff, left, right)
 
 
+def Abs(formula):
+    r"""Returns the absolute value of the formula.
+    
+    This is implemented as If(formula > 0, formula, -formula).
+    Works for both integer and real values.
+    
+    :param formula: The formula to compute the absolute value of
+    :returns: The absolute value of the formula
+    :raises: ValueError if the formula type is not integer or real
+    """
+    # Get the type of the formula to determine the appropriate zero value
+    formula_type = get_type(formula)
+    
+    # Create a zero value of the same type as the formula
+    if formula_type == types.INT:
+        zero = Int(0)
+    elif formula_type == types.REAL:
+        zero = Real(0)
+    else:
+        # Raise an error for unsupported types
+        raise ValueError(f"Abs function only supports integer and real types, got {formula_type}")
+    
+    return Ite(GT(formula, zero), formula, Minus(zero, formula))
+
+
 def Symbol(name, typename=types.BOOL):
     """Returns a symbol with the given name and type.
 
