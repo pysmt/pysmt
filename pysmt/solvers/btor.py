@@ -33,7 +33,6 @@ try:
     # making it work on either cython 3.0 or 3.1.
     enums = []
     for x in pyboolector.__dict__.values():
-        print(x)
         if inspect.isclass(x) and issubclass(x, Enum):
             enums.append(x)
     for x in enums:
