@@ -12,8 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
+from tempfile import NamedTemporaryFile
 
 from pysmt.cmd.installers.base import SolverInstaller
+
+CYTHON_PATCH = '''\
+--- pyboolector.pyx	2025-05-12 14:01:27.528128358 +0200
++++ pyboolector.pyx.patched	2025-05-12 14:07:26.685645023 +0200
+@@ -1274,7 +1274,7 @@
+                 Parameter ``width`` is only required if ``c`` is an integer.
+         """
+         cdef BoolectorConstNode r
+-        if isinstance(c, int) or (sys.version < '3' and isinstance(c, long)):
++        if isinstance(c, int):
+             if c != 0 and c.bit_length() > width:
+                 raise BoolectorException(
+                           "Value of constant {} (bit width {}) exceeds bit "\\
+'''
 
 
 class BtorInstaller(SolverInstaller):
@@ -58,6 +73,14 @@ class BtorInstaller(SolverInstaller):
         # Unpack
         SolverInstaller.untar(os.path.join(self.base_dir, self.archive_name),
                               self.extract_path)
+
+        # Patching for cython 3.8
+        with NamedTemporaryFile() as f:
+            f.write(CYTHON_PATCH.encode())
+            f.flush()
+            f.seek(0)
+            SolverInstaller.run("patch src/api/python/pyboolector.pyx -i %s" % f.name,
+                                directory=self.extract_path)
 
         # Build lingeling
         SolverInstaller.run("bash ./contrib/setup-lingeling.sh",
