@@ -19,7 +19,7 @@ import pysmt
 
 from pysmt.typing import BOOL, REAL, INT, FunctionType, BV8, BVType
 from pysmt.shortcuts import Symbol, is_sat, Not, Implies, GT, Plus, Int, Real
-from pysmt.shortcuts import Minus, Times, Xor, And, Or, TRUE, Iff, FALSE, Ite
+from pysmt.shortcuts import Minus, Times, Xor, And, Or, TRUE, Iff, FALSE, Ite, Abs
 from pysmt.shortcuts import Equals
 from pysmt.shortcuts import get_env
 from pysmt.environment import Environment
@@ -316,6 +316,38 @@ class TestFormulaManager(TestCase):
 
         inv = self.mgr.Real(Fraction(1) / self.rconst.constant_value())
         self.assertEqual(n, self.mgr.Times(self.s, inv))
+
+    def test_abs_shortcut(self):
+        # Test with integer
+        abs_int = Abs(self.p)
+        
+        # Verify the structure of the Abs node
+        self.assertTrue(abs_int.is_ite())
+        self.assertTrue(abs_int.arg(0).is_lt())  # GT is converted to LT with inverted args
+        self.assertEqual(abs_int.arg(0).arg(0), Int(0))  # First arg is 0
+        self.assertEqual(abs_int.arg(0).arg(1), self.p)  # Second arg is p
+        self.assertEqual(abs_int.arg(1), self.p)
+        self.assertTrue(abs_int.arg(2).is_minus())
+        self.assertEqual(abs_int.arg(2).arg(0), Int(0))
+        self.assertEqual(abs_int.arg(2).arg(1), self.p)
+        
+        # Test with real
+        abs_real = Abs(self.r)
+        
+        # Verify the structure of the Abs node
+        self.assertTrue(abs_real.is_ite())
+        self.assertTrue(abs_real.arg(0).is_lt())  # GT is converted to LT with inverted args
+        self.assertEqual(abs_real.arg(0).arg(0), Real(0))  # First arg is 0
+        self.assertEqual(abs_real.arg(0).arg(1), self.r)  # Second arg is r
+        self.assertEqual(abs_real.arg(1), self.r)
+        self.assertTrue(abs_real.arg(2).is_minus())
+        self.assertEqual(abs_real.arg(2).arg(0), Real(0))
+        self.assertEqual(abs_real.arg(2).arg(1), self.r)
+        
+        # Test with boolean (should raise ValueError)
+        bool_var = Symbol("z", BOOL)
+        with self.assertRaises(ValueError):
+            Abs(bool_var)
 
     def test_equals(self):
         n = self.mgr.Equals(self.real_expr, self.real_expr)
