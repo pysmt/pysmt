@@ -269,4 +269,4 @@ class MaxSMTGoal(Goal):
         return self._real_weights
 
     def __repr__(self):
-        return "MaxSMT{%s}" % (", ".join(("%s: %s" % (x.serialize(), str(w)) for x, w in self.soft)))
+        return "MaxSMT{%s}" % (", ".join(("%s: %s" % (x.serialize(), w.serialize()) for x, w in self.soft)))
