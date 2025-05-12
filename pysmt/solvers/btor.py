@@ -15,12 +15,30 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+from enum import Enum
+import inspect
 from math import log, ceil
 
 from pysmt.exceptions import SolverAPINotFound
 
 try:
     import pyboolector
+
+    # Fixing interface for cython 3.1+
+    #
+    # Cython 3.1 changed the way enums are handled: the enum values are no
+    # longer added to the global namespace, while the documentation of btor
+    # relied on the old behavior of cython, Here, we first collect all the nums
+    # in the module and then we add their enumerands to the pyboolector module,
+    # making it work on either cython 3.0 or 3.1.
+    enums = []
+    for x in pyboolector.__dict__.values():
+        print(x)
+        if inspect.isclass(x) and issubclass(x, Enum):
+            enums.append(x)
+    for x in enums:
+        pyboolector.__dict__.update(x.__members__)
+
 except ImportError:
     raise SolverAPINotFound
 
