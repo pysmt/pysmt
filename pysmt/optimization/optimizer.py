@@ -15,13 +15,13 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+import warnings
 
 from pysmt.solvers.solver import Solver
 from pysmt.exceptions import PysmtValueError, GoalNotSupportedError
 from pysmt.optimization.goal import MinimizationGoal, MaximizationGoal
-from pysmt.shortcuts import Symbol, INT, REAL, BVType, Equals, Ite, Int, Plus
-from pysmt.logics import LIA, LRA, BV
-from pysmt.oracles import get_logic
+from pysmt.shortcuts import INT, REAL, BVType, Equals, Ite, Int, Plus, Real
+from pysmt.logics import LIA, LRA, BV, QF_LIRA
 
 class Optimizer(Solver):
     """
@@ -45,18 +45,17 @@ class Optimizer(Solver):
         """
         raise NotImplementedError
 
-
     def pareto_optimize(self, goals):
         """This function is a generator returning *all* the pareto-optimal
-        solutions for the problem of minimizing the `cost_functions`
+        solutions for the problem of minimizing the `goals`
         keeping the formulae asserted in this optimizer satisfied.
 
         The solutions are returned as pairs `(model, costs)` where
         model is the pareto-optimal assignment and costs is the list
         of costs, one for each optimization function in
-        `cost_functions`.
+        `goals`.
 
-        `cost_functions` must be a list of terms with integer, real or
+        `goals` must be a list of terms with integer, real or
         bit-vector types whose values have to be minimized
 
         This function can raise a PysmtUnboundedOptimizationError if
@@ -67,7 +66,6 @@ class Optimizer(Solver):
 
         """
         raise NotImplementedError
-
 
     def lexicographic_optimize(self, goals):
         """
@@ -83,7 +81,6 @@ class Optimizer(Solver):
         For some implemented examples see file pysmt/test/test_optimization.py
         """
         raise NotImplementedError
-
 
     def boxed_optimize(self, goals):
         """
@@ -101,14 +98,12 @@ class Optimizer(Solver):
         """
         raise NotImplementedError
 
-
     def can_diverge_for_unbounded_cases(self):
         """This function returns True if the algorithm implemented in this
         optimizer can diverge (i.e. not terminate) if the objective is
         unbounded (infinite or infinitesimal).
         """
         raise NotImplementedError
-
 
     def _get_symbol_type(self, objective_formula):
         otype = self.environment.stc.get_type(objective_formula)
@@ -133,7 +128,6 @@ class Optimizer(Solver):
         else:
             raise PysmtValueError("Invalid optimization function type: %s" % otype)
 
-
     def _get_le(self, objective_formula):
         otype = self.environment.stc.get_type(objective_formula)
         mgr = self.environment.formula_manager
@@ -145,7 +139,6 @@ class Optimizer(Solver):
             return mgr.BVULE
         else:
             raise PysmtValueError("Invalid optimization function type: %s" % otype)
-
 
     def _get_lt(self, objective_formula):
         otype = self.environment.stc.get_type(objective_formula)
@@ -159,6 +152,23 @@ class Optimizer(Solver):
         else:
             raise PysmtValueError("Invalid optimization function type: %s" % otype)
 
+    def _compute_max_smt_cost(self, model, goal):
+        assert goal.is_maxsmt_goal()
+        max_smt_weight = 0
+        for soft_goal, weight in goal.soft:
+            soft_goal_value = model.get_value(soft_goal)
+            assert soft_goal_value.is_bool_constant()
+            if soft_goal_value.constant_value():
+                max_smt_weight += weight.constant_value()
+        if goal.real_weights():
+            return self.mgr.Real(max_smt_weight)
+        return self.mgr.Int(max_smt_weight)
+
+    def _check_pareto_lexicographic_goals(self, goals, mode):
+        for goal in goals:
+            if goal.is_maxsmt_goal():
+                raise GoalNotSupportedError(self, goal, mode)
+
 
 class OptComparationFunctions:
 
@@ -170,7 +180,11 @@ class OptComparationFunctions:
         cast_bv = None
         if goal.get_logic() is BV:
             otype = self.environment.stc.get_type(goal.term())
-            cast_bv = lambda x: mgr.BV(x, otype.width)
+            if goal.signed:
+                cast_bv = lambda x: mgr.SBV(x, otype.width)
+            else:
+                cast_bv = lambda x: mgr.BV(x, otype.width)
+
         options = {
             LIA: {
                 MinimizationGoal: {
@@ -203,6 +217,7 @@ class OptComparationFunctions:
                 },
             },
         }
+        options[QF_LIRA] = options[LRA]
         return options[goal.get_logic()][goal.opt()][goal.signed]
 
 
@@ -251,16 +266,16 @@ class OptSearchInterval(OptComparationFunctions):
 
     def search_is_sat(self, model):
         self._pivot = None
-        model_value = model.get_value(self._obj.term()).constant_value()
+        obj_value = model.get_value(self._obj.term())
+        if obj_value.is_bv_constant() and self._obj.signed:
+            model_value = obj_value.bv_signed_value()
+        else:
+            model_value = obj_value.constant_value()
         if self._obj.is_minimization_goal():
-            if self._upper is None:
-                self._upper = model_value
-            elif self._upper > model_value:
+            if self._upper is None or self._upper > model_value:
                 self._upper = model_value
         elif self._obj.is_maximization_goal():
-            if self._lower is None:
-                self._lower = model_value
-            elif self._lower < model_value:
+            if self._lower is None or self._lower < model_value:
                 self._lower = model_value
         else:
             pass  # this may happen in boxed multi-independent optimization
@@ -278,6 +293,7 @@ class OptSearchInterval(OptComparationFunctions):
             else:
                 self._upper = self._lower
 
+
 class OptPareto(OptComparationFunctions):
 
     def __init__(self, goal, environment):
@@ -286,17 +302,21 @@ class OptPareto(OptComparationFunctions):
         self._cast, self.op_strict, self.op_ns = self._comparation_functions(goal)
         self.val = None
 
-    def get_costraint_strict(self):
+    def get_constraint(self, strict):
         if self.val is not None:
-            return self.op_strict(self.goal.term(), self.val)
+            assert self.val.is_constant(), "Value %s is not a constant" % str(self.val)
+            correct_operator = self.op_ns
+            if strict:
+                correct_operator = self.op_strict
+            return correct_operator(self.goal.term(), self.val)
         else:
             return None
 
-    def get_costraint_ns(self):
-        if self.val is not None:
-            return self.op_ns(self.goal.term(), self.val)
-        else:
-            return None
+
+def _warn_diverge_real_goal(goal):
+    if (goal.is_maximization_goal() or goal.is_minimization_goal()) and goal.term().get_type().is_real_type():
+        warnings.warn("Algorithm might diverge on Real minimization/maximization objectives.")
+
 
 class ExternalOptimizerMixin(Optimizer):
     """An optimizer that uses an SMT-Solver externally"""
@@ -325,7 +345,7 @@ class ExternalOptimizerMixin(Optimizer):
         if goal.is_maximization_goal() or goal.is_minimization_goal() or goal.is_maxsmt_goal():
             rt = self._optimize(goal, strategy)
         else:
-            raise GoalNotSupportedError("ExternalOptimizerMixin", goal)
+            raise GoalNotSupportedError(self, goal)
         return rt
 
     def boxed_optimize(self, goals, strategy='linear'):
@@ -338,10 +358,11 @@ class ExternalOptimizerMixin(Optimizer):
                 else:
                     return None
             else:
-                raise GoalNotSupportedError("ExternalOptimizerMixin", goal)
+                raise GoalNotSupportedError(self, goal)
         return rt
 
     def lexicographic_optimize(self, goals, strategy='linear'):
+        self._check_pareto_lexicographic_goals(goals, "lexicographic")
         rt = []
         client_data = self._setup()
         for goal in goals:
@@ -355,15 +376,16 @@ class ExternalOptimizerMixin(Optimizer):
 
         return model, rt
 
-
     def _optimize(self, goal, strategy, extra_assumption = None):
+        _warn_diverge_real_goal(goal)
         if goal.is_maxsmt_goal():
             formula = None
+            zero = Real(0) if goal.real_weights() else Int(0)
             for (c, w) in goal.soft:
                 if formula is not None:
-                    formula = Plus(formula, Ite(c, Int(w), Int(0)))
+                    formula = Plus(formula, Ite(c, w, zero))
                 else:
-                    formula = Ite(c, Int(w), Int(0))
+                    formula = Ite(c, w, zero)
             assert formula is not None, "Empty MaxSMT goal passed"
             goal = MaximizationGoal(formula)
         model = None
@@ -397,10 +419,12 @@ class ExternalOptimizerMixin(Optimizer):
             return model, model.get_value(goal.term())
         return None
 
-
-
     def pareto_optimize(self, goals):
+        self._check_pareto_lexicographic_goals(goals, "pareto")
         objs = [OptPareto(goal, self.environment) for goal in goals]
+
+        for g in goals:
+            _warn_diverge_real_goal(g)
 
         terminated = False
         client_data = self._setup()
@@ -411,7 +435,7 @@ class ExternalOptimizerMixin(Optimizer):
                  obj.val = None
             self._pareto_setup()
             while not optimum_found:
-                optimum_found = self._pareto_check_progress(client_data,objs)
+                optimum_found = self._pareto_check_progress(client_data, objs)
                 if not optimum_found:
                     last_model = self.get_model()
                     for obj in objs:
@@ -448,30 +472,27 @@ class SUAOptimizerMixin(ExternalOptimizerMixin):
         rt = self.solve(assumptions = assum)
         return rt
 
-
     def _lexicographic_opt(self, client_data, current_goal, strategy):
         temp = self._optimize(current_goal, strategy, extra_assumption = client_data)
         if temp is not None:
             model, val = temp
         else:
             return None
+
         client_data.append(Equals(current_goal.term(), val))
         return model, val
-
-
 
     def _pareto_check_progress(self, client_data, objs):
         mgr = self.environment.formula_manager
         k = []
         if objs[0].val is not None:
-            k = [obj.get_costraint_ns() for obj in objs]
-            k.append(mgr.Or(obj.get_costraint_strict()for obj in objs ))
+            k = [obj.get_constraint(False) for obj in objs]
+            k.append(mgr.Or(obj.get_constraint(True) for obj in objs ))
         return not self.solve(assumptions=client_data + k)
-
 
     def _pareto_block_model(self, client_data, objs):
         mgr = self.environment.formula_manager
-        client_data.append(mgr.Or(obj.get_costraint_strict() for obj in objs))
+        client_data.append(mgr.Or(obj.get_constraint(True) for obj in objs))
 
     def can_diverge_for_unbounded_cases(self):
         return True
@@ -523,13 +544,13 @@ class IncrementalOptimizerMixin(ExternalOptimizerMixin):
         mgr = self.environment.formula_manager
         if objs[0].val is not None:
             for obj in objs:
-                self.add_assertion(obj.get_costraint_ns())
-            self.add_assertion(mgr.Or(obj.get_costraint_strict() for obj in objs))
+                self.add_assertion(obj.get_constraint(False))
+            self.add_assertion(mgr.Or((obj.get_constraint(True) for obj in objs)))
         return not self.solve()
 
     def _pareto_block_model(self, client_data, objs):
         mgr = self.environment.formula_manager
-        self.add_assertion(mgr.Or(obj.get_costraint_strict() for obj in objs))
+        self.add_assertion(mgr.Or((obj.get_constraint(True) for obj in objs)))
 
     def can_diverge_for_unbounded_cases(self):
         return True

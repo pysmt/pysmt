@@ -18,6 +18,7 @@
 
 from __future__ import absolute_import
 
+from fractions import Fraction
 from warnings import warn
 
 from pysmt.decorators import clear_pending_pop
@@ -37,7 +38,8 @@ except ImportError:
 
 
 class Z3NativeOptimizer(Optimizer, Z3Solver):
-    LOGICS = Z3Solver.LOGICS
+    # remove all theories that are not linear
+    LOGICS = set(filter(lambda x: x.theory.linear, Z3Solver.LOGICS))
 
     def __init__(self, environment, logic, **options):
         Z3Solver.__init__(self, environment=environment,
@@ -49,6 +51,9 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
         if goal.is_maxsmt_goal():
             for soft, w in goal.soft:
                 obj_soft = self.converter.convert(soft)
+                w = w.constant_value()
+                if isinstance(w, Fraction):
+                    w = float(w)
                 h = self.z3.add_soft(obj_soft, w, "__pysmt_" + str(goal.id))
         else:
             term = goal.term()
@@ -62,7 +67,7 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
             elif goal.is_maximization_goal():
                 h = self.z3.maximize(obj)
             else:
-                raise GoalNotSupportedError("z3", goal.__class__)
+                raise GoalNotSupportedError(self, goal)
         return  h
 
     @clear_pending_pop
@@ -76,7 +81,7 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
                 try:
                     if goal.is_maxsmt_goal():
                         model = Z3Model(self.environment, self.z3.model())
-                        return model, None
+                        return model, self._compute_max_smt_cost(model, goal)
                     else:
                         opt_value = self.z3.lower(h)
                         self.converter.back(opt_value)
@@ -85,7 +90,7 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
                 except PysmtInfinityError:
                     raise PysmtUnboundedOptimizationError("The optimal value is unbounded")
                 except PysmtInfinitesimalError:
-                    raise PysmtUnboundedOptimizationError("The optimal value is infinitesimal")
+                    raise PysmtInfinitesimalError("The optimal value is infinitesimal")
             else:
                 return None
         finally:
@@ -93,6 +98,7 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
 
     @clear_pending_pop
     def pareto_optimize(self, goals):
+        self._check_pareto_lexicographic_goals(goals, "pareto")
         self.push()
         try:
             self.z3.set(priority='pareto')
@@ -139,6 +145,7 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
 
     @clear_pending_pop
     def lexicographic_optimize(self, goals):
+        self._check_pareto_lexicographic_goals(goals, "lexicographic")
         self.push()
         try:
             self.z3.set(priority='lex')
@@ -147,7 +154,13 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
 
             if self.z3.check() == z3.sat:
                 model = Z3Model(self.environment, self.z3.model())
-                return model, [model.get_value(x.term()) for x in goals]
+                costs = []
+                for goal in goals:
+                    if goal.is_maxsmt_goal():
+                        costs.append(self._compute_max_smt_cost(model, goal))
+                    else:
+                        costs.append(model.get_value(goal.term()))
+                return model, costs
             else:
                 return None
         finally:
@@ -155,13 +168,10 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
 
 
 class Z3SUAOptimizer(Z3Solver, SUAOptimizerMixin):
-    LOGICS = set(x for x in Z3Solver.LOGICS if not x.theory.real_arithmetic and not x.theory.real_difference)
-
     def can_diverge_for_unbounded_cases(self):
         return True
 
-class Z3IncrementalOptimizer(Z3Solver, IncrementalOptimizerMixin):
-    LOGICS = set(x for x in Z3Solver.LOGICS if not x.theory.real_arithmetic and not x.theory.real_difference)
 
+class Z3IncrementalOptimizer(Z3Solver, IncrementalOptimizerMixin):
     def can_diverge_for_unbounded_cases(self):
         return True

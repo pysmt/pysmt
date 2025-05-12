@@ -15,17 +15,18 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+
 from pysmt.test import TestCase, skipIfNoOptimizerForLogic
 from pysmt.test import main
 
 from pysmt.shortcuts import Optimizer, GE, Int, Symbol, INT, LE, GT, REAL, Real
-from pysmt.shortcuts import BVType, BVUGE, BVSGE, BVULE, BVSLE, BVUGT, BVSGT, BVULT, BVSLT, BVZero, BVOne, BV
+from pysmt.shortcuts import BVType, BVSGE, BVSLE, BVSGT, BVSLT, BV
 from pysmt.shortcuts import And, Plus, Minus, get_env
 from pysmt.logics import QF_LIA, QF_LRA, QF_BV
 from pysmt.optimization.goal import MaximizationGoal, MinimizationGoal, \
     MinMaxGoal, MaxMinGoal, MaxSMTGoal
 
-from pysmt.exceptions import PysmtUnboundedOptimizationError
+from pysmt.exceptions import PysmtUnboundedOptimizationError, PysmtInfinitesimalError
 
 class TestOptimization(TestCase):
 
@@ -319,7 +320,7 @@ class TestOptimization(TestCase):
                 if opt.can_diverge_for_unbounded_cases():
                     continue
                 opt.add_assertion(formula)
-                with self.assertRaises(PysmtUnboundedOptimizationError):
+                with self.assertRaises(PysmtInfinitesimalError):
                     opt.optimize(min)
 
     @skipIfNoOptimizerForLogic(QF_LIA)
@@ -423,7 +424,7 @@ class TestOptimization(TestCase):
 
     def test_maxsmt_basic(self):
         x = Symbol("x", INT)
-        maxsmt = MaxSMTGoal()
+        maxsmt = MaxSMTGoal(real_weights=False)
         maxsmt.add_soft_clause(GE(x, Int(5)), 8)
         maxsmt.add_soft_clause(GE(x, Int(30)), 20)
         maxsmt.add_soft_clause(LE(x, Int(10)), 100)
@@ -434,6 +435,7 @@ class TestOptimization(TestCase):
                 opt.add_assertion(formula)
                 model, cost = opt.optimize(maxsmt)
                 self.assertEqual(model[x], Int(9))
+
 
 if __name__ == '__main__':
     main()

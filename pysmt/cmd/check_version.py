@@ -23,19 +23,20 @@ def check_version(module):
             (major, minor, ver, _) = z3.get_version()
             version = "%d.%d.%d" % (major, minor, ver)
 
-        elif module == "msat":
-            import mathsat
-            version_str = mathsat.msat_get_version()
+        elif module in ("msat", "optimsat"):
+            if module == "msat":
+                import mathsat
+                version_str = mathsat.msat_get_version()
+            else:
+                import optimathsat
+                version_str = optimathsat.msat_get_version()
             m = re.match(r"^MathSAT5 version (\d+\.\d+\.\d+) .*$", version_str)
             if m is not None:
                 version = m.group(1)
-
-        elif module == "optimsat":
-            import optimathsat
-            version_str = optimathsat.msat_get_version()
-            m = re.match(r"^MathSAT5 version (\d+\.\d+\.\d+) .*$", version_str)
-            if m is not None:
-                version = m.group(1)
+            else:
+                m = re.match(r"^MathSAT5 version (\w+) .*$", version_str)
+                if m is not None:
+                    version = m.group(1)
 
         elif module == "cudd":
             import repycudd

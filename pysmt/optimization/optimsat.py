@@ -22,15 +22,14 @@ from pysmt.logics import LRA, LIA
 
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               PysmtUnboundedOptimizationError,
-                              GoalNotSupportedError)
-from pysmt.optimization.optimizer import SUAOptimizerMixin, IncrementalOptimizerMixin
+                              GoalNotSupportedError,
+                              PysmtInfinitesimalError)
 from pysmt.optimization.optimizer import Optimizer
 
 from pysmt.solvers.msat import MSatEnv, MathSAT5Model, MathSATOptions
 from pysmt.solvers.msat import MathSAT5Solver, MSatConverter, MSatQuantifierEliminator
 from pysmt.solvers.msat import MSatInterpolator, MSatBoolUFRewriter
 
-from pysmt.solvers.dynmsat import MSATCreateEnv
 
 # TODO:
 # - check msat does not instantiate any MSAT class directly (use virtual override)
@@ -61,7 +60,9 @@ class OptiMSATOptions(MathSATOptions):
 
     def __init__(self, **base_options):
         MathSATOptions.__init__(self, **base_options)
-        self.solver_options['debug.api_call_trace_filename'] = "/tmp/omt.smt2"
+        # enables the dump of the interaction with optimathsat on the file
+        # useful for debugging
+        # self.solver_options['debug.api_call_trace_filename'] = "/tmp/omt.smt2"
 
 
 class OptiMSATSolver(MathSAT5Solver, Optimizer):
@@ -74,7 +75,6 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
     def __init__(self, environment, logic, **options):
         MathSAT5Solver.__init__(self, environment=environment,
                                 logic=logic, **options)
-
 
     def _le(self, x, y):
         # TODO: support FP
@@ -91,7 +91,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
         if goal.is_maxsmt_goal():
             for tcons, weight in goal.soft:
                 obj_tcons = self.converter.convert(tcons)
-                obj_weight = self._msat_lib.msat_make_number(self.msat_env(), str(weight))
+                obj_weight = self._msat_lib.msat_make_number(self.msat_env(), str(weight.constant_value()))
                 self._msat_lib.msat_assert_soft_formula(self.msat_env(), obj_tcons, obj_weight, "__pysmt_" + str(goal.id))
             obj_fun = self._msat_lib.msat_from_string(self.msat_env(),"__pysmt_"+str(goal.id))
             make_fun = self._msat_lib.msat_make_minimize
@@ -116,7 +116,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
             obj_fun = self.converter.convert(cost_function)
 
         else:
-            raise GoalNotSupportedError("optimathsat", goal)
+            raise GoalNotSupportedError(self, goal)
 
         msat_obj = make_fun(self.msat_env(), obj_fun, signed = goal.signed)
         self._msat_lib.msat_assert_objective(self.msat_env(), msat_obj)
@@ -127,54 +127,50 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
         msat_obj = self._assert_msat_goal(goal)
 
         self.solve()
-        optres = self._msat_lib.msat_objective_result(self.msat_env(), msat_obj)
-        if optres == self._msat_lib.MSAT_OPT_UNKNOWN:
-            raise SolverReturnedUnknownResultError()
-        elif optres == self._msat_lib.MSAT_OPT_UNSAT:
-            return None
-        else:
-            unbounded = self._msat_lib.msat_objective_value_is_unbounded(self.msat_env(),
-                                                                  msat_obj,
-                                                                  self._msat_lib.MSAT_OPTIMUM)
-            if unbounded > 0:
-                raise PysmtUnboundedOptimizationError("The optimal value is unbounded")
 
-            is_strict = self._msat_lib.msat_objective_value_is_strict(self.msat_env(),
-                                                                      msat_obj,
-                                                                      self._msat_lib.MSAT_OPTIMUM)
-            if is_strict:
-                raise PysmtUnboundedOptimizationError("The optimal value is infinitesimal")
-
-            check = self._msat_lib.msat_load_objective_model(self.msat_env(), msat_obj)
-            if check != 0:
-                raise ValueError()
+        if self._check_unsat_unbound_infinitesimal(msat_obj):
 
             model = self.get_model()
-            value = self._msat_lib.msat_objective_value_term(self.msat_env(),
-                                                             msat_obj,
-                                                             self._msat_lib.MSAT_OPTIMUM)
+            if goal.is_maxsmt_goal():
+                cost = self._compute_max_smt_cost(model, goal)
+                return model, cost
+            value = self._msat_lib.msat_objective_value_term(
+                self.msat_env(),
+                msat_obj,
+                self._msat_lib.MSAT_OPTIMUM
+            )
             return model, self.converter.back(value)
+
+        return None
 
     @clear_pending_pop
     def pareto_optimize(self, goals):
+        self._check_pareto_lexicographic_goals(goals, "pareto")
         self._msat_lib.msat_set_opt_priority(self.msat_env(), "par")
 
-        for g in goals:
-            self._assert_msat_goal(g)
+        msat_objs = {
+            g: self._assert_msat_goal(g) for g in goals
+        }
 
         while self.solve():
-            model = self.get_model()
-            yield model, [model.get_value(goal.term()) for goal in goals]
+            if all(self._check_unsat_unbound_infinitesimal(mo) for mo in msat_objs.values()):
+                model = self.get_model()
+                yield model, [model.get_value(goal.term()) for goal in goals]
+            else:
+                break
 
     @clear_pending_pop
     def lexicographic_optimize(self, goals):
+        self._check_pareto_lexicographic_goals(goals, "lexicographic")
         self._msat_lib.msat_set_opt_priority(self.msat_env(), "lex")
 
-        for g in goals:
-            self._assert_msat_goal(g)
+        msat_objs = {
+            g: self._assert_msat_goal(g) for g in goals
+        }
 
         rt = self.solve()
-        if rt:
+
+        if rt and all(self._check_unsat_unbound_infinitesimal(mo) for mo in msat_objs.values()):
             model = self.get_model()
             return model, [model.get_value(x.term()) for x in goals]
         else:
@@ -195,9 +191,14 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
         rt = {}
 
         for msat_obj, goal in zip(msat_objs, goals):
+            if not self._check_unsat_unbound_infinitesimal(msat_obj):
+                return None
             self._msat_lib.msat_load_objective_model(self.msat_env(), msat_obj)
             model = self.get_model()
-            rt[goal] = (model, model.get_value(goal.term()))
+            if goal.is_maxsmt_goal():
+                rt[goal] = (model, self._compute_max_smt_cost(model, goal))
+            else:
+                rt[goal] = (model, model.get_value(goal.term()))
 
         return rt
 
@@ -206,6 +207,35 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
 
     def can_diverge_for_unbounded_cases(self):
         return False
+
+    def _check_unsat_unbound_infinitesimal(self, msat_obj):
+        optres = self._msat_lib.msat_objective_result(self.msat_env(), msat_obj)
+        if optres == self._msat_lib.MSAT_OPT_UNKNOWN:
+            raise SolverReturnedUnknownResultError()
+        elif optres == self._msat_lib.MSAT_OPT_UNSAT:
+            return False
+        else:
+            unbounded = self._msat_lib.msat_objective_value_is_unbounded(
+                self.msat_env(),
+                msat_obj,
+                self._msat_lib.MSAT_OPTIMUM
+            )
+            if unbounded > 0:
+                raise PysmtUnboundedOptimizationError("The optimal value is unbounded")
+
+            is_strict = self._msat_lib.msat_objective_value_is_strict(
+                self.msat_env(),
+                msat_obj,
+                self._msat_lib.MSAT_OPTIMUM
+            )
+            if is_strict:
+                raise PysmtInfinitesimalError("The optimal value is infinitesimal")
+
+            check = self._msat_lib.msat_load_objective_model(self.msat_env(), msat_obj)
+            if check != 0:
+                raise ValueError()
+
+            return True
 
 
 class OptiMSATConverter(MSatConverter):
@@ -265,19 +295,3 @@ class OptiMSATBoolUFRewriter(MSatBoolUFRewriter):
 
     def __init__(self, environment):
         MSatBoolUFRewriter.__init__(self, environment=environment)
-
-
-class OptiMSATSUAOptimizer(OptiMSATSolver, SUAOptimizerMixin):
-    LOGICS = OptiMSATSolver.LOGICS
-
-    def can_diverge_for_unbounded_cases(self):
-        return True
-
-
-class OptiMSATIncrementalOptimizer(OptiMSATSolver, IncrementalOptimizerMixin):
-    LOGICS = OptiMSATSolver.LOGICS
-
-    def can_diverge_for_unbounded_cases(self):
-        return True
-
-

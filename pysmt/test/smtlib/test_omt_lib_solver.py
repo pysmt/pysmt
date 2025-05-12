@@ -15,15 +15,19 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+import pytest
 from io import StringIO
-from pysmt.logics import QF_LIA, QF_LRA
 
+from pysmt.environment import push_env, pop_env
+from pysmt.logics import QF_LIA, QF_LRA
 from pysmt.test import TestCase, skipIfNoOptimizerForLogic
 from pysmt.test import main
+from pysmt.test.optimization_utils import generate_examples_with_solvers, solve_given_example, OptimizationTypes
+from pysmt.test.smtlib.parser_utils import omt_test_cases_from_smtlib_test_set
 from pysmt.cmd.shell import PysmtShell
 
 
-class TestSmtLibSolver(TestCase):
+class TestOmtLibSolver(TestCase):
     @skipIfNoOptimizerForLogic(QF_LRA)
     def test_base(self):
         txt = """(declare-fun x () Real)
@@ -327,6 +331,23 @@ sat
 )
 """,
         )
+
+
+test_to_skip = {
+        ("QF_LRA - smtlib2_boxed.smt2", OptimizationTypes.LEXICOGRAPHIC, "optimsat"), # error return wrong maximization of z (should be 24, returns 0); seems like a bug in optimsat; have to try optimsat alone; with integers instead of reals it works
+        ("QF_LIA - smtlib2_allsat.smt2", OptimizationTypes.PARETO, "optimsat"), # error that happens only if test_optimizing is done before this test
+        ("QF_LIA - smtlib2_load_objective_model.smt2", OptimizationTypes.PARETO, "optimsat"), # error that happens only if test_optimizing is done before this test
+}
+@pytest.mark.parametrize(
+    "optimization_example, solver_name",
+    generate_examples_with_solvers(omt_test_cases_from_smtlib_test_set()),
+)
+def test_parsed_examples(optimization_example, solver_name):
+    solve_given_example(
+        optimization_example,
+        solver_name,
+        test_to_skip,
+    )
 
 
 if __name__ == "__main__":

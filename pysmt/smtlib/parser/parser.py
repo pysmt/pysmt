@@ -1311,7 +1311,6 @@ class SmtLibParser(object):
                 break
         return SmtLibCommand(current, [params,None])
 
-
     def _cmd_objective(self, current, tokens):
         """(maximize | minimize <term>"""
         obj = self.get_expression(tokens)
@@ -1335,7 +1334,6 @@ class SmtLibParser(object):
         if not signed:
             params.append((":signed", signed))
         return SmtLibCommand(current, [obj, params])
-
 
     def _cmd_declare_fun(self, current, tokens):
         """(declare-fun <symbol> (<sort>*) <sort>)"""
