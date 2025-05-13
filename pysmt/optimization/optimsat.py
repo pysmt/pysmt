@@ -31,12 +31,6 @@ from pysmt.solvers.msat import MathSAT5Solver, MSatConverter, MSatQuantifierElim
 from pysmt.solvers.msat import MSatInterpolator, MSatBoolUFRewriter
 
 
-# TODO:
-# - check msat does not instantiate any MSAT class directly (use virtual override)
-# - is it possible to reintroduce file-level try-except for library import?
-# - the "Not in Python's Path" message is wrong for MathSAT when only OptiMAthSAT
-#   is installed.. the current implementation must be revised.
-
 class OptiMSATEnv(MSatEnv):
     __lib_name__ = "optimathsat"
 
@@ -76,16 +70,6 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
         MathSAT5Solver.__init__(self, environment=environment,
                                 logic=logic, **options)
 
-    def _le(self, x, y):
-        # TODO: support FP
-        # TODO: support signed/unsigned BV optimization
-        otype = self.environment.stc.get_type(x)
-        mgr = self.environment.formula_manager
-        if otype.is_int_type() or otype.is_real_type():
-            return mgr.LE(x, y)
-        elif otype.is_bv_type():
-            return mgr.BVULE(x, y)
-
     def _assert_msat_goal(self, goal):
 
         if goal.is_maxsmt_goal():
@@ -93,7 +77,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
                 obj_tcons = self.converter.convert(tcons)
                 obj_weight = self._msat_lib.msat_make_number(self.msat_env(), str(weight.constant_value()))
                 self._msat_lib.msat_assert_soft_formula(self.msat_env(), obj_tcons, obj_weight, "__pysmt_" + str(goal.id))
-            obj_fun = self._msat_lib.msat_from_string(self.msat_env(),"__pysmt_"+str(goal.id))
+            obj_fun = self._msat_lib.msat_from_string(self.msat_env(),"__pysmt_" + str(goal.id))
             make_fun = self._msat_lib.msat_make_minimize
 
         elif goal.is_minmax_goal() or goal.is_maxmin_goal():

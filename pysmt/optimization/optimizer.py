@@ -30,7 +30,7 @@ class Optimizer(Solver):
 
     def optimize(self, goal, **kwargs):
         """Returns a pair `(model, cost)` where `model` is an object
-        that obtained according to `goal` while satisfying all
+        obtained according to `goal` while satisfying all
         the formulae asserted in the optimizer, while `cost` is the
         objective function value for the model.
 
@@ -225,8 +225,8 @@ class OptSearchInterval(OptComparationFunctions):
 
     def __init__(self, goal, environment,client_data):
         self._obj = goal
-        self._lower = None #-INF where i found this costant?
-        self._upper = None #+INF
+        self._lower = None # -inf
+        self._upper = None # +inf
         self._pivot = None
         self.environment = environment
         self._cast, self.op_strict, self.op_ns = self._comparation_functions(goal)

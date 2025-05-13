@@ -23,6 +23,19 @@ from pysmt.oracles import get_logic
 from pysmt.logics import LIA, LRA, BV
 from pysmt.fnode import FNode
 
+
+# check if gmpy2 is installed or not and decide which numeric classes are supported
+accepted_integer_numbers_class = (int, )
+accepted_real_numbers_class = (float, Fraction)
+try:
+    import gmpy2
+    accepted_integer_numbers_class += (gmpy2.mpz, )
+    accepted_real_numbers_class += (gmpy2.mpq, gmpy2.mpfr)
+except ImportError:
+    pass
+accepted_numbers_class = accepted_integer_numbers_class + accepted_real_numbers_class
+
+
 class Goal(object):
     """
     This class defines goals for solvers.
@@ -197,18 +210,6 @@ class MaxMinGoal(MaximizationGoal):
 
     def __repr__(self):
         return "Maximize{Min{%s}}" % (", ".join(x.serialize() for x in self.terms))
-
-
-# check if gmpy2 is installed or not and decide which numeric classes are supported
-accepted_integer_numbers_class = (int, )
-accepted_real_numbers_class = (float, Fraction)
-try:
-    import gmpy2
-    accepted_integer_numbers_class += (gmpy2.mpz, )
-    accepted_real_numbers_class += (gmpy2.mpq, gmpy2.mpfr)
-except ImportError:
-    pass
-accepted_numbers_class = accepted_integer_numbers_class + accepted_real_numbers_class
 
 
 class MaxSMTGoal(Goal):
