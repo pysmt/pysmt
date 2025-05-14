@@ -162,7 +162,7 @@ class CNFizer(DagWalker):
             return CNFizer.THEORY_PLACEHOLDER
 
     def walk_function(self, formula, **kwargs):
-        ty = formula.function_symbol().symbol_type()
+        ty = formula.function_name().symbol_type()
         if ty.return_type.is_bool_type():
             return formula, CNFizer.TRUE_CNF
         else:

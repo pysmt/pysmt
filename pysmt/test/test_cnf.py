@@ -20,7 +20,7 @@ import pytest
 
 from pysmt.shortcuts import Implies, is_sat, reset_env, Symbol, Iff
 from pysmt.rewritings import CNFizer
-from pysmt.logics import QF_BOOL, QF_LRA, QF_LIA, QF_UFLIRA
+from pysmt.logics import QF_BOOL, QF_LRA, QF_LIA, QF_UFLIRA, QF_UFLRA
 from pysmt.test import TestCase, skipIfNoSolverForLogic, main
 from pysmt.test.examples import get_example_formulae
 from pysmt.test.smtlib.parser_utils import SMTLIB_TEST_FILES, SMTLIB_DIR
@@ -53,6 +53,11 @@ class TestCnf(TestCase):
     def test_examples_solving_lia(self):
         self.do_examples(QF_LIA)
 
+    @skipIfNoSolverForLogic(QF_UFLRA)
+    def test_examples_solving_lia(self):
+        self.do_examples(QF_UFLRA)
+
+    @pytest.mark.slow
     @skipIfNoSolverForLogic(QF_LIA)
     def test_smtlib_cnf_small(self):
         cnt = 0
