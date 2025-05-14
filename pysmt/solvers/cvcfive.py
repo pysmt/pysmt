@@ -344,7 +344,7 @@ class CVC5Converter(Converter, DagWalker):
             return self.cvc5.mkTerm(Kind.DIVISION, *args)
 
     def walk_pow(self, formula, args, **kwargs):
-        return self.cvc5.mkTerm(Kind.POW, args[0], self.cvc5.mkTerm(Kind.TO_REAL, args[1]))
+        return self.cvc5.mkTerm(Kind.POW, args[0], args[1])
 
     def walk_toreal(self, formula, args, **kwargs):
         return self.cvc5.mkTerm(Kind.TO_REAL, args[0])
