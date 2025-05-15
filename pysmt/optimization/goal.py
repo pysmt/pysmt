@@ -217,12 +217,8 @@ class MaxSMTGoal(Goal):
     MaxSMT goal common to all solvers.
     """
 
-    _instance_id = 0
-
     def __init__(self, real_weights=True):
         """Accepts soft clauses and the relative weights"""
-        self.id = MaxSMTGoal._instance_id
-        MaxSMTGoal._instance_id = MaxSMTGoal._instance_id + 1
         self.soft = []
         self._bv_signed = False
         self._real_weights = real_weights

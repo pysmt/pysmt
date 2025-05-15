@@ -23,6 +23,7 @@ from pysmt.optimization.goal import MinimizationGoal, MaximizationGoal
 from pysmt.shortcuts import INT, REAL, BVType, Equals, Ite, Int, Plus, Real
 from pysmt.logics import LIA, LRA, BV, QF_LIRA
 
+
 class Optimizer(Solver):
     """
     Interface for the optimization
@@ -222,18 +223,41 @@ class OptComparationFunctions:
 
 
 class OptSearchInterval(OptComparationFunctions):
+    """
+    Represents a search interval for optimization problems.
 
-    def __init__(self, goal, environment,client_data):
+    This class is used to manage the bounds and constraints during the optimization
+    process. It supports both linear and binary search strategies to refine the
+    search space and determine the optimal value for a given goal.
+
+    Attributes:
+        _obj: The optimization goal (e.g., minimization or maximization).
+        _lower: The lower bound of the search interval.
+        _upper: The upper bound of the search interval.
+        _pivot: The current pivot value used in binary search.
+        environment: The solver environment.
+        client_data: Additional data used during the optimization process.
+    """
+
+    def __init__(self, goal, environment, client_data, lower, upper):
         self._obj = goal
-        self._lower = None # -inf
-        self._upper = None # +inf
+        self._lower = lower
+        self._upper = upper
         self._pivot = None
         self.environment = environment
         self._cast, self.op_strict, self.op_ns = self._comparation_functions(goal)
         self.client_data = client_data
 
     def linear_search_cut(self):
-        """must be called always"""
+        """
+        Generates a constraint for linear search.
+
+        This method creates a constraint to refine the search space by
+        cutting off part of the interval based on the current bounds.
+
+        Returns:
+            A constraint to refine the search space.
+        """
         if self._obj.is_minimization_goal():
             bound = self._upper
         else:
@@ -242,29 +266,58 @@ class OptSearchInterval(OptComparationFunctions):
         return self.op_strict(self._obj.term(), self._cast(bound))
 
     def _compute_pivot(self):
+        """
+        Computes the pivot value for binary search.
+
+        The pivot is calculated as the midpoint of the current bounds.
+
+        Returns:
+            The pivot value.
+        """
         if self._lower is None and self._upper is None:
             return 0
-        l,u = self._lower, self._upper
+        l, u = self._lower, self._upper
         if self._lower is None and self._upper is not None:
             l = self._upper - (abs(self._upper) + 1)
         elif self._lower is not None and self._upper is None:
             u = self._lower + abs(self._lower) + 1
-        return (l + u + 1) // 2
+        add = 1 if self._obj.is_minimization_goal() else 0
+        return (l + u + add) // 2
 
     def binary_search_cut(self):
-        """may be skipped"""
+        """
+        Generates a constraint for binary search.
+
+        This method creates a constraint to refine the search space by
+        using the pivot value.
+
+        Returns:
+            A constraint to refine the search space.
+        """
         self._pivot = self._compute_pivot()
         return self.op_strict(self._obj.term(), self._cast(self._pivot))
 
-
     def empty(self):
-        """True: remove this unit from optimization search"""
-        if self._upper == None or self._lower == None:
+        """
+        Checks if the search interval is empty.
+
+        Returns:
+            True if the interval is empty, False otherwise.
+        """
+        if self._upper is None or self._lower is None:
             return False
         return self._upper <= self._lower
 
-
     def search_is_sat(self, model):
+        """
+        Updates the bounds based on a satisfiable model.
+
+        This method refines the bounds of the search interval using the
+        value of the optimization goal in the given model.
+
+        Parameters:
+            model: The satisfiable model.
+        """
         self._pivot = None
         obj_value = model.get_value(self._obj.term())
         if obj_value.is_bv_constant() and self._obj.signed:
@@ -277,11 +330,14 @@ class OptSearchInterval(OptComparationFunctions):
         elif self._obj.is_maximization_goal():
             if self._lower is None or self._lower < model_value:
                 self._lower = model_value
-        else:
-            pass  # this may happen in boxed multi-independent optimization
-
 
     def search_is_unsat(self):
+        """
+        Updates the bounds based on an unsatisfiable result.
+
+        This method refines the bounds of the search interval when the
+        current constraints are unsatisfiable.
+        """
         if self._pivot is not None:
             if self._obj.is_minimization_goal():
                 self._lower = self._pivot
@@ -319,7 +375,22 @@ def _warn_diverge_real_goal(goal):
 
 
 class ExternalOptimizerMixin(Optimizer):
-    """An optimizer that uses an SMT-Solver externally"""
+    """
+    This class is a mixin that can be included by a solver to also implement
+    the functionalities of an `Optimizer`.
+
+    Two strategies of optimization are available: `linear` and `binary`.
+
+    The `linear` strategy is the default one, refining the search space by
+    checking if there are models that strictly improve the current solution.
+
+    The `binary` strategy is a more aggressive approach, using binary search
+    to find the optimal solution.
+
+    Both strategies can diverge for unbounded cases, meaning that they may not
+    terminate if the objective is unbounded while they can't terminate
+    on an infinitesimal objective.
+    """
 
     def optimize(self, goal, strategy='linear',
                  feasible_solution_callback=None,
@@ -377,6 +448,9 @@ class ExternalOptimizerMixin(Optimizer):
         return model, rt
 
     def _optimize(self, goal, strategy, extra_assumption = None):
+        """
+        Core algorithm for the optimization process.
+        Based on the strategy, it will either perform a linear or binary search"""
         _warn_diverge_real_goal(goal)
         if goal.is_maxsmt_goal():
             formula = None
@@ -390,7 +464,20 @@ class ExternalOptimizerMixin(Optimizer):
             goal = MaximizationGoal(formula)
         model = None
         client_data = self._setup()
-        current = OptSearchInterval(goal, self.environment, client_data)
+        lower, upper = None, None
+        if not goal.is_maxsmt_goal():
+            term_type = goal.term().get_type()
+            # For bit-vectors, start lower and upper bounds to their width limit
+            if term_type.is_bv_type():
+                # add 1 top upper bound because it is excluded
+                if goal.signed:
+                    lower = -(2**(term_type.width-1))
+                    upper = (2**(term_type.width-1))
+                else:
+                    lower = 0
+                    upper = (2**term_type.width) + 1
+
+        current = OptSearchInterval(goal, self.environment, client_data, lower, upper)
         first_step = True
         while not current.empty():
             if not first_step:
@@ -448,10 +535,6 @@ class ExternalOptimizerMixin(Optimizer):
                 terminated = True
         self._cleanup(client_data)
 
-
-class SUAOptimizerMixin(ExternalOptimizerMixin):
-    """Optimizer mixin using solving under assumptions"""
-
     def _setup(self):
         self.push()
         return []
@@ -464,6 +547,84 @@ class SUAOptimizerMixin(ExternalOptimizerMixin):
 
     def _pareto_cleanup(self):
         self.pop()
+
+    def can_diverge_for_unbounded_cases(self):
+        return True
+
+    def _optimization_check_progress(self, client_data, formula, strategy, extra_assumption = None):
+        """This function is called to check the progress of the optimization.
+        It should return `True` if the optimization is still possible, and `False`
+        otherwise.
+        """
+        raise NotImplementedError()
+
+    def _lexicographic_opt(self, client_data, current_goal, strategy):
+        """
+        Performs a single step in the lexicographic optimization process for the given goal.
+
+        This method optimizes the current goal while respecting the constraints imposed
+        by previously optimized goals. It ensures that the current goal's value is fixed
+        for subsequent goals in the lexicographic sequence.
+
+        Parameters:
+            client_data (list): A list of constraints accumulated from previously optimized goals.
+            current_goal (Goal): The goal to be optimized in this step.
+            strategy (str): The optimization strategy to use ('linear' or 'binary').
+
+        Returns:
+            tuple: A pair (model, value) where:
+                - model: The model representing the solution for the current goal.
+                - value: The optimal value for the current goal.
+            None: If no solution is found.
+
+        Raises:
+            NotImplementedError: If the method is not implemented in the subclass.
+        """
+        raise NotImplementedError()
+
+    def _pareto_check_progress(self, client_data, objs):
+        """
+        Checks whether progress can still be made in the Pareto optimization process.
+
+        This method constructs constraints for the current objectives to ensure that
+        a new Pareto-optimal solution can be found. It uses the solver to check whether
+        these constraints are satisfiable.
+
+        Parameters:
+            client_data (list): A list of constraints accumulated during the optimization process.
+            objs (list): A list of `OptPareto` objects representing the current optimization objectives.
+
+        Returns:
+            bool: True if progress can still be made (i.e., constraints are satisfiable),
+                  False otherwise.
+
+        Raises:
+            NotImplementedError: If the method is not implemented in the subclass.
+        """
+        raise NotImplementedError()
+
+    def _pareto_block_model(self, client_data, objs):
+        """
+        Blocks the current model in the Pareto optimization process.
+
+        This method constructs a disjunction of constraints to block the current model,
+        ensuring that the solver does not return the same solution in subsequent iterations.
+
+        Parameters:
+            client_data (list): A list of constraints accumulated during the optimization process.
+            objs (list): A list of `OptPareto` objects representing the current optimization objectives.
+
+        Returns:
+            None
+
+        Raises:
+            NotImplementedError: If the method is not implemented in the subclass.
+        """
+        raise NotImplementedError()
+
+
+class SUAOptimizerMixin(ExternalOptimizerMixin):
+    """Optimizer mixin using solving under assumptions"""
 
     def _optimization_check_progress(self, client_data, formula, strategy, extra_assumption = None):
         assum = extra_assumption if extra_assumption is not None else []
@@ -494,25 +655,9 @@ class SUAOptimizerMixin(ExternalOptimizerMixin):
         mgr = self.environment.formula_manager
         client_data.append(mgr.Or(obj.get_constraint(True) for obj in objs))
 
-    def can_diverge_for_unbounded_cases(self):
-        return True
-
 
 class IncrementalOptimizerMixin(ExternalOptimizerMixin):
-    """Optimizer mixin using the incremental interface"""
-
-    def _setup(self):
-        self.push()
-        return []
-
-    def _cleanup(self, client_data):
-        self.pop()
-
-    def _pareto_setup(self):
-        self.push()
-
-    def _pareto_cleanup(self):
-        self.pop()
+    """Optimizer mixin using the incremental capabilites of the solver"""
 
     def _optimization_check_progress(self, client_data, formula, strategy, extra_assumption = None):
         if strategy == 'linear':
@@ -524,7 +669,12 @@ class IncrementalOptimizerMixin(ExternalOptimizerMixin):
             if formula is not None:
                 self.add_assertion(formula)
             rt = self.solve()
+            # TODO for example in z3 the get_model must be called before the pop.
+            if rt:
+                assert self.get_model() is not None
             self.pop()
+        else:
+            raise PysmtValueError("Unknown optimization strategy '%s'" % strategy)
         return rt
 
     def _lexicographic_opt(self, client_data, current_goal, strategy):
@@ -551,6 +701,3 @@ class IncrementalOptimizerMixin(ExternalOptimizerMixin):
     def _pareto_block_model(self, client_data, objs):
         mgr = self.environment.formula_manager
         self.add_assertion(mgr.Or((obj.get_constraint(True) for obj in objs)))
-
-    def can_diverge_for_unbounded_cases(self):
-        return True

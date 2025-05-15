@@ -70,14 +70,14 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
         MathSAT5Solver.__init__(self, environment=environment,
                                 logic=logic, **options)
 
-    def _assert_msat_goal(self, goal):
+    def _assert_msat_goal(self, goal, goal_id):
 
         if goal.is_maxsmt_goal():
             for tcons, weight in goal.soft:
                 obj_tcons = self.converter.convert(tcons)
                 obj_weight = self._msat_lib.msat_make_number(self.msat_env(), str(weight.constant_value()))
-                self._msat_lib.msat_assert_soft_formula(self.msat_env(), obj_tcons, obj_weight, "__pysmt_" + str(goal.id))
-            obj_fun = self._msat_lib.msat_from_string(self.msat_env(),"__pysmt_" + str(goal.id))
+                self._msat_lib.msat_assert_soft_formula(self.msat_env(), obj_tcons, obj_weight, "__pysmt_" + str(goal_id))
+            obj_fun = self._msat_lib.msat_from_string(self.msat_env(), "__pysmt_" + str(goal_id))
             make_fun = self._msat_lib.msat_make_minimize
 
         elif goal.is_minmax_goal() or goal.is_maxmin_goal():
@@ -108,7 +108,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
 
     @clear_pending_pop
     def optimize(self, goal, **kwargs):
-        msat_obj = self._assert_msat_goal(goal)
+        msat_obj = self._assert_msat_goal(goal, 0)
 
         self.solve()
 
@@ -133,7 +133,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
         self._msat_lib.msat_set_opt_priority(self.msat_env(), "par")
 
         msat_objs = {
-            g: self._assert_msat_goal(g) for g in goals
+            g: self._assert_msat_goal(g, goal_id) for goal_id, g in enumerate(goals)
         }
 
         while self.solve():
@@ -149,7 +149,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
         self._msat_lib.msat_set_opt_priority(self.msat_env(), "lex")
 
         msat_objs = {
-            g: self._assert_msat_goal(g) for g in goals
+            g: self._assert_msat_goal(g, goal_id) for goal_id, g in enumerate(goals)
         }
 
         rt = self.solve()
@@ -165,8 +165,8 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
         self._msat_lib.msat_set_opt_priority(self.msat_env(), "box")
         msat_objs = []
 
-        for g in goals:
-            msat_objs.append(self._assert_msat_goal(g))
+        for goal_id, g in enumerate(goals):
+            msat_objs.append(self._assert_msat_goal(g, goal_id))
 
         check = self.solve()
         if not check:
