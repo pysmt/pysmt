@@ -39,12 +39,13 @@ class EagerModel(Model):
         self.completed_assignment = dict(self.assignment)
 
     def get_value(self, formula, model_completion=True):
+        substituter = self.environment.substituter
         if model_completion:
             syms = formula.get_free_variables()
             self._complete_model(syms)
-            r = formula.substitute(self.completed_assignment)
+            r = substituter.substitute(formula, self.completed_assignment)
         else:
-            r = formula.substitute(self.assignment)
+            r = substituter.substitute(formula, self.assignment)
 
         res = r.simplify()
         if not res.is_constant():
