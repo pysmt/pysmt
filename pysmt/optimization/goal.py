@@ -262,8 +262,23 @@ class MaxSMTGoal(Goal):
     def is_maxsmt_goal(self):
         return True
 
+    def is_maximization_goal(self):
+        return True
+
     def real_weights(self):
         return self._real_weights
+
+    def term(self):
+        formula = None
+        mgr = get_env().formula_manager
+        zero = mgr.Real(0) if self.real_weights() else mgr.Int(0)
+        for (c, w) in self.soft:
+            if formula is not None:
+                formula = mgr.Plus(formula, mgr.Ite(c, w, zero))
+            else:
+                formula = mgr.Ite(c, w, zero)
+        assert formula is not None, "Empty MaxSMT goal passed"
+        return formula
 
     def __repr__(self):
         return "MaxSMT{%s}" % (", ".join(("%s: %s" % (x.serialize(), w.serialize()) for x, w in self.soft)))

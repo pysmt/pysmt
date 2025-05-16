@@ -230,6 +230,13 @@ class OptSearchInterval(OptComparationFunctions):
     process. It supports both linear and binary search strategies to refine the
     search space and determine the optimal value for a given goal.
 
+    When using binary search the optimal value is found by iteratively
+    narrowing down the search interval based on the results of the optimization.
+
+    The search interval is defined by the lower and upper bounds.
+    When minimizing (maximizing) the lower bound (upper bound) is always included
+    in the search interval, while the upper bound (lower bound) is excluded.
+
     Attributes:
         _obj: The optimization goal (e.g., minimization or maximization).
         _lower: The lower bound of the search interval.
@@ -239,7 +246,26 @@ class OptSearchInterval(OptComparationFunctions):
         client_data: Additional data used during the optimization process.
     """
 
-    def __init__(self, goal, environment, client_data, lower, upper):
+    def __init__(self, goal, environment, client_data):
+
+        lower, upper = None, None
+        if not goal.is_maxsmt_goal():
+            term_type = goal.term().get_type()
+            # For bit-vectors, start lower and upper bounds to their width limit
+            if term_type.is_bv_type():
+                if goal.signed:
+                    lower = -(2**(term_type.width-1))
+                    upper = (2**(term_type.width-1)) - 1
+                else:
+                    lower = 0
+                    upper = (2**term_type.width)
+                # add 1 top upper bound because it is excluded when minimizing
+                # or remove 1 from lower bound because it is excluded when maximizing
+                if goal.is_minimization_goal():
+                    upper += 1
+                else:
+                    lower -= 1
+
         self._obj = goal
         self._lower = lower
         self._upper = upper
@@ -281,8 +307,15 @@ class OptSearchInterval(OptComparationFunctions):
             l = self._upper - (abs(self._upper) + 1)
         elif self._lower is not None and self._upper is None:
             u = self._lower + abs(self._lower) + 1
-        add = 1 if self._obj.is_minimization_goal() else 0
-        return (l + u + add) // 2
+        term_type = self._obj.term().get_type()
+        if term_type.is_int_type() or term_type.is_bv_type():
+            pivot = (l + u) // 2
+            if self._obj.is_minimization_goal():
+                return pivot + 1
+            else:
+                return pivot
+        assert term_type.is_real_type()
+        return (l + u) / 2
 
     def binary_search_cut(self):
         """
@@ -453,31 +486,11 @@ class ExternalOptimizerMixin(Optimizer):
         Based on the strategy, it will either perform a linear or binary search"""
         _warn_diverge_real_goal(goal)
         if goal.is_maxsmt_goal():
-            formula = None
-            zero = Real(0) if goal.real_weights() else Int(0)
-            for (c, w) in goal.soft:
-                if formula is not None:
-                    formula = Plus(formula, Ite(c, w, zero))
-                else:
-                    formula = Ite(c, w, zero)
-            assert formula is not None, "Empty MaxSMT goal passed"
-            goal = MaximizationGoal(formula)
+            goal = MaximizationGoal(goal.term())
         model = None
         client_data = self._setup()
-        lower, upper = None, None
-        if not goal.is_maxsmt_goal():
-            term_type = goal.term().get_type()
-            # For bit-vectors, start lower and upper bounds to their width limit
-            if term_type.is_bv_type():
-                # add 1 top upper bound because it is excluded
-                if goal.signed:
-                    lower = -(2**(term_type.width-1))
-                    upper = (2**(term_type.width-1))
-                else:
-                    lower = 0
-                    upper = (2**term_type.width) + 1
 
-        current = OptSearchInterval(goal, self.environment, client_data, lower, upper)
+        current = OptSearchInterval(goal, self.environment, client_data)
         first_step = True
         while not current.empty():
             if not first_step:
@@ -489,9 +502,9 @@ class ExternalOptimizerMixin(Optimizer):
                     raise PysmtValueError("Unknown optimization strategy '%s'" % strategy)
             else:
                 lin_assertions = None
-            status = self._optimization_check_progress(client_data, lin_assertions, strategy, extra_assumption)
-            if status:
-                model = self.get_model()
+            temp_model = self._optimization_check_progress(client_data, lin_assertions, strategy, extra_assumption)
+            if temp_model is not None:
+                model = temp_model
                 current.search_is_sat(model)
             else:
                 if first_step:
@@ -553,8 +566,8 @@ class ExternalOptimizerMixin(Optimizer):
 
     def _optimization_check_progress(self, client_data, formula, strategy, extra_assumption = None):
         """This function is called to check the progress of the optimization.
-        It should return `True` if the optimization is still possible, and `False`
-        otherwise.
+        It should return the model if the check returned SAT, None if the check
+        returned UNSAT.
         """
         raise NotImplementedError()
 
@@ -630,8 +643,9 @@ class SUAOptimizerMixin(ExternalOptimizerMixin):
         assum = extra_assumption if extra_assumption is not None else []
         if formula is not None:
             assum = assum + [formula]
-        rt = self.solve(assumptions = assum)
-        return rt
+        is_sat = self.solve(assumptions = assum)
+        model = self.get_model() if is_sat else None
+        return model
 
     def _lexicographic_opt(self, client_data, current_goal, strategy):
         temp = self._optimize(current_goal, strategy, extra_assumption = client_data)
@@ -663,19 +677,18 @@ class IncrementalOptimizerMixin(ExternalOptimizerMixin):
         if strategy == 'linear':
             if formula is not None:
                 self.add_assertion(formula)
-            rt = self.solve()
+            is_sat = self.solve()
+            model = self.get_model() if is_sat else None
         elif strategy == 'binary':
             self.push()
             if formula is not None:
                 self.add_assertion(formula)
-            rt = self.solve()
-            # TODO for example in z3 the get_model must be called before the pop.
-            if rt:
-                assert self.get_model() is not None
+            is_sat = self.solve()
+            model = self.get_model() if is_sat else None
             self.pop()
         else:
             raise PysmtValueError("Unknown optimization strategy '%s'" % strategy)
-        return rt
+        return model
 
     def _lexicographic_opt(self, client_data, current_goal, strategy):
         self.push()

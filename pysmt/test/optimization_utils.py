@@ -115,7 +115,7 @@ def generate_examples_with_solvers(optimization_examples):
     the logic of said test.
     """
     has_real_minimization_or_maximization = lambda opt_example: any(
-        (g.is_maximization_goal() or g.is_minimization_goal()) and g.term().get_type().is_real_type()
+        not g.is_maxsmt_goal() and g.term().get_type().is_real_type()
         for goals, _ in opt_example.goals.keys()
         for g in goals
     )
@@ -148,10 +148,19 @@ def solve_given_example(optimization_example, solver_name, test_to_skip=None):
             extra_options = {}
             strategies = ["linear", "binary"] if isinstance(opt, (SUAOptimizerMixin, IncrementalOptimizerMixin)) else [None]
             for strategy in strategies:
+                # skip binary strategy if there are real maxsmt goals
+                has_real_maxsmt_goals = any(g.is_maxsmt_goal() and g.term().get_type().is_real_type() for g in goals)
+                if (
+                    has_real_maxsmt_goals
+                    and opt.can_diverge_for_unbounded_cases()
+                    and strategy == "binary"
+                ):
+                    continue
                 if strategy is not None:
                     extra_options["strategy"] = strategy
                 # print the test_id to give some info if the test fails
                 temp_test_id_str = test_id_str + ", extra: %s" % str(extra_options) if extra_options else test_id_str
+
                 print(temp_test_id_str)
                 if optimization_type == OptimizationTypes.LEXICOGRAPHIC:
                     _test_lexicographic(opt, goals, goals_values, test_id_str, **extra_options)
