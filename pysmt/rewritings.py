@@ -188,6 +188,8 @@ class CNFizer(DagWalker):
     @handles(op.THEORY_OPERATORS)
     def walk_theory_op(self, formula, **kwargs):
         #pylint: disable=unused-argument
+        if formula.get_type().is_bool_type():
+            return formula, CNFizer.TRUE_CNF
         return CNFizer.THEORY_PLACEHOLDER
 
     @handles(op.CONSTANTS)
