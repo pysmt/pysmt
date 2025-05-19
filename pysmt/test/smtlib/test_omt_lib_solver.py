@@ -18,17 +18,17 @@
 import pytest
 from io import StringIO
 
-from pysmt.environment import push_env, pop_env
+from pysmt.shortcuts import get_env
 from pysmt.logics import QF_LIA, QF_LRA
-from pysmt.test import TestCase, skipIfNoOptimizerForLogic
+from pysmt.test import TestCase, skipIfNoOptimizerForLogic, skipIfNoSolverForLogic
 from pysmt.test import main
-from pysmt.test.optimization_utils import generate_examples_with_solvers, solve_given_example, OptimizationTypes
+from pysmt.test.optimization_utils import generate_examples_with_solvers, solve_given_example, OptimizationTypes, get_non_diverging_optimizers
 from pysmt.test.smtlib.parser_utils import omt_test_cases_from_smtlib_test_set
 from pysmt.cmd.shell import PysmtShell
 
 
 class TestOmtLibSolver(TestCase):
-    @skipIfNoOptimizerForLogic(QF_LRA)
+    @skipIfNoSolverForLogic(QF_LRA)
     def test_base(self):
         txt = """(declare-fun x () Real)
         (assert (> x 0))
@@ -54,14 +54,15 @@ class TestOmtLibSolver(TestCase):
 (minimize x)
 (check-sat)
 (get-objectives)"""
-        f_in = StringIO(txt)
-        f_out = StringIO()
-        args = ["-o", "auto"]
-        pysmtshell = PysmtShell(args)
-        pysmtshell.smtlib_solver(f_in, f_out)
-        self.assertIn(
-            f_out.getvalue(),
-            ["""sat
+        for oname in get_non_diverging_optimizers(logic=QF_LRA):
+                f_in = StringIO(txt)
+                f_out = StringIO()
+                args = ["-o", oname]
+                pysmtshell = PysmtShell(args)
+                pysmtshell.smtlib_solver(f_in, f_out)
+                self.assertIn(
+                f_out.getvalue(),
+                ["""sat
 (objectives
   (x 0.0)
 )
@@ -88,12 +89,13 @@ class TestOmtLibSolver(TestCase):
 (get-objectives)"""
         f_in = StringIO(txt)
         f_out = StringIO()
-        args = ["-o", "auto", "-l", "QF_LRA"]
-        pysmtshell = PysmtShell(args)
-        pysmtshell.smtlib_solver(f_in, f_out)
-        self.assertIn(
-            f_out.getvalue(),
-            ["""sat
+        for oname in get_non_diverging_optimizers(logic=QF_LRA):
+                args = ["-o", oname, "-l", "QF_LRA"]
+                pysmtshell = PysmtShell(args)
+                pysmtshell.smtlib_solver(f_in, f_out)
+                self.assertIn(
+                f_out.getvalue(),
+                ["""sat
 (objectives
   (((x <= y) ? y : x) 4.0)
 )
@@ -277,12 +279,15 @@ sat
 (get-objectives)"""
         f_in = StringIO(txt)
         f_out = StringIO()
-        args = ["-o", "auto", '-l', 'QF_LRA']
-        pysmtshell = PysmtShell(args)
-        pysmtshell.smtlib_solver(f_in, f_out)
-        self.assertEqual(
-            f_out.getvalue(),
-            """sat
+        for oname in get_non_diverging_optimizers(logic=QF_LRA):
+                args = ["-o", oname, '-l', 'QF_LRA']
+                factory = get_env().factory
+                factory.all_optimizers()
+                pysmtshell = PysmtShell(args)
+                pysmtshell.smtlib_solver(f_in, f_out)
+                self.assertEqual(
+                        f_out.getvalue(),
+                        """sat
 (objectives
   ((x - y) -10.0)
   ((y - x) 10.0)
@@ -299,7 +304,7 @@ sat
   (((x <= y) ? x : y) 10.0)
 )
 """,
-        )
+                )
 
     @skipIfNoOptimizerForLogic(QF_LIA)
     def test_omt_lex_unsat(self):

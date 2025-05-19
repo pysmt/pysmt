@@ -18,6 +18,7 @@
 
 from pysmt.test import TestCase, skipIfNoOptimizerForLogic
 from pysmt.test import main
+from pysmt.test.optimization_utils import get_non_diverging_optimizers
 
 from pysmt.shortcuts import Optimizer, GE, Int, Symbol, INT, LE, GT, REAL, Real
 from pysmt.shortcuts import BVType, BVSGE, BVSLE, BVSGT, BVSLT, BV
@@ -125,7 +126,7 @@ class TestOptimization(TestCase):
 
         maxmin = MaxMinGoal([x, y, z])
 
-        for oname in get_env().factory.all_optimizers(logic=QF_LRA):
+        for oname in get_non_diverging_optimizers(logic=QF_LRA):
             with Optimizer(name=oname) as opt:
                 opt.add_assertion(f11)
                 opt.add_assertion(f12)
@@ -154,7 +155,7 @@ class TestOptimization(TestCase):
 
         minmax = MinMaxGoal([x, y, z])
 
-        for oname in get_env().factory.all_optimizers(logic=QF_LRA):
+        for oname in get_non_diverging_optimizers(logic=QF_LRA):
             with Optimizer(name=oname) as opt:
                 opt.add_assertion(f11)
                 opt.add_assertion(f12)
@@ -315,10 +316,8 @@ class TestOptimization(TestCase):
         x = Symbol("x", REAL)
         formula = GT(x, Real(10))
         min = MinimizationGoal(x)
-        for oname in get_env().factory.all_optimizers(logic=QF_LRA):
+        for oname in get_non_diverging_optimizers(logic=QF_LRA):
             with Optimizer(name=oname) as opt:
-                if opt.can_diverge_for_unbounded_cases():
-                    continue
                 opt.add_assertion(formula)
                 with self.assertRaises(PysmtInfinitesimalError):
                     opt.optimize(min)

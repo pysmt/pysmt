@@ -284,3 +284,14 @@ def _test_basic(optimizer, goal, goal_value, test_id_str, **kwargs):
     elif not optimizer.can_diverge_for_unbounded_cases():
         with pytest.raises(raised_class):
             optimizer.optimize(goal, **kwargs)
+
+
+def get_non_diverging_optimizers(logic):
+    """
+    Returns an iterator over the optimizers that do not diverge for unbounded cases.
+    """
+    env = get_env()
+    for name, OptimizerClass in env.factory.all_optimizers(logic).items():
+        with OptimizerClass(env, logic) as opt:
+            if not opt.can_diverge_for_unbounded_cases():
+                yield name
