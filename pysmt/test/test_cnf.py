@@ -18,7 +18,7 @@
 import os
 import pytest
 
-from pysmt.shortcuts import Implies, is_sat, reset_env, Symbol, Iff, Select, ArrayType, INT, BOOL, And
+from pysmt.shortcuts import Implies, is_sat, reset_env, Symbol, Iff, Select, ArrayType, INT, BOOL, And, get_env
 from pysmt.rewritings import CNFizer
 from pysmt.logics import QF_BOOL, QF_LRA, QF_LIA, QF_UFLIRA, QF_UFLRA, QF_ALIA
 from pysmt.test import TestCase, skipIfNoSolverForLogic, main
@@ -108,6 +108,7 @@ class TestCnf(TestCase):
 
     @skipIfNoSolverForLogic(QF_ALIA)
     def test_CNFizer_bool_theory(self):
+        test_logic = QF_ALIA
         # (and (select boolean_array idx0) (select boolean_array idx1))
         boolean_array = Symbol("boolean_array", ArrayType(INT, BOOL))
         idx_0, idx_1 = Symbol("idx0", INT), Symbol("idx1", INT)
@@ -118,7 +119,16 @@ class TestCnf(TestCase):
         conv = CNFizer()
         cnf = conv.convert_as_formula(f)
 
-        self.assertValid(Implies(cnf, f), logic=QF_ALIA)
+        factory = get_env().factory
+        for solver_name in factory.all_solvers(test_logic):
+            # msat needs to be skipped. Check issue #807
+            if solver_name == "msat":
+                continue
+            self.assertValid(
+                Implies(cnf, f),
+                solver_name=solver_name,
+                logic=test_logic
+            )
 
 if __name__ == '__main__':
     main()
