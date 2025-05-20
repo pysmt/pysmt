@@ -562,7 +562,8 @@ class TestOptimization(TestCase):
                 # First optimization: maximize x and y
                 max_x = MaximizationGoal(x)
                 max_y = MaximizationGoal(y)
-                models_costs = opt.boxed_optimize([max_x, max_y])
+                models_costs = opt.pareto_optimize([max_x, max_y])
+                # TODO change from here. Not updated
                 self.assertEqual(len(models_costs), 2)
                 max_x_model, max_x_cost = models_costs[max_x]
                 self.assertEqual(max_x_model.get_value(x), Int(3))
