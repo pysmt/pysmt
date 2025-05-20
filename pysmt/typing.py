@@ -31,9 +31,10 @@ on a factory service. Each BitVector width is represented by a
 different instance of BVType.
 
 """
-import pysmt
+from typing import Any, Dict, List, Literal, Optional, OrderedDict, Sequence, Tuple, Union
+from typing_extensions import TypeGuard
 
-from pysmt.exceptions import PysmtValueError, PysmtModeError
+from pysmt.exceptions import PysmtTypeError, PysmtValueError, PysmtModeError
 
 
 class PySMTType(object):
@@ -44,7 +45,16 @@ class PySMTType(object):
 
     """
 
-    def __init__(self, decl=None, basename=None, args=None):
+    decl: "_TypeDecl"
+    basename: Optional[str]
+    arity: int
+
+    def __init__(
+        self,
+        decl: Optional["_TypeDecl"] = None,
+        basename: Optional[str] = None,
+        args: Optional[Sequence[Any]] = None,
+    ):
         if decl:
             self.decl = decl
             self.basename = decl.name
@@ -90,6 +100,9 @@ class PySMTType(object):
         return False
 
     def is_function_type(self):
+        return False
+
+    def is_algebraic_data_type(self) -> bool:
         return False
 
     def is_custom_type(self):
@@ -329,6 +342,209 @@ class _FunctionType(PySMTType):
         return self._hash
 
 
+class _AlgebraicDataTypes(PySMTType):
+    """Internal class used to represent a multiple interdependant
+    algebraic datatype.
+
+    This class should not be instantiated directly, but the factory
+    method AlgebraicDataType should be used instead.
+    """
+    def __init__(self):
+        raise NotImplementedError("This class is not implement, if possible use AlgebraicDataType")
+
+_ADSSelf_t = Literal['self']
+ADSSelf: _ADSSelf_t = 'self'
+
+class _AlgebraicDataType(PySMTType):
+    """Internal class used to represent a single algebraic datatype.
+
+    This class should not be instantiated directly, but the factory
+    method AlgebraicDataType should be used instead.
+    """
+
+    class _Constructor(_FunctionType):
+        def __init__(self, name: str, tp: PySMTType, args: OrderedDict[str, PySMTType]):
+            super().__init__(tp, [type for _, type in args.items()])
+            self._parameters = args
+            self.name = name
+
+        def __eq__(self, other: "_AlgebraicDataType._Constructor"):
+            return (self.name == other.name) and super().__eq__(other)
+
+        def __hash__(self):
+            return self._hash
+
+        @property
+        def parameters(self) -> List[Tuple[str, PySMTType]]:
+            """Get all construction param"""
+            return list(self._parameters.items())
+
+        def parameter(self, name: str) -> Optional[PySMTType]:
+            """Get the construction param type by param name"""
+            return self._parameters.get(name)
+
+    class _Selector(_FunctionType):
+        def __init__(
+            self,
+            name: str,
+            constructor: "_AlgebraicDataType._Constructor",
+            tp: PySMTType,
+            arg: PySMTType,
+        ):
+            super().__init__(arg, [tp])
+            self.name = name
+            self._constructor = constructor
+
+        def __eq__(self, other: "_AlgebraicDataType._Selector"):
+            return (
+                (self.name == other.name)
+                and (self._constructor == other._constructor)
+                and super().__eq__(other)
+            )
+
+        def __hash__(self):
+            return self._hash
+
+        @property
+        def param_type(self):
+            return self.return_type
+
+        @property
+        def constructor(self):
+            return self._constructor
+
+    class _Discriminator(_FunctionType):
+        def __init__(self, name: str, tp: PySMTType):
+            super().__init__(BOOL, [tp])
+            self.name = name
+
+        def __eq__(self, other: "_AlgebraicDataType._Discriminator"):
+            return (self.name == other.name) and super().__eq__(other)
+
+        def __hash__(self):
+            return self._hash
+
+    _constructors: Dict[str, _Constructor]
+    _selectors: Dict[Tuple[str, str], _Selector]
+    _discriminators: Dict[str, _Discriminator]
+
+    def __getattr__(self, n: str):
+        if n in self._constructors:
+            return self._constructors[n]
+        elif ("is_" in n) and n[len("is_"):] in self._discriminators:
+            return self._discriminators[n[len("is_"):]]
+
+        selectors = [x[1] for x in self._selectors.items() if x[0][1] == n]
+        if len(selectors) > 0:
+            # There should only be one sel with a given name by construction
+            return selectors[0]
+
+        raise AttributeError(f"There is no element {n}")
+
+    def __getitem__(self, n: str):
+        if n in self._constructors:
+            return self._constructors[n]
+        elif ("is_" in n) and n[len("is_"):] in self._discriminators:
+            return self._discriminators[n[len("is_"):]]
+
+        selectors = [x[1] for x in self._selectors.items() if x[0][1] == n]
+        if len(selectors) > 0:
+            # There should only be one sel with a given name by construction
+            return selectors[0]
+
+        raise AttributeError(f"There is no element {n}")
+
+
+    def __init__(
+        self,
+        type_name: str,
+        **constructors: Sequence[Tuple[str, Union[PySMTType, _ADSSelf_t]]]
+    ):
+        """
+        Constructor for private class `_AlgebraicDataType`
+
+        Every `**datatypes` **key** is interpreted as a new datatype
+        to create, the **value** associated with the key is a list of
+        all the constructor for the datatype
+
+        implicity this function will define the selector and
+        discriminator for the datatypes
+
+        Note:
+        the datatypes value type can be explain as a List of
+        Tuple for which the first argument is the name of the
+        constructor, and the second is a List of Tuple for which the
+        first argument is the name of the selector and second is the
+        type of the argument
+        """
+        sorted_constructors = sorted(constructors.items())
+        PySMTType.__init__(self, None, type_name, sorted_constructors)
+
+        constructors_with_sub: OrderedDict[str, OrderedDict[str, PySMTType]] = OrderedDict()
+        for name, params in sorted_constructors:
+            constructors_with_sub[name] = OrderedDict()
+            for sel, type in params:
+                # substitute self string with the type of the algebraic data type
+                if isinstance(type, PySMTType):
+                    constructors_with_sub[name][sel] = type
+                elif isinstance(type, str) and type == "self":
+                    constructors_with_sub[name][sel] = self
+
+        self._constructors = dict()
+        for name, params in constructors_with_sub.items():
+            self._constructors[name] = self._Constructor(name, self, params)
+
+        self._selectors = dict()
+        for const, params in constructors_with_sub.items():
+            for sel, arg in params.items():
+                if sel in self._constructors:
+                    raise PysmtTypeError(
+                        "There is a constructor with the same name of"
+                        " selector %s in constructor %s in %s declaration"
+                        % (sel, const, type_name)
+                    )
+                elif any(map(lambda x: x[1] == sel, self._selectors)):
+                    raise PysmtTypeError(
+                        "There is already a selector with this name %s" % sel
+                    )
+                self._selectors[(const, sel)] = self._Selector(sel, self._constructors[const] , self, arg)
+
+        self._discriminators = dict()
+        for name, _ in constructors_with_sub.items():
+            for cons, sel in self._selectors:
+                if name == sel:
+                    raise PysmtTypeError(
+                        "There is a discriminator with the same name of"
+                        " selector %s in constructor %s in %s declaration"
+                        % (cons, sel, type_name)
+                    )
+            self._discriminators[name] = self._Discriminator(name, self)
+
+    def as_smtlib(self, funstyle=True):
+        return str(self.basename)
+
+    def __str__(self):
+        return self.as_smtlib()
+
+    def is_algebraic_data_type(self) -> bool:
+        return True
+
+    def __eq__(self, other):
+        """
+        Return true only if `other` is actualy the same object
+        or if other is an algebraic datatype and if it contains the same constructor
+        """
+        return (other is not None) and (
+            (self is other)
+            or (
+                other.is_algebraic_data_type()
+                and (set(self._constructors.items()) == set(other._constructors.items()))
+            )
+        )
+
+    def __hash__(self):
+        return hash(self.name)
+
 class _TypeDecl(object):
     """Create a new Type Declaration (sort).
 
@@ -342,7 +558,8 @@ class _TypeDecl(object):
         self.custom_type = False
 
     def __call__(self, *args):
-        env = pysmt.environment.get_env()
+        from pysmt import environment
+        env = environment.get_env()
         # Note: This uses the global type manager
         if not env.enable_infix_notation:
             raise PysmtModeError("Infix notation disabled. "
@@ -394,6 +611,7 @@ class TypeManager(object):
     def __init__(self, environment):
         self._bv_types = {}
         self._function_types = {}
+        self._algebraic_data_type = {}
         self._array_types = {}
         self._custom_types = {}
         self._custom_types_decl = {}
@@ -465,6 +683,35 @@ class TypeManager(object):
                                param_types=param_types)
             self._function_types[key] = ty
         return ty
+
+    def AlgebraicDataType(
+        self,
+        type_name: str,
+        **constructors: Sequence[Tuple[str, Union[PySMTType, _ADSSelf_t]]]
+    ) -> _AlgebraicDataType:
+        """Returns the singleton of the algebraic data type with the given arguments.
+
+        This function takes care of building and registering the type
+        whenever needed. To see the functions provided by the type look at
+        `_AlgebraicDataType`
+        """
+        key = tuple(sorted(constructors.items()))
+
+        types = []
+        for _, args in constructors.items():
+            for _, type in args:
+                if isinstance(type, PySMTType):
+                    types.append(type)
+
+        assert_are_types(types, __name__)
+
+        if key in self._algebraic_data_type:
+            return self._algebraic_data_type[key]
+        else:
+            self._algebraic_data_type[key] = _AlgebraicDataType(
+                type_name, **constructors
+            )
+            return self._algebraic_data_type[key]
 
     def ArrayType(self, index_type, elem_type):
         """Returns the singleton of the Array type with the given arguments.
@@ -576,20 +823,30 @@ def assert_are_types(targets, func_name):
 
 def BVType(width=32):
     """Returns the BV type for the given width."""
-    mgr = pysmt.environment.get_env().type_manager
+    from pysmt import environment
+    mgr = environment.get_env().type_manager
     return mgr.BVType(width=width)
 
 def FunctionType(return_type, param_types):
     """Returns Function Type with the given arguments."""
-    mgr = pysmt.environment.get_env().type_manager
+    from pysmt import environment
+    mgr = environment.get_env().type_manager
     return mgr.FunctionType(return_type=return_type, param_types=param_types)
+
+def AlgebraicDataType(name, **constructors: Sequence[Tuple[str, Union[PySMTType, _ADSSelf_t]]]):
+    """Returns Algebraic Data Type with the given constructors."""
+    from pysmt import environment
+    mgr = environment.get_env().type_manager
+    return mgr.AlgebraicDataType(name, **constructors)
 
 def ArrayType(index_type, elem_type):
     """Returns the Array type with the given arguments."""
-    mgr = pysmt.environment.get_env().type_manager
+    from pysmt import environment
+    mgr = environment.get_env().type_manager
     return mgr.ArrayType(index_type=index_type, elem_type=elem_type)
 
 def Type(name, arity=0):
     """Returns the Type Declaration with the given name (sort declaration)."""
-    mgr = pysmt.environment.get_env().type_manager
+    from pysmt import environment
+    mgr = environment.get_env().type_manager
     return mgr.Type(name=name, arity=arity)

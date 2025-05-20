@@ -9,6 +9,7 @@ from pysmt.typing import (
     _ArrayType,
     _StringType,
     _FunctionType,
+    _AlgebraicDataType,
     _TypeDecl,
 )
 
@@ -40,6 +41,18 @@ def is_string_type(type: "PySMTType") -> TypeGuard["_StringType"]:
 def is_function_type(type: "PySMTType") -> TypeGuard["_FunctionType"]:
     return type.is_function_type()
 
+
+def is_algebraic_data_type(type: "PySMTType") -> TypeGuard["_AlgebraicDataType"]:
+    return type.is_algebraic_data_type()
+
+def is_adt_constructor(type: "PySMTType") -> TypeGuard["_AlgebraicDataType._Constructor"]:
+    return isinstance(type, _AlgebraicDataType._Constructor)
+
+def is_adt_selector(type: "PySMTType") -> TypeGuard["_AlgebraicDataType._Selector"]:
+    return isinstance(type, _AlgebraicDataType._Selector)
+
+def is_adt_discriminator(type: "PySMTType") -> TypeGuard["_AlgebraicDataType._Discriminator"]:
+    return isinstance(type, _AlgebraicDataType._Discriminator)
 
 def is_custom_type(type: "PySMTType") -> TypeGuard["_TypeDecl"]:
     return type.custom_type

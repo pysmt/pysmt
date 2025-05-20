@@ -15,6 +15,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+from typing import List
 from warnings import warn
 
 from pysmt.exceptions import SolverAPINotFound
@@ -25,6 +26,7 @@ try:
 except ImportError:
     raise SolverAPINotFound
 
+from pysmt.fnode import FNode
 from pysmt.logics import LRA, LIA, QF_UFLIA, QF_UFLRA, QF_BV, PYSMT_QF_LOGICS
 from pysmt.oracles import get_logic
 
@@ -44,6 +46,7 @@ from pysmt.decorators import clear_pending_pop, catch_conversion_error
 from pysmt.solvers.qelim import QuantifierEliminator
 from pysmt.solvers.interpolation import Interpolator
 from pysmt.walkers.identitydag import IdentityDagWalker
+from pysmt.typeguard import is_adt_constructor, is_adt_discriminator, is_adt_selector, is_algebraic_data_type
 
 
 class MSatEnv(object):
@@ -601,7 +604,10 @@ class MSatConverter(Converter, DagWalker):
         elif mathsat.msat_term_is_uf(self.msat_env(), term):
             d = mathsat.msat_term_get_decl(term)
             fun = self.get_symbol_from_declaration(d)
-            return fun.symbol_type()
+            if is_adt_constructor(fun) or is_adt_selector(fun) or is_adt_discriminator(fun):
+                return fun
+            else:
+                return fun.symbol_type()
         raise ConvertExpressionError("Unsupported expression:",
                                      mathsat.msat_term_repr(term))
 
@@ -712,7 +718,14 @@ class MSatConverter(Converter, DagWalker):
         elif mathsat.msat_term_is_uf(self.msat_env(), term):
             d = mathsat.msat_term_get_decl(term)
             fun = self.get_symbol_from_declaration(d)
-            res = self.mgr.Function(fun, args)
+            if is_adt_constructor(fun):
+                return self.mgr.Constructor(fun, args)
+            elif is_adt_selector(fun):
+                return self.mgr.Selector(fun, args)
+            elif is_adt_discriminator(fun):
+                return self.mgr.Discriminator(fun, args)
+            else:
+                res = self.mgr.Function(fun, args)
         else:
             raise ConvertExpressionError("Unsupported expression:",
                                          mathsat.msat_term_repr(term))
@@ -1046,6 +1059,8 @@ class MSatConverter(Converter, DagWalker):
             return mathsat.msat_get_bv_type(self.msat_env(), tp.width)
         elif tp.is_custom_type():
             return mathsat.msat_get_simple_type(self.msat_env(), str(tp))
+        elif is_algebraic_data_type(tp):
+            return mathsat.msat_get_simple_type(self.msat_env(), str(tp.basename))
         else:
             raise NotImplementedError("Usupported type for '%s'" % tp)
 
@@ -1088,6 +1103,64 @@ class MSatConverter(Converter, DagWalker):
                 raise InternalSolverError(msat_msg)
             self.symbol_to_decl[var] = decl
             self.decl_to_symbol[mathsat.msat_decl_id(decl)] = var
+
+    def walk_adt_construct(self, formula: FNode, args: List[mathsat.msat_term], **kwargs):
+        constructor = formula.adt_get_ops_type()
+        assert is_adt_constructor(constructor)
+
+        if constructor not in self.symbol_to_decl:
+            tp = self._type_to_msat(constructor)
+            decl = mathsat.msat_declare_function(self.msat_env(),
+                                                 constructor.name,
+                                                 tp)
+            if mathsat.MSAT_ERROR_DECL(decl):
+                msat_msg = mathsat.msat_last_error_message(self.msat_env())
+                raise InternalSolverError(msat_msg)
+            self.symbol_to_decl[constructor] = decl
+            self.decl_to_symbol[mathsat.msat_decl_id(decl)] = constructor
+
+        decl = self.symbol_to_decl[constructor]
+        uf_constructor = mathsat.msat_make_uf(self.msat_env(), decl, args)
+
+        return uf_constructor
+
+    def walk_adt_select(self, formula: FNode, args: List[mathsat.msat_term], **kwargs):
+        selector = formula.adt_get_ops_type()
+
+        if selector not in self.symbol_to_decl:
+            tp = self._type_to_msat(selector)
+            decl = mathsat.msat_declare_function(self.msat_env(),
+                                                 selector.name,
+                                                 tp)
+            if mathsat.MSAT_ERROR_DECL(decl):
+                msat_msg = mathsat.msat_last_error_message(self.msat_env())
+                raise InternalSolverError(msat_msg)
+            self.symbol_to_decl[selector] = decl
+            self.decl_to_symbol[mathsat.msat_decl_id(decl)] = selector
+
+        decl = self.symbol_to_decl[selector]
+        uf_selector = mathsat.msat_make_uf(self.msat_env(), decl, args)
+
+        return uf_selector
+
+    def walk_adt_discriminate(self, formula: FNode, args: List[mathsat.msat_term], **kwargs):
+        discriminator = formula.adt_get_ops_type()
+
+        if discriminator not in self.symbol_to_decl:
+            tp = self._type_to_msat(discriminator)
+            decl = mathsat.msat_declare_function(self.msat_env(),
+                                                 "is-" + discriminator.name,
+                                                 tp)
+            if mathsat.MSAT_ERROR_DECL(decl):
+                msat_msg = mathsat.msat_last_error_message(self.msat_env())
+                raise InternalSolverError(msat_msg)
+            self.symbol_to_decl[discriminator] = decl
+            self.decl_to_symbol[mathsat.msat_decl_id(decl)] = discriminator
+
+        decl = self.symbol_to_decl[discriminator]
+        uf_discriminator = mathsat.msat_make_uf(self.msat_env(), decl, args)
+
+        return uf_discriminator
 
 
 # Check if we are working on a version MathSAT supporting quantifier elimination

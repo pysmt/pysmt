@@ -327,6 +327,21 @@ class TheoryOracle(walkers.DagWalker):
         theory_out = theory_out.set_difference_logic(False)
         return theory_out
 
+    @walkers.handles([*op.ADT_OPERATORS])
+    def walk_algebraic_datatype(self, formula, args, **kwargs):
+        if len(args) == 1:
+            theory_out = args[0].copy()
+        elif len(args) > 1:
+            theory_out = args[0]
+            for t in args[1:]:
+                theory_out = theory_out.combine(t)
+        else:
+            theory_out = Theory()
+
+        theory_out = args[0].copy()
+        theory_out.uninterpreted = True
+        return theory_out
+
 # EOC TheoryOracle
 
 

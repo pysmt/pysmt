@@ -17,6 +17,7 @@
 #
 from io import StringIO
 
+from pysmt.fnode import FNode
 import pysmt.operators as op
 from pysmt.walkers import TreeWalker
 from pysmt.walkers.generic import handles
@@ -289,6 +290,25 @@ class HRPrinter(TreeWalker):
         self.write("bv2nat(")
         yield formula.arg(0)
         self.write(")")
+
+    def __print_adt_type(self, fun_name: str, formula: FNode):
+        self.write(fun_name + "(")
+        args = formula.args()
+        args_len = len(args)
+        for i, param in enumerate(args):
+            yield param
+            if i < (args_len - 1):
+                self.write(", ")
+        self.write(")")
+
+    def walk_adt_construct(self, formula: FNode):
+        return self.__print_adt_type(formula.adt_constructor_name(), formula)
+
+    def walk_adt_select(self, formula: FNode):
+        return self.__print_adt_type(formula.adt_get_ops_type().name, formula)
+
+    def walk_adt_discriminate(self, formula: FNode):
+        return self.__print_adt_type("is-" + formula.adt_get_ops_type().name, formula)
 
     def walk_and(self, formula): return self.walk_nary(formula, " & ")
     def walk_or(self, formula): return self.walk_nary(formula, " | ")

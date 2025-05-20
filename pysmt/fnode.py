@@ -17,6 +17,8 @@
 #
 """FNode are the building blocks of formulae."""
 import collections
+from typing import Union
+from typing_extensions import assert_never
 import pysmt
 import pysmt.smtlib
 from pysmt.operators import (FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF,
@@ -44,19 +46,20 @@ from pysmt.operators import (FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF,
                              STR_TO_INT, INT_TO_STR,
                              STR_CHARAT,
                              ARRAY_SELECT, ARRAY_STORE, ARRAY_VALUE,
-                             ALGEBRAIC_CONSTANT)
+                             ALGEBRAIC_CONSTANT,
+                             ADT_CONSTRUCT, ADT_DISCRIMINATE, ADT_SELECT)
 
 from pysmt.operators import  (BOOL_OPERATORS, THEORY_OPERATORS,
                               BV_OPERATORS, IRA_OPERATORS, ARRAY_OPERATORS,
                               STR_OPERATORS,
                               RELATIONS, CONSTANTS)
 
-from pysmt.typing import BOOL, REAL, INT, BVType, STRING
+from pysmt.typing import BOOL, REAL, INT, BVType, STRING, PySMTType, _AlgebraicDataType
 from pysmt.decorators import deprecated, assert_infix_enabled
 from pysmt.utils import twos_complement
 from pysmt.constants import (Fraction, is_python_integer,
                              is_python_rational, is_python_boolean)
-from pysmt.exceptions import (PysmtValueError, PysmtModeError,
+from pysmt.exceptions import (PysmtTypeError, PysmtValueError, PysmtModeError,
                               UnsupportedOperatorError)
 
 
@@ -556,6 +559,18 @@ class FNode(object):
         """
         return not (self.is_symbol() and self.symbol_type().is_function_type())
 
+    def is_adt_construct(self):
+        """Test whether the node is the applicaiton of a constractor"""
+        return self.node_type() == ADT_CONSTRUCT
+
+    def is_adt_select(self):
+        """Test whether the node is the applicaiton of a selector on a adt"""
+        return self.node_type() == ADT_SELECT
+
+    def is_adt_discriminate(self):
+        """Test whether the node is the applicaiton of a discriminator on a adt """
+        return self.node_type() == ADT_DISCRIMINATE
+
     def is_str_op(self):
         return self.node_type() in STR_OPERATORS
 
@@ -686,6 +701,66 @@ class FNode(object):
         value = self.constant_value()
         approx = value.approx(precision)
         return approx.as_fraction()
+
+    def adt_type_from_adt_op(self) -> _AlgebraicDataType:
+        """
+        From a constructor, selector or discriminator
+        return the original ADT
+        """
+        if self.is_adt_construct():
+            return self._content.payload.return_type
+        elif self.is_adt_select():
+            return self._content.payload.param_types[0]
+        elif self.is_adt_discriminate():
+            return self._content.payload.param_types[0]
+        else:
+            raise PysmtTypeError("Trying to use adt_type_from_adt_op on a non adt node")
+
+    def adt_get_ops_type(
+        self,
+    ) -> Union[
+        _AlgebraicDataType._Constructor,
+        _AlgebraicDataType._Selector,
+        _AlgebraicDataType._Discriminator,
+    ]:
+        """
+        From a constructor, selector or discriminator
+        return the original ADT
+        """
+        if self.is_adt_construct():
+            return self._content.payload
+        elif self.is_adt_select():
+            return self._content.payload
+        elif self.is_adt_discriminate():
+            return self._content.payload
+        else:
+            raise PysmtTypeError("Trying to use adt_get_type on a non adt node")
+
+
+    def adt_constructor_name(self) -> str:
+        """Return algebraic datatype constructor name."""
+        assert self.is_adt_construct()
+        return self._content.payload.name
+
+    def adt_get_constructor(self) -> _AlgebraicDataType._Constructor:
+        """Return type of the construct for the algebraic datatype."""
+        assert self.is_adt_construct()
+        return self._content.payload
+
+    def adt_constructed_type(self) -> PySMTType:
+        """Return algebraic datatype constructor name."""
+        assert self.is_adt_construct()
+        return self._content.payload.return_type
+
+    def adt_selector_name(self) -> str:
+        """Return algebraic datatype selector name."""
+        assert self.is_adt_select()
+        return self._content.payload.name
+
+    def adt_discriminator_name(self) -> str:
+        """Return algebraic datatype discriminator name."""
+        assert self.is_adt_discriminate()
+        return self._content.payload.name
 
     # Infix Notation
     @assert_infix_enabled

@@ -24,7 +24,7 @@ these operators.
 from itertools import chain
 
 
-ALL_TYPES = list(range(0,66))
+ALL_TYPES = list(range(0,69))
 
 (
 FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF, # Boolean Logic (0-6)
@@ -78,6 +78,12 @@ DIV,                                        # Arithmetic Division (62)
 POW,                                        # Arithmetic Power (63)
 ALGEBRAIC_CONSTANT,                         # Algebraic Number (64)
 BV_TONATURAL,                               # BV to Natural Conversion (65)
+#
+# ALGEBRAIC DATA TYPES
+#
+ADT_CONSTRUCT,                              # Create a new symbol with ADT type (66)
+ADT_SELECT,                                 # Extract a value from a ADT symbol (67)
+ADT_DISCRIMINATE,                           # Test if symbol was made with a constructor (68)
 ) = ALL_TYPES
 
 QUANTIFIERS = frozenset([FORALL, EXISTS])
@@ -113,7 +119,9 @@ IRA_OPERATORS = frozenset([PLUS, MINUS, TIMES, TOREAL, DIV, POW, BV_TONATURAL])
 
 ARRAY_OPERATORS = frozenset([ARRAY_SELECT, ARRAY_STORE, ARRAY_VALUE])
 
-THEORY_OPERATORS = IRA_OPERATORS | BV_OPERATORS | ARRAY_OPERATORS | STR_OPERATORS
+ADT_OPERATORS = frozenset([ADT_CONSTRUCT, ADT_SELECT, ADT_DISCRIMINATE])
+
+THEORY_OPERATORS = IRA_OPERATORS | BV_OPERATORS | ARRAY_OPERATORS | STR_OPERATORS | ADT_OPERATORS
 
 CUSTOM_NODE_TYPES = []
 
@@ -222,4 +230,7 @@ __OP_STR__ = {
     DIV: "DIV",
     POW: "POW",
     ALGEBRAIC_CONSTANT: "ALGEBRAIC_CONSTANT",
+    ADT_CONSTRUCT: "ADT_CONSTRUCT",
+    ADT_SELECT: "ADT_SELECT",
+    ADT_DISCRIMINATE: "ADT_DISCRIMINATE",
 }

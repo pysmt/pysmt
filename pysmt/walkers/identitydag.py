@@ -242,3 +242,12 @@ class IdentityDagWalker(DagWalker):
 
     def walk_div(self, formula, args, **kwargs):
         return self.mgr.Div(args[0], args[1])
+
+    def walk_adt_construct(self, formula, args, **kwargs):
+        return self.mgr.Constructor(formula._content.payload, *args)
+
+    def walk_adt_select(self, formula, args, **kwargs):
+        return self.mgr.Selector(formula._content.payload, args[0])
+
+    def walk_adt_discriminate(self, formula, args, **kwargs):
+        return self.mgr.Discriminator(formula._content.payload, args[0])

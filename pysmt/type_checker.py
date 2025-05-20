@@ -22,6 +22,8 @@ reasoning about the type of formulae.
  * The functions assert_*_args are useful for testing the type of
    arguments of a given function.
 """
+from pysmt.fnode import FNode
+from pysmt.typeguard import is_adt_constructor, is_adt_discriminator, is_adt_selector
 import pysmt.walkers as walkers
 import pysmt.operators as op
 
@@ -327,6 +329,24 @@ class SimpleTypeChecker(walkers.DagWalker):
         if args[0] != args[1]:
             return None
         return REAL
+
+    def walk_adt_construct(self, formula: FNode, args, **kwargs):
+        assert formula is not None
+        construct = formula.adt_get_ops_type()
+        assert is_adt_constructor(construct), "Expected construct type for construct ops"
+        return construct.return_type
+
+    def walk_adt_select(self, formula: FNode, args, **kwargs):
+        assert formula is not None
+        selector = formula.adt_get_ops_type()
+        assert is_adt_selector(selector), "Expected selector type for selector ops"
+        return selector.return_type
+
+    def walk_adt_discriminate(self, formula: FNode, args, **kwargs):
+        assert formula is not None
+        discriminate = formula.adt_get_ops_type()
+        assert is_adt_discriminator(discriminate), "Expected discriminator type for discriminator ops"
+        return discriminate.return_type
 
 # EOC SimpleTypeChecker
 

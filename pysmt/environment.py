@@ -21,6 +21,7 @@ singleton objects that are used throughout the system, such as the
 FormulaManager, Simplifier, HRSerializer, SimpleTypeChecker.
 """
 
+from typing import List
 import pysmt.simplifier
 import pysmt.printers
 import pysmt.substituter
@@ -181,7 +182,7 @@ class Environment(object):
 # EOC Environment
 
 #### GLOBAL ENVIRONMENTS STACKS ####
-ENVIRONMENTS_STACK = []
+ENVIRONMENTS_STACK: List[Environment] = []
 
 def get_env():
     """Returns the Environment at the head of the stack."""

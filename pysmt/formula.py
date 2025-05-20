@@ -1076,6 +1076,27 @@ class FormulaManager(object):
         return self.create_node(node_type=op.ARRAY_VALUE, args=tuple(args),
                                 payload=idx_type)
 
+    def Constructor(self, constractor: "types._AlgebraicDataType._Constructor", *args: FNode):
+        """Creates a node representing the construction of an ADT"""
+        tuple_args = self._polymorph_args_to_tuple(args)
+        return self.create_node(
+            node_type=op.ADT_CONSTRUCT, args=tuple_args, payload=constractor
+        )
+
+    def Selector(self, selector: "types._AlgebraicDataType._Selector", variable: FNode):
+        """Creates a node representing the selector of an ADT"""
+        return self.create_node(
+            node_type=op.ADT_SELECT, args=(variable,), payload=selector
+        )
+
+    def Discriminator(
+        self, discriminator: "types._AlgebraicDataType._Discriminator", variable: FNode
+    ):
+        """Creates a node representing the discrimination of an ADT"""
+        return self.create_node(
+            node_type=op.ADT_DISCRIMINATE, args=(variable,), payload=discriminator
+        )
+
     def _Algebraic(self, val):
         """Returns the algebraic number val."""
         return self.create_node(node_type=op.ALGEBRAIC_CONSTANT,
