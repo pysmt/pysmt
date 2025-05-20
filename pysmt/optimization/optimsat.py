@@ -69,6 +69,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
     def __init__(self, environment, logic, **options):
         MathSAT5Solver.__init__(self, environment=environment,
                                 logic=logic, **options)
+        self._objectives_to_destroy = []
 
     def _assert_msat_goal(self, goal, goal_id):
 
@@ -104,14 +105,23 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
 
         msat_obj = make_fun(self.msat_env(), obj_fun, signed = goal.signed)
         self._msat_lib.msat_assert_objective(self.msat_env(), msat_obj)
+        self._objectives_to_destroy.append(msat_obj)
         return msat_obj
+
+    def _destroy_asserted_objectives(self):
+        for msat_obj in self._objectives_to_destroy:
+            val = self._msat_lib.msat_destroy_objective(self.msat_env(), msat_obj)
+            print(val)
 
     @clear_pending_pop
     def optimize(self, goal, **kwargs):
+        self._destroy_asserted_objectives()
+        print("asserting")
         msat_obj = self._assert_msat_goal(goal, 0)
+        print("solving")
 
         self.solve()
-
+        print("solved")
         if self._check_unsat_unbound_infinitesimal(msat_obj):
 
             model = self.get_model()
@@ -129,6 +139,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
 
     @clear_pending_pop
     def pareto_optimize(self, goals):
+        self._destroy_asserted_objectives()
         self._check_pareto_lexicographic_goals(goals, "pareto")
         self._msat_lib.msat_set_opt_priority(self.msat_env(), "par")
 
@@ -145,6 +156,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
 
     @clear_pending_pop
     def lexicographic_optimize(self, goals):
+        self._destroy_asserted_objectives()
         self._check_pareto_lexicographic_goals(goals, "lexicographic")
         self._msat_lib.msat_set_opt_priority(self.msat_env(), "lex")
 
@@ -162,6 +174,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
 
     @clear_pending_pop
     def boxed_optimize(self, goals):
+        self._destroy_asserted_objectives()
         self._msat_lib.msat_set_opt_priority(self.msat_env(), "box")
         msat_objs = []
 
@@ -177,6 +190,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
         for msat_obj, goal in zip(msat_objs, goals):
             if not self._check_unsat_unbound_infinitesimal(msat_obj):
                 return None
+            # TODO this might be useless because it is done in the method above
             self._msat_lib.msat_load_objective_model(self.msat_env(), msat_obj)
             model = self.get_model()
             if goal.is_maxsmt_goal():

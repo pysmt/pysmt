@@ -49,7 +49,7 @@ def clear_pending_pop(f):
 
     Some functions (e.g., get_value) required the state of the solver
     to stay unchanged after a call to solve. Therefore, we can leave
-    th solver in an intermediate state in which there is a formula
+    the solver in an intermediate state in which there is a formula
     asserted in the stack that is not needed (e.g., when solving under
     assumptions). In order to guarantee that methods operate on the
     correct set of formulae, all methods of the solver that rely on

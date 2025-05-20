@@ -20,7 +20,7 @@ from pysmt.test import TestCase, skipIfNoOptimizerForLogic
 from pysmt.test import main
 from pysmt.test.optimization_utils import get_non_diverging_optimizers
 
-from pysmt.shortcuts import Optimizer, GE, Int, Symbol, INT, LE, GT, REAL, Real
+from pysmt.shortcuts import Optimizer, GE, Int, Symbol, INT, LE, GT, REAL, Real, Equals
 from pysmt.shortcuts import BVType, BVSGE, BVSLE, BVSGT, BVSLT, BV
 from pysmt.shortcuts import And, Plus, Minus, get_env
 from pysmt.logics import QF_LIA, QF_LRA, QF_BV
@@ -435,6 +435,163 @@ class TestOptimization(TestCase):
                 model, cost = opt.optimize(maxsmt)
                 self.assertEqual(model[x], Int(9))
 
+    def test_subsequent_optimizations(self):
+        x = Symbol("x", INT)
+        y = Symbol("y", INT)
+        formula = And(GE(x, Int(0)), GE(y, Int(0)), LE(x, Int(3)), LE(y, Int(3)), Equals(Plus(x, y), Int(3)))
+
+        for oname in get_env().factory.all_optimizers(logic=QF_LIA):
+            with Optimizer(name=oname) as opt:
+                opt.add_assertion(formula)
+
+                # First optimization: maximize x
+                max_x = MaximizationGoal(x)
+                model, cost = opt.optimize(max_x)
+                self.assertEqual(model.get_value(x), Int(3))
+                self.assertEqual(cost, Int(3))
+                self.assertEqual(model.get_value(y), Int(0))
+
+                print(oname)
+                # TODO currently optimsat does not support this; to understand why it goes in a deadlock
+                if oname == "optimsat":
+                    continue
+
+                # Second optimization: maximize y
+                max_y = MaximizationGoal(y)
+                model, cost = opt.optimize(max_y)
+                self.assertEqual(model.get_value(x), Int(0))
+                self.assertEqual(model.get_value(y), Int(3))
+                self.assertEqual(cost, Int(3))
+
+                # print(f"{oname} finished")
+
+    def test_subsequent_lexicographic_optimizations(self):
+        x = Symbol("x", INT)
+        y = Symbol("y", INT)
+        formula = And(GE(x, Int(0)), GE(y, Int(0)), LE(x, Int(3)), LE(y, Int(3)), Equals(Plus(x, y), Int(3)))
+
+        for oname in get_env().factory.all_optimizers(logic=QF_LIA):
+            with Optimizer(name=oname) as opt:
+                opt.add_assertion(formula)
+
+                # First optimization: maximize x
+                max_x = MaximizationGoal(x)
+                max_y = MaximizationGoal(y)
+                model, costs = opt.lexicographic_optimize([max_x, max_y])
+                cost_x, cost_y = costs
+                self.assertEqual(model.get_value(x), Int(3))
+                self.assertEqual(cost_x, Int(3))
+                self.assertEqual(model.get_value(y), Int(0))
+                self.assertEqual(cost_y, Int(0))
+
+                print(oname)
+                # TODO currently optimsat does not support this; to understand why it returns the wrong result
+                # if oname == "optimsat":
+                #     continue
+
+                # Second optimization: maximize y
+                model, costs = opt.lexicographic_optimize([max_y, max_x])
+                cost_y, cost_x = costs
+                self.assertEqual(model.get_value(x), Int(0))
+                self.assertEqual(cost_x, Int(0))
+                self.assertEqual(model.get_value(y), Int(3))
+                self.assertEqual(cost_y, Int(3))
+
+                # print(f"{oname} finished")
+
+    def test_subsequent_boxed_optimizations(self):
+        x = Symbol("x", INT)
+        y = Symbol("y", INT)
+        z = Symbol("z", INT)
+        formula = And(
+            GE(x, Int(0)), GE(y, Int(0)), GE(z, Int(0)),
+            LE(x, Int(3)), LE(y, Int(3)), LE(z, Int(3)),
+            Equals(Plus(x, y, z), Int(3)))
+
+        for oname in get_env().factory.all_optimizers(logic=QF_LIA):
+            with Optimizer(name=oname) as opt:
+                opt.add_assertion(formula)
+
+                # First optimization: maximize x and y
+                max_x = MaximizationGoal(x)
+                max_y = MaximizationGoal(y)
+                models_costs = opt.boxed_optimize([max_x, max_y])
+                self.assertEqual(len(models_costs), 2)
+                max_x_model, max_x_cost = models_costs[max_x]
+                self.assertEqual(max_x_model.get_value(x), Int(3))
+                self.assertEqual(max_x_cost, Int(3))
+                self.assertEqual(max_x_model.get_value(y), Int(0))
+                max_y_model, max_y_cost = models_costs[max_y]
+                self.assertEqual(max_y_model.get_value(x), Int(0))
+                self.assertEqual(max_y_cost, Int(3))
+                self.assertEqual(max_y_model.get_value(y), Int(3))
+
+                print(oname)
+                # TODO currently optimsat does not support this; to understand why it goes in a deadlock
+                if oname == "optimsat":
+                    continue
+
+                # First optimization: maximize x and z
+                max_z = MaximizationGoal(z)
+                models_costs = opt.boxed_optimize([max_x, max_z])
+                self.assertEqual(len(models_costs), 2)
+                max_x_model, max_x_cost = models_costs[max_x]
+                self.assertEqual(max_x_model.get_value(x), Int(3))
+                self.assertEqual(max_x_cost, Int(3))
+                self.assertEqual(max_x_model.get_value(z), Int(0))
+                max_z_model, max_z_cost = models_costs[max_z]
+                self.assertEqual(max_z_model.get_value(x), Int(0))
+                self.assertEqual(max_z_cost, Int(3))
+                self.assertEqual(max_z_model.get_value(z), Int(3))
+
+                # print(f"{oname} finished")
+
+    def test_subsequent_pareto_optimizations(self):
+        x = Symbol("x", INT)
+        y = Symbol("y", INT)
+        z = Symbol("z", INT)
+        formula = And(
+            GE(x, Int(0)), GE(y, Int(0)), GE(z, Int(0)),
+            LE(x, Int(3)), LE(y, Int(3)), LE(z, Int(3)),
+            Equals(Plus(x, y, z), Int(3)))
+
+        for oname in get_env().factory.all_optimizers(logic=QF_LIA):
+            with Optimizer(name=oname) as opt:
+                opt.add_assertion(formula)
+
+                # First optimization: maximize x and y
+                max_x = MaximizationGoal(x)
+                max_y = MaximizationGoal(y)
+                models_costs = opt.boxed_optimize([max_x, max_y])
+                self.assertEqual(len(models_costs), 2)
+                max_x_model, max_x_cost = models_costs[max_x]
+                self.assertEqual(max_x_model.get_value(x), Int(3))
+                self.assertEqual(max_x_cost, Int(3))
+                self.assertEqual(max_x_model.get_value(y), Int(0))
+                max_y_model, max_y_cost = models_costs[max_y]
+                self.assertEqual(max_y_model.get_value(x), Int(0))
+                self.assertEqual(max_y_cost, Int(3))
+                self.assertEqual(max_y_model.get_value(y), Int(3))
+
+                print(oname)
+                # TODO currently optimsat does not support this; to understand why it goes in a deadlock
+                if oname == "optimsat":
+                    continue
+
+                # First optimization: maximize x and z
+                max_z = MaximizationGoal(z)
+                models_costs = opt.boxed_optimize([max_x, max_z])
+                self.assertEqual(len(models_costs), 2)
+                max_x_model, max_x_cost = models_costs[max_x]
+                self.assertEqual(max_x_model.get_value(x), Int(3))
+                self.assertEqual(max_x_cost, Int(3))
+                self.assertEqual(max_x_model.get_value(z), Int(0))
+                max_z_model, max_z_cost = models_costs[max_z]
+                self.assertEqual(max_z_model.get_value(x), Int(0))
+                self.assertEqual(max_z_cost, Int(3))
+                self.assertEqual(max_z_model.get_value(z), Int(3))
+
+                # print(f"{oname} finished")
 
 if __name__ == '__main__':
     main()
