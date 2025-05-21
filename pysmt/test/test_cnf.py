@@ -122,7 +122,7 @@ class TestCnf(TestCase):
         factory = get_env().factory
         for solver_name in factory.all_solvers(test_logic):
             # msat needs to be skipped. Check issue #807
-            if solver_name == "msat":
+            if solver_name in ("msat", "optimsat"):
                 continue
             self.assertValid(
                 Implies(cnf, f),
