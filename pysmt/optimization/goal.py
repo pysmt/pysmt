@@ -16,24 +16,11 @@
 #   limitations under the License.
 #
 
-from fractions import Fraction
 from pysmt.environment import get_env
 from pysmt.exceptions import PysmtValueError
 from pysmt.oracles import get_logic
 from pysmt.logics import LIA, LRA, BV
 from pysmt.fnode import FNode
-
-
-# check if gmpy2 is installed or not and decide which numeric classes are supported
-accepted_integer_numbers_class = (int, )
-accepted_real_numbers_class = (float, Fraction)
-try:
-    import gmpy2
-    accepted_integer_numbers_class += (gmpy2.mpz, )
-    accepted_real_numbers_class += (gmpy2.mpq, gmpy2.mpfr)
-except ImportError:
-    pass
-accepted_numbers_class = accepted_integer_numbers_class + accepted_real_numbers_class
 
 
 class Goal(object):
@@ -252,10 +239,6 @@ class MaxSMTGoal(Goal):
                 weight = mgr.Real(weight.constant_value())
             self.soft.append((clause, weight))
         else:
-            if not isinstance(weight, accepted_numbers_class):
-                raise PysmtValueError("Weight '%s' has to be one of '%s'; given value has type: '%s'" % (str(weight), str(accepted_numbers_class), str(type(weight))))
-            if not self._real_weights and isinstance(weight, accepted_real_numbers_class):
-                raise PysmtValueError("Weight '%s' type has to be one of '%s' because the flag 'real_weights' is set to 'False'; given value has type: '%s'" % (str(weight), str(accepted_integer_numbers_class), str(type(weight))))
             WeightFnodeClass = mgr.Real if self.real_weights() else mgr.Int
             self.soft.append((clause, WeightFnodeClass(weight)))
 
