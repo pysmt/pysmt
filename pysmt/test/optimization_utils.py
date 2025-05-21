@@ -4,7 +4,7 @@ import pytest
 
 from pysmt.fnode import FNode
 from pysmt.shortcuts import get_env
-from pysmt.exceptions import PysmtUnboundedOptimizationError, PysmtInfinitesimalError, PysmtValueError
+from pysmt.exceptions import PysmtUnboundedOptimizationError, PysmtInfinitesimalError, PysmtValueError, PysmtNonReusableOptimizerError
 from pysmt.optimization.optimizer import SUAOptimizerMixin, IncrementalOptimizerMixin
 
 class OptimizationTypes(Enum):
@@ -163,16 +163,16 @@ def solve_given_example(optimization_example, solver_name, test_to_skip=None):
 
                 print(temp_test_id_str)
                 if optimization_type == OptimizationTypes.LEXICOGRAPHIC:
-                    _test_lexicographic(opt, goals, goals_values, test_id_str, **extra_options)
+                    check_lexicographic(opt, goals, goals_values, test_id_str, **extra_options)
                 elif optimization_type == OptimizationTypes.PARETO:
                     pareto_extra_options = extra_options.copy()
                     if "strategy" in pareto_extra_options:
                         del pareto_extra_options["strategy"]
-                    _test_pareto(opt, goals, goals_values, test_id_str, **pareto_extra_options)
+                    check_pareto(opt, goals, goals_values, test_id_str, **pareto_extra_options)
                 elif optimization_type == OptimizationTypes.BOXED:
-                    _test_boxed(opt, goals, goals_values, test_id_str, test_basic_in_boxed, **extra_options)
+                    check_boxed(opt, goals, goals_values, test_id_str, test_basic_in_boxed, **extra_options)
                 elif optimization_type == OptimizationTypes.BASIC:
-                    _test_basic(opt, goals[0], goals_values[0], test_id_str, **extra_options)
+                    check_basic(opt, goals[0], goals_values[0], test_id_str, **extra_options)
                 else:
                     raise NotImplementedError("Unknown optimization type: %s" % optimization_type)
 
@@ -212,7 +212,7 @@ def _get_expected_raised_class(goals_value):
     return raised_class
 
 
-def _test_lexicographic(optimizer, goals, goals_values, test_id_str, **kwargs):
+def check_lexicographic(optimizer, goals, goals_values, test_id_str, **kwargs):
     raised_class = _get_expected_raised_class(goals_values[0])
     assert raised_class is None or len(goals_values) == 1, "test: %s, goals_values: %s" % (test_id_str, str(goals_values))
     if raised_class is None:
@@ -222,17 +222,19 @@ def _test_lexicographic(optimizer, goals, goals_values, test_id_str, **kwargs):
         assert len(goals) == len(goals_values) == len(costs), test_id_str
         for goal, goal_value, cost in zip(goals, goals_values, costs):
             _check_oracle_goal(goal, goal_value, cost, test_id_str, **kwargs)
+        return retval
     elif not optimizer.can_diverge_for_unbounded_cases():
         with pytest.raises(raised_class):
             optimizer.lexicographic_optimize(goals, **kwargs)
 
 
-def _test_pareto(optimizer, goals, goals_values, test_id_str, **kwargs):
+def check_pareto(optimizer, goals, goals_values, test_id_str, **kwargs):
     raised_class = _get_expected_raised_class(goals_values[0])
     assert raised_class is None or len(goals_values) == 1, "test: %s, goals_values: %s" % (test_id_str, str(goals_values))
     if raised_class is None:
         retval = optimizer.pareto_optimize(goals, **kwargs)
         assert retval is not None, test_id_str
+        retval = list(retval)
 
         sorted_costs = sorted((costs for _, costs in retval), key=str)
         sorted_goals_values = sorted(goals_values, key=str)
@@ -243,12 +245,14 @@ def _test_pareto(optimizer, goals, goals_values, test_id_str, **kwargs):
 
             for goal, goal_value, cost in zip(goals, goals_values, costs):
                 _check_oracle_goal(goal, goal_value, cost, test_id_str, **kwargs)
+
+        return retval
     elif not optimizer.can_diverge_for_unbounded_cases():
         with pytest.raises(raised_class):
             optimizer.pareto_optimize(goals, **kwargs)
 
 
-def _test_boxed(optimizer, goals, goals_values, test_id_str, test_basic, **kwargs):
+def check_boxed(optimizer, goals, goals_values, test_id_str, also_test_basic, **kwargs):
     # extract which class should be raised by the boxed optimization
     raised_class = None
     for goal_value in goals_values:
@@ -269,18 +273,25 @@ def _test_boxed(optimizer, goals, goals_values, test_id_str, test_basic, **kwarg
             optimizer.boxed_optimize(goals, **kwargs)
 
     # test single optimizations separately
-    if test_basic:
-        for goal, goal_value in zip(goals, goals_values):
-            _test_basic(optimizer, goal, goal_value, test_id_str, **kwargs)
+    if also_test_basic:
+        try:
+            for goal, goal_value in zip(goals, goals_values):
+                check_basic(optimizer, goal, goal_value, test_id_str, **kwargs)
+        except PysmtNonReusableOptimizerError:
+            pass
+
+    if raised_class is None:
+        return retval
 
 
-def _test_basic(optimizer, goal, goal_value, test_id_str, **kwargs):
+def check_basic(optimizer, goal, goal_value, test_id_str, **kwargs):
     raised_class = _get_expected_raised_class(goal_value)
     if raised_class is None:
         retval = optimizer.optimize(goal, **kwargs)
         assert retval is not None, test_id_str
         _, cost = retval
         _check_oracle_goal(goal, goal_value, cost, test_id_str, **kwargs)
+        return retval
     elif not optimizer.can_diverge_for_unbounded_cases():
         with pytest.raises(raised_class):
             optimizer.optimize(goal, **kwargs)

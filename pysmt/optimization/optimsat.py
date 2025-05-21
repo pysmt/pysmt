@@ -23,7 +23,8 @@ from pysmt.logics import LRA, LIA
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               PysmtUnboundedOptimizationError,
                               GoalNotSupportedError,
-                              PysmtInfinitesimalError)
+                              PysmtInfinitesimalError,
+                              PysmtNonReusableOptimizerError)
 from pysmt.optimization.optimizer import Optimizer
 
 from pysmt.solvers.msat import MSatEnv, MathSAT5Model, MathSATOptions
@@ -71,14 +72,14 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
                                 logic=logic, **options)
         self._objectives_to_destroy = []
 
-    def _assert_msat_goal(self, goal, goal_id):
+    def _assert_msat_goal(self, goal):
 
         if goal.is_maxsmt_goal():
             for tcons, weight in goal.soft:
                 obj_tcons = self.converter.convert(tcons)
                 obj_weight = self._msat_lib.msat_make_number(self.msat_env(), str(weight.constant_value()))
-                self._msat_lib.msat_assert_soft_formula(self.msat_env(), obj_tcons, obj_weight, "__pysmt_" + str(goal_id))
-            obj_fun = self._msat_lib.msat_from_string(self.msat_env(), "__pysmt_" + str(goal_id))
+                self._msat_lib.msat_assert_soft_formula(self.msat_env(), obj_tcons, obj_weight, "__pysmt_" + str(id(goal)))
+            obj_fun = self._msat_lib.msat_from_string(self.msat_env(), "__pysmt_" + str(id(goal)))
             make_fun = self._msat_lib.msat_make_minimize
 
         elif goal.is_minmax_goal() or goal.is_maxmin_goal():
@@ -108,34 +109,30 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
         self._objectives_to_destroy.append(msat_obj)
         return msat_obj
 
-    def _destroy_asserted_objectives(self):
+    def _destroy_asserted_objectives(self, _raise_exception=True):
+        # TODO this code should remove the objectives, but we still have to check if this is allowed by optimsat
         for msat_obj in self._objectives_to_destroy:
-            val = self._msat_lib.msat_destroy_objective(self.msat_env(), msat_obj)
-            print(val)
+            # self._msat_lib.msat_destroy_objective(self.msat_env(), msat_obj) # This should be the code to de-assert a goal
+            if _raise_exception:
+                raise PysmtNonReusableOptimizerError("Optimsat cannot be reused. Create a new instance of the optimizer to use it again.")
+
+    def _get_goal_value(self, msat_obj, goal):
+        if not self._check_unsat_unbound_infinitesimal(msat_obj):
+            return None
+        model = self.get_model()
+        if goal.is_maxsmt_goal():
+            return model, self._compute_max_smt_cost(model, goal)
+        return model, model.get_value(goal.term())
 
     @clear_pending_pop
     def optimize(self, goal, **kwargs):
-        self._destroy_asserted_objectives()
-        print("asserting")
-        msat_obj = self._assert_msat_goal(goal, 0)
-        print("solving")
+        self._destroy_asserted_objectives(False)
+        # TODO temporary fix; reset priority as "box" to make sure it is not "lex" or "par"
+        self._msat_lib.msat_set_opt_priority(self.msat_env(), "box")
+        msat_obj = self._assert_msat_goal(goal)
 
         self.solve()
-        print("solved")
-        if self._check_unsat_unbound_infinitesimal(msat_obj):
-
-            model = self.get_model()
-            if goal.is_maxsmt_goal():
-                cost = self._compute_max_smt_cost(model, goal)
-                return model, cost
-            value = self._msat_lib.msat_objective_value_term(
-                self.msat_env(),
-                msat_obj,
-                self._msat_lib.MSAT_OPTIMUM
-            )
-            return model, self.converter.back(value)
-
-        return None
+        return self._get_goal_value(msat_obj, goal)
 
     @clear_pending_pop
     def pareto_optimize(self, goals):
@@ -144,7 +141,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
         self._msat_lib.msat_set_opt_priority(self.msat_env(), "par")
 
         msat_objs = {
-            g: self._assert_msat_goal(g, goal_id) for goal_id, g in enumerate(goals)
+            g: self._assert_msat_goal(g) for g in goals
         }
 
         while self.solve():
@@ -161,7 +158,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
         self._msat_lib.msat_set_opt_priority(self.msat_env(), "lex")
 
         msat_objs = {
-            g: self._assert_msat_goal(g, goal_id) for goal_id, g in enumerate(goals)
+            g: self._assert_msat_goal(g) for g in goals
         }
 
         rt = self.solve()
@@ -174,12 +171,12 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
 
     @clear_pending_pop
     def boxed_optimize(self, goals):
-        self._destroy_asserted_objectives()
+        self._destroy_asserted_objectives(False)
         self._msat_lib.msat_set_opt_priority(self.msat_env(), "box")
         msat_objs = []
 
-        for goal_id, g in enumerate(goals):
-            msat_objs.append(self._assert_msat_goal(g, goal_id))
+        for g in goals:
+            msat_objs.append(self._assert_msat_goal(g))
 
         check = self.solve()
         if not check:
@@ -188,15 +185,10 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
         rt = {}
 
         for msat_obj, goal in zip(msat_objs, goals):
-            if not self._check_unsat_unbound_infinitesimal(msat_obj):
+            model_value = self._get_goal_value(msat_obj, goal)
+            if model_value is None:
                 return None
-            # TODO this might be useless because it is done in the method above
-            self._msat_lib.msat_load_objective_model(self.msat_env(), msat_obj)
-            model = self.get_model()
-            if goal.is_maxsmt_goal():
-                rt[goal] = (model, self._compute_max_smt_cost(model, goal))
-            else:
-                rt[goal] = (model, model.get_value(goal.term()))
+            rt[goal] = model_value
 
         return rt
 

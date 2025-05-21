@@ -18,7 +18,7 @@
 
 from pysmt.test import TestCase, skipIfNoOptimizerForLogic
 from pysmt.test import main
-from pysmt.test.optimization_utils import get_non_diverging_optimizers
+from pysmt.test.optimization_utils import get_non_diverging_optimizers, check_basic, check_lexicographic, check_boxed, check_pareto
 
 from pysmt.shortcuts import Optimizer, GE, Int, Symbol, INT, LE, GT, REAL, Real, Equals
 from pysmt.shortcuts import BVType, BVSGE, BVSLE, BVSGT, BVSLT, BV
@@ -27,7 +27,7 @@ from pysmt.logics import QF_LIA, QF_LRA, QF_BV
 from pysmt.optimization.goal import MaximizationGoal, MinimizationGoal, \
     MinMaxGoal, MaxMinGoal, MaxSMTGoal
 
-from pysmt.exceptions import PysmtUnboundedOptimizationError, PysmtInfinitesimalError
+from pysmt.exceptions import PysmtUnboundedOptimizationError, PysmtInfinitesimalError, PysmtNonReusableOptimizerError
 
 class TestOptimization(TestCase):
 
@@ -441,29 +441,29 @@ class TestOptimization(TestCase):
         formula = And(GE(x, Int(0)), GE(y, Int(0)), LE(x, Int(3)), LE(y, Int(3)), Equals(Plus(x, y), Int(3)))
 
         for oname in get_env().factory.all_optimizers(logic=QF_LIA):
+            # TODO optimsat needs to skip this test because it does not terminate
+            if oname == "optimsat":
+                continue
             with Optimizer(name=oname) as opt:
                 opt.add_assertion(formula)
 
-                # First optimization: maximize x
                 max_x = MaximizationGoal(x)
-                model, cost = opt.optimize(max_x)
-                self.assertEqual(model.get_value(x), Int(3))
-                self.assertEqual(cost, Int(3))
+                max_y = MaximizationGoal(y)
+
+                # First optimization: maximize x
+                test_id_str = "test_first_subsequent_optimization %s" % oname
+                model, _ = check_basic(opt, max_x, Int(3), test_id_str)
                 self.assertEqual(model.get_value(y), Int(0))
 
-                print(oname)
-                # TODO currently optimsat does not support this; to understand why it goes in a deadlock
-                if oname == "optimsat":
-                    continue
+                try:
 
-                # Second optimization: maximize y
-                max_y = MaximizationGoal(y)
-                model, cost = opt.optimize(max_y)
-                self.assertEqual(model.get_value(x), Int(0))
-                self.assertEqual(model.get_value(y), Int(3))
-                self.assertEqual(cost, Int(3))
+                    # Second optimization: maximize y
+                    test_id_str = "test_second_subsequent_optimization %s" % oname
+                    model, _ = check_basic(opt, max_y, Int(3), test_id_str)
+                    self.assertEqual(model.get_value(x), Int(0))
 
-                # print(f"{oname} finished")
+                except PysmtNonReusableOptimizerError:
+                    pass
 
     def test_subsequent_lexicographic_optimizations(self):
         x = Symbol("x", INT)
@@ -477,27 +477,23 @@ class TestOptimization(TestCase):
                 # First optimization: maximize x
                 max_x = MaximizationGoal(x)
                 max_y = MaximizationGoal(y)
-                model, costs = opt.lexicographic_optimize([max_x, max_y])
-                cost_x, cost_y = costs
+                test_id_str = "test_first_subsequent_optimization %s" % oname
+                model, _ = check_lexicographic(opt, [max_x, max_y], [Int(3), Int(0)], test_id_str)
+
                 self.assertEqual(model.get_value(x), Int(3))
-                self.assertEqual(cost_x, Int(3))
                 self.assertEqual(model.get_value(y), Int(0))
-                self.assertEqual(cost_y, Int(0))
 
-                print(oname)
-                # TODO currently optimsat does not support this; to understand why it returns the wrong result
-                # if oname == "optimsat":
-                #     continue
+                try:
 
-                # Second optimization: maximize y
-                model, costs = opt.lexicographic_optimize([max_y, max_x])
-                cost_y, cost_x = costs
-                self.assertEqual(model.get_value(x), Int(0))
-                self.assertEqual(cost_x, Int(0))
-                self.assertEqual(model.get_value(y), Int(3))
-                self.assertEqual(cost_y, Int(3))
+                    # Second optimization: maximize y
+                    test_id_str = "test_second_subsequent_optimization %s" % oname
+                    model, _ = check_lexicographic(opt, [max_y, max_x], [Int(3), Int(0)], test_id_str)
 
-                # print(f"{oname} finished")
+                    self.assertEqual(model.get_value(x), Int(0))
+                    self.assertEqual(model.get_value(y), Int(3))
+
+                except PysmtNonReusableOptimizerError:
+                    pass
 
     def test_subsequent_boxed_optimizations(self):
         x = Symbol("x", INT)
@@ -509,42 +505,43 @@ class TestOptimization(TestCase):
             Equals(Plus(x, y, z), Int(3)))
 
         for oname in get_env().factory.all_optimizers(logic=QF_LIA):
+            if oname == "optimsat": continue
             with Optimizer(name=oname) as opt:
                 opt.add_assertion(formula)
 
                 # First optimization: maximize x and y
                 max_x = MaximizationGoal(x)
                 max_y = MaximizationGoal(y)
-                models_costs = opt.boxed_optimize([max_x, max_y])
+                max_z = MaximizationGoal(z)
+
+                test_id_str = "test_first_subsequent_optimization %s" % oname
+                models_costs = check_boxed(opt, [max_x, max_y], [Int(3), Int(3)], test_id_str, also_test_basic=True)
+
                 self.assertEqual(len(models_costs), 2)
-                max_x_model, max_x_cost = models_costs[max_x]
+                max_x_model, _ = models_costs[max_x]
                 self.assertEqual(max_x_model.get_value(x), Int(3))
-                self.assertEqual(max_x_cost, Int(3))
                 self.assertEqual(max_x_model.get_value(y), Int(0))
-                max_y_model, max_y_cost = models_costs[max_y]
+                max_y_model, _ = models_costs[max_y]
                 self.assertEqual(max_y_model.get_value(x), Int(0))
-                self.assertEqual(max_y_cost, Int(3))
                 self.assertEqual(max_y_model.get_value(y), Int(3))
 
-                print(oname)
-                # TODO currently optimsat does not support this; to understand why it goes in a deadlock
-                if oname == "optimsat":
-                    continue
-
                 # First optimization: maximize x and z
-                max_z = MaximizationGoal(z)
-                models_costs = opt.boxed_optimize([max_x, max_z])
-                self.assertEqual(len(models_costs), 2)
-                max_x_model, max_x_cost = models_costs[max_x]
-                self.assertEqual(max_x_model.get_value(x), Int(3))
-                self.assertEqual(max_x_cost, Int(3))
-                self.assertEqual(max_x_model.get_value(z), Int(0))
-                max_z_model, max_z_cost = models_costs[max_z]
-                self.assertEqual(max_z_model.get_value(x), Int(0))
-                self.assertEqual(max_z_cost, Int(3))
-                self.assertEqual(max_z_model.get_value(z), Int(3))
 
-                # print(f"{oname} finished")
+                try:
+
+                    test_id_str = "test_second_subsequent_optimization %s" % oname
+                    models_costs = check_boxed(opt, [max_x, max_z], [Int(3), Int(3)], test_id_str, also_test_basic=True)
+
+                    self.assertEqual(len(models_costs), 2)
+                    max_x_model, _ = models_costs[max_x]
+                    self.assertEqual(max_x_model.get_value(x), Int(3))
+                    self.assertEqual(max_x_model.get_value(z), Int(0))
+                    max_z_model, _ = models_costs[max_z]
+                    self.assertEqual(max_z_model.get_value(x), Int(0))
+                    self.assertEqual(max_z_model.get_value(z), Int(3))
+
+                except PysmtNonReusableOptimizerError:
+                    pass
 
     def test_subsequent_pareto_optimizations(self):
         x = Symbol("x", INT)
@@ -562,37 +559,46 @@ class TestOptimization(TestCase):
                 # First optimization: maximize x and y
                 max_x = MaximizationGoal(x)
                 max_y = MaximizationGoal(y)
-                models_costs = opt.pareto_optimize([max_x, max_y])
-                # TODO change from here. Not updated
-                self.assertEqual(len(models_costs), 2)
-                max_x_model, max_x_cost = models_costs[max_x]
-                self.assertEqual(max_x_model.get_value(x), Int(3))
-                self.assertEqual(max_x_cost, Int(3))
-                self.assertEqual(max_x_model.get_value(y), Int(0))
-                max_y_model, max_y_cost = models_costs[max_y]
-                self.assertEqual(max_y_model.get_value(x), Int(0))
-                self.assertEqual(max_y_cost, Int(3))
-                self.assertEqual(max_y_model.get_value(y), Int(3))
-
-                print(oname)
-                # TODO currently optimsat does not support this; to understand why it goes in a deadlock
-                if oname == "optimsat":
-                    continue
-
-                # First optimization: maximize x and z
                 max_z = MaximizationGoal(z)
-                models_costs = opt.boxed_optimize([max_x, max_z])
-                self.assertEqual(len(models_costs), 2)
-                max_x_model, max_x_cost = models_costs[max_x]
-                self.assertEqual(max_x_model.get_value(x), Int(3))
-                self.assertEqual(max_x_cost, Int(3))
-                self.assertEqual(max_x_model.get_value(z), Int(0))
-                max_z_model, max_z_cost = models_costs[max_z]
-                self.assertEqual(max_z_model.get_value(x), Int(0))
-                self.assertEqual(max_z_cost, Int(3))
-                self.assertEqual(max_z_model.get_value(z), Int(3))
 
-                # print(f"{oname} finished")
+                goals_values = [(Int(i), Int(3-i)) for i in range(4)]
+
+                test_id_str = "test_first_subsequent_pareto_optimizations %s" % oname
+                check_pareto(opt, [max_x, max_y], goals_values, test_id_str)
+
+                try:
+
+                    test_id_str = "test_second_subsequent_pareto_optimizations %s" % oname
+                    check_pareto(opt, [max_x, max_z], goals_values, test_id_str)
+
+                except PysmtNonReusableOptimizerError:
+                    pass
+
+    def test_subsequent_maxsmt_optimizations(self):
+        x = Symbol("x", INT)
+        formula = And(GE(x, Int(0)), LE(x, Int(10)))
+        first_max_smt_goal = MaxSMTGoal(real_weights=False)
+        first_max_smt_goal.add_soft_clause(Equals(x, Int(7)), 7)
+        first_max_smt_goal.add_soft_clause(LE(x, Int(6)), 5)
+
+        second_max_smt_goal = MaxSMTGoal(real_weights=False)
+        second_max_smt_goal.add_soft_clause(Equals(x, Int(3)), 1)
+
+        for oname in get_env().factory.all_optimizers(logic=QF_LIA):
+            with Optimizer(name=oname) as opt:
+                opt.add_assertion(formula)
+
+                test_id_str = "test_first_subsequent_maxsmt_optimizations %s" % oname
+                check_basic(opt, first_max_smt_goal, Int(7), test_id_str)
+
+                try:
+
+                    test_id_str = "test_second_subsequent_maxsmt_optimizations %s" % oname
+                    check_basic(opt, second_max_smt_goal, Int(1), test_id_str)
+
+                except PysmtNonReusableOptimizerError:
+                    pass
+
 
 if __name__ == '__main__':
     main()
