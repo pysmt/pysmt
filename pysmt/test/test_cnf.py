@@ -18,9 +18,9 @@
 import os
 import pytest
 
-from pysmt.shortcuts import Implies, is_sat, reset_env, Symbol, Iff
+from pysmt.shortcuts import Implies, is_sat, reset_env, Symbol, Iff, Select, ArrayType, INT, BOOL, And, get_env
 from pysmt.rewritings import CNFizer
-from pysmt.logics import QF_BOOL, QF_LRA, QF_LIA, QF_UFLIRA
+from pysmt.logics import QF_BOOL, QF_LRA, QF_LIA, QF_UFLIRA, QF_UFLRA, QF_ALIA
 from pysmt.test import TestCase, skipIfNoSolverForLogic, main
 from pysmt.test.examples import get_example_formulae
 from pysmt.test.smtlib.parser_utils import SMTLIB_TEST_FILES, SMTLIB_DIR
@@ -53,6 +53,11 @@ class TestCnf(TestCase):
     def test_examples_solving_lia(self):
         self.do_examples(QF_LIA)
 
+    @skipIfNoSolverForLogic(QF_UFLRA)
+    def test_examples_solving_lia(self):
+        self.do_examples(QF_UFLRA)
+
+    @pytest.mark.slow
     @skipIfNoSolverForLogic(QF_LIA)
     def test_smtlib_cnf_small(self):
         cnt = 0
@@ -100,6 +105,30 @@ class TestCnf(TestCase):
         cnf = conv.convert_as_formula(f)
 
         self.assertValid(Implies(cnf, f), logic=QF_BOOL)
+
+    @skipIfNoSolverForLogic(QF_ALIA)
+    def test_CNFizer_bool_theory(self):
+        test_logic = QF_ALIA
+        # (and (select boolean_array idx0) (select boolean_array idx1))
+        boolean_array = Symbol("boolean_array", ArrayType(INT, BOOL))
+        idx_0, idx_1 = Symbol("idx0", INT), Symbol("idx1", INT)
+        f = And(
+            Select(boolean_array, idx_0),
+            Select(boolean_array, idx_1)
+        )
+        conv = CNFizer()
+        cnf = conv.convert_as_formula(f)
+
+        factory = get_env().factory
+        for solver_name in factory.all_solvers(test_logic):
+            # msat needs to be skipped. Check issue #807
+            if solver_name == "msat":
+                continue
+            self.assertValid(
+                Implies(cnf, f),
+                solver_name=solver_name,
+                logic=test_logic
+            )
 
 if __name__ == '__main__':
     main()
