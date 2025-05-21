@@ -565,7 +565,6 @@ class TestRegressions(TestCase):
         self.assertIn(p, atoms)
         self.assertIn(Equals(x, Int(1)), atoms)
 
-
     @skipIfSolverNotAvailable("yices")
     def test_yices_quantifier(self):
         x = Symbol('x', REAL)
