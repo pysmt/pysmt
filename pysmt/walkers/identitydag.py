@@ -15,7 +15,12 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from pysmt.formula import FormulaManager
+
 from pysmt.walkers.dag import DagWalker
+
 
 class IdentityDagWalker(DagWalker):
     """This class traverses a formula and rebuilds it recursively
@@ -26,11 +31,11 @@ class IdentityDagWalker(DagWalker):
 
     """
 
-    def __init__(self, env=None, invalidate_memoization=None):
+    def __init__(self, env=None, invalidate_memoization=None) -> None:
         DagWalker.__init__(self,
                            env=env,
                            invalidate_memoization=invalidate_memoization)
-        self.mgr = self.env.formula_manager
+        self.mgr: FormulaManager = self.env.formula_manager
 
     def walk_symbol(self, formula, args, **kwargs):
         return self.mgr.Symbol(formula.symbol_name(),

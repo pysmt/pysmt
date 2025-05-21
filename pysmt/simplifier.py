@@ -15,6 +15,12 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import Self
+
 import math
 
 import pysmt.walkers
@@ -54,7 +60,7 @@ class Simplifier(pysmt.walkers.DagWalker):
 
         self._validate_simplifications = value
 
-    def simplify(self, formula):
+    def simplify(self: Self, formula: FNode) -> FNode:
         """Performs simplification of the given formula."""
         return self.walk(formula)
 

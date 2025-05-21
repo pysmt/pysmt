@@ -699,7 +699,10 @@ class TestFormulaManager(TestCase):
         b = src_mgr.Symbol("B")
         f = src_mgr.And(a, src_mgr.Not(b))
 
-        self.assertEqual(str(f), "(A & (! B))", str(f))
+        src_print = src_env.serializer.serialize
+        dst_print = dst_env.serializer.serialize
+
+        self.assertEqual(src_print(f), "(A & (! B))", src_print(f))
 
         # NOTE: We cannot use the textual format for pickle, because
         # we are using slots. We can, however, use more advanced
@@ -711,9 +714,9 @@ class TestFormulaManager(TestCase):
         f_new = dst_mgr.normalize(f)
 
         args = f_new.args()
-        self.assertEqual(str(args[0]), "A",
+        self.assertEqual(dst_print(args[0]), "A",
                           "Expecting symbol A, " +
-                          "symbol %s found instead" % str(args[0]))
+                          "symbol %s found instead" % dst_print(args[0]))
 
         a = dst_mgr.Symbol("A")
         b = dst_mgr.Symbol("B")
@@ -727,7 +730,7 @@ class TestFormulaManager(TestCase):
         # Normalizing a formula in the same manager should not
         # be a problem
         f_new = src_mgr.normalize(f)
-        self.assertEqual(f_new, f, "%s != %s" %(id(a),id(b)))
+        self.assertEqual(f_new, f, "%s != %s" % (id(a), id(b)))
 
         # Verify that new types do not lead to errors in pickling
         from pysmt.test.examples import get_example_formulae

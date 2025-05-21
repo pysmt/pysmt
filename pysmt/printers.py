@@ -15,8 +15,13 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from io import StringIO
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import Self
+    from pysmt.fnode import FNode
 
+from io import StringIO
 import pysmt.operators as op
 from pysmt.walkers import TreeWalker
 from pysmt.walkers.generic import handles
@@ -334,7 +339,7 @@ class HRSerializer(object):
     def __init__(self, environment=None):
         self.environment = environment
 
-    def serialize(self, formula, printer=None, threshold=None):
+    def serialize(self: Self, formula: FNode, printer=None, threshold=None) -> str:
         """Returns a string with the human-readable version of the formula.
 
         'printer' is the printer to call to perform the serialization.
