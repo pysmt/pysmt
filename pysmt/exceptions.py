@@ -193,7 +193,3 @@ class GoalNotSupportedError(PysmtException):
     def __str__(self):
         mode_str = (" in mode '%s'" % self.mode) if self.mode else ""
         return "Optimizer '%s' does not support goal '%s'%s" % tuple(map(str, (type(self.solver).__name__, self.goal, mode_str)))
-
-class PysmtNonReusableOptimizerError(PysmtException):
-    """The optimization capabilities of the solver can be used only once."""
-    pass

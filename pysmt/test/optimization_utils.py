@@ -4,7 +4,7 @@ import pytest
 
 from pysmt.fnode import FNode
 from pysmt.shortcuts import get_env
-from pysmt.exceptions import PysmtUnboundedOptimizationError, PysmtInfinitesimalError, PysmtValueError, PysmtNonReusableOptimizerError
+from pysmt.exceptions import PysmtUnboundedOptimizationError, PysmtInfinitesimalError, PysmtValueError
 from pysmt.optimization.optimizer import SUAOptimizerMixin, IncrementalOptimizerMixin
 
 class OptimizationTypes(Enum):
@@ -274,11 +274,8 @@ def check_boxed(optimizer, goals, goals_values, test_id_str, also_test_basic, **
 
     # test single optimizations separately
     if also_test_basic:
-        try:
-            for goal, goal_value in zip(goals, goals_values):
-                check_basic(optimizer, goal, goal_value, test_id_str, **kwargs)
-        except PysmtNonReusableOptimizerError:
-            pass
+        for goal, goal_value in zip(goals, goals_values):
+            check_basic(optimizer, goal, goal_value, test_id_str, **kwargs)
 
     if raised_class is None:
         return retval

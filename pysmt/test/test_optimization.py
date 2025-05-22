@@ -20,14 +20,14 @@ from pysmt.test import TestCase, skipIfNoOptimizerForLogic
 from pysmt.test import main
 from pysmt.test.optimization_utils import get_non_diverging_optimizers, check_basic, check_lexicographic, check_boxed, check_pareto
 
-from pysmt.shortcuts import Optimizer, GE, Int, Symbol, INT, LE, GT, REAL, Real, Equals
+from pysmt.shortcuts import Optimizer, GE, Int, Symbol, INT, LE, GT, REAL, Real, Equals, LT
 from pysmt.shortcuts import BVType, BVSGE, BVSLE, BVSGT, BVSLT, BV
 from pysmt.shortcuts import And, Plus, Minus, get_env
 from pysmt.logics import QF_LIA, QF_LRA, QF_BV
 from pysmt.optimization.goal import MaximizationGoal, MinimizationGoal, \
     MinMaxGoal, MaxMinGoal, MaxSMTGoal
 
-from pysmt.exceptions import PysmtUnboundedOptimizationError, PysmtInfinitesimalError, PysmtNonReusableOptimizerError
+from pysmt.exceptions import PysmtUnboundedOptimizationError, PysmtInfinitesimalError
 
 class TestOptimization(TestCase):
 
@@ -438,32 +438,29 @@ class TestOptimization(TestCase):
     def test_subsequent_optimizations(self):
         x = Symbol("x", INT)
         y = Symbol("y", INT)
-        formula = And(GE(x, Int(0)), GE(y, Int(0)), LE(x, Int(3)), LE(y, Int(3)), Equals(Plus(x, y), Int(3)))
+        formula = And(GE(x, Int(0)), GE(y, Int(0)), LE(x, Int(3)), LE(y, Int(3)), LT(Plus(x, y), Int(4)))
 
         for oname in get_env().factory.all_optimizers(logic=QF_LIA):
-            # TODO optimsat needs to skip this test because it does not terminate
-            if oname == "optimsat":
-                continue
             with Optimizer(name=oname) as opt:
                 opt.add_assertion(formula)
 
                 max_x = MaximizationGoal(x)
                 max_y = MaximizationGoal(y)
 
+                # val = opt._msat_lib.msat_push_backtrack_point(opt.msat_env())
+                # print(f"push val: {val}")
+
                 # First optimization: maximize x
                 test_id_str = "test_first_subsequent_optimization %s" % oname
                 model, _ = check_basic(opt, max_x, Int(3), test_id_str)
                 self.assertEqual(model.get_value(y), Int(0))
 
-                try:
+                # Second optimization: maximize y
+                opt.add_assertion(formula)
+                test_id_str = "test_second_subsequent_optimization %s" % oname
+                model, _ = check_basic(opt, max_y, Int(3), test_id_str)
+                self.assertEqual(model.get_value(x), Int(0))
 
-                    # Second optimization: maximize y
-                    test_id_str = "test_second_subsequent_optimization %s" % oname
-                    model, _ = check_basic(opt, max_y, Int(3), test_id_str)
-                    self.assertEqual(model.get_value(x), Int(0))
-
-                except PysmtNonReusableOptimizerError:
-                    pass
 
     def test_subsequent_lexicographic_optimizations(self):
         x = Symbol("x", INT)
@@ -483,17 +480,13 @@ class TestOptimization(TestCase):
                 self.assertEqual(model.get_value(x), Int(3))
                 self.assertEqual(model.get_value(y), Int(0))
 
-                try:
+                # Second optimization: maximize y
+                test_id_str = "test_second_subsequent_optimization %s" % oname
+                model, _ = check_lexicographic(opt, [max_y, max_x], [Int(3), Int(0)], test_id_str)
 
-                    # Second optimization: maximize y
-                    test_id_str = "test_second_subsequent_optimization %s" % oname
-                    model, _ = check_lexicographic(opt, [max_y, max_x], [Int(3), Int(0)], test_id_str)
+                self.assertEqual(model.get_value(x), Int(0))
+                self.assertEqual(model.get_value(y), Int(3))
 
-                    self.assertEqual(model.get_value(x), Int(0))
-                    self.assertEqual(model.get_value(y), Int(3))
-
-                except PysmtNonReusableOptimizerError:
-                    pass
 
     def test_subsequent_boxed_optimizations(self):
         x = Symbol("x", INT)
@@ -502,10 +495,9 @@ class TestOptimization(TestCase):
         formula = And(
             GE(x, Int(0)), GE(y, Int(0)), GE(z, Int(0)),
             LE(x, Int(3)), LE(y, Int(3)), LE(z, Int(3)),
-            Equals(Plus(x, y, z), Int(3)))
+            LE(Plus(x, y, z), Int(3)))
 
         for oname in get_env().factory.all_optimizers(logic=QF_LIA):
-            if oname == "optimsat": continue
             with Optimizer(name=oname) as opt:
                 opt.add_assertion(formula)
 
@@ -526,22 +518,16 @@ class TestOptimization(TestCase):
                 self.assertEqual(max_y_model.get_value(y), Int(3))
 
                 # First optimization: maximize x and z
+                test_id_str = "test_second_subsequent_optimization %s" % oname
+                models_costs = check_boxed(opt, [max_x, max_z], [Int(3), Int(3)], test_id_str, also_test_basic=True)
 
-                try:
-
-                    test_id_str = "test_second_subsequent_optimization %s" % oname
-                    models_costs = check_boxed(opt, [max_x, max_z], [Int(3), Int(3)], test_id_str, also_test_basic=True)
-
-                    self.assertEqual(len(models_costs), 2)
-                    max_x_model, _ = models_costs[max_x]
-                    self.assertEqual(max_x_model.get_value(x), Int(3))
-                    self.assertEqual(max_x_model.get_value(z), Int(0))
-                    max_z_model, _ = models_costs[max_z]
-                    self.assertEqual(max_z_model.get_value(x), Int(0))
-                    self.assertEqual(max_z_model.get_value(z), Int(3))
-
-                except PysmtNonReusableOptimizerError:
-                    pass
+                self.assertEqual(len(models_costs), 2)
+                max_x_model, _ = models_costs[max_x]
+                self.assertEqual(max_x_model.get_value(x), Int(3))
+                self.assertEqual(max_x_model.get_value(z), Int(0))
+                max_z_model, _ = models_costs[max_z]
+                self.assertEqual(max_z_model.get_value(x), Int(0))
+                self.assertEqual(max_z_model.get_value(z), Int(3))
 
     def test_subsequent_pareto_optimizations(self):
         x = Symbol("x", INT)
@@ -550,7 +536,7 @@ class TestOptimization(TestCase):
         formula = And(
             GE(x, Int(0)), GE(y, Int(0)), GE(z, Int(0)),
             LE(x, Int(3)), LE(y, Int(3)), LE(z, Int(3)),
-            Equals(Plus(x, y, z), Int(3)))
+            LT(Plus(x, y, z), Int(4)))
 
         for oname in get_env().factory.all_optimizers(logic=QF_LIA):
             with Optimizer(name=oname) as opt:
@@ -566,13 +552,8 @@ class TestOptimization(TestCase):
                 test_id_str = "test_first_subsequent_pareto_optimizations %s" % oname
                 check_pareto(opt, [max_x, max_y], goals_values, test_id_str)
 
-                try:
-
-                    test_id_str = "test_second_subsequent_pareto_optimizations %s" % oname
-                    check_pareto(opt, [max_x, max_z], goals_values, test_id_str)
-
-                except PysmtNonReusableOptimizerError:
-                    pass
+                test_id_str = "test_second_subsequent_pareto_optimizations %s" % oname
+                check_pareto(opt, [max_x, max_z], goals_values, test_id_str)
 
     def test_subsequent_maxsmt_optimizations(self):
         x = Symbol("x", INT)
@@ -591,13 +572,9 @@ class TestOptimization(TestCase):
                 test_id_str = "test_first_subsequent_maxsmt_optimizations %s" % oname
                 check_basic(opt, first_max_smt_goal, Int(7), test_id_str)
 
-                try:
+                test_id_str = "test_second_subsequent_maxsmt_optimizations %s" % oname
+                check_basic(opt, second_max_smt_goal, Int(1), test_id_str)
 
-                    test_id_str = "test_second_subsequent_maxsmt_optimizations %s" % oname
-                    check_basic(opt, second_max_smt_goal, Int(1), test_id_str)
-
-                except PysmtNonReusableOptimizerError:
-                    pass
 
 
 if __name__ == '__main__':
