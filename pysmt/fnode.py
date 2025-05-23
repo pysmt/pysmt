@@ -38,11 +38,6 @@ from pysmt.operators import (FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF,
                              BV_SDIV, BV_SREM,
                              BV_ASHR,
                              STR_CONSTANT,
-                             STR_LENGTH, STR_CONCAT, STR_CONTAINS,
-                             STR_INDEXOF, STR_REPLACE, STR_SUBSTR,
-                             STR_PREFIXOF, STR_SUFFIXOF,
-                             STR_TO_INT, INT_TO_STR,
-                             STR_CHARAT,
                              ARRAY_SELECT, ARRAY_STORE, ARRAY_VALUE,
                              ALGEBRAIC_CONSTANT)
 
@@ -54,8 +49,7 @@ from pysmt.operators import  (BOOL_OPERATORS, THEORY_OPERATORS,
 from pysmt.typing import BOOL, REAL, INT, BVType, STRING
 from pysmt.decorators import deprecated, assert_infix_enabled
 from pysmt.utils import twos_complement
-from pysmt.constants import (Fraction, is_python_integer,
-                             is_python_rational, is_python_boolean)
+from pysmt.constants import is_python_integer
 from pysmt.exceptions import (PysmtValueError, PysmtModeError,
                               UnsupportedOperatorError)
 
@@ -571,7 +565,7 @@ class FNode(object):
 
     def constant_value(self):
         """Return the value of the Constant."""
-        assert self.is_constant()
+        assert self.is_constant(), "%s is not a constant" % str(self)
         if self.node_type() == BV_CONSTANT:
             return self._content.payload[0]
         return self._content.payload

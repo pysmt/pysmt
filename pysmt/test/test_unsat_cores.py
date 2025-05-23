@@ -158,7 +158,7 @@ class TestUnsatCores(TestCase):
         formulae = [Or(b, n_a), Or(c, n_a), Or(n_a, n_b, n_c)]
         with UnsatCoreSolver(logic=QF_LIA, unsat_cores_mode="named") as solver:
             for i, f in enumerate(formulae):
-                solver.add_assertion(f, named=f"f{i}")
+                solver.add_assertion(f, named="f%d" % i)
             sat = solver.solve([a])
             self.assertFalse(sat)
 

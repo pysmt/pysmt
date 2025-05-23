@@ -4,7 +4,7 @@ on:
   push:
     branches: [ "master" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "**" ]
 
 jobs:
   run-tests:
@@ -13,7 +13,7 @@ jobs:
     strategy:
       matrix:
         os: [ ubuntu-latest ]
-        pysmt_solver: [ none, msat, z3, yices, cvc5, btor, picosat, bdd, msat_wrap, z3_wrap ]
+        pysmt_solver: [ none, msat, z3, yices, cvc5, btor, picosat, bdd, msat_wrap, z3_wrap, optimsat ]
 
     env:
       PYTHON_VERSION: 3.8
