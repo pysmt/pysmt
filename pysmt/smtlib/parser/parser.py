@@ -773,6 +773,11 @@ class SmtLibParser(object):
             keyword = tk[1:]
             tk = tokens.consume()
             value = None
+            if tk.startswith(":") or tk == ")":
+                # another annotation keyword instead of a value of the previous annotation
+                # add previous annotation with None value and continue to next iteration
+                self.cache.annotations.add(term, keyword, value)
+                continue
             if tk == "(":
                 counter = 1
                 buff = [tk]

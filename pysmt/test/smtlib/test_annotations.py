@@ -167,8 +167,10 @@ class TestBasic(TestCase):
         script = parser.get_script(buf)
         ann = script.annotations
         v0 = self.env.formula_manager.get_symbol('"v__AT0"')
-        v1_str = next(iter(ann[v0]["next"]))
-        self.assertEqual(v1_str, ":this_is_considered_a_value")
+        with self.assertRaises(StopIteration):
+            next(iter(ann[v0]["next"]))
+        with self.assertRaises(StopIteration):
+            next(iter(ann[v0]["this_is_considered_a_value"]))
 
 
 if __name__ == '__main__':
