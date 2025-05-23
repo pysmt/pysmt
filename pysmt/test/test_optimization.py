@@ -447,9 +447,6 @@ class TestOptimization(TestCase):
                 max_x = MaximizationGoal(x)
                 max_y = MaximizationGoal(y)
 
-                # val = opt._msat_lib.msat_push_backtrack_point(opt.msat_env())
-                # print(f"push val: {val}")
-
                 # First optimization: maximize x
                 test_id_str = "test_first_subsequent_optimization %s" % oname
                 model, _ = check_basic(opt, max_x, Int(3), test_id_str)
