@@ -461,7 +461,6 @@ class TestOptimization(TestCase):
                 model, _ = check_basic(opt, max_y, Int(3), test_id_str)
                 self.assertEqual(model.get_value(x), Int(0))
 
-
     def test_subsequent_lexicographic_optimizations(self):
         x = Symbol("x", INT)
         y = Symbol("y", INT)
@@ -486,7 +485,6 @@ class TestOptimization(TestCase):
 
                 self.assertEqual(model.get_value(x), Int(0))
                 self.assertEqual(model.get_value(y), Int(3))
-
 
     def test_subsequent_boxed_optimizations(self):
         x = Symbol("x", INT)
@@ -575,6 +573,37 @@ class TestOptimization(TestCase):
                 test_id_str = "test_second_subsequent_maxsmt_optimizations %s" % oname
                 check_basic(opt, second_max_smt_goal, Int(1), test_id_str)
 
+    def test_same_maxsmt_formulae(self):
+        x = Symbol("x", INT)
+        formula = And(GE(x, Int(0)), LE(x, Int(10)))
+
+        # test same formula with different weights
+        max_smt_goal = MaxSMTGoal(real_weights=False)
+        max_smt_goal.add_soft_clause(GT(x, Int(7)), 7)
+        max_smt_goal.add_soft_clause(Equals(x, Int(6)), 6)
+        max_smt_goal.add_soft_clause(Equals(x, Int(6)), 2)
+
+        for oname in get_env().factory.all_optimizers(logic=QF_LIA):
+            with Optimizer(name=oname) as opt:
+                opt.add_assertion(formula)
+
+                test_id_str = "test_first_subsequent_maxsmt_optimizations %s" % oname
+                model, _ = check_basic(opt, max_smt_goal, Int(8), test_id_str)
+                self.assertEqual(model.get_value(x), Int(6))
+
+        # test same formula with same weights
+        max_smt_goal = MaxSMTGoal(real_weights=False)
+        max_smt_goal.add_soft_clause(GT(x, Int(7)), 7)
+        max_smt_goal.add_soft_clause(Equals(x, Int(6)), 6)
+        max_smt_goal.add_soft_clause(Equals(x, Int(6)), 6)
+
+        for oname in get_env().factory.all_optimizers(logic=QF_LIA):
+            with Optimizer(name=oname) as opt:
+                opt.add_assertion(formula)
+
+                test_id_str = "test_first_subsequent_maxsmt_optimizations %s" % oname
+                model, _ = check_basic(opt, max_smt_goal, Int(12), test_id_str)
+                self.assertEqual(model.get_value(x), Int(6))
 
 
 if __name__ == '__main__':

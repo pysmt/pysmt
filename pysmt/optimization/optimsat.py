@@ -71,14 +71,15 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
                                 logic=logic, **options)
         self._objectives_to_destroy = []
 
-    def _assert_msat_goal(self, goal):
+    def _assert_msat_goal(self, goal, goal_id = None):
 
         if goal.is_maxsmt_goal():
+            assert goal_id is not None
             for tcons, weight in goal.soft:
                 obj_tcons = self.converter.convert(tcons)
                 obj_weight = self._msat_lib.msat_make_number(self.msat_env(), str(weight.constant_value()))
-                self._msat_lib.msat_assert_soft_formula(self.msat_env(), obj_tcons, obj_weight, "__pysmt_" + str(id(goal)))
-            obj_fun = self._msat_lib.msat_from_string(self.msat_env(), "__pysmt_" + str(id(goal)))
+                self._msat_lib.msat_assert_soft_formula(self.msat_env(), obj_tcons, obj_weight, "__pysmt_" + str(goal_id))
+            obj_fun = self._msat_lib.msat_from_string(self.msat_env(), "__pysmt_" + str(goal_id))
             make_fun = self._msat_lib.msat_make_minimize
 
         elif goal.is_minmax_goal() or goal.is_maxmin_goal():
@@ -120,19 +121,10 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
     def optimize(self, goal, **kwargs):
         self.push()
 
-        obj_iterator = self._msat_lib.msat_create_objective_iterator(self.msat_env())
-        i = 0
-        obj = None
-        while self._msat_lib.msat_objective_iterator_has_next(obj_iterator):
-            i += 1
-            j = self._msat_lib.msat_objective_iterator_next(obj_iterator)
-            print(i, ":", obj, ":", j)
-
-
-        self._msat_lib.msat_set_opt_priority(self.msat_env(), "box")
-        msat_obj = self._assert_msat_goal(goal)
+        msat_obj = self._assert_msat_goal(goal, 0)
 
         self.solve()
+        # set after the solve because the solve method has the clear_pending_pop decorator
         self.pending_pop = True
         return self._get_goal_value(msat_obj, goal)
 
@@ -152,6 +144,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
                 yield model, [model.get_value(goal.term()) for goal in goals]
             else:
                 break
+        # set after the solve because the solve method has the clear_pending_pop decorator
         self.pending_pop = True
 
     @clear_pending_pop
@@ -165,6 +158,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
         }
 
         rt = self.solve()
+        # set after the solve because the solve method has the clear_pending_pop decorator
         self.pending_pop = True
 
         if rt and all(self._check_unsat_unbound_infinitesimal(mo) for mo in msat_objs.values()):
@@ -179,10 +173,11 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
         self._msat_lib.msat_set_opt_priority(self.msat_env(), "box")
         msat_objs = []
 
-        for g in goals:
-            msat_objs.append(self._assert_msat_goal(g))
+        for goal_id, g in enumerate(goals):
+            msat_objs.append(self._assert_msat_goal(g, goal_id))
 
         check = self.solve()
+        # set after the solve because the solve method has the clear_pending_pop decorator
         self.pending_pop = True
         if not check:
             return None

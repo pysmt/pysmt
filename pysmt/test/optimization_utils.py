@@ -158,10 +158,10 @@ def solve_given_example(optimization_example, solver_name, test_to_skip=None):
                     continue
                 if strategy is not None:
                     extra_options["strategy"] = strategy
-                # print the test_id to give some info if the test fails
-                temp_test_id_str = test_id_str + ", extra: %s" % str(extra_options) if extra_options else test_id_str
 
-                print(temp_test_id_str)
+                # print the test_id to give some info if the test fails
+                # temp_test_id_str = test_id_str + ", extra: %s" % str(extra_options) if extra_options else test_id_str
+                # print(temp_test_id_str)
                 if optimization_type == OptimizationTypes.LEXICOGRAPHIC:
                     check_lexicographic(opt, goals, goals_values, test_id_str, **extra_options)
                 elif optimization_type == OptimizationTypes.PARETO:

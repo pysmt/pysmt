@@ -46,9 +46,10 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
                           logic=logic, **options)
         self.z3 = z3.Optimize()
 
-    def _assert_z3_goal(self, goal, goal_id):
+    def _assert_z3_goal(self, goal, goal_id = None):
         h = None
         if goal.is_maxsmt_goal():
+            assert goal_id is not None
             for soft, w in goal.soft:
                 obj_soft = self.converter.convert(soft)
                 w = w.constant_value()
@@ -102,8 +103,8 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
         self.push()
         try:
             self.z3.set(priority='pareto')
-            for goal_id, goal in enumerate(goals):
-                self._assert_z3_goal(goal, goal_id)
+            for goal in goals:
+                self._assert_z3_goal(goal)
             while self.z3.check() == z3.sat:
                 model = Z3Model(self.environment, self.z3.model())
                 yield model, [model.get_value(x.term()) for x in goals]
@@ -149,8 +150,8 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
         self.push()
         try:
             self.z3.set(priority='lex')
-            for goal_id, goal in enumerate(goals):
-                self._assert_z3_goal(goal, goal_id)
+            for goal in goals:
+                self._assert_z3_goal(goal)
 
             if self.z3.check() == z3.sat:
                 model = Z3Model(self.environment, self.z3.model())
