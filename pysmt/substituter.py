@@ -259,7 +259,7 @@ class MGSubstituter(Substituter):
     def __init__(self, env):
         Substituter.__init__(self, env=env)
 
-    @handles(set(op.ALL_TYPES) - op.QUANTIFIERS - {op.FUNCTION})
+    @handles(set(op.ALL_TYPES) - op.QUANTIFIERS)
     def walk_identity_or_replace(self, formula, args, **kwargs):
         """
         If the formula appears in the substitution, return the substitution.
@@ -314,7 +314,7 @@ class MSSubstituter(Substituter):
         """
         return substitutions.get(formula, formula)
 
-    @handles(set(op.ALL_TYPES) - op.QUANTIFIERS - {op.FUNCTION})
+    @handles(set(op.ALL_TYPES) - op.QUANTIFIERS)
     def walk_replace(self, formula, args, **kwargs):
         new_f =  Substituter.super(self, formula, args=args, **kwargs)
         return self._substitute(new_f, kwargs['substitutions'])
