@@ -20,6 +20,10 @@ The Environment is a key structure in pySMT. It contains multiple
 singleton objects that are used throughout the system, such as the
 FormulaManager, Simplifier, HRSerializer, SimpleTypeChecker.
 """
+
+from typing import List, Optional
+
+
 class Environment(object):
     """The Environment provides global singleton instances of various objects.
 
@@ -178,23 +182,26 @@ class Environment(object):
 # EOC Environment
 
 #### GLOBAL ENVIRONMENTS STACKS ####
-ENVIRONMENTS_STACK = []
+ENVIRONMENTS_STACK: List[Environment] = []
 
-def get_env():
+def get_env() -> Environment:
     """Returns the Environment at the head of the stack."""
     return ENVIRONMENTS_STACK[-1]
 
-def push_env(env=None):
+
+def push_env(env: Optional[Environment] = None):
     """Push a env in the stack. If env is None, a new Environment is created."""
     if env is None:
         env = Environment()
     ENVIRONMENTS_STACK.append(env)
 
-def pop_env():
+
+def pop_env() -> Environment:
     """Pop an env from the stack."""
     return ENVIRONMENTS_STACK.pop()
 
-def reset_env():
+
+def reset_env() -> Environment:
     """Destroys and recreate the head environment."""
     pop_env()
     push_env()
