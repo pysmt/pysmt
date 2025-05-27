@@ -20,18 +20,6 @@ The Environment is a key structure in pySMT. It contains multiple
 singleton objects that are used throughout the system, such as the
 FormulaManager, Simplifier, HRSerializer, SimpleTypeChecker.
 """
-
-import pysmt.simplifier
-import pysmt.printers
-import pysmt.substituter
-import pysmt.type_checker
-import pysmt.oracles
-import pysmt.formula
-import pysmt.factory
-import pysmt.decorators
-import pysmt.typing
-
-
 class Environment(object):
     """The Environment provides global singleton instances of various objects.
 
@@ -41,6 +29,14 @@ class Environment(object):
     of classes for the different services, by changing the class
     attributes.
     """
+    import pysmt.simplifier
+    import pysmt.printers
+    import pysmt.substituter
+    import pysmt.type_checker
+    import pysmt.oracles
+    import pysmt.formula
+    import pysmt.typing
+
     TypeCheckerClass = pysmt.type_checker.SimpleTypeChecker
     FormulaManagerClass = pysmt.formula.FormulaManager
     TypeManagerClass = pysmt.typing.TypeManager
@@ -165,6 +161,7 @@ class Environment(object):
 
     @property
     def factory(self):
+        import pysmt.factory
         if self._factory is None:
             self._factory = pysmt.factory.Factory(self)
         return self._factory
