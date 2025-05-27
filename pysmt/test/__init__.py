@@ -144,6 +144,21 @@ class skipIfNoQEForLogic(object):
             return test_fun(*args, **kwargs)
         return wrapper
 
+class skipIfNoOptimizerForLogic(object):
+    """Skip a test if there is no optimizer for the given logic."""
+
+    def __init__(self, logic):
+        self.logic = logic
+
+    def __call__(self, test_fun):
+        msg = "Optimizer for %s not available" % self.logic
+        cond = len(get_env().factory.all_optimizers(logic=self.logic)) == 0
+        @unittest.skipIf(cond, msg)
+        @wraps(test_fun)
+        def wrapper(*args, **kwargs):
+            return test_fun(*args, **kwargs)
+        return wrapper
+
 
 # Export a main function
 main = unittest.main

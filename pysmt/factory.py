@@ -28,24 +28,33 @@ from functools import partial
 from pysmt.exceptions import (NoSolverAvailableError, SolverRedefinitionError,
                               NoLogicAvailableError,
                               SolverAPINotFound)
-from pysmt.logics import QF_UFLIRA, LRA, QF_UFLRA
+from pysmt.logics import QF_UFLIRA, LRA, QF_UFLRA, QF_LIA
 from pysmt.logics import AUTO as AUTO_LOGIC
 from pysmt.logics import most_generic_logic, get_closer_logic
 from pysmt.logics import convert_logic_from_string
 from pysmt.oracles import get_logic
 from pysmt.solvers.qelim import (ShannonQuantifierEliminator,
                                  SelfSubstitutionQuantifierEliminator)
-from pysmt.solvers.solver import SolverOptions
 from pysmt.solvers.portfolio import Portfolio
 
-DEFAULT_SOLVER_PREFERENCE_LIST = ['msat', 'z3', 'cvc5', 'yices', 'btor',
-                                  'picosat', 'bdd', 'cvc4']
-DEFAULT_QELIM_PREFERENCE_LIST = ['z3', 'msat_fm', 'msat_lw', 'bdd',
-                                 'shannon', 'selfsub']
-DEFAULT_INTERPOLATION_PREFERENCE_LIST = ['msat']
+SOLVER_TYPES = ['Solver', 'Solver supporting Unsat Cores',
+                'Quantifier Eliminator', 'Interpolator', 'Optimizer']
+DEFAULT_PREFERENCES = {'Solver': ['msat', 'optimsat', 'z3', 'cvc5', 'yices', 'btor',
+                                  'picosat', 'bdd', 'cvc4'],
+                       'Solver supporting Unsat Cores': ['optimsat', 'msat', 'z3', 'cvc5',
+                                                         'yices', 'btor', 'picosat', 'bdd', 'cvc4'],
+                       'Quantifier Eliminator': ['z3', 'msat_fm', 'msat_lw',
+                                                 'optimsat_fm', 'optimsat_lw',
+                                                 'bdd', 'shannon', 'selfsub'],
+                       'Optimizer': ['optimsat', 'z3',
+                                     'msat_incr', 'yices_incr', 'z3_incr',
+                                     'msat_sua', 'yices_sua', 'z3_sua'
+                                    ],
+                       'Interpolator': ['msat', 'optimsat', 'z3']}
 DEFAULT_LOGIC = QF_UFLIRA
 DEFAULT_QE_LOGIC = LRA
 DEFAULT_INTERPOLATION_LOGIC = QF_UFLRA
+DEFAULT_OPTIMIZER_LOGIC = QF_LIA
 
 
 class Factory(object):
@@ -56,41 +65,33 @@ class Factory(object):
     is_sat, is_unsat etc.
 
     """
-    def __init__(self, environment,
-                 solver_preference_list=None,
-                 qelim_preference_list=None,
-                 interpolation_preference_list=None):
+    def __init__(self, environment, preferences=None):
         self.environment = environment
         self._all_solvers = None
         self._all_unsat_core_solvers = None
         self._all_qelims = None
         self._all_interpolators = None
+        self._all_optimizers = None
         self._generic_solvers = {}
-
-        #
-        if solver_preference_list is None:
-            solver_preference_list = DEFAULT_SOLVER_PREFERENCE_LIST
-        self.solver_preference_list = solver_preference_list
-        if qelim_preference_list is None:
-            qelim_preference_list = DEFAULT_QELIM_PREFERENCE_LIST
-        self.qelim_preference_list = qelim_preference_list
-        if interpolation_preference_list is None:
-            interpolation_preference_list = DEFAULT_INTERPOLATION_PREFERENCE_LIST
-        self.interpolation_preference_list = interpolation_preference_list
+        self.preferences = dict(DEFAULT_PREFERENCES)
+        if preferences is not None:
+            self.preferences.update(preferences)
         #
         self._default_logic = DEFAULT_LOGIC
         self._default_qe_logic = DEFAULT_QE_LOGIC
         self._default_interpolation_logic = DEFAULT_INTERPOLATION_LOGIC
+        self._default_optimizer_logic = DEFAULT_OPTIMIZER_LOGIC
+
         self._get_available_solvers()
         self._get_available_qe()
         self._get_available_interpolators()
+        self._get_available_optimizers()
 
 
     def get_solver(self, name=None, logic=None, **options):
         SolverClass, closer_logic = \
            self._get_solver_class(solver_list=self._all_solvers,
                                   solver_type="Solver",
-                                  preference_list=self.solver_preference_list,
                                   default_logic=self.default_logic,
                                   name=name,
                                   logic=logic)
@@ -105,7 +106,6 @@ class Factory(object):
         SolverClass, closer_logic = \
            self._get_solver_class(solver_list=self._all_unsat_core_solvers,
                                   solver_type="Solver supporting Unsat Cores",
-                                  preference_list=self.solver_preference_list,
                                   default_logic=self.default_logic,
                                   name=name,
                                   logic=logic)
@@ -119,7 +119,6 @@ class Factory(object):
         SolverClass, closer_logic = \
            self._get_solver_class(solver_list=self._all_qelims,
                                   solver_type="Quantifier Eliminator",
-                                  preference_list=self.qelim_preference_list,
                                   default_logic=self.default_qe_logic,
                                   name=name,
                                   logic=logic)
@@ -131,7 +130,6 @@ class Factory(object):
         SolverClass, closer_logic = \
            self._get_solver_class(solver_list=self._all_interpolators,
                                   solver_type="Interpolator",
-                                  preference_list=self.interpolation_preference_list,
                                   default_logic=self._default_interpolation_logic,
                                   name=name,
                                   logic=logic)
@@ -139,9 +137,19 @@ class Factory(object):
         return SolverClass(environment=self.environment,
                            logic=closer_logic)
 
+    def get_optimizer(self, name=None, logic=None):
+        SolverClass, closer_logic = \
+           self._get_solver_class(solver_list=self._all_optimizers,
+                                  solver_type="Optimizer",
+                                  default_logic=self._default_optimizer_logic,
+                                  name=name,
+                                  logic=logic)
+        return SolverClass(environment=self.environment,
+                           logic=closer_logic)
 
-    def _get_solver_class(self, solver_list, solver_type, preference_list,
-                          default_logic, name=None, logic=None):
+
+    def _get_solver_class(self, solver_list, solver_type, default_logic,
+                          name=None, logic=None):
         if len(solver_list) == 0:
             raise NoSolverAvailableError("No %s is available" % solver_type)
 
@@ -177,6 +185,7 @@ class Factory(object):
 
         if solvers is not None and len(solvers) > 0:
             # Pick the first solver based on preference list
+            preference_list = self.preferences[solver_type]
             SolverClass = self._pick_favorite(preference_list, solver_list, solvers)
             closer_logic = get_closer_logic(SolverClass.LOGICS, logic)
             return SolverClass, closer_logic
@@ -204,7 +213,9 @@ class Factory(object):
         solver.UNSAT_CORE_SUPPORT = unsat_core_support
         self._all_solvers[name] = solver
         # Extend preference list accordingly
-        self.solver_preference_list.append(name)
+        self.preferences['Solver'].append(name)
+        if unsat_core_support:
+            self.preferences['Solver supporting Unsat Cores'].append(name)
 
     def is_generic_solver(self, name):
         return name in self._generic_solvers
@@ -224,8 +235,18 @@ class Factory(object):
             pass
 
         try:
+            from pysmt.solvers.dynmsat import MSATLibLoader
+            MSATLibLoader("mathsat")
             from pysmt.solvers.msat import MathSAT5Solver
             installed_solvers['msat'] = MathSAT5Solver
+        except SolverAPINotFound:
+            pass
+
+        try:
+            from pysmt.solvers.dynmsat import MSATLibLoader
+            MSATLibLoader("optimathsat")
+            from pysmt.optimization.optimsat import OptiMSATSolver
+            installed_solvers['optimsat'] = OptiMSATSolver
         except SolverAPINotFound:
             pass
 
@@ -295,10 +316,27 @@ class Factory(object):
             pass
 
         try:
+            from pysmt.solvers.dynmsat import MSATLibLoader
+            MSATLibLoader("mathsat")
             from pysmt.solvers.msat import (MSatFMQuantifierEliminator,
                                             MSatLWQuantifierEliminator)
+            try:
+                MSatFMQuantifierEliminator()
+                MSatLWQuantifierEliminator()
+            except:
+                raise SolverAPINotFound
             self._all_qelims['msat_fm'] = MSatFMQuantifierEliminator
             self._all_qelims['msat_lw'] = MSatLWQuantifierEliminator
+        except SolverAPINotFound:
+            pass
+
+        try:
+            from pysmt.solvers.dynmsat import MSATLibLoader
+            MSATLibLoader("optimathsat")
+            from pysmt.optimization.optimsat import (OptiMSATFMQuantifierEliminator,
+                                                     OptiMSATLWQuantifierEliminator)
+            self._all_qelims['optimsat_fm'] = OptiMSATFMQuantifierEliminator
+            self._all_qelims['optimsat_lw'] = OptiMSATLWQuantifierEliminator
         except SolverAPINotFound:
             pass
 
@@ -316,10 +354,65 @@ class Factory(object):
         self._all_interpolators = {}
 
         try:
+            from pysmt.solvers.dynmsat import MSATLibLoader
+            MSATLibLoader("mathsat")
             from pysmt.solvers.msat import MSatInterpolator
             self._all_interpolators['msat'] = MSatInterpolator
         except SolverAPINotFound:
             pass
+
+        try:
+            from pysmt.solvers.dynmsat import MSATLibLoader
+            MSATLibLoader("optimathsat")
+            from pysmt.optimization.optimsat import OptiMSATInterpolator
+            self._all_interpolators['optimsat'] = OptiMSATInterpolator
+        except SolverAPINotFound:
+            pass
+
+    def _get_available_optimizers(self):
+        self._all_optimizers = {}
+
+        try:
+            from pysmt.optimization.z3 import Z3NativeOptimizer, Z3SUAOptimizer, \
+                Z3IncrementalOptimizer
+            self._all_optimizers['z3'] = Z3NativeOptimizer
+            self._all_optimizers['z3_sua'] = Z3SUAOptimizer
+            self._all_optimizers['z3_incr'] = Z3IncrementalOptimizer
+        except SolverAPINotFound:
+            pass
+
+        try:
+            from pysmt.solvers.dynmsat import MSATLibLoader
+            MSATLibLoader("mathsat")
+            from pysmt.optimization.msat import MSatSUAOptimizer, MSatIncrementalOptimizer
+            self._all_optimizers['msat_sua'] = MSatSUAOptimizer
+            self._all_optimizers['msat_incr'] = MSatIncrementalOptimizer
+        except SolverAPINotFound:
+            pass
+
+        try:
+            from pysmt.solvers.dynmsat import MSATLibLoader
+            MSATLibLoader("optimathsat")
+            from pysmt.optimization.optimsat import OptiMSATSolver
+            self._all_optimizers['optimsat'] = OptiMSATSolver
+        except SolverAPINotFound:
+            pass
+        except SolverAPINotFound:
+            pass
+
+        try:
+            from pysmt.optimization.yices import YicesSUAOptimizer, YicesIncrementalOptimizer
+            self._all_optimizers['yices_sua'] = YicesSUAOptimizer
+            self._all_optimizers['yices_incr'] = YicesIncrementalOptimizer
+        except SolverAPINotFound:
+            pass
+
+    def set_preference_list(self, solver_type, preference_list):
+        """Defines the order in which to pick the solvers."""
+        assert solver_type in SOLVER_TYPES
+        assert preference_list is not None
+        assert len(preference_list) > 0
+        self.preferences[solver_type] = preference_list
 
 
     def set_solver_preference_list(self, preference_list):
@@ -331,23 +424,31 @@ class Factory(object):
         selected automatically. Note, however, that the solver can
         still be selected by calling it by name.
         """
-        assert preference_list is not None
-        assert len(preference_list) > 0
-        self.solver_preference_list = preference_list
-
+        self.set_preference_list('Solver', preference_list)
 
     def set_qelim_preference_list(self, preference_list):
         """Defines the order in which to pick the solvers."""
-        assert preference_list is not None
-        assert len(preference_list) > 0
-        self.qelim_preference_list = preference_list
-
+        self.set_preference_list('Quantifier Eliminator', preference_list)
 
     def set_interpolation_preference_list(self, preference_list):
         """Defines the order in which to pick the solvers."""
+        self.set_preference_list('Interpolator', preference_list)
+
+    def set_optimizer_preference_list(self, preference_list):
+        """Defines the order in which to pick the optimizers."""
+        self.set_preference_list('Optimizer', preference_list)
+
+
+    def set_optimizer_preference_list(self, preference_list):
+        """Defines the order in which to pick the optimizers."""
         assert preference_list is not None
         assert len(preference_list) > 0
-        self.interpolation_preference_list = preference_list
+        self.optimizer_preference_list = preference_list
+
+
+    def set_optimizer_preference_list(self, preference_list):
+        """Defines the order in which to pick the optimizers."""
+        self.set_preference_list('Optimizer', preference_list)
 
 
     def _filter_solvers(self, solver_list, logic=None):
@@ -434,7 +535,18 @@ class Factory(object):
         """
         return self._filter_solvers(self._all_interpolators, logic=logic)
 
+    def all_optimizers(self, logic=None):
+        """
+        Returns a dict <solver_name, solver_class> including all and only
+        the solvers supporting optimization and directly or
+        indirectly supporting the given logic.  A solver supports a
+        logic if either the given logic is declared in the LOGICS
+        class field or if a logic subsuming the given logic is
+        declared in the LOGICS class field.
 
+        If logic is None, the map will contain all the known solvers
+        """
+        return self._filter_solvers(self._all_optimizers, logic=logic)
 
     ##
     ## Wrappers: These functions are exported in shortcuts
@@ -456,6 +568,9 @@ class Factory(object):
 
     def Interpolator(self, name=None, logic=None):
         return self.get_interpolator(name=name, logic=logic)
+
+    def Optimizer(self, name=None, logic=None):
+        return self.get_optimizer(name=name, logic=logic)
 
     def is_sat(self, formula, solver_name=None, logic=None, portfolio=None):
         if logic is None or logic == AUTO_LOGIC:

@@ -266,7 +266,7 @@ class Solver(object):
         Raises TypeError.
         """
         if formula.get_type() != BOOL:
-            raise PysmtTypeError("Argument must be boolean.")
+            raise PysmtTypeError("Argument '%s' must be boolean." % formula)
 
 
 class IncrementalTrackingSolver(Solver):

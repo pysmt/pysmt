@@ -19,13 +19,15 @@ import os
 import warnings
 
 from pysmt.test import SkipTest
-from pysmt.shortcuts import get_env, reset_env
+from pysmt.test.optimization_utils import OMTTestCase, OptimizationTypes
+from pysmt.shortcuts import get_env, reset_env, Int, Real, BV, SBV
 from pysmt.smtlib.parser import SmtLibParser, get_formula_fname
 from pysmt.smtlib.script import check_sat_filter
 from pysmt.logics import (QF_LIA, QF_LRA, LRA, QF_UFLIRA, QF_UFBV, QF_BV,
                           QF_ALIA, QF_ABV, QF_AUFLIA, QF_AUFBV, QF_NRA, QF_NIA,
-                          UFBV, BV, QF_UF)
+                          UFBV, BV as BV_logic, QF_UF)
 from pysmt.exceptions import NoSolverAvailableError, SolverReturnedUnknownResultError
+
 
 def smtlib_tests(logic_pred):
     """Returns the smtlib instances matching the logic predicate"""
@@ -45,7 +47,6 @@ def smtlib_tests(logic_pred):
 # parses and invokes a solver for the given smt file
 def execute_script_fname(smtfile, logic, expected_result):
     """Read and call a Solver to solve the instance"""
-
     reset_env()
     Solver = get_env().factory.Solver
     parser = SmtLibParser()
@@ -72,7 +73,7 @@ def execute_script_fname(smtfile, logic, expected_result):
         raise
 
     res = check_sat_filter(log)
-    assert expected_result == res
+    assert expected_result == res, (expected_result, res)
 
 
 def formulas_from_smtlib_test_set(logics=None):
@@ -159,8 +160,8 @@ SMTLIB_TEST_FILES = [
     #
     # UFBV
     #
-    (BV, "small_set/BV/AR-fixpoint-1.smt2.bz2", UNSAT),
-    (BV, "small_set/BV/audio_ac97_common.cpp.smt2.bz2", SAT),
+    (BV_logic, "small_set/BV/AR-fixpoint-1.smt2.bz2", UNSAT),
+    (BV_logic, "small_set/BV/audio_ac97_common.cpp.smt2.bz2", SAT),
     (UFBV, "small_set/UFBV/small-swap2-fixpoint-5.smt2.bz2", SAT),
     (UFBV, "small_set/UFBV/small-seq-fixpoint-10.smt2.bz2", UNSAT),
     #
@@ -192,4 +193,125 @@ SMTLIB_TEST_FILES = [
     # QF_UF
     #
     (QF_UF, "small_set/QF_UF/test0.smt2.bz2", SAT),
+]
+
+
+def omt_test_cases_from_smtlib_test_set(logics=None):
+    """
+    Returns a generator over the test-set of OMT-LIB test files.
+    The method accepts a set of logics; only the test cases
+    with a logic inside the logics set will be returned.
+    If logics is None, all the test cases will be returned.
+
+    Note: This resets the Environment at each call.
+    """
+    for (logic, fname, is_sat, expected_result) in OMTLIB_TEST_FILES:
+        if logics is not None and logic not in logics:
+            continue
+
+        env = reset_env()
+        mgr = env.formula_manager
+        smtfile = os.path.join(OMTLIB_DIR, fname)
+        parser = SmtLibParser()
+        test_name = "%s - %s" % (logic.name, fname)
+        script = parser.get_script_fname(smtfile)
+        assumptions, parsed_goals = _extract_assumptions_and_objectives(mgr, script)
+        if is_sat:
+            expected_goals = {}
+            for optimization_type, expected_values in expected_result.items():
+                if optimization_type == OptimizationTypes.BASIC:
+                    assert len(parsed_goals) == len(expected_values)
+                    for parsed_goal, expected_value in zip(parsed_goals, expected_values):
+                        key = (parsed_goal, ), optimization_type
+                        expected_goals[key] = [expected_value]
+                else:
+                    key = parsed_goals, optimization_type
+                    expected_goals[key] = expected_values
+        else:
+            assert expected_result is None
+            expected_goals = None
+        yield OMTTestCase(test_name, assumptions, logic, is_sat, expected_goals, env)
+
+
+def _extract_assumptions_and_objectives(mgr, script):
+    goals = []
+    formula, goals = script.get_last_formula(mgr, return_optimizations=True)
+    assumptions = list(formula.args()) if formula.is_and() else [formula]
+
+    return assumptions, tuple(goals)
+
+
+# Directory with the optimal SMT-LIB test files
+OMTLIB_DIR = "pysmt/test/smtlib/omt/"
+OMTLIB_TEST_FILES = [
+    (QF_LIA, "smtlib2_allsat.smt2", SAT, {
+        OptimizationTypes.LEXICOGRAPHIC: [Int(100), Int(100)],
+        OptimizationTypes.PARETO: [(Int(100), Int(100))],
+        OptimizationTypes.BOXED: [Int(100), Int(100)],
+    }),
+    (QF_LRA, "smtlib2_boxed.smt2", SAT, {
+        OptimizationTypes.BOXED: [Real(42.0), "unbounded", Real(24.0)],
+        OptimizationTypes.LEXICOGRAPHIC: [Real(42.0), Real(42.0), Real(24.0)],
+    }),
+    (QF_LRA, "smtlib2_boxed_variant.smt2", SAT, {
+        OptimizationTypes.BOXED: [Real(42.0), Real(24.0), Real(24.0)],
+        OptimizationTypes.LEXICOGRAPHIC: [Real(42.0), Real(24.0), Real(24.0)],
+    }),
+    (QF_LIA, "smtlib2_boxed_int.smt2", SAT, {
+        OptimizationTypes.BOXED: [Int(42), "unbounded", Int(24)],
+        OptimizationTypes.LEXICOGRAPHIC: [Int(42), Int(42), Int(24)],
+    }),
+    (QF_BV, "smtlib2_bitvector.smt2", SAT, {
+        OptimizationTypes.LEXICOGRAPHIC: [BV(8, 8), BV(8, 8)],
+        OptimizationTypes.PARETO: [(BV(8, 8), BV(8, 8)), (SBV(-105, 8), SBV(-105, 8))],
+        OptimizationTypes.BOXED: [BV(8, 8), SBV(-105, 8)],
+    }),
+    (QF_LIA, "smtlib2_combination.smt2", SAT, {
+        OptimizationTypes.BASIC: [Int(2)],
+    }),
+    (QF_LRA, "smtlib2_incremental.smt2", SAT, {
+        OptimizationTypes.BASIC: [Int(2)],
+    }),
+    (QF_LIA, "smtlib2_lexicographic.smt2", SAT, {
+        OptimizationTypes.BOXED: [Int(4150), Int(3)],
+    }),
+    (QF_LIA, "smtlib2_load_objective_model.smt2", SAT, {
+        OptimizationTypes.BOXED: [Int(3), Int(30)],
+        OptimizationTypes.PARETO: [ # TODO weird. if pareto is tested before boxed in optimsat it works, otherwise it fails
+            (Int(x), Int(2*x + 20)) for x in range(3, 6)
+        ],
+        OptimizationTypes.LEXICOGRAPHIC: [Int(3), Int(26)],
+    }),
+    (QF_LIA, "smtlib2_maxsmt.smt2", SAT, {
+        OptimizationTypes.BASIC: [Int(2)],
+    }),
+    (QF_LRA, "smtlib2_maxsmt_real_weight.smt2", SAT, {
+        OptimizationTypes.BASIC: [Real(1.0)],
+    }),
+    (QF_LRA, "smtlib2_pareto.smt2", SAT, {
+        OptimizationTypes.LEXICOGRAPHIC: [Real(3.0), Real(1.0)],
+        OptimizationTypes.BOXED: [Real(3.0), Real(3.0)],
+        OptimizationTypes.PARETO: [
+            (Real(float(x)), Real(float(4-x))) for x in range(1, 4)
+        ]
+    }),
+    (QF_LRA, "smtlib2_minmax_simple.smt2", SAT, {
+        OptimizationTypes.LEXICOGRAPHIC: [Real(17.0), Real(17.0)],
+        OptimizationTypes.BOXED: [Real(17.0), Real(42.0)],
+    }),
+    (QF_LIA, "clique.smt2", SAT, {
+        OptimizationTypes.BASIC: [Int(3)],
+    }),
+    (QF_LIA, "clique_bool.smt2", SAT, {
+        OptimizationTypes.BASIC: [Int(3)],
+    }),
+    (QF_LIA, "shortpath.smt2", SAT, {
+        OptimizationTypes.BASIC: [Int(17)],
+    }),
+    (QF_LIA, "coloring.smt2", SAT, {
+        OptimizationTypes.BASIC: [Int(7)],
+    }),
+    (QF_LIA, "vertex_cover.smt2", SAT, {
+        OptimizationTypes.BASIC: [Int(4)],
+    }),
 ]

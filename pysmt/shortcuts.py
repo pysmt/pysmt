@@ -1003,6 +1003,16 @@ def Portfolio(solvers_set, logic, **options):
                         environment=get_env(),
                         **options)
 
+def Optimizer(name=None, logic=None):
+    """Returns an Optimizer
+
+    :param name: Specify the name of the solver
+    :param logic: Specify the logic that is going to be used.
+    :returns: An Optimizer
+    :rtype: Optimizer
+    """
+    return get_env().factory.Optimizer(name=name, logic=logic)
+
 
 def is_sat(formula, solver_name=None, logic=None, portfolio=None):
     """ Returns whether a formula is satisfiable.
@@ -1152,7 +1162,6 @@ def qelim(formula, solver_name=None, logic=None):
     return env.factory.qelim(formula,
                              solver_name=solver_name,
                              logic=logic)
-
 
 def binary_interpolant(formula_a, formula_b, solver_name=None, logic=None):
     """Computes an interpolant of (formula_a, formula_b).
