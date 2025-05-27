@@ -21,15 +21,7 @@ singleton objects that are used throughout the system, such as the
 FormulaManager, Simplifier, HRSerializer, SimpleTypeChecker.
 """
 
-import pysmt.simplifier
-import pysmt.printers
-import pysmt.substituter
-import pysmt.type_checker
-import pysmt.oracles
-import pysmt.formula
-import pysmt.factory
-import pysmt.decorators
-import pysmt.typing
+from typing import List, Optional
 
 
 class Environment(object):
@@ -41,6 +33,14 @@ class Environment(object):
     of classes for the different services, by changing the class
     attributes.
     """
+    import pysmt.simplifier
+    import pysmt.printers
+    import pysmt.substituter
+    import pysmt.type_checker
+    import pysmt.oracles
+    import pysmt.formula
+    import pysmt.typing
+
     TypeCheckerClass = pysmt.type_checker.SimpleTypeChecker
     FormulaManagerClass = pysmt.formula.FormulaManager
     TypeManagerClass = pysmt.typing.TypeManager
@@ -165,6 +165,7 @@ class Environment(object):
 
     @property
     def factory(self):
+        import pysmt.factory
         if self._factory is None:
             self._factory = pysmt.factory.Factory(self)
         return self._factory
@@ -181,23 +182,26 @@ class Environment(object):
 # EOC Environment
 
 #### GLOBAL ENVIRONMENTS STACKS ####
-ENVIRONMENTS_STACK = []
+ENVIRONMENTS_STACK: List[Environment] = []
 
-def get_env():
+def get_env() -> Environment:
     """Returns the Environment at the head of the stack."""
     return ENVIRONMENTS_STACK[-1]
 
-def push_env(env=None):
+
+def push_env(env: Optional[Environment] = None):
     """Push a env in the stack. If env is None, a new Environment is created."""
     if env is None:
         env = Environment()
     ENVIRONMENTS_STACK.append(env)
 
-def pop_env():
+
+def pop_env() -> Environment:
     """Pop an env from the stack."""
     return ENVIRONMENTS_STACK.pop()
 
-def reset_env():
+
+def reset_env() -> Environment:
     """Destroys and recreate the head environment."""
     pop_env()
     push_env()
