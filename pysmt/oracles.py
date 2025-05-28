@@ -338,7 +338,6 @@ class TheoryOracle(walkers.DagWalker):
         else:
             theory_out = Theory()
 
-        theory_out = args[0].copy()
         theory_out.uninterpreted = True
         return theory_out
 
