@@ -716,6 +716,20 @@ class FNode(object):
         else:
             raise PysmtTypeError("Trying to use adt_type_from_adt_op on a non adt node")
 
+    def type_from_adt_op(self) -> PySMTType:
+        """
+        From a constructor, selector or discriminator
+        return the return type of the function
+        """
+        if self.is_adt_construct():
+            return self._content.payload.return_type
+        elif self.is_adt_select():
+            return self._content.payload.return_type
+        elif self.is_adt_discriminate():
+            return self._content.payload.return_type
+        else:
+            raise PysmtTypeError("Trying to use adt_type_from_adt_op on a non adt node")
+
     def adt_get_ops_type(
         self,
     ) -> Union[
