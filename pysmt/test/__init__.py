@@ -18,10 +18,7 @@
 import os
 from functools import wraps
 
-try:
-    import unittest2 as unittest
-except ImportError:
-    import unittest
+import unittest
 
 from pysmt.environment import get_env, reset_env
 skipIf = unittest.skipIf
