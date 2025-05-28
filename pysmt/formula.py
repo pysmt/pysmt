@@ -28,6 +28,8 @@ its definition.
 """
 
 import sys
+
+from pysmt.typeguard import is_adt_constructor, is_adt_discriminator, is_adt_selector
 if sys.version_info >= (3, 3):
     from collections.abc import Iterable
 else:
@@ -1076,23 +1078,29 @@ class FormulaManager(object):
         return self.create_node(node_type=op.ARRAY_VALUE, args=tuple(args),
                                 payload=idx_type)
 
-    def Constructor(self, constractor: "types._AlgebraicDataType._Constructor", *args: FNode):
+    def Constructor(self, constractor: "types._AlgebraicDataType._adt_func_t", *args: FNode):
         """Creates a node representing the construction of an ADT"""
+        assert is_adt_constructor(constractor), "Expected constractor type"
+
         tuple_args = self._polymorph_args_to_tuple(args)
         return self.create_node(
             node_type=op.ADT_CONSTRUCT, args=tuple_args, payload=constractor
         )
 
-    def Selector(self, selector: "types._AlgebraicDataType._Selector", variable: FNode):
+    def Selector(self, selector: "types._AlgebraicDataType._adt_func_t", variable: FNode):
         """Creates a node representing the selector of an ADT"""
+        assert is_adt_selector(selector), "Expected selector type"
+
         return self.create_node(
             node_type=op.ADT_SELECT, args=(variable,), payload=selector
         )
 
     def Discriminator(
-        self, discriminator: "types._AlgebraicDataType._Discriminator", variable: FNode
+        self, discriminator: "types._AlgebraicDataType._adt_func_t", variable: FNode
     ):
         """Creates a node representing the discrimination of an ADT"""
+        assert is_adt_discriminator(discriminator), "Expected discriminator type"
+
         return self.create_node(
             node_type=op.ADT_DISCRIMINATE, args=(variable,), payload=discriminator
         )

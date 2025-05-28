@@ -362,7 +362,14 @@ class _AlgebraicDataType(PySMTType):
     method AlgebraicDataType should be used instead.
     """
 
-    class _Constructor(_FunctionType):
+    # metaclass that accepts *only* exact matches
+    class NoSubclassMeta(type):
+        def __instancecheck__(cls, obj):
+            return type(obj) is cls
+        def __subclasscheck__(cls, sub):
+            return sub is cls
+
+    class _Constructor(_FunctionType, metaclass=NoSubclassMeta):
         def __init__(self, name: str, tp: PySMTType, args: OrderedDict[str, PySMTType]):
             super().__init__(tp, [type for _, type in args.items()])
             self._parameters = args
@@ -383,7 +390,7 @@ class _AlgebraicDataType(PySMTType):
             """Get the construction param type by param name"""
             return self._parameters.get(name)
 
-    class _Selector(_FunctionType):
+    class _Selector(_FunctionType, metaclass=NoSubclassMeta):
         def __init__(
             self,
             name: str,
@@ -413,7 +420,7 @@ class _AlgebraicDataType(PySMTType):
         def constructor(self):
             return self._constructor
 
-    class _Discriminator(_FunctionType):
+    class _Discriminator(_FunctionType, metaclass=NoSubclassMeta):
         def __init__(self, name: str, tp: PySMTType):
             super().__init__(BOOL, [tp])
             self.name = name
@@ -424,6 +431,7 @@ class _AlgebraicDataType(PySMTType):
         def __hash__(self):
             return self._hash
 
+    _adt_func_t = Union[_Constructor, _Selector, _Discriminator]
     _constructors: Dict[str, _Constructor]
     _selectors: Dict[Tuple[str, str], _Selector]
     _discriminators: Dict[str, _Discriminator]
@@ -442,17 +450,7 @@ class _AlgebraicDataType(PySMTType):
         raise AttributeError(f"There is no element {n}")
 
     def __getitem__(self, n: str):
-        if n in self._constructors:
-            return self._constructors[n]
-        elif ("is_" in n) and n[len("is_"):] in self._discriminators:
-            return self._discriminators[n[len("is_"):]]
-
-        selectors = [x[1] for x in self._selectors.items() if x[0][1] == n]
-        if len(selectors) > 0:
-            # There should only be one sel with a given name by construction
-            return selectors[0]
-
-        raise AttributeError(f"There is no element {n}")
+        return self.__getattr__(n)
 
 
     def __init__(
