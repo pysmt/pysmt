@@ -1040,6 +1040,11 @@ class MSatConverter(Converter, DagWalker):
         elif tp.is_function_type():
             stps = [self._type_to_msat(x) for x in tp.param_types]
             rtp = self._type_to_msat(tp.return_type)
+            # Mathsat expect the get_funtction_type to have more then
+            # 0 param, by returning just the rtp type the
+            # declare_function will work fine
+            if len(stps) == 0:
+                return rtp
             msat_type = mathsat.msat_get_function_type(self.msat_env(),
                                                        stps,
                                                        rtp)
