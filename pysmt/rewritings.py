@@ -25,7 +25,12 @@ from typing import Dict, List, Set, Tuple
 from typing_extensions import assert_never
 
 from pysmt.fnode import FNode
-from pysmt.typeguard import is_adt_constructor, is_adt_discriminator, is_adt_selector, is_algebraic_data_type
+from pysmt.typeguard import (
+    is_adt_constructor,
+    is_adt_discriminator,
+    is_adt_selector,
+    is_algebraic_data_type,
+)
 from pysmt.walkers import DagWalker, IdentityDagWalker, handles
 import pysmt.typing as types
 import pysmt.operators as op
