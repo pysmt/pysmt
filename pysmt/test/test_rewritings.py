@@ -164,9 +164,7 @@ class TestRewritings(TestCase):
 
     def test_ackermannization_for_examples(self):
         for (f, _, _, logic) in get_example_formulae():
-            if not logic.is_quantified() and logic.theory.uninterpreted:
-                if self.env.factory.has_solvers(logic=logic):
-                    self._verify_ackermannization(f)
+            self._verify_ackermannization(f, logic)
 
     def test_ackermannization_dictionaries(self):
         self.env.enable_infix_notation = True
@@ -192,7 +190,16 @@ class TestRewritings(TestCase):
             if atom.is_function_application():
                 self.assertIsNotNone(terms_to_consts[atom])
 
-    def _verify_ackermannization(self, formula):
+    def _verify_ackermannization(self, formula, logic=None):
+        if logic:
+            if logic.is_quantified() or not logic.theory.uninterpreted:
+                # Ackermannization only makes sense on formula with
+                # uninterpreted functions and without quantifiers.
+                return
+            # Ensure we have a solver for this logic
+            if not self.env.factory.has_solvers(logic=logic):
+                return
+
         ackermannization = Ackermannizer()
         ack = ackermannization.do_ackermannization(formula)
         #verify that there are no functions in ack
@@ -201,8 +208,8 @@ class TestRewritings(TestCase):
             for arg in atom.args():
                 self.assertFalse(arg.is_function_application())
         #verify that ack and formula are equisat
-        formula_sat = is_sat(formula)
-        ack_sat = is_sat(ack)
+        formula_sat = is_sat(formula, logic=logic)
+        ack_sat = is_sat(ack, logic=logic)
         self.assertTrue(formula_sat == ack_sat)
 
     def test_nnf_examples(self):
