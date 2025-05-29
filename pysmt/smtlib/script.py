@@ -18,7 +18,7 @@
 
 import warnings
 from collections import defaultdict, namedtuple
-from io import StringIO
+from io import TextIOWrapper, StringIO
 
 import pysmt.smtlib.commands as smtcmd
 from pysmt.exceptions import (UnknownSmtLibCommandError, NoLogicAvailableError,
@@ -28,9 +28,17 @@ from pysmt.oracles import get_logic
 from pysmt.logics import get_closer_smtlib_logic, Logic, SMTLIB2_LOGICS
 from pysmt.environment import get_env
 from pysmt.optimization.goal import MaximizationGoal, MinimizationGoal, MinMaxGoal, MaxMinGoal, MaxSMTGoal
+from pysmt.typing import _TypeDecl
+from pysmt.fnode import FNode
+from pysmt.formula import FormulaManager
+from pysmt.optimization.optimsat import OptiMSATSolver
+from pysmt.optimization.z3 import Z3NativeOptimizer
+from pysmt.solvers.msat import MathSAT5Solver
+from pysmt.solvers.z3 import Z3Solver
+from typing import Any, Iterator, List, Optional, Set, Tuple, Union
 
 
-def check_sat_filter(log):
+def check_sat_filter(log: List[Union[Tuple[str, None], Tuple[str, bool]]]) -> bool:
     """
     Returns the result of the check-sat command from a log.
 
@@ -42,7 +50,7 @@ def check_sat_filter(log):
 
 
 class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
-    def serialize(self, outstream=None, printer=None, daggify=True):
+    def serialize(self, outstream: Optional[StringIO]=None, printer: Optional[SmtDagPrinter]=None, daggify: bool=True) -> None:
         """Serializes the SmtLibCommand into outstream using the given printer.
 
         Exactly one of outstream or printer must be specified. When
@@ -178,7 +186,7 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
         else:
             raise UnknownSmtLibCommandError(self.name)
 
-    def serialize_to_string(self, daggify=True):
+    def serialize_to_string(self, daggify: bool=True) -> str:
         buf = StringIO()
         self.serialize(buf, daggify=daggify)
         return buf.getvalue()
@@ -187,19 +195,19 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
 
 class SmtLibScript(object):
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.annotations = None
         self.commands = []
 
-    def add(self, name, args):
+    def add(self, name: str, args: List[Optional[Union[Logic, _TypeDecl, FNode, str]]]) -> None:
         """Adds a new SmtLibCommand with the given name and arguments."""
         self.add_command(SmtLibCommand(name=name,
                                        args=args))
 
-    def add_command(self, command):
+    def add_command(self, command: SmtLibCommand) -> None:
         self.commands.append(command)
 
-    def evaluate(self, solver):
+    def evaluate(self, solver: Union[MathSAT5Solver, Z3Solver]) -> List[Union[Tuple[str, None], Tuple[str, bool]]]:
         log = []
         inter = InterpreterOMT()
         for cmd in self.commands:
@@ -208,16 +216,16 @@ class SmtLibScript(object):
 
         return log
 
-    def contains_command(self, command_name):
+    def contains_command(self, command_name: str) -> bool:
         return any(x.name == command_name for x in self.commands)
 
-    def count_command_occurrences(self, command_name):
+    def count_command_occurrences(self, command_name: str) -> int:
         return sum(1 for cmd in self.commands if cmd.name == command_name)
 
-    def filter_by_command_name(self, command_name_set):
+    def filter_by_command_name(self, command_name_set: List[str]) -> Iterator[Any]:
         return (cmd for cmd in self.commands if cmd.name in command_name_set)
 
-    def get_strict_formula(self, mgr=None):
+    def get_strict_formula(self, mgr: None=None) -> FNode:
         if self.contains_command(smtcmd.PUSH) or \
            self.contains_command(smtcmd.POP):
             raise PysmtValueError("Was not expecting push-pop commands")
@@ -229,17 +237,17 @@ class SmtLibScript(object):
                       for cmd in self.filter_by_command_name([smtcmd.ASSERT])]
         return _And(assertions)
 
-    def get_declared_symbols(self):
+    def get_declared_symbols(self) -> Set[FNode]:
         return {cmd.args[0] for cmd in self.filter_by_command_name([smtcmd.DECLARE_CONST,
                                                                     smtcmd.DECLARE_FUN])}
-    def get_define_fun_parameter_symbols(self):
+    def get_define_fun_parameter_symbols(self) -> Set[FNode]:
         res = set()
         for cmd in self.filter_by_command_name([smtcmd.DEFINE_FUN]):
             for s in cmd.args[1]:
                 res.add(s)
         return res
 
-    def get_last_formula(self, mgr=None, return_optimizations=False):
+    def get_last_formula(self, mgr: Optional[FormulaManager]=None, return_optimizations: bool=False) -> Any:
         """Returns the last formula of the execution of the Script.
 
         This coincides with the conjunction of the assertions that are
@@ -321,7 +329,7 @@ class SmtLibScript(object):
         with open(fname, "w") as outstream:
             self.serialize(outstream, daggify=daggify)
 
-    def serialize(self, outstream, daggify=True):
+    def serialize(self, outstream: Union[TextIOWrapper, StringIO], daggify: bool=True) -> None:
         """Serializes the SmtLibScript expanding commands"""
         if daggify:
             printer = SmtDagPrinter(outstream, annotations=self.annotations)
@@ -332,7 +340,7 @@ class SmtLibScript(object):
             cmd.serialize(printer=printer)
             outstream.write("\n")
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.commands)
 
     def __iter__(self):
@@ -342,7 +350,7 @@ class SmtLibScript(object):
         return "\n".join((str(cmd) for cmd in self.commands))
 
 
-def _command_is_signed(command):
+def _command_is_signed(command: SmtLibCommand) -> bool:
     singed = False
     if len(command.args) >= 2:
         options = command.args[1]
@@ -356,7 +364,7 @@ def _command_is_signed(command):
     return singed
 
 
-def smtlibscript_from_formula(formula, logic=None):
+def smtlibscript_from_formula(formula: FNode, logic: Optional[Union[str, int, Logic]]=None) -> SmtLibScript:
     script = SmtLibScript()
 
     if logic is None:
@@ -407,10 +415,10 @@ def smtlibscript_from_formula(formula, logic=None):
 
 class InterpreterSMT(object):
 
-    def evaluate(self, cmd, solver):
+    def evaluate(self, cmd: SmtLibCommand, solver: MathSAT5Solver) -> Optional[bool]:
         return self._smt_evaluate(cmd, solver)
 
-    def _smt_evaluate(self, cmd, solver):
+    def _smt_evaluate(self, cmd: SmtLibCommand, solver: Union[MathSAT5Solver, Z3NativeOptimizer, Z3Solver, OptiMSATSolver]) -> Optional[bool]:
         if cmd.name == smtcmd.SET_INFO:
             return solver.set_info(cmd.args[0], cmd.args[1])
 
@@ -487,14 +495,14 @@ class InterpreterSMT(object):
 
 class InterpreterOMT(InterpreterSMT):
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.optimization_goals = ([],[])
         self.opt_priority = "single-obj"
 
-    def evaluate(self, cmd, solver):
+    def evaluate(self, cmd: SmtLibCommand, solver: Union[Z3NativeOptimizer, MathSAT5Solver, Z3Solver, OptiMSATSolver]) -> Any:
         return self._omt_evaluate(cmd, solver)
 
-    def _omt_evaluate(self, cmd, optimizer):
+    def _omt_evaluate(self, cmd: SmtLibCommand, optimizer: Union[Z3NativeOptimizer, Z3Solver, MathSAT5Solver, OptiMSATSolver]) -> Any:
 
         if cmd.name == smtcmd.SET_OPTION:
             if cmd.args[0] == ":opt.priority":

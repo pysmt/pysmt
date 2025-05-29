@@ -17,6 +17,8 @@
 #
 
 from pysmt.simplifier import Simplifier
+from pysmt.fnode import FNode
+from typing import List
 
 class SmtLibModelValidationSimplifier(Simplifier):
     """This class is useful to validate SmtLib models produced by
@@ -36,7 +38,7 @@ class SmtLibModelValidationSimplifier(Simplifier):
     assert simp == TRUE()
     ```
     """
-    def walk_equals(self, formula, args, **kwargs):
+    def walk_equals(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         assert len(args) == 2
 
         sl = args[0]

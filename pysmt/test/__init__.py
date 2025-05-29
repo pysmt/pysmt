@@ -17,6 +17,9 @@
 #
 import os
 from functools import wraps
+from pysmt.fnode import FNode
+from pysmt.logics import Logic
+from typing import Callable, Optional, Tuple, Union
 
 try:
     import unittest2 as unittest
@@ -34,31 +37,31 @@ class TestCase(unittest.TestCase):
     a fresh environment is provided for each test.
     """
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.env = reset_env()
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         pass
 
     if "assertRaisesRegex" not in dir(unittest.TestCase):
         assertRaisesRegex = unittest.TestCase.assertRaisesRegexp
 
 
-    def assertValid(self, formula, msg=None, solver_name=None, logic=None):
+    def assertValid(self, formula: FNode, msg: Optional[Union[str, Tuple[FNode, FNode], FNode]]=None, solver_name: None=None, logic: Optional[Logic]=None) -> None:
         """Assert that formula is VALID."""
         self.assertTrue(self.env.factory.is_valid(formula=formula,
                                                   solver_name=solver_name,
                                                   logic=logic),
                         msg=msg)
 
-    def assertSat(self, formula, msg=None, solver_name=None, logic=None):
+    def assertSat(self, formula: FNode, msg: None=None, solver_name: None=None, logic: None=None) -> None:
         """Assert that formula is SAT."""
         self.assertTrue(self.env.factory.is_sat(formula=formula,
                                                 solver_name=solver_name,
                                                 logic=logic),
                         msg=msg)
 
-    def assertUnsat(self, formula, msg=None, solver_name=None, logic=None):
+    def assertUnsat(self, formula: FNode, msg: None=None, solver_name: None=None, logic: None=None) -> None:
         """Assert that formula is UNSAT."""
         self.assertTrue(self.env.factory.is_unsat(formula=formula,
                                                   solver_name=solver_name,
@@ -100,10 +103,10 @@ class skipIfQENotAvailable(object):
 class skipIfNoSolverForLogic(object):
     """Skip a test if there is no solver for the given logic."""
 
-    def __init__(self, logic):
+    def __init__(self, logic: Logic) -> None:
         self.logic = logic
 
-    def __call__(self, test_fun):
+    def __call__(self, test_fun: Callable) -> Callable:
         msg = "Solver for %s not available" % self.logic
         cond = not get_env().factory.has_solvers(logic=self.logic)
         @unittest.skipIf(cond, msg)
@@ -147,10 +150,10 @@ class skipIfNoQEForLogic(object):
 class skipIfNoOptimizerForLogic(object):
     """Skip a test if there is no optimizer for the given logic."""
 
-    def __init__(self, logic):
+    def __init__(self, logic: Logic) -> None:
         self.logic = logic
 
-    def __call__(self, test_fun):
+    def __call__(self, test_fun: Callable) -> Callable:
         msg = "Optimizer for %s not available" % self.logic
         cond = len(get_env().factory.all_optimizers(logic=self.logic)) == 0
         @unittest.skipIf(cond, msg)

@@ -28,7 +28,7 @@ from functools import partial
 from pysmt.exceptions import (NoSolverAvailableError, SolverRedefinitionError,
                               NoLogicAvailableError,
                               SolverAPINotFound)
-from pysmt.logics import QF_UFLIRA, LRA, QF_UFLRA, QF_LIA
+from pysmt.logics import Logic, QF_UFLIRA, LRA, QF_UFLRA, QF_LIA
 from pysmt.logics import AUTO as AUTO_LOGIC
 from pysmt.logics import most_generic_logic, get_closer_logic
 from pysmt.logics import convert_logic_from_string
@@ -36,6 +36,14 @@ from pysmt.oracles import get_logic
 from pysmt.solvers.qelim import (ShannonQuantifierEliminator,
                                  SelfSubstitutionQuantifierEliminator)
 from pysmt.solvers.portfolio import Portfolio
+from Factory import Optimizer
+from pysmt.environment import Environment
+from pysmt.fnode import FNode
+from pysmt.optimization.optimizer import Optimizer
+from pysmt.solvers.cvcfive import CVC5Solver
+from pysmt.solvers.msat import MathSAT5Solver
+from pysmt.solvers.z3 import Z3Solver
+from typing import Any, Dict, List, Optional, Type, Union
 
 SOLVER_TYPES = ['Solver', 'Solver supporting Unsat Cores',
                 'Quantifier Eliminator', 'Interpolator', 'Optimizer']
@@ -65,7 +73,7 @@ class Factory(object):
     is_sat, is_unsat etc.
 
     """
-    def __init__(self, environment, preferences=None):
+    def __init__(self, environment: Environment, preferences: None=None) -> None:
         self.environment = environment
         self._all_solvers = None
         self._all_unsat_core_solvers = None
@@ -88,7 +96,7 @@ class Factory(object):
         self._get_available_optimizers()
 
 
-    def get_solver(self, name=None, logic=None, **options):
+    def get_solver(self, name: None=None, logic: Optional[Union[str, Logic]]=None, **options) -> Union[Z3Solver, MathSAT5Solver, CVC5Solver]:
         SolverClass, closer_logic = \
            self._get_solver_class(solver_list=self._all_solvers,
                                   solver_type="Solver",
@@ -137,7 +145,7 @@ class Factory(object):
         return SolverClass(environment=self.environment,
                            logic=closer_logic)
 
-    def get_optimizer(self, name=None, logic=None):
+    def get_optimizer(self, name: Optional[str]=None, logic: Optional[Union[str, Logic]]=None) -> Optimizer:
         SolverClass, closer_logic = \
            self._get_solver_class(solver_list=self._all_optimizers,
                                   solver_type="Optimizer",
@@ -148,8 +156,8 @@ class Factory(object):
                            logic=closer_logic)
 
 
-    def _get_solver_class(self, solver_list, solver_type, default_logic,
-                          name=None, logic=None):
+    def _get_solver_class(self, solver_list: Dict[str, Any], solver_type: str, default_logic: Logic,
+                          name: Optional[str]=None, logic: Optional[Union[str, Logic]]=None) -> Any:
         if len(solver_list) == 0:
             raise NoSolverAvailableError("No %s is available" % solver_type)
 
@@ -195,7 +203,7 @@ class Factory(object):
                                          (solver_type, logic))
 
 
-    def _pick_favorite(self, preference_list, solver_list, solvers):
+    def _pick_favorite(self, preference_list: List[str], solver_list: Dict[str, Any], solvers: Dict[str, Any]) -> Union[Type[CVC5Solver], Type[Z3Solver], Type[MathSAT5Solver], Type[OptiMSATSolver]]:
         for candidate in preference_list:
             if candidate in solvers:
                 return solver_list[candidate]
@@ -203,7 +211,7 @@ class Factory(object):
             "Cannot find a matching solver in the preference list: %s " % solvers)
 
 
-    def add_generic_solver(self, name, args, logics, unsat_core_support=False):
+    def add_generic_solver(self, name: str, args: List[str], logics: List[Logic], unsat_core_support: bool=False) -> None:
         from pysmt.smtlib.solver import SmtLibSolver
         if name in self._all_solvers:
             raise SolverRedefinitionError("Solver %s already defined" % name)
@@ -223,7 +231,7 @@ class Factory(object):
     def get_generic_solver_info(self, name):
         return self._generic_solvers[name]
 
-    def _get_available_solvers(self):
+    def _get_available_solvers(self) -> None:
         installed_solvers = {}
         self._all_solvers = {}
         self._all_unsat_core_solvers = {}
@@ -306,7 +314,7 @@ class Factory(object):
                 pass
 
 
-    def _get_available_qe(self):
+    def _get_available_qe(self) -> None:
         self._all_qelims = {}
 
         try:
@@ -350,7 +358,7 @@ class Factory(object):
         self._all_qelims['shannon'] = ShannonQuantifierEliminator
         self._all_qelims['selfsub'] = SelfSubstitutionQuantifierEliminator
 
-    def _get_available_interpolators(self):
+    def _get_available_interpolators(self) -> None:
         self._all_interpolators = {}
 
         try:
@@ -369,7 +377,7 @@ class Factory(object):
         except SolverAPINotFound:
             pass
 
-    def _get_available_optimizers(self):
+    def _get_available_optimizers(self) -> None:
         self._all_optimizers = {}
 
         try:
@@ -451,7 +459,7 @@ class Factory(object):
         self.set_preference_list('Optimizer', preference_list)
 
 
-    def _filter_solvers(self, solver_list, logic=None):
+    def _filter_solvers(self, solver_list: Dict[str, Any], logic: Optional[Logic]=None) -> Dict[str, Any]:
         """
         Returns a dict <solver_name, solver_class> including all and only
         the solvers directly or indirectly supporting the given logic.
@@ -475,7 +483,7 @@ class Factory(object):
         return solvers
 
 
-    def all_solvers(self, logic=None):
+    def all_solvers(self, logic: Optional[Logic]=None) -> Dict[str, Any]:
         """
         Returns a dict <solver_name, solver_class> including all and only
         the solvers directly or indirectly supporting the given logic.
@@ -488,7 +496,7 @@ class Factory(object):
         return self._filter_solvers(self._all_solvers, logic=logic)
 
 
-    def has_solvers(self, logic=None):
+    def has_solvers(self, logic: Optional[Logic]=None) -> bool:
         """
         Returns true if self.all_solvers(logic) is non-empty
         """
@@ -535,7 +543,7 @@ class Factory(object):
         """
         return self._filter_solvers(self._all_interpolators, logic=logic)
 
-    def all_optimizers(self, logic=None):
+    def all_optimizers(self, logic: Optional[Logic]=None) -> Dict[str, Any]:
         """
         Returns a dict <solver_name, solver_class> including all and only
         the solvers supporting optimization and directly or
@@ -551,7 +559,7 @@ class Factory(object):
     ##
     ## Wrappers: These functions are exported in shortcuts
     ##
-    def Solver(self, name=None, logic=None, **options):
+    def Solver(self, name: None=None, logic: Optional[Union[str, Logic]]=None, **options) -> Union[Z3Solver, MathSAT5Solver, CVC5Solver]:
         return self.get_solver(name=name,
                                logic=logic,
                                **options)
@@ -569,10 +577,10 @@ class Factory(object):
     def Interpolator(self, name=None, logic=None):
         return self.get_interpolator(name=name, logic=logic)
 
-    def Optimizer(self, name=None, logic=None):
+    def Optimizer(self, name: Optional[str]=None, logic: Optional[Union[Logic, str]]=None) -> Optimizer:
         return self.get_optimizer(name=name, logic=logic)
 
-    def is_sat(self, formula, solver_name=None, logic=None, portfolio=None):
+    def is_sat(self, formula: FNode, solver_name: None=None, logic: None=None, portfolio: None=None) -> bool:
         if logic is None or logic == AUTO_LOGIC:
             logic = get_logic(formula, self.environment)
         if portfolio is not None:
@@ -638,7 +646,7 @@ class Factory(object):
 
             return solver.get_unsat_core()
 
-    def is_valid(self, formula, solver_name=None, logic=None, portfolio=None):
+    def is_valid(self, formula: FNode, solver_name: None=None, logic: Optional[Logic]=None, portfolio: None=None) -> bool:
         if logic is None or logic == AUTO_LOGIC:
             logic = get_logic(formula, self.environment)
         if portfolio is not None:
@@ -652,7 +660,7 @@ class Factory(object):
         with solver:
             return solver.is_valid(formula)
 
-    def is_unsat(self, formula, solver_name=None, logic=None, portfolio=None):
+    def is_unsat(self, formula: FNode, solver_name: None=None, logic: None=None, portfolio: None=None) -> bool:
         if logic is None or logic == AUTO_LOGIC:
             logic = get_logic(formula, self.environment)
         if portfolio is not None:

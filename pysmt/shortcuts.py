@@ -30,6 +30,15 @@ environment is used (this is the default behavior of
 
 # Enable default deprecation warnings!
 import warnings
+from fractions import Fraction
+from pysmt.fnode import FNode
+from pysmt.logics import Logic
+from pysmt.optimization.optimsat import OptiMSATSolver
+from pysmt.optimization.z3 import Z3NativeOptimizer
+from pysmt.solvers.msat import MathSAT5Solver
+from pysmt.typing import PySMTType
+from typing import Dict, List, Optional, Tuple, Union
+
 warnings.filterwarnings('default', module='pysmt')
 
 import pysmt.configuration as config
@@ -44,7 +53,7 @@ from pysmt.typing import INT, BOOL, REAL, BVType, FunctionType, ArrayType, Type
 assert INT or BOOL or REAL or BVType or FunctionType or ArrayType or Type
 
 
-def get_env():
+def get_env() -> pysmt.environment.Environment:
     """Returns the global environment.
 
     :returns: The global environment
@@ -53,7 +62,7 @@ def get_env():
     return pysmt.environment.get_env()
 
 
-def reset_env():
+def reset_env() -> pysmt.environment.Environment:
     """Resets the global environment, and returns the new one.
 
     :returns: A new environment after resetting the global environment
@@ -149,62 +158,62 @@ def get_formula_size(formula, measure=None):
 
 ##### Nodes Creation #####
 
-def ForAll(variables, formula):
+def ForAll(variables: List[FNode], formula: FNode) -> FNode:
     r""".. math:: \forall v_1, \cdots, v_n . \varphi(v_1, \cdots, v_n)"""
     return get_env().formula_manager.ForAll(variables, formula)
 
 
-def Exists(variables, formula):
+def Exists(variables: List[FNode], formula: FNode) -> FNode:
     r""".. math:: \exists v_1, \cdots, v_n . \varphi(v_1, \cdots, v_n)"""
     return get_env().formula_manager.Exists(variables, formula)
 
 
-def Function(vname, params):
+def Function(vname: FNode, params: Union[Tuple[FNode], Tuple[FNode, FNode], List[FNode]]) -> FNode:
     r""".. math:: vname(p_1, \cdots, p_n)"""
     return get_env().formula_manager.Function(vname, params)
 
 
-def Not(formula):
+def Not(formula: FNode) -> FNode:
     r""".. math:: \lnot \varphi"""
     return get_env().formula_manager.Not(formula)
 
 
-def Implies(left, right):
+def Implies(left: FNode, right: FNode) -> FNode:
     r""".. math:: l \rightarrow r"""
     return get_env().formula_manager.Implies(left, right)
 
 
-def Iff(left, right):
+def Iff(left: FNode, right: FNode) -> FNode:
     r""".. math:: l \leftrightarrow r """
     return get_env().formula_manager.Iff(left, right)
 
 
-def GE(left, right):
+def GE(left: FNode, right: FNode) -> FNode:
     r""".. math:: l \ge r"""
     return get_env().formula_manager.GE(left, right)
 
 
-def Minus(left, right):
+def Minus(left: FNode, right: FNode) -> FNode:
     r""".. math:: l - r """
     return get_env().formula_manager.Minus(left, right)
 
 
-def Times(*args):
+def Times(*args) -> FNode:
     r""".. math:: x_1 \times x_2 \cdots \times x_n"""
     return get_env().formula_manager.Times(*args)
 
 
-def Pow(left, right):
+def Pow(left: FNode, right: FNode) -> FNode:
     r""".. math:: l ^ r"""
     return get_env().formula_manager.Pow(left, right)
 
 
-def Div(left, right):
+def Div(left: FNode, right: FNode) -> FNode:
     r""".. math:: \frac{l}{r}"""
     return get_env().formula_manager.Div(left, right)
 
 
-def Equals(left, right):
+def Equals(left: FNode, right: FNode) -> FNode:
     r""".. math:: l = r"""
     return get_env().formula_manager.Equals(left, right)
 
@@ -213,39 +222,39 @@ def NotEquals(left, right):
     r""".. math:: l != r"""
     return get_env().formula_manager.NotEquals(left, right)
 
-def GT(left, right):
+def GT(left: FNode, right: FNode) -> FNode:
     r""".. math:: l > r"""
     return get_env().formula_manager.GT(left, right)
 
 
-def LE(left, right):
+def LE(left: FNode, right: FNode) -> FNode:
     r""".. math:: l \le r"""
     return get_env().formula_manager.LE(left, right)
 
 
-def LT(left, right):
+def LT(left: FNode, right: FNode) -> FNode:
     r""".. math:: l < r"""
     return get_env().formula_manager.LT(left, right)
 
 
-def Ite(iff, left, right):
+def Ite(iff: FNode, left: FNode, right: FNode) -> FNode:
     r""".. math:: \text{ If } i \text{ Then } l \text{ Else } r"""
     return get_env().formula_manager.Ite(iff, left, right)
 
 
 def Abs(formula):
     r"""Returns the absolute value of the formula.
-    
+
     This is implemented as If(formula > 0, formula, -formula).
     Works for both integer and real values.
-    
+
     :param formula: The formula to compute the absolute value of
     :returns: The absolute value of the formula
     :raises: ValueError if the formula type is not integer or real
     """
     # Get the type of the formula to determine the appropriate zero value
     formula_type = get_type(formula)
-    
+
     # Create a zero value of the same type as the formula
     if formula_type == types.INT:
         zero = Int(0)
@@ -254,11 +263,11 @@ def Abs(formula):
     else:
         # Raise an error for unsupported types
         raise ValueError(f"Abs function only supports integer and real types, got {formula_type}")
-    
+
     return Ite(GT(formula, zero), formula, Minus(zero, formula))
 
 
-def Symbol(name, typename=types.BOOL):
+def Symbol(name: str, typename: PySMTType=types.BOOL) -> FNode:
     """Returns a symbol with the given name and type.
 
     :param name: Specify the name
@@ -278,7 +287,7 @@ def FreshSymbol(typename=types.BOOL, template=None):
     return get_env().formula_manager.FreshSymbol(typename, template)
 
 
-def Int(value):
+def Int(value: int) -> FNode:
     """Returns an Integer constant with the given value.
 
     :param value: Specify the value
@@ -296,7 +305,7 @@ def Bool(value):
     return get_env().formula_manager.Bool(value)
 
 
-def Real(value):
+def Real(value: Union[Tuple[int, int], Fraction, int, float]) -> FNode:
     """Returns a Real constant with the given value.
 
     :param value: Specify the value
@@ -305,12 +314,12 @@ def Real(value):
     return get_env().formula_manager.Real(value)
 
 
-def String(value):
+def String(value: str) -> FNode:
     """Returns a String constant with the given value."""
     return get_env().formula_manager.String(value)
 
 
-def TRUE():
+def TRUE() -> FNode:
     """Returns the Boolean constant TRUE.
 
     returns: The Boolean constant TRUE
@@ -318,7 +327,7 @@ def TRUE():
     return get_env().formula_manager.TRUE()
 
 
-def FALSE():
+def FALSE() -> FNode:
     """Returns the Boolean constant FALSE.
 
     returns: The Boolean constant FALSE
@@ -326,22 +335,22 @@ def FALSE():
     return get_env().formula_manager.FALSE()
 
 
-def And(*args):
+def And(*args) -> FNode:
     r""".. math:: \varphi_0 \land \cdots \land \varphi_n """
     return get_env().formula_manager.And(*args)
 
 
-def Or(*args):
+def Or(*args) -> FNode:
     r""".. math:: \varphi_0 \lor \cdots \lor \varphi_n """
     return get_env().formula_manager.Or(*args)
 
 
-def Plus(*args):
+def Plus(*args) -> FNode:
     r""".. math:: \varphi_0 + \cdots + \varphi_n """
     return get_env().formula_manager.Plus(*args)
 
 
-def ToReal(formula):
+def ToReal(formula: FNode) -> FNode:
     """Explicit cast of a term into a Real term."""
     return get_env().formula_manager.ToReal(formula)
 
@@ -400,7 +409,7 @@ def EqualsOrIff(left, right):
 #
 # Bit Vectors
 #
-def BV(value, width=None):
+def BV(value: Union[str, int], width: Optional[int]=None) -> FNode:
     """Returns a constant of type BitVector.
 
     value can be either:
@@ -419,7 +428,7 @@ def BV(value, width=None):
     return get_env().formula_manager.BV(value, width)
 
 
-def SBV(value, width=None):
+def SBV(value: int, width: Optional[int]=None) -> FNode:
     """Returns a constant of type BitVector interpreting the sign.
 
     If the specified value is an integer, it is converted in the
@@ -434,7 +443,7 @@ def SBV(value, width=None):
     return get_env().formula_manager.SBV(value, width)
 
 
-def BVOne(width=None):
+def BVOne(width: Optional[int]=None) -> FNode:
     """Returns the unsigned one constant BitVector.
 
     :param width: Specify the width of the BitVector
@@ -444,7 +453,7 @@ def BVOne(width=None):
     return get_env().formula_manager.BVOne(width)
 
 
-def BVZero(width=None):
+def BVZero(width: Optional[int]=None) -> FNode:
     """Returns the zero constant BitVector.
 
     :param width: Specify the width of the BitVector
@@ -454,7 +463,7 @@ def BVZero(width=None):
     return get_env().formula_manager.BVZero(width)
 
 
-def BVNot(formula):
+def BVNot(formula: FNode) -> FNode:
     """Returns the bitwise negation of the bitvector
 
     :param formula: The target formula
@@ -464,7 +473,7 @@ def BVNot(formula):
     return get_env().formula_manager.BVNot(formula)
 
 
-def BVAnd(*args):
+def BVAnd(*args) -> FNode:
     """Returns the Bit-wise AND of bitvectors of the same size.
     If more than 2 arguments are passed, a left-associative formula is generated.
 
@@ -475,7 +484,7 @@ def BVAnd(*args):
     return get_env().formula_manager.BVAnd(*args)
 
 
-def BVOr(*args):
+def BVOr(*args) -> FNode:
     """Returns the Bit-wise OR of bitvectors of the same size.
     If more than 2 arguments are passed, a left-associative formula is generated.
 
@@ -486,7 +495,7 @@ def BVOr(*args):
     return get_env().formula_manager.BVOr(*args)
 
 
-def BVXor(left, right):
+def BVXor(left: FNode, right: FNode) -> FNode:
     """Returns the Bit-wise XOR of two bitvectors of the same size.
 
     :param left: Specify the left bitvector
@@ -497,7 +506,7 @@ def BVXor(left, right):
     return get_env().formula_manager.BVXor(left, right)
 
 
-def BVConcat(*args):
+def BVConcat(*args) -> FNode:
     """Returns the Concatenation of the two BVs
 
     :param args: Specify the bitvectors to concatenate
@@ -507,7 +516,7 @@ def BVConcat(*args):
     return get_env().formula_manager.BVConcat(*args)
 
 
-def BVExtract(formula, start=0, end=None):
+def BVExtract(formula: FNode, start: int=0, end: Optional[int]=None) -> FNode:
     """Returns the slice of formula from start to end (inclusive).
 
     :param formula: The target formula
@@ -519,7 +528,7 @@ def BVExtract(formula, start=0, end=None):
     return get_env().formula_manager.BVExtract(formula, start=start, end=end)
 
 
-def BVULT(left, right):
+def BVULT(left: FNode, right: FNode) -> FNode:
     """Returns the Unsigned Less-Than comparison of the two BVs.
 
     :param left: Specify the left bitvector
@@ -530,7 +539,7 @@ def BVULT(left, right):
     return get_env().formula_manager.BVULT(left, right)
 
 
-def BVUGT(left, right):
+def BVUGT(left: FNode, right: FNode) -> FNode:
     """Returns the Unsigned Greater-Than comparison of the two BVs.
 
     :param left: Specify the left bitvector
@@ -541,7 +550,7 @@ def BVUGT(left, right):
     return get_env().formula_manager.BVUGT(left, right)
 
 
-def BVULE(left, right):
+def BVULE(left: FNode, right: FNode) -> FNode:
     """Returns the Unsigned Less-Equal comparison of the two BVs.
 
     :param left: Specify the left bitvector
@@ -552,7 +561,7 @@ def BVULE(left, right):
     return get_env().formula_manager.BVULE(left, right)
 
 
-def BVUGE(left, right):
+def BVUGE(left: FNode, right: FNode) -> FNode:
     """Returns the Unsigned Greater-Equal comparison of the two BVs.
 
     :param left: Specify the left bitvector
@@ -563,7 +572,7 @@ def BVUGE(left, right):
     return get_env().formula_manager.BVUGE(left, right)
 
 
-def BVNeg(formula):
+def BVNeg(formula: FNode) -> FNode:
     """Returns the arithmetic negation of the BV.
 
     :param formula: The target formula
@@ -572,7 +581,7 @@ def BVNeg(formula):
     """
     return get_env().formula_manager.BVNeg(formula)
 
-def BVAdd(*args):
+def BVAdd(*args) -> FNode:
     """Returns the sum of BV.
     If more than 2 arguments are passed, a left-associative formula is generated.
 
@@ -583,7 +592,7 @@ def BVAdd(*args):
     return get_env().formula_manager.BVAdd(*args)
 
 
-def BVSub(left, right):
+def BVSub(left: FNode, right: FNode) -> FNode:
     """Returns the difference of two BV.
 
     :param left: Specify the left bitvector
@@ -594,7 +603,7 @@ def BVSub(left, right):
     return get_env().formula_manager.BVSub(left, right)
 
 
-def BVMul(*args):
+def BVMul(*args) -> FNode:
     """Returns the product of BV.
     If more than 2 arguments are passed, a left-associative formula is generated.
 
@@ -605,7 +614,7 @@ def BVMul(*args):
     return get_env().formula_manager.BVMul(*args)
 
 
-def BVUDiv(left, right):
+def BVUDiv(left: FNode, right: FNode) -> FNode:
     """Returns the Unsigned division of the two BV.
 
     :param left: Specify the left bitvector
@@ -616,7 +625,7 @@ def BVUDiv(left, right):
     return get_env().formula_manager.BVUDiv(left, right)
 
 
-def BVURem(left, right):
+def BVURem(left: FNode, right: FNode) -> FNode:
     """Returns the Unsigned remainder of the two BV.
 
     :param left: Specify the left bitvector
@@ -627,7 +636,7 @@ def BVURem(left, right):
     return get_env().formula_manager.BVURem(left, right)
 
 
-def BVLShl(left, right):
+def BVLShl(left: FNode, right: int) -> FNode:
     """Returns the logical left shift the BV.
 
     :param left: Specify the left bitvector
@@ -638,7 +647,7 @@ def BVLShl(left, right):
     return get_env().formula_manager.BVLShl(left, right)
 
 
-def BVLShr(left, right):
+def BVLShr(left: FNode, right: Union[FNode, int]) -> FNode:
     """Returns the logical right shift the BV.
 
     :param left: Specify the left bitvector
@@ -649,7 +658,7 @@ def BVLShr(left, right):
     return get_env().formula_manager.BVLShr(left, right)
 
 
-def BVAShr(left, right):
+def BVAShr(left: FNode, right: FNode) -> FNode:
     """Returns the RIGHT arithmetic shift of the left BV by the number
         of steps specified by the right BV.
 
@@ -662,7 +671,7 @@ def BVAShr(left, right):
     return get_env().formula_manager.BVAShr(left, right)
 
 
-def BVRol(formula, steps):
+def BVRol(formula: FNode, steps: int) -> FNode:
     """Returns the LEFT rotation of the BV by the number of steps.
 
     :param formula: The target formula
@@ -673,7 +682,7 @@ def BVRol(formula, steps):
     return get_env().formula_manager.BVRol(formula, steps)
 
 
-def BVRor(formula, steps):
+def BVRor(formula: FNode, steps: int) -> FNode:
     """Returns the RIGHT rotation of the BV by the number of steps.
 
     :param formula: The target formula
@@ -684,7 +693,7 @@ def BVRor(formula, steps):
     return get_env().formula_manager.BVRor(formula, steps)
 
 
-def BVZExt(formula, increase):
+def BVZExt(formula: FNode, increase: int) -> FNode:
     """Returns the zero-extension of the BV.
 
     New bits are set to zero.
@@ -697,7 +706,7 @@ def BVZExt(formula, increase):
     return get_env().formula_manager.BVZExt(formula, increase)
 
 
-def BVSExt(formula, increase):
+def BVSExt(formula: FNode, increase: int) -> FNode:
     """Returns the signed-extension of the BV.
 
     New bits are set according to the most-significant-bit.
@@ -710,7 +719,7 @@ def BVSExt(formula, increase):
     return get_env().formula_manager.BVSExt(formula, increase)
 
 
-def BVSLT(left, right):
+def BVSLT(left: FNode, right: FNode) -> FNode:
     """Returns the Signed Less-Than comparison of the two BVs.
 
     :param left: Specify the left bitvector
@@ -721,7 +730,7 @@ def BVSLT(left, right):
     return get_env().formula_manager.BVSLT(left, right)
 
 
-def BVSLE(left, right):
+def BVSLE(left: FNode, right: FNode) -> FNode:
     """Returns the Signed Less-Equal comparison of the two BVs.
 
     :param left: Specify the left bitvector
@@ -732,7 +741,7 @@ def BVSLE(left, right):
     return get_env().formula_manager.BVSLE(left, right)
 
 
-def BVSGT(left, right):
+def BVSGT(left: FNode, right: FNode) -> FNode:
     """Returns the Signed Greater-Than comparison of the two BVs.
 
     :param left: Specify the left bitvector
@@ -743,7 +752,7 @@ def BVSGT(left, right):
     return get_env().formula_manager.BVSGT(left, right)
 
 
-def BVSGE(left, right):
+def BVSGE(left: FNode, right: FNode) -> FNode:
     """Returns the Signed Greater-Equal comparison of the two BVs.
 
     :param left: Specify the left bitvector
@@ -754,7 +763,7 @@ def BVSGE(left, right):
     return get_env().formula_manager.BVSGE(left, right)
 
 
-def BVSDiv(left, right):
+def BVSDiv(left: FNode, right: FNode) -> FNode:
     """Returns the Signed division of the two BVs.
 
     :param left: Specify the left bitvector
@@ -765,7 +774,7 @@ def BVSDiv(left, right):
     return get_env().formula_manager.BVSDiv(left, right)
 
 
-def BVSRem(left, right):
+def BVSRem(left: FNode, right: FNode) -> FNode:
     """Returns the Signed remainder of the two BVs
 
     :param left: Specify the left bitvector
@@ -776,7 +785,7 @@ def BVSRem(left, right):
     return get_env().formula_manager.BVSRem(left, right)
 
 
-def BVComp(left, right):
+def BVComp(left: FNode, right: FNode) -> FNode:
     """Returns a BV of size 1 equal to 0 if left is equal to right,
         otherwise equal to 1.
 
@@ -788,7 +797,7 @@ def BVComp(left, right):
     """
     return get_env().formula_manager.BVComp(left, right)
 
-def BVToNatural(formula):
+def BVToNatural(formula: FNode) -> FNode:
     """Returns the Natural number represented by the BitVector.
 
     :param formula: Bitvector to be converted
@@ -798,18 +807,18 @@ def BVToNatural(formula):
     return get_env().formula_manager.BVToNatural(formula)
 
 # Strings
-def StrLength(string):
+def StrLength(string: FNode) -> FNode:
     """Returns the length of a formula resulting a String"""
     return get_env().formula_manager.StrLength(string)
 
-def StrCharAt(string, index):
+def StrCharAt(string: FNode, index: FNode) -> FNode:
     """Returns a single character String at position i.
 
     s is a string term and i is an integer term. i is the position.
     """
     return get_env().formula_manager.StrCharAt(string, index)
 
-def StrConcat(*args):
+def StrConcat(*args) -> FNode:
     """Returns the concatenation of n Strings.
 
     s1, s2, ..., and sn are String terms.
@@ -817,14 +826,14 @@ def StrConcat(*args):
     """
     return get_env().formula_manager.StrConcat(*args)
 
-def StrContains(string, target):
+def StrContains(string: FNode, target: FNode) -> FNode:
     """Returns wether string contains the target.
 
     s and t are String terms.
     """
     return get_env().formula_manager.StrContains(string, target)
 
-def StrIndexOf(string, target, offset):
+def StrIndexOf(string: FNode, target: FNode, offset: FNode) -> FNode:
     """Returns the position of the first occurrence of target in string after the offset.
 
     s and t being a non empty strings and i a non-negative integer.
@@ -832,42 +841,42 @@ def StrIndexOf(string, target, offset):
     """
     return get_env().formula_manager.StrIndexOf(string, target, offset)
 
-def StrReplace(s, t1, t2):
+def StrReplace(s: FNode, t1: FNode, t2: FNode) -> FNode:
     """Returns a new string where the first occurrence of t1 is replace by t2.
 
     where s, t1 and t2 are string terms, t1 is non-empty.
     """
     return get_env().formula_manager.StrReplace(s, t1, t2)
 
-def StrSubstr(s, i, j):
+def StrSubstr(s: FNode, i: FNode, j: FNode) -> FNode:
     """Returns a substring of s starting at i and ending at j+i.
 
     where s is a string term and i, j are integer terms.
     """
     return get_env().formula_manager.StrSubstr(s, i, j)
 
-def StrPrefixOf(s, t):
+def StrPrefixOf(s: FNode, t: FNode) -> FNode:
     """Returns whether the s is a prefix of the string t.
 
     where s and t are string terms.
     """
     return get_env().formula_manager.StrPrefixOf(s, t)
 
-def StrSuffixOf(s, t):
+def StrSuffixOf(s: FNode, t: FNode) -> FNode:
     """Returns whether the string s is a suffix of the string t.
 
     where s and t are string terms.
     """
     return get_env().formula_manager.StrSuffixOf(s, t)
 
-def StrToInt(x):
+def StrToInt(x: FNode) -> FNode:
     """Returns the corresponding natural number of s is valid;
 
     If s is not valid, it returns -1.
     """
     return get_env().formula_manager.StrToInt(x)
 
-def IntToStr(x):
+def IntToStr(x: FNode) -> FNode:
     """Returns the corresponding String representing the natural number x.
 
     where x is an integer term. If x is not a natural number it
@@ -878,7 +887,7 @@ def IntToStr(x):
 #
 # Arrays
 #
-def Select(array, index):
+def Select(array: FNode, index: FNode) -> FNode:
     """Returns a SELECT application on the array at the given index
 
     :param array: Specify the array
@@ -889,7 +898,7 @@ def Select(array, index):
     return get_env().formula_manager.Select(array, index)
 
 
-def Store(array, index, value):
+def Store(array: FNode, index: FNode, value: FNode) -> FNode:
     """Returns a STORE application with given value on array at the given index
 
     :param array: Specify the array
@@ -900,7 +909,7 @@ def Store(array, index, value):
     return get_env().formula_manager.Store(array, index, value)
 
 
-def Array(idx_type, default, assigned_values=None):
+def Array(idx_type: PySMTType, default: FNode, assigned_values: Optional[Dict[FNode, FNode]]=None) -> FNode:
     """Returns an Array with the given index type and initialization.
 
     If assigned_values is specified, then it must be a map from
@@ -923,7 +932,7 @@ def Array(idx_type, default, assigned_values=None):
 ##
 ## Shortcuts for Solvers Factory
 ##
-def Solver(name=None, logic=None, **kwargs):
+def Solver(name: None=None, logic: Optional[str]=None, **kwargs) -> MathSAT5Solver:
     """Returns a solver.
 
     :param name: Specify the name of the solver
@@ -1003,7 +1012,7 @@ def Portfolio(solvers_set, logic, **options):
                         environment=get_env(),
                         **options)
 
-def Optimizer(name=None, logic=None):
+def Optimizer(name: Optional[str]=None, logic: Optional[str]=None) -> Union[Z3NativeOptimizer, OptiMSATSolver]:
     """Returns an Optimizer
 
     :param name: Specify the name of the solver
@@ -1014,7 +1023,7 @@ def Optimizer(name=None, logic=None):
     return get_env().factory.Optimizer(name=name, logic=logic)
 
 
-def is_sat(formula, solver_name=None, logic=None, portfolio=None):
+def is_sat(formula: FNode, solver_name: None=None, logic: None=None, portfolio: None=None) -> bool:
     """ Returns whether a formula is satisfiable.
 
     :param formula: The formula to check satisfiability
@@ -1101,7 +1110,7 @@ def get_unsat_core(clauses, solver_name=None, logic=None):
                                       logic=logic)
 
 
-def is_valid(formula, solver_name=None, logic=None, portfolio=None):
+def is_valid(formula: FNode, solver_name: None=None, logic: Optional[Logic]=None, portfolio: None=None) -> bool:
     """Similar to :py:func:`is_sat` but checks validity.
 
     :param formula: The target formula
@@ -1238,7 +1247,7 @@ def write_configuration(config_filename, environment=None):
     config.write_environment_configuration(config_filename, environment)
 
 
-def read_smtlib(fname):
+def read_smtlib(fname: str) -> FNode:
     """Reads the SMT formula from the given file.
 
     This supports compressed files, if the fname ends in .bz2 .
@@ -1250,7 +1259,7 @@ def read_smtlib(fname):
     return pysmt.smtlib.parser.get_formula_fname(fname)
 
 
-def write_smtlib(formula, fname):
+def write_smtlib(formula: FNode, fname: str) -> None:
     """Writes the given formula in Smt-Lib format to the given file.
 
     :param formula: Specify the SMT formula to be written

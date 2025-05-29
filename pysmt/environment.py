@@ -33,43 +33,43 @@ class Environment(object):
     of classes for the different services, by changing the class
     attributes.
     """
-    import pysmt.simplifier
-    import pysmt.printers
-    import pysmt.substituter
-    import pysmt.type_checker
-    import pysmt.oracles
-    import pysmt.formula
-    import pysmt.typing
-
-    TypeCheckerClass = pysmt.type_checker.SimpleTypeChecker
-    FormulaManagerClass = pysmt.formula.FormulaManager
-    TypeManagerClass = pysmt.typing.TypeManager
-    SimplifierClass = pysmt.simplifier.Simplifier
-    #SubstituterClass = pysmt.substituter.MSSubstituter
-    SubstituterClass = pysmt.substituter.MGSubstituter
-    HRSerializerClass = pysmt.printers.HRSerializer
-    QuantifierOracleClass = pysmt.oracles.QuantifierOracle
-    TheoryOracleClass = pysmt.oracles.TheoryOracle
-    FreeVarsOracleClass= pysmt.oracles.FreeVarsOracle
-    SizeOracleClass = pysmt.oracles.SizeOracle
-    AtomsOracleClass = pysmt.oracles.AtomsOracle
-    TypesOracleClass = pysmt.oracles.TypesOracle
 
     def __init__(self):
-        self._stc = self.TypeCheckerClass(self)
-        self._formula_manager = self.FormulaManagerClass(self)
-        # NOTE: Both Simplifier and Substituter keep an internal copy
-        # of the Formula Manager and need to be initialized afterwards
-        self._simplifier = self.SimplifierClass(self)
-        self._substituter = self.SubstituterClass(self)
-        self._serializer = self.HRSerializerClass(self)
-        self._qfo = self.QuantifierOracleClass(self)
-        self._theoryo = self.TheoryOracleClass(self)
-        self._fvo = self.FreeVarsOracleClass(self)
-        self._sizeo = self.SizeOracleClass(self)
-        self._ao = self.AtomsOracleClass(self)
-        self._typeso = self.TypesOracleClass(self)
-        self._type_manager = self.TypeManagerClass(self)
+        # import pysmt.simplifier
+        # import pysmt.printers
+        # import pysmt.substituter
+        # import pysmt.type_checker
+        # import pysmt.oracles
+        # import pysmt.formula
+        # import pysmt.typing
+
+        # self.TypeCheckerClass = pysmt.type_checker.SimpleTypeChecker
+        # self.FormulaManagerClass = pysmt.formula.FormulaManager
+        # self.TypeManagerClass = pysmt.typing.TypeManager
+        # self.SimplifierClass = pysmt.simplifier.Simplifier
+        # # self.#SubstituterClass = pysmt.substituter.MSSubstituter
+        # self.SubstituterClass = pysmt.substituter.MGSubstituter
+        # self.HRSerializerClass = pysmt.printers.HRSerializer
+        # self.QuantifierOracleClass = pysmt.oracles.QuantifierOracle
+        # self.TheoryOracleClass = pysmt.oracles.TheoryOracle
+        # self.FreeVarsOracleClass= pysmt.oracles.FreeVarsOracle
+        # self.SizeOracleClass = pysmt.oracles.SizeOracle
+        # self.AtomsOracleClass = pysmt.oracles.AtomsOracle
+        # self.TypesOracleClass = pysmt.oracles.TypesOracle
+        # self._stc = self.TypeCheckerClass(self)
+        # self._formula_manager = self.FormulaManagerClass(self)
+        # # NOTE: Both Simplifier and Substituter keep an internal copy
+        # # of the Formula Manager and need to be initialized afterwards
+        # self._simplifier = self.SimplifierClass(self)
+        # self._substituter = self.SubstituterClass(self)
+        # self._serializer = self.HRSerializerClass(self)
+        # self._qfo = self.QuantifierOracleClass(self)
+        # self._theoryo = self.TheoryOracleClass(self)
+        # self._fvo = self.FreeVarsOracleClass(self)
+        # self._sizeo = self.SizeOracleClass(self)
+        # self._ao = self.AtomsOracleClass(self)
+        # self._typeso = self.TypesOracleClass(self)
+        # self._type_manager = self.TypeManagerClass(self)
 
         self._factory = None
         # Configurations

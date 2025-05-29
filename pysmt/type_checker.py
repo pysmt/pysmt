@@ -25,22 +25,26 @@ reasoning about the type of formulae.
 import pysmt.walkers as walkers
 import pysmt.operators as op
 
-from pysmt.typing import BOOL, REAL, INT, BVType, ArrayType, STRING
+from pysmt.typing import PySMTType, BOOL, REAL, INT, BVType, ArrayType, STRING
 from pysmt.exceptions import PysmtTypeError
+from pysmt import PySMTType, _ArrayType, _BVType, _BoolType, _IntType, _RealType, _StringType
+from pysmt.environment import Environment
+from pysmt.fnode import FNode
+from typing import Any, List, Optional, Union
 
 
 class SimpleTypeChecker(walkers.DagWalker):
 
-    def __init__(self, env=None):
+    def __init__(self, env: Optional[Environment]=None) -> None:
         walkers.DagWalker.__init__(self, env=env)
         # If `be_nice` is true, the `get_type` method will return None if 
         # the type cannot be computed instead of than raising an exception.
         self.be_nice = False
 
-    def _get_key(self, formula, **kwargs):
+    def _get_key(self, formula: FNode, **kwargs) -> FNode:
         return formula
 
-    def get_type(self, formula):
+    def get_type(self, formula: FNode) -> PySMTType:
         """ Returns the pysmt.types type of the formula """
         res = self.walk(formula)
         if not self.be_nice and res is None:
@@ -48,7 +52,7 @@ class SimpleTypeChecker(walkers.DagWalker):
                                  % str(formula))
         return res
 
-    def walk_type_to_type(self, formula, args, type_in, type_out):
+    def walk_type_to_type(self, formula: FNode, args: List[PySMTType], type_in: PySMTType, type_out: Union[_RealType, _IntType, _StringType, _BoolType]) -> Optional[Union[_StringType, _RealType, _IntType, _BoolType]]:
         assert formula is not None
         for x in args:
             if x is None or x != type_in:
@@ -56,7 +60,7 @@ class SimpleTypeChecker(walkers.DagWalker):
         return type_out
 
     @walkers.handles(op.AND, op.OR, op.NOT, op.IMPLIES, op.IFF)
-    def walk_bool_to_bool(self, formula, args, **kwargs):
+    def walk_bool_to_bool(self, formula: FNode, args: List[_BoolType], **kwargs) -> _BoolType:
         #pylint: disable=unused-argument
         return self.walk_type_to_type(formula, args, BOOL, BOOL)
 
@@ -65,7 +69,7 @@ class SimpleTypeChecker(walkers.DagWalker):
         return self.walk_type_to_type(formula, args, REAL, BOOL)
 
     @walkers.handles(op.TOREAL)
-    def walk_int_to_real(self, formula, args, **kwargs):
+    def walk_int_to_real(self, formula: FNode, args: List[_IntType], **kwargs) -> _RealType:
         #pylint: disable=unused-argument
         return self.walk_type_to_type(formula, args, INT, REAL)
 
@@ -74,7 +78,7 @@ class SimpleTypeChecker(walkers.DagWalker):
         return self.walk_type_to_type(formula, args, REAL, REAL)
 
     @walkers.handles(op.PLUS, op.MINUS, op.TIMES, op.DIV)
-    def walk_realint_to_realint(self, formula, args, **kwargs):
+    def walk_realint_to_realint(self, formula: FNode, args: List[Union[_IntType, _RealType]], **kwargs) -> Optional[Union[_RealType, _IntType]]:
         #pylint: disable=unused-argument
         rval = self.walk_type_to_type(formula, args, REAL, REAL)
         if rval is None:
@@ -85,7 +89,7 @@ class SimpleTypeChecker(walkers.DagWalker):
     @walkers.handles(op.BV_XOR, op.BV_NEG, op.BV_MUL)
     @walkers.handles(op.BV_UDIV, op.BV_UREM, op.BV_LSHL, op.BV_LSHR)
     @walkers.handles(op.BV_SDIV, op.BV_SREM, op.BV_ASHR)
-    def walk_bv_to_bv(self, formula, args, **kwargs):
+    def walk_bv_to_bv(self, formula: FNode, args: List[_BVType], **kwargs) -> _BVType:
         #pylint: disable=unused-argument
         # We check that all children are BV and the same size
         target_bv_type = BVType(formula.bv_width())
@@ -95,26 +99,26 @@ class SimpleTypeChecker(walkers.DagWalker):
         return target_bv_type
 
     @walkers.handles(op.STR_CONCAT, op.STR_REPLACE)
-    def walk_str_to_str(self, formula, args, **kwargs):
+    def walk_str_to_str(self, formula: FNode, args: List[_StringType], **kwargs) -> _StringType:
         #pylint: disable=unused-argument
         return self.walk_type_to_type(formula, args, STRING, STRING)
 
     @walkers.handles(op.STR_LENGTH, op.STR_TO_INT)
-    def walk_str_to_int(self, formula, args, **kwargs):
+    def walk_str_to_int(self, formula: FNode, args: List[_StringType], **kwargs) -> _IntType:
         #pylint: disable=unused-argument
         return self.walk_type_to_type(formula, args, STRING, INT)
 
     @walkers.handles(op.STR_CONTAINS, op.STR_PREFIXOF, op.STR_SUFFIXOF)
-    def walk_str_to_bool(self, formula, args, **kwargs):
+    def walk_str_to_bool(self, formula: FNode, args: List[_StringType], **kwargs) -> _BoolType:
         #pylint: disable=unused-argument
         return self.walk_type_to_type(formula, args, STRING, BOOL)
 
     @walkers.handles(op.INT_TO_STR)
-    def walk_int_to_str(self, formula, args, **kwargs):
+    def walk_int_to_str(self, formula: FNode, args: List[_IntType], **kwargs) -> _StringType:
         #pylint: disable=unused-argument
         return self.walk_type_to_type(formula, args, INT, STRING)
 
-    def walk_bv_comp(self, formula, args, **kwargs):
+    def walk_bv_comp(self, formula: FNode, args: List[_BVType], **kwargs) -> _BVType:
         # We check that all children are BV and the same size
         a, b = args
         if a != b or (not a.is_bv_type()):
@@ -122,7 +126,7 @@ class SimpleTypeChecker(walkers.DagWalker):
         return BVType(1)
 
     @walkers.handles(op.BV_ULT, op.BV_ULE, op.BV_SLT, op.BV_SLE)
-    def walk_bv_to_bool(self, formula, args, **kwargs):
+    def walk_bv_to_bool(self, formula: FNode, args: List[_BVType], **kwargs) -> _BoolType:
         #pylint: disable=unused-argument
         width = args[0].width
         for a in args[1:]:
@@ -130,13 +134,13 @@ class SimpleTypeChecker(walkers.DagWalker):
                 return None
         return BOOL
 
-    def walk_bv_tonatural(self, formula, args, **kwargs):
+    def walk_bv_tonatural(self, formula: FNode, args: List[_BVType], **kwargs) -> _IntType:
         #pylint: disable=unused-argument
         if args[0].is_bv_type():
             return INT
         return None
 
-    def walk_bv_concat(self, formula, args, **kwargs):
+    def walk_bv_concat(self, formula: FNode, args: List[_BVType], **kwargs) -> _BVType:
         # Width of BV operators are computed at construction time.
         # The type-checker only verifies that they are indeed
         # correct.
@@ -150,7 +154,7 @@ class SimpleTypeChecker(walkers.DagWalker):
             return None
         return BVType(target_width)
 
-    def walk_bv_extract(self, formula, args, **kwargs):
+    def walk_bv_extract(self, formula: FNode, args: List[_BVType], **kwargs) -> _BVType:
         arg = args[0]
         if not arg.is_bv_type():
             return None
@@ -167,7 +171,7 @@ class SimpleTypeChecker(walkers.DagWalker):
         return BVType(target_width)
 
     @walkers.handles(op.BV_ROL, op.BV_ROR)
-    def walk_bv_rotate(self, formula, args, **kwargs):
+    def walk_bv_rotate(self, formula: FNode, args: List[_BVType], **kwargs) -> _BVType:
         #pylint: disable=unused-argument
         target_width = formula.bv_width()
         if target_width < formula.bv_rotation_step() or target_width < 0:
@@ -177,14 +181,14 @@ class SimpleTypeChecker(walkers.DagWalker):
         return BVType(target_width)
 
     @walkers.handles(op.BV_ZEXT, op.BV_SEXT)
-    def walk_bv_extend(self, formula, args, **kwargs):
+    def walk_bv_extend(self, formula: FNode, args: List[_BVType], **kwargs) -> _BVType:
         #pylint: disable=unused-argument
         target_width = formula.bv_width()
         if target_width < args[0].width or target_width < 0:
             return None
         return BVType(target_width)
 
-    def walk_equals(self, formula, args, **kwargs):
+    def walk_equals(self, formula: FNode, args: List[PySMTType], **kwargs) -> Optional[_BoolType]:
         #pylint: disable=unused-argument
         if args[0].is_bool_type():
             raise PysmtTypeError("The formula '%s' is not well-formed."
@@ -196,13 +200,13 @@ class SimpleTypeChecker(walkers.DagWalker):
         return self.walk_type_to_type(formula, args, args[0], BOOL)
 
     @walkers.handles(op.LE, op.LT)
-    def walk_math_relation(self, formula, args, **kwargs):
+    def walk_math_relation(self, formula: FNode, args: List[Union[_IntType, _RealType]], **kwargs) -> Optional[_BoolType]:
         #pylint: disable=unused-argument
         if args[0].is_real_type():
             return self.walk_type_to_type(formula, args, REAL, BOOL)
         return self.walk_type_to_type(formula, args, INT, BOOL)
 
-    def walk_ite(self, formula, args, **kwargs):
+    def walk_ite(self, formula: FNode, args: List[PySMTType], **kwargs) -> Any:
         assert formula is not None
         if None in args: return None
         if (args[0] == BOOL and args[1]==args[2]):
@@ -210,47 +214,47 @@ class SimpleTypeChecker(walkers.DagWalker):
         return None
 
     @walkers.handles(op.BOOL_CONSTANT)
-    def walk_identity_bool(self, formula, args, **kwargs):
+    def walk_identity_bool(self, formula: FNode, args: List[Any], **kwargs) -> _BoolType:
         #pylint: disable=unused-argument
         assert formula is not None
         assert len(args) == 0
         return BOOL
 
     @walkers.handles(op.REAL_CONSTANT, op.ALGEBRAIC_CONSTANT)
-    def walk_identity_real(self, formula, args, **kwargs):
+    def walk_identity_real(self, formula: FNode, args: List[Any], **kwargs) -> _RealType:
         #pylint: disable=unused-argument
         assert formula is not None
         assert len(args) == 0
         return REAL
 
     @walkers.handles(op.INT_CONSTANT)
-    def walk_identity_int(self, formula, args, **kwargs):
+    def walk_identity_int(self, formula: FNode, args: List[Any], **kwargs) -> _IntType:
         #pylint: disable=unused-argument
         assert formula is not None
         assert len(args) == 0
         return INT
 
     @walkers.handles(op.STR_CONSTANT)
-    def walk_identity_string(self, formula, args, **kwargs):
+    def walk_identity_string(self, formula: FNode, args: List[Any], **kwargs) -> _StringType:
         #pylint: disable=unused-argument
         assert formula is not None
         assert len(args) == 0
         return STRING
 
     @walkers.handles(op.BV_CONSTANT)
-    def walk_identity_bv(self, formula, args, **kwargs):
+    def walk_identity_bv(self, formula: FNode, args: List[Any], **kwargs) -> _BVType:
         #pylint: disable=unused-argument
         assert formula is not None
         assert len(args) == 0
         return BVType(formula.bv_width())
 
-    def walk_symbol(self, formula, args, **kwargs):
+    def walk_symbol(self, formula: FNode, args: List[Any], **kwargs) -> PySMTType:
         assert formula is not None
         assert len(args) == 0
         return formula.symbol_type()
 
     @walkers.handles(op.FORALL, op.EXISTS)
-    def walk_quantifier(self, formula, args, **kwargs):
+    def walk_quantifier(self, formula: FNode, args: List[_BoolType], **kwargs) -> _BoolType:
         #pylint: disable=unused-argument
         assert formula is not None
         assert len(args) == 1
@@ -258,7 +262,7 @@ class SimpleTypeChecker(walkers.DagWalker):
             return BOOL
         return None
 
-    def walk_function(self, formula, args, **kwargs):
+    def walk_function(self, formula: FNode, args: List[PySMTType], **kwargs) -> PySMTType:
         name = formula.function_name()
         assert name.is_symbol()
         tp = name.symbol_type()
@@ -273,7 +277,7 @@ class SimpleTypeChecker(walkers.DagWalker):
 
         return tp.return_type
 
-    def walk_str_charat(self, formula, args, **kwargs):
+    def walk_str_charat(self, formula: FNode, args: List[Union[_StringType, _IntType]], **kwargs) -> _StringType:
         assert formula is not None
         if len(args) == 2 and \
            args[0].is_string_type() and \
@@ -281,28 +285,28 @@ class SimpleTypeChecker(walkers.DagWalker):
             return STRING
         return None
 
-    def walk_str_indexof(self, formula, args, **kwargs):
+    def walk_str_indexof(self, formula: FNode, args: List[Union[_StringType, _IntType]], **kwargs) -> _IntType:
         assert formula is not None
         if len(args) == 3 and args[0].is_string_type() and \
            args[1].is_string_type() and args[2].is_int_type():
             return INT
         return None
 
-    def walk_str_substr(self, formula, args, **kwargs):
+    def walk_str_substr(self, formula: FNode, args: List[Union[_StringType, _IntType]], **kwargs) -> _StringType:
         assert formula is not None
         if len(args) == 3 and args[0].is_string_type() and \
            args[1].is_int_type() and args[2].is_int_type():
             return STRING
         return None
 
-    def walk_array_select(self, formula, args, **kwargs):
+    def walk_array_select(self, formula: FNode, args: List[Union[_ArrayType, _BVType, PySMTType, _IntType, _RealType]], **kwargs) -> Union[_BVType, _ArrayType, _RealType, PySMTType, _IntType]:
         assert formula is not None
         if None in args: return None
         if (args[0].is_array_type() and args[0].index_type==args[1]):
             return args[0].elem_type
         return None
 
-    def walk_array_store(self, formula, args, **kwargs):
+    def walk_array_store(self, formula: FNode, args: List[Union[_ArrayType, _BVType, PySMTType, _IntType, _RealType]], **kwargs) -> _ArrayType:
         assert formula is not None
         if None in args: return None
         if (args[0].is_array_type() and args[0].index_type==args[1] and
@@ -310,7 +314,7 @@ class SimpleTypeChecker(walkers.DagWalker):
             return args[0]
         return None
 
-    def walk_array_value(self, formula, args, **kwargs):
+    def walk_array_value(self, formula: FNode, args: List[Union[_IntType, _BVType, _ArrayType, _RealType]], **kwargs) -> _ArrayType:
         assert formula is not None
         if None in args: return None
 
@@ -323,7 +327,7 @@ class SimpleTypeChecker(walkers.DagWalker):
                 return None
         return ArrayType(idx_type, default_type)
 
-    def walk_pow(self, formula, args, **kwargs):
+    def walk_pow(self, formula: FNode, args: List[Union[_IntType, _RealType]], **kwargs) -> _RealType:
         if args[0] != args[1]:
             return None
         return REAL

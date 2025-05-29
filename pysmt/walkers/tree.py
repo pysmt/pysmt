@@ -16,6 +16,8 @@
 #   limitations under the License.
 #
 from pysmt.walkers.generic import Walker
+from pysmt.fnode import FNode
+from typing import Optional
 
 class TreeWalker(Walker):
     """TreeWalker treats the formula as a Tree and does not perform memoization.
@@ -32,11 +34,11 @@ class TreeWalker(Walker):
 
     """
 
-    def __init__(self, env=None):
+    def __init__(self, env: None=None) -> None:
         Walker.__init__(self, env)
         return
 
-    def walk(self, formula, threshold=None):
+    def walk(self, formula: FNode, threshold: Optional[int]=None) -> None:
         """Generic walk method, will apply the function defined by the map
         self.functions.
 

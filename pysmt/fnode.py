@@ -46,12 +46,14 @@ from pysmt.operators import  (BOOL_OPERATORS, THEORY_OPERATORS,
                               STR_OPERATORS,
                               RELATIONS, CONSTANTS)
 
-from pysmt.typing import BOOL, REAL, INT, BVType, STRING
+from pysmt.typing import PySMTType, BOOL, REAL, INT, BVType, STRING
 from pysmt.decorators import deprecated, assert_infix_enabled
 from pysmt.utils import twos_complement
 from pysmt.constants import is_python_integer
 from pysmt.exceptions import (PysmtValueError, PysmtModeError,
                               UnsupportedOperatorError)
+from fractions import Fraction
+from typing import Any, Callable, Dict, Optional, Tuple, Union
 
 
 FNodeContent = collections.namedtuple("FNodeContent",
@@ -76,7 +78,7 @@ class FNode(object):
     """
     __slots__ = ["_content", "_node_id"]
 
-    def __init__(self, content, node_id):
+    def __init__(self, content: "FNodeContent", node_id: int) -> None:
         self._content = content
         self._node_id = node_id
         return
@@ -86,36 +88,36 @@ class FNode(object):
     # environment two nodes have always different ids, but in
     # different environments they can have the same id. This is not an
     # issue since, by default, equality coincides with identity.
-    def __hash__(self):
+    def __hash__(self) -> int:
         return self._node_id
 
-    def node_id(self):
+    def node_id(self) -> int:
         return self._node_id
 
-    def node_type(self):
+    def node_type(self) -> int:
         return self._content.node_type
 
-    def args(self):
+    def args(self) -> Any:
         """Returns the subformulae."""
         return self._content.args
 
-    def arg(self, idx):
+    def arg(self, idx: int) -> "FNode":
         """Return the given subformula at the given position."""
         return self._content.args[idx]
 
-    def get_free_variables(self):
+    def get_free_variables(self) -> frozenset:
         """Return the set of Symbols that are free in the formula."""
         return _env().fvo.get_free_variables(self)
 
-    def get_atoms(self):
+    def get_atoms(self) -> frozenset:
         """Return the set of atoms appearing in the formula."""
         return _env().ao.get_atoms(self)
 
-    def simplify(self):
+    def simplify(self) -> "FNode":
         """Return a simplified version of the formula."""
         return _env().simplifier.simplify(self)
 
-    def substitute(self, subs, interpretations=None):
+    def substitute(self, subs: Dict["FNode", "FNode"], interpretations: Optional[Dict["FNode", "pysmt.substituter.FunctionInterpretation"]]=None) -> "FNode":
         """Return a formula in which subformula have been substituted.
 
         subs is a dictionary mapping terms to be substituted with their
@@ -132,14 +134,14 @@ class FNode(object):
         """
         return _env().sizeo.get_size(self, measure)
 
-    def get_type(self):
+    def get_type(self) -> PySMTType:
         """Return the type of the formula by calling the Type-Checker.
 
         See :py:class:`SimpleTypeChecker`
         """
         return _env().stc.get_type(self)
 
-    def is_constant(self, _type=None, value=None):
+    def is_constant(self, _type: Optional[PySMTType]=None, value: Optional[Union[bool, int]]=None) -> bool:
         """Test whether the formula is a constant.
 
         Optionally, check that the constant is of the given type and value.
@@ -175,28 +177,28 @@ class FNode(object):
             return value == self.constant_value()
         return True
 
-    def is_bool_constant(self, value=None):
+    def is_bool_constant(self, value: Optional[bool]=None) -> bool:
         """Test whether the formula is a Boolean constant.
 
         Optionally, check that the constant has the given value.
         """
         return self.is_constant(BOOL, value)
 
-    def is_real_constant(self, value=None):
+    def is_real_constant(self, value: Optional[int]=None) -> bool:
         """Test whether the formula is a Real constant.
 
         Optionally, check that the constant has the given value.
         """
         return self.is_constant(REAL, value)
 
-    def is_int_constant(self, value=None):
+    def is_int_constant(self, value: Optional[int]=None) -> bool:
         """Test whether the formula is an Integer constant.
 
         Optionally, check that the constant has the given value.
         """
         return self.is_constant(INT, value)
 
-    def is_bv_constant(self, value=None, width=None):
+    def is_bv_constant(self, value: None=None, width: None=None) -> bool:
         """Test whether the formula is a BitVector constant.
 
         Optionally, check that the constant has the given value.
@@ -210,18 +212,18 @@ class FNode(object):
             return self.is_constant(_type=BVType(width=width),
                                     value=value)
 
-    def is_string_constant(self, value=None):
+    def is_string_constant(self, value: None=None) -> bool:
         """Test whether the formula is a String constant.
 
         Optionally, check that the constant has the given value.
         """
         return self.is_constant(STRING, value)
 
-    def is_algebraic_constant(self):
+    def is_algebraic_constant(self) -> bool:
         """Test whether the formula is an Algebraic Constant"""
         return self.node_type() == ALGEBRAIC_CONSTANT
 
-    def is_symbol(self, type_=None):
+    def is_symbol(self, type_: Optional[PySMTType]=None) -> bool:
         """Test whether the formula is a Symbol.
 
         Optionally, check that the symbol has the given type.
@@ -231,7 +233,7 @@ class FNode(object):
                    self.symbol_type() == type_
         return self.node_type() == SYMBOL
 
-    def is_literal(self):
+    def is_literal(self) -> None:
         """Test whether the formula is a literal.
 
         A literal is a positive or negative Boolean symbol.
@@ -241,57 +243,57 @@ class FNode(object):
         if self.is_not():
             return self.arg(0).is_symbol(BOOL)
 
-    def is_true(self):
+    def is_true(self) -> bool:
         """Test whether the formula is the True Boolean constant."""
         return self.is_bool_constant(True)
 
-    def is_false(self):
+    def is_false(self) -> bool:
         """Test whether the formula is the False Boolean constant."""
         return self.is_bool_constant(False)
 
-    def is_one(self):
+    def is_one(self) -> bool:
         return self.is_real_constant(1) or self.is_int_constant(1)
 
-    def is_zero(self):
+    def is_zero(self) -> bool:
         return self.is_real_constant(0) or self.is_int_constant(0)
 
     def is_toreal(self):
         """Test whether the node is the ToReal operator."""
         return self.node_type() == TOREAL
 
-    def is_forall(self):
+    def is_forall(self) -> bool:
         """Test whether the node is the ForAll operator."""
         return self.node_type() == FORALL
 
-    def is_exists(self):
+    def is_exists(self) -> bool:
         """Test whether the node is the Exists operator."""
         return self.node_type() == EXISTS
 
-    def is_quantifier(self):
+    def is_quantifier(self) -> bool:
         """Test whether the node is a Quantifier."""
         return self.is_exists() or self.is_forall()
 
-    def is_and(self):
+    def is_and(self) -> bool:
         """Test whether the node is the And operator."""
         return self.node_type() == AND
 
-    def is_or(self):
+    def is_or(self) -> bool:
         """Test whether the node is the Or operator."""
         return self.node_type() == OR
 
-    def is_not(self):
+    def is_not(self) -> bool:
         """Test whether the node is the Not operator."""
         return self.node_type() == NOT
 
-    def is_plus(self):
+    def is_plus(self) -> bool:
         """Test whether the node is the Plus operator."""
         return self.node_type() == PLUS
 
-    def is_minus(self):
+    def is_minus(self) -> bool:
         """Test whether the node is the Minus operator."""
         return self.node_type() == MINUS
 
-    def is_times(self):
+    def is_times(self) -> bool:
         """Test whether the node is the Times operator."""
         return self.node_type() == TIMES
 
@@ -299,19 +301,19 @@ class FNode(object):
         """Test whether the node is the Division operator."""
         return self.node_type() == DIV
 
-    def is_implies(self):
+    def is_implies(self) -> bool:
         """Test whether the node is the Implies operator."""
         return self.node_type() == IMPLIES
 
-    def is_iff(self):
+    def is_iff(self) -> bool:
         """Test whether the node is the Iff operator."""
         return self.node_type() == IFF
 
-    def is_ite(self):
+    def is_ite(self) -> bool:
         """Test whether the node is the Ite operator."""
         return self.node_type() == ITE
 
-    def is_equals(self):
+    def is_equals(self) -> bool:
         """Test whether the node is the Equals operator."""
         return self.node_type() == EQUALS
 
@@ -327,7 +329,7 @@ class FNode(object):
         """Test whether the node is a Boolean operator."""
         return self.node_type() in BOOL_OPERATORS
 
-    def is_theory_relation(self):
+    def is_theory_relation(self) -> bool:
         """Test whether the node is a theory relation."""
         return self.node_type() in RELATIONS
 
@@ -344,7 +346,7 @@ class FNode(object):
         """Test whether the node is a IRA operator."""
         return self.node_type() in IRA_OPERATORS
 
-    def is_bv_op(self):
+    def is_bv_op(self) -> bool:
         """Test whether the node is a BitVector operator."""
         return self.node_type() in BV_OPERATORS
 
@@ -372,7 +374,7 @@ class FNode(object):
         """Test whether the node is the BVConcat operator."""
         return self.node_type() == BV_CONCAT
 
-    def is_bv_extract(self):
+    def is_bv_extract(self) -> bool:
         """Test whether the node is the BVConcat operator."""
         return self.node_type() == BV_EXTRACT
 
@@ -412,19 +414,19 @@ class FNode(object):
         """Test whether the node is the BVLShr (logical shift right) operator."""
         return self.node_type() == BV_LSHR
 
-    def is_bv_rol(self):
+    def is_bv_rol(self) -> bool:
         """Test whether the node is the BVRol (rotate left) operator."""
         return self.node_type() == BV_ROL
 
-    def is_bv_ror(self):
+    def is_bv_ror(self) -> bool:
         """Test whether the node is the BVRor (rotate right) operator."""
         return self.node_type() == BV_ROR
 
-    def is_bv_zext(self):
+    def is_bv_zext(self) -> bool:
         """Test whether the node is the BVZext (zero extension) operator."""
         return self.node_type() == BV_ZEXT
 
-    def is_bv_sext(self):
+    def is_bv_sext(self) -> bool:
         """Test whether the node is the BVSext (signed extension) operator."""
         return self.node_type() == BV_SEXT
 
@@ -456,7 +458,7 @@ class FNode(object):
         """Test whether the node is the BVAshr (arithmetic shift right) operator."""
         return self.node_type() == BV_ASHR
 
-    def is_select(self):
+    def is_select(self) -> bool:
         """Test whether the node is the SELECT (array select) operator."""
         return self.node_type() == ARRAY_SELECT
 
@@ -464,11 +466,11 @@ class FNode(object):
         """Test whether the node is the STORE (array store) operator."""
         return self.node_type() == ARRAY_STORE
 
-    def is_array_value(self):
+    def is_array_value(self) -> bool:
         """Test whether the node is an array value operator."""
         return self.node_type() == ARRAY_VALUE
 
-    def bv_width(self):
+    def bv_width(self) -> int:
         """Return the BV width of the formula."""
         if self.is_bv_constant():
             return self._content.payload[1]
@@ -492,33 +494,33 @@ class FNode(object):
             assert self.is_bv_op(), "Unsupported method bv_width on %s" % self
             return self._content.payload[0]
 
-    def bv_extract_start(self):
+    def bv_extract_start(self) -> int:
         """Return the starting index for BVExtract."""
         assert self.is_bv_extract()
         return self._content.payload[1]
 
-    def bv_extract_end(self):
+    def bv_extract_end(self) -> int:
         """Return the ending index for BVExtract."""
         assert self.is_bv_extract()
         return self._content.payload[2]
 
-    def bv_rotation_step(self):
+    def bv_rotation_step(self) -> int:
         """Return the rotation step for BVRor and BVRol."""
         assert self.is_bv_ror() or self.is_bv_rol()
         return self._content.payload[1]
 
-    def bv_extend_step(self):
+    def bv_extend_step(self) -> int:
         """Return the extension step for BVZext and BVSext."""
         assert self.is_bv_zext() or self.is_bv_sext()
         return self._content.payload[1]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.serialize(threshold=5)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(self)
 
-    def serialize(self, threshold=None):
+    def serialize(self, threshold: Optional[int]=None) -> str:
         """Returns a human readable representation of the formula.
 
         The threshold parameter can be used to limit the amount of the
@@ -539,38 +541,38 @@ class FNode(object):
         """
         return pysmt.smtlib.printers.to_smtlib(self, daggify=daggify)
 
-    def is_function_application(self):
+    def is_function_application(self) -> bool:
         """Test whether the node is a Function application."""
         return self.node_type() == FUNCTION
 
-    def is_term(self):
+    def is_term(self) -> bool:
         """Test whether the node is a term.
 
         All nodes are terms, except for function definitions.
         """
         return not (self.is_symbol() and self.symbol_type().is_function_type())
 
-    def is_str_op(self):
+    def is_str_op(self) -> bool:
         return self.node_type() in STR_OPERATORS
 
-    def symbol_type(self):
+    def symbol_type(self) -> PySMTType:
         """Return the type of the Symbol."""
         assert self.is_symbol()
         return self._content.payload[1]
 
-    def symbol_name(self):
+    def symbol_name(self) -> str:
         """Return the name of the Symbol."""
         assert self.is_symbol()
         return self._content.payload[0]
 
-    def constant_value(self):
+    def constant_value(self) -> Union[str, bool, Fraction, int]:
         """Return the value of the Constant."""
         assert self.is_constant(), "%s is not a constant" % str(self)
         if self.node_type() == BV_CONSTANT:
             return self._content.payload[0]
         return self._content.payload
 
-    def constant_type(self):
+    def constant_type(self) -> PySMTType:
         """Return the type of the Constant."""
         if self.node_type() == INT_CONSTANT:
             return INT
@@ -589,15 +591,15 @@ class FNode(object):
         """Return the unsigned value encoded by the BitVector."""
         return self.bv_unsigned_value()
 
-    def bv_unsigned_value(self):
+    def bv_unsigned_value(self) -> int:
         """Return the unsigned value encoded by the BitVector."""
         return self.constant_value()
 
-    def bv_signed_value(self):
+    def bv_signed_value(self) -> int:
         """Return the signed value encoded by the BitVector."""
         return twos_complement(self.constant_value(), self.bv_width())
 
-    def bv_str(self, fmt='b'):
+    def bv_str(self, fmt: str='b') -> str:
         """Return a string representation of the BitVector.
 
         fmt: 'b' : Binary
@@ -616,7 +618,7 @@ class FNode(object):
         str_ = fstr.format(self.constant_value())
         return str_
 
-    def bv_bin_str(self, reverse=False):
+    def bv_bin_str(self, reverse: bool=False) -> str:
         """Return the binary representation of the BitVector as string.
 
         The reverse option is provided to deal with MSB/LSB.
@@ -626,7 +628,7 @@ class FNode(object):
             bitstr = bitstr[::-1]
         return bitstr
 
-    def array_value_index_type(self):
+    def array_value_index_type(self) -> Union[PySMTType]:
         assert self.is_array_value()
         return self._content.payload
 
@@ -659,19 +661,19 @@ class FNode(object):
         return self.array_value_default()
 
 
-    def array_value_assigned_values_map(self):
+    def array_value_assigned_values_map(self) -> Dict["FNode", "FNode"]:
         args = self.args()
         return dict(zip(args[1::2], args[2::2]))
 
-    def array_value_default(self):
+    def array_value_default(self) -> "FNode":
         return self.args()[0]
 
-    def function_name(self):
+    def function_name(self) -> "FNode":
         """Return the Function name."""
         assert self.is_function_application()
         return self._content.payload
 
-    def quantifier_vars(self):
+    def quantifier_vars(self) -> Union[Tuple["FNode"], Tuple["FNode", "FNode", "FNode"], Tuple["FNode", "FNode"]]:
         """Return the list of quantified variables."""
         assert self.is_quantifier()
         return self._content.payload
@@ -683,7 +685,7 @@ class FNode(object):
 
     # Infix Notation
     @assert_infix_enabled
-    def _apply_infix(self, right, function, bv_function=None):
+    def _apply_infix(self, right: "FNode", function: Callable, bv_function: None=None) -> "FNode":
         # Default bv_function to function
         if bv_function is None:
             bv_function = function
@@ -693,7 +695,7 @@ class FNode(object):
         return function(self, right)
 
     @assert_infix_enabled
-    def _infix_prepare_arg(self, arg, expected_type):
+    def _infix_prepare_arg(self, arg: "FNode", expected_type: PySMTType) -> "FNode":
         mgr = _mgr()
         if isinstance(arg, FNode):
             return arg
@@ -711,10 +713,10 @@ class FNode(object):
         else:
             raise PysmtValueError("Unsupported value '%s' in infix operator" % str(arg))
 
-    def Implies(self, right):
+    def Implies(self, right: "FNode") -> "FNode":
         return self._apply_infix(right, _mgr().Implies)
 
-    def Iff(self, right):
+    def Iff(self, right: "FNode") -> "FNode":
         return self._apply_infix(right, _mgr().Iff)
 
     def Equals(self, right):
@@ -944,7 +946,7 @@ class FNode(object):
         return self._apply_infix(right, None, bv_function=_mgr().BVURem)
 
     @assert_infix_enabled
-    def __call__(self, *args):
+    def __call__(self, *args) -> "FNode":
         if self.is_symbol() and self.symbol_type().is_function_type():
             types = self.symbol_type().param_types
             if (len(types) != len(args)):
@@ -959,11 +961,11 @@ class FNode(object):
 # EOC FNode
 
 
-def _env():
+def _env() -> "pysmt.environment.Environment":
     """Aux function to obtain the environment."""
     return pysmt.environment.get_env()
 
 
-def _mgr():
+def _mgr() -> "pysmt.formula.FormulaManager":
     """Aux function to obtain the formula manager."""
     return pysmt.environment.get_env().formula_manager

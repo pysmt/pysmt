@@ -21,6 +21,9 @@ import pysmt.walkers
 from pysmt.walkers.generic import handles
 import pysmt.operators as op
 from pysmt.exceptions import PysmtTypeError, PysmtValueError
+from pysmt.environment import Environment
+from pysmt.fnode import FNode
+from typing import Any, Dict, List, Optional, Union
 
 
 
@@ -53,7 +56,7 @@ class FunctionInterpretation:
     ```
     """
 
-    def __init__(self, formal_params, function_body, allow_free_vars=False):
+    def __init__(self, formal_params: List[FNode], function_body: FNode, allow_free_vars: bool=False) -> None:
         """Constructor, taking in input the list of formal parameters and the
         function body.
 
@@ -75,7 +78,7 @@ class FunctionInterpretation:
         self.function_body = function_body
 
 
-    def interpret(self, env, actual_params):
+    def interpret(self, env: Environment, actual_params: List[FNode]) -> FNode:
         """Given a set of actual parameter, returns the 'value' of the
         function by substituting formal parameters with their actual
         values.
@@ -118,7 +121,7 @@ class Substituter(pysmt.walkers.IdentityDagWalker):
     expected.  In case of doubt, it is recommended to issue two
     separate calls to the substitution procedure.
     """
-    def __init__(self, env):
+    def __init__(self, env: Environment) -> None:
         pysmt.walkers.IdentityDagWalker.__init__(self, env=env, invalidate_memoization=True)
         self.manager = self.env.formula_manager
         if self.__class__ == Substituter:
@@ -126,10 +129,10 @@ class Substituter(pysmt.walkers.IdentityDagWalker):
                 "Cannot instantiate abstract Substituter class directly. "
                 "Use MSSubstituter or MGSubstituter instead.")
 
-    def _get_key(self, formula, **kwargs):
+    def _get_key(self, formula: FNode, **kwargs) -> FNode:
         return formula
 
-    def _push_with_children_to_stack(self, formula, **kwargs):
+    def _push_with_children_to_stack(self, formula: FNode, **kwargs) -> None:
         """Add children to the stack."""
 
         # Deal with quantifiers
@@ -164,7 +167,7 @@ class Substituter(pysmt.walkers.IdentityDagWalker):
                                                                          formula,
                                                                          **kwargs)
 
-    def substitute(self, formula, subs=None, interpretations=None):
+    def substitute(self, formula: FNode, subs: Optional[Dict[FNode, FNode]]=None, interpretations: Optional[Dict[FNode, FunctionInterpretation]]=None) -> FNode:
         """Replaces any subformula in formula with the definition in subs (if
         any) and interprets function symbols with the interpretations
         in `interpretations`
@@ -240,7 +243,7 @@ class Substituter(pysmt.walkers.IdentityDagWalker):
                         interpretations=interpretations)
         return res
 
-    def walk_function(self, formula, args, **kwargs):
+    def walk_function(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         f = formula.function_name()
         interpretations = kwargs['interpretations']
         if f in interpretations:
@@ -256,11 +259,11 @@ class MGSubstituter(Substituter):
 
     This is the default behavior since version 0.5
     """
-    def __init__(self, env):
+    def __init__(self, env: Environment) -> None:
         Substituter.__init__(self, env=env)
 
     @handles(set(op.ALL_TYPES) - op.QUANTIFIERS - {op.FUNCTION})
-    def walk_identity_or_replace(self, formula, args, **kwargs):
+    def walk_identity_or_replace(self, formula: FNode, args: List[Union[Any, FNode]], **kwargs) -> FNode:
         """
         If the formula appears in the substitution, return the substitution.
         Otherwise, rebuild the formula by calling the IdentityWalker.
@@ -271,7 +274,7 @@ class MGSubstituter(Substituter):
             res = Substituter.super(self, formula, args=args, **kwargs)
         return res
 
-    def walk_forall(self, formula, args, **kwargs):
+    def walk_forall(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         substitutions = kwargs['substitutions']
         res = substitutions.get(formula, None)
         if res is None:
@@ -280,7 +283,7 @@ class MGSubstituter(Substituter):
             res = self.mgr.ForAll(qvars, args[0])
         return res
 
-    def walk_exists(self, formula, args, **kwargs):
+    def walk_exists(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         substitutions = kwargs['substitutions']
         res = substitutions.get(formula, None)
         if res is None:

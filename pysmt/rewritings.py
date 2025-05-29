@@ -23,6 +23,8 @@ from itertools import combinations
 from pysmt.walkers import DagWalker, IdentityDagWalker, handles
 import pysmt.typing as types
 import pysmt.operators as op
+from pysmt.fnode import FNode
+from typing import Any, Callable, Dict, Iterator, List, Optional, Set, Tuple, Union
 
 
 class CNFizer(DagWalker):
@@ -235,15 +237,15 @@ class NNFizer(DagWalker):
 
     """
 
-    def __init__(self, environment=None):
+    def __init__(self, environment: None=None) -> None:
         DagWalker.__init__(self, env=environment)
         self.mgr = self.env.formula_manager
 
-    def convert(self, formula):
+    def convert(self, formula: FNode) -> FNode:
         """ Converts the given formula in NNF """
         return self.walk(formula)
 
-    def _get_children(self, formula):
+    def _get_children(self, formula: FNode) -> Union[Tuple[FNode, FNode, FNode], Tuple[FNode], List[FNode], Tuple[FNode, FNode, FNode, FNode], Tuple[FNode, FNode]]:
         """Returns the arguments of the node on which an hypothetical recursion
         would be made, possibly negating them.
         """
@@ -293,7 +295,7 @@ class NNFizer(DagWalker):
                 formula.is_theory_relation(), str(formula)
             return []
 
-    def walk_not(self, formula, args, **kwargs):
+    def walk_not(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         s = formula.arg(0)
         if s.is_symbol():
             return self.mgr.Not(s)
@@ -316,18 +318,18 @@ class NNFizer(DagWalker):
         else:
             return self.mgr.Not(args[0])
 
-    def walk_implies(self, formula, args, **kwargs):
+    def walk_implies(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         return self.mgr.Or(args)
 
-    def walk_iff(self, formula, args, **kwargs):
+    def walk_iff(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         a, b, na, nb = args
         return self.mgr.And(self.mgr.Or(na, b),
                        self.mgr.Or(nb, a))
 
-    def walk_and(self, formula, args, **kwargs):
+    def walk_and(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         return self.mgr.And(args)
 
-    def walk_or(self, formula, args, **kwargs):
+    def walk_or(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         return self.mgr.Or(args)
 
     def walk_ite(self, formula, args, **kwargs):
@@ -337,25 +339,25 @@ class NNFizer(DagWalker):
         i, ni, t, e = args
         return self.mgr.And(self.mgr.Or(ni, t), self.mgr.Or(i, e))
 
-    def walk_forall(self, formula, args, **kwargs):
+    def walk_forall(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         return self.mgr.ForAll(formula.quantifier_vars(), args[0])
 
-    def walk_exists(self, formula, args, **kwargs):
+    def walk_exists(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         return self.mgr.Exists(formula.quantifier_vars(), args[0])
 
-    def walk_symbol(self, formula, **kwargs):
+    def walk_symbol(self, formula: FNode, **kwargs) -> FNode:
         return formula
 
-    def walk_function(self, formula, **kwargs):
+    def walk_function(self, formula: FNode, **kwargs) -> FNode:
         return formula
 
     @handles(op.CONSTANTS)
-    def walk_constant(self, formula, **kwargs):
+    def walk_constant(self, formula: FNode, **kwargs) -> FNode:
         #pylint: disable=unused-argument
         return formula
 
     @handles(op.RELATIONS)
-    def walk_theory_relation(self, formula, **kwargs):
+    def walk_theory_relation(self, formula: FNode, **kwargs) -> FNode:
         #pylint: disable=unused-argument
         return formula
 
@@ -372,7 +374,7 @@ class PrenexNormalizer(DagWalker):
     This class traverses a formula and rebuilds it in prenex normal form.
     """
 
-    def __init__(self, env=None, invalidate_memoization=None):
+    def __init__(self, env: None=None, invalidate_memoization: None=None) -> None:
         DagWalker.__init__(self,
                            env=env,
                            invalidate_memoization=invalidate_memoization)
@@ -388,32 +390,32 @@ class PrenexNormalizer(DagWalker):
         # for Q, vars in L:
         #    res = Q(vars, res)
 
-    def normalize(self, formula):
+    def normalize(self, formula: FNode) -> FNode:
         quantifiers, matrix = self.walk(formula)
         res = matrix
         for Q, qvars in quantifiers:
             res = Q(qvars, res)
         return res
 
-    def _invert_quantifier(self, Q):
+    def _invert_quantifier(self, Q: Callable) -> Callable:
         if Q == self.mgr.Exists:
             return self.mgr.ForAll
         return self.mgr.Exists
 
-    def walk_symbol(self, formula, **kwargs):
+    def walk_symbol(self, formula: FNode, **kwargs) -> Optional[Tuple[List[Any], FNode]]:
         if formula.symbol_type().is_bool_type():
             return [], formula
         return None # Note: When returning None, we do not pack it into a tuple!
 
     @handles(op.CONSTANTS)
-    def walk_constant(self, formula, **kwargs):
+    def walk_constant(self, formula: FNode, **kwargs) -> Optional[Tuple[List[Any], FNode]]:
         #pylint: disable=unused-argument
         if formula.is_bool_constant():
             return [],formula
         return None
 
     @handles(op.AND, op.OR)
-    def walk_conj_disj(self, formula, args, **kwargs):
+    def walk_conj_disj(self, formula: FNode, args: List[Union[Tuple[List[Any], FNode], Tuple[List[Tuple[Callable, Set[FNode]]], FNode]]], **kwargs) -> Union[Tuple[List[Tuple[Callable, Set[FNode]]], FNode], Tuple[List[Any], FNode]]:
         #pylint: disable=unused-argument
 
         # Hold the final result
@@ -467,13 +469,13 @@ class PrenexNormalizer(DagWalker):
         if formula.is_or():
             return (quantifiers, self.mgr.Or(matrix))
 
-    def walk_not(self, formula, args, **kwargs):
+    def walk_not(self, formula: FNode, args: List[Union[Tuple[List[Any], FNode], Tuple[List[Tuple[Callable, Set[FNode]]], FNode]]], **kwargs) -> Union[Tuple[List[Tuple[Callable, Set[FNode]]], FNode], Tuple[List[Any], FNode]]:
         quantifiers, matrix = args[0]
 
         nq = [(self._invert_quantifier(Q), qvars) for Q, qvars in quantifiers]
         return (nq, self.mgr.Not(matrix))
 
-    def walk_iff(self, formula, args, **kwargs):
+    def walk_iff(self, formula: FNode, args: List[Tuple[List[Any], FNode]], **kwargs) -> Tuple[List[Any], FNode]:
         a, b = formula.args()
         i1 = self.mgr.Implies(a, b)
         i2 = self.mgr.Implies(b, a)
@@ -481,13 +483,13 @@ class PrenexNormalizer(DagWalker):
         i2_args = self.walk_implies(i2, [args[1], args[0]])
         return self.walk_conj_disj(self.mgr.And(i1, i2), [i1_args, i2_args])
 
-    def walk_implies(self, formula, args, **kwargs):
+    def walk_implies(self, formula: FNode, args: List[Union[Tuple[List[Any], FNode], Tuple[List[Tuple[Callable, Set[FNode]]], FNode]]], **kwargs) -> Union[Tuple[List[Tuple[Callable, Set[FNode]]], FNode], Tuple[List[Any], FNode]]:
         a, b = formula.args()
         na = self.mgr.Not(a)
         na_arg = self.walk_not(na, [args[0]])
         return self.walk_conj_disj(self.mgr.Or(na, b), [na_arg, args[1]])
 
-    def walk_ite(self, formula, args, **kwargs):
+    def walk_ite(self, formula: FNode, args: List[Optional[Tuple[List[Any], FNode]]], **kwargs) -> None:
         if any(a is None for a in args):
             return None
         else:
@@ -501,18 +503,18 @@ class PrenexNormalizer(DagWalker):
             i2_args = self.walk_implies(i2, [ni_args, e_args])
             return self.walk_conj_disj(self.mgr.And(i1, i2), [i1_args, i2_args])
 
-    def walk_function(self, formula, **kwargs):
+    def walk_function(self, formula: FNode, **kwargs) -> Optional[Tuple[List[Any], FNode]]:
         if formula.function_name().symbol_type().return_type.is_bool_type():
             return [], formula
         return None
 
     @handles(op.RELATIONS)
-    def walk_theory_relation(self, formula, **kwargs):
+    def walk_theory_relation(self, formula: FNode, **kwargs) -> Tuple[List[Any], FNode]:
         #pylint: disable=unused-argument
         return [], formula
 
     @handles(op.QUANTIFIERS)
-    def walk_quantifier(self, formula, args, **kwargs):
+    def walk_quantifier(self, formula: FNode, args: List[Union[Tuple[List[Any], FNode], Tuple[List[Tuple[Callable, Set[FNode]]], FNode]]], **kwargs) -> Tuple[List[Tuple[Callable, Set[FNode]]], FNode]:
         #pylint: disable=unused-argument
         quantifiers, matrix = args[0]
         qvars = set(v for _, qv in quantifiers for v in qv)
@@ -529,7 +531,7 @@ class PrenexNormalizer(DagWalker):
         return quantifiers, matrix
 
     @handles(op.THEORY_OPERATORS)
-    def walk_theory_op(self, formula, **kwargs):
+    def walk_theory_op(self, formula: FNode, **kwargs) -> None:
         #pylint: disable=unused-argument
         return None
 
@@ -540,11 +542,11 @@ class PrenexNormalizer(DagWalker):
 class AIGer(DagWalker):
     """Converts a formula into an And-Inverted-Graph."""
 
-    def __init__(self, environment=None):
+    def __init__(self, environment: None=None) -> None:
         DagWalker.__init__(self, env=environment)
         self.mgr = self.env.formula_manager
 
-    def convert(self, formula):
+    def convert(self, formula: FNode) -> FNode:
         """ Converts the given formula in AIG """
         return self.walk(formula)
 
@@ -552,13 +554,13 @@ class AIGer(DagWalker):
     @handles(op.THEORY_OPERATORS)
     @handles(op.CONSTANTS)
     @handles(op.SYMBOL, op.FUNCTION)
-    def walk_nop(self, formula, args, **kwargs):
+    def walk_nop(self, formula: FNode, args: List[Union[Any, FNode]], **kwargs) -> FNode:
         """We return the Theory subformulae without changes."""
         #pylint: disable=unused-argument
         return formula
 
     @handles(op.QUANTIFIERS)
-    def walk_quantifier(self, formula, args, **kwargs):
+    def walk_quantifier(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         """Recreate the quantifiers, with the rewritten subformula."""
         #pylint: disable=unused-argument
         if formula.is_exists():
@@ -569,29 +571,29 @@ class AIGer(DagWalker):
             return self.mgr.ForAll(formula.quantifier_vars(),
                                    args[0])
 
-    def walk_and(self, formula, args, **kwargs):
+    def walk_and(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         return self.mgr.And(*args)
 
-    def walk_not(self, formula, args, **kwargs):
+    def walk_not(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         return self.mgr.Not(args[0])
 
-    def walk_or(self, formula, args, **kwargs):
+    def walk_or(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         """ a1 | ... | an = !( !a1 & ... & !an) """
         return self.mgr.Not(self.mgr.And(self.mgr.Not(s) for s in args))
 
-    def walk_iff(self, formula, args, **kwargs):
+    def walk_iff(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         """ a <-> b =  (!a | b) & (!b | a) = !( a & !b ) & !(b & !a)"""
         lhs, rhs = args
         r1 = self.mgr.Not(self.mgr.And(lhs, self.mgr.Not(rhs)))
         r2 = self.mgr.Not(self.mgr.And(rhs, self.mgr.Not(lhs)))
         return self.mgr.And(r1,r2)
 
-    def walk_implies(self, formula, args, **kwargs):
+    def walk_implies(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         """ a -> b = !(a & !b) """
         lhs, rhs = args
         return self.mgr.Not(self.mgr.And(lhs, self.mgr.Not(rhs)))
 
-    def walk_ite(self, formula, args, **kwargs):
+    def walk_ite(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         """This rewrites only boolean ITE, not theory ones.
 
             x ? a: b  = (x -> a) & (!x -> b) = !(x & !a) & !(!x & !b)
@@ -616,7 +618,7 @@ class TimesDistributor(IdentityDagWalker):
 
     E.g., (x+1)*3 -> (x*3) + 3
     """
-    def __init__(self, env=None, invalidate_memoization=None):
+    def __init__(self, env: None=None, invalidate_memoization: None=None) -> None:
         IdentityDagWalker.__init__(self, env=env,
                                    invalidate_memoization=invalidate_memoization)
         self.Times = self.env.formula_manager.Times
@@ -625,7 +627,7 @@ class TimesDistributor(IdentityDagWalker):
         self.iminus_one = self.env.formula_manager.Int(-1)
         self.get_type = self.env.stc.get_type
 
-    def walk_times(self, formula, args, **kwargs):
+    def walk_times(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         """
            From (x + 1) * (y - 1) * p * (m + (7 - p))
            Create [[x, 1], [y, -1*1], [p], [m, 7, -1*p]]
@@ -649,7 +651,7 @@ class TimesDistributor(IdentityDagWalker):
         res = self.Plus(self.Times(p) for p in product(*flat_args))
         return res
 
-    def walk_plus(self, formula, args, **kwargs):
+    def walk_plus(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         new_args = []
         for a in args:
             if a.is_plus():
@@ -658,7 +660,7 @@ class TimesDistributor(IdentityDagWalker):
                 new_args.append(a)
         return self.Plus(new_args)
 
-    def walk_minus(self, formula, args, **kwargs):
+    def walk_minus(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         expr_type = self.get_type(formula)
         if expr_type.is_real_type():
             minus_one = self.rminus_one
@@ -677,7 +679,7 @@ class TimesDistributor(IdentityDagWalker):
 
 
 class Ackermannizer(IdentityDagWalker):
-    def __init__(self, environment=None):
+    def __init__(self, environment: None=None) -> None:
         IdentityDagWalker.__init__(self, environment)
         # funs_to_args keeps for every function symbol f,
         # a set of lists of arguments.
@@ -689,7 +691,7 @@ class Ackermannizer(IdentityDagWalker):
         #generated, or to the original term if it is not replaced.
         self._terms_dict = {}
 
-    def do_ackermannization(self, formula):
+    def do_ackermannization(self, formula: FNode) -> FNode:
         substitued_formula = self._fill_maps_and_sub(formula)
         implications = self._get_equality_implications()
         if (len(implications) == 0):
@@ -699,20 +701,20 @@ class Ackermannizer(IdentityDagWalker):
             result = self.mgr.And(function_consistency, substitued_formula)
         return result
 
-    def get_term_to_const_dict(self):
+    def get_term_to_const_dict(self) -> Dict[FNode, FNode]:
         return self._terms_dict
 
-    def get_const_to_term_dict(self):
+    def get_const_to_term_dict(self) -> Dict[FNode, FNode]:
         return dict((v, k) for k, v in self._terms_dict.items())
 
-    def _get_equality_implications(self):
+    def _get_equality_implications(self) -> Set[FNode]:
         result = set([])
         for f in self._funs_to_args:
             implications = self._generate_implications(f)
             result.update(implications)
         return result
 
-    def _generate_implications(self, f):
+    def _generate_implications(self, f: FNode) -> Set[FNode]:
         result = set([])
         possible_args = self._funs_to_args[f]
         for option1, option2 in combinations(possible_args, 2):
@@ -720,7 +722,7 @@ class Ackermannizer(IdentityDagWalker):
             result.add(implication)
         return result
 
-    def _generate_implication(self, option1, option2, f):
+    def _generate_implication(self, option1: Union[Tuple[FNode], Tuple[FNode, FNode]], option2: Union[Tuple[FNode], Tuple[FNode, FNode]], f: FNode) -> FNode:
         left_conjuncts = set([])
         for term1, term2 in zip(option1, option2):
             if term1.is_function_application():
@@ -738,10 +740,10 @@ class Ackermannizer(IdentityDagWalker):
         implication = self.mgr.Implies(left, right)
         return implication
 
-    def _fill_maps_and_sub(self, formula):
+    def _fill_maps_and_sub(self, formula: FNode) -> FNode:
         return self.walk(formula)
 
-    def walk_function(self, formula, args, **kwargs):
+    def walk_function(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         try:
             ack_symbol = self._terms_dict[formula]
         except KeyError:
@@ -750,7 +752,7 @@ class Ackermannizer(IdentityDagWalker):
             ack_symbol = self._terms_dict[formula]
         return ack_symbol
 
-    def _add_application(self, formula):
+    def _add_application(self, formula: FNode) -> None:
         assert formula.is_function_application()
         if formula not in self._terms_dict:
             const_type = formula.function_name().symbol_type().return_type
@@ -758,7 +760,7 @@ class Ackermannizer(IdentityDagWalker):
                                        template="ack%d")
             self._terms_dict[formula] = sym
 
-    def _add_args_to_fun(self, formula):
+    def _add_args_to_fun(self, formula: FNode) -> None:
         function_name = formula.function_name()
         args = formula.args()
         if function_name not in self._funs_to_args.keys():
@@ -782,12 +784,12 @@ class DisjointSet(object):
     2. Set the compare function while creating the DisjointSet object.
     """
 
-    def __init__(self, compare_fun=None):
+    def __init__(self, compare_fun: Optional[Callable]=None) -> None:
         self.leader = {} # maps a member to the group's leader
         self.group = {} # maps a group leader to the group (which is a set)
         self.comp = compare_fun # a binary comparison function used for ranking
 
-    def add(self, a, b):
+    def add(self, a: FNode, b: FNode) -> None:
         """Add the pair (a,b) in the set"""
         leadera = self.leader.get(a)
         leaderb = self.leader.get(b)
@@ -817,7 +819,7 @@ class DisjointSet(object):
                 self.leader[a] = self.leader[b] = a
                 self.group[a] = set([a, b])
 
-    def find(self, k):
+    def find(self, k: FNode) -> FNode:
         """Find the root of k in the set"""
         return self.leader[k]
 
@@ -825,7 +827,7 @@ class DisjointSet(object):
 
 
 
-def nnf(formula, environment=None):
+def nnf(formula: FNode, environment: None=None) -> FNode:
     """Converts the given formula in NNF"""
     nnfizer = NNFizer(environment)
     return nnfizer.convert(formula)
@@ -843,19 +845,19 @@ def cnf_as_set(formula, environment=None):
     return cnfizer.convert(formula)
 
 
-def prenex_normal_form(formula, environment=None):
+def prenex_normal_form(formula: FNode, environment: None=None) -> FNode:
     """Converts the given formula in Prenex Normal Form"""
     normalizer = PrenexNormalizer(environment)
     return normalizer.normalize(formula)
 
 
-def aig(formula, environment=None):
+def aig(formula: FNode, environment: None=None) -> FNode:
     """Converts the given formula in AIG"""
     aiger = AIGer(environment)
     return aiger.convert(formula)
 
 
-def conjunctive_partition(formula):
+def conjunctive_partition(formula: FNode) -> Iterator[FNode]:
     """ Returns a generator over the top-level conjuncts of the given formula
 
     The result is such that for every formula phi, the following holds:
@@ -873,7 +875,7 @@ def conjunctive_partition(formula):
                 yield cur
 
 
-def disjunctive_partition(formula):
+def disjunctive_partition(formula: FNode) -> Iterator[FNode]:
     """ Returns a generator over the top-level disjuncts of the given formula
 
     The result is such that for every formula phi, the following holds:
@@ -891,7 +893,7 @@ def disjunctive_partition(formula):
                 yield cur
 
 
-def propagate_toplevel(formula, env=None, do_simplify=True, preserve_equivalence=True):
+def propagate_toplevel(formula: FNode, env: None=None, do_simplify: bool=True, preserve_equivalence: bool=True) -> FNode:
     """ Propagates the toplevel definitions and returns an equivalent formula.
     It considers three kinds of definitions:
     1) variable = constant

@@ -17,6 +17,9 @@
 import os
 
 from pysmt.exceptions import PysmtImportError
+from fractions import Fraction
+from typing import Tuple, Union
+
 # The environment variable can be used to force the configuration
 # of the Fraction class.
 #
@@ -70,7 +73,7 @@ else:
 FractionClass = type(Fraction(1,2))
 
 
-def is_pysmt_fraction(var):
+def is_pysmt_fraction(var: Union[Tuple[int, int], Fraction, int, float]) -> bool:
     """Tests whether var is a Fraction.
 
     This takes into account the class being used to represent the Fraction.
@@ -87,7 +90,7 @@ else:
 IntegerClass = type(Integer(1))
 
 
-def is_pysmt_integer(var):
+def is_pysmt_integer(var: int) -> bool:
     """Tests whether var is an Integer.
 
     This takes into account the class being used to represent the Integer.
@@ -95,7 +98,7 @@ def is_pysmt_integer(var):
     return type(var) == IntegerClass
 
 
-def is_python_integer(var):
+def is_python_integer(var: Union[int, "pysmt.fnode.FNode"]) -> bool:
     """Checks whether var is Python Integer.
 
     This accounts for: long, int and mpz (if available).
@@ -107,7 +110,7 @@ def is_python_integer(var):
     return False
 
 
-def is_python_rational(var):
+def is_python_rational(var: Union[float, int]) -> bool:
     """Tests whether var is a Rational.
 
     This accounts for: long, int, float, Fraction, mpz, mpq (if available).
@@ -142,14 +145,14 @@ def to_python_integer(value):
 
 
 if USE_GMPY:
-    def pysmt_fraction_from_rational(value):
+    def pysmt_fraction_from_rational(value: Union[float, int]) -> "Fraction":
         """Return a pysmt Fraction for the rational value."""
         if type(value) == FractionClass:
             # Nothing to do
             return value
         return Fraction(value)
 else:
-    def pysmt_fraction_from_rational(value):
+    def pysmt_fraction_from_rational(value: Union[float, int]) -> "Fraction":
         """Return a pysmt Fraction for the rational value."""
         if type(value) == FractionClass:
             # Nothing to do
@@ -201,5 +204,5 @@ else:
 #
 # Strings
 #
-def is_python_string(str1):
+def is_python_string(str1: str) -> bool:
     return type(str1) == str

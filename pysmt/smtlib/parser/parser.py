@@ -22,7 +22,7 @@ from warnings import warn
 from collections import deque
 
 import pysmt.smtlib.commands as smtcmd
-from pysmt.environment import get_env
+from pysmt.environment import Environment, get_env
 from pysmt.logics import get_logic_by_name, UndefinedLogicError
 from pysmt.exceptions import UnknownSmtLibCommandError, PysmtSyntaxError
 from pysmt.exceptions import PysmtTypeError
@@ -32,9 +32,16 @@ from pysmt.utils import interactive_char_iterator
 from pysmt.constants import Fraction
 from pysmt.typing import _TypeDecl, PartialType
 from pysmt.substituter import FunctionInterpretation
+import pysmt.typing
+from io import StringIO, TextIOWrapper
+from pysmt import PartialType, PySMTType, _ArrayType, _BoolType, _IntType, _RealType, _TypeDecl
+from pysmt.fnode import FNode
+from pysmt.formula import FormulaManager
+from pysmt.test.smtlib.test_parser_extensibility import TSFormula
+from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Union
 
 
-def open_(fname):
+def open_(fname: str) -> TextIOWrapper:
     """Transparently handle .bz2 files."""
     if fname.endswith(".bz2"):
         import bz2
@@ -42,7 +49,7 @@ def open_(fname):
     return open(fname)
 
 
-def get_formula(script_stream, environment=None):
+def get_formula(script_stream: StringIO, environment: None=None) -> FNode:
     """
     Returns the formula asserted at the end of the given script
     script_stream is a file descriptor.
@@ -56,7 +63,7 @@ def get_formula(script_stream, environment=None):
     return script.get_last_formula(mgr)
 
 
-def get_formula_strict(script_stream, environment=None):
+def get_formula_strict(script_stream: Union[TextIOWrapper, StringIO], environment: None=None) -> FNode:
     """Returns the formula defined in the SMTScript.
     This function assumes that only one formula is defined in the
     SMTScript. It will raise an exception if commands such as pop and
@@ -72,7 +79,7 @@ def get_formula_strict(script_stream, environment=None):
     return script.get_strict_formula(mgr)
 
 
-def get_formula_fname(script_fname, environment=None, strict=True):
+def get_formula_fname(script_fname: str, environment: None=None, strict: bool=True) -> FNode:
     """Returns the formula asserted at the end of the given script."""
     with open_(script_fname) as script:
         if strict:
@@ -83,32 +90,32 @@ def get_formula_fname(script_fname, environment=None, strict=True):
 
 class SmtLibExecutionCache(object):
     """Execution environment for SMT2 script execution"""
-    def __init__(self, env):
+    def __init__(self, env: Environment) -> None:
         self.substitute = env.substituter.substitute
         self.keys = {}
         self.definitions = {}
         self.annotations = Annotations()
 
-    def bind(self, name, value):
+    def bind(self, name: str, value: Union[str,     functools.partial, PySMTType, FNode, _TypeDecl]) -> None:
         """Binds a symbol in this environment"""
         lst = self.keys.setdefault(name, [])
         lst.append(value)
 
-    def unbind(self, name):
+    def unbind(self, name: str) -> None:
         """Unbinds the last binding of this symbol"""
         self.keys[name].pop()
 
-    def define(self, name, parameters, expression):
+    def define(self, name: str, parameters: List[Union[Any, FNode]], expression: Union[_ArrayType, _IntType, PySMTType, FNode, PartialType]) -> None:
         self.definitions[name] = (parameters, expression)
 
-    def _define_adapter(self, formal_parameters, expression):
+    def _define_adapter(self, formal_parameters: List[FNode], expression: FNode) -> Callable:
         def res(*actual_parameters):
             assert len(formal_parameters) == len(actual_parameters)
             submap = dict(zip(formal_parameters, actual_parameters))
             return self.substitute(expression, submap)
         return res
 
-    def get(self, name):
+    def get(self, name: str) -> Any:
         """Returns the last binding for 'name'"""
         if name in self.definitions:
             (parameters, expression) = self.definitions[name]
@@ -124,7 +131,7 @@ class SmtLibExecutionCache(object):
         else:
             return None
 
-    def update(self, value_map):
+    def update(self, value_map: Dict[str, Union[_TypeDecl, FNode]]) -> None:
         """Binds all the symbols in 'value_map'"""
         for k, val in value_map.items():
             self.bind(k, val)
@@ -150,7 +157,7 @@ class Tokenizer(object):
     reading from the actual generator.
     """
 
-    def __init__(self, handle, interactive=False):
+    def __init__(self, handle: Union[TextIOWrapper, StringIO], interactive: bool=False) -> None:
         if not interactive:
             # reads char-by-char
             if __debug__:
@@ -168,10 +175,10 @@ class Tokenizer(object):
         self.generator = self.create_generator(self.reader)
         self.extra_queue = deque()
 
-    def add_extra_token(self, token):
+    def add_extra_token(self, token: str) -> None:
         self.extra_queue.append(token)
 
-    def consume_maybe(self):
+    def consume_maybe(self) -> str:
         """Consumes and returns a single token from the stream.
            If the stream is empty `StopIteration` is thrown"""
         if self.extra_queue:
@@ -179,7 +186,7 @@ class Tokenizer(object):
         else:
             return next(self.generator)
 
-    def consume(self, msg=None):
+    def consume(self, msg: Optional[str]=None) -> str:
         """Consumes and returns a single token from the stream.
            If the stream is empty, a PysmtSyntaxError is thrown"""
         if self.extra_queue:
@@ -195,17 +202,17 @@ class Tokenizer(object):
                                            self.pos_info)
             return t
 
-    def raw_read(self):
+    def raw_read(self) -> str:
         return next(self.reader)
 
     @property
-    def pos_info(self):
+    def pos_info(self) -> Tuple[int, int]:
         if self.__row_cnt is not None:
             return (self.__row_cnt, self.__col_cnt)
         return None
 
     @staticmethod
-    def create_generator(reader):
+    def create_generator(reader: Iterator[Any]) -> Iterator[str]:
         """Takes a file-like object and produces a stream of tokens following
         the LISP rules.
         This is the method doing the heavy-lifting of tokenization.
@@ -285,7 +292,7 @@ class Tokenizer(object):
             # No more data to read, close generator
             return
 
-    def char_iterator(self, handle):
+    def char_iterator(self, handle: Union[TextIOWrapper, StringIO]) -> Iterator[str]:
         c = handle.read(1)
         while c:
             if c == "\n":
@@ -314,7 +321,7 @@ class SmtLibParser(object):
     for example with a SMT-Lib2-compliant solver
     """
 
-    def __init__(self, environment=None, interactive=False):
+    def __init__(self, environment: None=None, interactive: bool=False) -> None:
         self.env = get_env() if environment is None else environment
         self.interactive = interactive
 
@@ -479,14 +486,14 @@ class SmtLibParser(object):
                          smtcmd.LOAD_OBJECTIVE_MODEL: self._cmd_load_objective_model,
                          }
 
-    def _reset(self):
+    def _reset(self) -> None:
         """Resets the parser to the initial state"""
         self.cache = SmtLibExecutionCache(self.env)
         self.logic = None
         mgr = self.env.formula_manager
         self.cache.update({'false': mgr.FALSE(), 'true': mgr.TRUE()})
 
-    def _minus_or_uminus(self, *args):
+    def _minus_or_uminus(self, *args) -> FNode:
         """Utility function that handles both unary and binary minus"""
         mgr = self.env.formula_manager
         if len(args) == 1:
@@ -505,7 +512,7 @@ class SmtLibParser(object):
             assert len(args) == 2
             return self.Minus(args[0], args[1])
 
-    def _enter_smtlib_as(self, stack, tokens, key):
+    def _enter_smtlib_as(self, stack: List[List[Union[    functools.partial, Callable, FNode, Any]]], tokens: Tokenizer, key: str) -> None:
         """Utility function that handles 'as' that is a special function in SMTLIB"""
         #pylint: disable=unused-argument
         what = self.parse_atom(tokens, "expression")
@@ -522,7 +529,7 @@ class SmtLibParser(object):
                 return self.env.formula_manager.Symbol(what, ty)
             stack[-1].append(handler)
 
-    def _smtlib_underscore(self, stack, tokens, key):
+    def _smtlib_underscore(self, stack: List[List[Union[    functools.partial, Callable, FNode, Any]]], tokens: Tokenizer, key: str) -> None:
         # pylint: disable=unused-argument
         """Utility function that handles _ special function in SMTLIB"""
         mgr = self.env.formula_manager
@@ -619,7 +626,7 @@ class SmtLibParser(object):
 
         stack[-1].append(lambda: fun)
 
-    def _equals_or_iff(self, left, right):
+    def _equals_or_iff(self, left: FNode, right: FNode) -> FNode:
         """Utility function that treats = between booleans as <->"""
         mgr = self.env.formula_manager
         lty = self.get_type(left)
@@ -628,7 +635,7 @@ class SmtLibParser(object):
         else:
             return self.Equals(left, right)
 
-    def _division(self, left, right):
+    def _division(self, left: FNode, right: FNode) -> FNode:
         """Utility function that builds a division"""
         mgr = self.env.formula_manager
         if left.is_constant() and right.is_constant():
@@ -636,12 +643,12 @@ class SmtLibParser(object):
                             Fraction(right.constant_value()))
         return self.Div(left, right)
 
-    def _get_var(self, name, type_name):
+    def _get_var(self, name: str, type_name:     pysmt.typing.PySMTType) -> FNode:
         """Returns the PySMT variable corresponding to a declaration"""
         return self.env.formula_manager.Symbol(name=name,
                                                typename=type_name)
 
-    def _get_quantified_var(self, name, type_name):
+    def _get_quantified_var(self, name: str, type_name: Union[_IntType, _BoolType, _RealType]) -> FNode:
         """Returns the PySMT variable corresponding to a declaration"""
         try:
             return self._get_var(name, type_name)
@@ -649,7 +656,7 @@ class SmtLibParser(object):
             return self.env.formula_manager.FreshSymbol(typename=type_name,
                                                         template=name + "%d")
 
-    def atom(self, token, mgr):
+    def atom(self, token: str, mgr: FormulaManager) -> Union[str, FNode,     functools.partial, Callable]:
         """
         Given a token and a FormulaManager, returns the pysmt representation of
         the token
@@ -706,7 +713,7 @@ class SmtLibParser(object):
             self.cache.unbind(k)
         return bdy
 
-    def _exit_quantifier(self, fun, vrs, body):
+    def _exit_quantifier(self, fun: Callable, vrs: List[Tuple[str, FNode]], body: FNode) -> FNode:
         """
         Cleans the execution environment when we exit the scope of a quantifier
         """
@@ -716,7 +723,7 @@ class SmtLibParser(object):
             variables.add(var)
         return fun(variables, body)
 
-    def _enter_let(self, stack, tokens, key):
+    def _enter_let(self, stack: List[List[Union[Callable, FNode, List[Tuple[str, FNode]], Any]]], tokens: Tokenizer, key: str) -> None:
         """Handles a let expression by recurring on the expression and
         updating the cache
         """
@@ -739,7 +746,7 @@ class SmtLibParser(object):
         stack[-1].append(self._exit_let)
         stack[-1].append(newvals.keys())
 
-    def _operator_adapter(self, operator):
+    def _operator_adapter(self, operator: Union[    functools.partial, Callable]) -> Callable:
         """Handles generic operator"""
 
         def res(stack, tokens, key):
@@ -748,7 +755,7 @@ class SmtLibParser(object):
 
         return res
 
-    def _enter_quantifier(self, stack, tokens, key):
+    def _enter_quantifier(self, stack: List[List[Union[Callable, FNode, List[Tuple[str, FNode]], Any]]], tokens: Tokenizer, key: str) -> None:
         """Handles quantifiers by defining the bound variable in the cache
         before parsing the matrix
         """
@@ -780,7 +787,7 @@ class SmtLibParser(object):
         stack[-1].append(quant)
         stack[-1].append(vrs)
 
-    def _enter_annotation(self, stack, tokens, key):
+    def _enter_annotation(self, stack: List[List[Union[Callable, FNode, Any]]], tokens: Tokenizer, key: str) -> None:
         """Deals with annotations"""
         # pylint: disable=unused-argument
 
@@ -822,7 +829,7 @@ class SmtLibParser(object):
         tokens.add_extra_token(")")
         stack[-1].append(lambda: term)
 
-    def get_expression(self, tokens):
+    def get_expression(self, tokens: Tokenizer) -> Optional[Union[str, FNode]]:
         """
         Returns the pysmt representation of the given parsed expression
         """
@@ -871,7 +878,7 @@ class SmtLibParser(object):
             # No more data when trying to consume tokens
             return
 
-    def get_script(self, script):
+    def get_script(self, script: Union[TextIOWrapper, StringIO]) -> SmtLibScript:
         """
         Takes a file object and returns a SmtLibScript object representing
         the file
@@ -883,7 +890,7 @@ class SmtLibParser(object):
         res.annotations = self.cache.annotations
         return res
 
-    def get_command_generator(self, script):
+    def get_command_generator(self, script: Union[TextIOWrapper, StringIO]) -> Iterator[Union[SmtLibCommand, TSFormula]]:
         """Returns a python generator of SmtLibCommand's given a file object
         to read from
         This function can be used interactively, and blocks until a
@@ -894,7 +901,7 @@ class SmtLibParser(object):
             yield cmd
         return
 
-    def parse_model(self, script):
+    def parse_model(self, script: StringIO) -> Tuple[Dict[FNode, FNode], Dict[FNode, FunctionInterpretation]]:
         """This function pasres the result of a `(get-model)` command and
         returns a model as a dictionary from non-function symbols to
         constant values and an interpretation for uninterpreted
@@ -958,12 +965,12 @@ class SmtLibParser(object):
             current = tokens.consume()
         return model, interpretation
 
-    def get_script_fname(self, script_fname):
+    def get_script_fname(self, script_fname: str) -> SmtLibScript:
         """Given a filename and a Solver, executes the solver on the file."""
         with open_(script_fname) as script:
             return self.get_script(script)
 
-    def parse_atoms(self, tokens, command, min_size, max_size=None):
+    def parse_atoms(self, tokens: Tokenizer, command: str, min_size: int, max_size: Optional[int]=None) -> List[Union[Any, str]]:
         """
         Parses a sequence of N atoms (min_size <= N <= max_size) consuming
         the tokens
@@ -1001,7 +1008,7 @@ class SmtLibParser(object):
                                (current, command, max_size),
                                tokens.pos_info)
 
-    def parse_type(self, tokens, command, type_params=None, additional_token=None):
+    def parse_type(self, tokens: Tokenizer, command: str, type_params: Optional[List[str]]=None, additional_token: Optional[str]=None) -> Any:
         """Parses a single type name from the tokens"""
         if additional_token is not None:
             var = additional_token
@@ -1087,7 +1094,7 @@ class SmtLibParser(object):
         else:
             return res
 
-    def parse_atom(self, tokens, command):
+    def parse_atom(self, tokens: Tokenizer, command: str) -> str:
         """Parses a single name from the tokens"""
         var = tokens.consume("Unexpected end of stream in %s command." %
                                      command)
@@ -1097,7 +1104,7 @@ class SmtLibParser(object):
                                    tokens.pos_info)
         return var
 
-    def parse_params(self, tokens, command):
+    def parse_params(self, tokens: Tokenizer, command: str) -> List[Any]:
         """Parses a list of types from the tokens"""
         self.consume_opening(tokens, command)
         current = tokens.consume("Unexpected end of stream in %s command." %
@@ -1109,7 +1116,7 @@ class SmtLibParser(object):
                                              command)
         return res
 
-    def parse_named_params(self, tokens, command):
+    def parse_named_params(self, tokens: Tokenizer, command: str) -> List[Any]:
         """Parses a list of names and type from the tokens"""
         self.consume_opening(tokens, command)
         current = tokens.consume("Unexpected end of stream in %s command." %
@@ -1124,7 +1131,7 @@ class SmtLibParser(object):
                                              command)
         return res
 
-    def parse_expr_list(self, tokens, command):
+    def parse_expr_list(self, tokens: Tokenizer, command: str) -> List[Union[FNode, str]]:
         """Parses a list of expressions form the tokens"""
         self.consume_opening(tokens, command)
         res = []
@@ -1135,7 +1142,7 @@ class SmtLibParser(object):
             except PysmtSyntaxError:
                 return res
 
-    def consume_opening(self, tokens, command):
+    def consume_opening(self, tokens: Tokenizer, command: str) -> None:
         """ Consumes a single '(' """
         try:
             p = tokens.consume_maybe()
@@ -1146,7 +1153,7 @@ class SmtLibParser(object):
                                    "Expected '('" %
                                    (p, command), tokens.pos_info)
 
-    def consume_closing(self, tokens, command):
+    def consume_closing(self, tokens: Tokenizer, command: str) -> None:
         """ Consumes a single ')' """
         p = tokens.consume("Unexpected end of stream. Expected ')'")
         if p != ")":
@@ -1154,7 +1161,7 @@ class SmtLibParser(object):
                                    "Expected ')'" %
                                    (p, command), tokens.pos_info)
 
-    def _function_call_helper(self, v, *args):
+    def _function_call_helper(self, v: FNode, *args) -> FNode:
         """ Helper function for dealing with function calls """
         return self.env.formula_manager.Function(v, args)
 
@@ -1180,7 +1187,7 @@ class SmtLibParser(object):
         self.cache.unbind_all(symbols)
         return res
 
-    def get_command(self, tokens):
+    def get_command(self, tokens: Tokenizer) -> Iterator[Union[SmtLibCommand, TSFormula]]:
         """Builds an SmtLibCommand instance out of a parsed term."""
         while True:
             try:
@@ -1195,26 +1202,26 @@ class SmtLibParser(object):
             else:
                 raise UnknownSmtLibCommandError(current)
 
-    def _cmd_not_implemented(self, current, tokens):
+    def _cmd_not_implemented(self, current: str, tokens: Tokenizer):
         raise NotImplementedError("'%s' has not been implemented yet" % current)
 
-    def _cmd_set_info(self, current, tokens):
+    def _cmd_set_info(self, current: str, tokens: Tokenizer) -> SmtLibCommand:
         """(set-info <attribute>)"""
         elements = self.parse_atoms(tokens, current, 2)
         return SmtLibCommand(current, elements)
 
-    def _cmd_set_option(self, current, tokens):
+    def _cmd_set_option(self, current: str, tokens: Tokenizer) -> SmtLibCommand:
         """(set-option <option>)"""
         elements = self.parse_atoms(tokens, current, 2)
         return SmtLibCommand(current, elements)
 
-    def _cmd_assert(self, current, tokens):
+    def _cmd_assert(self, current: str, tokens: Tokenizer) -> SmtLibCommand:
         """(assert <term>)"""
         expr = self.get_expression(tokens)
         self.consume_closing(tokens, current)
         return SmtLibCommand(current, [expr])
 
-    def _cmd_assert_soft(self, current, tokens):
+    def _cmd_assert_soft(self, current: str, tokens: Tokenizer) -> SmtLibCommand:
         """(assert-soft <term> [:id <string>] [:weight <const_term>])"""
         expr = self.get_expression(tokens)
         term_weight = None
@@ -1242,18 +1249,18 @@ class SmtLibParser(object):
         ]
         return SmtLibCommand(current, [expr, params])
 
-    def _cmd_check_allsat(self, current, tokens):
+    def _cmd_check_allsat(self, current: str, tokens: Tokenizer) -> SmtLibCommand:
         """(check-allsat <terms>)"""
         params = self.parse_expr_list(tokens, current)
         self.consume_closing(tokens, current)
         return SmtLibCommand(current, params)
 
-    def _cmd_check_sat(self, current, tokens):
+    def _cmd_check_sat(self, current: str, tokens: Tokenizer) -> SmtLibCommand:
         """(check-sat)"""
         self.parse_atoms(tokens, current, 0)
         return SmtLibCommand(current, [])
 
-    def _cmd_push(self, current, tokens):
+    def _cmd_push(self, current: str, tokens: Tokenizer) -> SmtLibCommand:
         """(push <numeral>)"""
         elements = self.parse_atoms(tokens, current, 0, 1)
         levels = 1
@@ -1261,7 +1268,7 @@ class SmtLibParser(object):
             levels = int(elements[0])
         return SmtLibCommand(current, [levels])
 
-    def _cmd_pop(self, current, tokens):
+    def _cmd_pop(self, current: str, tokens: Tokenizer) -> SmtLibCommand:
         """(pop <numeral>)"""
         elements = self.parse_atoms(tokens, current, 0, 1)
         levels = 1
@@ -1269,12 +1276,12 @@ class SmtLibParser(object):
             levels = int(elements[0])
         return SmtLibCommand(current, [levels])
 
-    def _cmd_exit(self, current, tokens):
+    def _cmd_exit(self, current: str, tokens: Tokenizer) -> SmtLibCommand:
         """(exit)"""
         self.parse_atoms(tokens, current, 0)
         return SmtLibCommand(current, [])
 
-    def _cmd_set_logic(self, current, tokens):
+    def _cmd_set_logic(self, current: str, tokens: Tokenizer) -> SmtLibCommand:
         """(set-logic <symbol>)"""
         elements = self.parse_atoms(tokens, current, 1)
         name = elements[0]
@@ -1286,7 +1293,7 @@ class SmtLibParser(object):
                  "'. Ignoring set-logic command.")
             return SmtLibCommand(current, [None])
 
-    def _cmd_declare_const(self, current, tokens):
+    def _cmd_declare_const(self, current: str, tokens: Tokenizer) -> SmtLibCommand:
         """(declare-const <symbol> <sort>)"""
         var = self.parse_atom(tokens, current)
         typename = self.parse_type(tokens, current)
@@ -1295,18 +1302,18 @@ class SmtLibParser(object):
         self.cache.bind(var, v)
         return SmtLibCommand(current, [v])
 
-    def _cmd_get_value(self, current, tokens):
+    def _cmd_get_value(self, current: str, tokens: Tokenizer) -> SmtLibCommand:
         """(get-value (<term>+)"""
         params = self.parse_expr_list(tokens, current)
         self.consume_closing(tokens, current)
         return SmtLibCommand(current, params)
 
-    def _cmd_get_objectives(self, current, tokens):
+    def _cmd_get_objectives(self, current: str, tokens: Tokenizer) -> SmtLibCommand:
         """(get-objective)"""
         self.parse_atoms(tokens, current, 0)
         return SmtLibCommand(current, [])
 
-    def _cmd_minmax_maxmin_obj(self, current, tokens):
+    def _cmd_minmax_maxmin_obj(self, current: str, tokens: Tokenizer) -> SmtLibCommand:
         """(minmax | maxmin <term>+ )"""
         """TODO: [:id <string>] [:signed]"""
         params = []
@@ -1318,7 +1325,7 @@ class SmtLibParser(object):
                 break
         return SmtLibCommand(current, [params,None])
 
-    def _cmd_objective(self, current, tokens):
+    def _cmd_objective(self, current: str, tokens: Tokenizer) -> SmtLibCommand:
         """(maximize | minimize <term>"""
         obj = self.get_expression(tokens)
         params = []
@@ -1342,7 +1349,7 @@ class SmtLibParser(object):
             params.append((":signed", signed))
         return SmtLibCommand(current, [obj, params])
 
-    def _cmd_declare_fun(self, current, tokens):
+    def _cmd_declare_fun(self, current: str, tokens: Tokenizer) -> SmtLibCommand:
         """(declare-fun <symbol> (<sort>*) <sort>)"""
         var = self.parse_atom(tokens, current)
         params = self.parse_params(tokens, current)
@@ -1360,7 +1367,7 @@ class SmtLibParser(object):
             self.cache.bind(var, v)
         return SmtLibCommand(current, [v])
 
-    def _cmd_define_fun(self, current, tokens):
+    def _cmd_define_fun(self, current: str, tokens: Tokenizer) -> SmtLibCommand:
         """(define-fun <fun_def>)"""
         formal = []
         var = self.parse_atom(tokens, current)
@@ -1396,7 +1403,7 @@ class SmtLibParser(object):
         self.cache.define(var, formal, ebody)
         return SmtLibCommand(current, [var, formal, rtype, ebody])
 
-    def _cmd_declare_sort(self, current, tokens):
+    def _cmd_declare_sort(self, current: str, tokens: Tokenizer) -> SmtLibCommand:
         """(declare-sort <symbol> <numeral>)"""
         (typename, arity) = self.parse_atoms(tokens, current, 2)
         try:
@@ -1407,7 +1414,7 @@ class SmtLibParser(object):
         self.cache.bind(typename, type_)
         return SmtLibCommand(current, [type_])
 
-    def _cmd_define_sort(self, current, tokens):
+    def _cmd_define_sort(self, current: str, tokens: Tokenizer) -> SmtLibCommand:
         """(define-sort <name> <args> <fun_def>)"""
         name = self.parse_atom(tokens, current)
         self.consume_opening(tokens, current)
@@ -1430,76 +1437,76 @@ class SmtLibParser(object):
         self.cache.define(name, [], rtype)
         return SmtLibCommand(current, [name, [], rtype])
 
-    def _cmd_get_assertions(self, current, tokens):
+    def _cmd_get_assertions(self, current: str, tokens: Tokenizer) -> SmtLibCommand:
         """(get-assertions)"""
         self.parse_atoms(tokens, current, 0)
         return SmtLibCommand(current, [])
 
-    def _cmd_get_info(self, current, tokens):
+    def _cmd_get_info(self, current: str, tokens: Tokenizer) -> SmtLibCommand:
         """(get-info <info_flag>)"""
         keyword = self.parse_atoms(tokens, current, 1)
         return SmtLibCommand(current, keyword)
 
-    def _cmd_get_model(self, current, tokens):
+    def _cmd_get_model(self, current: str, tokens: Tokenizer) -> SmtLibCommand:
         """(get-model)"""
         self.parse_atoms(tokens, current, 0)
         return SmtLibCommand(current, [])
 
-    def _cmd_get_option(self, current, tokens):
+    def _cmd_get_option(self, current: str, tokens: Tokenizer) -> SmtLibCommand:
         """(get-option <keyword>)"""
         keyword = self.parse_atoms(tokens, current, 1)
         return SmtLibCommand(current, keyword)
 
-    def _cmd_get_proof(self, current, tokens):
+    def _cmd_get_proof(self, current: str, tokens: Tokenizer) -> SmtLibCommand:
         """(get-proof)"""
         self.parse_atoms(tokens, current, 0)
         return SmtLibCommand(current, [])
 
-    def _cmd_get_unsat_core(self, current, tokens):
+    def _cmd_get_unsat_core(self, current: str, tokens: Tokenizer) -> SmtLibCommand:
         """(get-unsat-core)"""
         self.parse_atoms(tokens, current, 0)
         return SmtLibCommand(current, [])
 
-    def _cmd_check_sat_assuming(self, current, tokens):
+    def _cmd_check_sat_assuming(self, current: str, tokens: Tokenizer) -> SmtLibCommand:
         """(check-sat-assuming (<prop_literal>*) ) """
         params = self.parse_expr_list(tokens, current)
         self.consume_closing(tokens, current)
         return SmtLibCommand(current, params)
 
-    def _cmd_define_fun_rec(self, current, tokens):
+    def _cmd_define_fun_rec(self, current: str, tokens: Tokenizer):
         """(define-fun-rec <fun_def>)"""
         return self._cmd_not_implemented(current, tokens)
 
-    def _cmd_define_funs_rec(self, current, tokens):
+    def _cmd_define_funs_rec(self, current: str, tokens: Tokenizer):
         """(define-funs-rec (<fun_dec>^{n+1}) (<term>^{n+1>))"""
         return self._cmd_not_implemented(current, tokens)
 
-    def _cmd_echo(self, current, tokens):
+    def _cmd_echo(self, current: str, tokens: Tokenizer) -> SmtLibCommand:
         """(echo <string>)"""
         elements = self.parse_atoms(tokens, current, 1)
         return SmtLibCommand(current, elements)
 
-    def _cmd_get_assignment(self, current, tokens):
+    def _cmd_get_assignment(self, current: str, tokens: Tokenizer) -> SmtLibCommand:
         """(get-assignment)"""
         self.parse_atoms(tokens, current, 0)
         return SmtLibCommand(current, [])
 
-    def _cmd_get_unsat_assumptions(self, current, tokens):
+    def _cmd_get_unsat_assumptions(self, current: str, tokens: Tokenizer) -> SmtLibCommand:
         """(get-unsat-assumptions)"""
         self.parse_atoms(tokens, current, 0)
         return SmtLibCommand(current, [])
 
-    def _cmd_reset(self, current, tokens):
+    def _cmd_reset(self, current: str, tokens: Tokenizer) -> SmtLibCommand:
         """(reset)"""
         self.parse_atoms(tokens, current, 0)
         return SmtLibCommand(current, [])
 
-    def _cmd_reset_assertions(self, current, tokens):
+    def _cmd_reset_assertions(self, current: str, tokens: Tokenizer) -> SmtLibCommand:
         """(reset-assertions)"""
         self.parse_atoms(tokens, current, 0)
         return SmtLibCommand(current, [])
 
-    def _cmd_load_objective_model(self, current, tokens):
+    def _cmd_load_objective_model(self, current: str, tokens: Tokenizer) -> SmtLibCommand:
         """(load-objective-model <numeral>)"""
         elements = self.parse_atoms(tokens, current, 0, 1)
         levels = 1

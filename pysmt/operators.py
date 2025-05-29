@@ -145,12 +145,12 @@ def new_node_type(node_id=None, node_str=None):
     return node_id
 
 
-def op_to_str(node_id):
+def op_to_str(node_id: int) -> str:
     """Returns a string representation of the given node."""
     return __OP_STR__[node_id]
 
 
-def all_types():
+def all_types() -> chain:
     """Returns an iterator over all base and custom types."""
     return chain(iter(ALL_TYPES), iter(CUSTOM_NODE_TYPES))
 

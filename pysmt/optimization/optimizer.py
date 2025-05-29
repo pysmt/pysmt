@@ -19,9 +19,13 @@ import warnings
 
 from pysmt.solvers.solver import Solver
 from pysmt.exceptions import PysmtValueError, GoalNotSupportedError
-from pysmt.optimization.goal import MinimizationGoal, MaximizationGoal
-from pysmt.shortcuts import INT, REAL, BVType, Equals, Ite, Int, Plus, Real
+from pysmt.optimization.goal import Goal, MaxSMTGoal, MinimizationGoal, MaximizationGoal
+from pysmt.typing import INT, REAL, BVType
 from pysmt.logics import LIA, LRA, BV, QF_LIRA
+from pysmt.environment import Environment
+from pysmt.fnode import FNode
+from pysmt.solvers.solver import Model
+from typing import Any, Callable, Iterator, List, Optional, Tuple, Union, Sequence
 
 
 class Optimizer(Solver):
@@ -153,7 +157,7 @@ class Optimizer(Solver):
         else:
             raise PysmtValueError("Invalid optimization function type: %s" % otype)
 
-    def _compute_max_smt_cost(self, model, goal):
+    def _compute_max_smt_cost(self, model: Model, goal: MaxSMTGoal) -> FNode:
         assert goal.is_maxsmt_goal()
         max_smt_weight = 0
         for soft_goal, weight in goal.soft:
@@ -165,7 +169,7 @@ class Optimizer(Solver):
             return self.mgr.Real(max_smt_weight)
         return self.mgr.Int(max_smt_weight)
 
-    def _check_pareto_lexicographic_goals(self, goals, mode):
+    def _check_pareto_lexicographic_goals(self, goals: Any, mode: str) -> None:
         for goal in goals:
             if goal.is_maxsmt_goal():
                 raise GoalNotSupportedError(self, goal, mode)
@@ -173,7 +177,7 @@ class Optimizer(Solver):
 
 class OptComparationFunctions:
 
-    def _comparation_functions(self, goal):
+    def _comparation_functions(self, goal: Goal) -> Tuple[Callable, Callable, Callable]:
         """Internal utility function to get the proper cast, LT and LE
         function for the given objective formula
         """
@@ -246,7 +250,7 @@ class OptSearchInterval(OptComparationFunctions):
         client_data: Additional data used during the optimization process.
     """
 
-    def __init__(self, goal, environment, client_data):
+    def __init__(self, goal: Goal, environment: Environment, client_data: List[Any]) -> None:
 
         lower, upper = None, None
         if not goal.is_maxsmt_goal():
@@ -274,7 +278,7 @@ class OptSearchInterval(OptComparationFunctions):
         self._cast, self.op_strict, self.op_ns = self._comparation_functions(goal)
         self.client_data = client_data
 
-    def linear_search_cut(self):
+    def linear_search_cut(self) -> FNode:
         """
         Generates a constraint for linear search.
 
@@ -291,7 +295,7 @@ class OptSearchInterval(OptComparationFunctions):
 
         return self.op_strict(self._obj.term(), self._cast(bound))
 
-    def _compute_pivot(self):
+    def _compute_pivot(self) -> int:
         """
         Computes the pivot value for binary search.
 
@@ -317,7 +321,7 @@ class OptSearchInterval(OptComparationFunctions):
         assert term_type.is_real_type()
         return (l + u) / 2
 
-    def binary_search_cut(self):
+    def binary_search_cut(self) -> FNode:
         """
         Generates a constraint for binary search.
 
@@ -330,7 +334,7 @@ class OptSearchInterval(OptComparationFunctions):
         self._pivot = self._compute_pivot()
         return self.op_strict(self._obj.term(), self._cast(self._pivot))
 
-    def empty(self):
+    def empty(self) -> bool:
         """
         Checks if the search interval is empty.
 
@@ -341,7 +345,7 @@ class OptSearchInterval(OptComparationFunctions):
             return False
         return self._upper <= self._lower
 
-    def search_is_sat(self, model):
+    def search_is_sat(self, model: Model) -> None:
         """
         Updates the bounds based on a satisfiable model.
 
@@ -364,7 +368,7 @@ class OptSearchInterval(OptComparationFunctions):
             if self._lower is None or self._lower < model_value:
                 self._lower = model_value
 
-    def search_is_unsat(self):
+    def search_is_unsat(self) -> None:
         """
         Updates the bounds based on an unsatisfiable result.
 
@@ -385,13 +389,13 @@ class OptSearchInterval(OptComparationFunctions):
 
 class OptPareto(OptComparationFunctions):
 
-    def __init__(self, goal, environment):
+    def __init__(self, goal: Goal, environment: Environment) -> None:
         self.environment = environment
         self.goal = goal
         self._cast, self.op_strict, self.op_ns = self._comparation_functions(goal)
         self.val = None
 
-    def get_constraint(self, strict):
+    def get_constraint(self, strict: bool) -> FNode:
         if self.val is not None:
             assert self.val.is_constant(), "Value %s is not a constant" % str(self.val)
             correct_operator = self.op_ns
@@ -402,7 +406,7 @@ class OptPareto(OptComparationFunctions):
             return None
 
 
-def _warn_diverge_real_goal(goal):
+def _warn_diverge_real_goal(goal: Goal) -> None:
     if (goal.is_maximization_goal() or goal.is_minimization_goal()) and goal.term().get_type().is_real_type():
         warnings.warn("Algorithm might diverge on Real minimization/maximization objectives.")
 
@@ -425,9 +429,9 @@ class ExternalOptimizerMixin(Optimizer):
     on an infinitesimal objective.
     """
 
-    def optimize(self, goal, strategy='linear',
-                 feasible_solution_callback=None,
-                 step_size=1, **kwargs):
+    def optimize(self, goal: Goal, strategy: str='linear',
+                 feasible_solution_callback: None=None,
+                 step_size: int=1, **kwargs) -> Tuple[Model, FNode]:
         """This function performs the optimization as described in
         `Optimizer.optimize()`. However. two additional parameters are
         available:
@@ -452,7 +456,7 @@ class ExternalOptimizerMixin(Optimizer):
             raise GoalNotSupportedError(self, goal)
         return rt
 
-    def boxed_optimize(self, goals, strategy='linear'):
+    def boxed_optimize(self, goals: Sequence[Goal], strategy: str='linear') -> Any:
         rt = {}
         for goal in goals:
             if goal.is_maximization_goal() or goal.is_minimization_goal() or goal.is_maxsmt_goal():
@@ -465,7 +469,7 @@ class ExternalOptimizerMixin(Optimizer):
                 raise GoalNotSupportedError(self, goal)
         return rt
 
-    def lexicographic_optimize(self, goals, strategy='linear'):
+    def lexicographic_optimize(self, goals: Sequence[Goal], strategy: str='linear') -> Tuple[Model, List[FNode]]:
         self._check_pareto_lexicographic_goals(goals, "lexicographic")
         rt = []
         client_data = self._setup()
@@ -480,7 +484,7 @@ class ExternalOptimizerMixin(Optimizer):
 
         return model, rt
 
-    def _optimize(self, goal, strategy, extra_assumption = None):
+    def _optimize(self, goal: Goal, strategy: str, extra_assumption: Optional[List[FNode]] = None) -> Tuple[Model, FNode]:
         """
         Core algorithm for the optimization process.
         Based on the strategy, it will either perform a linear or binary search"""
@@ -519,7 +523,7 @@ class ExternalOptimizerMixin(Optimizer):
             return model, model.get_value(goal.term())
         return None
 
-    def pareto_optimize(self, goals):
+    def pareto_optimize(self, goals: Sequence[Goal]) -> Iterator[Tuple[Model, List[FNode]]]:
         self._check_pareto_lexicographic_goals(goals, "pareto")
         objs = [OptPareto(goal, self.environment) for goal in goals]
 
@@ -548,20 +552,20 @@ class ExternalOptimizerMixin(Optimizer):
                 terminated = True
         self._cleanup(client_data)
 
-    def _setup(self):
+    def _setup(self) -> List[Any]:
         self.push()
         return []
 
-    def _cleanup(self, client_data):
+    def _cleanup(self, client_data: List[Union[Any, FNode]]) -> None:
         self.pop()
 
-    def _pareto_setup(self):
+    def _pareto_setup(self) -> None:
         self.push()
 
-    def _pareto_cleanup(self):
+    def _pareto_cleanup(self) -> None:
         self.pop()
 
-    def can_diverge_for_unbounded_cases(self):
+    def can_diverge_for_unbounded_cases(self) -> bool:
         return True
 
     def _optimization_check_progress(self, client_data, formula, strategy, extra_assumption = None):
@@ -639,7 +643,7 @@ class ExternalOptimizerMixin(Optimizer):
 class SUAOptimizerMixin(ExternalOptimizerMixin):
     """Optimizer mixin using solving under assumptions"""
 
-    def _optimization_check_progress(self, client_data, formula, strategy, extra_assumption = None):
+    def _optimization_check_progress(self, client_data: List[Any], formula: Optional[FNode], strategy: str, extra_assumption: Optional[List[FNode]] = None) -> Optional[Model]:
         assum = extra_assumption if extra_assumption is not None else []
         if formula is not None:
             assum = assum + [formula]
@@ -647,17 +651,17 @@ class SUAOptimizerMixin(ExternalOptimizerMixin):
         model = self.get_model() if is_sat else None
         return model
 
-    def _lexicographic_opt(self, client_data, current_goal, strategy):
+    def _lexicographic_opt(self, client_data: List[Union[Any, FNode]], current_goal: Goal, strategy: str) -> Tuple[Model, FNode]:
         temp = self._optimize(current_goal, strategy, extra_assumption = client_data)
         if temp is not None:
             model, val = temp
         else:
             return None
 
-        client_data.append(Equals(current_goal.term(), val))
+        client_data.append(self.environment.formula_manager.Equals(current_goal.term(), val))
         return model, val
 
-    def _pareto_check_progress(self, client_data, objs):
+    def _pareto_check_progress(self, client_data: List[Union[Any, FNode]], objs: List[OptPareto]) -> bool:
         mgr = self.environment.formula_manager
         k = []
         if objs[0].val is not None:
@@ -665,7 +669,7 @@ class SUAOptimizerMixin(ExternalOptimizerMixin):
             k.append(mgr.Or(obj.get_constraint(True) for obj in objs ))
         return not self.solve(assumptions=client_data + k)
 
-    def _pareto_block_model(self, client_data, objs):
+    def _pareto_block_model(self, client_data: List[Union[Any, FNode]], objs: List[OptPareto]) -> None:
         mgr = self.environment.formula_manager
         client_data.append(mgr.Or(obj.get_constraint(True) for obj in objs))
 
@@ -673,7 +677,7 @@ class SUAOptimizerMixin(ExternalOptimizerMixin):
 class IncrementalOptimizerMixin(ExternalOptimizerMixin):
     """Optimizer mixin using the incremental capabilites of the solver"""
 
-    def _optimization_check_progress(self, client_data, formula, strategy, extra_assumption = None):
+    def _optimization_check_progress(self, client_data: List[Any], formula: Optional[FNode], strategy: str, extra_assumption: None = None) -> Optional[Model]:
         if strategy == 'linear':
             if formula is not None:
                 self.add_assertion(formula)
@@ -690,7 +694,7 @@ class IncrementalOptimizerMixin(ExternalOptimizerMixin):
             raise PysmtValueError("Unknown optimization strategy '%s'" % strategy)
         return model
 
-    def _lexicographic_opt(self, client_data, current_goal, strategy):
+    def _lexicographic_opt(self, client_data: List[Union[Any, FNode]], current_goal: Goal, strategy: str) -> Tuple[Model, FNode]:
         self.push()
         for t in client_data:
             self.add_assertion(t)
@@ -700,10 +704,10 @@ class IncrementalOptimizerMixin(ExternalOptimizerMixin):
             model, val = temp
         else:
             return None
-        client_data.append(Equals(current_goal.term(), val))
+        client_data.append(self.environment.formula_manager.Equals(current_goal.term(), val))
         return model, val
 
-    def _pareto_check_progress(self, client_data, objs):
+    def _pareto_check_progress(self, client_data: List[Any], objs: List[OptPareto]) -> bool:
         mgr = self.environment.formula_manager
         if objs[0].val is not None:
             for obj in objs:
@@ -711,6 +715,6 @@ class IncrementalOptimizerMixin(ExternalOptimizerMixin):
             self.add_assertion(mgr.Or((obj.get_constraint(True) for obj in objs)))
         return not self.solve()
 
-    def _pareto_block_model(self, client_data, objs):
+    def _pareto_block_model(self, client_data: List[Any], objs: List[OptPareto]) -> None:
         mgr = self.environment.formula_manager
         self.add_assertion(mgr.Or((obj.get_constraint(True) for obj in objs)))

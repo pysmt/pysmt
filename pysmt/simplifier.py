@@ -24,12 +24,14 @@ import pysmt.typing as types
 from pysmt.utils import set_bit
 from pysmt.exceptions import PysmtValueError
 from pysmt.fnode import FNode
+from pysmt.environment import Environment
+from typing import Any, List, Optional
 
 
 class Simplifier(pysmt.walkers.DagWalker):
     """Perform basic simplifications of the input formula."""
 
-    def __init__(self, env=None):
+    def __init__(self, env: Optional[Environment]=None) -> None:
         pysmt.walkers.DagWalker.__init__(self, env=env)
         self.manager = self.env.formula_manager
         self._validate_simplifications = None
@@ -54,11 +56,11 @@ class Simplifier(pysmt.walkers.DagWalker):
 
         self._validate_simplifications = value
 
-    def simplify(self, formula):
+    def simplify(self, formula: FNode) -> FNode:
         """Performs simplification of the given formula."""
         return self.walk(formula)
 
-    def _get_key(self, formula, **kwargs):
+    def _get_key(self, formula: FNode, **kwargs) -> FNode:
         return formula
 
     def walk_debug(self, formula, **kwargs):
@@ -80,7 +82,7 @@ class Simplifier(pysmt.walkers.DagWalker):
                ("Was: %s \n Obtained: %s\n" % (str(formula), str(res)))
         return res
 
-    def walk_and(self, formula, args, **kwargs):
+    def walk_and(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         if len(args) == 2 and args[0] == args[1]:
             return args[0]
 
@@ -107,7 +109,7 @@ class Simplifier(pysmt.walkers.DagWalker):
         else:
             return self.manager.And(new_args)
 
-    def walk_or(self, formula, args, **kwargs):
+    def walk_or(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         if len(args) == 2 and args[0] == args[1]:
             return args[0]
 
@@ -134,7 +136,7 @@ class Simplifier(pysmt.walkers.DagWalker):
         else:
             return self.manager.Or(new_args)
 
-    def walk_not(self, formula, args, **kwargs):
+    def walk_not(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         assert len(args) == 1
         args = args[0]
         if args.is_bool_constant():
@@ -145,7 +147,7 @@ class Simplifier(pysmt.walkers.DagWalker):
 
         return self.manager.Not(args)
 
-    def walk_iff(self, formula, args, **kwargs):
+    def walk_iff(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         assert len(args) == 2
 
         sl = args[0]
@@ -170,7 +172,7 @@ class Simplifier(pysmt.walkers.DagWalker):
         else:
             return self.manager.Iff(sl, sr)
 
-    def walk_implies(self, formula, args, **kwargs):
+    def walk_implies(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         assert len(args) == 2
 
         sl = args[0]
@@ -193,7 +195,7 @@ class Simplifier(pysmt.walkers.DagWalker):
         else:
             return self.manager.Implies(sl, sr)
 
-    def walk_equals(self, formula, args, **kwargs):
+    def walk_equals(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         assert len(args) == 2
 
         sl = args[0]
@@ -208,7 +210,7 @@ class Simplifier(pysmt.walkers.DagWalker):
         else:
             return self.manager.Equals(sl, sr)
 
-    def walk_ite(self, formula, args, **kwargs):
+    def walk_ite(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         assert len(args) == 3
         si = args[0]
         st = args[1]
@@ -224,7 +226,7 @@ class Simplifier(pysmt.walkers.DagWalker):
         else:
             return self.manager.Ite(si, st, se)
 
-    def walk_le(self, formula, args, **kwargs):
+    def walk_le(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         assert len(args) == 2
 
         sl = args[0]
@@ -245,7 +247,7 @@ class Simplifier(pysmt.walkers.DagWalker):
             return self.manager.LE(x, y)
         return  self.manager.LE(sl, sr)
 
-    def walk_lt(self, formula, args, **kwargs):
+    def walk_lt(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         assert len(args) == 2
 
         sl = args[0]
@@ -257,7 +259,7 @@ class Simplifier(pysmt.walkers.DagWalker):
             return self.manager.Bool(l < r)
         return self.manager.LT(sl, sr)
 
-    def walk_forall(self, formula, args, **kwargs):
+    def walk_forall(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         assert len(args) == 1
         sf = args[0]
 
@@ -268,7 +270,7 @@ class Simplifier(pysmt.walkers.DagWalker):
 
         return self.manager.ForAll(varset, sf)
 
-    def walk_exists(self, formula, args, **kwargs):
+    def walk_exists(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         assert len(args) == 1
         sf = args[0]
 
@@ -279,7 +281,7 @@ class Simplifier(pysmt.walkers.DagWalker):
 
         return self.manager.Exists(varset, sf)
 
-    def walk_plus(self, formula, args, **kwargs):
+    def walk_plus(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         to_sum = []
         to_sub = []
         constant_add = 0
@@ -352,7 +354,7 @@ class Simplifier(pysmt.walkers.DagWalker):
                 res = self.manager.Times(m_1, sub)
         return res
 
-    def walk_times(self, formula, args, **kwargs):
+    def walk_times(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         new_args = []
         constant_mul = 1
         stack = list(args)
@@ -394,7 +396,7 @@ class Simplifier(pysmt.walkers.DagWalker):
         new_args = sorted(new_args, key=FNode.node_id)
         return self.manager.Times(new_args)
 
-    def walk_pow(self, formula, args, **kwargs):
+    def walk_pow(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         if args[0].is_real_constant():
             l = args[0].constant_value()
             r = args[1].constant_value()
@@ -413,7 +415,7 @@ class Simplifier(pysmt.walkers.DagWalker):
 
         return self.manager.Pow(args[0], args[1])
 
-    def walk_minus(self, formula, args, **kwargs):
+    def walk_minus(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         assert len(args) == 2
 
         sl = args[0]
@@ -447,17 +449,17 @@ class Simplifier(pysmt.walkers.DagWalker):
 
         return self.manager.Minus(sl, sr)
 
-    def walk_function(self, formula, args, **kwargs):
+    def walk_function(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         return self.manager.Function(formula.function_name(), args)
 
-    def walk_toreal(self, formula, args, **kwargs):
+    def walk_toreal(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         assert len(args) == 1
         if args[0].is_constant():
             assert args[0].is_int_constant()
             return self.manager.Real(args[0].constant_value())
         return self.manager.ToReal(args[0])
 
-    def walk_bv_and(self, formula, args, **kwargs):
+    def walk_bv_and(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         simplified = None
         width = formula.bv_width()
 
@@ -489,20 +491,20 @@ class Simplifier(pysmt.walkers.DagWalker):
 
         return self.manager.BVAnd(args[0], args[1])
 
-    def walk_bv_not(self, formula, args, **kwargs):
+    def walk_bv_not(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         if args[0].is_bv_constant():
             res = ~args[0].constant_value() & (2**formula.bv_width() - 1)
             return self.manager.BV(res, width=formula.bv_width())
         return self.manager.BVNot(args[0])
 
-    def walk_bv_neg(self, formula, args, **kwargs):
+    def walk_bv_neg(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         if args[0].is_bv_constant():
             res = 2**formula.bv_width() - args[0].constant_value()
             res = res % 2**formula.bv_width()
             return self.manager.BV(res, width=formula.bv_width())
         return self.manager.BVNeg(args[0])
 
-    def walk_bv_or(self, formula, args, **kwargs):
+    def walk_bv_or(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         simplified = None
 
         if args[0].is_bv_constant():
@@ -539,13 +541,13 @@ class Simplifier(pysmt.walkers.DagWalker):
 
         return self.manager.BVOr(args[0], args[1])
 
-    def walk_bv_xor(self, formula, args, **kwargs):
+    def walk_bv_xor(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         if args[0].is_bv_constant() and args[1].is_bv_constant():
             res = args[0].constant_value() ^ args[1].constant_value()
             return self.manager.BV(res, width=formula.bv_width())
         return self.manager.BVXor(args[0], args[1])
 
-    def walk_bv_add(self, formula, args, **kwargs):
+    def walk_bv_add(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         simplified = None
 
         if args[0].is_bv_constant():
@@ -567,7 +569,7 @@ class Simplifier(pysmt.walkers.DagWalker):
 
         return self.manager.BVAdd(args[0], args[1])
 
-    def walk_bv_mul(self, formula, args, **kwargs):
+    def walk_bv_mul(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         simplified = None
 
         if args[0].is_bv_constant():
@@ -597,7 +599,7 @@ class Simplifier(pysmt.walkers.DagWalker):
 
         return self.manager.BVMul(args[0], args[1])
 
-    def walk_bv_udiv(self, formula, args, **kwargs):
+    def walk_bv_udiv(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         simplified = None
 
         if args[1].is_bv_constant():
@@ -620,7 +622,7 @@ class Simplifier(pysmt.walkers.DagWalker):
 
         return self.manager.BVUDiv(args[0], args[1])
 
-    def walk_bv_urem(self, formula, args, **kwargs):
+    def walk_bv_urem(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         simplified = None
 
         if args[1].is_bv_constant():
@@ -643,7 +645,7 @@ class Simplifier(pysmt.walkers.DagWalker):
 
         return self.manager.BVURem(args[0], args[1])
 
-    def walk_bv_ult(self, formula, args, **kwargs):
+    def walk_bv_ult(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         simplified = None
 
         if args[0] == args[1]:
@@ -663,7 +665,7 @@ class Simplifier(pysmt.walkers.DagWalker):
 
         return self.manager.BVULT(args[0], args[1])
 
-    def walk_bv_ule(self, formula, args, **kwargs):
+    def walk_bv_ule(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         simplified = None
 
         if args[0] == args[1]:
@@ -683,7 +685,7 @@ class Simplifier(pysmt.walkers.DagWalker):
 
         return self.manager.BVULE(args[0], args[1])
 
-    def walk_bv_extract(self, formula, args, **kwargs):
+    def walk_bv_extract(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         if args[0].is_bv_constant():
             bitstr = args[0].bv_bin_str(reverse=True)
             start = formula.bv_extract_start()
@@ -695,7 +697,7 @@ class Simplifier(pysmt.walkers.DagWalker):
                                       start=formula.bv_extract_start(),
                                       end=formula.bv_extract_end())
 
-    def walk_bv_ror(self, formula, args, **kwargs):
+    def walk_bv_ror(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         if args[0].is_bv_constant():
             bitstr = args[0].bv_bin_str(reverse=True)
             # Takes first k elements and move to end
@@ -705,7 +707,7 @@ class Simplifier(pysmt.walkers.DagWalker):
             return self.manager.BV(res)
         return self.manager.BVRor(args[0], formula.bv_rotation_step())
 
-    def walk_bv_rol(self, formula, args, **kwargs):
+    def walk_bv_rol(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         if args[0].is_bv_constant():
             bitstr = args[0].bv_bin_str(reverse=True)
             # Takes last k elements and move to beginning
@@ -715,7 +717,7 @@ class Simplifier(pysmt.walkers.DagWalker):
             return self.manager.BV(res)
         return self.manager.BVRol(args[0], formula.bv_rotation_step())
 
-    def walk_bv_sext(self, formula, args, **kwargs):
+    def walk_bv_sext(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         if args[0].is_bv_constant():
             bitstr = args[0].bv_bin_str()
             filler = bitstr[0]
@@ -723,7 +725,7 @@ class Simplifier(pysmt.walkers.DagWalker):
             return self.manager.BV(res, width=formula.bv_width())
         return self.manager.BVSExt(args[0], formula.bv_extend_step())
 
-    def walk_bv_zext(self, formula, args, **kwargs):
+    def walk_bv_zext(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         if args[0].is_bv_constant():
             bitstr = args[0].bv_bin_str()
             filler = "0"
@@ -731,7 +733,7 @@ class Simplifier(pysmt.walkers.DagWalker):
             return self.manager.BV(res, width=formula.bv_width())
         return self.manager.BVZExt(args[0], formula.bv_extend_step())
 
-    def walk_bv_concat(self, formula, args, **kwargs):
+    def walk_bv_concat(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         if args[0].is_bv_constant() and args[1].is_bv_constant():
             w0 = args[0].bv_width()
             w1 = args[1].bv_width()
@@ -740,7 +742,7 @@ class Simplifier(pysmt.walkers.DagWalker):
             return self.manager.BV(res, w1 + w0)
         return self.manager.BVConcat(args[0], args[1])
 
-    def walk_bv_lshl(self, formula, args, **kwargs):
+    def walk_bv_lshl(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         simplified = None
 
         if args[1].is_bv_constant():
@@ -767,7 +769,7 @@ class Simplifier(pysmt.walkers.DagWalker):
 
         return self.manager.BVLShl(args[0], args[1])
 
-    def walk_bv_lshr(self, formula, args, **kwargs):
+    def walk_bv_lshr(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         simplified = None
 
         if args[1].is_bv_constant():
@@ -794,7 +796,7 @@ class Simplifier(pysmt.walkers.DagWalker):
 
         return self.manager.BVLShr(args[0], args[1])
 
-    def walk_bv_sub(self, formula, args, **kwargs):
+    def walk_bv_sub(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         simplified = None
 
         if args[0] == args[1]:
@@ -816,7 +818,7 @@ class Simplifier(pysmt.walkers.DagWalker):
 
         return self.manager.BVSub(args[0], args[1])
 
-    def walk_bv_slt(self, formula, args, **kwargs):
+    def walk_bv_slt(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         if args[0].is_bv_constant() and args[1].is_bv_constant():
             res = args[0].bv_signed_value() < args[1].bv_signed_value()
             return self.manager.Bool(res)
@@ -825,7 +827,7 @@ class Simplifier(pysmt.walkers.DagWalker):
             return self.manager.Bool(False)
         return self.manager.BVSLT(args[0], args[1])
 
-    def walk_bv_sle(self, formula, args, **kwargs):
+    def walk_bv_sle(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         if args[0].is_bv_constant() and args[1].is_bv_constant():
             res = args[0].bv_signed_value() <= args[1].bv_signed_value()
             return self.manager.Bool(res)
@@ -834,7 +836,7 @@ class Simplifier(pysmt.walkers.DagWalker):
             return self.manager.Bool(True)
         return self.manager.BVSLE(args[0], args[1])
 
-    def walk_bv_comp(self, formula, args, **kwargs):
+    def walk_bv_comp(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         sl, sr = args
 
         if sl == sr:
@@ -844,7 +846,7 @@ class Simplifier(pysmt.walkers.DagWalker):
         else:
             return self.manager.BVComp(sl, sr)
 
-    def walk_bv_sdiv(self, formula, args, **kwargs):
+    def walk_bv_sdiv(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         l,r = args
         if l.is_bv_constant() and r.is_bv_constant():
             l_sign = l.bv_signed_value() < 0
@@ -868,7 +870,7 @@ class Simplifier(pysmt.walkers.DagWalker):
                                          **kwargs)
         return self.manager.BVSDiv(l, r)
 
-    def walk_bv_srem(self, formula, args, **kwargs):
+    def walk_bv_srem(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         if args[0].is_bv_constant() and args[1].is_bv_constant():
             l = args[0]
             if args[0].bv_signed_value() < 0:
@@ -890,7 +892,7 @@ class Simplifier(pysmt.walkers.DagWalker):
             return res
         return self.manager.BVSRem(args[0], args[1])
 
-    def walk_bv_ashr(self, formula, args, **kwargs):
+    def walk_bv_ashr(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         l,r = args
         if l.is_bv_constant() and r.is_bv_constant():
             sign = l.bv_signed_value() < 0
@@ -908,32 +910,32 @@ class Simplifier(pysmt.walkers.DagWalker):
             return ret
         return self.manager.BVAShr(l, r)
 
-    def walk_str_length(self, formula, args, **kwargs):
+    def walk_str_length(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         s = args[0]
         if s.is_string_constant():
             return self.manager.Int(len(s.constant_value()))
         return self.manager.StrLength(s)
 
-    def walk_str_concat(self, formula, args, **kwargs):
+    def walk_str_concat(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         if all(arg.is_string_constant() for arg in args):
             ret = "".join(x.constant_value() for x in args)
             return self.manager.String(ret)
         return self.manager.StrConcat(args)
 
-    def walk_str_charat(self, formula,  args, **kwargs):
+    def walk_str_charat(self, formula: FNode,  args: List[FNode], **kwargs) -> FNode:
         s, i = args
         if s.is_string_constant() and i.is_int_constant():
             res = s.constant_value()[i.constant_value():i.constant_value() + 1]
             return self.manager.String(res)
         return self.manager.StrCharat(s, i)
 
-    def walk_str_contains(self, formula, args, **kwargs):
+    def walk_str_contains(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         s,t = args
         if s.is_string_constant() and t.is_string_constant():
             return self.manager.Bool(t.constant_value() in s.constant_value())
         return self.manager.StrContains(s, t)
 
-    def walk_str_indexof(self, formula, args, **kwargs):
+    def walk_str_indexof(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         s, t, i = args
         if s.is_string_constant() and t.is_string_constant() and i.is_int_constant():
             idx = s.constant_value().find(t.constant_value(), i.constant_value())
@@ -941,7 +943,7 @@ class Simplifier(pysmt.walkers.DagWalker):
             return self.manager.Int(idx)
         return self.manager.StrIndexOf(s, t, i)
 
-    def walk_str_replace(self, formula, args, **kwargs):
+    def walk_str_replace(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         s, t1, t2 = args
         if s.is_string_constant() and t1.is_string_constant() and t2.is_string_constant():
             t1_str = t1.constant_value()
@@ -950,7 +952,7 @@ class Simplifier(pysmt.walkers.DagWalker):
             return self.manager.String(s_str.replace(t1_str, t2_str, 1))
         return self.manager.StrReplace(s, t1, t2)
 
-    def walk_str_substr(self, formula, args, **kwargs):
+    def walk_str_substr(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         s, i, j = args
         if s.is_string_constant() and i.is_int_constant() and j.is_int_constant():
             start_ = i.constant_value()
@@ -959,19 +961,19 @@ class Simplifier(pysmt.walkers.DagWalker):
             return self.manager.String(res)
         return self.manager.StrSubstr(s, i, j)
 
-    def walk_str_prefixof(self, formula, args, **kwargs):
+    def walk_str_prefixof(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         s, t = args
         if s.is_string_constant() and t.is_string_constant():
             return self.manager.Bool(t.constant_value().startswith(s.constant_value()))
         return self.manager.StrPrefixof(s, t)
 
-    def walk_str_suffixof(self, formula, args, **kwargs):
+    def walk_str_suffixof(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         s, t = args
         if s.is_string_constant() and t.is_string_constant():
             return self.manager.Bool(t.constant_value().endswith(s.constant_value()))
         return self.manager.StrSuffixof(s, t)
 
-    def walk_str_to_int(self, formula, args, **kwargs):
+    def walk_str_to_int(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         s = args[0]
         if s.is_string_constant():
             try:
@@ -980,7 +982,7 @@ class Simplifier(pysmt.walkers.DagWalker):
                 return self.manager.Int(-1)
         return self.manager.StrToInt(s)
 
-    def walk_int_to_str(self, formula, args, **kwargs):
+    def walk_int_to_str(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         i = args[0]
         if i.is_int_constant():
             if i.constant_value() < 0:
@@ -988,18 +990,18 @@ class Simplifier(pysmt.walkers.DagWalker):
             return self.manager.String(str(i.constant_value()))
         return self.manager.IntToStr(i)
 
-    def walk_bv_tonatural(self, formula, args, **kwargs):
+    def walk_bv_tonatural(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         if args[0].is_bv_constant():
             return self.manager.Int(args[0].constant_value())
         return self.manager.BVToNatural(args[0])
 
-    def walk_array_select(self, formula, args, **kwargs):
+    def walk_array_select(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         a, i = args
         if a.is_array_value() and i.is_constant():
             return a.array_value_get(i)
         return self.manager.Select(args[0], args[1])
 
-    def walk_array_store(self, formula, args, **kwargs):
+    def walk_array_store(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         a, i, v = args
         if a.is_array_value() and i.is_constant():
             assign = a.array_value_assigned_values_map()
@@ -1009,13 +1011,13 @@ class Simplifier(pysmt.walkers.DagWalker):
                                       assign)
         return self.manager.Store(a, i, v)
 
-    def walk_array_value(self, formula, args, **kwargs):
+    def walk_array_value(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         assign = dict(zip(args[1::2], args[2::2]))
         return self.manager.Array(formula.array_value_index_type(),
                                   args[0],
                                   assign)
 
-    def walk_div(self, formula, args, **kwargs):
+    def walk_div(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         sl = args[0]
         sr = args[1]
 
@@ -1047,7 +1049,7 @@ class Simplifier(pysmt.walkers.DagWalker):
     @handles(op.SYMBOL)
     @handles(op.REAL_CONSTANT, op.INT_CONSTANT, op.BOOL_CONSTANT)
     @handles(op.BV_CONSTANT, op.STR_CONSTANT, op.ALGEBRAIC_CONSTANT)
-    def walk_identity(self, formula, args, **kwargs):
+    def walk_identity(self, formula: FNode, args: List[Any], **kwargs) -> FNode:
         return formula
 
 # EOC Simplifier
