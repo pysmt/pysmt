@@ -203,6 +203,10 @@ def Div(left, right):
     r""".. math:: \frac{l}{r}"""
     return get_env().formula_manager.Div(left, right)
 
+def Mod(left, right):
+    r""".. math:: l % r"""
+    return get_env().formula_manager.Mod(left, right)
+
 
 def Equals(left, right):
     r""".. math:: l = r"""
