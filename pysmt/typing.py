@@ -376,6 +376,10 @@ class _AlgebraicDataType(PySMTType):
             self.name = name
 
         def __eq__(self, other: "_AlgebraicDataType._Constructor"):
+            if other is None:
+                return False
+            elif self is other:
+                return True
             return (self.name == other.name) and super().__eq__(other)
 
         def __hash__(self):
@@ -403,6 +407,10 @@ class _AlgebraicDataType(PySMTType):
             self._constructor = constructor
 
         def __eq__(self, other: "_AlgebraicDataType._Selector"):
+            if other is None:
+                return False
+            elif self is other:
+                return True
             return (
                 (self.name == other.name)
                 and (self._constructor == other._constructor)
