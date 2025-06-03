@@ -81,6 +81,10 @@ class SimpleTypeChecker(walkers.DagWalker):
             rval = self.walk_type_to_type(formula, args, INT, INT)
         return rval
 
+    @walkers.handles(op.MOD)
+    def walk_int_to_int(self, formula, args, **kwargs):
+        self.walk_type_to_type(formula, args, INT, INT)
+
     @walkers.handles(op.BV_ADD, op.BV_SUB, op.BV_NOT, op.BV_AND, op.BV_OR)
     @walkers.handles(op.BV_XOR, op.BV_NEG, op.BV_MUL)
     @walkers.handles(op.BV_UDIV, op.BV_UREM, op.BV_LSHL, op.BV_LSHR)
