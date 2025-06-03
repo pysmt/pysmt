@@ -21,8 +21,9 @@ This module defines some rewritings for pySMT formulae.
 from collections import defaultdict
 from functools import reduce
 from itertools import combinations
-from typing import Dict, List, Set, Tuple
+from typing import Dict, Generator, List, Sequence, Set, Tuple
 from typing_extensions import assert_never
+from dataclasses import dataclass
 
 from pysmt.fnode import FNode
 from pysmt.typeguard import (
@@ -836,8 +837,10 @@ class ADT_to_EUF(IdentityDagWalker):
     def __init__(self, environment=None):
         IdentityDagWalker.__init__(self, environment, invalidate_memoization=True)
         self.adt_types = set()
-        self.adt_symbols = set()
-        self.flatten_symbols: List[Tuple[FNode, Tuple[FNode, FNode]]] = list()
+        self.adt_symbols: Set[Tuple[FNode, types.PySMTType]] = set()
+        self.adt_fresh_symbols: Set[Tuple[FNode, types.PySMTType]] = set()
+        self.flatten_symbols: List[FNode] = list()
+        self.cycle_memo = dict()
 
     def convert(self, formula):
         """Converts the given formula in AIG"""
@@ -853,6 +856,7 @@ class ADT_to_EUF(IdentityDagWalker):
                 ]
             )
             for adt_symbol, adt_type in self.adt_symbols
+            if is_algebraic_data_type(adt_type)
         ]
 
         constant_cons = [
@@ -861,28 +865,86 @@ class ADT_to_EUF(IdentityDagWalker):
                 f_mgr.Equals(f_mgr.Constructor(adt_type[disc_idx]), adt_symbol),
             )
             for adt_symbol, adt_type in self.adt_symbols
+            if is_algebraic_data_type(adt_type)
             for disc_idx, disc in adt_type._discriminators.items()
-            if len(adt_type[disc_idx].parameters) == 0
+            if is_adt_constructor(adt_type[disc_idx]) and len(adt_type[disc_idx].parameters) == 0  # type: ignore
+        ]
+
+        symbols = self.adt_symbols - self.adt_fresh_symbols
+        acyclicity = [
+            f_mgr.NotEquals(
+                adt_symbol,
+                reduce(lambda acc, it: f_mgr.Selector(it, acc), cycle, adt_symbol),
+            )
+            for adt_symbol, adt_type in symbols
+            if is_algebraic_data_type(adt_type)
+            for cycle in self.__type_cycle(
+                adt_type,
+                reduce(
+                    lambda acc, it: acc + (it[1] == adt_type),
+                    self.adt_fresh_symbols,
+                    0,
+                ),
+            )
         ]
 
         final_formula = f_mgr.And(
-            *(f for f, _ in self.flatten_symbols),
+            *self.flatten_symbols,
             *only_one_disc,
             *constant_cons,
-            #*acylicity,
+            *acyclicity,
             rewrite_formula,
         )
 
         # Zero adt_types for next run
         self.adt_types = set()
-        self.adt_symbols = set()
-        self.flatten_symbols = list()
+        self.adt_symbols: Set[Tuple[FNode, types.PySMTType]] = set()
+        self.adt_fresh_symbols: Set[Tuple[FNode, types.PySMTType]] = set()
+        self.flatten_symbols: List[FNode] = list()
+        self.cycle_memo = dict()
 
         return final_formula
 
-    def __apply_first_rewrite_rule(
-        self, formula: FNode, args: List[FNode], cons: FNode, symb: FNode
-    ):
+    def __type_cycle(
+        self, type: types._AlgebraicDataType, depth
+    ) -> Sequence[Sequence[types._AlgebraicDataType._Selector]]:
+        if (type, depth) in self.cycle_memo:
+            return self.cycle_memo[(type, depth)]
+
+        @dataclass
+        class search:
+            node: types._AlgebraicDataType
+            depth: int
+            application: Sequence[types._AlgebraicDataType._Selector]
+            valid: bool
+
+        root_type = type
+        stack: List[search] = [search(type, 0, (), False)]
+
+        res = list()
+        while len(stack) > 0:
+            v = stack.pop()
+            if v.valid:
+                res.append(v.application)
+            if v.depth + 1 <= depth:
+                stack.extend(
+                    (
+                        search(
+                            selector.return_type,
+                            v.depth + 1,
+                            (*v.application, selector),
+                            selector.return_type == root_type,
+                        )
+                        for selector in v.node._selectors.values()
+                        if is_algebraic_data_type(selector.return_type)
+                    )
+                )
+
+        self.cycle_memo[(type, depth)] = res
+
+        return res
+
+    def __apply_first_rewrite_rule(self, formula: FNode, cons: FNode, symb: FNode):
         f_mgr = self.env.formula_manager
 
         adt_t = cons.adt_type_from_adt_op()
@@ -900,9 +962,9 @@ class ADT_to_EUF(IdentityDagWalker):
                 for (param, _), val in zip(adt_cons.parameters, cons.args())
             )
         )
-        return f_mgr.And(f_mgr.Equals(cons, symb), discriminator, selectors_eq)
+        return f_mgr.And(formula, discriminator, selectors_eq)
 
-    def __apply_second_rewrite_rule(self, formula: FNode, sel: FNode, val: FNode):
+    def __apply_second_rewrite_rule(self, formula: FNode, sel: FNode):
         f_mgr = self.env.formula_manager
 
         adt_t = sel.adt_type_from_adt_op()
@@ -930,33 +992,47 @@ class ADT_to_EUF(IdentityDagWalker):
                 )
             ),
         )
-        return f_mgr.And(f_mgr.Equals(sel, val), f_mgr.Implies(discriminator, selectors_eq))
+        return f_mgr.And(
+            formula, f_mgr.Implies(discriminator, selectors_eq)
+        )
 
-    def walk_adt_construct(self, formula: FNode, args: List[FNode], **kwargs):
+    def walk_adt_construct(self, formula: FNode, args: List[FNode], **_):
         f_mgr = self.env.formula_manager
 
-        self.adt_types.add(formula.adt_type_from_adt_op())
-        new_sym = self.mgr.FreshSymbol(formula.type_from_adt_op())
+        adt_type = formula.adt_type_from_adt_op()
+        adt_ret = formula.type_from_adt_op()
+
+        self.adt_types.add(adt_type)
+        new_sym = self.mgr.FreshSymbol(adt_ret)
+        self.adt_fresh_symbols.add((new_sym, adt_ret))
+
+        self.adt_symbols.add((new_sym, adt_ret))
         cons = self.mgr.Constructor(formula._content.payload, *args)
 
         eq = f_mgr.Equals(new_sym, cons)
-        self.flatten_symbols.append((self.walk_equals(eq, [new_sym, cons]), (new_sym, cons)))
+        self.flatten_symbols.append(self.walk_equals(eq, [new_sym, cons]))
 
         return new_sym
 
-    def walk_adt_select(self, formula: FNode, args: List[FNode], **kwargs):
+    def walk_adt_select(self, formula: FNode, args: List[FNode], **_):
         f_mgr = self.env.formula_manager
 
-        self.adt_types.add(formula.adt_type_from_adt_op())
-        new_sym = self.mgr.FreshSymbol(formula.type_from_adt_op())
+        adt_type = formula.adt_type_from_adt_op()
+        adt_ret = formula.type_from_adt_op()
+
+        self.adt_types.add(adt_type)
+        new_sym = self.mgr.FreshSymbol(adt_ret)
+        self.adt_fresh_symbols.add((new_sym, adt_ret))
+
+        self.adt_symbols.add((new_sym, adt_ret))
         sel = self.mgr.Selector(formula._content.payload, *args)
 
         eq = f_mgr.Equals(new_sym, sel)
-        self.flatten_symbols.append((self.walk_equals(eq, [new_sym, sel]), (new_sym, sel)))
+        self.flatten_symbols.append(self.walk_equals(eq, [new_sym, sel]))
 
         return new_sym
 
-    def walk_adt_discriminate(self, formula: FNode, args: List[FNode], **kwargs):
+    def walk_adt_discriminate(self, formula: FNode, args: List[FNode], **_):
         self.adt_types.add(formula.adt_type_from_adt_op())
         return self.mgr.Discriminator(formula._content.payload, *args)
 
@@ -972,23 +1048,21 @@ class ADT_to_EUF(IdentityDagWalker):
         f_mgr = self.env.formula_manager
 
         if args[0].is_adt_construct() and args[1].is_symbol():
-            return self.__apply_first_rewrite_rule(formula, args, args[0], args[1])
+            return self.__apply_first_rewrite_rule(formula, args[0], args[1])
         elif args[1].is_adt_construct() and args[0].is_symbol():
-            return self.__apply_first_rewrite_rule(formula, args, args[1], args[0])
+            return self.__apply_first_rewrite_rule(formula, args[1], args[0])
 
-        elif args[0].is_adt_select() and not(args[1].is_adt_select()):
-            return self.__apply_second_rewrite_rule(formula, args[0], args[1])
-        elif args[1].is_adt_select() and not(args[0].is_adt_select()):
-            return self.__apply_second_rewrite_rule(formula, args[1], args[0])
+        elif args[0].is_adt_select() and not (args[1].is_adt_select()):
+            return self.__apply_second_rewrite_rule(formula, args[0])
+        elif args[1].is_adt_select() and not (args[0].is_adt_select()):
+            return self.__apply_second_rewrite_rule(formula, args[1])
         elif args[0].is_adt_select() and args[1].is_adt_select():
             return f_mgr.And(
-                self.__apply_second_rewrite_rule(formula, args[0], args[1]),
-                self.__apply_second_rewrite_rule(formula, args[1], args[0]),
+                self.__apply_second_rewrite_rule(formula, args[0]),
+                self.__apply_second_rewrite_rule(formula, args[1]),
             )
-
         else:
             return super().walk_equals(formula, args, **kwargs)
-
 
 
 def nnf(formula, environment=None):
