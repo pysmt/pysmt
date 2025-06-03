@@ -337,15 +337,7 @@ class TestDatatype(TestCase):
                 f_mgr.Constructor(
                     self.tree.node,
                     f_mgr.Constructor(self.tree.leaf, f_mgr.Int(1)),
-                    f_mgr.Constructor(
-                        self.tree.node,
-                        f_mgr.Constructor(self.tree.leaf, f_mgr.Int(2)),
-                        f_mgr.Constructor(
-                            self.tree.node,
-                            f_mgr.Constructor(self.tree.leaf, f_mgr.Int(3)),
-                            f_mgr.Constructor(self.tree.nil),
-                        ),
-                    ),
+                    f_mgr.Constructor(self.tree.nil),
                 ),
                 f_mgr.Symbol("tree_1_2_3_r", self.tree),
             )
@@ -355,15 +347,7 @@ class TestDatatype(TestCase):
             f_mgr.Equals(
                 f_mgr.Constructor(
                     self.tree.node,
-                    f_mgr.Constructor(
-                        self.tree.node,
-                        f_mgr.Constructor(
-                            self.tree.node,
-                            f_mgr.Constructor(self.tree.nil),
-                            f_mgr.Constructor(self.tree.leaf, f_mgr.Int(3)),
-                        ),
-                        f_mgr.Constructor(self.tree.leaf, f_mgr.Int(2)),
-                    ),
+                    f_mgr.Constructor(self.tree.nil),
                     f_mgr.Constructor(self.tree.leaf, f_mgr.Int(1)),
                 ),
                 f_mgr.Symbol("tree_1_2_3_l", self.tree),
@@ -371,88 +355,6 @@ class TestDatatype(TestCase):
         )
 
         eq_sub_tree = (
-            f_mgr.Equals(
-                f_mgr.Selector(
-                    self.tree.val,
-                    f_mgr.Selector(
-                        self.tree.left,
-                        f_mgr.Selector(
-                            self.tree.right,
-                            f_mgr.Selector(
-                                self.tree.right,
-                                f_mgr.Selector(
-                                    self.tree.right,
-                                    f_mgr.Symbol("tree_1_2_3_r", self.tree),
-                                ),
-                            ),
-                        ),
-                    ),
-                ),
-                f_mgr.Selector(
-                    self.tree.val,
-                    f_mgr.Selector(
-                        self.tree.right,
-                        f_mgr.Selector(
-                            self.tree.left,
-                            f_mgr.Selector(
-                                self.tree.left,
-                                f_mgr.Selector(
-                                    self.tree.left,
-                                    f_mgr.Symbol("tree_1_2_3_l", self.tree),
-                                ),
-                            ),
-                        ),
-                    ),
-                ),
-            ),
-            f_mgr.Equals(
-                f_mgr.Selector(
-                    self.tree.val,
-                    f_mgr.Selector(
-                        self.tree.left,
-                        f_mgr.Selector(
-                            self.tree.right,
-                            f_mgr.Selector(
-                                self.tree.right,
-                                f_mgr.Symbol("tree_1_2_3_r", self.tree),
-                            ),
-                        ),
-                    ),
-                ),
-                f_mgr.Selector(
-                    self.tree.val,
-                    f_mgr.Selector(
-                        self.tree.right,
-                        f_mgr.Selector(
-                            self.tree.left,
-                            f_mgr.Selector(
-                                self.tree.left,
-                                f_mgr.Symbol("tree_1_2_3_l", self.tree),
-                            ),
-                        ),
-                    ),
-                ),
-            ),
-            f_mgr.Equals(
-                f_mgr.Selector(
-                    self.tree.val,
-                    f_mgr.Selector(
-                        self.tree.left,
-                        f_mgr.Selector(
-                            self.tree.right, f_mgr.Symbol("tree_1_2_3_r", self.tree)
-                        ),
-                    ),
-                ),
-                f_mgr.Selector(
-                    self.tree.val,
-                    f_mgr.Selector(
-                        self.tree.right,
-                        f_mgr.Selector(
-                            self.tree.left, f_mgr.Symbol("tree_1_2_3_l", self.tree)
-                        ),
-                    ),
-                ),
-            ),
             f_mgr.Equals(
                 f_mgr.Selector(
                     self.tree.val,
@@ -477,8 +379,6 @@ class TestDatatype(TestCase):
                 second,
             )
         )
-
-        print(self.env.HRSerializerClass().serialize(rewrite).replace('=','==').replace('is-','is_').replace('!','not').replace('<->','**').replace('->','*'))
 
         self.assertSat(
             rewrite,
@@ -540,21 +440,38 @@ class TestDatatype(TestCase):
             self.env,
         )
 
-        print(
-            self.env.HRSerializerClass()
-            .serialize(rewrite)
-            .replace("=", "==")
-            .replace("is-", "is_")
-            .replace("!", "not")
-            .replace("<->", "**")
-            .replace("->", "*")
-        )
-
         self.assertUnsat(
             rewrite,
             solver_name="msat",
         )
 
+        rewrite = adt_to_euf(
+            f_mgr.And(
+                *(
+                    f_mgr.Equals(
+                        f_mgr.Symbol(f"y_{k}", self.tree),
+                        f_mgr.Selector(
+                            self.tree.left,
+                            f_mgr.Symbol(f"y_{(k + 1) % 5}", self.tree),
+                        )
+                    )
+                    for k in range(5)
+                )
+            ),
+            self.env,
+        )
 
-if __name__ == "__main__":
-    main()
+        # print(
+        #     self.env.HRSerializerClass()
+        #     .serialize(rewrite)
+        #     .replace("=", "==")
+        #     .replace("is-", "is_")
+        #     .replace("!", "not")
+        #     .replace("<->", "**")
+        #     .replace("->", "*")
+        # )
+
+        self.assertUnsat(
+            rewrite,
+            solver_name="msat",
+        )
