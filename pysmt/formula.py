@@ -275,6 +275,11 @@ class FormulaManager(object):
         return self.create_node(node_type=op.DIV,
                                 args=(left, right))
 
+    def Mod(self, left, right):
+        """ Creates an expression of the form: left % right """
+        return self.create_node(node_type=op.MOD, args=(left, right))
+
+
     def Equals(self, left, right):
         """ Creates an expression of the form: left = right
 
