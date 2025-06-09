@@ -18,6 +18,9 @@
 from functools import partial
 
 import sys
+from pysmt.fnode import FNode
+from typing import Any, Callable, Dict, Optional, Type
+
 if sys.version_info >= (3, 3):
     from collections.abc import Iterable
 else:
@@ -27,7 +30,7 @@ import pysmt.operators as op
 import pysmt.exceptions
 
 # NodeType to Function Name
-def nt_to_fun(o):
+def nt_to_fun(o: int) -> str:
     """Returns the name of the walk function for the given nodetype."""
     return "walk_%s" % op.op_to_str(o).lower()
 
@@ -43,12 +46,12 @@ class handles(object):
          ...
 
     """
-    def __init__(self, *nodetypes):
+    def __init__(self, *nodetypes) -> None:
         if len(nodetypes) == 1 and isinstance(nodetypes[0], Iterable):
             nodetypes = nodetypes[0]
         self.nodetypes = list(nodetypes)
 
-    def __call__(self, func):
+    def __call__(self, func: Callable) -> Callable:
         nodetypes = self.nodetypes
         if hasattr(func, "nodetypes"):
             nodetypes = func.nodetypes + nodetypes
@@ -57,7 +60,7 @@ class handles(object):
 
 class MetaNodeTypeHandler(type):
     """Metaclass used to intepret the nodehandler decorator. """
-    def __new__(cls, name, bases, dct):
+    def __new__(cls: Type["MetaNodeTypeHandler"], name: str, bases: Any, dct: Dict[str, Any]) -> Any:
         obj = type.__new__(cls, name, bases, dct)
         for k,v in dct.items():
             if hasattr(v, "nodetypes"):
@@ -71,7 +74,7 @@ class Walker(object, metaclass=MetaNodeTypeHandler):
     Do not subclass directly, use DagWalker or TreeWalker, instead.
     """
 
-    def __init__(self, env=None):
+    def __init__(self, env: Optional[    pysmt.environment.Environment]=None) -> None:
         if env is None:
             import pysmt.environment
             env = pysmt.environment.get_env()
@@ -97,13 +100,13 @@ class Walker(object, metaclass=MetaNodeTypeHandler):
             self.functions[nt] = function
 
     @classmethod
-    def set_handler(cls, function, *node_types):
+    def set_handler(cls, function: Callable, *node_types) -> None:
         """Associate in cls the given function to the given node_types."""
         for nt in node_types:
             setattr(cls, nt_to_fun(nt), function)
 
     @classmethod
-    def super(cls, self, formula, *args, **kwargs):
+    def super(cls, self, formula: FNode, *args, **kwargs) -> FNode:
         """Call the correct walk_* function of cls for the given formula."""
         f = getattr(cls, nt_to_fun(formula.node_type()))
         return f(self, formula, *args, **kwargs)

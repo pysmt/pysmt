@@ -57,9 +57,9 @@ class SolverOptions(object):
     """
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, generate_models=True, incremental=True,
-                 unsat_cores_mode=None, random_seed=None,
-                 solver_options=None):
+    def __init__(self, generate_models: bool=True, incremental: bool=True,
+                 unsat_cores_mode: None=None, random_seed: None=None,
+                 solver_options: None=None) -> None:
 
         if generate_models not in (True, False):
             raise ValueError("Invalid value %s for 'generate_models'" \

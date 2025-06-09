@@ -16,8 +16,10 @@
 #   limitations under the License.
 #
 from pysmt.solvers.solver import Model
-from pysmt.environment import get_env
+from pysmt.environment import Environment, get_env
 from pysmt.exceptions import PysmtTypeError
+from pysmt.fnode import FNode
+from typing import Dict, Optional
 
 
 class EagerModel(Model):
@@ -29,7 +31,7 @@ class EagerModel(Model):
     define a model.
     """
 
-    def __init__(self, assignment, environment=None):
+    def __init__(self, assignment: Dict[FNode, FNode], environment: Optional[Environment]=None) -> None:
         if environment is None:
             environment = get_env()
         Model.__init__(self, environment)
@@ -38,7 +40,7 @@ class EagerModel(Model):
         # Create a copy of the assignments to memoize completions
         self.completed_assignment = dict(self.assignment)
 
-    def get_value(self, formula, model_completion=True):
+    def get_value(self, formula: FNode, model_completion: bool=True) -> FNode:
         substituter = self.environment.substituter
         if model_completion:
             syms = formula.get_free_variables()
@@ -52,7 +54,7 @@ class EagerModel(Model):
             raise PysmtTypeError("Was expecting a constant but got %s" % res)
         return res
 
-    def _complete_model(self, symbols):
+    def _complete_model(self, symbols: frozenset) -> None:
         undefined_symbols = (s for s in symbols
                              if s not in self.completed_assignment)
         mgr = self.environment.formula_manager

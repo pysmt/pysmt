@@ -15,6 +15,10 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+from pysmt.fnode import FNode
+from pysmt.logics import Logic
+from typing import Optional
+
 class SmtLibSolver(object):
     #
     # SMT-LIB 2 Interface
@@ -231,19 +235,19 @@ class SmtLibSolver(object):
 
 
 class SmtLibIgnoreMixin(SmtLibSolver):
-    def set_logic(self, logic):
+    def set_logic(self, logic: Optional[Logic]) -> None:
         return None
 
-    def declare_fun(self, symbol):
+    def declare_fun(self, symbol: FNode) -> None:
         return None
 
-    def declare_const(self, symbol):
+    def declare_const(self, symbol: FNode) -> None:
         return None
 
     def define_fun(self, name, args, rtype, expr):
         return None
 
-    def declare_sort(self, name, cardinality):
+    def declare_sort(self, name: str, cardinality: int) -> None:
         return None
 
     def define_sort(self, name, args, sort_expr):
@@ -285,7 +289,7 @@ class SmtLibIgnoreMixin(SmtLibSolver):
     def get_info(self, name):
         return None
 
-    def set_info(self, name, value):
+    def set_info(self, name: str, value: str) -> None:
         return None
 
     def exit(self):
@@ -293,10 +297,10 @@ class SmtLibIgnoreMixin(SmtLibSolver):
 
 
 class SmtLibBasicSolver(SmtLibSolver):
-    def assert_(self, expr, named=None):
+    def assert_(self, expr: FNode, named: None=None) -> None:
         return self.add_assertion(expr, named)
 
-    def check_sat(self):
+    def check_sat(self) -> bool:
         return self.solve()
 
     def get_values(self, exprs):

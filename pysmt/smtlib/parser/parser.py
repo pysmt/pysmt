@@ -30,14 +30,13 @@ from pysmt.smtlib.script import SmtLibCommand, SmtLibScript
 from pysmt.smtlib.annotations import Annotations
 from pysmt.utils import interactive_char_iterator
 from pysmt.constants import Fraction
-from pysmt.typing import _TypeDecl, PartialType
+# TODO understand how to remove _TypeDecl
+from pysmt.typing import PartialType, PySMTType, _TypeDecl
 from pysmt.substituter import FunctionInterpretation
 import pysmt.typing
 from io import StringIO, TextIOWrapper
-from pysmt import PartialType, PySMTType, _ArrayType, _BoolType, _IntType, _RealType, _TypeDecl
 from pysmt.fnode import FNode
 from pysmt.formula import FormulaManager
-from pysmt.test.smtlib.test_parser_extensibility import TSFormula
 from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Union
 
 
@@ -105,7 +104,7 @@ class SmtLibExecutionCache(object):
         """Unbinds the last binding of this symbol"""
         self.keys[name].pop()
 
-    def define(self, name: str, parameters: List[Union[Any, FNode]], expression: Union[_ArrayType, _IntType, PySMTType, FNode, PartialType]) -> None:
+    def define(self, name: str, parameters: List[Union[Any, FNode]], expression: Union[PySMTType, FNode, PartialType]) -> None:
         self.definitions[name] = (parameters, expression)
 
     def _define_adapter(self, formal_parameters: List[FNode], expression: FNode) -> Callable:
@@ -648,7 +647,7 @@ class SmtLibParser(object):
         return self.env.formula_manager.Symbol(name=name,
                                                typename=type_name)
 
-    def _get_quantified_var(self, name: str, type_name: Union[_IntType, _BoolType, _RealType]) -> FNode:
+    def _get_quantified_var(self, name: str, type_name: PySMTType) -> FNode:
         """Returns the PySMT variable corresponding to a declaration"""
         try:
             return self._get_var(name, type_name)
@@ -890,7 +889,7 @@ class SmtLibParser(object):
         res.annotations = self.cache.annotations
         return res
 
-    def get_command_generator(self, script: Union[TextIOWrapper, StringIO]) -> Iterator[Union[SmtLibCommand, TSFormula]]:
+    def get_command_generator(self, script: Union[TextIOWrapper, StringIO]) -> Iterator[SmtLibCommand]:
         """Returns a python generator of SmtLibCommand's given a file object
         to read from
         This function can be used interactively, and blocks until a
@@ -1187,7 +1186,7 @@ class SmtLibParser(object):
         self.cache.unbind_all(symbols)
         return res
 
-    def get_command(self, tokens: Tokenizer) -> Iterator[Union[SmtLibCommand, TSFormula]]:
+    def get_command(self, tokens: Tokenizer) -> Iterator[SmtLibCommand]:
         """Builds an SmtLibCommand instance out of a parsed term."""
         while True:
             try:

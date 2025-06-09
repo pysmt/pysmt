@@ -15,7 +15,10 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from pysmt.walkers.tree import Walker
+from pysmt.walkers.generic import Walker
+from pysmt.environment import Environment
+from pysmt.fnode import FNode
+from typing import Any, List, Optional, Union
 
 
 class DagWalker(Walker):
@@ -34,7 +37,7 @@ class DagWalker(Walker):
     be used in memoization. See substituter for an example.
     """
 
-    def __init__(self, env=None, invalidate_memoization=False):
+    def __init__(self, env: Optional[Environment]=None, invalidate_memoization: Optional[bool]=False) -> None:
         """The flag ``invalidate_memoization`` can be used to clear the cache
         after the walk has been completed: the cache is one-time use.
         """
@@ -45,10 +48,10 @@ class DagWalker(Walker):
         self.stack = []
         return
 
-    def _get_children(self, formula):
+    def _get_children(self, formula: FNode) -> Any:
         return formula.args()
 
-    def _push_with_children_to_stack(self, formula, **kwargs):
+    def _push_with_children_to_stack(self, formula: FNode, **kwargs) -> None:
         """Add children to the stack."""
         self.stack.append((True, formula))
         for s in self._get_children(formula):
@@ -57,7 +60,7 @@ class DagWalker(Walker):
             if key not in self.memoization:
                 self.stack.append((False, s))
 
-    def _compute_node_result(self, formula, **kwargs):
+    def _compute_node_result(self, formula: FNode, **kwargs) -> None:
         """Apply function to the node and memoize the result.
 
         Note: This function assumes that the results for the children
@@ -76,7 +79,7 @@ class DagWalker(Walker):
         else:
             pass
 
-    def _process_stack(self, **kwargs):
+    def _process_stack(self, **kwargs) -> None:
         """Empties the stack by processing every node in it.
 
         Processing is performed in two steps.
@@ -92,14 +95,14 @@ class DagWalker(Walker):
             else:
                 self._push_with_children_to_stack(formula, **kwargs)
 
-    def iter_walk(self, formula, **kwargs):
+    def iter_walk(self, formula: FNode, **kwargs) -> Any:
         """Performs an iterative walk of the DAG"""
         self.stack.append((False, formula))
         self._process_stack(**kwargs)
         res_key = self._get_key(formula, **kwargs)
         return self.memoization[res_key]
 
-    def walk(self, formula, **kwargs):
+    def walk(self, formula: FNode, **kwargs) -> Any:
         if formula in self.memoization:
             return self.memoization[formula]
 
@@ -109,7 +112,7 @@ class DagWalker(Walker):
             self.memoization.clear()
         return res
 
-    def _get_key(self, formula, **kwargs):
+    def _get_key(self, formula: FNode, **kwargs) -> FNode:
         if not kwargs:
             return formula
         raise NotImplementedError("DagWalker should redefine '_get_key'" +
@@ -120,7 +123,7 @@ class DagWalker(Walker):
         """ Returns True, independently from the children's value."""
         return True
 
-    def walk_false(self, formula, args, **kwargs):
+    def walk_false(self, formula: FNode, args: List[bool], **kwargs) -> bool:
         #pylint: disable=unused-argument
         """ Returns False, independently from the children's value."""
         return False
@@ -140,7 +143,7 @@ class DagWalker(Walker):
         """ Returns True if any of the children returned True. """
         return any(args)
 
-    def walk_all(self, formula, args, **kwargs):
+    def walk_all(self, formula: FNode, args: List[Union[Any, bool]], **kwargs) -> bool:
         #pylint: disable=unused-argument
         """ Returns True if all the children returned True. """
         return all(args)

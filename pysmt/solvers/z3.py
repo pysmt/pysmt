@@ -18,6 +18,11 @@
 from __future__ import absolute_import
 
 from pysmt.exceptions import SolverAPINotFound
+from pysmt.environment import Environment
+from pysmt.fnode import FNode
+from pysmt.logics import Logic
+from pysmt.typing import PySMTType
+from typing import Any, List, Optional, Sequence, Type
 
 try:
     import z3
@@ -60,14 +65,14 @@ z3.get_payload = lambda node,i : z3.Z3_get_decl_int_parameter(node.ctx.ref(),
                                                               node.decl().ast, i)
 
 class AstRefKey:
-    def __init__(self, n):
+    def __init__(self, n: z3.ExprRef) -> None:
         self.n = n
-    def __hash__(self):
+    def __hash__(self) -> int:
         return self.n.hash()
-    def __eq__(self, other):
+    def __eq__(self, other: "AstRefKey") -> bool:
         return self.n.eq(other.n)
 
-def askey(n):
+def askey(n: z3.ExprRef) -> AstRefKey:
     assert isinstance(n, z3.AstRef)
     return AstRefKey(n)
 
@@ -75,12 +80,12 @@ def askey(n):
 
 class Z3Model(Model):
 
-    def __init__(self, environment, z3_model):
+    def __init__(self, environment: Environment, z3_model: z3.ModelRef) -> None:
         Model.__init__(self, environment)
         self.z3_model = z3_model
         self.converter = Z3Converter(environment, z3_model.ctx)
 
-    def get_value(self, formula, model_completion=True):
+    def get_value(self, formula: FNode, model_completion: bool=True) -> FNode:
         titem = self.converter.convert(formula)
         z3_res = self.z3_model.eval(titem, model_completion=model_completion)
         return self.converter.back(z3_res, model=self.z3_model)
@@ -112,7 +117,7 @@ class Z3Model(Model):
 class Z3Options(SolverOptions):
 
     @staticmethod
-    def _set_option(z3solver, name, value):
+    def _set_option(z3solver: z3.Solver, name: str, value: bool) -> None:
         try:
             z3solver.set(name, value)
         except z3.Z3Exception:
@@ -122,7 +127,7 @@ class Z3Options(SolverOptions):
             raise PysmtValueError("Error setting the option '%s=%s'" \
                                   % (name, value))
 
-    def __call__(self, solver):
+    def __call__(self, solver: "Z3Solver") -> None:
         self._set_option(solver.z3, 'model', self.generate_models)
         if self.unsat_cores_mode is not None:
             self._set_option(solver.z3, 'unsat_core', True)
@@ -150,7 +155,7 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
                            'QF_NRA', 'QF_RDL', 'QF_UF', 'UF', 'QF_UFBV', 'QF_UFIDL',
                            'QF_UFLIA', 'QF_UFLRA', 'QF_UFNRA', 'QF_UFNIA', 'UFLRA', 'UFNIA']
 
-    def __init__(self, environment, logic, **options):
+    def __init__(self, environment: Environment, logic: Logic, **options) -> None:
         IncrementalTrackingSolver.__init__(self,
                                            environment=environment,
                                            logic=logic,
@@ -179,7 +184,7 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
         raise NotImplementedError
 
     @clear_pending_pop
-    def _add_assertion(self, formula, named=None):
+    def _add_assertion(self, formula: FNode, named: None=None) -> FNode:
         self._assert_is_boolean(formula)
         term = self.converter.convert(formula)
 
@@ -194,11 +199,11 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
             self.z3.add(term)
             return formula
 
-    def get_model(self):
+    def get_model(self) -> Z3Model:
         return Z3Model(self.environment, self.z3.model())
 
     @clear_pending_pop
-    def _solve(self, assumptions=None):
+    def _solve(self, assumptions: Optional[List[FNode]]=None) -> bool:
         if assumptions is not None:
             bool_ass = []
             other_ass = []
@@ -267,12 +272,12 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
         raise NotImplementedError
 
     @clear_pending_pop
-    def _push(self, levels=1):
+    def _push(self, levels: int=1) -> None:
         for _ in range(levels):
             self.z3.push()
 
     @clear_pending_pop
-    def _pop(self, levels=1):
+    def _pop(self, levels: int=1) -> None:
         for _ in range(levels):
             self.z3.pop()
 
@@ -281,7 +286,7 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
             if name_filter is None or not var.symbol_name().startswith(name_filter):
                 print("%s = %s" % (var.symbol_name(), self.get_value(var)))
 
-    def get_value(self, item):
+    def get_value(self, item: FNode) -> FNode:
         self._assert_no_function_type(item)
 
         titem = self.converter.convert(item)
@@ -291,7 +296,7 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
             return res.simplify()
         return res
 
-    def _exit(self):
+    def _exit(self) -> None:
         del self.converter
         del self.z3
 
@@ -303,7 +308,7 @@ BITVECREF_SET = op.BV_OPERATORS
 
 class Z3Converter(Converter, DagWalker):
 
-    def __init__(self, environment, z3_ctx):
+    def __init__(self, environment: Environment, z3_ctx: z3.Context) -> None:
         DagWalker.__init__(self, environment)
         self.mgr = environment.formula_manager
         self._get_type = environment.stc.get_type
@@ -384,7 +389,7 @@ class Z3Converter(Converter, DagWalker):
         self._z3_func_decl_cache = {}
         return
 
-    def z3BitVecSort(self, width):
+    def z3BitVecSort(self, width: int) -> z3.BitVecSortRef:
         """Return the z3 BitVecSort for the given width."""
         try:
             bvsort = self._z3BitVecSorts[width]
@@ -414,7 +419,7 @@ class Z3Converter(Converter, DagWalker):
             self._z3Sorts[name] = sort
         return sort
 
-    def get_z3_ref(self, formula):
+    def get_z3_ref(self, formula: FNode) -> Type[z3.ExprRef]:
         if formula.node_type in op.QUANTIFIERS:
             return z3.QuantifierRef
         elif formula.node_type() in BOOLREF_SET:
@@ -460,12 +465,12 @@ class Z3Converter(Converter, DagWalker):
                 raise NotImplementedError(formula)
 
     @catch_conversion_error
-    def convert(self, formula):
+    def convert(self, formula: FNode) -> z3.ExprRef:
         z3term = self.walk(formula)
         ref_class = self.get_z3_ref(formula)
         return ref_class(z3term, self.ctx)
 
-    def back(self, expr, model=None):
+    def back(self, expr: z3.ExprRef, model: Optional[z3.ModelRef]=None) -> FNode:
         """Convert a Z3 expression back into a pySMT expression.
 
         This is done using the Z3 API. For very big expressions, it is
@@ -491,7 +496,7 @@ class Z3Converter(Converter, DagWalker):
                 pass
         return self._back_memoization[(askey(expr), model)]
 
-    def _back_single_term(self, expr, args, model=None):
+    def _back_single_term(self, expr: z3.ExprRef, args: List[Any], model: Optional[z3.ModelRef]=None) -> FNode:
         assert z3.is_expr(expr)
 
         if z3.is_quantifier(expr):
@@ -618,12 +623,12 @@ class Z3Converter(Converter, DagWalker):
             _args[i] = arg
         return _args, sz
 
-    def walk_not(self, formula, args, **kwargs):
+    def walk_not(self, formula: Optional[FNode], args: Sequence[z3.Ast], **kwargs) -> z3.Ast:
         z3term = z3.Z3_mk_not(self.ctx.ref(), args[0])
         z3.Z3_inc_ref(self.ctx.ref(), z3term)
         return z3term
 
-    def walk_symbol(self, formula, **kwargs):
+    def walk_symbol(self, formula: FNode, **kwargs) -> z3.Ast:
         symbol_type = formula.symbol_type()
         sname = formula.symbol_name()
         z3_sname = z3.Z3_mk_string_symbol(self.ctx.ref(), sname)
@@ -646,7 +651,7 @@ class Z3Converter(Converter, DagWalker):
         z3.Z3_inc_ref(self.ctx.ref(), res)
         return res
 
-    def walk_ite(self, formula, args, **kwargs):
+    def walk_ite(self, formula: FNode, args: Sequence[z3.Ast], **kwargs) -> z3.Ast:
         i = args[0]
         ni = self.walk_not(None, (i,))
         t = args[1]
@@ -678,7 +683,7 @@ class Z3Converter(Converter, DagWalker):
         z3.Z3_inc_ref(self.ctx.ref(), z3term)
         return z3term
 
-    def walk_real_constant(self, formula, **kwargs):
+    def walk_real_constant(self, formula: FNode, **kwargs) -> z3.Ast:
         frac = formula.constant_value()
         n,d = frac.numerator, frac.denominator
         rep = str(n) + "/" + str(d)
@@ -688,7 +693,7 @@ class Z3Converter(Converter, DagWalker):
         z3.Z3_inc_ref(self.ctx.ref(), z3term)
         return z3term
 
-    def walk_int_constant(self, formula, **kwargs):
+    def walk_int_constant(self, formula: FNode, **kwargs) -> z3.Ast:
         assert is_pysmt_integer(formula.constant_value())
         const = str(formula.constant_value())
         z3term = z3.Z3_mk_numeral(self.ctx.ref(),
@@ -697,13 +702,13 @@ class Z3Converter(Converter, DagWalker):
         z3.Z3_inc_ref(self.ctx.ref(), z3term)
         return z3term
 
-    def walk_bool_constant(self, formula, **kwargs):
+    def walk_bool_constant(self, formula: FNode, **kwargs) -> z3.Ast:
         _t = z3.BoolVal(formula.constant_value(), ctx=self.ctx)
         z3term = _t.as_ast()
         z3.Z3_inc_ref(self.ctx.ref(), z3term)
         return z3term
 
-    def walk_quantifier(self, formula, args, **kwargs):
+    def walk_quantifier(self, formula: FNode, args: Sequence[z3.Ast], **kwargs) -> z3.Ast:
         qvars = formula.quantifier_vars()
         qvars, qvars_sz = self._to_ast_array([self.walk_symbol(x)\
                                               for x in qvars])
@@ -747,7 +752,7 @@ class Z3Converter(Converter, DagWalker):
         z3.Z3_inc_ref(self.ctx.ref(), z3term)
         return z3term
 
-    def walk_bv_constant(self, formula, **kwargs):
+    def walk_bv_constant(self, formula: FNode, **kwargs) -> z3.Ast:
         value = formula.constant_value()
         z3term = z3.Z3_mk_numeral(self.ctx.ref(),
                                   str(value),
@@ -910,7 +915,7 @@ class Z3Converter(Converter, DagWalker):
     walk_exists = walk_quantifier
     walk_forall = walk_quantifier
 
-    def _type_to_z3(self, tp):
+    def _type_to_z3(self, tp: PySMTType) -> z3.BitVecSortRef:
         """Convert a pySMT type into the corresponding Z3 sort."""
         if tp.is_bool_type():
             return self.z3BoolSort
@@ -929,7 +934,7 @@ class Z3Converter(Converter, DagWalker):
             return self.z3Sort(tp)
         raise NotImplementedError("Unsupported type in conversion: %s" % tp)
 
-    def __del__(self):
+    def __del__(self) -> None:
         # Cleaning-up Z3Converter requires dec-ref'ing the terms in the cache
         if self.ctx.ref():
             # Check that there is still a context object
