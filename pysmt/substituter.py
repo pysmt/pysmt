@@ -15,13 +15,12 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import warnings
+import pysmt
 
 import pysmt.walkers
 from pysmt.walkers.generic import handles
 import pysmt.operators as op
 from pysmt.exceptions import PysmtTypeError, PysmtValueError
-from pysmt.environment import Environment
 from pysmt.fnode import FNode
 from typing import Any, Dict, List, Optional, Union
 
@@ -78,7 +77,7 @@ class FunctionInterpretation:
         self.function_body = function_body
 
 
-    def interpret(self, env: Environment, actual_params: List[FNode]) -> FNode:
+    def interpret(self, env: "pysmt.environment.Environment", actual_params: List[FNode]) -> FNode:
         """Given a set of actual parameter, returns the 'value' of the
         function by substituting formal parameters with their actual
         values.
@@ -121,7 +120,7 @@ class Substituter(pysmt.walkers.IdentityDagWalker):
     expected.  In case of doubt, it is recommended to issue two
     separate calls to the substitution procedure.
     """
-    def __init__(self, env: Environment) -> None:
+    def __init__(self, env: "pysmt.environment.Environment") -> None:
         pysmt.walkers.IdentityDagWalker.__init__(self, env=env, invalidate_memoization=True)
         self.manager = self.env.formula_manager
         if self.__class__ == Substituter:
@@ -259,7 +258,7 @@ class MGSubstituter(Substituter):
 
     This is the default behavior since version 0.5
     """
-    def __init__(self, env: Environment) -> None:
+    def __init__(self, env: "pysmt.environment.Environment") -> None:
         Substituter.__init__(self, env=env)
 
     @handles(set(op.ALL_TYPES) - op.QUANTIFIERS - {op.FUNCTION})

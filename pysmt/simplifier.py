@@ -17,6 +17,8 @@
 #
 import math
 
+import pysmt
+
 import pysmt.walkers
 from pysmt.walkers import handles
 import pysmt.operators as op
@@ -24,14 +26,13 @@ import pysmt.typing as types
 from pysmt.utils import set_bit
 from pysmt.exceptions import PysmtValueError
 from pysmt.fnode import FNode
-from pysmt.environment import Environment
 from typing import Any, List, Optional
 
 
 class Simplifier(pysmt.walkers.DagWalker):
     """Perform basic simplifications of the input formula."""
 
-    def __init__(self, env: Optional[Environment]=None) -> None:
+    def __init__(self, env: Optional["pysmt.environment.Environment"]=None) -> None:
         pysmt.walkers.DagWalker.__init__(self, env=env)
         self.manager = self.env.formula_manager
         self._validate_simplifications = None

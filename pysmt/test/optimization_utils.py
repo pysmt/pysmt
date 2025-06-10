@@ -5,7 +5,15 @@ import pytest
 from pysmt.fnode import FNode
 from pysmt.shortcuts import get_env
 from pysmt.exceptions import PysmtUnboundedOptimizationError, PysmtInfinitesimalError, PysmtValueError
-from pysmt.optimization.optimizer import SUAOptimizerMixin, IncrementalOptimizerMixin
+from pysmt.optimization.optimizer import Optimizer, SUAOptimizerMixin, IncrementalOptimizerMixin
+from pysmt.environment import Environment
+from pysmt.logics import Logic
+from pysmt.optimization.goal import MaxMinGoal, MaxSMTGoal, MaximizationGoal, MinMaxGoal, MinimizationGoal
+from pysmt.optimization.optimsat import OptiMSATModel
+from pysmt.solvers.eager import EagerModel
+from pysmt.solvers.msat import MathSAT5Model
+from pysmt.solvers.z3 import Z3Model
+from typing import Any, Iterator, List, Optional, Set, Tuple, Type, Union
 
 class OptimizationTypes(Enum):
     BASIC = auto()
@@ -39,7 +47,7 @@ class OMTTestCase:
     If the expected value is a FNode, it must be a constant value.
     If the expected value is a string, it must be either "unbounded" or "infinitesimal".
     """
-    def __init__(self, name, assertions, logic, solvable, goals, env):
+    def __init__(self, name: str, assertions: List[FNode], logic: Logic, solvable: bool, goals: Any, env: Environment) -> None:
         self._name = name
         self._assertions = assertions
         self._logic = logic
@@ -83,15 +91,15 @@ class OMTTestCase:
                 raise NotImplementedError("%s optimization is not supported yet" % optimization_type.name)
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     @property
-    def assertions(self):
+    def assertions(self) -> List[FNode]:
         return self._assertions
 
     @property
-    def logic(self):
+    def logic(self) -> Logic:
         return self._logic
 
     @property
@@ -99,16 +107,16 @@ class OMTTestCase:
         return self._solvable
 
     @property
-    def goals(self):
+    def goals(self) -> Any:
         return self._goals
 
     @property
-    def environment(self):
+    def environment(self) -> Environment:
         return self._env
 
 
 # method to solve the given examples
-def generate_examples_with_solvers(optimization_examples):
+def generate_examples_with_solvers(optimization_examples: Iterator[Any]) -> Iterator[Tuple[OMTTestCase, str]]:
     """
     This method takes a list of OMTTestCases and yields all the possible
     combinations of an OMTTestCase and the name of a solver that support
@@ -129,7 +137,7 @@ def generate_examples_with_solvers(optimization_examples):
             yield optimization_example, solver_name
 
 
-def solve_given_example(optimization_example, solver_name, test_to_skip=None):
+def solve_given_example(optimization_example: OMTTestCase, solver_name: str, test_to_skip: Optional[Set[Tuple[str, OptimizationTypes, str]]]=None) -> None:
     """
     Method to solve a single OMTTestCase using the given solver.
     """
@@ -177,7 +185,7 @@ def solve_given_example(optimization_example, solver_name, test_to_skip=None):
                     raise NotImplementedError("Unknown optimization type: %s" % optimization_type)
 
 
-def _check_oracle_goal(goal, goal_value, cost, test_id_str, **kwargs):
+def _check_oracle_goal(goal: Union[MaximizationGoal, MaxSMTGoal, MinMaxGoal, MaxMinGoal, MinimizationGoal], goal_value: FNode, cost: FNode, test_id_str: str, **kwargs) -> None:
     # converts the goal value and cost to constants and then checks if they are equal
     preliminary_checks_fail_str = "test: %s, goal: %s, goal_value: %s, cost: %s, extra: %s" % (test_id_str, str(goal), str(goal_value), str(cost), str(kwargs))
     assert goal_value.is_constant() and cost.is_constant(), preliminary_checks_fail_str
@@ -200,7 +208,7 @@ def _check_oracle_goal(goal, goal_value, cost, test_id_str, **kwargs):
     )
 
 
-def _get_expected_raised_class(goals_value):
+def _get_expected_raised_class(goals_value: Union[FNode, str, Tuple[FNode, FNode]]) -> Optional[Type[PysmtUnboundedOptimizationError]]:
     raised_class = None
     if isinstance(goals_value, str):
         if goals_value == "unbounded":
@@ -212,7 +220,7 @@ def _get_expected_raised_class(goals_value):
     return raised_class
 
 
-def check_lexicographic(optimizer, goals, goals_values, test_id_str, **kwargs):
+def check_lexicographic(optimizer: Optimizer, goals: Union[Tuple[MinimizationGoal, MaximizationGoal], Tuple[MinimizationGoal, MinimizationGoal], Tuple[MinMaxGoal, MaxMinGoal], Tuple[MinimizationGoal, MaximizationGoal, MaximizationGoal], Tuple[MaximizationGoal, MaximizationGoal]], goals_values: List[FNode], test_id_str: str, **kwargs) -> Union[Tuple[OptiMSATModel, List[FNode]], Tuple[EagerModel, List[FNode]], Tuple[MathSAT5Model, List[FNode]], Tuple[Z3Model, List[FNode]]]:
     raised_class = _get_expected_raised_class(goals_values[0])
     assert raised_class is None or len(goals_values) == 1, "test: %s, goals_values: %s" % (test_id_str, str(goals_values))
     if raised_class is None:
@@ -228,7 +236,7 @@ def check_lexicographic(optimizer, goals, goals_values, test_id_str, **kwargs):
             optimizer.lexicographic_optimize(goals, **kwargs)
 
 
-def check_pareto(optimizer, goals, goals_values, test_id_str, **kwargs):
+def check_pareto(optimizer: Optimizer, goals: Union[Tuple[MaximizationGoal, MaximizationGoal], Tuple[MinimizationGoal, MinimizationGoal], Tuple[MinimizationGoal, MaximizationGoal]], goals_values: List[Tuple[FNode, FNode]], test_id_str: str, **kwargs) -> List[Union[Tuple[MathSAT5Model, List[FNode]], Tuple[EagerModel, List[FNode]], Tuple[OptiMSATModel, List[FNode]], Tuple[Z3Model, List[FNode]]]]:
     raised_class = _get_expected_raised_class(goals_values[0])
     assert raised_class is None or len(goals_values) == 1, "test: %s, goals_values: %s" % (test_id_str, str(goals_values))
     if raised_class is None:
@@ -252,7 +260,7 @@ def check_pareto(optimizer, goals, goals_values, test_id_str, **kwargs):
             optimizer.pareto_optimize(goals, **kwargs)
 
 
-def check_boxed(optimizer, goals, goals_values, test_id_str, also_test_basic, **kwargs):
+def check_boxed(optimizer: Optimizer, goals: Any, goals_values: List[Union[FNode, str]], test_id_str: str, also_test_basic: bool, **kwargs) -> Any:
     # extract which class should be raised by the boxed optimization
     raised_class = None
     for goal_value in goals_values:
@@ -281,7 +289,7 @@ def check_boxed(optimizer, goals, goals_values, test_id_str, also_test_basic, **
         return retval
 
 
-def check_basic(optimizer, goal, goal_value, test_id_str, **kwargs):
+def check_basic(optimizer: Optimizer, goal: Union[MaximizationGoal, MaxSMTGoal, MinMaxGoal, MaxMinGoal, MinimizationGoal], goal_value: Union[FNode, str], test_id_str: str, **kwargs) -> Optional[Union[Tuple[MathSAT5Model, FNode], Tuple[EagerModel, FNode], Tuple[Z3Model, FNode], Tuple[OptiMSATModel, FNode]]]:
     raised_class = _get_expected_raised_class(goal_value)
     if raised_class is None:
         retval = optimizer.optimize(goal, **kwargs)
@@ -294,7 +302,7 @@ def check_basic(optimizer, goal, goal_value, test_id_str, **kwargs):
             optimizer.optimize(goal, **kwargs)
 
 
-def get_non_diverging_optimizers(logic):
+def get_non_diverging_optimizers(logic: Logic) -> Iterator[str]:
     """
     Returns an iterator over the optimizers that do not diverge for unbounded cases.
     """

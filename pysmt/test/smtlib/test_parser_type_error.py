@@ -23,7 +23,7 @@ from pysmt.exceptions import PysmtTypeError
 
 class TestTypeError(TestCase):
 
-    def test_wrong(self):
+    def test_wrong(self) -> None:
         d = os.path.dirname(os.path.realpath(__file__))
         smtfile = d + "/small_set/negative/wrong1.smt2.bz2"
         parser = SmtLibParser()

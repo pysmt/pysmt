@@ -23,11 +23,13 @@ from pysmt.shortcuts import reset_env
 from pysmt.test import TestCase
 from pysmt.smtlib.parser import SmtLibParser
 from pysmt.exceptions import PysmtSyntaxError
+from pysmt.smtlib.script import SmtLibScript
+from typing import Iterator, List, Tuple
 
 
 class TestSmtLibParserOMT(TestCase):
 
-    def test_parse_omt(self):
+    def test_parse_omt(self) -> None:
         for file_id, expected, script in self.examples():
             for i, cmd in enumerate(script):
                 self.assertEqual(cmd.name, expected[i],
@@ -40,7 +42,7 @@ class TestSmtLibParserOMT(TestCase):
             new_script = parser.get_script(StringIO(buf.getvalue()))
             self.assertEqual([cmd.name for cmd in script], [cmd.name for cmd in new_script])
 
-    def test_omt_parsing_exception(self):
+    def test_omt_parsing_exception(self) -> None:
         parser = SmtLibParser()
         with self.assertRaises(PysmtSyntaxError):
             parser.get_script(StringIO("(assert-soft false :weight (+ 3 (- 4 2)) :id goal :id goal)"))
@@ -53,7 +55,7 @@ class TestSmtLibParserOMT(TestCase):
         with self.assertRaises(PysmtSyntaxError):
             parser.get_script(StringIO("(maximize z :upper 50 :lower 50 :id abc"))
 
-    def test_command_option_value_correctness(self):
+    def test_command_option_value_correctness(self) -> None:
         for input_command, command, len_args in TestSmtLibParserOMT.snippet_examples():
             parser = SmtLibParser()
             script = parser.get_script(StringIO(input_command))
@@ -61,7 +63,7 @@ class TestSmtLibParserOMT(TestCase):
             self.assertEqual(cmd.name, command)
             self.assertEqual(len(cmd.args), len_args)
 
-    def parse_from_file(self, file_id):
+    def parse_from_file(self, file_id: int) -> SmtLibScript:
         fname = OMT_FILE_PATTERN % file_id
         reset_env()
         parser = SmtLibParser()
@@ -69,13 +71,13 @@ class TestSmtLibParserOMT(TestCase):
         self.assertIsNotNone(script)
         return script
 
-    def examples(self):
+    def examples(self) -> Iterator[Tuple[int, List[str], SmtLibScript]]:
         for file_id in TEST_FILES:
             script = self.parse_from_file(file_id)
             yield file_id, TEST_FILES[file_id], script
 
     @staticmethod
-    def snippet_examples():
+    def snippet_examples() -> Iterator[Tuple[str, str, int]]:
         for input_command, command, len_args in TEST_SNIPPETS:
             yield input_command, command, len_args
 

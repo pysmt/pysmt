@@ -16,15 +16,15 @@
 #   limitations under the License.
 #
 from io import StringIO
+from typing import Any, Iterator, Optional
 
+import pysmt
 import pysmt.operators as op
 from pysmt.walkers import TreeWalker
 from pysmt.walkers.generic import handles
 from pysmt.utils import quote
 from pysmt.constants import is_pysmt_fraction, is_pysmt_integer
-from pysmt.environment import Environment
 from pysmt.fnode import FNode
-from typing import Any, Iterator, Optional
 
 
 class HRPrinter(TreeWalker):
@@ -334,7 +334,7 @@ class HRSerializer(object):
 
     PrinterClass = HRPrinter
 
-    def __init__(self, environment: Optional[Environment]=None) -> None:
+    def __init__(self, environment: Optional["pysmt.environment.Environment"]=None) -> None:
         self.environment = environment
 
     def serialize(self, formula: FNode, printer: None=None, threshold: Optional[int]=None) -> str:

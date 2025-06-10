@@ -74,7 +74,7 @@ class Walker(object, metaclass=MetaNodeTypeHandler):
     Do not subclass directly, use DagWalker or TreeWalker, instead.
     """
 
-    def __init__(self, env: Optional[    pysmt.environment.Environment]=None) -> None:
+    def __init__(self, env: Optional["pysmt.environment.Environment"]=None) -> None:
         if env is None:
             import pysmt.environment
             env = pysmt.environment.get_env()

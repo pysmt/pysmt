@@ -29,9 +29,7 @@ its definition.
 
 import sys
 import fractions
-from pysmt.environment import Environment
-from pysmt.fnode import FNode
-from pysmt.typing import PySMTType
+import warnings
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
 
 if sys.version_info >= (3, 3):
@@ -39,12 +37,13 @@ if sys.version_info >= (3, 3):
 else:
     from collections import Iterable
 
-import warnings
+
+import pysmt
 
 import pysmt.typing as types
 import pysmt.operators as op
-
-
+from pysmt.fnode import FNode
+from pysmt.typing import PySMTType
 from pysmt.fnode import FNode, FNodeContent
 from pysmt.exceptions import UndefinedSymbolError, PysmtValueError,PysmtTypeError
 from pysmt.walkers.identitydag import IdentityDagWalker
@@ -61,7 +60,7 @@ from pysmt.constants import (is_pysmt_fraction,
 class FormulaManager(object):
     """FormulaManager is responsible for the creation of all formulae."""
 
-    def __init__(self, env: Optional[Environment]=None) -> None:
+    def __init__(self, env: Optional["pysmt.environment.Environment"]=None) -> None:
         self.env = env
         # Attributes for handling symbols and formulae
         self.formulae = {}
@@ -88,6 +87,7 @@ class FormulaManager(object):
         self.get_type(formula)
 
     def _do_type_check(self, formula: FNode) -> None:
+        print(type(self.env.stc))
         self.get_type = self.env.stc.get_type
         self._do_type_check = self._do_type_check_real
         return self._do_type_check(formula)

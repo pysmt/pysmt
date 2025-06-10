@@ -15,8 +15,9 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+import pysmt
+
 from pysmt.walkers.generic import Walker
-from pysmt.environment import Environment
 from pysmt.fnode import FNode
 from typing import Any, List, Optional, Union
 
@@ -37,7 +38,7 @@ class DagWalker(Walker):
     be used in memoization. See substituter for an example.
     """
 
-    def __init__(self, env: Optional[Environment]=None, invalidate_memoization: Optional[bool]=False) -> None:
+    def __init__(self, env: Optional["pysmt.environment.Environment"]=None, invalidate_memoization: Optional[bool]=False) -> None:
         """The flag ``invalidate_memoization`` can be used to clear the cache
         after the walk has been completed: the cache is one-time use.
         """

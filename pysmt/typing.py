@@ -34,7 +34,6 @@ different instance of BVType.
 import pysmt
 
 from pysmt.exceptions import PysmtValueError, PysmtModeError
-from pysmt.environment import Environment
 from typing import Any, Callable, List, Optional, Union
 
 
@@ -393,7 +392,7 @@ ARRAY_INT_INT = _ArrayType(INT,INT)
 
 class TypeManager(object):
 
-    def __init__(self, environment: Environment) -> None:
+    def __init__(self, environment: "pysmt.environment.Environment") -> None:
         self._bv_types = {}
         self._function_types = {}
         self._array_types = {}

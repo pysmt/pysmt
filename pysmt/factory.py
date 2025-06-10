@@ -33,16 +33,13 @@ from pysmt.logics import AUTO as AUTO_LOGIC
 from pysmt.logics import most_generic_logic, get_closer_logic
 from pysmt.logics import convert_logic_from_string
 from pysmt.oracles import get_logic
+from pysmt.solvers.solver import Solver
 from pysmt.solvers.qelim import (ShannonQuantifierEliminator,
                                  SelfSubstitutionQuantifierEliminator)
 from pysmt.solvers.portfolio import Portfolio
-from Factory import Optimizer
 from pysmt.environment import Environment
 from pysmt.fnode import FNode
 from pysmt.optimization.optimizer import Optimizer
-from pysmt.solvers.cvcfive import CVC5Solver
-from pysmt.solvers.msat import MathSAT5Solver
-from pysmt.solvers.z3 import Z3Solver
 from typing import Any, Dict, List, Optional, Type, Union
 
 SOLVER_TYPES = ['Solver', 'Solver supporting Unsat Cores',
@@ -96,7 +93,7 @@ class Factory(object):
         self._get_available_optimizers()
 
 
-    def get_solver(self, name: None=None, logic: Optional[Union[str, Logic]]=None, **options) -> Union[Z3Solver, MathSAT5Solver, CVC5Solver]:
+    def get_solver(self, name: None=None, logic: Optional[Union[str, Logic]]=None, **options) -> Solver:
         SolverClass, closer_logic = \
            self._get_solver_class(solver_list=self._all_solvers,
                                   solver_type="Solver",
@@ -203,7 +200,7 @@ class Factory(object):
                                          (solver_type, logic))
 
 
-    def _pick_favorite(self, preference_list: List[str], solver_list: Dict[str, Any], solvers: Dict[str, Any]) -> Union[Type[CVC5Solver], Type[Z3Solver], Type[MathSAT5Solver], Type[OptiMSATSolver]]:
+    def _pick_favorite(self, preference_list: List[str], solver_list: Dict[str, Any], solvers: Dict[str, Any]) -> Type[Solver]:
         for candidate in preference_list:
             if candidate in solvers:
                 return solver_list[candidate]
@@ -559,7 +556,7 @@ class Factory(object):
     ##
     ## Wrappers: These functions are exported in shortcuts
     ##
-    def Solver(self, name: None=None, logic: Optional[Union[str, Logic]]=None, **options) -> Union[Z3Solver, MathSAT5Solver, CVC5Solver]:
+    def Solver(self, name: None=None, logic: Optional[Union[str, Logic]]=None, **options) -> Solver:
         return self.get_solver(name=name,
                                logic=logic,
                                **options)

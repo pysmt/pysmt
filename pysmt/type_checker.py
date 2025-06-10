@@ -22,19 +22,20 @@ reasoning about the type of formulae.
  * The functions assert_*_args are useful for testing the type of
    arguments of a given function.
 """
+from typing import Any, List, Optional
+
+import pysmt
 import pysmt.walkers as walkers
 import pysmt.operators as op
 
 from pysmt.typing import PySMTType, BOOL, REAL, INT, BVType, ArrayType, STRING
 from pysmt.exceptions import PysmtTypeError
-from pysmt.environment import Environment
 from pysmt.fnode import FNode
-from typing import Any, List, Optional
 
 
 class SimpleTypeChecker(walkers.DagWalker):
 
-    def __init__(self, env: Optional[Environment]=None) -> None:
+    def __init__(self, env: Optional["pysmt.environment.Environment"]=None) -> None:
         walkers.DagWalker.__init__(self, env=env)
         # If `be_nice` is true, the `get_type` method will return None if
         # the type cannot be computed instead of than raising an exception.
@@ -43,7 +44,7 @@ class SimpleTypeChecker(walkers.DagWalker):
     def _get_key(self, formula: FNode, **kwargs) -> FNode:
         return formula
 
-    def get_type(self, formula: FNode) -> PySMTType:
+    def get_type(self, formula: FNode) -> Optional[PySMTType]:
         """ Returns the pysmt.types type of the formula """
         res = self.walk(formula)
         if not self.be_nice and res is None:

@@ -42,6 +42,7 @@ from pysmt.shortcuts import (Symbol, Function,
 from pysmt.typing import REAL, BOOL, INT, BV8, BV16, BVType, ARRAY_INT_INT
 from pysmt.typing import FunctionType, ArrayType, STRING
 from pysmt.constants import Fraction
+from typing import List
 
 
 Example = namedtuple('Example',
@@ -51,7 +52,7 @@ SExample = namedtuple('SimpleExample',
                       ['expr', 'is_valid', 'is_sat', 'logic'])
 
 
-def get_full_example_formulae(environment=None):
+def get_full_example_formulae(environment: None=None) -> List[Example]:
     """Return a list of Examples using the given environment."""
 
     if environment is None:

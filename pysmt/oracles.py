@@ -33,7 +33,6 @@ import pysmt.walkers as walkers
 import pysmt.operators as op
 
 from pysmt.logics import Logic, Theory, get_closer_pysmt_logic
-from pysmt.environment import Environment
 from pysmt.fnode import FNode
 from pysmt.typing import PySMTType, BOOL
 
@@ -55,7 +54,7 @@ class SizeOracle(walkers.DagWalker):
      MEASURE_SYMBOLS,
      MEASURE_BOOL_DAG) = range(6)
 
-    def __init__(self, env:     Optional[Environment]=None) -> None:
+    def __init__(self, env: Optional["pysmt.environment.Environment"]=None) -> None:
         walkers.DagWalker.__init__(self, env=env)
 
         self.measure_to_fun = \
@@ -528,7 +527,7 @@ class TypesOracle(walkers.DagWalker):
 # EOC TypesOracle
 
 
-def get_logic(formula: FNode, env: Optional[Environment]=None) -> Logic:
+def get_logic(formula: FNode, env: Optional["pysmt.environment.Environment"]=None) -> Logic:
     if env is None:
         env = pysmt.environment.get_env()
     # Get Quantifier Information

@@ -15,8 +15,9 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+import pysmt
+
 from pysmt.walkers.dag import DagWalker
-from pysmt.environment import Environment
 from pysmt.fnode import FNode
 from typing import Any, List, Optional, Union
 
@@ -29,7 +30,7 @@ class IdentityDagWalker(DagWalker):
 
     """
 
-    def __init__(self, env: Optional[Environment]=None, invalidate_memoization: Optional[bool]=None) -> None:
+    def __init__(self, env: Optional["pysmt.environment.Environment"]=None, invalidate_memoization: Optional[bool]=None) -> None:
         DagWalker.__init__(self,
                            env=env,
                            invalidate_memoization=invalidate_memoization)
