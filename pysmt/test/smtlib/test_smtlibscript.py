@@ -41,11 +41,11 @@ class TestSmtLibScript(TestCase):
         self.assertIsNotNone(SmtLibScript())
         self.assertTrue(len(script) > 0)
 
-        res = script.contains_command(smtcmd.SET_LOGIC)
-        self.assertTrue(res)
+        res_bool = script.contains_command(smtcmd.SET_LOGIC)
+        self.assertTrue(res_bool)
 
-        res = script.contains_command(smtcmd.CHECK_SAT)
-        self.assertFalse(res)
+        res_bool = script.contains_command(smtcmd.CHECK_SAT)
+        self.assertFalse(res_bool)
 
         res = script.count_command_occurrences(smtcmd.CHECK_SAT)
         self.assertEqual(res, 0, "Was expecting 0 occurrences of check-sat")
@@ -53,8 +53,8 @@ class TestSmtLibScript(TestCase):
         res = script.count_command_occurrences(smtcmd.SET_LOGIC)
         self.assertEqual(res, 1, "Was expecting 1 occurrences of set-logic")
 
-        res = script.filter_by_command_name([smtcmd.SET_LOGIC])
-        self.assertEqual(len(list(res)), 1)
+        res_it = script.filter_by_command_name([smtcmd.SET_LOGIC])
+        self.assertEqual(len(list(res_it)), 1)
 
 
     def test_declare_sort(self) -> None:
@@ -71,7 +71,7 @@ class TestSmtLibScript(TestCase):
                                    '(declare-const c1 (s1 Int))'])
         outstream = StringIO(smtlib_script)
         script = parser.get_script(outstream)
-        script.evaluate(solver=mock)
+        script.evaluate(solver=mock) # type: ignore[arg-type] # TODO check if there is a different way here; mock is not a solver
 
         self.assertEqual(len(mock.declare_sort_history), 2)
         s0_name, s0_arity = mock.declare_sort_history[0]
@@ -215,15 +215,15 @@ class TestSmtLibScript(TestCase):
                           smtcmd.POP]:
 
             inter.evaluate(SmtLibCommand(cmd_name, [None, None]),
-                             solver=mock)
+                             solver=mock) # type: ignore[arg-type] # mock is not a Solver # TODO check if there is a different way here; mock could become a Solver
 
         inter.evaluate(SmtLibCommand(smtcmd.DECLARE_FUN,
                                        [None, None, None]),
-                         solver=mock)
+                         solver=mock) # type: ignore[arg-type] # mock is not a Solver # TODO check if there is a different way here
 
         inter.evaluate(SmtLibCommand(smtcmd.DEFINE_FUN,
                                        [None, None, None, None]),
-                         solver=mock)
+                         solver=mock) # type: ignore[arg-type] # mock is not a Solver # TODO check if there is a different way here
 
 
     def test_smtlibignore_mixin(self) -> None:

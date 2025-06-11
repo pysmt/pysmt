@@ -22,6 +22,6 @@ from pysmt.cmd.installers.pico import PicoSATInstaller
 from pysmt.cmd.installers.bdd import CuddInstaller
 from pysmt.cmd.installers.optimsat import OptiMSatInstaller
 
-assert MSatInstaller and Z3Installer and CVC5Installer and YicesInstaller
-assert BtorInstaller and PicoSATInstaller and CuddInstaller and CVC4Installer
-assert OptiMSatInstaller
+assert MSatInstaller and Z3Installer and CVC5Installer and YicesInstaller # type: ignore [truthy-function] # TODO IDK what these assert mean
+assert BtorInstaller and PicoSATInstaller and CuddInstaller and CVC4Installer # type: ignore [truthy-function] # TODO IDK what these assert mean
+assert OptiMSatInstaller # type: ignore [truthy-function] # TODO IDK what these assert mean

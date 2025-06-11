@@ -23,6 +23,7 @@ from warnings import warn
 
 from pysmt import __version__
 from pysmt.shortcuts import *
+import pysmt.solvers
 from pysmt.typing import INT, REAL, BOOL, BVType, BV32
 
 from pysmt.smtlib.parser import SmtLibParser
@@ -99,7 +100,7 @@ class PysmtShell(object):
         # Enable infix notation in Interactive mode
         get_env().enable_infix_notation = True
         try:
-            import IPython
+            import IPython # type: ignore
             print(welcome_msg)
             IPython.embed()
         except ImportError:
@@ -144,10 +145,10 @@ class PysmtShell(object):
 
         if opt_name is not None:
             if opt_name == "auto":
-                solver = Optimizer(logic=logic)
+                solver: "pysmt.solvers.solver.Solver" = Optimizer(logic=logic)
             else:
                 solver = Optimizer(name=opt_name, logic=logic)
-            inter = InterpreterOMT()
+            inter: InterpreterSMT = InterpreterOMT()
         else:
             if s_name == "auto":
                 solver = Solver(logic=logic)

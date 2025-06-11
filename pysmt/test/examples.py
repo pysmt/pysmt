@@ -58,6 +58,7 @@ def get_full_example_formulae(environment: None=None) -> List[Example]:
     if environment is None:
         environment = get_env()
 
+    assert environment is not None
     with environment:
         x = Symbol("x", BOOL)
         y = Symbol("y", BOOL)

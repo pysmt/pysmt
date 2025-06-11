@@ -22,7 +22,7 @@ from pysmt.logics import Logic
 from typing import Callable, Optional, Tuple, Union
 
 try:
-    import unittest2 as unittest
+    import unittest2 as unittest # type: ignore[import]
 except ImportError:
     import unittest
 

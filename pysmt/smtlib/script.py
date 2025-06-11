@@ -26,6 +26,7 @@ from pysmt.smtlib.annotations import Annotations
 from pysmt.exceptions import (UnknownSmtLibCommandError, NoLogicAvailableError,
                               UndefinedLogicError, PysmtValueError)
 from pysmt.smtlib.printers import SmtPrinter, SmtDagPrinter, quote
+from pysmt.optimization.optimizer import Optimizer
 from pysmt.oracles import get_logic
 from pysmt.logics import get_closer_smtlib_logic, Logic, SMTLIB2_LOGICS
 from pysmt.environment import get_env
@@ -497,10 +498,10 @@ class InterpreterOMT(InterpreterSMT):
         self.optimization_goals = ([],[])
         self.opt_priority = "single-obj"
 
-    def evaluate(self, cmd: SmtLibCommand, solver: Solver) -> Any:
+    def evaluate(self, cmd: SmtLibCommand, solver: Union[Solver, Optimizer]) -> Any:
         return self._omt_evaluate(cmd, solver)
 
-    def _omt_evaluate(self, cmd: SmtLibCommand, optimizer: Solver) -> Any:
+    def _omt_evaluate(self, cmd: SmtLibCommand, optimizer: Union[Solver, Optimizer]) -> Any:
 
         if cmd.name == smtcmd.SET_OPTION:
             if cmd.args[0] == ":opt.priority":
@@ -521,6 +522,7 @@ class InterpreterOMT(InterpreterSMT):
                 # If there are no optimization objectives, then we default to normal SMT check-sat
                 return self._smt_evaluate(cmd, optimizer)
 
+            assert isinstance(optimizer, Optimizer)
             self.optimization_goals[1].clear()
             rt = False
             if self.opt_priority == "single-obj":
@@ -533,12 +535,14 @@ class InterpreterOMT(InterpreterSMT):
                     self.optimization_goals[1].append((g.term(), solver_res[1]))
 
             elif self.opt_priority == "pareto":
+                assert isinstance(optimizer, Optimizer)
                 for model, values in optimizer.pareto_optimize(self.optimization_goals[0]):
                     rt = True
                     for (g, v) in zip(self.optimization_goals[0], values):
                         self.optimization_goals[1].append((g.term(), v))
 
             elif self.opt_priority == "box":
+                assert isinstance(optimizer, Optimizer)
                 results = optimizer.boxed_optimize(self.optimization_goals[0])
                 if results is not None:
                     rt = True
@@ -546,6 +550,7 @@ class InterpreterOMT(InterpreterSMT):
                         self.optimization_goals[1].append((g.term(), results[g][1]))
 
             elif self.opt_priority == "lex":
+                assert isinstance(optimizer, Optimizer)
                 results = optimizer.lexicographic_optimize(self.optimization_goals[0])
                 if results is not None:
                     _, values = results
