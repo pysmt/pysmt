@@ -34,7 +34,7 @@ from pysmt.test.examples import get_example_formulae
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ALL_WRAPPERS = []
 
-for _, _, fnames in os.walk(BASE_DIR):
+for _, _, fnames in os.walk(BASE_DIR): # type: ignore[assignment] # TODO understand why there is this error
     for f in fnames:
         if f.endswith(".solver.sh"):
             name = os.path.basename(f)

@@ -24,7 +24,7 @@ from pysmt.exceptions import (SolverReturnedUnknownResultError, PysmtValueError,
 from pysmt.environment import Environment
 from pysmt.fnode import FNode
 from pysmt.logics import Logic
-from typing import List, Optional
+from typing import List, Optional, Type
 
 
 class Solver(object):
@@ -34,7 +34,7 @@ class Solver(object):
     LOGICS = []
 
     # Class defining options for the Solver
-    OptionsClass = SolverOptions
+    OptionsClass: Type[SolverOptions] = SolverOptions
 
     def __init__(self, environment: Environment, logic: Logic, **options) -> None:
         if logic is None:

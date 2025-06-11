@@ -74,7 +74,7 @@ class Annotations(object):
         return False
 
 
-    def annotations(self, formula: FNode) -> Optional[Union[Dict[str, Set[str]], Dict[str, Set[FNode]], Dict[str, Set[Any]]]]:
+    def annotations(self, formula: FNode) -> Optional[Dict[str, Set[Any]]]:
         """Returns a dictionary containing all the annotations for the given
         formula as keys and the respective values. None is returned if
         formula has no annotations.

@@ -22,6 +22,7 @@ they will be rewritten (during construction) in order to only use
 these operators.
 """
 from itertools import chain
+from typing import List
 
 
 ALL_TYPES = list(range(0,66))
@@ -115,7 +116,7 @@ ARRAY_OPERATORS = frozenset([ARRAY_SELECT, ARRAY_STORE, ARRAY_VALUE])
 
 THEORY_OPERATORS = IRA_OPERATORS | BV_OPERATORS | ARRAY_OPERATORS | STR_OPERATORS
 
-CUSTOM_NODE_TYPES = []
+CUSTOM_NODE_TYPES: List[int] = []
 
 assert (BOOL_OPERATORS | THEORY_OPERATORS | RELATIONS | \
         CONSTANTS | frozenset((SYMBOL, FUNCTION, ITE))) == frozenset(ALL_TYPES)

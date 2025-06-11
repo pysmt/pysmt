@@ -18,6 +18,9 @@
 import os
 import warnings
 
+from typing import Callable, Dict, Iterator, List, Optional, Tuple, Union
+
+from pysmt.optimization.goal import Goal
 from pysmt.test import SkipTest
 from pysmt.test.optimization_utils import OMTTestCase, OptimizationTypes
 from pysmt.shortcuts import get_env, reset_env, Int, Real, BV, SBV
@@ -29,7 +32,6 @@ from pysmt.logics import (Logic, QF_LIA, QF_LRA, LRA, QF_UFLIRA, QF_UFBV, QF_BV,
 from pysmt.exceptions import NoSolverAvailableError, SolverReturnedUnknownResultError
 from pysmt.fnode import FNode
 from pysmt.formula import FormulaManager
-from typing import Any, Callable, Iterator, List, Optional, Tuple
 
 
 def smtlib_tests(logic_pred: Callable) -> List[Tuple[str, Logic, bool]]:
@@ -225,7 +227,7 @@ def omt_test_cases_from_smtlib_test_set(logics: None=None) -> Iterator[OMTTestCa
                 if optimization_type == OptimizationTypes.BASIC:
                     assert len(parsed_goals) == len(expected_values)
                     for parsed_goal, expected_value in zip(parsed_goals, expected_values):
-                        key = (parsed_goal, ), optimization_type
+                        key: Tuple[Tuple[Goal, ...], OptimizationTypes] = (parsed_goal, ), optimization_type
                         expected_goals[key] = [expected_value]
                 else:
                     key = parsed_goals, optimization_type
@@ -236,7 +238,7 @@ def omt_test_cases_from_smtlib_test_set(logics: None=None) -> Iterator[OMTTestCa
         yield OMTTestCase(test_name, assumptions, logic, is_sat, expected_goals, env)
 
 
-def _extract_assumptions_and_objectives(mgr: FormulaManager, script: SmtLibScript) -> Any:
+def _extract_assumptions_and_objectives(mgr: FormulaManager, script: SmtLibScript) -> Tuple[List[FNode], Tuple[Goal, ...]]:
     goals = []
     formula, goals = script.get_last_formula(mgr, return_optimizations=True)
     assumptions = list(formula.args()) if formula.is_and() else [formula]
@@ -245,76 +247,77 @@ def _extract_assumptions_and_objectives(mgr: FormulaManager, script: SmtLibScrip
 
 
 # Directory with the optimal SMT-LIB test files
+FNode_or_Str = Union[FNode, str]
 OMTLIB_DIR = "pysmt/test/smtlib/omt/"
-OMTLIB_TEST_FILES = [
-    # (QF_LIA, "smtlib2_allsat.smt2", SAT, {
-    #     OptimizationTypes.LEXICOGRAPHIC: [Int(100), Int(100)],
-    #     OptimizationTypes.PARETO: [(Int(100), Int(100))],
-    #     OptimizationTypes.BOXED: [Int(100), Int(100)],
-    # }),
-    # (QF_LRA, "smtlib2_boxed.smt2", SAT, {
-    #     OptimizationTypes.BOXED: [Real(42.0), "unbounded", Real(24.0)],
-    #     OptimizationTypes.LEXICOGRAPHIC: [Real(42.0), Real(42.0), Real(24.0)],
-    # }),
-    # (QF_LRA, "smtlib2_boxed_variant.smt2", SAT, {
-    #     OptimizationTypes.BOXED: [Real(42.0), Real(24.0), Real(24.0)],
-    #     OptimizationTypes.LEXICOGRAPHIC: [Real(42.0), Real(24.0), Real(24.0)],
-    # }),
-    # (QF_LIA, "smtlib2_boxed_int.smt2", SAT, {
-    #     OptimizationTypes.BOXED: [Int(42), "unbounded", Int(24)],
-    #     OptimizationTypes.LEXICOGRAPHIC: [Int(42), Int(42), Int(24)],
-    # }),
-    # (QF_BV, "smtlib2_bitvector.smt2", SAT, {
-    #     OptimizationTypes.LEXICOGRAPHIC: [BV(8, 8), BV(8, 8)],
-    #     OptimizationTypes.PARETO: [(BV(8, 8), BV(8, 8)), (SBV(-105, 8), SBV(-105, 8))],
-    #     OptimizationTypes.BOXED: [BV(8, 8), SBV(-105, 8)],
-    # }),
-    # (QF_LIA, "smtlib2_combination.smt2", SAT, {
-    #     OptimizationTypes.BASIC: [Int(2)],
-    # }),
-    # (QF_LRA, "smtlib2_incremental.smt2", SAT, {
-    #     OptimizationTypes.BASIC: [Int(2)],
-    # }),
-    # (QF_LIA, "smtlib2_lexicographic.smt2", SAT, {
-    #     OptimizationTypes.BOXED: [Int(4150), Int(3)],
-    # }),
-    # (QF_LIA, "smtlib2_load_objective_model.smt2", SAT, {
-    #     OptimizationTypes.BOXED: [Int(3), Int(30)],
-    #     OptimizationTypes.PARETO: [ # TODO weird. if pareto is tested before boxed in optimsat it works, otherwise it fails
-    #         (Int(x), Int(2*x + 20)) for x in range(3, 6)
-    #     ],
-    #     OptimizationTypes.LEXICOGRAPHIC: [Int(3), Int(26)],
-    # }),
-    # (QF_LIA, "smtlib2_maxsmt.smt2", SAT, {
-    #     OptimizationTypes.BASIC: [Int(2)],
-    # }),
-    # (QF_LRA, "smtlib2_maxsmt_real_weight.smt2", SAT, {
-    #     OptimizationTypes.BASIC: [Real(1.0)],
-    # }),
-    # (QF_LRA, "smtlib2_pareto.smt2", SAT, {
-    #     OptimizationTypes.LEXICOGRAPHIC: [Real(3.0), Real(1.0)],
-    #     OptimizationTypes.BOXED: [Real(3.0), Real(3.0)],
-    #     OptimizationTypes.PARETO: [
-    #         (Real(float(x)), Real(float(4-x))) for x in range(1, 4)
-    #     ]
-    # }),
-    # (QF_LRA, "smtlib2_minmax_simple.smt2", SAT, {
-    #     OptimizationTypes.LEXICOGRAPHIC: [Real(17.0), Real(17.0)],
-    #     OptimizationTypes.BOXED: [Real(17.0), Real(42.0)],
-    # }),
-    # (QF_LIA, "clique.smt2", SAT, {
-    #     OptimizationTypes.BASIC: [Int(3)],
-    # }),
-    # (QF_LIA, "clique_bool.smt2", SAT, {
-    #     OptimizationTypes.BASIC: [Int(3)],
-    # }),
-    # (QF_LIA, "shortpath.smt2", SAT, {
-    #     OptimizationTypes.BASIC: [Int(17)],
-    # }),
-    # (QF_LIA, "coloring.smt2", SAT, {
-    #     OptimizationTypes.BASIC: [Int(7)],
-    # }),
-    # (QF_LIA, "vertex_cover.smt2", SAT, {
-    #     OptimizationTypes.BASIC: [Int(4)],
-    # }),
+OMTLIB_TEST_FILES: List[Tuple[Logic, str, bool, Dict[OptimizationTypes, List[Union[FNode_or_Str, Tuple[FNode_or_Str, ...]]]]]] = [
+    (QF_LIA, "smtlib2_allsat.smt2", SAT, {
+        OptimizationTypes.LEXICOGRAPHIC: [Int(100), Int(100)],
+        OptimizationTypes.PARETO: [(Int(100), Int(100))],
+        OptimizationTypes.BOXED: [Int(100), Int(100)],
+    }),
+    (QF_LRA, "smtlib2_boxed.smt2", SAT, {
+        OptimizationTypes.BOXED: [Real(42.0), "unbounded", Real(24.0)],
+        OptimizationTypes.LEXICOGRAPHIC: [Real(42.0), Real(42.0), Real(24.0)],
+    }),
+    (QF_LRA, "smtlib2_boxed_variant.smt2", SAT, {
+        OptimizationTypes.BOXED: [Real(42.0), Real(24.0), Real(24.0)],
+        OptimizationTypes.LEXICOGRAPHIC: [Real(42.0), Real(24.0), Real(24.0)],
+    }),
+    (QF_LIA, "smtlib2_boxed_int.smt2", SAT, {
+        OptimizationTypes.BOXED: [Int(42), "unbounded", Int(24)],
+        OptimizationTypes.LEXICOGRAPHIC: [Int(42), Int(42), Int(24)],
+    }),
+    (QF_BV, "smtlib2_bitvector.smt2", SAT, {
+        OptimizationTypes.LEXICOGRAPHIC: [BV(8, 8), BV(8, 8)],
+        OptimizationTypes.PARETO: [(BV(8, 8), BV(8, 8)), (SBV(-105, 8), SBV(-105, 8))],
+        OptimizationTypes.BOXED: [BV(8, 8), SBV(-105, 8)],
+    }),
+    (QF_LIA, "smtlib2_combination.smt2", SAT, {
+        OptimizationTypes.BASIC: [Int(2)],
+    }),
+    (QF_LRA, "smtlib2_incremental.smt2", SAT, {
+        OptimizationTypes.BASIC: [Int(2)],
+    }),
+    (QF_LIA, "smtlib2_lexicographic.smt2", SAT, {
+        OptimizationTypes.BOXED: [Int(4150), Int(3)],
+    }),
+    (QF_LIA, "smtlib2_load_objective_model.smt2", SAT, {
+        OptimizationTypes.BOXED: [Int(3), Int(30)],
+        OptimizationTypes.PARETO: [ # TODO weird. if pareto is tested before boxed in optimsat it works, otherwise it fails
+            (Int(x), Int(2*x + 20)) for x in range(3, 6)
+        ],
+        OptimizationTypes.LEXICOGRAPHIC: [Int(3), Int(26)],
+    }),
+    (QF_LIA, "smtlib2_maxsmt.smt2", SAT, {
+        OptimizationTypes.BASIC: [Int(2)],
+    }),
+    (QF_LRA, "smtlib2_maxsmt_real_weight.smt2", SAT, {
+        OptimizationTypes.BASIC: [Real(1.0)],
+    }),
+    (QF_LRA, "smtlib2_pareto.smt2", SAT, {
+        OptimizationTypes.LEXICOGRAPHIC: [Real(3.0), Real(1.0)],
+        OptimizationTypes.BOXED: [Real(3.0), Real(3.0)],
+        OptimizationTypes.PARETO: [
+            (Real(float(x)), Real(float(4-x))) for x in range(1, 4)
+        ]
+    }),
+    (QF_LRA, "smtlib2_minmax_simple.smt2", SAT, {
+        OptimizationTypes.LEXICOGRAPHIC: [Real(17.0), Real(17.0)],
+        OptimizationTypes.BOXED: [Real(17.0), Real(42.0)],
+    }),
+    (QF_LIA, "clique.smt2", SAT, {
+        OptimizationTypes.BASIC: [Int(3)],
+    }),
+    (QF_LIA, "clique_bool.smt2", SAT, {
+        OptimizationTypes.BASIC: [Int(3)],
+    }),
+    (QF_LIA, "shortpath.smt2", SAT, {
+        OptimizationTypes.BASIC: [Int(17)],
+    }),
+    (QF_LIA, "coloring.smt2", SAT, {
+        OptimizationTypes.BASIC: [Int(7)],
+    }),
+    (QF_LIA, "vertex_cover.smt2", SAT, {
+        OptimizationTypes.BASIC: [Int(4)],
+    }),
 ]

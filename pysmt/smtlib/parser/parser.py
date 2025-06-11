@@ -325,7 +325,7 @@ class SmtLibParser(object):
         self.interactive = interactive
 
         # Placeholders for fields filled by self._reset
-        self.cache = None
+        self.cache: SmtLibExecutionCache
         self.logic = None
         self._reset()
 
@@ -1381,6 +1381,7 @@ class SmtLibParser(object):
             bindings.append(x)  # remember the name
         # Parse expression using also parameters
         ebody = self.get_expression(tokens)
+        # assert ebody is not None
         ebody_type = self.env.stc.get_type(ebody)
         ebody_vars = self.env.fvo.get_free_variables(ebody)
         # Promote constant integer expression to real

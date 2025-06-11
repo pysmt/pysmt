@@ -19,8 +19,10 @@
 import warnings
 from collections import defaultdict, namedtuple
 from io import TextIOWrapper, StringIO
+from typing import Any, Iterator, List, Optional, Set, Tuple, Union
 
 import pysmt.smtlib.commands as smtcmd
+from pysmt.smtlib.annotations import Annotations
 from pysmt.exceptions import (UnknownSmtLibCommandError, NoLogicAvailableError,
                               UndefinedLogicError, PysmtValueError)
 from pysmt.smtlib.printers import SmtPrinter, SmtDagPrinter, quote
@@ -31,11 +33,7 @@ from pysmt.optimization.goal import MaximizationGoal, MinimizationGoal, MinMaxGo
 from pysmt.typing import _TypeDecl
 from pysmt.fnode import FNode
 from pysmt.formula import FormulaManager
-from pysmt.optimization.optimsat import OptiMSATSolver
-from pysmt.optimization.z3 import Z3NativeOptimizer
-from pysmt.solvers.msat import MathSAT5Solver
-from pysmt.solvers.z3 import Z3Solver
-from typing import Any, Iterator, List, Optional, Set, Tuple, Union
+from pysmt.solvers.solver import Solver
 
 
 def check_sat_filter(log: List[Union[Tuple[str, None], Tuple[str, bool]]]) -> bool:
@@ -196,7 +194,7 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
 class SmtLibScript(object):
 
     def __init__(self) -> None:
-        self.annotations = None
+        self.annotations: Optional[Annotations] = None
         self.commands = []
 
     def add(self, name: str, args: List[Optional[Union[Logic, _TypeDecl, FNode, str]]]) -> None:
@@ -207,7 +205,7 @@ class SmtLibScript(object):
     def add_command(self, command: SmtLibCommand) -> None:
         self.commands.append(command)
 
-    def evaluate(self, solver: Union[MathSAT5Solver, Z3Solver]) -> List[Union[Tuple[str, None], Tuple[str, bool]]]:
+    def evaluate(self, solver: Solver) -> List[Union[Tuple[str, None], Tuple[str, bool]]]:
         log = []
         inter = InterpreterOMT()
         for cmd in self.commands:
@@ -415,10 +413,10 @@ def smtlibscript_from_formula(formula: FNode, logic: Optional[Union[str, int, Lo
 
 class InterpreterSMT(object):
 
-    def evaluate(self, cmd: SmtLibCommand, solver: MathSAT5Solver) -> Optional[bool]:
+    def evaluate(self, cmd: SmtLibCommand, solver: Solver) -> Optional[bool]:
         return self._smt_evaluate(cmd, solver)
 
-    def _smt_evaluate(self, cmd: SmtLibCommand, solver: Union[MathSAT5Solver, Z3NativeOptimizer, Z3Solver, OptiMSATSolver]) -> Optional[bool]:
+    def _smt_evaluate(self, cmd: SmtLibCommand, solver: Solver) -> Optional[bool]:
         if cmd.name == smtcmd.SET_INFO:
             return solver.set_info(cmd.args[0], cmd.args[1])
 
@@ -499,10 +497,10 @@ class InterpreterOMT(InterpreterSMT):
         self.optimization_goals = ([],[])
         self.opt_priority = "single-obj"
 
-    def evaluate(self, cmd: SmtLibCommand, solver: Union[Z3NativeOptimizer, MathSAT5Solver, Z3Solver, OptiMSATSolver]) -> Any:
+    def evaluate(self, cmd: SmtLibCommand, solver: Solver) -> Any:
         return self._omt_evaluate(cmd, solver)
 
-    def _omt_evaluate(self, cmd: SmtLibCommand, optimizer: Union[Z3NativeOptimizer, Z3Solver, MathSAT5Solver, OptiMSATSolver]) -> Any:
+    def _omt_evaluate(self, cmd: SmtLibCommand, optimizer: Solver) -> Any:
 
         if cmd.name == smtcmd.SET_OPTION:
             if cmd.args[0] == ":opt.priority":

@@ -50,7 +50,7 @@ import pysmt.smtlib.printers
 
 # Import types from shortcuts
 from pysmt.typing import INT, BOOL, REAL, BVType, FunctionType, ArrayType, Type
-assert INT or BOOL or REAL or BVType or FunctionType or ArrayType or Type
+assert INT or BOOL or REAL or BVType or FunctionType or ArrayType or Type # type: ignore[truthy-function] # TODO what does this assert mean?
 
 
 def get_env() -> pysmt.environment.Environment:

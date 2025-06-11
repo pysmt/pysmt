@@ -141,7 +141,7 @@ class Theory(object):
             custom_type=self.custom_type or other.custom_type,
             strings=self.strings or other.strings)
 
-    def __eq__(self, other: "Theory") -> bool:
+    def __eq__(self, other) -> bool:
         if other is None or (not isinstance(other, Theory)):
             return False
         return (self.arrays == other.arrays and
@@ -256,7 +256,7 @@ class Logic(object):
     def __repr__(self) -> str:
         return str(self)
 
-    def __eq__(self, other: "Logic") -> bool:
+    def __eq__(self, other) -> bool:
         if other is None or (not isinstance(other, Logic)):
             return False
 
@@ -264,17 +264,17 @@ class Logic(object):
                 self.quantifier_free == other.quantifier_free and
                 self.theory == other.theory)
 
-    def __ne__(self, other: "Logic") -> bool:
+    def __ne__(self, other) -> bool:
         return not (self == other)
 
     def __lt__(self, other):
         return (self != other) and (self.__le__(other))
 
-    def __le__(self, other: "Logic") -> bool:
+    def __le__(self, other) -> bool:
         return (self.theory <= other.theory and
                 self.quantifier_free >= other.quantifier_free)
 
-    def __ge__(self, other: "Logic") -> bool:
+    def __ge__(self, other) -> bool:
         return (other.__le__(self))
 
     def __gt__(self, other):

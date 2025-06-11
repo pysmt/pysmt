@@ -228,30 +228,31 @@ class TestSmtLibScript(TestCase):
 
     def test_smtlibignore_mixin(self) -> None:
         """In SmtLibIgnoreMixin, all SMT-LIB methods return None."""
+        # TODO skipping type checks in this test file because it's not clear to me ATM what the methods of SmtLibSolver can accept
         class SmtLibIgnore(SmtLibIgnoreMixin):
             pass
 
         solver = SmtLibIgnore()
-        self.assertIsNone(solver.set_logic(None))
-        self.assertIsNone(solver.declare_fun(None))
-        self.assertIsNone(solver.declare_const(None))
-        self.assertIsNone(solver.define_fun(None, None, None, None))
-        self.assertIsNone(solver.declare_sort(None, None))
-        self.assertIsNone(solver.define_sort(None, None, None))
-        self.assertIsNone(solver.assert_(None))
-        self.assertIsNone(solver.get_assertions())
-        self.assertIsNone(solver.check_sat())
-        self.assertIsNone(solver.get_proof())
-        self.assertIsNone(solver.get_unsat_core())
-        self.assertIsNone(solver.get_values(None))
-        self.assertIsNone(solver.get_assignment())
-        self.assertIsNone(solver.push())
-        self.assertIsNone(solver.pop())
-        self.assertIsNone(solver.get_option(None))
-        self.assertIsNone(solver.set_option(None, None))
-        self.assertIsNone(solver.get_info(None))
-        self.assertIsNone(solver.set_info(None, None))
-        self.assertIsNone(solver.exit())
+        self.assertIsNone(solver.set_logic(None)) # type: ignore
+        self.assertIsNone(solver.declare_fun(None)) # type: ignore
+        self.assertIsNone(solver.declare_const(None)) # type: ignore
+        self.assertIsNone(solver.define_fun(None, None, None, None)) # type: ignore
+        self.assertIsNone(solver.declare_sort(None, None)) # type: ignore
+        self.assertIsNone(solver.define_sort(None, None, None)) # type: ignore
+        self.assertIsNone(solver.assert_(None)) # type: ignore
+        self.assertIsNone(solver.get_assertions()) # type: ignore
+        self.assertIsNone(solver.check_sat()) # type: ignore
+        self.assertIsNone(solver.get_proof()) # type: ignore
+        self.assertIsNone(solver.get_unsat_core()) # type: ignore
+        self.assertIsNone(solver.get_values(None)) # type: ignore
+        self.assertIsNone(solver.get_assignment()) # type: ignore
+        self.assertIsNone(solver.push()) # type: ignore
+        self.assertIsNone(solver.pop()) # type: ignore
+        self.assertIsNone(solver.get_option(None)) # type: ignore
+        self.assertIsNone(solver.set_option(None, None)) # type: ignore
+        self.assertIsNone(solver.get_info(None)) # type: ignore
+        self.assertIsNone(solver.set_info(None, None)) # type: ignore
+        self.assertIsNone(solver.exit()) # type: ignore
 
     def test_all_parsing(self) -> None:
         # Create a small file that tests all commands of smt-lib 2

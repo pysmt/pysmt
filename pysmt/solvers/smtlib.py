@@ -17,13 +17,15 @@
 #
 from pysmt.fnode import FNode
 from pysmt.logics import Logic
-from typing import Optional
+from typing import Optional, Union
+
+# type: ignore # TODO skipping type checks in this file because it's not clear to me ATM what the methods of SmtLibSolver can accept
 
 class SmtLibSolver(object):
     #
     # SMT-LIB 2 Interface
     #
-    def set_logic(self, logic):
+    def set_logic(self, logic: Optional[Union[str, Logic]]):
         """ Defines the logic in use.
 
         E.g., set_logic("QF_LIA")
@@ -37,7 +39,7 @@ class SmtLibSolver(object):
         """
         raise NotImplementedError
 
-    def declare_fun(self, symbol):
+    def declare_fun(self, symbol: FNode):
         """ Declare a function symbol.
 
         Restrictions: Only after set-logic.
@@ -48,7 +50,7 @@ class SmtLibSolver(object):
         """
         raise NotImplementedError
 
-    def declare_const(self, symbol):
+    def declare_const(self, symbol: FNode):
         """ Declares a constant symbol.
 
         Restrictions: Only after set-logic.
@@ -76,7 +78,7 @@ class SmtLibSolver(object):
         """
         raise NotImplementedError
 
-    def declare_sort(self, name, cardinality):
+    def declare_sort(self, name: Optional[str], cardinality: Optional[int]):
         """ Declares a new sort with the given name and cardinality.
 
         Restrictions: Only after set-logic.
@@ -211,7 +213,7 @@ class SmtLibSolver(object):
         """ Gets the value of a given information. """
         raise NotImplementedError
 
-    def set_info(self, name, value):
+    def set_info(self, name: Optional[str], value: Optional[str]):
         """ Sets the value for a given information.
 
         Required (by SMT):
@@ -247,7 +249,7 @@ class SmtLibIgnoreMixin(SmtLibSolver):
     def define_fun(self, name, args, rtype, expr):
         return None
 
-    def declare_sort(self, name: str, cardinality: int) -> None:
+    def declare_sort(self, name: Optional[str], cardinality: Optional[int]) -> None:
         return None
 
     def define_sort(self, name, args, sort_expr):
@@ -289,7 +291,7 @@ class SmtLibIgnoreMixin(SmtLibSolver):
     def get_info(self, name):
         return None
 
-    def set_info(self, name: str, value: str) -> None:
+    def set_info(self, name: Optional[str], value: Optional[str]) -> None:
         return None
 
     def exit(self):

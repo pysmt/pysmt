@@ -18,6 +18,8 @@
 import re
 import itertools
 
+from typing import Optional, TypeVar
+
 
 def all_assignments(bool_variables, env):
     """Generates all possible assignments for a set of boolean variables."""
@@ -77,3 +79,11 @@ def quote(name: str, style: str='|') -> str:
         return "%s%s%s" % (style, name, style)
     else:
         return name
+
+
+# utility function to narrow a type from Optional[T] to [T] without having to assert it is not None
+T = TypeVar("T")
+
+def assert_not_none(value: Optional[T]) -> T:
+    assert value is not None, "Value: '%s' must not be None" % str(value)
+    return value
