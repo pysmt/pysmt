@@ -25,7 +25,7 @@ from pysmt.logics import LIA, LRA, BV, QF_LIRA
 from pysmt.environment import Environment
 from pysmt.fnode import FNode
 from pysmt.solvers.solver import Model
-from typing import Any, Callable, Iterator, List, Optional, Tuple, Union, Sequence
+from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Union, Sequence
 
 
 class Optimizer(Solver):
@@ -33,7 +33,7 @@ class Optimizer(Solver):
     Interface for the optimization
     """
 
-    def optimize(self, goal, **kwargs):
+    def optimize(self, goal: Goal, **kwargs) -> Optional[Tuple[Model, FNode]]:
         """Returns a pair `(model, cost)` where `model` is an object
         obtained according to `goal` while satisfying all
         the formulae asserted in the optimizer, while `cost` is the
@@ -50,7 +50,7 @@ class Optimizer(Solver):
         """
         raise NotImplementedError
 
-    def pareto_optimize(self, goals):
+    def pareto_optimize(self, goals: Sequence[Goal]) -> Iterator[Tuple[Model, List[FNode]]]:
         """This function is a generator returning *all* the pareto-optimal
         solutions for the problem of minimizing the `goals`
         keeping the formulae asserted in this optimizer satisfied.
@@ -72,11 +72,11 @@ class Optimizer(Solver):
         """
         raise NotImplementedError
 
-    def lexicographic_optimize(self, goals):
+    def lexicographic_optimize(self, goals: Sequence[Goal]) -> Optional[Tuple[Model, List[FNode]]]:
         """
         This function returns a pair of (model, values) where 'values' is a list containing the optimal values
         (as pysmt constants) for each goal in 'goals'.
-        If there is no solution the function returns a pair (None,None)
+        If there is no solution the function returns 'None'
 
         The parameter 'goals' must be a list of 'Goals'(see file goal.py).
 
@@ -87,7 +87,7 @@ class Optimizer(Solver):
         """
         raise NotImplementedError
 
-    def boxed_optimize(self, goals):
+    def boxed_optimize(self, goals: Sequence[Goal]) -> Optional[Dict[Goal, Tuple[Model, FNode]]]:
         """
         This function returns dictionary where the keys are the goals of optimization. Each goal is mapped to a pair
         (model, value) of the current goal (key).
@@ -157,8 +157,8 @@ class Optimizer(Solver):
         else:
             raise PysmtValueError("Invalid optimization function type: %s" % otype)
 
-    def _compute_max_smt_cost(self, model: Model, goal: MaxSMTGoal) -> FNode:
-        assert goal.is_maxsmt_goal()
+    def _compute_max_smt_cost(self, model: Model, goal: Goal) -> FNode:
+        assert isinstance(goal, MaxSMTGoal)
         max_smt_weight = 0
         for soft_goal, weight in goal.soft:
             soft_goal_value = model.get_value(soft_goal)
@@ -449,14 +449,14 @@ class ExternalOptimizerMixin(Optimizer):
         `step_size` the minimum reolution for finding a solution. The
         optimum will be found in the proximity of `step_size`
         """
-        rt = None, None
+        rt = None
         if goal.is_maximization_goal() or goal.is_minimization_goal() or goal.is_maxsmt_goal():
             rt = self._optimize(goal, strategy)
         else:
             raise GoalNotSupportedError(self, goal)
         return rt
 
-    def boxed_optimize(self, goals: Sequence[Goal], strategy: str='linear') -> Any:
+    def boxed_optimize(self, goals: Sequence[Goal], strategy: str='linear') -> Optional[Dict[Goal, Tuple[Model, FNode]]]:
         rt = {}
         for goal in goals:
             if goal.is_maximization_goal() or goal.is_minimization_goal() or goal.is_maxsmt_goal():
@@ -469,7 +469,7 @@ class ExternalOptimizerMixin(Optimizer):
                 raise GoalNotSupportedError(self, goal)
         return rt
 
-    def lexicographic_optimize(self, goals: Sequence[Goal], strategy: str='linear') -> Tuple[Model, List[FNode]]:
+    def lexicographic_optimize(self, goals: Sequence[Goal], strategy: str='linear') -> Optional[Tuple[Model, List[FNode]]]:
         self._check_pareto_lexicographic_goals(goals, "lexicographic")
         rt = []
         client_data = self._setup()

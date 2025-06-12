@@ -18,7 +18,7 @@
 import re
 import itertools
 
-from typing import Optional, TypeVar
+from typing import Optional, TypeVar, cast
 
 
 def all_assignments(bool_variables, env):
@@ -86,4 +86,4 @@ T = TypeVar("T")
 
 def assert_not_none(value: Optional[T]) -> T:
     assert value is not None, "Value: '%s' must not be None" % str(value)
-    return value
+    return cast(T, value)

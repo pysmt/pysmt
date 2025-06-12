@@ -85,6 +85,9 @@ class Goal(object):
     def signed(self, value):
         self._bv_signed = value
 
+    def term(self) -> FNode:
+        raise NotImplementedError
+
 
 class MaximizationGoal(Goal):
     """

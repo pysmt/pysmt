@@ -11,7 +11,7 @@ from pysmt.optimization.goal import Goal
 from pysmt.environment import Environment
 from pysmt.logics import Logic
 from pysmt.solvers.solver import Model
-from typing import Any, Iterator, List, Optional, Set, Tuple, Type, Union
+from typing import Any, Iterator, List, Optional, Sequence, Set, Tuple, Type, Union
 
 FNode_or_Str = Union[FNode, str]
 
@@ -207,7 +207,8 @@ def _check_oracle_goal(goal: Goal, goal_value: FNode, cost: FNode, test_id_str: 
         "test_id: %s, goal: %s, oracle value: %s, cost returned: %s, extra: %s" % (test_id_str, str(goal), str(goal_value), str(cost), str(kwargs))
     )
 
-def _get_expected_raised_class(goals_value: Union[FNode_or_Str, Tuple[FNode_or_Str, ...]]) -> Optional[Type[PysmtException]]:
+
+def _get_expected_raised_class(goals_value: Union[FNode_or_Str, Sequence[FNode_or_Str]]) -> Optional[Type[PysmtException]]:
     raised_class: Optional[Type[PysmtException]] = None
     if isinstance(goals_value, str):
         if goals_value == "unbounded":
@@ -219,7 +220,7 @@ def _get_expected_raised_class(goals_value: Union[FNode_or_Str, Tuple[FNode_or_S
     return raised_class
 
 
-def check_lexicographic(optimizer: Optimizer, goals: Tuple[Goal, ...], goals_values: List[FNode], test_id_str: str, **kwargs) -> Optional[Tuple[Model, List[FNode]]]:
+def check_lexicographic(optimizer: Optimizer, goals: Sequence[Goal], goals_values: Sequence[FNode_or_Str], test_id_str: str, **kwargs) -> Optional[Tuple[Model, List[FNode]]]:
     raised_class = _get_expected_raised_class(goals_values[0])
     assert raised_class is None or len(goals_values) == 1, "test: %s, goals_values: %s" % (test_id_str, str(goals_values))
     if raised_class is None:
@@ -228,6 +229,7 @@ def check_lexicographic(optimizer: Optimizer, goals: Tuple[Goal, ...], goals_val
         _, costs = retval
         assert len(goals) == len(goals_values) == len(costs), test_id_str
         for goal, goal_value, cost in zip(goals, goals_values, costs):
+            assert isinstance(goal_value, FNode)
             _check_oracle_goal(goal, goal_value, cost, test_id_str, **kwargs)
         return retval
     elif not optimizer.can_diverge_for_unbounded_cases():
@@ -236,13 +238,13 @@ def check_lexicographic(optimizer: Optimizer, goals: Tuple[Goal, ...], goals_val
     return None
 
 
-def check_pareto(optimizer: Optimizer, goals: Tuple[Goal, ...], goals_values: List[Tuple[FNode, ...]], test_id_str: str, **kwargs) -> Optional[List[Tuple[Model, List[FNode]]]]:
+def check_pareto(optimizer: Optimizer, goals: Sequence[Goal], goals_values: Sequence[Sequence[FNode_or_Str]], test_id_str: str, **kwargs) -> Optional[List[Tuple[Model, List[FNode]]]]:
     raised_class = _get_expected_raised_class(goals_values[0])
     assert raised_class is None or len(goals_values) == 1, "test: %s, goals_values: %s" % (test_id_str, str(goals_values))
     if raised_class is None:
-        retval = optimizer.pareto_optimize(goals, **kwargs)
-        assert retval is not None, test_id_str
-        retval = list(retval)
+        iterator_retval = optimizer.pareto_optimize(goals, **kwargs)
+        assert iterator_retval is not None, test_id_str
+        retval = list(iterator_retval)
 
         sorted_costs = sorted((costs for _, costs in retval), key=str)
         sorted_goals_values = sorted(goals_values, key=str)
@@ -258,11 +260,11 @@ def check_pareto(optimizer: Optimizer, goals: Tuple[Goal, ...], goals_values: Li
         return retval
     elif not optimizer.can_diverge_for_unbounded_cases():
         with pytest.raises(raised_class):
-            return optimizer.pareto_optimize(goals, **kwargs)
+            return list(optimizer.pareto_optimize(goals, **kwargs))
     return None
 
 
-def check_boxed(optimizer: Optimizer, goals: Any, goals_values: List[Union[FNode, str]], test_id_str: str, also_test_basic: bool, **kwargs) -> Any:
+def check_boxed(optimizer: Optimizer, goals: Sequence[Goal], goals_values: Sequence[FNode_or_Str], test_id_str: str, also_test_basic: bool, **kwargs) -> Any:
     # extract which class should be raised by the boxed optimization
     raised_class = None
     for goal_value in goals_values:

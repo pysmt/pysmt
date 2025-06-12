@@ -22,6 +22,7 @@ from fractions import Fraction
 from warnings import warn
 
 from pysmt.decorators import clear_pending_pop
+from pysmt.solvers.solver import Model
 from pysmt.solvers.z3 import Z3Solver, Z3Model
 
 from pysmt.exceptions import PysmtInfinityError, \
@@ -33,29 +34,30 @@ from pysmt.optimization.optimizer import Optimizer, \
 from pysmt.environment import Environment
 from pysmt.fnode import FNode
 from pysmt.logics import Logic
-from pysmt.optimization.goal import MaxMinGoal, MaxSMTGoal, MaximizationGoal, MinMaxGoal, MinimizationGoal
-from typing import Any, Iterator, List, Optional, Tuple, Union
-from z3.z3 import OptimizeObjective
+from pysmt.optimization.goal import Goal, MaxSMTGoal
+from typing import Dict, Iterable, Iterator, List, Optional, Sequence, Tuple
 
 try:
-    import z3
+    import z3 # type: ignore[import]
+    from z3.z3 import OptimizeObjective # type: ignore[import]
 except ImportError:
     raise SolverAPINotFound
 
 
 class Z3NativeOptimizer(Optimizer, Z3Solver):
     # remove all theories that are not linear
-    LOGICS = set(filter(lambda x: x.theory.linear, Z3Solver.LOGICS))
+    LOGICS: Iterable[Logic] = set(filter(lambda x: x.theory.linear, Z3Solver.LOGICS))
 
     def __init__(self, environment: Environment, logic: Logic, **options) -> None:
         Z3Solver.__init__(self, environment=environment,
                           logic=logic, **options)
         self.z3 = z3.Optimize()
 
-    def _assert_z3_goal(self, goal: Union[MaxSMTGoal, MinMaxGoal, MaxMinGoal, MinimizationGoal, MaximizationGoal], goal_id: Optional[int] = None) -> OptimizeObjective:
+    def _assert_z3_goal(self, goal: Goal, goal_id: Optional[int] = None) -> OptimizeObjective:
         h = None
         if goal.is_maxsmt_goal():
             assert goal_id is not None
+            assert isinstance(goal, MaxSMTGoal)
             for soft, w in goal.soft:
                 obj_soft = self.converter.convert(soft)
                 w = w.constant_value()
@@ -78,7 +80,7 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
         return  h
 
     @clear_pending_pop
-    def optimize(self, goal: Union[MaxSMTGoal, MinMaxGoal, MaxMinGoal, MinimizationGoal, MaximizationGoal], **kwargs) -> Tuple[Z3Model, FNode]:
+    def optimize(self, goal: Goal, **kwargs) -> Optional[Tuple[Model, FNode]]:
         self.push()
         try:
             h = self._assert_z3_goal(goal, 0)
@@ -104,7 +106,7 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
             self.pop()
 
     @clear_pending_pop
-    def pareto_optimize(self, goals: Union[Tuple[MaximizationGoal, MaximizationGoal], Tuple[MinimizationGoal, MinimizationGoal], Tuple[MinimizationGoal, MaximizationGoal]]) -> Iterator[Tuple[Z3Model, List[FNode]]]:
+    def pareto_optimize(self, goals: Sequence[Goal]) -> Iterator[Tuple[Model, List[FNode]]]:
         self._check_pareto_lexicographic_goals(goals, "pareto")
         self.push()
         try:
@@ -121,7 +123,7 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
         return False
 
     @clear_pending_pop
-    def boxed_optimize(self, goals: Any) -> Any:
+    def boxed_optimize(self, goals: Sequence[Goal]) -> Optional[Dict[Goal, Tuple[Model, FNode]]]:
         # This implementation is a naive simulation of a box optimization,
         # but is needed to cope with an upstream Z3 issue:
         # https://github.com/Z3Prover/z3/issues/7240
@@ -151,7 +153,7 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
         return models
 
     @clear_pending_pop
-    def lexicographic_optimize(self, goals: Any) -> Tuple[Z3Model, List[FNode]]:
+    def lexicographic_optimize(self, goals: Sequence[Goal]) -> Optional[Tuple[Model, List[FNode]]]:
         self._check_pareto_lexicographic_goals(goals, "lexicographic")
         self.push()
         try:
