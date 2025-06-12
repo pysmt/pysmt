@@ -28,7 +28,7 @@ from pysmt.exceptions import UnknownSmtLibCommandError, PysmtSyntaxError
 from pysmt.exceptions import PysmtTypeError
 from pysmt.smtlib.script import SmtLibCommand, SmtLibScript
 from pysmt.smtlib.annotations import Annotations
-from pysmt.utils import interactive_char_iterator
+from pysmt.utils import interactive_char_iterator, assert_not_none
 from pysmt.constants import Fraction
 # TODO understand how to remove _TypeDecl
 from pysmt.typing import PartialType, PySMTType, _TypeDecl
@@ -103,8 +103,8 @@ class SmtLibExecutionCache(object):
     def unbind(self, name: str) -> None:
         """Unbinds the last binding of this symbol"""
         self.keys[name].pop()
-
-    def define(self, name: str, parameters: List[Union[Any, FNode]], expression: Union[PySMTType, FNode, PartialType]) -> None:
+    # TODO: expression can be a str? (in define)
+    def define(self, name: str, parameters: List[Union[Any, FNode]], expression: Union[PySMTType, FNode, PartialType, str]) -> None:
         self.definitions[name] = (parameters, expression)
 
     def _define_adapter(self, formal_parameters: List[FNode], expression: FNode) -> Callable:
@@ -1380,8 +1380,7 @@ class SmtLibParser(object):
             formal.append(v)  # remember the variable
             bindings.append(x)  # remember the name
         # Parse expression using also parameters
-        ebody = self.get_expression(tokens)
-        # assert ebody is not None
+        ebody: Union[str, FNode] = assert_not_none(self.get_expression(tokens))
         ebody_type = self.env.stc.get_type(ebody)
         ebody_vars = self.env.fvo.get_free_variables(ebody)
         # Promote constant integer expression to real

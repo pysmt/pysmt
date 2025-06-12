@@ -110,9 +110,12 @@ else:
     so_path = pyximport.build_module(name, path,
                                      pyxbuild_dir=build_dir)
     spec = importlib.util.spec_from_file_location(name, so_path) # type: ignore[attr-defined] # TODO understand why it is not defined for mypy
+    assert spec is not None
     module = importlib.util.module_from_spec(spec) # type: ignore[attr-defined] # TODO understand why it is not defined for mypy
     sys.modules[name] = module
-    spec.loader.exec_module(module)
+    loader = spec.loader
+    assert loader is not None
+    loader.exec_module(module)
     mod = sys.modules[name]
 
     assert mod.__file__ == so_path, (mod.__file__, so_path)
