@@ -21,15 +21,15 @@ from pysmt.exceptions import SolverAPINotFound
 from pysmt.environment import Environment
 from pysmt.fnode import FNode
 from pysmt.logics import Logic
-from pysmt.typing import PySMTType
-from typing import Any, List
+from pysmt.typing import PySMTType, _BVType, _ArrayType, _FunctionType
+from typing import Any, Dict, List, Union
 
 try:
-    import cvc5
+    import cvc5 # type: ignore[import]
 except ImportError:
     raise SolverAPINotFound
 
-from cvc5 import Kind
+from cvc5 import Kind # type: ignore[import]
 
 import pysmt.typing as types
 from pysmt.logics import PYSMT_LOGICS, ARRAYS_CONST_LOGICS
@@ -90,7 +90,7 @@ class CVC5Options(SolverOptions):
 
         #self._set_option(solver.cvc5, "nl-ext-tplanes", "true")
 
-
+        assert isinstance(self.solver_options, dict)
         for k,v in self.solver_options.items():
             self._set_option(solver.cvc5, str(k), str(v))
 
@@ -218,8 +218,8 @@ class CVC5Converter(Converter, DagWalker):
 
         self.cvc5 = cvc5
 
-        self.declared_vars = {}
-        self.backconversion = {}
+        self.declared_vars: Dict[Union[str, FNode], Any] = {}
+        self.backconversion = {} # type: ignore # TODO what is this used for?
         self.mgr = environment.formula_manager
         self._get_type = environment.stc.get_type
         return
@@ -498,15 +498,18 @@ class CVC5Converter(Converter, DagWalker):
         elif tp.is_int_type():
             return self.cvc5.getIntegerSort()
         elif tp.is_function_type():
+            assert isinstance(tp, _FunctionType)
             stps = [self._type_to_cvc5(x) for x in tp.param_types]
             rtp = self._type_to_cvc5(tp.return_type)
             return self.cvc5.mkFunctionSort(stps, rtp)
         elif tp.is_array_type():
+            assert isinstance(tp, _ArrayType)
             # Recursively convert the types of index and elem
             idx_cvc_type = self._type_to_cvc5(tp.index_type)
             elem_cvc_type = self._type_to_cvc5(tp.elem_type)
             return self.cvc5.mkArraySort(idx_cvc_type, elem_cvc_type)
         elif tp.is_bv_type():
+            assert isinstance(tp, _BVType)
             return self.cvc5.mkBitVectorSort(tp.width)
         elif tp.is_string_type():
             return self.cvc5.getStringSort()

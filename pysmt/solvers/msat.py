@@ -42,7 +42,7 @@ from pysmt.environment import Environment
 from pysmt.fnode import FNode
 from pysmt.formula import FormulaManager
 from pysmt.typing import PySMTType
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, Iterable, List, Optional
 
 class MSatEnv():
     """A wrapper for the msat_env object.
@@ -179,7 +179,7 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
 
     __lib_name__ = "mathsat"
 
-    LOGICS = PYSMT_QF_LOGICS -\
+    LOGICS: Iterable[Logic] = PYSMT_QF_LOGICS -\
              set(l for l in PYSMT_QF_LOGICS \
                  if not l.theory.linear or l.theory.strings)
 

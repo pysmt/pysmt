@@ -20,7 +20,7 @@ from __future__ import absolute_import
 from pysmt.exceptions import SolverAPINotFound
 
 try:
-    import CVC4
+    import CVC4 # type: ignore[import]
 except ImportError:
     raise SolverAPINotFound
 

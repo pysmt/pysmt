@@ -19,7 +19,7 @@
 import warnings
 from collections import defaultdict, namedtuple
 from io import TextIOWrapper, StringIO
-from typing import Any, Iterator, List, Optional, Set, Tuple, Union
+from typing import Any, Dict, Iterator, List, Optional, Set, TextIO, Tuple, Union
 
 import pysmt.smtlib.commands as smtcmd
 from pysmt.smtlib.annotations import Annotations
@@ -30,14 +30,15 @@ from pysmt.optimization.optimizer import Optimizer
 from pysmt.oracles import get_logic
 from pysmt.logics import get_closer_smtlib_logic, Logic, SMTLIB2_LOGICS
 from pysmt.environment import get_env
-from pysmt.optimization.goal import MaximizationGoal, MinimizationGoal, MinMaxGoal, MaxMinGoal, MaxSMTGoal
+from pysmt.optimization.goal import MaximizationGoal, MinimizationGoal, MinMaxGoal, MaxMinGoal, MaxSMTGoal, Goal
 from pysmt.typing import _TypeDecl
 from pysmt.fnode import FNode
 from pysmt.formula import FormulaManager
 from pysmt.solvers.solver import Solver
 
+PrinterType = Union[SmtPrinter, SmtDagPrinter]
 
-def check_sat_filter(log: List[Union[Tuple[str, None], Tuple[str, bool]]]) -> bool:
+def check_sat_filter(log: List[Tuple[str, Optional[Union[bool, Goal, List[Tuple[FNode, FNode]]]]]]) -> bool:
     """
     Returns the result of the check-sat command from a log.
 
@@ -45,11 +46,13 @@ def check_sat_filter(log: List[Union[Tuple[str, None], Tuple[str, bool]]]) -> bo
     """
     filtered = [(x,y) for x,y in log if x == smtcmd.CHECK_SAT]
     assert len(filtered) == 1
-    return filtered[0][1]
+    retval = filtered[0][1]
+    assert isinstance(retval, bool)
+    return retval
 
 
 class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
-    def serialize(self, outstream: Optional[StringIO]=None, printer: Optional[SmtDagPrinter]=None, daggify: bool=True) -> None:
+    def serialize(self, outstream: Optional[TextIO]=None, printer: Optional[PrinterType]=None, daggify: bool=True) -> None:
         """Serializes the SmtLibCommand into outstream using the given printer.
 
         Exactly one of outstream or printer must be specified. When
@@ -71,6 +74,7 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
             assert (outstream is not None and printer is not None) or \
                    (outstream is None and printer is None), \
                    "Exactly one of outstream and printer must be set."
+        assert outstream is not None and printer is not None
 
         if self.name == smtcmd.SET_OPTION:
             outstream.write("(%s %s %s)" % (self.name,self.args[0],self.args[1]))
@@ -196,7 +200,7 @@ class SmtLibScript(object):
 
     def __init__(self) -> None:
         self.annotations: Optional[Annotations] = None
-        self.commands = []
+        self.commands: List[SmtLibCommand] = []
 
     def add(self, name: str, args: List[Optional[Union[Logic, _TypeDecl, FNode, str]]]) -> None:
         """Adds a new SmtLibCommand with the given name and arguments."""
@@ -206,7 +210,7 @@ class SmtLibScript(object):
     def add_command(self, command: SmtLibCommand) -> None:
         self.commands.append(command)
 
-    def evaluate(self, solver: Solver) -> List[Union[Tuple[str, None], Tuple[str, bool]]]:
+    def evaluate(self, solver: Solver) -> List[Tuple[str, Optional[Union[bool, Goal, List[Tuple[FNode, FNode]]]]]]:
         log = []
         inter = InterpreterOMT()
         for cmd in self.commands:
@@ -257,12 +261,12 @@ class SmtLibScript(object):
         script and the second element is the tuple containing the last goals
         defined.
         """
-        stack = []
-        backtrack = []
-        goals = []
-        goals_backtrack = []
-        max_smt_goals = {}
-        max_smt_goals_backtrack = defaultdict(list)
+        stack: List[FNode] = []
+        backtrack: List[int] = []
+        goals: List[Goal] = []
+        goals_backtrack: List[int] = []
+        max_smt_goals: Dict[Optional[str], Tuple[int, MaxSMTGoal]] = {}
+        max_smt_goals_backtrack: Dict[Optional[str], List[int]] = defaultdict(list)
         if mgr is None:
             mgr = get_env().formula_manager
 
@@ -331,7 +335,7 @@ class SmtLibScript(object):
     def serialize(self, outstream: Union[TextIOWrapper, StringIO], daggify: bool=True) -> None:
         """Serializes the SmtLibScript expanding commands"""
         if daggify:
-            printer = SmtDagPrinter(outstream, annotations=self.annotations)
+            printer: PrinterType = SmtDagPrinter(outstream, annotations=self.annotations)
         else:
             printer = SmtPrinter(outstream, annotations=self.annotations)
 
@@ -370,7 +374,7 @@ def smtlibscript_from_formula(formula: FNode, logic: Optional[Union[str, int, Lo
         # Get the simplest SmtLib logic that contains the formula
         f_logic = get_logic(formula)
 
-        smt_logic = None
+        smt_logic: Optional[Union[Logic, str]] = None
         try:
             smt_logic = get_closer_smtlib_logic(f_logic)
         except NoLogicAvailableError:
@@ -414,24 +418,24 @@ def smtlibscript_from_formula(formula: FNode, logic: Optional[Union[str, int, Lo
 
 class InterpreterSMT(object):
 
-    def evaluate(self, cmd: SmtLibCommand, solver: Solver) -> Optional[bool]:
+    def evaluate(self, cmd: SmtLibCommand, solver: Solver) -> Optional[Union[bool, Goal, List[Tuple[FNode, FNode]]]]:
         return self._smt_evaluate(cmd, solver)
 
-    def _smt_evaluate(self, cmd: SmtLibCommand, solver: Solver) -> Optional[bool]:
+    def _smt_evaluate(self, cmd: SmtLibCommand, solver: Solver) -> Optional[Union[bool, Goal, List[Tuple[FNode, FNode]]]]:
         if cmd.name == smtcmd.SET_INFO:
-            return solver.set_info(cmd.args[0], cmd.args[1])
+            return solver.set_info(cmd.args[0], cmd.args[1]) # type: ignore[attr-defined] # TODO These method are defined in the class SmtLibSolver. Should the solver class be this instead of solver?
 
         if cmd.name == smtcmd.SET_OPTION:
             opt = cmd.args[0]
             if opt[0] == ':':
                 opt = opt[1:]
-            return solver.set_option(opt, cmd.args[1])
+            return solver.set_option(opt, cmd.args[1]) # type: ignore[attr-defined] # TODO These method are defined in the class SmtLibSolver. Should the solver class be this instead of solver?
 
         elif cmd.name == smtcmd.ASSERT:
-            return solver.assert_(cmd.args[0])
+            return solver.assert_(cmd.args[0]) # type: ignore[attr-defined] # TODO These method are defined in the class SmtLibSolver. Should the solver class be this instead of solver?
 
         elif cmd.name == smtcmd.CHECK_SAT:
-            return solver.check_sat()
+            return solver.check_sat() # type: ignore[attr-defined] # TODO These method are defined in the class SmtLibSolver. Should the solver class be this instead of solver?
 
         elif cmd.name == smtcmd.RESET_ASSERTIONS:
             return solver.reset_assertions()
@@ -446,27 +450,28 @@ class InterpreterSMT(object):
             return solver.pop(cmd.args[0])
 
         elif cmd.name == smtcmd.EXIT:
-            return solver.exit()
+            solver.exit() # TODO makes mypy happy, but is this a problem? error: "exit" of "Solver" does not return a value (it only ever returns None)  [func-returns-value]
+            return None
 
         elif cmd.name == smtcmd.SET_LOGIC:
             name = cmd.args[0]
-            return solver.set_logic(name)
+            return solver.set_logic(name) # type: ignore[attr-defined] # TODO These method are defined in the class SmtLibSolver. Should the solver class be this instead of solver?
 
         elif cmd.name == smtcmd.DECLARE_FUN:
-            return solver.declare_fun(cmd.args[0])
+            return solver.declare_fun(cmd.args[0]) # type: ignore[attr-defined] # TODO These method are defined in the class SmtLibSolver. Should the solver class be this instead of solver?
 
         elif cmd.name == smtcmd.DECLARE_CONST:
-            return solver.declare_const(cmd.args[0])
+            return solver.declare_const(cmd.args[0]) # type: ignore[attr-defined] # TODO These method are defined in the class SmtLibSolver. Should the solver class be this instead of solver?
 
         elif cmd.name == smtcmd.DEFINE_FUN:
             (var, formals, typename, body) = cmd.args
-            return solver.define_fun(var, formals, typename, body)
+            return solver.define_fun(var, formals, typename, body) # type: ignore[attr-defined] # TODO These method are defined in the class SmtLibSolver. Should the solver class be this instead of solver?
 
         elif cmd.name == smtcmd.ECHO:
             return cmd.args[0]
 
         elif cmd.name == smtcmd.CHECK_SAT_ASSUMING:
-            return solver.check_sat(cmd.args)
+            return solver.check_sat(cmd.args) # type: ignore[attr-defined] # TODO These method are defined in the class SmtLibSolver. Should the solver class be this instead of solver?
 
         elif cmd.name == smtcmd.GET_MODEL:
             return solver.get_model()
@@ -474,15 +479,10 @@ class InterpreterSMT(object):
         elif cmd.name == smtcmd.DECLARE_SORT:
             name = cmd.args[0].name
             arity = cmd.args[0].arity
-            return solver.declare_sort(name, arity)
+            return solver.declare_sort(name, arity) # type: ignore[attr-defined] # TODO These method are defined in the class SmtLibSolver. Should the solver class be this instead of solver?
 
         elif cmd.name == smtcmd.GET_UNSAT_CORE:
-            return solver.get_unsat_core()
-
-        elif cmd.name == smtcmd.DECLARE_SORT:
-            name = cmd.args[0].name
-            arity = cmd.args[0].arity
-            return solver.declare_sort(name, arity)
+            return solver.get_unsat_core() # type: ignore[attr-defined] # TODO These method are defined in the class SmtLibSolver. Should the solver class be this instead of solver?
 
         elif cmd.name in smtcmd.ALL_COMMANDS:
             raise NotImplementedError("'%s' is a valid SMT-LIB command "\
@@ -495,27 +495,27 @@ class InterpreterSMT(object):
 class InterpreterOMT(InterpreterSMT):
 
     def __init__(self) -> None:
-        self.optimization_goals = ([],[])
+        self.optimization_goals: Tuple[List[Goal], List[Tuple[FNode, FNode]]] = ([], [])
         self.opt_priority = "single-obj"
 
-    def evaluate(self, cmd: SmtLibCommand, solver: Union[Solver, Optimizer]) -> Any:
+    def evaluate(self, cmd: SmtLibCommand, solver: Union[Solver, Optimizer]) -> Optional[Union[bool, Goal, List[Tuple[FNode, FNode]]]]:
         return self._omt_evaluate(cmd, solver)
 
-    def _omt_evaluate(self, cmd: SmtLibCommand, optimizer: Union[Solver, Optimizer]) -> Any:
-
+    def _omt_evaluate(self, cmd: SmtLibCommand, optimizer: Union[Solver, Optimizer]) -> Optional[Union[bool, Goal, List[Tuple[FNode, FNode]]]]:
         if cmd.name == smtcmd.SET_OPTION:
             if cmd.args[0] == ":opt.priority":
                 self.opt_priority = cmd.args[1]
+            return None
 
         elif cmd.name == smtcmd.MAXIMIZE:
-            rt = MaximizationGoal(cmd.args[0])
-            self.optimization_goals[0].append(rt)
-            return rt
+            g: Goal = MaximizationGoal(cmd.args[0])
+            self.optimization_goals[0].append(g)
+            return g
 
         elif cmd.name == smtcmd.MINIMIZE:
-            rt = MinimizationGoal(cmd.args[0])
-            self.optimization_goals[0].append(rt)
-            return rt
+            g = MinimizationGoal(cmd.args[0])
+            self.optimization_goals[0].append(g)
+            return g
 
         elif cmd.name == smtcmd.CHECK_SAT:
             if len(self.optimization_goals[0]) == 0:
@@ -543,31 +543,31 @@ class InterpreterOMT(InterpreterSMT):
 
             elif self.opt_priority == "box":
                 assert isinstance(optimizer, Optimizer)
-                results = optimizer.boxed_optimize(self.optimization_goals[0])
-                if results is not None:
+                boxed_results = optimizer.boxed_optimize(self.optimization_goals[0])
+                if boxed_results is not None:
                     rt = True
                     for g in self.optimization_goals[0]:
-                        self.optimization_goals[1].append((g.term(), results[g][1]))
+                        self.optimization_goals[1].append((g.term(), boxed_results[g][1]))
 
             elif self.opt_priority == "lex":
                 assert isinstance(optimizer, Optimizer)
-                results = optimizer.lexicographic_optimize(self.optimization_goals[0])
-                if results is not None:
-                    _, values = results
+                lex_results = optimizer.lexicographic_optimize(self.optimization_goals[0])
+                if lex_results is not None:
+                    _, values = lex_results
                     rt = True
-                    for (g,v) in zip(self.optimization_goals[0], values):
+                    for (g, v) in zip(self.optimization_goals[0], values):
                         self.optimization_goals[1].append((g.term(), v))
             return rt
 
         elif cmd.name == smtcmd.MAXMIN:
-            rt = MaxMinGoal(cmd.args[0])
-            self.optimization_goals[0].append(rt)
-            return rt
+            g = MaxMinGoal(cmd.args[0])
+            self.optimization_goals[0].append(g)
+            return g
 
         elif cmd.name == smtcmd.MINMAX:
-            rt = MinMaxGoal(cmd.args[0])
-            self.optimization_goals[0].append(rt)
-            return rt
+            g = MinMaxGoal(cmd.args[0])
+            self.optimization_goals[0].append(g)
+            return g
 
         elif cmd.name == smtcmd.GET_OBJECTIVES:
             return self.optimization_goals[1]

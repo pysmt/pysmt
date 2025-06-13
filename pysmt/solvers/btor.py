@@ -22,7 +22,7 @@ from math import log, ceil
 from pysmt.exceptions import SolverAPINotFound
 
 try:
-    import pyboolector
+    import pyboolector # type: ignore[import]
 
     # Fixing interface for cython 3.1+
     #

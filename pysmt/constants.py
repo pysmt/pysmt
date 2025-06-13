@@ -77,7 +77,7 @@ FractionClassType: TypeAlias = Type[pyFraction] # TODO CHECK THIS
 FractionClass = type(Fraction(1,2))
 
 
-def is_pysmt_fraction(var: Union[Tuple[int, int], FractionClassType, int, float]) -> bool:
+def is_pysmt_fraction(var: Any) -> bool:
     """Tests whether var is a Fraction.
 
     This takes into account the class being used to represent the Fraction.
@@ -94,7 +94,7 @@ else:
 IntegerClass = type(Integer(1))
 
 
-def is_pysmt_integer(var: int) -> bool:
+def is_pysmt_integer(var: Any) -> bool:
     """Tests whether var is an Integer.
 
     This takes into account the class being used to represent the Integer.
@@ -114,7 +114,7 @@ def is_python_integer(var: Any) -> bool:
     return False
 
 
-def is_python_rational(var: Union[float, int, FractionClassType]) -> bool:
+def is_python_rational(var: Any) -> bool:
     """Tests whether var is a Rational.
 
     This accounts for: long, int, float, Fraction, mpz, mpq (if available).
@@ -130,7 +130,7 @@ def is_python_rational(var: Union[float, int, FractionClassType]) -> bool:
     return False
 
 
-def is_python_boolean(var):
+def is_python_boolean(var: Any):
     """Tests whether var is a Boolean."""
     return var is True or var is False
 

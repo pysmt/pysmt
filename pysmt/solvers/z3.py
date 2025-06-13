@@ -22,7 +22,7 @@ from pysmt.environment import Environment
 from pysmt.fnode import FNode
 from pysmt.logics import Logic
 from pysmt.typing import PySMTType
-from typing import Any, List, Optional, Sequence, Type
+from typing import Any, Iterable, List, Optional, Sequence, Type
 
 try:
     import z3
@@ -146,7 +146,7 @@ class Z3Options(SolverOptions):
 class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
                SmtLibBasicSolver, SmtLibIgnoreMixin):
 
-    LOGICS = PYSMT_LOGICS - set(x for x in PYSMT_LOGICS if x.theory.strings)
+    LOGICS: Iterable[Logic] = PYSMT_LOGICS - set(x for x in PYSMT_LOGICS if x.theory.strings)
     OptionsClass = Z3Options
 
     SOLVERFOR_LOGIC_NAMES=['AUFLIA', 'ALIA', 'AUFLIRA', 'AUFNIRA', 'LRA', 'LIA', 'NIA',

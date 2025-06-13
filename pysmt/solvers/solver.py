@@ -24,14 +24,14 @@ from pysmt.exceptions import (SolverReturnedUnknownResultError, PysmtValueError,
 from pysmt.environment import Environment
 from pysmt.fnode import FNode
 from pysmt.logics import Logic
-from typing import List, Optional, Type
+from typing import Iterable, List, Optional, Type
 
 
 class Solver(object):
     """Represents a generic SMT Solver."""
 
     # Define the supported logics for the Solver
-    LOGICS = []
+    LOGICS: Iterable[Logic] = []
 
     # Class defining options for the Solver
     OptionsClass: Type[SolverOptions] = SolverOptions

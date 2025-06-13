@@ -15,8 +15,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from functools import partial
-from io import TextIOWrapper, StringIO
+from io import StringIO
+from typing import Callable, List, Optional, TextIO
 
 import pysmt.operators as op
 from pysmt.environment import get_env
@@ -24,7 +24,6 @@ from pysmt.walkers import TreeWalker, DagWalker, handles
 from pysmt.utils import quote
 from pysmt.fnode import FNode
 from pysmt.smtlib.annotations import Annotations
-from typing import Callable, List, Optional, Union
 
 def write_annotations(f: Callable) -> Callable:
     def resf(self, formula, *args, **kwargs):
@@ -60,7 +59,7 @@ def write_annotations_dag(f: Callable) -> Callable:
 
 class SmtPrinter(TreeWalker):
 
-    def __init__(self, stream, annotations=None):
+    def __init__(self, stream: TextIO, annotations=None):
         TreeWalker.__init__(self)
         self.stream = stream
         self.write = self.stream.write
@@ -328,7 +327,7 @@ class SmtPrinter(TreeWalker):
 
 class SmtDagPrinter(DagWalker):
 
-    def __init__(self, stream: Union[TextIOWrapper, StringIO], template: str=".def_%d", annotations: Optional[Annotations]=None) -> None:
+    def __init__(self, stream: TextIO, template: str=".def_%d", annotations: Optional[Annotations]=None) -> None:
         DagWalker.__init__(self, invalidate_memoization=True)
         self.stream = stream
         self.write = self.stream.write
