@@ -336,7 +336,7 @@ class TheoryOracle(walkers.DagWalker):
 
         # Check for non-linear
         _, right = formula.args()
-        if len(right.get_free_variables() != 0):
+        if len(right.get_free_variables()) != 0:
             theory_out.set_linear(False)
 
         theory_out = theory_out.set_difference_logic(False)
