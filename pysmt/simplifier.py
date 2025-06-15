@@ -1044,6 +1044,17 @@ class Simplifier(pysmt.walkers.DagWalker):
 
         return self.manager.Div(sl, sr)
 
+    def walk_mod(self, formula, args, **kwargs):
+        sl = args[0]
+        sr = args[1]
+
+        # Should be int int, via typechecker
+        if sl.is_constant() and sr.is_constant():
+            l = sl.constant_value()
+            r = sr.constant_value()
+
+            return self.mananger.Int(l % r)
+
     @handles(op.SYMBOL)
     @handles(op.REAL_CONSTANT, op.INT_CONSTANT, op.BOOL_CONSTANT)
     @handles(op.BV_CONSTANT, op.STR_CONSTANT, op.ALGEBRAIC_CONSTANT)
