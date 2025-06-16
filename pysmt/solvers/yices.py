@@ -16,17 +16,18 @@
 #   limitations under the License.
 #
 import atexit
+from fractions import Fraction as pyFraction
 from warnings import warn
 
 from pysmt.exceptions import SolverAPINotFound
-from pysmt.typing import PySMTType
+from pysmt.typing import PySMTType, _FunctionType, _BVType
 from pysmt.environment import Environment
 from pysmt.fnode import FNode
 from pysmt.solvers.eager import EagerModel
-from typing import List, Optional
+from typing import Any, Dict, List, Optional, Set, cast
 
 try:
-    import yices_api
+    import yices_api # type: ignore[import]
 except ImportError:
     raise SolverAPINotFound
 
@@ -48,7 +49,7 @@ import pysmt.logics
 def init() -> None:
     if not getattr(init, 'initialized', False):
         yices_api.yices_init()
-    init.initialized = True
+    init.initialized = True #type: ignore[attr-defined] # TODO understand how to handle this
 
 def reset_yices():
     yices_api.yices_reset()
@@ -140,18 +141,20 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
                  if not l.theory.linear or l.theory.strings)
     OptionsClass = YicesOptions
 
-    def __init__(self, environment: Environment, logic:     pysmt.logics.Logic, **options) -> None:
+    def __init__(self, environment: Environment, logic: pysmt.logics.Logic, **options) -> None:
         Solver.__init__(self,
                         environment=environment,
                         logic=logic,
                         **options)
 
-        self.declarations = set()
+        self.declarations: Set[FNode] = set()
         self.yices_config = yices_api.yices_new_config()
         if yices_api.yices_default_config_for_logic(self.yices_config,
                                                     yices_logic(logic)) != 0:
             warn("Error setting config for logic %s" % logic)
+        self.yices_params: Any # This is set in the self.options(self) call
         self.options(self)
+        assert isinstance(self.options, YicesOptions)
         self.yices = yices_api.yices_new_context(self.yices_config)
         self.options.set_params(self)
         yices_api.yices_free_config(self.yices_config)
@@ -310,15 +313,15 @@ class YicesConverter(Converter, DagWalker):
 
     def __init__(self, environment: Environment) -> None:
         DagWalker.__init__(self, environment)
-        self.backconversion = {}
+        self.backconversion = {} # type: ignore # TODO what is this used for?
         self.mgr = environment.formula_manager
         self._get_type = environment.stc.get_type
 
         # Maps a Symbol into the corresponding internal yices instance
-        self.symbol_to_decl = {}
+        self.symbol_to_decl: Dict[FNode, Any] = {}
         # Maps an internal yices instance into the corresponding symbol
-        self.decl_to_symbol = {}
-        self._yicesSort = {}
+        self.decl_to_symbol: Dict[Any, FNode] = {}
+        self._yicesSort: Dict[str, Any] = {}
 
     @catch_conversion_error
     def convert(self, formula: FNode) -> int:
@@ -388,7 +391,7 @@ class YicesConverter(Converter, DagWalker):
         return res
 
     def walk_real_constant(self, formula: FNode, **kwargs) -> int:
-        frac = formula.constant_value()
+        frac = cast(pyFraction, formula.constant_value())
         n,d = frac.numerator, frac.denominator
         rep = str(n) + "/" + str(d)
         res = yices_api.yices_parse_rational(rep)
@@ -465,10 +468,10 @@ class YicesConverter(Converter, DagWalker):
             self._check_term_result(res)
         return res
 
-    def walk_toreal(self, formula, args, **kwargs):
+    def walk_toreal(self, formula: FNode, args, **kwargs):
         return args[0]
 
-    def walk_function(self, formula, args, **kwargs):
+    def walk_function(self, formula: FNode, args, **kwargs):
         name = formula.function_name()
         if name not in self.symbol_to_decl:
             self.declare_variable(name)
@@ -482,7 +485,7 @@ class YicesConverter(Converter, DagWalker):
     def walk_bv_constant(self, formula: FNode, **kwargs) -> int:
         width = formula.bv_width()
         res = None
-        value = formula.constant_value()
+        value = cast(int, formula.constant_value())
         if value <= ((2**63) - 1):
             # we can use the numerical representation
             # Note: yices_api uses *signed* longs in the API, so the maximal
@@ -649,18 +652,20 @@ class YicesConverter(Converter, DagWalker):
         elif tp.is_int_type():
             return yices_api.yices_int_type()
         elif tp.is_function_type():
+            assert isinstance(tp, _FunctionType)
             stps = [self._type_to_yices(x) for x in tp.param_types]
             rtp = self._type_to_yices(tp.return_type)
             arr = (yices_api.type_t * len(stps))(*stps)
             return yices_api.yices_function_type(len(stps), arr, rtp)
         elif tp.is_bv_type():
+            assert isinstance(tp, _BVType)
             return yices_api.yices_bv_type(tp.width)
         elif tp.is_custom_type():
             return self.yicesSort(str(tp))
         else:
             raise NotImplementedError(tp)
 
-    def declare_variable(self, var):
+    def declare_variable(self, var: FNode):
         if not var.is_symbol():
             raise PysmtTypeError("Trying to declare as a variable something "
                                  "that is not a symbol: %s" % var)

@@ -34,7 +34,7 @@ class Solver(object):
     LOGICS: Iterable[Logic] = []
 
     # Class defining options for the Solver
-    OptionsClass: Type[SolverOptions] = SolverOptions
+    OptionsClass: Type[SolverOptions] = SolverOptions # type: ignore[type-abstract] # TODO: Can only assign concrete classes to a variable of type "type[SolverOptions]"
 
     def __init__(self, environment: Environment, logic: Logic, **options) -> None:
         if logic is None:
@@ -107,8 +107,8 @@ class Solver(object):
             def solve_error(*args, **kwargs):
                 raise SolverStatusError("Cannot call is_sat twice when incrementality is disable")
             res = self.solve()
-            self.solve = solve_error
-            self.is_sat = solve_error
+            self.solve = solve_error # type: ignore[method-assign] # TODO here and below a method is assigned. is it OK?
+            self.is_sat = solve_error # type: ignore[method-assign]
             return res
 
         # Try to be incremental using push/pop but fallback to
@@ -216,7 +216,7 @@ class Solver(object):
         """
         raise NotImplementedError
 
-    def get_value(self, formula):
+    def get_value(self, formula: FNode) -> FNode:
         """Returns the value of formula in the current model (if one exists).
 
         This is a simplified version of the SMT-LIB function get_values
@@ -299,11 +299,11 @@ class IncrementalTrackingSolver(Solver):
         """See py:func:`Solver.__init__()`."""
         Solver.__init__(self, environment, logic, **options)
 
-        self._last_result = None
-        self._last_command = None
+        self._last_result: Optional[str] = None
+        self._last_command: Optional[str] = None
 
-        self._assertion_stack = []
-        self._backtrack_points = []
+        self._assertion_stack: List[FNode] = []
+        self._backtrack_points: List[int] = []
 
     @property
     def last_command(self):
@@ -338,7 +338,7 @@ class IncrementalTrackingSolver(Solver):
         self._assertion_stack = []
         self._last_command = "reset_assertions"
 
-    def _add_assertion(self, formula, named=None):
+    def _add_assertion(self, formula, named=None) -> FNode:
         """Assert the formula in the solver.
 
         This must return the asserted formula (as an FNode) exactly as
@@ -439,7 +439,7 @@ class Model(object):
         self.environment = environment
         self._converter = None
 
-    def get_value(self, formula, model_completion=True):
+    def get_value(self, formula, model_completion=True) -> FNode:
         """Returns the value of formula in the current model (if one exists).
 
         If model_completion is True, then variables not appearing in the

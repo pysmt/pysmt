@@ -233,7 +233,7 @@ class FNode(object):
                    self.symbol_type() == type_
         return self.node_type() == SYMBOL
 
-    def is_literal(self) -> None:
+    def is_literal(self) -> bool:
         """Test whether the formula is a literal.
 
         A literal is a positive or negative Boolean symbol.
@@ -257,7 +257,7 @@ class FNode(object):
     def is_zero(self) -> bool:
         return self.is_real_constant(0) or self.is_int_constant(0)
 
-    def is_toreal(self):
+    def is_toreal(self) -> bool:
         """Test whether the node is the ToReal operator."""
         return self.node_type() == TOREAL
 
@@ -297,7 +297,7 @@ class FNode(object):
         """Test whether the node is the Times operator."""
         return self.node_type() == TIMES
 
-    def is_div(self):
+    def is_div(self) -> bool:
         """Test whether the node is the Division operator."""
         return self.node_type() == DIV
 
@@ -317,15 +317,15 @@ class FNode(object):
         """Test whether the node is the Equals operator."""
         return self.node_type() == EQUALS
 
-    def is_le(self):
+    def is_le(self) -> bool:
         """Test whether the node is the LE (less than equal) relation."""
         return self.node_type() == LE
 
-    def is_lt(self):
+    def is_lt(self) -> bool:
         """Test whether the node is the LT (less than) relation."""
         return self.node_type() == LT
 
-    def is_bool_op(self):
+    def is_bool_op(self) -> bool:
         """Test whether the node is a Boolean operator."""
         return self.node_type() in BOOL_OPERATORS
 
@@ -333,16 +333,16 @@ class FNode(object):
         """Test whether the node is a theory relation."""
         return self.node_type() in RELATIONS
 
-    def is_theory_op(self):
+    def is_theory_op(self) -> bool:
         """Test whether the node is a theory operator."""
         return self.node_type() in THEORY_OPERATORS
 
-    def is_ira_op(self):
+    def is_ira_op(self) -> bool:
         """Test whether the node is an Int or Real Arithmetic operator."""
         return self.node_type() in IRA_OPERATORS
 
     @deprecated("is_isa_op")
-    def is_lira_op(self):
+    def is_lira_op(self) -> bool:
         """Test whether the node is a IRA operator."""
         return self.node_type() in IRA_OPERATORS
 
@@ -350,27 +350,27 @@ class FNode(object):
         """Test whether the node is a BitVector operator."""
         return self.node_type() in BV_OPERATORS
 
-    def is_array_op(self):
+    def is_array_op(self) -> bool:
         """Test whether the node is an array operator."""
         return self.node_type() in ARRAY_OPERATORS
 
-    def is_bv_not(self):
+    def is_bv_not(self) -> bool:
         """Test whether the node is the BVNot operator."""
         return self.node_type() == BV_NOT
 
-    def is_bv_and(self):
+    def is_bv_and(self) -> bool:
         """Test whether the node is the BVAnd operator."""
         return self.node_type() == BV_AND
 
-    def is_bv_or(self):
+    def is_bv_or(self) -> bool:
         """Test whether the node is the BVOr operator."""
         return self.node_type() == BV_OR
 
-    def is_bv_xor(self):
+    def is_bv_xor(self) -> bool:
         """Test whether the node is the BVXor operator."""
         return self.node_type() == BV_XOR
 
-    def is_bv_concat(self):
+    def is_bv_concat(self) -> bool:
         """Test whether the node is the BVConcat operator."""
         return self.node_type() == BV_CONCAT
 
@@ -378,39 +378,39 @@ class FNode(object):
         """Test whether the node is the BVConcat operator."""
         return self.node_type() == BV_EXTRACT
 
-    def is_bv_ult(self):
+    def is_bv_ult(self) -> bool:
         """Test whether the node is the BVULT (unsigned less than) relation."""
         return self.node_type() == BV_ULT
 
-    def is_bv_ule(self):
+    def is_bv_ule(self) -> bool:
         """Test whether the node is the BVULE (unsigned less than) relation."""
         return self.node_type() == BV_ULE
 
-    def is_bv_neg(self):
+    def is_bv_neg(self) -> bool:
         """Test whether the node is the BVNeg operator."""
         return self.node_type() == BV_NEG
 
-    def is_bv_add(self):
+    def is_bv_add(self) -> bool:
         """Test whether the node is the BVAdd operator."""
         return self.node_type() == BV_ADD
 
-    def is_bv_mul(self):
+    def is_bv_mul(self) -> bool:
         """Test whether the node is the BVMul operator."""
         return self.node_type() == BV_MUL
 
-    def is_bv_udiv(self):
+    def is_bv_udiv(self) -> bool:
         """Test whether the node is the BVUDiv operator."""
         return self.node_type() == BV_UDIV
 
-    def is_bv_urem(self):
+    def is_bv_urem(self) -> bool:
         """Test whether the node is the BVURem operator."""
         return self.node_type() == BV_UREM
 
-    def is_bv_lshl(self):
+    def is_bv_lshl(self) -> bool:
         """Test whether the node is the BVLShl (logical shift left) operator."""
         return self.node_type() == BV_LSHL
 
-    def is_bv_lshr(self):
+    def is_bv_lshr(self) -> bool:
         """Test whether the node is the BVLShr (logical shift right) operator."""
         return self.node_type() == BV_LSHR
 
@@ -430,31 +430,31 @@ class FNode(object):
         """Test whether the node is the BVSext (signed extension) operator."""
         return self.node_type() == BV_SEXT
 
-    def is_bv_sub(self):
+    def is_bv_sub(self) -> bool:
         """Test whether the node is the BVSub (subtraction) operator."""
         return self.node_type() == BV_SUB
 
-    def is_bv_slt(self):
+    def is_bv_slt(self) -> bool:
         """Test whether the node is the BVSLT (signed less-than) operator."""
         return self.node_type() == BV_SLT
 
-    def is_bv_sle(self):
+    def is_bv_sle(self) -> bool:
         """Test whether the node is the BVSLE (signed less-than-or-equal-to) operator."""
         return self.node_type() == BV_SLE
 
-    def is_bv_comp(self):
+    def is_bv_comp(self) -> bool:
         """Test whether the node is the BVComp (comparison) operator."""
         return self.node_type() == BV_COMP
 
-    def is_bv_sdiv(self):
+    def is_bv_sdiv(self) -> bool:
         """Test whether the node is the BVSDiv (signed division) operator."""
         return self.node_type() == BV_SDIV
 
-    def is_bv_srem(self):
+    def is_bv_srem(self) -> bool:
         """Test whether the node is the BVSRem (signed reminder) operator."""
         return self.node_type() == BV_SREM
 
-    def is_bv_ashr(self):
+    def is_bv_ashr(self) -> bool:
         """Test whether the node is the BVAshr (arithmetic shift right) operator."""
         return self.node_type() == BV_ASHR
 
@@ -462,7 +462,7 @@ class FNode(object):
         """Test whether the node is the SELECT (array select) operator."""
         return self.node_type() == ARRAY_SELECT
 
-    def is_store(self):
+    def is_store(self) -> bool:
         """Test whether the node is the STORE (array store) operator."""
         return self.node_type() == ARRAY_STORE
 
@@ -587,7 +587,7 @@ class FNode(object):
                 "Unsupported method constant_type '%s'" % self
             return BVType(width=self.bv_width())
 
-    def bv2nat(self):
+    def bv2nat(self) -> int:
         """Return the unsigned value encoded by the BitVector."""
         return self.bv_unsigned_value()
 

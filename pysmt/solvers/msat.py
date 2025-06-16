@@ -16,6 +16,8 @@
 #   limitations under the License.
 #
 from warnings import warn
+from fractions import Fraction as pyFraction
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union, cast
 
 from pysmt.constants import Fraction, is_pysmt_fraction, is_pysmt_integer
 
@@ -42,7 +44,6 @@ from pysmt.environment import Environment
 from pysmt.fnode import FNode
 from pysmt.formula import FormulaManager
 from pysmt.typing import PySMTType
-from typing import Any, Callable, Iterable, List, Optional
 
 class MSatEnv():
     """A wrapper for the msat_env object.
@@ -212,10 +213,10 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
         raise NotImplementedError
 
     @clear_pending_pop
-    def _add_assertion(self, formula: FNode, named: None=None) -> FNode:
+    def _add_assertion(self, formula: FNode, named: Optional[str]=None) -> Union[FNode, Tuple[FNode, Optional[str], FNode]]:
         self._assert_is_boolean(formula)
 
-        result = formula
+        result: Union[FNode, Tuple[FNode, Optional[str], FNode]] = formula
         if self.options.unsat_cores_mode == "named":
             # If we want named unsat cores, we need to rewrite the
             # formulae as implications
@@ -232,7 +233,7 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
 
         return result
 
-    def _named_assertions(self) -> None:
+    def _named_assertions(self) -> Optional[List[FNode]]:
         if self.options.unsat_cores_mode == "named":
             return [t[0] for t in self.assertions]
         return None
@@ -387,18 +388,18 @@ class MSatConverter(Converter, DagWalker):
         self._get_type = environment.stc.get_type
 
         # Maps a Symbol into the corresponding msat_decl instance in the msat_env
-        self.symbol_to_decl = {}
+        self.symbol_to_decl: Dict[FNode, Any] = {}
         # Maps a msat_decl instance inside the msat_env into the corresponding
         # Symbol
-        self.decl_to_symbol = {}
+        self.decl_to_symbol: Dict[Any, FNode] = {}
 
         self.boolType = self._msat_lib.msat_get_bool_type(self.msat_env())
         self.realType = self._msat_lib.msat_get_rational_type(self.msat_env())
         self.intType = self._msat_lib.msat_get_integer_type(self.msat_env())
 
         # Back Conversion
-        self.back_memoization = {}
-        self.back_fun = {
+        self.back_memoization: Dict[Any, Optional[FNode]] = {}
+        self.back_fun: Dict[Any, Callable[..., FNode]] = {
             self._msat_lib.MSAT_TAG_TRUE: lambda term, args: self.mgr.TRUE(),
             self._msat_lib.MSAT_TAG_FALSE:lambda term, args: self.mgr.FALSE(),
             self._msat_lib.MSAT_TAG_AND: self._back_adapter(self.mgr.And),
@@ -599,7 +600,7 @@ class MSatConverter(Converter, DagWalker):
         elif self._msat_lib.msat_term_is_number(self.msat_env(), term):
             ty = self._msat_lib.msat_term_get_type(term)
             if self._msat_lib.msat_is_integer_type(self.msat_env(), ty):
-                res = types.INT
+                res: PySMTType = types.INT
             elif self._msat_lib.msat_is_rational_type(self.msat_env(), ty):
                 res = types.REAL
             else:
@@ -697,9 +698,7 @@ class MSatConverter(Converter, DagWalker):
                 res = self.mgr.Real(Fraction(self._msat_lib.msat_term_repr(term)))
             else:
                 assert "_" in str(term), "Unsupported type for '%s'" % str(term)
-                val, width = str(term).split("_")
-                val = int(val)
-                width = int(width)
+                val, width = map(int, str(term).split("_"))
                 res = self.mgr.BV(val, width)
         elif self._msat_lib.msat_term_is_constant(self.msat_env(), term):
             rep = self._msat_lib.msat_term_repr(term)
@@ -718,7 +717,7 @@ class MSatConverter(Converter, DagWalker):
                     res = self.mgr.Symbol(rep, types.ArrayType(i, e))
                 else:
                     _, width = self._msat_lib.msat_is_bv_type(self.msat_env(), ty)
-                    assert width is not None, "Unsupported variable type for '%s'"%str(term)
+                    assert isinstance(width, int), "Unsupported variable type for '%s'"%str(term)
                     res = self.mgr.Symbol(rep, types.BVType(width))
 
         elif self._msat_lib.msat_term_is_uf(self.msat_env(), term):
@@ -752,8 +751,9 @@ class MSatConverter(Converter, DagWalker):
                 signature = self._get_signature(current, args)
                 new_args = []
                 for i, a in enumerate(args):
+                    assert a is not None
                     t = self.env.stc.get_type(a)
-                    if t != signature.param_types[i]:
+                    if t != cast(types._FunctionType, signature).param_types[i]:
                         a = mgr.ToReal(a)
                     new_args.append(a)
                 res = self._back_single_term(current, mgr, new_args)
@@ -761,7 +761,9 @@ class MSatConverter(Converter, DagWalker):
             else:
                 # we already visited the node, nothing else to do
                 pass
-        return self.back_memoization[term]
+        term_back_expression = self.back_memoization[term]
+        assert isinstance(term_back_expression, FNode)
+        return term_back_expression
 
     @catch_conversion_error
     def convert(self, formula: FNode) -> Any:
@@ -825,7 +827,7 @@ class MSatConverter(Converter, DagWalker):
 
     def walk_real_constant(self, formula: FNode, **kwargs) -> Any:
         assert is_pysmt_fraction(formula.constant_value())
-        frac = formula.constant_value()
+        frac = cast(pyFraction, formula.constant_value())
         n,d = frac.numerator, frac.denominator
         rep = str(n) + "/" + str(d)
         return self._msat_lib.msat_make_number(self.msat_env(), rep)
@@ -1037,8 +1039,8 @@ class MSatConverter(Converter, DagWalker):
         elif tp.is_int_type():
             return self.intType
         elif tp.is_function_type():
-            stps = [self._type_to_msat(x) for x in tp.param_types]
-            rtp = self._type_to_msat(tp.return_type)
+            stps = [self._type_to_msat(x) for x in cast(types._FunctionType, tp).param_types]
+            rtp = self._type_to_msat(cast(types._FunctionType, tp).return_type)
             msat_type = self._msat_lib.msat_get_function_type(self.msat_env(),
                                                        stps,
                                                        rtp)
@@ -1047,15 +1049,15 @@ class MSatConverter(Converter, DagWalker):
                 raise InternalSolverError(msat_msg)
             return msat_type
         elif tp.is_array_type():
-            i = self._type_to_msat(tp.index_type)
-            e = self._type_to_msat(tp.elem_type)
+            i = self._type_to_msat(cast(types._ArrayType, tp).index_type)
+            e = self._type_to_msat(cast(types._ArrayType, tp).elem_type)
             msat_type = self._msat_lib.msat_get_array_type(self.msat_env(), i, e)
             if self._msat_lib.MSAT_ERROR_TYPE(msat_type):
                 msat_msg = self._msat_lib.msat_last_error_message(self.msat_env())
                 raise InternalSolverError(msat_msg)
             return msat_type
         elif tp.is_bv_type():
-            return self._msat_lib.msat_get_bv_type(self.msat_env(), tp.width)
+            return self._msat_lib.msat_get_bv_type(self.msat_env(), cast(types._BVType, tp).width)
         elif tp.is_custom_type():
             return self._msat_lib.msat_get_simple_type(self.msat_env(), str(tp))
         else:
@@ -1321,7 +1323,7 @@ class MSatBoolUFRewriter(IdentityDagWalker):
             return IdentityDagWalker.walk_function(self, formula, args, **kwargs)
 
         # Build new function type
-        rtype = formula.function_name().symbol_type().return_type
+        rtype = cast(types._FunctionType, formula.function_name().symbol_type()).return_type
         ptype = [self.get_type(a) for a in other_args]
         if len(ptype) == 0:
             ftype = rtype

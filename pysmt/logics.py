@@ -21,7 +21,7 @@ logics.
 """
 
 from pysmt.exceptions import UndefinedLogicError, NoLogicAvailableError
-from typing import Optional, Set, Union
+from typing import Iterable, Optional, Set, Union
 
 
 class Theory(object):
@@ -785,7 +785,7 @@ def get_logic(quantifier_free=False,
     raise UndefinedLogicError
 
 
-def most_generic_logic(logics: Union[frozenset, Set[Logic]]):
+def most_generic_logic(logics: Iterable[Logic]) -> Logic:
     """Given a set of logics, return the most generic one.
 
     If a unique most generic logic does not exists, throw an error.
@@ -797,7 +797,7 @@ def most_generic_logic(logics: Union[frozenset, Set[Logic]]):
     return res[0]
 
 
-def get_closer_logic(supported_logics: Union[frozenset, Set[Logic]], logic: Logic) -> Logic:
+def get_closer_logic(supported_logics: Iterable[Logic], logic: Logic) -> Logic:
     """
     Returns the smaller supported logic that is greater or equal to
     the given logic. Raises NoLogicAvailableError if the solver

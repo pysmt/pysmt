@@ -21,7 +21,7 @@ from pysmt.exceptions import PysmtValueError
 from pysmt.oracles import get_logic
 from pysmt.logics import Logic, LIA, LRA, BV
 from pysmt.fnode import FNode
-from typing import List, Type
+from typing import List, Tuple, Type
 
 
 class Goal(object):
@@ -67,7 +67,7 @@ class Goal(object):
         return False
 
     def get_logic(self) -> Logic:
-        logic = get_logic(self.formula)
+        logic = get_logic(self.term())
         if logic <= LIA:
             return LIA
         elif logic <= LRA:
@@ -88,6 +88,10 @@ class Goal(object):
     def term(self) -> FNode:
         raise NotImplementedError
 
+    # TODO is this OK? I added this because MaxSMTgoal didn't define it but it's a maximization
+    def opt(self) -> Type["Goal"]:
+        raise NotImplementedError
+
 
 class MaximizationGoal(Goal):
     """
@@ -104,7 +108,7 @@ class MaximizationGoal(Goal):
         self.formula = formula
         self._bv_signed = signed
 
-    def opt(self) -> Type["MaximizationGoal"]:
+    def opt(self) -> Type["Goal"]:
         return MaximizationGoal
 
     def term(self) -> FNode:
@@ -132,7 +136,7 @@ class MinimizationGoal(Goal):
         self.formula = formula
         self._bv_signed = sign
 
-    def opt(self) -> Type["MinimizationGoal"]:
+    def opt(self) -> Type["Goal"]:
         return MinimizationGoal
 
     def term(self) -> FNode:
@@ -210,7 +214,7 @@ class MaxSMTGoal(Goal):
 
     def __init__(self, real_weights: bool=True) -> None:
         """Accepts soft clauses and the relative weights"""
-        self.soft = []
+        self.soft: List[Tuple[FNode, FNode]] = []
         self._bv_signed = False
         self._real_weights = real_weights
 
@@ -266,6 +270,9 @@ class MaxSMTGoal(Goal):
                 formula = mgr.Ite(c, w, zero)
         assert formula is not None, "Empty MaxSMT goal passed"
         return formula
+
+    def opt(self) -> Type["Goal"]:
+        return MaximizationGoal
 
     def __repr__(self) -> str:
         return "MaxSMT{%s}" % (", ".join(("%s: %s" % (x.serialize(), w.serialize()) for x, w in self.soft)))

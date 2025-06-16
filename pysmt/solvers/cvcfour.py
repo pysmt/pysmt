@@ -215,7 +215,7 @@ class CVC4Converter(Converter, DagWalker):
         self.stringType = cvc4_exprMgr.stringType()
 
         self.declared_vars = {}
-        self.backconversion = {}
+        self.backconversion = {} # type: ignore # TODO what is this used for?
         self.mgr = environment.formula_manager
         self._get_type = environment.stc.get_type
         return
