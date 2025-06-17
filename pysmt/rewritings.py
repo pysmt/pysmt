@@ -20,19 +20,20 @@ This module defines some rewritings for pySMT formulae.
 """
 from itertools import combinations
 
+import pysmt
 from pysmt.walkers import DagWalker, IdentityDagWalker, handles
 import pysmt.typing as types
 import pysmt.operators as op
 from pysmt.fnode import FNode
-from typing import Any, Callable, Dict, Iterator, List, Optional, Set, Tuple, Union
+from typing import Any, Callable, Dict, Iterable, Iterator, List, Optional, Sequence, Set, Tuple, Union, cast, FrozenSet
 
 
 class CNFizer(DagWalker):
 
     THEORY_PLACEHOLDER = "__Placeholder__"
 
-    TRUE_CNF = frozenset()
-    FALSE_CNF = frozenset([frozenset()])
+    TRUE_CNF: FrozenSet[Iterable[FNode]] = frozenset()
+    FALSE_CNF: FrozenSet[Iterable[FNode]] = frozenset([frozenset()])
 
     def __init__(self, environment=None):
         DagWalker.__init__(self, environment)
@@ -278,7 +279,7 @@ class NNFizer(DagWalker):
                     mgr.Not(formula.arg(1))]
 
         elif formula.is_and() or formula.is_or() or formula.is_quantifier():
-            return formula.args()
+            return formula.args() # type: ignore # TODO understand this file to type it better
 
         elif formula.is_ite():
             # This must be a boolean ITE as we do not recur within
@@ -466,8 +467,9 @@ class PrenexNormalizer(DagWalker):
         # Build and return the result
         if formula.is_and():
             return (quantifiers, self.mgr.And(matrix))
-        if formula.is_or():
-            return (quantifiers, self.mgr.Or(matrix))
+        assert formula.is_or()
+        return (quantifiers, self.mgr.Or(matrix))
+
 
     def walk_not(self, formula: FNode, args: List[Union[Tuple[List[Any], FNode], Tuple[List[Tuple[Callable, Set[FNode]]], FNode]]], **kwargs) -> Union[Tuple[List[Tuple[Callable, Set[FNode]]], FNode], Tuple[List[Any], FNode]]:
         quantifiers, matrix = args[0]
@@ -498,13 +500,14 @@ class PrenexNormalizer(DagWalker):
             ni = self.mgr.Not(i)
             i1 = self.mgr.Implies(i, t)
             i2 = self.mgr.Implies(ni, e)
-            ni_args = self.walk_not(ni, [i_args])
-            i1_args = self.walk_implies(i1, [i_args, t_args])
-            i2_args = self.walk_implies(i2, [ni_args, e_args])
+            ni_args = self.walk_not(ni, [i_args]) # type: ignore # TODO understand this file to type it better
+            i1_args = self.walk_implies(i1, [i_args, t_args]) # type: ignore # TODO understand this file to type it better
+            i2_args = self.walk_implies(i2, [ni_args, e_args]) # type: ignore # TODO understand this file to type it better
             return self.walk_conj_disj(self.mgr.And(i1, i2), [i1_args, i2_args])
 
     def walk_function(self, formula: FNode, **kwargs) -> Optional[Tuple[List[Any], FNode]]:
-        if formula.function_name().symbol_type().return_type.is_bool_type():
+        f_type = cast(types._FunctionType, formula.function_name().symbol_type())
+        if f_type.return_type.is_bool_type():
             return [], formula
         return None
 
@@ -641,7 +644,7 @@ class TimesDistributor(IdentityDagWalker):
             return self.Times(*args)
 
         # Create list of additions
-        flat_args = []
+        flat_args: List[Sequence[FNode]] = []
         for a in args:
             # Flattening
             if a.is_plus():
@@ -652,7 +655,7 @@ class TimesDistributor(IdentityDagWalker):
         return res
 
     def walk_plus(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
-        new_args = []
+        new_args: List[FNode] = []
         for a in args:
             if a.is_plus():
                 new_args += a.args()
@@ -669,10 +672,10 @@ class TimesDistributor(IdentityDagWalker):
             minus_one = self.iminus_one
         lhs, rhs = args
         # we assume that rhs is either a sum or times cannot distribute.
-        rhs = [rhs] if not rhs.is_plus() else list(rhs.args())
+        rhs_l = [rhs] if not rhs.is_plus() else list(rhs.args())
         # we need to keep the plus flat: no nested sums (see walk_times).
         new_args = [lhs] if not lhs.is_plus() else list(lhs.args())
-        new_args.extend(self.Times(minus_one, r) for r in rhs)
+        new_args.extend(self.Times(minus_one, r) for r in rhs_l)
         return self.Plus(new_args)
 
 # EOC TimesDistributivity
@@ -685,11 +688,11 @@ class Ackermannizer(IdentityDagWalker):
         # a set of lists of arguments.
         # if f(g(x),y) and f(x,g(y)) occur in a formula, then we
         # will have "f": set([g(x), y], [x, g(y)])
-        self._funs_to_args = {}
+        self._funs_to_args: Dict[FNode, Set[Tuple[FNode, ...]]] = {}
 
         #maps the actual applications to the constants that will be
         #generated, or to the original term if it is not replaced.
-        self._terms_dict = {}
+        self._terms_dict: Dict[FNode, FNode] = {}
 
     def do_ackermannization(self, formula: FNode) -> FNode:
         substitued_formula = self._fill_maps_and_sub(formula)
@@ -708,22 +711,22 @@ class Ackermannizer(IdentityDagWalker):
         return dict((v, k) for k, v in self._terms_dict.items())
 
     def _get_equality_implications(self) -> Set[FNode]:
-        result = set([])
+        result = set()
         for f in self._funs_to_args:
             implications = self._generate_implications(f)
             result.update(implications)
         return result
 
     def _generate_implications(self, f: FNode) -> Set[FNode]:
-        result = set([])
+        result = set()
         possible_args = self._funs_to_args[f]
         for option1, option2 in combinations(possible_args, 2):
-            implication = self._generate_implication(option1, option2, f)
+            implication = self._generate_implication(option1, option2, f) # type: ignore[arg-type] # TODO I don't understand the typing this method should have
             result.add(implication)
         return result
 
     def _generate_implication(self, option1: Union[Tuple[FNode], Tuple[FNode, FNode]], option2: Union[Tuple[FNode], Tuple[FNode, FNode]], f: FNode) -> FNode:
-        left_conjuncts = set([])
+        left_conjuncts = set()
         for term1, term2 in zip(option1, option2):
             if term1.is_function_application():
                 term1 = self._terms_dict[term1]
@@ -755,7 +758,7 @@ class Ackermannizer(IdentityDagWalker):
     def _add_application(self, formula: FNode) -> None:
         assert formula.is_function_application()
         if formula not in self._terms_dict:
-            const_type = formula.function_name().symbol_type().return_type
+            const_type = cast(types._FunctionType, formula.function_name().symbol_type()).return_type
             sym = self.mgr.FreshSymbol(typename=const_type,
                                        template="ack%d")
             self._terms_dict[formula] = sym
@@ -763,9 +766,7 @@ class Ackermannizer(IdentityDagWalker):
     def _add_args_to_fun(self, formula: FNode) -> None:
         function_name = formula.function_name()
         args = formula.args()
-        if function_name not in self._funs_to_args.keys():
-            self._funs_to_args[function_name] = set([])
-        self._funs_to_args[function_name].add(args)
+        self._funs_to_args.setdefault(function_name, set()).add(args)
 
 
 
@@ -785,8 +786,8 @@ class DisjointSet(object):
     """
 
     def __init__(self, compare_fun: Optional[Callable]=None) -> None:
-        self.leader = {} # maps a member to the group's leader
-        self.group = {} # maps a group leader to the group (which is a set)
+        self.leader: Dict[FNode, FNode] = {} # maps a member to the group's leader
+        self.group: Dict[FNode, Set[FNode]] = {} # maps a group leader to the group (which is a set)
         self.comp = compare_fun # a binary comparison function used for ranking
 
     def add(self, a: FNode, b: FNode) -> None:
@@ -803,7 +804,7 @@ class DisjointSet(object):
                     a, leadera, groupa, b, leaderb, groupb = b, leaderb, groupb,\
                                                              a, leadera, groupa
                 groupa |= groupb
-                del group[leaderb]
+                del self.group[leaderb] # TODO old code: del group[leaderb]. The change is correct?
                 for k in groupb:
                     self.leader[k] = leadera
             else:
@@ -893,7 +894,7 @@ def disjunctive_partition(formula: FNode) -> Iterator[FNode]:
                 yield cur
 
 
-def propagate_toplevel(formula: FNode, env: None=None, do_simplify: bool=True, preserve_equivalence: bool=True) -> FNode:
+def propagate_toplevel(formula: FNode, env: Optional["pysmt.environment.Environment"]=None, do_simplify: bool=True, preserve_equivalence: bool=True) -> FNode:
     """ Propagates the toplevel definitions and returns an equivalent formula.
     It considers three kinds of definitions:
     1) variable = constant
@@ -903,6 +904,7 @@ def propagate_toplevel(formula: FNode, env: None=None, do_simplify: bool=True, p
     if env is None:
         import pysmt.environment
         env = pysmt.environment.get_env()
+    assert env is not None
     mgr = env.formula_manager
 
     # comparison function for ranking

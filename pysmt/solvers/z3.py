@@ -16,16 +16,17 @@
 #   limitations under the License.
 #
 from __future__ import absolute_import
+from fractions import Fraction as pyFraction
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Type, cast
 
 from pysmt.exceptions import SolverAPINotFound
 from pysmt.environment import Environment
 from pysmt.fnode import FNode
 from pysmt.logics import Logic
 from pysmt.typing import PySMTType
-from typing import Any, Iterable, List, Optional, Sequence, Type
 
 try:
-    import z3
+    import z3 # type: ignore[import]
 except ImportError:
     raise SolverAPINotFound
 
@@ -69,8 +70,10 @@ class AstRefKey:
         self.n = n
     def __hash__(self) -> int:
         return self.n.hash()
-    def __eq__(self, other: "AstRefKey") -> bool:
-        return self.n.eq(other.n)
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, AstRefKey):
+            return self.n.eq(other.n)
+        return False
 
 def askey(n: z3.ExprRef) -> AstRefKey:
     assert isinstance(n, z3.AstRef)
@@ -167,7 +170,7 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
         else:
             self.z3 = z3.Solver()
         self.options(self)
-        self.declarations = set()
+        self.declarations: Set[FNode] = set()
         self.converter = Z3Converter(environment, z3_ctx=self.z3.ctx)
         self.mgr = environment.formula_manager
 
@@ -312,7 +315,7 @@ class Z3Converter(Converter, DagWalker):
         DagWalker.__init__(self, environment)
         self.mgr = environment.formula_manager
         self._get_type = environment.stc.get_type
-        self._back_memoization = {}
+        self._back_memoization: Dict[Any, Optional[FNode]] = {}
         self.ctx = z3_ctx
 
         # Back Conversion
@@ -382,11 +385,11 @@ class Z3Converter(Converter, DagWalker):
         self.z3RealSort = z3.RealSort(self.ctx)
         self.z3BoolSort = z3.BoolSort(self.ctx)
         self.z3IntSort  = z3.IntSort(self.ctx)
-        self._z3ArraySorts = {}
-        self._z3BitVecSorts = {}
-        self._z3Sorts = {}
+        self._z3ArraySorts: Dict[Any, Any] = {}
+        self._z3BitVecSorts: Dict[int, z3.BitVecSortRef] = {}
+        self._z3Sorts: Dict[str, Any] = {}
         # Unique reference to Function Declaration
-        self._z3_func_decl_cache = {}
+        self._z3_func_decl_cache: Dict[FNode, Any] = {}
         return
 
     def z3BitVecSort(self, width: int) -> z3.BitVecSortRef:
@@ -431,7 +434,7 @@ class Z3Converter(Converter, DagWalker):
         elif formula.is_symbol() or formula.is_function_application():
             if formula.is_function_application():
                 type_ = formula.function_name().symbol_type()
-                type_ = type_.return_type
+                type_ = cast(types._FunctionType, type_).return_type
             else:
                 type_ = formula.symbol_type()
 
@@ -494,7 +497,9 @@ class Z3Converter(Converter, DagWalker):
             else:
                 # we already visited the node, nothing else to do
                 pass
-        return self._back_memoization[(askey(expr), model)]
+        retval = self._back_memoization[(askey(expr), model)]
+        assert retval is not None
+        return retval
 
     def _back_single_term(self, expr: z3.ExprRef, args: List[Any], model: Optional[z3.ModelRef]=None) -> FNode:
         assert z3.is_expr(expr)
@@ -684,7 +689,7 @@ class Z3Converter(Converter, DagWalker):
         return z3term
 
     def walk_real_constant(self, formula: FNode, **kwargs) -> z3.Ast:
-        frac = formula.constant_value()
+        frac = cast(pyFraction, formula.constant_value())
         n,d = frac.numerator, frac.denominator
         rep = str(n) + "/" + str(d)
         z3term = z3.Z3_mk_numeral(self.ctx.ref(),
@@ -924,11 +929,11 @@ class Z3Converter(Converter, DagWalker):
         elif tp.is_int_type():
             return self.z3IntSort
         elif tp.is_array_type():
-            key_sort = self._type_to_z3(tp.index_type)
-            val_sort = self._type_to_z3(tp.elem_type)
+            key_sort = self._type_to_z3(cast(types._ArrayType, tp).index_type)
+            val_sort = self._type_to_z3(cast(types._ArrayType, tp).elem_type)
             return self.z3ArraySort(key_sort, val_sort)
         elif tp.is_bv_type():
-            return self.z3BitVecSort(tp.width)
+            return self.z3BitVecSort(cast(types._BVType, tp).width)
         else:
             assert tp.is_custom_type(), "Unsupported type '%s'" % tp
             return self.z3Sort(tp)

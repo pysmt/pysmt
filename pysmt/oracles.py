@@ -26,11 +26,13 @@ properties of formulae.
  * TypesOracle provides the list of types in the formula
 """
 
-from typing import List, Any, Optional, Union
+from itertools import chain
+from typing import List, Any, Optional, Union, cast
 
 import pysmt
 import pysmt.walkers as walkers
 import pysmt.operators as op
+import pysmt.typing as types
 
 from pysmt.logics import Logic, Theory, get_closer_pysmt_logic
 from pysmt.fnode import FNode
@@ -163,6 +165,7 @@ class TheoryOracle(walkers.DagWalker):
         elif ty.is_bv_type():
             theory.bit_vectors = True
         elif ty.is_array_type():
+            assert isinstance(ty, types._ArrayType)
             theory.arrays = True
             theory = theory.combine(self._theory_from_type(ty.index_type))
             theory = theory.combine(self._theory_from_type(ty.elem_type))
@@ -232,7 +235,7 @@ class TheoryOracle(walkers.DagWalker):
         else:
             theory_out = Theory()
         # Extend Theory with function return type
-        rtype = formula.function_name().symbol_type().return_type
+        rtype = cast(types._FunctionType, formula.function_name().symbol_type()).return_type
         theory_out = theory_out.combine(self._theory_from_type(rtype))
         theory_out.uninterpreted = True
         return theory_out
@@ -350,12 +353,9 @@ class FreeVarsOracle(walkers.DagWalker):
         return self.walk(formula)
 
     @walkers.handles(DEPENDENCIES_SIMPLE_ARGS)
-    def walk_simple_args(self, formula: FNode, args:     List[frozenset], **kwargs) -> frozenset:
+    def walk_simple_args(self, formula: FNode, args: List[frozenset], **kwargs) -> frozenset:
         #pylint: disable=unused-argument
-        res = set()
-        for arg in args:
-            res.update(arg)
-        return frozenset(res)
+        return frozenset(chain(*args))
 
     @walkers.handles(op.QUANTIFIERS)
     def walk_quantifier(self, formula: FNode, args:     List[frozenset], **kwargs) -> frozenset:
@@ -415,26 +415,27 @@ class AtomsOracle(walkers.DagWalker):
         #pylint: disable=unused-argument
         return None
 
-    def walk_array_select(self, formula: FNode, **kwargs) -> None:
+    def walk_array_select(self, formula: FNode, **kwargs) -> Optional[frozenset]:
         #pylint: disable=unused-argument
         if self.env.stc.get_type(formula).is_bool_type():
             return frozenset([formula])
         return None
 
     @walkers.handles(op.CONSTANTS)
-    def walk_constant(self, formula: FNode, **kwargs) -> None:
+    def walk_constant(self, formula: FNode, **kwargs) -> Optional[frozenset]:
         #pylint: disable=unused-argument
         if formula.is_bool_constant():
             return frozenset()
         return None
 
-    def walk_symbol(self, formula: FNode, **kwargs) ->     Optional[frozenset]:
+    def walk_symbol(self, formula: FNode, **kwargs) -> Optional[frozenset]:
         if formula.is_symbol(BOOL):
             return frozenset([formula])
         return None
 
-    def walk_function(self, formula: FNode, **kwargs) -> None:
-        if formula.function_name().symbol_type().return_type.is_bool_type():
+    def walk_function(self, formula: FNode, **kwargs) -> Optional[frozenset]:
+        f_type = cast(types._FunctionType, formula.function_name().symbol_type())
+        if f_type.return_type.is_bool_type():
             return frozenset([formula])
         return None
 
@@ -499,12 +500,9 @@ class TypesOracle(walkers.DagWalker):
     @walkers.handles(set(op.ALL_TYPES) - \
                      set([op.SYMBOL, op.FUNCTION]) -\
                      op.QUANTIFIERS - op.CONSTANTS)
-    def walk_combine(self, formula: FNode, args:     List[frozenset], **kwargs) -> frozenset:
+    def walk_combine(self, formula: FNode, args: List[frozenset], **kwargs) -> frozenset:
         #pylint: disable=unused-argument
-        res = set()
-        for arg in args:
-            res.update(arg)
-        return frozenset(res)
+        return frozenset(chain(*args))
 
     @walkers.handles(op.SYMBOL)
     def walk_symbol(self, formula: FNode, **kwargs) -> frozenset:
@@ -512,7 +510,7 @@ class TypesOracle(walkers.DagWalker):
 
     @walkers.handles(op.FUNCTION)
     def walk_function(self, formula: FNode, **kwargs) -> frozenset:
-        ftype = formula.function_name().symbol_type()
+        ftype = cast(types._FunctionType, formula.function_name().symbol_type())
         return frozenset([ftype.return_type] + list(ftype.param_types))
 
     @walkers.handles(op.QUANTIFIERS)

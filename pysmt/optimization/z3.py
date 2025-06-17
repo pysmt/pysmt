@@ -35,7 +35,7 @@ from pysmt.environment import Environment
 from pysmt.fnode import FNode
 from pysmt.logics import Logic
 from pysmt.optimization.goal import Goal, MaxSMTGoal
-from typing import Dict, Iterable, Iterator, List, Optional, Sequence, Tuple
+from typing import Dict, Iterable, Iterator, List, Optional, Sequence, Tuple, Union
 
 try:
     import z3 # type: ignore[import]
@@ -58,9 +58,9 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
         if goal.is_maxsmt_goal():
             assert goal_id is not None
             assert isinstance(goal, MaxSMTGoal)
-            for soft, w in goal.soft:
+            for soft, weight_exp in goal.soft:
                 obj_soft = self.converter.convert(soft)
-                w = w.constant_value()
+                w: Union[float, int, Fraction, str] = weight_exp.constant_value()
                 if isinstance(w, Fraction):
                     w = float(w)
                 h = self.z3.add_soft(obj_soft, w, "__pysmt_" + str(goal_id))

@@ -97,7 +97,7 @@ class FNode(object):
     def node_type(self) -> int:
         return self._content.node_type
 
-    def args(self) -> Any:
+    def args(self) -> Tuple["FNode", ...]:
         """Returns the subformulae."""
         return self._content.args
 

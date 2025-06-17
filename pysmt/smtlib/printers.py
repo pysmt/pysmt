@@ -16,7 +16,7 @@
 #   limitations under the License.
 #
 from io import StringIO
-from typing import Callable, List, Optional, TextIO
+from typing import Callable, List, Optional, Set, TextIO
 
 import pysmt.operators as op
 from pysmt.environment import get_env
@@ -334,7 +334,7 @@ class SmtDagPrinter(DagWalker):
         self.openings = 0
         self.name_seed = 0
         self.template = template
-        self.names = None
+        self.names: Optional[Set[str]] = None
         self.mgr = get_env().formula_manager
         self.annotations = annotations
 
@@ -364,6 +364,7 @@ class SmtDagPrinter(DagWalker):
         self.write(")" * self.openings)
 
     def _new_symbol(self) -> str:
+        assert self.names is not None
         while (self.template % self.name_seed) in self.names:
             self.name_seed += 1
         res = (self.template % self.name_seed)
