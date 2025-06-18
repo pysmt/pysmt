@@ -30,7 +30,7 @@ class IdentityDagWalker(DagWalker):
 
     """
 
-    def __init__(self, env: Optional["pysmt.environment.Environment"]=None, invalidate_memoization: Optional[bool]=None) -> None:
+    def __init__(self, env: Optional["pysmt.environment.Environment"]=None, invalidate_memoization: bool=False) -> None:
         DagWalker.__init__(self,
                            env=env,
                            invalidate_memoization=invalidate_memoization)

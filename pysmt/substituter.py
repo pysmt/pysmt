@@ -222,17 +222,17 @@ class Substituter(pysmt.walkers.IdentityDagWalker):
                 raise PysmtTypeError(
                     "Value %d does not belong to the Formula Manager." % i)
 
-        for i, (k, v) in enumerate(interpretations.items()):
+        for i, (k, f) in enumerate(interpretations.items()):
             # Check that interpretations are terms
             if not k.is_symbol() or k.is_term():
                 raise PysmtTypeError(
                     "Only function symbols should be provided as interpretation"
                     " keys. Non-function '%s' found." % k)
-            if not isinstance(v, FunctionInterpretation):
+            if not isinstance(f, FunctionInterpretation):
                 raise PysmtTypeError(
                     "Only FunctionInterpretation objects should be provided as "
                     "interpretation values. Object '%s' of type %s "
-                    "found." % (v, type(v)))
+                    "found." % (f, type(f)))
             # Check that interpretations belong to the current formula manager
             if k not in self.manager:
                 raise PysmtTypeError(

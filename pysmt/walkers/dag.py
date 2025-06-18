@@ -19,7 +19,7 @@ import pysmt
 
 from pysmt.walkers.generic import Walker
 from pysmt.fnode import FNode
-from typing import Any, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 
 class DagWalker(Walker):
@@ -38,21 +38,20 @@ class DagWalker(Walker):
     be used in memoization. See substituter for an example.
     """
 
-    def __init__(self, env: Optional["pysmt.environment.Environment"]=None, invalidate_memoization: Optional[bool]=False) -> None:
+    def __init__(self, env: Optional["pysmt.environment.Environment"]=None, invalidate_memoization: bool=False):
         """The flag ``invalidate_memoization`` can be used to clear the cache
         after the walk has been completed: the cache is one-time use.
         """
         Walker.__init__(self, env)
 
-        self.memoization = {}
+        self.memoization: Dict[FNode, Any] = {}
         self.invalidate_memoization = invalidate_memoization
-        self.stack = []
-        return
+        self.stack: List[Tuple[bool, Union[FNode, Any]]] = [] # TODO consider to create a generic type variable instead of Any
 
     def _get_children(self, formula: FNode) -> Any:
         return formula.args()
 
-    def _push_with_children_to_stack(self, formula: FNode, **kwargs) -> None:
+    def _push_with_children_to_stack(self, formula: FNode, **kwargs):
         """Add children to the stack."""
         self.stack.append((True, formula))
         for s in self._get_children(formula):
@@ -61,7 +60,7 @@ class DagWalker(Walker):
             if key not in self.memoization:
                 self.stack.append((False, s))
 
-    def _compute_node_result(self, formula: FNode, **kwargs) -> None:
+    def _compute_node_result(self, formula: FNode, **kwargs):
         """Apply function to the node and memoize the result.
 
         Note: This function assumes that the results for the children

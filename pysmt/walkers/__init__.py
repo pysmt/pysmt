@@ -34,13 +34,13 @@ it only once.
 """
 
 from pysmt.walkers.dag import DagWalker
-assert DagWalker
+assert DagWalker  # type: ignore[truthy-function] # TODO
 
 from pysmt.walkers.tree import TreeWalker
-assert TreeWalker
+assert TreeWalker  # type: ignore[truthy-function] # TODO
 
 from pysmt.walkers.identitydag import IdentityDagWalker
-assert IdentityDagWalker
+assert IdentityDagWalker  # type: ignore[truthy-function] # TODO
 
 from pysmt.walkers.generic import handles
-assert handles
+assert handles  # type: ignore[truthy-function] # TODO

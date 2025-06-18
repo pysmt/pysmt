@@ -30,7 +30,7 @@ its definition.
 import sys
 import fractions
 import warnings
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union, cast
 
 if sys.version_info >= (3, 3):
     from collections.abc import Iterable
@@ -60,14 +60,14 @@ from pysmt.constants import (is_pysmt_fraction,
 class FormulaManager(object):
     """FormulaManager is responsible for the creation of all formulae."""
 
-    def __init__(self, env: Optional["pysmt.environment.Environment"]=None) -> None:
+    def __init__(self, env: "pysmt.environment.Environment"): # TODO removed default to None. Check if it's ok
         self.env = env
         # Attributes for handling symbols and formulae
         self.formulae = {}
         self.symbols = {}
         self._fresh_guess = 0
         # get_type() from TypeChecker will be initialized lazily
-        self.get_type = None
+        self.get_type: Optional[Callable[[FNode], Optional[PySMTType]]] = None
         self._next_free_id = 1
 
         self.int_constants = {}
@@ -81,15 +81,14 @@ class FormulaManager(object):
                                               args=tuple(),
                                               payload=False)
         self._normalizer = None
-        return
 
-    def _do_type_check_real(self, formula: FNode) -> None:
+    def _do_type_check_real(self, formula: FNode):
+        assert self.get_type is not None
         self.get_type(formula)
 
-    def _do_type_check(self, formula: FNode) -> None:
-        print(type(self.env.stc))
+    def _do_type_check(self, formula: FNode):
         self.get_type = self.env.stc.get_type
-        self._do_type_check = self._do_type_check_real
+        self._do_type_check = self._do_type_check_real # type: ignore[method-assign]
         return self._do_type_check(formula)
 
     def create_node(self, node_type: int, args: Any, payload: Optional[Any]=None) -> FNode:
@@ -191,7 +190,7 @@ class FormulaManager(object):
         """
         if len(params) == 0:
             return vname
-        assert len(params) == len(vname.symbol_type().param_types)
+        assert len(params) == len(cast(types._FunctionType, vname.symbol_type()).param_types)
         return self.create_node(node_type=op.FUNCTION,
                                 args=tuple(params),
                                 payload=vname)
@@ -260,7 +259,7 @@ class FormulaManager(object):
             raise PysmtValueError("The exponent of POW must be a constant.", exponent)
 
         if base.is_constant():
-            val = base.constant_value() ** exponent.constant_value()
+            val = cast(Union[int, fractions.Fraction], base.constant_value()) ** cast(Union[int, fractions.Fraction], exponent.constant_value())
             return self.Real(val)
         return self.create_node(node_type=op.POW, args=(base, exponent))
 
@@ -335,7 +334,7 @@ class FormulaManager(object):
         """
         return self.create_node(node_type=op.ITE, args=(iff, left, right))
 
-    def Real(self, value: Union[Tuple[int, int], int,     fractions.Fraction, float]) -> FNode:
+    def Real(self, value: Union[Tuple[int, int], int, fractions.Fraction, float]) -> FNode:
         """ Returns a Real-type constant of the given value.
 
         value can be:
@@ -350,7 +349,7 @@ class FormulaManager(object):
 
         if is_pysmt_fraction(value):
             val = value
-        elif type(value) == tuple:
+        elif isinstance(value, tuple):
             val = Fraction(value[0], value[1])
         elif is_python_rational(value):
             val = pysmt_fraction_from_rational(value)
@@ -481,7 +480,7 @@ class FormulaManager(object):
             return formula
         elif t == types.INT:
             if formula.is_int_constant():
-                return self.Real(formula.constant_value())
+                return self.Real(cast(int, formula.constant_value()))
             return self.create_node(node_type=op.TOREAL,
                                     args=(formula,))
         else:
@@ -624,6 +623,7 @@ class FormulaManager(object):
         if width is None:
             raise PysmtValueError("Need to specify a width for the constant")
 
+        assert isinstance(value, int), "Non-accepted typing" # TODO check this with other TODOs abouut BV
         if is_pysmt_integer(value):
             _value = value
         elif is_python_integer(value):
@@ -632,11 +632,11 @@ class FormulaManager(object):
             raise PysmtTypeError("Invalid type in constant. The type was: %s" \
                                  % str(type(value)))
         if _value < 0:
-            raise PysmtValueError("Cannot specify a negative value: %d" \
-                                  % _value)
+            raise PysmtValueError("Cannot specify a negative value: %s" \
+                                  % (str(_value)))
         if _value >= 2**width:
-            raise PysmtValueError("Cannot express %d in %d bits" \
-                                  % (_value, width))
+            raise PysmtValueError("Cannot express %s in %s bits" \
+                                  % (str(_value), str(width)))
 
         return self.create_node(node_type=op.BV_CONSTANT,
                                 args=tuple(),
@@ -818,7 +818,7 @@ class FormulaManager(object):
     def BVLShl(self, left: FNode, right: Union[FNode, int]) -> FNode:
         """Returns the logical left shift the BV."""
         if is_python_integer(right):
-            right = self.BV(right, left.bv_width())
+            right = self.BV(right, left.bv_width()) # type: ignore[arg-type] # TODO can BV take an FNode??
         return self.create_node(node_type=op.BV_LSHL,
                                 args=(left, right),
                                 payload=(left.bv_width(),))
@@ -826,7 +826,7 @@ class FormulaManager(object):
     def BVLShr(self, left: FNode, right: Union[FNode, int]) -> FNode:
         """Returns the logical right shift the BV."""
         if is_python_integer(right):
-            right = self.BV(right, left.bv_width())
+            right = self.BV(right, left.bv_width()) # type: ignore[arg-type] # TODO can BV take an FNode??
         return self.create_node(node_type=op.BV_LSHR,
                                 args=(left, right),
                                 payload=(left.bv_width(),))
@@ -908,7 +908,7 @@ class FormulaManager(object):
         """Returns the RIGHT arithmetic rotation of the left BV by the number
         of steps specified by the right BV."""
         if is_python_integer(right):
-            right = self.BV(right, left.bv_width())
+            right = self.BV(right, left.bv_width()) # type: ignore[arg-type] # TODO can BV take an FNode??
         return self.create_node(node_type=op.BV_ASHR,
                                 args=(left, right),
                                 payload=(left.bv_width(),))

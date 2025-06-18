@@ -149,14 +149,14 @@ def to_python_integer(value):
 
 
 if USE_GMPY:
-    def pysmt_fraction_from_rational(value: Union[float, int, FractionClassType]) -> FractionClassType:
+    def pysmt_fraction_from_rational(value: Union[float, int, pyFraction]) -> pyFraction:
         """Return a pysmt Fraction for the rational value."""
         if type(value) == FractionClass:
             # Nothing to do
             return value
         return FractionClass(value)
 else:
-    def pysmt_fraction_from_rational(value: Union[float, int, FractionClassType]) -> "FractionClassType":
+    def pysmt_fraction_from_rational(value: Union[float, int, pyFraction]) -> pyFraction:
         """Return a pysmt Fraction for the rational value."""
         if type(value) == FractionClass:
             # Nothing to do

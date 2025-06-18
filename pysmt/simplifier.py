@@ -25,7 +25,7 @@ import pysmt.walkers
 from pysmt.walkers import handles
 import pysmt.operators as op
 import pysmt.typing as types
-from pysmt.utils import set_bit
+from pysmt.utils import set_bit, assert_not_none
 from pysmt.exceptions import PysmtValueError
 from pysmt.fnode import FNode
 
@@ -140,14 +140,14 @@ class Simplifier(pysmt.walkers.DagWalker):
 
     def walk_not(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         assert len(args) == 1
-        args = args[0]
-        if args.is_bool_constant():
-            l = args.constant_value()
+        arg = args[0]
+        if arg.is_bool_constant():
+            l = cast(bool, arg.constant_value())
             return self.manager.Bool(not l)
-        elif args.is_not():
-            return args.arg(0)
+        elif arg.is_not():
+            return arg.arg(0)
 
-        return self.manager.Not(args)
+        return self.manager.Not(arg)
 
     def walk_iff(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         assert len(args) == 2
@@ -235,8 +235,8 @@ class Simplifier(pysmt.walkers.DagWalker):
         sr = args[1]
 
         if sl.is_constant() and sr.is_constant():
-            l = sl.constant_value()
-            r = sr.constant_value()
+            l = cast(bool, sl.constant_value())
+            r = cast(bool, sr.constant_value())
             return self.manager.Bool(l <= r)
 
         # # (le 0 (- X Y)) => (le Y X)
@@ -256,8 +256,8 @@ class Simplifier(pysmt.walkers.DagWalker):
         sr = args[1]
 
         if sl.is_constant() and sr.is_constant():
-            l = sl.constant_value()
-            r = sr.constant_value()
+            l = cast(bool, sl.constant_value())
+            r = cast(bool, sr.constant_value())
             return self.manager.Bool(l < r)
         return self.manager.LT(sl, sr)
 
@@ -286,7 +286,7 @@ class Simplifier(pysmt.walkers.DagWalker):
     def walk_plus(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         to_sum = []
         to_sub = []
-        constant_add = 0
+        constant_add: Union[int, Fraction] = 0
         stack = list(args)
         ttype = self.env.stc.get_type(args[0])
         is_algebraic = False
@@ -295,7 +295,7 @@ class Simplifier(pysmt.walkers.DagWalker):
             if x.is_constant():
                 if x.is_algebraic_constant():
                     is_algebraic = True
-                constant_add += x.constant_value()
+                constant_add += cast(Union[int, Fraction], x.constant_value())
             elif x.is_plus():
                 stack += x.args()
             elif x.is_minus():
@@ -303,9 +303,9 @@ class Simplifier(pysmt.walkers.DagWalker):
                 to_sub.append(x.arg(1))
             elif x.is_times() and x.args()[-1].is_constant():
                 const = x.args()[-1]
-                const_val = const.constant_value()
+                const_val = cast(Union[int, Fraction], const.constant_value())
                 if const_val < 0:
-                    new_times = list(x.args()[:-1])
+                    new_times_args = list(x.args()[:-1])
                     if const_val != -1:
                         const_val = -const_val
                         if const.is_algebraic_constant():
@@ -316,32 +316,33 @@ class Simplifier(pysmt.walkers.DagWalker):
                         else:
                             assert ttype.is_int_type()
                             const = self.manager.Int(const_val)
-                        new_times.append(const)
-                    new_times = self.manager.Times(new_times)
+                        new_times_args.append(const)
+                    new_times = self.manager.Times(new_times_args)
                     to_sub.append(new_times)
                 else:
                     to_sum.append(x)
             else:
                 to_sum.append(x)
 
-        const = None
+        constant = None
         if is_algebraic:
             from pysmt.constants import Numeral
-            const = self.manager._Algebraic(Numeral(constant_add))
+            constant = self.manager._Algebraic(Numeral(constant_add))
         elif ttype.is_real_type():
-            const = self.manager.Real(constant_add)
+            constant = self.manager.Real(constant_add)
         else:
             assert ttype.is_int_type()
-            const = self.manager.Int(constant_add)
+            constant = self.manager.Int(constant_add)
 
         if len(to_sum) == 0 and len(to_sub) == 0:
-            return const
-        if not const.is_zero():
-            to_sum.append(const)
+            assert constant is not None
+            return constant
+        if not constant.is_zero():
+            to_sum.append(constant)
 
         assert to_sum or to_sub
 
-        res = self.manager.Plus(to_sum) if to_sum else None
+        res: Optional[FNode] = self.manager.Plus(to_sum) if to_sum else None
 
         if to_sub:
             sub = self.manager.Plus(to_sub)
@@ -354,11 +355,12 @@ class Simplifier(pysmt.walkers.DagWalker):
                     assert ttype.is_real_type()
                     m_1 = self.manager.Real(-1)
                 res = self.manager.Times(m_1, sub)
+        assert res is not None
         return res
 
     def walk_times(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         new_args = []
-        constant_mul = 1
+        constant_mul: Union[int, Fraction] = 1
         stack = list(args)
         ttype = self.env.stc.get_type(args[0])
         is_algebraic = False
@@ -371,7 +373,7 @@ class Simplifier(pysmt.walkers.DagWalker):
                     constant_mul = 0
                     break
                 else:
-                    constant_mul *= x.constant_value()
+                    constant_mul *= cast(Union[int, Fraction], x.constant_value())
             elif x.is_times():
                 stack += x.args()
             else:

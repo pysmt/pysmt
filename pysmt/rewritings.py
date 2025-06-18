@@ -375,7 +375,7 @@ class PrenexNormalizer(DagWalker):
     This class traverses a formula and rebuilds it in prenex normal form.
     """
 
-    def __init__(self, env: None=None, invalidate_memoization: None=None) -> None:
+    def __init__(self, env: None=None, invalidate_memoization: bool=False) -> None:
         DagWalker.__init__(self,
                            env=env,
                            invalidate_memoization=invalidate_memoization)
@@ -621,7 +621,7 @@ class TimesDistributor(IdentityDagWalker):
 
     E.g., (x+1)*3 -> (x*3) + 3
     """
-    def __init__(self, env: None=None, invalidate_memoization: None=None) -> None:
+    def __init__(self, env: Optional["pysmt.environment.Environment"]=None, invalidate_memoization: bool=False) -> None:
         IdentityDagWalker.__init__(self, env=env,
                                    invalidate_memoization=invalidate_memoization)
         self.Times = self.env.formula_manager.Times
