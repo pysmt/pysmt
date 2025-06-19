@@ -16,6 +16,7 @@
 #   limitations under the License.
 #
 import os
+from typing import List
 from unittest import skipIf
 
 from fractions import Fraction
@@ -34,7 +35,8 @@ from pysmt.test.examples import get_example_formulae
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ALL_WRAPPERS = []
 
-for _, _, fnames in os.walk(BASE_DIR):
+fnames: List[str]
+for _1, _2, fnames in os.walk(BASE_DIR):
     for f in fnames:
         if f.endswith(".solver.sh"):
             name = os.path.basename(f)
@@ -44,7 +46,7 @@ for _, _, fnames in os.walk(BASE_DIR):
 
 class TestGenericWrapper(TestCase):
 
-    def setUp(self):
+    def setUp(self) -> None:
         TestCase.setUp(self)
 
         self.all_solvers = []
@@ -167,7 +169,7 @@ class TestGenericWrapper(TestCase):
                     # SMT-LIB Wrapper
                     self.assertTrue(name == "mathsat.solver.sh", name)
 
-    def test_redefinition(self):
+    def test_redefinition(self) -> None:
         env = get_env()
         env.factory.add_generic_solver("test__redefinition",
                                        ["/tmp/nonexistent"],

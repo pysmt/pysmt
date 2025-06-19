@@ -18,6 +18,8 @@
 import re
 import itertools
 
+from typing import Optional, TypeVar, cast
+
 
 def all_assignments(bool_variables, env):
     """Generates all possible assignments for a set of boolean variables."""
@@ -47,7 +49,7 @@ def set_bit(v, index, x):
     return v
 
 
-def twos_complement(val, bits):
+def twos_complement(val: int, bits: int) -> int:
     """Retuns the 2-complemented value of val assuming bits word width"""
     if (val & (1 << (bits - 1))) != 0: # if sign bit is set
         val = val - (2 ** bits)        # compute negative value
@@ -71,9 +73,17 @@ def interactive_char_iterator(handle):
 _simple_symbol_prog = re.compile(r"^[~!@\$%\^&\*_\-+=<>\.\?\/A-Za-z][~!@\$%\^&\*_\-+=<>\.\?\/A-Za-z0-9]*$")
 _keywords = set(["Int", "Real", "Bool"])
 
-def quote(name, style='|'):
+def quote(name: str, style: str='|') -> str:
     if name in _keywords or _simple_symbol_prog.match(name) is None:
         name = name.replace("\\", "\\\\").replace("%s" % style, "\\%s" % style)
         return "%s%s%s" % (style, name, style)
     else:
         return name
+
+
+# utility function to narrow a type from Optional[T] to [T] without having to assert it is not None
+T = TypeVar("T")
+
+def assert_not_none(value: Optional[T]) -> T:
+    assert value is not None, "Value: '%s' must not be None" % str(value)
+    return cast(T, value)
