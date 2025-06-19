@@ -147,7 +147,7 @@ class Z3Options(SolverOptions):
 
 
 class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
-               SmtLibBasicSolver, SmtLibIgnoreMixin):
+               SmtLibBasicSolver, SmtLibIgnoreMixin): # TODO this class extends Solver twice (1 in IncrementalTrackingSolver, 1 in SmtLibBasicSolver). Is this a problem?
 
     LOGICS: Iterable[Logic] = PYSMT_LOGICS - set(x for x in PYSMT_LOGICS if x.theory.strings)
     OptionsClass = Z3Options

@@ -413,8 +413,8 @@ class Simplifier(pysmt.walkers.DagWalker):
 
         if args[0].is_algebraic_constant():
             from pysmt.constants import Numeral
-            l = cast(Union[int, Fraction], args[0].constant_value()) # TODO is this casting correct? Or constant_value can be a Numeral?
-            r = cast(Union[int, Fraction], args[1].constant_value())
+            l = cast(Numeral, args[0].constant_value())
+            r = cast(Numeral, args[1].constant_value())
             return self.manager._Algebraic(Numeral(l**r))
 
         return self.manager.Pow(args[0], args[1])

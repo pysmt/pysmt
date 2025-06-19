@@ -31,13 +31,12 @@ environment is used (this is the default behavior of
 # Enable default deprecation warnings!
 import warnings
 from fractions import Fraction
+from typing import Dict, List, Optional, Tuple, Union
+
+import pysmt
 from pysmt.fnode import FNode
 from pysmt.logics import Logic
-from pysmt.optimization.optimsat import OptiMSATSolver
-from pysmt.optimization.z3 import Z3NativeOptimizer
-from pysmt.solvers.msat import MathSAT5Solver
 from pysmt.typing import PySMTType
-from typing import Dict, List, Optional, Tuple, Union
 
 warnings.filterwarnings('default', module='pysmt')
 
@@ -50,8 +49,8 @@ import pysmt.smtlib.printers
 
 # Import types from shortcuts
 from pysmt.typing import INT, BOOL, REAL, BVType, FunctionType, ArrayType, Type
-assert INT or BOOL or REAL or BVType or FunctionType or ArrayType or Type # type: ignore[truthy-function] # TODO what does this assert mean?
-
+# These are to avoid "unused" linting error on exported classes
+assert INT or BOOL or REAL or BVType or FunctionType or ArrayType or Type # type: ignore[truthy-function]
 
 def get_env() -> pysmt.environment.Environment:
     """Returns the global environment.
@@ -932,7 +931,7 @@ def Array(idx_type: PySMTType, default: FNode, assigned_values: Optional[Dict[FN
 ##
 ## Shortcuts for Solvers Factory
 ##
-def Solver(name: None=None, logic: Optional[str]=None, **kwargs) -> MathSAT5Solver:
+def Solver(name: None=None, logic: Optional[str]=None, **kwargs) -> "pysmt.solvers.solver.Solver":
     """Returns a solver.
 
     :param name: Specify the name of the solver
@@ -1012,7 +1011,7 @@ def Portfolio(solvers_set, logic, **options):
                         environment=get_env(),
                         **options)
 
-def Optimizer(name: Optional[str]=None, logic: Optional[str]=None) -> Union[Z3NativeOptimizer, OptiMSATSolver]:
+def Optimizer(name: Optional[str]=None, logic: Optional[str]=None) -> "pysmt.optimization.optimizer.Optimizer":
     """Returns an Optimizer
 
     :param name: Specify the name of the solver

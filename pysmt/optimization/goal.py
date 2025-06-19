@@ -88,7 +88,6 @@ class Goal(object):
     def term(self) -> FNode:
         raise NotImplementedError
 
-    # TODO is this OK? I added this because MaxSMTgoal didn't define it but it's a maximization
     def opt(self) -> Type["Goal"]:
         raise NotImplementedError
 

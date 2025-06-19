@@ -22,7 +22,7 @@ import subprocess
 import urllib.request
 
 from contextlib import contextmanager
-from setuptools import Distribution
+from setuptools import Distribution # type: ignore[import]
 from typing import Optional
 
 from urllib.error import HTTPError, URLError

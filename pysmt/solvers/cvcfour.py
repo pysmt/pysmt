@@ -74,7 +74,7 @@ class CVC4Options(SolverOptions):
 # EOC CVC4Options
 
 
-class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
+class CVC4Solver(SmtLibBasicSolver, SmtLibIgnoreMixin):
 
     LOGICS = PYSMT_LOGICS -\
              ARRAYS_CONST_LOGICS -\
@@ -215,10 +215,8 @@ class CVC4Converter(Converter, DagWalker):
         self.stringType = cvc4_exprMgr.stringType()
 
         self.declared_vars = {}
-        self.backconversion = {} # type: ignore # TODO what is this used for?
         self.mgr = environment.formula_manager
         self._get_type = environment.stc.get_type
-        return
 
     def declare_variable(self, var):
         if not var.is_symbol():

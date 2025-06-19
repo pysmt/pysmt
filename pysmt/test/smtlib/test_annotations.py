@@ -124,7 +124,7 @@ class TestBasic(TestCase):
         self.assertFalse(ann.has_annotation(a1, "next", "non-existent"))
 
         self.assertIn("A_1__AT1", assert_not_none(ann.annotations(a1))["next"])
-        self.assertIn("A_1__AT1", ann[a1]["next"])
+        self.assertIn("A_1__AT1", assert_not_none(ann[a1])["next"])
 
         curr_a1 = ann.all_annotated_formulae("next", "A_1__AT1")
         self.assertEqual(curr_a1, set([a1]))
@@ -141,7 +141,7 @@ class TestBasic(TestCase):
         ann = script.annotations
         assert ann is not None
         v0 = self.env.formula_manager.get_symbol('"v__AT0"')
-        v1_str = next(iter(ann[v0]["next"]))
+        v1_str = next(iter(assert_not_none(ann[v0])["next"]))
         self.env.formula_manager.get_symbol(v1_str)
         self.assertEqual(v1_str, '"v__AT1"')
 
@@ -157,7 +157,7 @@ class TestBasic(TestCase):
         ann = script.annotations
         assert ann is not None
         v0 = self.env.formula_manager.get_symbol('"v__AT0"')
-        v1_str = next(iter(ann[v0]["next"]))
+        v1_str = next(iter(assert_not_none(ann[v0])["next"]))
         self.assertEqual(v1_str, "(+ 1     meaningless)")
 
 
@@ -171,10 +171,8 @@ class TestBasic(TestCase):
         script = parser.get_script(buf)
         ann = assert_not_none(script.annotations)
         v0 = self.env.formula_manager.get_symbol('"v__AT0"')
-        with self.assertRaises(StopIteration):
-            next(iter(ann[v0]["next"]))
-        with self.assertRaises(StopIteration):
-            next(iter(ann[v0]["this_is_considered_a_value"]))
+        self.assertEqual(len(assert_not_none(ann[v0])["next"]), 0)
+        self.assertEqual(len(assert_not_none(ann[v0])["this_is_considered_a_value"]), 0)
 
 
 if __name__ == '__main__':

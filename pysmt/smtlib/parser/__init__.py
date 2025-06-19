@@ -109,9 +109,9 @@ else:
 
     so_path = pyximport.build_module(name, path,
                                      pyxbuild_dir=build_dir)
-    spec = importlib.util.spec_from_file_location(name, so_path) # type: ignore[attr-defined] # TODO understand why it is not defined for mypy
+    spec = importlib.util.spec_from_file_location(name, so_path) # type: ignore[attr-defined]
     assert spec is not None
-    module = importlib.util.module_from_spec(spec) # type: ignore[attr-defined] # TODO understand why it is not defined for mypy
+    module = importlib.util.module_from_spec(spec) # type: ignore[attr-defined]
     sys.modules[name] = module
     loader = spec.loader
     assert loader is not None

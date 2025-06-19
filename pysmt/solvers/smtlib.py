@@ -19,13 +19,13 @@ from pysmt.fnode import FNode
 from pysmt.logics import Logic
 from typing import Optional, Union
 
-# type: ignore # TODO skipping type checks in this file because it's not clear to me ATM what the methods of SmtLibSolver can accept
+from pysmt.solvers.solver import Solver
 
-class SmtLibSolver(object):
+class SmtLibSolver(Solver): # TODO should this derive from Solver or SmtLibBasicSolver?
     #
     # SMT-LIB 2 Interface
     #
-    def set_logic(self, logic: Optional[Union[str, Logic]]):
+    def set_logic(self, logic: Optional[Union[str, Logic]]) -> bool:
         """ Defines the logic in use.
 
         E.g., set_logic("QF_LIA")
@@ -237,8 +237,8 @@ class SmtLibSolver(object):
 
 
 class SmtLibIgnoreMixin(SmtLibSolver):
-    def set_logic(self, logic: Optional[Logic]) -> None:
-        return None
+    def set_logic(self, logic: Optional[Union[str, Logic]]) -> bool:
+        return True
 
     def declare_fun(self, symbol: FNode) -> None:
         return None
@@ -298,7 +298,7 @@ class SmtLibIgnoreMixin(SmtLibSolver):
         return None
 
 
-class SmtLibBasicSolver(SmtLibSolver):
+class SmtLibBasicSolver(SmtLibSolver): # TODO should this derive from Solver or SmtLibSolver?
     def assert_(self, expr: FNode, named: None=None) -> None:
         return self.add_assertion(expr, named)
 
@@ -315,4 +315,5 @@ class SmtLibBasicSolver(SmtLibSolver):
         return self.pop(levels)
 
     def exit(self):
+        return None # TODO after the Solver derivation the self.exit() goes in a recursion loop
         return self.exit()

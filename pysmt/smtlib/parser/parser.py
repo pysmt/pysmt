@@ -30,7 +30,6 @@ from pysmt.smtlib.script import SmtLibCommand, SmtLibScript
 from pysmt.smtlib.annotations import Annotations
 from pysmt.utils import interactive_char_iterator, assert_not_none
 from pysmt.constants import Fraction
-# TODO understand how to remove _TypeDecl
 from pysmt.typing import PartialType, PySMTType, _TypeDecl
 from pysmt.substituter import FunctionInterpretation
 import pysmt.typing
@@ -103,9 +102,7 @@ class SmtLibExecutionCache(object):
         """Unbinds the last binding of this symbol"""
         self.keys[name].pop()
 
-    # TODO: expression can be a str? (in define)
-    # TODO what are the possible types in parameters?
-    def define(self, name: str, parameters: List[Union[Any, FNode]], expression: Union[PySMTType, FNode, PartialType, str]) -> None:
+    def define(self, name: str, parameters: List[FNode], expression: Union[PySMTType, FNode, PartialType, str]) -> None:
         self.definitions[name] = (parameters, expression)
 
     def _define_adapter(self, formal_parameters: List[FNode], expression: FNode) -> Callable:

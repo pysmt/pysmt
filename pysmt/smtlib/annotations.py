@@ -22,9 +22,9 @@ from typing import Any, Dict, Optional, Set, Union
 class Annotations(object):
     """Handles and stores (key,value) annotations for formulae"""
 
-    def __init__(self, initial_annotations: None=None) -> None:
+    def __init__(self, initial_annotations: Optional[Dict[FNode, Dict[str, Any]]]=None) -> None:
         if initial_annotations is not None:
-            self._annotations = initial_annotations
+            self._annotations: Dict[FNode, Dict[str, Any]] = initial_annotations
         else:
             self._annotations = {}
 
@@ -119,5 +119,5 @@ class Annotations(object):
         return "".join(res + ["}"])
 
 
-    def __getitem__(self, formula: FNode) -> Dict[str, Union[Set[str], Set[Any]]]:
+    def __getitem__(self, formula: FNode) -> Optional[Dict[str, Union[Set[str], Set[Any]]]]:
         return self.annotations(formula)

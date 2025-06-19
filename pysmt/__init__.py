@@ -42,4 +42,4 @@ if len(VERSION) == 5:
 
 # PEP440 Format
 __version__ = "%d.%d.%d.%s%d" % VERSION if len(VERSION) == 5 else \
-              "%d.%d.%d" % VERSION
+              "%d.%d.%d" % VERSION # type: ignore[str-format] # TODO Not all arguments converted during string formatting  [str-format]

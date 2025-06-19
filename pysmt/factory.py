@@ -42,7 +42,7 @@ from pysmt.solvers.qelim import QuantifierEliminator
 from pysmt.environment import Environment
 from pysmt.fnode import FNode
 from pysmt.optimization.optimizer import Optimizer
-from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar, Union, cast
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, TypeVar, Union, cast
 
 SOLVER_TYPES = ['Solver', 'Solver supporting Unsat Cores',
                 'Quantifier Eliminator', 'Interpolator', 'Optimizer']
@@ -328,11 +328,6 @@ class Factory(object):
             MSATLibLoader("mathsat")
             from pysmt.solvers.msat import (MSatFMQuantifierEliminator,
                                             MSatLWQuantifierEliminator)
-            try:
-                MSatFMQuantifierEliminator() # type: ignore[call-arg] # TODO this needs an environment. Does it always raise the SolverAPINotFound?
-                MSatLWQuantifierEliminator() # type: ignore[call-arg] # TODO same above
-            except:
-                raise SolverAPINotFound
             self._all_qelims['msat_fm'] = MSatFMQuantifierEliminator
             self._all_qelims['msat_lw'] = MSatLWQuantifierEliminator
         except SolverAPINotFound:
@@ -445,19 +440,6 @@ class Factory(object):
     def set_optimizer_preference_list(self, preference_list):
         """Defines the order in which to pick the optimizers."""
         self.set_preference_list('Optimizer', preference_list)
-
-    # TODO understand why this old commented code is in here (probably a leftover)
-    # def set_optimizer_preference_list(self, preference_list):
-    #     """Defines the order in which to pick the optimizers."""
-    #     assert preference_list is not None
-    #     assert len(preference_list) > 0
-    #     self.optimizer_preference_list = preference_list
-
-
-    # def set_optimizer_preference_list(self, preference_list):
-    #     """Defines the order in which to pick the optimizers."""
-    #     self.set_preference_list('Optimizer', preference_list)
-
 
     def _filter_solvers(self, solver_list: Dict[str, Type[T]], logic: Optional[Union[Logic, str]]=None) -> Dict[str, Type[T]]:
         """
@@ -662,11 +644,11 @@ class Factory(object):
         with solver:
             return solver.is_valid(formula)
 
-    def is_unsat(self, formula: FNode, solver_name: Optional[str]=None, logic: Optional[Union[str, Logic]]=None, portfolio: None=None) -> bool: # TODO type portfolio
+    def is_unsat(self, formula: FNode, solver_name: Optional[str]=None, logic: Optional[Union[str, Logic]]=None, portfolio: Optional[Union[Iterable[str], Iterable[Tuple[str, Dict[str, Any]]]]]=None) -> bool:
         if logic is None or logic == AUTO_LOGIC:
             logic = get_logic(formula, self.environment)
         if portfolio is not None:
-            solver = Portfolio(solvers_set=portfolio,
+            solver: Solver = Portfolio(solvers_set=portfolio,
                                environment=self.environment,
                                logic=logic,
                                generate_models=False, incremental=False)

@@ -20,18 +20,20 @@
 import sys
 import argparse
 from warnings import warn
+from io import StringIO
+from typing import Any, List
 
+import pysmt.solvers
 from pysmt import __version__
 from pysmt.shortcuts import *
-import pysmt.solvers
-from pysmt.typing import INT, REAL, BOOL, BVType, BV32
-
+from pysmt.logics import PYSMT_LOGICS
 from pysmt.smtlib.parser import SmtLibParser
 from pysmt.smtlib.script import SmtLibCommand, InterpreterOMT, InterpreterSMT
 from pysmt.smtlib.commands import CHECK_SAT, GET_VALUE, GET_OBJECTIVES, ECHO
-from pysmt.logics import PYSMT_LOGICS
-from io import StringIO
-from typing import Any, List
+from pysmt.solvers.smtlib import SmtLibSolver
+from pysmt.typing import INT, REAL, BOOL, BVType, BV32
+# assert done to use variables for handier export
+assert INT or REAL or BOOL or BVType or BV32 # type: ignore[truthy-function]
 
 welcome_msg = \
 """Welcome to pySMT!!!
@@ -156,6 +158,7 @@ class PysmtShell(object):
                 solver = Solver(name=s_name, logic=logic)
             inter = InterpreterSMT()
         for cmd in smt_parser.get_command_generator(stream_in):
+            assert isinstance(solver, SmtLibSolver)
             r = inter.evaluate(cmd, solver)
             self.print_result(stream_out, cmd, r)
 

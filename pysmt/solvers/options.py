@@ -35,7 +35,7 @@ To use the Options it is necessary to:
 """
 
 import abc
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 class SolverOptions(object):
     """Solver Options shared by most solvers.
@@ -60,7 +60,7 @@ class SolverOptions(object):
 
     def __init__(self, generate_models: bool=True, incremental: bool=True,
                  unsat_cores_mode: None=None, random_seed: None=None,
-                 solver_options: Dict[str, Any]=None) -> None:
+                 solver_options: Optional[Dict[str, Any]]=None) -> None:
 
         if generate_models not in (True, False):
             raise ValueError("Invalid value %s for 'generate_models'" \

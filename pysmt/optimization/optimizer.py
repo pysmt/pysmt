@@ -403,15 +403,6 @@ class OptPareto(OptComparationFunctions):
         self.val: Optional[FNode] = None
 
     def get_constraint(self, strict: bool) -> FNode:
-        # if self.val is not None:
-        #     assert self.val.is_constant(), "Value %s is not a constant" % str(self.val)
-        #     correct_operator = self.op_ns
-        #     if strict:
-        #         correct_operator = self.op_strict
-        #     return correct_operator(self.goal.term(), self.val)
-        # else:
-        #     return None
-        # TODO check with implementation is correct. Typing this return as Optional[FNode] creates some boilerplate in subsequent code
         assert self.val is not None
         assert self.val.is_constant(), "Value %s is not a constant" % str(self.val)
         correct_operator = self.op_ns

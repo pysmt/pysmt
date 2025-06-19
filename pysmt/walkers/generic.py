@@ -19,7 +19,7 @@ from functools import partial
 
 import sys
 from pysmt.fnode import FNode
-from typing import Any, Callable, Dict, Optional, Type
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union, cast
 
 if sys.version_info >= (3, 3):
     from collections.abc import Iterable
@@ -38,7 +38,7 @@ class handles(object):
     """Decorator for walker functions.
 
     Use it by specifying the nodetypes that need to be handled by the
-    given function. It is possible to use groupd (e.g., op.RELATIONS)
+    given function. It is possible to use grouped (e.g., op.RELATIONS)
     directly. ::
 
       @handles(op.NODE, ...)
@@ -46,25 +46,28 @@ class handles(object):
          ...
 
     """
-    def __init__(self, *nodetypes) -> None:
+    def __init__(self, *nodetypes: Union[int, Iterable[int]]) -> None:
         if len(nodetypes) == 1 and isinstance(nodetypes[0], Iterable):
-            nodetypes = nodetypes[0]
-        self.nodetypes = list(nodetypes)
+            nt: Iterable[int] = nodetypes[0]
+        else:
+            assert all(isinstance(x, int) for x in nodetypes)
+            nt = cast(Tuple[int], nodetypes)
+        self.nodetypes: List[int] = list(cast(Iterable[int], nt))
 
     def __call__(self, func: Callable) -> Callable:
         nodetypes = self.nodetypes
         if hasattr(func, "nodetypes"):
-            nodetypes = func.nodetypes + nodetypes
-        func.nodetypes = nodetypes
+            nodetypes = cast(List[int], getattr(func, "nodetypes")) + nodetypes
+        setattr(func, "nodetypes", nodetypes)
         return func
 
 class MetaNodeTypeHandler(type):
     """Metaclass used to intepret the nodehandler decorator. """
     def __new__(cls: Type["MetaNodeTypeHandler"], name: str, bases: Any, dct: Dict[str, Any]) -> Any:
         obj = type.__new__(cls, name, bases, dct)
-        for k,v in dct.items():
+        for k, v in dct.items():
             if hasattr(v, "nodetypes"):
-                obj.set_handler(v, *v.nodetypes)
+                cast("Walker", obj).set_handler(v, *cast(List[int], getattr(v, "nodetypes")))
         return obj
 
 

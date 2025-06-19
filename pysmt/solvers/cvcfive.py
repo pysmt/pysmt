@@ -97,7 +97,7 @@ class CVC5Options(SolverOptions):
 # EOC CVC5Options
 
 
-class CVC5Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
+class CVC5Solver(SmtLibBasicSolver, SmtLibIgnoreMixin):
 
     LOGICS = PYSMT_LOGICS -\
              ARRAYS_CONST_LOGICS
@@ -219,7 +219,6 @@ class CVC5Converter(Converter, DagWalker):
         self.cvc5 = cvc5
 
         self.declared_vars: Dict[Union[str, FNode], Any] = {}
-        self.backconversion = {} # type: ignore # TODO what is this used for?
         self.mgr = environment.formula_manager
         self._get_type = environment.stc.get_type
         return

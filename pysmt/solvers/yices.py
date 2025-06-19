@@ -49,7 +49,7 @@ import pysmt.logics
 def init() -> None:
     if not getattr(init, 'initialized', False):
         yices_api.yices_init()
-    init.initialized = True #type: ignore[attr-defined] # TODO understand how to handle this
+    setattr(init, "initialized", True)
 
 def reset_yices():
     yices_api.yices_reset()
@@ -133,7 +133,7 @@ class YicesOptions(SolverOptions):
 # EOC YicesOptions
 
 
-class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
+class YicesSolver(SmtLibBasicSolver, SmtLibIgnoreMixin):
 
     LOGICS = pysmt.logics.PYSMT_QF_LOGICS -\
              pysmt.logics.ARRAYS_LOGICS -\
@@ -313,7 +313,6 @@ class YicesConverter(Converter, DagWalker):
 
     def __init__(self, environment: Environment) -> None:
         DagWalker.__init__(self, environment)
-        self.backconversion = {} # type: ignore # TODO what is this used for?
         self.mgr = environment.formula_manager
         self._get_type = environment.stc.get_type
 

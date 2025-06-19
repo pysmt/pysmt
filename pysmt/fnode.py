@@ -17,8 +17,12 @@
 #
 """FNode are the building blocks of formulae."""
 import collections
+from fractions import Fraction
+from typing import Any, Callable, Dict, Optional, Tuple, Union, cast
+
 import pysmt
 import pysmt.smtlib
+import pysmt.typing as types
 from pysmt.operators import (FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF,
                              SYMBOL, FUNCTION,
                              REAL_CONSTANT, BOOL_CONSTANT, INT_CONSTANT,
@@ -52,8 +56,6 @@ from pysmt.utils import twos_complement
 from pysmt.constants import is_python_integer
 from pysmt.exceptions import (PysmtValueError, PysmtModeError,
                               UnsupportedOperatorError)
-from fractions import Fraction
-from typing import Any, Callable, Dict, Optional, Tuple, Union
 
 
 FNodeContent = collections.namedtuple("FNodeContent",
@@ -170,7 +172,7 @@ class FNode(object):
             if _type.is_bv_type():
                 if self.node_type() != BV_CONSTANT:
                     return False
-                if self._content.payload[1] != _type.width:
+                if self._content.payload[1] != cast(types._BVType, _type).width:
                     return False
 
         if value is not None:
@@ -240,8 +242,7 @@ class FNode(object):
         """
         if self.is_symbol(BOOL):
             return True
-        if self.is_not():
-            return self.arg(0).is_symbol(BOOL)
+        return self.is_not() and self.arg(0).is_symbol(BOOL)
 
     def is_true(self) -> bool:
         """Test whether the formula is the True Boolean constant."""
@@ -476,10 +477,10 @@ class FNode(object):
             return self._content.payload[1]
         elif self.is_symbol():
             assert self.symbol_type().is_bv_type()
-            return self.symbol_type().width
+            return cast(types._BVType, self.symbol_type()).width
         elif self.is_function_application():
             # Return width defined in the declaration
-            return self.function_name().symbol_type().return_type.width
+            return cast(types._BVType, cast(types._FunctionType, self.function_name().symbol_type()).return_type).width
         elif self.is_ite():
             # Recursively call bv_width on the left child
             # (The right child has the same width if the node is well-formed)
@@ -488,7 +489,7 @@ class FNode(object):
         elif self.is_select():
             # This must be a select over an array with BV value type
             ty = self.arg(0).get_type()
-            return ty.elem_type.width
+            return cast(types._BVType, cast(types._ArrayType, ty).elem_type).width
         else:
             # BV Operator
             assert self.is_bv_op(), "Unsupported method bv_width on %s" % self
@@ -593,11 +594,15 @@ class FNode(object):
 
     def bv_unsigned_value(self) -> int:
         """Return the unsigned value encoded by the BitVector."""
-        return self.constant_value()
+        if self.node_type() != BV_CONSTANT:
+            raise PysmtValueError("%s is not a BV constant" % str(self))
+        return cast(int, self.constant_value())
 
     def bv_signed_value(self) -> int:
         """Return the signed value encoded by the BitVector."""
-        return twos_complement(self.constant_value(), self.bv_width())
+        if self.node_type() != BV_CONSTANT:
+            raise PysmtValueError("%s is not a BV constant" % str(self))
+        return twos_complement(cast(int, self.constant_value()), self.bv_width())
 
     def bv_str(self, fmt: str='b') -> str:
         """Return a string representation of the BitVector.
@@ -685,10 +690,11 @@ class FNode(object):
 
     # Infix Notation
     @assert_infix_enabled
-    def _apply_infix(self, right: "FNode", function: Callable, bv_function: None=None) -> "FNode":
+    def _apply_infix(self, right: "FNode", function: Callable, bv_function: Optional[Callable]=None) -> "FNode":
         # Default bv_function to function
         if bv_function is None:
             bv_function = function
+        assert bv_function is not None
         right = self._infix_prepare_arg(right, self.get_type())
         if self.get_type().is_bv_type():
             return bv_function(self, right)
@@ -948,11 +954,11 @@ class FNode(object):
     @assert_infix_enabled
     def __call__(self, *args) -> "FNode":
         if self.is_symbol() and self.symbol_type().is_function_type():
-            types = self.symbol_type().param_types
-            if (len(types) != len(args)):
+            param_types = cast(types._FunctionType, self.symbol_type()).param_types
+            if (len(param_types) != len(args)):
                 raise PysmtValueError("Wrong number of parameters passed in "
                                       "infix 'call' operator")
-            args = [self._infix_prepare_arg(x, t) for x,t in zip(args, types)]
+            args = tuple(self._infix_prepare_arg(x, t) for x,t in zip(args, param_types))
             return _mgr().Function(self, args)
         else:
             raise PysmtValueError("Call operator can be applied to symbol "

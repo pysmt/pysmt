@@ -21,6 +21,7 @@ from collections import defaultdict, namedtuple
 from io import TextIOWrapper, StringIO
 from typing import Any, Dict, Iterator, List, Optional, Set, TextIO, Tuple, Union
 
+import pysmt
 import pysmt.smtlib.commands as smtcmd
 from pysmt.smtlib.annotations import Annotations
 from pysmt.exceptions import (UnknownSmtLibCommandError, NoLogicAvailableError,
@@ -34,6 +35,7 @@ from pysmt.optimization.goal import MaximizationGoal, MinimizationGoal, MinMaxGo
 from pysmt.typing import _TypeDecl
 from pysmt.fnode import FNode
 from pysmt.formula import FormulaManager
+from pysmt.solvers.smtlib import SmtLibSolver
 from pysmt.solvers.solver import Solver
 
 PrinterType = Union[SmtPrinter, SmtDagPrinter]
@@ -210,7 +212,7 @@ class SmtLibScript(object):
     def add_command(self, command: SmtLibCommand) -> None:
         self.commands.append(command)
 
-    def evaluate(self, solver: Solver) -> List[Tuple[str, Optional[Union[bool, Goal, List[Tuple[FNode, FNode]]]]]]:
+    def evaluate(self, solver: SmtLibSolver) -> List[Tuple[str, Optional[Union[bool, Goal, List[Tuple[FNode, FNode]]]]]]:
         log = []
         inter = InterpreterOMT()
         for cmd in self.commands:
@@ -228,7 +230,7 @@ class SmtLibScript(object):
     def filter_by_command_name(self, command_name_set: List[str]) -> Iterator[Any]:
         return (cmd for cmd in self.commands if cmd.name in command_name_set)
 
-    def get_strict_formula(self, mgr: None=None) -> FNode:
+    def get_strict_formula(self, mgr: Optional["pysmt.formula.FormulaManager"]=None) -> FNode:
         if self.contains_command(smtcmd.PUSH) or \
            self.contains_command(smtcmd.POP):
             raise PysmtValueError("Was not expecting push-pop commands")
@@ -417,11 +419,11 @@ def smtlibscript_from_formula(formula: FNode, logic: Optional[Union[str, int, Lo
 
 
 class InterpreterSMT(object):
-
-    def evaluate(self, cmd: SmtLibCommand, solver: Solver) -> Optional[Union[bool, Goal, List[Tuple[FNode, FNode]]]]:
+    # TODO where this is used cast it to SmtLibSOlver and open issue about this.
+    def evaluate(self, cmd: SmtLibCommand, solver: SmtLibSolver) -> Optional[Union[bool, Goal, List[Tuple[FNode, FNode]]]]:
         return self._smt_evaluate(cmd, solver)
 
-    def _smt_evaluate(self, cmd: SmtLibCommand, solver: Solver) -> Optional[Union[bool, Goal, List[Tuple[FNode, FNode]]]]:
+    def _smt_evaluate(self, cmd: SmtLibCommand, solver: SmtLibSolver) -> Optional[Union[bool, Goal, List[Tuple[FNode, FNode]]]]:
         if cmd.name == smtcmd.SET_INFO:
             return solver.set_info(cmd.args[0], cmd.args[1]) # type: ignore[attr-defined] # TODO These method are defined in the class SmtLibSolver. Should the solver class be this instead of solver?
 
@@ -450,7 +452,7 @@ class InterpreterSMT(object):
             return solver.pop(cmd.args[0])
 
         elif cmd.name == smtcmd.EXIT:
-            solver.exit() # TODO makes mypy happy, but is this a problem? error: "exit" of "Solver" does not return a value (it only ever returns None)  [func-returns-value]
+            solver.exit()
             return None
 
         elif cmd.name == smtcmd.SET_LOGIC:
@@ -471,7 +473,7 @@ class InterpreterSMT(object):
             return cmd.args[0]
 
         elif cmd.name == smtcmd.CHECK_SAT_ASSUMING:
-            return solver.check_sat(cmd.args) # type: ignore[attr-defined] # TODO These method are defined in the class SmtLibSolver. Should the solver class be this instead of solver?
+            return solver.check_sat(cmd.args) # type: ignore[call-arg] # TODO where do check_sat take args?
 
         elif cmd.name == smtcmd.GET_MODEL:
             return solver.get_model()
@@ -498,10 +500,10 @@ class InterpreterOMT(InterpreterSMT):
         self.optimization_goals: Tuple[List[Goal], List[Tuple[FNode, FNode]]] = ([], [])
         self.opt_priority = "single-obj"
 
-    def evaluate(self, cmd: SmtLibCommand, solver: Union[Solver, Optimizer]) -> Optional[Union[bool, Goal, List[Tuple[FNode, FNode]]]]:
+    def evaluate(self, cmd: SmtLibCommand, solver: SmtLibSolver) -> Optional[Union[bool, Goal, List[Tuple[FNode, FNode]]]]:
         return self._omt_evaluate(cmd, solver)
 
-    def _omt_evaluate(self, cmd: SmtLibCommand, optimizer: Union[Solver, Optimizer]) -> Optional[Union[bool, Goal, List[Tuple[FNode, FNode]]]]:
+    def _omt_evaluate(self, cmd: SmtLibCommand, optimizer: SmtLibSolver) -> Optional[Union[bool, Goal, List[Tuple[FNode, FNode]]]]:
         if cmd.name == smtcmd.SET_OPTION:
             if cmd.args[0] == ":opt.priority":
                 self.opt_priority = cmd.args[1]

@@ -34,18 +34,18 @@ class Solver(object):
     LOGICS: Iterable[Logic] = []
 
     # Class defining options for the Solver
-    OptionsClass: Type[SolverOptions] = SolverOptions # type: ignore[type-abstract] # TODO: Can only assign concrete classes to a variable of type "type[SolverOptions]"
+    OptionsClass: Optional[Type[SolverOptions]] = None
 
-    def __init__(self, environment: Environment, logic: Logic, **options) -> None:
+    def __init__(self, environment: Environment, logic: Logic, **options):
         if logic is None:
             raise PysmtValueError("Cannot provide 'None' as logic")
 
         self.environment = environment
         self.pending_pop = False
         self.logic = logic
+        assert self.OptionsClass is not None
         self.options = self.OptionsClass(**options)
         self._destroyed = False
-        return
 
     def solve(self, assumptions=None):
         """Returns the satisfiability value of the asserted formulas.
@@ -107,7 +107,7 @@ class Solver(object):
             def solve_error(*args, **kwargs):
                 raise SolverStatusError("Cannot call is_sat twice when incrementality is disable")
             res = self.solve()
-            self.solve = solve_error # type: ignore[method-assign] # TODO here and below a method is assigned. is it OK?
+            self.solve = solve_error # type: ignore[method-assign]
             self.is_sat = solve_error # type: ignore[method-assign]
             return res
 
