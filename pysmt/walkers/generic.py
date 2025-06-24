@@ -19,7 +19,7 @@ from functools import partial
 
 import sys
 from pysmt.fnode import FNode
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union, cast
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union, cast, Iterable as TypingIterable
 
 if sys.version_info >= (3, 3):
     from collections.abc import Iterable
@@ -46,13 +46,13 @@ class handles(object):
          ...
 
     """
-    def __init__(self, *nodetypes: Union[int, Iterable[int]]) -> None:
+    def __init__(self, *nodetypes: Union[int, TypingIterable[int]]) -> None:
         if len(nodetypes) == 1 and isinstance(nodetypes[0], Iterable):
-            nt: Iterable[int] = nodetypes[0]
+            nt: TypingIterable[int] = nodetypes[0]
         else:
             assert all(isinstance(x, int) for x in nodetypes)
             nt = cast(Tuple[int], nodetypes)
-        self.nodetypes: List[int] = list(cast(Iterable[int], nt))
+        self.nodetypes: List[int] = list(cast(TypingIterable[int], nt))
 
     def __call__(self, func: Callable) -> Callable:
         nodetypes = self.nodetypes
