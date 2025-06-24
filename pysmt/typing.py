@@ -175,9 +175,6 @@ class _ArrayType(PySMTType):
     This class should not be instantiated directly, but the factory
     method ArrayType should be used instead.
     """
-
-    # _instances = {}  # TODO commented this because it is not used
-
     def __init__(self, index_type: "PySMTType", elem_type: "PySMTType") -> None:
         decl = _TypeDecl("Array", 2)
         PySMTType.__init__(self, decl=decl, args=(index_type, elem_type))
@@ -212,9 +209,6 @@ class _BVType(PySMTType):
     This class should not be instantiated directly, but the factory
     method BVType should be used instead.
     """
-
-    # _instances = {} # TODO commented this because it is not used
-
     def __init__(self, width: int=32) -> None:
         decl = _TypeDecl("BV{%d}" % width, 0)
         PySMTType.__init__(self, decl=decl, args=None)
@@ -255,9 +249,6 @@ class _FunctionType(PySMTType):
     This class should not be instantiated directly, but the factory
     method FunctionType should be used instead.
     """
-
-    # _instances = {} # TODO commented this because it is not used
-
     def __init__(self, return_type: PySMTType, param_types: Sequence[PySMTType]) -> None:
         PySMTType.__init__(self)
         self._return_type = return_type

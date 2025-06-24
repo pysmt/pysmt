@@ -213,7 +213,7 @@ class SmtLibSolver(Solver): # TODO should this derive from Solver or SmtLibBasic
         """ Gets the value of a given information. """
         raise NotImplementedError
 
-    def set_info(self, name: Optional[str], value: Optional[str]):
+    def set_info(self, name: str, value: str):
         """ Sets the value for a given information.
 
         Required (by SMT):
@@ -291,7 +291,7 @@ class SmtLibIgnoreMixin(SmtLibSolver):
     def get_info(self, name):
         return None
 
-    def set_info(self, name: Optional[str], value: Optional[str]) -> None:
+    def set_info(self, name: Optional[str], value: Optional[str]):
         return None
 
     def exit(self):

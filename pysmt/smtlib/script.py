@@ -419,25 +419,24 @@ def smtlibscript_from_formula(formula: FNode, logic: Optional[Union[str, int, Lo
 
 
 class InterpreterSMT(object):
-    # TODO where this is used cast it to SmtLibSOlver and open issue about this.
     def evaluate(self, cmd: SmtLibCommand, solver: SmtLibSolver) -> Optional[Union[bool, Goal, List[Tuple[FNode, FNode]]]]:
         return self._smt_evaluate(cmd, solver)
 
     def _smt_evaluate(self, cmd: SmtLibCommand, solver: SmtLibSolver) -> Optional[Union[bool, Goal, List[Tuple[FNode, FNode]]]]:
         if cmd.name == smtcmd.SET_INFO:
-            return solver.set_info(cmd.args[0], cmd.args[1]) # type: ignore[attr-defined] # TODO These method are defined in the class SmtLibSolver. Should the solver class be this instead of solver?
+            return solver.set_info(cmd.args[0], cmd.args[1])
 
         if cmd.name == smtcmd.SET_OPTION:
             opt = cmd.args[0]
             if opt[0] == ':':
                 opt = opt[1:]
-            return solver.set_option(opt, cmd.args[1]) # type: ignore[attr-defined] # TODO These method are defined in the class SmtLibSolver. Should the solver class be this instead of solver?
+            return solver.set_option(opt, cmd.args[1])
 
         elif cmd.name == smtcmd.ASSERT:
-            return solver.assert_(cmd.args[0]) # type: ignore[attr-defined] # TODO These method are defined in the class SmtLibSolver. Should the solver class be this instead of solver?
+            return solver.assert_(cmd.args[0])
 
         elif cmd.name == smtcmd.CHECK_SAT:
-            return solver.check_sat() # type: ignore[attr-defined] # TODO These method are defined in the class SmtLibSolver. Should the solver class be this instead of solver?
+            return solver.check_sat()
 
         elif cmd.name == smtcmd.RESET_ASSERTIONS:
             return solver.reset_assertions()
@@ -457,17 +456,17 @@ class InterpreterSMT(object):
 
         elif cmd.name == smtcmd.SET_LOGIC:
             name = cmd.args[0]
-            return solver.set_logic(name) # type: ignore[attr-defined] # TODO These method are defined in the class SmtLibSolver. Should the solver class be this instead of solver?
+            return solver.set_logic(name)
 
         elif cmd.name == smtcmd.DECLARE_FUN:
-            return solver.declare_fun(cmd.args[0]) # type: ignore[attr-defined] # TODO These method are defined in the class SmtLibSolver. Should the solver class be this instead of solver?
+            return solver.declare_fun(cmd.args[0])
 
         elif cmd.name == smtcmd.DECLARE_CONST:
-            return solver.declare_const(cmd.args[0]) # type: ignore[attr-defined] # TODO These method are defined in the class SmtLibSolver. Should the solver class be this instead of solver?
+            return solver.declare_const(cmd.args[0])
 
         elif cmd.name == smtcmd.DEFINE_FUN:
             (var, formals, typename, body) = cmd.args
-            return solver.define_fun(var, formals, typename, body) # type: ignore[attr-defined] # TODO These method are defined in the class SmtLibSolver. Should the solver class be this instead of solver?
+            return solver.define_fun(var, formals, typename, body)
 
         elif cmd.name == smtcmd.ECHO:
             return cmd.args[0]
@@ -481,10 +480,10 @@ class InterpreterSMT(object):
         elif cmd.name == smtcmd.DECLARE_SORT:
             name = cmd.args[0].name
             arity = cmd.args[0].arity
-            return solver.declare_sort(name, arity) # type: ignore[attr-defined] # TODO These method are defined in the class SmtLibSolver. Should the solver class be this instead of solver?
+            return solver.declare_sort(name, arity)
 
         elif cmd.name == smtcmd.GET_UNSAT_CORE:
-            return solver.get_unsat_core() # type: ignore[attr-defined] # TODO These method are defined in the class SmtLibSolver. Should the solver class be this instead of solver?
+            return solver.get_unsat_core()
 
         elif cmd.name in smtcmd.ALL_COMMANDS:
             raise NotImplementedError("'%s' is a valid SMT-LIB command "\

@@ -78,7 +78,7 @@ class TestSmtLibScript(TestCase):
                                    '(declare-const c1 (s1 Int))'])
         outstream = StringIO(smtlib_script)
         script = parser.get_script(outstream)
-        script.evaluate(solver=mock) # type: ignore[arg-type] # TODO post-pone this until the TODO in solvers.smtlib (line 301, definition of class SmtLibBasicSolver) is solved
+        script.evaluate(solver=mock)
 
         self.assertEqual(len(mock.declare_sort_history), 2)
         s0_name, s0_arity = mock.declare_sort_history[0]
@@ -226,15 +226,15 @@ class TestSmtLibScript(TestCase):
                           smtcmd.POP]:
 
             inter.evaluate(SmtLibCommand(cmd_name, [None, None]),
-                             solver=mock) # type: ignore[arg-type] # mock is not a Solver # TODO check if there is a different way here; mock could become a Solver
+                             solver=mock)
 
         inter.evaluate(SmtLibCommand(smtcmd.DECLARE_FUN,
                                        [None, None, None]),
-                         solver=mock) # type: ignore[arg-type] # mock is not a Solver # TODO check if there is a different way here
+                         solver=mock)
 
         inter.evaluate(SmtLibCommand(smtcmd.DEFINE_FUN,
                                        [None, None, None, None]),
-                         solver=mock) # type: ignore[arg-type] # mock is not a Solver # TODO check if there is a different way here
+                         solver=mock)
 
 
     def test_smtlibignore_mixin(self) -> None:
@@ -247,8 +247,9 @@ class TestSmtLibScript(TestCase):
         class SmtLibIgnore(SmtLibIgnoreMixin):
             OptionsClass = SolverOptionsIgnore
 
-        solver = SmtLibIgnore(get_env(), AUTO) # TODO all these type: ignore are because the typing of the function is not respected
-        self.assertTrue(solver.set_logic(None)) # type: ignore
+        solver = SmtLibIgnore(get_env(), AUTO)
+        # the following type: ignore are because the typing of the function is not respected
+        self.assertTrue(solver.set_logic(None))
         self.assertIsNone(solver.declare_fun(None)) # type: ignore
         self.assertIsNone(solver.declare_const(None)) # type: ignore
         self.assertIsNone(solver.define_fun(None, None, None, None)) # type: ignore

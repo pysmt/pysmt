@@ -625,7 +625,7 @@ class FormulaManager(object):
             raise PysmtValueError("Need to specify a width for the constant")
 
         if is_pysmt_integer(value):
-            _value = cast(int, value) #TODO: this is incorect, we should define a custom "Integer" type including mpz. Try with IntegerClass from constants
+            _value = cast(int, value) #TODO: this is incorrect, we should define a custom "Integer" type including mpz. Try with IntegerClass from constants
         elif is_python_integer(value):
             assert isinstance(value, int), "Non-accepted typing"
             _value = pysmt_integer_from_integer(value)

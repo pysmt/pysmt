@@ -24,7 +24,6 @@ from pysmt.exceptions import InternalSolverError
 
 
 class QuantifierEliminator(object):
-    # TODO adding this here and  to Interpolator base class. is it OK?
     LOGICS: Iterable[pysmt.logics.Logic] = []
 
     def __init__(self):

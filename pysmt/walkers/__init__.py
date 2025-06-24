@@ -32,15 +32,10 @@ multiple information can be extracted from the formula by navigating
 it only once.
 
 """
-
 from pysmt.walkers.dag import DagWalker
-assert DagWalker  # type: ignore[truthy-function] # TODO
-
 from pysmt.walkers.tree import TreeWalker
-assert TreeWalker  # type: ignore[truthy-function] # TODO
-
 from pysmt.walkers.identitydag import IdentityDagWalker
-assert IdentityDagWalker  # type: ignore[truthy-function] # TODO
-
 from pysmt.walkers.generic import handles
-assert handles  # type: ignore[truthy-function] # TODO
+
+# assert is used to remove the unused-import warning
+assert DagWalker and TreeWalker and IdentityDagWalker and handles # type: ignore[truthy-function]

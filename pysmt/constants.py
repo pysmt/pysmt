@@ -198,7 +198,7 @@ if USE_Z3:
             pass
 
 else:
-    class Numeral(object): # type: ignore[no-redef] # TODO check if this is the correct fix
+    class Numeral(object): # type: ignore[no-redef]
         """Represents a Number (Algebraic)"""
         def __init__(self, obj):
             raise NotImplementedError("Z3 is not installed. "\

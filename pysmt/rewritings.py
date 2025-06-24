@@ -246,7 +246,7 @@ class NNFizer(DagWalker):
         """ Converts the given formula in NNF """
         return self.walk(formula)
 
-    def _get_children(self, formula: FNode) -> Union[Tuple[FNode, FNode, FNode], Tuple[FNode], List[FNode], Tuple[FNode, FNode, FNode, FNode], Tuple[FNode, FNode]]:
+    def _get_children(self, formula: FNode) -> Union[Tuple[FNode, ...], List[FNode]]:
         """Returns the arguments of the node on which an hypothetical recursion
         would be made, possibly negating them.
         """
@@ -279,7 +279,7 @@ class NNFizer(DagWalker):
                     mgr.Not(formula.arg(1))]
 
         elif formula.is_and() or formula.is_or() or formula.is_quantifier():
-            return formula.args() # type: ignore # TODO understand this file to type it better
+            return formula.args()
 
         elif formula.is_ite():
             # This must be a boolean ITE as we do not recur within
@@ -721,11 +721,11 @@ class Ackermannizer(IdentityDagWalker):
         result = set()
         possible_args = self._funs_to_args[f]
         for option1, option2 in combinations(possible_args, 2):
-            implication = self._generate_implication(option1, option2, f) # type: ignore[arg-type] # TODO I don't understand the typing this method should have
+            implication = self._generate_implication(option1, option2, f)
             result.add(implication)
         return result
 
-    def _generate_implication(self, option1: Union[Tuple[FNode], Tuple[FNode, FNode]], option2: Union[Tuple[FNode], Tuple[FNode, FNode]], f: FNode) -> FNode:
+    def _generate_implication(self, option1: Sequence[FNode], option2: Sequence[FNode], f: FNode) -> FNode:
         left_conjuncts = set()
         for term1, term2 in zip(option1, option2):
             if term1.is_function_application():
