@@ -16,7 +16,7 @@
 
 import os
 
-from typing import Any, Optional, Tuple, Type, TypeAlias, Union
+from typing import Any, Optional, Type, Union
 
 from pysmt.exceptions import PysmtImportError
 
@@ -72,8 +72,6 @@ if USE_GMPY:
 else:
     Fraction = pyFraction # type: ignore[misc] # TODO understand how to fix this typing error (removing the Fraction definition has side effects on other files that import Fraction from pysmt.constants)
 
-# FractionClassType: TypeAlias = Union[Type[mpq], Type[pyFraction]] # TODO check if this is OK
-FractionClassType: TypeAlias = Type[pyFraction] # TODO CHECK THIS
 FractionClass = type(Fraction(1,2))
 
 
