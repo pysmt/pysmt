@@ -59,8 +59,12 @@ class TestSmtLibScript(TestCase):
 
 
     def test_declare_sort(self) -> None:
+        class SolverOptionsIgnore(SolverOptions):
+            def __call__(self, solver):
+                pass
+
         class SmtLibIgnore(SmtLibIgnoreMixin):
-            OptionsClass = SolverOptions
+            OptionsClass = SolverOptionsIgnore
 
             declare_sort_history = []
             def declare_sort(self, name, arity):
@@ -203,8 +207,12 @@ class TestSmtLibScript(TestCase):
             _ = parser.get_script(stream)
 
     def test_evaluate_command(self) -> None:
+        class SolverOptionsIgnore(SolverOptions):
+            def __call__(self, solver):
+                pass
+
         class SmtLibIgnore(SmtLibIgnoreMixin):
-            OptionsClass = SolverOptions
+            OptionsClass = SolverOptionsIgnore
 
         mock = SmtLibIgnore(get_env(), AUTO)
         inter = InterpreterOMT()
@@ -231,8 +239,13 @@ class TestSmtLibScript(TestCase):
 
     def test_smtlibignore_mixin(self) -> None:
         """In SmtLibIgnoreMixin, all SMT-LIB methods return None."""
+
+        class SolverOptionsIgnore(SolverOptions):
+            def __call__(self, solver):
+                pass
+
         class SmtLibIgnore(SmtLibIgnoreMixin):
-            OptionsClass = SolverOptions
+            OptionsClass = SolverOptionsIgnore
 
         solver = SmtLibIgnore(get_env(), AUTO) # TODO all these type: ignore are because the typing of the function is not respected
         self.assertTrue(solver.set_logic(None)) # type: ignore
