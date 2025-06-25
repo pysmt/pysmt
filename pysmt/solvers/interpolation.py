@@ -16,7 +16,12 @@
 #   limitations under the License.
 #
 
+from typing import Iterable
+
+import pysmt.logics
+
 class Interpolator(object):
+    LOGICS: Iterable[pysmt.logics.Logic] = []
 
     def __init__(self):
         self._destroyed = False

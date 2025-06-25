@@ -15,6 +15,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+from typing import Iterable
 import pysmt.logics
 
 from pysmt.walkers.identitydag import IdentityDagWalker
@@ -23,6 +24,7 @@ from pysmt.exceptions import InternalSolverError
 
 
 class QuantifierEliminator(object):
+    LOGICS: Iterable[pysmt.logics.Logic] = []
 
     def __init__(self):
         self._destroyed = False

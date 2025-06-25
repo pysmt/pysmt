@@ -20,7 +20,7 @@ from __future__ import absolute_import
 from pysmt.exceptions import SolverAPINotFound
 
 try:
-    import CVC4
+    import CVC4 # type: ignore[import]
 except ImportError:
     raise SolverAPINotFound
 
@@ -74,7 +74,7 @@ class CVC4Options(SolverOptions):
 # EOC CVC4Options
 
 
-class CVC4Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
+class CVC4Solver(SmtLibBasicSolver, SmtLibIgnoreMixin):
 
     LOGICS = PYSMT_LOGICS -\
              ARRAYS_CONST_LOGICS -\
@@ -215,10 +215,8 @@ class CVC4Converter(Converter, DagWalker):
         self.stringType = cvc4_exprMgr.stringType()
 
         self.declared_vars = {}
-        self.backconversion = {}
         self.mgr = environment.formula_manager
         self._get_type = environment.stc.get_type
-        return
 
     def declare_variable(self, var):
         if not var.is_symbol():
