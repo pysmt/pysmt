@@ -86,7 +86,6 @@ class Solver(object):
         """
         raise NotImplementedError
 
-
     def is_sat(self, formula: FNode) -> bool:
         """Checks satisfiability of the formula w.r.t. the current state of
         the solver.

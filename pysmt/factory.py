@@ -33,8 +33,9 @@ from pysmt.logics import AUTO as AUTO_LOGIC
 from pysmt.logics import most_generic_logic, get_closer_logic
 from pysmt.logics import convert_logic_from_string
 from pysmt.oracles import get_logic
-from pysmt.solvers.solver import Solver
-from pysmt.solvers.qelim import (ShannonQuantifierEliminator,
+from pysmt.solvers.solver import Solver, UnsatCoreSolver, Model
+from pysmt.solvers.qelim import (QuantifierEliminator,
+                                 ShannonQuantifierEliminator,
                                  SelfSubstitutionQuantifierEliminator)
 from pysmt.solvers.interpolation import Interpolator
 from pysmt.solvers.portfolio import Portfolio
@@ -549,26 +550,26 @@ class Factory(object):
                                **options)
 
     def UnsatCoreSolver(self, name: Optional[str]=None, logic: Optional[Union[Logic, str]]=None,
-                        unsat_cores_mode="all", **options):
+                        unsat_cores_mode: str="all", **options) -> UnsatCoreSolver:
         return self.get_unsat_core_solver(name=name,
                                           logic=logic,
                                           unsat_cores_mode=unsat_cores_mode,
                                           **options)
 
-    def QuantifierEliminator(self, name: Optional[str]=None, logic: Optional[Union[Logic, str]]=None):
+    def QuantifierEliminator(self, name: Optional[str]=None, logic: Optional[Union[Logic, str]]=None) -> QuantifierEliminator:
         return self.get_quantifier_eliminator(name=name, logic=logic)
 
-    def Interpolator(self, name: Optional[str]=None, logic: Optional[Union[Logic, str]]=None):
+    def Interpolator(self, name: Optional[str]=None, logic: Optional[Union[Logic, str]]=None) -> Interpolator:
         return self.get_interpolator(name=name, logic=logic)
 
-    def Optimizer(self, name: Optional[str]=None, logic: Optional[Union[Logic, str]]=None) -> Optimizer:
-        return self.get_optimizer(name=name, logic=logic)
+    def Optimizer(self, name: Optional[str]=None, logic: Optional[Union[Logic, str]]=None, **options) -> Optimizer:
+        return self.get_optimizer(name=name, logic=logic, **options)
 
-    def is_sat(self, formula: FNode, solver_name: Optional[str]=None, logic: Optional[Union[Logic, str]]=None, portfolio: None=None) -> bool:
+    def is_sat(self, formula: FNode, solver_name: Optional[str]=None, logic: Optional[Union[Logic, str]]=None, portfolio: Optional[Iterable[str]]=None) -> bool:
         if logic is None or logic == AUTO_LOGIC:
             logic = get_logic(formula, self.environment)
         if portfolio is not None:
-            solver = Portfolio(solvers_set=portfolio,
+            solver: Union[Portfolio, Solver] = Portfolio(solvers_set=portfolio,
                                environment=self.environment,
                                logic=logic,
                                generate_models=False, incremental=False)
@@ -578,7 +579,7 @@ class Factory(object):
         with solver:
             return solver.is_sat(formula)
 
-    def get_model(self, formula, solver_name: Optional[str]=None, logic=Optional[Union[Logic, str]]):
+    def get_model(self, formula: FNode, solver_name: Optional[str]=None, logic: Optional[Union[Logic, str]]=None) -> Optional[Model]:
         if logic is None or logic == AUTO_LOGIC:
             logic = get_logic(formula, self.environment)
         with self.Solver(name=solver_name, logic=logic,
@@ -589,8 +590,8 @@ class Factory(object):
                 return solver.get_model()
             return None
 
-    def get_implicant(self, formula, solver_name: Optional[str]=None,
-                      logic: Optional[Union[Logic, str]]=None):
+    def get_implicant(self, formula: FNode, solver_name: Optional[str]=None,
+            logic: Optional[Union[str, Logic]]=None) -> Optional[FNode]:
         mgr = self.environment.formula_manager
         if logic is None or logic == AUTO_LOGIC:
             logic = get_logic(formula, self.environment)
@@ -620,8 +621,7 @@ class Factory(object):
             logic = get_logic(self.environment.formula_manager.And(clauses),
                               self.environment)
 
-        with self.UnsatCoreSolver(name=solver_name, logic=logic) \
-             as solver:
+        with self.UnsatCoreSolver(name=solver_name, logic=logic) as solver: # type: ignore [attr-defined] # TODO UnsatCoreSolver does not have enter and exit. SHould it derive from Solver?
             for c in clauses:
                 solver.add_assertion(c)
             check = solver.solve()

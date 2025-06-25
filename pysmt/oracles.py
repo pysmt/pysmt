@@ -27,7 +27,7 @@ properties of formulae.
 """
 
 from itertools import chain
-from typing import List, Any, Optional, Union, cast
+from typing import FrozenSet, List, Any, Optional, Union, cast
 
 import pysmt
 import pysmt.walkers as walkers
@@ -78,7 +78,7 @@ class SizeOracle(walkers.DagWalker):
         """Memoize using a tuple (measure, formula)."""
         return (measure, formula)
 
-    def get_size(self, formula, measure=None):
+    def get_size(self, formula: FNode, measure: Optional[int]=None) -> int:
         """Return the size of the formula according to the specified measure.
 
         The default measure is MEASURE_TREE_NODES.
@@ -348,34 +348,34 @@ class FreeVarsOracle(walkers.DagWalker):
     # - Quantifiers need to exclude bounded variables
     # - Constants have no impact
 
-    def get_free_variables(self, formula: FNode) -> frozenset:
+    def get_free_variables(self, formula: FNode) -> FrozenSet[FNode]:
         """Returns the set of Symbols appearing free in the formula."""
         return self.walk(formula)
 
     @walkers.handles(DEPENDENCIES_SIMPLE_ARGS)
-    def walk_simple_args(self, formula: FNode, args: List[frozenset], **kwargs) -> frozenset:
+    def walk_simple_args(self, formula: FNode, args: List[FrozenSet[FNode]], **kwargs) -> FrozenSet[FNode]:
         #pylint: disable=unused-argument
         return frozenset(chain(*args))
 
     @walkers.handles(op.QUANTIFIERS)
-    def walk_quantifier(self, formula: FNode, args:     List[frozenset], **kwargs) -> frozenset:
+    def walk_quantifier(self, formula: FNode, args: List[FrozenSet[FNode]], **kwargs) -> FrozenSet[FNode]:
         #pylint: disable=unused-argument
         return args[0].difference(formula.quantifier_vars())
 
-    def walk_symbol(self, formula: FNode, args:     List[    Any], **kwargs) -> frozenset:
+    def walk_symbol(self, formula: FNode, args: List[FrozenSet[FNode]], **kwargs) -> FrozenSet[FNode]:
         #pylint: disable=unused-argument
         return frozenset([formula])
 
     @walkers.handles(op.CONSTANTS)
-    def walk_constant(self, formula: FNode, args:     List[    Any], **kwargs) -> frozenset:
+    def walk_constant(self, formula: FNode, args: List[FrozenSet[FNode]], **kwargs) -> FrozenSet[FNode]:
         #pylint: disable=unused-argument
         return frozenset()
 
-    def walk_function(self, formula: FNode, args:     List[frozenset], **kwargs) -> frozenset:
+    def walk_function(self, formula: FNode, args: List[FrozenSet[FNode]], **kwargs) -> FrozenSet[FNode]:
         res = set([formula.function_name()])
         for arg in args:
             res.update(arg)
-        return frozenset(res)
+        return frozenset(chain([formula.function_name()], *args))
 
 # EOC FreeVarsOracle
 
@@ -395,57 +395,58 @@ class AtomsOracle(walkers.DagWalker):
     # - Array select, e.g. a[x] because such term could be of Boolean type
     #
 
-    def get_atoms(self, formula: FNode) -> frozenset:
+    def get_atoms(self, formula: FNode) -> FrozenSet[FNode]:
         """Returns the set of atoms appearing in the formula."""
+        # TODO handle the case where None is returned
         return self.walk(formula)
 
     @walkers.handles(op.BOOL_CONNECTIVES)
     @walkers.handles(op.QUANTIFIERS)
-    def walk_bool_op(self, formula: FNode, args:     List[frozenset], **kwargs) -> frozenset:
+    def walk_bool_op(self, formula: FNode, args: List[Optional[FrozenSet[FNode]]], **kwargs) -> Optional[FrozenSet[FNode]]:
         #pylint: disable=unused-argument
-        return frozenset(x for a in args for x in a)
+        return frozenset(x for a in args for x in a) # type: ignore # TODO here None has no iter. Can this be None? How does this work?
 
     @walkers.handles(op.RELATIONS)
-    def walk_theory_relation(self, formula: FNode, **kwargs) -> frozenset:
+    def walk_theory_relation(self, formula: FNode, **kwargs) -> Optional[FrozenSet[FNode]]:
         #pylint: disable=unused-argument
         return frozenset([formula])
 
     @walkers.handles(op.THEORY_OPERATORS - {op.ARRAY_SELECT})
-    def walk_theory_op(self, formula: FNode, **kwargs) -> None:
+    def walk_theory_op(self, formula: FNode, **kwargs) -> Optional[FrozenSet[FNode]]:
         #pylint: disable=unused-argument
         return None
 
-    def walk_array_select(self, formula: FNode, **kwargs) -> Optional[frozenset]:
+    def walk_array_select(self, formula: FNode, **kwargs) -> Optional[FrozenSet[FNode]]:
         #pylint: disable=unused-argument
         if self.env.stc.get_type(formula).is_bool_type():
             return frozenset([formula])
         return None
 
     @walkers.handles(op.CONSTANTS)
-    def walk_constant(self, formula: FNode, **kwargs) -> Optional[frozenset]:
+    def walk_constant(self, formula: FNode, **kwargs) -> Optional[FrozenSet[FNode]]:
         #pylint: disable=unused-argument
         if formula.is_bool_constant():
             return frozenset()
         return None
 
-    def walk_symbol(self, formula: FNode, **kwargs) -> Optional[frozenset]:
+    def walk_symbol(self, formula: FNode, **kwargs) -> Optional[FrozenSet[FNode]]:
         if formula.is_symbol(BOOL):
             return frozenset([formula])
         return None
 
-    def walk_function(self, formula: FNode, **kwargs) -> Optional[frozenset]:
+    def walk_function(self, formula: FNode, **kwargs) -> Optional[FrozenSet[FNode]]:
         f_type = cast(types._FunctionType, formula.function_name().symbol_type())
         if f_type.return_type.is_bool_type():
             return frozenset([formula])
         return None
 
-    def walk_ite(self, formula, args, **kwargs):
+    def walk_ite(self, formula, args: List[Optional[FrozenSet[FNode]]], **kwargs) -> Optional[FrozenSet[FNode]]:
         #pylint: disable=unused-argument
         if any(a is None for a in args):
             # Theory ITE
             return None
         else:
-            return frozenset(x for a in args for x in a)
+            return frozenset(x for a in args for x in a) # type: ignore # TODO here we know no args are None
 
 # EOC AtomsOracle
 

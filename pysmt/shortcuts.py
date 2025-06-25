@@ -31,7 +31,7 @@ environment is used (this is the default behavior of
 # Enable default deprecation warnings!
 import warnings
 from fractions import Fraction
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, FrozenSet, Iterable, Optional, Sequence, Tuple, Union
 
 import pysmt
 from pysmt.fnode import FNode
@@ -75,7 +75,7 @@ get_env().enable_infix_notation = True
 
 
 ##### Shortcuts for FormulaManager #####
-def get_type(formula):
+def get_type(formula: FNode) -> Optional[PySMTType]:
     """Returns the type of the formula.
 
     :param formula: The target formula
@@ -85,7 +85,7 @@ def get_type(formula):
     return get_env().stc.get_type(formula)
 
 
-def simplify(formula):
+def simplify(formula: FNode) -> FNode:
     """Returns the simplified version of the formula.
 
     :param formula: The target formula
@@ -96,7 +96,7 @@ def simplify(formula):
     return get_env().simplifier.simplify(formula)
 
 
-def substitute(formula, subs):
+def substitute(formula: FNode, subs: Dict[FNode, FNode]) -> FNode: # TODO Substituter also accepts FunctionInterpretations as a third parameter (and subs is optional)
     """Applies the substitutions defined in the dictionary to the formula.
 
     :param formula: The target formula
@@ -109,7 +109,7 @@ def substitute(formula, subs):
     return get_env().substituter.substitute(formula, subs)
 
 
-def serialize(formula, threshold=None):
+def serialize(formula: FNode, threshold: Optional[int]=None) -> str:
     """Provides a string representing the formula.
 
     :param formula: The target formula
@@ -122,7 +122,7 @@ def serialize(formula, threshold=None):
     return get_env().serializer.serialize(formula,
                                           threshold=threshold)
 
-def get_free_variables(formula):
+def get_free_variables(formula: FNode) -> FrozenSet[FNode]:
     """Returns the free variables of the formula.
 
     :param formula: The target formula
@@ -132,7 +132,7 @@ def get_free_variables(formula):
     return get_env().fvo.get_free_variables(formula)
 
 
-def get_atoms(formula):
+def get_atoms(formula: FNode) -> FrozenSet[FNode]:
     """Returns the set of atoms of the formula.
 
     :param formula: The target formula
@@ -142,7 +142,7 @@ def get_atoms(formula):
     return get_env().ao.get_atoms(formula)
 
 
-def get_formula_size(formula, measure=None):
+def get_formula_size(formula: FNode, measure: Optional[int]=None) -> int:
     """Returns the size of the formula as measured by the given counting type.
 
     See pysmt.oracles.SizeOracle for details.
@@ -157,17 +157,17 @@ def get_formula_size(formula, measure=None):
 
 ##### Nodes Creation #####
 
-def ForAll(variables: List[FNode], formula: FNode) -> FNode:
+def ForAll(variables: Iterable[FNode], formula: FNode) -> FNode:
     r""".. math:: \forall v_1, \cdots, v_n . \varphi(v_1, \cdots, v_n)"""
     return get_env().formula_manager.ForAll(variables, formula)
 
 
-def Exists(variables: List[FNode], formula: FNode) -> FNode:
+def Exists(variables: Iterable[FNode], formula: FNode) -> FNode:
     r""".. math:: \exists v_1, \cdots, v_n . \varphi(v_1, \cdots, v_n)"""
     return get_env().formula_manager.Exists(variables, formula)
 
 
-def Function(vname: FNode, params: Union[Tuple[FNode], Tuple[FNode, FNode], List[FNode]]) -> FNode:
+def Function(vname: FNode, params: Sequence[FNode]) -> FNode:
     r""".. math:: vname(p_1, \cdots, p_n)"""
     return get_env().formula_manager.Function(vname, params)
 
@@ -197,7 +197,7 @@ def Minus(left: FNode, right: FNode) -> FNode:
     return get_env().formula_manager.Minus(left, right)
 
 
-def Times(*args) -> FNode:
+def Times(*args: Union[FNode, Iterable[FNode]]) -> FNode:
     r""".. math:: x_1 \times x_2 \cdots \times x_n"""
     return get_env().formula_manager.Times(*args)
 
@@ -217,7 +217,7 @@ def Equals(left: FNode, right: FNode) -> FNode:
     return get_env().formula_manager.Equals(left, right)
 
 
-def NotEquals(left, right):
+def NotEquals(left: FNode, right: FNode):
     r""".. math:: l != r"""
     return get_env().formula_manager.NotEquals(left, right)
 
@@ -241,7 +241,7 @@ def Ite(iff: FNode, left: FNode, right: FNode) -> FNode:
     return get_env().formula_manager.Ite(iff, left, right)
 
 
-def Abs(formula):
+def Abs(formula: FNode) -> FNode:
     r"""Returns the absolute value of the formula.
 
     This is implemented as If(formula > 0, formula, -formula).
@@ -276,7 +276,7 @@ def Symbol(name: str, typename: PySMTType=types.BOOL) -> FNode:
     return get_env().formula_manager.Symbol(name, typename)
 
 
-def FreshSymbol(typename=types.BOOL, template=None):
+def FreshSymbol(typename: PySMTType=types.BOOL, template: Optional[str]=None):
     """Returns a symbol with a fresh name and given type.
 
     :param typename: Specify the typename
@@ -295,7 +295,7 @@ def Int(value: int) -> FNode:
     return get_env().formula_manager.Int(value)
 
 
-def Bool(value):
+def Bool(value: bool) -> FNode:
     """Returns a Boolean constant with the given value.
 
     :param value: Specify the value
@@ -334,17 +334,17 @@ def FALSE() -> FNode:
     return get_env().formula_manager.FALSE()
 
 
-def And(*args) -> FNode:
+def And(*args: Union[FNode, Iterable[FNode]]) -> FNode:
     r""".. math:: \varphi_0 \land \cdots \land \varphi_n """
     return get_env().formula_manager.And(*args)
 
 
-def Or(*args) -> FNode:
+def Or(*args: Union[FNode, Iterable[FNode]]) -> FNode:
     r""".. math:: \varphi_0 \lor \cdots \lor \varphi_n """
     return get_env().formula_manager.Or(*args)
 
 
-def Plus(*args) -> FNode:
+def Plus(*args: Union[FNode, Iterable[FNode]]) -> FNode:
     r""".. math:: \varphi_0 + \cdots + \varphi_n """
     return get_env().formula_manager.Plus(*args)
 
@@ -354,7 +354,7 @@ def ToReal(formula: FNode) -> FNode:
     return get_env().formula_manager.ToReal(formula)
 
 
-def AtMostOne(*args):
+def AtMostOne(*args: Union[FNode, Iterable[FNode]]) -> FNode:
     """At most one can be true at anytime.
 
     Cardinality constraint over a set of boolean expressions.
@@ -362,19 +362,19 @@ def AtMostOne(*args):
     return get_env().formula_manager.AtMostOne(*args)
 
 
-def ExactlyOne(*args):
+def ExactlyOne(*args: Union[FNode, Iterable[FNode]]) -> FNode:
     """Given a set of boolean expressions requires that exactly one holds."""
     return get_env().formula_manager.ExactlyOne(*args)
 
 
-def AllDifferent(*args):
+def AllDifferent(*args: Union[FNode, Iterable[FNode]]) -> FNode:
     """Given a set of non-boolean expressions, requires that each of them
     has value different from all the others
     """
     return get_env().formula_manager.AllDifferent(*args)
 
 
-def Xor(left, right):
+def Xor(left: FNode, right: FNode) -> FNode:
     """Returns the XOR of left and right
 
     :param left: Specify the left BV
@@ -386,17 +386,17 @@ def Xor(left, right):
     return get_env().formula_manager.Xor(left, right)
 
 
-def Min(*args):
+def Min(*args: Union[FNode, Iterable[FNode]]) -> FNode:
     """Minimum over a set of real or integer terms."""
     return get_env().formula_manager.Min(*args)
 
 
-def Max(*args):
+def Max(*args: Union[FNode, Iterable[FNode]]) -> FNode:
     """Maximum over a set of real or integer terms"""
     return get_env().formula_manager.Max(*args)
 
 
-def EqualsOrIff(left, right):
+def EqualsOrIff(left: FNode, right: FNode) -> FNode:
     """Returns Equals() or Iff() depending on the type of the arguments.
 
     This can be used to deal with ambiguous cases where we might be
@@ -427,7 +427,7 @@ def BV(value: Union[str, int], width: Optional[int]=None) -> FNode:
     return get_env().formula_manager.BV(value, width)
 
 
-def SBV(value: int, width: Optional[int]=None) -> FNode:
+def SBV(value: Union[str, int], width: Optional[int]=None) -> FNode:
     """Returns a constant of type BitVector interpreting the sign.
 
     If the specified value is an integer, it is converted in the
@@ -442,7 +442,7 @@ def SBV(value: int, width: Optional[int]=None) -> FNode:
     return get_env().formula_manager.SBV(value, width)
 
 
-def BVOne(width: Optional[int]=None) -> FNode:
+def BVOne(width: int) -> FNode:
     """Returns the unsigned one constant BitVector.
 
     :param width: Specify the width of the BitVector
@@ -452,7 +452,7 @@ def BVOne(width: Optional[int]=None) -> FNode:
     return get_env().formula_manager.BVOne(width)
 
 
-def BVZero(width: Optional[int]=None) -> FNode:
+def BVZero(width: Optional[int]) -> FNode: # TODO here it should be int. But this definition should raise an error (BVZero only accepts ints, not None) but mypy does not raise it...
     """Returns the zero constant BitVector.
 
     :param width: Specify the width of the BitVector
@@ -472,7 +472,7 @@ def BVNot(formula: FNode) -> FNode:
     return get_env().formula_manager.BVNot(formula)
 
 
-def BVAnd(*args) -> FNode:
+def BVAnd(*args: Union[FNode, Sequence[FNode]]) -> FNode:
     """Returns the Bit-wise AND of bitvectors of the same size.
     If more than 2 arguments are passed, a left-associative formula is generated.
 
@@ -483,7 +483,7 @@ def BVAnd(*args) -> FNode:
     return get_env().formula_manager.BVAnd(*args)
 
 
-def BVOr(*args) -> FNode:
+def BVOr(*args: Union[FNode, Sequence[FNode]]) -> FNode:
     """Returns the Bit-wise OR of bitvectors of the same size.
     If more than 2 arguments are passed, a left-associative formula is generated.
 
@@ -505,7 +505,7 @@ def BVXor(left: FNode, right: FNode) -> FNode:
     return get_env().formula_manager.BVXor(left, right)
 
 
-def BVConcat(*args) -> FNode:
+def BVConcat(*args: Union[FNode, Sequence[FNode]]) -> FNode:
     """Returns the Concatenation of the two BVs
 
     :param args: Specify the bitvectors to concatenate
@@ -580,7 +580,7 @@ def BVNeg(formula: FNode) -> FNode:
     """
     return get_env().formula_manager.BVNeg(formula)
 
-def BVAdd(*args) -> FNode:
+def BVAdd(*args: Union[FNode, Sequence[FNode]]) -> FNode:
     """Returns the sum of BV.
     If more than 2 arguments are passed, a left-associative formula is generated.
 
@@ -602,7 +602,7 @@ def BVSub(left: FNode, right: FNode) -> FNode:
     return get_env().formula_manager.BVSub(left, right)
 
 
-def BVMul(*args) -> FNode:
+def BVMul(*args: Union[FNode, Sequence[FNode]]) -> FNode:
     """Returns the product of BV.
     If more than 2 arguments are passed, a left-associative formula is generated.
 
@@ -635,7 +635,7 @@ def BVURem(left: FNode, right: FNode) -> FNode:
     return get_env().formula_manager.BVURem(left, right)
 
 
-def BVLShl(left: FNode, right: int) -> FNode:
+def BVLShl(left: FNode, right: Union[FNode, int]) -> FNode:
     """Returns the logical left shift the BV.
 
     :param left: Specify the left bitvector
@@ -931,7 +931,7 @@ def Array(idx_type: PySMTType, default: FNode, assigned_values: Optional[Dict[FN
 ##
 ## Shortcuts for Solvers Factory
 ##
-def Solver(name: None=None, logic: Optional[str]=None, **kwargs) -> "pysmt.solvers.solver.Solver":
+def Solver(name: Optional[str]=None, logic: Optional[Union[str, Logic]]=None, **kwargs) -> "pysmt.solvers.solver.Solver":
     """Returns a solver.
 
     :param name: Specify the name of the solver
@@ -942,7 +942,7 @@ def Solver(name: None=None, logic: Optional[str]=None, **kwargs) -> "pysmt.solve
                                     logic=logic,
                                     **kwargs)
 
-def UnsatCoreSolver(name=None, logic=None, unsat_cores_mode="all", **kwargs):
+def UnsatCoreSolver(name: Optional[str]=None, logic: Optional[Union[str, Logic]]=None, unsat_cores_mode: str="all", **kwargs) -> "pysmt.solvers.solver.UnsatCoreSolver":
     """Returns a solver supporting unsat core extraction.
 
     :param name: Specify the name of the solver
@@ -957,7 +957,7 @@ def UnsatCoreSolver(name=None, logic=None, unsat_cores_mode="all", **kwargs):
                                              **kwargs)
 
 
-def QuantifierEliminator(name=None, logic=None):
+def QuantifierEliminator(name: Optional[str]=None, logic: Optional[Union[str, Logic]]=None) -> "pysmt.solvers.qelim.QuantifierEliminator":
     """Returns a quantifier eliminator.
 
     :param name: Specify the name of the solver
@@ -969,7 +969,7 @@ def QuantifierEliminator(name=None, logic=None):
     return get_env().factory.QuantifierEliminator(name=name, logic=logic)
 
 
-def Interpolator(name=None, logic=None):
+def Interpolator(name: Optional[str]=None, logic: Optional[Union[str, Logic]]=None) -> "pysmt.solvers.interpolation.Interpolator" :
     """Returns an interpolator
 
     :param name: Specify the name of the solver
@@ -980,7 +980,7 @@ def Interpolator(name=None, logic=None):
     return get_env().factory.Interpolator(name=name, logic=logic)
 
 
-def Portfolio(solvers_set, logic, **options):
+def Portfolio(solvers_set: Iterable[Union[str, Tuple[str, Dict[str, Any]]]], logic: Optional[Union[str, Logic]], **options) -> "pysmt.solvers.portfolio.Portfolio":
     """Creates a portfolio using the specified solvers.
 
     Solver_set is an iterable. Elements of solver_set can be
@@ -1011,7 +1011,7 @@ def Portfolio(solvers_set, logic, **options):
                         environment=get_env(),
                         **options)
 
-def Optimizer(name: Optional[str]=None, logic: Optional[str]=None) -> "pysmt.optimization.optimizer.Optimizer":
+def Optimizer(name: Optional[str]=None, logic: Optional[Union[str, Logic]]=None, **options) -> "pysmt.optimization.optimizer.Optimizer":
     """Returns an Optimizer
 
     :param name: Specify the name of the solver
@@ -1019,10 +1019,10 @@ def Optimizer(name: Optional[str]=None, logic: Optional[str]=None) -> "pysmt.opt
     :returns: An Optimizer
     :rtype: Optimizer
     """
-    return get_env().factory.Optimizer(name=name, logic=logic)
+    return get_env().factory.Optimizer(name=name, logic=logic, **options)
 
 
-def is_sat(formula: FNode, solver_name: None=None, logic: None=None, portfolio: None=None) -> bool:
+def is_sat(formula: FNode, solver_name: Optional[str]=None, logic: Optional[Union[str, Logic]]=None, portfolio: Optional[Iterable[str]]=None) -> bool:
     """ Returns whether a formula is satisfiable.
 
     :param formula: The formula to check satisfiability
@@ -1045,8 +1045,8 @@ def is_sat(formula: FNode, solver_name: None=None, logic: None=None, portfolio: 
                               logic=logic,
                               portfolio=portfolio)
 
-
-def get_model(formula, solver_name=None, logic=None):
+# TODO also here mypy didn't notice that the model was not Optional (a mistake)
+def get_model(formula: FNode, solver_name: Optional[str]=None, logic: Optional[Union[str, Logic]]=None) -> Optional["pysmt.solvers.solver.Model"]:
     """ Similar to :py:func:`is_sat` but returns a model if the formula is
     satisfiable, otherwise None
 
@@ -1066,7 +1066,7 @@ def get_model(formula, solver_name=None, logic=None):
                                  logic=logic)
 
 
-def get_implicant(formula, solver_name=None, logic=None):
+def get_implicant(formula: FNode, solver_name: Optional[str]=None, logic: Optional[Union[str, Logic]]=None) -> Optional[FNode]:
     """Returns a formula f_i such that Implies(f_i, formula) is valid or None
     if formula is unsatisfiable.
 
@@ -1088,7 +1088,7 @@ def get_implicant(formula, solver_name=None, logic=None):
                                      solver_name=solver_name,
                                      logic=logic)
 
-
+# HERE # TODO remove comment
 def get_unsat_core(clauses, solver_name=None, logic=None):
     """Similar to :py:func:`get_model` but returns the unsat core of the
     conjunction of the input clauses
