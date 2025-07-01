@@ -16,7 +16,7 @@
 #   limitations under the License.
 #
 from io import StringIO
-from typing import Callable, List, Optional, Set, TextIO
+from typing import Callable, List, Optional, Set, TextIO, Union
 
 import pysmt.operators as op
 from pysmt.environment import get_env
@@ -705,7 +705,7 @@ class SmtDagPrinter(DagWalker):
         return sym
 
 
-def to_smtlib(formula, daggify=True):
+def to_smtlib(formula: FNode, daggify: bool=True) -> str:
     """Returns a Smt-Lib string representation of the formula.
 
     The daggify parameter can be used to switch from a linear-size
@@ -716,7 +716,7 @@ def to_smtlib(formula, daggify=True):
     See :py:class:`SmtPrinter`
     """
     buf = StringIO()
-    p = None
+    p: Union[SmtDagPrinter, SmtPrinter]
     if daggify:
         p = SmtDagPrinter(buf)
     else:

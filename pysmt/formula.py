@@ -30,7 +30,7 @@ its definition.
 import sys
 import fractions
 import warnings
-from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, Union, cast, Iterable
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union, cast, Iterable
 
 if sys.version_info >= (3, 3):
     from collections.abc import Iterable as CollectionsIterable
@@ -47,7 +47,7 @@ from pysmt.typing import PySMTType
 from pysmt.fnode import FNode, FNodeContent
 from pysmt.exceptions import UndefinedSymbolError, PysmtValueError,PysmtTypeError
 from pysmt.walkers.identitydag import IdentityDagWalker
-from pysmt.constants import Fraction
+from pysmt.constants import Fraction, Numeral
 from pysmt.constants import (is_pysmt_fraction,
                              is_pysmt_integer,
                              is_python_rational,
@@ -55,6 +55,7 @@ from pysmt.constants import (is_pysmt_fraction,
                              is_python_string,
                              pysmt_fraction_from_rational,
                              pysmt_integer_from_integer)
+from pysmt.utils import assert_not_none
 
 
 class FormulaManager(object):
@@ -80,7 +81,7 @@ class FormulaManager(object):
         self.false_formula = self.create_node(node_type=op.BOOL_CONSTANT,
                                               args=tuple(),
                                               payload=False)
-        self._normalizer = None
+        self._normalizer: Optional[FormulaContextualizer] = None
 
     def _do_type_check_real(self, formula: FNode):
         assert self.get_type is not None
@@ -91,7 +92,7 @@ class FormulaManager(object):
         self._do_type_check = self._do_type_check_real # type: ignore[method-assign]
         return self._do_type_check(formula)
 
-    def create_node(self, node_type: int, args: Any, payload: Optional[Any]=None) -> FNode:
+    def create_node(self, node_type: int, args: Tuple[FNode, ...], payload: Optional[Any]=None) -> FNode:
         content = FNodeContent(node_type, args, payload)
         if content in self.formulae:
             n = self.formulae[content]
@@ -132,7 +133,7 @@ class FormulaManager(object):
         except KeyError:
             raise UndefinedSymbolError(name)
 
-    def get_all_symbols(self):
+    def get_all_symbols(self) -> Iterable[FNode]:
         return self.symbols.values()
 
     def get_or_create_symbol(self, name: str, typename: PySMTType) -> FNode:
@@ -192,7 +193,9 @@ class FormulaManager(object):
         """
         if len(params) == 0:
             return vname
-        assert len(params) == len(cast(types._FunctionType, vname.symbol_type()).param_types) # TODO should this be a raise?
+        lpt = len(cast(types._FunctionType, vname.symbol_type()).param_types)
+        if len(params) != lpt:
+            raise PysmtValueError("Incorrect number of parameters in function creation: got %d expected %d" % (len(params), lpt))
         return self.create_node(node_type=op.FUNCTION,
                                 args=tuple(params),
                                 payload=vname)
@@ -490,7 +493,7 @@ class FormulaManager(object):
             raise PysmtTypeError("Argument is of type %s, but INT was "
                                  "expected!\n" % t)
 
-    def AtMostOne(self, *args: Union[FNode, Iterable[FNode]]):
+    def AtMostOne(self, *args: Union[FNode, Iterable[FNode]]) -> FNode:
         """ At most one of the bool expressions can be true at anytime.
 
         This using a quadratic encoding:
@@ -505,7 +508,7 @@ class FormulaManager(object):
         return self.And(constraints)
 
 
-    def ExactlyOne(self, *args: Union[FNode, Iterable[FNode]]):
+    def ExactlyOne(self, *args: Union[FNode, Iterable[FNode]]) -> FNode:
         """ Encodes an exactly-one constraint on the boolean symbols.
 
         This using a quadratic encoding:
@@ -534,7 +537,7 @@ class FormulaManager(object):
         """Returns the xor of left and right: left XOR right """
         return self.Not(self.Iff(left, right))
 
-    def _MinWrap(self, le: Callable, *args) -> FNode:
+    def _MinWrap(self, le: Callable[[FNode, FNode], FNode], *args: Union[FNode, Iterable[FNode]]) -> FNode:
         """Returns the encoding of the minimum expression within args using the specified 'Lower-Equal' operator"""
         exprs = self._polymorph_args_to_tuple(args)
         assert len(exprs) > 0
@@ -547,7 +550,7 @@ class FormulaManager(object):
             h = len(exprs) // 2
             return self._MinWrap(le, self._MinWrap(le, exprs[0:h]), self._MinWrap(le, exprs[h:]))
 
-    def _MaxWrap(self, le: Callable, *args) -> FNode:
+    def _MaxWrap(self, le: Callable[[FNode, FNode], FNode], *args: Union[FNode, Iterable[FNode]]) -> FNode:
         """Returns the encoding of the maximum expression within args using the specified 'Lower-Equal' operator"""
         exprs = self._polymorph_args_to_tuple(args)
         assert len(exprs) > 0
@@ -560,14 +563,14 @@ class FormulaManager(object):
             h = len(exprs) // 2
             return self._MaxWrap(le, self._MaxWrap(le,exprs[0:h]), self._MaxWrap(le,exprs[h:]))
 
-    def MinBV(self, sign, *args):
+    def MinBV(self, sign: bool, *args: Union[FNode, Iterable[FNode]]) -> FNode:
         """Returns the encoding of the minimum expression within args"""
         le = self.BVULE
         if sign:
             le = self.BVSLE
         return self._MinWrap( le, *args)
 
-    def MaxBV(self, sign, *args):
+    def MaxBV(self, sign: bool, *args: Union[FNode, Iterable[FNode]]) -> FNode:
         """Returns the encoding of the maximum expression within args"""
         le = self.BVULE
         if sign:
@@ -823,6 +826,7 @@ class FormulaManager(object):
         """Returns the logical left shift the BV."""
         if is_python_integer(right):
             right = self.BV(cast(int, right), left.bv_width())
+        assert isinstance(right, FNode), "Wrong typing"
         return self.create_node(node_type=op.BV_LSHL,
                                 args=(left, right),
                                 payload=(left.bv_width(),))
@@ -831,6 +835,7 @@ class FormulaManager(object):
         """Returns the logical right shift the BV."""
         if is_python_integer(right):
             right = self.BV(cast(int, right), left.bv_width())
+        assert isinstance(right, FNode), "Wrong typing"
         return self.create_node(node_type=op.BV_LSHR,
                                 args=(left, right),
                                 payload=(left.bv_width(),))
@@ -917,7 +922,7 @@ class FormulaManager(object):
                                 args=(left, right),
                                 payload=(left.bv_width(),))
 
-    def BVNand(self, left, right):
+    def BVNand(self, left: FNode, right: FNode) -> FNode:
         """Returns the NAND composition of left and right."""
         return self.BVNot(self.BVAnd(left, right))
 
@@ -937,7 +942,7 @@ class FormulaManager(object):
         """Returns the SIGNED GREATER-THAN-OR-EQUAL-TO comparison for BV."""
         return self.BVSLE(right, left)
 
-    def BVSMod(self, left, right):
+    def BVSMod(self, left: FNode, right: FNode) -> FNode:
         """Returns the SIGNED MODULUS of left divided by right."""
         # According to SMT-LIB standard (2015-06-23) BVSMod is defined as follows
         # http://smtlib.cs.uiowa.edu/logics-all.shtml#QF_BV
@@ -993,7 +998,7 @@ class FormulaManager(object):
         """Returns the length of a formula resulting a String"""
         return self.create_node(node_type=op.STR_LENGTH, args=(formula,))
 
-    def StrConcat(self, *args) -> FNode:
+    def StrConcat(self, *args: Union[FNode, Sequence[FNode]]) -> FNode:
         """Returns the concatenation of n Strings.
 
         s1, s2, ..., and sn are String terms.
@@ -1108,7 +1113,7 @@ class FormulaManager(object):
         return self.create_node(node_type=op.ARRAY_VALUE, args=tuple(args),
                                 payload=idx_type)
 
-    def _Algebraic(self, val):
+    def _Algebraic(self, val: Numeral) -> FNode:
         """Returns the algebraic number val."""
         return self.create_node(node_type=op.ALGEBRAIC_CONSTANT,
                                 args=tuple(),
@@ -1117,7 +1122,7 @@ class FormulaManager(object):
     #
     # Helper functions
     #
-    def normalize(self, formula):
+    def normalize(self, formula: FNode) -> FNode:
         """Returns the formula normalized to the current Formula Manager.
 
         This method is useful to contextualize a formula coming from another
@@ -1129,7 +1134,8 @@ class FormulaManager(object):
         """
         if self._normalizer is None:
             self._normalizer = FormulaContextualizer(self.env)
-        return self._normalizer.walk(formula)
+
+        return assert_not_none(self._normalizer).walk(formula)
 
     def _polymorph_args_to_tuple(self, args: Sequence[Union[FNode, Iterable[FNode]]]) -> Tuple[FNode, ...]:
         """ Helper function to return a tuple of arguments from args.
@@ -1140,14 +1146,14 @@ class FormulaManager(object):
         are both valid, and they are converted into a tuple (a,b,c) """
 
         if len(args) == 1 and isinstance(args[0], CollectionsIterable):
-            args = args[0] # type: ignore # TODO decide comment below and then deal with this type: ignore
-            # TODO This method (as is) accepts args where either the first is a Iterable or all are FNodes.
-            # In the UP we can mix those and I think we can do it also here, being more flexible and accept things like And(a, b, [c, d, e], f).
+            itargs: Iterable[FNode] = args[0]
+        else:
+            itargs = cast(Sequence[FNode], args)
         def _check_fnode(f: Union[FNode, Iterable[FNode]]) -> FNode:
             if not isinstance(f, FNode):
                 raise PysmtTypeError("Typing not respected")
             return f
-        return tuple(map(_check_fnode, args))
+        return tuple(map(_check_fnode, itargs))
 
     def __contains__(self, node: FNode) -> bool:
         """Checks whether the given node belongs to this formula manager.
@@ -1167,24 +1173,24 @@ class FormulaManager(object):
 class FormulaContextualizer(IdentityDagWalker):
     """Helper class to recreate a formula within a new environment."""
 
-    def __init__(self, env=None):
+    def __init__(self, env: Optional["pysmt.environment.Environment"]=None):
         IdentityDagWalker.__init__(self, env=env)
         self.type_normalize = self.env.type_manager.normalize
 
-    def walk_symbol(self, formula, args, **kwargs):
+    def walk_symbol(self, formula: FNode, args: Sequence[FNode], **kwargs) -> FNode:
         # Recreate the Symbol taking into account the type information
         ty = formula.symbol_type()
         newty = self.type_normalize(ty)
         return self.mgr.Symbol(formula.symbol_name(), newty)
 
-    def walk_array_value(self, formula, args, **kwargs):
+    def walk_array_value(self, formula: FNode, args: Sequence[FNode], **kwargs) -> FNode:
         # Recreate the ArrayValue taking into account the type information
         assign = dict(zip(args[1::2], args[2::2]))
         ty = self.type_normalize(formula.array_value_index_type())
         return self.mgr.Array(ty, args[0], assign)
 
-    def walk_function(self, formula, args, **kwargs):
+    def walk_function(self, formula: FNode, args: Sequence[FNode], **kwargs) -> FNode:
         # We re-create the symbol name
         old_name = formula.function_name()
-        new_name = self.walk_symbol(old_name, None)
+        new_name = self.walk_symbol(old_name, ())
         return self.mgr.Function(new_name, args)

@@ -16,9 +16,10 @@
 #   limitations under the License.
 #
 
-from typing import Iterable
+from typing import Iterable, Optional, Sequence
 
 import pysmt.logics
+from pysmt.fnode import FNode
 
 class Interpolator(object):
     LOGICS: Iterable[pysmt.logics.Logic] = []
@@ -33,7 +34,7 @@ class Interpolator(object):
         """
         raise NotImplementedError
 
-    def sequence_interpolant(self, formulas):
+    def sequence_interpolant(self, formulas: Sequence[FNode]) -> Optional[FNode]:
         """Returns a sequence interpolant for the conjunction of formulas, or
         None if the problem is satisfiable.
 

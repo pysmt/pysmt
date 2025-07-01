@@ -16,10 +16,10 @@
 #   limitations under the License.
 #
 
-from typing import Tuple
+from typing import Tuple, Union
 
 
-VERSION: Tuple[int, int, int, str, int] = (0, 9, 7, "dev", 1)
+VERSION: Union[Tuple[int, int, int], Tuple[int, int, int, str, int]] = (0, 9, 7, "dev", 1)
 
 # Try to provide human-readable version of latest commit for dev versions
 # E.g. v0.5.1-4-g49a49f2-wip
@@ -42,4 +42,4 @@ if len(VERSION) == 5:
 
 # PEP440 Format
 __version__ = "%d.%d.%d.%s%d" % VERSION if len(VERSION) == 5 else \
-              "%d.%d.%d" % VERSION # type: ignore[str-format] # TODO Not all arguments converted during string formatting  [str-format]
+              "%d.%d.%d" % VERSION

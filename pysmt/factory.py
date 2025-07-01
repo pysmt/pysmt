@@ -43,7 +43,7 @@ from pysmt.solvers.qelim import QuantifierEliminator
 from pysmt.environment import Environment
 from pysmt.fnode import FNode
 from pysmt.optimization.optimizer import Optimizer
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, TypeVar, Union, cast
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple, Type, TypeVar, Union, cast
 
 SOLVER_TYPES = ['Solver', 'Solver supporting Unsat Cores',
                 'Quantifier Eliminator', 'Interpolator', 'Optimizer']
@@ -616,12 +616,12 @@ class Factory(object):
                             res.append(mgr.Not(a))
                 return mgr.And(res)
 
-    def get_unsat_core(self, clauses, solver_name: Optional[str]=None, logic: Optional[Union[Logic, str]]=None):
+    def get_unsat_core(self, clauses: Iterable[FNode], solver_name: Optional[str]=None, logic: Optional[Union[str, Logic]]=None) -> Optional[Set[FNode]]:
         if logic is None or logic == AUTO_LOGIC:
             logic = get_logic(self.environment.formula_manager.And(clauses),
                               self.environment)
 
-        with self.UnsatCoreSolver(name=solver_name, logic=logic) as solver: # type: ignore [attr-defined] # TODO UnsatCoreSolver does not have enter and exit. SHould it derive from Solver?
+        with self.UnsatCoreSolver(name=solver_name, logic=logic) as solver:
             for c in clauses:
                 solver.add_assertion(c)
             check = solver.solve()
@@ -630,11 +630,11 @@ class Factory(object):
 
             return solver.get_unsat_core()
 
-    def is_valid(self, formula: FNode, solver_name: Optional[str]=None, logic: Optional[Union[Logic, str]]=None, portfolio: None=None) -> bool:
+    def is_valid(self, formula: FNode, solver_name: Optional[str]=None, logic: Optional[Union[Logic, str]]=None, portfolio: Optional[Iterable[str]]=None) -> bool:
         if logic is None or logic == AUTO_LOGIC:
             logic = get_logic(formula, self.environment)
         if portfolio is not None:
-            solver = Portfolio(solvers_set=portfolio,
+            solver: Union[Solver, Portfolio] = Portfolio(solvers_set=portfolio,
                                environment=self.environment,
                                logic=logic,
                                generate_models=False, incremental=False)
@@ -658,7 +658,7 @@ class Factory(object):
         with solver:
             return solver.is_unsat(formula)
 
-    def qelim(self, formula, solver_name: Optional[str]=None, logic: Optional[Union[Logic, str]]=None):
+    def qelim(self, formula: FNode, solver_name: Optional[str]=None, logic: Optional[Union[Logic, str]]=None) -> FNode:
         if logic is None or logic == AUTO_LOGIC:
             logic = get_logic(formula, self.environment)
 
@@ -666,8 +666,8 @@ class Factory(object):
             return qe.eliminate_quantifiers(formula)
 
 
-    def binary_interpolant(self, formula_a, formula_b,
-                           solver_name: Optional[str]=None, logic: Optional[Union[Logic, str]]=None):
+    def binary_interpolant(self, formula_a: FNode, formula_b: FNode,
+                           solver_name: Optional[str]=None, logic: Optional[Union[Logic, str]]=None) -> Optional[FNode]:
         if logic is None or logic == AUTO_LOGIC:
             _And = self.environment.formula_manager.And
             logic = get_logic(_And(formula_a, formula_b))
@@ -676,7 +676,7 @@ class Factory(object):
             return itp.binary_interpolant(formula_a, formula_b)
 
 
-    def sequence_interpolant(self, formulas, solver_name: Optional[str]=None, logic: Optional[Union[Logic, str]]=None):
+    def sequence_interpolant(self, formulas: Sequence[FNode], solver_name: Optional[str]=None, logic: Optional[Union[Logic, str]]=None) -> Optional[FNode]:
         if logic is None or logic == AUTO_LOGIC:
             _And = self.environment.formula_manager.And
             logic = get_logic(_And(formulas))
@@ -686,11 +686,11 @@ class Factory(object):
 
 
     @property
-    def default_logic(self):
+    def default_logic(self) -> Logic:
         return self._default_logic
 
     @default_logic.setter
-    def default_logic(self, value):
+    def default_logic(self, value: Logic):
         self._default_logic = value
 
     @property

@@ -19,13 +19,14 @@
 This module defines some rewritings for pySMT formulae.
 """
 from itertools import combinations
+from typing import Any, Callable, Dict, Iterable, Iterator, List, Optional, Sequence, Set, Tuple, Union, cast, FrozenSet
 
 import pysmt
 from pysmt.walkers import DagWalker, IdentityDagWalker, handles
 import pysmt.typing as types
 import pysmt.operators as op
 from pysmt.fnode import FNode
-from typing import Any, Callable, Dict, Iterable, Iterator, List, Optional, Sequence, Set, Tuple, Union, cast, FrozenSet
+from pysmt.utils import assert_not_none
 
 
 class CNFizer(DagWalker):
@@ -371,6 +372,7 @@ class NNFizer(DagWalker):
 
 
 class PrenexNormalizer(DagWalker):
+    # TODO better type this class
     """
     This class traverses a formula and rebuilds it in prenex normal form.
     """
@@ -500,9 +502,9 @@ class PrenexNormalizer(DagWalker):
             ni = self.mgr.Not(i)
             i1 = self.mgr.Implies(i, t)
             i2 = self.mgr.Implies(ni, e)
-            ni_args = self.walk_not(ni, [i_args]) # type: ignore # TODO understand this file to type it better
-            i1_args = self.walk_implies(i1, [i_args, t_args]) # type: ignore # TODO understand this file to type it better
-            i2_args = self.walk_implies(i2, [ni_args, e_args]) # type: ignore # TODO understand this file to type it better
+            ni_args = self.walk_not(ni, [assert_not_none(i_args)])
+            i1_args = self.walk_implies(i1, [assert_not_none(i_args), assert_not_none(t_args)])
+            i2_args = self.walk_implies(i2, [ni_args, assert_not_none(e_args)])
             return self.walk_conj_disj(self.mgr.And(i1, i2), [i1_args, i2_args])
 
     def walk_function(self, formula: FNode, **kwargs) -> Optional[Tuple[List[Any], FNode]]:
@@ -804,7 +806,7 @@ class DisjointSet(object):
                     a, leadera, groupa, b, leaderb, groupb = b, leaderb, groupb,\
                                                              a, leadera, groupa
                 groupa |= groupb
-                del self.group[leaderb] # TODO old code: del group[leaderb]. The change is correct?
+                del self.group[leaderb]
                 for k in groupb:
                     self.leader[k] = leadera
             else:

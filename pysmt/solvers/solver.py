@@ -24,7 +24,7 @@ from pysmt.exceptions import (SolverReturnedUnknownResultError, PysmtValueError,
 from pysmt.environment import Environment
 from pysmt.fnode import FNode
 from pysmt.logics import Logic
-from typing import Iterable, List, Optional, Type
+from typing import Dict, Iterable, List, Optional, Set, Type, cast
 
 
 class Solver(object):
@@ -390,7 +390,7 @@ class IncrementalTrackingSolver(Solver):
         self._last_command = "pop"
 
 
-class UnsatCoreSolver(object):
+class UnsatCoreSolver(Solver):
     """A solver supporting unsat core extraction"""
 
     UNSAT_CORE_SUPPORT = True
@@ -408,7 +408,7 @@ class UnsatCoreSolver(object):
                                     " '%s' command after the last call to" \
                                     " solve()" % self.last_command)
 
-    def get_unsat_core(self):
+    def get_unsat_core(self) -> Set[FNode]:
         """Returns the unsat core as a set of formulae.
 
         After a call to solve() yielding UNSAT, returns the unsat core
@@ -416,8 +416,7 @@ class UnsatCoreSolver(object):
         """
         raise NotImplementedError
 
-
-    def get_named_unsat_core(self):
+    def get_named_unsat_core(self) -> Dict[str, FNode]:
         """Returns the unsat core as a dict of names to formulae.
 
         After a call to solve() yielding UNSAT, returns the unsat core as a
@@ -425,6 +424,8 @@ class UnsatCoreSolver(object):
         """
         raise NotImplementedError
 
+    def __enter__(self) -> "UnsatCoreSolver":
+        return cast(UnsatCoreSolver, super().__enter__())
 
 class Model(object):
     """An abstract Model for a Solver.

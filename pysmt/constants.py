@@ -68,9 +68,9 @@ else:
 
 from fractions import Fraction as pyFraction
 if USE_GMPY:
-    Fraction = mpq # type: ignore[misc] # TODO understand how to fix this typing error (removing the Fraction definition has side effects on other files that import Fraction from pysmt.constants)
+    Fraction = mpq
 else:
-    Fraction = pyFraction # type: ignore[misc] # TODO understand how to fix this typing error (removing the Fraction definition has side effects on other files that import Fraction from pysmt.constants)
+    Fraction = pyFraction
 
 FractionClass = type(Fraction(1,2))
 

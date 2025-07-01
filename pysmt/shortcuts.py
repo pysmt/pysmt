@@ -29,9 +29,10 @@ environment is used (this is the default behavior of
 """
 
 # Enable default deprecation warnings!
+import os
 import warnings
 from fractions import Fraction
-from typing import Any, Dict, FrozenSet, Iterable, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, FrozenSet, Iterable, Optional, Sequence, Set, Tuple, Union
 
 import pysmt
 from pysmt.fnode import FNode
@@ -96,7 +97,7 @@ def simplify(formula: FNode) -> FNode:
     return get_env().simplifier.simplify(formula)
 
 
-def substitute(formula: FNode, subs: Dict[FNode, FNode]) -> FNode: # TODO Substituter also accepts FunctionInterpretations as a third parameter (and subs is optional)
+def substitute(formula: FNode, subs: Dict[FNode, FNode]) -> FNode: # TODO do this and document: Substituter also accepts FunctionInterpretations as a third parameter (and subs is optional)
     """Applies the substitutions defined in the dictionary to the formula.
 
     :param formula: The target formula
@@ -386,12 +387,12 @@ def Xor(left: FNode, right: FNode) -> FNode:
     return get_env().formula_manager.Xor(left, right)
 
 
-def Min(*args: Union[FNode, Iterable[FNode]]) -> FNode:
+def Min(*args: Union[FNode, Sequence[FNode]]) -> FNode:
     """Minimum over a set of real or integer terms."""
     return get_env().formula_manager.Min(*args)
 
 
-def Max(*args: Union[FNode, Iterable[FNode]]) -> FNode:
+def Max(*args: Union[FNode, Sequence[FNode]]) -> FNode:
     """Maximum over a set of real or integer terms"""
     return get_env().formula_manager.Max(*args)
 
@@ -1088,8 +1089,8 @@ def get_implicant(formula: FNode, solver_name: Optional[str]=None, logic: Option
                                      solver_name=solver_name,
                                      logic=logic)
 
-# HERE # TODO remove comment
-def get_unsat_core(clauses, solver_name=None, logic=None):
+
+def get_unsat_core(clauses: Iterable[FNode], solver_name: Optional[str]=None, logic: Optional[Union[str, Logic]]=None)  -> Set[FNode]:
     """Similar to :py:func:`get_model` but returns the unsat core of the
     conjunction of the input clauses
 
@@ -1109,7 +1110,7 @@ def get_unsat_core(clauses, solver_name=None, logic=None):
                                       logic=logic)
 
 
-def is_valid(formula: FNode, solver_name: None=None, logic: Optional[Logic]=None, portfolio: None=None) -> bool:
+def is_valid(formula: FNode, solver_name: Optional[str]=None, logic: Optional[Union[str, Logic]]=None, portfolio: Optional[Union[Iterable[str], Iterable[Tuple[str, Dict[str, Any]]]]]=None) -> bool:
     """Similar to :py:func:`is_sat` but checks validity.
 
     :param formula: The target formula
@@ -1131,7 +1132,7 @@ def is_valid(formula: FNode, solver_name: None=None, logic: Optional[Logic]=None
                                 portfolio=portfolio)
 
 
-def is_unsat(formula, solver_name=None, logic=None, portfolio=None):
+def is_unsat(formula: FNode, solver_name: Optional[str]=None, logic: Optional[Union[str, Logic]]=None, portfolio: Optional[Union[Iterable[str], Iterable[Tuple[str, Dict[str, Any]]]]]=None) -> bool:
     """Similar to :py:func:`is_sat` but checks unsatisfiability.
 
     :param formula: The target formula
@@ -1153,7 +1154,7 @@ def is_unsat(formula, solver_name=None, logic=None, portfolio=None):
                                 portfolio=portfolio)
 
 
-def qelim(formula, solver_name=None, logic=None):
+def qelim(formula: FNode, solver_name: Optional[str]=None, logic: Optional[Union[str, Logic]]=None) -> FNode:
     """Performs quantifier elimination of the given formula.
 
     :param formula: The target formula
@@ -1171,7 +1172,7 @@ def qelim(formula, solver_name=None, logic=None):
                              solver_name=solver_name,
                              logic=logic)
 
-def binary_interpolant(formula_a, formula_b, solver_name=None, logic=None):
+def binary_interpolant(formula_a: FNode, formula_b: FNode, solver_name: Optional[str]=None, logic: Optional[Union[str, FNode]]=None) -> Optional[FNode]:
     """Computes an interpolant of (formula_a, formula_b).
 
     Returns None if the conjunction is satisfiable
@@ -1197,7 +1198,7 @@ def binary_interpolant(formula_a, formula_b, solver_name=None, logic=None):
                                           logic=logic)
 
 
-def sequence_interpolant(formulas, solver_name=None, logic=None):
+def sequence_interpolant(formulas: Sequence[FNode], solver_name: Optional[str]=None, logic:Optional[Union[str, FNode]]=None) -> Optional[FNode]:
     """Computes a sequence interpolant of the formulas.
 
     Returns None if the conjunction is satisfiable.
@@ -1218,11 +1219,11 @@ def sequence_interpolant(formulas, solver_name=None, logic=None):
             formulas[i] = env.formula_manager.normalize(f)
 
     return env.factory.sequence_interpolant(formulas,
-                                            solver_name=solver_name,
+                                            solveformulasr_name=solver_name,
                                             logic=logic)
 
 
-def read_configuration(config_filename, environment=None):
+def read_configuration(config_filename: Union[str, os.PathLike], environment: Optional["pysmt.environment.Environment"]=None):
     """Reads the pysmt configuration of the given file path and applies
     it on the specified environment. If no environment is specified,
     the top-level environment will be used.
@@ -1235,7 +1236,7 @@ def read_configuration(config_filename, environment=None):
     config.configure_environment(config_filename, environment)
 
 
-def write_configuration(config_filename, environment=None):
+def write_configuration(config_filename: Union[str, os.PathLike], environment: Optional["pysmt.environment.Environment"]=None):
     """Dumps the current pysmt configuration to the specified file path
 
     :param config_filename: Specify the name of the config file
@@ -1258,7 +1259,7 @@ def read_smtlib(fname: str) -> FNode:
     return pysmt.smtlib.parser.get_formula_fname(fname)
 
 
-def write_smtlib(formula: FNode, fname: str) -> None:
+def write_smtlib(formula: FNode, fname: Union[str, os.PathLike]):
     """Writes the given formula in Smt-Lib format to the given file.
 
     :param formula: Specify the SMT formula to be written
@@ -1269,7 +1270,7 @@ def write_smtlib(formula: FNode, fname: str) -> None:
         script.serialize(fout)
 
 
-def to_smtlib(formula, daggify=True):
+def to_smtlib(formula: FNode, daggify: bool=True) -> str:
     """Returns a Smt-Lib string representation of the formula.
 
     The daggify parameter can be used to switch from a linear-size

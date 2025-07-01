@@ -37,6 +37,7 @@ import pysmt.typing as types
 from pysmt.logics import Logic, Theory, get_closer_pysmt_logic
 from pysmt.fnode import FNode
 from pysmt.typing import PySMTType, BOOL
+from pysmt.utils import assert_not_none
 
 
 class SizeOracle(walkers.DagWalker):
@@ -397,14 +398,13 @@ class AtomsOracle(walkers.DagWalker):
 
     def get_atoms(self, formula: FNode) -> FrozenSet[FNode]:
         """Returns the set of atoms appearing in the formula."""
-        # TODO handle the case where None is returned
-        return self.walk(formula)
+        return assert_not_none(self.walk(formula))
 
     @walkers.handles(op.BOOL_CONNECTIVES)
     @walkers.handles(op.QUANTIFIERS)
     def walk_bool_op(self, formula: FNode, args: List[Optional[FrozenSet[FNode]]], **kwargs) -> Optional[FrozenSet[FNode]]:
         #pylint: disable=unused-argument
-        return frozenset(x for a in args for x in a) # type: ignore # TODO here None has no iter. Can this be None? How does this work?
+        return frozenset(x for a in args for x in assert_not_none(a))
 
     @walkers.handles(op.RELATIONS)
     def walk_theory_relation(self, formula: FNode, **kwargs) -> Optional[FrozenSet[FNode]]:
@@ -446,7 +446,7 @@ class AtomsOracle(walkers.DagWalker):
             # Theory ITE
             return None
         else:
-            return frozenset(x for a in args for x in a) # type: ignore # TODO here we know no args are None
+            return frozenset(x for a in args for x in assert_not_none(a))
 
 # EOC AtomsOracle
 
