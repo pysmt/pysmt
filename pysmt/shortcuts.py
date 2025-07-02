@@ -37,6 +37,7 @@ from typing import Any, Dict, FrozenSet, Iterable, Optional, Sequence, Set, Tupl
 import pysmt
 from pysmt.fnode import FNode
 from pysmt.logics import Logic
+from pysmt.substituter import FunctionInterpretation
 from pysmt.typing import PySMTType
 
 warnings.filterwarnings('default', module='pysmt')
@@ -97,17 +98,19 @@ def simplify(formula: FNode) -> FNode:
     return get_env().simplifier.simplify(formula)
 
 
-def substitute(formula: FNode, subs: Dict[FNode, FNode]) -> FNode: # TODO do this and document: Substituter also accepts FunctionInterpretations as a third parameter (and subs is optional)
+def substitute(formula: FNode, subs: Optional[Dict[FNode, FNode]]=None, interpretations: Optional[Dict[FNode, FunctionInterpretation]]=None) -> FNode:
     """Applies the substitutions defined in the dictionary to the formula.
 
     :param formula: The target formula
     :type  formula: FNode
     :param subs: Specify the substitutions to apply to the formula
-    :type  subs: A dictionary from FNode to FNode
-    :returns: Formula after applying the substitutions
+    :type  subs: Optionally a dictionary from FNode to FNode
+    :param interpretations: Specify the function interpretations to apply to the formula
+    :type  interpretations: Optionally a dictionary from FNode to FunctionInterpretation
+    :returns: Formula after applying the substitutions or the interpretations
     :rtype: Fnode
     """
-    return get_env().substituter.substitute(formula, subs)
+    return get_env().substituter.substitute(formula, subs, interpretations)
 
 
 def serialize(formula: FNode, threshold: Optional[int]=None) -> str:

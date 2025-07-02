@@ -70,7 +70,7 @@ class SizeOracle(walkers.DagWalker):
                         }
 
 
-    def set_walking_measure(self, measure):
+    def set_walking_measure(self, measure: int):
         if measure not in self.measure_to_fun:
             raise NotImplementedError
         self.set_function(self.measure_to_fun[measure], *op.ALL_TYPES)
