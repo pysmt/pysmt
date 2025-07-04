@@ -19,7 +19,7 @@ from pysmt.solvers.solver import Model
 from pysmt.environment import Environment, get_env
 from pysmt.exceptions import PysmtTypeError
 from pysmt.fnode import FNode
-from typing import Dict, Optional
+from typing import Dict, Iterable, Iterator, Optional
 
 
 class EagerModel(Model):
@@ -54,7 +54,7 @@ class EagerModel(Model):
             raise PysmtTypeError("Was expecting a constant but got %s" % res)
         return res
 
-    def _complete_model(self, symbols: frozenset) -> None:
+    def _complete_model(self, symbols):
         undefined_symbols = (s for s in symbols
                              if s not in self.completed_assignment)
         mgr = self.environment.formula_manager
@@ -78,16 +78,16 @@ class EagerModel(Model):
             self.completed_assignment[s] = value
 
 
-    def iterator_over(self, language):
+    def iterator_over(self, language: Iterable[FNode]) -> Iterator[FNode]:
         for x in language:
             yield x, self.get_value(x, model_completion=True)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[FNode]:
         """Overloading of iterator from Model.  We iterate only on the
         variables defined in the assignment.
         """
         return iter(self.assignment.items())
 
-    def __contains__(self, x):
+    def __contains__(self, x) -> bool:
         """Returns whether the model contains a value for 'x'."""
         return x in self.assignment

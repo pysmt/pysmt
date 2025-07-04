@@ -36,7 +36,7 @@ from pysmt.typing import _TypeDecl
 from pysmt.fnode import FNode
 from pysmt.formula import FormulaManager
 from pysmt.solvers.smtlib import SmtLibSolver
-from pysmt.solvers.solver import Solver
+from pysmt.solvers.solver import Solver, Model
 
 PrinterType = Union[SmtPrinter, SmtDagPrinter]
 
@@ -419,10 +419,10 @@ def smtlibscript_from_formula(formula: FNode, logic: Optional[Union[str, int, Lo
 
 
 class InterpreterSMT(object):
-    def evaluate(self, cmd: SmtLibCommand, solver: SmtLibSolver) -> Optional[Union[bool, Goal, List[Tuple[FNode, FNode]]]]:
+    def evaluate(self, cmd: SmtLibCommand, solver: SmtLibSolver) -> Optional[Union[Model, bool, Goal, List[Tuple[FNode, FNode]]]]:
         return self._smt_evaluate(cmd, solver)
 
-    def _smt_evaluate(self, cmd: SmtLibCommand, solver: SmtLibSolver) -> Optional[Union[bool, Goal, List[Tuple[FNode, FNode]]]]:
+    def _smt_evaluate(self, cmd: SmtLibCommand, solver: SmtLibSolver) -> Optional[Union[Model, bool, Goal, List[Tuple[FNode, FNode]]]]:
         if cmd.name == smtcmd.SET_INFO:
             return solver.set_info(cmd.args[0], cmd.args[1])
 
@@ -502,7 +502,7 @@ class InterpreterOMT(InterpreterSMT):
     def evaluate(self, cmd: SmtLibCommand, solver: SmtLibSolver) -> Optional[Union[bool, Goal, List[Tuple[FNode, FNode]]]]:
         return self._omt_evaluate(cmd, solver)
 
-    def _omt_evaluate(self, cmd: SmtLibCommand, optimizer: SmtLibSolver) -> Optional[Union[bool, Goal, List[Tuple[FNode, FNode]]]]:
+    def _omt_evaluate(self, cmd: SmtLibCommand, optimizer: SmtLibSolver) -> Optional[Union[Model, bool, Goal, List[Tuple[FNode, FNode]]]]:
         if cmd.name == smtcmd.SET_OPTION:
             if cmd.args[0] == ":opt.priority":
                 self.opt_priority = cmd.args[1]

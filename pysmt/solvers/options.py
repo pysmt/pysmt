@@ -36,6 +36,7 @@ To use the Options it is necessary to:
 
 import abc
 from typing import Any, Dict, Optional
+import pysmt
 
 class SolverOptions(object):
     """Solver Options shared by most solvers.
@@ -59,8 +60,8 @@ class SolverOptions(object):
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, generate_models: bool=True, incremental: bool=True,
-                 unsat_cores_mode: None=None, random_seed: None=None,
-                 solver_options: Optional[Dict[str, Any]]=None) -> None:
+                 unsat_cores_mode: Optional[str]=None, random_seed: Optional[int]=None,
+                 solver_options: Optional[Dict[str, Any]]=None):
 
         if generate_models not in (True, False):
             raise ValueError("Invalid value %s for 'generate_models'" \
@@ -93,11 +94,11 @@ class SolverOptions(object):
         self.solver_options = solver_options
 
     @abc.abstractmethod
-    def __call__(self, solver):
+    def __call__(self, solver: "pysmt.solvers.solver.Solver"):
         """Handle the setting options within solver"""
         raise NotImplementedError
 
-    def as_kwargs(self):
+    def as_kwargs(self) -> Dict[str, Any]:
         """Construct a dictionary object that can be used as **kwargs.
 
         This can be used to duplicate the options.

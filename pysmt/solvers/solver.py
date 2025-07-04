@@ -15,6 +15,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+from fractions import Fraction
 from pysmt.typing import BOOL
 from pysmt.solvers.options import SolverOptions
 from pysmt.decorators import clear_pending_pop
@@ -24,7 +25,7 @@ from pysmt.exceptions import (SolverReturnedUnknownResultError, PysmtValueError,
 from pysmt.environment import Environment
 from pysmt.fnode import FNode
 from pysmt.logics import Logic
-from typing import Dict, Iterable, List, Optional, Set, Type, cast
+from typing import Dict, Iterable, List, Optional, Set, Type, Union, cast
 
 
 class Solver(object):
@@ -47,7 +48,7 @@ class Solver(object):
         self.options = self.OptionsClass(**options)
         self._destroyed = False
 
-    def solve(self, assumptions=None):
+    def solve(self, assumptions: Iterable[FNode]=None) -> bool:
         """Returns the satisfiability value of the asserted formulas.
 
         Assumptions is a list of Boolean variables or negations of
@@ -74,7 +75,7 @@ class Solver(object):
         """
         raise NotImplementedError
 
-    def get_model(self):
+    def get_model(self) -> Optional["Model"]:
         """Returns an instance of Model that survives the solver instance.
 
         Restrictions: Requires option generate_models to be set to
@@ -152,7 +153,7 @@ class Solver(object):
         """
         return not self.is_sat(formula)
 
-    def get_values(self, formulae):
+    def get_values(self, formulae: Iterable[FNode]) -> Dict[FNode, FNode]:
         """Returns the value of the expressions if a model was found.
 
         Requires option generate_models to be set to true (default)
@@ -171,21 +172,21 @@ class Solver(object):
             res[f] = v
         return res
 
-    def push(self, levels=1):
+    def push(self, levels: int=1):
         """Push the current context of the given number of levels.
 
         :type levels: int
         """
         raise NotImplementedError
 
-    def pop(self, levels=1):
+    def pop(self, levels: int=1):
         """Pop the context of the given number of levels.
 
         :type levels: int
         """
         raise NotImplementedError
 
-    def exit(self) -> None:
+    def exit(self):
         """Exits from the solver and closes associated resources."""
         if not self._destroyed:
             self._exit()
@@ -199,15 +200,15 @@ class Solver(object):
         """Removes all defined assertions."""
         raise NotImplementedError
 
-    def add_assertion(self, formula, named=None):
+    def add_assertion(self, formula: FNode, named: Optional[str]=None): # TODO is the type of named ok?
         """Add assertion to the solver."""
         raise NotImplementedError
 
-    def add_assertions(self, formulae):
+    def add_assertions(self, formulae: FNode):
         for formula in formulae:
             self.add_assertion(formula)
 
-    def print_model(self, name_filter=None):
+    def print_model(self, name_filter: Optional[str]=None):
         """Prints the model (if one exists).
 
         An optional function can be passed, that will be called on each symbol
@@ -222,7 +223,7 @@ class Solver(object):
         """
         raise NotImplementedError
 
-    def get_py_value(self, formula):
+    def get_py_value(self, formula: FNode) -> Union[str, bool, Fraction, int]:
         """Returns the value of formula as a python type.
 
         E.g., Bool(True) is translated into True.
@@ -232,7 +233,7 @@ class Solver(object):
         assert res.is_constant()
         return res.constant_value()
 
-    def get_py_values(self, formulae):
+    def get_py_values(self, formulae: Iterable[FNode]) -> Dict[FNode, Union[str, bool, Fraction, int]]:
         """Returns the values of the formulae as python types.
 
         Returns a dictionary mapping each formula to its python value.
@@ -247,7 +248,7 @@ class Solver(object):
         """Manages entering a Context (i.e., with statement)"""
         return self
 
-    def __exit__(self, exc_type: None, exc_val: None, exc_tb: None) -> None:
+    def __exit__(self, exc_type: None, exc_val: None, exc_tb: None):
         """Manages exiting from Context (i.e., with statement)
 
         The default behaviour is "close" the solver by calling the
@@ -255,7 +256,7 @@ class Solver(object):
         """
         self.exit()
 
-    def _assert_no_function_type(self, item: FNode) -> None:
+    def _assert_no_function_type(self, item: FNode):
         """Enforces that argument 'item' cannot be a FunctionType.
 
         Raises TypeError.
@@ -263,7 +264,7 @@ class Solver(object):
         if item.is_symbol() and item.symbol_type().is_function_type():
             raise PysmtTypeError("Cannot call get_value() on a FunctionType")
 
-    def _assert_is_boolean(self, formula: FNode) -> None:
+    def _assert_is_boolean(self, formula: FNode):
         """Enforces that argument 'formula' is of type Boolean.
 
         Raises TypeError.
@@ -357,7 +358,7 @@ class IncrementalTrackingSolver(Solver):
     def _solve(self, assumptions=None):
         raise NotImplementedError
 
-    def solve(self, assumptions: Optional[List[FNode]]=None) -> bool:
+    def solve(self, assumptions: Optional[Iterable[FNode]]=None) -> bool:
         try:
             res = self._solve(assumptions=assumptions)
             self._last_result = res
@@ -369,7 +370,7 @@ class IncrementalTrackingSolver(Solver):
         finally:
             self._last_command = "solve"
 
-    def _push(self, levels=1):
+    def _push(self, levels: int=1):
         raise NotImplementedError
 
     def push(self, levels: int=1) -> None:
@@ -379,7 +380,7 @@ class IncrementalTrackingSolver(Solver):
             self._backtrack_points.append(point)
         self._last_command = "push"
 
-    def _pop(self, levels=1):
+    def _pop(self, levels: int=1):
         raise NotImplementedError
 
     def pop(self, levels: int=1) -> None:

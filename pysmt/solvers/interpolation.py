@@ -27,7 +27,7 @@ class Interpolator(object):
     def __init__(self):
         self._destroyed = False
 
-    def binary_interpolant(self, a, b):
+    def binary_interpolant(self, a: FNode, b: FNode) -> Optional[FNode]:
         """Returns a binary interpolant for the pair (a, b), if And(a, b) is
         unsatisfiable, or None if And(a, b) is satisfiable.
 

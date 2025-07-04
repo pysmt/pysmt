@@ -22,7 +22,7 @@ from pysmt.environment import Environment
 from pysmt.fnode import FNode
 from pysmt.logics import Logic
 from pysmt.typing import PySMTType, _BVType, _ArrayType, _FunctionType
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, Iterable, List, Optional, Union
 
 try:
     import cvc5 # type: ignore[import]
@@ -145,7 +145,7 @@ class CVC5Solver(SmtLibBasicSolver, SmtLibIgnoreMixin):
                 assignment[s] = v
         return EagerModel(assignment=assignment, environment=self.environment)
 
-    def solve(self, assumptions: None=None) -> bool:
+    def solve(self, assumptions: Optional[Iterable[FNode]]=None) -> bool:
         if assumptions is not None:
             cvc5_assumptions = [self.converter.convert(a) for a in assumptions]
             res = self.cvc5.checkSatAssuming(*cvc5_assumptions)
