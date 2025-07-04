@@ -7,7 +7,28 @@ on:
     branches: [ "**" ]
 
 jobs:
+
+  mypy-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.9
+
+      - name: Install Development Python dependencies
+        run: python3 -m pip install -r dev-requirements.txt
+
+      - name: MyPy check
+        run: python3 -m mypy pysmt
+
   run-tests:
+    needs: mypy-check
+
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -39,6 +60,7 @@ jobs:
 
 
   run-tests-master:
+    needs: mypy-check
     runs-on: ${{ matrix.os }}
     if: (github.ref == 'refs/heads/master') || (github.event_name == 'pull_request') # We only run these tests on master or in pull-requests
     strategy:

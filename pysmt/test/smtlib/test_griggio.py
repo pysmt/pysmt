@@ -22,10 +22,11 @@ from io import StringIO
 from pysmt.shortcuts import reset_env
 from pysmt.test import TestCase
 from pysmt.smtlib.parser import SmtLibParser
+from pysmt.smtlib.script import SmtLibScript
 
 class TestSmtLibParserGriggio(TestCase):
 
-    def test_griggio(self):
+    def test_griggio(self) -> None:
         for file_id in range(1,7):
             # Parse
             script = self.parse(file_id)
@@ -39,7 +40,7 @@ class TestSmtLibParserGriggio(TestCase):
             script.serialize(buf)
             self.assertTrue(True)
 
-    def parse(self, file_id):
+    def parse(self, file_id: int) -> SmtLibScript:
         fname = SMTLIB_FILE_PATTERN % file_id
         reset_env()
         parser = SmtLibParser()

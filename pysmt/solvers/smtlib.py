@@ -15,11 +15,17 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-class SmtLibSolver(object):
+from pysmt.fnode import FNode
+from pysmt.logics import Logic
+from typing import Optional, Union
+
+from pysmt.solvers.solver import Solver
+
+class SmtLibSolver(Solver): # TODO should this derive from Solver or SmtLibBasicSolver?
     #
     # SMT-LIB 2 Interface
     #
-    def set_logic(self, logic):
+    def set_logic(self, logic: Optional[Union[str, Logic]]) -> bool:
         """ Defines the logic in use.
 
         E.g., set_logic("QF_LIA")
@@ -33,7 +39,7 @@ class SmtLibSolver(object):
         """
         raise NotImplementedError
 
-    def declare_fun(self, symbol):
+    def declare_fun(self, symbol: FNode):
         """ Declare a function symbol.
 
         Restrictions: Only after set-logic.
@@ -44,7 +50,7 @@ class SmtLibSolver(object):
         """
         raise NotImplementedError
 
-    def declare_const(self, symbol):
+    def declare_const(self, symbol: FNode):
         """ Declares a constant symbol.
 
         Restrictions: Only after set-logic.
@@ -72,7 +78,7 @@ class SmtLibSolver(object):
         """
         raise NotImplementedError
 
-    def declare_sort(self, name, cardinality):
+    def declare_sort(self, name: Optional[str], cardinality: Optional[int]):
         """ Declares a new sort with the given name and cardinality.
 
         Restrictions: Only after set-logic.
@@ -207,7 +213,7 @@ class SmtLibSolver(object):
         """ Gets the value of a given information. """
         raise NotImplementedError
 
-    def set_info(self, name, value):
+    def set_info(self, name: str, value: str):
         """ Sets the value for a given information.
 
         Required (by SMT):
@@ -231,19 +237,19 @@ class SmtLibSolver(object):
 
 
 class SmtLibIgnoreMixin(SmtLibSolver):
-    def set_logic(self, logic):
+    def set_logic(self, logic: Optional[Union[str, Logic]]) -> bool:
+        return True
+
+    def declare_fun(self, symbol: FNode) -> None:
         return None
 
-    def declare_fun(self, symbol):
-        return None
-
-    def declare_const(self, symbol):
+    def declare_const(self, symbol: FNode) -> None:
         return None
 
     def define_fun(self, name, args, rtype, expr):
         return None
 
-    def declare_sort(self, name, cardinality):
+    def declare_sort(self, name: Optional[str], cardinality: Optional[int]) -> None:
         return None
 
     def define_sort(self, name, args, sort_expr):
@@ -285,18 +291,18 @@ class SmtLibIgnoreMixin(SmtLibSolver):
     def get_info(self, name):
         return None
 
-    def set_info(self, name, value):
+    def set_info(self, name: Optional[str], value: Optional[str]):
         return None
 
     def exit(self):
         return None
 
 
-class SmtLibBasicSolver(SmtLibSolver):
-    def assert_(self, expr, named=None):
+class SmtLibBasicSolver(SmtLibSolver): # TODO should this derive from Solver or SmtLibSolver?
+    def assert_(self, expr: FNode, named: None=None) -> None:
         return self.add_assertion(expr, named)
 
-    def check_sat(self):
+    def check_sat(self) -> bool:
         return self.solve()
 
     def get_values(self, exprs):
@@ -309,4 +315,5 @@ class SmtLibBasicSolver(SmtLibSolver):
         return self.pop(levels)
 
     def exit(self):
+        return None # TODO after the Solver derivation the self.exit() goes in a recursion loop
         return self.exit()
