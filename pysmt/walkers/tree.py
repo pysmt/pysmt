@@ -34,11 +34,11 @@ class TreeWalker(Walker):
 
     """
 
-    def __init__(self, env: None=None) -> None:
+    def __init__(self, env: None=None):
         Walker.__init__(self, env)
         return
 
-    def walk(self, formula: FNode, threshold: Optional[int]=None) -> None:
+    def walk(self, formula: FNode, threshold: Optional[int]=None):
         """Generic walk method, will apply the function defined by the map
         self.functions.
 

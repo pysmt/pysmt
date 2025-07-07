@@ -34,7 +34,7 @@ from pysmt.exceptions import UndefinedLogicError, PysmtValueError, PysmtTypeErro
 
 class TestSmtLibScript(TestCase):
 
-    def test_basic_operations(self) -> None:
+    def test_basic_operations(self):
         script = SmtLibScript()
         script.add(name=smtcmd.SET_LOGIC,
                    args=[None])
@@ -58,7 +58,7 @@ class TestSmtLibScript(TestCase):
         self.assertEqual(len(list(res_it)), 1)
 
 
-    def test_declare_sort(self) -> None:
+    def test_declare_sort(self):
         class SolverOptionsIgnore(SolverOptions):
             def __call__(self, solver):
                 pass
@@ -89,7 +89,7 @@ class TestSmtLibScript(TestCase):
         self.assertEqual(s1_arity, 1)
 
 
-    def test_from_formula(self) -> None:
+    def test_from_formula(self):
         x, y = Symbol("x"), Symbol("y")
         f = And(x, Or(y, x))
         script = smtlibscript_from_formula(f)
@@ -122,7 +122,7 @@ class TestSmtLibScript(TestCase):
             smtlibscript_from_formula(f, logic=4)
 
 
-    def test_get_strict_formula(self) -> None:
+    def test_get_strict_formula(self):
 
         smtlib_single = """
 (set-logic UFLIRA)
@@ -156,7 +156,7 @@ class TestSmtLibScript(TestCase):
             f = get_formula_strict(stream_in)
 
 
-    def test_define_funs_same_args(self) -> None:
+    def test_define_funs_same_args(self):
         # n is defined once as an Int and once as a Real
         smtlib_script = "\n".join(['(define-fun f ((n Int)) Int n)', '(define-fun f ((n Real)) Real n)'])
         stream = StringIO(smtlib_script)
@@ -166,7 +166,7 @@ class TestSmtLibScript(TestCase):
         self.assertTrue(True)
 
 
-    def test_define_funs_arg_and_fun(self) -> None:
+    def test_define_funs_arg_and_fun(self):
         smtlib_script = "\n".join(['(define-fun f ((n Int)) Int n)', '(declare-fun n () Real)'])
         stream = StringIO(smtlib_script)
         parser = SmtLibParser()
@@ -174,7 +174,7 @@ class TestSmtLibScript(TestCase):
         # No exceptions are thrown
         self.assertTrue(True)
 
-    def test_define_fun_serialize_complex_type(self) -> None:
+    def test_define_fun_serialize_complex_type(self):
         smtlib_script = '(define-fun f ((var (_ BitVec 32))) (_ BitVec 32) var)'
         stream = StringIO(smtlib_script)
         parser = SmtLibParser()
@@ -182,7 +182,7 @@ class TestSmtLibScript(TestCase):
         # No exceptions are thrown
         self.assertEqual(smtlib_script.replace('var', '__var0'), script.commands[0].serialize_to_string())
 
-    def test_twice_fix_real(self) -> None:
+    def test_twice_fix_real(self):
         smtlib_script = "\n".join([
             '(declare-fun r () Real)',
             '(assert (< (* 1 r) 0))',
@@ -194,7 +194,7 @@ class TestSmtLibScript(TestCase):
         # No exceptions are thrown
         self.assertTrue(True)
 
-    def test_type_error(self) -> None:
+    def test_type_error(self):
         smtlib_script = "\n".join([
             "(declare-sort B 0)",
             "(declare-const e B)",
@@ -206,7 +206,7 @@ class TestSmtLibScript(TestCase):
         with self.assertRaises(PysmtTypeError):
             _ = parser.get_script(stream)
 
-    def test_evaluate_command(self) -> None:
+    def test_evaluate_command(self):
         class SolverOptionsIgnore(SolverOptions):
             def __call__(self, solver):
                 pass
@@ -237,7 +237,7 @@ class TestSmtLibScript(TestCase):
                          solver=mock)
 
 
-    def test_smtlibignore_mixin(self) -> None:
+    def test_smtlibignore_mixin(self):
         """In SmtLibIgnoreMixin, all SMT-LIB methods return None."""
 
         class SolverOptionsIgnore(SolverOptions):
@@ -270,7 +270,7 @@ class TestSmtLibScript(TestCase):
         self.assertIsNone(solver.set_info(None, None)) # type: ignore
         self.assertIsNone(solver.exit())
 
-    def test_all_parsing(self) -> None:
+    def test_all_parsing(self):
         # Create a small file that tests all commands of smt-lib 2
         parser = SmtLibParser()
 

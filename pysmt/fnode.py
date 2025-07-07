@@ -80,10 +80,9 @@ class FNode(object):
     """
     __slots__ = ["_content", "_node_id"]
 
-    def __init__(self, content: "FNodeContent", node_id: int) -> None:
+    def __init__(self, content: "FNodeContent", node_id: int):
         self._content = content
         self._node_id = node_id
-        return
 
     # __eq__ is left as default while __hash__ uses the node id. This
     # is because we always have shared FNodes, hence in a single

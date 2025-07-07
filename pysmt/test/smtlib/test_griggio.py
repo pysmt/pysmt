@@ -26,7 +26,7 @@ from pysmt.smtlib.script import SmtLibScript
 
 class TestSmtLibParserGriggio(TestCase):
 
-    def test_griggio(self) -> None:
+    def test_griggio(self):
         for file_id in range(1,7):
             # Parse
             script = self.parse(file_id)

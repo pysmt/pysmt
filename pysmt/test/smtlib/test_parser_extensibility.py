@@ -28,7 +28,7 @@ TS = collections.namedtuple('TS', ['init', 'trans'])
 TSFormula = collections.namedtuple('TSFormula', ['formula', "is_init"])
 
 class TSSmtLibParser(SmtLibParser):
-    def __init__(self, env: None=None, interactive: bool=False) -> None:
+    def __init__(self, env: None=None, interactive: bool=False):
         SmtLibParser.__init__(self, env, interactive)
 
         # Add new commands
@@ -82,11 +82,11 @@ class TSSmtLibParser(SmtLibParser):
 
 class TestParserExtensibility(TestCase):
 
-    def setUp(self) -> None:
+    def setUp(self):
         self.ts_parser = TSSmtLibParser()
         self.smt_parser = SmtLibParser()
 
-    def test_wrong(self) -> None:
+    def test_wrong(self):
         txt = """
         (declare-fun A () Bool)
         (declare-fun B () Bool)
@@ -99,7 +99,7 @@ class TestParserExtensibility(TestCase):
         script = self.smt_parser.get_script(StringIO(txt))
         self.assertIsNotNone(script)
 
-    def test_basic(self) -> None:
+    def test_basic(self):
         txt = """
         (declare-fun A () Bool)
         (declare-fun B () Bool)

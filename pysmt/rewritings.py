@@ -36,7 +36,7 @@ class CNFizer(DagWalker):
     TRUE_CNF: FrozenSet[Iterable[FNode]] = frozenset()
     FALSE_CNF: FrozenSet[Iterable[FNode]] = frozenset([frozenset()])
 
-    def __init__(self, environment=None):
+    def __init__(self, environment: "pysmt.environment.Environment" =None):
         DagWalker.__init__(self, environment)
 
         self.mgr = self.env.formula_manager
@@ -239,7 +239,7 @@ class NNFizer(DagWalker):
 
     """
 
-    def __init__(self, environment: None=None) -> None:
+    def __init__(self, environment: Optional["pysmt.environment.Environment"]=None):
         DagWalker.__init__(self, env=environment)
         self.mgr = self.env.formula_manager
 
@@ -377,7 +377,7 @@ class PrenexNormalizer(DagWalker):
     This class traverses a formula and rebuilds it in prenex normal form.
     """
 
-    def __init__(self, env: None=None, invalidate_memoization: bool=False) -> None:
+    def __init__(self, env: None=None, invalidate_memoization: bool=False):
         DagWalker.__init__(self,
                            env=env,
                            invalidate_memoization=invalidate_memoization)
@@ -493,7 +493,7 @@ class PrenexNormalizer(DagWalker):
         na_arg = self.walk_not(na, [args[0]])
         return self.walk_conj_disj(self.mgr.Or(na, b), [na_arg, args[1]])
 
-    def walk_ite(self, formula: FNode, args: List[Optional[Tuple[List[Any], FNode]]], **kwargs) -> None:
+    def walk_ite(self, formula: FNode, args: List[Optional[Tuple[List[Any], FNode]]], **kwargs):
         if any(a is None for a in args):
             return None
         else:
@@ -536,7 +536,7 @@ class PrenexNormalizer(DagWalker):
         return quantifiers, matrix
 
     @handles(op.THEORY_OPERATORS)
-    def walk_theory_op(self, formula: FNode, **kwargs) -> None:
+    def walk_theory_op(self, formula: FNode, **kwargs):
         #pylint: disable=unused-argument
         return None
 
@@ -547,7 +547,7 @@ class PrenexNormalizer(DagWalker):
 class AIGer(DagWalker):
     """Converts a formula into an And-Inverted-Graph."""
 
-    def __init__(self, environment: None=None) -> None:
+    def __init__(self, environment: Optional["pysmt.environment.Environment"]=None):
         DagWalker.__init__(self, env=environment)
         self.mgr = self.env.formula_manager
 
@@ -623,7 +623,7 @@ class TimesDistributor(IdentityDagWalker):
 
     E.g., (x+1)*3 -> (x*3) + 3
     """
-    def __init__(self, env: Optional["pysmt.environment.Environment"]=None, invalidate_memoization: bool=False) -> None:
+    def __init__(self, env: Optional["pysmt.environment.Environment"]=None, invalidate_memoization: bool=False):
         IdentityDagWalker.__init__(self, env=env,
                                    invalidate_memoization=invalidate_memoization)
         self.Times = self.env.formula_manager.Times
@@ -684,7 +684,7 @@ class TimesDistributor(IdentityDagWalker):
 
 
 class Ackermannizer(IdentityDagWalker):
-    def __init__(self, environment: None=None) -> None:
+    def __init__(self, environment: Optional["pysmt.environment.Environment"]=None):
         IdentityDagWalker.__init__(self, environment)
         # funs_to_args keeps for every function symbol f,
         # a set of lists of arguments.
@@ -757,7 +757,7 @@ class Ackermannizer(IdentityDagWalker):
             ack_symbol = self._terms_dict[formula]
         return ack_symbol
 
-    def _add_application(self, formula: FNode) -> None:
+    def _add_application(self, formula: FNode):
         assert formula.is_function_application()
         if formula not in self._terms_dict:
             const_type = cast(types._FunctionType, formula.function_name().symbol_type()).return_type
@@ -765,7 +765,7 @@ class Ackermannizer(IdentityDagWalker):
                                        template="ack%d")
             self._terms_dict[formula] = sym
 
-    def _add_args_to_fun(self, formula: FNode) -> None:
+    def _add_args_to_fun(self, formula: FNode):
         function_name = formula.function_name()
         args = formula.args()
         self._funs_to_args.setdefault(function_name, set()).add(args)
@@ -787,12 +787,12 @@ class DisjointSet(object):
     2. Set the compare function while creating the DisjointSet object.
     """
 
-    def __init__(self, compare_fun: Optional[Callable]=None) -> None:
+    def __init__(self, compare_fun: Optional[Callable]=None):
         self.leader: Dict[FNode, FNode] = {} # maps a member to the group's leader
         self.group: Dict[FNode, Set[FNode]] = {} # maps a group leader to the group (which is a set)
         self.comp = compare_fun # a binary comparison function used for ranking
 
-    def add(self, a: FNode, b: FNode) -> None:
+    def add(self, a: FNode, b: FNode):
         """Add the pair (a,b) in the set"""
         leadera = self.leader.get(a)
         leaderb = self.leader.get(b)
@@ -830,31 +830,31 @@ class DisjointSet(object):
 
 
 
-def nnf(formula: FNode, environment: None=None) -> FNode:
+def nnf(formula: FNode, environment: Optional["pysmt.environment.Environment"]=None) -> FNode:
     """Converts the given formula in NNF"""
     nnfizer = NNFizer(environment)
     return nnfizer.convert(formula)
 
 
-def cnf(formula, environment=None):
+def cnf(formula, environment: Optional["pysmt.environment.Environment"]=None):
     """Converts the given formula in CNF represented as a formula"""
     cnfizer = CNFizer(environment)
     return cnfizer.convert_as_formula(formula)
 
 
-def cnf_as_set(formula, environment=None):
+def cnf_as_set(formula, environment: Optional["pysmt.environment.Environment"]=None):
     """Converts the given formula in CNF represented as a set of sets"""
     cnfizer = CNFizer(environment)
     return cnfizer.convert(formula)
 
 
-def prenex_normal_form(formula: FNode, environment: None=None) -> FNode:
+def prenex_normal_form(formula: FNode, environment: Optional["pysmt.environment.Environment"]=None) -> FNode:
     """Converts the given formula in Prenex Normal Form"""
     normalizer = PrenexNormalizer(environment)
     return normalizer.normalize(formula)
 
 
-def aig(formula: FNode, environment: None=None) -> FNode:
+def aig(formula: FNode, environment: Optional["pysmt.environment.Environment"]=None) -> FNode:
     """Converts the given formula in AIG"""
     aiger = AIGer(environment)
     return aiger.convert(formula)

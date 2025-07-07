@@ -46,7 +46,7 @@ import pysmt.logics
 
 
 # Initialization
-def init() -> None:
+def init():
     if not getattr(init, 'initialized', False):
         yices_api.yices_init()
     setattr(init, "initialized", True)
@@ -76,7 +76,7 @@ def yices_logic(pysmt_logic: pysmt.logics.Logic) -> str:
 
 
 class YicesOptions(SolverOptions):
-    def __init__(self, **base_options) -> None:
+    def __init__(self, **base_options):
         SolverOptions.__init__(self, **base_options)
         # TODO: Yices Supports UnsatCore extraction
         # but we did not wrapped it yet.
@@ -84,7 +84,7 @@ class YicesOptions(SolverOptions):
             raise PysmtValueError("'unsat_cores_mode' option not supported.")
 
     @staticmethod
-    def _set_option(cfg: int, name: str, value: str) -> None:
+    def _set_option(cfg: int, name: str, value: str):
         rv = yices_api.yices_set_config(cfg, name, value)
         if rv != 0:
             # This might be a parameter to be set later (see set_params)
@@ -95,7 +95,7 @@ class YicesOptions(SolverOptions):
                 raise PysmtValueError("Error setting the option "
                                       "'%s=%s'" % (name,value))
 
-    def __call__(self, solver: "YicesSolver") -> None:
+    def __call__(self, solver: "YicesSolver"):
         if self.generate_models:
             # Yices always generates models
             pass
@@ -111,7 +111,7 @@ class YicesOptions(SolverOptions):
         for k,v in self.solver_options.items():
             self._set_option(solver.yices_config, str(k), str(v))
 
-    def set_params(self, solver: "YicesSolver") -> None:
+    def set_params(self, solver: "YicesSolver"):
         """Set Search Parameters.
 
         Yices makes a distinction between configuration and search
@@ -141,7 +141,7 @@ class YicesSolver(SmtLibBasicSolver, SmtLibIgnoreMixin):
                  if not l.theory.linear or l.theory.strings)
     OptionsClass = YicesOptions
 
-    def __init__(self, environment: Environment, logic: pysmt.logics.Logic, **options) -> None:
+    def __init__(self, environment: Environment, logic: pysmt.logics.Logic, **options):
         Solver.__init__(self,
                         environment=environment,
                         logic=logic,
@@ -173,7 +173,7 @@ class YicesSolver(SmtLibBasicSolver, SmtLibIgnoreMixin):
         raise NotImplementedError
 
     @clear_pending_pop
-    def add_assertion(self, formula: FNode, named: None=None) -> None:
+    def add_assertion(self, formula: FNode, named: None=None):
         self._assert_is_boolean(formula)
         term = self.converter.convert(formula)
         code = yices_api.yices_assert_formula(self.yices, term)
@@ -228,7 +228,7 @@ class YicesSolver(SmtLibBasicSolver, SmtLibIgnoreMixin):
         raise NotImplementedError
 
     @clear_pending_pop
-    def push(self, levels: int=1) -> None:
+    def push(self, levels: int=1):
         for _ in range(levels):
             c = yices_api.yices_push(self.yices)
             if c != 0:
@@ -244,7 +244,7 @@ class YicesSolver(SmtLibBasicSolver, SmtLibIgnoreMixin):
                                               yices_api.yices_error_string())
 
     @clear_pending_pop
-    def pop(self, levels: int=1) -> None:
+    def pop(self, levels: int=1):
         for _ in range(levels):
             if self.failed_pushes > 0:
                 self.failed_pushes -= 1
@@ -259,7 +259,7 @@ class YicesSolver(SmtLibBasicSolver, SmtLibIgnoreMixin):
             if name_filter is None or not var.symbol_name().startswith(name_filter):
                 print("%s = %s", (var.symbol_name(), self.get_value(var)))
 
-    def _check_error(self, res: int) -> None:
+    def _check_error(self, res: int):
         if res != 0:
             err = yices_api.yices_error_string()
             raise InternalSolverError("Yices returned an error: " + err)
@@ -302,7 +302,7 @@ class YicesSolver(SmtLibBasicSolver, SmtLibIgnoreMixin):
         else:
             raise NotImplementedError()
 
-    def _exit(self) -> None:
+    def _exit(self):
         yices_api.yices_free_context(self.yices)
         yices_api.yices_free_param_record(self.yices_params)
 
@@ -311,7 +311,7 @@ class YicesSolver(SmtLibBasicSolver, SmtLibIgnoreMixin):
 
 class YicesConverter(Converter, DagWalker):
 
-    def __init__(self, environment: Environment) -> None:
+    def __init__(self, environment: Environment):
         DagWalker.__init__(self, environment)
         self.mgr = environment.formula_manager
         self._get_type = environment.stc.get_type
@@ -326,7 +326,7 @@ class YicesConverter(Converter, DagWalker):
     def convert(self, formula: FNode) -> int:
         return self.walk(formula)
 
-    def _check_term_result(self, res: int) -> None:
+    def _check_term_result(self, res: int):
         if res == -1:
             err = yices_api.yices_error_string()
             raise InternalSolverError("Yices returned an error: " + err)

@@ -24,6 +24,7 @@ particular solver.
 """
 
 from functools import partial
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple, Type, TypeVar, Union, cast
 
 from pysmt.exceptions import (NoSolverAvailableError, SolverRedefinitionError,
                               NoLogicAvailableError,
@@ -43,7 +44,7 @@ from pysmt.solvers.qelim import QuantifierEliminator
 from pysmt.environment import Environment
 from pysmt.fnode import FNode
 from pysmt.optimization.optimizer import Optimizer
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple, Type, TypeVar, Union, cast
+from pysmt.utils import assert_not_none
 
 SOLVER_TYPES = ['Solver', 'Solver supporting Unsat Cores',
                 'Quantifier Eliminator', 'Interpolator', 'Optimizer']
@@ -74,7 +75,7 @@ class Factory(object):
     is_sat, is_unsat etc.
 
     """
-    def __init__(self, environment: Environment, preferences: None=None) -> None:
+    def __init__(self, environment: Environment, preferences: None=None):
         self.environment = environment
         self._all_solvers: Dict[str, Type[Solver]]
         self._all_unsat_core_solvers: Dict[str, Type[Solver]]
@@ -212,7 +213,7 @@ class Factory(object):
             "Cannot find a matching solver in the preference list: %s " % solvers)
 
 
-    def add_generic_solver(self, name: str, args: List[str], logics: List[Logic], unsat_core_support: bool=False) -> None:
+    def add_generic_solver(self, name: str, args: List[str], logics: List[Logic], unsat_core_support: bool=False):
         from pysmt.smtlib.solver import SmtLibSolver
         if name in self._all_solvers:
             raise SolverRedefinitionError("Solver %s already defined" % name)
@@ -232,7 +233,7 @@ class Factory(object):
     def get_generic_solver_info(self, name):
         return self._generic_solvers[name]
 
-    def _get_available_solvers(self) -> None:
+    def _get_available_solvers(self):
         installed_solvers: Dict[str, Type[Solver]] = {}
         self._all_solvers = {}
         self._all_unsat_core_solvers = {}
@@ -315,7 +316,7 @@ class Factory(object):
                 pass
 
 
-    def _get_available_qe(self) -> None:
+    def _get_available_qe(self):
         self._all_qelims = {}
 
         try:
@@ -354,7 +355,7 @@ class Factory(object):
         self._all_qelims['shannon'] = ShannonQuantifierEliminator
         self._all_qelims['selfsub'] = SelfSubstitutionQuantifierEliminator
 
-    def _get_available_interpolators(self) -> None:
+    def _get_available_interpolators(self):
         self._all_interpolators = {}
 
         try:
@@ -373,7 +374,7 @@ class Factory(object):
         except SolverAPINotFound:
             pass
 
-    def _get_available_optimizers(self) -> None:
+    def _get_available_optimizers(self):
         self._all_optimizers = {}
 
         try:
@@ -603,7 +604,7 @@ class Factory(object):
             if not check:
                 return None
             else:
-                model = solver.get_model()
+                model = assert_not_none(solver.get_model())
                 atoms = formula.get_atoms()
                 res = []
                 for a in atoms:

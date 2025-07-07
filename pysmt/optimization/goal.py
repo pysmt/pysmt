@@ -99,7 +99,7 @@ class MaximizationGoal(Goal):
     Warning: some Optimizer may not support this goal
     """
 
-    def __init__(self, formula: FNode, signed: bool = False) -> None:
+    def __init__(self, formula: FNode, signed: bool = False):
         """
         :param formula: The target formula
         :type  formula: FNode
@@ -127,7 +127,7 @@ class MinimizationGoal(Goal):
     Warning: some Optimizer may not support this goal
     """
 
-    def __init__(self, formula: FNode, sign: bool = False) -> None:
+    def __init__(self, formula: FNode, sign: bool = False):
         """
         :param formula: The target formula
         :type  formula: FNode
@@ -156,7 +156,7 @@ class MinMaxGoal(MinimizationGoal):
     Warning: some Optimizer may not support this goal
     """
 
-    def __init__(self, terms: List[FNode], sign: bool = False) -> None:
+    def __init__(self, terms: List[FNode], sign: bool = False):
         """
         :param terms: List of FNode
         """
@@ -185,7 +185,7 @@ class MaxMinGoal(MaximizationGoal):
     Warning: some Optimizer may not support this goal
     """
 
-    def __init__(self, terms: List[FNode], sign: bool = False) -> None:
+    def __init__(self, terms: List[FNode], sign: bool = False):
         """
         :param terms: List of FNode
         """
@@ -211,13 +211,13 @@ class MaxSMTGoal(Goal):
     MaxSMT goal common to all solvers.
     """
 
-    def __init__(self, real_weights: bool=True) -> None:
+    def __init__(self, real_weights: bool=True):
         """Accepts soft clauses and the relative weights"""
         self.soft: List[Tuple[FNode, FNode]] = []
         self._bv_signed = False
         self._real_weights = real_weights
 
-    def add_soft_clause(self, clause: FNode, weight: FNode) -> None:
+    def add_soft_clause(self, clause: FNode, weight: FNode):
         """Accepts soft clauses and the relative weights"""
         mgr = get_env().formula_manager
         if not clause.get_type().is_bool_type():

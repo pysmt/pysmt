@@ -48,7 +48,7 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
     # remove all theories that are not linear
     LOGICS: Iterable[Logic] = set(filter(lambda x: x.theory.linear, Z3Solver.LOGICS))
 
-    def __init__(self, environment: Environment, logic: Logic, **options) -> None:
+    def __init__(self, environment: Environment, logic: Logic, **options):
         Z3Solver.__init__(self, environment=environment,
                           logic=logic, **options)
         self.z3 = z3.Optimize()

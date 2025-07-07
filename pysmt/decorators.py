@@ -26,7 +26,7 @@ class deprecated(object):
     as deprecated. It will result in a warning being emitted
     when the function is used."""
 
-    def __init__(self, alternative: Optional[str]=None) -> None:
+    def __init__(self, alternative: Optional[str]=None):
         self.alternative = alternative
 
     def __call__(self, func: Callable) -> Callable:

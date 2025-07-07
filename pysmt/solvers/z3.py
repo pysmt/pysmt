@@ -66,7 +66,7 @@ z3.get_payload = lambda node,i : z3.Z3_get_decl_int_parameter(node.ctx.ref(),
                                                               node.decl().ast, i)
 
 class AstRefKey:
-    def __init__(self, n: z3.ExprRef) -> None:
+    def __init__(self, n: z3.ExprRef):
         self.n = n
     def __hash__(self) -> int:
         return self.n.hash()
@@ -83,7 +83,7 @@ def askey(n: z3.ExprRef) -> AstRefKey:
 
 class Z3Model(Model):
 
-    def __init__(self, environment: Environment, z3_model: z3.ModelRef) -> None:
+    def __init__(self, environment: Environment, z3_model: z3.ModelRef):
         Model.__init__(self, environment)
         self.z3_model = z3_model
         self.converter = Z3Converter(environment, z3_model.ctx)
@@ -120,7 +120,7 @@ class Z3Model(Model):
 class Z3Options(SolverOptions):
 
     @staticmethod
-    def _set_option(z3solver: z3.Solver, name: str, value: bool) -> None:
+    def _set_option(z3solver: z3.Solver, name: str, value: Any):
         try:
             z3solver.set(name, value)
         except z3.Z3Exception:
@@ -130,7 +130,7 @@ class Z3Options(SolverOptions):
             raise PysmtValueError("Error setting the option '%s=%s'" \
                                   % (name, value))
 
-    def __call__(self, solver: "Z3Solver") -> None:
+    def __call__(self, solver: "Z3Solver"):
         self._set_option(solver.z3, 'model', self.generate_models)
         if self.unsat_cores_mode is not None:
             self._set_option(solver.z3, 'unsat_core', True)
@@ -158,7 +158,7 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
                            'QF_NRA', 'QF_RDL', 'QF_UF', 'UF', 'QF_UFBV', 'QF_UFIDL',
                            'QF_UFLIA', 'QF_UFLRA', 'QF_UFNRA', 'QF_UFNIA', 'UFLRA', 'UFNIA']
 
-    def __init__(self, environment: Environment, logic: Logic, **options) -> None:
+    def __init__(self, environment: Environment, logic: Logic, **options):
         IncrementalTrackingSolver.__init__(self,
                                            environment=environment,
                                            logic=logic,
@@ -187,7 +187,7 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
         raise NotImplementedError
 
     @clear_pending_pop
-    def _add_assertion(self, formula: FNode, named: None=None) -> FNode:
+    def _add_assertion(self, formula: FNode, named: Optional[str]=None):
         self._assert_is_boolean(formula)
         term = self.converter.convert(formula)
 
@@ -275,12 +275,12 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
         raise NotImplementedError
 
     @clear_pending_pop
-    def _push(self, levels: int=1) -> None:
+    def _push(self, levels: int=1):
         for _ in range(levels):
             self.z3.push()
 
     @clear_pending_pop
-    def _pop(self, levels: int=1) -> None:
+    def _pop(self, levels: int=1):
         for _ in range(levels):
             self.z3.pop()
 
@@ -299,7 +299,7 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
             return res.simplify()
         return res
 
-    def _exit(self) -> None:
+    def _exit(self):
         del self.converter
         del self.z3
 
@@ -311,7 +311,7 @@ BITVECREF_SET = op.BV_OPERATORS
 
 class Z3Converter(Converter, DagWalker):
 
-    def __init__(self, environment: Environment, z3_ctx: z3.Context) -> None:
+    def __init__(self, environment: Environment, z3_ctx: z3.Context):
         DagWalker.__init__(self, environment)
         self.mgr = environment.formula_manager
         self._get_type = environment.stc.get_type
@@ -939,7 +939,7 @@ class Z3Converter(Converter, DagWalker):
             return self.z3Sort(tp)
         raise NotImplementedError("Unsupported type in conversion: %s" % tp)
 
-    def __del__(self) -> None:
+    def __del__(self):
         # Cleaning-up Z3Converter requires dec-ref'ing the terms in the cache
         if self.ctx.ref():
             # Check that there is still a context object

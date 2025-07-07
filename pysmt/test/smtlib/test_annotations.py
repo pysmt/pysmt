@@ -28,7 +28,7 @@ from pysmt.utils import assert_not_none
 
 class TestBasic(TestCase):
 
-    def test_basic(self) -> None:
+    def test_basic(self):
         ann = Annotations()
         a = Symbol("a")
         next_a = Symbol("next(a)")
@@ -48,7 +48,7 @@ class TestBasic(TestCase):
         self.assertEqual(set([a]), ann.all_annotated_formulae("related"))
         self.assertEqual(set(), ann.all_annotated_formulae("non-existent"))
 
-    def test_remove(self) -> None:
+    def test_remove(self):
         ann = Annotations()
         a = Symbol("a")
         next_a = Symbol("next(a)")
@@ -69,7 +69,7 @@ class TestBasic(TestCase):
         self.assertEqual(set([]), ann.all_annotated_formulae("related"))
         self.assertEqual(set(), ann.all_annotated_formulae("non-existent"))
 
-    def test_remove_annotation(self) -> None:
+    def test_remove_annotation(self):
         ann = Annotations()
         a = Symbol("a")
         next_a = Symbol("next(a)")
@@ -90,7 +90,7 @@ class TestBasic(TestCase):
         self.assertEqual(set([a]), ann.all_annotated_formulae("related"))
         self.assertEqual(set(), ann.all_annotated_formulae("non-existent"))
 
-    def test_remove_value(self) -> None:
+    def test_remove_value(self):
         ann = Annotations()
         a = Symbol("a")
         next_a = Symbol("next(a)")
@@ -105,7 +105,7 @@ class TestBasic(TestCase):
         ann.remove_value(a, "related", next_a)
         self.assertEqual(assert_not_none(ann.annotations(a))["related"], assert_not_none(ann.annotations(a))["init"])
 
-    def test_vmt(self) -> None:
+    def test_vmt(self):
         parser = SmtLibParser()
         fname = os.path.join(SMTLIB_DIR, "small_set/vmt/c432_0f.vmt")
         script = parser.get_script_fname(fname)
@@ -129,7 +129,7 @@ class TestBasic(TestCase):
         curr_a1 = ann.all_annotated_formulae("next", "A_1__AT1")
         self.assertEqual(curr_a1, set([a1]))
 
-    def test_interpreting_annotations(self) -> None:
+    def test_interpreting_annotations(self):
         source ="""\
 (declare-fun |"v__AT0"| () Bool)
 (declare-fun |"v__AT1"| () Bool)
@@ -146,7 +146,7 @@ class TestBasic(TestCase):
         self.assertEqual(v1_str, '"v__AT1"')
 
 
-    def test_complex_annotations_values(self) -> None:
+    def test_complex_annotations_values(self):
         source ="""\
 (declare-fun |"v__AT0"| () Bool)
 (define-fun .def_1 () Bool (! |"v__AT0"| :next (+ 1     meaningless)))
@@ -161,7 +161,7 @@ class TestBasic(TestCase):
         self.assertEqual(v1_str, "(+ 1     meaningless)")
 
 
-    def test_annotations_colon_values(self) -> None:
+    def test_annotations_colon_values(self):
         source ="""\
 (declare-fun |"v__AT0"| () Bool)
 (define-fun .def_1 () Bool (! |"v__AT0"| :next :this_is_considered_a_value))

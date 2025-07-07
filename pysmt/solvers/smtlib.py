@@ -240,16 +240,16 @@ class SmtLibIgnoreMixin(SmtLibSolver):
     def set_logic(self, logic: Optional[Union[str, Logic]]) -> bool:
         return True
 
-    def declare_fun(self, symbol: FNode) -> None:
+    def declare_fun(self, symbol: FNode):
         return None
 
-    def declare_const(self, symbol: FNode) -> None:
+    def declare_const(self, symbol: FNode):
         return None
 
     def define_fun(self, name, args, rtype, expr):
         return None
 
-    def declare_sort(self, name: Optional[str], cardinality: Optional[int]) -> None:
+    def declare_sort(self, name: Optional[str], cardinality: Optional[int]):
         return None
 
     def define_sort(self, name, args, sort_expr):
@@ -299,7 +299,7 @@ class SmtLibIgnoreMixin(SmtLibSolver):
 
 
 class SmtLibBasicSolver(SmtLibSolver): # TODO should this derive from Solver or SmtLibSolver?
-    def assert_(self, expr: FNode, named: None=None) -> None:
+    def assert_(self, expr: FNode, named: None=None):
         return self.add_assertion(expr, named)
 
     def check_sat(self) -> bool:

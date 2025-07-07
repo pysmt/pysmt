@@ -327,7 +327,7 @@ class SmtPrinter(TreeWalker):
 
 class SmtDagPrinter(DagWalker):
 
-    def __init__(self, stream: TextIO, template: str=".def_%d", annotations: Optional[Annotations]=None) -> None:
+    def __init__(self, stream: TextIO, template: str=".def_%d", annotations: Optional[Annotations]=None):
         DagWalker.__init__(self, invalidate_memoization=True)
         self.stream = stream
         self.write = self.stream.write
@@ -338,7 +338,7 @@ class SmtDagPrinter(DagWalker):
         self.mgr = get_env().formula_manager
         self.annotations = annotations
 
-    def _push_with_children_to_stack(self, formula: FNode, **kwargs) -> None:
+    def _push_with_children_to_stack(self, formula: FNode, **kwargs):
         """Add children to the stack."""
 
         # Deal with quantifiers
@@ -354,7 +354,7 @@ class SmtDagPrinter(DagWalker):
         else:
             DagWalker._push_with_children_to_stack(self, formula, **kwargs)
 
-    def printer(self, f: FNode) -> None:
+    def printer(self, f: FNode):
         self.openings = 0
         self.name_seed = 0
         self.names = set(quote(x.symbol_name()) for x in f.get_free_variables())

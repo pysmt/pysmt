@@ -94,7 +94,7 @@ class SolverOptions(object):
         self.solver_options = solver_options
 
     @abc.abstractmethod
-    def __call__(self, solver: "pysmt.solvers.solver.Solver"):
+    def __call__(self, solver: "pysmt.solvers.solver.Solver"): # type: ignore [name-defined] # TODO it says that pysmt.solvers.solver.Solver is not defined
         """Handle the setting options within solver"""
         raise NotImplementedError
 

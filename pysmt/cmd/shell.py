@@ -63,7 +63,7 @@ Happy Solving!
 
 class PysmtShell(object):
 
-    def __init__(self, argv: List[str]) -> None:
+    def __init__(self, argv: List[str]):
         self.env = get_env()
         self.solvers = list(self.env.factory.all_solvers().keys())
         self.optimizers = list(self.env.factory.all_optimizers().keys())
@@ -110,13 +110,13 @@ class PysmtShell(object):
             code.interact(welcome_msg)
 
 
-    def _print(self, val: str, stream_out: StringIO) -> None:
+    def _print(self, val: str, stream_out: StringIO):
         stream_out.write(val)
         stream_out.write("\n")
         stream_out.flush()
 
 
-    def print_result(self, stream_out: StringIO, cmd: SmtLibCommand, result: Any) -> None:
+    def print_result(self, stream_out: StringIO, cmd: SmtLibCommand, result: Any):
         name, _ = cmd
         if name == ECHO:
             self._print(result, stream_out)
@@ -137,7 +137,7 @@ class PysmtShell(object):
             self._print(")", stream_out)
 
 
-    def smtlib_solver(self, stream_in: StringIO, stream_out: StringIO) -> None:
+    def smtlib_solver(self, stream_in: StringIO, stream_out: StringIO):
         smt_parser = SmtLibParser()
         s_name = self.args.solver
         opt_name = self.args.optimizer

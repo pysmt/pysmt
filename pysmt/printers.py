@@ -34,12 +34,12 @@ class HRPrinter(TreeWalker):
     E.g., Implies(And(Symbol(x), Symbol(y)), Symbol(z))  ~>   '(x * y) -> z'
     """
 
-    def __init__(self, stream: StringIO, env: None=None) -> None:
+    def __init__(self, stream: StringIO, env: None=None):
         TreeWalker.__init__(self, env=env)
         self.stream = stream
         self.write = self.stream.write
 
-    def printer(self, f: FNode, threshold: Optional[int]=None) -> None:
+    def printer(self, f: FNode, threshold: Optional[int]=None):
         """Performs the serialization of 'f'.
 
         Thresholding can be used to define how deep in the formula to
@@ -48,7 +48,7 @@ class HRPrinter(TreeWalker):
         """
         self.walk(f, threshold=threshold)
 
-    def walk_threshold(self, formula: FNode) -> None:
+    def walk_threshold(self, formula: FNode):
         self.write("...")
 
     def walk_nary(self, formula: FNode, ops: str) -> Iterator[FNode]:
@@ -79,7 +79,7 @@ class HRPrinter(TreeWalker):
         yield formula.arg(0)
         self.write(")")
 
-    def walk_symbol(self, formula: FNode) -> None:
+    def walk_symbol(self, formula: FNode):
         self.write(quote(formula.symbol_name(), style="'"))
 
     def walk_function(self, formula: FNode) -> Iterator[FNode]:
@@ -91,7 +91,7 @@ class HRPrinter(TreeWalker):
         yield formula.args()[-1]
         self.write(")")
 
-    def walk_real_constant(self, formula: FNode) -> None:
+    def walk_real_constant(self, formula: FNode):
         assert is_pysmt_fraction(formula.constant_value()), \
             "The type was " + str(type(formula.constant_value()))
         # TODO: Remove this once issue 113 in gmpy2 is solved
@@ -102,18 +102,18 @@ class HRPrinter(TreeWalker):
         else:
             self.write("%s/%s" % (n, d))
 
-    def walk_int_constant(self, formula: FNode) -> None:
+    def walk_int_constant(self, formula: FNode):
         assert is_pysmt_integer(formula.constant_value()), \
             "The type was " + str(type(formula.constant_value()))
         self.write(str(formula.constant_value()))
 
-    def walk_bool_constant(self, formula: FNode) -> None:
+    def walk_bool_constant(self, formula: FNode):
         if formula.constant_value():
             self.write("True")
         else:
             self.write("False")
 
-    def walk_bv_constant(self, formula: FNode) -> None:
+    def walk_bv_constant(self, formula: FNode):
         # This is the simplest SMT-LIB way of printing the value of a BV
         # self.write("(_ bv%d %d)" % (formula.bv_width(),
         #                             formula.constant_value()))
@@ -177,25 +177,25 @@ class HRPrinter(TreeWalker):
         yield formula.arg(0)
         self.write(")")
 
-    def walk_str_constant(self, formula: FNode) -> None:
+    def walk_str_constant(self, formula: FNode):
         formula_value = formula.constant_value()
         assert isinstance(formula_value, str), \
             "The type was " + str(type(formula_value))
         self.write('"%s"' % formula_value.replace('"', '""'))
 
-    def walk_str_length(self,formula: FNode) -> None:
+    def walk_str_length(self,formula: FNode):
         self.write("str.len(" )
         self.walk(formula.arg(0))
         self.write(")")
 
-    def walk_str_charat(self,formula: FNode, **kwargs) -> None:
+    def walk_str_charat(self,formula: FNode, **kwargs):
         self.write("str.at(" )
         self.walk(formula.arg(0))
         self.write(", ")
         self.walk(formula.arg(1))
         self.write(")")
 
-    def walk_str_concat(self,formula: FNode, **kwargs) -> None:
+    def walk_str_concat(self,formula: FNode, **kwargs):
         self.write("str.++(" )
         for arg in formula.args()[:-1]:
             self.walk(arg)
@@ -203,14 +203,14 @@ class HRPrinter(TreeWalker):
         self.walk(formula.args()[-1])
         self.write(")")
 
-    def walk_str_contains(self,formula: FNode, **kwargs) -> None:
+    def walk_str_contains(self,formula: FNode, **kwargs):
         self.write("str.contains(" )
         self.walk(formula.arg(0))
         self.write(", ")
         self.walk(formula.arg(1))
         self.write(")")
 
-    def walk_str_indexof(self,formula: FNode, **kwargs) -> None:
+    def walk_str_indexof(self,formula: FNode, **kwargs):
         self.write("str.indexof(" )
         self.walk(formula.arg(0))
         self.write(", ")
@@ -219,7 +219,7 @@ class HRPrinter(TreeWalker):
         self.walk(formula.arg(2))
         self.write(")")
 
-    def walk_str_replace(self,formula: FNode, **kwargs) -> None:
+    def walk_str_replace(self,formula: FNode, **kwargs):
         self.write("str.replace(" )
         self.walk(formula.arg(0))
         self.write(", ")
@@ -228,7 +228,7 @@ class HRPrinter(TreeWalker):
         self.walk(formula.arg(2))
         self.write(")")
 
-    def walk_str_substr(self,formula: FNode, **kwargs) -> None:
+    def walk_str_substr(self,formula: FNode, **kwargs):
         self.write("str.substr(" )
         self.walk(formula.arg(0))
         self.write(", ")
@@ -237,26 +237,26 @@ class HRPrinter(TreeWalker):
         self.walk(formula.arg(2))
         self.write(")")
 
-    def walk_str_prefixof(self,formula: FNode, **kwargs) -> None:
+    def walk_str_prefixof(self,formula: FNode, **kwargs):
         self.write("str.prefixof(" )
         self.walk(formula.arg(0))
         self.write(", ")
         self.walk(formula.arg(1))
         self.write(")")
 
-    def walk_str_suffixof(self,formula: FNode, **kwargs) -> None:
+    def walk_str_suffixof(self,formula: FNode, **kwargs):
         self.write("str.suffixof(" )
         self.walk(formula.arg(0))
         self.write(", ")
         self.walk(formula.arg(1))
         self.write(")")
 
-    def walk_str_to_int(self,formula: FNode, **kwargs) -> None:
+    def walk_str_to_int(self,formula: FNode, **kwargs):
         self.write("str.to.int(" )
         self.walk(formula.arg(0))
         self.write(")")
 
-    def walk_int_to_str(self,formula: FNode, **kwargs) -> None:
+    def walk_int_to_str(self,formula: FNode, **kwargs):
         self.write("int.to.str(" )
         self.walk(formula.arg(0))
         self.write(")")
@@ -336,7 +336,7 @@ class HRSerializer(object):
 
     PrinterClass = HRPrinter
 
-    def __init__(self, environment: Optional["pysmt.environment.Environment"]=None) -> None:
+    def __init__(self, environment: Optional["pysmt.environment.Environment"]=None):
         self.environment = environment
 
     def serialize(self, formula: FNode, printer: None=None, threshold: Optional[int]=None) -> str:

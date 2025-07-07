@@ -30,7 +30,7 @@ from pysmt.smtlib.script import SmtLibScript
 class TestSmtLibParserFuzzer(TestCase):
 
     @pytest.mark.slow
-    def test_fuzzed(self) -> None:
+    def test_fuzzed(self):
         for fname in FUZZED_FILES:
             script = self.parse(os.path.join(SMTLIB_DIR, fname))
             buf = StringIO()

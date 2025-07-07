@@ -46,7 +46,7 @@ class handles(object):
          ...
 
     """
-    def __init__(self, *nodetypes: Union[int, Iterable[int]]) -> None:
+    def __init__(self, *nodetypes: Union[int, Iterable[int]]):
         if len(nodetypes) == 1 and isinstance(nodetypes[0], CollectionsIterable):
             nt: Iterable[int] = nodetypes[0]
         else:
@@ -77,7 +77,7 @@ class Walker(object, metaclass=MetaNodeTypeHandler):
     Do not subclass directly, use DagWalker or TreeWalker, instead.
     """
 
-    def __init__(self, env: Optional["pysmt.environment.Environment"]=None) -> None:
+    def __init__(self, env: Optional["pysmt.environment.Environment"]=None):
         if env is None:
             import pysmt.environment
             env = pysmt.environment.get_env()
@@ -103,7 +103,7 @@ class Walker(object, metaclass=MetaNodeTypeHandler):
             self.functions[nt] = function
 
     @classmethod
-    def set_handler(cls, function: Callable, *node_types) -> None:
+    def set_handler(cls, function: Callable, *node_types):
         """Associate in cls the given function to the given node_types."""
         for nt in node_types:
             setattr(cls, nt_to_fun(nt), function)

@@ -36,7 +36,7 @@ from pysmt.fnode import FNode
 
 class SimpleTypeChecker(walkers.DagWalker):
 
-    def __init__(self, env: Optional["pysmt.environment.Environment"]=None) -> None:
+    def __init__(self, env: Optional["pysmt.environment.Environment"]=None):
         walkers.DagWalker.__init__(self, env=env)
         # If `be_nice` is true, the `get_type` method will return None if
         # the type cannot be computed instead of than raising an exception.

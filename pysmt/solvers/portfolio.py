@@ -17,7 +17,8 @@
 #
 import logging
 from multiprocessing import Process, Queue, Pipe
-from typing import Any, Dict, Iterable, Optional, Tuple, Union
+from multiprocessing.connection import Connection
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union, cast
 
 import pysmt
 from pysmt.solvers.solver import IncrementalTrackingSolver, SolverOptions, Solver, Model
@@ -75,22 +76,23 @@ class Portfolio(IncrementalTrackingSolver):
         One process will be used for each of the solvers.
         """
         logic = convert_logic_from_string(logic)
+        # TODO can logic be None in IncrementalTrackingSOlver (and SOlver)?
         IncrementalTrackingSolver.__init__(self,
                                            environment=environment,
-                                           logic=logic,
+                                           logic=logic, # type: ignore [arg-type] # TODO
                                            **options)
-        self.solvers = []
+        self.solvers: List[Tuple[str, Dict[str, Any]]] = []
         self._process_solver_set(solvers_set)
         # Check that the names are valid ?
         all_solvers = set(self.environment.factory.all_solvers(logic=logic))
-        not_found = set(s for s,_ in self.solvers) - all_solvers
+        not_found = {s for s,_ in self.solvers} - all_solvers
         if len(not_found) != 0:
             raise ValueError("Cannot find solvers %s" % not_found)
 
         # After Solving, we only keep the solver that finished first.
         # We can extract models from the solver, unsat cores, etc
-        self._ext_solver = None # Existing solver Process
-        self._ctrl_pipe = None  # Ctrl Pipe to the existing solver
+        self._ext_solver: Optional[Process] = None # Existing solver Process
+        self._ctrl_pipe: Optional[Connection] = None  # Ctrl Pipe to the existing solver
 
     def _process_solver_set(self, sset):
         """The sset can contain both solver names and pairs name options."""
@@ -137,7 +139,7 @@ class Portfolio(IncrementalTrackingSolver):
 
         formula = self.environment.formula_manager.And(self.assertions)
         _debug("Creating Queue and Pipe")
-        signaling_queue = Queue()
+        signaling_queue: Queue = Queue()
         child_ctrl_pipe, my_ctrl_pipe = Pipe()
         self._ctrl_pipe = my_ctrl_pipe
 
@@ -157,7 +159,7 @@ class Portfolio(IncrementalTrackingSolver):
         while True:
             (sname, res) = signaling_queue.get(block=True)
             if isinstance(res, BaseException):
-                if self.options.exit_on_exception:
+                if cast(PortfolioOptions, self.options).exit_on_exception:
                     # Close all solvers and raise exception
                     for p in processes:
                         p.terminate()
@@ -181,6 +183,7 @@ class Portfolio(IncrementalTrackingSolver):
         if not self._ext_solver:
             raise ValueError("No SAT model")
 
+        assert self._ctrl_pipe is not None
         self._ctrl_pipe.send(("get_value", formula))
         res = self._ctrl_pipe.recv()
         return self.environment.formula_manager.normalize(res)
@@ -191,6 +194,7 @@ class Portfolio(IncrementalTrackingSolver):
         if not self._ext_solver:
             raise ValueError("No SAT model")
 
+        assert self._ctrl_pipe is not None
         self._ctrl_pipe.send("get_model")
         # Contextualize the result within the calling process
         _normalize = self.environment.formula_manager.normalize

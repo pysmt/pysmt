@@ -50,7 +50,7 @@ def smtlib_tests(logic_pred: Callable) -> List[Tuple[str, Logic, bool]]:
 #  $ python -m pytest pysmt/test/smtlib/test_parser_qf_lra.py
 # The function 'execute_script_fname' is a general checker that
 # parses and invokes a solver for the given smt file
-def execute_script_fname(smtfile: str, logic: Logic, expected_result: bool) -> None:
+def execute_script_fname(smtfile: str, logic: Logic, expected_result: bool):
     """Read and call a Solver to solve the instance"""
     reset_env()
     Solver = get_env().factory.Solver

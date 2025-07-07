@@ -17,14 +17,16 @@
 #
 import re
 from collections import namedtuple
+from typing import Optional
 
+import pysmt
 import pysmt.typing as types
 from pysmt.environment import get_env
 from pysmt.exceptions import PysmtSyntaxError, UndefinedSymbolError
 from pysmt.constants import Fraction
 
 
-def HRParser(env=None):
+def HRParser(env: Optional["pysmt.environment.Environment"]=None):
     """Parser for HR format of pySMT."""
     return PrattParser(HRLexer, env=env)
 
@@ -45,14 +47,14 @@ class Lexer(object):
     modifying rules.
     """
 
-    def __init__(self, env=None):
+    def __init__(self, env: Optional["pysmt.environment.Environment"]=None):
         if env is None:
             env = get_env()
         self.env = env
         self.mgr = env.formula_manager
         self.get_type = env.stc.get_type
 
-        self.rules = []
+        self.rules: List[Rule] = []
         self.scanner = None
         self.eoi = EndOfInput()
 
@@ -114,7 +116,7 @@ class GrammarSymbol(object):
 class HRLexer(Lexer):
     """Produces a stream of token objects for the Human-Readable format."""
 
-    def __init__(self, env=None):
+    def __init__(self, env: Optional["pysmt.environment.Environment"]=None):
         Lexer.__init__(self, env=env)
 
         hr_rules = [
@@ -455,7 +457,7 @@ class PrattParser(object):
     The LexerClass is required, and is the one doing the heavy lifting.
     """
 
-    def __init__(self, LexerClass, env=None):
+    def __init__(self, LexerClass, env: Optional["pysmt.environment.Environment"]=None):
         if env is None:
             env = get_env()
 

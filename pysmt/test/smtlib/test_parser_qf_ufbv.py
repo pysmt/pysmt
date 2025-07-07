@@ -21,5 +21,5 @@ from pysmt.logics import Logic, QF_UFBV
 from pysmt.test.smtlib.parser_utils import execute_script_fname, smtlib_tests
 
 @pytest.mark.parametrize("smtfile, logic, expected_result", smtlib_tests(lambda x: x == QF_UFBV))
-def test_qf_ufbv(smtfile: str, logic: Logic, expected_result: bool) -> None:
+def test_qf_ufbv(smtfile: str, logic: Logic, expected_result: bool):
     execute_script_fname(smtfile, logic, expected_result)

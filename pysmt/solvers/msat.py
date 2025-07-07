@@ -58,11 +58,11 @@ class MSatEnv():
     __slots__ = ['msat_env', '_msat_lib']
     __lib_name__ = "mathsat"
 
-    def __init__(self, msat_config: Optional[Any]=None) -> None:
+    def __init__(self, msat_config: Optional[Any]=None):
         self._msat_lib = MSATLibLoader(self.__class__.__lib_name__)
         self.msat_env = self._do_create_env(msat_config)
 
-    def __del__(self) -> None:
+    def __del__(self):
         self._msat_lib.msat_destroy_env(self.msat_env)
 
     def __call__(self) -> Any:
@@ -77,7 +77,7 @@ class MathSAT5Model(Model):
 
     __lib_name__ = "mathsat"
 
-    def __init__(self, environment: Environment, msat_env: MSatEnv) -> None:
+    def __init__(self, environment: Environment, msat_env: MSatEnv):
         Model.__init__(self, environment)
         self._msat_lib = MSATLibLoader(self.__class__.__lib_name__)
         self.msat_env = msat_env
@@ -90,7 +90,7 @@ class MathSAT5Model(Model):
             raise InternalSolverError(msat_msg)
         self.msat_model = msat_model
 
-    def __del__(self) -> None:
+    def __del__(self):
         if self.msat_model is not None:
             self._msat_lib.msat_destroy_model(self.msat_model)
         del self.msat_env
@@ -142,17 +142,17 @@ class MathSATOptions(SolverOptions):
 
     __lib_name__ = "mathsat"
 
-    def __init__(self, **base_options) -> None:
+    def __init__(self, **base_options):
         SolverOptions.__init__(self, **base_options)
         self._msat_lib = MSATLibLoader(self.__class__.__lib_name__)
 
-    def _set_option(self, msat_config: Any, name: str, value: str) -> None:
+    def _set_option(self, msat_config: Any, name: str, value: str):
         """Sets the given option. Might raise a ValueError."""
         check = self._msat_lib.msat_set_option(msat_config, name, value)
         if check != 0:
             raise PysmtValueError("Error setting the option '%s=%s'" % (name,value))
 
-    def __call__(self, solver: "MathSAT5Solver") -> None:
+    def __call__(self, solver: "MathSAT5Solver"):
         if self.generate_models:
             self._set_option(solver.msat_config, "model_generation", "true")
 
@@ -186,7 +186,7 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
 
     OptionsClass = MathSATOptions
 
-    def __init__(self, environment: Environment, logic: Logic, **options) -> None:
+    def __init__(self, environment: Environment, logic: Logic, **options):
         IncrementalTrackingSolver.__init__(self,
                                            environment=environment,
                                            logic=logic,
@@ -327,12 +327,12 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
         self.pop()
 
     @clear_pending_pop
-    def _push(self, levels: int=1) -> None:
+    def _push(self, levels: int=1):
         for _ in range(levels):
             self._msat_lib.msat_push_backtrack_point(self.msat_env())
 
     @clear_pending_pop
-    def _pop(self, levels: int=1) -> None:
+    def _pop(self, levels: int=1):
         for _ in range(levels):
             self._msat_lib.msat_pop_backtrack_point(self.msat_env())
 
@@ -371,7 +371,7 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
     def get_model(self) -> MathSAT5Model:
         return MathSAT5Model(self.environment, self.msat_env)
 
-    def _exit(self) -> None:
+    def _exit(self):
         del self.msat_env
 
 
@@ -379,7 +379,7 @@ class MSatConverter(Converter, DagWalker):
 
     __lib_name__ = "mathsat"
 
-    def __init__(self, environment: Environment, msat_env: MSatEnv) -> None:
+    def __init__(self, environment: Environment, msat_env: MSatEnv):
         DagWalker.__init__(self, environment)
 
         self._msat_lib = MSATLibLoader(self.__class__.__lib_name__)
@@ -1088,7 +1088,7 @@ class MSatConverter(Converter, DagWalker):
             raise NotImplementedError("Function types are unsupported")
 
 
-    def declare_variable(self, var: FNode) -> None:
+    def declare_variable(self, var: FNode):
         if not var.is_symbol():
             raise PysmtTypeError("Trying to declare as a variable something "
                                  "that is not a symbol: %s" % var)
@@ -1302,7 +1302,7 @@ class MSatBoolUFRewriter(IdentityDagWalker):
     Converter directly.
     """
 
-    def __init__(self, environment: Environment) -> None:
+    def __init__(self, environment: Environment):
         IdentityDagWalker.__init__(self, environment)
         self.get_type = self.env.stc.get_type
         self.mgr = self.env.formula_manager

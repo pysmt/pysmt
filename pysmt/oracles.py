@@ -57,7 +57,7 @@ class SizeOracle(walkers.DagWalker):
      MEASURE_SYMBOLS,
      MEASURE_BOOL_DAG) = range(6)
 
-    def __init__(self, env: Optional["pysmt.environment.Environment"]=None) -> None:
+    def __init__(self, env: Optional["pysmt.environment.Environment"]=None):
         walkers.DagWalker.__init__(self, env=env)
 
         self.measure_to_fun = \

@@ -39,7 +39,7 @@ from typing import Dict, Iterable, Iterator, List, Optional, Sequence, Tuple
 class OptiMSATEnv(MSatEnv):
     __lib_name__ = "optimathsat"
 
-    def __init__(self, msat_config=None) -> None:
+    def __init__(self, msat_config=None):
         MSatEnv.__init__(self, msat_config=msat_config)
 
     def _do_create_env(self, msat_config=None, msat_env: None=None):
@@ -49,7 +49,7 @@ class OptiMSATEnv(MSatEnv):
 class OptiMSATModel(MathSAT5Model):
     __lib_name__ = "optimathsat"
 
-    def __init__(self, environment: Environment, msat_env: MSatEnv) -> None:
+    def __init__(self, environment: Environment, msat_env: MSatEnv):
         MathSAT5Model.__init__(self, environment=environment,
                                msat_env=msat_env)
 
@@ -57,7 +57,7 @@ class OptiMSATModel(MathSAT5Model):
 class OptiMSATOptions(MathSATOptions):
     __lib_name__ = "optimathsat"
 
-    def __init__(self, **base_options) -> None:
+    def __init__(self, **base_options):
         MathSATOptions.__init__(self, **base_options)
         # enables the dump of the interaction with optimathsat on the file
         # useful for debugging
@@ -71,7 +71,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
 
     OptionsClass = OptiMSATOptions
 
-    def __init__(self, environment: Environment, logic: Logic, **options) -> None:
+    def __init__(self, environment: Environment, logic: Logic, **options):
         MathSAT5Solver.__init__(self, environment=environment,
                                 logic=logic, **options)
 
@@ -236,7 +236,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
 class OptiMSATConverter(MSatConverter):
     __lib_name__ = "optimathsat"
 
-    def __init__(self, environment: Environment, msat_env: OptiMSATEnv) -> None:
+    def __init__(self, environment: Environment, msat_env: OptiMSATEnv):
         MSatConverter.__init__(self, environment=environment,
                                msat_env=msat_env)
 
@@ -285,5 +285,5 @@ class OptiMSATInterpolator(MSatInterpolator):
 class OptiMSATBoolUFRewriter(MSatBoolUFRewriter):
     __lib_name__ = "optimathsat"
 
-    def __init__(self, environment: Environment) -> None:
+    def __init__(self, environment: Environment):
         MSatBoolUFRewriter.__init__(self, environment=environment)

@@ -25,7 +25,7 @@ from pysmt.exceptions import (SolverReturnedUnknownResultError, PysmtValueError,
 from pysmt.environment import Environment
 from pysmt.fnode import FNode
 from pysmt.logics import Logic
-from typing import Dict, Iterable, List, Optional, Set, Type, Union, cast
+from typing import Dict, Iterable, Iterator, List, Optional, Set, Tuple, Type, Union, cast
 
 
 class Solver(object):
@@ -48,7 +48,7 @@ class Solver(object):
         self.options = self.OptionsClass(**options)
         self._destroyed = False
 
-    def solve(self, assumptions: Iterable[FNode]=None) -> bool:
+    def solve(self, assumptions: Optional[Iterable[FNode]]=None) -> bool:
         """Returns the satisfiability value of the asserted formulas.
 
         Assumptions is a list of Boolean variables or negations of
@@ -204,7 +204,7 @@ class Solver(object):
         """Add assertion to the solver."""
         raise NotImplementedError
 
-    def add_assertions(self, formulae: FNode):
+    def add_assertions(self, formulae: Iterable[FNode]):
         for formula in formulae:
             self.add_assertion(formula)
 
@@ -295,7 +295,7 @@ class IncrementalTrackingSolver(Solver):
     self.assertions list.
     """
 
-    def __init__(self, environment: Environment, logic: Logic, **options) -> None:
+    def __init__(self, environment: Environment, logic: Logic, **options):
         """See py:func:`Solver.__init__()`."""
         Solver.__init__(self, environment, logic, **options)
 
@@ -350,7 +350,7 @@ class IncrementalTrackingSolver(Solver):
         """
         raise NotImplementedError
 
-    def add_assertion(self, formula: FNode, named: None=None) -> None:
+    def add_assertion(self, formula: FNode, named: Optional[str]=None):
         tracked = self._add_assertion(formula, named=named)
         self._assertion_stack.append(tracked)
         self._last_command = "assert"
@@ -373,7 +373,7 @@ class IncrementalTrackingSolver(Solver):
     def _push(self, levels: int=1):
         raise NotImplementedError
 
-    def push(self, levels: int=1) -> None:
+    def push(self, levels: int=1):
         self._push(levels=levels)
         point = len(self._assertion_stack)
         for _ in range(levels):
@@ -383,7 +383,7 @@ class IncrementalTrackingSolver(Solver):
     def _pop(self, levels: int=1):
         raise NotImplementedError
 
-    def pop(self, levels: int=1) -> None:
+    def pop(self, levels: int=1):
         self._pop(levels=levels)
         for _ in range(levels):
             point = self._backtrack_points.pop()
@@ -436,11 +436,11 @@ class Model(object):
     Models, that are solver dependent or by the EagerModel class.
     """
 
-    def __init__(self, environment: Environment) -> None:
+    def __init__(self, environment: Environment):
         self.environment = environment
         self._converter = None
 
-    def get_value(self, formula, model_completion=True) -> FNode:
+    def get_value(self, formula: FNode, model_completion: bool=True) -> FNode:
         """Returns the value of formula in the current model (if one exists).
 
         If model_completion is True, then variables not appearing in the
@@ -450,7 +450,7 @@ class Model(object):
         """
         raise NotImplementedError
 
-    def get_values(self, formulae, model_completion=True):
+    def get_values(self, formulae: Iterable[FNode], model_completion: bool=True) -> Dict[FNode, FNode]:
         """Evaluates the values of the formulae in the current model.
 
         Evaluates the values of the formulae in the current model
@@ -462,7 +462,7 @@ class Model(object):
             res[f] = v
         return res
 
-    def get_py_value(self, formula, model_completion=True):
+    def get_py_value(self, formula: FNode, model_completion: bool=True) -> Union[str, bool, Fraction, int]:
         """Returns the value of formula as a python type.
 
         E.g., Bool(True) is translated into True.
@@ -472,19 +472,23 @@ class Model(object):
         assert res.is_constant()
         return res.constant_value()
 
-    def get_py_values(self, formulae, model_completion=True):
+    def get_py_values(self, formulae: Iterable[FNode], model_completion: bool=True) -> Dict[FNode, Union[str, bool, Fraction, int]]:
         """Returns the values of the formulae as python types.
 
         Returns the values of the formulae as python types. in the
         current model returning a dictionary.
         """
-        res = {}
-        for f in formulae:
-            v = self.get_py_value(f, model_completion=model_completion)
-            res[f] = v
-        return res
+        return {
+            f: self.get_py_value(f, model_completion=model_completion)
+            for f in formulae
+        } # TODO changed this to dict comprehension: below old code
+        # res = {}
+        # for f in formulae:
+        #     v = self.get_py_value(f, model_completion=model_completion)
+        #     res[f] = v
+        # return res
 
-    def satisfies(self, formula, solver=None):
+    def satisfies(self, formula: FNode, solver: Optional[Solver]=None) -> bool:
         """Checks whether the model satisfies the formula.
 
         The optional solver argument is used to complete partial
@@ -537,6 +541,16 @@ class Model(object):
 
     def __str__(self):
         return "\n".join([ "%s := %s" % (var, value) for (var, value) in self])
+
+    # TODO added those 2 methods. Consider using ABC? Also, should doc write expected behavior?
+    def __iter__(self) -> Iterator[Tuple[FNode, FNode]]:
+        """This method must be implemented by subclasses
+        """
+        raise NotImplementedError()
+
+    def __contains__(self, x) -> bool:
+        """This method must be implemented by subclasses"""
+        raise NotImplementedError()
 
 
 class Converter(object):

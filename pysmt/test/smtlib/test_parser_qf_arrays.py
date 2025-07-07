@@ -21,5 +21,5 @@ from pysmt.test.smtlib.parser_utils import execute_script_fname, smtlib_tests, S
 from pysmt.logics import Logic
 
 @pytest.mark.parametrize("smtfile, logic, expected_result", smtlib_tests(lambda x: x.theory.arrays))
-def test_qf_arrays(smtfile: str, logic: Logic, expected_result: bool) -> None:
+def test_qf_arrays(smtfile: str, logic: Logic, expected_result: bool):
     execute_script_fname(smtfile, logic, expected_result)

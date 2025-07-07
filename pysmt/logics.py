@@ -38,7 +38,7 @@ class Theory(object):
                  linear: Optional[bool] = None,
                  uninterpreted: Optional[bool] = None,
                  custom_type: Optional[bool] = None,
-                 strings: Optional[bool] = None) -> None:
+                 strings: Optional[bool] = None):
         self.arrays = arrays or False
         self.arrays_const = arrays_const or False
         self.bit_vectors = bit_vectors or False
@@ -52,7 +52,6 @@ class Theory(object):
         self.custom_type = custom_type or False
         self.strings = strings or False
         assert not arrays_const or arrays, "Cannot set arrays_const w/o arrays"
-        return
 
     def set_lira(self, value: bool=True) -> "Theory":
         res = self.copy()
@@ -227,7 +226,7 @@ class Logic(object):
     def __init__(self, name: str, description: str,
                  quantifier_free: bool = False,
                  theory: Optional[Theory]=None,
-                 **theory_kwargs) -> None:
+                 **theory_kwargs):
         self.name = name
         self.description = description
         self.quantifier_free = quantifier_free
@@ -235,7 +234,6 @@ class Logic(object):
             self.theory = Theory(**theory_kwargs)
         else:
             self.theory = theory
-        return
 
     def get_quantified_version(self):
         """Returns the quantified version of logic."""

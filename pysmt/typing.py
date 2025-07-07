@@ -47,7 +47,7 @@ class PySMTType(object):
 
     """
 
-    def __init__(self, decl: Optional["_TypeDecl"]=None, basename: Optional[str]=None, args: Optional[Sequence["PySMTType"]]=None) -> None:
+    def __init__(self, decl: Optional["_TypeDecl"]=None, basename: Optional[str]=None, args: Optional[Sequence["PySMTType"]]=None):
         if decl:
             self.decl = decl
             self.basename: Optional[str] = decl.name
@@ -135,7 +135,7 @@ class PySMTType(object):
 
 # Basic Types Declarations
 class _BoolType(PySMTType):
-    def __init__(self) -> None:
+    def __init__(self):
         decl = _TypeDecl("Bool", 0)
         PySMTType.__init__(self, decl=decl, args=None)
 
@@ -143,7 +143,7 @@ class _BoolType(PySMTType):
         return True
 
 class _IntType(PySMTType):
-    def __init__(self) -> None:
+    def __init__(self):
         decl = _TypeDecl("Int", 0)
         PySMTType.__init__(self, decl=decl, args=None)
 
@@ -151,7 +151,7 @@ class _IntType(PySMTType):
         return True
 
 class _RealType(PySMTType):
-    def __init__(self) -> None:
+    def __init__(self):
         decl = _TypeDecl("Real", 0)
         PySMTType.__init__(self, decl=decl, args=None)
 
@@ -159,7 +159,7 @@ class _RealType(PySMTType):
         return True
 
 class _StringType(PySMTType):
-    def __init__(self) -> None:
+    def __init__(self):
         decl = _TypeDecl("String", 0)
         PySMTType.__init__(self, decl=decl, args=None)
 
@@ -175,7 +175,7 @@ class _ArrayType(PySMTType):
     This class should not be instantiated directly, but the factory
     method ArrayType should be used instead.
     """
-    def __init__(self, index_type: "PySMTType", elem_type: "PySMTType") -> None:
+    def __init__(self, index_type: "PySMTType", elem_type: "PySMTType"):
         decl = _TypeDecl("Array", 2)
         PySMTType.__init__(self, decl=decl, args=(index_type, elem_type))
 
@@ -209,7 +209,7 @@ class _BVType(PySMTType):
     This class should not be instantiated directly, but the factory
     method BVType should be used instead.
     """
-    def __init__(self, width: int=32) -> None:
+    def __init__(self, width: int=32):
         decl = _TypeDecl("BV{%d}" % width, 0)
         PySMTType.__init__(self, decl=decl, args=None)
         self._width = width
@@ -249,7 +249,7 @@ class _FunctionType(PySMTType):
     This class should not be instantiated directly, but the factory
     method FunctionType should be used instead.
     """
-    def __init__(self, return_type: PySMTType, param_types: Sequence[PySMTType]) -> None:
+    def __init__(self, return_type: PySMTType, param_types: Sequence[PySMTType]):
         PySMTType.__init__(self)
         self._return_type = return_type
         self._param_types = tuple(param_types)
@@ -325,7 +325,7 @@ class _TypeDecl(object):
     NOTE: This object is **not** a Type, but a Type Declaration.
     """
 
-    def __init__(self, name: str, arity: int) -> None:
+    def __init__(self, name: str, arity: int):
         self.name = name
         self.arity = arity
         self.custom_type = False
@@ -341,7 +341,7 @@ class _TypeDecl(object):
     def __str__(self):
         return "%s/%s" % (self.name, self.arity)
 
-    def set_custom_type_flag(self) -> None:
+    def set_custom_type_flag(self):
         assert self.custom_type == False
         self.custom_type = True
 
@@ -353,7 +353,7 @@ class PartialType(object):
 
     A partial type is equivalent to SMT-LIB "define-sort" command.
     """
-    def __init__(self, name: str, definition: Callable) -> None:
+    def __init__(self, name: str, definition: Callable):
         self.name = name
         self.definition = definition
 
@@ -394,7 +394,7 @@ class TypeManager(object):
         self.load_global_types()
         self.environment = environment
 
-    def load_global_types(self) -> None:
+    def load_global_types(self):
         """Register basic global types within the TypeManager."""
         for bvtype in (BV1, BV8, BV16, BV32, BV64, BV128):
             self._bv_types[bvtype.width] = bvtype
@@ -553,11 +553,11 @@ class TypeManager(object):
 
 
 # Util
-def assert_is_type(target: PySMTType, func_name: str) -> None:
+def assert_is_type(target: PySMTType, func_name: str):
     if not isinstance(target, PySMTType):
         raise PysmtValueError("Invalid type '%s' in %s." % (target, func_name))
 
-def assert_are_types(targets: Any, func_name: str) -> None:
+def assert_are_types(targets: Any, func_name: str):
     for target in targets:
         assert_is_type(target, func_name)
 

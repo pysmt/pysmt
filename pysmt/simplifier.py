@@ -33,7 +33,7 @@ from pysmt.fnode import FNode
 class Simplifier(pysmt.walkers.DagWalker):
     """Perform basic simplifications of the input formula."""
 
-    def __init__(self, env: Optional["pysmt.environment.Environment"]=None) -> None:
+    def __init__(self, env: Optional["pysmt.environment.Environment"]=None):
         pysmt.walkers.DagWalker.__init__(self, env=env)
         self.manager = self.env.formula_manager
         self._validate_simplifications = None
@@ -1083,7 +1083,7 @@ class BddSimplifier(Simplifier):
     boolean structure of the formula.
     """
 
-    def __init__(self, env=None, static_ordering=None, bool_abstraction=False):
+    def __init__(self, env: Optional["pysmt.environment.Environment"]=None, static_ordering=None, bool_abstraction=False):
         Simplifier.__init__(self, env=env)
         self._validation_sname = None
 

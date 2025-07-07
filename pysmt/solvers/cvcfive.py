@@ -48,7 +48,7 @@ from pysmt.constants import Fraction, is_pysmt_integer, to_python_integer
 
 class CVC5Options(SolverOptions):
 
-    def __init__(self, **base_options) -> None:
+    def __init__(self, **base_options):
         SolverOptions.__init__(self, **base_options)
         # TODO: CVC5 Supports UnsatCore extraction
         # but we did not wrapped it yet. (See #359)
@@ -56,13 +56,13 @@ class CVC5Options(SolverOptions):
             raise PysmtValueError("'unsat_cores_mode' option not supported.")
 
     @staticmethod
-    def _set_option(cvc5: cvc5.Solver, name: str, value: str) -> None:
+    def _set_option(cvc5: cvc5.Solver, name: str, value: str):
         try:
             cvc5.setOption(name, value)
         except:
             raise PysmtValueError("Error setting the option '%s=%s'" % (name,value))
 
-    def __call__(self, solver: "CVC5Solver") -> None:
+    def __call__(self, solver: "CVC5Solver"):
         if solver.logic_name == "QF_SLIA":
             self._set_option(solver.cvc5,
                              "strings-exp", "true")
@@ -104,7 +104,7 @@ class CVC5Solver(SmtLibBasicSolver, SmtLibIgnoreMixin):
 
     OptionsClass = CVC5Options
 
-    def __init__(self, environment: Environment, logic: Logic, **options) -> None:
+    def __init__(self, environment: Environment, logic: Logic, **options):
         Solver.__init__(self,
                         environment=environment,
                         logic=logic,
@@ -131,7 +131,7 @@ class CVC5Solver(SmtLibBasicSolver, SmtLibIgnoreMixin):
     def declare_variable(self, var):
         raise NotImplementedError
 
-    def add_assertion(self, formula: FNode, named: None=None) -> None:
+    def add_assertion(self, formula: FNode, named: Optional[str]=None):
         self._assert_is_boolean(formula)
         term = self.converter.convert(formula)
         self.cvc5.assertFormula(term)
@@ -197,7 +197,7 @@ class CVC5Solver(SmtLibBasicSolver, SmtLibIgnoreMixin):
             res = self.environment.formula_manager.Real(Fraction(res.constant_value(), 1))
         return res
 
-    def _exit(self) -> None:
+    def _exit(self):
         del self.cvc5
 
     def set_option(self, name, value):
@@ -213,7 +213,7 @@ class CVC5Solver(SmtLibBasicSolver, SmtLibIgnoreMixin):
 
 class CVC5Converter(Converter, DagWalker):
 
-    def __init__(self, environment: Environment, cvc5: cvc5.Solver) -> None:
+    def __init__(self, environment: Environment, cvc5: cvc5.Solver):
         DagWalker.__init__(self, environment)
 
         self.cvc5 = cvc5
@@ -223,7 +223,7 @@ class CVC5Converter(Converter, DagWalker):
         self._get_type = environment.stc.get_type
         return
 
-    def declare_variable(self, var: FNode) -> None:
+    def declare_variable(self, var: FNode):
         if not var.is_symbol():
             raise PysmtTypeError("Trying to declare as a variable something "
                                  "that is not a symbol: %s" % var)

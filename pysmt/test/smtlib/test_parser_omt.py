@@ -29,7 +29,7 @@ from typing import Iterator, List, Tuple
 
 class TestSmtLibParserOMT(TestCase):
 
-    def test_parse_omt(self) -> None:
+    def test_parse_omt(self):
         for file_id, expected, script in self.examples():
             for i, cmd in enumerate(script):
                 self.assertEqual(cmd.name, expected[i],
@@ -42,7 +42,7 @@ class TestSmtLibParserOMT(TestCase):
             new_script = parser.get_script(StringIO(buf.getvalue()))
             self.assertEqual([cmd.name for cmd in script], [cmd.name for cmd in new_script])
 
-    def test_omt_parsing_exception(self) -> None:
+    def test_omt_parsing_exception(self):
         parser = SmtLibParser()
         with self.assertRaises(PysmtSyntaxError):
             parser.get_script(StringIO("(assert-soft false :weight (+ 3 (- 4 2)) :id goal :id goal)"))
@@ -55,7 +55,7 @@ class TestSmtLibParserOMT(TestCase):
         with self.assertRaises(PysmtSyntaxError):
             parser.get_script(StringIO("(maximize z :upper 50 :lower 50 :id abc"))
 
-    def test_command_option_value_correctness(self) -> None:
+    def test_command_option_value_correctness(self):
         for input_command, command, len_args in TestSmtLibParserOMT.snippet_examples():
             parser = SmtLibParser()
             script = parser.get_script(StringIO(input_command))

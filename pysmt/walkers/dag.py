@@ -79,7 +79,7 @@ class DagWalker(Walker):
         else:
             pass
 
-    def _process_stack(self, **kwargs) -> None:
+    def _process_stack(self, **kwargs):
         """Empties the stack by processing every node in it.
 
         Processing is performed in two steps.

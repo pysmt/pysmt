@@ -47,7 +47,7 @@ class OMTTestCase:
     If the expected value is a FNode, it must be a constant value.
     If the expected value is a string, it must be either "unbounded" or "infinitesimal".
     """
-    def __init__(self, name: str, assertions: List[FNode], logic: Logic, solvable: bool, goals: Any, env: Environment) -> None:
+    def __init__(self, name: str, assertions: List[FNode], logic: Logic, solvable: bool, goals: Any, env: Environment):
         self._name = name
         self._assertions = assertions
         self._logic = logic
@@ -137,7 +137,7 @@ def generate_examples_with_solvers(optimization_examples: Iterator[Any]) -> Iter
             yield optimization_example, solver_name
 
 
-def solve_given_example(optimization_example: OMTTestCase, solver_name: str, test_to_skip: Optional[Set[Tuple[str, OptimizationTypes, str]]]=None) -> None:
+def solve_given_example(optimization_example: OMTTestCase, solver_name: str, test_to_skip: Optional[Set[Tuple[str, OptimizationTypes, str]]]=None):
     """
     Method to solve a single OMTTestCase using the given solver.
     """
@@ -185,7 +185,7 @@ def solve_given_example(optimization_example: OMTTestCase, solver_name: str, tes
                     raise NotImplementedError("Unknown optimization type: %s" % optimization_type)
 
 
-def _check_oracle_goal(goal: Goal, goal_value: FNode, cost: FNode, test_id_str: str, **kwargs) -> None:
+def _check_oracle_goal(goal: Goal, goal_value: FNode, cost: FNode, test_id_str: str, **kwargs):
     # converts the goal value and cost to constants and then checks if they are equal
     preliminary_checks_fail_str = "test: %s, goal: %s, goal_value: %s, cost: %s, extra: %s" % (test_id_str, str(goal), str(goal_value), str(cost), str(kwargs))
     assert goal_value.is_constant() and cost.is_constant(), preliminary_checks_fail_str

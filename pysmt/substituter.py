@@ -55,7 +55,7 @@ class FunctionInterpretation:
     ```
     """
 
-    def __init__(self, formal_params: List[FNode], function_body: FNode, allow_free_vars: bool=False) -> None:
+    def __init__(self, formal_params: List[FNode], function_body: FNode, allow_free_vars: bool=False):
         """Constructor, taking in input the list of formal parameters and the
         function body.
 
@@ -120,7 +120,7 @@ class Substituter(pysmt.walkers.IdentityDagWalker):
     expected.  In case of doubt, it is recommended to issue two
     separate calls to the substitution procedure.
     """
-    def __init__(self, env: "pysmt.environment.Environment") -> None:
+    def __init__(self, env: "pysmt.environment.Environment"):
         pysmt.walkers.IdentityDagWalker.__init__(self, env=env, invalidate_memoization=True)
         self.manager = self.env.formula_manager
         if self.__class__ == Substituter:
@@ -131,7 +131,7 @@ class Substituter(pysmt.walkers.IdentityDagWalker):
     def _get_key(self, formula: FNode, **kwargs) -> FNode:
         return formula
 
-    def _push_with_children_to_stack(self, formula: FNode, **kwargs) -> None:
+    def _push_with_children_to_stack(self, formula: FNode, **kwargs):
         """Add children to the stack."""
 
         # Deal with quantifiers
@@ -258,7 +258,7 @@ class MGSubstituter(Substituter):
 
     This is the default behavior since version 0.5
     """
-    def __init__(self, env: "pysmt.environment.Environment") -> None:
+    def __init__(self, env: "pysmt.environment.Environment"):
         Substituter.__init__(self, env=env)
 
     @handles(set(op.ALL_TYPES) - op.QUANTIFIERS)

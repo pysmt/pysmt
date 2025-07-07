@@ -46,7 +46,7 @@ for _1, _2, fnames in os.walk(BASE_DIR):
 
 class TestGenericWrapper(TestCase):
 
-    def setUp(self) -> None:
+    def setUp(self):
         TestCase.setUp(self)
 
         self.all_solvers = []
@@ -169,7 +169,7 @@ class TestGenericWrapper(TestCase):
                     # SMT-LIB Wrapper
                     self.assertTrue(name == "mathsat.solver.sh", name)
 
-    def test_redefinition(self) -> None:
+    def test_redefinition(self):
         env = get_env()
         env.factory.add_generic_solver("test__redefinition",
                                        ["/tmp/nonexistent"],

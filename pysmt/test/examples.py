@@ -997,13 +997,13 @@ def get_full_example_formulae(environment: Optional[Environment]=None) -> List[E
     return result
 
 
-def get_example_formulae(environment=None):
+def get_example_formulae(environment: Optional["pysmt.environment.Environment"]=None):
     """Generates a stream of SExample using the given environment."""
     for (hr, expr, is_valid, is_sat, logic) in get_full_example_formulae(environment):
         yield SimpleExample(expr, is_valid, is_sat, logic)
 
 
-def get_str_example_formulae(environment=None):
+def get_str_example_formulae(environment: Optional["pysmt.environment.Environment"]=None):
     """Returns a triple from each Example."""
     for (hr, expr, is_valid, is_sat, logic) in get_full_example_formulae(environment):
         yield (hr, expr, logic)

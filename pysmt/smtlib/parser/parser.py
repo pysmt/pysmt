@@ -87,22 +87,22 @@ def get_formula_fname(script_fname: str, environment: Optional[Environment]=None
 
 class SmtLibExecutionCache(object):
     """Execution environment for SMT2 script execution"""
-    def __init__(self, env: Environment) -> None:
+    def __init__(self, env: Environment):
         self.substitute = env.substituter.substitute
         self.keys: Dict[str, List[Union[str, Callable, PySMTType, FNode, _TypeDecl]]] = {}
         self.definitions: Dict[str, Tuple[List[Union[Any, FNode]], Union[PySMTType, FNode, PartialType, str]]] = {}
         self.annotations = Annotations()
 
-    def bind(self, name: str, value: Union[str, Callable, PySMTType, FNode, _TypeDecl]) -> None:
+    def bind(self, name: str, value: Union[str, Callable, PySMTType, FNode, _TypeDecl]):
         """Binds a symbol in this environment"""
         lst = self.keys.setdefault(name, [])
         lst.append(value)
 
-    def unbind(self, name: str) -> None:
+    def unbind(self, name: str):
         """Unbinds the last binding of this symbol"""
         self.keys[name].pop()
 
-    def define(self, name: str, parameters: List[FNode], expression: Union[PySMTType, FNode, PartialType, str]) -> None:
+    def define(self, name: str, parameters: List[FNode], expression: Union[PySMTType, FNode, PartialType, str]):
         self.definitions[name] = (parameters, expression)
 
     def _define_adapter(self, formal_parameters: List[FNode], expression: FNode) -> Callable:
@@ -129,7 +129,7 @@ class SmtLibExecutionCache(object):
         else:
             return None
 
-    def update(self, value_map: Dict[str, Union[_TypeDecl, FNode]]) -> None:
+    def update(self, value_map: Dict[str, Union[_TypeDecl, FNode]]):
         """Binds all the symbols in 'value_map'"""
         for k, val in value_map.items():
             self.bind(k, val)
@@ -155,7 +155,7 @@ class Tokenizer(object):
     reading from the actual generator.
     """
 
-    def __init__(self, handle: TextIO, interactive: bool=False) -> None:
+    def __init__(self, handle: TextIO, interactive: bool=False):
         self.__has_pos_info: bool = False
         self.__col_cnt: int = 0
         self.__row_cnt: int = 0
@@ -171,7 +171,7 @@ class Tokenizer(object):
         self.generator = self.create_generator(self.reader)
         self.extra_queue: deque[str] = deque()
 
-    def add_extra_token(self, token: str) -> None:
+    def add_extra_token(self, token: str):
         self.extra_queue.append(token)
 
     def consume_maybe(self) -> str:
@@ -317,7 +317,7 @@ class SmtLibParser(object):
     for example with a SMT-Lib2-compliant solver
     """
 
-    def __init__(self, environment: Optional[Environment]=None, interactive: bool=False) -> None:
+    def __init__(self, environment: Optional[Environment]=None, interactive: bool=False):
         self.env = get_env() if environment is None else environment
         self.interactive = interactive
 
@@ -483,7 +483,7 @@ class SmtLibParser(object):
                          smtcmd.LOAD_OBJECTIVE_MODEL: self._cmd_load_objective_model,
                          }
 
-    def _reset(self) -> None:
+    def _reset(self):
         """Resets the parser to the initial state"""
         self.cache = SmtLibExecutionCache(self.env)
         self.logic = None
@@ -509,7 +509,7 @@ class SmtLibParser(object):
             assert len(args) == 2
             return self.Minus(args[0], args[1])
 
-    def _enter_smtlib_as(self, stack: List[List[Union[Callable, FNode, Any]]], tokens: Tokenizer, key: str) -> None:
+    def _enter_smtlib_as(self, stack: List[List[Union[Callable, FNode, Any]]], tokens: Tokenizer, key: str):
         """Utility function that handles 'as' that is a special function in SMTLIB"""
         #pylint: disable=unused-argument
         what = self.parse_atom(tokens, "expression")
@@ -526,7 +526,7 @@ class SmtLibParser(object):
                 return self.env.formula_manager.Symbol(what, ty)
             stack[-1].append(handler)
 
-    def _smtlib_underscore(self, stack: List[List[Union[Callable, FNode, Any]]], tokens: Tokenizer, key: str) -> None:
+    def _smtlib_underscore(self, stack: List[List[Union[Callable, FNode, Any]]], tokens: Tokenizer, key: str):
         # pylint: disable=unused-argument
         """Utility function that handles _ special function in SMTLIB"""
         mgr = self.env.formula_manager
@@ -720,7 +720,7 @@ class SmtLibParser(object):
             variables.add(var)
         return fun(variables, body)
 
-    def _enter_let(self, stack: List[List[Union[Callable, FNode, List[Tuple[str, FNode]], Any]]], tokens: Tokenizer, key: str) -> None:
+    def _enter_let(self, stack: List[List[Union[Callable, FNode, List[Tuple[str, FNode]], Any]]], tokens: Tokenizer, key: str):
         """Handles a let expression by recurring on the expression and
         updating the cache
         """
@@ -752,7 +752,7 @@ class SmtLibParser(object):
 
         return res
 
-    def _enter_quantifier(self, stack: List[List[Union[Callable, FNode, List[Tuple[str, FNode]], Any]]], tokens: Tokenizer, key: str) -> None:
+    def _enter_quantifier(self, stack: List[List[Union[Callable, FNode, List[Tuple[str, FNode]], Any]]], tokens: Tokenizer, key: str):
         """Handles quantifiers by defining the bound variable in the cache
         before parsing the matrix
         """
@@ -784,7 +784,7 @@ class SmtLibParser(object):
         stack[-1].append(quant)
         stack[-1].append(vrs)
 
-    def _enter_annotation(self, stack: List[List[Union[Callable, FNode, Any]]], tokens: Tokenizer, key: str) -> None:
+    def _enter_annotation(self, stack: List[List[Union[Callable, FNode, Any]]], tokens: Tokenizer, key: str):
         """Deals with annotations"""
         # pylint: disable=unused-argument
 
@@ -1140,7 +1140,7 @@ class SmtLibParser(object):
             except PysmtSyntaxError:
                 return res
 
-    def consume_opening(self, tokens: Tokenizer, command: str) -> None:
+    def consume_opening(self, tokens: Tokenizer, command: str):
         """ Consumes a single '(' """
         try:
             p = tokens.consume_maybe()
@@ -1151,7 +1151,7 @@ class SmtLibParser(object):
                                    "Expected '('" %
                                    (p, command), tokens.pos_info)
 
-    def consume_closing(self, tokens: Tokenizer, command: str) -> None:
+    def consume_closing(self, tokens: Tokenizer, command: str):
         """ Consumes a single ')' """
         p = tokens.consume("Unexpected end of stream. Expected ')'")
         if p != ")":
@@ -1519,7 +1519,7 @@ class SmtLibParser(object):
 class SmtLib20Parser(SmtLibParser):
     """Parser for SMT-LIB 2.0."""
 
-    def __init__(self, environment=None, interactive=False):
+    def __init__(self, environment: Optional["pysmt.environment.Environment"]=None, interactive=False):
         SmtLibParser.__init__(self, environment, interactive)
 
         # Remove commands that were introduced in SMT-LIB 2.5
@@ -1542,7 +1542,7 @@ class SmtLibZ3Parser(SmtLibParser):
     Parses extended Z3 SmtLib Syntax
     """
 
-    def __init__(self, environment=None, interactive=False):
+    def __init__(self, environment: Optional["pysmt.environment.Environment"]=None, interactive=False):
         SmtLibParser.__init__(self, environment, interactive)
 
         # Z3 prints Pow as "^"

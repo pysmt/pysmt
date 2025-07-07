@@ -40,7 +40,7 @@ from pysmt.solvers.solver import Solver, Model
 
 PrinterType = Union[SmtPrinter, SmtDagPrinter]
 
-def check_sat_filter(log: List[Tuple[str, Optional[Union[bool, Goal, List[Tuple[FNode, FNode]]]]]]) -> bool:
+def check_sat_filter(log: List[Tuple[str, Optional[Union[Model, bool, Goal, List[Tuple[FNode, FNode]]]]]]) -> bool:
     """
     Returns the result of the check-sat command from a log.
 
@@ -54,7 +54,7 @@ def check_sat_filter(log: List[Tuple[str, Optional[Union[bool, Goal, List[Tuple[
 
 
 class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
-    def serialize(self, outstream: Optional[TextIO]=None, printer: Optional[PrinterType]=None, daggify: bool=True) -> None:
+    def serialize(self, outstream: Optional[TextIO]=None, printer: Optional[PrinterType]=None, daggify: bool=True):
         """Serializes the SmtLibCommand into outstream using the given printer.
 
         Exactly one of outstream or printer must be specified. When
@@ -200,19 +200,19 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
 
 class SmtLibScript(object):
 
-    def __init__(self) -> None:
+    def __init__(self):
         self.annotations: Optional[Annotations] = None
         self.commands: List[SmtLibCommand] = []
 
-    def add(self, name: str, args: List[Optional[Union[Logic, _TypeDecl, FNode, str]]]) -> None:
+    def add(self, name: str, args: List[Optional[Union[Logic, _TypeDecl, FNode, str]]]):
         """Adds a new SmtLibCommand with the given name and arguments."""
         self.add_command(SmtLibCommand(name=name,
                                        args=args))
 
-    def add_command(self, command: SmtLibCommand) -> None:
+    def add_command(self, command: SmtLibCommand):
         self.commands.append(command)
 
-    def evaluate(self, solver: SmtLibSolver) -> List[Tuple[str, Optional[Union[bool, Goal, List[Tuple[FNode, FNode]]]]]]:
+    def evaluate(self, solver: SmtLibSolver) -> List[Tuple[str, Optional[Union[Model, bool, Goal, List[Tuple[FNode, FNode]]]]]]:
         log = []
         inter = InterpreterOMT()
         for cmd in self.commands:
@@ -334,7 +334,7 @@ class SmtLibScript(object):
         with open(fname, "w") as outstream:
             self.serialize(outstream, daggify=daggify)
 
-    def serialize(self, outstream: Union[TextIOWrapper, StringIO], daggify: bool=True) -> None:
+    def serialize(self, outstream: Union[TextIOWrapper, StringIO], daggify: bool=True):
         """Serializes the SmtLibScript expanding commands"""
         if daggify:
             printer: PrinterType = SmtDagPrinter(outstream, annotations=self.annotations)
@@ -495,11 +495,11 @@ class InterpreterSMT(object):
 
 class InterpreterOMT(InterpreterSMT):
 
-    def __init__(self) -> None:
+    def __init__(self):
         self.optimization_goals: Tuple[List[Goal], List[Tuple[FNode, FNode]]] = ([], [])
         self.opt_priority = "single-obj"
 
-    def evaluate(self, cmd: SmtLibCommand, solver: SmtLibSolver) -> Optional[Union[bool, Goal, List[Tuple[FNode, FNode]]]]:
+    def evaluate(self, cmd: SmtLibCommand, solver: SmtLibSolver) -> Optional[Union[Model, bool, Goal, List[Tuple[FNode, FNode]]]]:
         return self._omt_evaluate(cmd, solver)
 
     def _omt_evaluate(self, cmd: SmtLibCommand, optimizer: SmtLibSolver) -> Optional[Union[Model, bool, Goal, List[Tuple[FNode, FNode]]]]:

@@ -37,31 +37,31 @@ class TestCase(unittest.TestCase):
     a fresh environment is provided for each test.
     """
 
-    def setUp(self) -> None:
+    def setUp(self):
         self.env = reset_env()
 
-    def tearDown(self) -> None:
+    def tearDown(self):
         pass
 
     if "assertRaisesRegex" not in dir(unittest.TestCase):
         assertRaisesRegex = unittest.TestCase.assertRaisesRegexp
 
 
-    def assertValid(self, formula: FNode, msg: Optional[Union[str, Tuple[FNode, FNode], FNode]]=None, solver_name: None=None, logic: Optional[Logic]=None) -> None:
+    def assertValid(self, formula: FNode, msg: Optional[Union[str, Tuple[FNode, FNode], FNode]]=None, solver_name: None=None, logic: Optional[Logic]=None):
         """Assert that formula is VALID."""
         self.assertTrue(self.env.factory.is_valid(formula=formula,
                                                   solver_name=solver_name,
                                                   logic=logic),
                         msg=msg)
 
-    def assertSat(self, formula: FNode, msg: None=None, solver_name: None=None, logic: None=None) -> None:
+    def assertSat(self, formula: FNode, msg: None=None, solver_name: None=None, logic: None=None):
         """Assert that formula is SAT."""
         self.assertTrue(self.env.factory.is_sat(formula=formula,
                                                 solver_name=solver_name,
                                                 logic=logic),
                         msg=msg)
 
-    def assertUnsat(self, formula: FNode, msg: None=None, solver_name: None=None, logic: None=None) -> None:
+    def assertUnsat(self, formula: FNode, msg: None=None, solver_name: None=None, logic: None=None):
         """Assert that formula is UNSAT."""
         self.assertTrue(self.env.factory.is_unsat(formula=formula,
                                                   solver_name=solver_name,
@@ -103,7 +103,7 @@ class skipIfQENotAvailable(object):
 class skipIfNoSolverForLogic(object):
     """Skip a test if there is no solver for the given logic."""
 
-    def __init__(self, logic: Logic) -> None:
+    def __init__(self, logic: Logic):
         self.logic = logic
 
     def __call__(self, test_fun: Callable) -> Callable:
@@ -150,7 +150,7 @@ class skipIfNoQEForLogic(object):
 class skipIfNoOptimizerForLogic(object):
     """Skip a test if there is no optimizer for the given logic."""
 
-    def __init__(self, logic: Logic) -> None:
+    def __init__(self, logic: Logic):
         self.logic = logic
 
     def __call__(self, test_fun: Callable) -> Callable:

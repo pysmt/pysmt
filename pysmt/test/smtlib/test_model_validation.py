@@ -26,14 +26,14 @@ from pysmt.test import TestCase, main
 
 class TestModelValidation(TestCase):
 
-    def setUp(self) -> None:
+    def setUp(self):
         super(TestModelValidation, self).setUp()
         self.env = get_env()
         self.tm = self.env.type_manager
         self.fm = self.env.formula_manager
 
 
-    def test_basic(self) -> None:
+    def test_basic(self):
         model_source ="""\
 (model
   ;; universe for U:
@@ -64,7 +64,7 @@ class TestModelValidation(TestCase):
         simp = simplifier.simplify(formula.substitute(model, interpretations))
         self.assertEqual(simp, self.fm.TRUE())
 
-    def test_basic2(self) -> None:
+    def test_basic2(self):
         model_source ="""\
 (model
   ;; universe for U:

@@ -135,7 +135,7 @@ class PysmtTypeError(PysmtException, TypeError):
     pass
 
 class PysmtSyntaxError(PysmtException, SyntaxError):
-    def __init__(self, message: str, pos_info: Optional[Tuple[int, int]]=None) -> None:
+    def __init__(self, message: str, pos_info: Optional[Tuple[int, int]]=None):
         super(PysmtSyntaxError, self).__init__(message)
         self.pos_info = pos_info
         self.message = message
