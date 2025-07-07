@@ -17,18 +17,20 @@
 #
 import collections
 from io import StringIO
+from typing import Optional
 
 from pysmt.test import TestCase, main
 from pysmt.smtlib.parser import SmtLibParser
 from pysmt.exceptions import UnknownSmtLibCommandError, PysmtValueError
 from pysmt.fnode import FNode
 from pysmt.smtlib.parser.parser import Tokenizer
+from pysmt.environment import Environment
 
 TS = collections.namedtuple('TS', ['init', 'trans'])
 TSFormula = collections.namedtuple('TSFormula', ['formula', "is_init"])
 
 class TSSmtLibParser(SmtLibParser):
-    def __init__(self, env: None=None, interactive: bool=False):
+    def __init__(self, env: Optional[Environment]=None, interactive: bool=False):
         SmtLibParser.__init__(self, env, interactive)
 
         # Add new commands

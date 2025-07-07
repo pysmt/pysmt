@@ -36,7 +36,7 @@ import pysmt
 from pysmt.exceptions import PysmtValueError, PysmtModeError
 from pysmt.utils import assert_not_none
 
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Dict, Iterable, Iterator, List, Optional, Sequence, Tuple, Union, cast
 
 
 class PySMTType(object):
@@ -384,7 +384,7 @@ class TypeManager(object):
         self._bv_types: Dict[int, _BVType] = {}
         self._function_types: Dict[Tuple[PySMTType, Tuple[PySMTType, ...]], _FunctionType] = {}
         self._array_types: Dict[Tuple[PySMTType, PySMTType], _ArrayType] = {}
-        self._custom_types: Dict[Tuple[_TypeDecl, Tuple[Any, ...]], PySMTType] = {}
+        self._custom_types: Dict[Tuple[Union[PySMTType, _TypeDecl], Tuple[PySMTType, ...]], PySMTType] = {}
         self._custom_types_decl: Dict[str, _TypeDecl] = {}
         self._bool: Optional[_BoolType] = None
         self._real: Optional[_RealType] = None
@@ -496,18 +496,19 @@ class TypeManager(object):
             return self.get_type_instance(td)
         return td
 
-    def get_type_instance(self, type_decl: _TypeDecl, *args) -> PySMTType:
+    def get_type_instance(self, type_decl: Union[PySMTType, _TypeDecl], *args: PySMTType) -> PySMTType:
         """Creates an instance of the TypeDecl with the given arguments."""
         assert_are_types(args, __name__)
         key = (type_decl, tuple(args)) if args is not None else type_decl
         try:
             ty = self._custom_types[key]
         except KeyError:
+            assert isinstance(type_decl, _TypeDecl)
             ty = PySMTType(decl=type_decl, args=args)
             self._custom_types[key] = ty
         return ty
 
-    def normalize(self, type_):
+    def normalize(self, type_: PySMTType) -> PySMTType:
         """Recursively recreate the given type within the manager.
 
         This proceeds iteratively on the structure of the type tree.
@@ -521,12 +522,12 @@ class TypeManager(object):
                     ty.is_real_type() or ty.is_string_type()):
                     myty = ty
                 elif ty.is_bv_type():
-                    myty = self.BVType(ty.width)
+                    myty = self.BVType(cast(_BVType, ty).width)
                 else:
-                    myty = self.Type(ty.basename, arity=0)
+                    myty = cast(PySMTType, self.Type(assert_not_none(ty.basename), arity=0))
                 typemap[ty] = myty
             else:
-                missing = [subtype for subtype in ty.args\
+                missing = [subtype for subtype in assert_not_none(ty.args)\
                            if subtype not in typemap]
                 if missing:
                     # At least one type still needs to be converted
@@ -534,17 +535,17 @@ class TypeManager(object):
                     stack += missing
                 else:
                     if ty.is_array_type():
-                        index_type = typemap[ty.index_type]
-                        elem_type = typemap[ty.elem_type]
+                        index_type = typemap[cast(_ArrayType, ty).index_type]
+                        elem_type = typemap[cast(_ArrayType, ty).elem_type]
                         myty = self.ArrayType(index_type, elem_type)
                     elif ty.is_function_type():
-                        param_types = (typemap[a] for a in ty.param_types)
-                        return_type = typemap[ty.return_type]
+                        param_types: Tuple[PySMTType, ...] = tuple((typemap[a] for a in cast(_FunctionType, ty).param_types))
+                        return_type = typemap[cast(_FunctionType, ty).return_type]
                         myty = self.FunctionType(return_type, param_types)
                     else:
                         # Custom Type
-                        typedecl = self.Type(type_.basename, type_.arity)
-                        new_args = tuple(typemap[a] for a in type_.args)
+                        typedecl = self.Type(assert_not_none(type_.basename), type_.arity)
+                        new_args = tuple(typemap[a] for a in assert_not_none(type_.args))
                         myty = self.get_type_instance(typedecl, *new_args)
                     typemap[ty] = myty
         return typemap[type_]
@@ -553,11 +554,11 @@ class TypeManager(object):
 
 
 # Util
-def assert_is_type(target: PySMTType, func_name: str):
+def assert_is_type(target: Any, func_name: str):
     if not isinstance(target, PySMTType):
         raise PysmtValueError("Invalid type '%s' in %s." % (target, func_name))
 
-def assert_are_types(targets: Any, func_name: str):
+def assert_are_types(targets: Iterable[Any], func_name: str):
     for target in targets:
         assert_is_type(target, func_name)
 

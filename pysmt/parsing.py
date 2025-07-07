@@ -17,7 +17,7 @@
 #
 import re
 from collections import namedtuple
-from typing import Optional
+from typing import List, Optional
 
 import pysmt
 import pysmt.typing as types

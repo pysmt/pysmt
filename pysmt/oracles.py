@@ -27,7 +27,7 @@ properties of formulae.
 """
 
 from itertools import chain
-from typing import FrozenSet, List, Any, Optional, Union, cast
+from typing import FrozenSet, Iterable, List, Any, Optional, Union, cast
 
 import pysmt
 import pysmt.walkers as walkers
@@ -137,11 +137,11 @@ class QuantifierOracle(walkers.DagWalker):
 
     # Propagate truth value, but force False if a Quantifier is found.
     @walkers.handles(set(op.ALL_TYPES) - op.QUANTIFIERS)
-    def walk_all(self, formula: FNode, args:     List[    Union[    Any, bool]], **kwargs) -> bool:
+    def walk_all(self, formula: FNode, args: List[bool], **kwargs) -> bool:
         return walkers.DagWalker.walk_all(self, formula, args, **kwargs)
 
     @walkers.handles(op.QUANTIFIERS)
-    def walk_false(self, formula: FNode, args:     List[bool], **kwargs) -> bool:
+    def walk_false(self, formula: FNode, args: List[bool], **kwargs) -> bool:
         return walkers.DagWalker.walk_false(self, formula, args, **kwargs)
 
 # EOC QuantifierOracle
@@ -185,7 +185,7 @@ class TheoryOracle(walkers.DagWalker):
     @walkers.handles(op.STR_OPERATORS -\
                      set([op.STR_LENGTH, op.STR_INDEXOF, op.STR_TO_INT]))
     @walkers.handles(op.ITE, op.ARRAY_SELECT, op.ARRAY_STORE, op.MINUS)
-    def walk_combine(self, formula: FNode, args:     List[Theory], **kwargs) -> Theory:
+    def walk_combine(self, formula: FNode, args: List[Theory], **kwargs) -> Theory:
         """Combines the current theory value of the children"""
         #pylint: disable=unused-argument
         if len(args) == 1:
@@ -199,7 +199,7 @@ class TheoryOracle(walkers.DagWalker):
     @walkers.handles(op.INT_CONSTANT, op.BV_CONSTANT)
     @walkers.handles(op.ALGEBRAIC_CONSTANT)
     @walkers.handles(op.STR_CONSTANT)
-    def walk_constant(self, formula: FNode, args:     List[    Any], **kwargs) -> Theory:
+    def walk_constant(self, formula: FNode, args: List[Theory], **kwargs) -> Theory:
         """Returns a new theory object with the type of the constant."""
         #pylint: disable=unused-argument
         theory_out = Theory()
@@ -217,14 +217,14 @@ class TheoryOracle(walkers.DagWalker):
             assert formula.is_bool_constant()
         return theory_out
 
-    def walk_symbol(self, formula: FNode, args:     List[    Any], **kwargs) -> Theory:
+    def walk_symbol(self, formula: FNode, args: List[Theory], **kwargs) -> Theory:
         """Returns a new theory object with the type of the symbol."""
         #pylint: disable=unused-argument
         f_type = formula.symbol_type()
         theory_out = self._theory_from_type(f_type)
         return theory_out
 
-    def walk_function(self, formula: FNode, args:     List[Theory], **kwargs) -> Theory:
+    def walk_function(self, formula: FNode, args: List[Theory], **kwargs) -> Theory:
         """Extends the Theory with UF."""
         #pylint: disable=unused-argument
         if len(args) == 1:
@@ -241,7 +241,7 @@ class TheoryOracle(walkers.DagWalker):
         theory_out.uninterpreted = True
         return theory_out
 
-    def walk_toreal(self, formula: FNode, args:     List[Theory], **kwargs) -> Theory:
+    def walk_toreal(self, formula: FNode, args: List[Theory], **kwargs) -> Theory:
         #pylint: disable=unused-argument
         """Extends the Theory with LIRA."""
         theory_out = args[0].set_lira() # This makes a copy of args[0]
@@ -249,13 +249,13 @@ class TheoryOracle(walkers.DagWalker):
         rtype = formula.symbol_name()
 
     @walkers.handles([op.STR_LENGTH, op.STR_INDEXOF, op.STR_TO_INT])
-    def walk_str_int(self, formula: FNode, args:     List[Theory], **kwargs) -> Theory:
+    def walk_str_int(self, formula: FNode, args: List[Theory], **kwargs) -> Theory:
         theory_out = self.walk_combine(formula, args, **kwargs)
         theory_out.integer_arithmetic = True
         theory_out.integer_difference = True
         return theory_out
 
-    def walk_bv_tonatural(self, formula: FNode, args:     List[Theory], **kwargs) -> Theory:
+    def walk_bv_tonatural(self, formula: FNode, args: List[Theory], **kwargs) -> Theory:
         #pylint: disable=unused-argument
         """Extends the Theory with Integer."""
         theory_out = args[0].copy()
@@ -263,7 +263,7 @@ class TheoryOracle(walkers.DagWalker):
         theory_out.integer_difference = True
         return theory_out
 
-    def walk_times(self, formula: FNode, args:     List[Theory], **kwargs) -> Theory:
+    def walk_times(self, formula: FNode, args: List[Theory], **kwargs) -> Theory:
         """Extends the Theory with Non-Linear, if needed."""
         theory_out = args[0]
         for t in args[1:]:
@@ -276,10 +276,10 @@ class TheoryOracle(walkers.DagWalker):
         theory_out = theory_out.set_difference_logic(False)
         return theory_out
 
-    def walk_pow(self, formula: FNode, args:     List[Theory], **kwargs) -> Theory:
+    def walk_pow(self, formula: FNode, args: List[Theory], **kwargs) -> Theory:
         return args[0].set_linear(False)
 
-    def walk_plus(self, formula: FNode, args:     List[Theory], **kwargs) -> Theory:
+    def walk_plus(self, formula: FNode, args: List[Theory], **kwargs) -> Theory:
         theory_out = args[0]
         for t in args[1:]:
             theory_out = theory_out.combine(t)
@@ -288,7 +288,7 @@ class TheoryOracle(walkers.DagWalker):
         assert not theory_out.integer_difference
         return theory_out
 
-    def walk_strings(self, formula, args, **kwargs):
+    def walk_strings(self, formula: FNode, args: List[Theory], **kwargs) -> Theory:
         """Extends the Theory with Strings."""
         #pylint: disable=unused-argument
         if formula.is_string_constant():
@@ -297,7 +297,7 @@ class TheoryOracle(walkers.DagWalker):
             theory_out = args[0].set_strings() # This makes a copy of args[0]
         return theory_out
 
-    def walk_array_value(self, formula: FNode, args:     List[Theory], **kwargs) -> Theory:
+    def walk_array_value(self, formula: FNode, args: List[Theory], **kwargs) -> Theory:
         # First, we combine all the theories of all the indexes and values
         theory_out = self.walk_combine(formula, args)
 
@@ -311,7 +311,7 @@ class TheoryOracle(walkers.DagWalker):
         theory_out.arrays_const = True
         return theory_out
 
-    def walk_div(self, formula: FNode, args:     List[Theory], **kwargs) -> Theory:
+    def walk_div(self, formula: FNode, args: List[Theory], **kwargs) -> Theory:
         """Extends the Theory with Non-Linear, if needed."""
         assert len(args) == 2
         theory_out = args[0]
@@ -440,7 +440,7 @@ class AtomsOracle(walkers.DagWalker):
             return frozenset([formula])
         return None
 
-    def walk_ite(self, formula, args: List[Optional[FrozenSet[FNode]]], **kwargs) -> Optional[FrozenSet[FNode]]:
+    def walk_ite(self, formula: FNode, args: List[Optional[FrozenSet[FNode]]], **kwargs) -> Optional[FrozenSet[FNode]]:
         #pylint: disable=unused-argument
         if any(a is None for a in args):
             # Theory ITE
@@ -453,7 +453,7 @@ class AtomsOracle(walkers.DagWalker):
 
 class TypesOracle(walkers.DagWalker):
 
-    def get_types(self, formula: FNode, custom_only: bool=False) ->     List[Union[PySMTType, Any]]:
+    def get_types(self, formula: FNode, custom_only: bool=False) -> List[PySMTType]:
         """Returns the types appearing in the formula.
 
         custom_only: filter the result by excluding base SMT-LIB types.
@@ -475,7 +475,7 @@ class TypesOracle(walkers.DagWalker):
             ]
         return exp_types
 
-    def expand_types(self, types: frozenset) -> List[PySMTType]:
+    def expand_types(self, types: Iterable[PySMTType]) -> List[PySMTType]:
         """Recursively look into composite types.
 
         Note: This returns a list. The list is ordered (by
@@ -490,7 +490,7 @@ class TypesOracle(walkers.DagWalker):
                 expanded.append(t)
                 all_types.add(t)
             if t.arity > 0:
-                for subtype in t.args:
+                for subtype in assert_not_none(t.args):
                     if subtype not in all_types:
                         expanded.append(subtype)
                         all_types.add(subtype)
@@ -501,26 +501,26 @@ class TypesOracle(walkers.DagWalker):
     @walkers.handles(set(op.ALL_TYPES) - \
                      set([op.SYMBOL, op.FUNCTION]) -\
                      op.QUANTIFIERS - op.CONSTANTS)
-    def walk_combine(self, formula: FNode, args: List[frozenset], **kwargs) -> frozenset:
+    def walk_combine(self, formula: FNode, args: List[FrozenSet[PySMTType]], **kwargs) -> FrozenSet[PySMTType]:
         #pylint: disable=unused-argument
         return frozenset(chain(*args))
 
     @walkers.handles(op.SYMBOL)
-    def walk_symbol(self, formula: FNode, **kwargs) -> frozenset:
+    def walk_symbol(self, formula: FNode, **kwargs) -> FrozenSet[PySMTType]:
         return frozenset([formula.symbol_type()])
 
     @walkers.handles(op.FUNCTION)
-    def walk_function(self, formula: FNode, **kwargs) -> frozenset:
+    def walk_function(self, formula: FNode, **kwargs) -> FrozenSet[PySMTType]:
         ftype = cast(types._FunctionType, formula.function_name().symbol_type())
         return frozenset([ftype.return_type] + list(ftype.param_types))
 
     @walkers.handles(op.QUANTIFIERS)
-    def walk_quantifier(self, formula: FNode, args:     List[frozenset], **kwargs) -> frozenset:
+    def walk_quantifier(self, formula: FNode, args: List[FrozenSet[PySMTType]], **kwargs) -> FrozenSet[PySMTType]:
         return frozenset([x.symbol_type()
                           for x in formula.quantifier_vars()]) | args[0]
 
     @walkers.handles(op.CONSTANTS)
-    def walk_constant(self, formula: FNode, args:     List[    Any], **kwargs) -> frozenset:
+    def walk_constant(self, formula: FNode, args: List[FrozenSet[PySMTType]], **kwargs) -> FrozenSet[PySMTType]:
         return frozenset([formula.constant_type()])
 
 # EOC TypesOracle

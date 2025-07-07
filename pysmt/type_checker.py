@@ -22,7 +22,7 @@ reasoning about the type of formulae.
  * The functions assert_*_args are useful for testing the type of
    arguments of a given function.
 """
-from typing import Any, List, Optional, cast
+from typing import Any, Iterable, List, Optional, Sequence, Set, cast
 
 import pysmt
 import pysmt.walkers as walkers
@@ -40,7 +40,7 @@ class SimpleTypeChecker(walkers.DagWalker):
         walkers.DagWalker.__init__(self, env=env)
         # If `be_nice` is true, the `get_type` method will return None if
         # the type cannot be computed instead of than raising an exception.
-        self.be_nice = False
+        self.be_nice: bool = False
 
     def _get_key(self, formula: FNode, **kwargs) -> FNode:
         return formula
@@ -65,7 +65,7 @@ class SimpleTypeChecker(walkers.DagWalker):
         #pylint: disable=unused-argument
         return self.walk_type_to_type(formula, args, BOOL, BOOL)
 
-    def walk_real_to_bool(self, formula, args, **kwargs):
+    def walk_real_to_bool(self, formula: FNode, args: List[PySMTType], **kwargs) -> Optional[PySMTType]:
         #pylint: disable=unused-argument
         return self.walk_type_to_type(formula, args, REAL, BOOL)
 
@@ -74,7 +74,7 @@ class SimpleTypeChecker(walkers.DagWalker):
         #pylint: disable=unused-argument
         return self.walk_type_to_type(formula, args, INT, REAL)
 
-    def walk_real_to_real(self, formula, args, **kwargs):
+    def walk_real_to_real(self, formula: FNode, args: List[PySMTType], **kwargs) -> Optional[PySMTType]:
         #pylint: disable=unused-argument
         return self.walk_type_to_type(formula, args, REAL, REAL)
 
@@ -336,7 +336,7 @@ class SimpleTypeChecker(walkers.DagWalker):
 # EOC SimpleTypeChecker
 
 
-def assert_no_boolean_in_args(args):
+def assert_no_boolean_in_args(args: Iterable[FNode]):
     """ Enforces that the elements in args are not of BOOL type."""
     for arg in args:
         if (arg.get_type() == BOOL):
@@ -344,7 +344,7 @@ def assert_no_boolean_in_args(args):
                                  "in arguments")
 
 
-def assert_boolean_args(args):
+def assert_boolean_args(args: Iterable[FNode]):
     """ Enforces that the elements in args are of BOOL type. """
     for arg in args:
         t = arg.get_type()
@@ -352,7 +352,7 @@ def assert_boolean_args(args):
             raise PysmtTypeError("%s is not allowed in arguments" % t)
 
 
-def assert_same_type_args(args):
+def assert_same_type_args(args: Sequence[FNode]):
     """ Enforces that all elements in args have the same type. """
     ref_t = args[0].get_type()
     for arg in args[1:]:
@@ -362,7 +362,7 @@ def assert_same_type_args(args):
                              str([str((a, a.get_type())) for a in args]))
 
 
-def assert_args_type_in(args, allowed_types):
+def assert_args_type_in(args: Iterable[FNode], allowed_types: Set[PySMTType]):
     """ Enforces that the type of the arguments is an allowed type """
     for arg in args:
         t = arg.get_type()

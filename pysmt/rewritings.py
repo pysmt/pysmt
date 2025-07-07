@@ -36,14 +36,14 @@ class CNFizer(DagWalker):
     TRUE_CNF: FrozenSet[Iterable[FNode]] = frozenset()
     FALSE_CNF: FrozenSet[Iterable[FNode]] = frozenset([frozenset()])
 
-    def __init__(self, environment: "pysmt.environment.Environment" =None):
+    def __init__(self, environment: Optional["pysmt.environment.Environment"]=None):
         DagWalker.__init__(self, environment)
 
         self.mgr = self.env.formula_manager
-        self._introduced_variables = {}
-        self._cnf_pieces = {}
+        self._introduced_variables: Dict[FNode, FNode] = {}
+        self._cnf_pieces = {} # type: ignore [var-annotated] # TODO this is never used
 
-    def _key_var(self, formula):
+    def _key_var(self, formula: FNode) -> FNode:
         if formula in self._introduced_variables:
             res = self._introduced_variables[formula]
         else:
@@ -377,7 +377,7 @@ class PrenexNormalizer(DagWalker):
     This class traverses a formula and rebuilds it in prenex normal form.
     """
 
-    def __init__(self, env: None=None, invalidate_memoization: bool=False):
+    def __init__(self, env: Optional["pysmt.environment.Environment"]=None, invalidate_memoization: bool=False):
         DagWalker.__init__(self,
                            env=env,
                            invalidate_memoization=invalidate_memoization)

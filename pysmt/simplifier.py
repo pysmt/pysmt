@@ -17,7 +17,7 @@
 #
 import math
 from fractions import Fraction
-from typing import Any, List, Optional, Union, cast
+from typing import Any, Dict, List, Optional, Union, cast
 
 import pysmt
 
@@ -25,7 +25,7 @@ import pysmt.walkers
 from pysmt.walkers import handles
 import pysmt.operators as op
 import pysmt.typing as types
-from pysmt.utils import set_bit, assert_not_none
+from pysmt.utils import set_bit
 from pysmt.exceptions import PysmtValueError
 from pysmt.fnode import FNode
 
@@ -36,25 +36,25 @@ class Simplifier(pysmt.walkers.DagWalker):
     def __init__(self, env: Optional["pysmt.environment.Environment"]=None):
         pysmt.walkers.DagWalker.__init__(self, env=env)
         self.manager = self.env.formula_manager
-        self._validate_simplifications = None
+        self._validate_simplifications: Optional[str] = None
         self.original_walk = self.walk
 
     @property
-    def validate_simplifications(self):
+    def validate_simplifications(self) -> Optional[str]:
         return self._validate_simplifications
 
     @validate_simplifications.setter
-    def validate_simplifications(self, value):
+    def validate_simplifications(self, value: Optional[str]):
         """If set to true: checks for equivalence after each simplification.
 
         NOTE: This can be very expensive, and should be used for debug
         and testing only.
         """
         if value:
-            self.walk = self.walk_debug
+            self.walk = self.walk_debug # type: ignore [method-assign]
         else:
             # Restore original walk method
-            self.walk = self.original_walk
+            self.walk = self.original_walk # type: ignore [method-assign]
 
         self._validate_simplifications = value
 
@@ -65,7 +65,7 @@ class Simplifier(pysmt.walkers.DagWalker):
     def _get_key(self, formula: FNode, **kwargs) -> FNode:
         return formula
 
-    def walk_debug(self, formula, **kwargs):
+    def walk_debug(self, formula: FNode, **kwargs) -> FNode:
         from pysmt.shortcuts import Equals, Iff, get_type, is_valid
         from pysmt.typing import BOOL
 
@@ -1058,7 +1058,7 @@ class Simplifier(pysmt.walkers.DagWalker):
     @handles(op.SYMBOL)
     @handles(op.REAL_CONSTANT, op.INT_CONSTANT, op.BOOL_CONSTANT)
     @handles(op.BV_CONSTANT, op.STR_CONSTANT, op.ALGEBRAIC_CONSTANT)
-    def walk_identity(self, formula: FNode, args: List[Any], **kwargs) -> FNode:
+    def walk_identity(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         return formula
 
 # EOC Simplifier
@@ -1083,7 +1083,7 @@ class BddSimplifier(Simplifier):
     boolean structure of the formula.
     """
 
-    def __init__(self, env: Optional["pysmt.environment.Environment"]=None, static_ordering=None, bool_abstraction=False):
+    def __init__(self, env: Optional["pysmt.environment.Environment"]=None, static_ordering=None, bool_abstraction: bool=False): # TODO type of static ordering? Seems like a callable from FNode to something that supports <
         Simplifier.__init__(self, env=env)
         self._validation_sname = None
 
@@ -1097,16 +1097,16 @@ class BddSimplifier(Simplifier):
         self.back = self.s.converter.back
         # Set methods for boolean_abstraction
         self.bool_abstraction = bool_abstraction
-        self.ba_map = {}
+        self.ba_map: Dict[FNode, FNode] = {}
         self.get_type = self.env.stc.get_type
         self.FreshSymbol = self.env.formula_manager.FreshSymbol
 
     @property
-    def validate_simplifications(self):
+    def validate_simplifications(self) -> Optional[str]:
         return self._validate_simplifications
 
     @validate_simplifications.setter
-    def validate_simplifications(self, value):
+    def validate_simplifications(self, value: Optional[str]):
         possible_solvers = [sname for sname in self.env.factory.all_solvers()\
                             if sname!="bdd"]
         if len(possible_solvers) == 0:
@@ -1115,7 +1115,7 @@ class BddSimplifier(Simplifier):
         self._validation_sname = possible_solvers[0]
         self._validate_simplifications = value
 
-    def simplify(self, formula):
+    def simplify(self, formula: FNode) -> FNode:
         from pysmt.oracles import get_logic
         from pysmt.logics import BOOL, QF_BOOL
         if self.bool_abstraction:
@@ -1137,14 +1137,14 @@ class BddSimplifier(Simplifier):
             assert is_valid(Iff(old, new), solver_name=sname ), \
               "Was: %s \n Obtained: %s\n" % (str(old), str(new))
 
-    def abstract_and_simplify(self, formula):
+    def abstract_and_simplify(self, formula: FNode) -> FNode:
         abs_formula = self.walk(formula)
         abs_res = self.back(self.convert(abs_formula))
         res = abs_res.substitute(self.ba_map)
         return res
 
     @handles(op.RELATIONS)
-    def walk_simplify_and_abstract(self, formula, args, **kwargs):
+    def walk_simplify_and_abstract(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         rewritten = Simplifier.super(self, formula, args, **kwargs)
         if rewritten.is_bool_constant():
             return rewritten
@@ -1152,9 +1152,9 @@ class BddSimplifier(Simplifier):
         self.ba_map[new_var] = rewritten
         return new_var
 
-    def walk_function(self, formula, args, **kwargs):
+    def walk_function(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         rewritten = Simplifier.walk_function(self, formula, args, **kwargs)
-        if rewritten.function_name().symbol_type().return_type.is_bool_type():
+        if cast(types._FunctionType, rewritten.function_name().symbol_type()).return_type.is_bool_type():
             new_var = self.FreshSymbol()
             self.ba_map[new_var] = rewritten
             return new_var

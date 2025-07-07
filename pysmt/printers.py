@@ -17,7 +17,7 @@
 #
 from fractions import Fraction
 from io import StringIO
-from typing import Any, Iterator, Optional, cast
+from typing import Any, Iterator, Optional, Type, cast
 
 import pysmt
 import pysmt.operators as op
@@ -34,7 +34,7 @@ class HRPrinter(TreeWalker):
     E.g., Implies(And(Symbol(x), Symbol(y)), Symbol(z))  ~>   '(x * y) -> z'
     """
 
-    def __init__(self, stream: StringIO, env: None=None):
+    def __init__(self, stream: StringIO, env: Optional["pysmt.environment.Environment"]=None):
         TreeWalker.__init__(self, env=env)
         self.stream = stream
         self.write = self.stream.write
@@ -337,9 +337,10 @@ class HRSerializer(object):
     PrinterClass = HRPrinter
 
     def __init__(self, environment: Optional["pysmt.environment.Environment"]=None):
-        self.environment = environment
+        self.environment = environment # TODO environment is not used. SHould it bnbe passed to the printer?
 
-    def serialize(self, formula: FNode, printer: None=None, threshold: Optional[int]=None) -> str:
+
+    def serialize(self, formula: FNode, printer: Optional[Type[HRPrinter]]=None, threshold: Optional[int]=None) -> str:
         """Returns a string with the human-readable version of the formula.
 
         'printer' is the printer to call to perform the serialization.

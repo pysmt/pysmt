@@ -15,9 +15,11 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+from typing import Optional
+
+import pysmt
 from pysmt.walkers.generic import Walker
 from pysmt.fnode import FNode
-from typing import Optional
 
 class TreeWalker(Walker):
     """TreeWalker treats the formula as a Tree and does not perform memoization.
@@ -34,7 +36,7 @@ class TreeWalker(Walker):
 
     """
 
-    def __init__(self, env: None=None):
+    def __init__(self, env: Optional["pysmt.environment.Environment"]=None):
         Walker.__init__(self, env)
         return
 
