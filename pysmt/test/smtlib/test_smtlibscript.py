@@ -248,26 +248,25 @@ class TestSmtLibScript(TestCase):
             OptionsClass = SolverOptionsIgnore
 
         solver = SmtLibIgnore(get_env(), AUTO)
-        # the following type: ignore are because the typing of the function is not respected
         self.assertTrue(solver.set_logic(None))
-        self.assertIsNone(solver.declare_fun(None)) # type: ignore
-        self.assertIsNone(solver.declare_const(None)) # type: ignore
-        self.assertIsNone(solver.define_fun(None, None, None, None)) # type: ignore
-        self.assertIsNone(solver.declare_sort(None, None)) # type: ignore
-        self.assertIsNone(solver.define_sort(None, None, None)) # type: ignore
-        self.assertIsNone(solver.assert_(None)) # type: ignore
+        self.assertIsNone(solver.declare_fun(None))
+        self.assertIsNone(solver.declare_const(None))
+        self.assertIsNone(solver.define_fun(None, None, None, None))
+        self.assertIsNone(solver.declare_sort(None, None))
+        self.assertIsNone(solver.define_sort(None, None, None))
+        self.assertIsNone(solver.assert_(None))
         self.assertIsNone(solver.get_assertions())
         self.assertIsNone(solver.check_sat())
         self.assertIsNone(solver.get_proof())
         self.assertIsNone(solver.get_unsat_core())
-        self.assertIsNone(solver.get_values(None)) # type: ignore
+        self.assertIsNone(solver.get_values(None))
         self.assertIsNone(solver.get_assignment())
         self.assertIsNone(solver.push())
         self.assertIsNone(solver.pop())
-        self.assertIsNone(solver.get_option(None)) # type: ignore
-        self.assertIsNone(solver.set_option(None, None)) # type: ignore
-        self.assertIsNone(solver.get_info(None)) # type: ignore
-        self.assertIsNone(solver.set_info(None, None)) # type: ignore
+        self.assertIsNone(solver.get_option(None))
+        self.assertIsNone(solver.set_option(None, None))
+        self.assertIsNone(solver.get_info(None))
+        self.assertIsNone(solver.set_info(None, None))
         self.assertIsNone(solver.exit())
 
     def test_all_parsing(self):

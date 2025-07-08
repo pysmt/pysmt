@@ -175,9 +175,6 @@ class FNode(object):
                     return False
 
         return value is None or value == self.constant_value()
-        # if value is not None: # TODO old code, small improvement, check this
-        #     return value == self.constant_value()
-        # return True
 
     def is_bool_constant(self, value: Optional[bool]=None) -> bool:
         """Test whether the formula is a Boolean constant.
@@ -210,13 +207,6 @@ class FNode(object):
 
         type_ = None if width is None else BVType(width=width)
         return self.is_constant(_type=type_, value=value)
-
-        # TODO old code, small improvement
-        # if width is None:
-        #     return self.is_constant(value=value)
-        # else:
-        #     return self.is_constant(_type=BVType(width=width),
-        #                             value=value)
 
     def is_string_constant(self, value: Optional[str]=None) -> bool:
         """Test whether the formula is a String constant.
@@ -688,9 +678,9 @@ class FNode(object):
         assert self.is_quantifier()
         return self._content.payload
 
-    def algebraic_approx_value(self, precision: int=10) -> Fraction: # TODO what type does this return? If value is a Numeral then it does not define approx and as_fraction (soo either skip or define them)
+    def algebraic_approx_value(self, precision: int=10) -> Fraction:
         value = self.constant_value()
-        approx = value.approx(precision) # type: ignore [union-attr] # TODO look above
+        approx = value.approx(precision) # type: ignore [union-attr]
         return approx.as_fraction()
 
     # Infix Notation

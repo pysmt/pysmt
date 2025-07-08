@@ -41,7 +41,6 @@ class CNFizer(DagWalker):
 
         self.mgr = self.env.formula_manager
         self._introduced_variables: Dict[FNode, FNode] = {}
-        self._cnf_pieces = {} # type: ignore [var-annotated] # TODO this is never used
 
     def _key_var(self, formula: FNode) -> FNode:
         if formula in self._introduced_variables:

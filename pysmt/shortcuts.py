@@ -984,7 +984,7 @@ def Interpolator(name: Optional[str]=None, logic: Optional[Union[str, Logic]]=No
     return get_env().factory.Interpolator(name=name, logic=logic)
 
 
-def Portfolio(solvers_set: Iterable[Union[str, Tuple[str, Dict[str, Any]]]], logic: Optional[Union[str, Logic]], **options) -> "pysmt.solvers.portfolio.Portfolio":
+def Portfolio(solvers_set: Iterable[Union[str, Tuple[str, Dict[str, Any]]]], logic: Union[str, Logic], **options) -> "pysmt.solvers.portfolio.Portfolio":
     """Creates a portfolio using the specified solvers.
 
     Solver_set is an iterable. Elements of solver_set can be

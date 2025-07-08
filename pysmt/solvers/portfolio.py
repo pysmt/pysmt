@@ -25,6 +25,7 @@ from pysmt.solvers.solver import IncrementalTrackingSolver, SolverOptions, Solve
 from pysmt.decorators import clear_pending_pop
 from pysmt.logics import convert_logic_from_string, Logic
 from pysmt.fnode import FNode
+from pysmt.utils import assert_not_none
 
 
 LOGGER = logging.getLogger(__name__)
@@ -56,7 +57,7 @@ class Portfolio(IncrementalTrackingSolver):
     """Create a portfolio instance of multiple Solvers."""
     OptionsClass = PortfolioOptions
 
-    def __init__(self, solvers_set: Iterable[Union[str, Tuple[str, Dict[str, Dict[str, Any]]]]], environment: "pysmt.environment.Environment", logic: Optional[Union[str, Logic]], **options):
+    def __init__(self, solvers_set: Iterable[Union[str, Tuple[str, Dict[str, Dict[str, Any]]]]], environment: "pysmt.environment.Environment", logic: Union[str, Logic], **options):
         """Creates a portfolio using the specified solvers.
 
         Solver_set is an iterable. Elements of solver_set can be
@@ -75,11 +76,10 @@ class Portfolio(IncrementalTrackingSolver):
 
         One process will be used for each of the solvers.
         """
-        logic = convert_logic_from_string(logic)
-        # TODO can logic be None in IncrementalTrackingSOlver (and SOlver)?
+        logic = assert_not_none(convert_logic_from_string(logic))
         IncrementalTrackingSolver.__init__(self,
                                            environment=environment,
-                                           logic=logic, # type: ignore [arg-type] # TODO
+                                           logic=logic,
                                            **options)
         self.solvers: List[Tuple[str, Dict[str, Any]]] = []
         self._process_solver_set(solvers_set)

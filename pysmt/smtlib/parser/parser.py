@@ -207,15 +207,14 @@ class Tokenizer(object):
             return (self.__row_cnt, self.__col_cnt)
         return None
 
-    @staticmethod
-    def create_generator(reader: Iterator[Any]) -> Iterator[str]:
-        """Takes a file-like object and produces a stream of tokens following
+    def create_generator(self, reader: Iterator[str]) -> Iterator[str]:
+        """Takes an Iterator[str] and produces a stream of tokens following
         the LISP rules.
         This is the method doing the heavy-lifting of tokenization.
         """
-        spaces = set([" ", "\n", "\t"])
-        separators = set(["(", ")", "|", "\""])
-        specials = spaces | separators | set([";", ""])
+        spaces = {" ", "\n", "\t"}
+        separators = {"(", ")", "|", "\""}
+        specials = spaces | separators | {";", ""}
 
         try:
             c = next(reader)
@@ -237,12 +236,12 @@ class Tokenizer(object):
                                         # Only \| and \\ are supported escapings
                                         raise PysmtSyntaxError(
                                             "Unknown escaping in quoted symbol: "
-                                            "'\\%s'" % c, reader.pos_info) # type: ignore # TODO I don't understand where this pos_info comes from
+                                            "'\\%s'" % c, self.pos_info)
                                 ls.append(c)
                                 c = next(reader)
                             if not c:
                                 raise PysmtSyntaxError("Expected '|'",
-                                                       reader.pos_info) # type: ignore # TODO I don't understand where this pos_info comes from
+                                                       self.pos_info)
                             yield "".join(ls)
                             c = next(reader)
 
@@ -254,7 +253,7 @@ class Tokenizer(object):
                                 c = next(reader)
                                 if not c:
                                     raise PysmtSyntaxError("Expected '\"'",
-                                                           reader.pos_info) # type: ignore # TODO I don't understand where this pos_info comes from
+                                                           self.pos_info)
 
                                 if c != "\"" and num_quotes % 2 != 0:
                                     break
@@ -369,7 +368,7 @@ class SmtLibParser(object):
         # Each token is handled by a dedicated function that takes the
         # recursion stack, the token stream and the parsed token
         # Common tokens are handled in the _reset function
-        self.interpreted: Dict[str, Callable[[Any, Tokenizer, str], Optional[Union[str, FNode]]]] = {
+        self.interpreted: Dict[str, Callable[[Any, Tokenizer, str], Optional[FNode]]] = {
             "let": self._enter_let,
             "!": self._enter_annotation,
             "exists": self._enter_quantifier,
@@ -653,7 +652,7 @@ class SmtLibParser(object):
             return self.env.formula_manager.FreshSymbol(typename=type_name,
                                                         template=name + "%d")
 
-    def atom(self, token: str, mgr: FormulaManager) -> Union[str, FNode]:
+    def atom(self, token: str, mgr: FormulaManager) -> FNode:
         """
         Given a token and a FormulaManager, returns the pysmt representation of
         the token
@@ -700,7 +699,7 @@ class SmtLibParser(object):
 
                 except ValueError:
                     # a string constant
-                    res = token
+                    res = mgr.String(token)
             self.cache.bind(token, res)
         return res
 
@@ -827,12 +826,12 @@ class SmtLibParser(object):
         tokens.add_extra_token(")")
         stack[-1].append(lambda: term)
 
-    def get_expression(self, tokens: Tokenizer) -> Optional[Union[str, FNode]]: # TODO: Should this method always return a FNode?
+    def get_expression(self, tokens: Tokenizer) -> Optional[FNode]:
         """
         Returns the pysmt representation of the given parsed expression
         """
         mgr = self.env.formula_manager
-        stack: List[List[Union[str, FNode]]] = []
+        stack : List[Any] = []
 
         try:
             while True:
@@ -843,20 +842,20 @@ class SmtLibParser(object):
                         tk = tokens.consume()
                     if tk in self.interpreted:
                         fun = self.interpreted[tk]
-                        fun(stack, tokens, tk) # type: ignore[operator]
+                        fun(stack, tokens, tk)
                     else:
                         stack[-1].append(self.atom(tk, mgr))
 
                 elif tk == ")":
                     try:
                         lst = stack.pop()
-                        fun = lst.pop(0) # type: ignore[assignment]
+                        fun = lst.pop(0)
                     except IndexError:
                         raise PysmtSyntaxError("Unexpected ')'",
                                                tokens.pos_info)
 
                     try:
-                        res = cast(Union[FNode, str], assert_not_none(fun(*lst))) # type: ignore[operator, arg-type]
+                        res = fun(*lst)
                     except TypeError as err:
                         if not callable(fun):
                             raise NotImplementedError("Unknown function '%s'" % fun)
@@ -1379,7 +1378,7 @@ class SmtLibParser(object):
             formal.append(v)  # remember the variable
             bindings.append(x)  # remember the name
         # Parse expression using also parameters
-        ebody: Union[str, FNode] = assert_not_none(self.get_expression(tokens)) # type: ignore # TODO understand why the espression has type object for mypy here (should be Union[str, FNode])
+        ebody: FNode = assert_not_none(self.get_expression(tokens))
         ebody_type = self.env.stc.get_type(ebody)
         ebody_vars = self.env.fvo.get_free_variables(ebody)
         # Promote constant integer expression to real

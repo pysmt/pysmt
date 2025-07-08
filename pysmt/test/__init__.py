@@ -15,16 +15,12 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import os
 from functools import wraps
 from pysmt.fnode import FNode
 from pysmt.logics import Logic
 from typing import Callable, Optional, Tuple, Union
 
-try:
-    import unittest2 as unittest # type: ignore[import]
-except ImportError:
-    import unittest
+import unittest
 
 from pysmt.environment import get_env, reset_env
 skipIf = unittest.skipIf

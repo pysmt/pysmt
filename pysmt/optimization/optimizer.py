@@ -277,9 +277,9 @@ class OptSearchInterval(OptComparationFunctions):
                     lower -= 1
 
         self._obj = goal
-        self._lower: Optional[Union[int, float, Fraction]] = lower # TODO is this typing correct?
-        self._upper: Optional[Union[int, float, Fraction]] = upper
-        self._pivot: Optional[Union[int, float, Fraction]] = None
+        self._lower: Optional[Union[int, Fraction]] = lower
+        self._upper: Optional[Union[int, Fraction]] = upper
+        self._pivot: Optional[Union[int, Fraction]] = None
         self._cast, self.op_strict, self.op_ns = self._comparation_functions(goal)
         self.client_data = client_data
 
@@ -300,7 +300,7 @@ class OptSearchInterval(OptComparationFunctions):
 
         return self.op_strict(self._obj.term(), self._cast(bound))
 
-    def _compute_pivot(self) -> Union[int, float, Fraction]:
+    def _compute_pivot(self) -> Union[int, Fraction]:
         """
         Computes the pivot value for binary search.
 
@@ -313,9 +313,9 @@ class OptSearchInterval(OptComparationFunctions):
             return 0
         l, u = self._lower, self._upper
         if self._lower is None and self._upper is not None:
-            l = self._upper - (cast(Union[int, float, Fraction], abs(self._upper)) + 1)
+            l = self._upper - (cast(Union[int, Fraction], abs(self._upper)) + 1)
         elif self._lower is not None and self._upper is None:
-            u = self._lower + cast(Union[int, float, Fraction], abs(self._lower)) + 1
+            u = self._lower + cast(Union[int, Fraction], abs(self._lower)) + 1
         term_type = self._obj.term().get_type()
         assert l is not None and u is not None
         if term_type.is_int_type() or term_type.is_bv_type():
@@ -325,7 +325,7 @@ class OptSearchInterval(OptComparationFunctions):
             else:
                 return pivot
         assert term_type.is_real_type()
-        return (l + u) / 2
+        return Fraction((l + u) / 2)
 
     def binary_search_cut(self) -> FNode:
         """
@@ -436,9 +436,7 @@ class ExternalOptimizerMixin(Optimizer):
     on an infinitesimal objective.
     """
 
-    def optimize(self, goal: Goal, strategy: str='linear',
-                 feasible_solution_callback: Optional[Callable[[Any], Any]]=None,
-                 step_size: int=1, **kwargs) -> Optional[Tuple[Model, FNode]]: # TODO is step_size not used? Also feasible_solution_callback? How should it be typed
+    def optimize(self, goal: Goal, strategy: str='linear', **kwargs) -> Optional[Tuple[Model, FNode]]:
         """This function performs the optimization as described in
         `Optimizer.optimize()`. However. two additional parameters are
         available:
@@ -446,15 +444,6 @@ class ExternalOptimizerMixin(Optimizer):
         `strategy` can be either 'binary' or 'linear'. 'binary' performs a
         binary search to find the optimum, while 'ub' searches among
         the satisfiable models.
-
-        `feasible_solution_callback` is a function with a single
-        argument or None. If specified, the function will be called
-        each time the algorithm finds a feasible solution. Each call
-        is guaranteed to have a better solution quality than the
-        previous.
-
-        `step_size` the minimum reolution for finding a solution. The
-        optimum will be found in the proximity of `step_size`
         """
         rt = None
         if goal.is_maximization_goal() or goal.is_minimization_goal() or goal.is_maxsmt_goal():

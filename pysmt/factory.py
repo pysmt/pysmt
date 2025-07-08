@@ -220,7 +220,7 @@ class Factory(object):
         self._generic_solvers[name] = (args, logics)
         solver = cast(Type[SmtLibSolver], partial(SmtLibSolver, args, LOGICS=logics))
         solver.LOGICS = logics
-        solver.UNSAT_CORE_SUPPORT = unsat_core_support # type: ignore[attr-defined]
+        setattr(solver, "UNSAT_CORE_SUPPORT", unsat_core_support)
         self._all_solvers[name] = solver
         # Extend preference list accordingly
         self.preferences['Solver'].append(name)
@@ -309,11 +309,8 @@ class Factory(object):
             self._all_solvers = installed_solvers
 
         for k,solv in self._all_solvers.items():
-            try:
-                if solv.UNSAT_CORE_SUPPORT: # type: ignore[attr-defined]
-                    self._all_unsat_core_solvers[k] = solv
-            except AttributeError:
-                pass
+            if getattr(solv, "UNSAT_CORE_SUPPORT", False):
+                self._all_unsat_core_solvers[k] = solv
 
 
     def _get_available_qe(self):

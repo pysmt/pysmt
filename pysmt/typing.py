@@ -36,7 +36,7 @@ import pysmt
 from pysmt.exceptions import PysmtValueError, PysmtModeError
 from pysmt.utils import assert_not_none
 
-from typing import Any, Callable, Dict, Iterable, Iterator, List, Optional, Sequence, Tuple, Union, cast
+from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Union, cast
 
 
 class PySMTType(object):
@@ -125,11 +125,10 @@ class PySMTType(object):
         if funstyle:
             return "() %s" % name
         else:
-            return str(name) # TODO same as below
+            return assert_not_none(name)
 
     def __str__(self) -> str:
-        return str(self.name) # TODO is this ok? self.name can be None
-        # return self.name # OLD CODE
+        return assert_not_none(self.name)
 
 # EOC PySMTType
 
@@ -230,12 +229,7 @@ class _BVType(PySMTType):
             return "(_ BitVec %d)" % self.width
 
     def __eq__(self, other: object) -> bool:
-        return isinstance(other, _BVType) and self.width == other.width # TODO check this code compared to old
-        # if PySMTType.__eq__(self, other):
-        #     return True
-        # if other is not None and other.is_bv_type():
-        #     return self.width == other.width
-        # return False
+        return isinstance(other, _BVType) and self.width == other.width
 
     def __hash__(self) -> int:
         return hash(self.width)
@@ -270,7 +264,7 @@ class _FunctionType(PySMTType):
         # return typ and param_types for FunctionType.
         self.args = (self._return_type,) + self.param_types
         self.arity = len(self.args)
-        return
+
 
     @property
     def param_types(self) -> Tuple[PySMTType, ...]:
@@ -380,7 +374,7 @@ ARRAY_INT_INT = _ArrayType(INT,INT)
 
 class TypeManager(object):
 
-    def __init__(self, environment: "pysmt.environment.Environment"): # type: ignore[name-defined] # TODO it says the Environment name is not defined (probably because pysmt.environment is not imported)
+    def __init__(self, environment: "pysmt.environment.Environment"): # type: ignore [name-defined]
         self._bv_types: Dict[int, _BVType] = {}
         self._function_types: Dict[Tuple[PySMTType, Tuple[PySMTType, ...]], _FunctionType] = {}
         self._array_types: Dict[Tuple[PySMTType, PySMTType], _ArrayType] = {}

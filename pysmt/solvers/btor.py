@@ -191,8 +191,7 @@ class BoolectorOptions(SolverOptions):
 # EOC BoolectorOptions
 
 
-class BoolectorSolver(IncrementalTrackingSolver, UnsatCoreSolver,
-                      SmtLibBasicSolver, SmtLibIgnoreMixin):
+class BoolectorSolver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolver):
 
     LOGICS = [QF_BV, QF_UFBV, QF_ABV, QF_AUFBV, QF_AX] + \
         list(filter(lambda l: l.name in {

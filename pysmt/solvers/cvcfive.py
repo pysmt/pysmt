@@ -97,7 +97,7 @@ class CVC5Options(SolverOptions):
 # EOC CVC5Options
 
 
-class CVC5Solver(SmtLibBasicSolver, SmtLibIgnoreMixin):
+class CVC5Solver(SmtLibBasicSolver):
 
     LOGICS = PYSMT_LOGICS -\
              ARRAYS_CONST_LOGICS

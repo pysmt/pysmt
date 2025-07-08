@@ -74,7 +74,7 @@ class CVC4Options(SolverOptions):
 # EOC CVC4Options
 
 
-class CVC4Solver(SmtLibBasicSolver, SmtLibIgnoreMixin):
+class CVC4Solver(SmtLibBasicSolver):
 
     LOGICS = PYSMT_LOGICS -\
              ARRAYS_CONST_LOGICS -\

@@ -337,7 +337,7 @@ class HRSerializer(object):
     PrinterClass = HRPrinter
 
     def __init__(self, environment: Optional["pysmt.environment.Environment"]=None):
-        self.environment = environment # TODO environment is not used. SHould it bnbe passed to the printer?
+        self.environment = environment
 
 
     def serialize(self, formula: FNode, printer: Optional[Type[HRPrinter]]=None, threshold: Optional[int]=None) -> str:
@@ -348,7 +348,7 @@ class HRSerializer(object):
         """
         buf = StringIO()
         if printer is None:
-            p = self.PrinterClass(buf)
+            p = self.PrinterClass(buf, self.environment)
         else:
             p = printer(buf)
 

@@ -200,7 +200,7 @@ class Solver(object):
         """Removes all defined assertions."""
         raise NotImplementedError
 
-    def add_assertion(self, formula: FNode, named: Optional[str]=None): # TODO is the type of named ok?
+    def add_assertion(self, formula: FNode, named: Optional[str]=None):
         """Add assertion to the solver."""
         raise NotImplementedError
 
@@ -481,12 +481,7 @@ class Model(object):
         return {
             f: self.get_py_value(f, model_completion=model_completion)
             for f in formulae
-        } # TODO changed this to dict comprehension: below old code
-        # res = {}
-        # for f in formulae:
-        #     v = self.get_py_value(f, model_completion=model_completion)
-        #     res[f] = v
-        # return res
+        }
 
     def satisfies(self, formula: FNode, solver: Optional[Solver]=None) -> bool:
         """Checks whether the model satisfies the formula.
@@ -542,7 +537,6 @@ class Model(object):
     def __str__(self):
         return "\n".join([ "%s := %s" % (var, value) for (var, value) in self])
 
-    # TODO added those 2 methods. Consider using ABC? Also, should doc write expected behavior?
     def __iter__(self) -> Iterator[Tuple[FNode, FNode]]:
         """This method must be implemented by subclasses
         """

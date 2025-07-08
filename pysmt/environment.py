@@ -92,7 +92,7 @@ class Environment(object):
         self.dwf = {}
 
     @property
-    def formula_manager(self):
+    def formula_manager(self):# -> pysmt.formula.FormulaManager:
         return self._formula_manager
 
     @property

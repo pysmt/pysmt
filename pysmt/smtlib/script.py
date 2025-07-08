@@ -472,7 +472,7 @@ class InterpreterSMT(object):
             return cmd.args[0]
 
         elif cmd.name == smtcmd.CHECK_SAT_ASSUMING:
-            return solver.check_sat(cmd.args) # type: ignore[call-arg] # TODO where do check_sat take args?
+            return solver.check_sat(cmd.args)
 
         elif cmd.name == smtcmd.GET_MODEL:
             return solver.get_model()

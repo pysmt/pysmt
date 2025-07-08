@@ -17,7 +17,7 @@
 #
 import math
 from fractions import Fraction
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, Dict, List, Optional, Sequence, Union, cast
 
 import pysmt
 
@@ -1083,11 +1083,12 @@ class BddSimplifier(Simplifier):
     boolean structure of the formula.
     """
 
-    def __init__(self, env: Optional["pysmt.environment.Environment"]=None, static_ordering=None, bool_abstraction: bool=False): # TODO type of static ordering? Seems like a callable from FNode to something that supports <
+    def __init__(self, env: Optional["pysmt.environment.Environment"]=None, static_ordering: Optional[Sequence[FNode]]=None, bool_abstraction: bool=False):
         Simplifier.__init__(self, env=env)
         self._validation_sname = None
 
         Solver = self.env.factory.Solver
+        solver_options: Dict[str, Any] = {}
         if static_ordering is not None:
             solver_options={'static_ordering': static_ordering}
         else:

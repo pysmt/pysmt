@@ -133,7 +133,7 @@ class YicesOptions(SolverOptions):
 # EOC YicesOptions
 
 
-class YicesSolver(SmtLibBasicSolver, SmtLibIgnoreMixin):
+class YicesSolver(SmtLibBasicSolver):
 
     LOGICS = pysmt.logics.PYSMT_QF_LOGICS -\
              pysmt.logics.ARRAYS_LOGICS -\

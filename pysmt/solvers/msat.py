@@ -175,8 +175,7 @@ class MathSATOptions(SolverOptions):
 # EOC MathSATOptions
 
 
-class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
-                     SmtLibBasicSolver, SmtLibIgnoreMixin):
+class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolver):
 
     __lib_name__ = "mathsat"
 

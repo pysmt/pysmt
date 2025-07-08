@@ -17,11 +17,11 @@
 #
 from pysmt.fnode import FNode
 from pysmt.logics import Logic
-from typing import Optional, Union
+from typing import Iterable, Optional, Union
 
-from pysmt.solvers.solver import Solver
+from pysmt.solvers.solver import Model, Solver
 
-class SmtLibSolver(Solver): # TODO should this derive from Solver or SmtLibBasicSolver?
+class SmtLibSolver(object):
     #
     # SMT-LIB 2 Interface
     #
@@ -112,7 +112,7 @@ class SmtLibSolver(Solver): # TODO should this derive from Solver or SmtLibBasic
         """
         raise NotImplementedError
 
-    def check_sat(self):
+    def check_sat(self, assumptions: Optional[Iterable[FNode]]=None):
         """ Checks the satisfiability of the formula.
 
         Restrictions: Only after set-logic.
@@ -227,6 +227,14 @@ class SmtLibSolver(Solver): # TODO should this derive from Solver or SmtLibBasic
         """
         raise NotImplementedError
 
+    def reset_assertions(self):
+        """Clears all asserted formulae"""
+        raise NotImplementedError
+
+    def get_model(self) -> Optional[Model]:
+        """Returns a model of the formula or None if unsat"""
+        raise NotImplementedError
+
     def exit(self):
         """Destroys the solver."""
         raise NotImplementedError
@@ -236,7 +244,7 @@ class SmtLibSolver(Solver): # TODO should this derive from Solver or SmtLibBasic
     #
 
 
-class SmtLibIgnoreMixin(SmtLibSolver):
+class SmtLibIgnoreMixin(Solver, SmtLibSolver):
     def set_logic(self, logic: Optional[Union[str, Logic]]) -> bool:
         return True
 
@@ -298,12 +306,12 @@ class SmtLibIgnoreMixin(SmtLibSolver):
         return None
 
 
-class SmtLibBasicSolver(SmtLibSolver): # TODO should this derive from Solver or SmtLibSolver?
-    def assert_(self, expr: FNode, named: None=None):
+class SmtLibBasicSolver(SmtLibIgnoreMixin):
+    def assert_(self, expr: FNode, named: Optional[str]=None):
         return self.add_assertion(expr, named)
 
-    def check_sat(self) -> bool:
-        return self.solve()
+    def check_sat(self, assumptions: Optional[Iterable[FNode]]=None) -> bool:
+        return self.solve(assumptions=assumptions)
 
     def get_values(self, exprs):
         return self.get_values(exprs)
@@ -313,7 +321,3 @@ class SmtLibBasicSolver(SmtLibSolver): # TODO should this derive from Solver or 
 
     def pop(self, levels=1):
         return self.pop(levels)
-
-    def exit(self):
-        return None # TODO after the Solver derivation the self.exit() goes in a recursion loop
-        return self.exit()
