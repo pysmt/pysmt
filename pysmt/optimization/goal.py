@@ -19,8 +19,9 @@
 from pysmt.environment import get_env
 from pysmt.exceptions import PysmtValueError
 from pysmt.oracles import get_logic
-from pysmt.logics import LIA, LRA, BV
+from pysmt.logics import Logic, LIA, LRA, BV
 from pysmt.fnode import FNode
+from typing import List, Tuple, Type, cast
 
 
 class Goal(object):
@@ -50,23 +51,23 @@ class Goal(object):
         ```
     """
 
-    def is_maximization_goal(self):
+    def is_maximization_goal(self) -> bool:
         return False
 
-    def is_minimization_goal(self):
+    def is_minimization_goal(self) -> bool:
         return False
 
-    def is_minmax_goal(self):
+    def is_minmax_goal(self) -> bool:
         return False
 
-    def is_maxmin_goal(self):
+    def is_maxmin_goal(self) -> bool:
         return False
 
-    def is_maxsmt_goal(self):
+    def is_maxsmt_goal(self) -> bool:
         return False
 
-    def get_logic(self):
-        logic = get_logic(self.formula)
+    def get_logic(self) -> Logic:
+        logic = get_logic(self.term())
         if logic <= LIA:
             return LIA
         elif logic <= LRA:
@@ -84,6 +85,12 @@ class Goal(object):
     def signed(self, value):
         self._bv_signed = value
 
+    def term(self) -> FNode:
+        raise NotImplementedError
+
+    def opt(self) -> Type["Goal"]:
+        raise NotImplementedError
+
 
 class MaximizationGoal(Goal):
     """
@@ -92,7 +99,7 @@ class MaximizationGoal(Goal):
     Warning: some Optimizer may not support this goal
     """
 
-    def __init__(self, formula, signed = False):
+    def __init__(self, formula: FNode, signed: bool = False):
         """
         :param formula: The target formula
         :type  formula: FNode
@@ -100,16 +107,16 @@ class MaximizationGoal(Goal):
         self.formula = formula
         self._bv_signed = signed
 
-    def opt(self):
+    def opt(self) -> Type["Goal"]:
         return MaximizationGoal
 
-    def term(self):
+    def term(self) -> FNode:
         return self.formula
 
-    def is_maximization_goal(self):
+    def is_maximization_goal(self) -> bool:
         return True
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "Maximize{%s}" % self.formula.serialize()
 
 
@@ -120,7 +127,7 @@ class MinimizationGoal(Goal):
     Warning: some Optimizer may not support this goal
     """
 
-    def __init__(self, formula, sign = False):
+    def __init__(self, formula: FNode, sign: bool = False):
         """
         :param formula: The target formula
         :type  formula: FNode
@@ -128,16 +135,16 @@ class MinimizationGoal(Goal):
         self.formula = formula
         self._bv_signed = sign
 
-    def opt(self):
+    def opt(self) -> Type["Goal"]:
         return MinimizationGoal
 
-    def term(self):
+    def term(self) -> FNode:
         return self.formula
 
-    def is_minimization_goal(self):
+    def is_minimization_goal(self) -> bool:
         return True
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "Minimize{%s}" % self.formula.serialize()
 
 
@@ -149,7 +156,7 @@ class MinMaxGoal(MinimizationGoal):
     Warning: some Optimizer may not support this goal
     """
 
-    def __init__(self, terms, sign = False):
+    def __init__(self, terms: List[FNode], sign: bool = False):
         """
         :param terms: List of FNode
         """
@@ -163,10 +170,10 @@ class MinMaxGoal(MinimizationGoal):
         self.terms = terms
         self._bv_signed = sign
 
-    def is_minmax_goal(self):
+    def is_minmax_goal(self) -> bool:
         return True
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "Minimize{Max{%s}}" % (", ".join(x.serialize() for x in self.terms))
 
 
@@ -178,7 +185,7 @@ class MaxMinGoal(MaximizationGoal):
     Warning: some Optimizer may not support this goal
     """
 
-    def __init__(self, terms, sign = False):
+    def __init__(self, terms: List[FNode], sign: bool = False):
         """
         :param terms: List of FNode
         """
@@ -192,10 +199,10 @@ class MaxMinGoal(MaximizationGoal):
         self.terms = terms
         self._bv_signed = sign
 
-    def is_maxmin_goal(self):
+    def is_maxmin_goal(self) -> bool:
         return True
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "Maximize{Min{%s}}" % (", ".join(x.serialize() for x in self.terms))
 
 
@@ -204,13 +211,13 @@ class MaxSMTGoal(Goal):
     MaxSMT goal common to all solvers.
     """
 
-    def __init__(self, real_weights=True):
+    def __init__(self, real_weights: bool=True):
         """Accepts soft clauses and the relative weights"""
-        self.soft = []
+        self.soft: List[Tuple[FNode, FNode]] = []
         self._bv_signed = False
         self._real_weights = real_weights
 
-    def add_soft_clause(self, clause, weight):
+    def add_soft_clause(self, clause: FNode, weight: FNode):
         """Accepts soft clauses and the relative weights"""
         mgr = get_env().formula_manager
         if not clause.get_type().is_bool_type():
@@ -236,22 +243,22 @@ class MaxSMTGoal(Goal):
                     (str(weight), str(weight.get_type()))
                 )
             if weight_type.is_int_type() and self._real_weights:
-                weight = mgr.Real(weight.constant_value())
+                weight = mgr.Real(cast(int, weight.constant_value()))
             self.soft.append((clause, weight))
         else:
             WeightFnodeClass = mgr.Real if self.real_weights() else mgr.Int
             self.soft.append((clause, WeightFnodeClass(weight)))
 
-    def is_maxsmt_goal(self):
+    def is_maxsmt_goal(self) -> bool:
         return True
 
-    def is_maximization_goal(self):
+    def is_maximization_goal(self) -> bool:
         return True
 
-    def real_weights(self):
+    def real_weights(self) -> bool:
         return self._real_weights
 
-    def term(self):
+    def term(self) -> FNode:
         formula = None
         mgr = get_env().formula_manager
         zero = mgr.Real(0) if self.real_weights() else mgr.Int(0)
@@ -263,5 +270,8 @@ class MaxSMTGoal(Goal):
         assert formula is not None, "Empty MaxSMT goal passed"
         return formula
 
-    def __repr__(self):
+    def opt(self) -> Type["Goal"]:
+        return MaximizationGoal
+
+    def __repr__(self) -> str:
         return "MaxSMT{%s}" % (", ".join(("%s: %s" % (x.serialize(), w.serialize()) for x, w in self.soft)))

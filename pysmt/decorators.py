@@ -19,16 +19,17 @@ from functools import wraps
 import warnings
 
 import pysmt.exceptions
+from typing import Callable, Optional
 
 class deprecated(object):
     """This is a decorator which can be used to mark functions
     as deprecated. It will result in a warning being emitted
     when the function is used."""
 
-    def __init__(self, alternative=None):
+    def __init__(self, alternative: Optional[str]=None):
         self.alternative = alternative
 
-    def __call__(self, func):
+    def __call__(self, func: Callable) -> Callable:
         def newFunc(*args, **kwargs):
             alt = ""
             if self.alternative is not None:
@@ -44,7 +45,7 @@ class deprecated(object):
         return newFunc
 
 
-def clear_pending_pop(f):
+def clear_pending_pop(f: Callable) -> Callable:
     """Pop the solver stack (if necessary) before calling the function.
 
     Some functions (e.g., get_value) required the state of the solver
@@ -75,7 +76,7 @@ def typecheck_result(f):
     return typecheck_result_wrap
 
 
-def catch_conversion_error(f):
+def catch_conversion_error(f: Callable) -> Callable:
     """Catch unknown operators errors and converts them into conversion error."""
 
     @wraps(f)
@@ -92,7 +93,7 @@ def catch_conversion_error(f):
     return catch_conversion_error_wrap
 
 
-def assert_infix_enabled(f):
+def assert_infix_enabled(f: Callable) -> Callable:
     """Raise an exception if infix notation is not enabled."""
     from functools import wraps
     from pysmt.exceptions import PysmtModeError

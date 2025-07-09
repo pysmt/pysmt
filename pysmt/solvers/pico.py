@@ -18,7 +18,7 @@
 from pysmt.exceptions import SolverAPINotFound
 
 try:
-    import picosat
+    import picosat # type: ignore[import]
 except ImportError:
     raise SolverAPINotFound
 

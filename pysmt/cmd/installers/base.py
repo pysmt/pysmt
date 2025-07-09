@@ -23,6 +23,7 @@ import urllib.request
 
 from contextlib import contextmanager
 from setuptools import Distribution
+from typing import Optional
 
 from urllib.error import HTTPError, URLError
 
@@ -40,7 +41,7 @@ def TemporaryPath(path):
 
 class SolverInstaller(object):
 
-    SOLVER = None
+    SOLVER: Optional[str] = None
 
     def __init__(self, install_dir, bindings_dir, solver_version,
                  archive_name=None, native_link=None, mirror_link=None):
