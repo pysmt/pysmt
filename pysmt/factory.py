@@ -628,7 +628,7 @@ class Factory(object):
 
             return solver.get_unsat_core()
 
-    def is_valid(self, formula: FNode, solver_name: Optional[str]=None, logic: Optional[Union[Logic, str]]=None, portfolio: Optional[Iterable[str]]=None) -> bool:
+    def is_valid(self, formula: FNode, solver_name: Optional[str]=None, logic: Optional[Union[Logic, str]]=None, portfolio: Optional[Iterable[Union[str, Tuple[str, Dict[str, Any]]]]]=None) -> bool:
         if logic is None or logic == AUTO_LOGIC:
             logic = get_logic(formula, self.environment)
         if portfolio is not None:

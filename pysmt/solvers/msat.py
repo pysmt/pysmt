@@ -31,6 +31,7 @@ from pysmt import typing as types
 from pysmt.solvers.solver import (IncrementalTrackingSolver, UnsatCoreSolver,
                                   Model, Converter, SolverOptions)
 from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
+from pysmt.utils import assert_not_none
 from pysmt.walkers import DagWalker
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               InternalSolverError,
@@ -291,7 +292,7 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolv
                     self._msat_lib.msat_last_error_message(self.msat_env()))
             return set(self.converter.back(t) for t in terms)
         else:
-            return self.get_named_unsat_core().values()
+            return set(self.get_named_unsat_core().values())
 
     def get_named_unsat_core(self):
         """After a call to solve() yielding UNSAT, returns the unsat core as a
@@ -364,7 +365,7 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolv
         val = self.converter.back(tval)
         if self.environment.stc.get_type(item).is_real_type() and \
                val.is_int_constant():
-            val = self.mgr.Real(val.constant_value())
+            val = self.mgr.Real(cast(int, val.constant_value()))
         return val
 
     def get_model(self) -> MathSAT5Model:

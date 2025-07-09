@@ -315,7 +315,7 @@ class Simplifier(pysmt.walkers.DagWalker):
                             const = self.manager.Real(const_val)
                         else:
                             assert ttype.is_int_type()
-                            const = self.manager.Int(const_val)
+                            const = self.manager.Int(cast(int, const_val))
                         new_times_args.append(const)
                     new_times = self.manager.Times(new_times_args)
                     to_sub.append(new_times)
@@ -332,7 +332,7 @@ class Simplifier(pysmt.walkers.DagWalker):
             constant = self.manager.Real(constant_add)
         else:
             assert ttype.is_int_type()
-            constant = self.manager.Int(constant_add)
+            constant = self.manager.Int(cast(int, constant_add))
 
         if len(to_sum) == 0 and len(to_sub) == 0:
             assert constant is not None
@@ -387,7 +387,7 @@ class Simplifier(pysmt.walkers.DagWalker):
             const = self.manager.Real(constant_mul)
         else:
             assert ttype.is_int_type()
-            const = self.manager.Int(constant_mul)
+            const = self.manager.Int(cast(int, constant_mul))
 
         if const.is_zero():
             return const
@@ -408,7 +408,7 @@ class Simplifier(pysmt.walkers.DagWalker):
 
         if args[0].is_int_constant():
             l = cast(int, args[0].constant_value())
-            r = cast(Union[int, Fraction], args[1].constant_value())
+            r = cast(int, args[1].constant_value())
             return self.manager.Int(l**r)
 
         if args[0].is_algebraic_constant():
@@ -460,7 +460,7 @@ class Simplifier(pysmt.walkers.DagWalker):
         assert len(args) == 1
         if args[0].is_constant():
             assert args[0].is_int_constant()
-            return self.manager.Real(args[0].constant_value())
+            return self.manager.Real(cast(int, args[0].constant_value()))
         return self.manager.ToReal(args[0])
 
     def walk_bv_and(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
@@ -932,7 +932,7 @@ class Simplifier(pysmt.walkers.DagWalker):
             i_value = cast(int, i.constant_value())
             res = cast(str, s.constant_value())[i_value:i_value + 1]
             return self.manager.String(res)
-        return self.manager.StrCharat(s, i)
+        return self.manager.StrCharAt(s, i)
 
     def walk_str_contains(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         s,t = args
@@ -974,13 +974,13 @@ class Simplifier(pysmt.walkers.DagWalker):
         s, t = args
         if s.is_string_constant() and t.is_string_constant():
             return self.manager.Bool(cast(str, t.constant_value()).startswith(cast(str, s.constant_value())))
-        return self.manager.StrPrefixof(s, t)
+        return self.manager.StrPrefixOf(s, t)
 
     def walk_str_suffixof(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         s, t = args
         if s.is_string_constant() and t.is_string_constant():
             return self.manager.Bool(cast(str, t.constant_value()).endswith(cast(str, s.constant_value())))
-        return self.manager.StrSuffixof(s, t)
+        return self.manager.StrSuffixOf(s, t)
 
     def walk_str_to_int(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         s = args[0]
@@ -1001,7 +1001,7 @@ class Simplifier(pysmt.walkers.DagWalker):
 
     def walk_bv_tonatural(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         if args[0].is_bv_constant():
-            return self.manager.Int(args[0].constant_value())
+            return self.manager.Int(cast(int, args[0].constant_value()))
         return self.manager.BVToNatural(args[0])
 
     def walk_array_select(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
@@ -1085,7 +1085,7 @@ class BddSimplifier(Simplifier):
 
     def __init__(self, env: Optional["pysmt.environment.Environment"]=None, static_ordering: Optional[Sequence[FNode]]=None, bool_abstraction: bool=False):
         Simplifier.__init__(self, env=env)
-        self._validation_sname = None
+        self._validation_sname: Optional[str] = None
 
         Solver = self.env.factory.Solver
         solver_options: Dict[str, Any] = {}

@@ -232,7 +232,7 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolver):
     def get_unsat_core(self):
         """After a call to solve() yielding UNSAT, returns the unsat core as a
         set of formulae"""
-        return self.get_named_unsat_core().values()
+        return set(self.get_named_unsat_core().values())
 
     def _named_assertions_map(self):
         if self.options.unsat_cores_mode is not None:

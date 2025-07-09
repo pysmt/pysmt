@@ -83,7 +83,7 @@ class PySMTType(object):
     def is_int_type(self) -> bool:
         return False
 
-    def is_bv_type(self, width: None=None) -> bool:
+    def is_bv_type(self, width: Optional[int]=None) -> bool:
         #pylint: disable=unused-argument
         return False
 
@@ -217,7 +217,7 @@ class _BVType(PySMTType):
     def width(self) -> int:
         return self._width
 
-    def is_bv_type(self, width: None=None) -> bool:
+    def is_bv_type(self, width: Optional[int]=None) -> bool:
         if width:
             return self.width == width
         return True
@@ -295,7 +295,7 @@ class _FunctionType(PySMTType):
             res = " -> ".join(args+[rtype])
         return res
 
-    def __str__(self):
+    def __str__(self) -> str:
         return " -> ".join([str(p) for p in self.param_types] +
                            [str(self.return_type)])
 
@@ -332,7 +332,7 @@ class _TypeDecl(object):
                                  "Use type_manager.get_type_instance instead.")
         return env.type_manager.get_type_instance(self, *args)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "%s/%s" % (self.name, self.arity)
 
     def set_custom_type_flag(self):
@@ -347,14 +347,14 @@ class PartialType(object):
 
     A partial type is equivalent to SMT-LIB "define-sort" command.
     """
-    def __init__(self, name: str, definition: Callable):
+    def __init__(self, name: str, definition: Callable[..., PySMTType]):
         self.name = name
         self.definition = definition
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "PartialType(%s)" % (self.name)
 
-    def __call__(self, *args):
+    def __call__(self, *args: PySMTType):
         return self.definition(*args)
 
 

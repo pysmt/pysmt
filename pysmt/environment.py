@@ -92,57 +92,57 @@ class Environment(object):
         self.dwf = {}
 
     @property
-    def formula_manager(self):# -> pysmt.formula.FormulaManager:
+    def formula_manager(self) -> pysmt.formula.FormulaManager:
         return self._formula_manager
 
     @property
-    def type_manager(self):
+    def type_manager(self) -> pysmt.typing.TypeManager:
         return self._type_manager
 
     @property
-    def simplifier(self):
+    def simplifier(self) -> pysmt.simplifier.Simplifier:
         return self._simplifier
 
     @property
-    def serializer(self):
+    def serializer(self) -> pysmt.printers.HRSerializer:
         return self._serializer
 
     @property
-    def substituter(self):
+    def substituter(self) -> pysmt.substituter.Substituter:
         return self._substituter
 
     @property
-    def stc(self):
+    def stc(self) -> pysmt.type_checker.SimpleTypeChecker:
         """ Get the Simple Type Checker """
         return self._stc
 
     @property
-    def qfo(self):
+    def qfo(self) -> pysmt.oracles.QuantifierOracle:
         """ Get the Quantifier Oracle """
         return self._qfo
 
     @property
-    def ao(self):
+    def ao(self) -> pysmt.oracles.AtomsOracle:
         """ Get the Atoms Oracle """
         return self._ao
 
     @property
-    def theoryo(self):
+    def theoryo(self) -> pysmt.oracles.TheoryOracle:
         """ Get the Theory Oracle """
         return self._theoryo
 
     @property
-    def typeso(self):
+    def typeso(self) -> pysmt.oracles.TypesOracle:
         """ Get the Types Oracle """
         return self._typeso
 
     @property
-    def fvo(self):
+    def fvo(self) -> pysmt.oracles.FreeVarsOracle:
         """ Get the FreeVars Oracle """
         return self._fvo
 
     @property
-    def sizeo(self):
+    def sizeo(self) -> pysmt.oracles.SizeOracle:
         """ Get the Size Oracle """
         return self._sizeo
 
@@ -165,13 +165,13 @@ class Environment(object):
         self.dwf[nodetype][walker] = function
 
     @property
-    def factory(self):
+    def factory(self) -> "pysmt.factory.Factory":
         import pysmt.factory
         if self._factory is None:
             self._factory = pysmt.factory.Factory(self)
         return self._factory
 
-    def __enter__(self):
+    def __enter__(self) -> "Environment":
         """Entering a Context """
         push_env(self)
         return self

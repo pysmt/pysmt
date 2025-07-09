@@ -15,11 +15,12 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+from fractions import Fraction
 import pysmt
 
 from pysmt.walkers.dag import DagWalker
 from pysmt.fnode import FNode
-from typing import Any, List, Optional, Union
+from typing import Any, List, Optional, Union, cast
 
 class IdentityDagWalker(DagWalker):
     """This class traverses a formula and rebuilds it recursively
@@ -44,16 +45,16 @@ class IdentityDagWalker(DagWalker):
         return self.mgr._Algebraic(formula.constant_value())
 
     def walk_real_constant(self, formula: FNode, args: List[Any], **kwargs) -> FNode:
-        return self.mgr.Real(formula.constant_value())
+        return self.mgr.Real(cast(Fraction, formula.constant_value()))
 
     def walk_int_constant(self, formula: FNode, args: List[Any], **kwargs) -> FNode:
-        return self.mgr.Int(formula.constant_value())
+        return self.mgr.Int(cast(int, formula.constant_value()))
 
     def walk_bool_constant(self, formula: FNode, args: List[Any], **kwargs) -> FNode:
-        return self.mgr.Bool(formula.constant_value())
+        return self.mgr.Bool(cast(bool, formula.constant_value()))
 
     def walk_str_constant(self, formula: FNode, **kwargs) -> FNode:
-        return self.mgr.String(formula.constant_value())
+        return self.mgr.String(cast(str, formula.constant_value()))
 
     def walk_and(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         return self.mgr.And(args)
@@ -114,7 +115,7 @@ class IdentityDagWalker(DagWalker):
         return self.mgr.ToReal(args[0])
 
     def walk_bv_constant(self, formula: FNode, **kwargs) -> FNode:
-        return self.mgr.BV(formula.constant_value(), formula.bv_width())
+        return self.mgr.BV(cast(int, formula.constant_value()), formula.bv_width())
 
     def walk_bv_and(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         return self.mgr.BVAnd(args[0], args[1])

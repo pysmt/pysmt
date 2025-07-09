@@ -20,7 +20,9 @@ import itertools
 
 from warnings import warn
 from collections import deque
+from typing import Any, Callable, Dict, Iterator, List, Mapping, Optional, Tuple, TextIO, Union, cast
 
+import pysmt
 import pysmt.smtlib.commands as smtcmd
 from pysmt.environment import Environment, get_env
 from pysmt.logics import get_logic_by_name, UndefinedLogicError, Logic
@@ -30,12 +32,10 @@ from pysmt.smtlib.script import SmtLibCommand, SmtLibScript
 from pysmt.smtlib.annotations import Annotations
 from pysmt.utils import interactive_char_iterator, assert_not_none
 from pysmt.constants import Fraction
-from pysmt.typing import PartialType, PySMTType, _TypeDecl
+from pysmt.typing import PartialType, PySMTType, _TypeDecl, _ArrayType
 from pysmt.substituter import FunctionInterpretation
-import pysmt.typing
 from pysmt.fnode import FNode
 from pysmt.formula import FormulaManager
-from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, TextIO, Union, cast
 
 
 def open_(fname: str) -> TextIO:
@@ -129,7 +129,7 @@ class SmtLibExecutionCache(object):
         else:
             return None
 
-    def update(self, value_map: Dict[str, Union[_TypeDecl, FNode]]):
+    def update(self, value_map: Mapping[str, Union[_TypeDecl, FNode]]):
         """Binds all the symbols in 'value_map'"""
         for k, val in value_map.items():
             self.bind(k, val)
@@ -512,11 +512,11 @@ class SmtLibParser(object):
         """Utility function that handles 'as' that is a special function in SMTLIB"""
         #pylint: disable=unused-argument
         what = self.parse_atom(tokens, "expression")
-        ty = self.parse_type(tokens, "expression")
+        ty = cast(PySMTType, self.parse_type(tokens, "expression"))
         if what == "const":
             assert ty.is_array_type(), "(as const x) is supported only for array constants"
             def res(expr):
-                return self.env.formula_manager.Array(ty.index_type, expr)
+                return self.env.formula_manager.Array(cast(_ArrayType, ty).index_type, expr)
             def handler():
                 return res
             stack[-1].append(handler)
@@ -639,7 +639,7 @@ class SmtLibParser(object):
                             Fraction(right.constant_value()))
         return self.Div(left, right)
 
-    def _get_var(self, name: str, type_name:     pysmt.typing.PySMTType) -> FNode:
+    def _get_var(self, name: str, type_name: PySMTType) -> FNode:
         """Returns the PySMT variable corresponding to a declaration"""
         return self.env.formula_manager.Symbol(name=name,
                                                typename=type_name)
@@ -764,7 +764,7 @@ class SmtLibParser(object):
             if current != "(":
                 raise PysmtSyntaxError("Expected '(' in let binding", tokens.pos_info)
             vname = self.parse_atom(tokens, "expression")
-            typename = self.parse_type(tokens, "expression")
+            typename = cast(PySMTType, self.parse_type(tokens, "expression"))
 
             var = self._get_quantified_var(vname, typename)
             self.cache.bind(vname, var)
@@ -1005,22 +1005,22 @@ class SmtLibParser(object):
                                (current, command, max_size),
                                tokens.pos_info)
 
-    def parse_type(self, tokens: Tokenizer, command: str, type_params: Optional[List[str]]=None, additional_token: Optional[str]=None) -> Any:
+    def parse_type(self, tokens: Tokenizer, command: str, type_params: Optional[List[str]]=None, additional_token: Optional[str]=None) -> Union[PySMTType, PartialType]:
         """Parses a single type name from the tokens"""
         if additional_token is not None:
             var = additional_token
         else:
             var = tokens.consume("Unexpected end of stream in %s command." %
                                          command)
-        res = None
+        res: Optional[Union[PartialType, PySMTType]] = None
         if type_params and var in type_params:
-            return (var,)  # This is a type parameter, it is handled recursively
+            return (var,) # type: ignore [return-value] # This is a type parameter, it is handled recursively  # TODO is PartialType also handled recursively?
         elif var == "(":
             op = tokens.consume("Unexpected end of stream in %s command." %
                                         command)
             if op == "Array":
-                idxtype = self.parse_type(tokens, command)
-                elemtype = self.parse_type(tokens, command)
+                idxtype = cast(PySMTType, self.parse_type(tokens, command))
+                elemtype = cast(PySMTType, self.parse_type(tokens, command))
                 self.consume_closing(tokens, command)
                 res = self.env.type_manager.ArrayType(idxtype, elemtype)
 
@@ -1050,10 +1050,10 @@ class SmtLibParser(object):
                     raise PysmtSyntaxError("Unexpected token '%s' in %s command." %
                                            (op, command),
                                            tokens.pos_info)
-                pparams = []
+                pparams: List[PySMTType] = []
                 has_free_params = False
                 for _ in range(base_type.arity):
-                    ty = self.parse_type(tokens, command, type_params=type_params)
+                    ty = cast(PySMTType, self.parse_type(tokens, command, type_params=type_params))
                     pparams.append(ty)
                     if isinstance(ty, tuple):
                         has_free_params = True
@@ -1088,8 +1088,8 @@ class SmtLibParser(object):
 
         if isinstance(res, _TypeDecl):
             return self.env.type_manager.get_type_instance(res)
-        else:
-            return res
+        assert isinstance(res, (PartialType, PySMTType))
+        return res
 
     def parse_atom(self, tokens: Tokenizer, command: str) -> str:
         """Parses a single name from the tokens"""
@@ -1293,7 +1293,7 @@ class SmtLibParser(object):
     def _cmd_declare_const(self, current: str, tokens: Tokenizer) -> SmtLibCommand:
         """(declare-const <symbol> <sort>)"""
         var = self.parse_atom(tokens, current)
-        typename = self.parse_type(tokens, current)
+        typename = cast(PySMTType, self.parse_type(tokens, current))
         self.consume_closing(tokens, current)
         v = self._get_var(var, typename)
         self.cache.bind(var, v)
@@ -1350,7 +1350,7 @@ class SmtLibParser(object):
         """(declare-fun <symbol> (<sort>*) <sort>)"""
         var = self.parse_atom(tokens, current)
         params = self.parse_params(tokens, current)
-        typename = self.parse_type(tokens, current)
+        typename = cast(PySMTType, self.parse_type(tokens, current))
         self.consume_closing(tokens, current)
 
         if params:
@@ -1369,7 +1369,7 @@ class SmtLibParser(object):
         formal = []
         var = self.parse_atom(tokens, current)
         namedparams = self.parse_named_params(tokens, current)
-        rtype = self.parse_type(tokens, current)
+        rtype = cast(PySMTType, self.parse_type(tokens, current)) # TODO is this cast correct? WHen can it be a PartialType?
         bindings = []
         for (x, t) in namedparams:
             v = self.env.formula_manager.FreshSymbol(typename=t,
@@ -1425,7 +1425,7 @@ class SmtLibParser(object):
         rtype = self.parse_type(tokens, current, type_params=params)
         if isinstance(rtype, PartialType):
             rtype.name = name
-        elif isinstance(rtype, tuple):
+        elif isinstance(rtype, tuple): # TODO when does parse_type return a tuple? It should never
             def definition(*args):
                 return args[params.index(rtype[0])]
 

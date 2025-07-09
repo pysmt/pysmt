@@ -18,17 +18,19 @@
 import re
 import itertools
 
-from typing import Optional, TypeVar, cast
+from typing import Dict, Iterator, Optional, Sequence, Tuple, TypeVar, cast
 
+import pysmt
 
-def all_assignments(bool_variables, env):
+def all_assignments(bool_variables: Sequence["pysmt.fnode.FNode"], env: "pysmt.environment.Environment") -> Iterator[Dict["pysmt.fnode.FNode", "pysmt.fnode.FNode"]]: # type: ignore [name-defined]
     """Generates all possible assignments for a set of boolean variables."""
     mgr = env.formula_manager
     for set_ in powerset(bool_variables):
         yield dict((v, mgr.Bool(v in set_)) for v in bool_variables)
 
 
-def powerset(elements):
+T = TypeVar("T")
+def powerset(elements: Sequence[T]) -> Iterator[Tuple[T, ...]]:
     """Generates the powerset of the given elements set.
 
     E.g., powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)
@@ -39,7 +41,7 @@ def powerset(elements):
 #
 # Bit Operations
 #
-def set_bit(v, index, x):
+def set_bit(v, index, x): # TODO type of this?
     """Set the index:th bit of v to x, and return the new value."""
     mask = 1 << index
     if x:
@@ -82,8 +84,6 @@ def quote(name: str, style: str='|') -> str:
 
 
 # utility function to narrow a type from Optional[T] to [T] without having to assert it is not None
-T = TypeVar("T")
-
 def assert_not_none(value: Optional[T]) -> T:
     assert value is not None, "Value: '%s' must not be None" % str(value)
     return cast(T, value)

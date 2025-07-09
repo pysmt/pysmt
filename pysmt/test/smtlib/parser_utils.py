@@ -18,7 +18,7 @@
 import os
 import warnings
 
-from typing import Callable, Dict, Iterator, List, Optional, Tuple, Union
+from typing import Callable, Dict, Iterator, List, Optional, Tuple, Union, cast
 
 from pysmt.optimization.goal import Goal
 from pysmt.test import SkipTest
@@ -26,6 +26,7 @@ from pysmt.test.optimization_utils import OMTTestCase, OptimizationTypes
 from pysmt.shortcuts import get_env, reset_env, Int, Real, BV, SBV
 from pysmt.smtlib.parser import SmtLibParser, get_formula_fname
 from pysmt.smtlib.script import SmtLibScript, check_sat_filter
+from pysmt.solvers.smtlib import SmtLibSolver
 from pysmt.logics import (Logic, QF_LIA, QF_LRA, LRA, QF_UFLIRA, QF_UFBV, QF_BV,
                           QF_ALIA, QF_ABV, QF_AUFLIA, QF_AUFBV, QF_NRA, QF_NIA,
                           UFBV, BV as BV_logic, QF_UF)
@@ -68,7 +69,7 @@ def execute_script_fname(smtfile: str, logic: Logic, expected_result: bool):
         if logic == QF_UF and type(solver).__name__ == 'BoolectorSolver':
             warnings.warn("Test (%s, %s) skipped because Boolector can't handle QF_UF." % (logic, smtfile))
             return
-        log = script.evaluate(solver)
+        log = script.evaluate(cast(SmtLibSolver, solver))
     except NoSolverAvailableError:
         raise SkipTest("No solver for logic %s." % logic)
     except SolverReturnedUnknownResultError:

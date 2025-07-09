@@ -45,13 +45,18 @@ class SimpleTypeChecker(walkers.DagWalker):
     def _get_key(self, formula: FNode, **kwargs) -> FNode:
         return formula
 
-    def get_type(self, formula: FNode) -> Optional[PySMTType]:
-        """ Returns the pysmt.types type of the formula """
+    def get_type(self, formula: FNode) -> PySMTType:
+        """ Returns the pysmt.types type of the formula.
+
+        If `self.be_nice` is `True` this method can return `None` instead of
+        raising an exception, but internally a lot of calls rely on formulae
+        being correctly typed.
+        """
         res = self.walk(formula)
         if not self.be_nice and res is None:
             raise PysmtTypeError("The formula '%s' is not well-formed"
                                  % str(formula))
-        return res
+        return cast(PySMTType, res)
 
     def walk_type_to_type(self, formula: FNode, args: List[PySMTType], type_in: PySMTType, type_out: PySMTType) -> Optional[PySMTType]:
         assert formula is not None

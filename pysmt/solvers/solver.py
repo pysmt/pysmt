@@ -25,7 +25,7 @@ from pysmt.exceptions import (SolverReturnedUnknownResultError, PysmtValueError,
 from pysmt.environment import Environment
 from pysmt.fnode import FNode
 from pysmt.logics import Logic
-from typing import Dict, Iterable, Iterator, List, Optional, Set, Tuple, Type, Union, cast
+from typing import Any, Dict, Iterable, Iterator, List, Optional, Set, Tuple, Type, Union, cast
 
 
 class Solver(object):
@@ -47,6 +47,7 @@ class Solver(object):
         assert self.OptionsClass is not None
         self.options = self.OptionsClass(**options)
         self._destroyed = False
+        self.converter: Converter
 
     def solve(self, assumptions: Optional[Iterable[FNode]]=None) -> bool:
         """Returns the satisfiability value of the asserted formulas.
@@ -428,6 +429,7 @@ class UnsatCoreSolver(Solver):
     def __enter__(self) -> "UnsatCoreSolver":
         return cast(UnsatCoreSolver, super().__enter__())
 
+
 class Model(object):
     """An abstract Model for a Solver.
 
@@ -555,10 +557,10 @@ class Converter(object):
     the second performs the backwards conversion (Solver API -> pySMT)
     """
 
-    def convert(self, formula):
+    def convert(self, formula: FNode) -> Any:
         """Convert a PySMT formula into a Solver term."""
         raise NotImplementedError
 
-    def back(self, expr):
+    def back(self, expr: Any, *args: Any, **kwargs: Any) -> FNode:
         """Convert an expression of the Solver into a PySMT term."""
         raise NotImplementedError

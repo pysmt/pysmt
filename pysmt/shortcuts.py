@@ -456,7 +456,7 @@ def BVOne(width: int) -> FNode:
     return get_env().formula_manager.BVOne(width)
 
 
-def BVZero(width: Optional[int]) -> FNode: # TODO here it should be int. But this definition should raise an error (BVZero only accepts ints, not None) but mypy does not raise it...
+def BVZero(width: int) -> FNode:
     """Returns the zero constant BitVector.
 
     :param width: Specify the width of the BitVector
@@ -1093,7 +1093,7 @@ def get_implicant(formula: FNode, solver_name: Optional[str]=None, logic: Option
                                      logic=logic)
 
 
-def get_unsat_core(clauses: Iterable[FNode], solver_name: Optional[str]=None, logic: Optional[Union[str, Logic]]=None)  -> Set[FNode]:
+def get_unsat_core(clauses: Iterable[FNode], solver_name: Optional[str]=None, logic: Optional[Union[str, Logic]]=None)  -> Optional[Set[FNode]]:
     """Similar to :py:func:`get_model` but returns the unsat core of the
     conjunction of the input clauses
 
@@ -1175,7 +1175,7 @@ def qelim(formula: FNode, solver_name: Optional[str]=None, logic: Optional[Union
                              solver_name=solver_name,
                              logic=logic)
 
-def binary_interpolant(formula_a: FNode, formula_b: FNode, solver_name: Optional[str]=None, logic: Optional[Union[str, FNode]]=None) -> Optional[FNode]:
+def binary_interpolant(formula_a: FNode, formula_b: FNode, solver_name: Optional[str]=None, logic: Optional[Union[str, Logic]]=None) -> Optional[FNode]:
     """Computes an interpolant of (formula_a, formula_b).
 
     Returns None if the conjunction is satisfiable
@@ -1201,7 +1201,7 @@ def binary_interpolant(formula_a: FNode, formula_b: FNode, solver_name: Optional
                                           logic=logic)
 
 
-def sequence_interpolant(formulas: Sequence[FNode], solver_name: Optional[str]=None, logic:Optional[Union[str, FNode]]=None) -> Optional[FNode]:
+def sequence_interpolant(formulas: Sequence[FNode], solver_name: Optional[str]=None, logic:Optional[Union[str, Logic]]=None) -> Optional[FNode]:
     """Computes a sequence interpolant of the formulas.
 
     Returns None if the conjunction is satisfiable.
@@ -1222,7 +1222,7 @@ def sequence_interpolant(formulas: Sequence[FNode], solver_name: Optional[str]=N
             formulas[i] = env.formula_manager.normalize(f)
 
     return env.factory.sequence_interpolant(formulas,
-                                            solveformulasr_name=solver_name,
+                                            solver_name=solver_name,
                                             logic=logic)
 
 

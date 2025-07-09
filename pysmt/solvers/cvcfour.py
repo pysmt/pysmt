@@ -102,7 +102,6 @@ class CVC4Solver(SmtLibBasicSolver):
 
         self.reset_assertions()
         self.converter = CVC4Converter(environment, cvc4_exprMgr=self.em)
-        return
 
     def reset_assertions(self):
         del self.cvc4

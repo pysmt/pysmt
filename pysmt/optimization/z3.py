@@ -35,7 +35,10 @@ from pysmt.environment import Environment
 from pysmt.fnode import FNode
 from pysmt.logics import Logic
 from pysmt.optimization.goal import Goal, MaxSMTGoal
-from typing import Dict, Iterable, Iterator, List, Optional, Sequence, Tuple, Union
+from typing import Dict, Iterable, Iterator, List, Optional, Sequence, Tuple, Union, cast
+
+from pysmt.typing import _BVType
+from pysmt.utils import assert_not_none
 
 try:
     import z3 # type: ignore[import]
@@ -68,7 +71,7 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
             term = goal.term()
             ty = self.environment.stc.get_type(term)
             if goal.signed and ty.is_bv_type():
-                width = ty.width
+                width = cast(_BVType, ty).width
                 term = self.mgr.BVAdd(term, self.mgr.BV(2**(width-1), width))
             obj = self.converter.convert(term)
             if goal.is_minimization_goal():

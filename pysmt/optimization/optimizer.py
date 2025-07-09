@@ -22,11 +22,11 @@ from pysmt.solvers.solver import Solver
 from pysmt.exceptions import PysmtValueError, GoalNotSupportedError
 from pysmt.optimization.goal import Goal, MaxSMTGoal, MinimizationGoal, MaximizationGoal
 from pysmt.typing import INT, REAL, BVType, _BVType
-from pysmt.logics import LIA, LRA, BV, QF_LIRA
+from pysmt.logics import LIA, LRA, BV, QF_LIRA, Logic
 from pysmt.environment import Environment
 from pysmt.fnode import FNode
 from pysmt.solvers.solver import Model
-from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Union, Sequence, cast
+from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Type, Union, Sequence, cast
 
 
 class Optimizer(Solver):
@@ -169,12 +169,15 @@ class Optimizer(Solver):
                 max_smt_weight += cast(Union[int, Fraction], weight.constant_value())
         if goal.real_weights():
             return mgr.Real(max_smt_weight)
-        return mgr.Int(max_smt_weight)
+        return mgr.Int(cast(int, max_smt_weight))
 
     def _check_pareto_lexicographic_goals(self, goals: Any, mode: str):
         for goal in goals:
             if goal.is_maxsmt_goal():
                 raise GoalNotSupportedError(self, goal, mode)
+
+    def __enter__(self):
+        return cast(Optimizer, super().__enter__())
 
 
 class OptComparationFunctions:
@@ -189,12 +192,13 @@ class OptComparationFunctions:
         cast_bv = None
         if goal.get_logic() is BV:
             otype = self.environment.stc.get_type(goal.term())
+            assert isinstance(otype, _BVType), "Error, BV goal logic when goal term is not of BV Type"
             if goal.signed:
                 cast_bv = lambda x: mgr.SBV(x, otype.width)
             else:
                 cast_bv = lambda x: mgr.BV(x, otype.width)
 
-        options = {
+        options: Dict[Logic, Dict[Type[Goal], Dict[bool, Tuple[Callable[[Any], FNode], Callable[[FNode, FNode], FNode], Callable[[FNode, FNode], FNode]]]]] = {
             LIA: {
                 MinimizationGoal: {
                     True: (mgr.Int, mgr.LT, mgr.LE),
@@ -217,12 +221,12 @@ class OptComparationFunctions:
             },
             BV: {
                 MinimizationGoal: {
-                    False: (cast_bv, mgr.BVULT, mgr.BVULE),
-                    True: (cast_bv, mgr.BVSLT, mgr.BVSLE),
+                    False: (cast(Callable, cast_bv), mgr.BVULT, mgr.BVULE),
+                    True: (cast(Callable, cast_bv), mgr.BVSLT, mgr.BVSLE),
                 },
                 MaximizationGoal: {
-                    False: (cast_bv, mgr.BVUGT, mgr.BVUGE),
-                    True: (cast_bv, mgr.BVSGT, mgr.BVSGE),
+                    False: (cast(Callable, cast_bv), mgr.BVUGT, mgr.BVUGE),
+                    True: (cast(Callable, cast_bv), mgr.BVSGT, mgr.BVSGE),
                 },
             },
         }

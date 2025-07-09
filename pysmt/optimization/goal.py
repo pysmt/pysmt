@@ -21,7 +21,7 @@ from pysmt.exceptions import PysmtValueError
 from pysmt.oracles import get_logic
 from pysmt.logics import Logic, LIA, LRA, BV
 from pysmt.fnode import FNode
-from typing import List, Tuple, Type
+from typing import List, Tuple, Type, cast
 
 
 class Goal(object):
@@ -243,7 +243,7 @@ class MaxSMTGoal(Goal):
                     (str(weight), str(weight.get_type()))
                 )
             if weight_type.is_int_type() and self._real_weights:
-                weight = mgr.Real(weight.constant_value())
+                weight = mgr.Real(cast(int, weight.constant_value()))
             self.soft.append((clause, weight))
         else:
             WeightFnodeClass = mgr.Real if self.real_weights() else mgr.Int
