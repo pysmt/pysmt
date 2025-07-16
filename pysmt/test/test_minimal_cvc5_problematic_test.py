@@ -14,9 +14,11 @@ from pysmt.shortcuts import (
     Div,
     LE,
 )
+from pysmt.test import skipIfSolverNotAvailable
 
 
 class TestSMTSolvers:
+    @skipIfSolverNotAvailable("cvc5")
     def test_cvc5_strange_formula3(self):
         s = pysmt_solver("cvc5", logic="QF_NRA", random_seed=42)
         s.set_option("nl-ext", "none")
