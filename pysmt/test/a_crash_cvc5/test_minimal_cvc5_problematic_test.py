@@ -13,6 +13,7 @@ from pysmt.shortcuts import (
     Implies as pysmt_Implies,
     Div,
     LE,
+    reset_env
 )
 from pysmt.test import skipIfSolverNotAvailable
 
@@ -20,6 +21,7 @@ from pysmt.test import skipIfSolverNotAvailable
 class TestSMTSolvers:
     @skipIfSolverNotAvailable("cvc5")
     def test_cvc5_strange_formula3(self):
+        reset_env()
         s = pysmt_solver("cvc5", logic="QF_NRA", random_seed=42)
         s.set_option("nl-ext", "none")
         x = Symbol("x", REAL)
