@@ -21,7 +21,8 @@ from pysmt.test import skipIfSolverNotAvailable
 class TestSMTSolvers:
     @skipIfSolverNotAvailable("cvc5")
     def test_cvc5_strange_formula3(self):
-        reset_env()
+        env = reset_env()
+        env.enable_infix_notation = True
         s = pysmt_solver("cvc5", logic="QF_NRA", random_seed=42)
         s.set_option("nl-ext", "none")
         x = Symbol("x", REAL)
@@ -34,3 +35,5 @@ class TestSMTSolvers:
         )
         result = s.is_valid(prop)
         assert result is False, "CVC5 solver failed to handle negated linear formula 3"
+
+        assert False, "not failed"
