@@ -404,8 +404,6 @@ class Factory(object):
             self._all_optimizers['optimsat'] = OptiMSATSolver
         except SolverAPINotFound:
             pass
-        except SolverAPINotFound:
-            pass
 
         try:
             from pysmt.optimization.yices import YicesSUAOptimizer, YicesIncrementalOptimizer
