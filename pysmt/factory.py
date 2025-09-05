@@ -321,10 +321,11 @@ class Factory(object):
             from pysmt.solvers.msat import (MSatFMQuantifierEliminator,
                                             MSatLWQuantifierEliminator)
             try:
-                MSatFMQuantifierEliminator()
-                MSatLWQuantifierEliminator()
-            except:
+                MSatFMQuantifierEliminator(self.environment)
+                MSatLWQuantifierEliminator(self.environment)
+            except NotImplementedError:
                 raise SolverAPINotFound
+
             self._all_qelims['msat_fm'] = MSatFMQuantifierEliminator
             self._all_qelims['msat_lw'] = MSatLWQuantifierEliminator
         except SolverAPINotFound:
@@ -335,6 +336,12 @@ class Factory(object):
             MSATLibLoader("optimathsat")
             from pysmt.optimization.optimsat import (OptiMSATFMQuantifierEliminator,
                                                      OptiMSATLWQuantifierEliminator)
+            try:
+                OptiMSATFMQuantifierEliminator(self.environment)
+                OptiMSATLWQuantifierEliminator(self.environment)
+            except NotImplementedError:
+                raise SolverAPINotFound
+
             self._all_qelims['optimsat_fm'] = OptiMSATFMQuantifierEliminator
             self._all_qelims['optimsat_lw'] = OptiMSATLWQuantifierEliminator
         except SolverAPINotFound:
@@ -395,8 +402,6 @@ class Factory(object):
             MSATLibLoader("optimathsat")
             from pysmt.optimization.optimsat import OptiMSATSolver
             self._all_optimizers['optimsat'] = OptiMSATSolver
-        except SolverAPINotFound:
-            pass
         except SolverAPINotFound:
             pass
 
