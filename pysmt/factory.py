@@ -337,8 +337,8 @@ class Factory(object):
             from pysmt.optimization.optimsat import (OptiMSATFMQuantifierEliminator,
                                                      OptiMSATLWQuantifierEliminator)
             try:
-                MSatFMQuantifierEliminator(self.environment)
-                MSatLWQuantifierEliminator(self.environment)
+                OptiMSATFMQuantifierEliminator(self.environment)
+                OptiMSATLWQuantifierEliminator(self.environment)
             except NotImplementedError:
                 raise SolverAPINotFound
 
