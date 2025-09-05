@@ -21,14 +21,14 @@ singleton objects that are used throughout the system, such as the
 FormulaManager, Simplifier, HRSerializer, SimpleTypeChecker.
 """
 
+from typing import List, Optional
+
 import pysmt.simplifier
 import pysmt.printers
 import pysmt.substituter
 import pysmt.type_checker
 import pysmt.oracles
 import pysmt.formula
-import pysmt.factory
-import pysmt.decorators
 import pysmt.typing
 
 
@@ -41,11 +41,12 @@ class Environment(object):
     of classes for the different services, by changing the class
     attributes.
     """
+
     TypeCheckerClass = pysmt.type_checker.SimpleTypeChecker
     FormulaManagerClass = pysmt.formula.FormulaManager
     TypeManagerClass = pysmt.typing.TypeManager
     SimplifierClass = pysmt.simplifier.Simplifier
-    #SubstituterClass = pysmt.substituter.MSSubstituter
+    # SubstituterClass = pysmt.substituter.MSSubstituter
     SubstituterClass = pysmt.substituter.MGSubstituter
     HRSerializerClass = pysmt.printers.HRSerializer
     QuantifierOracleClass = pysmt.oracles.QuantifierOracle
@@ -91,57 +92,57 @@ class Environment(object):
         self.dwf = {}
 
     @property
-    def formula_manager(self):
+    def formula_manager(self) -> pysmt.formula.FormulaManager:
         return self._formula_manager
 
     @property
-    def type_manager(self):
+    def type_manager(self) -> pysmt.typing.TypeManager:
         return self._type_manager
 
     @property
-    def simplifier(self):
+    def simplifier(self) -> pysmt.simplifier.Simplifier:
         return self._simplifier
 
     @property
-    def serializer(self):
+    def serializer(self) -> pysmt.printers.HRSerializer:
         return self._serializer
 
     @property
-    def substituter(self):
+    def substituter(self) -> pysmt.substituter.Substituter:
         return self._substituter
 
     @property
-    def stc(self):
+    def stc(self) -> pysmt.type_checker.SimpleTypeChecker:
         """ Get the Simple Type Checker """
         return self._stc
 
     @property
-    def qfo(self):
+    def qfo(self) -> pysmt.oracles.QuantifierOracle:
         """ Get the Quantifier Oracle """
         return self._qfo
 
     @property
-    def ao(self):
+    def ao(self) -> pysmt.oracles.AtomsOracle:
         """ Get the Atoms Oracle """
         return self._ao
 
     @property
-    def theoryo(self):
+    def theoryo(self) -> pysmt.oracles.TheoryOracle:
         """ Get the Theory Oracle """
         return self._theoryo
 
     @property
-    def typeso(self):
+    def typeso(self) -> pysmt.oracles.TypesOracle:
         """ Get the Types Oracle """
         return self._typeso
 
     @property
-    def fvo(self):
+    def fvo(self) -> pysmt.oracles.FreeVarsOracle:
         """ Get the FreeVars Oracle """
         return self._fvo
 
     @property
-    def sizeo(self):
+    def sizeo(self) -> pysmt.oracles.SizeOracle:
         """ Get the Size Oracle """
         return self._sizeo
 
@@ -164,12 +165,13 @@ class Environment(object):
         self.dwf[nodetype][walker] = function
 
     @property
-    def factory(self):
+    def factory(self) -> "pysmt.factory.Factory":
+        import pysmt.factory
         if self._factory is None:
             self._factory = pysmt.factory.Factory(self)
         return self._factory
 
-    def __enter__(self):
+    def __enter__(self) -> "Environment":
         """Entering a Context """
         push_env(self)
         return self
@@ -181,23 +183,26 @@ class Environment(object):
 # EOC Environment
 
 #### GLOBAL ENVIRONMENTS STACKS ####
-ENVIRONMENTS_STACK = []
+ENVIRONMENTS_STACK: List[Environment] = []
 
-def get_env():
+def get_env() -> Environment:
     """Returns the Environment at the head of the stack."""
     return ENVIRONMENTS_STACK[-1]
 
-def push_env(env=None):
+
+def push_env(env: Optional[Environment] = None):
     """Push a env in the stack. If env is None, a new Environment is created."""
     if env is None:
         env = Environment()
     ENVIRONMENTS_STACK.append(env)
 
-def pop_env():
+
+def pop_env() -> Environment:
     """Pop an env from the stack."""
     return ENVIRONMENTS_STACK.pop()
 
-def reset_env():
+
+def reset_env() -> Environment:
     """Destroys and recreate the head environment."""
     pop_env()
     push_env()

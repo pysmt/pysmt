@@ -21,23 +21,24 @@ logics.
 """
 
 from pysmt.exceptions import UndefinedLogicError, NoLogicAvailableError
+from typing import Iterable, Optional, Set, Union
 
 
 class Theory(object):
     """Describes a theory similarly to the SMTLIB 2.0."""
     def __init__(self,
-                 arrays = None,
-                 arrays_const = None,
-                 bit_vectors = None,
-                 floating_point = None,
-                 integer_arithmetic = None,
-                 real_arithmetic = None,
-                 integer_difference = None,
-                 real_difference = None,
-                 linear = None,
-                 uninterpreted = None,
-                 custom_type = None,
-                 strings = None):
+                 arrays: Optional[bool] = None,
+                 arrays_const: Optional[bool] = None,
+                 bit_vectors: Optional[bool] = None,
+                 floating_point: Optional[bool] = None,
+                 integer_arithmetic: Optional[bool] = None,
+                 real_arithmetic: Optional[bool] = None,
+                 integer_difference: Optional[bool] = None,
+                 real_difference: Optional[bool] = None,
+                 linear: Optional[bool] = None,
+                 uninterpreted: Optional[bool] = None,
+                 custom_type: Optional[bool] = None,
+                 strings: Optional[bool] = None):
         self.arrays = arrays or False
         self.arrays_const = arrays_const or False
         self.bit_vectors = bit_vectors or False
@@ -51,15 +52,14 @@ class Theory(object):
         self.custom_type = custom_type or False
         self.strings = strings or False
         assert not arrays_const or arrays, "Cannot set arrays_const w/o arrays"
-        return
 
-    def set_lira(self, value=True):
+    def set_lira(self, value: bool=True) -> "Theory":
         res = self.copy()
         res.integer_arithmetic = value
         res.real_arithmetic = value
         return res
 
-    def set_linear(self, value=True):
+    def set_linear(self, value: bool=True) -> "Theory":
         res = self.copy()
         res.linear = value
         return res
@@ -69,7 +69,7 @@ class Theory(object):
         res.strings = value
         return res
 
-    def set_difference_logic(self, value=True):
+    def set_difference_logic(self, value: bool=True) -> "Theory":
         res = self.copy()
         if res.integer_arithmetic:
             res.integer_difference = value
@@ -90,7 +90,7 @@ class Theory(object):
         res.arrays_const = value
         return res
 
-    def copy(self):
+    def copy(self) -> "Theory":
         new_theory = Theory(arrays = self.arrays,
                             arrays_const = self.arrays_const,
                             bit_vectors = self.bit_vectors,
@@ -105,7 +105,7 @@ class Theory(object):
                             strings = self.strings)
         return new_theory
 
-    def combine(self, other):
+    def combine(self, other: "Theory") -> "Theory":
         if self.integer_arithmetic and other.integer_arithmetic:
             integer_difference = self.integer_difference and other.integer_difference
         elif self.integer_arithmetic and not other.integer_arithmetic:
@@ -140,7 +140,7 @@ class Theory(object):
             custom_type=self.custom_type or other.custom_type,
             strings=self.strings or other.strings)
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         if other is None or (not isinstance(other, Theory)):
             return False
         return (self.arrays == other.arrays and
@@ -159,7 +159,7 @@ class Theory(object):
     def __ne__(self, other):
         return not (self == other)
 
-    def __le__(self, other):
+    def __le__(self, other: "Theory") -> bool:
         if self.integer_difference == other.integer_difference:
             le_integer_difference = True
         elif self.integer_difference and other.integer_arithmetic:
@@ -223,9 +223,9 @@ class Logic(object):
     for the restriction to the ones defined in SMTLIB2.0
     """
 
-    def __init__(self, name, description,
-                 quantifier_free = False,
-                 theory=None,
+    def __init__(self, name: str, description: str,
+                 quantifier_free: bool = False,
+                 theory: Optional[Theory]=None,
                  **theory_kwargs):
         self.name = name
         self.description = description
@@ -234,7 +234,6 @@ class Logic(object):
             self.theory = Theory(**theory_kwargs)
         else:
             self.theory = theory
-        return
 
     def get_quantified_version(self):
         """Returns the quantified version of logic."""
@@ -245,17 +244,17 @@ class Logic(object):
                              theory=self.theory)
         return get_closer_pysmt_logic(target_logic)
 
-    def is_quantified(self):
+    def is_quantified(self) -> bool:
         """Return whether the logic supports quantifiers."""
         return not self.quantifier_free
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(self)
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         if other is None or (not isinstance(other, Logic)):
             return False
 
@@ -263,23 +262,23 @@ class Logic(object):
                 self.quantifier_free == other.quantifier_free and
                 self.theory == other.theory)
 
-    def __ne__(self, other):
+    def __ne__(self, other) -> bool:
         return not (self == other)
 
     def __lt__(self, other):
         return (self != other) and (self.__le__(other))
 
-    def __le__(self, other):
+    def __le__(self, other) -> bool:
         return (self.theory <= other.theory and
                 self.quantifier_free >= other.quantifier_free)
 
-    def __ge__(self, other):
+    def __ge__(self, other) -> bool:
         return (other.__le__(self))
 
     def __gt__(self, other):
         return (other.__lt__(self))
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.name)
 
 # Logics
@@ -723,14 +722,14 @@ ARRAYS_CONST_LOGICS = frozenset(_l for _l in PYSMT_LOGICS \
                                 if _l.theory.arrays_const)
 
 
-def get_logic_by_name(name):
+def get_logic_by_name(name: str) -> Logic:
     """Returns the Logic that matches the provided name."""
     for logic in LOGICS:
         if logic.name.lower() == name.lower(): return logic
     raise UndefinedLogicError(name)
 
 
-def convert_logic_from_string(name):
+def convert_logic_from_string(name: Optional[Union[str, Logic]]) -> Optional[Logic]:
     """Helper function to parse function arguments.
 
     This takes a logic or a string or None, and returns a logic or None.
@@ -784,7 +783,7 @@ def get_logic(quantifier_free=False,
     raise UndefinedLogicError
 
 
-def most_generic_logic(logics):
+def most_generic_logic(logics: Iterable[Logic]) -> Logic:
     """Given a set of logics, return the most generic one.
 
     If a unique most generic logic does not exists, throw an error.
@@ -796,7 +795,7 @@ def most_generic_logic(logics):
     return res[0]
 
 
-def get_closer_logic(supported_logics, logic):
+def get_closer_logic(supported_logics: Iterable[Logic], logic: Logic) -> Logic:
     """
     Returns the smaller supported logic that is greater or equal to
     the given logic. Raises NoLogicAvailableError if the solver
@@ -816,12 +815,12 @@ def get_closer_logic(supported_logics, logic):
     return sorted(res, key=lambda x:str(x))[0]
 
 
-def get_closer_pysmt_logic(target_logic):
+def get_closer_pysmt_logic(target_logic: Logic) -> Logic:
     """Returns the closer logic supported by PYSMT."""
     return get_closer_logic(PYSMT_LOGICS, target_logic)
 
 
-def get_closer_smtlib_logic(target_logic):
+def get_closer_smtlib_logic(target_logic: Logic) -> Logic:
     """Returns the closer logic supported by SMT-LIB 2.0."""
     if target_logic == QF_BOOL:
         return QF_UF

@@ -17,16 +17,20 @@
 #
 import collections
 from io import StringIO
+from typing import Optional
 
 from pysmt.test import TestCase, main
 from pysmt.smtlib.parser import SmtLibParser
 from pysmt.exceptions import UnknownSmtLibCommandError, PysmtValueError
+from pysmt.fnode import FNode
+from pysmt.smtlib.parser.parser import Tokenizer
+from pysmt.environment import Environment
 
 TS = collections.namedtuple('TS', ['init', 'trans'])
 TSFormula = collections.namedtuple('TSFormula', ['formula', "is_init"])
 
 class TSSmtLibParser(SmtLibParser):
-    def __init__(self, env=None, interactive=False):
+    def __init__(self, env: Optional[Environment]=None, interactive: bool=False):
         SmtLibParser.__init__(self, env, interactive)
 
         # Add new commands
@@ -41,17 +45,17 @@ class TSSmtLibParser(SmtLibParser):
         # Add 'next' function
         self.interpreted["next"] = self._operator_adapter(self._next_var)
 
-    def _cmd_init(self, current, tokens):
+    def _cmd_init(self, current: str, tokens: Tokenizer) -> "TSFormula":
         expr = self.get_expression(tokens)
         self.consume_closing(tokens, current)
         return TSFormula(expr, True)
 
-    def _cmd_trans(self, current, tokens):
+    def _cmd_trans(self, current: str, tokens: Tokenizer) -> "TSFormula":
         expr = self.get_expression(tokens)
         self.consume_closing(tokens, current)
         return TSFormula(expr, False)
 
-    def _next_var(self, symbol):
+    def _next_var(self, symbol: FNode) -> FNode:
         if symbol.is_symbol():
             name = symbol.symbol_name()
             ty = symbol.symbol_type()
@@ -59,7 +63,7 @@ class TSSmtLibParser(SmtLibParser):
         else:
             raise PysmtValueError("'next' operator can be applied only to symbols")
 
-    def get_ts(self, script):
+    def get_ts(self, script: StringIO) -> "TS":
         init = self.env.formula_manager.TRUE()
         trans = self.env.formula_manager.TRUE()
 

@@ -18,18 +18,24 @@
 import os
 import warnings
 
+from typing import Callable, Dict, Iterator, List, Optional, Tuple, Union, cast
+
+from pysmt.optimization.goal import Goal
 from pysmt.test import SkipTest
 from pysmt.test.optimization_utils import OMTTestCase, OptimizationTypes
 from pysmt.shortcuts import get_env, reset_env, Int, Real, BV, SBV
 from pysmt.smtlib.parser import SmtLibParser, get_formula_fname
-from pysmt.smtlib.script import check_sat_filter
-from pysmt.logics import (QF_LIA, QF_LRA, LRA, QF_UFLIRA, QF_UFBV, QF_BV,
+from pysmt.smtlib.script import SmtLibScript, check_sat_filter
+from pysmt.solvers.smtlib import SmtLibSolver
+from pysmt.logics import (Logic, QF_LIA, QF_LRA, LRA, QF_UFLIRA, QF_UFBV, QF_BV,
                           QF_ALIA, QF_ABV, QF_AUFLIA, QF_AUFBV, QF_NRA, QF_NIA,
                           UFBV, BV as BV_logic, QF_UF)
 from pysmt.exceptions import NoSolverAvailableError, SolverReturnedUnknownResultError
+from pysmt.fnode import FNode
+from pysmt.formula import FormulaManager
 
 
-def smtlib_tests(logic_pred):
+def smtlib_tests(logic_pred: Callable) -> List[Tuple[str, Logic, bool]]:
     """Returns the smtlib instances matching the logic predicate"""
     tests = []
     for (logic, f, expected_result) in SMTLIB_TEST_FILES:
@@ -45,7 +51,7 @@ def smtlib_tests(logic_pred):
 #  $ python -m pytest pysmt/test/smtlib/test_parser_qf_lra.py
 # The function 'execute_script_fname' is a general checker that
 # parses and invokes a solver for the given smt file
-def execute_script_fname(smtfile, logic, expected_result):
+def execute_script_fname(smtfile: str, logic: Logic, expected_result: bool):
     """Read and call a Solver to solve the instance"""
     reset_env()
     Solver = get_env().factory.Solver
@@ -63,7 +69,7 @@ def execute_script_fname(smtfile, logic, expected_result):
         if logic == QF_UF and type(solver).__name__ == 'BoolectorSolver':
             warnings.warn("Test (%s, %s) skipped because Boolector can't handle QF_UF." % (logic, smtfile))
             return
-        log = script.evaluate(solver)
+        log = script.evaluate(cast(SmtLibSolver, solver))
     except NoSolverAvailableError:
         raise SkipTest("No solver for logic %s." % logic)
     except SolverReturnedUnknownResultError:
@@ -76,7 +82,7 @@ def execute_script_fname(smtfile, logic, expected_result):
     assert expected_result == res, (expected_result, res)
 
 
-def formulas_from_smtlib_test_set(logics=None):
+def formulas_from_smtlib_test_set(logics: Optional[List[Logic]]=None) -> Iterator[Tuple[Logic, str, FNode, bool]]:
     """Returns a generator over the test-set of SMT-LIB files.
 
     Note: This resets the Environment at each call.
@@ -196,7 +202,7 @@ SMTLIB_TEST_FILES = [
 ]
 
 
-def omt_test_cases_from_smtlib_test_set(logics=None):
+def omt_test_cases_from_smtlib_test_set(logics: None=None) -> Iterator[OMTTestCase]:
     """
     Returns a generator over the test-set of OMT-LIB test files.
     The method accepts a set of logics; only the test cases
@@ -222,7 +228,7 @@ def omt_test_cases_from_smtlib_test_set(logics=None):
                 if optimization_type == OptimizationTypes.BASIC:
                     assert len(parsed_goals) == len(expected_values)
                     for parsed_goal, expected_value in zip(parsed_goals, expected_values):
-                        key = (parsed_goal, ), optimization_type
+                        key: Tuple[Tuple[Goal, ...], OptimizationTypes] = (parsed_goal, ), optimization_type
                         expected_goals[key] = [expected_value]
                 else:
                     key = parsed_goals, optimization_type
@@ -233,7 +239,7 @@ def omt_test_cases_from_smtlib_test_set(logics=None):
         yield OMTTestCase(test_name, assumptions, logic, is_sat, expected_goals, env)
 
 
-def _extract_assumptions_and_objectives(mgr, script):
+def _extract_assumptions_and_objectives(mgr: FormulaManager, script: SmtLibScript) -> Tuple[List[FNode], Tuple[Goal, ...]]:
     goals = []
     formula, goals = script.get_last_formula(mgr, return_optimizations=True)
     assumptions = list(formula.args()) if formula.is_and() else [formula]
@@ -242,8 +248,9 @@ def _extract_assumptions_and_objectives(mgr, script):
 
 
 # Directory with the optimal SMT-LIB test files
+FNode_or_Str = Union[FNode, str]
 OMTLIB_DIR = "pysmt/test/smtlib/omt/"
-OMTLIB_TEST_FILES = [
+OMTLIB_TEST_FILES: List[Tuple[Logic, str, bool, Dict[OptimizationTypes, List[Union[FNode_or_Str, Tuple[FNode_or_Str, ...]]]]]] = [
     (QF_LIA, "smtlib2_allsat.smt2", SAT, {
         OptimizationTypes.LEXICOGRAPHIC: [Int(100), Int(100)],
         OptimizationTypes.PARETO: [(Int(100), Int(100))],

@@ -18,13 +18,18 @@
 from __future__ import absolute_import
 
 from pysmt.exceptions import SolverAPINotFound
+from pysmt.environment import Environment
+from pysmt.fnode import FNode
+from pysmt.logics import Logic
+from pysmt.typing import PySMTType, _BVType, _ArrayType, _FunctionType
+from typing import Any, Dict, Iterable, List, Optional, Union
 
 try:
-    import cvc5
+    import cvc5 # type: ignore[import]
 except ImportError:
     raise SolverAPINotFound
 
-from cvc5 import Kind
+from cvc5 import Kind # type: ignore[import]
 
 import pysmt.typing as types
 from pysmt.logics import PYSMT_LOGICS, ARRAYS_CONST_LOGICS
@@ -51,13 +56,13 @@ class CVC5Options(SolverOptions):
             raise PysmtValueError("'unsat_cores_mode' option not supported.")
 
     @staticmethod
-    def _set_option(cvc5, name, value):
+    def _set_option(cvc5: cvc5.Solver, name: str, value: str):
         try:
             cvc5.setOption(name, value)
         except:
             raise PysmtValueError("Error setting the option '%s=%s'" % (name,value))
 
-    def __call__(self, solver):
+    def __call__(self, solver: "CVC5Solver"):
         if solver.logic_name == "QF_SLIA":
             self._set_option(solver.cvc5,
                              "strings-exp", "true")
@@ -85,21 +90,21 @@ class CVC5Options(SolverOptions):
 
         #self._set_option(solver.cvc5, "nl-ext-tplanes", "true")
 
-
+        assert isinstance(self.solver_options, dict)
         for k,v in self.solver_options.items():
             self._set_option(solver.cvc5, str(k), str(v))
 
 # EOC CVC5Options
 
 
-class CVC5Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
+class CVC5Solver(SmtLibBasicSolver):
 
     LOGICS = PYSMT_LOGICS -\
              ARRAYS_CONST_LOGICS
 
     OptionsClass = CVC5Options
 
-    def __init__(self, environment, logic, **options):
+    def __init__(self, environment: Environment, logic: Logic, **options):
         Solver.__init__(self,
                         environment=environment,
                         logic=logic,
@@ -126,7 +131,7 @@ class CVC5Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
     def declare_variable(self, var):
         raise NotImplementedError
 
-    def add_assertion(self, formula, named=None):
+    def add_assertion(self, formula: FNode, named: Optional[str]=None):
         self._assert_is_boolean(formula)
         term = self.converter.convert(formula)
         self.cvc5.assertFormula(term)
@@ -140,7 +145,7 @@ class CVC5Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
                 assignment[s] = v
         return EagerModel(assignment=assignment, environment=self.environment)
 
-    def solve(self, assumptions=None):
+    def solve(self, assumptions: Optional[Iterable[FNode]]=None) -> bool:
         if assumptions is not None:
             cvc5_assumptions = [self.converter.convert(a) for a in assumptions]
             res = self.cvc5.checkSatAssuming(*cvc5_assumptions)
@@ -208,18 +213,17 @@ class CVC5Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
 class CVC5Converter(Converter, DagWalker):
 
-    def __init__(self, environment, cvc5):
+    def __init__(self, environment: Environment, cvc5: cvc5.Solver):
         DagWalker.__init__(self, environment)
 
         self.cvc5 = cvc5
 
-        self.declared_vars = {}
-        self.backconversion = {}
+        self.declared_vars: Dict[Union[str, FNode], Any] = {}
         self.mgr = environment.formula_manager
         self._get_type = environment.stc.get_type
         return
 
-    def declare_variable(self, var):
+    def declare_variable(self, var: FNode):
         if not var.is_symbol():
             raise PysmtTypeError("Trying to declare as a variable something "
                                  "that is not a symbol: %s" % var)
@@ -256,25 +260,25 @@ class CVC5Converter(Converter, DagWalker):
         return res
 
     @catch_conversion_error
-    def convert(self, formula):
+    def convert(self, formula: FNode) -> cvc5.Term:
         return self.walk(formula)
 
-    def walk_and(self, formula, args, **kwargs):
+    def walk_and(self, formula: FNode, args: List[cvc5.Term], **kwargs) -> cvc5.Term:
         return self.cvc5.mkTerm(Kind.AND, *args)
 
     def walk_or(self, formula, args, **kwargs):
         return self.cvc5.mkTerm(Kind.OR, *args)
 
-    def walk_not(self, formula, args, **kwargs):
+    def walk_not(self, formula: FNode, args: List[cvc5.Term], **kwargs) -> cvc5.Term:
         return self.cvc5.mkTerm(Kind.NOT, *args)
 
-    def walk_symbol(self, formula, args, **kwargs):
+    def walk_symbol(self, formula: FNode, args: List[Any], **kwargs) -> cvc5.Term:
         #pylint: disable=unused-argument
         if formula not in self.declared_vars:
             self.declare_variable(formula)
         return self.declared_vars[formula]
 
-    def walk_iff(self, formula, args, **kwargs):
+    def walk_iff(self, formula: FNode, args: List[cvc5.Term], **kwargs) -> cvc5.Term:
         return self.cvc5.mkTerm(Kind.EQUAL, args[0], args[1])
 
     def walk_implies(self, formula, args, **kwargs):
@@ -283,7 +287,7 @@ class CVC5Converter(Converter, DagWalker):
     def walk_le(self, formula, args, **kwargs):
         return self.cvc5.mkTerm(Kind.LEQ, args[0], args[1])
 
-    def walk_lt(self, formula, args, **kwargs):
+    def walk_lt(self, formula: FNode, args: List[cvc5.Term], **kwargs) -> cvc5.Term:
         return self.cvc5.mkTerm(Kind.LT, args[0], args[1])
 
     def walk_ite(self, formula, args, **kwargs):
@@ -295,12 +299,12 @@ class CVC5Converter(Converter, DagWalker):
         rep = str(n) + "/" + str(d)
         return self.cvc5.mkReal(rep)
 
-    def walk_int_constant(self, formula, **kwargs):
+    def walk_int_constant(self, formula: FNode, **kwargs) -> cvc5.Term:
         assert is_pysmt_integer(formula.constant_value())
         rep = str(formula.constant_value())
         return self.cvc5.mkInteger(rep)
 
-    def walk_bool_constant(self, formula, **kwargs):
+    def walk_bool_constant(self, formula: FNode, **kwargs) -> cvc5.Term:
         return self.cvc5.mkBoolean(formula.constant_value())
 
     def walk_exists(self, formula, args, **kwargs):
@@ -331,7 +335,7 @@ class CVC5Converter(Converter, DagWalker):
     def walk_minus(self, formula, args, **kwargs):
         return self.cvc5.mkTerm(Kind.SUB, args[0], args[1])
 
-    def walk_equals(self, formula, args, **kwargs):
+    def walk_equals(self, formula: FNode, args: List[cvc5.Term], **kwargs) -> cvc5.Term:
         return self.cvc5.mkTerm(Kind.EQUAL, args[0], args[1])
 
     def walk_times(self, formula, args, **kwargs):
@@ -449,43 +453,43 @@ class CVC5Converter(Converter, DagWalker):
     def walk_bv_ashr(self, formula, args, **kwargs):
         return self.cvc5.mkTerm(Kind.BITVECTOR_ASHR, args[0], args[1])
 
-    def walk_str_constant(self, formula, args, **kwargs):
+    def walk_str_constant(self, formula: FNode, args: List[Any], **kwargs) -> cvc5.Term:
         return self.cvc5.mkString(formula.constant_value())
 
-    def walk_str_length (self, formula, args, **kwargs):
+    def walk_str_length (self, formula: FNode, args: List[cvc5.Term], **kwargs) -> cvc5.Term:
         return self.cvc5.mkTerm(Kind.STRING_LENGTH , args[0])
 
-    def walk_str_concat(self, formula, args, **kwargs):
+    def walk_str_concat(self, formula: FNode, args: List[cvc5.Term], **kwargs) -> cvc5.Term:
         return self.cvc5.mkTerm(Kind.STRING_CONCAT, *args)
 
-    def walk_str_contains(self, formula, args, **kwargs):
+    def walk_str_contains(self, formula: FNode, args: List[cvc5.Term], **kwargs) -> cvc5.Term:
         return self.cvc5.mkTerm(Kind.STRING_CONTAINS, args[0], args[1])
 
-    def walk_str_indexof(self, formula, args, **kwargs):
+    def walk_str_indexof(self, formula: FNode, args: List[cvc5.Term], **kwargs) -> cvc5.Term:
         return self.cvc5.mkTerm(Kind.STRING_INDEXOF, args[0], args[1], args[2])
 
-    def walk_str_replace(self, formula, args, **kwargs):
+    def walk_str_replace(self, formula: FNode, args: List[cvc5.Term], **kwargs) -> cvc5.Term:
         return self.cvc5.mkTerm(Kind.STRING_REPLACE, args[0], args[1], args[2])
 
-    def walk_str_substr(self, formula, args, **kwargs):
+    def walk_str_substr(self, formula: FNode, args: List[cvc5.Term], **kwargs) -> cvc5.Term:
         return self.cvc5.mkTerm(Kind.STRING_SUBSTR, args[0], args[1], args[2])
 
-    def walk_str_prefixof(self, formula, args, **kwargs):
+    def walk_str_prefixof(self, formula: FNode, args: List[cvc5.Term], **kwargs) -> cvc5.Term:
         return self.cvc5.mkTerm(Kind.STRING_PREFIX, args[0], args[1])
 
-    def walk_str_suffixof(self, formula, args, **kwargs):
+    def walk_str_suffixof(self, formula: FNode, args: List[cvc5.Term], **kwargs) -> cvc5.Term:
         return self.cvc5.mkTerm(Kind.STRING_SUFFIX, args[0], args[1])
 
-    def walk_str_to_int(self, formula, args, **kwargs):
+    def walk_str_to_int(self, formula: FNode, args: List[cvc5.Term], **kwargs) -> cvc5.Term:
         return self.cvc5.mkTerm(Kind.STRING_TO_INT, args[0])
 
-    def walk_int_to_str(self, formula, args, **kwargs):
+    def walk_int_to_str(self, formula: FNode, args: List[cvc5.Term], **kwargs) -> cvc5.Term:
         return self.cvc5.mkTerm(Kind.STRING_FROM_INT, args[0])
 
-    def walk_str_charat(self, formula, args, **kwargs):
+    def walk_str_charat(self, formula: FNode, args: List[cvc5.Term], **kwargs) -> cvc5.Term:
         return self.cvc5.mkTerm(Kind.STRING_CHARAT, args[0], args[1])
 
-    def _type_to_cvc5(self, tp):
+    def _type_to_cvc5(self, tp: PySMTType) -> cvc5.Sort:
         if tp.is_bool_type():
             return self.cvc5.getBooleanSort()
         elif tp.is_real_type():
@@ -493,15 +497,18 @@ class CVC5Converter(Converter, DagWalker):
         elif tp.is_int_type():
             return self.cvc5.getIntegerSort()
         elif tp.is_function_type():
+            assert isinstance(tp, _FunctionType)
             stps = [self._type_to_cvc5(x) for x in tp.param_types]
             rtp = self._type_to_cvc5(tp.return_type)
             return self.cvc5.mkFunctionSort(stps, rtp)
         elif tp.is_array_type():
+            assert isinstance(tp, _ArrayType)
             # Recursively convert the types of index and elem
             idx_cvc_type = self._type_to_cvc5(tp.index_type)
             elem_cvc_type = self._type_to_cvc5(tp.elem_type)
             return self.cvc5.mkArraySort(idx_cvc_type, elem_cvc_type)
         elif tp.is_bv_type():
+            assert isinstance(tp, _BVType)
             return self.cvc5.mkBitVectorSort(tp.width)
         elif tp.is_string_type():
             return self.cvc5.getStringSort()

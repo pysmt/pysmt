@@ -15,19 +15,24 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+from typing import Iterable, List, Optional, Sequence
+
+import pysmt
 import pysmt.logics
 
 from pysmt.walkers.identitydag import IdentityDagWalker
 from pysmt.utils import all_assignments
 from pysmt.exceptions import InternalSolverError
+from pysmt.fnode import FNode
 
 
 class QuantifierEliminator(object):
+    LOGICS: Iterable[pysmt.logics.Logic] = []
 
     def __init__(self):
         self._destroyed = False
 
-    def eliminate_quantifiers(self, formula):
+    def eliminate_quantifiers(self, formula: FNode):
         """
         Returns a quantifier-free equivalent formula of the given
         formula
@@ -67,12 +72,12 @@ class ShannonQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
 
     LOGICS = [pysmt.logics.BOOL]
 
-    def __init__(self, environment, logic=None):
+    def __init__(self, environment: "pysmt.environment.Environment", logic: Optional[pysmt.logics.Logic]=None):
         IdentityDagWalker.__init__(self, env=environment)
         QuantifierEliminator.__init__(self)
         self.logic = logic
 
-    def eliminate_quantifiers(self, formula):
+    def eliminate_quantifiers(self, formula: FNode) -> FNode:
         return self.walk(formula)
 
     def _assert_vars_boolean(self, var_set):
@@ -83,7 +88,7 @@ class ShannonQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
                     "quantification over Boolean variables: "\
                     "(%s is %s)" % (v, v.symbol_type()))
 
-    def _expand(self, formula, args):
+    def _expand(self, formula: FNode, args: Sequence[FNode]) -> List[FNode]:
         """Returns the list of elements from the Shannon expansion."""
         qvars = formula.quantifier_vars()
         self._assert_vars_boolean(qvars)
@@ -93,10 +98,10 @@ class ShannonQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
             res.append(f.substitute(subs))
         return res
 
-    def walk_forall(self, formula, args, **kwargs):
+    def walk_forall(self, formula: FNode, args: Sequence[FNode], **kwargs) -> FNode:
         return self.mgr.And(self._expand(formula, args))
 
-    def walk_exists(self, formula, args, **kwargs):
+    def walk_exists(self, formula: FNode, args: Sequence[FNode], **kwargs) -> FNode:
         return self.mgr.Or(self._expand(formula, args))
 
     def _exit(self):
@@ -114,21 +119,21 @@ class SelfSubstitutionQuantifierEliminator(QuantifierEliminator, IdentityDagWalk
     """
     LOGICS = [pysmt.logics.BOOL]
 
-    def __init__(self, environment, logic=None):
+    def __init__(self, environment: "pysmt.environment.Environment", logic: Optional[pysmt.logics.Logic]=None):
         IdentityDagWalker.__init__(self, env=environment)
         QuantifierEliminator.__init__(self)
         self.logic = logic
 
-    def eliminate_quantifiers(self, formula):
+    def eliminate_quantifiers(self, formula: FNode) -> FNode:
         return self.walk(formula)
 
-    def self_substitute(self, formula, qvars, token):
+    def self_substitute(self, formula: FNode, qvars: Sequence[FNode], token: FNode) -> FNode:
         for v in qvars[::-1]:
             inner_sub = formula.substitute({v: token})
             formula = formula.substitute({v: inner_sub})
         return formula
 
-    def walk_forall(self, formula, args, **kwargs):
+    def walk_forall(self, formula: FNode, args: Sequence[FNode], **kwargs) -> FNode:
         """Forall y . f(x, y) =>  f(x, f(x, 0))"""
         qvars = formula.quantifier_vars()
         f = args[0]
@@ -136,7 +141,7 @@ class SelfSubstitutionQuantifierEliminator(QuantifierEliminator, IdentityDagWalk
         qf_f = self.self_substitute(f, qvars, token)
         return qf_f
 
-    def walk_exists(self, formula, args, **kwargs):
+    def walk_exists(self, formula: FNode, args: Sequence[FNode], **kwargs) -> FNode:
         """Exists y . f(x, y) =>  f(x, f(x, 1))"""
         qvars = formula.quantifier_vars()
         f = args[0]

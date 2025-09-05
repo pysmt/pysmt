@@ -17,9 +17,9 @@
 #
 import pytest
 
-from pysmt.logics import QF_LIA
+from pysmt.logics import Logic, QF_LIA
 from pysmt.test.smtlib.parser_utils import execute_script_fname, smtlib_tests
 
 @pytest.mark.parametrize("smtfile, logic, expected_result", smtlib_tests(lambda x: x == QF_LIA))
-def test_qf_lia(smtfile, logic, expected_result):
+def test_qf_lia(smtfile: str, logic: Logic, expected_result: bool):
     execute_script_fname(smtfile, logic, expected_result)

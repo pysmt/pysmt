@@ -24,6 +24,7 @@ from io import StringIO
 from pysmt.shortcuts import reset_env
 from pysmt.test import TestCase
 from pysmt.smtlib.parser import SmtLibParser
+from pysmt.smtlib.script import SmtLibScript
 
 
 class TestSmtLibParserFuzzer(TestCase):
@@ -37,7 +38,7 @@ class TestSmtLibParserFuzzer(TestCase):
             #print(buf.getvalue())
             self.assertTrue(len(buf.getvalue()) > 1)
 
-    def parse(self, fname):
+    def parse(self, fname: str) -> SmtLibScript:
         reset_env()
         parser = SmtLibParser()
         script = parser.get_script_fname(fname)

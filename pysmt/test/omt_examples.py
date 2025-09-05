@@ -1,11 +1,30 @@
-from itertools import chain
+#
+# This file is part of pySMT.
+#
+#   Copyright 2014 Andrea Micheli and Marco Gario
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
 import os.path as path
+from itertools import chain
+from typing import Optional
 
 from pysmt.shortcuts import GE, Int, Symbol, INT, LE, REAL, Real, Equals, Times, Or,Ite
 from pysmt.shortcuts import And, Plus, Minus, BOOL, Implies, get_env
 from pysmt.logics import QF_LIA, QF_LRA
 from pysmt.optimization.goal import MaximizationGoal
 from pysmt.test.optimization_utils import OMTTestCase, OptimizationTypes
+from pysmt.environment import Environment
 from pysmt.exceptions import PysmtValueError
 
 
@@ -24,7 +43,7 @@ def _slow_examples():
     yield test_maximize_revenue()
 
 
-def get_full_example_omt_formuale(environment=None, fast=True, slow=True):
+def get_full_example_omt_formuale(environment: Optional[Environment]=None, fast: bool=True, slow: bool=True):
     """Return a list of OMTTestCases using the given environment."""
 
     if environment is None:
