@@ -338,11 +338,8 @@ sat
         )
 
 
-test_to_skip = {
-        ("QF_LRA - smtlib2_boxed.smt2", OptimizationTypes.LEXICOGRAPHIC, "optimsat"), # error return wrong maximization of z (should be 24, returns 0); seems like a bug in optimsat; have to try optimsat alone; with integers instead of reals it works
-        ("QF_LIA - smtlib2_allsat.smt2", OptimizationTypes.PARETO, "optimsat"), # error that happens only if test_optimizing is done before this test
-        ("QF_LIA - smtlib2_load_objective_model.smt2", OptimizationTypes.PARETO, "optimsat"), # error that happens only if test_optimizing is done before this test
-}
+test_to_skip = {}
+
 @pytest.mark.parametrize(
     "optimization_example, solver_name",
     generate_examples_with_solvers(omt_test_cases_from_smtlib_test_set()),
