@@ -11,7 +11,20 @@ simple problem using it.
 Installation
 ------------
 
-To run pySMT you need Python 3.5+ installed.
+To run pySMT you need Python 3.5+ installed. 
+You can install the latest stable release of pySMT from PyPI::
+
+  $ pip install pysmt
+
+this will additionally install the *pysmt-install* command, that can
+be used to install the solvers.
+To check which solvers are visible to pySMT, you can use the command
+``pysmt-install`` (simply ``install.py`` in the sources)::
+
+  $ pysmt-install --check
+
+provides the list of installed solvers (and version) that have been found in your ``PYTHONPATH``.
+
 If no solver is installed, pySMT can still create and dump the SMT
 problem in SMT-LIB format. pySMT works with any SMT-LIB compatible
 solver. Moreover, pySMT can leverage the API of the following solvers:
@@ -27,13 +40,7 @@ solver. Moreover, pySMT can leverage the API of the following solvers:
 The Python binding for the SMT Solvers must be installed and
 accessible from your ``PYTHONPATH``.
 
-To check which solvers are visible to pySMT, you can use the command
-``pysmt-install`` (simply ``install.py`` in the sources)::
-
-  $ pysmt-install --check
-
-provides the list of installed solvers (and version). Solvers can be
-installed with the same script: e.g., ::
+Solvers can be installed with the same script: e.g., ::
 
   $ pysmt-install --msat
 
