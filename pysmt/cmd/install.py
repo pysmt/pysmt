@@ -33,7 +33,7 @@ Installer = namedtuple("Installer",
                        ["InstallerClass", "version", "extra_params"])
 INSTALLERS = [
     Installer(MSatInstaller,    "5.6.10", {}),
-    Installer(CVC5Installer,    "1.1.2", {}),
+    Installer(CVC5Installer,    "1.2.1", {}),
     Installer(CVC4Installer,    "1.7-prerelease",
               {"git_version" : "391ab9df6c3fd9a3771864900c1718534c1e4666"}),
     Installer(Z3Installer,      "4.15.0", {}),

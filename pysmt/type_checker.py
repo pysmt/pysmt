@@ -33,7 +33,7 @@ class SimpleTypeChecker(walkers.DagWalker):
 
     def __init__(self, env=None):
         walkers.DagWalker.__init__(self, env=env)
-        # If `be_nice` is true, the `get_type` method will return None if 
+        # If `be_nice` is true, the `get_type` method will return None if
         # the type cannot be computed instead of than raising an exception.
         self.be_nice = False
 
@@ -324,9 +324,9 @@ class SimpleTypeChecker(walkers.DagWalker):
         return ArrayType(idx_type, default_type)
 
     def walk_pow(self, formula, args, **kwargs):
-        if args[0] != args[1]:
+        if args[0] != args[1] or args[0] not in [REAL, INT]:
             return None
-        return REAL
+        return args[0]
 
 # EOC SimpleTypeChecker
 
