@@ -95,7 +95,7 @@ The problem that we are going to solve is the following:
   Lets consider the letters composing the words *HELLO* and *WORLD*,
   with a possible integer value between 1 and 10 to each of them.
 
-  Is there a value for each letter so that H+E+L+L+O = W+O+R+L+D = 25?
+  Is there a value for each letter so that H+E+L+L+O = W+O+R+L+D = 36?
 
 The Basics
 """"""""""
