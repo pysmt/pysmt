@@ -88,6 +88,15 @@ class IdentityDagWalker(DagWalker):
                  for v in formula.quantifier_vars()]
         return self.mgr.Exists(qvars, args[0])
 
+    def walk_pble(self, formula, args, **kwargs):
+        return self.mgr.PbLe(args)
+
+    def walk_pbge(self, formula, args, **kwargs):
+        return self.mgr.PbGe(args)
+
+    def walk_pbeq(self, formula, args, **kwargs):
+        return self.mgr.PbEq(args)
+
     def walk_plus(self, formula, args, **kwargs):
         return self.mgr.Plus(args)
 

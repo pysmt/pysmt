@@ -37,7 +37,7 @@ from pysmt.shortcuts import (Symbol, Function,
                              StrIndexOf, StrLength, StrPrefixOf, StrReplace,
                              StrSubstr, StrSuffixOf, StrToInt,
                              IntToStr, BVToNatural,
-                             Store, Select, Array, Type)
+                             Store, Select, Array, Type, PbLe)
 
 from pysmt.typing import REAL, BOOL, INT, BV8, BV16, BVType, ARRAY_INT_INT
 from pysmt.typing import FunctionType, ArrayType, STRING
@@ -58,6 +58,9 @@ def get_full_example_formulae(environment=None):
         environment = get_env()
 
     with environment:
+        a = Int(1)
+        b = Int(2)
+        c = Int(3)
         x = Symbol("x", BOOL)
         y = Symbol("y", BOOL)
         p = Symbol("p", INT)
@@ -133,6 +136,16 @@ def get_full_example_formulae(environment=None):
                     is_sat=False,
                     logic=pysmt.logics.QF_BOOL
                 ),
+
+            #
+            #  PSEUDO-BOOLEAN
+            #
+            Example(hr="1x + 2y <= 3",
+                    expr=PbLe((x,y), (a, b), c),
+                    is_valid=False,
+                    is_sat=True,
+                    logic=pysmt.logics.QF_BOOL
+                    ),
 
             #
             #  LIA

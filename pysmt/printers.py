@@ -323,6 +323,34 @@ class HRPrinter(TreeWalker):
     walk_bv_mul = walk_times
     walk_bv_sub = walk_minus
 
+    def walk_pble(self, formula):
+        return self._walk_pb("pble", formula)
+
+    def walk_pbge(self, formula):
+        return self._walk_pb("pbge", formula)
+
+    def walk_pbeq(self, formula):
+        return self._walk_pb("pbeq", formula)
+
+    def _walk_pb(self, operator, formula):
+        args = formula.args()
+        coeffs = formula.pb_coeffs()
+
+        self.write("(")
+
+        h = 0
+        for i, j in zip(coeffs, args):
+            self.write("%s" % i)
+            self.write("%s" % j)
+            if (h < len(coeffs) - 1):
+                self.write(" + ")
+            h += 1
+
+        self.write(" %s " % operator)
+        self.write("%s" % formula.pb_k())
+
+        self.write(")")
+
 #EOC HRPrinter
 
 
