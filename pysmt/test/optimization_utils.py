@@ -234,7 +234,6 @@ def check_pareto(optimizer, goals, goals_values, test_id_str, **kwargs):
     if raised_class is None:
         retval = optimizer.pareto_optimize(goals, **kwargs)
         assert retval is not None, test_id_str
-        retval = list(retval)
 
         sorted_costs = sorted((costs for _, costs in retval), key=str)
         sorted_goals_values = sorted(goals_values, key=str)
