@@ -77,20 +77,21 @@ class TestWalkers(TestCase):
 
         with self.assertRaisesRegex(PysmtTypeError, "substitute()"):
             substitute(f, {x:x})
-    
+
     def test_substituter_interpretations_in_quantifiers(self):
-        x = Symbol("x")
+        x = Symbol("x", INT)
         UF_XOR = Symbol('uf_xor', FunctionType(INT, [INT, INT]))
-        f = ForAll([x], Equals(Function(self.UF_XOR, [x, x]), Int(0)))
+        f = ForAll([x], Equals(Function(UF_XOR, [x, x]), Int(0)))
 
         class XORInterpreter(FunctionInterpretation):
+            def __init__(self): pass
             def interpret(self, env, args):
                 if args[0] == args[1]: return Int(0)
                 return Function(UF_XOR, args)
         
-        subs = f.substitute({UF_XOR: XORInterpreter()})
+        subs = f.substitute({}, interpretations={UF_XOR: XORInterpreter()})
 
-        self.assertEqual(subs, TRUE())
+        self.assertEqual(subs, ForAll([x], Equals(Int(0), Int(0))))
 
     def test_undefined_node(self):
         varA = Symbol("At", INT)
