@@ -90,6 +90,7 @@ fi
 if [ "${PYSMT_SOLVER}" == "yices" ] || [ "${PYSMT_SOLVER}" == "all" ]
 then
     os_install gperf
+    os_install autoconf
 fi
 
 # Install dependencies

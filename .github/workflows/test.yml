@@ -52,11 +52,11 @@ jobs:
             pysmt_solver: all
           - os: macos-latest
             pysmt_solver: none
-          - os: macos-13
+          - os: macos-latest
             pysmt_solver: msat
-          - os: macos-13
+          - os: macos-latest
             pysmt_solver: z3
-          - os: macos-13
+          - os: macos-latest
             pysmt_solver: yices
           - os: windows-latest
             pysmt_solver: none
@@ -80,6 +80,14 @@ jobs:
         uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236 #v4.7.1
         with:
           python-version: 3.8
+
+      - name: Set up MSVC
+        if: (matrix.os == 'windows-latest' && (matrix.pysmt_solver == 'msat' || matrix.pysmt_solver == 'all'))
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Install MPIR
+        if: (matrix.os == 'windows-latest' && (matrix.pysmt_solver == 'msat' || matrix.pysmt_solver == 'all'))
+        run: vcpkg install mpir:x64-windows
 
       - name: Prepare System
         run: |
