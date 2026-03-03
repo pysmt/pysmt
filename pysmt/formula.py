@@ -586,6 +586,29 @@ class FormulaManager(object):
         else:
             return self.Equals(left, right)
 
+    # Pseudo-Booleans
+    def PbLe(self, vals, coeffs, k):
+        """ Creates a Pseudo-Boolean inequality k constraint.
+        e.g.) PbLe((x, y, z), (2, 3, 4), 6) encodes of a formula 2x + 3y + 4z <= 6
+
+        :param vals: BOOL Symbols tuple or list of variables.
+        :param coeffs: integer tuple or list of coefficients.
+        :param k: integer constant
+        """
+        return self.create_node(node_type=op.PBLE, args=vals, payload=(coeffs, k))
+
+    def PbGe(self, vals, coeffs, k):
+        """ Creates a Pseudo-Boolean inequality k constraint.
+        e.g.) PbGe((x, y, z), (2, 3, 4), 6) encodes of a formula 2x + 3y + 4z >= 6
+        """
+        return self.create_node(node_type=op.PBGE, args=vals, payload=(coeffs, k))
+
+    def PbEq(self, vals, coeffs, k):
+        """ Creates a Pseudo-Boolean inequality k constraint.
+        e.g.) PbEq((x, y, z), (2, 3, 4), 6) encodes of a formula 2x + 3y + 4z = 6
+        """
+        return self.create_node(node_type=op.PBEQ, args=vals, payload=(coeffs, k))
+
     # BitVectors
     def BV(self, value, width=None):
         """Return a constant of type BitVector.
