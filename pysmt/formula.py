@@ -28,21 +28,26 @@ its definition.
 """
 
 import sys
-if sys.version_info >= (3, 3):
-    from collections.abc import Iterable
-else:
-    from collections import Iterable
-
+import fractions
 import warnings
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union, cast, Iterable
+
+if sys.version_info >= (3, 3):
+    from collections.abc import Iterable as CollectionsIterable
+else:
+    from collections import Iterable as CollectionsIterable
+
+
+import pysmt
 
 import pysmt.typing as types
 import pysmt.operators as op
-
-
+from pysmt.fnode import FNode
+from pysmt.typing import PySMTType
 from pysmt.fnode import FNode, FNodeContent
 from pysmt.exceptions import UndefinedSymbolError, PysmtValueError,PysmtTypeError
 from pysmt.walkers.identitydag import IdentityDagWalker
-from pysmt.constants import Fraction
+from pysmt.constants import Fraction, Numeral
 from pysmt.constants import (is_pysmt_fraction,
                              is_pysmt_integer,
                              is_python_rational,
@@ -50,24 +55,25 @@ from pysmt.constants import (is_pysmt_fraction,
                              is_python_string,
                              pysmt_fraction_from_rational,
                              pysmt_integer_from_integer)
+from pysmt.utils import assert_not_none
 
 
 class FormulaManager(object):
     """FormulaManager is responsible for the creation of all formulae."""
 
-    def __init__(self, env=None):
+    def __init__(self, env: "pysmt.environment.Environment"):
         self.env = env
         # Attributes for handling symbols and formulae
-        self.formulae = {}
-        self.symbols = {}
+        self.formulae: Dict[FNodeContent, FNode] = {}
+        self.symbols: Dict[str, FNode] = {}
         self._fresh_guess = 0
         # get_type() from TypeChecker will be initialized lazily
-        self.get_type = None
+        self.get_type: Optional[Callable[[FNode], Optional[PySMTType]]] = None
         self._next_free_id = 1
 
-        self.int_constants = {}
-        self.real_constants = {}
-        self.string_constants = {}
+        self.int_constants: Dict[int, FNode] = {}
+        self.real_constants: Dict[Union[Tuple[int, int], int, fractions.Fraction, float], FNode] = {}
+        self.string_constants: Dict[str, FNode] = {}
 
         self.true_formula = self.create_node(node_type=op.BOOL_CONSTANT,
                                              args=tuple(),
@@ -75,18 +81,18 @@ class FormulaManager(object):
         self.false_formula = self.create_node(node_type=op.BOOL_CONSTANT,
                                               args=tuple(),
                                               payload=False)
-        self._normalizer = None
-        return
+        self._normalizer: Optional[FormulaContextualizer] = None
 
-    def _do_type_check_real(self, formula):
+    def _do_type_check_real(self, formula: FNode):
+        assert self.get_type is not None
         self.get_type(formula)
 
-    def _do_type_check(self, formula):
+    def _do_type_check(self, formula: FNode):
         self.get_type = self.env.stc.get_type
-        self._do_type_check = self._do_type_check_real
+        self._do_type_check = self._do_type_check_real # type: ignore[method-assign]
         return self._do_type_check(formula)
 
-    def create_node(self, node_type, args, payload=None):
+    def create_node(self, node_type: int, args: Tuple[FNode, ...], payload: Optional[Any]=None) -> FNode:
         content = FNodeContent(node_type, args, payload)
         if content in self.formulae:
             n = self.formulae[content]
@@ -99,7 +105,7 @@ class FormulaManager(object):
             self._do_type_check(n)
             return n
 
-    def _create_symbol(self, name, typename=types.BOOL):
+    def _create_symbol(self, name: str, typename: PySMTType=types.BOOL) -> FNode:
         if len(name) == 0 and not self.env.allow_empty_var_names:
             raise PysmtValueError("Empty string is not a valid name")
         if not isinstance(typename, types.PySMTType):
@@ -110,7 +116,7 @@ class FormulaManager(object):
         self.symbols[name] = n
         return n
 
-    def new_fresh_symbol(self, typename, base="FV%d"):
+    def new_fresh_symbol(self, typename: PySMTType, base: str="FV%d") -> FNode:
         count = self._fresh_guess
         while (base % count) in self.symbols:
             count = count + 1
@@ -121,16 +127,16 @@ class FormulaManager(object):
         assert v is not None
         return v
 
-    def get_symbol(self, name):
+    def get_symbol(self, name: str) -> FNode:
         try:
             return self.symbols[name]
         except KeyError:
             raise UndefinedSymbolError(name)
 
-    def get_all_symbols(self):
+    def get_all_symbols(self) -> Iterable[FNode]:
         return self.symbols.values()
 
-    def get_or_create_symbol(self, name, typename):
+    def get_or_create_symbol(self, name: str, typename: PySMTType) -> FNode:
         s = self.symbols.get(name, None)
         if s is None:
             return self._create_symbol(name, typename)
@@ -142,15 +148,15 @@ class FormulaManager(object):
 
     # Node definitions start here
 
-    def Symbol(self, name, typename=types.BOOL):
+    def Symbol(self, name: str, typename: PySMTType=types.BOOL) -> FNode:
         return self.get_or_create_symbol(name, typename)
 
-    def FreshSymbol(self, typename=types.BOOL, template=None):
+    def FreshSymbol(self, typename: PySMTType=types.BOOL, template: Optional[str]=None) -> FNode:
         if template is None:
             return self.new_fresh_symbol(typename)
         return self.new_fresh_symbol(typename, template)
 
-    def ForAll(self, variables, formula):
+    def ForAll(self, variables: Iterable[FNode], formula: FNode) -> FNode:
         """ Creates an expression of the form:
             Forall variables. formula(variables)
 
@@ -158,13 +164,14 @@ class FormulaManager(object):
          - Formula must be of boolean type
          - Variables must be BOOL, REAL or INT
         """
-        if len(variables) == 0:
+        variables_tuple = tuple(variables)
+        if len(variables_tuple) == 0:
             return formula
         return self.create_node(node_type=op.FORALL,
                                 args=(formula,),
-                                payload=tuple(variables))
+                                payload=variables_tuple)
 
-    def Exists(self, variables, formula):
+    def Exists(self, variables: Iterable[FNode], formula: FNode) -> FNode:
         """ Creates an expression of the form:
             Exists variables. formula(variables)
 
@@ -172,25 +179,28 @@ class FormulaManager(object):
          - Formula must be of boolean type
          - Variables must be BOOL, REAL or INT
         """
-        if len(variables) == 0:
+        variables_tuple = tuple(variables)
+        if len(variables_tuple) == 0:
             return formula
         return self.create_node(node_type=op.EXISTS,
                                 args=(formula,),
-                                payload=tuple(variables))
+                                payload=variables_tuple)
 
-    def Function(self, vname, params):
+    def Function(self, vname: FNode, params: Sequence[FNode]) -> FNode:
         """Returns the function application of vname to params.
 
         Note: Applying a 0-arity function returns the function itself.
         """
         if len(params) == 0:
             return vname
-        assert len(params) == len(vname.symbol_type().param_types)
+        lpt = len(cast(types._FunctionType, vname.symbol_type()).param_types)
+        if len(params) != lpt:
+            raise PysmtValueError("Incorrect number of parameters in function creation: got %d expected %d" % (len(params), lpt))
         return self.create_node(node_type=op.FUNCTION,
                                 args=tuple(params),
                                 payload=vname)
 
-    def Not(self, formula):
+    def Not(self, formula: FNode) -> FNode:
         """ Creates an expression of the form:
             not formula
 
@@ -200,7 +210,7 @@ class FormulaManager(object):
             return formula.arg(0)
         return self.create_node(node_type=op.NOT, args=(formula,))
 
-    def Implies(self, left, right):
+    def Implies(self, left: FNode, right: FNode) -> FNode:
         """ Creates an expression of the form:
             left -> right
 
@@ -208,7 +218,7 @@ class FormulaManager(object):
         """
         return self.create_node(node_type=op.IMPLIES, args=(left, right))
 
-    def Iff(self, left, right):
+    def Iff(self, left: FNode, right: FNode) -> FNode:
         """ Creates an expression of the form:
             left <-> right
 
@@ -216,7 +226,7 @@ class FormulaManager(object):
         """
         return self.create_node(node_type=op.IFF, args=(left, right))
 
-    def Minus(self, left, right):
+    def Minus(self, left: FNode, right: FNode) -> FNode:
         """ Creates an expression of the form:
             left - right
 
@@ -224,7 +234,7 @@ class FormulaManager(object):
         """
         return self.create_node(node_type=op.MINUS, args=(left, right))
 
-    def Times(self, *args):
+    def Times(self, *args: Union[FNode, Iterable[FNode]]) -> FNode:
         """ Creates a multiplication of terms
 
         This function has polymorphic n-arguments:
@@ -245,7 +255,7 @@ class FormulaManager(object):
             return self.create_node(node_type=op.TIMES,
                                     args=tuple_args)
 
-    def Pow(self, base, exponent):
+    def Pow(self, base: FNode, exponent: FNode) -> FNode:
         """ Creates the n-th power of the base.
 
         The exponent must be a constant.
@@ -254,11 +264,11 @@ class FormulaManager(object):
             raise PysmtValueError("The exponent of POW must be a constant.", exponent)
 
         if base.is_constant():
-            val = base.constant_value() ** exponent.constant_value()
+            val = cast(Union[int, fractions.Fraction], base.constant_value()) ** cast(Union[int, fractions.Fraction], exponent.constant_value())
             return self.Real(val)
         return self.create_node(node_type=op.POW, args=(base, exponent))
 
-    def Div(self, left, right):
+    def Div(self, left: FNode, right: FNode) -> FNode:
         """ Creates an expression of the form: left / right """
         if (right.is_constant(types.REAL, 0) or
             right.is_constant(types.INT, 0)) \
@@ -275,7 +285,7 @@ class FormulaManager(object):
         return self.create_node(node_type=op.DIV,
                                 args=(left, right))
 
-    def Equals(self, left, right):
+    def Equals(self, left: FNode, right: FNode) -> FNode:
         """ Creates an expression of the form: left = right
 
         For the boolean case use Iff
@@ -283,11 +293,11 @@ class FormulaManager(object):
         return self.create_node(node_type=op.EQUALS,
                                 args=(left, right))
 
-    def NotEquals(self, left, right):
+    def NotEquals(self, left: FNode, right: FNode):
         """ Creates an expression of the form: left != right"""
         return self.Not(self.Equals(left, right))
 
-    def GE(self, left, right):
+    def GE(self, left: FNode, right: FNode) -> FNode:
         """ Creates an expression of the form:
             left >= right
 
@@ -295,7 +305,7 @@ class FormulaManager(object):
         """
         return self.create_node(node_type=op.LE, args=(right, left))
 
-    def GT(self, left, right):
+    def GT(self, left: FNode, right: FNode) -> FNode:
         """ Creates an expression of the form:
             left > right
 
@@ -303,7 +313,7 @@ class FormulaManager(object):
         """
         return self.create_node(node_type=op.LT, args=(right, left))
 
-    def LE(self, left, right):
+    def LE(self, left: FNode, right: FNode) -> FNode:
         """ Creates an expression of the form:
             left <= right
 
@@ -311,7 +321,7 @@ class FormulaManager(object):
         """
         return self.create_node(node_type=op.LE, args=(left, right))
 
-    def LT(self, left, right):
+    def LT(self, left: FNode, right: FNode) -> FNode:
         """ Creates an expression of the form:
             left < right
 
@@ -319,7 +329,7 @@ class FormulaManager(object):
         """
         return self.create_node(node_type=op.LT, args=(left, right))
 
-    def Ite(self, iff, left, right):
+    def Ite(self, iff: FNode, left: FNode, right: FNode) -> FNode:
         """ Creates an expression of the form:
             if( iff ) then  left  else  right
 
@@ -329,7 +339,7 @@ class FormulaManager(object):
         """
         return self.create_node(node_type=op.ITE, args=(iff, left, right))
 
-    def Real(self, value):
+    def Real(self, value: Union[Tuple[int, int], int, fractions.Fraction, float]) -> FNode:
         """ Returns a Real-type constant of the given value.
 
         value can be:
@@ -339,12 +349,13 @@ class FormulaManager(object):
           - A float
           - (Optionally) a mpq or mpz object
         """
+        # TODO could this be improved by storing only the relative Fraction (or int maybe) in the real_constants dict?
         if value in self.real_constants:
             return self.real_constants[value]
 
         if is_pysmt_fraction(value):
             val = value
-        elif type(value) == tuple:
+        elif isinstance(value, tuple):
             val = Fraction(value[0], value[1])
         elif is_python_rational(value):
             val = pysmt_fraction_from_rational(value)
@@ -358,7 +369,7 @@ class FormulaManager(object):
         self.real_constants[value] = n
         return n
 
-    def Int(self, value):
+    def Int(self, value: int) -> FNode:
         """Return a constant of type INT."""
         if value in self.int_constants:
             return self.int_constants[value]
@@ -376,7 +387,7 @@ class FormulaManager(object):
         self.int_constants[value] = n
         return n
 
-    def String(self, value):
+    def String(self, value: str) -> FNode:
         """Return a constant of type STRING."""
         if value in self.string_constants:
             return self.string_constants[value]
@@ -391,15 +402,15 @@ class FormulaManager(object):
             raise TypeError("Invalid type in constant. The type was:" + \
                             str(type(value)))
 
-    def TRUE(self):
+    def TRUE(self) -> FNode:
         """Return the boolean constant True."""
         return self.true_formula
 
-    def FALSE(self):
+    def FALSE(self) -> FNode:
         """Return the boolean constant False."""
         return self.false_formula
 
-    def Bool(self, value):
+    def Bool(self, value: bool) -> FNode:
         if type(value) != bool:
             raise PysmtTypeError("Expecting bool, got %s" % type(value))
 
@@ -408,7 +419,7 @@ class FormulaManager(object):
         else:
             return self.false_formula
 
-    def And(self, *args):
+    def And(self, *args: Union[FNode, Iterable[FNode]]) -> FNode:
         """ Returns a conjunction of terms.
 
         This function has polymorphic arguments:
@@ -427,7 +438,7 @@ class FormulaManager(object):
             return self.create_node(node_type=op.AND,
                                     args=tuple_args)
 
-    def Or(self, *args):
+    def Or(self, *args: Union[FNode, Iterable[FNode]]) -> FNode:
         """ Returns an disjunction of terms.
 
         This function has polymorphic n-arguments:
@@ -446,7 +457,7 @@ class FormulaManager(object):
             return self.create_node(node_type=op.OR,
                                     args=tuple_args)
 
-    def Plus(self, *args):
+    def Plus(self, *args: Union[FNode, Iterable[FNode]]) -> FNode:
         """ Returns an sum of terms.
 
         This function has polymorphic n-arguments:
@@ -467,7 +478,7 @@ class FormulaManager(object):
             return self.create_node(node_type=op.PLUS,
                                     args=tuple_args)
 
-    def ToReal(self, formula):
+    def ToReal(self, formula: FNode) -> FNode:
         """ Cast a formula to real type. """
         t = self.env.stc.get_type(formula)
         if t == types.REAL:
@@ -475,14 +486,14 @@ class FormulaManager(object):
             return formula
         elif t == types.INT:
             if formula.is_int_constant():
-                return self.Real(formula.constant_value())
+                return self.Real(cast(int, formula.constant_value()))
             return self.create_node(node_type=op.TOREAL,
                                     args=(formula,))
         else:
             raise PysmtTypeError("Argument is of type %s, but INT was "
                                  "expected!\n" % t)
 
-    def AtMostOne(self, *args):
+    def AtMostOne(self, *args: Union[FNode, Iterable[FNode]]) -> FNode:
         """ At most one of the bool expressions can be true at anytime.
 
         This using a quadratic encoding:
@@ -497,7 +508,7 @@ class FormulaManager(object):
         return self.And(constraints)
 
 
-    def ExactlyOne(self, *args):
+    def ExactlyOne(self, *args: Union[FNode, Iterable[FNode]]) -> FNode:
         """ Encodes an exactly-one constraint on the boolean symbols.
 
         This using a quadratic encoding:
@@ -509,7 +520,7 @@ class FormulaManager(object):
         return self.And(self.Or(*args),
                         self.AtMostOne(*args))
 
-    def AllDifferent(self, *args):
+    def AllDifferent(self, *args: Union[FNode, Iterable[FNode]]) -> FNode:
         """ Encodes the 'all-different' constraint using two possible
         encodings.
 
@@ -522,11 +533,11 @@ class FormulaManager(object):
                 res.append(self.Not(self.EqualsOrIff(a, b)))
         return self.And(res)
 
-    def Xor(self, left, right):
+    def Xor(self, left: FNode, right: FNode) -> FNode:
         """Returns the xor of left and right: left XOR right """
         return self.Not(self.Iff(left, right))
 
-    def _MinWrap(self, le, *args):
+    def _MinWrap(self, le: Callable[[FNode, FNode], FNode], *args: Union[FNode, Iterable[FNode]]) -> FNode:
         """Returns the encoding of the minimum expression within args using the specified 'Lower-Equal' operator"""
         exprs = self._polymorph_args_to_tuple(args)
         assert len(exprs) > 0
@@ -539,7 +550,7 @@ class FormulaManager(object):
             h = len(exprs) // 2
             return self._MinWrap(le, self._MinWrap(le, exprs[0:h]), self._MinWrap(le, exprs[h:]))
 
-    def _MaxWrap(self, le, *args):
+    def _MaxWrap(self, le: Callable[[FNode, FNode], FNode], *args: Union[FNode, Iterable[FNode]]) -> FNode:
         """Returns the encoding of the maximum expression within args using the specified 'Lower-Equal' operator"""
         exprs = self._polymorph_args_to_tuple(args)
         assert len(exprs) > 0
@@ -552,29 +563,29 @@ class FormulaManager(object):
             h = len(exprs) // 2
             return self._MaxWrap(le, self._MaxWrap(le,exprs[0:h]), self._MaxWrap(le,exprs[h:]))
 
-    def MinBV(self, sign, *args):
+    def MinBV(self, sign: bool, *args: Union[FNode, Iterable[FNode]]) -> FNode:
         """Returns the encoding of the minimum expression within args"""
         le = self.BVULE
         if sign:
             le = self.BVSLE
         return self._MinWrap( le, *args)
 
-    def MaxBV(self, sign, *args):
+    def MaxBV(self, sign: bool, *args: Union[FNode, Iterable[FNode]]) -> FNode:
         """Returns the encoding of the maximum expression within args"""
         le = self.BVULE
         if sign:
             le = self.BVSLE
         return self._MaxWrap( le, *args)
 
-    def Min(self, *args):
+    def Min(self, *args: Union[FNode, Iterable[FNode]]) -> FNode:
         """Returns the encoding of the minimum expression within args"""
         return self._MinWrap(self.LE, *args)
 
-    def Max(self, *args):
+    def Max(self, *args: Union[FNode, Iterable[FNode]]) -> FNode:
         """Returns the encoding of the maximum expression within args"""
         return self._MaxWrap(self.LE, *args)
 
-    def EqualsOrIff(self, left, right):
+    def EqualsOrIff(self, left: FNode, right: FNode) -> FNode:
         """Returns Equals() or Iff() depending on the type of the arguments.
 
         This can be used to deal with ambiguous cases where we might be
@@ -587,7 +598,7 @@ class FormulaManager(object):
             return self.Equals(left, right)
 
     # BitVectors
-    def BV(self, value, width=None):
+    def BV(self, value: Union[str, int], width: Optional[int]=None) -> FNode:
         """Return a constant of type BitVector.
 
         value can be either:
@@ -599,7 +610,7 @@ class FormulaManager(object):
         the SBV() method shall be used.
         """
 
-        if type(value) is str:
+        if isinstance(value, str):
             if value.startswith("#b"):
                 str_width = len(value)-2
                 value = int(value[2:],2)
@@ -619,25 +630,26 @@ class FormulaManager(object):
             raise PysmtValueError("Need to specify a width for the constant")
 
         if is_pysmt_integer(value):
-            _value = value
+            _value = cast(int, value) #TODO: this is incorrect, we should define a custom "Integer" type including mpz. Try with IntegerClass from constants
         elif is_python_integer(value):
+            assert isinstance(value, int), "Non-accepted typing"
             _value = pysmt_integer_from_integer(value)
         else:
             raise PysmtTypeError("Invalid type in constant. The type was: %s" \
                                  % str(type(value)))
         if _value < 0:
-            raise PysmtValueError("Cannot specify a negative value: %d" \
-                                  % _value)
+            raise PysmtValueError("Cannot specify a negative value: %s" \
+                                  % (str(_value)))
         if _value >= 2**width:
-            raise PysmtValueError("Cannot express %d in %d bits" \
-                                  % (_value, width))
+            raise PysmtValueError("Cannot express %s in %s bits" \
+                                  % (str(_value), str(width)))
 
         return self.create_node(node_type=op.BV_CONSTANT,
                                 args=tuple(),
                                 payload=(_value, width))
 
 
-    def SBV(self, value, width=None):
+    def SBV(self, value: Union[int, str], width: Optional[int]=None) -> FNode:
         """Returns a constant of type BitVector interpreting the sign.
 
         If the specified value is an integer, it is converted in the
@@ -645,18 +657,19 @@ class FormulaManager(object):
         behavior is the same as BV().
         """
         if is_python_integer(value):
+            value = cast(int, value)
             if width is None:
                 raise PysmtValueError("Need to specify a width for the constant")
 
             min_val = -(2**(width-1))
             max_val = (2**(width-1)) - 1
             if value < min_val:
-                raise PysmtValueError("Cannot represent a value (%d) lower " \
-                                      "than %d in %d bits" % (value, min_val,
+                raise PysmtValueError("Cannot represent a value (%s) lower " \
+                                      "than %d in %d bits" % (str(value), min_val,
                                                               width))
             if value > max_val:
-                raise PysmtValueError("Cannot represent a value (%d) greater " \
-                                      "than %d in %d bits" % (value, max_val,
+                raise PysmtValueError("Cannot represent a value (%s) greater " \
+                                      "than %d in %d bits" % (str(value), max_val,
                                                               width))
 
             if value >= 0:
@@ -667,21 +680,21 @@ class FormulaManager(object):
         else:
             return self.BV(value, width=width)
 
-    def BVOne(self, width):
+    def BVOne(self, width: int) -> FNode:
         """Returns the bit-vector representing the unsigned one."""
         return self.BV(1, width=width)
 
-    def BVZero(self, width):
+    def BVZero(self, width: int) -> FNode:
         """Returns the bit-vector with all bits set to zero."""
         return self.BV(0, width=width)
 
-    def BVNot(self, formula):
+    def BVNot(self, formula: FNode) -> FNode:
         """Returns the bitvector Not(bv)"""
         return self.create_node(node_type=op.BV_NOT,
                                 args=(formula,),
                                 payload=(formula.bv_width(),))
 
-    def BVAnd(self, *args):
+    def BVAnd(self, *args: Union[FNode, Sequence[FNode]]) -> FNode:
         """Returns the Bit-wise AND of bitvectors of the same size.
         If more than 2 arguments are passed, a left-associative formula is generated."""
         args = self._polymorph_args_to_tuple(args)
@@ -694,7 +707,7 @@ class FormulaManager(object):
                              payload=(res.bv_width(),))
         return res
 
-    def BVOr(self,  *args):
+    def BVOr(self, *args: Union[FNode, Sequence[FNode]]) -> FNode:
         """Returns the Bit-wise OR of bitvectors of the same size.
         If more than 2 arguments are passed, a left-associative formula is generated."""
         args = self._polymorph_args_to_tuple(args)
@@ -707,13 +720,13 @@ class FormulaManager(object):
                              payload=(res.bv_width(),))
         return res
 
-    def BVXor(self, left, right):
+    def BVXor(self, left: FNode, right: FNode) -> FNode:
         """Returns the Bit-wise XOR of two bitvectors of the same size."""
         return self.create_node(node_type=op.BV_XOR,
                                 args=(left,right),
                                 payload=(left.bv_width(),))
 
-    def BVConcat(self, *args):
+    def BVConcat(self, *args: Union[FNode, Sequence[FNode]]) -> FNode:
         """Returns the Concatenation of the given BVs"""
         ex = self._polymorph_args_to_tuple(args)
         base = self.create_node(node_type=op.BV_CONCAT,
@@ -725,7 +738,7 @@ class FormulaManager(object):
                                     payload=(base.bv_width() + e.bv_width(),))
         return base
 
-    def BVExtract(self, formula, start=0, end=None):
+    def BVExtract(self, formula: FNode, start: int=0, end: Optional[int]=None) -> FNode:
         """Returns the slice of formula from start to end (inclusive)."""
         if end is None: end = formula.bv_width()-1
         assert is_python_integer(start) and is_python_integer(end)
@@ -739,33 +752,33 @@ class FormulaManager(object):
                                 args=(formula,),
                                 payload=(size, start, end))
 
-    def BVULT(self, left, right):
+    def BVULT(self, left: FNode, right: FNode) -> FNode:
         """Returns the formula left < right."""
         return self.create_node(node_type=op.BV_ULT,
                                 args=(left, right))
 
-    def BVUGT(self, left, right):
+    def BVUGT(self, left: FNode, right: FNode) -> FNode:
         """Returns the formula left > right."""
         return self.create_node(node_type=op.BV_ULT,
                                 args=(right, left))
 
-    def BVULE(self, left, right):
+    def BVULE(self, left: FNode, right: FNode) -> FNode:
         """Returns the formula left <= right."""
         return self.create_node(node_type=op.BV_ULE,
                                 args=(left, right))
 
-    def BVUGE(self, left, right):
+    def BVUGE(self, left: FNode, right: FNode) -> FNode:
         """Returns the formula left >= right."""
         return self.create_node(node_type=op.BV_ULE,
                                 args=(right, left))
 
-    def BVNeg(self, formula):
+    def BVNeg(self, formula: FNode) -> FNode:
         """Returns the arithmetic negation of the BV."""
         return self.create_node(node_type=op.BV_NEG,
                                 args=(formula,),
                                 payload=(formula.bv_width(),))
 
-    def BVAdd(self, *args):
+    def BVAdd(self, *args: Union[FNode, Sequence[FNode]]) -> FNode:
         """Returns the sum of BV.
         If more than 2 arguments are passed, a left-associative formula is generated."""
         args = self._polymorph_args_to_tuple(args)
@@ -778,13 +791,13 @@ class FormulaManager(object):
                              payload=(res.bv_width(),))
         return res
 
-    def BVSub(self, left, right):
+    def BVSub(self, left: FNode, right: FNode) -> FNode:
         """Returns the difference of two BV."""
         return self.create_node(node_type=op.BV_SUB,
                                 args=(left, right),
                                 payload=(left.bv_width(),))
 
-    def BVMul(self, *args):
+    def BVMul(self, *args: Union[FNode, Sequence[FNode]]) -> FNode:
         """Returns the product of BV.
         If more than 2 arguments are passed, a left-associative formula is generated."""
         args = self._polymorph_args_to_tuple(args)
@@ -797,35 +810,37 @@ class FormulaManager(object):
                              payload=(res.bv_width(),))
         return res
 
-    def BVUDiv(self, left, right):
+    def BVUDiv(self, left: FNode, right: FNode) -> FNode:
         """Returns the division of the two BV."""
         return self.create_node(node_type=op.BV_UDIV,
                                 args=(left, right),
                                 payload=(left.bv_width(),))
 
-    def BVURem(self, left, right):
+    def BVURem(self, left: FNode, right: FNode) -> FNode:
         """Returns the remainder of the two BV."""
         return self.create_node(node_type=op.BV_UREM,
                                 args=(left, right),
                                 payload=(left.bv_width(),))
 
-    def BVLShl(self, left, right):
+    def BVLShl(self, left: FNode, right: Union[FNode, int]) -> FNode:
         """Returns the logical left shift the BV."""
         if is_python_integer(right):
-            right = self.BV(right, left.bv_width())
+            right = self.BV(cast(int, right), left.bv_width())
+        assert isinstance(right, FNode), "Wrong typing"
         return self.create_node(node_type=op.BV_LSHL,
                                 args=(left, right),
                                 payload=(left.bv_width(),))
 
-    def BVLShr(self, left, right):
+    def BVLShr(self, left: FNode, right: Union[FNode, int]) -> FNode:
         """Returns the logical right shift the BV."""
         if is_python_integer(right):
-            right = self.BV(right, left.bv_width())
+            right = self.BV(cast(int, right), left.bv_width())
+        assert isinstance(right, FNode), "Wrong typing"
         return self.create_node(node_type=op.BV_LSHR,
                                 args=(left, right),
                                 payload=(left.bv_width(),))
 
-    def BVRol(self, formula, steps):
+    def BVRol(self, formula: FNode, steps: int) -> FNode:
         """Returns the LEFT rotation of the BV by the number of steps."""
         if not is_python_integer(steps):
             raise PysmtTypeError("BVRol: 'steps' should be an integer. Got %s" \
@@ -834,7 +849,7 @@ class FormulaManager(object):
                                 args=(formula,),
                                 payload=(formula.bv_width(), steps))
 
-    def BVRor(self, formula, steps):
+    def BVRor(self, formula: FNode, steps: int) -> FNode:
         """Returns the RIGHT rotation of the BV by the number of steps."""
         if not is_python_integer(steps):
             raise PysmtTypeError("BVRor: 'steps' should be an integer. Got %s" \
@@ -843,7 +858,7 @@ class FormulaManager(object):
                                 args=(formula,),
                                 payload=(formula.bv_width(), steps))
 
-    def BVZExt(self, formula, increase):
+    def BVZExt(self, formula: FNode, increase: int) -> FNode:
         """Returns the extension of the BV with 'increase' additional bits
 
         New bits are set to zero.
@@ -856,7 +871,7 @@ class FormulaManager(object):
                                 payload=(formula.bv_width()+increase,
                                          increase))
 
-    def BVSExt(self, formula, increase):
+    def BVSExt(self, formula: FNode, increase: int) -> FNode:
         """Returns the signed extension of the BV with 'increase' additional bits
 
         New bits are set according to the most-significant-bit.
@@ -869,65 +884,65 @@ class FormulaManager(object):
                                 payload=(formula.bv_width()+increase,
                                          increase))
 
-    def BVSLT(self, left, right):
+    def BVSLT(self, left: FNode, right: FNode) -> FNode:
         """Returns the SIGNED LOWER-THAN comparison for BV."""
         return self.create_node(node_type=op.BV_SLT,
                                 args=(left, right))
 
-    def BVSLE(self, left, right):
+    def BVSLE(self, left: FNode, right: FNode) -> FNode:
         """Returns the SIGNED LOWER-THAN-OR-EQUAL-TO comparison for BV."""
         return self.create_node(node_type=op.BV_SLE,
                                 args=(left, right))
 
-    def BVComp(self, left, right):
+    def BVComp(self, left: FNode, right: FNode) -> FNode:
         """Returns a BV of size 1 equal to 0 if left is equal to right,
         otherwise 1 is returned."""
         return self.create_node(node_type=op.BV_COMP,
                                 args=(left, right),
                                 payload=(1,))
 
-    def BVSDiv(self, left, right):
+    def BVSDiv(self, left: FNode, right: FNode) -> FNode:
         """Returns the SIGNED DIVISION of left by right"""
         return self.create_node(node_type=op.BV_SDIV,
                                 args=(left, right),
                                 payload=(left.bv_width(),))
 
-    def BVSRem(self, left, right):
+    def BVSRem(self, left: FNode, right: FNode) -> FNode:
         """Returns the SIGNED REMAINDER of left divided by right"""
         return self.create_node(node_type=op.BV_SREM,
                                 args=(left, right),
                                 payload=(left.bv_width(),))
 
-    def BVAShr(self, left, right):
+    def BVAShr(self, left: FNode, right: FNode) -> FNode:
         """Returns the RIGHT arithmetic rotation of the left BV by the number
         of steps specified by the right BV."""
         if is_python_integer(right):
-            right = self.BV(right, left.bv_width())
+            right = self.BV(cast(int, right), left.bv_width())
         return self.create_node(node_type=op.BV_ASHR,
                                 args=(left, right),
                                 payload=(left.bv_width(),))
 
-    def BVNand(self, left, right):
+    def BVNand(self, left: FNode, right: FNode) -> FNode:
         """Returns the NAND composition of left and right."""
         return self.BVNot(self.BVAnd(left, right))
 
-    def BVNor(self, left, right):
+    def BVNor(self, left: FNode, right: FNode) -> FNode:
         """Returns the NOR composition of left and right."""
         return self.BVNot(self.BVOr(left, right))
 
-    def BVXnor(self, left, right):
+    def BVXnor(self, left: FNode, right: FNode) -> FNode:
         """Returns the XNOR composition of left and right."""
         return self.BVNot(self.BVXor(left, right))
 
-    def BVSGT(self, left, right):
+    def BVSGT(self, left: FNode, right: FNode) -> FNode:
         """Returns the SIGNED GREATER-THAN comparison for BV."""
         return self.BVSLT(right, left)
 
-    def BVSGE(self, left, right):
+    def BVSGE(self, left: FNode, right: FNode) -> FNode:
         """Returns the SIGNED GREATER-THAN-OR-EQUAL-TO comparison for BV."""
         return self.BVSLE(right, left)
 
-    def BVSMod(self, left, right):
+    def BVSMod(self, left: FNode, right: FNode) -> FNode:
         """Returns the SIGNED MODULUS of left divided by right."""
         # According to SMT-LIB standard (2015-06-23) BVSMod is defined as follows
         # http://smtlib.cs.uiowa.edu/logics-all.shtml#QF_BV
@@ -972,18 +987,18 @@ class FormulaManager(object):
         return self.Ite(self.Or(cond1, cond2), u,
                         self.Ite(cond3, case3, self.Ite(cond4, case4, case5)))
 
-    def BVRepeat(self, formula, count=1):
+    def BVRepeat(self, formula: FNode, count: int=1) -> FNode:
         """Returns the concatenation of count copies of formula."""
         res = formula
         for _ in range(count-1):
             res = self.BVConcat(res, formula)
         return res
 
-    def StrLength(self, formula):
+    def StrLength(self, formula: FNode) -> FNode:
         """Returns the length of a formula resulting a String"""
         return self.create_node(node_type=op.STR_LENGTH, args=(formula,))
 
-    def StrConcat(self, *args):
+    def StrConcat(self, *args: Union[FNode, Sequence[FNode]]) -> FNode:
         """Returns the concatenation of n Strings.
 
         s1, s2, ..., and sn are String terms.
@@ -994,14 +1009,14 @@ class FormulaManager(object):
             raise TypeError("Cannot create a Str_Concat without arguments.")
         return self.create_node(node_type=op.STR_CONCAT, args=tuple_args)
 
-    def StrContains(self, s, t):
+    def StrContains(self, s: FNode, t: FNode) -> FNode:
         """Returns wether the String s contains the String t.
 
         s and t are String terms.
         """
         return self.create_node(node_type=op.STR_CONTAINS, args=(s, t))
 
-    def StrIndexOf(self, s, t, i):
+    def StrIndexOf(self, s: FNode, t: FNode, i: FNode) -> FNode:
         """Returns the position of the first occurrence of t in s after the index i.
 
         s and t being a non empty strings and i a non-negative integer.
@@ -1009,42 +1024,42 @@ class FormulaManager(object):
         """
         return self.create_node(node_type=op.STR_INDEXOF, args=(s, t, i))
 
-    def StrReplace(self, s, t1, t2):
+    def StrReplace(self, s: FNode, t1: FNode, t2: FNode) -> FNode:
         """Returns a new string where the first occurrence of t1 is replace by t2.
 
         where s, t1 and t2 are string terms, t1 is non-empty.
         """
         return self.create_node(node_type=op.STR_REPLACE, args=(s, t1, t2))
 
-    def StrSubstr(self, s, i, j):
+    def StrSubstr(self, s: FNode, i: FNode, j: FNode) -> FNode:
         """Returns a substring of s starting at i and ending at j+i.
 
         where s is a string term and i, j are integer terms.
         """
         return self.create_node(node_type=op.STR_SUBSTR, args=(s, i, j))
 
-    def StrPrefixOf(self, s, t):
+    def StrPrefixOf(self, s: FNode, t: FNode) -> FNode:
         """Returns whether the s is a prefix of the string t.
 
         where s and t are string terms.
         """
         return self.create_node(node_type=op.STR_PREFIXOF, args=(s, t))
 
-    def StrSuffixOf(self, s, t):
+    def StrSuffixOf(self, s: FNode, t: FNode) -> FNode:
         """Returns whether the string s is a suffix of the string t.
 
         where s and t are string terms.
         """
         return self.create_node(node_type=op.STR_SUFFIXOF, args=(s, t))
 
-    def StrToInt(self, s):
+    def StrToInt(self, s: FNode) -> FNode:
         """Returns the corresponding natural number of s.
 
         If s does not represent a natural number, it returns -1.
         """
         return self.create_node(node_type=op.STR_TO_INT, args=(s,))
 
-    def IntToStr(self, x):
+    def IntToStr(self, x: FNode) -> FNode:
         """Returns the corresponding String representing the natural number x.
 
         where x is an integer term. If x is not a natural number it
@@ -1052,29 +1067,29 @@ class FormulaManager(object):
         """
         return self.create_node(node_type=op.INT_TO_STR, args=(x, ))
 
-    def StrCharAt(self, s, i):
+    def StrCharAt(self, s: FNode, i: FNode) -> FNode:
         """Returns a single character String at position i.
 
         s is a string term and i is an integer term. i is the position.
         """
         return self.create_node(node_type=op.STR_CHARAT, args=(s, i))
 
-    def BVToNatural(self, formula):
+    def BVToNatural(self, formula: FNode) -> FNode:
         """Returns the Natural number represented by the BitVector.
 
         Given a BitVector of width m returns an integer between 0 and 2^m-1
         """
         return self.create_node(node_type=op.BV_TONATURAL, args=(formula,))
 
-    def Select(self, arr, idx):
+    def Select(self, arr: FNode, idx: FNode) -> FNode:
         """Creates a node representing an array selection."""
         return self.create_node(node_type=op.ARRAY_SELECT, args=(arr, idx))
 
-    def Store(self, arr, idx, val):
+    def Store(self, arr: FNode, idx: FNode, val: FNode) -> FNode:
         """Creates a node representing an array update."""
         return self.create_node(node_type=op.ARRAY_STORE, args=(arr, idx, val))
 
-    def Array(self, idx_type, default, assigned_values=None):
+    def Array(self, idx_type: PySMTType, default: FNode, assigned_values: Optional[Dict[FNode, FNode]]=None) -> FNode:
         """Creates a node representing an array having index type equal to
            idx_type, initialized with default values.
 
@@ -1098,7 +1113,7 @@ class FormulaManager(object):
         return self.create_node(node_type=op.ARRAY_VALUE, args=tuple(args),
                                 payload=idx_type)
 
-    def _Algebraic(self, val):
+    def _Algebraic(self, val: Numeral) -> FNode:
         """Returns the algebraic number val."""
         return self.create_node(node_type=op.ALGEBRAIC_CONSTANT,
                                 args=tuple(),
@@ -1107,7 +1122,7 @@ class FormulaManager(object):
     #
     # Helper functions
     #
-    def normalize(self, formula):
+    def normalize(self, formula: FNode) -> FNode:
         """Returns the formula normalized to the current Formula Manager.
 
         This method is useful to contextualize a formula coming from another
@@ -1119,9 +1134,10 @@ class FormulaManager(object):
         """
         if self._normalizer is None:
             self._normalizer = FormulaContextualizer(self.env)
-        return self._normalizer.walk(formula)
 
-    def _polymorph_args_to_tuple(self, args):
+        return assert_not_none(self._normalizer).walk(formula)
+
+    def _polymorph_args_to_tuple(self, args: Sequence[Union[FNode, Iterable[FNode]]]) -> Tuple[FNode, ...]:
         """ Helper function to return a tuple of arguments from args.
 
         This function is used to allow N-ary operators to express their arguments
@@ -1129,11 +1145,17 @@ class FormulaManager(object):
            And([a,b,c]) and And(a,b,c)
         are both valid, and they are converted into a tuple (a,b,c) """
 
-        if len(args) == 1 and isinstance(args[0], Iterable):
-            args = args[0]
-        return tuple(args)
+        if len(args) == 1 and isinstance(args[0], CollectionsIterable):
+            itargs: Iterable[FNode] = args[0]
+        else:
+            itargs = cast(Sequence[FNode], args)
+        def _check_fnode(f: Union[FNode, Iterable[FNode]]) -> FNode:
+            if not isinstance(f, FNode):
+                raise PysmtTypeError("Typing not respected")
+            return f
+        return tuple(map(_check_fnode, itargs))
 
-    def __contains__(self, node):
+    def __contains__(self, node: FNode) -> bool:
         """Checks whether the given node belongs to this formula manager.
 
         This overloads the 'in' operator, making it possible to write:
@@ -1151,24 +1173,24 @@ class FormulaManager(object):
 class FormulaContextualizer(IdentityDagWalker):
     """Helper class to recreate a formula within a new environment."""
 
-    def __init__(self, env=None):
+    def __init__(self, env: Optional["pysmt.environment.Environment"]=None):
         IdentityDagWalker.__init__(self, env=env)
         self.type_normalize = self.env.type_manager.normalize
 
-    def walk_symbol(self, formula, args, **kwargs):
+    def walk_symbol(self, formula: FNode, args: Sequence[FNode], **kwargs) -> FNode:
         # Recreate the Symbol taking into account the type information
         ty = formula.symbol_type()
         newty = self.type_normalize(ty)
         return self.mgr.Symbol(formula.symbol_name(), newty)
 
-    def walk_array_value(self, formula, args, **kwargs):
+    def walk_array_value(self, formula: FNode, args: Sequence[FNode], **kwargs) -> FNode:
         # Recreate the ArrayValue taking into account the type information
         assign = dict(zip(args[1::2], args[2::2]))
         ty = self.type_normalize(formula.array_value_index_type())
         return self.mgr.Array(ty, args[0], assign)
 
-    def walk_function(self, formula, args, **kwargs):
+    def walk_function(self, formula: FNode, args: Sequence[FNode], **kwargs) -> FNode:
         # We re-create the symbol name
         old_name = formula.function_name()
-        new_name = self.walk_symbol(old_name, None)
+        new_name = self.walk_symbol(old_name, ())
         return self.mgr.Function(new_name, args)

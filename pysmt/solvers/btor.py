@@ -18,11 +18,13 @@
 from enum import Enum
 import inspect
 from math import log, ceil
+from typing import Dict, Set
 
 from pysmt.exceptions import SolverAPINotFound
+from pysmt.fnode import FNode
 
 try:
-    import pyboolector
+    import pyboolector # type: ignore[import]
 
     # Fixing interface for cython 3.1+
     #
@@ -189,8 +191,7 @@ class BoolectorOptions(SolverOptions):
 # EOC BoolectorOptions
 
 
-class BoolectorSolver(IncrementalTrackingSolver, UnsatCoreSolver,
-                      SmtLibBasicSolver, SmtLibIgnoreMixin):
+class BoolectorSolver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolver):
 
     LOGICS = [QF_BV, QF_UFBV, QF_ABV, QF_AUFBV, QF_AX] + \
         list(filter(lambda l: l.name in {
@@ -266,7 +267,7 @@ class BoolectorSolver(IncrementalTrackingSolver, UnsatCoreSolver,
         else:
             raise SolverReturnedUnknownResultError
 
-    def get_unsat_core(self):
+    def get_unsat_core(self) -> Set[FNode]:
         """After a call to solve() yielding UNSAT, returns the unsat core as a
         set of formulae"""
         self._check_unsat_core_config()
@@ -283,9 +284,9 @@ class BoolectorSolver(IncrementalTrackingSolver, UnsatCoreSolver,
                     unsat_core.add(a)
             return unsat_core
         else:
-            return self.get_named_unsat_core().values()
+            return set(self.get_named_unsat_core().values())
 
-    def get_named_unsat_core(self):
+    def get_named_unsat_core(self) -> Dict[str, FNode]:
         """After a call to solve() yielding UNSAT, returns the unsat core as a
         dict of names to formulae"""
         self._check_unsat_core_config()

@@ -16,7 +16,10 @@
 
 import os
 
+from typing import Any, Optional, Type, Union
+
 from pysmt.exceptions import PysmtImportError
+
 # The environment variable can be used to force the configuration
 # of the Fraction class.
 #
@@ -29,13 +32,14 @@ from pysmt.exceptions import PysmtImportError
 # If set to True, Python's Fraction module will be used instead.
 #
 
-ENV_USE_GMPY = os.environ.get("PYSMT_GMPY")
-if ENV_USE_GMPY is not None:
-    ENV_USE_GMPY = ENV_USE_GMPY.lower() in ["true", "1"]
+ENV_USE_GMPY: Optional[bool] = None
+env_use_gmpy_val = os.environ.get("PYSMT_GMPY")
+if env_use_gmpy_val is not None:
+    ENV_USE_GMPY = env_use_gmpy_val.lower() in ["true", "1"]
 
 HAS_GMPY = False
 try:
-    from gmpy2 import mpq, mpz
+    from gmpy2 import mpq, mpz # type: ignore[import]
     HAS_GMPY = True
 except ImportError as ex:
     if ENV_USE_GMPY is True:
@@ -52,8 +56,8 @@ else:
     USE_GMPY = HAS_GMPY
 
 if HAS_GMPY:
-    mpq_type = type(mpq(1,2))
-    mpz_type = type(mpz(1))
+    mpq_type: Optional[Type[Any]] = type(mpq(1,2))
+    mpz_type: Optional[Type[Any]] = type(mpz(1))
 else:
     mpq_type = None
     mpz_type = None
@@ -67,10 +71,11 @@ if USE_GMPY:
     Fraction = mpq
 else:
     Fraction = pyFraction
+
 FractionClass = type(Fraction(1,2))
 
 
-def is_pysmt_fraction(var):
+def is_pysmt_fraction(var: Any) -> bool:
     """Tests whether var is a Fraction.
 
     This takes into account the class being used to represent the Fraction.
@@ -87,7 +92,7 @@ else:
 IntegerClass = type(Integer(1))
 
 
-def is_pysmt_integer(var):
+def is_pysmt_integer(var: Any) -> bool:
     """Tests whether var is an Integer.
 
     This takes into account the class being used to represent the Integer.
@@ -95,7 +100,7 @@ def is_pysmt_integer(var):
     return type(var) == IntegerClass
 
 
-def is_python_integer(var):
+def is_python_integer(var: Any) -> bool:
     """Checks whether var is Python Integer.
 
     This accounts for: long, int and mpz (if available).
@@ -107,7 +112,7 @@ def is_python_integer(var):
     return False
 
 
-def is_python_rational(var):
+def is_python_rational(var: Any) -> bool:
     """Tests whether var is a Rational.
 
     This accounts for: long, int, float, Fraction, mpz, mpq (if available).
@@ -123,7 +128,7 @@ def is_python_rational(var):
     return False
 
 
-def is_python_boolean(var):
+def is_python_boolean(var: Any):
     """Tests whether var is a Boolean."""
     return var is True or var is False
 
@@ -142,14 +147,14 @@ def to_python_integer(value):
 
 
 if USE_GMPY:
-    def pysmt_fraction_from_rational(value):
+    def pysmt_fraction_from_rational(value: Union[float, int, pyFraction]) -> pyFraction:
         """Return a pysmt Fraction for the rational value."""
         if type(value) == FractionClass:
             # Nothing to do
             return value
-        return Fraction(value)
+        return FractionClass(value)
 else:
-    def pysmt_fraction_from_rational(value):
+    def pysmt_fraction_from_rational(value: Union[float, int, pyFraction]) -> pyFraction:
         """Return a pysmt Fraction for the rational value."""
         if type(value) == FractionClass:
             # Nothing to do
@@ -157,6 +162,7 @@ else:
         # Python's Fraction is a bit picky, need to
         # construct the object in different ways
         if type(value) == mpq_type:
+            assert isinstance(value, mpq_type)
             n = Integer(value.numerator())
             d = Integer(value.denominator())
             return Fraction(n, d)
@@ -171,7 +177,7 @@ else:
 
 USE_Z3 = False
 try:
-    import z3.z3num
+    import z3.z3num # type: ignore[import]
     USE_Z3 = True
 except ImportError:
     pass
@@ -192,7 +198,7 @@ if USE_Z3:
             pass
 
 else:
-    class Numeral(object):
+    class Numeral(object): # type: ignore[no-redef]
         """Represents a Number (Algebraic)"""
         def __init__(self, obj):
             raise NotImplementedError("Z3 is not installed. "\
@@ -201,5 +207,5 @@ else:
 #
 # Strings
 #
-def is_python_string(str1):
+def is_python_string(str1: str) -> bool:
     return type(str1) == str

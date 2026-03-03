@@ -16,17 +16,22 @@
 #   limitations under the License.
 #
 import atexit
+from fractions import Fraction as pyFraction
 from warnings import warn
 
 from pysmt.exceptions import SolverAPINotFound
+from pysmt.typing import PySMTType, _FunctionType, _BVType
+from pysmt.environment import Environment
+from pysmt.fnode import FNode
+from pysmt.solvers.eager import EagerModel
+from typing import Any, Dict, List, Optional, Set, cast
 
 try:
-    import yices_api
+    import yices_api # type: ignore[import]
 except ImportError:
     raise SolverAPINotFound
 
 
-from pysmt.solvers.eager import EagerModel
 from pysmt.solvers.solver import Solver, Converter, SolverOptions
 from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
 
@@ -44,7 +49,7 @@ import pysmt.logics
 def init():
     if not getattr(init, 'initialized', False):
         yices_api.yices_init()
-    init.initialized = True
+    setattr(init, "initialized", True)
 
 def reset_yices():
     yices_api.yices_reset()
@@ -62,7 +67,7 @@ STATUS_UNSAT = 4
 
 PRINTING_WIDTH = 999999999
 
-def yices_logic(pysmt_logic):
+def yices_logic(pysmt_logic: pysmt.logics.Logic) -> str:
     """Return a Yices String representing the given pySMT logic."""
     ylogic = str(pysmt_logic)
     if ylogic == "QF_BOOL":
@@ -79,7 +84,7 @@ class YicesOptions(SolverOptions):
             raise PysmtValueError("'unsat_cores_mode' option not supported.")
 
     @staticmethod
-    def _set_option(cfg, name, value):
+    def _set_option(cfg: int, name: str, value: str):
         rv = yices_api.yices_set_config(cfg, name, value)
         if rv != 0:
             # This might be a parameter to be set later (see set_params)
@@ -90,7 +95,7 @@ class YicesOptions(SolverOptions):
                 raise PysmtValueError("Error setting the option "
                                       "'%s=%s'" % (name,value))
 
-    def __call__(self, solver):
+    def __call__(self, solver: "YicesSolver"):
         if self.generate_models:
             # Yices always generates models
             pass
@@ -106,7 +111,7 @@ class YicesOptions(SolverOptions):
         for k,v in self.solver_options.items():
             self._set_option(solver.yices_config, str(k), str(v))
 
-    def set_params(self, solver):
+    def set_params(self, solver: "YicesSolver"):
         """Set Search Parameters.
 
         Yices makes a distinction between configuration and search
@@ -128,7 +133,7 @@ class YicesOptions(SolverOptions):
 # EOC YicesOptions
 
 
-class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
+class YicesSolver(SmtLibBasicSolver):
 
     LOGICS = pysmt.logics.PYSMT_QF_LOGICS -\
              pysmt.logics.ARRAYS_LOGICS -\
@@ -136,18 +141,20 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
                  if not l.theory.linear or l.theory.strings)
     OptionsClass = YicesOptions
 
-    def __init__(self, environment, logic, **options):
+    def __init__(self, environment: Environment, logic: pysmt.logics.Logic, **options):
         Solver.__init__(self,
                         environment=environment,
                         logic=logic,
                         **options)
 
-        self.declarations = set()
+        self.declarations: Set[FNode] = set()
         self.yices_config = yices_api.yices_new_config()
         if yices_api.yices_default_config_for_logic(self.yices_config,
                                                     yices_logic(logic)) != 0:
             warn("Error setting config for logic %s" % logic)
+        self.yices_params: Any # This is set in the self.options(self) call
         self.options(self)
+        assert isinstance(self.options, YicesOptions)
         self.yices = yices_api.yices_new_context(self.yices_config)
         self.options.set_params(self)
         yices_api.yices_free_config(self.yices_config)
@@ -166,7 +173,7 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         raise NotImplementedError
 
     @clear_pending_pop
-    def add_assertion(self, formula, named=None):
+    def add_assertion(self, formula: FNode, named: None=None):
         self._assert_is_boolean(formula)
         term = self.converter.convert(formula)
         code = yices_api.yices_assert_formula(self.yices, term)
@@ -178,7 +185,7 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
                                       ": %s (code: %s)" % \
                                       (msg, code))
 
-    def get_model(self):
+    def get_model(self) -> EagerModel:
         assignment = {}
         # MG: This iteration is problematic, since it assumes that all
         # defined symbols have a type that is compatible with this
@@ -195,7 +202,7 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         return EagerModel(assignment=assignment, environment=self.environment)
 
     @clear_pending_pop
-    def solve(self, assumptions=None):
+    def solve(self, assumptions: Optional[List[FNode]]=None) -> bool:
         if assumptions is not None:
             self.push()
             self.add_assertion(self.mgr.And(assumptions))
@@ -221,7 +228,7 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         raise NotImplementedError
 
     @clear_pending_pop
-    def push(self, levels=1):
+    def push(self, levels: int=1):
         for _ in range(levels):
             c = yices_api.yices_push(self.yices)
             if c != 0:
@@ -237,7 +244,7 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
                                               yices_api.yices_error_string())
 
     @clear_pending_pop
-    def pop(self, levels=1):
+    def pop(self, levels: int=1):
         for _ in range(levels):
             if self.failed_pushes > 0:
                 self.failed_pushes -= 1
@@ -252,12 +259,12 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
             if name_filter is None or not var.symbol_name().startswith(name_filter):
                 print("%s = %s", (var.symbol_name(), self.get_value(var)))
 
-    def _check_error(self, res):
+    def _check_error(self, res: int):
         if res != 0:
             err = yices_api.yices_error_string()
             raise InternalSolverError("Yices returned an error: " + err)
 
-    def get_value(self, item):
+    def get_value(self, item: FNode) -> FNode:
         self._assert_no_function_type(item)
 
         titem = self.converter.convert(item)
@@ -286,10 +293,10 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
             yval = yices_api.yval_t()
             errcode = yices_api.yices_get_value(self.model, titem, yval)
             self._check_error(errcode)
-            bvarray = yices_api.make_empty_int32_array(ty.width)
+            bvarray = yices_api.make_empty_int32_array(cast(_BVType, ty).width)
             errcode = yices_api.yices_val_get_bv(self.model, yval, bvarray)
             self._check_error(errcode)
-            res = [ bvarray[i] for i in range(0, ty.width) ]
+            res = [ bvarray[i] for i in range(0, cast(_BVType, ty).width) ]
             str_val = "".join(str(x) for x in reversed(res))
             return self.mgr.BV("#b" + str_val)
         else:
@@ -304,45 +311,44 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
 class YicesConverter(Converter, DagWalker):
 
-    def __init__(self, environment):
+    def __init__(self, environment: Environment):
         DagWalker.__init__(self, environment)
-        self.backconversion = {}
         self.mgr = environment.formula_manager
         self._get_type = environment.stc.get_type
 
         # Maps a Symbol into the corresponding internal yices instance
-        self.symbol_to_decl = {}
+        self.symbol_to_decl: Dict[FNode, Any] = {}
         # Maps an internal yices instance into the corresponding symbol
-        self.decl_to_symbol = {}
-        self._yicesSort = {}
+        self.decl_to_symbol: Dict[Any, FNode] = {}
+        self._yicesSort: Dict[str, Any] = {}
 
     @catch_conversion_error
-    def convert(self, formula):
+    def convert(self, formula: FNode) -> int:
         return self.walk(formula)
 
-    def _check_term_result(self, res):
+    def _check_term_result(self, res: int):
         if res == -1:
             err = yices_api.yices_error_string()
             raise InternalSolverError("Yices returned an error: " + err)
 
-    def walk_and(self, formula, args, **kwargs):
+    def walk_and(self, formula: FNode, args: List[int], **kwargs) -> int:
         values = (yices_api.term_t * len(args))(*args)
         res = yices_api.yices_and(len(args), values)
         self._check_term_result(res)
         return res
 
-    def walk_or(self, formula, args, **kwargs):
+    def walk_or(self, formula: FNode, args: List[int], **kwargs) -> int:
         values = (yices_api.term_t * len(args))(*args)
         res = yices_api.yices_or(len(args), values)
         self._check_term_result(res)
         return res
 
-    def walk_not(self, formula, args, **kwargs):
+    def walk_not(self, formula: FNode, args: List[int], **kwargs) -> int:
         res = yices_api.yices_not(args[0])
         self._check_term_result(res)
         return res
 
-    def walk_symbol(self, formula, **kwargs):
+    def walk_symbol(self, formula: FNode, **kwargs) -> int:
         symbol_type = formula.symbol_type()
         var_type = self._type_to_yices(symbol_type)
         term = yices_api.yices_new_uninterpreted_term(var_type)
@@ -357,48 +363,48 @@ class YicesConverter(Converter, DagWalker):
         yices_api.yices_set_term_name(term, var.symbol_name())
         return term
 
-    def walk_iff(self, formula, args, **kwargs):
+    def walk_iff(self, formula: FNode, args: List[int], **kwargs) -> int:
         res = yices_api.yices_iff(args[0], args[1])
         self._check_term_result(res)
         return res
 
-    def walk_implies(self, formula, args, **kwargs):
+    def walk_implies(self, formula: FNode, args: List[int], **kwargs) -> int:
         res = yices_api.yices_implies(args[0], args[1])
         self._check_term_result(res)
         return res
 
-    def walk_le(self, formula, args, **kwargs):
+    def walk_le(self, formula: FNode, args: List[int], **kwargs) -> int:
         res = yices_api.yices_arith_leq_atom(args[0], args[1])
         self._check_term_result(res)
         return res
 
-    def walk_lt(self, formula, args, **kwargs):
+    def walk_lt(self, formula: FNode, args: List[int], **kwargs) -> int:
         res = yices_api.yices_arith_lt_atom(args[0], args[1])
         self._check_term_result(res)
         return res
 
-    def walk_ite(self, formula, args, **kwargs):
+    def walk_ite(self, formula: FNode, args: List[int], **kwargs) -> int:
         i, t, e = args
         res = yices_api.yices_ite(i, t, e)
         self._check_term_result(res)
         return res
 
-    def walk_real_constant(self, formula, **kwargs):
-        frac = formula.constant_value()
+    def walk_real_constant(self, formula: FNode, **kwargs) -> int:
+        frac = cast(pyFraction, formula.constant_value())
         n,d = frac.numerator, frac.denominator
         rep = str(n) + "/" + str(d)
         res = yices_api.yices_parse_rational(rep)
         self._check_term_result(res)
         return res
 
-    def walk_int_constant(self, formula, **kwargs):
+    def walk_int_constant(self, formula: FNode, **kwargs) -> int:
         assert is_pysmt_integer(formula.constant_value())
         rep = str(formula.constant_value())
         res = yices_api.yices_parse_rational(rep)
         self._check_term_result(res)
         return res
 
-    def walk_bool_constant(self, formula, **kwargs):
+    def walk_bool_constant(self, formula: FNode, **kwargs) -> int:
         if formula.constant_value():
             return yices_api.yices_true()
         else:
@@ -430,7 +436,7 @@ class YicesConverter(Converter, DagWalker):
                                                  old_vars, formula)
         return (new_formula, new_vars)
 
-    def walk_plus(self, formula, args, **kwargs):
+    def walk_plus(self, formula: FNode, args: List[int], **kwargs) -> int:
         values = (yices_api.term_t * len(args))(*args)
         res = yices_api.yices_sum(len(args), values)
         self._check_term_result(res)
@@ -441,7 +447,7 @@ class YicesConverter(Converter, DagWalker):
         self._check_term_result(res)
         return res
 
-    def walk_equals(self, formula, args, **kwargs):
+    def walk_equals(self, formula: FNode, args: List[int], **kwargs) -> int:
         tp = self._get_type(formula.arg(0))
         res = None
         if tp.is_bv_type():
@@ -454,17 +460,17 @@ class YicesConverter(Converter, DagWalker):
         self._check_term_result(res)
         return res
 
-    def walk_times(self, formula, args, **kwargs):
+    def walk_times(self, formula: FNode, args: List[int], **kwargs) -> int:
         res = args[0]
         for x in args[1:]:
             res = yices_api.yices_mul(res, x)
             self._check_term_result(res)
         return res
 
-    def walk_toreal(self, formula, args, **kwargs):
+    def walk_toreal(self, formula: FNode, args, **kwargs):
         return args[0]
 
-    def walk_function(self, formula, args, **kwargs):
+    def walk_function(self, formula: FNode, args, **kwargs):
         name = formula.function_name()
         if name not in self.symbol_to_decl:
             self.declare_variable(name)
@@ -475,10 +481,10 @@ class YicesConverter(Converter, DagWalker):
         return res
 
 
-    def walk_bv_constant(self, formula, **kwargs):
+    def walk_bv_constant(self, formula: FNode, **kwargs) -> int:
         width = formula.bv_width()
         res = None
-        value = formula.constant_value()
+        value = cast(int, formula.constant_value())
         if value <= ((2**63) - 1):
             # we can use the numerical representation
             # Note: yices_api uses *signed* longs in the API, so the maximal
@@ -490,12 +496,12 @@ class YicesConverter(Converter, DagWalker):
         self._check_term_result(res)
         return res
 
-    def walk_bv_ult(self, formula, args, **kwargs):
+    def walk_bv_ult(self, formula: FNode, args: List[int], **kwargs) -> int:
         res = yices_api.yices_bvlt_atom(args[0], args[1])
         self._check_term_result(res)
         return res
 
-    def walk_bv_ule(self, formula, args, **kwargs):
+    def walk_bv_ule(self, formula: FNode, args: List[int], **kwargs) -> int:
         res = yices_api.yices_bvle_atom(args[0], args[1])
         self._check_term_result(res)
         return res
@@ -592,12 +598,12 @@ class YicesConverter(Converter, DagWalker):
         self._check_term_result(res)
         return res
 
-    def walk_bv_slt(self, formula, args, **kwargs):
+    def walk_bv_slt(self, formula: FNode, args: List[int], **kwargs) -> int:
         res = yices_api.yices_bvslt_atom(args[0], args[1])
         self._check_term_result(res)
         return res
 
-    def walk_bv_sle (self, formula, args, **kwargs):
+    def walk_bv_sle (self, formula: FNode, args: List[int], **kwargs) -> int:
         res = yices_api.yices_bvsle_atom(args[0], args[1])
         self._check_term_result(res)
         return res
@@ -637,7 +643,7 @@ class YicesConverter(Converter, DagWalker):
             self._yicesSort[name] = sort
         return sort
 
-    def _type_to_yices(self, tp):
+    def _type_to_yices(self, tp: PySMTType) -> int:
         if tp.is_bool_type():
             return yices_api.yices_bool_type()
         elif tp.is_real_type():
@@ -645,18 +651,20 @@ class YicesConverter(Converter, DagWalker):
         elif tp.is_int_type():
             return yices_api.yices_int_type()
         elif tp.is_function_type():
+            assert isinstance(tp, _FunctionType)
             stps = [self._type_to_yices(x) for x in tp.param_types]
             rtp = self._type_to_yices(tp.return_type)
             arr = (yices_api.type_t * len(stps))(*stps)
             return yices_api.yices_function_type(len(stps), arr, rtp)
         elif tp.is_bv_type():
+            assert isinstance(tp, _BVType)
             return yices_api.yices_bv_type(tp.width)
         elif tp.is_custom_type():
             return self.yicesSort(str(tp))
         else:
             raise NotImplementedError(tp)
 
-    def declare_variable(self, var):
+    def declare_variable(self, var: FNode):
         if not var.is_symbol():
             raise PysmtTypeError("Trying to declare as a variable something "
                                  "that is not a symbol: %s" % var)

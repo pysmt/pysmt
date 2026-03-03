@@ -16,7 +16,10 @@
 #   limitations under the License.
 #
 
-VERSION = (0, 9, 7, "dev", 1)
+from typing import Tuple, Union
+
+
+VERSION: Union[Tuple[int, int, int], Tuple[int, int, int, str, int]] = (0, 9, 7, "dev", 1)
 
 # Try to provide human-readable version of latest commit for dev versions
 # E.g. v0.5.1-4-g49a49f2-wip
@@ -32,8 +35,8 @@ if len(VERSION) == 5:
                                               stderr=subprocess.STDOUT)
         commits_from_tag = git_version.strip().decode('ascii')
         commits_from_tag = commits_from_tag.split("-")[1]
-        commits_from_tag = int(commits_from_tag)
-        VERSION = VERSION[:4] + (commits_from_tag,)
+        commits_from_tag_int = int(commits_from_tag)
+        VERSION = VERSION[:4] + (commits_from_tag_int,)
     except Exception as ex:
         pass
 

@@ -320,7 +320,7 @@ class TestFormulaManager(TestCase):
     def test_abs_shortcut(self):
         # Test with integer
         abs_int = Abs(self.p)
-        
+
         # Verify the structure of the Abs node
         self.assertTrue(abs_int.is_ite())
         self.assertTrue(abs_int.arg(0).is_lt())  # GT is converted to LT with inverted args
@@ -330,10 +330,10 @@ class TestFormulaManager(TestCase):
         self.assertTrue(abs_int.arg(2).is_minus())
         self.assertEqual(abs_int.arg(2).arg(0), Int(0))
         self.assertEqual(abs_int.arg(2).arg(1), self.p)
-        
+
         # Test with real
         abs_real = Abs(self.r)
-        
+
         # Verify the structure of the Abs node
         self.assertTrue(abs_real.is_ite())
         self.assertTrue(abs_real.arg(0).is_lt())  # GT is converted to LT with inverted args
@@ -343,7 +343,7 @@ class TestFormulaManager(TestCase):
         self.assertTrue(abs_real.arg(2).is_minus())
         self.assertEqual(abs_real.arg(2).arg(0), Real(0))
         self.assertEqual(abs_real.arg(2).arg(1), self.r)
-        
+
         # Test with boolean (should raise ValueError)
         bool_var = Symbol("z", BOOL)
         with self.assertRaises(ValueError):
@@ -1032,7 +1032,7 @@ class TestFormulaManager(TestCase):
         self.assertIs(c3, c4)
 
         if HAS_GMPY:
-            from gmpy2 import mpq, mpz
+            from gmpy2 import mpq, mpz # type: ignore[import]
             v5 = (mpz(1), mpz(2))
             v6 = mpq(1,2)
 
