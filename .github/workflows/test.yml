@@ -16,7 +16,7 @@ jobs:
         pysmt_solver: [ none, msat, z3, yices, cvc5, btor, picosat, bdd, msat_wrap, z3_wrap, optimsat ]
 
     env:
-      PYTHON_VERSION: 3.8
+      PYTHON_VERSION: 3.13
       PYSMT_SOLVER: ${{ matrix.pysmt_solver }}
       AGENT_OS: ${{ matrix.os }}
 
@@ -27,7 +27,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236 #v4.7.1
         with:
-          python-version: 3.8
+          python-version: 3.13
 
       - name: Prepare System
         run: |
@@ -66,7 +66,7 @@ jobs:
             pysmt_solver: z3
 
     env:
-      PYTHON_VERSION: 3.8
+      PYTHON_VERSION: 3.13
       PYSMT_SOLVER: ${{ matrix.pysmt_solver }}
       AGENT_OS: ${{ matrix.os }}
       PYSMT_CYTHON: ${{ matrix.pysmt_cython }}
@@ -79,15 +79,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236 #v4.7.1
         with:
-          python-version: 3.8
-
-      - name: Set up MSVC
-        if: (matrix.os == 'windows-latest' && (matrix.pysmt_solver == 'msat' || matrix.pysmt_solver == 'all'))
-        uses: ilammy/msvc-dev-cmd@v1
-
-      - name: Install MPIR
-        if: (matrix.os == 'windows-latest' && (matrix.pysmt_solver == 'msat' || matrix.pysmt_solver == 'all'))
-        run: vcpkg install mpir:x64-windows
+          python-version: 3.13
 
       - name: Prepare System
         run: |
@@ -109,10 +101,10 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Set up Python 3.8
+    - name: Set up Python 3.13
       uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236 #v4.7.1
       with:
-        python-version: 3.8
+        python-version: 3.13
 
     - name: Make distrib
       run: |

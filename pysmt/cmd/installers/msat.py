@@ -58,22 +58,28 @@ class MSatInstaller(SolverInstaller):
 
 
     def compile(self):
-        # if self.os_name == "windows":
-        #     libdir = os.path.join(self.python_bindings_dir, "../lib")
-        #     incdir = os.path.join(self.python_bindings_dir, "../include")
-        #     gmp_h_url = "https://github.com/mikand/tamer-windows-deps/raw/master/gmp/include/gmp.h"
-        #     mpir_dll_url = "https://github.com/Legrandin/mpir-windows-builds/blob/master/mpir-2.6.0_VS2015_%s/mpir.dll?raw=true" % self.bits
-        #     mpir_lib_url = "https://github.com/Legrandin/mpir-windows-builds/blob/master/mpir-2.6.0_VS2015_%s/mpir.lib?raw=true" % self.bits
-        #     setup_py_win_url = "https://github.com/pysmt/solvers_patches/raw/master/mathsat/setup-win.py"
+        if self.os_name == "windows":
+            libdir = os.path.join(self.python_bindings_dir, "../lib")
+            incdir = os.path.join(self.python_bindings_dir, "../include")
 
-        #     # SolverInstaller.do_download(gmp_h_url, os.path.join(incdir, "gmp.h"))
-        #     # SolverInstaller.do_download(mpir_dll_url, os.path.join(libdir, "mpir.dll"))
-        #     # SolverInstaller.do_download(mpir_lib_url, os.path.join(libdir, "mpir.lib"))
+            gmp_win_url = "https://github.com/apotocki/gmp-win/releases/download/6.3.0/gmp-6.3.0.zip"
+            gmp_archive = os.path.join(self.base_dir, "gmp-6.3.0.zip")
+            gmp_dir = os.path.join(self.base_dir, "gmp-6.3.0")
+            SolverInstaller.clean_dir(gmp_dir)
+            SolverInstaller.do_download(url=gmp_win_url, file_name=gmp_archive)
+            SolverInstaller.unzip(gmp_archive, gmp_dir)
 
-        #     # Overwrite setup.py with the patched version
-        #     setup_py = os.path.join(self.python_bindings_dir, "setup.py")
-        #     SolverInstaller.mv(setup_py, setup_py + ".original")
-        #     SolverInstaller.do_download(setup_py_win_url, setup_py)
+            gmp_include_dir = os.path.join(self.base_dir, "gmp-6.3.0", "include")
+            gmp_lib_dir = os.path.join(self.base_dir, "gmp-6.3.0", "lib")
+            # gmp_dll_dir = os.path.join(self.base_dir, "gmp-6.3.0", "bin")
+            SolverInstaller.mv(os.path.join(gmp_include_dir, "gmp.h"), incdir)
+            SolverInstaller.mv(source=os.path.join(gmp_lib_dir, "gmpdll.lib"),
+                               dest=os.path.join(libdir, "gmp.lib"))
+
+            # The MathSAT setup.py expects to link against "mpir" on Windows,
+            # but we link against "gmp", so we need to patch the setup.py
+            setup_py_path = os.path.join(self.python_bindings_dir, "setup.py")
+            SolverInstaller.replace_in_file(setup_py_path, "mpir", "gmp")
 
         # Run setup.py to compile the bindings
         if self.os_name in {"windows", "darwin"}:
@@ -89,11 +95,11 @@ class MSatInstaller(SolverInstaller):
         pdir = self.python_bindings_dir
         bdir = os.path.join(pdir, "build")
         sodir = glob.glob(bdir + "/lib.*")[0]
-        libdir = os.path.join(self.python_bindings_dir, "../lib")
+        libdir = os.path.join(self.python_bindings_dir, "../bin")
 
         # First, we need the SWIG-generated wrapper
         for f in os.listdir(sodir):
-            if f.endswith(".so") or f.endswith(".pyd"):
+            if "_mathsat" in f:
                 SolverInstaller.mv(os.path.join(sodir, f), self.bindings_dir)
         SolverInstaller.mv(os.path.join(pdir, "mathsat.py"), self.bindings_dir)
 

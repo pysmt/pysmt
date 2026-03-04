@@ -97,6 +97,7 @@ fi
 $PIP_INSTALL configparser
 $PIP_INSTALL wheel
 $PIP_INSTALL pytest
+$PIP_INSTALL setuptools
 
 if [ "${PYSMT_SOLVER}" == "cvc5" ]
 then
