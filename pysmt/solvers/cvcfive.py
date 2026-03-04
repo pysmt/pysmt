@@ -92,7 +92,7 @@ class CVC5Options(SolverOptions):
 
 class CVC5Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
-    LOGICS = PYSMT_LOGICS | {AUFLIRA, AUFLIA, AUFNIRA, ALIA}
+    LOGICS = PYSMT_LOGICS | {AUFLIRA, AUFLIA, ALIA}
 
     OptionsClass = CVC5Options
 
