@@ -450,6 +450,7 @@ class SmtLibParser(object):
                             're.opt':self._operator_adapter(mgr.ReOpt),
                             're.union':self._operator_adapter(mgr.ReUnion),
                             're.inter':self._operator_adapter(mgr.ReInter),
+                            're.diff': self._operator_adapter(mgr.ReDiff),
                             # arrays
                             'select':self._operator_adapter(mgr.Select),
                             'store':self._operator_adapter(mgr.Store),

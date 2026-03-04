@@ -207,6 +207,7 @@ class HRLexer(Lexer):
             Rule(r"(re\.opt)", FunctionCallAdapter(self.mgr.ReOpt, 100), False), # re_opt
             Rule(r"(re\.union)", FunctionCallAdapter(self.mgr.ReUnion, 100), False), # re_union
             Rule(r"(re\.inter)", FunctionCallAdapter(self.mgr.ReInter, 100), False), # re_inter
+            Rule(r"(re\.diff)", FunctionCallAdapter(self.mgr.ReDiff, 100), False), # re_diff
             Rule(r"'(.*?)'", self.identifier, True), # quoted identifiers
             Rule(r"([A-Za-z_][A-Za-z0-9_]*)", self.identifier, True),# identifiers
             Rule(r"(.)", self.lexing_error, True), # input error

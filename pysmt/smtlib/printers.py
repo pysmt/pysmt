@@ -309,6 +309,13 @@ class SmtPrinter(TreeWalker):
         self.write(" ")
         self.walk(formula.arg(1))
         self.write(")")
+    
+    def walk_re_diff(self,formula, **kwargs):
+        self.write("( re.diff" )
+        self.walk(formula.arg(0))
+        self.write(" ")
+        self.walk(formula.arg(1))
+        self.write(")")
 
     def walk_int_to_str(self,formula, **kwargs):
         self.write("( int.to.str " )
@@ -704,6 +711,9 @@ class SmtDagPrinter(DagWalker):
     
     def walk_re_inter(self,formula, args, **kwargs):
         return "( re.inter %s %s )" % (args[0], args[1])
+    
+    def walk_re_diff(self,formula, args, **kwargs):
+        return "( re.diff %s %s )" % (args[0], args[1])
     
     def walk_int_to_str(self,formula, args, **kwargs):
         return "( int.to.str %s )" % args[0]

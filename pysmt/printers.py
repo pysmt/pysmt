@@ -315,6 +315,13 @@ class HRPrinter(TreeWalker):
         self.write(", ")
         self.walk(formula.arg(1))
         self.write(")")
+
+    def walk_re_diff(self, formula, **kwargs):
+        self.write("re.diff(" )
+        self.walk(formula.arg(0))
+        self.write(", ")
+        self.walk(formula.arg(1))
+        self.write(")")
     
     def walk_int_to_str(self,formula, **kwargs):
         self.write("int.to.str(" )

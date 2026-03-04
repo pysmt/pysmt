@@ -254,6 +254,9 @@ class IdentityDagWalker(DagWalker):
 
     def walk_re_inter(self, formula, args, **kwargs):
         return self.mgr.ReInter(args[0], args[1])
+    
+    def walk_re_diff(self, formula, args, **kwargs):
+        return self.mgr.ReDiff(args[0], args[1])
 
     def walk_int_to_str(self, formula, args, **kwargs):
         return self.mgr.IntToStr(args[0])

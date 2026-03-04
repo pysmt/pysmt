@@ -24,7 +24,7 @@ these operators.
 from itertools import chain
 
 
-ALL_TYPES = list(range(0,78))
+ALL_TYPES = list(range(0,79))
 
 (
 FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF, # Boolean Logic (0-6)
@@ -90,6 +90,7 @@ RE_KLEENE_PLUS,                             # Regex Kleene + (74)
 RE_OPT,                                     # Zero or one use of r (75)
 RE_UNION,                                   # Union of Regex (76)
 RE_INTER,                                   # Instersection of regex (77)
+RE_DIFF,                                    # Difference of Regex (78)
 ) = ALL_TYPES
 
 QUANTIFIERS = frozenset([FORALL, EXISTS])
@@ -124,7 +125,7 @@ STR_OPERATORS = frozenset([STR_LENGTH, STR_CONCAT, STR_INDEXOF, STR_REPLACE,
 
 REGEX_OPERATORS = frozenset([RE_ALL, RE_ALLCHAR, RE_NONE,
                              RE_RANGE, RE_CONCAT, RE_KLEENE_PLUS, RE_KLEENE_STAR,
-                             RE_OPT, RE_UNION, RE_INTER])
+                             RE_OPT, RE_UNION, RE_INTER, RE_DIFF])
 
 IRA_OPERATORS = frozenset([PLUS, MINUS, TIMES, TOREAL, DIV, POW, BV_TONATURAL])
 
@@ -251,4 +252,5 @@ __OP_STR__ = {
     RE_OPT: "RE_OPT",
     RE_UNION: "RE_UNION",
     RE_INTER: "RE_INTER",
+    RE_DIFF: "RE_DIFF",
 }
