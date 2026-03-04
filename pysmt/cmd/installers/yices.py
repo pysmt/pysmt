@@ -25,20 +25,8 @@ class YicesInstaller(SolverInstaller):
     def __init__(self, install_dir, bindings_dir, solver_version,
                  mirror_link=None, yicespy_version='HEAD'):
 
-        self.needs_compilation = False
-        if self.os_name == "darwin" or self.needs_compilation:
-            sysctl = self.run("sysctl -a", get_output=True, suppress_stderr=True)
-            if 'hw.optional.avx2_0: 1' in sysctl:
-                # No need to compile, see http://yices.csl.sri.com/faq.html
-                pack = "x86_64-apple-darwin16.7.0-static-gmp"
-            else:
-                self.needs_compilation = True
-                pack = "src"
-        else:
-            pack = "x86_64-pc-linux-gnu-static-gmp"
-
-        archive_name = "yices-%s-%s.tar.gz" % (solver_version, pack)
-        native_link = "http://yices.csl.sri.com/releases/{solver_version}/{archive_name}"
+        archive_name = "Yices-%s.tar.gz" % (solver_version)
+        native_link = "https://github.com/SRI-CSL/yices2/archive/{archive_name}"
         SolverInstaller.__init__(self, install_dir=install_dir,
                                  bindings_dir=bindings_dir,
                                  solver_version=solver_version,
@@ -46,7 +34,7 @@ class YicesInstaller(SolverInstaller):
                                  native_link=native_link,
                                  mirror_link=mirror_link)
 
-        self.extract_path = os.path.join(self.base_dir, "yices-%s" % self.solver_version)
+        self.extract_path = os.path.join(self.base_dir, "yices2-Yices-%s" % self.solver_version)
         self.yices_path = os.path.join(self.bindings_dir, "yices_bin")
         self.yicespy_git_version = yicespy_version
 
@@ -74,14 +62,12 @@ class YicesInstaller(SolverInstaller):
         # Prepare an empty folder for installing yices
         SolverInstaller.clean_dir(self.yices_path)
 
-        if self.needs_compilation:
-            SolverInstaller.run("bash configure --prefix %s" % self.yices_path,
-                                directory=self.extract_path)
-            SolverInstaller.run("make", directory=self.extract_path)
-            SolverInstaller.run("make install", directory=self.extract_path)
-        else:
-            SolverInstaller.run("bash ./install-yices %s" % self.yices_path,
-                                directory=self.extract_path)
+        SolverInstaller.run("autoconf", directory=self.extract_path)
+
+        SolverInstaller.run("bash configure --prefix %s" % self.yices_path,
+                            directory=self.extract_path)
+        SolverInstaller.run("make", directory=self.extract_path)
+        SolverInstaller.run("make install", directory=self.extract_path)
 
         self.install_yicespy()
 

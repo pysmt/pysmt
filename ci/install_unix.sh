@@ -28,12 +28,18 @@ function os_install {
     fi
 }
 
+
+
 # Use python or pypy as commands depending on the build
 PYTHON="python"
 if [ "${PYTHON_VERSION}" == "pypy" ] || [ "${PYTHON_VERSION}" == "pypy3" ]
 then
     PYTHON="${PYTHON_VERSION}"
 fi
+
+# Fix problem with LIBDIR of Azure Pipelines
+VRS=`python -c 'import platform;print(platform.python_version())'`
+export PYSMT_PYTHON_LIBDIR="/opt/hostedtoolcache/Python/${VRS}/x64/lib/"
 
 # 'pip install' command
 PIP_INSTALL="${PYTHON} -m pip install --upgrade"
@@ -69,11 +75,21 @@ then
     os_install swig
 fi
 
+# GPerf is needed to compile Yices
+if [ "${PYSMT_SOLVER}" == "yices" ] || [ "${PYSMT_SOLVER}" == "all" ]
+then
+    os_install gperf
+fi
+
 # Install dependencies
 $PIP_INSTALL configparser
-$PIP_INSTALL six
 $PIP_INSTALL wheel
-$PIP_INSTALL nose
+$PIP_INSTALL pytest
+
+if [ "${PYSMT_SOLVER}" == "cvc4" ]
+then
+    $PIP_INSTALL toml
+fi
 
 # Install gmpy if needed
 if [ "${PYSMT_GMPY}" == "TRUE" ]

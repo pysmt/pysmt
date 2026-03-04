@@ -16,7 +16,6 @@
 #   limitations under the License.
 #
 from warnings import warn
-from six.moves import xrange
 
 from pysmt.exceptions import SolverAPINotFound
 from pysmt.constants import Fraction, is_pysmt_fraction, is_pysmt_integer
@@ -276,19 +275,6 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
 
         return (res == mathsat.MSAT_SAT)
 
-    def _check_unsat_core_config(self):
-        if self.options.unsat_cores_mode is None:
-            raise SolverNotConfiguredForUnsatCoresError
-
-        if self.last_result is None or self.last_result:
-            raise SolverStatusError("The last call to solve() was not" \
-                                    " unsatisfiable")
-
-        if self.last_command != "solve":
-            raise SolverStatusError("The solver status has been modified by a" \
-                                    " '%s' command after the last call to" \
-                                    " solve()" % self.last_command)
-
     def get_unsat_core(self):
         """After a call to solve() yielding UNSAT, returns the unsat core as a
         set of formulae"""
@@ -338,12 +324,12 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver,
 
     @clear_pending_pop
     def _push(self, levels=1):
-        for _ in xrange(levels):
+        for _ in range(levels):
             mathsat.msat_push_backtrack_point(self.msat_env())
 
     @clear_pending_pop
     def _pop(self, levels=1):
-        for _ in xrange(levels):
+        for _ in range(levels):
             mathsat.msat_pop_backtrack_point(self.msat_env())
 
     def _var2term(self, var):
@@ -477,7 +463,7 @@ class MSatConverter(Converter, DagWalker):
             mathsat.MSAT_TAG_BV_ADD: self._sig_binary,
             mathsat.MSAT_TAG_BV_UDIV:self._sig_binary,
             mathsat.MSAT_TAG_BV_UREM:self._sig_binary,
-            mathsat.MSAT_TAG_BV_CONCAT: self._sig_binary,
+            mathsat.MSAT_TAG_BV_CONCAT: self._sig_bv_concat,
             mathsat.MSAT_TAG_BV_OR:  self._sig_binary,
             mathsat.MSAT_TAG_BV_XOR: self._sig_binary,
             mathsat.MSAT_TAG_BV_AND: self._sig_binary,
@@ -577,6 +563,11 @@ class MSatConverter(Converter, DagWalker):
         _, msb, lsb = mathsat.msat_term_is_bv_extract(self.msat_env(), term)
         t = self.env.stc.get_type(args[0])
         return types.FunctionType(types.BVType(msb - lsb + 1), [t])
+
+    def _sig_bv_concat(self, term, args):
+        t1 = self.env.stc.get_type(args[0])
+        t2 = self.env.stc.get_type(args[1])
+        return types.FunctionType(types.BVType(t1.width + t2.width), [t1, t2])
 
     def _sig_array_read(self, term, args):
         t1 = self.env.stc.get_type(args[0])
@@ -742,12 +733,12 @@ class MSatConverter(Converter, DagWalker):
             if current not in self.back_memoization:
                 self.back_memoization[current] = None
                 stack.append(current)
-                for i in xrange(arity):
+                for i in range(arity):
                     son = mathsat.msat_term_get_arg(current, i)
                     stack.append(son)
             elif self.back_memoization[current] is None:
                 args=[self.back_memoization[mathsat.msat_term_get_arg(current,i)]
-                      for i in xrange(arity)]
+                      for i in range(arity)]
 
                 signature = self._get_signature(current, args)
                 new_args = []
@@ -816,7 +807,7 @@ class MSatConverter(Converter, DagWalker):
         if self._get_type(formula).is_bool_type():
             impl = self.mgr.Implies(formula.arg(0), formula.arg(1))
             th = self.walk_implies(impl, [i,t])
-            nif = self.mgr.Not(formula.arg(1))
+            nif = self.mgr.Not(formula.arg(0))
             ni = self.walk_not(nif, [i])
             el = self.walk_implies(self.mgr.Implies(nif, formula.arg(2)), [ni,e])
             return mathsat.msat_make_and(self.msat_env(), th, el)
@@ -833,6 +824,14 @@ class MSatConverter(Converter, DagWalker):
     def walk_int_constant(self, formula, **kwargs):
         assert is_pysmt_integer(formula.constant_value())
         rep = str(formula.constant_value())
+        return mathsat.msat_make_number(self.msat_env(), rep)
+
+    def walk_algebraic_constant(self, formula, **kwargs):
+        val = formula.constant_value()
+        if val.is_irrational():
+            raise ConvertExpressionError("Cannot convert irrational constant")
+        num, den = val.numerator(), val.denominator()
+        rep = "{}/{}".format(str(num), str(den))
         return mathsat.msat_make_number(self.msat_env(), rep)
 
     def walk_bool_constant(self, formula, **kwargs):
@@ -1257,7 +1256,7 @@ class MSatInterpolator(Interpolator):
                 return None
 
             pysmt_ret = []
-            for i in xrange(1, len(groups)):
+            for i in range(1, len(groups)):
                 itp = mathsat.msat_get_interpolant(env, groups[:i])
                 f = self.converter.back(itp)
                 pysmt_ret.append(f)
@@ -1310,7 +1309,7 @@ class MSatBoolUFRewriter(IdentityDagWalker):
 
         # Base-case
         stack = []
-        for i in xrange(2**len(bool_args)):
+        for i in range(2**len(bool_args)):
             fname = self.mgr.Symbol("%s#%i" % (formula.function_name(),i), ftype)
             if len(ptype) == 0:
                 stack.append(fname)

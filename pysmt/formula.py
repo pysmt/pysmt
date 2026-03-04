@@ -27,9 +27,13 @@ rewritten as LE and LT. Similarly, the operator Xor is rewritten using
 its definition.
 """
 
-import collections
+import sys
+if sys.version_info >= (3, 3):
+    from collections.abc import Iterable
+else:
+    from collections import Iterable
 
-from six.moves import xrange
+import warnings
 
 import pysmt.typing as types
 import pysmt.operators as op
@@ -93,7 +97,7 @@ class FormulaManager(object):
             return n
 
     def _create_symbol(self, name, typename=types.BOOL):
-        if len(name) == 0:
+        if len(name) == 0 and not self.env.allow_empty_var_names:
             raise PysmtValueError("Empty string is not a valid name")
         if not isinstance(typename, types.PySMTType):
             raise PysmtValueError("typename must be a PySMTType.")
@@ -257,12 +261,16 @@ class FormulaManager(object):
 
     def Div(self, left, right):
         """ Creates an expression of the form: left / right """
-        if right.is_constant(types.REAL):
+        if (right.is_constant(types.REAL, 0) or
+            right.is_constant(types.INT, 0)) \
+           and self.env.enable_div_by_0:
+            # Allow division by 0 byt warn the user
+            # This can only happen in non-linear logics
+            warnings.warn("Warning: Division by 0")
+        elif right.is_constant(types.REAL):
             # If right is a constant we rewrite as left * 1/right
             inverse = Fraction(1) / right.constant_value()
             return self.Times(left, self.Real(inverse))
-        elif right.is_constant(types.INT):
-            raise NotImplementedError
 
         # This is a non-linear expression
         return self.create_node(node_type=op.DIV,
@@ -479,7 +487,7 @@ class FormulaManager(object):
         """ At most one of the bool expressions can be true at anytime.
 
         This using a quadratic encoding:
-           A -> !(B \/ C)
+           A -> !(B \\/ C)
            B -> !(C)
         """
         bool_exprs = self._polymorph_args_to_tuple(args)
@@ -494,8 +502,8 @@ class FormulaManager(object):
         """ Encodes an exactly-one constraint on the boolean symbols.
 
         This using a quadratic encoding:
-           A \/ B \/ C
-           A -> !(B \/ C)
+           A \\/ B \\/ C
+           A -> !(B \\/ C)
            B -> !(C)
         """
         args = self._polymorph_args_to_tuple(args)
@@ -670,11 +678,17 @@ class FormulaManager(object):
                                 args=(left,right),
                                 payload=(left.bv_width(),))
 
-    def BVConcat(self, left, right):
-        """Returns the Concatenation of the two BVs"""
-        return self.create_node(node_type=op.BV_CONCAT,
-                                args=(left,right),
-                                payload=(left.bv_width()+right.bv_width(),))
+    def BVConcat(self, *args):
+        """Returns the Concatenation of the given BVs"""
+        ex = self._polymorph_args_to_tuple(args)
+        base = self.create_node(node_type=op.BV_CONCAT,
+                                args=(ex[0], ex[1]),
+                                payload=(ex[0].bv_width() + ex[1].bv_width(),))
+        for e in ex[2:]:
+            base = self.create_node(node_type=op.BV_CONCAT,
+                                    args=(base, e),
+                                    payload=(base.bv_width() + e.bv_width(),))
+        return base
 
     def BVExtract(self, formula, start=0, end=None):
         """Returns the slice of formula from start to end (inclusive)."""
@@ -913,7 +927,7 @@ class FormulaManager(object):
     def BVRepeat(self, formula, count=1):
         """Returns the concatenation of count copies of formula."""
         res = formula
-        for _ in xrange(count-1):
+        for _ in range(count-1):
             res = self.BVConcat(res, formula)
         return res
 
@@ -1001,6 +1015,11 @@ class FormulaManager(object):
         """
         return self.create_node(node_type=op.RE_ALL, args=())
 
+    def ReAllchar(self):
+        """Returns a constant denoting the set of all strings of length 1
+        """
+        return self.create_node(node_type=op.RE_ALLCHAR, args=())
+
     def ReNone(self):
         """Returns a constant denoting the empty set of strings
         """
@@ -1058,6 +1077,14 @@ class FormulaManager(object):
         where r1 and r2 are RegEx terms defined over a certain sort
         """
         return self.create_node(node_type=op.RE_INTER, args=(r1, r2))
+    
+    def ReDiff(self, r1, r2):
+        """Returns a regular expression that accepts the difference of the
+        languages accepted by r1 and r2 (i.e., L1 \\ L2).
+
+        where r1 and r2 are RegEx terms defined over a certain sort
+        """
+        return self.create_node(node_type=op.RE_DIFF, args=(r1, r2))
 
     def IntToStr(self, x):
         """Returns the corresponding String representing the natural number x.
@@ -1143,7 +1170,7 @@ class FormulaManager(object):
            And([a,b,c]) and And(a,b,c)
         are both valid, and they are converted into a tuple (a,b,c) """
 
-        if len(args) == 1 and isinstance(args[0], collections.Iterable):
+        if len(args) == 1 and isinstance(args[0], Iterable):
             args = args[0]
         return tuple(args)
 

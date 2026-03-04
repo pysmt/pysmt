@@ -16,7 +16,7 @@
 #   limitations under the License.
 #
 import collections
-from six.moves import cStringIO
+from io import StringIO
 
 from pysmt.test import TestCase, main
 from pysmt.smtlib.parser import SmtLibParser
@@ -93,8 +93,8 @@ class TestParserExtensibility(TestCase):
         (exit)
         """
         with self.assertRaises(UnknownSmtLibCommandError):
-            self.ts_parser.get_ts(cStringIO(txt))
-        script = self.smt_parser.get_script(cStringIO(txt))
+            self.ts_parser.get_ts(StringIO(txt))
+        script = self.smt_parser.get_script(StringIO(txt))
         self.assertIsNotNone(script)
 
     def test_basic(self):
@@ -106,8 +106,8 @@ class TestParserExtensibility(TestCase):
         (exit)
         """
         with self.assertRaises(UnknownSmtLibCommandError):
-            self.smt_parser.get_script(cStringIO(txt))
-        ts = self.ts_parser.get_ts(cStringIO(txt))
+            self.smt_parser.get_script(StringIO(txt))
+        ts = self.ts_parser.get_ts(StringIO(txt))
         self.assertIsNotNone(ts)
 
 

@@ -15,10 +15,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from six.moves import xrange
-from six import PY2
-
 import pysmt.operators as op
+
 from pysmt.shortcuts import Symbol, FreshSymbol, And, Not, GT, Function, Plus
 from pysmt.shortcuts import Bool, TRUE, Real, LE, FALSE, Or, Equals, Implies
 from pysmt.shortcuts import Solver
@@ -156,6 +154,19 @@ class TestBasic(TestCase):
             self.assertTrue(s.get_py_value(varA))
 
     @skipIfNoSolverForLogic(QF_BOOL)
+    def test_add_assertions(self):
+        varA = Symbol("A", BOOL)
+        varB = Symbol("B", BOOL)
+        varC = Symbol("C", BOOL)
+
+        assertions = [varA, Implies(varA, varB), Implies(varB, varC)]
+        for name in get_env().factory.all_solvers(logic=QF_BOOL):
+            with Solver(name) as solver:
+                solver.add_assertions(assertions)
+                solver.solve()
+                self.assertTrue(solver.get_py_value(And(assertions)))
+
+    @skipIfNoSolverForLogic(QF_BOOL)
     def test_incremental(self):
         a = Symbol('a', BOOL)
         b = Symbol('b', BOOL)
@@ -240,6 +251,7 @@ class TestBasic(TestCase):
             self.assertEqual(satisfiability, s, f)
 
     def do_model(self, solver_name):
+
         for (f, _, satisfiability, logic) in get_example_formulae():
             if satisfiability and not logic.theory.uninterpreted and logic.quantifier_free:
                 try:
@@ -249,24 +261,9 @@ class TestBasic(TestCase):
                         check = s.solve()
                         self.assertTrue(check)
 
-                        # Ask single values to the solver
-                        subs = {}
-                        for d in f.get_free_variables():
-                            m = s.get_value(d)
-                            subs[d] = m
-
-                        simp = f.substitute(subs).simplify()
-                        self.assertEqual(simp, TRUE(), "%s -- %s :> %s" % (f, subs, simp))
-
-                        # Ask the eager model
-                        subs = {}
                         model = s.get_model()
-                        for d in f.get_free_variables():
-                            m = model.get_value(d)
-                            subs[d] = m
+                        self.assertTrue(model.satisfies(f, s))
 
-                        simp = f.substitute(subs).simplify()
-                        self.assertEqual(simp, TRUE())
                 except NoSolverAvailableError:
                     pass
 
@@ -352,7 +349,7 @@ class TestBasic(TestCase):
                         self.assertIsNone(f_i)
 
     def test_solving_under_assumption(self):
-        v1, v2 = [FreshSymbol() for _ in xrange(2)]
+        v1, v2 = [FreshSymbol() for _ in range(2)]
         xor = Or(And(v1, Not(v2)), And(Not(v1), v2))
 
         for name in get_env().factory.all_solvers():
@@ -550,9 +547,6 @@ class TestBasic(TestCase):
     @skipIfNoSolverForLogic(QF_LRA)
     def test_logic_as_string(self):
         self.assertEqual(convert_logic_from_string("QF_LRA"), QF_LRA)
-        if PY2:
-            self.assertEqual(convert_logic_from_string(unicode("QF_LRA")),
-                             QF_LRA)
         with self.assertRaises(UndefinedLogicError):
             convert_logic_from_string("PAPAYA")
         self.assertIsNone(convert_logic_from_string(None))
@@ -623,11 +617,12 @@ class TestBasic(TestCase):
             if logic == QF_BV:
                 solver = Solver(name="btor",
                                 solver_options={"rewrite-level":0,
-                                                "fun:dual-prop":1,
+                                                "fun-dual-prop":1,
                                                 "eliminate-slices":1})
                 solver.add_assertion(f)
                 res = solver.solve()
                 self.assertTrue(res == sat)
+
 
 if __name__ == '__main__':
     main()

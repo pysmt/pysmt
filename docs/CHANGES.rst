@@ -1,6 +1,68 @@
 Change Log
 ==========
 
+0.9.0: 2020-04-26 -- PySMT as module
+------------------------------------
+
+General:
+
+* PySMT as module (PR #573): It is now possible to do
+    python -m pysmt install
+
+  and
+
+    python -m pysmt shell
+
+  while the tool pystm-install is still available, using the module syntax makes it easier to understand which version of python will be used, in case multiple interpreters co-exist.
+
+* Added functions to obtain the symbols in SMTLIB script (PR #583)
+
+* Python 2 is not supported anymore. While it might still work, we will not actively test for it anymore.
+
+Solvers:
+
+* Boolector: Incremental and Unsat cores support (PR #591, #567). Thanks **Makai Mann** for providing the patch.
+
+* Picosat: Fixed a bug related to solver reset (PR #567)
+
+* Boolector: Upgrade to 3.2.1
+
+* MathSAT: Upgrade to 5.6.1
+
+Bugfix:
+
+* Collections.abc: fix deprecation warning (PR #574, PR #562). Thanks to **Liana Hadarean** and **Caleb Donovick**.
+
+* PysmtSyntaxError: Fix missing message constructor (PR #576). Thanks to **Liana Hadarean** for providing a fix.
+
+* Version: Static version in make_distrib.sh (PR #575)
+
+* Fix simplifier StrIndexOf capitalization (PR #563). Thanks to **Makai Mann** for providing the patch.
+
+* Sort the arguments of Times while simplifying (PR #561). Thanks to **Ahmed Irfan** for providing the patch.
+
+* Fix bug in deque pop in smtlib/parser (PR #558). Thanks to **Sebastiano Mariani** for providing the patch.
+
+* Function names quoted with `'` instead of `|` when seraializing to smt2 (PR #584). Thanks **Kevin Laeufer** for reporting this.
+
+* Fix assertion tracking for boolector (PR #589). Thanks **Makai Mann** for providing the patch.
+
+* Handle one-bit shifts in btor (PR #592) Thanks **Makai Mann** for providing the patch.
+
+* Fix issue with bv conversion in Yices (PR #597). Thanks to `@nano-o` for reporting this.
+
+* Fix Mathsat signature for BV_CONCAT (PR #598). Thanks **Makai Mann** for providing the patch.
+
+* Support n-ary BVConcat (PR #621). Thanks to **Ridwan Shariffdeen** for reporting this.
+
+* Fix a correctness issue when reading from SMT-LIB interface (Issue #616, #615, PR #619). Thanks to **Sergio Mover** for reporting this.
+
+* Clear pending assertions in IncrementalTrackingSolver.assertions (PR #627). Thanks to **Enrico Magnago** for reporting this.
+
+* Various documentation fixes. Thanks to **Matthew Fernandez**, **Guillem Francès**, and **Gianluca Redondi**.
+
+* Disable multiprocessing in run_tests.sh script (PR #637). Thanks **Patrick Trentin** for reporting this.
+
 0.8.0: 2019-01-27 -- Better Install and Great Community
 -------------------------------------------------------
 
@@ -20,7 +82,7 @@ General:
   installs the solvers within the site-package directory (by
   default). This makes it possible to work with virtual environments,
   and does not require anymore to export the Python path, greatly
-  simplifying the installation process. Thanks to **Radomi
+  simplifying the installation process. Thanks to **Radomir
   Stevanovic** for contributing the patch.
 
 * Simplify shared lib usage (PR #494): Modify z3 and msat installers

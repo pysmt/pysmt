@@ -81,6 +81,7 @@ else:
     # cython version is by the so_path that targets .pyxbld .
     #
     import imp
+    
     pyx = pyximport.install()
     pyximport.uninstall(*pyx)
     build_dir = os.path.join(os.path.expanduser('~'), '.pyxbld')

@@ -26,9 +26,7 @@ except ImportError:
 
 # Keep array models expressed as values instead of Lambdas
 # (see https://github.com/Z3Prover/z3/issues/1769)
-z3.set_param('model_compress', False)
-
-from six.moves import xrange
+z3.set_param('model.compact', False)
 
 
 import pysmt.typing as types
@@ -153,6 +151,8 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
             self.z3 = z3.Solver()
         except z3.z3types.Z3Exception:
             self.z3 = z3.Solver()
+        except OSError:
+            self.z3 = z3.Solver()
         self.options(self)
         self.declarations = set()
         self.converter = Z3Converter(environment, z3_ctx=self.z3.ctx)
@@ -260,12 +260,12 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
 
     @clear_pending_pop
     def _push(self, levels=1):
-        for _ in xrange(levels):
+        for _ in range(levels):
             self.z3.push()
 
     @clear_pending_pop
     def _pop(self, levels=1):
-        for _ in xrange(levels):
+        for _ in range(levels):
             self.z3.pop()
 
     def print_model(self, name_filter=None):
@@ -530,7 +530,7 @@ class Z3Converter(Converter, DagWalker):
                     interp = model[interp_decl]
                     default = self.back(interp.else_value(), model=model)
                     assign = {}
-                    for i in xrange(interp.num_entries()):
+                    for i in range(interp.num_entries()):
                         e = interp.entry(i)
                         assert e.num_args() == 1
                         idx = self.back(e.arg_value(0), model=model)
@@ -581,7 +581,7 @@ class Z3Converter(Converter, DagWalker):
 
     def back_via_smtlib(self, expr):
         """Back convert a Z3 Expression by translation to SMT-LIB."""
-        from six import StringIO
+        from io import StringIO
         from pysmt.smtlib.parser import SmtLibZ3Parser
         parser = SmtLibZ3Parser(self.env)
 
@@ -655,6 +655,14 @@ class Z3Converter(Converter, DagWalker):
             z3.Z3_dec_ref(self.ctx.ref(), or2)
             return z3term
         z3term = z3.Z3_mk_ite(self.ctx.ref(), i, t, e)
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
+        return z3term
+
+    def walk_algebraic_constant(self, formula, **kwargs):
+        rep = str(formula.constant_value())
+        z3term = z3.Z3_mk_numeral(self.ctx.ref(),
+                                  rep,
+                                  self.z3RealSort.ast)
         z3.Z3_inc_ref(self.ctx.ref(), z3term)
         return z3term
 
@@ -821,7 +829,7 @@ class Z3Converter(Converter, DagWalker):
         z3term = z3.Z3_mk_const_array(self.ctx.ref(), arraysort, args[0])
         z3.Z3_inc_ref(self.ctx.ref(), z3term)
 
-        for i in xrange(1, len(args), 2):
+        for i in range(1, len(args), 2):
             c = args[i]
             z3term = self.walk_array_store(None, (z3term, c, args[i+1]))
             z3.Z3_inc_ref(self.ctx.ref(), z3term)

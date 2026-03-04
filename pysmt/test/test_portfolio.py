@@ -36,7 +36,7 @@ class PortfolioTestCase(TestCase):
     def test_basic(self):
         with Portfolio(["z3", "msat", "cvc4"],
                        environment=self.env,
-                       logic="QF_LRA") as p:
+                       logic=QF_LRA) as p:
             for example in get_example_formulae():
                 if not example.logic <= QF_LRA: continue
                 res = p.is_sat(example.expr)
@@ -109,11 +109,9 @@ class PortfolioTestCase(TestCase):
             is_sat(TRUE(), portfolio=["supersolver"])
 
     @skipIfSolverNotAvailable("msat")
-    @skipIfSolverNotAvailable("picosat")
-    @skipIfSolverNotAvailable("btor")
-    @skipIfSolverNotAvailable("bdd")
+    @skipIfSolverNotAvailable("cvc4")
     def test_get_value(self):
-        with Portfolio(["msat", "picosat", "btor", "bdd"],
+        with Portfolio(["msat", "cvc4"],
                        logic=QF_UFLIRA,
                        environment=self.env,
                        incremental=False,

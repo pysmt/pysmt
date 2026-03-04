@@ -16,7 +16,8 @@
 #   limitations under the License.
 #
 import os
-from six import StringIO
+
+from io import StringIO
 
 from pysmt.test.smtlib.parser_utils import SMTLIB_DIR
 from pysmt.smtlib.parser import SmtLibParser

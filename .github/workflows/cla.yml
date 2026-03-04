@@ -1,0 +1,16 @@
+on: 
+ push:
+   branches: master
+ pull_request:
+
+jobs:
+  CheckCLA:
+    runs-on: ubuntu-latest
+    name: Checks that all committers are in CONTRIBUTORS
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Run Check
+        run: ./ci/cla.sh

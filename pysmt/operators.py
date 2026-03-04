@@ -22,10 +22,9 @@ they will be rewritten (during construction) in order to only use
 these operators.
 """
 from itertools import chain
-from six.moves import xrange
 
 
-ALL_TYPES = list(xrange(0,77))
+ALL_TYPES = list(range(0,79))
 
 (
 FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF, # Boolean Logic (0-6)
@@ -82,14 +81,16 @@ BV_TONATURAL,                               # BV to Natural Conversion (65)
 STR_TO_RE,                                  # String to Regular expression (66)
 STR_IN_RE,                                  # String in Regular expression (67)
 RE_ALL,                                     # Regex accepting every string (68)
-RE_NONE,                                    # Regex accepting no string (69)
-RE_RANGE,                                   # Range of characters between ch1 and ch2 (70)
-RE_CONCAT,                                  # Concatenation of regex (71)
-RE_KLEENE_STAR,                             # Regex Kleene * (72)
-RE_KLEENE_PLUS,                             # Regex Kleene + (73)
-RE_OPT,                                     # Zero or one use of r (74)
-RE_UNION,                                   # Union of Regex (75)
-RE_INTER,                                   # Instersection of regex (76)
+RE_ALLCHAR,                                 # Regex accepting every character (69)
+RE_NONE,                                    # Regex accepting no string (70)
+RE_RANGE,                                   # Range of characters between ch1 and ch2 (71)
+RE_CONCAT,                                  # Concatenation of regex (72)
+RE_KLEENE_STAR,                             # Regex Kleene * (73)
+RE_KLEENE_PLUS,                             # Regex Kleene + (74)
+RE_OPT,                                     # Zero or one use of r (75)
+RE_UNION,                                   # Union of Regex (76)
+RE_INTER,                                   # Instersection of regex (77)
+RE_DIFF,                                    # Difference of Regex (78)
 ) = ALL_TYPES
 
 QUANTIFIERS = frozenset([FORALL, EXISTS])
@@ -122,9 +123,9 @@ STR_OPERATORS = frozenset([STR_LENGTH, STR_CONCAT, STR_INDEXOF, STR_REPLACE,
                            STR_SUBSTR, STR_CHARAT, STR_TO_INT, INT_TO_STR,
                            STR_TO_RE, STR_IN_RE])
 
-REGEX_OPERATORS = frozenset([RE_ALL, RE_NONE,
+REGEX_OPERATORS = frozenset([RE_ALL, RE_ALLCHAR, RE_NONE,
                              RE_RANGE, RE_CONCAT, RE_KLEENE_PLUS, RE_KLEENE_STAR,
-                             RE_OPT, RE_UNION, RE_INTER])
+                             RE_OPT, RE_UNION, RE_INTER, RE_DIFF])
 
 IRA_OPERATORS = frozenset([PLUS, MINUS, TIMES, TOREAL, DIV, POW, BV_TONATURAL])
 
@@ -242,6 +243,7 @@ __OP_STR__ = {
     STR_TO_RE: "STR_TO_RE",
     STR_IN_RE: "STR_IN_RE",
     RE_ALL: "RE_ALL",
+    RE_ALLCHAR: "RE_ALLCHAR",
     RE_NONE: "RE_NONE",
     RE_RANGE: "RE_RANGE",
     RE_CONCAT: "RE_CONCAT",
@@ -250,4 +252,5 @@ __OP_STR__ = {
     RE_OPT: "RE_OPT",
     RE_UNION: "RE_UNION",
     RE_INTER: "RE_INTER",
+    RE_DIFF: "RE_DIFF",
 }

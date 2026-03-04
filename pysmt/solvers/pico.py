@@ -22,9 +22,6 @@ try:
 except ImportError:
     raise SolverAPINotFound
 
-from six.moves import xrange
-from six import iteritems
-
 import pysmt.logics
 from pysmt import typing as types
 from pysmt.solvers.solver import Solver, SolverOptions
@@ -282,7 +279,7 @@ class PicosatSolver(Solver):
 
     def get_model(self):
         assignment = {}
-        for var, vid in iteritems(self._var_ids):
+        for var, vid in self._var_ids.items():
             v = picosat.picosat_deref(self.pico, vid)
             assert v!=0, "Error when translating variable."
 
@@ -294,12 +291,12 @@ class PicosatSolver(Solver):
 
     @clear_pending_pop
     def push(self, levels=1):
-        for _ in xrange(levels):
+        for _ in range(levels):
             picosat.picosat_push(self.pico)
 
     @clear_pending_pop
     def pop(self, levels=1):
-        for _ in xrange(levels):
+        for _ in range(levels):
             picosat.picosat_pop(self.pico)
 
     def _exit(self):

@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from six.moves import input
-
 import os
 import argparse
 import sys
@@ -28,21 +26,19 @@ from pysmt.cmd.installers.base import solver_install_site
 
 from pysmt.environment import get_env
 from pysmt.exceptions import PysmtException
-from pysmt import git_version
+from pysmt import __version__ as pysmt_version
 
 # Build a list of installers, one for each solver
 Installer = namedtuple("Installer",
                        ["InstallerClass", "version", "extra_params"])
 INSTALLERS = [
-    Installer(MSatInstaller,    "5.5.1", {}),
+    Installer(MSatInstaller,    "5.6.1", {}),
     Installer(CVC4Installer,    "1.7-prerelease",
               {"git_version" : "391ab9df6c3fd9a3771864900c1718534c1e4666"}),
-    Installer(Z3Installer,      "4.8.4",
-              {"osx": "10.14.1", "commit": "d6df51951f4c"}),
-    Installer(YicesInstaller,   "2.6.0",
+    Installer(Z3Installer,      "4.8.7", {"osx": "10.14.6"}),
+    Installer(YicesInstaller,   "2.6.2",
               {"yicespy_version": "f0768ffeec15ea310f830d10878971c9998454ac"}),
-    Installer(BtorInstaller,    "3.0.1-pre",
-              {"git_version" : "8062caf14f797a3aa85bf310705973468874e127"}),
+    Installer(BtorInstaller,    "3.2.1", {}),
     Installer(PicoSATInstaller, "965",
               {"pypicosat_minor_version" : "1708010052"}),
     Installer(CuddInstaller,    "2.0.3",
@@ -119,7 +115,7 @@ def parse_options():
                                      ' variable PYSMT_SOLVER if not already '
                                      'instaled on the system.')
     parser.add_argument('--version', action='version',
-                        version='%(prog)s {version}'.format(version=git_version()))
+                        version='%(prog)s {version}'.format(version=pysmt_version))
 
     for i in INSTALLERS:
         name = i.InstallerClass.SOLVER
@@ -259,7 +255,3 @@ def main():
                                          mirror_link=mirror_url,
                                          **i.extra_params)
             installer.install(force_redo=options.force_redo)
-
-
-if __name__ == "__main__":
-    main()

@@ -15,7 +15,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from nose.plugins.attrib import attr
+import pytest
+
 from pysmt.test import TestCase, skipIfSolverNotAvailable, main
 from pysmt.test.examples import get_example_formulae
 from pysmt.environment import get_env
@@ -24,12 +25,12 @@ from pysmt.shortcuts import (Array, Store, Int, Iff, Symbol, Plus, Equals, And,
 from pysmt.typing import INT, REAL
 from pysmt.simplifier import BddSimplifier
 from pysmt.logics import QF_BOOL
-from pysmt.exceptions import ConvertExpressionError
+from pysmt.exceptions import ConvertExpressionError, NoSolverAvailableError
 
 
 class TestSimplify(TestCase):
 
-    @attr("slow")
+    @pytest.mark.slow
     @skipIfSolverNotAvailable("z3")
     @skipIfSolverNotAvailable("cvc4")
     def test_simplify_qf(self):
@@ -44,7 +45,7 @@ class TestSimplify(TestCase):
                              msg="Simplification did not provide equivalent "+
                                 "result:\n f= %s\n sf = %s" % (f, sf))
 
-    @attr("slow")
+    @pytest.mark.slow
     @skipIfSolverNotAvailable("z3")
     def test_simplify_q(self):
         simp = get_env().simplifier
@@ -95,7 +96,10 @@ class TestSimplify(TestCase):
         for (f, _, _, logic) in get_example_formulae():
             if logic.quantifier_free:
                 fprime = s.simplify(f)
-                self.assertValid(Iff(fprime, f))
+                try:
+                    self.assertValid(Iff(fprime, f))
+                except NoSolverAvailableError:
+                    pass
 
         s = BddSimplifier(bool_abstraction=True)
         f = And(Equals(Plus(Int(5), Int(1)),
@@ -110,6 +114,82 @@ class TestSimplify(TestCase):
         f = Times(r, r, Real(1))
         f = f.simplify()
         self.assertNotIn(Real(1), f.args())
+
+    @skipIfSolverNotAvailable("z3")
+    def test_plus_negatives(self):
+        r0 = Symbol("r0", REAL)
+        r1 = Symbol("r1", REAL)
+        p_1 = Real(1)
+        m_1 = Real(-1)
+        p_2 = Real(2)
+        m_4 = Real(-4)
+
+        # 4 * r0 + (-1) * r1 + 2 - 4
+        neg_r1 = Times(m_1, r1)
+        m_4_r0 = Times(Real(4), r0)
+        expr = Plus(m_4_r0, neg_r1, p_2, m_4)
+        res = expr.simplify()
+        self.assertValid(Equals(expr, res))
+        stack = [res]
+        while stack:
+            curr = stack.pop()
+            if curr.is_plus():
+                stack.extend(curr.args())
+            elif curr.is_minus():
+                stack.extend(curr.args())
+            elif curr.is_times():
+                stack.extend(curr.args())
+            elif curr.is_constant():
+                self.assertNotEqual(curr, m_1)
+                self.assertNotEqual(curr, p_1)
+            elif not curr.is_symbol():
+                # unexpected expression type.
+                self.assertTrue(False)
+
+    @skipIfSolverNotAvailable("z3")
+    def test_sum_all_negatives(self):
+        r0 = Symbol("r0", REAL)
+        r1 = Symbol("r1", REAL)
+        m_1 = Real(-1)
+
+        # -4 * r0 + (-1) * r1
+        neg_r1 = Times(m_1, r1)
+        m_4_r0 = Times(Real(-4), r0)
+        expr = Plus(m_4_r0, neg_r1)
+        res = expr.simplify()
+        self.assertValid(Equals(expr, res))
+
+    @skipIfSolverNotAvailable("z3")
+    def test_plus_algebraic(self):
+        from pysmt.constants import Numeral
+        env = get_env()
+        mgr = env.formula_manager
+        r0 = Symbol("r0", REAL)
+        p_2 = Real(2)
+        m_5 = mgr._Algebraic(Numeral(-5))
+        m_3 = mgr._Algebraic(Numeral(-3))
+
+        # r0 + 2 - 5
+        expr = Plus(r0, p_2, m_5)
+        res = expr.simplify()
+        self.assertValid(Equals(expr, res))
+        self.assertIn(m_3, res.args())
+
+    @skipIfSolverNotAvailable("z3")
+    def test_times_algebraic(self):
+        from pysmt.constants import Numeral
+        env = get_env()
+        mgr = env.formula_manager
+        r0 = Symbol("r0", REAL)
+        p_2 = Real(2)
+        m_5 = mgr._Algebraic(Numeral(-5))
+        m_10 = mgr._Algebraic(Numeral(-10))
+
+        # -5 * r0 * 2
+        expr = Times(m_5, r0, p_2)
+        res = expr.simplify()
+        self.assertValid(Equals(expr, res))
+        self.assertIn(m_10, res.args())
 
 
     def test_and_flattening(self):

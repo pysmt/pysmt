@@ -13,7 +13,7 @@ sum_hello = Plus(hello)
 sum_world = Plus(world)
 
 problem = And(Equals(sum_hello, sum_world),
-              Equals(sum_hello, Int(36)))
+              Equals(sum_hello, Int(25)))
 
 formula = And(domains, problem)
 

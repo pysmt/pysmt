@@ -16,7 +16,7 @@
 #   limitations under the License.
 #
 import os
-from nose.plugins.attrib import attr
+import pytest
 
 from pysmt.shortcuts import Implies, is_sat, reset_env, Symbol, Iff
 from pysmt.rewritings import CNFizer
@@ -65,7 +65,7 @@ class TestCnf(TestCase):
             if cnt == max_cnt:
                 break
 
-    @attr("slow")
+    @pytest.mark.slow
     @skipIfNoSolverForLogic(QF_UFLIRA)
     def test_smtlib_cnf(self):
         for (logic, f, expected_result) in SMTLIB_TEST_FILES:

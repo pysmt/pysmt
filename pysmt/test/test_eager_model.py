@@ -15,8 +15,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from six.moves import xrange
-
 from pysmt.test import TestCase, main
 from pysmt.shortcuts import And, Or, FALSE, TRUE, FreshSymbol, Solver
 from pysmt.solvers.eager import EagerModel
@@ -87,7 +85,7 @@ class TestEagerModel(TestCase):
 
 
     def test_contains(self):
-        x, y, z = [FreshSymbol() for _ in xrange(3)]
+        x, y, z = [FreshSymbol() for _ in range(3)]
         d = {x: TRUE(), y: FALSE()}
         model = EagerModel(assignment=d)
         self.assertTrue(x in model)
@@ -95,7 +93,7 @@ class TestEagerModel(TestCase):
 
     @skipIfSolverNotAvailable("z3")
     def test_warp_solvermodel(self):
-        x, y, z = [FreshSymbol() for _ in xrange(3)]
+        x, y, z = [FreshSymbol() for _ in range(3)]
         with Solver(name='z3') as solver:
             solver.add_assertion(And(x,y,z))
             solver.solve()

@@ -42,7 +42,7 @@ How to access functionalities of solvers not currently wrapped by pySMT
 -----------------------------------------------------------------------
 .. literalinclude:: ../examples/allsat.py
 
-How to use any SMT-LIB complaint SMT solver
+How to use any SMT-LIB compliant SMT solver
 --------------------------------------------
 .. literalinclude:: ../examples/generic_smtlib.py
 

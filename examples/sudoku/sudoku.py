@@ -57,8 +57,8 @@ class Sudoku(object):
         """
         sq_size = self.size**2
         ty = self.get_type()
-        var_table = [[FreshSymbol(ty) for _ in xrange(sq_size)]
-                          for _ in xrange(sq_size)]
+        var_table = [[FreshSymbol(ty) for _ in range(sq_size)]
+                          for _ in range(sq_size)]
 
         solver = Solver(logic=logic, name=solver_name)
         # Sudoku constraints
@@ -66,18 +66,18 @@ class Sudoku(object):
         for row in var_table:
             for var in row:
                 solver.add_assertion(Or([Equals(var, self.const(i))
-                                         for i in xrange(1, sq_size + 1)]))
+                                         for i in range(1, sq_size + 1)]))
 
         # each row and each column contains all different numbers
-        for i in xrange(sq_size):
+        for i in range(sq_size):
             solver.add_assertion(AllDifferent(var_table[i]))
             solver.add_assertion(AllDifferent([x[i] for x in var_table]))
 
         # each square contains all different numbers
-        for sx in xrange(self.size):
-            for sy in xrange(self.size):
+        for sx in range(self.size):
+            for sy in range(self.size):
                 square = [var_table[i + sx * self.size][j + sy * self.size]
-                          for i in xrange(self.size) for j in xrange(self.size)]
+                          for i in range(self.size) for j in range(self.size)]
                 solver.add_assertion(AllDifferent(square))
 
         return solver, var_table
@@ -134,9 +134,9 @@ def read_constraints(fname):
     r = reader(fname)
     size = int(next(r))
     constraints = []
-    for _ in xrange(size**2):
+    for _ in range(size**2):
         row = []
-        for _ in xrange(size**2):
+        for _ in range(size**2):
             w = next(r)
             if w != "X":
                 row.append(int(w))

@@ -197,12 +197,17 @@ class HRLexer(Lexer):
             Rule(r"(str\.in\.re)", FunctionCallAdapter(self.mgr.StrInRe, 100), False), # str_in_re
             Rule(r"(re\.range)", FunctionCallAdapter(self.mgr.ReRange, 100), False), # re_range
             Rule(r"(re\.\+\+)", FunctionCallAdapter(self.mgr.ReConcat, 100), False), # re_concat
+            # TODO: FunctionCalls or Constants?
+            Rule(r"(re\.all)", FunctionCallAdapter(self.mgr.ReAll, 100), False), # re_all
+            Rule(r"(re\.allchar)", FunctionCallAdapter(self.mgr.ReAllchar, 100), False),  # re_allchar
+            Rule(r"(re\.none)", FunctionCallAdapter(self.mgr.ReNone, 100), False),  # re_none
             # TODO: UnaryOperator or FunctionCall??
             Rule(r"(re\.\*)", FunctionCallAdapter(self.mgr.ReKleeneStar, 100), False), # re_kleene_star
             Rule(r"(re\.\+)", FunctionCallAdapter(self.mgr.ReKleenePlus, 100), False), # re_kleene_plus
             Rule(r"(re\.opt)", FunctionCallAdapter(self.mgr.ReOpt, 100), False), # re_opt
             Rule(r"(re\.union)", FunctionCallAdapter(self.mgr.ReUnion, 100), False), # re_union
             Rule(r"(re\.inter)", FunctionCallAdapter(self.mgr.ReInter, 100), False), # re_inter
+            Rule(r"(re\.diff)", FunctionCallAdapter(self.mgr.ReDiff, 100), False), # re_diff
             Rule(r"'(.*?)'", self.identifier, True), # quoted identifiers
             Rule(r"([A-Za-z_][A-Za-z0-9_]*)", self.identifier, True),# identifiers
             Rule(r"(.)", self.lexing_error, True), # input error

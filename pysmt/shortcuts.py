@@ -472,15 +472,14 @@ def BVXor(left, right):
     return get_env().formula_manager.BVXor(left, right)
 
 
-def BVConcat(left, right):
+def BVConcat(*args):
     """Returns the Concatenation of the two BVs
 
-    :param left: Specify the left bitvector
-    :param right: Specify the right bitvector
-    :returns: The concatenation of the two BVs
+    :param args: Specify the bitvectors to concatenate
+    :returns: The concatenation of the given BVs
     :rtype: FNode
     """
-    return get_env().formula_manager.BVConcat(left, right)
+    return get_env().formula_manager.BVConcat(*args)
 
 
 def BVExtract(formula, start=0, end=None):
@@ -911,7 +910,7 @@ def Solver(name=None, logic=None, **kwargs):
                                     logic=logic,
                                     **kwargs)
 
-def UnsatCoreSolver(name=None, logic=None, unsat_cores_mode="all"):
+def UnsatCoreSolver(name=None, logic=None, unsat_cores_mode="all", **kwargs):
     """Returns a solver supporting unsat core extraction.
 
     :param name: Specify the name of the solver
@@ -922,7 +921,8 @@ def UnsatCoreSolver(name=None, logic=None, unsat_cores_mode="all"):
     """
     return get_env().factory.UnsatCoreSolver(name=name,
                                              logic=logic,
-                                             unsat_cores_mode=unsat_cores_mode)
+                                             unsat_cores_mode=unsat_cores_mode,
+                                             **kwargs)
 
 
 def QuantifierEliminator(name=None, logic=None):

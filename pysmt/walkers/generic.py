@@ -16,7 +16,7 @@
 #   limitations under the License.
 #
 from functools import partial
-from six import with_metaclass
+
 import sys
 if sys.version_info >= (3, 3):
     from collections.abc import Iterable
@@ -65,7 +65,7 @@ class MetaNodeTypeHandler(type):
         return obj
 
 
-class Walker(with_metaclass(MetaNodeTypeHandler)):
+class Walker(object, metaclass=MetaNodeTypeHandler):
     """Base Abstract Walker class.
 
     Do not subclass directly, use DagWalker or TreeWalker, instead.

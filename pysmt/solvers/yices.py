@@ -18,8 +18,6 @@
 import atexit
 from warnings import warn
 
-from six.moves import xrange
-
 from pysmt.exceptions import SolverAPINotFound
 
 try:
@@ -222,7 +220,7 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
     @clear_pending_pop
     def push(self, levels=1):
-        for _ in xrange(levels):
+        for _ in range(levels):
             c = yicespy.yices_push(self.yices)
             if c != 0:
                 # 4 is STATUS_UNSAT
@@ -238,7 +236,7 @@ class YicesSolver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
     @clear_pending_pop
     def pop(self, levels=1):
-        for _ in xrange(levels):
+        for _ in range(levels):
             if self.failed_pushes > 0:
                 self.failed_pushes -= 1
             else:
@@ -409,7 +407,7 @@ class YicesConverter(Converter, DagWalker):
         variables have been replaced by the new variables in the list.
         """
         new_vars = [self._bound_symbol(x) for x in variables]
-        old_vars = [self.walk_symbol(x, []) for x in variables]
+        old_vars = [self.walk_symbol(x) for x in variables]
         new_formula = yicespy.yices_subst_term(len(variables), new_vars,
                                                 old_vars, formula)
         return (new_formula, new_vars)
@@ -461,9 +459,11 @@ class YicesConverter(Converter, DagWalker):
     def walk_bv_constant(self, formula, **kwargs):
         width = formula.bv_width()
         res = None
-        if width <= 64:
-            # we can use the numberical representation
-            value = formula.constant_value()
+        value = formula.constant_value()
+        if value <= ((2**63) - 1):
+            # we can use the numerical representation
+            # Note: yicespy uses *signed* longs in the API, so the maximal
+            # representable number is 2^63 - 1
             res = yicespy.yices_bvconst_uint64(width, value)
         else:
             # we must resort to strings to communicate the result to yices

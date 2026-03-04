@@ -104,7 +104,7 @@ class PysmtShell(object):
                 print("unsat")
         elif name == GET_VALUE:
             print("(")
-            for k, r in result.iteritems():
+            for k, r in result.items():
                 print("  (%s %s)" % (k,r))
             print(")")
 

@@ -15,7 +15,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from six.moves import cStringIO
+from io import StringIO
 
 import pysmt.operators as op
 from pysmt.walkers import TreeWalker
@@ -266,6 +266,9 @@ class HRPrinter(TreeWalker):
     def walk_re_all(self, formula, **kwargs):
         self.write("re.all()")
 
+    def walk_re_allchar(self, formula, **kwargs):
+        self.write("re.allchar()")
+
     def walk_re_none(self, formula, **kwargs):
         self.write("re.none()")
 
@@ -308,6 +311,13 @@ class HRPrinter(TreeWalker):
 
     def walk_re_inter(self, formula, **kwargs):
         self.write("re.inter(" )
+        self.walk(formula.arg(0))
+        self.write(", ")
+        self.walk(formula.arg(1))
+        self.write(")")
+
+    def walk_re_diff(self, formula, **kwargs):
+        self.write("re.diff(" )
         self.walk(formula.arg(0))
         self.write(", ")
         self.walk(formula.arg(1))
@@ -402,7 +412,7 @@ class HRSerializer(object):
         'printer' is the printer to call to perform the serialization.
         'threshold' is the thresholding value for the printing function.
         """
-        buf = cStringIO()
+        buf = StringIO()
         if printer is None:
             p = self.PrinterClass(buf)
         else:
@@ -451,7 +461,7 @@ class SmartPrinter(HRPrinter):
 
 def smart_serialize(formula, subs=None, threshold=None):
     """Creates and calls a SmartPrinter to perform smart serialization."""
-    buf = cStringIO()
+    buf = StringIO()
     p = SmartPrinter(buf, subs=subs)
     p.printer(formula, threshold=threshold)
     res = buf.getvalue()

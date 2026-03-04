@@ -15,8 +15,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from six.moves import xrange
-
 from pysmt.shortcuts import Solver, BVAnd, BVOr, BVXor, BVConcat, BVULT, BVUGT, \
     BVULE, BVUGE, BVAdd, BVSub, BVMul, BVUDiv, BVURem, BVLShl, BVLShr, BVNot, \
     BVNeg, BVZExt, BVSExt, BVRor, BVRol, BV, BVExtract, BVSLT, BVSLE, BVComp, \
@@ -45,7 +43,7 @@ class TestBvSimplification(TestCase):
     def all_bv_numbers(self, width=None):
         if width is None:
             width = self.width
-        for x in xrange(2 ** width):
+        for x in range(2 ** width):
             yield BV(x, width)
 
     @skipIfSolverNotAvailable("msat")
@@ -83,8 +81,8 @@ class TestBvSimplification(TestCase):
 
     def extract(self):
         for l in self.all_bv_numbers():
-            for s in xrange(0, self.width):
-                for e in xrange(s, self.width):
+            for s in range(0, self.width):
+                for e in range(s, self.width):
                     self.check(BVExtract(l, start=s, end=e))
 
     def concat_different_length(self):
@@ -95,7 +93,7 @@ class TestBvSimplification(TestCase):
 
     def all_special(self):
         for l in self.all_bv_numbers():
-            for n in xrange(0, self.width + 1):
+            for n in range(0, self.width + 1):
                 for op in self.special_operators:
                     self.check(op(l, n))
 

@@ -15,8 +15,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from six.moves import xrange
-
 import pysmt.operators as op
 from pysmt.shortcuts import FreshSymbol, Symbol, Int, Bool, ForAll
 from pysmt.shortcuts import And, Or, Iff, Not, Function, Real
@@ -214,7 +212,7 @@ class TestWalkers(TestCase):
 
     def test_iterative_get_free_variables(self):
         f = Symbol("x")
-        for _ in xrange(1000):
+        for _ in range(1000):
             f = And(f, f)
 
         cone = f.get_free_variables()

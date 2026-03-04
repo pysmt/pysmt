@@ -31,7 +31,7 @@ pySMT makes working with **Satisfiability Modulo Theory** simple:
 
 * Define formulae in a *simple*, *intuitive*, and *solver independent* way
 * Solve your formulae using one of the native solvers, or by wrapping
-  any SMT-Lib complaint solver,
+  any SMT-Lib compliant solver,
 * Dump your problems in the SMT-Lib format,
 * and more...
 
@@ -178,8 +178,6 @@ Additionally, you can use any SMT-LIB 2 compliant solver.
 PySMT assumes that the python bindings for the SMT Solver are
 installed and accessible from your ``PYTHONPATH``.
 
-pySMT works on both Python 3.5 and Python 2.7.
-
 Installation
 ============
 You can install the latest stable release of pySMT from PyPI::
@@ -207,7 +205,9 @@ By default the solvers are downloaded, unpacked and built in your home directory
 in the ``.smt_solvers`` folder. Compiled libraries and actual solver packages are
 installed in the relevant ``site-packages`` directory (e.g. virtual environment's
 packages root or local user-site). ``pysmt-install`` has many options to
-customize its behavior.
+customize its behavior. If you have multiple versions of python in your system,
+we recommend the following syntax to run pysmt-install: ``python -m pysmt install``.
+
 
 *Note:* This script does not install required
 dependencies for building the solver (e.g., make or gcc) and has been

@@ -191,12 +191,13 @@ class TheoryOracle(walkers.DagWalker):
 
     @walkers.handles(op.REAL_CONSTANT, op.BOOL_CONSTANT)
     @walkers.handles(op.INT_CONSTANT, op.BV_CONSTANT)
+    @walkers.handles(op.ALGEBRAIC_CONSTANT)
     @walkers.handles(op.STR_CONSTANT)
     def walk_constant(self, formula, args, **kwargs):
         """Returns a new theory object with the type of the constant."""
         #pylint: disable=unused-argument
         theory_out = Theory()
-        if formula.is_real_constant():
+        if formula.is_real_constant() or formula.is_algebraic_constant():
             theory_out.real_arithmetic = True
             theory_out.real_difference = True
         elif formula.is_int_constant():
@@ -315,6 +316,13 @@ class TheoryOracle(walkers.DagWalker):
         if len(left.get_free_variables()) != 0 and \
            len(right.get_free_variables()) != 0:
             theory_out = theory_out.set_linear(False)
+        elif formula.arg(1).is_zero():
+            # DivBy0 is non-linear
+            theory_out = theory_out.set_linear(False)
+        else:
+            theory_out = theory_out.combine(args[1])
+        return theory_out
+
         # This is  not in DL anymore
         theory_out = theory_out.set_difference_logic(False)
         return theory_out
@@ -382,6 +390,7 @@ class AtomsOracle(walkers.DagWalker):
     # - ITE terms
     # - Symbols
     # - Constants
+    # - Array select, e.g. a[x] because such term could be of Boolean type
     #
 
     def get_atoms(self, formula):
@@ -399,9 +408,15 @@ class AtomsOracle(walkers.DagWalker):
         #pylint: disable=unused-argument
         return frozenset([formula])
 
-    @walkers.handles(op.THEORY_OPERATORS)
+    @walkers.handles(op.THEORY_OPERATORS - {op.ARRAY_SELECT})
     def walk_theory_op(self, formula, **kwargs):
         #pylint: disable=unused-argument
+        return None
+
+    def walk_array_select(self, formula, **kwargs):
+        #pylint: disable=unused-argument
+        if self.env.stc.get_type(formula).is_bool_type():
+            return frozenset([formula])
         return None
 
     @walkers.handles(op.CONSTANTS)

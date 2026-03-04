@@ -17,11 +17,11 @@
 #
 
 from pysmt.test import TestCase, main
-from pysmt.test import skipIfSolverNotAvailable
+from pysmt.test import skipIfSolverNotAvailable, skipIfNoSolverForLogic
 
 from pysmt.oracles import get_logic
 from pysmt.shortcuts import FreshSymbol, Times, Equals, Div, Real, Int, Pow
-from pysmt.shortcuts import Solver, is_sat
+from pysmt.shortcuts import Solver, Symbol, And, Not, is_sat
 from pysmt.typing import REAL, INT
 from pysmt.exceptions import (ConvertExpressionError,
                               NonLinearError,
@@ -116,6 +116,17 @@ class TestNonLinear(TestCase):
             self.assertTrue(is_sat(f))
         except SolverReturnedUnknownResultError:
             pass
+
+    @skipIfNoSolverForLogic(QF_NRA)
+    def test_div_by_0(self):
+        varA = Symbol('A', REAL)
+        varB = Symbol('B', REAL)
+
+        f = And(Equals(varA, varB),
+                Not(Equals(Div(varA, Real(0)), Div(varB, Real(0)))))
+
+        self.assertUnsat(f)
+
 
 if __name__ == "__main__":
     main()

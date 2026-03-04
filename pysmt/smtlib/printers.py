@@ -16,8 +16,7 @@
 #   limitations under the License.
 #
 from functools import partial
-
-from six.moves import xrange, cStringIO
+from io import StringIO
 
 import pysmt.operators as op
 from pysmt.environment import get_env
@@ -91,7 +90,7 @@ class SmtPrinter(TreeWalker):
         self.write(quote(formula.symbol_name()))
 
     def walk_function(self, formula):
-        return self.walk_nary(formula, formula.function_name())
+        return self.walk_nary(formula, quote(formula.function_name().symbol_name()))
 
     def walk_int_constant(self, formula):
         if formula.constant_value() < 0:
@@ -262,6 +261,9 @@ class SmtPrinter(TreeWalker):
     def walk_re_all(self,formula, **kwargs):
         self.write("( re.all )" )
 
+    def walk_re_allchar(self,formula, **kwargs):
+        self.write("( re.allchar )" )
+
     def walk_re_none(self,formula, **kwargs):
         self.write("( re.none )" )
 
@@ -307,6 +309,13 @@ class SmtPrinter(TreeWalker):
         self.write(" ")
         self.walk(formula.arg(1))
         self.write(")")
+    
+    def walk_re_diff(self,formula, **kwargs):
+        self.write("( re.diff" )
+        self.walk(formula.arg(0))
+        self.write(" ")
+        self.walk(formula.arg(1))
+        self.write(")")
 
     def walk_int_to_str(self,formula, **kwargs):
         self.write("( int.to.str " )
@@ -315,7 +324,7 @@ class SmtPrinter(TreeWalker):
 
     def walk_array_value(self, formula):
         assign = formula.array_value_assigned_values_map()
-        for _ in xrange(len(assign)):
+        for _ in range(len(assign)):
             self.write("(store ")
 
         self.write("((as const %s) " % formula.get_type().as_smtlib(False))
@@ -506,7 +515,7 @@ class SmtDagPrinter(DagWalker):
         return quote(formula.symbol_name())
 
     def walk_function(self, formula, args, **kwargs):
-        return self.walk_nary(formula, args, formula.function_name())
+        return self.walk_nary(formula, args, quote(formula.function_name().symbol_name()))
 
     def walk_int_constant(self, formula, **kwargs):
         if formula.constant_value() < 0:
@@ -669,6 +678,9 @@ class SmtDagPrinter(DagWalker):
     def walk_re_all(self,formula, args, **kwargs):
         return "( re.all )"
 
+    def walk_re_allchar(self,formula, args, **kwargs):
+        return "( re.allchar )"
+
     def walk_re_none(self,formula, args, **kwargs):
         return "( re.none )"
 
@@ -700,6 +712,9 @@ class SmtDagPrinter(DagWalker):
     def walk_re_inter(self,formula, args, **kwargs):
         return "( re.inter %s %s )" % (args[0], args[1])
     
+    def walk_re_diff(self,formula, args, **kwargs):
+        return "( re.diff %s %s )" % (args[0], args[1])
+    
     def walk_int_to_str(self,formula, args, **kwargs):
         return "( int.to.str %s )" % args[0]
 
@@ -708,7 +723,7 @@ class SmtDagPrinter(DagWalker):
         self.openings += 1
         self.write("(let ((%s " % sym)
 
-        for _ in xrange((len(args) - 1) // 2):
+        for _ in range((len(args) - 1) // 2):
             self.write("(store ")
 
         self.write("((as const %s) " % formula.get_type().as_smtlib(False))
@@ -735,7 +750,7 @@ def to_smtlib(formula, daggify=True):
 
     See :py:class:`SmtPrinter`
     """
-    buf = cStringIO()
+    buf = StringIO()
     p = None
     if daggify:
         p = SmtDagPrinter(buf)

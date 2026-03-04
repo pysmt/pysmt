@@ -36,6 +36,9 @@ class IdentityDagWalker(DagWalker):
         return self.mgr.Symbol(formula.symbol_name(),
                                formula.symbol_type())
 
+    def walk_algebraic_constant(self, formula, args, **kwargs):
+        return self.mgr._Algebraic(formula.constant_value())
+
     def walk_real_constant(self, formula, args, **kwargs):
         return self.mgr.Real(formula.constant_value())
 
@@ -225,6 +228,9 @@ class IdentityDagWalker(DagWalker):
     def walk_re_all(self, formula, args, **kwargs):
         return self.mgr.ReAll()
 
+    def walk_re_allchar(self, formula, args, **kwargs):
+        return self.mgr.ReAllchar()
+
     def walk_re_none(self, formula, args, **kwargs):
         return self.mgr.ReNone()
 
@@ -248,6 +254,9 @@ class IdentityDagWalker(DagWalker):
 
     def walk_re_inter(self, formula, args, **kwargs):
         return self.mgr.ReInter(args[0], args[1])
+    
+    def walk_re_diff(self, formula, args, **kwargs):
+        return self.mgr.ReDiff(args[0], args[1])
 
     def walk_int_to_str(self, formula, args, **kwargs):
         return self.mgr.IntToStr(args[0])
