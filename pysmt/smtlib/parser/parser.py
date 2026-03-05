@@ -19,8 +19,6 @@ import functools
 import itertools
 
 from warnings import warn
-from six import iteritems, PY2
-from six.moves import xrange
 from collections import deque
 
 import pysmt.smtlib.commands as smtcmd
@@ -445,6 +443,7 @@ class SmtLibParser(object):
                             'str.to.re':self._operator_adapter(mgr.StrToRe),
                             'str.in.re':self._operator_adapter(mgr.StrInRe),
                             're.all':self._operator_adapter(mgr.ReAll),
+                            're.allchar':self._operator_adapter(mgr.ReAllchar),
                             're.none':self._operator_adapter(mgr.ReNone),
                             're.range':self._operator_adapter(mgr.ReRange),
                             're.++':self._operator_adapter(mgr.ReConcat),
@@ -453,6 +452,7 @@ class SmtLibParser(object):
                             're.opt':self._operator_adapter(mgr.ReOpt),
                             're.union':self._operator_adapter(mgr.ReUnion),
                             're.inter':self._operator_adapter(mgr.ReInter),
+                            're.diff': self._operator_adapter(mgr.ReDiff),
                             # arrays
                             'select':self._operator_adapter(mgr.Select),
                             'store':self._operator_adapter(mgr.Store),
