@@ -1001,6 +1001,11 @@ class FormulaManager(object):
         """
         return self.create_node(node_type=op.RE_ALL, args=())
 
+    def ReAllchar(self):
+        """Returns a constant denoting the set of all strings of length 1
+        """
+        return self.create_node(node_type=op.RE_ALLCHAR, args=())
+
     def ReNone(self):
         """Returns a constant denoting the empty set of strings
         """
@@ -1058,6 +1063,14 @@ class FormulaManager(object):
         where r1 and r2 are RegEx terms defined over a certain sort
         """
         return self.create_node(node_type=op.RE_INTER, args=(r1, r2))
+    
+    def ReDiff(self, r1, r2):
+        """Returns a regular expression that accepts the difference of the
+        languages accepted by r1 and r2 (i.e., L1 \\ L2).
+
+        where r1 and r2 are RegEx terms defined over a certain sort
+        """
+        return self.create_node(node_type=op.RE_DIFF, args=(r1, r2))
 
     def IntToStr(self, x):
         """Returns the corresponding String representing the natural number x.
