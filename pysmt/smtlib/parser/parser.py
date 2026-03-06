@@ -19,6 +19,8 @@ import functools
 import itertools
 
 from warnings import warn
+from six import iteritems, PY2
+from six.moves import xrange
 from collections import deque
 
 import pysmt.smtlib.commands as smtcmd
