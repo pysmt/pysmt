@@ -92,7 +92,14 @@ class CVC5Options(SolverOptions):
 
 class CVC5Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
-    LOGICS = PYSMT_LOGICS | {AUFLIRA, AUFLIA, ALIA}
+    # Exclude const-array logics that mix BV with integer/real arithmetic:
+    # cvc5 rejects arrays indexed by array types (e.g. QF_AUFBVLIRA*).
+    LOGICS = (PYSMT_LOGICS | {AUFLIRA, AUFLIA, ALIA}) - \
+             frozenset(l for l in PYSMT_LOGICS
+                       if l.theory.arrays_const
+                       and l.theory.bit_vectors
+                       and (l.theory.integer_arithmetic
+                            or l.theory.real_arithmetic))
 
     OptionsClass = CVC5Options
 
