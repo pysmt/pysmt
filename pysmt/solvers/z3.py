@@ -143,7 +143,7 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver,
                SmtLibBasicSolver, SmtLibIgnoreMixin):
 
     LOGICS = (PYSMT_LOGICS |
-              {AUFLIRA, AUFLIA, ALIA}) -\
+              {AUFLIRA, AUFLIA, AUFNIRA, ALIA}) -\
              set(x for x in PYSMT_LOGICS if x.theory.strings)
     OptionsClass = Z3Options
 
