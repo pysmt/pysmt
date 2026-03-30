@@ -167,7 +167,7 @@ class TestBdd(TestCase):
                                     'dynamic_reordering':True}) as s:
             s.add_assertion(self.big_tree)
             self.assertTrue(s.solve())
-            self.assertNotEquals(s.ddmanager.ReorderingStatus()[1], 0)
+            self.assertNotEqual(s.ddmanager.ReorderingStatus()[1], 0)
 
 
 if __name__ == '__main__':
