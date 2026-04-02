@@ -112,6 +112,6 @@ jobs:
         bash make_distrib.sh
 
     - name: Upload to PyPI
-      uses: pypa/gh-action-pypi-publish@b7f401de30cb6434a1e19f805ff006643653240e
+      uses: pypa/gh-action-pypi-publish@release/v1.13.0
       with:
         password: ${{ secrets.PYPI_API_TOKEN }}
