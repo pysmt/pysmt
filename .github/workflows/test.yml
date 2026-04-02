@@ -108,7 +108,7 @@ jobs:
 
     - name: Make distrib
       run: |
-        python3 -m pip install wheel
+        python3 -m pip install wheel setuptools
         bash make_distrib.sh
 
     - name: Upload to PyPI
