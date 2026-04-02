@@ -128,7 +128,7 @@ class CVC5Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         # arrays with "Cannot handle assertion with term of kind
         # STORE_ALL in this configuration."
         try:
-            self.cvc5.setOption("arrays-exp", "true")
+            self.cvc5_solver.setOption("arrays-exp", "true")
         except Exception:
             pass  # older cvc5 versions may not have this option
 
@@ -361,11 +361,11 @@ class CVC5Converter(Converter, DagWalker):
     def walk_array_value(self, formula, args, **kwargs):
         arr_sort = self._type_to_cvc5(formula.get_type())
         # args[0] is the converted default value
-        const_arr = self.cvc5.mkConstArray(arr_sort, args[0])
+        const_arr = self.cvc5_solver.mkConstArray(arr_sort, args[0])
         # Remaining args are (index, value) pairs for point overrides
         result = const_arr
         for i in range(1, len(args), 2):
-            result = self.cvc5.mkTerm(Kind.STORE, result, args[i], args[i + 1])
+            result = self.cvc5_solver.mkTerm(Kind.STORE, result, args[i], args[i + 1])
         return result
 
     def walk_minus(self, formula, args, **kwargs):
