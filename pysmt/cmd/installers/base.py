@@ -232,6 +232,16 @@ class SolverInstaller(object):
 
 
     @staticmethod
+    def replace_in_file(file_path, old_str, new_str):
+        """Replaces all occurrences of old_str with new_str in the given file"""
+        with open(file_path, "r") as f:
+            content = f.read()
+        content = content.replace(old_str, new_str)
+        with open(file_path, "w") as f:
+            f.write(content)
+
+
+    @staticmethod
     def clean_dir(path):
         """Empties a (possibly non-existent) directory"""
         if os.path.exists(path):

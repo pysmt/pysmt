@@ -64,20 +64,7 @@ then
    os_install libgmp-dev
 fi
 
-# Install latest version of SWIG for CVC and BDD
-# (The other solvers in isolation fall-back to the system swig)
-if [ "${PYSMT_SOLVER}" == "cvc5" ] || [ "${PYSMT_SOLVER}" == "bdd" ] || [ "${PYSMT_SOLVER}" == "all" ]
-then
-    os_install flex
-    os_install bison
-    git clone https://github.com/swig/swig.git
-    cd swig
-    git checkout v4.0.2
-    ./autogen.sh && ./configure --without-pcre && make
-    sudo make install
-    cd ..
-fi
-#
+
 if [ "${PYSMT_SOLVER}" == "yices" ] || \
    [ "${PYSMT_SOLVER}" == "btor" ] || \
    [ "${PYSMT_SOLVER}" == "bdd" ] || \
@@ -90,23 +77,19 @@ fi
 if [ "${PYSMT_SOLVER}" == "yices" ] || [ "${PYSMT_SOLVER}" == "all" ]
 then
     os_install gperf
+    os_install autoconf
 fi
 
 # Install dependencies
 $PIP_INSTALL configparser
 $PIP_INSTALL wheel
 $PIP_INSTALL pytest
+$PIP_INSTALL setuptools
 
 if [ "${PYSMT_SOLVER}" == "cvc5" ]
 then
     $PIP_INSTALL toml
 fi
-
-# Needed only when using "act" locally
-# if [ "${PYSMT_SOLVER}" == "cvc5" ] || [ "${PYSMT_SOLVER}" == "btor" ] || [ "${PYSMT_SOLVER}" == "all" ]
-# then
-#     os_install cmake
-# fi
 
 # Install gmpy if needed
 if [ "${PYSMT_GMPY}" == "TRUE" ]

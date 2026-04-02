@@ -11,9 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import sys, os
+import os
 import json
 import codecs
+import glob
 
 import urllib.request
 
@@ -59,10 +60,8 @@ class PicoSATInstaller(SolverInstaller):
         SolverInstaller.run_python("setup.py build", directory=self.extract_path)
 
     def move(self):
-        libdir = "lib.%s-%s-%s" % (self.os_name, self.architecture,
-                                   self.python_version)
         bdir = os.path.join(self.extract_path, "build")
-        sodir = os.path.join(bdir, libdir)
+        sodir = glob.glob(bdir + "/lib.*")[0]
 
         for f in os.listdir(sodir):
             if f.endswith(".so"):
