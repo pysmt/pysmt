@@ -115,9 +115,6 @@ class TestLogic(TestCase):
                 Solver(logic=pysmt.logics.QF_BOOL)
 
         with self.assertRaises(NoSolverAvailableError):
-            Solver(logic=NRA)
-
-        with self.assertRaises(NoSolverAvailableError):
             Solver(name='picosat', logic=pysmt.logics.QF_BV)
 
 

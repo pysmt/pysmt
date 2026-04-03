@@ -25,7 +25,7 @@ except ImportError:
 from cvc5 import Kind
 
 import pysmt.typing as types
-from pysmt.logics import PYSMT_LOGICS, ARRAYS_CONST_LOGICS
+from pysmt.logics import PYSMT_LOGICS, AUFLIRA, AUFLIA, AUFNIRA, ALIA
 
 from pysmt.solvers.solver import Solver, Converter, SolverOptions
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
@@ -92,8 +92,14 @@ class CVC5Options(SolverOptions):
 
 class CVC5Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
 
-    LOGICS = PYSMT_LOGICS -\
-             ARRAYS_CONST_LOGICS
+    # Exclude const-array logics that mix BV with integer/real arithmetic:
+    # cvc5 rejects arrays indexed by array types (e.g. QF_AUFBVLIRA*).
+    LOGICS = (PYSMT_LOGICS | {AUFLIRA, AUFLIA, AUFNIRA, ALIA}) - \
+             frozenset(l for l in PYSMT_LOGICS
+                       if l.theory.arrays_const
+                       and l.theory.bit_vectors
+                       and (l.theory.integer_arithmetic
+                            or l.theory.real_arithmetic))
 
     OptionsClass = CVC5Options
 
@@ -105,6 +111,9 @@ class CVC5Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         self.cvc5_solver = cvc5.Solver()
         self.declarations = None
         self.logic_name = str(logic)
+        if self.logic_name.endswith("*"):
+            # Const-array extension (pySMT-internal suffix)
+            self.logic_name = self.logic_name[:-1]
         if "t" in self.logic_name:
             # Custom Type extension
             self.logic_name = self.logic_name.replace("t","")
@@ -113,6 +122,15 @@ class CVC5Solver(Solver, SmtLibBasicSolver, SmtLibIgnoreMixin):
         elif self.logic_name == "BOOL":
             self.logic_name = "LRA"
         self.cvc5_solver.setLogic(self.logic_name)
+
+        # Enable constant-array support (STORE_ALL / mkConstArray).
+        # Without this, cvc5 rejects assertions containing constant
+        # arrays with "Cannot handle assertion with term of kind
+        # STORE_ALL in this configuration."
+        try:
+            self.cvc5_solver.setOption("arrays-exp", "true")
+        except Exception:
+            pass  # older cvc5 versions may not have this option
 
         self.options(self)
 
@@ -257,6 +275,11 @@ class CVC5Converter(Converter, DagWalker):
             array_type = self._cvc5_type_to_type(expr.getSort())
             base_value = self.back(const_)
             res = self.mgr.Array(array_type.index_type, base_value)
+        elif expr.getKind() == Kind.STORE:
+            base = self.back(expr[0])
+            index = self.back(expr[1])
+            value = self.back(expr[2])
+            res = self.mgr.Store(base, index, value)
         else:
             raise PysmtTypeError("Unsupported expression:", str(expr))
 
@@ -334,6 +357,16 @@ class CVC5Converter(Converter, DagWalker):
 
     def walk_array_select(self, formula, args, **kwargs):
         return self.cvc5_solver.mkTerm(Kind.SELECT, args[0], args[1])
+
+    def walk_array_value(self, formula, args, **kwargs):
+        arr_sort = self._type_to_cvc5(formula.get_type())
+        # args[0] is the converted default value
+        const_arr = self.cvc5_solver.mkConstArray(arr_sort, args[0])
+        # Remaining args are (index, value) pairs for point overrides
+        result = const_arr
+        for i in range(1, len(args), 2):
+            result = self.cvc5_solver.mkTerm(Kind.STORE, result, args[i], args[i + 1])
+        return result
 
     def walk_minus(self, formula, args, **kwargs):
         return self.cvc5_solver.mkTerm(Kind.SUB, args[0], args[1])
