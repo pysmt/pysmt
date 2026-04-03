@@ -18,7 +18,7 @@
 import os
 import pytest
 
-from pysmt.shortcuts import Implies, is_sat, reset_env, Symbol, Iff, Select, ArrayType, INT, BOOL, And, get_env
+from pysmt.shortcuts import Implies, is_sat, is_valid, reset_env, Symbol, Iff, Select, ArrayType, INT, BOOL, And, get_env
 from pysmt.rewritings import CNFizer
 from pysmt.logics import QF_BOOL, QF_LRA, QF_LIA, QF_UFLIRA, QF_UFLRA, QF_ALIA
 from pysmt.test import TestCase, skipIfNoSolverForLogic, main
@@ -91,7 +91,7 @@ class TestCnf(TestCase):
             return
 
         cnf = conv.convert_as_formula(expr)
-        self.assertValid(Implies(cnf, expr), logic=logic)
+        self.assertTrue(is_valid(Implies(cnf, expr), logic=logic))
 
         res = is_sat(cnf, logic=logic)
         self.assertEqual(res, res_is_sat)
