@@ -24,18 +24,26 @@ class OptiMSatInstaller(SolverInstaller):
 
     def __init__(self, install_dir, bindings_dir, solver_version,
                  mirror_link=None):
-        # Getting the right archive name
-        os_name = self.os_name
-        arch = str(self.bits) + "-bit"
-        ext = "tar.gz"
-        if os_name == "windows":
-            ext = "zip"
-            arch += "-mingw"
-        elif os_name == "darwin":
-            os_name = "macos"
 
-        archive_name = "optimathsat-%s-%s-%s.%s" % (solver_version, os_name,
-                                                    arch, ext)
+        # Getting the right archive name
+        archive_name_template = "optimathsat-{version}-{os}-{arch}.{ext}"
+        format = {
+                "version": solver_version,
+                "os" : self.os_name,
+                "arch": self.architecture,
+                "ext": "tar.gz"
+        }
+        if self.os_name in ["windows", "darwin"]:
+            # Since version 1.7.5 the architecture is not included in the
+            # pkg name for the OSX and Win release as it is considered a "universal binary"
+            archive_name_template = "optimathsat-{version}-{os}.{ext}"
+        if self.os_name == "windows":
+            format["ext"] = "zip"
+            format["os"] = "win64" if self.architecture == "x86_64" else "win32"
+        elif self.os_name == "darwin":
+            format["os"] = "osx"
+
+        archive_name = archive_name_template.format(**format)
 
         native_link = "https://optimathsat.disi.unitn.it/releases/optimathsat-%s/{archive_name}" % solver_version
 
