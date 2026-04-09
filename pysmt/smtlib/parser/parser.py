@@ -1312,15 +1312,33 @@ class SmtLibParser(object):
 
     def _cmd_minmax_maxmin_obj(self, current: str, tokens: Tokenizer) -> SmtLibCommand:
         """(minmax | maxmin <term>+ )"""
-        """TODO: [:id <string>] [:signed]"""
         params = []
+        terms = []
+        signed = False
+
         while True:
-            try:
-                c = self.get_expression(tokens)
-                params.append(c)
-            except PysmtSyntaxError:
+            token = tokens.consume()
+            if token == ")":
                 break
-        return SmtLibCommand(current, [params,None])
+            if token.startswith(":"):
+                if token == ":id":
+                    identifier = self.parse_atom(tokens, "maxmin/minmax")
+                    params.append((token, identifier))
+                elif token == ":signed":
+                    signed = True
+                    params.append((token, signed))
+                else:
+                    raise PysmtSyntaxError(
+                        "Incorrect option in the '%s' command" % token,
+                        tokens.pos_info)
+            else:
+                tokens.add_extra_token(token)
+                terms.append(self.get_expression(tokens))
+
+        if not any(option[0] == ":signed" for option in params):
+            params.append((":signed", False))
+
+        return SmtLibCommand(current, [terms, params])
 
     def _cmd_objective(self, current: str, tokens: Tokenizer) -> SmtLibCommand:
         """(maximize | minimize <term>"""
