@@ -109,9 +109,15 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
 
         elif self.name in [smtcmd.MINMAX, smtcmd.MAXMIN]:
             outstream.write("(%s" % self.name)
-            for a in self.args:
+            for a in self.args[0]:
                 outstream.write(" ")
                 printer.printer(a)
+            for option_name, value in self.args[1] or []:
+                if option_name == ":signed":
+                    if value:
+                        outstream.write(" %s" % option_name)
+                else:
+                    outstream.write(" %s %s" % (option_name, value))
             outstream.write(")")
 
         elif self.name == smtcmd.CHECK_ALLSAT:
