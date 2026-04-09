@@ -61,6 +61,90 @@ class TestSmtLibParserOMT(TestCase):
             self.assertEqual(cmd.name, command)
             self.assertEqual(len(cmd.args), len_args)
 
+    def test_parse_minmax_maxmin_with_options(self):
+        parser = SmtLibParser()
+
+        script = parser.get_script(StringIO(
+            "(declare-fun x () Real)\n"
+            "(declare-fun y () Real)\n"
+            "(minmax x y :id g1 :signed)\n"
+        ))
+        cmd = script.commands[-1]
+        self.assertEqual(cmd.name, "minmax")
+        self.assertEqual(cmd.args[1], [(':id', 'g1'), (':signed', True)])
+
+        buf = StringIO()
+        script.serialize(buf)
+        self.assertIn("(minmax x y :id g1 :signed)", buf.getvalue())
+
+        script = parser.get_script(StringIO(
+            "(declare-fun x () Real)\n"
+            "(declare-fun y () Real)\n"
+            "(maxmin x y :id g2)\n"
+        ))
+        cmd = script.commands[-1]
+        self.assertEqual(cmd.name, "maxmin")
+        self.assertEqual(cmd.args[1], [(':id', 'g2'), (':signed', False)])
+
+    def test_parse_minmax_maxmin_signed_only(self):
+        parser = SmtLibParser()
+
+        script = parser.get_script(StringIO(
+            "(declare-fun x () Real)\n"
+            "(declare-fun y () Real)\n"
+            "(maxmin x y :signed)\n"
+        ))
+        cmd = script.commands[-1]
+        self.assertEqual(cmd.name, "maxmin")
+        self.assertEqual(cmd.args[1], [(':signed', True)])
+
+        buf = StringIO()
+        script.serialize(buf)
+        self.assertIn("(maxmin x y :signed)", buf.getvalue())
+
+    def test_parse_minmax_maxmin_invalid_option(self):
+        parser = SmtLibParser()
+        with self.assertRaises(PysmtSyntaxError):
+            parser.get_script(StringIO(
+                "(declare-fun x () Real)\n"
+                "(declare-fun y () Real)\n"
+                "(minmax x y :foo 1)\n"
+            ))
+
+    def test_parse_minmax_multiple_terms_with_options(self):
+        parser = SmtLibParser()
+
+        script = parser.get_script(StringIO(
+            "(declare-fun x () Real)\n"
+            "(declare-fun y () Real)\n"
+            "(declare-fun z () Real)\n"
+            "(minmax x y z :id g1 :signed)\n"
+        ))
+        cmd = script.commands[-1]
+        self.assertEqual(cmd.name, "minmax")
+        self.assertEqual([term.symbol_name() for term in cmd.args[0]], ['x', 'y', 'z'])
+        self.assertEqual(cmd.args[1], [(':id', 'g1'), (':signed', True)])
+
+        buf = StringIO()
+        script.serialize(buf)
+        self.assertIn("(minmax x y z :id g1 :signed)", buf.getvalue())
+
+    def test_parse_minmax_option_order(self):
+        parser = SmtLibParser()
+
+        script = parser.get_script(StringIO(
+            "(declare-fun x () Real)\n"
+            "(declare-fun y () Real)\n"
+            "(maxmin x y :signed :id g2)\n"
+        ))
+        cmd = script.commands[-1]
+        self.assertEqual(cmd.name, "maxmin")
+        self.assertEqual(cmd.args[1], [(':signed', True), (':id', 'g2')])
+
+        buf = StringIO()
+        script.serialize(buf)
+        self.assertIn("(maxmin x y :signed :id g2)", buf.getvalue())
+
     def parse_from_file(self, file_id):
         fname = OMT_FILE_PATTERN % file_id
         reset_env()
