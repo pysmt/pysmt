@@ -1311,12 +1311,14 @@ class SmtLibParser(object):
         params = []
         terms = []
         signed = False
+        options = False
 
         while True:
             token = tokens.consume()
             if token == ")":
                 break
             if token.startswith(":"):
+                options = True
                 if token == ":id":
                     identifier = self.parse_atom(tokens, "maxmin/minmax")
                     params.append((token, identifier))
@@ -1328,6 +1330,10 @@ class SmtLibParser(object):
                         "Incorrect option in the '%s' command" % token,
                         tokens.pos_info)
             else:
+                if options:
+                    raise PysmtSyntaxError(
+                        "Unexpected token '%s' after options in the '%s' command" % (token, current),
+                        tokens.pos_info)
                 tokens.add_extra_token(token)
                 terms.append(self.get_expression(tokens))
 
