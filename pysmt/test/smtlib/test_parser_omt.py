@@ -145,6 +145,55 @@ class TestSmtLibParserOMT(TestCase):
         script.serialize(buf)
         self.assertIn("(maxmin x y :signed :id g2)", buf.getvalue())
 
+    def test_parse_minmax_reverse_option_order(self):
+        parser = SmtLibParser()
+
+        script = parser.get_script(StringIO(
+            "(declare-fun x () Real)\n"
+            "(declare-fun y () Real)\n"
+            "(minmax x y :signed :id g1)\n"
+        ))
+        cmd = script.commands[-1]
+        self.assertEqual(cmd.name, "minmax")
+        self.assertEqual(cmd.args[1], [(':signed', True), (':id', 'g1')])
+
+        buf = StringIO()
+        script.serialize(buf)
+        self.assertIn("(minmax x y :signed :id g1)", buf.getvalue())
+
+    def test_parse_minmax_maxmin_syntax_errors(self):
+        parser = SmtLibParser()
+        with self.assertRaises(PysmtSyntaxError):
+            parser.get_script(StringIO(
+                "(declare-fun x () Real)\n"
+                "(declare-fun y () Real)\n"
+                "(minmax x y :id)\n"
+            ))
+        with self.assertRaises(PysmtSyntaxError):
+            parser.get_script(StringIO(
+                "(declare-fun x () Real)\n"
+                "(declare-fun y () Real)\n"
+                "(maxmin x y :signed true)\n"
+            ))
+
+    def test_parse_minmax_maxmin_round_trip(self):
+        parser = SmtLibParser()
+        txt = """(declare-fun x () Real)
+(declare-fun y () Real)
+(minmax x y :id g1 :signed)
+(maxmin x y :signed :id g2)
+"""
+        script = parser.get_script(StringIO(txt))
+
+        buf = StringIO()
+        script.serialize(buf)
+        new_script = parser.get_script(StringIO(buf.getvalue()))
+
+        self.assertEqual(script.commands[-2].name, new_script.commands[-2].name)
+        self.assertEqual(script.commands[-2].args[1], new_script.commands[-2].args[1])
+        self.assertEqual(script.commands[-1].name, new_script.commands[-1].name)
+        self.assertEqual(script.commands[-1].args[1], new_script.commands[-1].args[1])
+
     def parse_from_file(self, file_id):
         fname = OMT_FILE_PATTERN % file_id
         reset_env()
