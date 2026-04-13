@@ -518,6 +518,14 @@ class SmtLibParser(object):
                 return res
             stack[-1].append(handler)
         else:
+            # This is a dirty hack to make symbols with multiple types
+            # work (e.g. (as @0 V) and (as @0 U)) become two distinct
+            # symbols @0_V and @0_U. In this respect PySMT is
+            # fundamentally different from SMTLib: we associate a
+            # single type to each symbol, SMTLib allows multiple sorts
+            # to be associated with a symbol.
+            if what .startswith('@'):
+                what += "_" + str(ty)
             def handler():
                 return self.env.formula_manager.Symbol(what, ty)
             stack[-1].append(handler)
