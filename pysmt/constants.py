@@ -16,7 +16,7 @@
 
 import os
 
-from typing import Any, Optional, Type, Union
+from typing import Any, Optional, Type, Union, cast
 
 from pysmt.exceptions import PysmtImportError
 
@@ -151,25 +151,25 @@ if USE_GMPY:
         """Return a pysmt Fraction for the rational value."""
         if type(value) == FractionClass:
             # Nothing to do
-            return value
-        return FractionClass(value)
+            return cast(pyFraction, value)
+        return cast(pyFraction, FractionClass(value))
 else:
     def pysmt_fraction_from_rational(value: Union[float, int, pyFraction]) -> pyFraction:
         """Return a pysmt Fraction for the rational value."""
         if type(value) == FractionClass:
             # Nothing to do
-            return value
+            return cast(pyFraction, value)
         # Python's Fraction is a bit picky, need to
         # construct the object in different ways
         if type(value) == mpq_type:
-            assert isinstance(value, mpq_type)
-            n = Integer(value.numerator())
-            d = Integer(value.denominator())
-            return Fraction(n, d)
+            val = cast(Any, value)
+            n = Integer(val.numerator())
+            d = Integer(val.denominator())
+            return cast(pyFraction, Fraction(n, d))
         elif type(value) == mpz_type:
-            return Fraction(Integer(value))
+            return cast(pyFraction, Fraction(Integer(value)))
         else:
-            return Fraction(value)
+            return cast(pyFraction, Fraction(value))
 
 #
 # Algebraic Numbers Using Z3

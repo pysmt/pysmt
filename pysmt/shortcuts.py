@@ -32,7 +32,10 @@ environment is used (this is the default behavior of
 import os
 import warnings
 from fractions import Fraction
-from typing import Any, Dict, FrozenSet, Iterable, Optional, Sequence, Set, Tuple, Union
+from typing import Any, Dict, FrozenSet, Iterable, Optional, Sequence, Set, Tuple, Union, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import pysmt.optimization.optimizer
 
 import pysmt
 from pysmt.fnode import FNode
