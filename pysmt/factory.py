@@ -24,18 +24,27 @@ particular solver.
 """
 
 from functools import partial
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple, Type, TypeVar, Union, cast
 
 from pysmt.exceptions import (NoSolverAvailableError, SolverRedefinitionError,
                               NoLogicAvailableError,
                               SolverAPINotFound)
-from pysmt.logics import QF_UFLIRA, LRA, QF_UFLRA, QF_LIA
+from pysmt.logics import Logic, QF_UFLIRA, LRA, QF_UFLRA, QF_LIA
 from pysmt.logics import AUTO as AUTO_LOGIC
 from pysmt.logics import most_generic_logic, get_closer_logic
 from pysmt.logics import convert_logic_from_string
 from pysmt.oracles import get_logic
-from pysmt.solvers.qelim import (ShannonQuantifierEliminator,
+from pysmt.solvers.solver import Solver, UnsatCoreSolver, Model
+from pysmt.solvers.qelim import (QuantifierEliminator,
+                                 ShannonQuantifierEliminator,
                                  SelfSubstitutionQuantifierEliminator)
+from pysmt.solvers.interpolation import Interpolator
 from pysmt.solvers.portfolio import Portfolio
+from pysmt.solvers.qelim import QuantifierEliminator
+from pysmt.environment import Environment
+from pysmt.fnode import FNode
+from pysmt.optimization.optimizer import Optimizer
+from pysmt.utils import assert_not_none
 
 SOLVER_TYPES = ['Solver', 'Solver supporting Unsat Cores',
                 'Quantifier Eliminator', 'Interpolator', 'Optimizer']
@@ -56,6 +65,7 @@ DEFAULT_QE_LOGIC = LRA
 DEFAULT_INTERPOLATION_LOGIC = QF_UFLRA
 DEFAULT_OPTIMIZER_LOGIC = QF_LIA
 
+T = TypeVar("T", Solver, Interpolator, QuantifierEliminator, Optimizer)
 
 class Factory(object):
     """Factory used to build Solver, QuantifierEliminators, Interpolators etc.
@@ -65,14 +75,14 @@ class Factory(object):
     is_sat, is_unsat etc.
 
     """
-    def __init__(self, environment, preferences=None):
+    def __init__(self, environment: Environment, preferences: None=None):
         self.environment = environment
-        self._all_solvers = None
-        self._all_unsat_core_solvers = None
-        self._all_qelims = None
-        self._all_interpolators = None
-        self._all_optimizers = None
-        self._generic_solvers = {}
+        self._all_solvers: Dict[str, Type[Solver]]
+        self._all_unsat_core_solvers: Dict[str, Type[Solver]]
+        self._all_qelims: Dict[str, Type[QuantifierEliminator]]
+        self._all_interpolators: Dict[str, Type[Interpolator]]
+        self._all_optimizers: Dict[str, Type[Optimizer]]
+        self._generic_solvers: Dict[str, Tuple[List[str], List[Logic]]] = {}
         self.preferences = dict(DEFAULT_PREFERENCES)
         if preferences is not None:
             self.preferences.update(preferences)
@@ -88,7 +98,7 @@ class Factory(object):
         self._get_available_optimizers()
 
 
-    def get_solver(self, name=None, logic=None, **options):
+    def get_solver(self, name: Optional[str]=None, logic: Optional[Union[str, Logic]]=None, **options) -> Solver:
         SolverClass, closer_logic = \
            self._get_solver_class(solver_list=self._all_solvers,
                                   solver_type="Solver",
@@ -101,7 +111,7 @@ class Factory(object):
                            **options)
 
 
-    def get_unsat_core_solver(self, name=None, logic=None,
+    def get_unsat_core_solver(self, name: Optional[str]=None, logic: Optional[Union[Logic, str]]=None,
                               unsat_cores_mode="all", **options):
         SolverClass, closer_logic = \
            self._get_solver_class(solver_list=self._all_unsat_core_solvers,
@@ -115,7 +125,7 @@ class Factory(object):
                            unsat_cores_mode=unsat_cores_mode,
                            **options)
 
-    def get_quantifier_eliminator(self, name=None, logic=None):
+    def get_quantifier_eliminator(self, name: Optional[str]=None, logic: Optional[Union[Logic, str]]=None):
         SolverClass, closer_logic = \
            self._get_solver_class(solver_list=self._all_qelims,
                                   solver_type="Quantifier Eliminator",
@@ -126,7 +136,7 @@ class Factory(object):
         return SolverClass(environment=self.environment,
                            logic=closer_logic)
 
-    def get_interpolator(self, name=None, logic=None):
+    def get_interpolator(self, name: Optional[str]=None, logic: Optional[Union[Logic, str]]=None):
         SolverClass, closer_logic = \
            self._get_solver_class(solver_list=self._all_interpolators,
                                   solver_type="Interpolator",
@@ -137,7 +147,7 @@ class Factory(object):
         return SolverClass(environment=self.environment,
                            logic=closer_logic)
 
-    def get_optimizer(self, name=None, logic=None):
+    def get_optimizer(self, name: Optional[str]=None, logic: Optional[Union[str, Logic]]=None) -> Optimizer:
         SolverClass, closer_logic = \
            self._get_solver_class(solver_list=self._all_optimizers,
                                   solver_type="Optimizer",
@@ -148,8 +158,8 @@ class Factory(object):
                            logic=closer_logic)
 
 
-    def _get_solver_class(self, solver_list, solver_type, default_logic,
-                          name=None, logic=None):
+    def _get_solver_class(self, solver_list: Dict[str, Any], solver_type: str, default_logic: Logic,
+                          name: Optional[str]=None, logic: Optional[Union[str, Logic]]=None) -> Any:
         if len(solver_list) == 0:
             raise NoSolverAvailableError("No %s is available" % solver_type)
 
@@ -195,7 +205,7 @@ class Factory(object):
                                          (solver_type, logic))
 
 
-    def _pick_favorite(self, preference_list, solver_list, solvers):
+    def _pick_favorite(self, preference_list: List[str], solver_list: Dict[str, Any], solvers: Dict[str, Any]) -> Type[Solver]:
         for candidate in preference_list:
             if candidate in solvers:
                 return solver_list[candidate]
@@ -203,14 +213,14 @@ class Factory(object):
             "Cannot find a matching solver in the preference list: %s " % solvers)
 
 
-    def add_generic_solver(self, name, args, logics, unsat_core_support=False):
+    def add_generic_solver(self, name: str, args: List[str], logics: List[Logic], unsat_core_support: bool=False):
         from pysmt.smtlib.solver import SmtLibSolver
         if name in self._all_solvers:
             raise SolverRedefinitionError("Solver %s already defined" % name)
         self._generic_solvers[name] = (args, logics)
-        solver = partial(SmtLibSolver, args, LOGICS=logics)
+        solver = cast(Type[SmtLibSolver], partial(SmtLibSolver, args, LOGICS=logics))
         solver.LOGICS = logics
-        solver.UNSAT_CORE_SUPPORT = unsat_core_support
+        setattr(solver, "UNSAT_CORE_SUPPORT", unsat_core_support)
         self._all_solvers[name] = solver
         # Extend preference list accordingly
         self.preferences['Solver'].append(name)
@@ -224,7 +234,7 @@ class Factory(object):
         return self._generic_solvers[name]
 
     def _get_available_solvers(self):
-        installed_solvers = {}
+        installed_solvers: Dict[str, Type[Solver]] = {}
         self._all_solvers = {}
         self._all_unsat_core_solvers = {}
 
@@ -298,12 +308,9 @@ class Factory(object):
         else:
             self._all_solvers = installed_solvers
 
-        for k,s in self._all_solvers.items():
-            try:
-                if s.UNSAT_CORE_SUPPORT:
-                    self._all_unsat_core_solvers[k] = s
-            except AttributeError:
-                pass
+        for k,solv in self._all_solvers.items():
+            if getattr(solv, "UNSAT_CORE_SUPPORT", False):
+                self._all_unsat_core_solvers[k] = solv
 
 
     def _get_available_qe(self):
@@ -443,20 +450,7 @@ class Factory(object):
         """Defines the order in which to pick the optimizers."""
         self.set_preference_list('Optimizer', preference_list)
 
-
-    def set_optimizer_preference_list(self, preference_list):
-        """Defines the order in which to pick the optimizers."""
-        assert preference_list is not None
-        assert len(preference_list) > 0
-        self.optimizer_preference_list = preference_list
-
-
-    def set_optimizer_preference_list(self, preference_list):
-        """Defines the order in which to pick the optimizers."""
-        self.set_preference_list('Optimizer', preference_list)
-
-
-    def _filter_solvers(self, solver_list, logic=None):
+    def _filter_solvers(self, solver_list: Dict[str, Type[T]], logic: Optional[Union[Logic, str]]=None) -> Dict[str, Type[T]]:
         """
         Returns a dict <solver_name, solver_class> including all and only
         the solvers directly or indirectly supporting the given logic.
@@ -466,7 +460,7 @@ class Factory(object):
 
         If logic is None, the map will contain all the known solvers
         """
-        res = {}
+        res: Dict[str, Type[T]] = {}
         if logic is not None:
             for s, v in solver_list.items():
                 for l in v.LOGICS:
@@ -476,11 +470,13 @@ class Factory(object):
             return res
         else:
             solvers = solver_list
-
+        if not isinstance(solvers, dict):
+            solvers = dict(solver_list.items())
+        assert isinstance(solvers, dict)
         return solvers
 
 
-    def all_solvers(self, logic=None):
+    def all_solvers(self, logic: Optional[Logic]=None) -> Dict[str, Type[Solver]]:
         """
         Returns a dict <solver_name, solver_class> including all and only
         the solvers directly or indirectly supporting the given logic.
@@ -493,14 +489,14 @@ class Factory(object):
         return self._filter_solvers(self._all_solvers, logic=logic)
 
 
-    def has_solvers(self, logic=None):
+    def has_solvers(self, logic: Optional[Logic]=None) -> bool:
         """
         Returns true if self.all_solvers(logic) is non-empty
         """
         return len(self.all_solvers(logic=logic)) > 0
 
 
-    def all_quantifier_eliminators(self, logic=None):
+    def all_quantifier_eliminators(self, logic: Optional[Union[Logic, str]]=None) -> Dict[str, Type[QuantifierEliminator]]:
         """Returns a dict <qelim_name, qelim_class> including all and only the
         quantifier eliminators directly or indirectly supporting the
         given logic.  A qelim supports a logic if either the given
@@ -514,7 +510,7 @@ class Factory(object):
         return self._filter_solvers(self._all_qelims, logic=logic)
 
 
-    def all_unsat_core_solvers(self, logic=None):
+    def all_unsat_core_solvers(self, logic: Optional[Union[Logic, str]]=None) -> Dict[str, Type[Solver]]:
         """
         Returns a dict <solver_name, solver_class> including all and only
         the solvers supporting unsat core extraction and directly or
@@ -527,7 +523,7 @@ class Factory(object):
         """
         return self._filter_solvers(self._all_unsat_core_solvers, logic=logic)
 
-    def all_interpolators(self, logic=None):
+    def all_interpolators(self, logic: Optional[Union[Logic, str]]=None) -> Dict[str, Type[Interpolator]]:
         """
         Returns a dict <solver_name, solver_class> including all and only
         the solvers supporting interpolation and directly or
@@ -540,7 +536,7 @@ class Factory(object):
         """
         return self._filter_solvers(self._all_interpolators, logic=logic)
 
-    def all_optimizers(self, logic=None):
+    def all_optimizers(self, logic: Optional[Logic]=None) -> Dict[str, Type[Optimizer]]:
         """
         Returns a dict <solver_name, solver_class> including all and only
         the solvers supporting optimization and directly or
@@ -556,32 +552,32 @@ class Factory(object):
     ##
     ## Wrappers: These functions are exported in shortcuts
     ##
-    def Solver(self, name=None, logic=None, **options):
+    def Solver(self, name: Optional[str]=None, logic: Optional[Union[str, Logic]]=None, **options) -> Solver:
         return self.get_solver(name=name,
                                logic=logic,
                                **options)
 
-    def UnsatCoreSolver(self, name=None, logic=None,
-                        unsat_cores_mode="all", **options):
+    def UnsatCoreSolver(self, name: Optional[str]=None, logic: Optional[Union[Logic, str]]=None,
+                        unsat_cores_mode: str="all", **options) -> UnsatCoreSolver:
         return self.get_unsat_core_solver(name=name,
                                           logic=logic,
                                           unsat_cores_mode=unsat_cores_mode,
                                           **options)
 
-    def QuantifierEliminator(self, name=None, logic=None):
+    def QuantifierEliminator(self, name: Optional[str]=None, logic: Optional[Union[Logic, str]]=None) -> QuantifierEliminator:
         return self.get_quantifier_eliminator(name=name, logic=logic)
 
-    def Interpolator(self, name=None, logic=None):
+    def Interpolator(self, name: Optional[str]=None, logic: Optional[Union[Logic, str]]=None) -> Interpolator:
         return self.get_interpolator(name=name, logic=logic)
 
-    def Optimizer(self, name=None, logic=None):
-        return self.get_optimizer(name=name, logic=logic)
+    def Optimizer(self, name: Optional[str]=None, logic: Optional[Union[Logic, str]]=None, **options) -> Optimizer:
+        return self.get_optimizer(name=name, logic=logic, **options)
 
-    def is_sat(self, formula, solver_name=None, logic=None, portfolio=None):
+    def is_sat(self, formula: FNode, solver_name: Optional[str]=None, logic: Optional[Union[Logic, str]]=None, portfolio: Optional[Iterable[str]]=None) -> bool:
         if logic is None or logic == AUTO_LOGIC:
             logic = get_logic(formula, self.environment)
         if portfolio is not None:
-            solver = Portfolio(solvers_set=portfolio,
+            solver: Union[Portfolio, Solver] = Portfolio(solvers_set=portfolio,
                                environment=self.environment,
                                logic=logic,
                                generate_models=False, incremental=False)
@@ -591,7 +587,7 @@ class Factory(object):
         with solver:
             return solver.is_sat(formula)
 
-    def get_model(self, formula, solver_name=None, logic=None):
+    def get_model(self, formula: FNode, solver_name: Optional[str]=None, logic: Optional[Union[Logic, str]]=None) -> Optional[Model]:
         if logic is None or logic == AUTO_LOGIC:
             logic = get_logic(formula, self.environment)
         with self.Solver(name=solver_name, logic=logic,
@@ -602,8 +598,8 @@ class Factory(object):
                 return solver.get_model()
             return None
 
-    def get_implicant(self, formula, solver_name=None,
-                      logic=None):
+    def get_implicant(self, formula: FNode, solver_name: Optional[str]=None,
+            logic: Optional[Union[str, Logic]]=None) -> Optional[FNode]:
         mgr = self.environment.formula_manager
         if logic is None or logic == AUTO_LOGIC:
             logic = get_logic(formula, self.environment)
@@ -615,7 +611,7 @@ class Factory(object):
             if not check:
                 return None
             else:
-                model = solver.get_model()
+                model = assert_not_none(solver.get_model())
                 atoms = formula.get_atoms()
                 res = []
                 for a in atoms:
@@ -628,13 +624,12 @@ class Factory(object):
                             res.append(mgr.Not(a))
                 return mgr.And(res)
 
-    def get_unsat_core(self, clauses, solver_name=None, logic=None):
+    def get_unsat_core(self, clauses: Iterable[FNode], solver_name: Optional[str]=None, logic: Optional[Union[str, Logic]]=None) -> Optional[Set[FNode]]:
         if logic is None or logic == AUTO_LOGIC:
             logic = get_logic(self.environment.formula_manager.And(clauses),
                               self.environment)
 
-        with self.UnsatCoreSolver(name=solver_name, logic=logic) \
-             as solver:
+        with self.UnsatCoreSolver(name=solver_name, logic=logic) as solver:
             for c in clauses:
                 solver.add_assertion(c)
             check = solver.solve()
@@ -643,11 +638,11 @@ class Factory(object):
 
             return solver.get_unsat_core()
 
-    def is_valid(self, formula, solver_name=None, logic=None, portfolio=None):
+    def is_valid(self, formula: FNode, solver_name: Optional[str]=None, logic: Optional[Union[Logic, str]]=None, portfolio: Optional[Iterable[Union[str, Tuple[str, Dict[str, Any]]]]]=None) -> bool:
         if logic is None or logic == AUTO_LOGIC:
             logic = get_logic(formula, self.environment)
         if portfolio is not None:
-            solver = Portfolio(solvers_set=portfolio,
+            solver: Union[Solver, Portfolio] = Portfolio(solvers_set=portfolio,
                                environment=self.environment,
                                logic=logic,
                                generate_models=False, incremental=False)
@@ -657,11 +652,11 @@ class Factory(object):
         with solver:
             return solver.is_valid(formula)
 
-    def is_unsat(self, formula, solver_name=None, logic=None, portfolio=None):
+    def is_unsat(self, formula: FNode, solver_name: Optional[str]=None, logic: Optional[Union[str, Logic]]=None, portfolio: Optional[Union[Iterable[str], Iterable[Tuple[str, Dict[str, Any]]]]]=None) -> bool:
         if logic is None or logic == AUTO_LOGIC:
             logic = get_logic(formula, self.environment)
         if portfolio is not None:
-            solver = Portfolio(solvers_set=portfolio,
+            solver: Solver = Portfolio(solvers_set=portfolio,
                                environment=self.environment,
                                logic=logic,
                                generate_models=False, incremental=False)
@@ -671,7 +666,7 @@ class Factory(object):
         with solver:
             return solver.is_unsat(formula)
 
-    def qelim(self, formula, solver_name=None, logic=None):
+    def qelim(self, formula: FNode, solver_name: Optional[str]=None, logic: Optional[Union[Logic, str]]=None) -> FNode:
         if logic is None or logic == AUTO_LOGIC:
             logic = get_logic(formula, self.environment)
 
@@ -679,8 +674,8 @@ class Factory(object):
             return qe.eliminate_quantifiers(formula)
 
 
-    def binary_interpolant(self, formula_a, formula_b,
-                           solver_name=None, logic=None):
+    def binary_interpolant(self, formula_a: FNode, formula_b: FNode,
+                           solver_name: Optional[str]=None, logic: Optional[Union[Logic, str]]=None) -> Optional[FNode]:
         if logic is None or logic == AUTO_LOGIC:
             _And = self.environment.formula_manager.And
             logic = get_logic(_And(formula_a, formula_b))
@@ -689,7 +684,7 @@ class Factory(object):
             return itp.binary_interpolant(formula_a, formula_b)
 
 
-    def sequence_interpolant(self, formulas, solver_name=None, logic=None):
+    def sequence_interpolant(self, formulas: Sequence[FNode], solver_name: Optional[str]=None, logic: Optional[Union[Logic, str]]=None) -> Optional[FNode]:
         if logic is None or logic == AUTO_LOGIC:
             _And = self.environment.formula_manager.And
             logic = get_logic(_And(formulas))
@@ -699,11 +694,11 @@ class Factory(object):
 
 
     @property
-    def default_logic(self):
+    def default_logic(self) -> Logic:
         return self._default_logic
 
     @default_logic.setter
-    def default_logic(self, value):
+    def default_logic(self, value: Logic):
         self._default_logic = value
 
     @property
@@ -727,13 +722,14 @@ class Factory(object):
 #   "msat, z3, cvc5"
 #
 import os
-ENV_SOLVER_LIST = os.environ.get("PYSMT_SOLVER")
-if ENV_SOLVER_LIST is not None:
-    if ENV_SOLVER_LIST.lower() == "all":
+_pysmt_solver_env = os.environ.get("PYSMT_SOLVER")
+ENV_SOLVER_LIST: Optional[List[str]] = None
+if _pysmt_solver_env is not None:
+    if _pysmt_solver_env.lower() == "all":
         ENV_SOLVER_LIST = None
-    elif ENV_SOLVER_LIST.lower() == "none":
+    elif _pysmt_solver_env.lower() == "none":
         ENV_SOLVER_LIST = []
     else:
         # E.g. "msat, z3"
         ENV_SOLVER_LIST = [s.strip() \
-                           for s in ENV_SOLVER_LIST.lower().split(",")]
+                           for s in _pysmt_solver_env.lower().split(",")]

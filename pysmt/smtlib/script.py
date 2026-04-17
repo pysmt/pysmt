@@ -18,19 +18,29 @@
 
 import warnings
 from collections import defaultdict, namedtuple
-from io import StringIO
+from io import TextIOWrapper, StringIO
+from typing import Any, Dict, Iterator, List, Optional, Set, TextIO, Tuple, Union
 
+import pysmt
 import pysmt.smtlib.commands as smtcmd
+from pysmt.smtlib.annotations import Annotations
 from pysmt.exceptions import (UnknownSmtLibCommandError, NoLogicAvailableError,
                               UndefinedLogicError, PysmtValueError)
 from pysmt.smtlib.printers import SmtPrinter, SmtDagPrinter, quote
+from pysmt.optimization.optimizer import Optimizer
 from pysmt.oracles import get_logic
 from pysmt.logics import get_closer_smtlib_logic, Logic, SMTLIB2_LOGICS
 from pysmt.environment import get_env
-from pysmt.optimization.goal import MaximizationGoal, MinimizationGoal, MinMaxGoal, MaxMinGoal, MaxSMTGoal
+from pysmt.optimization.goal import MaximizationGoal, MinimizationGoal, MinMaxGoal, MaxMinGoal, MaxSMTGoal, Goal
+from pysmt.typing import _TypeDecl
+from pysmt.fnode import FNode
+from pysmt.formula import FormulaManager
+from pysmt.solvers.smtlib import SmtLibSolver
+from pysmt.solvers.solver import Solver, Model
 
+PrinterType = Union[SmtPrinter, SmtDagPrinter]
 
-def check_sat_filter(log):
+def check_sat_filter(log: List[Tuple[str, Optional[Union[Model, bool, Goal, List[Tuple[FNode, FNode]]]]]]) -> bool:
     """
     Returns the result of the check-sat command from a log.
 
@@ -38,11 +48,13 @@ def check_sat_filter(log):
     """
     filtered = [(x,y) for x,y in log if x == smtcmd.CHECK_SAT]
     assert len(filtered) == 1
-    return filtered[0][1]
+    retval = filtered[0][1]
+    assert isinstance(retval, bool)
+    return retval
 
 
 class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
-    def serialize(self, outstream=None, printer=None, daggify=True):
+    def serialize(self, outstream: Optional[TextIO]=None, printer: Optional[PrinterType]=None, daggify: bool=True):
         """Serializes the SmtLibCommand into outstream using the given printer.
 
         Exactly one of outstream or printer must be specified. When
@@ -64,6 +76,7 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
             assert (outstream is not None and printer is not None) or \
                    (outstream is None and printer is None), \
                    "Exactly one of outstream and printer must be set."
+        assert outstream is not None and printer is not None
 
         if self.name == smtcmd.SET_OPTION:
             outstream.write("(%s %s %s)" % (self.name,self.args[0],self.args[1]))
@@ -178,7 +191,7 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
         else:
             raise UnknownSmtLibCommandError(self.name)
 
-    def serialize_to_string(self, daggify=True):
+    def serialize_to_string(self, daggify: bool=True) -> str:
         buf = StringIO()
         self.serialize(buf, daggify=daggify)
         return buf.getvalue()
@@ -188,18 +201,18 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
 class SmtLibScript(object):
 
     def __init__(self):
-        self.annotations = None
-        self.commands = []
+        self.annotations: Optional[Annotations] = None
+        self.commands: List[SmtLibCommand] = []
 
-    def add(self, name, args):
+    def add(self, name: str, args: List[Optional[Union[Logic, _TypeDecl, FNode, str]]]):
         """Adds a new SmtLibCommand with the given name and arguments."""
         self.add_command(SmtLibCommand(name=name,
                                        args=args))
 
-    def add_command(self, command):
+    def add_command(self, command: SmtLibCommand):
         self.commands.append(command)
 
-    def evaluate(self, solver):
+    def evaluate(self, solver: SmtLibSolver) -> List[Tuple[str, Optional[Union[Model, bool, Goal, List[Tuple[FNode, FNode]]]]]]:
         log = []
         inter = InterpreterOMT()
         for cmd in self.commands:
@@ -208,16 +221,16 @@ class SmtLibScript(object):
 
         return log
 
-    def contains_command(self, command_name):
+    def contains_command(self, command_name: str) -> bool:
         return any(x.name == command_name for x in self.commands)
 
-    def count_command_occurrences(self, command_name):
+    def count_command_occurrences(self, command_name: str) -> int:
         return sum(1 for cmd in self.commands if cmd.name == command_name)
 
-    def filter_by_command_name(self, command_name_set):
+    def filter_by_command_name(self, command_name_set: List[str]) -> Iterator[Any]:
         return (cmd for cmd in self.commands if cmd.name in command_name_set)
 
-    def get_strict_formula(self, mgr=None):
+    def get_strict_formula(self, mgr: Optional["pysmt.formula.FormulaManager"]=None) -> FNode:
         if self.contains_command(smtcmd.PUSH) or \
            self.contains_command(smtcmd.POP):
             raise PysmtValueError("Was not expecting push-pop commands")
@@ -229,17 +242,17 @@ class SmtLibScript(object):
                       for cmd in self.filter_by_command_name([smtcmd.ASSERT])]
         return _And(assertions)
 
-    def get_declared_symbols(self):
+    def get_declared_symbols(self) -> Set[FNode]:
         return {cmd.args[0] for cmd in self.filter_by_command_name([smtcmd.DECLARE_CONST,
                                                                     smtcmd.DECLARE_FUN])}
-    def get_define_fun_parameter_symbols(self):
+    def get_define_fun_parameter_symbols(self) -> Set[FNode]:
         res = set()
         for cmd in self.filter_by_command_name([smtcmd.DEFINE_FUN]):
             for s in cmd.args[1]:
                 res.add(s)
         return res
 
-    def get_last_formula(self, mgr=None, return_optimizations=False):
+    def get_last_formula(self, mgr: Optional[FormulaManager]=None, return_optimizations: bool=False) -> Any:
         """Returns the last formula of the execution of the Script.
 
         This coincides with the conjunction of the assertions that are
@@ -250,12 +263,12 @@ class SmtLibScript(object):
         script and the second element is the tuple containing the last goals
         defined.
         """
-        stack = []
-        backtrack = []
-        goals = []
-        goals_backtrack = []
-        max_smt_goals = {}
-        max_smt_goals_backtrack = defaultdict(list)
+        stack: List[FNode] = []
+        backtrack: List[int] = []
+        goals: List[Goal] = []
+        goals_backtrack: List[int] = []
+        max_smt_goals: Dict[Optional[str], Tuple[int, MaxSMTGoal]] = {}
+        max_smt_goals_backtrack: Dict[Optional[str], List[int]] = defaultdict(list)
         if mgr is None:
             mgr = get_env().formula_manager
 
@@ -321,10 +334,10 @@ class SmtLibScript(object):
         with open(fname, "w") as outstream:
             self.serialize(outstream, daggify=daggify)
 
-    def serialize(self, outstream, daggify=True):
+    def serialize(self, outstream: Union[TextIOWrapper, StringIO], daggify: bool=True):
         """Serializes the SmtLibScript expanding commands"""
         if daggify:
-            printer = SmtDagPrinter(outstream, annotations=self.annotations)
+            printer: PrinterType = SmtDagPrinter(outstream, annotations=self.annotations)
         else:
             printer = SmtPrinter(outstream, annotations=self.annotations)
 
@@ -332,7 +345,7 @@ class SmtLibScript(object):
             cmd.serialize(printer=printer)
             outstream.write("\n")
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.commands)
 
     def __iter__(self):
@@ -342,7 +355,7 @@ class SmtLibScript(object):
         return "\n".join((str(cmd) for cmd in self.commands))
 
 
-def _command_is_signed(command):
+def _command_is_signed(command: SmtLibCommand) -> bool:
     singed = False
     if len(command.args) >= 2:
         options = command.args[1]
@@ -356,14 +369,14 @@ def _command_is_signed(command):
     return singed
 
 
-def smtlibscript_from_formula(formula, logic=None):
+def smtlibscript_from_formula(formula: FNode, logic: Optional[Union[str, int, Logic]]=None) -> SmtLibScript:
     script = SmtLibScript()
 
     if logic is None:
         # Get the simplest SmtLib logic that contains the formula
         f_logic = get_logic(formula)
 
-        smt_logic = None
+        smt_logic: Optional[Union[Logic, str]] = None
         try:
             smt_logic = get_closer_smtlib_logic(f_logic)
         except NoLogicAvailableError:
@@ -406,11 +419,10 @@ def smtlibscript_from_formula(formula, logic=None):
 
 
 class InterpreterSMT(object):
-
-    def evaluate(self, cmd, solver):
+    def evaluate(self, cmd: SmtLibCommand, solver: SmtLibSolver) -> Optional[Union[Model, bool, Goal, List[Tuple[FNode, FNode]]]]:
         return self._smt_evaluate(cmd, solver)
 
-    def _smt_evaluate(self, cmd, solver):
+    def _smt_evaluate(self, cmd: SmtLibCommand, solver: SmtLibSolver) -> Optional[Union[Model, bool, Goal, List[Tuple[FNode, FNode]]]]:
         if cmd.name == smtcmd.SET_INFO:
             return solver.set_info(cmd.args[0], cmd.args[1])
 
@@ -439,7 +451,8 @@ class InterpreterSMT(object):
             return solver.pop(cmd.args[0])
 
         elif cmd.name == smtcmd.EXIT:
-            return solver.exit()
+            solver.exit()
+            return None
 
         elif cmd.name == smtcmd.SET_LOGIC:
             name = cmd.args[0]
@@ -472,11 +485,6 @@ class InterpreterSMT(object):
         elif cmd.name == smtcmd.GET_UNSAT_CORE:
             return solver.get_unsat_core()
 
-        elif cmd.name == smtcmd.DECLARE_SORT:
-            name = cmd.args[0].name
-            arity = cmd.args[0].arity
-            return solver.declare_sort(name, arity)
-
         elif cmd.name in smtcmd.ALL_COMMANDS:
             raise NotImplementedError("'%s' is a valid SMT-LIB command "\
                                       "but it is currently not supported. "\
@@ -488,33 +496,34 @@ class InterpreterSMT(object):
 class InterpreterOMT(InterpreterSMT):
 
     def __init__(self):
-        self.optimization_goals = ([],[])
+        self.optimization_goals: Tuple[List[Goal], List[Tuple[FNode, FNode]]] = ([], [])
         self.opt_priority = "single-obj"
 
-    def evaluate(self, cmd, solver):
+    def evaluate(self, cmd: SmtLibCommand, solver: SmtLibSolver) -> Optional[Union[Model, bool, Goal, List[Tuple[FNode, FNode]]]]:
         return self._omt_evaluate(cmd, solver)
 
-    def _omt_evaluate(self, cmd, optimizer):
-
+    def _omt_evaluate(self, cmd: SmtLibCommand, optimizer: SmtLibSolver) -> Optional[Union[Model, bool, Goal, List[Tuple[FNode, FNode]]]]:
         if cmd.name == smtcmd.SET_OPTION:
             if cmd.args[0] == ":opt.priority":
                 self.opt_priority = cmd.args[1]
+            return None
 
         elif cmd.name == smtcmd.MAXIMIZE:
-            rt = MaximizationGoal(cmd.args[0])
-            self.optimization_goals[0].append(rt)
-            return rt
+            g: Goal = MaximizationGoal(cmd.args[0])
+            self.optimization_goals[0].append(g)
+            return g
 
         elif cmd.name == smtcmd.MINIMIZE:
-            rt = MinimizationGoal(cmd.args[0])
-            self.optimization_goals[0].append(rt)
-            return rt
+            g = MinimizationGoal(cmd.args[0])
+            self.optimization_goals[0].append(g)
+            return g
 
         elif cmd.name == smtcmd.CHECK_SAT:
             if len(self.optimization_goals[0]) == 0:
                 # If there are no optimization objectives, then we default to normal SMT check-sat
                 return self._smt_evaluate(cmd, optimizer)
 
+            assert isinstance(optimizer, Optimizer)
             self.optimization_goals[1].clear()
             rt = False
             if self.opt_priority == "single-obj":
@@ -527,36 +536,39 @@ class InterpreterOMT(InterpreterSMT):
                     self.optimization_goals[1].append((g.term(), solver_res[1]))
 
             elif self.opt_priority == "pareto":
+                assert isinstance(optimizer, Optimizer)
                 for model, values in optimizer.pareto_optimize(self.optimization_goals[0]):
                     rt = True
                     for (g, v) in zip(self.optimization_goals[0], values):
                         self.optimization_goals[1].append((g.term(), v))
 
             elif self.opt_priority == "box":
-                results = optimizer.boxed_optimize(self.optimization_goals[0])
-                if results is not None:
+                assert isinstance(optimizer, Optimizer)
+                boxed_results = optimizer.boxed_optimize(self.optimization_goals[0])
+                if boxed_results is not None:
                     rt = True
                     for g in self.optimization_goals[0]:
-                        self.optimization_goals[1].append((g.term(), results[g][1]))
+                        self.optimization_goals[1].append((g.term(), boxed_results[g][1]))
 
             elif self.opt_priority == "lex":
-                results = optimizer.lexicographic_optimize(self.optimization_goals[0])
-                if results is not None:
-                    _, values = results
+                assert isinstance(optimizer, Optimizer)
+                lex_results = optimizer.lexicographic_optimize(self.optimization_goals[0])
+                if lex_results is not None:
+                    _, values = lex_results
                     rt = True
-                    for (g,v) in zip(self.optimization_goals[0], values):
+                    for (g, v) in zip(self.optimization_goals[0], values):
                         self.optimization_goals[1].append((g.term(), v))
             return rt
 
         elif cmd.name == smtcmd.MAXMIN:
-            rt = MaxMinGoal(cmd.args[0])
-            self.optimization_goals[0].append(rt)
-            return rt
+            g = MaxMinGoal(cmd.args[0])
+            self.optimization_goals[0].append(g)
+            return g
 
         elif cmd.name == smtcmd.MINMAX:
-            rt = MinMaxGoal(cmd.args[0])
-            self.optimization_goals[0].append(rt)
-            return rt
+            g = MinMaxGoal(cmd.args[0])
+            self.optimization_goals[0].append(g)
+            return g
 
         elif cmd.name == smtcmd.GET_OBJECTIVES:
             return self.optimization_goals[1]

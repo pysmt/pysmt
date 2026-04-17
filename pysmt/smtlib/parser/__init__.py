@@ -17,6 +17,8 @@
 #
 import os
 
+from typing import Optional
+
 from pysmt.exceptions import PysmtImportError
 #
 # Try to import the Cython version of the parser.
@@ -25,13 +27,14 @@ from pysmt.exceptions import PysmtImportError
 #  - There is an error in the handling of the pyx file and the use of
 #    Cython was not specified (unset env variable)
 #
-ENV_USE_CYTHON = os.environ.get("PYSMT_CYTHON")
-if ENV_USE_CYTHON is not None:
-    ENV_USE_CYTHON = ENV_USE_CYTHON.lower() in ["true", "1"]
+env_use_cython_val = os.environ.get("PYSMT_CYTHON")
+ENV_USE_CYTHON: Optional[bool] = None
+if env_use_cython_val is not None:
+    ENV_USE_CYTHON = env_use_cython_val.lower() in ["true", "1"]
 
 HAS_CYTHON = False
 try:
-    import pyximport
+    import pyximport # type: ignore[import]
     HAS_CYTHON = True
 except ImportError as ex:
     if ENV_USE_CYTHON:
@@ -86,9 +89,9 @@ else:
     if not hasattr(pyximport, "build_module"):
         if sys.version_info < (3, 5):
             # _pyximport3 module requires at least Python 3.5
-            import pyximport._pyximport2 as pyximport
+            import pyximport._pyximport2 as pyximport # type: ignore[import]
         else:
-            import pyximport._pyximport3 as pyximport
+            import pyximport._pyximport3 as pyximport # type: ignore[import]
 
     if not hasattr(pyximport, "build_module"):
         import sys
@@ -106,10 +109,13 @@ else:
 
     so_path = pyximport.build_module(name, path,
                                      pyxbuild_dir=build_dir)
-    spec = importlib.util.spec_from_file_location(name, so_path)
-    module = importlib.util.module_from_spec(spec)
+    spec = importlib.util.spec_from_file_location(name, so_path) # type: ignore[attr-defined]
+    assert spec is not None
+    module = importlib.util.module_from_spec(spec) # type: ignore[attr-defined]
     sys.modules[name] = module
-    spec.loader.exec_module(module)
+    loader = spec.loader
+    assert loader is not None
+    loader.exec_module(module)
     mod = sys.modules[name]
 
     assert mod.__file__ == so_path, (mod.__file__, so_path)

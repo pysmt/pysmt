@@ -82,6 +82,8 @@ class TestExtendSuper(TestCase):
             HRSerializerClass = MyHRSerializer
 
         with MyEnv() as myenv:
+            print(type(myenv))
+            print(myenv.TypeCheckerClass)
             create_node = myenv.formula_manager.create_node
             # Create a test node (This implicitly calls the Type-checker)
             x = Symbol("x")
