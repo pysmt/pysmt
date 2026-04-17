@@ -37,7 +37,7 @@ jobs:
         pysmt_solver: [ none, msat, z3, yices, cvc5, btor, picosat, bdd, msat_wrap, z3_wrap, optimsat ]
 
     env:
-      PYTHON_VERSION: 3.8
+      PYTHON_VERSION: 3.13
       PYSMT_SOLVER: ${{ matrix.pysmt_solver }}
       AGENT_OS: ${{ matrix.os }}
 
@@ -48,7 +48,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236 #v4.7.1
         with:
-          python-version: 3.8
+          python-version: 3.13
 
       - name: Prepare System
         run: |
@@ -74,11 +74,11 @@ jobs:
             pysmt_solver: all
           - os: macos-latest
             pysmt_solver: none
-          - os: macos-13
+          - os: macos-latest
             pysmt_solver: msat
-          - os: macos-13
+          - os: macos-latest
             pysmt_solver: z3
-          - os: macos-13
+          - os: macos-latest
             pysmt_solver: yices
           - os: windows-latest
             pysmt_solver: none
@@ -88,7 +88,7 @@ jobs:
             pysmt_solver: z3
 
     env:
-      PYTHON_VERSION: 3.8
+      PYTHON_VERSION: 3.13
       PYSMT_SOLVER: ${{ matrix.pysmt_solver }}
       AGENT_OS: ${{ matrix.os }}
       PYSMT_CYTHON: ${{ matrix.pysmt_cython }}
@@ -101,7 +101,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236 #v4.7.1
         with:
-          python-version: 3.8
+          python-version: 3.13
 
       - name: Prepare System
         run: |
@@ -123,17 +123,17 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Set up Python 3.8
+    - name: Set up Python 3.13
       uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236 #v4.7.1
       with:
-        python-version: 3.8
+        python-version: 3.13
 
     - name: Make distrib
       run: |
-        python3 -m pip install wheel
+        python3 -m pip install wheel setuptools
         bash make_distrib.sh
 
     - name: Upload to PyPI
-      uses: pypa/gh-action-pypi-publish@b7f401de30cb6434a1e19f805ff006643653240e
+      uses: pypa/gh-action-pypi-publish@release/v1
       with:
         password: ${{ secrets.PYPI_API_TOKEN }}

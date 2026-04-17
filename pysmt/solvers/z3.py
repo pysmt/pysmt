@@ -51,7 +51,8 @@ from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               UndefinedSymbolError, PysmtValueError,
                               PysmtInfinityError, PysmtInfinitesimalError)
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
-from pysmt.logics import LRA, LIA, QF_UFLRA, QF_UFLIA, PYSMT_LOGICS
+from pysmt.logics import LRA, LIA, QF_UFLRA, QF_UFLIA, PYSMT_LOGICS, \
+    AUFLIRA, AUFLIA, AUFNIRA, ALIA
 from pysmt.oracles import get_logic
 from pysmt.constants import Fraction, Numeral, is_pysmt_integer
 
@@ -148,7 +149,9 @@ class Z3Options(SolverOptions):
 
 class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolver):
 
-    LOGICS: Iterable[Logic] = PYSMT_LOGICS - set(x for x in PYSMT_LOGICS if x.theory.strings)
+    LOGICS: Iterable[Logic] = (PYSMT_LOGICS |
+              {AUFLIRA, AUFLIA, AUFNIRA, ALIA}) -\
+             set(x for x in PYSMT_LOGICS if x.theory.strings)
     OptionsClass = Z3Options
 
     SOLVERFOR_LOGIC_NAMES=['AUFLIA', 'ALIA', 'AUFLIRA', 'AUFNIRA', 'LRA', 'LIA', 'NIA',

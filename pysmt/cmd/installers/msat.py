@@ -34,14 +34,14 @@ class MSatInstaller(SolverInstaller):
                 "ext": "tar.gz"
         }
         if self.os_name == "windows":
+            archive_name_template = "mathsat-{version}-{os}.{ext}"
             format["ext"] = "zip"
-            format["arch"] = "msvc"
-            format["os"] = "win64" if self.architecture == "x86_64" else "win32"
+            format["os"] = "win64"
         elif self.os_name == "darwin":
             # Since version 5.6.7 the architecture is not included in the
             # pkg name for the OSX release as it is considered a "univeral binary"
             archive_name_template = "mathsat-{version}-{os}.{ext}"
-            format["os"] = "osx"
+            format["os"] = "macos"
 
         archive_name = archive_name_template.format(**format)
 
@@ -61,19 +61,25 @@ class MSatInstaller(SolverInstaller):
         if self.os_name == "windows":
             libdir = os.path.join(self.python_bindings_dir, "../lib")
             incdir = os.path.join(self.python_bindings_dir, "../include")
-            gmp_h_url = "https://github.com/mikand/tamer-windows-deps/raw/master/gmp/include/gmp.h"
-            mpir_dll_url = "https://github.com/Legrandin/mpir-windows-builds/blob/master/mpir-2.6.0_VS2015_%s/mpir.dll?raw=true" % self.bits
-            mpir_lib_url = "https://github.com/Legrandin/mpir-windows-builds/blob/master/mpir-2.6.0_VS2015_%s/mpir.lib?raw=true" % self.bits
-            setup_py_win_url = "https://github.com/pysmt/solvers_patches/raw/master/mathsat/setup-win.py"
 
-            SolverInstaller.do_download(gmp_h_url, os.path.join(incdir, "gmp.h"))
-            SolverInstaller.do_download(mpir_dll_url, os.path.join(libdir, "mpir.dll"))
-            SolverInstaller.do_download(mpir_lib_url, os.path.join(libdir, "mpir.lib"))
+            gmp_win_url = "https://github.com/apotocki/gmp-win/releases/download/6.3.0/gmp-6.3.0.zip"
+            gmp_archive = os.path.join(self.base_dir, "gmp-6.3.0.zip")
+            gmp_dir = os.path.join(self.base_dir, "gmp-6.3.0")
+            SolverInstaller.clean_dir(gmp_dir)
+            SolverInstaller.do_download(url=gmp_win_url, file_name=gmp_archive)
+            SolverInstaller.unzip(gmp_archive, gmp_dir)
 
-            # Overwrite setup.py with the patched version
-            setup_py = os.path.join(self.python_bindings_dir, "setup.py")
-            SolverInstaller.mv(setup_py, setup_py + ".original")
-            SolverInstaller.do_download(setup_py_win_url, setup_py)
+            gmp_include_dir = os.path.join(self.base_dir, "gmp-6.3.0", "include")
+            gmp_lib_dir = os.path.join(self.base_dir, "gmp-6.3.0", "lib")
+            # gmp_dll_dir = os.path.join(self.base_dir, "gmp-6.3.0", "bin")
+            SolverInstaller.mv(os.path.join(gmp_include_dir, "gmp.h"), incdir)
+            SolverInstaller.mv(source=os.path.join(gmp_lib_dir, "gmpdll.lib"),
+                               dest=os.path.join(libdir, "gmp.lib"))
+
+            # The MathSAT setup.py expects to link against "mpir" on Windows,
+            # but we link against "gmp", so we need to patch the setup.py
+            setup_py_path = os.path.join(self.python_bindings_dir, "setup.py")
+            SolverInstaller.replace_in_file(setup_py_path, "mpir", "gmp")
 
         # Run setup.py to compile the bindings
         if self.os_name in {"windows", "darwin"}:
@@ -89,11 +95,11 @@ class MSatInstaller(SolverInstaller):
         pdir = self.python_bindings_dir
         bdir = os.path.join(pdir, "build")
         sodir = glob.glob(bdir + "/lib.*")[0]
-        libdir = os.path.join(self.python_bindings_dir, "../lib")
+        libdir = os.path.join(self.python_bindings_dir, "../bin")
 
         # First, we need the SWIG-generated wrapper
         for f in os.listdir(sodir):
-            if f.endswith(".so") or f.endswith(".pyd"):
+            if "_mathsat" in f:
                 SolverInstaller.mv(os.path.join(sodir, f), self.bindings_dir)
         SolverInstaller.mv(os.path.join(pdir, "mathsat.py"), self.bindings_dir)
 
@@ -103,7 +109,7 @@ class MSatInstaller(SolverInstaller):
             if f.endswith(".so") or f.endswith(".dll") or f.endswith(".dylib"):
                 SolverInstaller.mv(os.path.join(libdir, f), self.bindings_dir)
 
-        # Fix issue in MathSAT 5.6.10 linking to incorrect directory on OSX
+        # Fix issue in MathSAT 5.6.10 linking to incorrect directory on MacOS
         if self.os_name == "darwin":
             soname = glob.glob(self.bindings_dir + "/_mathsat*.so")[0]
             old_path = "/Users/alb/src/release/build/libmathsat.dylib"
