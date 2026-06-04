@@ -18,7 +18,7 @@
 from collections import namedtuple
 
 import pysmt.logics
-from pysmt.environment import get_env
+from pysmt.environment import get_env, Environment
 from pysmt.shortcuts import (Symbol, Function,
                              Int, Real, FALSE, TRUE,
                              And, Iff, Or, Not, Implies, Ite,
@@ -42,21 +42,23 @@ from pysmt.shortcuts import (Symbol, Function,
 from pysmt.typing import REAL, BOOL, INT, BV8, BV16, BVType, ARRAY_INT_INT
 from pysmt.typing import FunctionType, ArrayType, STRING
 from pysmt.constants import Fraction
+from typing import List, Optional
 
 
 Example = namedtuple('Example',
                      ['hr', 'expr', 'is_valid', 'is_sat', 'logic'])
 
-SExample = namedtuple('SimpleExample',
+SimpleExample = namedtuple('SimpleExample',
                       ['expr', 'is_valid', 'is_sat', 'logic'])
 
 
-def get_full_example_formulae(environment=None):
+def get_full_example_formulae(environment: Optional[Environment]=None) -> List[Example]:
     """Return a list of Examples using the given environment."""
 
     if environment is None:
         environment = get_env()
 
+    assert environment is not None
     with environment:
         x = Symbol("x", BOOL)
         y = Symbol("y", BOOL)
@@ -995,13 +997,13 @@ def get_full_example_formulae(environment=None):
     return result
 
 
-def get_example_formulae(environment=None):
+def get_example_formulae(environment: Optional["pysmt.environment.Environment"]=None):
     """Generates a stream of SExample using the given environment."""
     for (hr, expr, is_valid, is_sat, logic) in get_full_example_formulae(environment):
-        yield SExample(expr, is_valid, is_sat, logic)
+        yield SimpleExample(expr, is_valid, is_sat, logic)
 
 
-def get_str_example_formulae(environment=None):
+def get_str_example_formulae(environment: Optional["pysmt.environment.Environment"]=None):
     """Returns a triple from each Example."""
     for (hr, expr, is_valid, is_sat, logic) in get_full_example_formulae(environment):
         yield (hr, expr, logic)

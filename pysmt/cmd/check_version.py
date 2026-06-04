@@ -19,16 +19,16 @@ import re
 def check_version(module):
     try:
         if module == "z3":
-            import z3
+            import z3 # type: ignore[import]
             (major, minor, ver, _) = z3.get_version()
             version = "%d.%d.%d" % (major, minor, ver)
 
         elif module in ("msat", "optimsat"):
             if module == "msat":
-                import mathsat
+                import mathsat # type: ignore[import]
                 version_str = mathsat.msat_get_version()
             else:
-                import optimathsat
+                import optimathsat # type: ignore[import]
                 version_str = optimathsat.msat_get_version()
             m = re.match(r"^MathSAT5 version (\d+\.\d+\.\d+) .*$", version_str)
             if m is not None:
@@ -39,31 +39,31 @@ def check_version(module):
                     version = m.group(1)
 
         elif module == "cudd":
-            import repycudd
+            import repycudd # type: ignore[import]
             doc = repycudd.DOCSTRING
             m = re.match(r"^PyCUDD (\d+\.\d+\.\d+).*", doc)
             if m is not None:
                 version = m.group(1)
 
         elif module == "btor":
-            import pyboolector
+            import pyboolector # type: ignore[import]
             version = "OK" # Just checking if import succeeds
 
         elif module == "cvc5":
-            import cvc5
+            import cvc5 # type: ignore[import]
             solver = cvc5.Solver()
             version = solver.getVersion().decode('ascii')
 
         elif module == "cvc4":
-            import CVC4
+            import CVC4 # type: ignore[import]
             version = CVC4.Configuration_getVersionString()
 
         elif module == "picosat":
-            import picosat
+            import picosat # type: ignore[import]
             version = picosat.picosat_version()
 
         elif module == "yices":
-            import yices_api
+            import yices_api # type: ignore[import]
             version = yices_api.yices_python_version
         else:
             print("Invalid argument '%s'"  % module)

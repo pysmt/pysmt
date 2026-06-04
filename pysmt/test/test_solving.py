@@ -293,7 +293,7 @@ class TestBasic(TestCase):
 
     @skipIfSolverNotAvailable("z3")
     def test_tactics_z3(self):
-        from z3 import Tactic, Then
+        from z3 import Tactic, Then # type: ignore[import]
 
         my_tactic = lambda ctx : Then(Tactic('simplify', ctx),
                                       Tactic('propagate-values', ctx),
@@ -485,7 +485,7 @@ class TestBasic(TestCase):
 
     @skipIfSolverNotAvailable("msat")
     def test_msat_converter_on_msat_error(self):
-        import mathsat
+        import mathsat # type: ignore[import]
         from pysmt.solvers.msat import MathSAT5Solver, MSatConverter
 
 

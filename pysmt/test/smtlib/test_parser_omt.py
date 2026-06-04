@@ -23,6 +23,8 @@ from pysmt.shortcuts import reset_env
 from pysmt.test import TestCase
 from pysmt.smtlib.parser import SmtLibParser
 from pysmt.exceptions import PysmtSyntaxError
+from pysmt.smtlib.script import SmtLibScript
+from typing import Iterator, List, Tuple
 
 
 class TestSmtLibParserOMT(TestCase):
@@ -61,7 +63,7 @@ class TestSmtLibParserOMT(TestCase):
             self.assertEqual(cmd.name, command)
             self.assertEqual(len(cmd.args), len_args)
 
-    def parse_from_file(self, file_id):
+    def parse_from_file(self, file_id: int) -> SmtLibScript:
         fname = OMT_FILE_PATTERN % file_id
         reset_env()
         parser = SmtLibParser()
@@ -69,13 +71,13 @@ class TestSmtLibParserOMT(TestCase):
         self.assertIsNotNone(script)
         return script
 
-    def examples(self):
+    def examples(self) -> Iterator[Tuple[int, List[str], SmtLibScript]]:
         for file_id in TEST_FILES:
             script = self.parse_from_file(file_id)
             yield file_id, TEST_FILES[file_id], script
 
     @staticmethod
-    def snippet_examples():
+    def snippet_examples() -> Iterator[Tuple[str, str, int]]:
         for input_command, command, len_args in TEST_SNIPPETS:
             yield input_command, command, len_args
 

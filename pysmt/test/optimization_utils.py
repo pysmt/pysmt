@@ -1,11 +1,19 @@
 from enum import Enum, auto
+from fractions import Fraction
 from itertools import chain
 import pytest
 
 from pysmt.fnode import FNode
 from pysmt.shortcuts import get_env
-from pysmt.exceptions import PysmtUnboundedOptimizationError, PysmtInfinitesimalError, PysmtValueError
-from pysmt.optimization.optimizer import SUAOptimizerMixin, IncrementalOptimizerMixin
+from pysmt.exceptions import PysmtUnboundedOptimizationError, PysmtInfinitesimalError, PysmtValueError, PysmtException
+from pysmt.optimization.optimizer import Optimizer, SUAOptimizerMixin, IncrementalOptimizerMixin
+from pysmt.optimization.goal import Goal
+from pysmt.environment import Environment
+from pysmt.logics import Logic
+from pysmt.solvers.solver import Model
+from typing import Any, Iterator, List, Optional, Sequence, Set, Tuple, Type, Union
+
+FNode_or_Str = Union[FNode, str]
 
 class OptimizationTypes(Enum):
     BASIC = auto()
@@ -39,7 +47,7 @@ class OMTTestCase:
     If the expected value is a FNode, it must be a constant value.
     If the expected value is a string, it must be either "unbounded" or "infinitesimal".
     """
-    def __init__(self, name, assertions, logic, solvable, goals, env):
+    def __init__(self, name: str, assertions: List[FNode], logic: Logic, solvable: bool, goals: Any, env: Environment):
         self._name = name
         self._assertions = assertions
         self._logic = logic
@@ -83,15 +91,15 @@ class OMTTestCase:
                 raise NotImplementedError("%s optimization is not supported yet" % optimization_type.name)
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     @property
-    def assertions(self):
+    def assertions(self) -> List[FNode]:
         return self._assertions
 
     @property
-    def logic(self):
+    def logic(self) -> Logic:
         return self._logic
 
     @property
@@ -99,16 +107,16 @@ class OMTTestCase:
         return self._solvable
 
     @property
-    def goals(self):
+    def goals(self) -> Any:
         return self._goals
 
     @property
-    def environment(self):
+    def environment(self) -> Environment:
         return self._env
 
 
 # method to solve the given examples
-def generate_examples_with_solvers(optimization_examples):
+def generate_examples_with_solvers(optimization_examples: Iterator[Any]) -> Iterator[Tuple[OMTTestCase, str]]:
     """
     This method takes a list of OMTTestCases and yields all the possible
     combinations of an OMTTestCase and the name of a solver that support
@@ -129,7 +137,7 @@ def generate_examples_with_solvers(optimization_examples):
             yield optimization_example, solver_name
 
 
-def solve_given_example(optimization_example, solver_name, test_to_skip=None):
+def solve_given_example(optimization_example: OMTTestCase, solver_name: str, test_to_skip: Optional[Set[Tuple[str, OptimizationTypes, str]]]=None):
     """
     Method to solve a single OMTTestCase using the given solver.
     """
@@ -146,7 +154,7 @@ def solve_given_example(optimization_example, solver_name, test_to_skip=None):
                 opt.add_assertion(assertion)
             test_id_str = "test: %s; solver: %s; optimization: %s" % (optimization_example.name, solver_name, optimization_type.name)
             extra_options = {}
-            strategies = ["linear", "binary"] if isinstance(opt, (SUAOptimizerMixin, IncrementalOptimizerMixin)) else [None]
+            strategies: List[Optional[str]] = ["linear", "binary"] if isinstance(opt, (SUAOptimizerMixin, IncrementalOptimizerMixin)) else [None]
             for strategy in strategies:
                 # skip binary strategy if there are real maxsmt goals
                 has_real_maxsmt_goals = any(g.is_maxsmt_goal() and g.term().get_type().is_real_type() for g in goals)
@@ -177,7 +185,7 @@ def solve_given_example(optimization_example, solver_name, test_to_skip=None):
                     raise NotImplementedError("Unknown optimization type: %s" % optimization_type)
 
 
-def _check_oracle_goal(goal, goal_value, cost, test_id_str, **kwargs):
+def _check_oracle_goal(goal: Goal, goal_value: FNode, cost: FNode, test_id_str: str, **kwargs):
     # converts the goal value and cost to constants and then checks if they are equal
     preliminary_checks_fail_str = "test: %s, goal: %s, goal_value: %s, cost: %s, extra: %s" % (test_id_str, str(goal), str(goal_value), str(cost), str(kwargs))
     assert goal_value.is_constant() and cost.is_constant(), preliminary_checks_fail_str
@@ -185,8 +193,8 @@ def _check_oracle_goal(goal, goal_value, cost, test_id_str, **kwargs):
     if goal_value.is_bv_constant():
         assert cost.is_bv_constant(), preliminary_checks_fail_str
         if goal.signed:
-            goal_value_constant = goal_value.bv_signed_value()
-            cost_constant = cost.bv_signed_value()
+            goal_value_constant: Union[str, int, Fraction, bool] = goal_value.bv_signed_value()
+            cost_constant: Union[str, int, Fraction, bool] = cost.bv_signed_value()
         else:
             goal_value_constant = goal_value.bv_unsigned_value()
             cost_constant = cost.bv_unsigned_value()
@@ -200,8 +208,8 @@ def _check_oracle_goal(goal, goal_value, cost, test_id_str, **kwargs):
     )
 
 
-def _get_expected_raised_class(goals_value):
-    raised_class = None
+def _get_expected_raised_class(goals_value: Union[FNode_or_Str, Sequence[FNode_or_Str]]) -> Optional[Type[PysmtException]]:
+    raised_class: Optional[Type[PysmtException]] = None
     if isinstance(goals_value, str):
         if goals_value == "unbounded":
             raised_class = PysmtUnboundedOptimizationError
@@ -212,7 +220,7 @@ def _get_expected_raised_class(goals_value):
     return raised_class
 
 
-def check_lexicographic(optimizer, goals, goals_values, test_id_str, **kwargs):
+def check_lexicographic(optimizer: Optimizer, goals: Sequence[Goal], goals_values: Sequence[FNode_or_Str], test_id_str: str, **kwargs) -> Optional[Tuple[Model, List[FNode]]]:
     raised_class = _get_expected_raised_class(goals_values[0])
     assert raised_class is None or len(goals_values) == 1, "test: %s, goals_values: %s" % (test_id_str, str(goals_values))
     if raised_class is None:
@@ -221,38 +229,42 @@ def check_lexicographic(optimizer, goals, goals_values, test_id_str, **kwargs):
         _, costs = retval
         assert len(goals) == len(goals_values) == len(costs), test_id_str
         for goal, goal_value, cost in zip(goals, goals_values, costs):
+            assert isinstance(goal_value, FNode)
             _check_oracle_goal(goal, goal_value, cost, test_id_str, **kwargs)
         return retval
     elif not optimizer.can_diverge_for_unbounded_cases():
         with pytest.raises(raised_class):
-            optimizer.lexicographic_optimize(goals, **kwargs)
+            return optimizer.lexicographic_optimize(goals, **kwargs)
+    return None
 
 
-def check_pareto(optimizer, goals, goals_values, test_id_str, **kwargs):
+def check_pareto(optimizer: Optimizer, goals: Sequence[Goal], goals_values: Sequence[Sequence[FNode_or_Str]], test_id_str: str, **kwargs) -> Optional[List[Tuple[Model, List[FNode]]]]:
     raised_class = _get_expected_raised_class(goals_values[0])
     assert raised_class is None or len(goals_values) == 1, "test: %s, goals_values: %s" % (test_id_str, str(goals_values))
     if raised_class is None:
-        retval = optimizer.pareto_optimize(goals, **kwargs)
-        assert retval is not None, test_id_str
-        retval = list(retval)
+        iterator_retval = optimizer.pareto_optimize(goals, **kwargs)
+        assert iterator_retval is not None, test_id_str
+        retval = list(iterator_retval)
 
         sorted_costs = sorted((costs for _, costs in retval), key=str)
         sorted_goals_values = sorted(goals_values, key=str)
 
         assert len(sorted_costs) == len(sorted_goals_values), test_id_str
-        for costs, goals_values in zip(sorted_costs, sorted_goals_values):
-            assert len(goals) == len(costs) == len(goals_values), test_id_str
+        for costs, current_goals_values in zip(sorted_costs, sorted_goals_values):
+            assert len(goals) == len(costs) == len(current_goals_values), test_id_str
 
-            for goal, goal_value, cost in zip(goals, goals_values, costs):
+            for goal, goal_value, cost in zip(goals, current_goals_values, costs):
+                assert isinstance(goal_value, FNode)
                 _check_oracle_goal(goal, goal_value, cost, test_id_str, **kwargs)
 
         return retval
     elif not optimizer.can_diverge_for_unbounded_cases():
         with pytest.raises(raised_class):
-            optimizer.pareto_optimize(goals, **kwargs)
+            return list(optimizer.pareto_optimize(goals, **kwargs))
+    return None
 
 
-def check_boxed(optimizer, goals, goals_values, test_id_str, also_test_basic, **kwargs):
+def check_boxed(optimizer: Optimizer, goals: Sequence[Goal], goals_values: Sequence[FNode_or_Str], test_id_str: str, also_test_basic: bool, **kwargs) -> Any:
     # extract which class should be raised by the boxed optimization
     raised_class = None
     for goal_value in goals_values:
@@ -267,6 +279,7 @@ def check_boxed(optimizer, goals, goals_values, test_id_str, also_test_basic, **
         assert retval is not None, test_id_str
         for goal, goal_value in zip(goals, goals_values):
             _, cost = retval[goal]
+            assert isinstance(goal_value, FNode)
             _check_oracle_goal(goal, goal_value, cost, test_id_str, **kwargs)
     elif not optimizer.can_diverge_for_unbounded_cases():
         with pytest.raises(raised_class):
@@ -281,9 +294,10 @@ def check_boxed(optimizer, goals, goals_values, test_id_str, also_test_basic, **
         return retval
 
 
-def check_basic(optimizer, goal, goal_value, test_id_str, **kwargs):
+def check_basic(optimizer: Optimizer, goal: Goal, goal_value: FNode_or_Str, test_id_str: str, **kwargs) -> Optional[Tuple[Model, FNode]]:
     raised_class = _get_expected_raised_class(goal_value)
     if raised_class is None:
+        assert isinstance(goal_value, FNode)
         retval = optimizer.optimize(goal, **kwargs)
         assert retval is not None, test_id_str
         _, cost = retval
@@ -292,9 +306,10 @@ def check_basic(optimizer, goal, goal_value, test_id_str, **kwargs):
     elif not optimizer.can_diverge_for_unbounded_cases():
         with pytest.raises(raised_class):
             optimizer.optimize(goal, **kwargs)
+    return None
 
 
-def get_non_diverging_optimizers(logic):
+def get_non_diverging_optimizers(logic: Logic) -> Iterator[str]:
     """
     Returns an iterator over the optimizers that do not diverge for unbounded cases.
     """

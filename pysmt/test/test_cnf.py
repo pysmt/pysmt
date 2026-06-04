@@ -54,7 +54,7 @@ class TestCnf(TestCase):
         self.do_examples(QF_LIA)
 
     @skipIfNoSolverForLogic(QF_UFLRA)
-    def test_examples_solving_lia(self):
+    def test_examples_solving_uflra(self):
         self.do_examples(QF_UFLRA)
 
     @pytest.mark.slow

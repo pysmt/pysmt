@@ -15,15 +15,17 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from functools import partial
 from io import StringIO
+from typing import Callable, List, Optional, Set, TextIO, Union
 
 import pysmt.operators as op
 from pysmt.environment import get_env
 from pysmt.walkers import TreeWalker, DagWalker, handles
 from pysmt.utils import quote
+from pysmt.fnode import FNode
+from pysmt.smtlib.annotations import Annotations
 
-def write_annotations(f):
+def write_annotations(f: Callable) -> Callable:
     def resf(self, formula, *args, **kwargs):
         annots = self.annotations
         if annots is not None and formula in annots:
@@ -41,7 +43,7 @@ def write_annotations(f):
             self.write(')')
     return resf
 
-def write_annotations_dag(f):
+def write_annotations_dag(f: Callable) -> Callable:
     def resf(self, formula, *args, **kwargs):
         annots = self.annotations
         res = f(self, formula, *args, **kwargs)
@@ -57,7 +59,7 @@ def write_annotations_dag(f):
 
 class SmtPrinter(TreeWalker):
 
-    def __init__(self, stream, annotations=None):
+    def __init__(self, stream: TextIO, annotations=None):
         TreeWalker.__init__(self)
         self.stream = stream
         self.write = self.stream.write
@@ -325,18 +327,18 @@ class SmtPrinter(TreeWalker):
 
 class SmtDagPrinter(DagWalker):
 
-    def __init__(self, stream, template=".def_%d", annotations=None):
+    def __init__(self, stream: TextIO, template: str=".def_%d", annotations: Optional[Annotations]=None):
         DagWalker.__init__(self, invalidate_memoization=True)
         self.stream = stream
         self.write = self.stream.write
         self.openings = 0
         self.name_seed = 0
         self.template = template
-        self.names = None
+        self.names: Optional[Set[str]] = None
         self.mgr = get_env().formula_manager
         self.annotations = annotations
 
-    def _push_with_children_to_stack(self, formula, **kwargs):
+    def _push_with_children_to_stack(self, formula: FNode, **kwargs):
         """Add children to the stack."""
 
         # Deal with quantifiers
@@ -352,7 +354,7 @@ class SmtDagPrinter(DagWalker):
         else:
             DagWalker._push_with_children_to_stack(self, formula, **kwargs)
 
-    def printer(self, f):
+    def printer(self, f: FNode):
         self.openings = 0
         self.name_seed = 0
         self.names = set(quote(x.symbol_name()) for x in f.get_free_variables())
@@ -361,7 +363,8 @@ class SmtDagPrinter(DagWalker):
         self.write(key)
         self.write(")" * self.openings)
 
-    def _new_symbol(self):
+    def _new_symbol(self) -> str:
+        assert self.names is not None
         while (self.template % self.name_seed) in self.names:
             self.name_seed += 1
         res = (self.template % self.name_seed)
@@ -380,128 +383,128 @@ class SmtDagPrinter(DagWalker):
         self.write("))) ")
         return sym
 
-    def walk_and(self, formula, args):
+    def walk_and(self, formula: FNode, args: List[str]) -> str:
         return self.walk_nary(formula, args, "and")
 
-    def walk_or(self, formula, args):
+    def walk_or(self, formula: FNode, args: List[str]) -> str:
         return self.walk_nary(formula, args, "or")
 
-    def walk_not(self, formula, args):
+    def walk_not(self, formula: FNode, args: List[str]) -> str:
         return self.walk_nary(formula, args, "not")
 
-    def walk_implies(self, formula, args):
+    def walk_implies(self, formula: FNode, args: List[str]) -> str:
         return self.walk_nary(formula, args, "=>")
 
-    def walk_iff(self, formula, args):
+    def walk_iff(self, formula: FNode, args: List[str]) -> str:
         return self.walk_nary(formula, args, "=")
 
-    def walk_plus(self, formula, args):
+    def walk_plus(self, formula: FNode, args: List[str]) -> str:
         return self.walk_nary(formula, args, "+")
 
-    def walk_minus(self, formula, args):
+    def walk_minus(self, formula: FNode, args: List[str]) -> str:
         return self.walk_nary(formula, args, "-")
 
-    def walk_times(self, formula, args):
+    def walk_times(self, formula: FNode, args: List[str]) -> str:
         return self.walk_nary(formula, args, "*")
 
-    def walk_equals(self, formula, args):
+    def walk_equals(self, formula: FNode, args: List[str]) -> str:
         return self.walk_nary(formula, args, "=")
 
-    def walk_le(self, formula, args):
+    def walk_le(self, formula: FNode, args: List[str]) -> str:
         return self.walk_nary(formula, args, "<=")
 
-    def walk_lt(self, formula, args):
+    def walk_lt(self, formula: FNode, args: List[str]) -> str:
         return self.walk_nary(formula, args, "<")
 
-    def walk_ite(self, formula, args):
+    def walk_ite(self, formula: FNode, args: List[str]) -> str:
         return self.walk_nary(formula, args, "ite")
 
-    def walk_toreal(self, formula, args):
+    def walk_toreal(self, formula: FNode, args: List[str]) -> str:
         return self.walk_nary(formula, args, "to_real")
 
-    def walk_div(self, formula, args):
+    def walk_div(self, formula: FNode, args: List[str]) -> str:
         return self.walk_nary(formula, args, "/")
 
-    def walk_pow(self, formula, args):
+    def walk_pow(self, formula: FNode, args: List[str]) -> str:
         return self.walk_nary(formula, args, "pow")
 
-    def walk_bv_and(self, formula, args):
+    def walk_bv_and(self, formula: FNode, args: List[str]) -> str:
         return self.walk_nary(formula, args, "bvand")
 
-    def walk_bv_or(self, formula, args):
+    def walk_bv_or(self, formula: FNode, args: List[str]) -> str:
         return self.walk_nary(formula, args, "bvor")
 
-    def walk_bv_not(self, formula, args):
+    def walk_bv_not(self, formula: FNode, args: List[str]) -> str:
         return self.walk_nary(formula, args, "bvnot")
 
-    def walk_bv_xor(self, formula, args):
+    def walk_bv_xor(self, formula: FNode, args: List[str]) -> str:
         return self.walk_nary(formula, args, "bvxor")
 
-    def walk_bv_add(self, formula, args):
+    def walk_bv_add(self, formula: FNode, args: List[str]) -> str:
         return self.walk_nary(formula, args, "bvadd")
 
-    def walk_bv_sub(self, formula, args):
+    def walk_bv_sub(self, formula: FNode, args: List[str]) -> str:
         return self.walk_nary(formula, args, "bvsub")
 
-    def walk_bv_neg(self, formula, args):
+    def walk_bv_neg(self, formula: FNode, args: List[str]) -> str:
         return self.walk_nary(formula, args, "bvneg")
 
-    def walk_bv_mul(self, formula, args):
+    def walk_bv_mul(self, formula: FNode, args: List[str]) -> str:
         return self.walk_nary(formula, args, "bvmul")
 
-    def walk_bv_udiv(self, formula, args):
+    def walk_bv_udiv(self, formula: FNode, args: List[str]) -> str:
         return self.walk_nary(formula, args, "bvudiv")
 
-    def walk_bv_urem(self, formula, args):
+    def walk_bv_urem(self, formula: FNode, args: List[str]) -> str:
 
         return self.walk_nary(formula, args, "bvurem")
-    def walk_bv_lshl(self, formula, args):
+    def walk_bv_lshl(self, formula: FNode, args: List[str]) -> str:
         return self.walk_nary(formula, args, "bvshl")
 
-    def walk_bv_lshr(self, formula, args):
+    def walk_bv_lshr(self, formula: FNode, args: List[str]) -> str:
         return self.walk_nary(formula, args, "bvlshr")
 
-    def walk_bv_ult(self, formula, args):
+    def walk_bv_ult(self, formula: FNode, args: List[str]) -> str:
         return self.walk_nary(formula, args, "bvult")
 
-    def walk_bv_ule(self, formula, args):
+    def walk_bv_ule(self, formula: FNode, args: List[str]) -> str:
         return self.walk_nary(formula, args, "bvule")
 
-    def walk_bv_slt(self, formula, args):
+    def walk_bv_slt(self, formula: FNode, args: List[str]) -> str:
         return self.walk_nary(formula, args, "bvslt")
 
-    def walk_bv_sle(self, formula, args):
+    def walk_bv_sle(self, formula: FNode, args: List[str]) -> str:
         return self.walk_nary(formula, args, "bvsle")
 
-    def walk_bv_concat(self, formula, args):
+    def walk_bv_concat(self, formula: FNode, args: List[str]) -> str:
         return self.walk_nary(formula, args, "concat")
 
-    def walk_bv_comp(self, formula, args):
+    def walk_bv_comp(self, formula: FNode, args: List[str]) -> str:
         return self.walk_nary(formula, args, "bvcomp")
 
-    def walk_bv_ashr(self, formula, args):
+    def walk_bv_ashr(self, formula: FNode, args: List[str]) -> str:
         return self.walk_nary(formula, args, "bvashr")
 
-    def walk_bv_sdiv(self, formula, args):
+    def walk_bv_sdiv(self, formula: FNode, args: List[str]) -> str:
         return self.walk_nary(formula, args, "bvsdiv")
 
-    def walk_bv_srem(self, formula, args):
+    def walk_bv_srem(self, formula: FNode, args: List[str]) -> str:
         return self.walk_nary(formula, args, "bvsrem")
 
-    def walk_bv_tonatural(self, formula, args):
+    def walk_bv_tonatural(self, formula: FNode, args: List[str]) -> str:
         return self.walk_nary(formula, args, "bv2nat")
 
-    def walk_array_select(self, formula, args):
+    def walk_array_select(self, formula: FNode, args: List[str]) -> str:
         return self.walk_nary(formula, args, "select")
 
-    def walk_array_store(self, formula, args):
+    def walk_array_store(self, formula: FNode, args: List[str]) -> str:
         return self.walk_nary(formula, args, "store")
 
     @write_annotations_dag
     def walk_symbol(self, formula, **kwargs):
         return quote(formula.symbol_name())
 
-    def walk_function(self, formula, args, **kwargs):
+    def walk_function(self, formula: FNode, args: List[str], **kwargs) -> str:
         return self.walk_nary(formula, args, quote(formula.function_name().symbol_name()))
 
     @write_annotations_dag
@@ -547,10 +550,10 @@ class SmtDagPrinter(DagWalker):
     def walk_str_constant(self, formula, **kwargs):
         return '"' + formula.constant_value().replace('"', '""') + '"'
 
-    def walk_forall(self, formula, args, **kwargs):
+    def walk_forall(self, formula: FNode, args: None, **kwargs) -> str:
         return self._walk_quantifier("forall", formula, args)
 
-    def walk_exists(self, formula, args, **kwargs):
+    def walk_exists(self, formula: FNode, args: None, **kwargs) -> str:
         return self._walk_quantifier("exists", formula, args)
 
     @write_annotations_dag
@@ -702,7 +705,7 @@ class SmtDagPrinter(DagWalker):
         return sym
 
 
-def to_smtlib(formula, daggify=True):
+def to_smtlib(formula: FNode, daggify: bool=True) -> str:
     """Returns a Smt-Lib string representation of the formula.
 
     The daggify parameter can be used to switch from a linear-size
@@ -713,7 +716,7 @@ def to_smtlib(formula, daggify=True):
     See :py:class:`SmtPrinter`
     """
     buf = StringIO()
-    p = None
+    p: Union[SmtDagPrinter, SmtPrinter]
     if daggify:
         p = SmtDagPrinter(buf)
     else:

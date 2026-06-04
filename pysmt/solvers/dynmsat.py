@@ -16,9 +16,13 @@
 #   limitations under the License.
 #
 
-from pysmt.exceptions import SolverAPINotFound
 
+from typing import Any
 import importlib
+
+import pysmt
+from pysmt.environment import Environment
+from pysmt.exceptions import SolverAPINotFound
 
 def MSATLibLoader(name):
     if name not in ["mathsat", "optimathsat"]:
@@ -29,7 +33,7 @@ def MSATLibLoader(name):
     except ImportError:
         raise SolverAPINotFound
 
-def MSATCreateEnv(name, msat_config):
+def MSATCreateEnv(name: str, msat_config: Any) -> "pysmt.solvers.msat.MSatEnv":
     map = {
         "mathsat" : {
             "class" : "MSatEnv",
@@ -47,7 +51,7 @@ def MSATCreateEnv(name, msat_config):
 
     return EnvClass(msat_config)
 
-def MSATCreateConverter(name, environment, msat_env):
+def MSATCreateConverter(name: str, environment: Environment, msat_env: "pysmt.solvers.msat.MSatEnv") -> "pysmt.solvers.msat.MSatConverter":
     map = {
         "mathsat" : {
             "class" : "MSatConverter",

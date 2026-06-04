@@ -397,7 +397,7 @@ class TestRegressions(TestCase):
 
     @skipIfSolverNotAvailable("z3")
     def test_z3_nary_back(self):
-        from z3 import Tactic
+        from z3 import Tactic # type: ignore[import]
         r = Symbol("r", REAL)
         s = Symbol("s", REAL)
         t = Symbol("t", REAL)

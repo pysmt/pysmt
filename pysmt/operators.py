@@ -22,6 +22,7 @@ they will be rewritten (during construction) in order to only use
 these operators.
 """
 from itertools import chain
+from typing import List
 
 
 ALL_TYPES = list(range(0,66))
@@ -115,7 +116,7 @@ ARRAY_OPERATORS = frozenset([ARRAY_SELECT, ARRAY_STORE, ARRAY_VALUE])
 
 THEORY_OPERATORS = IRA_OPERATORS | BV_OPERATORS | ARRAY_OPERATORS | STR_OPERATORS
 
-CUSTOM_NODE_TYPES = []
+CUSTOM_NODE_TYPES: List[int] = []
 
 assert (BOOL_OPERATORS | THEORY_OPERATORS | RELATIONS | \
         CONSTANTS | frozenset((SYMBOL, FUNCTION, ITE))) == frozenset(ALL_TYPES)
@@ -145,12 +146,12 @@ def new_node_type(node_id=None, node_str=None):
     return node_id
 
 
-def op_to_str(node_id):
+def op_to_str(node_id: int) -> str:
     """Returns a string representation of the given node."""
     return __OP_STR__[node_id]
 
 
-def all_types():
+def all_types() -> chain:
     """Returns an iterator over all base and custom types."""
     return chain(iter(ALL_TYPES), iter(CUSTOM_NODE_TYPES))
 
