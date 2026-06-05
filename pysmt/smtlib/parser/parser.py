@@ -1312,7 +1312,7 @@ class SmtLibParser(object):
 
     def _cmd_minmax_maxmin_obj(self, current: str, tokens: Tokenizer) -> SmtLibCommand:
         """(minmax | maxmin <term>+ )"""
-        params = []
+        params: List[Tuple[str, Union[str, bool]]] = []
         terms = []
         signed = False
         options = False
