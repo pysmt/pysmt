@@ -93,7 +93,7 @@ class TestBasic(TestCase):
         # Z3 simplification can produce n-ary (more than two arguments)
         # bit-vector operations. Back-converting them used to fail because
         # only the binary case was handled (unlike the integer operations).
-        import z3
+        import z3 # type: ignore[import]
 
         s = Solver(name="z3", logic=QF_BV)
         conv = s.converter
