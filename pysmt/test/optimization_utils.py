@@ -242,9 +242,8 @@ def check_pareto(optimizer: Optimizer, goals: Sequence[Goal], goals_values: Sequ
     raised_class = _get_expected_raised_class(goals_values[0])
     assert raised_class is None or len(goals_values) == 1, "test: %s, goals_values: %s" % (test_id_str, str(goals_values))
     if raised_class is None:
-        iterator_retval = optimizer.pareto_optimize(goals, **kwargs)
-        assert iterator_retval is not None, test_id_str
-        retval = list(iterator_retval)
+        retval = optimizer.pareto_optimize(goals, **kwargs)
+        assert retval is not None, test_id_str
 
         sorted_costs = sorted((costs for _, costs in retval), key=str)
         sorted_goals_values = sorted(goals_values, key=str)
@@ -257,7 +256,7 @@ def check_pareto(optimizer: Optimizer, goals: Sequence[Goal], goals_values: Sequ
                 assert isinstance(goal_value, FNode)
                 _check_oracle_goal(goal, goal_value, cost, test_id_str, **kwargs)
 
-        return retval
+        return None
     elif not optimizer.can_diverge_for_unbounded_cases():
         with pytest.raises(raised_class):
             return list(optimizer.pareto_optimize(goals, **kwargs))
