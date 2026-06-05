@@ -144,9 +144,18 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
         }
 
         while self.solve():
-            if all(self._check_unsat_unbound_infinitesimal(mo) for mo in msat_objs.values()):
-                model = self.get_model()
-                yield model, [model.get_value(goal.term()) for goal in goals]
+            all_ok = True
+            costs = []
+            model = None
+            for goal in goals:
+                result = self._get_goal_value(msat_objs[goal], goal)
+                if result is None:
+                    all_ok = False
+                    break
+                model, cost = result
+                costs.append(cost)
+            if all_ok and model is not None:
+                yield model, costs
             else:
                 break
         # set after the solve because the solve method has the clear_pending_pop decorator
