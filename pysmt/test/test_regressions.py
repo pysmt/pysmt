@@ -258,7 +258,7 @@ class TestRegressions(TestCase):
 
     def test_cnf_as_set(self):
         r = cnf_as_set(Symbol("x"))
-        self.assertTrue(type(r) == frozenset)
+        self.assertEqual(type(r), frozenset)
 
     def test_substitute_to_real(self):
         p = Symbol("p", INT)

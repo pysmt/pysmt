@@ -19,7 +19,7 @@ import os
 import pytest
 
 from pysmt.shortcuts import Implies, is_sat, is_valid, reset_env, Symbol, Iff, Select, ArrayType, INT, BOOL, And, get_env
-from pysmt.rewritings import CNFizer
+from pysmt.rewritings import CNFizer, PolarityCNFizer
 from pysmt.logics import QF_BOOL, QF_LRA, QF_LIA, QF_UFLIRA, QF_UFLRA, QF_ALIA
 from pysmt.test import TestCase, skipIfNoSolverForLogic, main
 from pysmt.test.examples import get_example_formulae
@@ -29,16 +29,16 @@ from pysmt.smtlib.parser import get_formula_fname
 class TestCnf(TestCase):
 
     def do_examples(self, logic):
-        conv = CNFizer()
-        for example in get_example_formulae():
-            if example.logic != logic:
-                continue
-            cnf = conv.convert_as_formula(example.expr)
+        for conv in (CNFizer(), PolarityCNFizer()):
+            for example in get_example_formulae():
+                if example.logic != logic:
+                    continue
+                cnf = conv.convert_as_formula(example.expr)
 
-            self.assertValid(Implies(cnf, example.expr), logic=logic)
+                self.assertValid(Implies(cnf, example.expr), logic=logic)
 
-            res = is_sat(cnf, logic=logic)
-            self.assertEqual(res, example.is_sat)
+                res = is_sat(cnf, logic=logic)
+                self.assertEqual(res, example.is_sat)
 
 
     @skipIfNoSolverForLogic(QF_BOOL)
@@ -80,31 +80,30 @@ class TestCnf(TestCase):
 
     def _smtlib_cnf(self, filename, logic, res_is_sat):
         reset_env()
-        conv = CNFizer()
         smtfile = os.path.join(SMTLIB_DIR, filename)
         assert os.path.exists(smtfile)
 
         expr = get_formula_fname(smtfile)
-        if not logic.quantifier_free:
-            with self.assertRaises(NotImplementedError):
-                conv.convert_as_formula(expr)
-            return
+        for conv in (CNFizer(), PolarityCNFizer()):
+            if not logic.quantifier_free:
+                with self.assertRaises(NotImplementedError):
+                    conv.convert_as_formula(expr)
+                return
+            cnf = conv.convert_as_formula(expr)
+            self.assertTrue(is_valid(Implies(cnf, expr), logic=logic))
 
-        cnf = conv.convert_as_formula(expr)
-        self.assertTrue(is_valid(Implies(cnf, expr), logic=logic))
-
-        res = is_sat(cnf, logic=logic)
-        self.assertEqual(res, res_is_sat)
+            res = is_sat(cnf, logic=logic)
+            self.assertEqual(res, res_is_sat)
 
     @skipIfNoSolverForLogic(QF_BOOL)
     def test_implies(self):
         a,b,c,d = (Symbol(x) for x in "abcd")
         f = Implies(Iff(a, b), Iff(c, d))
 
-        conv = CNFizer()
-        cnf = conv.convert_as_formula(f)
+        for conv in [CNFizer(), PolarityCNFizer()]:
+            cnf = conv.convert_as_formula(f)
 
-        self.assertValid(Implies(cnf, f), logic=QF_BOOL)
+            self.assertValid(Implies(cnf, f), logic=QF_BOOL)
 
     @skipIfNoSolverForLogic(QF_ALIA)
     def test_CNFizer_bool_theory(self):
