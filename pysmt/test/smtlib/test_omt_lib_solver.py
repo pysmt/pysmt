@@ -338,7 +338,7 @@ sat
         )
 
 
-test_to_skip = {}
+test_to_skip: dict = {}
 
 @pytest.mark.parametrize(
     "optimization_example, solver_name",

@@ -20,7 +20,7 @@ import pytest
 from pysmt.test.omt_examples import get_full_example_omt_formuale
 from pysmt.test.optimization_utils import generate_examples_with_solvers, solve_given_example, OptimizationTypes
 
-test_to_skip = {}
+test_to_skip: dict = {}
 
 @pytest.mark.parametrize(
     "optimization_example, solver_name",
