@@ -16,11 +16,12 @@
 #   limitations under the License.
 #
 from pysmt.shortcuts import FreshSymbol, GT, And, Plus, Real, Int, LE, Iff
-from pysmt.shortcuts import Solver
-from pysmt.typing import REAL, INT
+from pysmt.shortcuts import Solver, Symbol, EqualsOrIff
+from pysmt.shortcuts import BVAdd, BVMul, BVAnd, BVOr, BVConcat
+from pysmt.typing import REAL, INT, BVType
 from pysmt.test import TestCase, skipIfSolverNotAvailable, main
 from pysmt.test.examples import get_example_formulae
-from pysmt.logics import QF_UFLIRA
+from pysmt.logics import QF_UFLIRA, QF_BV
 from pysmt.exceptions import NoSolverAvailableError
 
 
@@ -86,6 +87,31 @@ class TestBasic(TestCase):
     def test_z3_back_formulae(self):
         self.do_back("z3", via_smtlib=True)
         self.do_back("z3", via_smtlib=False)
+
+    @skipIfSolverNotAvailable("z3")
+    def test_z3_back_nary_bv(self):
+        # Z3 simplification can produce n-ary (more than two arguments)
+        # bit-vector operations. Back-converting them used to fail because
+        # only the binary case was handled (unlike the integer operations).
+        import z3 # type: ignore[import]
+
+        s = Solver(name="z3", logic=QF_BV)
+        conv = s.converter
+        a = Symbol("a", BVType(8))
+        b = Symbol("b", BVType(8))
+        c = Symbol("c", BVType(8))
+
+        for f in (BVAdd(BVAdd(a, b), c),
+                  BVMul(BVMul(a, b), c),
+                  BVAnd(BVAnd(a, b), c),
+                  BVOr(BVOr(a, b), c),
+                  BVConcat(BVConcat(a, b), c)):
+            # Simplify in Z3 to flatten the associative operators into a
+            # single n-ary application before converting back.
+            simplified = z3.simplify(conv.convert(f))
+            res = conv.back(simplified)
+            self.assertValid(EqualsOrIff(f, res), logic=QF_BV,
+                             solver_name="z3")
 
 
 if __name__ == '__main__':
