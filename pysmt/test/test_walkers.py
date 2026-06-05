@@ -26,7 +26,7 @@ from pysmt.test import TestCase, main
 from pysmt.formula import FormulaManager
 from pysmt.test.examples import get_example_formulae
 from pysmt.exceptions import UnsupportedOperatorError, PysmtTypeError
-from pysmt.substituter import MSSubstituter, MGSubstituter
+from pysmt.substituter import FunctionInterpretation, MSSubstituter, MGSubstituter
 
 
 class TestWalkers(TestCase):
@@ -77,6 +77,21 @@ class TestWalkers(TestCase):
 
         with self.assertRaisesRegex(PysmtTypeError, "substitute()"):
             substitute(f, {x:x})
+
+    def test_substituter_interpretations_in_quantifiers(self):
+        x = Symbol("x", INT)
+        UF_XOR = Symbol('uf_xor', FunctionType(INT, [INT, INT]))
+        f = ForAll([x], Equals(Function(UF_XOR, [x, x]), Int(0)))
+
+        class XORInterpreter(FunctionInterpretation):
+            def __init__(self): pass
+            def interpret(self, env, args):
+                if args[0] == args[1]: return Int(0)
+                return Function(UF_XOR, args)
+        
+        subs = f.substitute({}, interpretations={UF_XOR: XORInterpreter()})
+
+        self.assertEqual(subs, ForAll([x], Equals(Int(0), Int(0))))
 
     def test_undefined_node(self):
         varA = Symbol("At", INT)

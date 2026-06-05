@@ -151,7 +151,8 @@ class Substituter(pysmt.walkers.IdentityDagWalker):
             # 2. We apply the substitution on the quantifier body with
             #    the new 'reduced' map
             sub = self.__class__(self.env)
-            res_formula = sub.substitute(formula.arg(0), new_subs)
+            res_formula = sub.substitute(formula.arg(0), subs=new_subs,
+                                         interpretations=kwargs.get('interpretations', None))
 
             # 3. We invoke the relevant function (walk_exists or
             #    walk_forall) to compute the substitution
@@ -304,8 +305,9 @@ class MSSubstituter(Substituter):
     def __init__(self, env):
         Substituter.__init__(self, env=env)
 
-    def substitute(self, formula, subs):
-        return Substituter.substitute(self, formula, subs)
+    def substitute(self, formula, subs=None, interpretations=None):
+        return Substituter.substitute(self, formula, subs,
+                                      interpretations=interpretations)
 
     def _substitute(self, formula, substitutions):
         """Returns the substitution for formula, if one is defined, otherwise
