@@ -245,7 +245,7 @@ class PolarityCNFizer(CNFizer):
             # theory atoms
             assert self.env.stc.get_type(formula).is_bool_type()
             i, t, e = formula.args()
-            return [(i, pol), (i, not pol), (t, pol), (e, not pol)]
+            return [(i, pol), (i, not pol), (t, pol), (e, pol)]
 
         else:
             assert formula.is_str_op() or \
