@@ -574,6 +574,40 @@ class TestRegressions(TestCase):
                 s.add_assertion(f)
                 self.assertFalse(s.solve())
 
+    @skipIfSolverNotAvailable("msat")
+    def test_msat_all_sat_theory_atoms(self):
+        # Regression test: MathSAT5Solver.all_sat must accept arbitrary
+        # SMT-atoms as "important" terms, not only Boolean symbols.
+        # Previously the "important" terms were converted with a helper
+        # (_var2term) that assumed each term was a declared symbol, so
+        # passing a theory atom raised an AssertionError.
+        x = Symbol("x", INT)
+        f = And(LE(Int(0), x), LE(x, Int(5)))
+        atom = LE(x, Int(2))  # a theory atom, not a Boolean symbol
+
+        result = []
+
+        def callback(model, converter, res):
+            res.append(And(converter.back(v) for v in model))
+            return 1  # continue enumeration
+
+        with Solver(name="msat",
+                    solver_options={
+                        "dpll.allsat_minimize_model": "false",
+                        "dpll.allsat_allow_duplicates": "false",
+                        "preprocessor.toplevel_propagation": "false",
+                        "preprocessor.simplification": "0",
+                    }) as msat:
+            msat.add_assertion(f)
+            # This call used to raise AssertionError on a theory atom.
+            msat.all_sat([atom], lambda m: callback(m, msat.converter, result))
+
+        # The atom can be both true (x in [0,2]) and false (x in [3,5]),
+        # so we expect exactly the two disjoint total assignments.
+        self.assertEqual(len(result), 2, result)
+        self.assertIn(atom, result)
+        self.assertIn(Not(atom), result)
+
 
 if __name__ == "__main__":
     main()
