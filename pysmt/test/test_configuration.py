@@ -68,8 +68,7 @@ class TestConfiguration(TestCase):
 
         self.assertEqual(new_env.enable_infix_notation,
                           env.enable_infix_notation)
-        self.assertEqual(new_env.factory.solver_preference_list,
-                          env.factory.solver_preference_list)
+        self.assertEqual(new_env.factory.preferences, env.factory.preferences)
 
         self.assertTrue("mathsat-smt" in new_env.factory.all_solvers())
         self.assertTrue("z3-smt" in new_env.factory.all_solvers())
@@ -93,8 +92,7 @@ class TestConfiguration(TestCase):
         env = get_env()
         self.assertEqual(new_env.enable_infix_notation,
                           env.enable_infix_notation)
-        self.assertEqual(new_env.factory.solver_preference_list,
-                          env.factory.solver_preference_list)
+        self.assertEqual(new_env.factory.preferences, env.factory.preferences)
 
         self.assertTrue("mathsat-smt" in new_env.factory.all_solvers())
         self.assertTrue("z3-smt" in new_env.factory.all_solvers())

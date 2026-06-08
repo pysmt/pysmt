@@ -4,30 +4,51 @@ on:
   push:
     branches: [ "master" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "**" ]
 
 jobs:
+
+  mypy-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 #v4.1.1
+
+      - name: Set up Python
+        uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236 #v4.7.1
+        with:
+          python-version: 3.13
+
+      - name: Install Development Python dependencies
+        run: python3 -m pip install -r dev-requirements.txt
+
+      - name: MyPy check
+        run: python3 -m mypy pysmt
+
   run-tests:
+    needs: mypy-check
+
     runs-on: ${{ matrix.os }}
 
     strategy:
       matrix:
         os: [ ubuntu-latest ]
-        pysmt_solver: [ none, msat, z3, yices, cvc4, btor, picosat, bdd, msat_wrap, z3_wrap ]
+        pysmt_solver: [ none, msat, z3, yices, cvc5, btor, picosat, bdd, msat_wrap, z3_wrap, optimsat ]
 
     env:
-      PYTHON_VERSION: 3.8
+      PYTHON_VERSION: 3.13
       PYSMT_SOLVER: ${{ matrix.pysmt_solver }}
       AGENT_OS: ${{ matrix.os }}
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 #v4.1.1
 
       - name: Set up Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236 #v4.7.1
         with:
-          python-version: 3.8
+          python-version: 3.13
 
       - name: Prepare System
         run: |
@@ -39,6 +60,7 @@ jobs:
 
 
   run-tests-master:
+    needs: mypy-check
     runs-on: ${{ matrix.os }}
     if: (github.ref == 'refs/heads/master') || (github.event_name == 'pull_request') # We only run these tests on master or in pull-requests
     strategy:
@@ -66,7 +88,7 @@ jobs:
             pysmt_solver: z3
 
     env:
-      PYTHON_VERSION: 3.8
+      PYTHON_VERSION: 3.13
       PYSMT_SOLVER: ${{ matrix.pysmt_solver }}
       AGENT_OS: ${{ matrix.os }}
       PYSMT_CYTHON: ${{ matrix.pysmt_cython }}
@@ -74,12 +96,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 #v4.1.1
 
       - name: Set up Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236 #v4.7.1
         with:
-          python-version: 3.8
+          python-version: 3.13
 
       - name: Prepare System
         run: |
@@ -97,21 +119,21 @@ jobs:
 
     steps:
     - name: Checkout repo
-      uses: actions/checkout@master
+      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 #v4.1.1
       with:
         fetch-depth: 0
 
-    - name: Set up Python 3.8
-      uses: actions/setup-python@v1
+    - name: Set up Python 3.13
+      uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236 #v4.7.1
       with:
-        python-version: 3.8
+        python-version: 3.13
 
     - name: Make distrib
       run: |
-        python3 -m pip install wheel
+        python3 -m pip install wheel setuptools
         bash make_distrib.sh
 
     - name: Upload to PyPI
-      uses: pypa/gh-action-pypi-publish@master
+      uses: pypa/gh-action-pypi-publish@release/v1
       with:
         password: ${{ secrets.PYPI_API_TOKEN }}

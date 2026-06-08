@@ -20,14 +20,20 @@
 import sys
 import argparse
 from warnings import warn
+from io import StringIO
+from typing import Any, List
 
-from pysmt import git_version
+import pysmt.solvers
+from pysmt import __version__
 from pysmt.shortcuts import *
-from pysmt.typing import INT, REAL, BOOL, BVType, BV32
-
+from pysmt.logics import PYSMT_LOGICS
 from pysmt.smtlib.parser import SmtLibParser
-from pysmt.smtlib.script import evaluate_command
-from pysmt.smtlib.commands import CHECK_SAT, GET_VALUE
+from pysmt.smtlib.script import SmtLibCommand, InterpreterOMT, InterpreterSMT
+from pysmt.smtlib.commands import CHECK_SAT, GET_VALUE, GET_OBJECTIVES, ECHO
+from pysmt.solvers.smtlib import SmtLibSolver
+from pysmt.typing import INT, REAL, BOOL, BVType, BV32
+# assert done to use variables for handier export
+assert INT or REAL or BOOL or BVType or BV32 # type: ignore[truthy-function]
 
 welcome_msg = \
 """Welcome to pySMT!!!
@@ -57,18 +63,19 @@ Happy Solving!
 
 class PysmtShell(object):
 
-    def __init__(self, argv):
+    def __init__(self, argv: List[str]):
         self.env = get_env()
         self.solvers = list(self.env.factory.all_solvers().keys())
+        self.optimizers = list(self.env.factory.all_optimizers().keys())
         self.parser = self.get_parser()
         self.args = self.parser.parse_args(argv)
 
 
-    def get_parser(self):
+    def get_parser(self) ->     argparse.ArgumentParser:
         parser = argparse.ArgumentParser(description="Command-line interface " \
                                          "for pySMT problems")
         parser.add_argument('--version', action='version',
-                        version='%(prog)s {version}'.format(version=git_version()))
+                        version='%(prog)s {version}'.format(version=__version__))
         parser.add_argument('--file', '-f', metavar='filename', type=str,
                             help='A script file to read from instead of stdin')
 
@@ -80,6 +87,14 @@ class PysmtShell(object):
                             choices=['auto'] + self.solvers,
                             default=None,
                             help='The solver to use (default: auto)')
+        parser.add_argument('--optimizer', '-o', metavar='opt_name', type=str,
+                            choices=['auto'] + self.optimizers,
+                            default=None,
+                            help='The OMT optimizer to use (default: auto)')
+        parser.add_argument('--logic', '-l', metavar='logic_name', type=str,
+                            choices=['auto'] + [str(l) for l in PYSMT_LOGICS],
+                            default=None,
+                            help='The logic to use for solver/optimizer selection (default: auto)')
         return parser
 
 
@@ -87,7 +102,7 @@ class PysmtShell(object):
         # Enable infix notation in Interactive mode
         get_env().enable_infix_notation = True
         try:
-            import IPython
+            import IPython # type: ignore
             print(welcome_msg)
             IPython.embed()
         except ImportError:
@@ -95,31 +110,57 @@ class PysmtShell(object):
             code.interact(welcome_msg)
 
 
-    def print_result(self, cmd, result):
+    def _print(self, val: str, stream_out: StringIO):
+        stream_out.write(val)
+        stream_out.write("\n")
+        stream_out.flush()
+
+
+    def print_result(self, stream_out: StringIO, cmd: SmtLibCommand, result: Any):
         name, _ = cmd
-        if name == CHECK_SAT:
+        if name == ECHO:
+            self._print(result, stream_out)
+        elif name == CHECK_SAT:
             if result == True:
-                print("sat")
+                self._print("sat", stream_out)
             else:
-                print("unsat")
+                self._print("unsat", stream_out)
         elif name == GET_VALUE:
-            print("(")
+            self._print("(", stream_out)
             for k, r in result.items():
-                print("  (%s %s)" % (k,r))
-            print(")")
+                self._print("  (%s %s)" % (k,r), stream_out)
+            self._print(")", stream_out)
+        elif name == GET_OBJECTIVES:
+            self._print("(objectives", stream_out)
+            for r in result:
+                self._print("  (%s %s)" % (r[0], r[1]), stream_out)
+            self._print(")", stream_out)
 
 
-    def smtlib_solver(self, stream):
+    def smtlib_solver(self, stream_in: StringIO, stream_out: StringIO):
         smt_parser = SmtLibParser()
-        name = self.args.solver
-        if name == "auto":
-            solver = Solver()
-        else:
-            solver = Solver(name=name)
+        s_name = self.args.solver
+        opt_name = self.args.optimizer
+        logic = self.args.logic
+        if logic == "auto":
+            logic = None
 
-        for cmd in smt_parser.get_command_generator(stream):
-            r = evaluate_command(cmd, solver)
-            self.print_result(cmd, r)
+        if opt_name is not None:
+            if opt_name == "auto":
+                solver: "pysmt.solvers.solver.Solver" = Optimizer(logic=logic)
+            else:
+                solver = Optimizer(name=opt_name, logic=logic)
+            inter: InterpreterSMT = InterpreterOMT()
+        else:
+            if s_name == "auto":
+                solver = Solver(logic=logic)
+            else:
+                solver = Solver(name=s_name, logic=logic)
+            inter = InterpreterSMT()
+        for cmd in smt_parser.get_command_generator(stream_in):
+            assert isinstance(solver, SmtLibSolver)
+            r = inter.evaluate(cmd, solver)
+            self.print_result(stream_out, cmd, r)
 
 
     def main(self):
@@ -131,10 +172,12 @@ class PysmtShell(object):
                 warn("The solver option will be ignored in interactive mode")
             self.interactive()
         else:
-            input_stream = sys.stdin
-            if self.args.file is not None:
-                input_stream = open(self.args.file, "r")
-            self.smtlib_solver(input_stream)
+            if self.args.file is None:
+                self.smtlib_solver(sys.stdin, sys.stdout)
+            else:
+                with open(self.args.file, "r") as input_stream:
+                    self.smtlib_solver(input_stream, sys.stdout)
+
 
 def main_interactive():
     shell = PysmtShell(sys.argv[1:])

@@ -18,6 +18,7 @@
 """This module contains all custom exceptions of pySMT."""
 
 import pysmt.operators as op
+from typing import Optional, Tuple
 
 
 class PysmtException(Exception):
@@ -134,7 +135,7 @@ class PysmtTypeError(PysmtException, TypeError):
     pass
 
 class PysmtSyntaxError(PysmtException, SyntaxError):
-    def __init__(self, message, pos_info=None):
+    def __init__(self, message: str, pos_info: Optional[Tuple[int, int]]=None):
         super(PysmtSyntaxError, self).__init__(message)
         self.pos_info = pos_info
         self.message = message
@@ -148,3 +149,48 @@ class PysmtSyntaxError(PysmtException, SyntaxError):
 
 class PysmtIOError(PysmtException, IOError):
     pass
+
+class PysmtInfinityError(PysmtException):
+    """Infinite value in expressions."""
+    pass
+
+class PysmtInfinitesimalError(PysmtException):
+    """Infinite value in expressions."""
+    pass
+
+class PysmtUnboundedOptimizationError(PysmtException):
+    """Infinite optimal value in optimization."""
+    pass
+
+class GoalNotSupportedError(PysmtException):
+    """
+    Goal not supported by the solver.
+
+    The possible modes are the optimization modes, in case a specific goal is
+    not supported by a specific mode.
+    The possible modes are:
+    - basic
+    - boxed
+    - lexicographic
+    - pareto
+    """
+    def __init__(self, solver, goal, mode=None):
+        self._solver = solver
+        self._goal = goal
+        self._mode = mode
+
+    @property
+    def solver(self):
+        return self._solver
+
+    @property
+    def goal(self):
+        return self._goal
+
+    @property
+    def mode(self):
+        return self._mode
+
+    def __str__(self):
+        mode_str = (" in mode '%s'" % self.mode) if self.mode else ""
+        return "Optimizer '%s' does not support goal '%s'%s" % tuple(map(str, (type(self.solver).__name__, self.goal, mode_str)))

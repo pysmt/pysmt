@@ -1,0 +1,30 @@
+(set-option :produce-models true)
+
+(declare-fun A () Bool)
+(declare-fun B () Bool)
+(declare-fun C () Bool)
+(declare-fun D () Bool)
+(declare-fun E () Bool)
+(declare-fun F () Bool)
+(declare-fun G () Bool)
+
+
+(assert (or A B))
+(assert (or B C))
+(assert (or C E))
+(assert (or C D))
+(assert (or E D))
+(assert (or E F))
+(assert (or D G))
+
+(assert-soft (not A))
+(assert-soft (not C))
+(assert-soft (not B))
+(assert-soft (not D))
+(assert-soft (not E))
+(assert-soft (not F))
+(assert-soft (not G))
+
+(check-sat)
+(get-objectives)
+(get-model)

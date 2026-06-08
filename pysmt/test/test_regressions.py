@@ -258,7 +258,7 @@ class TestRegressions(TestCase):
 
     def test_cnf_as_set(self):
         r = cnf_as_set(Symbol("x"))
-        self.assertTrue(type(r) == frozenset)
+        self.assertEqual(type(r), frozenset)
 
     def test_substitute_to_real(self):
         p = Symbol("p", INT)
@@ -397,7 +397,7 @@ class TestRegressions(TestCase):
 
     @skipIfSolverNotAvailable("z3")
     def test_z3_nary_back(self):
-        from z3 import Tactic
+        from z3 import Tactic # type: ignore[import]
         r = Symbol("r", REAL)
         s = Symbol("s", REAL)
         t = Symbol("t", REAL)
@@ -456,12 +456,19 @@ class TestRegressions(TestCase):
             self.assertEqual(ex.pos_info[1], 19)
 
     def test_parse_bvconst_width(self):
-        smtlib_input = "(assert (> #x10 #x10))"
+        smtlib_input = "(assert (bvugt #x10 #x10))"
         parser = SmtLibParser()
         buffer_ = StringIO(smtlib_input)
         expr = parser.get_script(buffer_).get_last_formula()
         const = expr.args()[0]
         self.assertEqual(const.bv_width(), 8, const.bv_width())
+
+    def test_parse_bvconst_type_check(self):
+        smtlib_input = "(assert (> #x10 #x10))"
+        parser = SmtLibParser()
+        buffer_ = StringIO(smtlib_input)
+        with self.assertRaises(PysmtTypeError):
+            _ = parser.get_script(buffer_).get_last_formula()
 
     def test_equality_typing(self):
         x = Symbol('x', BOOL)
@@ -557,7 +564,6 @@ class TestRegressions(TestCase):
         self.assertIn(Select(a, x), atoms)
         self.assertIn(p, atoms)
         self.assertIn(Equals(x, Int(1)), atoms)
-
 
     @skipIfSolverNotAvailable("yices")
     def test_yices_quantifier(self):

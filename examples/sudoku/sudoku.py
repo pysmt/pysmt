@@ -156,7 +156,7 @@ def main():
                         help='The sudoku base size', default=3)
 
     parser.add_argument('--solver', '-s', metavar='name', type=str,
-                        choices=['auto'] + env.factory.all_solvers().keys(),
+                        choices=['auto'] + list(env.factory.all_solvers().keys()),
                         default='auto',
                         help='The solver to use (default: auto)')
 
@@ -182,14 +182,14 @@ def main():
         constraints = read_constraints(args.problem)
         res = sudoku.solve(constraints)
         if res is None:
-            print "No solution exists"
+            print("No solution exists")
         else:
             for row in res:
-                print "\t".join(str(x) for x in row)
+                print("\t".join(str(x) for x in row))
     else:
-        print "No problem specified! Either use the gui.py script or pass" \
+        print("No problem specified! Either use the gui.py script or pass" \
             " a problem with --problem flag. Example problems are available" \
-            " in the problems/ folder."
+            " in the problems/ folder.")
 
 
 

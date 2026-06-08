@@ -32,7 +32,7 @@ class TestNIA(TestCase):
         # a = 5 / 2 = 2
         check = And(Equals(a, Div(i_5, i_2)))
         for sname in get_env().factory.all_solvers(logic=QF_NIA):
-            with Solver(name=sname) as s:
+            with Solver(name=sname, logic=QF_NIA) as s:
                 s.add_assertion(check)
                 c = s.solve()
                 self.assertTrue(c)
@@ -47,7 +47,7 @@ class TestNIA(TestCase):
         # a = 5 / (-2) = -2
         check = And(Equals(a, Div(i_5, m_2)))
         for sname in get_env().factory.all_solvers(logic=QF_NIA):
-            with Solver(name=sname) as s:
+            with Solver(name=sname, logic=QF_NIA) as s:
                 s.add_assertion(check)
                 c = s.solve()
                 self.assertTrue(c)
@@ -63,7 +63,7 @@ class TestNIA(TestCase):
         # a = -5 / 2 = -3
         check = And(Equals(a, Div(m_5, i_2)))
         for sname in get_env().factory.all_solvers(logic=QF_NIA):
-            with Solver(name=sname) as s:
+            with Solver(name=sname, logic=QF_NIA) as s:
                 s.add_assertion(check)
                 c = s.solve()
                 self.assertTrue(c)
@@ -79,7 +79,7 @@ class TestNIA(TestCase):
         # a = -5 / (-2) = 3
         check = And(Equals(a, Div(m_5, m_2)))
         for sname in get_env().factory.all_solvers(logic=QF_NIA):
-            with Solver(name=sname) as s:
+            with Solver(name=sname, logic=QF_NIA) as s:
                 s.add_assertion(check)
                 c = s.solve()
                 self.assertTrue(c)
@@ -96,7 +96,7 @@ class TestNIA(TestCase):
         # a > 6 & a/2 = 3
         check = And(GT(a, i_6), Equals(Div(a, i_2), i_3))
         for sname in get_env().factory.all_solvers(logic=QF_NIA):
-            with Solver(name=sname) as s:
+            with Solver(name=sname, logic=QF_NIA) as s:
                 s.add_assertion(check)
                 c = s.solve()
                 self.assertTrue(c)
@@ -113,7 +113,7 @@ class TestNIA(TestCase):
         # a > 6 & a / -2 = -3
         check = And(GT(a, i_6), Equals(Div(a, m_2), m_3))
         for sname in get_env().factory.all_solvers(logic=QF_NIA):
-            with Solver(name=sname) as s:
+            with Solver(name=sname, logic=QF_NIA) as s:
                 s.add_assertion(check)
                 c = s.solve()
                 self.assertTrue(c)
@@ -131,7 +131,7 @@ class TestNIA(TestCase):
         # a != -8 & a < -6 & a/2 = -4
         check = And(Not(Equals(a, m_8)), LT(a, m_6), Equals(Div(a, i_2), m_4))
         for sname in get_env().factory.all_solvers(logic=QF_NIA):
-            with Solver(name=sname) as s:
+            with Solver(name=sname, logic=QF_NIA) as s:
                 s.add_assertion(check)
                 c = s.solve()
                 self.assertTrue(c)
@@ -149,7 +149,7 @@ class TestNIA(TestCase):
         # a != -8 & a < -6 & a / -2 = 4
         check = And(Not(Equals(a, m_8)), LT(a, m_6), Equals(Div(a, m_2), i_4))
         for sname in get_env().factory.all_solvers(logic=QF_NIA):
-            with Solver(name=sname) as s:
+            with Solver(name=sname, logic=QF_NIA) as s:
                 s.add_assertion(check)
                 c = s.solve()
                 self.assertTrue(c)
@@ -165,7 +165,7 @@ class TestNIA(TestCase):
         # a > 0 & 5/a = 2
         check = And(GT(a, i_0), Equals(Div(i_5, a), i_2))
         for sname in get_env().factory.all_solvers(logic=QF_NIA):
-            with Solver(name=sname) as s:
+            with Solver(name=sname, logic=QF_NIA) as s:
                 s.add_assertion(check)
                 c = s.solve()
                 self.assertTrue(c)
@@ -183,7 +183,7 @@ class TestNIA(TestCase):
         check = And(Equals(a, i_5), GT(b, i_0),
                     Equals(Div(a, b), i_2))
         for sname in get_env().factory.all_solvers(logic=QF_NIA):
-            with Solver(name=sname) as s:
+            with Solver(name=sname, logic=QF_NIA) as s:
                 s.add_assertion(check)
                 c = s.solve()
                 self.assertTrue(c)

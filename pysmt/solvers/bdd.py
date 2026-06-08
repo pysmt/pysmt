@@ -18,7 +18,7 @@
 from pysmt.exceptions import SolverAPINotFound
 
 try:
-    import repycudd
+    import repycudd # type: ignore[import]
 except ImportError:
     raise SolverAPINotFound
 

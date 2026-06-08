@@ -32,7 +32,7 @@ from pysmt.logics import LRA, LIA, UFLIRA
 class TestQE(TestCase):
 
     @skipIfNoSolverForLogic(LRA)
-    @skipIfNoQEForLogic(LRA)
+    @skipIfQENotAvailable('z3')
     def test_qe_eq(self):
         qe = QuantifierEliminator(logic=LRA)
 
@@ -49,7 +49,7 @@ class TestQE(TestCase):
         r1 = qe.eliminate_quantifiers(qf)
 
         try:
-            self.assertValid(Iff(r1, qf), logic=LRA,
+            self.assertValid(Iff(r1, qf), logic=LRA, solver_name="z3",
                              msg="The two formulas should be equivalent.")
         except SolverReturnedUnknownResultError:
             pass

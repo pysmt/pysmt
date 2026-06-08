@@ -62,7 +62,7 @@ class SmtLibOptions(SolverOptions):
 # EOC SmtLibOptions
 
 
-class SmtLibSolver(Solver):
+class SmtLibSolver(Solver): # TODO this class is defined twice in pysmt. Here and in solvers.smtlib.py
     """Wrapper for using a solver via textual SMT-LIB interface.
 
     The solver is launched in a subprocess using args as arguments of

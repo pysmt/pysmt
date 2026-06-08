@@ -18,7 +18,7 @@
 from collections import namedtuple
 
 import pysmt.logics
-from pysmt.environment import get_env
+from pysmt.environment import get_env, Environment
 from pysmt.shortcuts import (Symbol, Function,
                              Int, Real, FALSE, TRUE,
                              And, Iff, Or, Not, Implies, Ite,
@@ -42,21 +42,23 @@ from pysmt.shortcuts import (Symbol, Function,
 from pysmt.typing import REAL, BOOL, INT, BV8, BV16, BVType, ARRAY_INT_INT
 from pysmt.typing import FunctionType, ArrayType, STRING
 from pysmt.constants import Fraction
+from typing import List, Optional
 
 
 Example = namedtuple('Example',
                      ['hr', 'expr', 'is_valid', 'is_sat', 'logic'])
 
-SExample = namedtuple('SimpleExample',
+SimpleExample = namedtuple('SimpleExample',
                       ['expr', 'is_valid', 'is_sat', 'logic'])
 
 
-def get_full_example_formulae(environment=None):
+def get_full_example_formulae(environment: Optional[Environment]=None) -> List[Example]:
     """Return a list of Examples using the given environment."""
 
     if environment is None:
         environment = get_env()
 
+    assert environment is not None
     with environment:
         x = Symbol("x", BOOL)
         y = Symbol("y", BOOL)
@@ -864,6 +866,12 @@ def get_full_example_formulae(environment=None):
                     logic=pysmt.logics.get_logic_by_name("QF_AUFBVLIRA*")
                 ),
 
+            Example(hr="((Array{BV{8}, BV{8}}(0_8)[1_8 := 42_8] = abb) & (abb[1_8] = 42_8))",
+                    expr=And(Equals(Array(BV8, BV(0, 8), {BV(1, 8) : BV(42, 8)}), abb), Equals(Select(abb, BV(1, 8)), BV(42, 8))),
+                    is_valid=False,
+                    is_sat=True,
+                    logic=pysmt.logics.get_logic_by_name("QF_ABV*")
+                ),
 
             Example(hr="((a_arb_aii = Array{Array{Real, BV{8}}, Array{Int, Int}}(Array{Int, Int}(7))) -> (a_arb_aii[arb][42] = 7))",
                     expr=Implies(Equals(nested_a, Array(ArrayType(REAL, BV8),
@@ -989,13 +997,13 @@ def get_full_example_formulae(environment=None):
     return result
 
 
-def get_example_formulae(environment=None):
+def get_example_formulae(environment: Optional["pysmt.environment.Environment"]=None):
     """Generates a stream of SExample using the given environment."""
     for (hr, expr, is_valid, is_sat, logic) in get_full_example_formulae(environment):
-        yield SExample(expr, is_valid, is_sat, logic)
+        yield SimpleExample(expr, is_valid, is_sat, logic)
 
 
-def get_str_example_formulae(environment=None):
+def get_str_example_formulae(environment: Optional["pysmt.environment.Environment"]=None):
     """Returns a triple from each Example."""
     for (hr, expr, is_valid, is_sat, logic) in get_full_example_formulae(environment):
         yield (hr, expr, logic)

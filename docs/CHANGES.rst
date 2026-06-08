@@ -1,6 +1,44 @@
 Change Log
 ==========
 
+0.9.6: 2022-06-24 -- CVC5 and upgraded solvers
+----------------------------------------------
+
+**What's Changed**:
+
+* Fixed issue #613 by @mikand in https://github.com/pysmt/pysmt/pull/710 - Thanks @ekiwi for reporting
+* Fix missing file in Manifest by @marcogario in https://github.com/pysmt/pysmt/pull/718
+* Upgrade MathSAT to 5.6.6 by @marcogario in https://github.com/pysmt/pysmt/pull/720
+* CI: Avoid running on PR branch push by @marcogario in https://github.com/pysmt/pysmt/pull/721
+* Upgrade MathSAT to 5.6.7 by @marcogario in https://github.com/pysmt/pysmt/pull/719
+* Fix misspellings by @jayvdb in https://github.com/pysmt/pysmt/pull/724
+* Upgrade Z3 to 4.8.17 by @marcogario in https://github.com/pysmt/pysmt/pull/723
+* make FormulaContextualizer singleton in FormulaManager. by @enmag in https://github.com/pysmt/pysmt/pull/698
+* README: Remove interpolants from Z3 by @marcogario in https://github.com/pysmt/pysmt/pull/727
+* Parse logic str in Portfolio by @marcogario in https://github.com/pysmt/pysmt/pull/726
+* Make sudoku.py Python3 compatible by @akumm2k in https://github.com/pysmt/pysmt/pull/734
+* Fix the definition of BVXnor by @YikeZhou in https://github.com/pysmt/pysmt/pull/748
+* Deterministic get_closer_logic by @marcogario in https://github.com/pysmt/pysmt/pull/733
+* Grammar correction by @quantik-git in https://github.com/pysmt/pysmt/pull/750
+* example/parallel.py: typo fix by @tias in https://github.com/pysmt/pysmt/pull/755
+* Fix for pyximport by @marcogario in https://github.com/pysmt/pysmt/pull/766
+* Remove deprecated distutils by @marcogario in https://github.com/pysmt/pysmt/pull/765
+* Fixed removed imp module in Python 3.12 by @cybaol in https://github.com/pysmt/pysmt/pull/770
+* [Boolector] Add support for const arrays and boolean indices/elements by @nbailluet in https://github.com/pysmt/pysmt/pull/771
+* Update of all solvers  by @mikand in https://github.com/pysmt/pysmt/pull/761
+
+**New Contributors**
+
+* @jayvdb made their first contribution in https://github.com/pysmt/pysmt/pull/724
+* @akumm2k made their first contribution in https://github.com/pysmt/pysmt/pull/734
+* @YikeZhou made their first contribution in https://github.com/pysmt/pysmt/pull/748
+* @quantik-git made their first contribution in https://github.com/pysmt/pysmt/pull/750
+* @tias made their first contribution in https://github.com/pysmt/pysmt/pull/755
+* @cybaol made their first contribution in https://github.com/pysmt/pysmt/pull/770
+* @nbailluet made their first contribution in https://github.com/pysmt/pysmt/pull/771
+
+**Full Changelog**: https://github.com/pysmt/pysmt/compare/v0.9.5...v0.9.6
+
 0.9.5: 2022-05-28 -- 2 years of bugfixes
 ----------------------------------------
 
@@ -8,7 +46,7 @@ Intermediate release that collects 2 years of bugfixes and improvements.
 
 Python 2 was deprecated in version 0.9.0, and this version removes the use of compatible code for that version.
 
-## What's Changed
+**What's Changed**:
 
 * Add support for boolean-typed array in the AtomsOracle by @mikand in https://github.com/pysmt/pysmt/pull/644
 * Switched from nosetests to pytest by @mikand in https://github.com/pysmt/pysmt/pull/662

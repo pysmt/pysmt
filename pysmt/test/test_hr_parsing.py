@@ -18,8 +18,10 @@
 import unittest
 import tempfile, os
 
+from fractions import Fraction
+
 from pysmt.parsing import HRParser, parse
-from pysmt.shortcuts import Iff, Symbol, And, Or, LE, Real, Plus, Minus
+from pysmt.shortcuts import Iff, Symbol, And, Or, LE, GT, Real, Plus, Minus
 from pysmt.test.examples import get_example_formulae
 from pysmt.exceptions import NoSolverAvailableError
 from pysmt.test import TestCase
@@ -76,6 +78,7 @@ class TestHRParser(TestCase):
         p = HRParser()
         for (f, _, _, _) in get_example_formulae():
             s = f.serialize()
+            print(s)
             res = p.parse(s)
             check = (res == f)
             if not check:
@@ -84,6 +87,12 @@ class TestHRParser(TestCase):
                 except NoSolverAvailableError:
                     pass
 
+    def test_substring(self):
+        p = HRParser()
+        s=Symbol('Intake_Pressure', REAL)
+        res = p.parse('(Intake_Pressure > 91.988 & Intake_Pressure<=116.892)')
+        print(res.serialize())
+        self.assertEqual(res, And(GT(s, Real(Fraction("91.988"))), LE(s, Real(Fraction("116.892")))))
 
 
 if __name__ == '__main__':

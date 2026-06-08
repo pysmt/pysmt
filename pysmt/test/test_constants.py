@@ -37,11 +37,11 @@ class TestConstants(TestCase):
 
         self.assertTrue(is_python_integer(int(2)))
         if HAS_GMPY:
-            from gmpy2 import mpz
+            from gmpy2 import mpz # type: ignore[import]
             self.assertTrue(is_python_integer(mpz(1)))
 
         if HAS_GMPY:
-            from gmpy2 import mpz, mpq
+            from gmpy2 import mpz, mpq # type: ignore[import]
             self.assertTrue(is_python_rational(mpz(1)))
             self.assertTrue(is_python_rational(mpq(1)))
 

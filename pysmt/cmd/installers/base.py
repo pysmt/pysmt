@@ -22,8 +22,8 @@ import subprocess
 import urllib.request
 
 from contextlib import contextmanager
-from distutils import spawn
-from distutils.dist import Distribution
+from setuptools import Distribution
+from typing import Optional
 
 from urllib.error import HTTPError, URLError
 
@@ -41,7 +41,7 @@ def TemporaryPath(path):
 
 class SolverInstaller(object):
 
-    SOLVER = None
+    SOLVER: Optional[str] = None
 
     def __init__(self, install_dir, bindings_dir, solver_version,
                  archive_name=None, native_link=None, mirror_link=None):
@@ -99,7 +99,7 @@ class SolverInstaller(object):
 
     def download(self):
         """Downloads the archive from one of the mirrors"""
-        if not os.path.exists(self.archive_path):
+        if self.archive_path and not os.path.exists(self.archive_path):
             for turn in range(self.trials_404):
                 for i, link in enumerate(self.download_links()):
                     try:
@@ -116,15 +116,16 @@ class SolverInstaller(object):
 
     def unpack(self):
         """Unpacks the archive"""
-        path = self.archive_path
-        if path.endswith(".zip"):
-            SolverInstaller.unzip(path, directory=self.base_dir)
-        elif path.endswith(".tar.bz2"):
-            SolverInstaller.untar(path, directory=self.base_dir, mode='r:bz2')
-        elif path.endswith(".tar.gz"):
-            SolverInstaller.untar(path, directory=self.base_dir)
-        else:
-            raise ValueError("Unsupported archive for extraction: %s" % path)
+        if self.archive_path:
+            path = self.archive_path
+            if path.endswith(".zip"):
+                SolverInstaller.unzip(path, directory=self.base_dir)
+            elif path.endswith(".tar.bz2"):
+                SolverInstaller.untar(path, directory=self.base_dir, mode='r:bz2')
+            elif path.endswith(".tar.gz"):
+                SolverInstaller.untar(path, directory=self.base_dir)
+            else:
+                raise ValueError("Unsupported archive for extraction: %s" % path)
 
     def compile(self):
         """Performs the compilation if needed"""
@@ -232,6 +233,16 @@ class SolverInstaller(object):
 
 
     @staticmethod
+    def replace_in_file(file_path, old_str, new_str):
+        """Replaces all occurrences of old_str with new_str in the given file"""
+        with open(file_path, "r") as f:
+            content = f.read()
+        content = content.replace(old_str, new_str)
+        with open(file_path, "w") as f:
+            f.write(content)
+
+
+    @staticmethod
     def clean_dir(path):
         """Empties a (possibly non-existent) directory"""
         if os.path.exists(path):
@@ -304,14 +315,14 @@ class SolverInstaller(object):
         command = None
         for alt in alternatives:
             name = command_tplate % alt
-            command = spawn.find_executable(name)
+            command = shutil.which(name)
             if command is not None:
                 break
         return command
 
 
 def package_install_site(name='', user=False, plat_specific=False):
-    """pip-inspired, distutils-based method for fetching the
+    """pip-inspired method for fetching the
     default install location (site-packages path).
 
     Returns virtual environment or system site-packages, unless

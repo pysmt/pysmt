@@ -23,7 +23,7 @@ class YicesInstaller(SolverInstaller):
     SOLVER = "yices"
 
     def __init__(self, install_dir, bindings_dir, solver_version,
-                 mirror_link=None, yicespy_version='HEAD'):
+                 mirror_link=None, yices_api_version=None):
 
         archive_name = "Yices-%s.tar.gz" % (solver_version)
         native_link = "https://github.com/SRI-CSL/yices2/archive/{archive_name}"
@@ -34,29 +34,9 @@ class YicesInstaller(SolverInstaller):
                                  native_link=native_link,
                                  mirror_link=mirror_link)
 
+        self.yices_api_version = yices_api_version
         self.extract_path = os.path.join(self.base_dir, "yices2-Yices-%s" % self.solver_version)
-        self.yices_path = os.path.join(self.bindings_dir, "yices_bin")
-        self.yicespy_git_version = yicespy_version
-
-    def install_yicespy(self):
-        yicespy_git_version = self.yicespy_git_version
-        yicespy_base_name =  "yicespy"
-        yicespy_archive_name = "%s.tar.gz" % yicespy_base_name
-        yicespy_archive = os.path.join(self.base_dir, yicespy_archive_name)
-        yicespy_dir_path = os.path.join(self.base_dir,
-                                        yicespy_base_name + "-" + yicespy_git_version)
-
-        yicespy_download_link = "https://codeload.github.com/pysmt/yicespy/tar.gz/%s" % (yicespy_git_version)
-        SolverInstaller.do_download(yicespy_download_link, yicespy_archive)
-
-        SolverInstaller.clean_dir(yicespy_dir_path)
-
-        SolverInstaller.untar(yicespy_archive, self.base_dir)
-        # Build yicespy
-        SolverInstaller.run_python("setup.py --yices-dir=%s -- build_ext bdist_wheel --dist-dir=%s " % (self.yices_path, self.base_dir),
-                                   directory=yicespy_dir_path)
-        wheel_file = glob.glob(os.path.join(self.base_dir, "yicespy") + "*.whl")[0]
-        SolverInstaller.unzip(wheel_file, self.bindings_dir)
+        self.yices_path = os.path.join(self.base_dir, "yices_bin")
 
     def compile(self):
         # Prepare an empty folder for installing yices
@@ -69,8 +49,21 @@ class YicesInstaller(SolverInstaller):
         SolverInstaller.run("make", directory=self.extract_path)
         SolverInstaller.run("make install", directory=self.extract_path)
 
-        self.install_yicespy()
+        if self.yices_api_version is None:
+            SolverInstaller.run_python("-m pip install --upgrade --target=%s yices" % self.bindings_dir)
+        else:
+            SolverInstaller.run_python("-m pip install --upgrade --target=%s yices==%s" % (self.bindings_dir, self.yices_api_version))
 
+        libdir = os.path.join(self.yices_path, "lib")
+        yices_api_file = os.path.join(self.bindings_dir, "yices_api.py")
+        with open(yices_api_file, 'r') as f:
+            lines = f.readlines()
+            if "sys.stderr.write" in lines[215]:
+                lines.pop(215)
+            if "else" in lines[226]:
+                lines.insert(226, "    if _loadYicesFromPath('%s', libyicespath):\n        return\n" % libdir)
+        with open(yices_api_file, 'w') as f:
+            f.write("".join(lines))
 
     def get_installed_version(self):
         return self.get_installed_version_script(self.bindings_dir, "yices")

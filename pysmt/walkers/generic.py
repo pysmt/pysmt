@@ -18,16 +18,19 @@
 from functools import partial
 
 import sys
+from pysmt.fnode import FNode
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union, cast, Iterable
+
 if sys.version_info >= (3, 3):
-    from collections.abc import Iterable
+    from collections.abc import Iterable as CollectionsIterable
 else:
-    from collections import Iterable
+    from collections import Iterable as CollectionsIterable
 
 import pysmt.operators as op
 import pysmt.exceptions
 
 # NodeType to Function Name
-def nt_to_fun(o):
+def nt_to_fun(o: int) -> str:
     """Returns the name of the walk function for the given nodetype."""
     return "walk_%s" % op.op_to_str(o).lower()
 
@@ -35,7 +38,7 @@ class handles(object):
     """Decorator for walker functions.
 
     Use it by specifying the nodetypes that need to be handled by the
-    given function. It is possible to use groupd (e.g., op.RELATIONS)
+    given function. It is possible to use grouped (e.g., op.RELATIONS)
     directly. ::
 
       @handles(op.NODE, ...)
@@ -43,25 +46,28 @@ class handles(object):
          ...
 
     """
-    def __init__(self, *nodetypes):
-        if len(nodetypes) == 1 and isinstance(nodetypes[0], Iterable):
-            nodetypes = nodetypes[0]
-        self.nodetypes = list(nodetypes)
+    def __init__(self, *nodetypes: Union[int, Iterable[int]]):
+        if len(nodetypes) == 1 and isinstance(nodetypes[0], CollectionsIterable):
+            nt: Iterable[int] = nodetypes[0]
+        else:
+            assert all(isinstance(x, int) for x in nodetypes)
+            nt = cast(Tuple[int], nodetypes)
+        self.nodetypes: List[int] = list(cast(Iterable[int], nt))
 
-    def __call__(self, func):
+    def __call__(self, func: Callable) -> Callable:
         nodetypes = self.nodetypes
         if hasattr(func, "nodetypes"):
-            nodetypes = func.nodetypes + nodetypes
-        func.nodetypes = nodetypes
+            nodetypes = cast(List[int], getattr(func, "nodetypes")) + nodetypes
+        setattr(func, "nodetypes", nodetypes)
         return func
 
 class MetaNodeTypeHandler(type):
     """Metaclass used to intepret the nodehandler decorator. """
-    def __new__(cls, name, bases, dct):
+    def __new__(cls: Type["MetaNodeTypeHandler"], name: str, bases: Any, dct: Dict[str, Any]) -> Any:
         obj = type.__new__(cls, name, bases, dct)
-        for k,v in dct.items():
+        for k, v in dct.items():
             if hasattr(v, "nodetypes"):
-                obj.set_handler(v, *v.nodetypes)
+                cast("Walker", obj).set_handler(v, *cast(List[int], getattr(v, "nodetypes")))
         return obj
 
 
@@ -71,11 +77,11 @@ class Walker(object, metaclass=MetaNodeTypeHandler):
     Do not subclass directly, use DagWalker or TreeWalker, instead.
     """
 
-    def __init__(self, env=None):
+    def __init__(self, env: Optional["pysmt.environment.Environment"]=None):
         if env is None:
             import pysmt.environment
             env = pysmt.environment.get_env()
-        self.env = env
+        self.env: "pysmt.environment.Environment" = env
 
         self.functions = {}
         for o in op.all_types():
@@ -97,13 +103,13 @@ class Walker(object, metaclass=MetaNodeTypeHandler):
             self.functions[nt] = function
 
     @classmethod
-    def set_handler(cls, function, *node_types):
+    def set_handler(cls, function: Callable, *node_types):
         """Associate in cls the given function to the given node_types."""
         for nt in node_types:
             setattr(cls, nt_to_fun(nt), function)
 
     @classmethod
-    def super(cls, self, formula, *args, **kwargs):
+    def super(cls, self, formula: FNode, *args, **kwargs) -> FNode:
         """Call the correct walk_* function of cls for the given formula."""
         f = getattr(cls, nt_to_fun(formula.node_type()))
         return f(self, formula, *args, **kwargs)

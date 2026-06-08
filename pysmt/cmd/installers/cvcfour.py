@@ -58,9 +58,9 @@ class CVC4Installer(SolverInstaller):
 
         # Inject Python library and include paths into CMake because CVC4 search
         # system can be fooled in some systems
-        import distutils.sysconfig as sysconfig
+        import sysconfig
         PYTHON_LIBRARY = os.environ.get('PYSMT_PYTHON_LIBDIR')
-        PYTHON_INCLUDE_DIR = sysconfig.get_python_inc()
+        PYTHON_INCLUDE_DIR = sysconfig.get_path("include")
         PYTHON_EXECUTABLE = sys.executable
 
         CMAKE_OPTS = '-DPYTHON_INCLUDE_DIR=' + PYTHON_INCLUDE_DIR

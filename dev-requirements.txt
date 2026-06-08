@@ -1,2 +1,4 @@
+mypy
 pytest
 wheel
+types-setuptools

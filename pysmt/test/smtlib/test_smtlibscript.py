@@ -17,18 +17,19 @@
 #
 from io import StringIO
 
+from pysmt.environment import get_env
 import pysmt.smtlib.commands as smtcmd
 
 from pysmt.shortcuts import And, Or, Symbol, GT, Real, Not
 from pysmt.typing import REAL
 from pysmt.test import TestCase, main
 from pysmt.smtlib.script import SmtLibScript, SmtLibCommand
-from pysmt.smtlib.script import smtlibscript_from_formula, evaluate_command
+from pysmt.smtlib.script import smtlibscript_from_formula, InterpreterOMT
 from pysmt.smtlib.parser import get_formula_strict, get_formula, SmtLibParser
+from pysmt.solvers.options import SolverOptions
 from pysmt.solvers.smtlib import SmtLibIgnoreMixin
-from pysmt.logics import QF_UFLIRA
-from pysmt.exceptions import UndefinedLogicError, PysmtValueError
-
+from pysmt.logics import QF_UFLIRA, AUTO
+from pysmt.exceptions import UndefinedLogicError, PysmtValueError, PysmtTypeError
 
 
 class TestSmtLibScript(TestCase):
@@ -41,11 +42,11 @@ class TestSmtLibScript(TestCase):
         self.assertIsNotNone(SmtLibScript())
         self.assertTrue(len(script) > 0)
 
-        res = script.contains_command(smtcmd.SET_LOGIC)
-        self.assertTrue(res)
+        res_bool = script.contains_command(smtcmd.SET_LOGIC)
+        self.assertTrue(res_bool)
 
-        res = script.contains_command(smtcmd.CHECK_SAT)
-        self.assertFalse(res)
+        res_bool = script.contains_command(smtcmd.CHECK_SAT)
+        self.assertFalse(res_bool)
 
         res = script.count_command_occurrences(smtcmd.CHECK_SAT)
         self.assertEqual(res, 0, "Was expecting 0 occurrences of check-sat")
@@ -53,17 +54,23 @@ class TestSmtLibScript(TestCase):
         res = script.count_command_occurrences(smtcmd.SET_LOGIC)
         self.assertEqual(res, 1, "Was expecting 1 occurrences of set-logic")
 
-        res = script.filter_by_command_name([smtcmd.SET_LOGIC])
-        self.assertEqual(len(list(res)), 1)
+        res_it = script.filter_by_command_name([smtcmd.SET_LOGIC])
+        self.assertEqual(len(list(res_it)), 1)
 
 
     def test_declare_sort(self):
+        class SolverOptionsIgnore(SolverOptions):
+            def __call__(self, solver):
+                pass
+
         class SmtLibIgnore(SmtLibIgnoreMixin):
+            OptionsClass = SolverOptionsIgnore
+
             declare_sort_history = []
             def declare_sort(self, name, arity):
                 self.declare_sort_history.append((name, arity))
 
-        mock = SmtLibIgnore()
+        mock = SmtLibIgnore(get_env(), AUTO)
         parser = SmtLibParser()
         smtlib_script = '\n'.join(['(declare-sort s0 0)', \
                                    '(declare-sort s1 1)', \
@@ -175,12 +182,40 @@ class TestSmtLibScript(TestCase):
         # No exceptions are thrown
         self.assertEqual(smtlib_script.replace('var', '__var0'), script.commands[0].serialize_to_string())
 
+    def test_twice_fix_real(self):
+        smtlib_script = "\n".join([
+            '(declare-fun r () Real)',
+            '(assert (< (* 1 r) 0))',
+            '(assert (< 2 (* 1 r)))'
+        ])
+        stream = StringIO(smtlib_script)
+        parser = SmtLibParser()
+        _ = parser.get_script(stream)
+        # No exceptions are thrown
+        self.assertTrue(True)
+
+    def test_type_error(self):
+        smtlib_script = "\n".join([
+            "(declare-sort B 0)",
+            "(declare-const e B)",
+            "(declare-const x Bool)",
+            "(assert (= e x))",
+        ])
+        stream = StringIO(smtlib_script)
+        parser = SmtLibParser()
+        with self.assertRaises(PysmtTypeError):
+            _ = parser.get_script(stream)
 
     def test_evaluate_command(self):
-        class SmtLibIgnore(SmtLibIgnoreMixin):
-            pass
+        class SolverOptionsIgnore(SolverOptions):
+            def __call__(self, solver):
+                pass
 
-        mock = SmtLibIgnore()
+        class SmtLibIgnore(SmtLibIgnoreMixin):
+            OptionsClass = SolverOptionsIgnore
+
+        mock = SmtLibIgnore(get_env(), AUTO)
+        inter = InterpreterOMT()
         for cmd_name in [ smtcmd.SET_INFO,
                           smtcmd.ASSERT,
                           smtcmd.CHECK_SAT,
@@ -190,25 +225,30 @@ class TestSmtLibScript(TestCase):
                           smtcmd.PUSH,
                           smtcmd.POP]:
 
-            evaluate_command(SmtLibCommand(cmd_name, [None, None]),
+            inter.evaluate(SmtLibCommand(cmd_name, [None, None]),
                              solver=mock)
 
-        evaluate_command(SmtLibCommand(smtcmd.DECLARE_FUN,
+        inter.evaluate(SmtLibCommand(smtcmd.DECLARE_FUN,
                                        [None, None, None]),
                          solver=mock)
 
-        evaluate_command(SmtLibCommand(smtcmd.DEFINE_FUN,
+        inter.evaluate(SmtLibCommand(smtcmd.DEFINE_FUN,
                                        [None, None, None, None]),
                          solver=mock)
 
 
     def test_smtlibignore_mixin(self):
         """In SmtLibIgnoreMixin, all SMT-LIB methods return None."""
-        class SmtLibIgnore(SmtLibIgnoreMixin):
-            pass
 
-        solver = SmtLibIgnore()
-        self.assertIsNone(solver.set_logic(None))
+        class SolverOptionsIgnore(SolverOptions):
+            def __call__(self, solver):
+                pass
+
+        class SmtLibIgnore(SmtLibIgnoreMixin):
+            OptionsClass = SolverOptionsIgnore
+
+        solver = SmtLibIgnore(get_env(), AUTO)
+        self.assertTrue(solver.set_logic(None))
         self.assertIsNone(solver.declare_fun(None))
         self.assertIsNone(solver.declare_const(None))
         self.assertIsNone(solver.define_fun(None, None, None, None))
@@ -233,14 +273,19 @@ class TestSmtLibScript(TestCase):
         # Create a small file that tests all commands of smt-lib 2
         parser = SmtLibParser()
 
+        te = 0
         nie = 0
         for cmd in DEMO_SMTSCRIPT:
             try:
                 next(parser.get_command_generator(StringIO(cmd)))
             except NotImplementedError:
                 nie += 1
+            except PysmtTypeError:
+                te += 1
         # There are currently 3 not-implemented commands
         self.assertEqual(nie, 3)
+        # There is currently 1 type error
+        self.assertEqual(te, 1)
 
 DEMO_SMTSCRIPT = [ "(declare-fun a () Bool)",
                    "(declare-fun b () Bool)",

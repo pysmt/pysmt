@@ -21,7 +21,7 @@ The following is an example of configuration file.
 
 [global]
 use_infix_notation: true
-solver_preference_list: msat z3 cvc4 z3-smt mathsat-smt
+solver_preference_list: msat z3 cvc5 z3-smt mathsat-smt
 
 [smtlibsolver z3-smt]
 command: z3 -smt2 -in
@@ -122,7 +122,7 @@ def write_environment_configuration(config_filename, environment):
 
     config.add_section("global")
     inf = "true" if environment.enable_infix_notation else "false"
-    pl = " ".join(factory.solver_preference_list)
+    pl = " ".join(factory.preferences['Solver'])
     config.set("global", "use_infix_notation", inf)
     config.set("global", "solver_preference_list", pl)
 
