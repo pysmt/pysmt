@@ -528,7 +528,11 @@ class Z3Converter(Converter, DagWalker):
              z3.is_app_of(expr, z3.Z3_OP_BAND) or z3.is_app_of(expr, z3.Z3_OP_BOR) or
              z3.is_app_of(expr, z3.Z3_OP_BADD) or z3.is_app_of(expr, z3.Z3_OP_BMUL) or
              z3.is_app_of(expr, z3.Z3_OP_CONCAT) or
-             (len(args) == 3 and (z3.is_ite(expr) or z3.is_array_store(expr)))),\
+             z3.is_app_of(expr, z3.Z3_OP_SEQ_CONCAT) or
+             (len(args) == 3 and (z3.is_ite(expr) or z3.is_array_store(expr) or
+                                  z3.is_app_of(expr, z3.Z3_OP_SEQ_INDEX) or
+                                  z3.is_app_of(expr, z3.Z3_OP_SEQ_REPLACE) or
+                                  z3.is_app_of(expr, z3.Z3_OP_SEQ_EXTRACT)))),\
             "Unexpected n-ary term: %s" % expr
 
         res = None
