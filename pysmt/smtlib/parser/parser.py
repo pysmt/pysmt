@@ -434,7 +434,9 @@ class SmtLibParser(object):
             'str.prefixof': self._operator_adapter(mgr.StrPrefixOf),
             'str.suffixof': self._operator_adapter(mgr.StrSuffixOf),
             'str.to.int': self._operator_adapter(mgr.StrToInt),
+            'str.to_int': self._operator_adapter(mgr.StrToInt),
             'int.to.str': self._operator_adapter(mgr.IntToStr),
+            'str.from_int': self._operator_adapter(mgr.IntToStr),
             'bv2nat': self._operator_adapter(mgr.BVToNatural),
             # arrays
             'select': self._operator_adapter(mgr.Select),
