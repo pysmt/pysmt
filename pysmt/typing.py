@@ -93,6 +93,9 @@ class PySMTType(object):
     def is_string_type(self) -> bool:
         return False
 
+    def is_set_type(self) -> bool:
+        return False
+
     def is_function_type(self) -> bool:
         return False
 
@@ -235,6 +238,27 @@ class _BVType(PySMTType):
         return hash(self.width)
 
 # EOC _BVType
+
+
+class _SetType(PySMTType):
+
+    def __init__(self, elem_type: "PySMTType"):
+        decl = _TypeDecl("Set", 1)
+        PySMTType.__init__(self, decl=decl, args=(elem_type,))
+
+    @property
+    def elem_type(self) -> "PySMTType":
+        """Returns the element type.
+
+        E.g.,  A: (Set Int)
+        Returns IntType.
+        """
+        return assert_not_none(self.args)[0]
+
+    def is_set_type(self):
+        return True
+
+# EOC _SetType
 
 
 class _FunctionType(PySMTType):
@@ -384,6 +408,7 @@ class TypeManager(object):
         self._real: Optional[_RealType] = None
         self._int: Optional[_IntType] = None
         self._string: Optional[_StringType] = None
+        self._set_types: Dict[PySMTType, _SetType] = {}
         #
         self.load_global_types()
         self.environment = environment
@@ -463,6 +488,22 @@ class TypeManager(object):
             assert_are_types((index_type, elem_type), __name__)
             ty = _ArrayType(index_type, elem_type)
             self._array_types[key] = ty
+        return ty
+
+    def SetType(self, elem_type: "PySMTType") -> "PySMTType":
+        """Returns the singleton of the Set type with the given arguments.
+
+        This function takes care of building and registering the type
+        whenever needed. To see the functions provided by the type look at
+        _SetType
+        """
+        key = elem_type
+        try:
+            ty = self._set_types[key]
+        except KeyError:
+            assert_are_types((elem_type, ), __name__)
+            ty = _SetType(elem_type)
+            self._set_types[key] = ty
         return ty
 
     def Type(self, name: str, arity: int=0) -> Union["_TypeDecl", "PySMTType"]:
