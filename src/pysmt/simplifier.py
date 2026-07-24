@@ -17,7 +17,7 @@
 #
 import math
 from fractions import Fraction
-from typing import Any, Dict, List, Optional, Sequence, Union, cast
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 
 import pysmt
 import pysmt.operators as op
@@ -200,6 +200,17 @@ class Simplifier(pysmt.walkers.DagWalker):
 
         sl = args[0]
         sr = args[1]
+
+        if sl.is_fp_constant() and sr.is_fp_constant():
+            # The FloatingPoint theory has one semantic NaN value with many
+            # component encodings. SMT equality identifies all of those
+            # encodings, unlike fp.eq (which is false for every NaN).
+            left = cast(Tuple[int, int, int], sl.constant_value())
+            right = cast(Tuple[int, int, int], sr.constant_value())
+            left_is_nan = left[1] == 2 ** sl.fp_exp_width() - 1 and left[2] != 0
+            right_is_nan = right[1] == 2 ** sr.fp_exp_width() - 1 and right[2] != 0
+            if left_is_nan and right_is_nan:
+                return self.manager.TRUE()
 
         if sl.is_constant() and sr.is_constant():
             l = sl.constant_value()
@@ -1008,7 +1019,7 @@ class Simplifier(pysmt.walkers.DagWalker):
         s = args[0]
         if s.is_string_constant():
             try:
-                return self.manager.Int(int(s.constant_value()))
+                return self.manager.Int(int(cast(str, s.constant_value())))
             except ValueError:
                 return self.manager.Int(-1)
         return self.manager.StrToInt(s)
@@ -1074,6 +1085,17 @@ class Simplifier(pysmt.walkers.DagWalker):
                 return sl
 
         return self.manager.Div(sl, sr)
+
+    @handles(op.FP_OPERATORS)
+    @handles(op.FP_RELATIONS)
+    @handles(op.FP_RM_CONSTANTS)
+    def walk_fp(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
+        """Rebuild FP nodes without applying rounding-sensitive rewrites."""
+        return self.manager.create_node(
+            node_type=formula.node_type(),
+            args=tuple(args),
+            payload=formula._content.payload,
+        )
 
     @handles(op.SYMBOL)
     @handles(op.REAL_CONSTANT, op.INT_CONSTANT, op.BOOL_CONSTANT)

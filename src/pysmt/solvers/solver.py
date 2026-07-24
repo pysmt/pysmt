@@ -265,7 +265,9 @@ class Solver(object):
         """
         raise NotImplementedError
 
-    def get_py_value(self, formula: FNode) -> Union[str, bool, Fraction, int]:
+    def get_py_value(
+        self, formula: FNode
+    ) -> Union[str, bool, Fraction, int, Tuple[int, int, int]]:
         """Returns the value of formula as a python type.
 
         E.g., Bool(True) is translated into True.
@@ -277,7 +279,7 @@ class Solver(object):
 
     def get_py_values(
         self, formulae: Iterable[FNode]
-    ) -> Dict[FNode, Union[str, bool, Fraction, int]]:
+    ) -> Dict[FNode, Union[str, bool, Fraction, int, Tuple[int, int, int]]]:
         """Returns the values of the formulae as python types.
 
         Returns a dictionary mapping each formula to its python value.
@@ -528,7 +530,7 @@ class Model(object):
 
     def get_py_value(
         self, formula: FNode, model_completion: bool = True
-    ) -> Union[str, bool, Fraction, int]:
+    ) -> Union[str, bool, Fraction, int, Tuple[int, int, int]]:
         """Returns the value of formula as a python type.
 
         E.g., Bool(True) is translated into True.
@@ -540,7 +542,7 @@ class Model(object):
 
     def get_py_values(
         self, formulae: Iterable[FNode], model_completion: bool = True
-    ) -> Dict[FNode, Union[str, bool, Fraction, int]]:
+    ) -> Dict[FNode, Union[str, bool, Fraction, int, Tuple[int, int, int]]]:
         """Returns the values of the formulae as python types.
 
         Returns the values of the formulae as python types. in the

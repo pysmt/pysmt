@@ -73,6 +73,11 @@ class EagerModel(Model):
                 value = mgr.Int(0)
             elif s.symbol_type().is_bv_type():
                 value = mgr.BVZero(s.bv_width())
+            elif s.symbol_type().is_fp_type():
+                fp_type = s.symbol_type()
+                value = mgr.FPPlusZero(fp_type.exponent_size, fp_type.significand_size)
+            elif s.symbol_type().is_rm_type():
+                value = mgr.RNE()
             else:
                 raise PysmtTypeError("Unhandled type for %s: %s" % (s, s.symbol_type()))
 

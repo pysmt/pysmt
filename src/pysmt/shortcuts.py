@@ -64,10 +64,27 @@ import pysmt.smtlib.script
 import pysmt.typing as types
 
 # Import types from shortcuts
-from pysmt.typing import BOOL, INT, REAL, ArrayType, BVType, FunctionType, Type
+from pysmt.typing import (
+    BOOL,
+    FLOAT16,
+    FLOAT32,
+    FLOAT64,
+    FLOAT128,
+    INT,
+    REAL,
+    RM,
+    ArrayType,
+    BVType,
+    FPType,
+    FunctionType,
+    RMType,
+    Type,
+)
 
 # These are to avoid "unused" linting error on exported classes
 assert INT or BOOL or REAL or BVType or FunctionType or ArrayType or Type  # type: ignore[truthy-function]
+assert FPType or RMType  # type: ignore[truthy-function]
+assert RM or FLOAT16 or FLOAT32 or FLOAT64 or FLOAT128
 
 
 def get_env() -> pysmt.environment.Environment:
@@ -847,6 +864,237 @@ def BVToNatural(formula: FNode) -> FNode:
     :rtype: FNode
     """
     return get_env().formula_manager.BVToNatural(formula)
+
+
+#
+# Floating-Point
+#
+def FP(sign: FNode, exponent: FNode, significand: FNode) -> FNode:
+    """Build an FP term from its sign, exponent, and significand components."""
+    return get_env().formula_manager.FP(sign, exponent, significand)
+
+
+def FPPlusZero(exponent_size: int, significand_size: int) -> FNode:
+    """Return positive zero in the requested FP format."""
+    return get_env().formula_manager.FPPlusZero(exponent_size, significand_size)
+
+
+def FPMinusZero(exponent_size: int, significand_size: int) -> FNode:
+    """Return negative zero in the requested FP format."""
+    return get_env().formula_manager.FPMinusZero(exponent_size, significand_size)
+
+
+def FPPlusInfinity(exponent_size: int, significand_size: int) -> FNode:
+    """Return positive infinity in the requested FP format."""
+    return get_env().formula_manager.FPPlusInfinity(exponent_size, significand_size)
+
+
+def FPMinusInfinity(exponent_size: int, significand_size: int) -> FNode:
+    """Return negative infinity in the requested FP format."""
+    return get_env().formula_manager.FPMinusInfinity(exponent_size, significand_size)
+
+
+def FPNaN(exponent_size: int, significand_size: int) -> FNode:
+    """Return a canonical NaN in the requested FP format."""
+    return get_env().formula_manager.FPNaN(exponent_size, significand_size)
+
+
+def RNE() -> FNode:
+    """Return roundNearestTiesToEven."""
+    return get_env().formula_manager.RNE()
+
+
+def RNA() -> FNode:
+    """Return roundNearestTiesToAway."""
+    return get_env().formula_manager.RNA()
+
+
+def RTP() -> FNode:
+    """Return roundTowardPositive."""
+    return get_env().formula_manager.RTP()
+
+
+def RTN() -> FNode:
+    """Return roundTowardNegative."""
+    return get_env().formula_manager.RTN()
+
+
+def RTZ() -> FNode:
+    """Return roundTowardZero."""
+    return get_env().formula_manager.RTZ()
+
+
+def FPAbs(formula: FNode) -> FNode:
+    """Return the absolute value of an FP term."""
+    return get_env().formula_manager.FPAbs(formula)
+
+
+def FPNeg(formula: FNode) -> FNode:
+    """Return the negation of an FP term."""
+    return get_env().formula_manager.FPNeg(formula)
+
+
+def FPSqrt(rounding_mode: FNode, formula: FNode) -> FNode:
+    """Return the square root of an FP term."""
+    return get_env().formula_manager.FPSqrt(rounding_mode, formula)
+
+
+def FPRoundToIntegral(rounding_mode: FNode, formula: FNode) -> FNode:
+    """Round an FP term to an integral FP value."""
+    return get_env().formula_manager.FPRoundToIntegral(rounding_mode, formula)
+
+
+def FPAdd(rounding_mode: FNode, left: FNode, right: FNode) -> FNode:
+    """Return the rounded sum of two FP terms."""
+    return get_env().formula_manager.FPAdd(rounding_mode, left, right)
+
+
+def FPSub(rounding_mode: FNode, left: FNode, right: FNode) -> FNode:
+    """Return the rounded difference of two FP terms."""
+    return get_env().formula_manager.FPSub(rounding_mode, left, right)
+
+
+def FPMul(rounding_mode: FNode, left: FNode, right: FNode) -> FNode:
+    """Return the rounded product of two FP terms."""
+    return get_env().formula_manager.FPMul(rounding_mode, left, right)
+
+
+def FPDiv(rounding_mode: FNode, left: FNode, right: FNode) -> FNode:
+    """Return the rounded quotient of two FP terms."""
+    return get_env().formula_manager.FPDiv(rounding_mode, left, right)
+
+
+def FPFMA(rounding_mode: FNode, first: FNode, second: FNode, third: FNode) -> FNode:
+    """Return the fused multiply-add of three FP terms."""
+    return get_env().formula_manager.FPFMA(rounding_mode, first, second, third)
+
+
+def FPRem(left: FNode, right: FNode) -> FNode:
+    """Return the IEEE remainder of two FP terms."""
+    return get_env().formula_manager.FPRem(left, right)
+
+
+def FPMin(left: FNode, right: FNode) -> FNode:
+    """Return the minimum of two FP terms."""
+    return get_env().formula_manager.FPMin(left, right)
+
+
+def FPMax(left: FNode, right: FNode) -> FNode:
+    """Return the maximum of two FP terms."""
+    return get_env().formula_manager.FPMax(left, right)
+
+
+def FPLEq(left: FNode, right: FNode) -> FNode:
+    """Return the FP less-than-or-equal predicate."""
+    return get_env().formula_manager.FPLEq(left, right)
+
+
+def FPLt(left: FNode, right: FNode) -> FNode:
+    """Return the FP less-than predicate."""
+    return get_env().formula_manager.FPLt(left, right)
+
+
+def FPGEq(left: FNode, right: FNode) -> FNode:
+    """Return the FP greater-than-or-equal predicate."""
+    return get_env().formula_manager.FPGEq(left, right)
+
+
+def FPGt(left: FNode, right: FNode) -> FNode:
+    """Return the FP greater-than predicate."""
+    return get_env().formula_manager.FPGt(left, right)
+
+
+def FPEq(left: FNode, right: FNode) -> FNode:
+    """Return the IEEE FP equality predicate."""
+    return get_env().formula_manager.FPEq(left, right)
+
+
+def FPIsNormal(formula: FNode) -> FNode:
+    """Return whether an FP term is normal."""
+    return get_env().formula_manager.FPIsNormal(formula)
+
+
+def FPIsSubnormal(formula: FNode) -> FNode:
+    """Return whether an FP term is subnormal."""
+    return get_env().formula_manager.FPIsSubnormal(formula)
+
+
+def FPIsZero(formula: FNode) -> FNode:
+    """Return whether an FP term is positive or negative zero."""
+    return get_env().formula_manager.FPIsZero(formula)
+
+
+def FPIsInfinite(formula: FNode) -> FNode:
+    """Return whether an FP term is infinite."""
+    return get_env().formula_manager.FPIsInfinite(formula)
+
+
+def FPIsNaN(formula: FNode) -> FNode:
+    """Return whether an FP term is NaN."""
+    return get_env().formula_manager.FPIsNaN(formula)
+
+
+def FPIsNegative(formula: FNode) -> FNode:
+    """Return whether an FP term is negative."""
+    return get_env().formula_manager.FPIsNegative(formula)
+
+
+def FPIsPositive(formula: FNode) -> FNode:
+    """Return whether an FP term is positive."""
+    return get_env().formula_manager.FPIsPositive(formula)
+
+
+def FPFromIEEEBV(formula: FNode, exponent_size: int, significand_size: int) -> FNode:
+    """Interpret an IEEE interchange-format bit-vector as an FP term."""
+    return get_env().formula_manager.FPFromIEEEBV(
+        formula, exponent_size, significand_size
+    )
+
+
+def FPToFP(
+    rounding_mode: FNode, formula: FNode, exponent_size: int, significand_size: int
+) -> FNode:
+    """Convert an FP, Real, or signed bit-vector term to an FP format."""
+    return get_env().formula_manager.FPToFP(
+        rounding_mode, formula, exponent_size, significand_size
+    )
+
+
+def FPToFPUnsigned(
+    rounding_mode: FNode, formula: FNode, exponent_size: int, significand_size: int
+) -> FNode:
+    """Convert an unsigned bit-vector term to an FP format."""
+    return get_env().formula_manager.FPToFPUnsigned(
+        rounding_mode, formula, exponent_size, significand_size
+    )
+
+
+def FPToUBV(rounding_mode: FNode, formula: FNode, width: int) -> FNode:
+    """Convert an FP term to an unsigned bit-vector."""
+    return get_env().formula_manager.FPToUBV(rounding_mode, formula, width)
+
+
+def FPToSBV(rounding_mode: FNode, formula: FNode, width: int) -> FNode:
+    """Convert an FP term to a signed bit-vector."""
+    return get_env().formula_manager.FPToSBV(rounding_mode, formula, width)
+
+
+def FPToReal(formula: FNode) -> FNode:
+    """Convert a finite FP term to a Real term."""
+    return get_env().formula_manager.FPToReal(formula)
+
+
+# Compatibility spellings from the original FP pull request.
+FPPositiveZero = FPPlusZero
+FPNegativeZero = FPMinusZero
+FPPositiveInfinity = FPPlusInfinity
+FPNegativeInfinity = FPMinusInfinity
+FPRNE, FPRNA, FPRTP, FPRTN, FPRTZ = RNE, RNA, RTP, RTN, RTZ
+FPLEQ = FPLEq
+FPLT = FPLt
+FPGEQ = FPGEq
+FPGT = FPGt
+FPEQ = FPEq
 
 
 # Strings

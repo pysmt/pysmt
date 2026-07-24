@@ -24,6 +24,51 @@ from pysmt.smtlib.annotations import Annotations
 from pysmt.utils import quote
 from pysmt.walkers import DagWalker, TreeWalker, handles
 
+FP_SMTLIB_NAMES = {
+    op.FP_FROM_COMPONENTS: "fp",
+    op.FP_ABS: "fp.abs",
+    op.FP_NEG: "fp.neg",
+    op.FP_SQRT: "fp.sqrt",
+    op.FP_ROUND_TO_INTEGRAL: "fp.roundToIntegral",
+    op.FP_ADD: "fp.add",
+    op.FP_SUB: "fp.sub",
+    op.FP_MUL: "fp.mul",
+    op.FP_DIV: "fp.div",
+    op.FP_FMA: "fp.fma",
+    op.FP_REM: "fp.rem",
+    op.FP_MIN: "fp.min",
+    op.FP_MAX: "fp.max",
+    op.FP_LEQ: "fp.leq",
+    op.FP_LT: "fp.lt",
+    op.FP_EQ: "fp.eq",
+    op.FP_IS_NORMAL: "fp.isNormal",
+    op.FP_IS_SUBNORMAL: "fp.isSubnormal",
+    op.FP_IS_ZERO: "fp.isZero",
+    op.FP_IS_INFINITE: "fp.isInfinite",
+    op.FP_IS_NAN: "fp.isNaN",
+    op.FP_IS_NEGATIVE: "fp.isNegative",
+    op.FP_IS_POSITIVE: "fp.isPositive",
+    op.FP_TO_REAL: "fp.to_real",
+}
+
+FP_RM_NAMES = {
+    op.FP_RNE: "RNE",
+    op.FP_RNA: "RNA",
+    op.FP_RTP: "RTP",
+    op.FP_RTN: "RTN",
+    op.FP_RTZ: "RTZ",
+}
+
+FP_INDEXED_FORMAT_OPERATORS = frozenset(
+    [op.FP_FROM_IEEE_BV, op.FP_TO_FP, op.FP_TO_FP_UNSIGNED]
+)
+FP_INDEXED_BV_OPERATORS = frozenset([op.FP_TO_UBV, op.FP_TO_SBV])
+FP_NAMED_OPERATORS = (
+    (op.FP_OPERATORS | op.FP_RELATIONS)
+    - FP_INDEXED_FORMAT_OPERATORS
+    - FP_INDEXED_BV_OPERATORS
+)
+
 
 def write_annotations(f: Callable) -> Callable:
     def resf(self, formula, *args, **kwargs):
@@ -203,6 +248,38 @@ class SmtPrinter(TreeWalker):
 
     def walk_array_store(self, formula):
         return self.walk_nary(formula, "store")
+
+    @handles(FP_NAMED_OPERATORS)
+    def walk_fp_named(self, formula):
+        return self.walk_nary(formula, FP_SMTLIB_NAMES[formula.node_type()])
+
+    @handles(op.FP_RM_CONSTANTS)
+    @write_annotations
+    def walk_fp_rounding_mode(self, formula):
+        self.write(FP_RM_NAMES[formula.node_type()])
+
+    @handles(FP_INDEXED_FORMAT_OPERATORS)
+    @write_annotations
+    def walk_fp_format_conversion(self, formula):
+        exponent_size, significand_size = formula._content.payload
+        operator = (
+            "to_fp_unsigned" if formula.node_type() == op.FP_TO_FP_UNSIGNED else "to_fp"
+        )
+        self.write("((_ %s %d %d)" % (operator, exponent_size, significand_size))
+        for arg in formula.args():
+            self.write(" ")
+            yield arg
+        self.write(")")
+
+    @handles(FP_INDEXED_BV_OPERATORS)
+    @write_annotations
+    def walk_fp_bv_conversion(self, formula):
+        operator = "fp.to_ubv" if formula.node_type() == op.FP_TO_UBV else "fp.to_sbv"
+        self.write("((_ %s %d)" % (operator, formula._content.payload))
+        for arg in formula.args():
+            self.write(" ")
+            yield arg
+        self.write(")")
 
     @write_annotations
     def walk_symbol(self, formula):
@@ -594,6 +671,32 @@ class SmtDagPrinter(DagWalker):
 
     def walk_array_store(self, formula: FNode, args: List[str]) -> str:
         return self.walk_nary(formula, args, "store")
+
+    @handles(FP_NAMED_OPERATORS)
+    def walk_fp_named(self, formula: FNode, args: List[str]) -> str:
+        return self.walk_nary(formula, args, FP_SMTLIB_NAMES[formula.node_type()])
+
+    @handles(op.FP_RM_CONSTANTS)
+    @write_annotations_dag
+    def walk_fp_rounding_mode(self, formula: FNode, **kwargs) -> str:
+        return FP_RM_NAMES[formula.node_type()]
+
+    @handles(FP_INDEXED_FORMAT_OPERATORS)
+    def walk_fp_format_conversion(self, formula: FNode, args: List[str]) -> str:
+        exponent_size, significand_size = formula._content.payload
+        operator = (
+            "to_fp_unsigned" if formula.node_type() == op.FP_TO_FP_UNSIGNED else "to_fp"
+        )
+        return self.walk_nary(
+            formula, args, "(_ %s %d %d)" % (operator, exponent_size, significand_size)
+        )
+
+    @handles(FP_INDEXED_BV_OPERATORS)
+    def walk_fp_bv_conversion(self, formula: FNode, args: List[str]) -> str:
+        operator = "fp.to_ubv" if formula.node_type() == op.FP_TO_UBV else "fp.to_sbv"
+        return self.walk_nary(
+            formula, args, "(_ %s %d)" % (operator, formula._content.payload)
+        )
 
     @write_annotations_dag
     def walk_symbol(self, formula, **kwargs):

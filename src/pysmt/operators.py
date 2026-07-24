@@ -25,7 +25,7 @@ these operators.
 from itertools import chain
 from typing import List
 
-ALL_TYPES = list(range(0, 67))
+ALL_TYPES = list(range(0, 101))
 
 (
     FORALL,
@@ -106,7 +106,48 @@ ALL_TYPES = list(range(0, 67))
     ALGEBRAIC_CONSTANT,  # Algebraic Number (64)
     BV_TONATURAL,  # BV to Natural Conversion (65)
     TOINT,  # LIRA to_int() function, i.e. floor (66)
+    #
+    # FLOATING-POINT
+    #
+    FP_FROM_COMPONENTS,  # (fp sign exponent significand) (67)
+    FP_RNE,
+    FP_RNA,
+    FP_RTP,
+    FP_RTN,
+    FP_RTZ,  # Rounding modes (68-72)
+    FP_ABS,
+    FP_NEG,  # Unary operations (73-74)
+    FP_SQRT,
+    FP_ROUND_TO_INTEGRAL,  # Rounded unary operations (75-76)
+    FP_ADD,
+    FP_SUB,
+    FP_MUL,
+    FP_DIV,
+    FP_FMA,  # Rounded arithmetic (77-81)
+    FP_REM,
+    FP_MIN,
+    FP_MAX,  # Arithmetic (82-84)
+    FP_LEQ,
+    FP_LT,
+    FP_EQ,  # Comparisons (85-87)
+    FP_IS_NORMAL,
+    FP_IS_SUBNORMAL,
+    FP_IS_ZERO,  # Classification predicates (88-90)
+    FP_IS_INFINITE,
+    FP_IS_NAN,  # Classification predicates (91-92)
+    FP_IS_NEGATIVE,
+    FP_IS_POSITIVE,  # Sign predicates (93-94)
+    FP_FROM_IEEE_BV,  # ((_ to_fp eb sb) bv) (95)
+    FP_TO_FP,
+    FP_TO_FP_UNSIGNED,  # Conversions to FP (96-97)
+    FP_TO_UBV,
+    FP_TO_SBV,
+    FP_TO_REAL,  # Conversions from FP (98-100)
 ) = ALL_TYPES
+
+# Compatibility name used by the original floating-point PR.  The node is a
+# constructor over terms, not a leaf constant.
+FP_CONSTANT = FP_FROM_COMPONENTS
 
 QUANTIFIERS = frozenset([FORALL, EXISTS])
 
@@ -114,15 +155,20 @@ BOOL_CONNECTIVES = frozenset([AND, OR, NOT, IMPLIES, IFF])
 
 BOOL_OPERATORS = frozenset(QUANTIFIERS | BOOL_CONNECTIVES)
 
-CONSTANTS = frozenset(
-    [
-        BOOL_CONSTANT,
-        REAL_CONSTANT,
-        INT_CONSTANT,
-        BV_CONSTANT,
-        STR_CONSTANT,
-        ALGEBRAIC_CONSTANT,
-    ]
+FP_RM_CONSTANTS = frozenset([FP_RNE, FP_RNA, FP_RTP, FP_RTN, FP_RTZ])
+
+CONSTANTS = (
+    frozenset(
+        [
+            BOOL_CONSTANT,
+            REAL_CONSTANT,
+            INT_CONSTANT,
+            BV_CONSTANT,
+            STR_CONSTANT,
+            ALGEBRAIC_CONSTANT,
+        ]
+    )
+    | FP_RM_CONSTANTS
 )
 
 # Relations are predicates on theory atoms.
@@ -133,7 +179,24 @@ IRA_RELATIONS = frozenset([LE, LT])
 
 STR_RELATIONS = frozenset([STR_CONTAINS, STR_PREFIXOF, STR_SUFFIXOF])
 
-RELATIONS = frozenset((EQUALS,)) | BV_RELATIONS | IRA_RELATIONS | STR_RELATIONS
+FP_RELATIONS = frozenset(
+    [
+        FP_LEQ,
+        FP_LT,
+        FP_EQ,
+        FP_IS_NORMAL,
+        FP_IS_SUBNORMAL,
+        FP_IS_ZERO,
+        FP_IS_INFINITE,
+        FP_IS_NAN,
+        FP_IS_NEGATIVE,
+        FP_IS_POSITIVE,
+    ]
+)
+
+RELATIONS = (
+    frozenset((EQUALS,)) | BV_RELATIONS | IRA_RELATIONS | STR_RELATIONS | FP_RELATIONS
+)
 
 # Operators are functions that return a Theory object
 BV_OPERATORS = frozenset(
@@ -180,7 +243,33 @@ IRA_OPERATORS = frozenset([PLUS, MINUS, TIMES, TOREAL, TOINT, DIV, POW, BV_TONAT
 
 ARRAY_OPERATORS = frozenset([ARRAY_SELECT, ARRAY_STORE, ARRAY_VALUE])
 
-THEORY_OPERATORS = IRA_OPERATORS | BV_OPERATORS | ARRAY_OPERATORS | STR_OPERATORS
+FP_OPERATORS = frozenset(
+    [
+        FP_FROM_COMPONENTS,
+        FP_ABS,
+        FP_NEG,
+        FP_SQRT,
+        FP_ROUND_TO_INTEGRAL,
+        FP_ADD,
+        FP_SUB,
+        FP_MUL,
+        FP_DIV,
+        FP_FMA,
+        FP_REM,
+        FP_MIN,
+        FP_MAX,
+        FP_FROM_IEEE_BV,
+        FP_TO_FP,
+        FP_TO_FP_UNSIGNED,
+        FP_TO_UBV,
+        FP_TO_SBV,
+        FP_TO_REAL,
+    ]
+)
+
+THEORY_OPERATORS = (
+    IRA_OPERATORS | BV_OPERATORS | ARRAY_OPERATORS | STR_OPERATORS | FP_OPERATORS
+)
 
 CUSTOM_NODE_TYPES: List[int] = []
 
@@ -295,4 +384,38 @@ __OP_STR__ = {
     DIV: "DIV",
     POW: "POW",
     ALGEBRAIC_CONSTANT: "ALGEBRAIC_CONSTANT",
+    FP_FROM_COMPONENTS: "FP_FROM_COMPONENTS",
+    FP_RNE: "FP_RNE",
+    FP_RNA: "FP_RNA",
+    FP_RTP: "FP_RTP",
+    FP_RTN: "FP_RTN",
+    FP_RTZ: "FP_RTZ",
+    FP_ABS: "FP_ABS",
+    FP_NEG: "FP_NEG",
+    FP_SQRT: "FP_SQRT",
+    FP_ROUND_TO_INTEGRAL: "FP_ROUND_TO_INTEGRAL",
+    FP_ADD: "FP_ADD",
+    FP_SUB: "FP_SUB",
+    FP_MUL: "FP_MUL",
+    FP_DIV: "FP_DIV",
+    FP_FMA: "FP_FMA",
+    FP_REM: "FP_REM",
+    FP_MIN: "FP_MIN",
+    FP_MAX: "FP_MAX",
+    FP_LEQ: "FP_LEQ",
+    FP_LT: "FP_LT",
+    FP_EQ: "FP_EQ",
+    FP_IS_NORMAL: "FP_IS_NORMAL",
+    FP_IS_SUBNORMAL: "FP_IS_SUBNORMAL",
+    FP_IS_ZERO: "FP_IS_ZERO",
+    FP_IS_INFINITE: "FP_IS_INFINITE",
+    FP_IS_NAN: "FP_IS_NAN",
+    FP_IS_NEGATIVE: "FP_IS_NEGATIVE",
+    FP_IS_POSITIVE: "FP_IS_POSITIVE",
+    FP_FROM_IEEE_BV: "FP_FROM_IEEE_BV",
+    FP_TO_FP: "FP_TO_FP",
+    FP_TO_FP_UNSIGNED: "FP_TO_FP_UNSIGNED",
+    FP_TO_UBV: "FP_TO_UBV",
+    FP_TO_SBV: "FP_TO_SBV",
+    FP_TO_REAL: "FP_TO_REAL",
 }

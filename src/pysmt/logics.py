@@ -477,6 +477,14 @@ bitvectors.""",
     bit_vectors=True,
 )
 
+QF_FP = Logic(
+    name="QF_FP",
+    description="""Closed quantifier-free formulas over the theory of floating-point
+arithmetic.""",
+    quantifier_free=True,
+    floating_point=True,
+)
+
 BV = Logic(
     name="BV",
     description="""Closed formulas over the theory of fixed-size
@@ -714,6 +722,7 @@ SMTLIB2_LOGICS = frozenset(
         QF_ALIA,
         QF_AX,
         QF_BV,
+        QF_FP,
         QF_IDL,
         QF_LIA,
         QF_LRA,
@@ -759,6 +768,7 @@ PYSMT_LOGICS = frozenset(
         UFLRA,
         QF_BV,
         QF_UFBV,
+        QF_FP,
         QF_SLIA,
         QF_BV,
         QF_UFBV,
@@ -813,6 +823,7 @@ PYSMT_LOGICS = PYSMT_LOGICS | frozenset(ext_logics)
 PYSMT_QF_LOGICS = frozenset(_l for _l in PYSMT_LOGICS if _l.quantifier_free)
 
 BV_LOGICS = frozenset(_l for _l in PYSMT_LOGICS if _l.theory.bit_vectors)
+FP_LOGICS = frozenset(_l for _l in PYSMT_LOGICS if _l.theory.floating_point)
 ARRAYS_LOGICS = frozenset(_l for _l in PYSMT_LOGICS if _l.theory.arrays)
 ARRAYS_CONST_LOGICS = frozenset(_l for _l in PYSMT_LOGICS if _l.theory.arrays_const)
 

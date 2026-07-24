@@ -148,7 +148,7 @@ class YicesSolver(SmtLibBasicSolver):
         - set(
             l
             for l in pysmt.logics.PYSMT_QF_LOGICS
-            if not l.theory.linear or l.theory.strings
+            if (not l.theory.linear or l.theory.strings or l.theory.floating_point)
         )
     )
     OptionsClass = YicesOptions
