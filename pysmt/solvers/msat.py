@@ -30,8 +30,7 @@ import pysmt.operators as op
 from pysmt import typing as types
 from pysmt.solvers.solver import (IncrementalTrackingSolver, UnsatCoreSolver,
                                   Model, Converter, SolverOptions)
-from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
-from pysmt.utils import assert_not_none
+from pysmt.solvers.smtlib import SmtLibBasicSolver
 from pysmt.walkers import DagWalker
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               InternalSolverError,
@@ -46,6 +45,7 @@ from pysmt.fnode import FNode
 from pysmt.formula import FormulaManager
 from pysmt.typing import PySMTType
 
+
 class MSatEnv():
     """A wrapper for the msat_env object.
 
@@ -59,7 +59,7 @@ class MSatEnv():
     __slots__ = ['msat_env', '_msat_lib']
     __lib_name__ = "mathsat"
 
-    def __init__(self, msat_config: Optional[Any]=None):
+    def __init__(self, msat_config: Optional[Any] = None):
         self._msat_lib = MSATLibLoader(self.__class__.__lib_name__)
         self.msat_env = self._do_create_env(msat_config)
 
@@ -69,7 +69,7 @@ class MSatEnv():
     def __call__(self) -> Any:
         return self.msat_env
 
-    def _do_create_env(self, msat_config: Optional[Any]=None, msat_env: None=None) -> Any:
+    def _do_create_env(self, msat_config: Optional[Any] = None, msat_env: None = None) -> Any:
         return self._msat_lib.msat_create_env(msat_config, msat_env)
 
 
@@ -96,7 +96,7 @@ class MathSAT5Model(Model):
             self._msat_lib.msat_destroy_model(self.msat_model)
         del self.msat_env
 
-    def get_value(self, formula: FNode, model_completion: bool=True) -> FNode:
+    def get_value(self, formula: FNode, model_completion: bool = True) -> FNode:
         titem = self.converter.convert(formula)
         msat_res = self._msat_lib.msat_model_eval(self.msat_model, titem)
         if self._msat_lib.MSAT_ERROR_TERM(msat_res):
@@ -268,11 +268,11 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolv
 
     def _named_assertions_map(self):
         if self.options.unsat_cores_mode == "named":
-            return dict((t[0], (t[1],t[2])) for t in self.assertions)
+            return dict((t[0], (t[1], t[2])) for t in self.assertions)
         return None
 
     @clear_pending_pop
-    def _solve(self, assumptions: Optional[List[FNode]]=None) -> bool:
+    def _solve(self, assumptions: Optional[List[FNode]] = None) -> bool:
         res = None
         bool_ass = []
         other_ass = []
@@ -368,7 +368,7 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolv
         tvar = self.converter.convert(var)
         mval = self._msat_lib.MSAT_UNDEF
         if val is not None:
-            mval = self._msat_lib.MSAT_TRUE if val==True else self._msat_lib.MSAT_FALSE
+            mval = self._msat_lib.MSAT_TRUE if val is True else self._msat_lib.MSAT_FALSE
         self._msat_lib.msat_add_preferred_for_branching(self.msat_env(), tvar, mval)
         return
 
@@ -424,8 +424,8 @@ class MSatConverter(Converter, DagWalker):
         # Back Conversion
         self.back_memoization: Dict[Any, Optional[FNode]] = {}
         self.back_fun: Dict[Any, Callable[..., FNode]] = {
-            self._msat_lib.MSAT_TAG_TRUE: lambda term, args: self.mgr.TRUE(),
-            self._msat_lib.MSAT_TAG_FALSE:lambda term, args: self.mgr.FALSE(),
+            self._msat_lib.MSAT_TAG_TRUE:  lambda term, args: self.mgr.TRUE(),
+            self._msat_lib.MSAT_TAG_FALSE: lambda term, args: self.mgr.FALSE(),
             self._msat_lib.MSAT_TAG_AND: self._back_adapter(self.mgr.And),
             self._msat_lib.MSAT_TAG_OR:  self._back_adapter(self.mgr.Or),
             self._msat_lib.MSAT_TAG_NOT: self._back_adapter(self.mgr.Not),
@@ -441,35 +441,35 @@ class MSatConverter(Converter, DagWalker):
             self._msat_lib.MSAT_TAG_BV_UDIV: self._back_adapter(self.mgr.BVUDiv),
             self._msat_lib.MSAT_TAG_BV_UREM: self._back_adapter(self.mgr.BVURem),
             self._msat_lib.MSAT_TAG_BV_CONCAT: self._back_adapter(self.mgr.BVConcat),
-            self._msat_lib.MSAT_TAG_BV_OR: self._back_adapter(self.mgr.BVOr),
-            self._msat_lib.MSAT_TAG_BV_XOR:self._back_adapter(self.mgr.BVXor),
-            self._msat_lib.MSAT_TAG_BV_AND:self._back_adapter(self.mgr.BVAnd),
-            self._msat_lib.MSAT_TAG_BV_NOT:self._back_adapter(self.mgr.BVNot),
-            self._msat_lib.MSAT_TAG_BV_SUB:self._back_adapter(self.mgr.BVSub),
-            self._msat_lib.MSAT_TAG_BV_NEG:self._back_adapter(self.mgr.BVNeg),
-            self._msat_lib.MSAT_TAG_BV_SREM:self._back_adapter(self.mgr.BVSRem),
-            self._msat_lib.MSAT_TAG_BV_SDIV:self._back_adapter(self.mgr.BVSDiv),
-            self._msat_lib.MSAT_TAG_BV_ULT: self._back_adapter(self.mgr.BVULT),
-            self._msat_lib.MSAT_TAG_BV_SLT: self._back_adapter(self.mgr.BVSLT),
-            self._msat_lib.MSAT_TAG_BV_ULE: self._back_adapter(self.mgr.BVULE),
-            self._msat_lib.MSAT_TAG_BV_SLE: self._back_adapter(self.mgr.BVSLE),
+            self._msat_lib.MSAT_TAG_BV_OR:   self._back_adapter(self.mgr.BVOr),
+            self._msat_lib.MSAT_TAG_BV_XOR:  self._back_adapter(self.mgr.BVXor),
+            self._msat_lib.MSAT_TAG_BV_AND:  self._back_adapter(self.mgr.BVAnd),
+            self._msat_lib.MSAT_TAG_BV_NOT:  self._back_adapter(self.mgr.BVNot),
+            self._msat_lib.MSAT_TAG_BV_SUB:  self._back_adapter(self.mgr.BVSub),
+            self._msat_lib.MSAT_TAG_BV_NEG:  self._back_adapter(self.mgr.BVNeg),
+            self._msat_lib.MSAT_TAG_BV_SREM: self._back_adapter(self.mgr.BVSRem),
+            self._msat_lib.MSAT_TAG_BV_SDIV: self._back_adapter(self.mgr.BVSDiv),
+            self._msat_lib.MSAT_TAG_BV_ULT:  self._back_adapter(self.mgr.BVULT),
+            self._msat_lib.MSAT_TAG_BV_SLT:  self._back_adapter(self.mgr.BVSLT),
+            self._msat_lib.MSAT_TAG_BV_ULE:  self._back_adapter(self.mgr.BVULE),
+            self._msat_lib.MSAT_TAG_BV_SLE:  self._back_adapter(self.mgr.BVSLE),
             self._msat_lib.MSAT_TAG_BV_LSHL: self._back_adapter(self.mgr.BVLShl),
             self._msat_lib.MSAT_TAG_BV_LSHR: self._back_adapter(self.mgr.BVLShr),
             self._msat_lib.MSAT_TAG_BV_ASHR: self._back_adapter(self.mgr.BVAShr),
             self._msat_lib.MSAT_TAG_BV_COMP: self._back_adapter(self.mgr.BVComp),
-            self._msat_lib.MSAT_TAG_FLOOR: self._back_adapter(self.mgr.ToInt),
+            self._msat_lib.MSAT_TAG_FLOOR:   self._back_adapter(self.mgr.ToInt),
             self._msat_lib.MSAT_TAG_INT_FROM_UBV: self._back_adapter(self.mgr.BVToNatural),
-            self._msat_lib.MSAT_TAG_ARRAY_READ: self._back_adapter(self.mgr.Select),
+            self._msat_lib.MSAT_TAG_ARRAY_READ:  self._back_adapter(self.mgr.Select),
             self._msat_lib.MSAT_TAG_ARRAY_WRITE: self._back_adapter(self.mgr.Store),
             # Slightly more complex conversion
-            self._msat_lib.MSAT_TAG_BV_EXTRACT: self._back_bv_extract,
-            self._msat_lib.MSAT_TAG_BV_ZEXT: self._back_bv_zext,
-            self._msat_lib.MSAT_TAG_BV_SEXT: self._back_bv_sext,
-            self._msat_lib.MSAT_TAG_BV_ROL: self._back_bv_rol,
-            self._msat_lib.MSAT_TAG_BV_ROR: self._back_bv_ror,
+            self._msat_lib.MSAT_TAG_BV_EXTRACT:  self._back_bv_extract,
+            self._msat_lib.MSAT_TAG_BV_ZEXT:     self._back_bv_zext,
+            self._msat_lib.MSAT_TAG_BV_SEXT:     self._back_bv_sext,
+            self._msat_lib.MSAT_TAG_BV_ROL:      self._back_bv_rol,
+            self._msat_lib.MSAT_TAG_BV_ROR:      self._back_bv_ror,
             self._msat_lib.MSAT_TAG_ARRAY_CONST: self._back_array_const,
             # Symbols, Constants and UFs have TAG_UNKNOWN
-            self._msat_lib.MSAT_TAG_UNKNOWN: self._back_tag_unknown,
+            self._msat_lib.MSAT_TAG_UNKNOWN:     self._back_tag_unknown,
         }
 
         # Handling of UF bool args
@@ -479,13 +479,13 @@ class MSatConverter(Converter, DagWalker):
         self.term_sig = {
             self._msat_lib.MSAT_TAG_TRUE: lambda term, args: types.BOOL,
             self._msat_lib.MSAT_TAG_FALSE: lambda term, args: types.BOOL,
-            self._msat_lib.MSAT_TAG_AND: lambda term, args:\
+            self._msat_lib.MSAT_TAG_AND: lambda term, args:
                 self.tm.FunctionType(types.BOOL, [types.BOOL, types.BOOL]),
-            self._msat_lib.MSAT_TAG_OR: lambda term, args:\
+            self._msat_lib.MSAT_TAG_OR: lambda term, args:
                 self.tm.FunctionType(types.BOOL, [types.BOOL, types.BOOL]),
-            self._msat_lib.MSAT_TAG_NOT: lambda term, args:\
+            self._msat_lib.MSAT_TAG_NOT: lambda term, args:
                 self.tm.FunctionType(types.BOOL, [types.BOOL]),
-            self._msat_lib.MSAT_TAG_IFF: lambda term, args:\
+            self._msat_lib.MSAT_TAG_IFF: lambda term, args:
                 self.tm.FunctionType(types.BOOL, [types.BOOL, types.BOOL]),
             self._msat_lib.MSAT_TAG_ITE: self._sig_ite,
             self._msat_lib.MSAT_TAG_EQ: self._sig_most_generic_bool_binary,
@@ -493,18 +493,18 @@ class MSatConverter(Converter, DagWalker):
             self._msat_lib.MSAT_TAG_PLUS:  self._sig_most_generic_bool_binary,
             self._msat_lib.MSAT_TAG_TIMES: self._sig_most_generic_bool_binary,
             self._msat_lib.MSAT_TAG_DIVIDE: self._sig_most_generic_bool_binary,
-            self._msat_lib.MSAT_TAG_FLOOR: lambda term, args:\
+            self._msat_lib.MSAT_TAG_FLOOR: lambda term, args:
                 self.tm.FunctionType(types.INT, [types.REAL]),
-            self._msat_lib.MSAT_TAG_BV_MUL: self._sig_binary,
-            self._msat_lib.MSAT_TAG_BV_ADD: self._sig_binary,
-            self._msat_lib.MSAT_TAG_BV_UDIV:self._sig_binary,
-            self._msat_lib.MSAT_TAG_BV_UREM:self._sig_binary,
+            self._msat_lib.MSAT_TAG_BV_MUL:  self._sig_binary,
+            self._msat_lib.MSAT_TAG_BV_ADD:  self._sig_binary,
+            self._msat_lib.MSAT_TAG_BV_UDIV: self._sig_binary,
+            self._msat_lib.MSAT_TAG_BV_UREM: self._sig_binary,
             self._msat_lib.MSAT_TAG_BV_CONCAT: self._sig_bv_concat,
-            self._msat_lib.MSAT_TAG_BV_OR:  self._sig_binary,
-            self._msat_lib.MSAT_TAG_BV_XOR: self._sig_binary,
-            self._msat_lib.MSAT_TAG_BV_AND: self._sig_binary,
+            self._msat_lib.MSAT_TAG_BV_OR:   self._sig_binary,
+            self._msat_lib.MSAT_TAG_BV_XOR:  self._sig_binary,
+            self._msat_lib.MSAT_TAG_BV_AND:  self._sig_binary,
             self._msat_lib.MSAT_TAG_BV_NOT:  self._sig_unary,
-            self._msat_lib.MSAT_TAG_BV_SUB: self._sig_binary,
+            self._msat_lib.MSAT_TAG_BV_SUB:  self._sig_binary,
             self._msat_lib.MSAT_TAG_BV_NEG:  self._sig_unary,
             self._msat_lib.MSAT_TAG_BV_SREM: self._sig_binary,
             self._msat_lib.MSAT_TAG_BV_SDIV: self._sig_binary,
@@ -515,13 +515,13 @@ class MSatConverter(Converter, DagWalker):
             self._msat_lib.MSAT_TAG_BV_LSHL: self._sig_binary,
             self._msat_lib.MSAT_TAG_BV_LSHR: self._sig_binary,
             self._msat_lib.MSAT_TAG_BV_ASHR: self._sig_binary,
-            self._msat_lib.MSAT_TAG_BV_ROL: self._sig_binary,
+            self._msat_lib.MSAT_TAG_BV_ROL:  self._sig_binary,
             self._msat_lib.MSAT_TAG_BV_ROR:  self._sig_binary,
             self._msat_lib.MSAT_TAG_BV_EXTRACT: self._sig_bv_extract,
             self._msat_lib.MSAT_TAG_BV_ZEXT: self._sig_bv_zext,
             self._msat_lib.MSAT_TAG_BV_SEXT: self._sig_bv_sext,
             self._msat_lib.MSAT_TAG_BV_COMP: self._sig_bv_comp,
-            self._msat_lib.MSAT_TAG_ARRAY_READ: self._sig_array_read,
+            self._msat_lib.MSAT_TAG_ARRAY_READ:  self._sig_array_read,
             self._msat_lib.MSAT_TAG_ARRAY_WRITE: self._sig_array_write,
             self._msat_lib.MSAT_TAG_ARRAY_CONST: self._sig_array_const,
             ## Symbols, Constants and UFs have TAG_UNKNOWN
@@ -774,8 +774,8 @@ class MSatConverter(Converter, DagWalker):
                     son = self._msat_lib.msat_term_get_arg(current, i)
                     stack.append(son)
             elif self.back_memoization[current] is None:
-                args=[self.back_memoization[self._msat_lib.msat_term_get_arg(current,i)]
-                      for i in range(arity)]
+                args = [self.back_memoization[self._msat_lib.msat_term_get_arg(current,i)]
+                        for i in range(arity)]
 
                 signature = self._get_signature(current, args)
                 new_args = []
@@ -812,14 +812,18 @@ class MSatConverter(Converter, DagWalker):
         return res
 
     def walk_and(self, formula: FNode, args: List[Any], **kwargs) -> Any:
-        res = self._msat_lib.msat_make_true(self.msat_env())
-        for a in args:
+        if len(args) == 0:
+            return self._msat_lib.msat_make_true(self.msat_env())
+        res = args[0]
+        for a in args[1:]:
             res = self._msat_lib.msat_make_and(self.msat_env(), res, a)
         return res
 
     def walk_or(self, formula: FNode, args: List[Any], **kwargs) -> Any:
-        res = self._msat_lib.msat_make_false(self.msat_env())
-        for a in args:
+        if len(args) == 0:
+            return self._msat_lib.msat_make_false(self.msat_env())
+        res = args[0]
+        for a in args[1:]:
             res = self._msat_lib.msat_make_or(self.msat_env(), res, a)
         return res
 
@@ -846,10 +850,10 @@ class MSatConverter(Converter, DagWalker):
 
         if self._get_type(formula).is_bool_type():
             impl = self.mgr.Implies(formula.arg(0), formula.arg(1))
-            th = self.walk_implies(impl, [i,t])
+            th = self.walk_implies(impl, [i, t])
             nif = self.mgr.Not(formula.arg(0))
             ni = self.walk_not(nif, [i])
-            el = self.walk_implies(self.mgr.Implies(nif, formula.arg(2)), [ni,e])
+            el = self.walk_implies(self.mgr.Implies(nif, formula.arg(2)), [ni, e])
             return self._msat_lib.msat_make_and(self.msat_env(), th, el)
         else:
             return self._msat_lib.msat_make_term_ite(self.msat_env(), i, t, e)
@@ -857,7 +861,7 @@ class MSatConverter(Converter, DagWalker):
     def walk_real_constant(self, formula: FNode, **kwargs) -> Any:
         assert is_pysmt_fraction(formula.constant_value())
         frac = cast(pyFraction, formula.constant_value())
-        n,d = frac.numerator, frac.denominator
+        n, d = frac.numerator, frac.denominator
         rep = str(n) + "/" + str(d)
         return self._msat_lib.msat_make_number(self.msat_env(), rep)
 
@@ -903,8 +907,11 @@ class MSatConverter(Converter, DagWalker):
                                          args[0], args[1])
 
     def walk_bv_concat(self, formula: FNode, args: List[Any], **kwargs) -> Any:
-        return self._msat_lib.msat_make_bv_concat(self.msat_env(),
-                                           args[0], args[1])
+        res = args[0]
+        for arg in args[1:]:
+            res = self._msat_lib.msat_make_bv_concat(self.msat_env(),
+                                                     res, arg)
+        return res
 
     def walk_bv_extract(self, formula: FNode, args: List[Any], **kwargs) -> Any:
         return self._msat_lib.msat_make_bv_extract(self.msat_env(),
@@ -913,23 +920,32 @@ class MSatConverter(Converter, DagWalker):
                                             args[0])
 
     def walk_bv_or(self, formula: FNode, args: List[Any], **kwargs) -> Any:
-        return self._msat_lib.msat_make_bv_or(self.msat_env(),
-                                       args[0], args[1])
+        res = args[0]
+        for arg in args[1:]:
+            res = self._msat_lib.msat_make_bv_or(self.msat_env(),
+                                                 res, arg)
+        return res
 
     def walk_bv_not(self, formula: FNode, args: List[Any], **kwargs) -> Any:
         return self._msat_lib.msat_make_bv_not(self.msat_env(), args[0])
 
     def walk_bv_and(self, formula: FNode, args: List[Any], **kwargs) -> Any:
-        return self._msat_lib.msat_make_bv_and(self.msat_env(),
-                                        args[0], args[1])
+        res = args[0]
+        for arg in args[1:]:
+            res = self._msat_lib.msat_make_bv_and(self.msat_env(),
+                                                  res, arg)
+        return res
 
     def walk_bv_xor(self, formula: FNode, args: List[Any], **kwargs) -> Any:
         return self._msat_lib.msat_make_bv_xor(self.msat_env(),
                                         args[0], args[1])
 
     def walk_bv_add(self, formula: FNode, args: List[Any], **kwargs) -> Any:
-        return self._msat_lib.msat_make_bv_plus(self.msat_env(),
-                                         args[0], args[1])
+        res = args[0]
+        for arg in args[1:]:
+            res = self._msat_lib.msat_make_bv_plus(self.msat_env(),
+                                                   res, arg)
+        return res
 
     def walk_bv_sub(self, formula: FNode, args: List[Any], **kwargs) -> Any:
         return self._msat_lib.msat_make_bv_minus(self.msat_env(),
@@ -939,8 +955,11 @@ class MSatConverter(Converter, DagWalker):
         return self._msat_lib.msat_make_bv_neg(self.msat_env(), args[0])
 
     def walk_bv_mul(self, formula: FNode, args: List[Any], **kwargs) -> Any:
-        return self._msat_lib.msat_make_bv_times(self.msat_env(),
-                                          args[0], args[1])
+        res = args[0]
+        for arg in args[1:]:
+            res = self._msat_lib.msat_bv_times(self.msat_env(),
+                                               res, arg)
+        return res
 
     def walk_bv_udiv(self, formula: FNode, args: List[Any], **kwargs) -> Any:
         return self._msat_lib.msat_make_bv_udiv(self.msat_env(),
@@ -995,8 +1014,10 @@ class MSatConverter(Converter, DagWalker):
                                          args[0], args[1])
 
     def walk_plus(self, formula: FNode, args: List[Any], **kwargs) -> Any:
-        res = self._msat_lib.msat_make_number(self.msat_env(), "0")
-        for a in args:
+        if len(args) == 0:
+            return self._msat_lib.msat_make_number(self.msat_env(), "0")
+        res = args[0]
+        for a in args[1:]:
             res = self._msat_lib.msat_make_plus(self.msat_env(), res, a)
         return res
 
@@ -1074,9 +1095,9 @@ class MSatConverter(Converter, DagWalker):
                                              self._type_to_msat(arr_type),
                                              args[0])
         assert not self._msat_lib.MSAT_ERROR_TERM(rval)
-        for i,c in enumerate(args[1::2]):
+        for i, c in enumerate(args[1::2]):
             rval = self._msat_lib.msat_make_array_write(self.msat_env(), rval,
-                                                 c, args[(i*2)+2])
+                                                        c, args[(i*2)+2])
         return rval
 
     def _type_to_msat(self, tp: PySMTType) -> Any:
@@ -1112,7 +1133,6 @@ class MSatConverter(Converter, DagWalker):
         else:
             raise NotImplementedError("Usupported type for '%s'" % tp)
 
-
     def _msat_type_to_type(self, tp):
         """Converts a MathSAT type into a PySMT type."""
         if self._msat_lib.msat_is_bool_type(self.msat_env(), tp):
@@ -1135,7 +1155,6 @@ class MSatConverter(Converter, DagWalker):
 
             # It must be a function type, currently unsupported
             raise NotImplementedError("Function types are unsupported")
-
 
     def declare_variable(self, var: FNode):
         if not var.is_symbol():
@@ -1194,18 +1213,16 @@ class MSatQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
         """Returns a quantifier-free equivalent formula of `formula`."""
         return self.walk(formula)
 
-
     def exist_elim(self, variables, formula):
         logic = get_logic(formula, self.env)
         if not (logic <= LRA or logic <= LIA):
-            raise PysmtValueError("MathSAT quantifier elimination only"\
-                                  " supports LRA or LIA (detected logic " \
+            raise PysmtValueError("MathSAT quantifier elimination only"
+                                  " supports LRA or LIA (detected logic "
                                   "is: %s)" % str(logic))
 
         if not logic <= LRA and self.algorithm != "lw":
-            raise PysmtValueError("MathSAT quantifier elimination for LIA"\
+            raise PysmtValueError("MathSAT quantifier elimination for LIA"
                                   " only works with 'lw' algorithm")
-
 
         fterm = self.converter.convert(formula)
         tvars = [self.converter.convert(x) for x in variables]
@@ -1221,13 +1238,12 @@ class MSatQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
         except ConvertExpressionError:
             if logic <= LRA:
                 raise
-            raise ConvertExpressionError(message=("Unable to represent" \
-                  "expression %s in pySMT: the quantifier elimination for " \
-                  "LIA is incomplete as it requires the modulus. You can " \
-                  "find the MathSAT term representing the quantifier " \
-                  "elimination as the attribute 'expression' of this " \
+            raise ConvertExpressionError(message=("Unable to represent"
+                  "expression %s in pySMT: the quantifier elimination for "
+                  "LIA is incomplete as it requires the modulus. You can "
+                  "find the MathSAT term representing the quantifier "
+                  "elimination as the attribute 'expression' of this "
                   "exception object" % str(res)), expression=res)
-
 
     def walk_forall(self, formula, args, **kwargs):
         assert formula.is_forall()
@@ -1249,6 +1265,7 @@ class MSatQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
 
 class MSatFMQuantifierEliminator(MSatQuantifierEliminator):
     LOGICS = [LRA]
+
     def __init__(self, environment, logic=None):
         MSatQuantifierEliminator.__init__(self, environment,
                                           logic=logic, algorithm='fm')
@@ -1256,6 +1273,7 @@ class MSatFMQuantifierEliminator(MSatQuantifierEliminator):
 
 class MSatLWQuantifierEliminator(MSatQuantifierEliminator):
     LOGICS = [LRA, LIA]
+
     def __init__(self, environment, logic=None):
         MSatQuantifierEliminator.__init__(self, environment,
                                           logic=logic, algorithm='lw')
@@ -1284,7 +1302,7 @@ class MSatInterpolator(Interpolator):
             ok = any(logic <= l for l in self.LOGICS)
             if not ok:
                 raise PysmtValueError("Logic not supported by MathSAT "
-                                      "interpolation. (detected logic is: %s)" \
+                                      "interpolation. (detected logic is: %s)"
                                       % str(logic))
 
     def binary_interpolant(self, a, b):
@@ -1372,7 +1390,7 @@ class MSatBoolUFRewriter(IdentityDagWalker):
             return IdentityDagWalker.walk_function(self, formula, args, **kwargs)
 
         # Build new function type
-        rtype = cast(types._FunctionType, formula.function_name().symbol_type()).return_type
+        rtype = cast(types._FunctionType, formula.function_name().symbol_type()). return_type
         ptype = [self.get_type(a) for a in other_args]
         if len(ptype) == 0:
             ftype = rtype
@@ -1382,7 +1400,7 @@ class MSatBoolUFRewriter(IdentityDagWalker):
         # Base-case
         stack = []
         for i in range(2**len(bool_args)):
-            fname = self.mgr.Symbol("%s#%i" % (formula.function_name(),i), ftype)
+            fname = self.mgr.Symbol("%s#%i" % (formula.function_name(), i), ftype)
             if len(ptype) == 0:
                 stack.append(fname)
             else:

@@ -27,13 +27,13 @@ from pysmt.solvers.eager import EagerModel
 from typing import Any, Dict, List, Optional, Set, cast
 
 try:
-    import yices_api # type: ignore[import]
+    import yices_api  # type: ignore[import]
 except ImportError:
     raise SolverAPINotFound
 
 
 from pysmt.solvers.solver import Solver, Converter, SolverOptions
-from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
+from pysmt.solvers.smtlib import SmtLibBasicSolver
 
 from pysmt.walkers import DagWalker
 from pysmt.exceptions import SolverReturnedUnknownResultError
@@ -51,14 +51,18 @@ def init():
         yices_api.yices_init()
     setattr(init, "initialized", True)
 
+
 def reset_yices():
     yices_api.yices_reset()
 
+
 init()
+
 
 @atexit.register
 def cleanup():
     yices_api.yices_exit()
+
 
 # Yices constants
 STATUS_UNKNOWN = 2
@@ -66,6 +70,7 @@ STATUS_SAT = 3
 STATUS_UNSAT = 4
 
 PRINTING_WIDTH = 999999999
+
 
 def yices_logic(pysmt_logic: pysmt.logics.Logic) -> str:
     """Return a Yices String representing the given pySMT logic."""
@@ -91,9 +96,9 @@ class YicesOptions(SolverOptions):
             # We raise the exception only if the parameter exists but the value
             # provided to the parameter is invalid.
             err = yices_api.yices_error_code()
-            if err == 502: # CTX_INVALID_PARAMETER_VALUE:
+            if err == 502:  # CTX_INVALID_PARAMETER_VALUE:
                 raise PysmtValueError("Error setting the option "
-                                      "'%s=%s'" % (name,value))
+                                      "'%s=%s'" % (name, value))
 
     def __call__(self, solver: "YicesSolver"):
         if self.generate_models:
@@ -108,7 +113,7 @@ class YicesOptions(SolverOptions):
             self._set_option(solver.yices_config,
                              "random-seed", str(self.random_seed))
 
-        for k,v in self.solver_options.items():
+        for k, v in self.solver_options.items():
             self._set_option(solver.yices_config, str(k), str(v))
 
     def set_params(self, solver: "YicesSolver"):
@@ -124,7 +129,7 @@ class YicesOptions(SolverOptions):
         """
         params = yices_api.yices_new_param_record()
         yices_api.yices_default_params_for_context(solver.yices, params)
-        for k,v in self.solver_options.items():
+        for k, v in self.solver_options.items():
             rv = yices_api.yices_set_param(params, k, v)
             if rv != 0:
                 raise PysmtValueError("Error setting the option '%s=%s'" % (k,v))
@@ -173,7 +178,7 @@ class YicesSolver(SmtLibBasicSolver):
         raise NotImplementedError
 
     @clear_pending_pop
-    def add_assertion(self, formula: FNode, named: None=None):
+    def add_assertion(self, formula: FNode, named: None = None):
         self._assert_is_boolean(formula)
         term = self.converter.convert(formula)
         code = yices_api.yices_assert_formula(self.yices, term)
@@ -181,9 +186,8 @@ class YicesSolver(SmtLibBasicSolver):
             msg = yices_api.yices_error_string()
             if code == -1 and "non-linear arithmetic" in msg:
                 raise NonLinearError(formula)
-            raise InternalSolverError("Yices returned non-zero code upon assert"\
-                                      ": %s (code: %s)" % \
-                                      (msg, code))
+            raise InternalSolverError("Yices returned non-zero code upon assert"
+                                      ": %s (code: %s)" % (msg, code))
 
     def get_model(self) -> EagerModel:
         assignment = {}
@@ -195,14 +199,16 @@ class YicesSolver(SmtLibBasicSolver):
             if s.is_symbol() and s.symbol_type().is_string_type():
                 continue
             if s.is_term():
-                if s.symbol_type().is_array_type(): continue
-                if s.symbol_type().is_custom_type(): continue
+                if s.symbol_type().is_array_type():
+                    continue
+                if s.symbol_type().is_custom_type():
+                    continue
                 v = self.get_value(s)
                 assignment[s] = v
         return EagerModel(assignment=assignment, environment=self.environment)
 
     @clear_pending_pop
-    def solve(self, assumptions: Optional[List[FNode]]=None) -> bool:
+    def solve(self, assumptions: Optional[List[FNode]] = None) -> bool:
         if assumptions is not None:
             self.push()
             self.add_assertion(self.mgr.And(assumptions))
@@ -228,7 +234,7 @@ class YicesSolver(SmtLibBasicSolver):
         raise NotImplementedError
 
     @clear_pending_pop
-    def push(self, levels: int=1):
+    def push(self, levels: int = 1):
         for _ in range(levels):
             c = yices_api.yices_push(self.yices)
             if c != 0:
@@ -240,18 +246,18 @@ class YicesSolver(SmtLibBasicSolver):
                     # spurious push calls
                     self.failed_pushes += 1
                 else:
-                    raise InternalSolverError("Error in push: %s" % \
+                    raise InternalSolverError("Error in push: %s" %
                                               yices_api.yices_error_string())
 
     @clear_pending_pop
-    def pop(self, levels: int=1):
+    def pop(self, levels: int = 1):
         for _ in range(levels):
             if self.failed_pushes > 0:
                 self.failed_pushes -= 1
             else:
                 c = yices_api.yices_pop(self.yices)
                 if c != 0:
-                    raise InternalSolverError("Error in pop: %s" % \
+                    raise InternalSolverError("Error in pop: %s" %
                                               yices_api.yices_error_string())
 
     def print_model(self, name_filter=None):
@@ -512,20 +518,21 @@ class YicesConverter(Converter, DagWalker):
         return res
 
     def walk_bv_concat(self, formula, args, **kwargs):
-        res = yices_api.yices_bvconcat2(args[0], args[1])
+        values = (yices_api.term_t * len(args))(*args)
+        res = yices_api.yices_bvconcat(len(args), values)
         self._check_term_result(res)
         return res
 
     def walk_bv_extract(self, formula, args, **kwargs):
         res = yices_api.yices_bvextract(args[0],
-                                       formula.bv_extract_start(),
-                                       formula.bv_extract_end())
+                                        formula.bv_extract_start(),
+                                        formula.bv_extract_end())
         self._check_term_result(res)
         return res
 
     def walk_bv_or(self, formula, args, **kwargs):
-        res = yices_api.yices_bvor2(args[0], args[1])
-        self._check_term_result(res)
+        values = (yices_api.term_t * len(args))(*args)
+        res = yices_api.yices_bvor(len(args), values)
         return res
 
     def walk_bv_not(self, formula, args, **kwargs):
@@ -534,8 +541,8 @@ class YicesConverter(Converter, DagWalker):
         return res
 
     def walk_bv_and(self, formula, args, **kwargs):
-        res = yices_api.yices_bvand2(args[0], args[1])
-        self._check_term_result(res)
+        values = (yices_api.term_t * len(args))(*args)
+        res = yices_api.yices_bvand(len(args), values)
         return res
 
     def walk_bv_xor(self, formula, args, **kwargs):
@@ -544,8 +551,8 @@ class YicesConverter(Converter, DagWalker):
         return res
 
     def walk_bv_add(self, formula, args, **kwargs):
-        res = yices_api.yices_bvadd(args[0], args[1])
-        self._check_term_result(res)
+        values = (yices_api.term_t * len(args))(*args)
+        res = yices_api.yices_bvsum(len(args), values)
         return res
 
     def walk_bv_sub(self, formula, args, **kwargs):
@@ -559,8 +566,8 @@ class YicesConverter(Converter, DagWalker):
         return res
 
     def walk_bv_mul(self, formula, args, **kwargs):
-        res = yices_api.yices_bvmul(args[0], args[1])
-        self._check_term_result(res)
+        values = (yices_api.term_t * len(args))(*args)
+        res = yices_api.yices_bvproduct(len(args), values)
         return res
 
     def walk_bv_udiv(self, formula, args, **kwargs):
@@ -598,7 +605,7 @@ class YicesConverter(Converter, DagWalker):
         self._check_term_result(res)
         return res
 
-    def walk_bv_sext (self, formula, args, **kwargs):
+    def walk_bv_sext(self, formula, args, **kwargs):
         res = yices_api.yices_sign_extend(args[0], formula.bv_extend_step())
         self._check_term_result(res)
         return res
@@ -608,13 +615,13 @@ class YicesConverter(Converter, DagWalker):
         self._check_term_result(res)
         return res
 
-    def walk_bv_sle (self, formula: FNode, args: List[int], **kwargs) -> int:
+    def walk_bv_sle(self, formula: FNode, args: List[int], **kwargs) -> int:
         res = yices_api.yices_bvsle_atom(args[0], args[1])
         self._check_term_result(res)
         return res
 
-    def walk_bv_comp (self, formula, args, **kwargs):
-        a,b = args
+    def walk_bv_comp(self, formula, args, **kwargs):
+        a, b = args
         eq = yices_api.yices_bveq_atom(a, b)
         self._check_term_result(eq)
         one = yices_api.yices_bvconst_int32(1, 1)
@@ -623,17 +630,17 @@ class YicesConverter(Converter, DagWalker):
         self._check_term_result(res)
         return res
 
-    def walk_bv_sdiv (self, formula, args, **kwargs):
+    def walk_bv_sdiv(self, formula, args, **kwargs):
         res = yices_api.yices_bvsdiv(args[0], args[1])
         self._check_term_result(res)
         return res
 
-    def walk_bv_srem (self, formula, args, **kwargs):
+    def walk_bv_srem(self, formula, args, **kwargs):
         res = yices_api.yices_bvsrem(args[0], args[1])
         self._check_term_result(res)
         return res
 
-    def walk_bv_ashr (self, formula, args, **kwargs):
+    def walk_bv_ashr(self, formula, args, **kwargs):
         res = yices_api.yices_bvashr(args[0], args[1])
         self._check_term_result(res)
         return res

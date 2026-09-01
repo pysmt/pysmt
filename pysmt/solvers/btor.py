@@ -46,7 +46,7 @@ except ImportError:
 
 from pysmt.solvers.solver import (IncrementalTrackingSolver, UnsatCoreSolver,
                                   Converter, SolverOptions)
-from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
+from pysmt.solvers.smtlib import SmtLibBasicSolver
 from pysmt.solvers.eager import EagerModel
 from pysmt.walkers import DagWalker
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
@@ -399,16 +399,14 @@ class BTORConverter(Converter, DagWalker):
         return decl
 
     def walk_and(self, formula, args, **kwargs):
-        assert len(args) >= 2
-        res = self._btor.And(args[0], args[1])
-        for conj in args[2:]:
+        res = args[0]
+        for conj in args[1:]:
             res = self._btor.And(res, conj)
         return res
 
     def walk_or(self, formula, args, **kwargs):
-        assert len(args) >= 2
-        res = self._btor.Or(args[0], args[1])
-        for disj in args[2:]:
+        res = args[0]
+        for disj in args[1:]:
             res = self._btor.Or(res, disj)
         return res
 
@@ -476,7 +474,10 @@ class BTORConverter(Converter, DagWalker):
         return self._btor.Ulte(args[0], args[1])
 
     def walk_bv_concat(self, formula, args, **kwargs):
-        return self._btor.Concat(args[0], args[1])
+        res = args[0]
+        for arg in args[1:]:
+            res = self._btor.Concat(res, arg)
+        return res
 
     def walk_bv_extract(self, formula, args, **kwargs):
         start = formula.bv_extract_start()
@@ -496,7 +497,10 @@ class BTORConverter(Converter, DagWalker):
         return self._btor.Xor(*args)
 
     def walk_bv_add(self, formula, args, **kwargs):
-        return self._btor.Add(args[0], args[1])
+        res = args[0]
+        for arg in args[1:]:
+            res = self._btor.Add(res, arg)
+        return res
 
     def walk_bv_sub(self, formula, args, **kwargs):
         return self._btor.Sub(args[0], args[1])
@@ -505,7 +509,10 @@ class BTORConverter(Converter, DagWalker):
         return -args[0]
 
     def walk_bv_mul(self, formula, args, **kwargs):
-        return args[0]*args[1]
+        res = args[0]
+        for arg in args[1:]:
+            res *= arg
+        return res
 
     def walk_bv_udiv(self, formula, args, **kwargs):
         return args[0] / args[1]

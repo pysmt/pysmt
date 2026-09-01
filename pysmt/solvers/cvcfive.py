@@ -23,11 +23,11 @@ from pysmt.typing import PySMTType, _BVType, _ArrayType, _FunctionType
 from typing import Any, Dict, Iterable, List, Optional, Union
 
 try:
-    import cvc5 # type: ignore[import]
+    import cvc5  # type: ignore[import]
 except ImportError:
     raise SolverAPINotFound
 
-from cvc5 import Kind # type: ignore[import]
+from cvc5 import Kind  # type: ignore[import]
 
 import pysmt.typing as types
 from pysmt.logics import PYSMT_LOGICS, AUFLIRA, AUFLIA, AUFNIRA, ALIA
@@ -38,7 +38,7 @@ from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               PysmtValueError,
                               PysmtTypeError)
 from pysmt.walkers import DagWalker
-from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
+from pysmt.solvers.smtlib import SmtLibBasicSolver
 from pysmt.solvers.eager import EagerModel
 from pysmt.decorators import catch_conversion_error
 from pysmt.constants import Fraction, is_pysmt_integer
@@ -58,7 +58,7 @@ class CVC5Options(SolverOptions):
         try:
             cvc5_solver.setOption(name, value)
         except:
-            raise PysmtValueError("Error setting the option '%s=%s'" % (name,value))
+            raise PysmtValueError("Error setting the option '%s=%s'" % (name, value))
 
     def __call__(self, solver: "CVC5Solver"):
         if solver.logic_name == "QF_SLIA":
@@ -89,7 +89,7 @@ class CVC5Options(SolverOptions):
         #self._set_option(solver.cvc5_solver, "nl-ext-tplanes", "true")
 
         assert isinstance(self.solver_options, dict)
-        for k,v in self.solver_options.items():
+        for k, v in self.solver_options.items():
             self._set_option(solver.cvc5_solver, str(k), str(v))
 
 # EOC CVC5Options
@@ -121,7 +121,7 @@ class CVC5Solver(SmtLibBasicSolver):
             self.logic_name = self.logic_name[:-1]
         if "t" in self.logic_name:
             # Custom Type extension
-            self.logic_name = self.logic_name.replace("t","")
+            self.logic_name = self.logic_name.replace("t", "")
         if self.logic_name == "QF_BOOL":
             self.logic_name = "QF_LRA"
         elif self.logic_name == "BOOL":
@@ -156,12 +156,13 @@ class CVC5Solver(SmtLibBasicSolver):
         assignment = {}
         for s in self.environment.formula_manager.get_all_symbols():
             if s.is_term():
-                if s.symbol_type().is_custom_type(): continue
+                if s.symbol_type().is_custom_type():
+                    continue
                 v = self.get_value(s)
                 assignment[s] = v
         return EagerModel(assignment=assignment, environment=self.environment)
 
-    def solve(self, assumptions: Optional[Iterable[FNode]]=None) -> bool:
+    def solve(self, assumptions: Optional[Iterable[FNode]] = None) -> bool:
         if assumptions is not None:
             cvc5_assumptions = [self.converter.convert(a) for a in assumptions]
             res = self.cvc5_solver.checkSatAssuming(*cvc5_assumptions)
@@ -197,8 +198,7 @@ class CVC5Solver(SmtLibBasicSolver):
         if name_filter is None:
             var_set = self.declarations
         else:
-            var_set = (var for var in self.declarations\
-                       if name_filter(var))
+            var_set = (var for var in self.declarations if name_filter(var))
         for var in var_set:
             print("%s = %s", (var.symbol_name(), self.get_value(var)))
         return
@@ -303,7 +303,7 @@ class CVC5Converter(Converter, DagWalker):
         return self.cvc5_solver.mkTerm(Kind.NOT, *args)
 
     def walk_symbol(self, formula: FNode, args: List[Any], **kwargs) -> cvc5.Term:
-        #pylint: disable=unused-argument
+        # pylint: disable=unused-argument
         if formula not in self.declared_vars:
             self.declare_variable(formula)
         return self.declared_vars[formula]
@@ -325,7 +325,7 @@ class CVC5Converter(Converter, DagWalker):
 
     def walk_real_constant(self, formula, **kwargs):
         frac = formula.constant_value()
-        n,d = frac.numerator, frac.denominator
+        n, d = frac.numerator, frac.denominator
         rep = str(n) + "/" + str(d)
         return self.cvc5_solver.mkReal(rep)
 
@@ -416,7 +416,10 @@ class CVC5Converter(Converter, DagWalker):
         return self.cvc5_solver.mkTerm(Kind.BITVECTOR_ULE, args[0], args[1])
 
     def walk_bv_concat(self, formula, args, **kwargs):
-        return self.cvc5_solver.mkTerm(Kind.BITVECTOR_CONCAT, args[0], args[1])
+        res = args[0]
+        for arg in args[1:]:
+            res = self.cvc5.mkTerm(Kind.BITVECTOR_CONCAT, res, arg)
+        return res
 
     def walk_bv_extract(self, formula, args, **kwargs):
         ext = self.cvc5_solver.mkOp(Kind.BITVECTOR_EXTRACT,
@@ -425,13 +428,19 @@ class CVC5Converter(Converter, DagWalker):
         return self.cvc5_solver.mkTerm(ext, args[0])
 
     def walk_bv_or(self, formula, args, **kwargs):
-        return self.cvc5_solver.mkTerm(Kind.BITVECTOR_OR, args[0], args[1])
+        res = args[0]
+        for arg in args[1:]:
+            res = self.cvc5.mkTerm(Kind.BITVECTOR_OR, res, arg)
+        return res
 
     def walk_bv_not(self, formula, args, **kwargs):
         return self.cvc5_solver.mkTerm(Kind.BITVECTOR_NOT, args[0])
 
     def walk_bv_and(self, formula, args, **kwargs):
-        return self.cvc5_solver.mkTerm(Kind.BITVECTOR_AND, args[0], args[1])
+        res = args[0]
+        for arg in args[1:]:
+            res = self.cvc5.mkTerm(Kind.BITVECTOR_AND, res, arg)
+        return res
 
     def walk_bv_xor(self, formula, args, **kwargs):
         return self.cvc5_solver.mkTerm(Kind.BITVECTOR_XOR, args[0], args[1])
@@ -446,7 +455,10 @@ class CVC5Converter(Converter, DagWalker):
         return self.cvc5_solver.mkTerm(Kind.BITVECTOR_NEG, args[0])
 
     def walk_bv_mul(self, formula, args, **kwargs):
-        return self.cvc5_solver.mkTerm(Kind.BITVECTOR_MULT, args[0], args[1])
+        res = args[0]
+        for arg in args[1:]:
+            res = self.cvc5.mkTerm(Kind.BITVECTOR_MULT, res, arg)
+        return res
 
     def walk_bv_tonatural(self, formula, args, **kwargs):
         return self.cvc5_solver.mkTerm(Kind.BITVECTOR_TO_NAT, args[0])
