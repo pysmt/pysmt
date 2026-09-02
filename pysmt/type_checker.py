@@ -140,7 +140,7 @@ class SimpleTypeChecker(walkers.DagWalker):
     def walk_bv_to_bool(self, formula: FNode, args: List[PySMTType], **kwargs) -> Optional[PySMTType]:
         #pylint: disable=unused-argument
         width = cast(types._BVType, args[0]).width
-        if all(curr_t.is_bv_type() and width == curr_t.width
+        if all(curr_t.is_bv_type() and width == cast(types._BVType, curr_t).width
                for curr_t in args[1:]):
             return BOOL
         return None
@@ -283,7 +283,7 @@ class SimpleTypeChecker(walkers.DagWalker):
         if len(args) != len(cast(types._FunctionType, tp).param_types):
             return None
 
-        if all(arg == p_type for arg, p_type in zip(args, tp.param_types)):
+        if all(arg == p_type for arg, p_type in zip(args, cast(types._FunctionType, tp).param_types)):
             return cast(types._FunctionType, tp).return_type
         return None
 
