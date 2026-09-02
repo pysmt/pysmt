@@ -22,6 +22,7 @@ from pysmt.walkers.dag import DagWalker
 from pysmt.fnode import FNode
 from typing import Any, List, Optional, Union, cast
 
+
 class IdentityDagWalker(DagWalker):
     """This class traverses a formula and rebuilds it recursively
     identically.
@@ -31,7 +32,8 @@ class IdentityDagWalker(DagWalker):
 
     """
 
-    def __init__(self, env: Optional["pysmt.environment.Environment"]=None, invalidate_memoization: bool=False):
+    def __init__(self, env: Optional["pysmt.environment.Environment"] = None,
+                 invalidate_memoization: bool = False):
         DagWalker.__init__(self,
                            env=env,
                            invalidate_memoization=invalidate_memoization)
@@ -121,7 +123,7 @@ class IdentityDagWalker(DagWalker):
         return self.mgr.BV(cast(int, formula.constant_value()), formula.bv_width())
 
     def walk_bv_and(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
-        return self.mgr.BVAnd(args[0], args[1])
+        return self.mgr.BVAnd(args)
 
     def walk_bv_not(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         return self.mgr.BVNot(args[0])
@@ -130,19 +132,19 @@ class IdentityDagWalker(DagWalker):
         return self.mgr.BVNeg(args[0])
 
     def walk_bv_or(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
-        return self.mgr.BVOr(args[0], args[1])
+        return self.mgr.BVOr(args)
 
     def walk_bv_xor(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         return self.mgr.BVXor(args[0], args[1])
 
     def walk_bv_add(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
-        return self.mgr.BVAdd(args[0], args[1])
+        return self.mgr.BVAdd(args)
 
     def walk_bv_sub(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         return self.mgr.BVSub(args[0], args[1])
 
     def walk_bv_mul(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
-        return self.mgr.BVMul(args[0], args[1])
+        return self.mgr.BVMul(args)
 
     def walk_bv_udiv(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         return self.mgr.BVUDiv(args[0], args[1])
@@ -174,7 +176,7 @@ class IdentityDagWalker(DagWalker):
         return self.mgr.BVZExt(args[0], formula.bv_extend_step())
 
     def walk_bv_concat(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
-        return self.mgr.BVConcat(args[0], args[1])
+        return self.mgr.BVConcat(args)
 
     def walk_bv_lshl(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         return self.mgr.BVLShl(args[0], args[1])

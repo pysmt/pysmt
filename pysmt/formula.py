@@ -90,10 +90,10 @@ class FormulaManager(object):
 
     def _do_type_check(self, formula: FNode):
         self.get_type = self.env.stc.get_type
-        self._do_type_check = self._do_type_check_real # type: ignore[method-assign]
+        self._do_type_check = self._do_type_check_real  # type: ignore[method-assign]
         return self._do_type_check(formula)
 
-    def create_node(self, node_type: int, args: Tuple[FNode, ...], payload: Optional[Any]=None) -> FNode:
+    def create_node(self, node_type: int, args: Tuple[FNode, ...], payload: Optional[Any] = None) -> FNode:
         content = FNodeContent(node_type, args, payload)
         if content in self.formulae:
             n = self.formulae[content]
@@ -106,7 +106,7 @@ class FormulaManager(object):
             self._do_type_check(n)
             return n
 
-    def _create_symbol(self, name: str, typename: PySMTType=types.BOOL) -> FNode:
+    def _create_symbol(self, name: str, typename: PySMTType = types.BOOL) -> FNode:
         if len(name) == 0 and not self.env.allow_empty_var_names:
             raise PysmtEmptySymbolNameError()
         if not isinstance(typename, types.PySMTType):
@@ -117,7 +117,8 @@ class FormulaManager(object):
         self.symbols[name] = n
         return n
 
-    def new_fresh_symbol(self, typename: PySMTType, base: str="FV%d") -> FNode:
+    def new_fresh_symbol(self, typename: PySMTType,
+                         base: str = "FV%d") -> FNode:
         count = self._fresh_guess
         while (base % count) in self.symbols:
             count = count + 1
@@ -149,10 +150,11 @@ class FormulaManager(object):
 
     # Node definitions start here
 
-    def Symbol(self, name: str, typename: PySMTType=types.BOOL) -> FNode:
+    def Symbol(self, name: str, typename: PySMTType = types.BOOL) -> FNode:
         return self.get_or_create_symbol(name, typename)
 
-    def FreshSymbol(self, typename: PySMTType=types.BOOL, template: Optional[str]=None) -> FNode:
+    def FreshSymbol(self, typename: PySMTType = types.BOOL,
+                    template: Optional[str] = None) -> FNode:
         if template is None:
             return self.new_fresh_symbol(typename)
         return self.new_fresh_symbol(typename, template)
@@ -180,7 +182,7 @@ class FormulaManager(object):
          - Formula must be of boolean type
          - Variables must be BOOL, REAL or INT
         """
-        variables_tuple = self._sorted_tupletuple(variables)
+        variables_tuple = self._sorted_tuple(variables)
         if len(variables_tuple) == 0:
             return formula
         return self.create_node(node_type=op.EXISTS,
@@ -226,7 +228,7 @@ class FormulaManager(object):
         Restriction: Left and Right must be of boolean type
         """
         return self.create_node(node_type=op.IFF,
-                                args=self._args_to_sorted_tuple(left, right))
+                                args=self._sorted_tuple((left, right)))
 
     def Minus(self, left: FNode, right: FNode) -> FNode:
         """ Creates an expression of the form:
@@ -292,7 +294,7 @@ class FormulaManager(object):
         For the boolean case use Iff
         """
         return self.create_node(node_type=op.EQUALS,
-                                args=self._args_to_sorted_tuple(left, right))
+                                args=self._sorted_tuple((left, right)))
 
     def NotEquals(self, left: FNode, right: FNode):
         """ Creates an expression of the form: left != right"""
@@ -596,7 +598,7 @@ class FormulaManager(object):
             return self.Ite(le(a, b), b, a)
         else:
             h = len(exprs) // 2
-            return self._MaxWrap(le, self._MaxWrap(le,exprs[0:h]), self._MaxWrap(le,exprs[h:]))
+            return self._MaxWrap(le, self._MaxWrap(le, exprs[0:h]), self._MaxWrap(le, exprs[h:]))
 
     def MinBV(self, sign: bool, *args: Union[FNode, Iterable[FNode]]) -> FNode:
         """Returns the encoding of the minimum expression within args"""
@@ -633,7 +635,7 @@ class FormulaManager(object):
             return self.Equals(left, right)
 
     # BitVectors
-    def BV(self, value: Union[str, int], width: Optional[int]=None) -> FNode:
+    def BV(self, value: Union[str, int], width: Optional[int] = None) -> FNode:
         """Return a constant of type BitVector.
 
         value can be either:
@@ -665,7 +667,8 @@ class FormulaManager(object):
             raise PysmtValueError("Need to specify a width for the constant")
 
         if is_pysmt_integer(value):
-            _value = cast(int, value) #TODO: this is incorrect, we should define a custom "Integer" type including mpz. Try with IntegerClass from constants
+            # TODO: this is incorrect, we should define a custom "Integer" type including mpz. Try with IntegerClass from constants
+            _value = cast(int, value)
         elif is_python_integer(value):
             assert isinstance(value, int), "Non-accepted typing"
             _value = pysmt_integer_from_integer(value)
@@ -699,12 +702,12 @@ class FormulaManager(object):
             max_val = (2**(width-1)) - 1
             if value < min_val:
                 raise PysmtValueError("Cannot represent a value (%s) lower "
-                                      "than %d in %d bits" % (str(value), min_val,
-                                                              width))
+                                      "than %d in %d bits" %
+                                      (str(value), min_val, width))
             if value > max_val:
                 raise PysmtValueError("Cannot represent a value (%s) greater "
-                                      "than %d in %d bits" % (str(value), max_val,
-                                                              width))
+                                      "than %d in %d bits" %
+                                      (str(value), max_val, width))
 
             if value >= 0:
                 return self.BV(value, width)
@@ -761,7 +764,7 @@ class FormulaManager(object):
     def BVXor(self, left: FNode, right: FNode) -> FNode:
         """Returns the Bit-wise XOR of two bitvectors of the same size."""
         return self.create_node(node_type=op.BV_XOR,
-                                args=self._args_to_sorted_tuple(left, right),
+                                args=self._sorted_tuple((left, right)),
                                 payload=(left.bv_width(),))
 
     def BVConcat(self, *args: Union[FNode, Sequence[FNode]]) -> FNode:
@@ -777,13 +780,13 @@ class FormulaManager(object):
                                 args=args,
                                 payload=(sum(v.bv_width() for v in args), ))
 
-    def BVExtract(self, formula: FNode, start: int=0, end: Optional[int]=None) -> FNode:
+    def BVExtract(self, formula: FNode, start: int = 0, end: Optional[int] = None) -> FNode:
         """Returns the slice of formula from start to end (inclusive)."""
         if end is None:
             end = formula.bv_width() - 1
 
         assert is_python_integer(start) and is_python_integer(end)
-        assert end >= start and start >= 0, "Start: %d ; End: %d" % (start,end)
+        assert end >= start and start >= 0, "Start: %d ; End: %d" % (start, end)
 
         size = end-start + 1
 
@@ -1131,7 +1134,8 @@ class FormulaManager(object):
         """Creates a node representing an array update."""
         return self.create_node(node_type=op.ARRAY_STORE, args=(arr, idx, val))
 
-    def Array(self, idx_type: PySMTType, default: FNode, assigned_values: Optional[Dict[FNode, FNode]]=None) -> FNode:
+    def Array(self, idx_type: PySMTType, default: FNode,
+              assigned_values: Optional[Dict[FNode, FNode]] = None) -> FNode:
         """Creates a node representing an array having index type equal to
            idx_type, initialized with default values.
 
@@ -1227,14 +1231,13 @@ class FormulaManager(object):
             return self.formulae[node._content] == node
         else:
             return False
-
-#EOC FormulaManager
+# EOC FormulaManager
 
 
 class FormulaContextualizer(IdentityDagWalker):
     """Helper class to recreate a formula within a new environment."""
 
-    def __init__(self, env: Optional["pysmt.environment.Environment"]=None):
+    def __init__(self, env: Optional["pysmt.environment.Environment"] = None):
         IdentityDagWalker.__init__(self, env=env)
         self.type_normalize = self.env.type_manager.normalize
 

@@ -38,7 +38,8 @@ class DagWalker(Walker):
     be used in memoization. See substituter for an example.
     """
 
-    def __init__(self, env: Optional["pysmt.environment.Environment"]=None, invalidate_memoization: bool=False):
+    def __init__(self, env: Optional["pysmt.environment.Environment"] = None,
+                 invalidate_memoization: bool = False):
         """The flag ``invalidate_memoization`` can be used to clear the cache
         after the walk has been completed: the cache is one-time use.
         """
@@ -46,7 +47,8 @@ class DagWalker(Walker):
 
         self.memoization: Dict[FNode, Any] = {}
         self.invalidate_memoization = invalidate_memoization
-        self.stack: List[Tuple[bool, Union[FNode, Any]]] = [] # TODO consider to create a generic type variable instead of Any
+        # TODO consider to create a generic type variable instead of Any
+        self.stack: List[Tuple[bool, Union[FNode, Any]]] = []
 
     def _get_children(self, formula: FNode) -> Any:
         return formula.args()
@@ -54,7 +56,7 @@ class DagWalker(Walker):
     def _push_with_children_to_stack(self, formula: FNode, **kwargs):
         """Add children to the stack."""
         self.stack.append((True, formula))
-        for s in self._get_children(formula):
+        for s in reversed(self._get_children(formula)):
             # Add only if not memoized already
             key = self._get_key(s, **kwargs)
             if key not in self.memoization:
@@ -73,7 +75,7 @@ class DagWalker(Walker):
             except KeyError:
                 f = self.walk_error
 
-            args = [self.memoization[self._get_key(s, **kwargs)] \
+            args = [self.memoization[self._get_key(s, **kwargs)]
                     for s in self._get_children(formula)]
             self.memoization[key] = f(formula, args=args, **kwargs)
         else:

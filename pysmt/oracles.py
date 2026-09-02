@@ -27,7 +27,7 @@ properties of formulae.
 """
 
 from itertools import chain
-from typing import FrozenSet, Iterable, List, Any, Optional, Union, cast
+from typing import FrozenSet, Iterable, List, Optional, cast
 
 import pysmt
 import pysmt.walkers as walkers

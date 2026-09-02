@@ -25,9 +25,9 @@ reasoning about the type of formulae.
 from typing import Any, Iterable, List, Optional, Sequence, Set, cast
 
 import pysmt
-import pysmt.walkers as walkers
-import pysmt.operators as op
-import pysmt.typing as types
+from pysmt import walkers
+from pysmt import operators as op
+from pysmt import typing as types
 
 from pysmt.typing import PySMTType, BOOL, REAL, INT, STRING
 from pysmt.exceptions import PysmtTypeError
@@ -36,7 +36,7 @@ from pysmt.fnode import FNode
 
 class SimpleTypeChecker(walkers.DagWalker):
 
-    def __init__(self, env: Optional["pysmt.environment.Environment"]=None):
+    def __init__(self, env: Optional["pysmt.environment.Environment"] = None):
         walkers.DagWalker.__init__(self, env=env)
         # If `be_nice` is true, the `get_type` method will return None if
         # the type cannot be computed instead of than raising an exception.
@@ -58,12 +58,12 @@ class SimpleTypeChecker(walkers.DagWalker):
                                  % str(formula))
         return cast(PySMTType, res)
 
-    def walk_type_to_type(self, formula: FNode, args: List[PySMTType], type_in: PySMTType, type_out: PySMTType) -> Optional[PySMTType]:
+    def walk_type_to_type(self, formula: FNode, args: List[PySMTType],
+                          type_in: PySMTType, type_out: PySMTType) -> Optional[PySMTType]:
         assert formula is not None
-        for x in args:
-            if x is None or x != type_in:
-                return None
-        return type_out
+        if all(curr_t is not None and type_in == curr_t for curr_t in args):
+            return type_out
+        return None
 
     @walkers.handles(op.AND, op.OR, op.NOT, op.IMPLIES, op.IFF)
     def walk_bool_to_bool(self, formula: FNode, args: List[PySMTType], **kwargs) -> Optional[PySMTType]:
@@ -104,10 +104,10 @@ class SimpleTypeChecker(walkers.DagWalker):
         #pylint: disable=unused-argument
         # We check that all children are BV and the same size
         target_bv_type = self.env.type_manager.BVType(formula.bv_width())
-        for a in args:
-            if not a == target_bv_type:
-                return None
-        return target_bv_type
+
+        if all(target_bv_type == curr_t for curr_t in args):
+            return target_bv_type
+        return None
 
     @walkers.handles(op.STR_CONCAT, op.STR_REPLACE)
     def walk_str_to_str(self, formula: FNode, args: List[PySMTType], **kwargs) -> Optional[PySMTType]:
@@ -140,10 +140,10 @@ class SimpleTypeChecker(walkers.DagWalker):
     def walk_bv_to_bool(self, formula: FNode, args: List[PySMTType], **kwargs) -> Optional[PySMTType]:
         #pylint: disable=unused-argument
         width = cast(types._BVType, args[0]).width
-        for a in args[1:]:
-            if (not a.is_bv_type()) or width != cast(types._BVType, a).width:
-                return None
-        return BOOL
+        if all(curr_t.is_bv_type() and width == curr_t.width
+               for curr_t in args[1:]):
+            return BOOL
+        return None
 
     def walk_bv_tonatural(self, formula: FNode, args: List[PySMTType], **kwargs) -> Optional[PySMTType]:
         #pylint: disable=unused-argument
@@ -156,12 +156,12 @@ class SimpleTypeChecker(walkers.DagWalker):
         # The type-checker only verifies that they are indeed
         # correct.
         try:
-            l_width = cast(types._BVType, args[0]).width
-            r_width = cast(types._BVType, args[1]).width
+            expected_width = sum(cast(types._BVType, curr_t).width
+                                 for curr_t in args)
             target_width = formula.bv_width()
         except AttributeError:
             return None
-        if not l_width + r_width == target_width:
+        if expected_width != target_width:
             return None
         return self.env.type_manager.BVType(target_width)
 
@@ -219,8 +219,9 @@ class SimpleTypeChecker(walkers.DagWalker):
 
     def walk_ite(self, formula: FNode, args: List[PySMTType], **kwargs) -> Any:
         assert formula is not None
-        if None in args: return None
-        if (args[0] == BOOL and args[1]==args[2]):
+        if None in args:
+            return None
+        if (args[0] == BOOL and args[1] == args[2]):
             return args[1]
         return None
 
@@ -282,11 +283,9 @@ class SimpleTypeChecker(walkers.DagWalker):
         if len(args) != len(cast(types._FunctionType, tp).param_types):
             return None
 
-        for (arg, p_type) in zip(args, cast(types._FunctionType, tp).param_types):
-            if arg != p_type:
-                return None
-
-        return cast(types._FunctionType, tp).return_type
+        if all(arg == p_type for arg, p_type in zip(args, tp.param_types)):
+            return cast(types._FunctionType, tp).return_type
+        return None
 
     def walk_str_charat(self, formula: FNode, args: List[PySMTType], **kwargs) -> Optional[PySMTType]:
         assert formula is not None
@@ -312,31 +311,36 @@ class SimpleTypeChecker(walkers.DagWalker):
 
     def walk_array_select(self, formula: FNode, args: List[PySMTType], **kwargs) -> Optional[PySMTType]:
         assert formula is not None
-        if None in args: return None
-        if (args[0].is_array_type() and cast(types._ArrayType, args[0]).index_type==args[1]):
+        if None in args:
+            return None
+        if (args[0].is_array_type()
+              and cast(types._ArrayType, args[0]).index_type == args[1]):
             return cast(types._ArrayType, args[0]).elem_type
         return None
 
     def walk_array_store(self, formula: FNode, args: List[PySMTType], **kwargs) -> Optional[PySMTType]:
         assert formula is not None
-        if None in args: return None
-        if (args[0].is_array_type() and cast(types._ArrayType, args[0]).index_type==args[1] and
-            cast(types._ArrayType, args[0]).elem_type==args[2]):
+        if None in args:
+            return None
+        if (args[0].is_array_type()
+              and cast(types._ArrayType, args[0]).index_type == args[1]
+              and cast(types._ArrayType, args[0]).elem_type == args[2]):
             return args[0]
         return None
 
     def walk_array_value(self, formula: FNode, args: List[PySMTType], **kwargs) -> Optional[PySMTType]:
         assert formula is not None
-        if None in args: return None
+        if None in args:
+            return None
 
         default_type = args[0]
         idx_type = formula.array_value_index_type()
-        for i, c in enumerate(args[1:]):
-            if i % 2 == 0 and c != idx_type:
-                return None # Wrong index type
-            elif i % 2 == 1 and c != default_type:
-                return None
-        return self.env.type_manager.ArrayType(idx_type, default_type)
+
+        if all(c == (idx_type if i % 2 == 0 else default_type)
+               for i, c in enumerate(args[1:])):
+            return self.env.type_manager.ArrayType(idx_type, default_type)
+
+        return None
 
     def walk_pow(self, formula: FNode, args: List[PySMTType], **kwargs) -> Optional[PySMTType]:
         if args[0] != args[1]:
