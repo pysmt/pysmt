@@ -35,7 +35,7 @@ from pysmt.utils import assert_not_none
 from pysmt.walkers import DagWalker
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               InternalSolverError,
-                              NonLinearError, PysmtValueError, PysmtTypeError,
+                              PysmtValueError, PysmtTypeError,
                               ConvertExpressionError)
 from pysmt.decorators import clear_pending_pop, catch_conversion_error
 from pysmt.solvers.qelim import QuantifierEliminator
@@ -181,8 +181,7 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolv
     __lib_name__ = "mathsat"
 
     LOGICS: Iterable[Logic] = PYSMT_QF_LOGICS -\
-             set(l for l in PYSMT_QF_LOGICS \
-                 if not l.theory.linear or l.theory.strings)
+             set(l for l in PYSMT_QF_LOGICS if l.theory.strings)
 
     OptionsClass = MathSATOptions
 
@@ -407,6 +406,7 @@ class MSatConverter(Converter, DagWalker):
             self._msat_lib.MSAT_TAG_LEQ: self._back_adapter(self.mgr.LE),
             self._msat_lib.MSAT_TAG_PLUS: self._back_adapter(self.mgr.Plus),
             self._msat_lib.MSAT_TAG_TIMES: self._back_adapter(self.mgr.Times),
+            self._msat_lib.MSAT_TAG_DIVIDE: self._back_adapter(self.mgr.Div),
             self._msat_lib.MSAT_TAG_BV_MUL: self._back_adapter(self.mgr.BVMul),
             self._msat_lib.MSAT_TAG_BV_ADD: self._back_adapter(self.mgr.BVAdd),
             self._msat_lib.MSAT_TAG_BV_UDIV: self._back_adapter(self.mgr.BVUDiv),
@@ -463,6 +463,7 @@ class MSatConverter(Converter, DagWalker):
             self._msat_lib.MSAT_TAG_LEQ: self._sig_most_generic_bool_binary,
             self._msat_lib.MSAT_TAG_PLUS:  self._sig_most_generic_bool_binary,
             self._msat_lib.MSAT_TAG_TIMES: self._sig_most_generic_bool_binary,
+            self._msat_lib.MSAT_TAG_DIVIDE: self._sig_most_generic_bool_binary,
             self._msat_lib.MSAT_TAG_FLOOR: lambda term, args:\
                 self.tm.FunctionType(types.INT, [types.REAL]),
             self._msat_lib.MSAT_TAG_BV_MUL: self._sig_binary,
@@ -987,15 +988,32 @@ class MSatConverter(Converter, DagWalker):
 
     def walk_times(self, formula: FNode, args: List[Any], **kwargs) -> Any:
         res = args[0]
-        nl_count = 0 if self._msat_lib.msat_term_is_number(self.msat_env(), res) else 1
         for x in args[1:]:
-            if not self._msat_lib.msat_term_is_number(self.msat_env(), x):
-                nl_count += 1
-            if nl_count >= 2:
-                raise NonLinearError(formula)
-            else:
-                res = self._msat_lib.msat_make_times(self.msat_env(), res, x)
+            res = self._msat_lib.msat_make_times(self.msat_env(), res, x)
         return res
+
+    def walk_pow(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+        # MathSAT rejects exponents it cannot handle by returning an error
+        # term, which convert() turns into an InternalSolverError.
+        return self._msat_lib.msat_make_pow(self.msat_env(), args[0], args[1])
+
+    def walk_div(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+        num, den = args
+        if self.env.stc.get_type(formula).is_real_type():
+            return self._msat_lib.msat_make_divide(self.msat_env(), num, den)
+        # msat_make_divide is real division, while pySMT follows the SMT-LIB
+        # semantics for integers: den >= 0 ? floor(num/den) : ceil(num/den).
+        # ceil(a) is rewritten as -floor(-a).
+        zero = self._msat_lib.msat_make_number(self.msat_env(), "0")
+        neg = self._msat_lib.msat_make_number(self.msat_env(), "-1")
+        cond = self._msat_lib.msat_make_leq(self.msat_env(), zero, den)
+        div = self._msat_lib.msat_make_floor(self.msat_env(),
+                  self._msat_lib.msat_make_divide(self.msat_env(), num, den))
+        n_den = self._msat_lib.msat_make_times(self.msat_env(), neg, den)
+        n_div = self._msat_lib.msat_make_times(self.msat_env(), neg,
+                    self._msat_lib.msat_make_floor(self.msat_env(),
+                        self._msat_lib.msat_make_divide(self.msat_env(), num, n_den)))
+        return self._msat_lib.msat_make_term_ite(self.msat_env(), cond, div, n_div)
 
     def walk_function(self, formula: FNode, args: List[Any], **kwargs) -> Any:
         name = formula.function_name()
