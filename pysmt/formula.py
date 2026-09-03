@@ -741,7 +741,6 @@ class FormulaManager(object):
         if len(args) == 1:
             return args[0]
 
-        assert all(v.bv_width() == args[0].bv_width() for v in args)
         return self.create_node(node_type=op.BV_AND,
                                 args=args,
                                 payload=(args[0].bv_width(), ))

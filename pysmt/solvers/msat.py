@@ -957,8 +957,7 @@ class MSatConverter(Converter, DagWalker):
     def walk_bv_mul(self, formula: FNode, args: List[Any], **kwargs) -> Any:
         res = args[0]
         for arg in args[1:]:
-            res = self._msat_lib.msat_bv_times(self.msat_env(),
-                                               res, arg)
+            res = self._msat_lib.msat_make_bv_times(self.msat_env(), res, arg)
         return res
 
     def walk_bv_udiv(self, formula: FNode, args: List[Any], **kwargs) -> Any:

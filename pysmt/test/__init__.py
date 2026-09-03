@@ -40,10 +40,12 @@ class TestCase(unittest.TestCase):
         pass
 
     if "assertRaisesRegex" not in dir(unittest.TestCase):
-        assertRaisesRegex = unittest.TestCase.assertRaisesRegexp # type: ignore[attr-defined]
+        assertRaisesRegex = unittest.TestCase.assertRaisesRegexp  # type: ignore[attr-defined]
 
-
-    def assertValid(self, formula: FNode, msg: Optional[Union[str, Tuple[FNode, FNode], FNode]]=None, solver_name: None=None, logic: Optional[Logic]=None):
+    def assertValid(self, formula: FNode,
+                    msg: Optional[Union[str, Tuple[FNode, FNode], FNode]] = None,
+                    solver_name: None = None,
+                    logic: Optional[Logic] = None):
         """Assert that formula is VALID."""
         self.assertTrue(self.env.factory.is_valid(formula=formula,
                                                   solver_name=solver_name,

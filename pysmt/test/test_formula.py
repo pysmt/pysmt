@@ -1064,42 +1064,49 @@ class TestFormulaManager(TestCase):
         self.assertNotEqual(x.node_id(), y.node_id())
 
     @skipIfNoSolverForLogic(QF_BV)
-    def test_left_associative_bv(self):
-        """Test that the left-associative bv operators work properly"""
+    def test_left_associative_bv_valid(self):
+        """Test that the left-associative bv operators work properly,
+           assert validity of equality between FNodes"""
         bva = self.mgr.Symbol('a', BV8)
         bvb = self.mgr.Symbol('b', BV8)
         bvc = self.mgr.BV('10101010')
-        self.assertValid(
+        eq = self.mgr.Equals(
             # passing a list of elements
             self.mgr.BVAnd([bva, bvb, bvc]),
             self.mgr.BVAnd(
                 self.mgr.BVAnd(bva, bvb),
                 bvc
-            )
-        )
-        self.assertValid(
+            ))
+        self.assertValid(eq)
+
+        eq = self.mgr.Equals(
             # passing n elements
             self.mgr.BVOr(bva, bvb, bvc),
             self.mgr.BVOr(
                 self.mgr.BVOr(bva, bvb),
                 bvc
-            )
-        )
-        self.assertValid(
+            ))
+        self.assertValid(eq)
+
+        eq = self.mgr.Equals(
             self.mgr.BVAdd(bva, bvb, bvc),
             self.mgr.BVAdd(
                 self.mgr.BVAdd(bva, bvb),
                 bvc
-            )
-        )
-        self.assertValid(
+            ))
+        self.assertValid(eq)
+
+        eq = self.mgr.Equals(
             self.mgr.BVMul(bva, bvb, bvc),
             self.mgr.BVMul(
                 self.mgr.BVMul(bva, bvb),
                 bvc
-            )
-        )
+            ))
+        self.assertValid(eq)
 
+    def test_left_associative_bv_equal(self):
+        """Test syntactic equalities between BV FNodes"""
+        bva = self.mgr.Symbol('a', BV8)
         # passing a single element
         self.assertEqual(self.mgr.BVAnd(bva), bva)
         self.assertEqual(self.mgr.BVOr(bva), bva)
@@ -1107,14 +1114,10 @@ class TestFormulaManager(TestCase):
         self.assertEqual(self.mgr.BVMul(bva), bva)
 
         # passing no elements
-        self.assertRaises(PysmtValueError,
-            lambda: self.mgr.BVAnd([]))
-        self.assertRaises(PysmtValueError,
-            lambda: self.mgr.BVOr([]))
-        self.assertRaises(PysmtValueError,
-            lambda: self.mgr.BVAdd([]))
-        self.assertRaises(PysmtValueError,
-            lambda: self.mgr.BVMul([]))
+        self.assertRaises(PysmtValueError, lambda: self.mgr.BVAnd([]))
+        self.assertRaises(PysmtValueError, lambda: self.mgr.BVOr([]))
+        self.assertRaises(PysmtValueError, lambda: self.mgr.BVAdd([]))
+        self.assertRaises(PysmtValueError, lambda: self.mgr.BVMul([]))
 
     def test_function_substitute(self):
         FunTy = FunctionType(BOOL, [INT])

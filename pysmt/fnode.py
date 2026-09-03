@@ -45,10 +45,10 @@ from pysmt.operators import (FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF,
                              ARRAY_SELECT, ARRAY_STORE, ARRAY_VALUE,
                              ALGEBRAIC_CONSTANT)
 
-from pysmt.operators import  (BOOL_OPERATORS, THEORY_OPERATORS,
-                              BV_OPERATORS, IRA_OPERATORS, ARRAY_OPERATORS,
-                              STR_OPERATORS,
-                              RELATIONS, CONSTANTS)
+from pysmt.operators import (BOOL_OPERATORS, THEORY_OPERATORS,
+                             BV_OPERATORS, IRA_OPERATORS, ARRAY_OPERATORS,
+                             STR_OPERATORS,
+                             RELATIONS, CONSTANTS)
 
 from pysmt.typing import PySMTType, BOOL, REAL, INT, BVType, STRING
 from pysmt.decorators import deprecated, assert_infix_enabled
@@ -61,7 +61,8 @@ from pysmt.exceptions import (PysmtValueError, PysmtModeError,
 FNodeContent = collections.namedtuple("FNodeContent",
                                       ["node_type", "args", "payload"])
 
-class FNode(object):
+
+class FNode:
     r"""FNode represent the basic structure for representing a formula.
 
     FNodes are built using the FormulaManager, and should not be
@@ -78,6 +79,7 @@ class FNode(object):
     The node_id is an integer uniquely identifying the node within the
     FormulaManager it belongs.
     """
+
     __slots__ = ["_content", "_node_id"]
 
     def __init__(self, content: "FNodeContent", node_id: int):
