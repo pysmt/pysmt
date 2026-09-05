@@ -912,7 +912,7 @@ class Z3Converter(Converter, DagWalker):
             z3term = args[0]
             for arg in args[1:]:
                 z3term = func(self.ctx.ref(), z3term, arg)
-                z3.Z3_inc_ref(self.ctx.ref(), z3term)
+            z3.Z3_inc_ref(self.ctx.ref(), z3term)
             return z3term
         return walk_n_to_b
 

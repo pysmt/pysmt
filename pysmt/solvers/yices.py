@@ -533,6 +533,7 @@ class YicesConverter(Converter, DagWalker):
     def walk_bv_or(self, formula, args, **kwargs):
         values = (yices_api.term_t * len(args))(*args)
         res = yices_api.yices_bvor(len(args), values)
+        self._check_term_result(res)
         return res
 
     def walk_bv_not(self, formula, args, **kwargs):
@@ -543,6 +544,7 @@ class YicesConverter(Converter, DagWalker):
     def walk_bv_and(self, formula, args, **kwargs):
         values = (yices_api.term_t * len(args))(*args)
         res = yices_api.yices_bvand(len(args), values)
+        self._check_term_result(res)
         return res
 
     def walk_bv_xor(self, formula, args, **kwargs):
@@ -553,6 +555,7 @@ class YicesConverter(Converter, DagWalker):
     def walk_bv_add(self, formula, args, **kwargs):
         values = (yices_api.term_t * len(args))(*args)
         res = yices_api.yices_bvsum(len(args), values)
+        self._check_term_result(res)
         return res
 
     def walk_bv_sub(self, formula, args, **kwargs):
@@ -568,6 +571,7 @@ class YicesConverter(Converter, DagWalker):
     def walk_bv_mul(self, formula, args, **kwargs):
         values = (yices_api.term_t * len(args))(*args)
         res = yices_api.yices_bvproduct(len(args), values)
+        self._check_term_result(res)
         return res
 
     def walk_bv_udiv(self, formula, args, **kwargs):
