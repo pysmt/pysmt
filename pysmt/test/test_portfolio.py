@@ -25,10 +25,25 @@ from pysmt.solvers.portfolio import Portfolio
 from pysmt.smtlib.parser import get_formula_fname
 from pysmt.shortcuts import TRUE, Implies, Equals, Symbol, FALSE
 from pysmt.shortcuts import reset_env, is_sat
-from pysmt.typing import REAL
+from pysmt.typing import REAL, BOOL
 
 
 class PortfolioTestCase(TestCase):
+
+    @skipIfSolverNotAvailable("z3")
+    def test_basic_z3(self):
+        mgr = self.env.formula_manager
+        x = mgr.Symbol('x', BOOL)
+        y = mgr.Symbol('y', BOOL)
+        formula = mgr.And(x, y)
+        with Portfolio(["z3"],
+                       environment=self.env,
+                       logic=QF_LRA) as solver:
+            res = solver.is_sat(formula)
+            self.assertTrue(res)
+            model = solver.get_model()
+            formula_val_term = model.get_value(formula)
+            self.assertTrue(formula_val_term.is_true())
 
     @skipIfSolverNotAvailable("z3")
     @skipIfSolverNotAvailable("msat")

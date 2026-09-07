@@ -232,7 +232,13 @@ def _run_solver(idx, solver, logic, options, formula, signaling_queue, ctrl_pipe
     """
     from pysmt.environment import get_env
 
-    Solver = get_env().factory.Solver
+    env = get_env()
+    # The formula is pickled across the process boundary, so its FNodes
+    # belong to no FormulaManager here (this is always the case with the
+    # 'spawn'/'forkserver' start methods). Contextualize it in our own env.
+    formula = env.formula_manager.normalize(formula)
+
+    Solver = env.factory.Solver
     with Solver(name=solver, logic=logic, **options) as s:
         s.add_assertion(formula)
         try:
@@ -258,7 +264,7 @@ def _run_solver(idx, solver, logic, options, formula, signaling_queue, ctrl_pipe
                 model = list(s.get_model())
                 ctrl_pipe.send(model)
             elif cmd == "get_value":
-                args = get_env().formula_manager.normalize(args)
+                args = env.formula_manager.normalize(args)
                 ctrl_pipe.send(s.get_value(args))
             else:
                 raise ValueError("Unknown command '%s'" % cmd)
