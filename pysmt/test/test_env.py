@@ -203,5 +203,17 @@ class TestEnvironment(TestCase):
             factory.get_quantifier_eliminator()
 
 
+    def test_nonlinear_demotes_mathsat(self):
+        # The MathSAT family is the last resort on nonlinear logics, but still
+        # picked when it is the only capable solver.
+        pick = get_env().factory._pick_favorite
+        available = {'msat': 'MSAT', 'z3': 'Z3'}
+        prefs = ['msat', 'z3']
+        self.assertEqual(pick(prefs, available, available, logics.QF_NRA), 'Z3')
+        self.assertEqual(pick(prefs, available, available, logics.QF_LRA), 'MSAT')
+        only_msat = {'msat': 'MSAT'}
+        self.assertEqual(pick(prefs, only_msat, only_msat, logics.QF_NRA), 'MSAT')
+
+
 if __name__ == '__main__':
     main()

@@ -190,13 +190,15 @@ class Factory(object):
 
         if logic is None:
             logic = default_logic
+        assert isinstance(logic, Logic)
 
         solvers = self._filter_solvers(solver_list, logic=logic)
 
         if solvers is not None and len(solvers) > 0:
             # Pick the first solver based on preference list
             preference_list = self.preferences[solver_type]
-            SolverClass = self._pick_favorite(preference_list, solver_list, solvers)
+            SolverClass = self._pick_favorite(preference_list, solver_list,
+                                              solvers, logic)
             closer_logic = get_closer_logic(SolverClass.LOGICS, logic)
             return SolverClass, closer_logic
 
@@ -205,7 +207,18 @@ class Factory(object):
                                          (solver_type, logic))
 
 
-    def _pick_favorite(self, preference_list: List[str], solver_list: Dict[str, Any], solvers: Dict[str, Any]) -> Type[Solver]:
+    def _pick_favorite(self, preference_list: List[str], solver_list: Dict[str, Any],
+                       solvers: Dict[str, Any], logic: Logic) -> Type[Solver]:
+        if not logic.theory.linear:
+            # The MathSAT family solves nonlinear problems by incremental
+            # linearization, which may not terminate on satisfiable instances
+            # whose solutions are all irrational (see the note on
+            # MathSAT5Solver.LOGICS). Prefer any other capable solver, but keep
+            # them as a fallback when nothing else supports the logic.
+            # ponytail: name prefix instead of a table of names; every
+            # MathSAT-based entry in the preference lists is msat*/optimsat*.
+            preference_list = sorted(preference_list,
+                                     key=lambda n: n.startswith(("msat", "optimsat")))
         for candidate in preference_list:
             if candidate in solvers:
                 return solver_list[candidate]
