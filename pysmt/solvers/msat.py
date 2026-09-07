@@ -180,6 +180,35 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolv
 
     __lib_name__ = "mathsat"
 
+    # NOTE on nonlinear arithmetic (QF_NRA/QF_NIA, and OptiMathSAT, which
+    # inherits this LOGICS set).
+    #
+    # MathSAT solves nonlinear problems by incremental linearization: the
+    # nonlinear terms are abstracted away as free symbols and then
+    # progressively constrained with linear lemmas, until either the
+    # abstraction is refuted (UNSAT) or a model of the abstraction happens to
+    # be a model of the original formula (SAT). Every model MathSAT can build
+    # therefore assigns *rational* values only; irrational (algebraic) values
+    # are not representable.
+    #
+    # This is fine for UNSAT instances and for SAT instances that admit a
+    # rational solution, but not for SAT instances whose solutions are all
+    # irrational: on e.g. `x * x = 2` no finite set of linear lemmas refutes
+    # the abstraction, and no model of the abstraction ever satisfies the
+    # original constraint, so the refinement loop does not terminate. MathSAT
+    # diverges rather than returning `unknown`, and there is currently no
+    # option to bound the number of refinement rounds. The only available
+    # mitigation is a soft timeout installed with `msat_set_termination_test`,
+    # which pySMT does not expose, and which could only be wall-clock based
+    # (hence non-reproducible), since the internal statistics that would give a
+    # deterministic budget cannot be retrieved through the API.
+    # See the discussion in https://github.com/pysmt/pysmt/pull/844.
+    #
+    # Practical consequences:
+    #  - formulas that need algebraic witnesses must be sent to a solver with a
+    #    complete NRA decision procedure (z3, cvc5);
+    #  - the nonlinear examples and tests run against MathSAT are kept
+    #    rational on purpose (e.g. `r * r = 4.0` instead of `r * r = 2.0`).
     LOGICS: Iterable[Logic] = PYSMT_QF_LOGICS -\
              set(l for l in PYSMT_QF_LOGICS if l.theory.strings)
 
