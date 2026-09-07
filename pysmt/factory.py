@@ -215,8 +215,6 @@ class Factory(object):
             # whose solutions are all irrational (see the note on
             # MathSAT5Solver.LOGICS). Prefer any other capable solver, but keep
             # them as a fallback when nothing else supports the logic.
-            # ponytail: name prefix instead of a table of names; every
-            # MathSAT-based entry in the preference lists is msat*/optimsat*.
             preference_list = sorted(preference_list,
                                      key=lambda n: n.startswith(("msat", "optimsat")))
         for candidate in preference_list:
