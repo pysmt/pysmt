@@ -37,11 +37,11 @@ class PortfolioOptions(SolverOptions):
     def __init__(self, **base_options):
         SolverOptions.__init__(self, **base_options)
         self.exit_on_exception = False
-        for k,v in self.solver_options.items():
+        for k, v in self.solver_options.items():
             if k == "exit_on_exception":
                 if v not in (True, False):
-                    raise ValueError("Invalid value for %s: %s" % \
-                                     (str(k),str(v)))
+                    raise ValueError("Invalid value for %s: %s" %
+                                     (str(k), str(v)))
             else:
                 raise ValueError("Unrecognized option '%s'." % k)
             # Store option
@@ -85,7 +85,7 @@ class Portfolio(IncrementalTrackingSolver):
         self._process_solver_set(solvers_set)
         # Check that the names are valid ?
         all_solvers = set(self.environment.factory.all_solvers(logic=logic))
-        not_found = {s for s,_ in self.solvers} - all_solvers
+        not_found = {s for s, _ in self.solvers} - all_solvers
         if len(not_found) != 0:
             raise ValueError("Cannot find solvers %s" % not_found)
 
@@ -108,7 +108,7 @@ class Portfolio(IncrementalTrackingSolver):
             else:
                 sname, local_opts = elem
                 opts = dict(global_opts)
-                for k,v in local_opts.items():
+                for k, v in local_opts.items():
                     # local_opts has priority over global_opts
                     opts[k] = v
             self.solvers.append((sname, opts))
@@ -117,25 +117,29 @@ class Portfolio(IncrementalTrackingSolver):
         pass
 
     @clear_pending_pop
-    def _add_assertion(self, formula: FNode, named: Optional[str]=None):
+    def _add_assertion(self, formula: FNode, named: Optional[str] = None):
         return formula
 
     @clear_pending_pop
-    def _push(self, levels: int=1):
+    def _push(self, levels: int = 1) -> None:
         pass
 
     @clear_pending_pop
-    def _pop(self, levels: int=1):
+    def _pop(self, levels: int = 1) -> None:
         pass
 
     @clear_pending_pop
-    def _solve(self, assumptions: Optional[Iterable[FNode]]=None) -> bool:
+    def _solve(self, assumptions: Optional[Iterable[FNode]] = None) -> bool:
         # We destroy the last solver before solving again. Note: We
         # might be able to do something smarter by keeping track of
         # the state of the solver. This, however, requires more
         # booking (e.g., we need to assert expressions incrementally,
         # instead of in one shot!)
         self._close_existing()
+
+        # if this is fails, you need to either
+        # fix _close_existing or update the code below.
+        assert self._ext_solver is None
 
         formula = self.environment.formula_manager.And(self.assertions)
         _debug("Creating Queue and Pipe")
@@ -144,39 +148,41 @@ class Portfolio(IncrementalTrackingSolver):
         self._ctrl_pipe = my_ctrl_pipe
 
         processes = []
-        for idx, (sname, opts) in enumerate(self.solvers):
-            _debug("Creating instance of %s", sname)
-            options = opts
-            _p = Process(name="%d (%s)" % (idx, sname),
-                         target=_run_solver,
-                         args=("%d (%s)" % (idx, sname),
-                               sname, self.logic, options, formula,
-                               signaling_queue, child_ctrl_pipe))
-            processes.append(_p)
-            _p.start()
-            _debug("Started instance of %s", sname)
+        try:
+            for idx, (sname, opts) in enumerate(self.solvers):
+                _debug("Creating instance of %s", sname)
+                options = opts
+                _p = Process(name="%d (%s)" % (idx, sname),
+                             target=_run_solver,
+                             args=("%d (%s)" % (idx, sname),
+                                   sname, self.logic, options, formula,
+                                   signaling_queue, child_ctrl_pipe))
+                processes.append(_p)
+                _p.start()
+                _debug("Started instance of %s", sname)
 
-        while True:
-            (sname, res) = signaling_queue.get(block=True)
-            if isinstance(res, BaseException):
-                if cast(PortfolioOptions, self.options).exit_on_exception:
-                    # Close all solvers and raise exception
-                    for p in processes:
-                        p.terminate()
-                    raise res
+            while True:
+                (sname, res) = signaling_queue.get(block=True)
+                if isinstance(res, BaseException):
+                    if cast(PortfolioOptions, self.options).exit_on_exception:
+                        # Close all solvers and raise exception
+                        for p in processes:
+                            p.terminate()
+                        raise res
+                    else:
+                        continue
                 else:
-                    continue
-            else:
-                assert type(res) is bool, type(res)
-                break
-        _debug("Solver %s finished first saying %s", sname, res)
-        # Kill all processes, except for the "winner"
-        for p in processes:
-            if p.name == sname:
-                self._ext_solver = p
-            else:
-                p.terminate()
+                    assert type(res) is bool, type(res)
+                    break
+            _debug("Solver %s finished first saying %s", sname, res)
+            # store name of solver that found the answer first
+            self._ext_solver = sname
 
+        finally:
+            # Kill all processes, except for the "winner"
+            for p in processes:
+                if p.name != self._ext_solver:
+                    p.terminate()
         return res
 
     def get_value(self, formula: FNode) -> FNode:
@@ -200,7 +206,7 @@ class Portfolio(IncrementalTrackingSolver):
         _normalize = self.environment.formula_manager.normalize
         model_list = self._ctrl_pipe.recv()
         model = {}
-        for k,v in model_list:
+        for k, v in model_list:
             _k, _v = _normalize(k), _normalize(v)
             model[_k] = _v
 
@@ -208,7 +214,8 @@ class Portfolio(IncrementalTrackingSolver):
 
     def _close_existing(self):
         _debug("Closing resources..")
-        if self._ctrl_pipe :
+        self._ext_solver = None
+        if self._ctrl_pipe:
             self._ctrl_pipe.send("exit")
             self._ctrl_pipe = None
         if self._ext_solver and self._ext_solver.is_alive():

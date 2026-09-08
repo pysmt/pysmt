@@ -33,15 +33,14 @@ class TestString(TestCase):
     #    - Infix notation
     #    - Constants and unicode support
 
-    @skipIfNoSolverForLogic(QF_SLIA)
     def test_str_length(self):
         s1 = Symbol("s1", STRING)
         s2 = Symbol("s2", STRING)
         f = Not(Implies(Equals(s1, s2),
                         Equals(StrLength(s2), StrLength(s1))))
-        self.assertUnsat(f)
+        for sname in self.env.factory.all_solvers(logic=QF_SLIA):
+            self.assertUnsat(f, solver_name=sname)
 
-    @skipIfNoSolverForLogic(QF_SLIA)
     def test_str_concat(self):
         s1 = Symbol("s1", STRING)
         s2 = Symbol("s2", STRING)
@@ -52,26 +51,26 @@ class TestString(TestCase):
                        StrLength(s1)),
                     GE(StrLength(StrConcat(s1, s2)),
                        StrLength(s2))))
-        self.assertUnsat(f)
+        for sname in self.env.factory.all_solvers(logic=QF_SLIA):
+            self.assertUnsat(f, solver_name=sname)
 
-    @skipIfNoSolverForLogic(QF_SLIA)
     def test_str_contains(self):
         s1 = Symbol("s1", STRING)
         s2 = Symbol("s2", STRING)
         f = Not(Implies(And(StrContains(s1, s2),
                             StrContains(s2, s1)),
                         Equals(s1, s2)))
-        self.assertUnsat(f)
+        for sname in self.env.factory.all_solvers(logic=QF_SLIA):
+            self.assertUnsat(f, solver_name=sname)
 
-    @skipIfNoSolverForLogic(QF_SLIA)
     def test_str_indexof(self):
         s1 = String("Hello World")
         t1 = String("o")
         # MG: Make offset argument optional (default 0) StrIndexOf
         f = Not(Equals(StrIndexOf(s1, t1, Int(0)), Int(4)))
-        self.assertUnsat(f)
+        for sname in self.env.factory.all_solvers(logic=QF_SLIA):
+            self.assertUnsat(f, solver_name=sname)
 
-    @skipIfNoSolverForLogic(QF_SLIA)
     def test_str_replace(self):
         s1 = Symbol("s1", STRING)
         s2 = Symbol("s2", STRING)
@@ -84,16 +83,18 @@ class TestString(TestCase):
                 GT(StrLength(s3), Int(0)),
                 Not(StrContains(s1, s2)),
                 Not(StrContains(s1, s3)),
-                Not(Equals(StrReplace(StrReplace(s1, s2,s3), s3, s2), s1)))
-        self.assertUnsat(f)
+                Not(Equals(StrReplace(StrReplace(s1, s2, s3), s3, s2),
+                           s1)))
+        for sname in self.env.factory.all_solvers(logic=QF_SLIA):
+            self.assertUnsat(f, solver_name=sname)
 
         # Replace first v Replace First
         f = Implies(And(Equals(s1, String("Hello")),
                         Equals(s2, StrReplace(s1, String("l"), String(" ")))),
                     Equals(s2, String("He lo")))
-        self.assertValid(f, logic="QF_SLIA")
+        for sname in self.env.factory.all_solvers(logic=QF_SLIA):
+            self.assertValid(f, logic="QF_SLIA", solver_name=sname)
 
-    @skipIfNoSolverForLogic(QF_SLIA)
     def test_str_substr(self):
         s1 = Symbol("s1", STRING)
         i = Symbol("index", INT)
@@ -104,63 +105,67 @@ class TestString(TestCase):
                                  StrSubstr(s1, Plus(i, Int(1)),
                                            StrLength(s1))),
                        s1))
-        self.assertUnsat(f)
+        for sname in self.env.factory.all_solvers(logic=QF_SLIA):
+            self.assertUnsat(f, solver_name=sname)
 
-    @skipIfNoSolverForLogic(QF_SLIA)
     def test_str_prefixof(self):
         s1 = Symbol("s1", STRING)
         s2 = Symbol("s2", STRING)
         f = And(GT(StrLength(s1), Int(2)),
                 GT(StrLength(s2), StrLength(s1)),
                 And(StrPrefixOf(s2, s1), StrContains(s2, s1)))
-        self.assertUnsat(f)
+        for sname in self.env.factory.all_solvers(logic=QF_SLIA):
+            self.assertUnsat(f, solver_name=sname)
 
-    @skipIfNoSolverForLogic(QF_SLIA)
     def test_str_suffixof(self):
         s1 = Symbol("s1", STRING)
         s2 = Symbol("s2", STRING)
         f = And(GT(StrLength(s1), Int(2)),
                 GT(StrLength(s2), StrLength(s1)),
                 And(StrSuffixOf(s2, s1), StrContains(s2, s1)))
-        self.assertUnsat(f)
+        for sname in self.env.factory.all_solvers(logic=QF_SLIA):
+            self.assertUnsat(f, solver_name=sname)
 
-    @skipIfNoSolverForLogic(QF_SLIA)
     def test_str_to_int(self):
         f = Equals(StrToInt(String("1")), Int(1))
-        self.assertValid(f)
+        for sname in self.env.factory.all_solvers(logic=QF_SLIA):
+            self.assertValid(f, solver_name=sname)
         f = Equals(StrToInt(String("-55")), Int(-1))
-        self.assertValid(f)
+        for sname in self.env.factory.all_solvers(logic=QF_SLIA):
+            self.assertValid(f, solver_name=sname)
         f = Equals(StrToInt(String("pippo")), Int(-1))
-        self.assertValid(f)
+        for sname in self.env.factory.all_solvers(logic=QF_SLIA):
+            self.assertValid(f, solver_name=sname)
 
-    @skipIfNoSolverForLogic(QF_SLIA)
     def test_int_to_str(self):
         f = Equals((IntToStr(Int(1))), String("1"))
-        self.assertValid(f)
+        for sname in self.env.factory.all_solvers(logic=QF_SLIA):
+            self.assertValid(f, solver_name=sname)
         f = Equals(IntToStr(Int(-1)), String(""))
-        self.assertValid(f)
+        for sname in self.env.factory.all_solvers(logic=QF_SLIA):
+            self.assertValid(f, solver_name=sname)
 
-    @skipIfNoSolverForLogic(QF_SLIA)
     def test_str_charat(self):
         s1 = String("Hello")
         f = Equals(StrCharAt(s1, Int(0)), String("H"))
-        self.assertValid(f)
+        for sname in self.env.factory.all_solvers(logic=QF_SLIA):
+            self.assertValid(f, solver_name=sname)
 
-    @skipIfNoSolverForLogic(QF_SLIA)
     def test_model(self):
         s = Symbol("s", STRING)
-        f = [ Equals(StrLength(s), Int(5)),
-              Equals(StrCharAt(s, Int(0)), String("A")),
-              Not(Equals(StrCharAt(s, Int(2)), String("B")))]
-        with Solver(logic=QF_SLIA) as solver:
-            solver.add_assertion(And(f))
-            res = solver.solve()
-            self.assertTrue(res)
-            s_value = solver.get_value(s)
-            py_value = s_value.constant_value()
-            self.assertEqual(py_value[0], "A")
-            self.assertNotEqual(py_value[1], "B")
-            self.assertEqual(len(py_value), 5)
+        f = [Equals(StrLength(s), Int(5)),
+             Equals(StrCharAt(s, Int(0)), String("A")),
+             Not(Equals(StrCharAt(s, Int(2)), String("B")))]
+        for sname in self.env.factory.all_solvers(logic=QF_SLIA):
+            with Solver(name=sname, logic=QF_SLIA) as solver:
+                solver.add_assertion(And(f))
+                res = solver.solve()
+                self.assertTrue(res)
+                s_value = solver.get_value(s)
+                py_value = s_value.constant_value()
+                self.assertEqual(py_value[0], "A")
+                self.assertNotEqual(py_value[1], "B")
+                self.assertEqual(len(py_value), 5)
 
     def test_simplification(self):
         constA, constB = String("Hello"), String("World")
@@ -206,6 +211,7 @@ class TestString(TestCase):
                 And(StrSuffixOf(s2, s1), StrContains(s2, s1)))
         theory = get_logic(f).theory
         self.assertTrue(theory.strings, theory)
+
 
 if __name__ == "__main__":
     from pysmt.test import main

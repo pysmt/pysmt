@@ -412,7 +412,7 @@ class FormulaManager(object):
         return self.false_formula
 
     def Bool(self, value: bool) -> FNode:
-        if type(value) != bool:
+        if not isinstance(value, bool):
             raise PysmtTypeError("Expecting bool, got %s" % type(value))
 
         if value:

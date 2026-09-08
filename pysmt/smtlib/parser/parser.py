@@ -46,7 +46,8 @@ def open_(fname: str) -> TextIO:
     return open(fname)
 
 
-def get_formula(script_stream: TextIO, environment: Optional[Environment]=None) -> FNode:
+def get_formula(script_stream: TextIO,
+                environment: Optional[Environment] = None) -> FNode:
     """
     Returns the formula asserted at the end of the given script
     script_stream is a file descriptor.
@@ -60,7 +61,8 @@ def get_formula(script_stream: TextIO, environment: Optional[Environment]=None) 
     return script.get_last_formula(mgr)
 
 
-def get_formula_strict(script_stream: TextIO, environment: Optional[Environment]=None) -> FNode:
+def get_formula_strict(script_stream: TextIO,
+                       environment: Optional[Environment] = None) -> FNode:
     """Returns the formula defined in the SMTScript.
     This function assumes that only one formula is defined in the
     SMTScript. It will raise an exception if commands such as pop and
@@ -76,7 +78,9 @@ def get_formula_strict(script_stream: TextIO, environment: Optional[Environment]
     return script.get_strict_formula(mgr)
 
 
-def get_formula_fname(script_fname: str, environment: Optional[Environment]=None, strict: bool=True) -> FNode:
+def get_formula_fname(script_fname: str,
+                      environment: Optional[Environment] = None,
+                      strict: bool = True) -> FNode:
     """Returns the formula asserted at the end of the given script."""
     with open_(script_fname) as script:
         if strict:
@@ -85,7 +89,7 @@ def get_formula_fname(script_fname: str, environment: Optional[Environment]=None
             return get_formula(script, environment)
 
 
-class SmtLibExecutionCache(object):
+class SmtLibExecutionCache:
     """Execution environment for SMT2 script execution"""
     def __init__(self, env: Environment):
         self.substitute = env.substituter.substitute
@@ -464,7 +468,7 @@ class SmtLibParser(object):
             'bvsle': self._operator_adapter(mgr.BVSLE),
             'bvsgt': self._operator_adapter(mgr.BVSGT),
             'bvsge': self._operator_adapter(mgr.BVSGE),
-            # Strings
+            # Strings: https://smt-lib.org/theories-UnicodeStrings.shtml
             'str.len': self._operator_adapter(mgr.StrLength),
             'str.++': self._operator_adapter(mgr.StrConcat),
             'str.at': self._operator_adapter(mgr.StrCharAt),
@@ -475,6 +479,8 @@ class SmtLibParser(object):
             'str.prefixof': self._operator_adapter(mgr.StrPrefixOf),
             'str.suffixof': self._operator_adapter(mgr.StrSuffixOf),
             'str.to.int': self._operator_adapter(mgr.StrToInt),
+            'str.to_int': self._operator_adapter(mgr.StrToInt),
+            'str.from_int': self._operator_adapter(mgr.IntToStr),
             'int.to.str': self._operator_adapter(mgr.IntToStr),
             'bv2nat': self._operator_adapter(mgr.BVToNatural),
             # arrays
@@ -871,7 +877,7 @@ class SmtLibParser(object):
         Returns the pysmt representation of the given parsed expression
         """
         mgr = self.env.formula_manager
-        stack : List[Any] = []
+        stack: List[Any] = []
 
         try:
             while True:
