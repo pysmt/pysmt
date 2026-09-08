@@ -296,6 +296,7 @@ class TestRegressions(TestCase):
         Symbol("")
         self.assertEqual(hr_parse("''"), Symbol(""))
 
+    @skipIfNoSolverForLogic(logics.QF_BV)
     def test_empty_string_symbol_in_solvers(self):
         self.env.allow_empty_var_names = True
         empty = Symbol("", BVType(8))
@@ -316,6 +317,7 @@ class TestRegressions(TestCase):
                     self.assertEqual(s.converter.back(s.converter.convert(empty)),
                                      empty, sname)
 
+    @skipIfNoSolverForLogic(logics.QF_BV)
     def test_empty_string_symbol_smtlib(self):
         # The benchmark reported in #587 declares `||` and `| |`.
         self.env.allow_empty_var_names = True
