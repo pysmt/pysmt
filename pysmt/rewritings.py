@@ -268,15 +268,12 @@ class PolarityCNFizer(CNFizer):
     def _compute_node_result(self, formula, pol=None, **kwargs):
         key = self._get_key(formula, pol, **kwargs)
         if key not in self.memoization:
-            try:
-                f = self.functions[formula.node_type()]
-            except KeyError:
-                f = self.walk_error
-
             args = [self.memoization[self._get_key(s, p, **kwargs)] \
                     for s, p in self._get_children(formula, pol)]
 
-            self.memoization[key] = f(formula, args=args, pol=pol, **kwargs)
+            self.memoization[key] = self.__class__.super(self, formula,
+                                                         args=args, pol=pol,
+                                                         **kwargs)
         else:
             pass
 

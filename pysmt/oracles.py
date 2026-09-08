@@ -68,12 +68,16 @@ class SizeOracle(walkers.DagWalker):
                          SizeOracle.MEASURE_SYMBOLS: self.walk_count_symbols,
                          SizeOracle.MEASURE_BOOL_DAG: self.walk_count_bool_dag,
                         }
+        self._walking_fun = None
 
+    @walkers.handles(*op.ALL_TYPES)
+    def walk_measure(self, formula, args, **kwargs):
+        return self._walking_fun(formula, args, **kwargs)
 
     def set_walking_measure(self, measure: int):
         if measure not in self.measure_to_fun:
             raise NotImplementedError
-        self.set_function(self.measure_to_fun[measure], *op.ALL_TYPES)
+        self._walking_fun = self.measure_to_fun[measure]
 
     def _get_key(self, formula, measure, **kwargs):
         """Memoize using a tuple (measure, formula)."""

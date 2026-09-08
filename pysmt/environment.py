@@ -87,9 +87,9 @@ class Environment(object):
         # (e.g. substitution and simplification).
         self.allow_empty_var_names = False
 
-        # Dynamic Walker Configuration Map
+        # Dynamic Walker Configuration(s)
         # See: add_dynamic_walker_function
-        self.dwf = {}
+        self._dwf: set = set()
 
     @property
     def formula_manager(self) -> pysmt.formula.FormulaManager:
@@ -157,12 +157,13 @@ class Environment(object):
         See :py:meth:`pysmt.walkers.generic.Walker.walk_error` for
         more information.
         """
-        # self.dwf is a map of maps: {nodetype, {walker: function}}
-        if nodetype not in self.dwf:
-            self.dwf[nodetype] = {}
-
-        assert walker not in self.dwf[nodetype], "Redefinition"
-        self.dwf[nodetype][walker] = function
+        # self._dwf is a set of (nodetype, walker) pairs, used only to
+        # detect redefinitions (which are otherwise hard to debug). The
+        # function is registered directly as a walk_* handler on the
+        # walker class.
+        assert (nodetype, walker) not in self._dwf, "Dynamic Walker Redefinition!"
+        self._dwf.add((nodetype, walker))
+        walker.set_handler(function, nodetype)
 
     @property
     def factory(self) -> "pysmt.factory.Factory":
