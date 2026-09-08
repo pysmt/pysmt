@@ -270,6 +270,43 @@ class TestRegressions(TestCase):
     def test_empty_string_symbol(self):
         with self.assertRaises(PysmtValueError):
             Symbol("")
+        # SMT-LIB allows `||` as a symbol name (see #587), but pySMT
+        # requires the user to opt-in explicitly.
+        self.env.allow_empty_var_names = True
+        self.assertNotEqual(Symbol(""), Symbol(" "))
+
+    def test_empty_string_symbol_in_solvers(self):
+        self.env.allow_empty_var_names = True
+        empty = Symbol("", BVType(8))
+        other = Symbol("other", BVType(8))
+        f = Not(Equals(empty, other))
+        for sname in self.env.factory.all_solvers(logic=logics.QF_BV):
+            with Solver(name=sname, logic=logics.QF_BV) as s:
+                s.add_assertion(f)
+                self.assertTrue(s.solve(), sname)
+                self.assertTrue(s.get_value(empty).is_bv_constant(), sname)
+                # Round-trip, but only for converters that can back-convert
+                # a regular symbol in the first place.
+                try:
+                    can_back = s.converter.back(s.converter.convert(other)) == other
+                except Exception:
+                    can_back = False
+                if can_back:
+                    self.assertEqual(s.converter.back(s.converter.convert(empty)),
+                                     empty, sname)
+
+    def test_empty_string_symbol_smtlib(self):
+        # The benchmark reported in #587 declares `||` and `| |`.
+        self.env.allow_empty_var_names = True
+        txt = """(set-logic QF_BV)
+        (declare-fun || () (_ BitVec 4))
+        (declare-fun | | () (_ BitVec 4))
+        (assert (not (= || | |)))
+        (check-sat)"""
+        script = SmtLibParser().get_script(StringIO(txt))
+        self.assertEqual({s.symbol_name() for s in script.get_declared_symbols()},
+                         {"", " "})
+        self.assertSat(script.get_last_formula())
 
     def test_smtlib_info_quoting(self):
         cmd = SmtLibCommand(smtcmd.SET_INFO, [":source", "This\nis\nmultiline!"])

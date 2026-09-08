@@ -16,6 +16,7 @@
 #   limitations under the License.
 #
 from fractions import Fraction
+import pysmt.formula
 from pysmt.typing import BOOL
 from pysmt.solvers.options import SolverOptions
 from pysmt.decorators import clear_pending_pop
@@ -566,3 +567,25 @@ class Converter(object):
     def back(self, expr: Any, *args: Any, **kwargs: Any) -> FNode:
         """Convert an expression of the Solver into a PySMT term."""
         raise NotImplementedError
+
+    # SMT-LIB allows a symbol with the empty name (`||`), but some
+    # solvers refuse to declare it (MathSAT) or cannot print it back
+    # (Z3). Those converters rename it to a fresh, unused name on the
+    # way in and undo the renaming on the way out.
+    _empty_name_subst: Optional[str] = None
+    mgr: 'pysmt.formula.FormulaManager'
+
+    def _rename_empty(self, name: str) -> str:
+        """Map a pySMT symbol name to the name used by the solver."""
+        if name != "":
+            return name
+        if self._empty_name_subst is None:
+            i = 0
+            while ("__pysmt_empty_name_%d" % i) in self.mgr.symbols:
+                i += 1
+            self._empty_name_subst = "__pysmt_empty_name_%d" % i
+        return self._empty_name_subst
+
+    def _restore_empty(self, name: str) -> str:
+        """Inverse of _rename_empty()."""
+        return "" if name == self._empty_name_subst else name
