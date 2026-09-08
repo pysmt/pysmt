@@ -22,7 +22,8 @@ from typing import List, Optional
 import pysmt
 import pysmt.typing as types
 from pysmt.environment import get_env
-from pysmt.exceptions import PysmtSyntaxError, UndefinedSymbolError
+from pysmt.exceptions import (PysmtSyntaxError, UndefinedSymbolError,
+                             PysmtEmptySymbolNameError)
 from pysmt.constants import Fraction
 
 
@@ -332,6 +333,9 @@ class Constant(GrammarSymbol):
 class Identifier(GrammarSymbol):
     def __init__(self, name, env):
         GrammarSymbol.__init__(self)
+        if name == "" and not env.allow_empty_var_names:
+            # Otherwise this would be reported as an undefined symbol
+            raise PysmtEmptySymbolNameError()
         self.value = env.formula_manager.get_symbol(name)
         if self.value is None:
             raise UndefinedSymbolError(name)

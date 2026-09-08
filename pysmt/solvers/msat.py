@@ -730,7 +730,7 @@ class MSatConverter(Converter, DagWalker):
                 val, width = map(int, str(term).split("_"))
                 res = self.mgr.BV(val, width)
         elif self._msat_lib.msat_term_is_constant(self.msat_env(), term):
-            rep = self._msat_lib.msat_term_repr(term)
+            rep = self._restore_empty(self._msat_lib.msat_term_repr(term))
             ty = self._msat_lib.msat_term_get_type(term)
             if self._msat_lib.msat_term_is_boolean_constant(self.msat_env(), term):
                 res = self.mgr.Symbol(rep, types.BOOL)
@@ -1141,10 +1141,10 @@ class MSatConverter(Converter, DagWalker):
         if not var.is_symbol():
             raise PysmtTypeError("Trying to declare as a variable something "
                                  "that is not a symbol: %s" % var)
-        if var.symbol_name() not in self.symbol_to_decl:
+        if var not in self.symbol_to_decl:
             tp = self._type_to_msat(var.symbol_type())
             decl = self._msat_lib.msat_declare_function(self.msat_env(),
-                                                 var.symbol_name(),
+                                                 self._rename_empty(var.symbol_name()),
                                                  tp)
             if self._msat_lib.MSAT_ERROR_DECL(decl):
                 msat_msg = self._msat_lib.msat_last_error_message(self.msat_env())

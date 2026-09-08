@@ -573,7 +573,7 @@ class Z3Converter(Converter, DagWalker):
             else:
                 # it must be a symbol
                 try:
-                    return self.mgr.get_symbol(str(expr))
+                    return self.mgr.get_symbol(self._restore_empty(str(expr)))
                 except UndefinedSymbolError:
                     import warnings
                     symb_type = self._z3_to_type(expr.sort())
@@ -582,7 +582,7 @@ class Z3Converter(Converter, DagWalker):
                                                 template="__z3_%d")
         elif z3.is_function(expr):
             # This needs to be after we try to convert regular Symbols
-            fsymbol = self.mgr.get_symbol(expr.decl().name())
+            fsymbol = self.mgr.get_symbol(self._restore_empty(expr.decl().name()))
             return self.mgr.Function(fsymbol, args)
 
         # If we reach this point, we did not manage to translate the expression
@@ -622,6 +622,11 @@ class Z3Converter(Converter, DagWalker):
                                              expr.ast)
         stream_in = StringIO(s)
         r = parser.get_script(stream_in).get_last_formula(self.mgr)
+        if self._empty_name_subst is not None:
+            # Undo the renaming of the empty symbol name (see Converter)
+            src = self.mgr.get_symbol(self._empty_name_subst)
+            r = self.env.substituter.substitute(
+                r, {src: self.mgr.Symbol("", src.symbol_type())})
         key = (askey(expr), None)
         self._back_memoization[key] = r
         return r
@@ -642,7 +647,7 @@ class Z3Converter(Converter, DagWalker):
 
     def walk_symbol(self, formula: FNode, **kwargs) -> z3.Ast:
         symbol_type = formula.symbol_type()
-        sname = formula.symbol_name()
+        sname = self._rename_empty(formula.symbol_name())
         z3_sname = z3.Z3_mk_string_symbol(self.ctx.ref(), sname)
         if symbol_type.is_bool_type():
             sort_ast = self.z3BoolSort.ast
@@ -756,7 +761,7 @@ class Z3Converter(Converter, DagWalker):
                 z3dom[i] = self._type_to_z3(t).ast
             z3ret = self._type_to_z3(tp.return_type).ast
             z3name = z3.Z3_mk_string_symbol(self.ctx.ref(),
-                                            func_name.symbol_name())
+                                            self._rename_empty(func_name.symbol_name()))
             z3func = z3.Z3_mk_func_decl(self.ctx.ref(), z3name,
                                         arity, z3dom, z3ret)
             self._z3_func_decl_cache[func_name] = z3func
