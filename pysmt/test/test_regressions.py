@@ -29,11 +29,13 @@ from pysmt.test import (TestCase, skipIfSolverNotAvailable, skipIfNoSolverForLog
                         skipIfNoQEForLogic)
 from pysmt.test import main
 from pysmt.exceptions import (ConvertExpressionError, PysmtValueError,
-                              PysmtTypeError, InternalSolverError)
+                              PysmtTypeError, InternalSolverError,
+                              PysmtEmptySymbolNameError, UndefinedSymbolError)
 from pysmt.test.examples import get_example_formulae
 from pysmt.environment import Environment
 from pysmt.rewritings import cnf_as_set
 from pysmt.smtlib.parser import SmtLibParser
+from pysmt.parsing import parse as hr_parse
 from pysmt.smtlib.commands import DECLARE_FUN
 from pysmt.smtlib.script import SmtLibCommand
 from pysmt.logics import get_closer_smtlib_logic
@@ -274,6 +276,25 @@ class TestRegressions(TestCase):
         # requires the user to opt-in explicitly.
         self.env.allow_empty_var_names = True
         self.assertNotEqual(Symbol(""), Symbol(" "))
+
+    def test_empty_string_symbol_error_message(self):
+        # Parsing a symbol with the empty name must point at the option
+        # to enable, not fail with an unrelated message.
+        smtlib = """(set-logic QF_BV)
+        (declare-fun || () (_ BitVec 4))
+        (assert (= || || ))
+        (check-sat)"""
+        with self.assertRaises(PysmtEmptySymbolNameError) as ctx:
+            SmtLibParser().get_script(StringIO(smtlib))
+        self.assertIn("allow_empty_var_names", str(ctx.exception))
+        with self.assertRaises(PysmtEmptySymbolNameError):
+            hr_parse("'' & x")
+        # Once enabled, the empty name is just an undeclared symbol
+        self.env.allow_empty_var_names = True
+        with self.assertRaises(UndefinedSymbolError):
+            hr_parse("'' & x")
+        Symbol("")
+        self.assertEqual(hr_parse("''"), Symbol(""))
 
     def test_empty_string_symbol_in_solvers(self):
         self.env.allow_empty_var_names = True

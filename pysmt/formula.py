@@ -45,7 +45,8 @@ import pysmt.operators as op
 from pysmt.fnode import FNode
 from pysmt.typing import PySMTType
 from pysmt.fnode import FNode, FNodeContent
-from pysmt.exceptions import UndefinedSymbolError, PysmtValueError,PysmtTypeError
+from pysmt.exceptions import (UndefinedSymbolError, PysmtValueError,
+                             PysmtTypeError, PysmtEmptySymbolNameError)
 from pysmt.walkers.identitydag import IdentityDagWalker
 from pysmt.constants import Fraction, Numeral
 from pysmt.constants import (is_pysmt_fraction,
@@ -107,7 +108,7 @@ class FormulaManager(object):
 
     def _create_symbol(self, name: str, typename: PySMTType=types.BOOL) -> FNode:
         if len(name) == 0 and not self.env.allow_empty_var_names:
-            raise PysmtValueError("Empty string is not a valid name")
+            raise PysmtEmptySymbolNameError()
         if not isinstance(typename, types.PySMTType):
             raise PysmtValueError("typename must be a PySMTType.")
         n = self.create_node(node_type=op.SYMBOL,

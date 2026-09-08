@@ -131,6 +131,16 @@ class PysmtImportError(PysmtException, ImportError):
 class PysmtValueError(PysmtException, ValueError):
     pass
 
+class PysmtEmptySymbolNameError(PysmtValueError):
+    """A symbol with the empty name was built, but they are not enabled."""
+
+    def __init__(self):
+        PysmtValueError.__init__(
+            self,
+            "The empty string is not a valid symbol name. SMT-LIB allows it "
+            "(as `||`), but not every solver does, so pySMT requires it to be "
+            "enabled explicitly by setting `env.allow_empty_var_names = True`.")
+
 class PysmtTypeError(PysmtException, TypeError):
     pass
 
