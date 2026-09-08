@@ -98,8 +98,13 @@ class Walker(object, metaclass=MetaNodeTypeHandler):
             setattr(cls, nt_to_fun(nt), function)
 
     @classmethod
-    def super(cls, self, formula: FNode, *args, **kwargs) -> FNode:
-        """Call the correct walk_* function of cls for the given formula."""
+    def super(cls, self, formula: FNode, *args, **kwargs) -> Any:
+        """Call the correct walk_* function of cls for the given formula.
+
+        The return type depends on the walker: an FNode for rewriting
+        walkers, but a generator (TreeWalker), a set or an int (oracles),
+        etc. for others; hence Any.
+        """
         nt = formula.node_type()
         try:
             f = getattr(cls, nt_to_fun(nt))
