@@ -16,6 +16,8 @@
 #   limitations under the License.
 #
 from fractions import Fraction
+
+from pysmt.constants import is_pysmt_integer, is_pysmt_fraction
 import warnings
 
 from pysmt.solvers.solver import Solver
@@ -371,7 +373,8 @@ class OptSearchInterval(OptComparationFunctions):
             model_value: Union[Fraction, int] = obj_value.bv_signed_value()
         else:
             v = obj_value.constant_value()
-            assert isinstance(v, (int, Fraction))
+            # backend-aware: v may be a gmpy2 mpz/mpq, not a python int/Fraction
+            assert is_pysmt_integer(v) or is_pysmt_fraction(v)
             model_value = v
         if self._obj.is_minimization_goal():
             if self._upper is None or self._upper > model_value:

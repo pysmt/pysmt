@@ -70,6 +70,10 @@ jobs:
         pysmt_cython: ["TRUE", "FALSE"]
         pysmt_gmpy: ["TRUE", "FALSE"]
         include:
+          # z3 with gmpy2: exercises the optimization/OMT code on the gmpy2 backend
+          - os: ubuntu-latest
+            pysmt_solver: z3
+            pysmt_gmpy: "TRUE"
           - os: ubuntu-latest
             pysmt_solver: all
           - os: macos-latest
