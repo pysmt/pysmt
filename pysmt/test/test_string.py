@@ -33,6 +33,7 @@ class TestString(TestCase):
     #    - Infix notation
     #    - Constants and unicode support
 
+    @skipIfNoSolverForLogic(QF_SLIA)
     def test_str_length(self):
         s1 = Symbol("s1", STRING)
         s2 = Symbol("s2", STRING)
@@ -41,6 +42,7 @@ class TestString(TestCase):
         for sname in self.env.factory.all_solvers(logic=QF_SLIA):
             self.assertUnsat(f, solver_name=sname)
 
+    @skipIfNoSolverForLogic(QF_SLIA)
     def test_str_concat(self):
         s1 = Symbol("s1", STRING)
         s2 = Symbol("s2", STRING)
@@ -54,6 +56,7 @@ class TestString(TestCase):
         for sname in self.env.factory.all_solvers(logic=QF_SLIA):
             self.assertUnsat(f, solver_name=sname)
 
+    @skipIfNoSolverForLogic(QF_SLIA)
     def test_str_contains(self):
         s1 = Symbol("s1", STRING)
         s2 = Symbol("s2", STRING)
@@ -63,6 +66,7 @@ class TestString(TestCase):
         for sname in self.env.factory.all_solvers(logic=QF_SLIA):
             self.assertUnsat(f, solver_name=sname)
 
+    @skipIfNoSolverForLogic(QF_SLIA)
     def test_str_indexof(self):
         s1 = String("Hello World")
         t1 = String("o")
@@ -71,6 +75,7 @@ class TestString(TestCase):
         for sname in self.env.factory.all_solvers(logic=QF_SLIA):
             self.assertUnsat(f, solver_name=sname)
 
+    @skipIfNoSolverForLogic(QF_SLIA)
     def test_str_replace(self):
         s1 = Symbol("s1", STRING)
         s2 = Symbol("s2", STRING)
@@ -95,6 +100,7 @@ class TestString(TestCase):
         for sname in self.env.factory.all_solvers(logic=QF_SLIA):
             self.assertValid(f, logic="QF_SLIA", solver_name=sname)
 
+    @skipIfNoSolverForLogic(QF_SLIA)
     def test_str_substr(self):
         s1 = Symbol("s1", STRING)
         i = Symbol("index", INT)
@@ -108,6 +114,7 @@ class TestString(TestCase):
         for sname in self.env.factory.all_solvers(logic=QF_SLIA):
             self.assertUnsat(f, solver_name=sname)
 
+    @skipIfNoSolverForLogic(QF_SLIA)
     def test_str_prefixof(self):
         s1 = Symbol("s1", STRING)
         s2 = Symbol("s2", STRING)
@@ -117,6 +124,7 @@ class TestString(TestCase):
         for sname in self.env.factory.all_solvers(logic=QF_SLIA):
             self.assertUnsat(f, solver_name=sname)
 
+    @skipIfNoSolverForLogic(QF_SLIA)
     def test_str_suffixof(self):
         s1 = Symbol("s1", STRING)
         s2 = Symbol("s2", STRING)
@@ -126,6 +134,7 @@ class TestString(TestCase):
         for sname in self.env.factory.all_solvers(logic=QF_SLIA):
             self.assertUnsat(f, solver_name=sname)
 
+    @skipIfNoSolverForLogic(QF_SLIA)
     def test_str_to_int(self):
         f = Equals(StrToInt(String("1")), Int(1))
         for sname in self.env.factory.all_solvers(logic=QF_SLIA):
@@ -137,6 +146,7 @@ class TestString(TestCase):
         for sname in self.env.factory.all_solvers(logic=QF_SLIA):
             self.assertValid(f, solver_name=sname)
 
+    @skipIfNoSolverForLogic(QF_SLIA)
     def test_int_to_str(self):
         f = Equals((IntToStr(Int(1))), String("1"))
         for sname in self.env.factory.all_solvers(logic=QF_SLIA):
@@ -145,6 +155,7 @@ class TestString(TestCase):
         for sname in self.env.factory.all_solvers(logic=QF_SLIA):
             self.assertValid(f, solver_name=sname)
 
+    @skipIfNoSolverForLogic(QF_SLIA)
     def test_str_charat(self):
         s1 = String("Hello")
         f = Equals(StrCharAt(s1, Int(0)), String("H"))
