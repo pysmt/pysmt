@@ -18,7 +18,6 @@
 
 from __future__ import absolute_import
 
-from pysmt.constants import is_pysmt_integer, is_pysmt_fraction
 from warnings import warn
 
 from pysmt.decorators import clear_pending_pop
@@ -63,15 +62,10 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
             assert isinstance(goal, MaxSMTGoal)
             for soft, weight_exp in goal.soft:
                 obj_soft = self.converter.convert(soft)
-                c = weight_exp.constant_value()
-                # z3 add_soft accepts a numeral string; use an exact rational string
-                # to avoid the precision loss of float() on gmpy2 mpq / Fraction weights.
-                if is_pysmt_fraction(c):
-                    w: str = "%d/%d" % (int(c.numerator), int(c.denominator))
-                elif is_pysmt_integer(c):
-                    w = str(int(c))
-                else:
-                    w = str(c)
+                # str() yields an exact rational numeral ("1/3", "8") for every
+                # backend (int/Fraction and gmpy2 mpz/mpq); z3 add_soft parses it,
+                # avoiding the precision loss of float() on fractional weights.
+                w = str(weight_exp.constant_value())
                 h = self.z3.add_soft(obj_soft, w, "__pysmt_" + str(goal_id))
         else:
             term = goal.term()

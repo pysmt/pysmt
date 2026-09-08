@@ -375,7 +375,7 @@ class OptSearchInterval(OptComparationFunctions):
             v = obj_value.constant_value()
             # backend-aware: v may be a gmpy2 mpz/mpq, not a python int/Fraction
             assert is_pysmt_integer(v) or is_pysmt_fraction(v)
-            model_value = v
+            model_value = cast(Union[Fraction, int], v)
         if self._obj.is_minimization_goal():
             if self._upper is None or self._upper > model_value:
                 self._upper = model_value
