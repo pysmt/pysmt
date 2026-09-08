@@ -475,8 +475,7 @@ class FormulaManager(object):
         if len(tuple_args) == 1:
             return tuple_args[0]
         else:
-            return self.create_node(node_type=op.PLUS,
-                                    args=tuple_args)
+            return self.create_node(node_type=op.PLUS, args=tuple_args)
 
     def ToReal(self, formula: FNode) -> FNode:
         """ Cast a formula to real type. """
@@ -755,16 +754,23 @@ class FormulaManager(object):
         if len(args) == 1:
             return args[0]
 
-        assert all(v.bv_width() == args[0].bv_width() for v in args)
         return self.create_node(node_type=op.BV_OR,
                                 args=args,
                                 payload=(args[0].bv_width(), ))
 
-    def BVXor(self, left: FNode, right: FNode) -> FNode:
-        """Returns the Bit-wise XOR of two bitvectors of the same size."""
+    def BVXor(self, *args: Union[FNode, Sequence[FNode]]) -> FNode:
+        """Returns the Bit-wise XOR of bitvectors of the same size."""
+        args = self._args_to_sorted_tuple(args)
+
+        if len(args) == 0:
+            raise PysmtValueError("BVXOr expects at least one argument to be passed")
+
+        if len(args) == 1:
+            return args[0]
+
         return self.create_node(node_type=op.BV_XOR,
-                                args=self._sorted_tuple((left, right)),
-                                payload=(left.bv_width(),))
+                                args=args,
+                                payload=(args[0].bv_width(), ))
 
     def BVConcat(self, *args: Union[FNode, Sequence[FNode]]) -> FNode:
         """Returns the Concatenation of the given BVs"""
@@ -828,7 +834,6 @@ class FormulaManager(object):
         if len(args) == 1:
             return args[0]
 
-        assert all(v.bv_width() == args[0].bv_width() for v in args)
         return self.create_node(node_type=op.BV_ADD,
                                 args=args,
                                 payload=(args[0].bv_width(),))
@@ -849,7 +854,6 @@ class FormulaManager(object):
         if len(args) == 1:
             return args[0]
 
-        assert all(v.bv_width() == args[0].bv_width() for v in args)
         return self.create_node(node_type=op.BV_MUL,
                                 args=args,
                                 payload=(args[0].bv_width(),))
@@ -1197,16 +1201,20 @@ class FormulaManager(object):
 
         def _check_fnode(f: Union[FNode, Iterable[FNode]]) -> FNode:
             if not isinstance(f, FNode):
-                raise PysmtTypeError("Typing not respected")
+                raise PysmtTypeError("Typing not respected expected FNode found: %s" % type(f))
             return f
         return tuple(map(_check_fnode, itargs))
 
     def _sorted_tuple(self, nodes: Iterable[FNode]) -> Tuple[FNode, ...]:
         """Build sorted tuple of FNode from iterable of FNode"""
-        result = tuple(sorted(nodes, key=lambda p: p.node_id()))
+        # skip sorting if not enabled.
+        if self.env.sort_commutative_args:
+            nodes = sorted(nodes, key=lambda p: p.node_id())
+
+        result = tuple(nodes)
 
         if not all(isinstance(res, FNode) for res in result):
-            raise PysmtTypeError("Typing not respected")
+            raise PysmtTypeError("Typing not respected expected")
 
         return result
 

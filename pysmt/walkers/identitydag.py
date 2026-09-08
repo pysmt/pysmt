@@ -135,7 +135,7 @@ class IdentityDagWalker(DagWalker):
         return self.mgr.BVOr(args)
 
     def walk_bv_xor(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
-        return self.mgr.BVXor(args[0], args[1])
+        return self.mgr.BVXor(args)
 
     def walk_bv_add(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         return self.mgr.BVAdd(args)

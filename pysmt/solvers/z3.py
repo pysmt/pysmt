@@ -935,7 +935,7 @@ class Z3Converter(Converter, DagWalker):
     walk_bv_concat = make_walk_nary_to_binary(z3.Z3_mk_concat)
     walk_bv_or   = make_walk_nary_to_binary(z3.Z3_mk_bvor)
     walk_bv_and  = make_walk_nary_to_binary(z3.Z3_mk_bvand)
-    walk_bv_xor  = make_walk_binary(z3.Z3_mk_bvxor)
+    walk_bv_xor  = make_walk_nary_to_binary(z3.Z3_mk_bvxor)
     walk_bv_add  = make_walk_nary_to_binary(z3.Z3_mk_bvadd)
     walk_bv_sub  = make_walk_binary(z3.Z3_mk_bvsub)
     walk_bv_mul  = make_walk_nary_to_binary(z3.Z3_mk_bvmul)

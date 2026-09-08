@@ -51,7 +51,7 @@ class Environment(object):
     HRSerializerClass = pysmt.printers.HRSerializer
     QuantifierOracleClass = pysmt.oracles.QuantifierOracle
     TheoryOracleClass = pysmt.oracles.TheoryOracle
-    FreeVarsOracleClass= pysmt.oracles.FreeVarsOracle
+    FreeVarsOracleClass = pysmt.oracles.FreeVarsOracle
     SizeOracleClass = pysmt.oracles.SizeOracle
     AtomsOracleClass = pysmt.oracles.AtomsOracle
     TypesOracleClass = pysmt.oracles.TypesOracle
@@ -76,6 +76,10 @@ class Environment(object):
         # Configurations
         self.enable_infix_notation = False
         self.enable_div_by_0 = True
+        # set to true to enable FormulaManager reordering of arguments
+        # of commutative operations.
+        # NOTE: ordering across runs depends on order in which FNodes are created.
+        self.sort_commutative_args = False
 
         # This option allows the construction of a symbol with empty
         # name (i.e. `Symbol("", INT)`). This feature is allowed by

@@ -494,7 +494,10 @@ class BTORConverter(Converter, DagWalker):
         return self.walk_and(formula, args, **kwargs)
 
     def walk_bv_xor(self, formula, args, **kwargs):
-        return self._btor.Xor(*args)
+        res = args[0]
+        for arg in args[1:]:
+            res = self._btor.Xor(res, arg)
+        return res
 
     def walk_bv_add(self, formula, args, **kwargs):
         res = args[0]

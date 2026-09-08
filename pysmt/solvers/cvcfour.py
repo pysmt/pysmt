@@ -418,7 +418,7 @@ class CVC4Converter(Converter, DagWalker):
         return self.mkExpr(CVC4.BITVECTOR_AND, args)
 
     def walk_bv_xor(self, formula, args, **kwargs):
-        return self.mkExpr(CVC4.BITVECTOR_XOR, args[0], args[1])
+        return self.mkExpr(CVC4.BITVECTOR_XOR, args)
 
     def walk_bv_add(self, formula, args, **kwargs):
         return self.mkExpr(CVC4.BITVECTOR_PLUS, args)

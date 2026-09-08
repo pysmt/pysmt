@@ -443,7 +443,7 @@ class CVC5Converter(Converter, DagWalker):
         return res
 
     def walk_bv_xor(self, formula, args, **kwargs):
-        return self.cvc5_solver.mkTerm(Kind.BITVECTOR_XOR, args[0], args[1])
+        return self.cvc5_solver.mkTerm(Kind.BITVECTOR_XOR, *args)
 
     def walk_bv_add(self, formula, args, **kwargs):
         return self.cvc5_solver.mkTerm(Kind.BITVECTOR_ADD, *args)

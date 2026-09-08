@@ -937,8 +937,11 @@ class MSatConverter(Converter, DagWalker):
         return res
 
     def walk_bv_xor(self, formula: FNode, args: List[Any], **kwargs) -> Any:
-        return self._msat_lib.msat_make_bv_xor(self.msat_env(),
-                                        args[0], args[1])
+        res = args[0]
+        for arg in args[1:]:
+            res = self._msat_lib.msat_make_bv_xor(self.msat_env(),
+                                                  res, arg)
+        return res
 
     def walk_bv_add(self, formula: FNode, args: List[Any], **kwargs) -> Any:
         res = args[0]

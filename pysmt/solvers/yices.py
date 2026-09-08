@@ -548,7 +548,8 @@ class YicesConverter(Converter, DagWalker):
         return res
 
     def walk_bv_xor(self, formula, args, **kwargs):
-        res = yices_api.yices_bvxor2(args[0], args[1])
+        values = (yices_api.term_t * len(args))(*args)
+        res = yices_api.yices_bvxor(len(args), values)
         self._check_term_result(res)
         return res
 
