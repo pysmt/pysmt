@@ -73,3 +73,50 @@ class TestDwf(TestCase):
         new_t = new_node_type()
         new_types_set = set(all_types())
         self.assertEqual(new_types_set - old_types_set, set([new_t]))
+
+    def test_03_dwf_is_environment_local(self):
+        # A DWF registered in one environment must not leak into another.
+        # Handlers are dispatched via Walker.super through the walker's
+        # own env, not by mutating the (process-global) walker class.
+        from pysmt.environment import Environment
+        from pysmt.printers import HRPrinter
+
+        def make_printer(sep):
+            def hrprinter_walk_XOR(self, formula):
+                self.stream.write("(")
+                yield formula.arg(0)
+                self.stream.write(sep)
+                yield formula.arg(1)
+                self.stream.write(")")
+            return hrprinter_walk_XOR
+
+        XOR = new_node_type()
+        env1 = Environment()
+        env2 = Environment()
+
+        # Both envs must be able to build the node, so both get a
+        # type-checker handler. Only env1 gets a printer handler.
+        for env in (env1, env2):
+            env.add_dynamic_walker_function(
+                XOR, SimpleTypeChecker, SimpleTypeChecker.walk_bool_to_bool)
+        env1.add_dynamic_walker_function(XOR, HRPrinter, make_printer(" *+* "))
+
+        x1 = env1.formula_manager.Symbol("x")
+        f1 = env1.formula_manager.create_node(node_type=XOR, args=(x1, x1))
+        self.assertEqual(env1.serializer.serialize(f1), "(x *+* x)")
+
+        # The handler registered on env1 must NOT leak into env2.
+        x2 = env2.formula_manager.Symbol("x")
+        f2 = env2.formula_manager.create_node(node_type=XOR, args=(x2, x2))
+        with self.assertRaises(UnsupportedOperatorError):
+            env2.serializer.serialize(f2)
+
+        # env2 can register its own, independent handler for the same
+        # (nodetype, walker) pair, and env1 stays unaffected.
+        env2.add_dynamic_walker_function(XOR, HRPrinter, make_printer(" XOR "))
+        self.assertEqual(env2.serializer.serialize(f2), "(x XOR x)")
+        self.assertEqual(env1.serializer.serialize(f1), "(x *+* x)")
+
+        # Redefining the same (nodetype, walker) within one env is caught.
+        with self.assertRaises(AssertionError):
+            env1.add_dynamic_walker_function(XOR, HRPrinter, make_printer("!"))
