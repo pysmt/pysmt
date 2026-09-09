@@ -108,11 +108,17 @@ class Walker(object, metaclass=MetaNodeTypeHandler):
         nt = formula.node_type()
         try:
             f = getattr(cls, nt_to_fun(nt))
-        except AttributeError as ex:
+        except AttributeError:
             # Custom node types (see new_node_type) have no walk_* method
-            # unless one is registered via add_dynamic_walker_function.
-            raise pysmt.exceptions.UnsupportedOperatorError(
-                node_type=nt, expression=formula) from ex
+            # on the class. Look for a handler registered on this walker's
+            # environment via add_dynamic_walker_function; keeping the
+            # lookup env-local is what stops registrations from leaking
+            # across environments.
+            fun = self.env.get_dynamic_walker_function(nt, cls)
+            if fun is None:
+                raise pysmt.exceptions.UnsupportedOperatorError(
+                    node_type=nt, expression=formula)
+            return fun(self, formula, *args, **kwargs)
         return f(self, formula, *args, **kwargs)
 
     @handles(op.ALL_TYPES)
