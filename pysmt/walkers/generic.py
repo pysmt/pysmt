@@ -15,8 +15,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from functools import partial
-
 import sys
 from pysmt.fnode import FNode
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union, cast, Iterable
@@ -86,24 +84,15 @@ class Walker(metaclass=MetaNodeTypeHandler):
             env = pysmt.environment.get_env()
         self.env: "pysmt.environment.Environment" = env
 
-        self.functions = {}
-        for o in op.all_types():
-            try:
-                # getattr will raise an AttributeError exception if a
-                # method does not exist
-                self.functions[o] = getattr(self, nt_to_fun(o))
-            except AttributeError:
-                self.functions[o] = self.walk_error
-
     def set_function(self, function, *node_types):
-        """Overrides the default walking function for each of the specified
-        node_types with the given function
+        """Instance-based walkers (<=0.6.0) are no longer supported.
+
+        Use class-based walkers instead: define walk_* methods (or use
+        the ``@handles`` decorator) on a subclass.
         """
-        from warnings import warn
-        warn("Instance-based walkers (<=0.6.0) walkers are deprecated. "
-             "You should use new-style/class based walkers", stacklevel=2)
-        for nt in node_types:
-            self.functions[nt] = function
+        raise NotImplementedError(
+            "Instance-based walkers (<=0.6.0) are deprecated. "
+            "You should use new-style/class based walkers.")
 
     @classmethod
     def set_handler(cls, function: Callable, *node_types):
@@ -112,28 +101,33 @@ class Walker(metaclass=MetaNodeTypeHandler):
             setattr(cls, nt_to_fun(nt), function)
 
     @classmethod
-    def super(cls, self, formula: FNode, *args, **kwargs) -> FNode:
-        """Call the correct walk_* function of cls for the given formula."""
-        f = getattr(cls, nt_to_fun(formula.node_type()))
+    def super(cls, self, formula: FNode, *args, **kwargs) -> Any:
+        """Call the correct walk_* function of cls for the given formula.
+
+        The return type depends on the walker: an FNode for rewriting
+        walkers, but a generator (TreeWalker), a set or an int (oracles),
+        etc. for others; hence Any.
+        """
+        nt = formula.node_type()
+        try:
+            f = getattr(cls, nt_to_fun(nt))
+        except AttributeError:
+            # Custom node types (see new_node_type) have no walk_* method
+            # on the class. Look for a handler registered on this walker's
+            # environment via add_dynamic_walker_function; keeping the
+            # lookup env-local is what stops registrations from leaking
+            # across environments.
+            fun = self.env.get_dynamic_walker_function(nt, cls)
+            if fun is None:
+                raise pysmt.exceptions.UnsupportedOperatorError(
+                    node_type=nt, expression=formula)
+            return fun(self, formula, *args, **kwargs)
         return f(self, formula, *args, **kwargs)
 
     @handles(op.ALL_TYPES)
     def walk_error(self, formula, **kwargs):
-        """Default function for a node that is not handled by the Walker.
-
-        This tries to handle the node using the Dynamic Walker
-        Function information from the environment. If this fails, then
-        an UnsupportedOperatorError exception is given.
-
-        """
+        """Default function for a node that is not handled by the Walker."""
         node_type = formula.node_type()
-        if node_type in self.env.dwf:
-            dwf = self.env.dwf[node_type]
-            walker_class = type(self)
-            if walker_class in dwf:
-                self.functions[node_type] = partial(dwf[walker_class], self)
-                return self.functions[node_type](formula, **kwargs)
-
         raise pysmt.exceptions.UnsupportedOperatorError(node_type=node_type,
                                                         expression=formula)
 

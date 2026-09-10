@@ -40,6 +40,7 @@ from pysmt.decorators import clear_pending_pop, catch_conversion_error
 from pysmt.solvers.qelim import QuantifierEliminator
 from pysmt.solvers.interpolation import Interpolator
 from pysmt.walkers.identitydag import IdentityDagWalker
+from pysmt.walkers.generic import handles
 from pysmt.environment import Environment
 from pysmt.fnode import FNode
 from pysmt.formula import FormulaManager
@@ -1204,8 +1205,6 @@ class MSatQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
         self.msat_env = MSATCreateEnv(self.__class__.__lib_name__, self.msat_config)
         self._msat_lib.msat_destroy_config(self.msat_config)
 
-        self.set_function(self.walk_identity, op.SYMBOL, op.REAL_CONSTANT,
-                          op.BOOL_CONSTANT, op.INT_CONSTANT)
         self.logic = logic
 
         self.algorithm = algorithm
@@ -1260,6 +1259,11 @@ class MSatQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
         variables = formula.quantifier_vars()
         subf = args[0]
         return self.exist_elim(variables, subf)
+
+    @handles(op.SYMBOL, op.REAL_CONSTANT, op.BOOL_CONSTANT, op.INT_CONSTANT)
+    def walk_identity(self, formula, args, **kwargs):
+        # Leaves are unchanged by quantifier elimination.
+        return formula
 
     def _exit(self):
         del self.msat_env

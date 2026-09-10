@@ -70,14 +70,10 @@ class DagWalker(Walker):
         """
         key = self._get_key(formula, **kwargs)
         if key not in self.memoization:
-            try:
-                f = self.functions[formula.node_type()]
-            except KeyError:
-                f = self.walk_error
-
-            args = [self.memoization[self._get_key(s, **kwargs)]
+            args = [self.memoization[self._get_key(s, **kwargs)] \
                     for s in self._get_children(formula)]
-            self.memoization[key] = f(formula, args=args, **kwargs)
+            self.memoization[key] = self.__class__.super(self, formula,
+                                                         args=args, **kwargs)
         else:
             pass
 
