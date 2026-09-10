@@ -20,7 +20,7 @@ from __future__ import absolute_import
 from pysmt.exceptions import SolverAPINotFound
 
 try:
-    import CVC4 # type: ignore[import]
+    import CVC4  # type: ignore[import]
 except ImportError:
     raise SolverAPINotFound
 
@@ -33,10 +33,10 @@ from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               NonLinearError, PysmtValueError,
                               PysmtTypeError)
 from pysmt.walkers import DagWalker
-from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
+from pysmt.solvers.smtlib import SmtLibBasicSolver
 from pysmt.solvers.eager import EagerModel
 from pysmt.decorators import catch_conversion_error
-from pysmt.constants import Fraction, is_pysmt_integer, to_python_integer
+from pysmt.constants import Fraction, is_pysmt_integer
 
 
 class CVC4Options(SolverOptions):
@@ -53,7 +53,7 @@ class CVC4Options(SolverOptions):
         try:
             cvc4.setOption(name, CVC4.SExpr(value))
         except:
-            raise PysmtValueError("Error setting the option '%s=%s'" % (name,value))
+            raise PysmtValueError("Error setting the option '%s=%s'" % (name, value))
 
     def __call__(self, solver):
         if solver.logic_name == "QF_SLIA":
@@ -68,7 +68,7 @@ class CVC4Options(SolverOptions):
             self._set_option(solver.cvc4,
                              "random-seed", str(self.random_seed))
 
-        for k,v in self.solver_options.items():
+        for k, v in self.solver_options.items():
             self._set_option(solver.cvc4, str(k), str(v))
 
 # EOC CVC4Options
@@ -96,7 +96,7 @@ class CVC4Solver(SmtLibBasicSolver):
             self.logic_name = self.logic_name[:-1]
         if "t" in self.logic_name:
             # Custom Type extension
-            self.logic_name = self.logic_name.replace("t","")
+            self.logic_name = self.logic_name.replace("t", "")
         if self.logic_name == "QF_BOOL":
             self.logic_name = "QF_LRA"
         elif self.logic_name == "BOOL":
@@ -109,7 +109,8 @@ class CVC4Solver(SmtLibBasicSolver):
         del self.cvc4
         # CVC4's SWIG interface is not acquiring ownership of the
         # SmtEngine object. Forcing it here.
-        self.cvc4 = CVC4.SmtEngine(self.em); self.cvc4.thisown=1
+        self.cvc4 = CVC4.SmtEngine(self.em)
+        self.cvc4.thisown = 1
         self.options(self)
         self.declarations = set()
         self.cvc4.setLogic(self.logic_name)
@@ -127,7 +128,8 @@ class CVC4Solver(SmtLibBasicSolver):
         assignment = {}
         for s in self.environment.formula_manager.get_all_symbols():
             if s.is_term():
-                if s.symbol_type().is_custom_type(): continue
+                if s.symbol_type().is_custom_type():
+                    continue
                 v = self.get_value(s)
                 assignment[s] = v
         return EagerModel(assignment=assignment, environment=self.environment)
@@ -171,8 +173,7 @@ class CVC4Solver(SmtLibBasicSolver):
         if name_filter is None:
             var_set = self.declarations
         else:
-            var_set = (var for var in self.declarations\
-                       if name_filter(var))
+            var_set = (var for var in self.declarations if name_filter(var))
         for var in var_set:
             print("%s = %s", (var.symbol_name(), self.get_value(var)))
         return
@@ -198,7 +199,6 @@ class CVC4Solver(SmtLibBasicSolver):
         :type value: String
         """
         self.cvc4.setOption(name, CVC4.SExpr(value))
-
 
 
 class CVC4Converter(Converter, DagWalker):
@@ -401,7 +401,7 @@ class CVC4Converter(Converter, DagWalker):
         return self.mkExpr(CVC4.BITVECTOR_ULE, args[0], args[1])
 
     def walk_bv_concat(self, formula, args, **kwargs):
-        return self.mkExpr(CVC4.BITVECTOR_CONCAT, args[0], args[1])
+        return self.mkExpr(CVC4.BITVECTOR_CONCAT, args)
 
     def walk_bv_extract(self, formula, args, **kwargs):
         ext = self.mkConst(CVC4.BitVectorExtract(formula.bv_extract_end(),
@@ -409,19 +409,19 @@ class CVC4Converter(Converter, DagWalker):
         return self.mkExpr(CVC4.BITVECTOR_EXTRACT, ext, args[0])
 
     def walk_bv_or(self, formula, args, **kwargs):
-        return self.mkExpr(CVC4.BITVECTOR_OR, args[0], args[1])
+        return self.mkExpr(CVC4.BITVECTOR_OR, args)
 
     def walk_bv_not(self, formula, args, **kwargs):
         return self.mkExpr(CVC4.BITVECTOR_NOT, args[0])
 
     def walk_bv_and(self, formula, args, **kwargs):
-        return self.mkExpr(CVC4.BITVECTOR_AND, args[0], args[1])
+        return self.mkExpr(CVC4.BITVECTOR_AND, args)
 
     def walk_bv_xor(self, formula, args, **kwargs):
-        return self.mkExpr(CVC4.BITVECTOR_XOR, args[0], args[1])
+        return self.mkExpr(CVC4.BITVECTOR_XOR, args)
 
     def walk_bv_add(self, formula, args, **kwargs):
-        return self.mkExpr(CVC4.BITVECTOR_PLUS, args[0], args[1])
+        return self.mkExpr(CVC4.BITVECTOR_PLUS, args)
 
     def walk_bv_sub(self, formula, args, **kwargs):
         return self.mkExpr(CVC4.BITVECTOR_SUB, args[0], args[1])
@@ -430,7 +430,7 @@ class CVC4Converter(Converter, DagWalker):
         return self.mkExpr(CVC4.BITVECTOR_NEG, args[0])
 
     def walk_bv_mul(self, formula, args, **kwargs):
-        return self.mkExpr(CVC4.BITVECTOR_MULT, args[0], args[1])
+        return self.mkExpr(CVC4.BITVECTOR_MULT, args)
 
     def walk_bv_tonatural(self, formula, args, **kwargs):
         return self.mkExpr(CVC4.BITVECTOR_TO_NAT, args[0])
@@ -438,7 +438,7 @@ class CVC4Converter(Converter, DagWalker):
     def walk_bv_udiv(self, formula, args, **kwargs):
         # Force deterministic semantics of division by 0
         # If the denominator is bv0, then the result is ~0
-        n,d = args
+        n, d = args
         if d.isConst():
             bv = d.getConstBitVector()
             v = bv.getValue().toString()
@@ -458,7 +458,7 @@ class CVC4Converter(Converter, DagWalker):
     def walk_bv_urem(self, formula, args, **kwargs):
         # Force deterministic semantics of reminder by 0
         # If the denominator is bv0, then the result is the numerator
-        n,d = args
+        n, d = args
         if d.isConst():
             bv = d.getConstBitVector()
             v = bv.getValue().toString()
@@ -492,7 +492,7 @@ class CVC4Converter(Converter, DagWalker):
         ext = self.mkConst(CVC4.BitVectorZeroExtend(formula.bv_extend_step()))
         return self.mkExpr(CVC4.BITVECTOR_ZERO_EXTEND, ext, args[0])
 
-    def walk_bv_sext (self, formula, args, **kwargs):
+    def walk_bv_sext(self, formula, args, **kwargs):
         ext = self.mkConst(CVC4.BitVectorSignExtend(formula.bv_extend_step()))
         return self.mkExpr(CVC4.BITVECTOR_SIGN_EXTEND, ext, args[0])
 
@@ -510,7 +510,7 @@ class CVC4Converter(Converter, DagWalker):
         # If the denominator is bv0, then the result is:
         #   * ~0 (if the numerator is signed >= 0)
         #   * 1 (if the numerator is signed < 0)
-        n,d = args
+        n, d = args
         # sign_expr : ( 0 s<= n ) ? ~0 : 1 )
         zero = self.mkConst(CVC4.BitVector(formula.bv_width(),
                                            CVC4.Integer("0")))
@@ -534,7 +534,7 @@ class CVC4Converter(Converter, DagWalker):
     def walk_bv_srem(self, formula, args, **kwargs):
         # Force deterministic semantics of reminder by 0
         # If the denominator is bv0, then the result is the numerator
-        n,d = args
+        n, d = args
         if d.isConst():
             v = d.getConstBitVector().getValue().toString()
             if v == "0":
@@ -555,8 +555,8 @@ class CVC4Converter(Converter, DagWalker):
     def walk_str_constant(self, formula, args, **kwargs):
         return self.mkConst(CVC4.CVC4String(formula.constant_value()))
 
-    def walk_str_length (self, formula, args, **kwargs):
-        return self.mkExpr(CVC4.STRING_LENGTH , args[0])
+    def walk_str_length(self, formula, args, **kwargs):
+        return self.mkExpr(CVC4.STRING_LENGTH, args[0])
 
     def walk_str_concat(self, formula, args, **kwargs):
         return self.mkExpr(CVC4.STRING_CONCAT, args)
@@ -611,7 +611,7 @@ class CVC4Converter(Converter, DagWalker):
         elif tp.is_custom_type():
             return self.cvc4_exprMgr.mkSort(str(tp))
         else:
-            raise NotImplementedError("Unsupported type: %s" %tp)
+            raise NotImplementedError("Unsupported type: %s" % tp)
 
     def _cvc4_type_to_type(self, type_):
         if type_.isBoolean():
@@ -635,7 +635,8 @@ class CVC4Converter(Converter, DagWalker):
             # Casting Type into FunctionType
             type_ = CVC4.FunctionType(type_)
             return_type = type_.getRangeType()
-            param_types = tuple(self._cvc4_type_to_type(ty) for ty in type_.getArgTypes())
+            param_types = tuple(self._cvc4_type_to_type(ty)
+                                for ty in type_.getArgTypes())
             return self.env.type_manager.FunctionType(return_type, param_types)
         else:
             raise NotImplementedError("Unsupported type: %s" % type_)
@@ -648,7 +649,7 @@ class CVC4Converter(Converter, DagWalker):
         """
         mkBoundVar = self.cvc4_exprMgr.mkBoundVar
         new_var_list = [mkBoundVar(x.symbol_name(),
-                                   self._type_to_cvc4(x.symbol_type())) \
+                                   self._type_to_cvc4(x.symbol_type()))
                         for x in variables]
         old_var_list = [self.walk_symbol(x, []) for x in variables]
         new_formula = formula.substitute(old_var_list, new_var_list)

@@ -61,7 +61,7 @@ class TestBvSimplification(TestCase):
     def check(self, f):
         simp_f = f.simplify()
         solver_f = self.solver_simplify(f)
-        self.assertEqual(solver_f, simp_f)
+        self.assertEqual(solver_f, simp_f, f.serialize())
 
     def all_binary(self):
         for l in self.all_bv_numbers():
@@ -279,6 +279,27 @@ class TestBvSimplification(TestCase):
         f = BVAnd(x, BVZero(32))
         self.check_equal_and_valid(f, BVZero(32))
 
+    def test_bv_and_3_const_args(self):
+        arg0 = BV("1100")
+        arg1 = BV("1111")
+        arg2 = BV("0011")
+        formula = BVAnd(arg0, arg1, arg2)
+        self.check_equal_and_valid(formula, BVZero(4))
+
+    def test_bv_and_2_const_var_args(self):
+        arg0 = BV("1100")
+        arg1 = BV("1111")
+        arg2 = Symbol("x", BVType(4))
+        formula = BVAnd(arg0, arg1, arg2)
+        self.check_equal_and_valid(formula, BVAnd(arg2, arg0))
+
+    def test_bv_and_const_var_const_args(self):
+        arg2 = BV("0110")
+        arg1 = Symbol("x", BVType(4))
+        arg0 = BV("1100")
+        formula = BVAnd(arg0, arg1, arg2)
+        self.check_equal_and_valid(formula, BVAnd(arg1, BV("0100")))
+
     def test_bv_zero_and(self):
         x = Symbol("x", BVType(32))
         f = BVAnd(BVZero(32), x)
@@ -308,6 +329,27 @@ class TestBvSimplification(TestCase):
         f = BVOr(x, BVZero(32))
         self.check_equal_and_valid(f, x)
 
+    def test_bv_or_3_args(self):
+        arg0 = BV("1100")
+        arg1 = BV("0010")
+        arg2 = BV("0001")
+        formula = BVOr(arg0, arg1, arg2)
+        self.check_equal_and_valid(formula, BV("1111"))
+
+    def test_bv_or_2_const_var_args(self):
+        arg0 = BV("1100")
+        arg1 = BV("1110")
+        arg2 = Symbol("x", BVType(4))
+        formula = BVOr(arg0, arg1, arg2)
+        self.check_equal_and_valid(formula, BVOr(arg2, BV("1110")))
+
+    def test_bv_or_const_var_const_args(self):
+        arg0 = BV("1100")
+        arg1 = Symbol("x", BVType(4))
+        arg2 = BV("0110")
+        formula = BVOr(arg0, arg1, arg2)
+        self.check_equal_and_valid(formula, BVOr(arg1, BV("1110")))
+
     def test_bv_zero_or(self):
         x = Symbol("x", BVType(32))
         f = BVOr(BVZero(32), x)
@@ -332,10 +374,61 @@ class TestBvSimplification(TestCase):
         f = BVOr(BV(0xdededede, 32), BV(0xacacacac, 32))
         self.check_equal_and_valid(f, BV(0xfefefefe, 32))
 
+    def test_bv_xor_zeros(self):
+        zeros = BV("0000")
+        formula = BVXor(zeros)
+        self.assertEqual(formula, zeros)
+
+        formula = BVXor(zeros, zeros)
+        self.check_equal_and_valid(formula, zeros)
+
+        formula = BVXor(zeros, zeros, zeros)
+        self.check_equal_and_valid(formula, zeros)
+
+    def test_bv_xor_ones(self):
+        zeros = BV("0000")
+        ones = BV("1111")
+        formula = BVXor(ones)
+        self.assertEqual(formula, ones)
+
+        formula = BVXor(ones, ones)
+        self.check_equal_and_valid(formula, zeros)
+
+        formula = BVXor(ones, ones, ones)
+        self.check_equal_and_valid(formula, ones)
+
+    def test_bv_xor_const_var_const(self):
+        arg0 = BV("1001")
+        arg1 = Symbol("x", BVType(4))
+        arg2 = BV("0011")
+        formula = BVXor(arg0, arg1, arg2)
+        self.check_equal_and_valid(formula, BVXor(arg1, BV("1010")))
+
     def test_bv_sub_zero(self):
         x = Symbol("x", BVType(32))
         f = BVSub(x, BVZero(32))
         self.check_equal_and_valid(f, x)
+
+    def test_bv_concat_3_const_args(self):
+        arg0 = BV("10")
+        arg1 = BV("01")
+        arg2 = BV("00")
+        formula = BVConcat(arg0, arg1, arg2)
+        self.check_equal_and_valid(formula, BV("100100"))
+
+    def test_bv_concat_2_const_1_var(self):
+        arg0 = BV("10")
+        arg1 = BV("01")
+        arg2 = Symbol("s", BVType(32))
+        formula = BVConcat(arg0, arg1, arg2)
+        self.check_equal_and_valid(formula, BVConcat(BV("1001"), arg2))
+
+    def test_bv_concat_const_var_const(self):
+        arg0 = BV("10")
+        arg1 = Symbol("s", BVType(32))
+        arg2 = BV("01")
+        formula = BVConcat(arg0, arg1, arg2)
+        self.check_equal_and_valid(formula, BVConcat(arg0, arg1, arg2))
 
     def test_bv_sub_eq(self):
         x, y = (Symbol(name, BVType(32)) for name in "xy")

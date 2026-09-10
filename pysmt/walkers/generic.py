@@ -27,12 +27,14 @@ else:
 import pysmt.operators as op
 import pysmt.exceptions
 
+
 # NodeType to Function Name
 def nt_to_fun(o: int) -> str:
     """Returns the name of the walk function for the given nodetype."""
     return "walk_%s" % op.op_to_str(o).lower()
 
-class handles(object):
+
+class handles:
     """Decorator for walker functions.
 
     Use it by specifying the nodetypes that need to be handled by the
@@ -59,6 +61,7 @@ class handles(object):
         setattr(func, "nodetypes", nodetypes)
         return func
 
+
 class MetaNodeTypeHandler(type):
     """Metaclass used to intepret the nodehandler decorator. """
     def __new__(cls: Type["MetaNodeTypeHandler"], name: str, bases: Any, dct: Dict[str, Any]) -> Any:
@@ -69,13 +72,13 @@ class MetaNodeTypeHandler(type):
         return obj
 
 
-class Walker(object, metaclass=MetaNodeTypeHandler):
+class Walker(metaclass=MetaNodeTypeHandler):
     """Base Abstract Walker class.
 
     Do not subclass directly, use DagWalker or TreeWalker, instead.
     """
 
-    def __init__(self, env: Optional["pysmt.environment.Environment"]=None):
+    def __init__(self, env: Optional["pysmt.environment.Environment"] = None):
         if env is None:
             import pysmt.environment
             env = pysmt.environment.get_env()

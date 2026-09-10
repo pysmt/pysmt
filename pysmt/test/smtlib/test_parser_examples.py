@@ -317,7 +317,7 @@ class TestSMTParseExamples(TestCase):
             AllDifferent(a, b, c),
             # bit-vectors
             Equals(BVXor(BVXor(x, y), z), x),
-            Equals(BVConcat(BVConcat(x, y), z), BVConcat(BVConcat(z, y), x)),
+            Equals(BVConcat(x, y, z), BVConcat(z, y, x)),
         ]
 
         parser = SmtLibParser()

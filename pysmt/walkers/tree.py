@@ -21,6 +21,7 @@ import pysmt
 from pysmt.walkers.generic import Walker
 from pysmt.fnode import FNode
 
+
 class TreeWalker(Walker):
     """TreeWalker treats the formula as a Tree and does not perform memoization.
 
@@ -36,9 +37,8 @@ class TreeWalker(Walker):
 
     """
 
-    def __init__(self, env: Optional["pysmt.environment.Environment"]=None):
+    def __init__(self, env: Optional["pysmt.environment.Environment"] = None):
         Walker.__init__(self, env)
-        return
 
     def walk(self, formula: FNode, threshold: Optional[int]=None):
         """Generic walk method, will apply the function associated with
@@ -67,7 +67,6 @@ class TreeWalker(Walker):
                         stack.append(iterator)
             except StopIteration:
                 stack.pop()
-        return
 
     def walk_threshold(self, formula):
         raise NotImplementedError

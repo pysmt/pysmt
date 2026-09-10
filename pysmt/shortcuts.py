@@ -514,7 +514,7 @@ def BVOr(*args: Union[FNode, Sequence[FNode]]) -> FNode:
     return get_env().formula_manager.BVOr(*args)
 
 
-def BVXor(left: FNode, right: FNode) -> FNode:
+def BVXor(*args: Union[FNode, Sequence[FNode]]) -> FNode:
     """Returns the Bit-wise XOR of two bitvectors of the same size.
 
     :param left: Specify the left bitvector
@@ -522,7 +522,7 @@ def BVXor(left: FNode, right: FNode) -> FNode:
     :returns: The bit-wise XOR of left and right
     :rtype: FNode
     """
-    return get_env().formula_manager.BVXor(left, right)
+    return get_env().formula_manager.BVXor(*args)
 
 
 def BVConcat(*args: Union[FNode, Sequence[FNode]]) -> FNode:

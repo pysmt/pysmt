@@ -474,38 +474,6 @@ class Simplifier(pysmt.walkers.DagWalker):
         # Folding of real constants is done by the FormulaManager
         return self.manager.ToInt(args[0])
 
-    def walk_bv_and(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
-        simplified = None
-        width = formula.bv_width()
-
-        if args[0].is_bv_constant():
-            lhs = args[0].bv_unsigned_value()
-
-            if lhs == 0:
-                # 0 & x -> 0
-                simplified = self.manager.BVZero(width)
-            elif lhs == 2**width - 1:
-                # 0xf...f & x -> x
-                simplified = args[1]
-            elif args[1].is_bv_constant():
-                rhs = args[1].bv_unsigned_value()
-                res = lhs & rhs
-                simplified = self.manager.BV(res, width=width)
-        elif args[1].is_bv_constant():
-            rhs = args[1].bv_unsigned_value()
-
-            if rhs == 0:
-                # x & 0 -> 0
-                simplified = self.manager.BVZero(width)
-            elif rhs == 2**width - 1:
-                # x & 0xf...f -> x
-                simplified = args[0]
-
-        if simplified is not None:
-            return simplified
-
-        return self.manager.BVAnd(args[0], args[1])
-
     def walk_bv_not(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         if args[0].is_bv_constant():
             res = ~cast(int, args[0].constant_value()) & (2**formula.bv_width() - 1)
@@ -519,100 +487,134 @@ class Simplifier(pysmt.walkers.DagWalker):
             return self.manager.BV(res, width=formula.bv_width())
         return self.manager.BVNeg(args[0])
 
+    def walk_bv_and(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
+        width: int = formula.bv_width()
+
+        all_ones: int = (2 ** width) - 1
+        # drop duplicates
+        # `seen` separate from `new_args` to keep order of args.
+        seen = set()
+        # accumulate And of constant values.
+        bv_const: int = all_ones
+        new_args: List[FNode] = []
+
+        for arg in args:
+            if arg.is_bv_constant():
+                value: int = cast(int, arg.bv_unsigned_value())
+                if value == 0:
+                    return self.manager.BVZero(width)
+                # drop all ones.
+                if value != all_ones:
+                    # bit-wise & with bv_const
+                    bv_const &= value
+            # ignore duplicates: a & a <-> a
+            elif arg not in seen:
+                new_args.append(arg)
+                seen.add(arg)
+
+        if bv_const != all_ones or len(new_args) == 0:
+            # constant value always ends up at the end.
+            new_args.append(self.manager.BV(bv_const, width=width))
+        return self.manager.BVAnd(new_args)
+
     def walk_bv_or(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
-        simplified = None
+        width: int = formula.bv_width()
 
-        if args[0].is_bv_constant():
-            lhs = args[0].bv_unsigned_value()
+        all_ones: int = (2 ** width) - 1
+        # drop duplicates
+        # `seen` separate from `new_args` to keep order of args.
+        seen = set()
+        # accumulate And of constant values.
+        bv_const: int = 0
+        new_args: List[FNode] = []
 
-            if lhs == 0:
-                # 0 | x -> x
-                simplified = args[1]
-            else:
-                width = formula.bv_width()
-                mask = 2**width - 1
+        for arg in args:
+            if arg.is_bv_constant():
+                value: int = cast(int, arg.bv_unsigned_value())
+                if value == all_ones:
+                    return self.manager.BV(all_ones, width=width)
+                # drop zeros.
+                if value != 0:
+                    # bit-wise & with bv_const
+                    bv_const |= value
+            # ignore duplicates: a & a <-> a
+            elif arg not in seen:
+                new_args.append(arg)
+                seen.add(arg)
 
-                if lhs == mask:
-                    # 0xf...f | x -> 0xf...f
-                    simplified = self.manager.BV(mask, width=width)
-                elif args[1].is_constant():
-                    res = lhs | args[1].bv_unsigned_value()
-                    simplified = self.manager.BV(res, width=width)
-        elif args[1].is_bv_constant():
-            rhs = args[1].bv_unsigned_value()
-
-            if rhs == 0:
-                # x | 0 -> x
-                simplified = args[0]
-            else:
-                width = formula.bv_width()
-                mask = 2**width - 1
-                if rhs == mask:
-                    # x | 0xf...f -> 0xf...f
-                    simplified = self.manager.BV(mask, width=width)
-
-        if simplified is not None:
-            return simplified
-
-        return self.manager.BVOr(args[0], args[1])
+        if bv_const != 0 or len(new_args) == 0:
+            # constant value always ends up at the end.
+            new_args.append(self.manager.BV(bv_const, width=width))
+        return self.manager.BVOr(new_args)
 
     def walk_bv_xor(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
-        if args[0].is_bv_constant() and args[1].is_bv_constant():
-            res = cast(int, args[0].constant_value()) ^ cast(int, args[1].constant_value())
-            return self.manager.BV(res, width=formula.bv_width())
-        return self.manager.BVXor(args[0], args[1])
+        width: int = formula.bv_width()
+
+        # TODO: replace all FNodes occurring an even number of times with bv0.
+        # TODO: keep at most 1 bv0.
+        # TODO: retain only 1 occurrance map all FNodes occurring even number of times to 0s.
+
+        # accumulate And of constant values.
+        bv_const: Optional[int] = None
+        new_args: List[FNode] = []
+        for arg in args:
+            if arg.is_bv_constant():
+                value: int = cast(int, arg.bv_unsigned_value())
+                if bv_const is None:
+                    bv_const = value
+                else:
+                    bv_const ^= value
+            else:
+                new_args.append(arg)
+
+        if bv_const is not None:
+            # constant value always ends up at the end.
+            new_args.append(self.manager.BV(bv_const, width=width))
+
+        return self.manager.BVXor(new_args)
 
     def walk_bv_add(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
-        simplified = None
+        width: int = formula.bv_width()
+        bound: int = 2 ** width
 
-        if args[0].is_bv_constant():
-            lhs = args[0].bv_unsigned_value()
-            if lhs == 0:
-                # 0 + args[1] -> args[1]
-                simplified = args[1]
-            elif args[1].is_bv_constant():
-                width = formula.bv_width()
-                res = lhs + args[1].bv_unsigned_value()
-                res = res % 2**width
-                simplified = self.manager.BV(res, width=width)
-        elif args[1].is_bv_constant() and args[1].bv_unsigned_value() == 0:
-            # args[0] + 0 -> args[0]
-            simplified = args[0]
+        bv_const: int = 0
+        new_args: List[FNode] = []
+        for arg in args:
+            if arg.is_bv_constant():
+                value: int = cast(int, arg.bv_unsigned_value())
+                if value != 0:
+                    bv_const += value
+                    bv_const %= bound
+            else:
+                new_args.append(arg)
 
-        if simplified is not None:
-            return simplified
+        if bv_const != 0 or len(new_args) == 0:
+            new_args.append(self.manager.BV(bv_const, width=width))
 
-        return self.manager.BVAdd(args[0], args[1])
+        return self.manager.BVAdd(new_args)
 
     def walk_bv_mul(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
-        simplified = None
+        width: int = formula.bv_width()
+        bound: int = 2 ** width
 
-        if args[0].is_bv_constant():
-            lhs = args[0].bv_unsigned_value()
-            if lhs == 0:
-                # 0 * args[1] -> 0
-                simplified = self.manager.BVZero(formula.bv_width())
-            elif lhs == 1:
-                # 1 * args[1] -> args[1]
-                simplified = args[1]
-            elif args[1].is_bv_constant():
-                width = formula.bv_width()
-                res = lhs * args[1].bv_unsigned_value()
-                res = res % 2**width
-                simplified = self.manager.BV(res, width=width)
-        elif args[1].is_bv_constant():
-            rhs = args[1].bv_unsigned_value()
-            if rhs == 0:
-                # args[0] * 0 -> 0
-                simplified = self.manager.BVZero(formula.bv_width())
-            elif rhs == 1:
-                # args[0] * 1 -> args[0]
-                simplified = args[0]
+        bv_const: int = 1
+        new_args: list[FNode] = []
 
-        if simplified is not None:
-            return simplified
+        for arg in args:
+            if arg.is_bv_constant():
+                value: int = cast(int, arg.bv_unsigned_value())
+                if value == 0:
+                    return self.manager.BVZero(width)
+                if value != 1:
+                    bv_const *= value
+                    bv_const %= bound
+            else:
+                new_args.append(arg)
 
-        return self.manager.BVMul(args[0], args[1])
+        if bv_const != 1 or len(new_args) == 0:
+            new_args.append(self.manager.BV(bv_const, width))
+
+        return self.manager.BVMul(new_args)
 
     def walk_bv_udiv(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         simplified = None
@@ -749,13 +751,30 @@ class Simplifier(pysmt.walkers.DagWalker):
         return self.manager.BVZExt(args[0], formula.bv_extend_step())
 
     def walk_bv_concat(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
-        if args[0].is_bv_constant() and args[1].is_bv_constant():
-            w0 = args[0].bv_width()
-            w1 = args[1].bv_width()
-            res = (2**w1) * args[0].bv_unsigned_value() + \
-                  args[1].bv_unsigned_value()
-            return self.manager.BV(res, w1 + w0)
-        return self.manager.BVConcat(args[0], args[1])
+
+        bv_acc_value: int = 0
+        bv_acc_width: int = 0
+        new_args: List[FNode] = []
+
+        for arg in args:
+            if arg.is_bv_constant():
+                value: int = cast(int, arg.bv_unsigned_value())
+                bv_acc_value *= 2 ** arg.bv_width()
+                bv_acc_value += value
+                bv_acc_width += arg.bv_width()
+            else:
+                if bv_acc_width != 0:
+                    # we have some accumulated constant to add first.
+                    new_args.append(self.manager.BV(bv_acc_value, width=bv_acc_width))
+                    bv_acc_value = 0
+                    bv_acc_width = 0
+                new_args.append(arg)
+
+        if bv_acc_width != 0:
+            new_args.append(self.manager.BV(bv_acc_value, width=bv_acc_width))
+            del bv_acc_value, bv_acc_width
+
+        return self.manager.BVConcat(new_args)
 
     def walk_bv_lshl(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         simplified = None
