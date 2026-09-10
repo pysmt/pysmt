@@ -15,7 +15,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import os, sys
+import os
+import sys
 
 from pysmt.test import TestCase
 from pysmt.test import skipIfSolverNotAvailable
@@ -53,7 +54,8 @@ class PortfolioTestCase(TestCase):
                        environment=self.env,
                        logic=QF_LRA) as p:
             for example in get_example_formulae():
-                if not example.logic <= QF_LRA: continue
+                if not example.logic <= QF_LRA:
+                    continue
                 res = p.is_sat(example.expr)
                 self.assertEqual(res, example.is_sat, example.expr)
                 if res:
@@ -97,7 +99,7 @@ class PortfolioTestCase(TestCase):
                     res = s.is_sat(formula)
                     self.assertEqual(expected_result, res, smtfile)
 
-        #reset recursion limit
+        # reset recursion limit
         sys.setrecursionlimit(old_recursion_limit)
 
     def run_smtlib(self, smtfile, logic, expected_result):
@@ -116,7 +118,8 @@ class PortfolioTestCase(TestCase):
     @skipIfSolverNotAvailable("z3")
     def test_shortcuts(self):
         for (expr, _, sat_res, logic) in get_example_formulae():
-            if not logic <= QF_UFLIRA: continue
+            if not logic <= QF_UFLIRA:
+                continue
             res = is_sat(expr, portfolio=["z3", "cvc5", "msat"])
             self.assertEqual(res, sat_res, expr)
 
@@ -171,7 +174,7 @@ class PortfolioTestCase(TestCase):
                        environment=self.env,
                        incremental=True,
                        generate_models=True,
-                       solver_options={"exit_on_exception":False}) as s:
+                       solver_options={"exit_on_exception": False}) as s:
             s.add_assertion(Equals(Symbol("r", REAL), Symbol("r", REAL)))
             res = s.solve()
             self.assertTrue(res)
@@ -184,7 +187,7 @@ class PortfolioTestCase(TestCase):
                            environment=self.env,
                            incremental=True,
                            generate_models=True,
-                           solver_options={"exit_on_exception":True}) as s:
+                           solver_options={"exit_on_exception": True}) as s:
                 s.add_assertion(Equals(Symbol("r", REAL), Symbol("r", REAL)))
                 with self.assertRaises(Exception):
                     s.solve()

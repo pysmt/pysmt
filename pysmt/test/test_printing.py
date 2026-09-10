@@ -34,9 +34,9 @@ class TestPrinting(TestCase):
         return formula.to_smtlib(daggify=False)
 
     def test_real(self):
-        f = Plus([ Real(1),
-                   Symbol("x", REAL),
-                   Symbol("y", REAL)])
+        f = Plus([Real(1),
+                  Symbol("x", REAL),
+                  Symbol("y", REAL)])
 
         self.assertEqual(f.to_smtlib(daggify=False), "(+ 1.0 x y)")
         self.assertEqual(f.to_smtlib(daggify=True), "(let ((.def_0 (+ 1.0 x y))) .def_0)")
