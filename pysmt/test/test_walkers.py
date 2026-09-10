@@ -21,7 +21,8 @@ from pysmt.shortcuts import And, Or, Iff, Not, Function, Real
 from pysmt.shortcuts import LT, GT, Plus, Minus, Equals
 from pysmt.shortcuts import get_env, substitute, TRUE
 from pysmt.typing import INT, BOOL, REAL, FunctionType
-from pysmt.walkers import TreeWalker, DagWalker, IdentityDagWalker
+from pysmt.walkers import TreeWalker, DagWalker, IdentityDagWalker, handles
+from pysmt.walkers.generic import nt_to_fun
 from pysmt.test import TestCase, main
 from pysmt.formula import FormulaManager
 from pysmt.test.examples import get_example_formulae
@@ -105,36 +106,36 @@ class TestWalkers(TestCase):
             tree_walker.walk(varA)
 
     def test_walker_new_operators_complete(self):
-        walkerA = IdentityDagWalker(env=self.env)
         idx = op.new_node_type(node_str="fancy_new_node")
-        walkerB = IdentityDagWalker(env=self.env)
-        with self.assertRaises(KeyError):
-            walkerA.functions[idx]
-        self.assertEqual(walkerB.functions[idx], walkerB.walk_error)
+        fun_name = nt_to_fun(idx)
 
-        # Use a mixin to handle the node type
+        # A node type introduced after the class was defined has no
+        # dedicated walk_* method: dispatch falls back to walk_error.
+        self.assertFalse(hasattr(IdentityDagWalker, fun_name))
+
+        # Use a mixin to handle the node type (the method name matches
+        # nt_to_fun, so it is picked up by class-based dispatch).
         class FancyNewNodeWalkerMixin(object):
-            def walk_fancy_new_node(self, args, **kwargs):
+            def walk_fancy_new_node(self, formula, args, **kwargs):
                 raise UnsupportedOperatorError
 
         class IdentityDagWalker2(IdentityDagWalker, FancyNewNodeWalkerMixin):
             pass
-        walkerC = IdentityDagWalker2(env=self.env)
-        self.assertEqual(walkerC.functions[idx],
-                         walkerC.walk_fancy_new_node)
+        self.assertEqual(getattr(IdentityDagWalker2, fun_name),
+                         FancyNewNodeWalkerMixin.walk_fancy_new_node)
 
     def test_identity_walker_simple(self):
 
-        def walk_and_to_or(formula, args, **kwargs):
-            return Or(args)
+        class MyWalker(IdentityDagWalker):
+            @handles(op.AND)
+            def walk_and_to_or(self, formula, args, **kwargs):
+                return Or(args)
 
-        def walk_or_to_and(formula, args, **kwargs):
-            return And(args)
+            @handles(op.OR)
+            def walk_or_to_and(self, formula, args, **kwargs):
+                return And(args)
 
-        walker = IdentityDagWalker(env=get_env())
-
-        walker.set_function(walk_and_to_or, op.AND)
-        walker.set_function(walk_or_to_and, op.OR)
+        walker = MyWalker(env=get_env())
 
         x, y, z = Symbol('x'), Symbol('y'), Symbol('z')
 
@@ -240,8 +241,9 @@ class TestWalkers(TestCase):
         x = Symbol("x")
         w = DagWalker()
         for o in op.ALL_TYPES:
+            f = getattr(w, nt_to_fun(o))
             with self.assertRaises(UnsupportedOperatorError):
-                w.functions[o](x)
+                f(x)
 
     def test_walker_super(self):
         from pysmt.walkers import DagWalker

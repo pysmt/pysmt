@@ -21,7 +21,7 @@ singleton objects that are used throughout the system, such as the
 FormulaManager, Simplifier, HRSerializer, SimpleTypeChecker.
 """
 
-from typing import List, Optional
+from typing import Callable, Dict, List, Optional, Tuple, Type
 
 import pysmt.simplifier
 import pysmt.printers
@@ -87,9 +87,11 @@ class Environment(object):
         # (e.g. substitution and simplification).
         self.allow_empty_var_names = False
 
-        # Dynamic Walker Configuration Map
+        # Dynamic Walker Functions: handlers for custom node types,
+        # keyed by (nodetype, walker_class). Kept local to this
+        # environment so registrations never leak across environments.
         # See: add_dynamic_walker_function
-        self.dwf = {}
+        self.dwf: Dict[Tuple[int, Type], Callable] = {}
 
     @property
     def formula_manager(self) -> pysmt.formula.FormulaManager:
@@ -154,15 +156,20 @@ class Environment(object):
         function to a given walker, so that the walker will be able to
         handle the new nodetype.
 
-        See :py:meth:`pysmt.walkers.generic.Walker.walk_error` for
-        more information.
+        See :py:meth:`pysmt.walkers.generic.Walker.super` for more
+        information on how the handler is dispatched.
         """
-        # self.dwf is a map of maps: {nodetype, {walker: function}}
-        if nodetype not in self.dwf:
-            self.dwf[nodetype] = {}
+        key = (nodetype, walker)
+        assert key not in self.dwf, "Dynamic Walker Redefinition!"
+        self.dwf[key] = function
 
-        assert walker not in self.dwf[nodetype], "Redefinition"
-        self.dwf[nodetype][walker] = function
+    def get_dynamic_walker_function(self, nodetype, walker_class):
+        """Return the handler registered for (nodetype, walker_class), or None.
+
+        Used by :py:meth:`pysmt.walkers.generic.Walker.super` to
+        dispatch custom node types without mutating the walker class.
+        """
+        return self.dwf.get((nodetype, walker_class))
 
     @property
     def factory(self) -> "pysmt.factory.Factory":

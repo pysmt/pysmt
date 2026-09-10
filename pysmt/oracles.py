@@ -27,7 +27,7 @@ properties of formulae.
 """
 
 from itertools import chain
-from typing import FrozenSet, Iterable, List, Any, Optional, Union, cast
+from typing import FrozenSet, Iterable, List, Any, Optional, Union, cast, Callable, Dict
 
 import pysmt
 import pysmt.walkers as walkers
@@ -60,7 +60,7 @@ class SizeOracle(walkers.DagWalker):
     def __init__(self, env: Optional["pysmt.environment.Environment"]=None):
         walkers.DagWalker.__init__(self, env=env)
 
-        self.measure_to_fun = \
+        self.measure_to_fun: Dict[int, Callable] = \
                         {SizeOracle.MEASURE_TREE_NODES: self.walk_count_tree,
                          SizeOracle.MEASURE_DAG_NODES: self.walk_count_dag,
                          SizeOracle.MEASURE_LEAVES: self.walk_count_leaves,
@@ -68,12 +68,16 @@ class SizeOracle(walkers.DagWalker):
                          SizeOracle.MEASURE_SYMBOLS: self.walk_count_symbols,
                          SizeOracle.MEASURE_BOOL_DAG: self.walk_count_bool_dag,
                         }
+        self._walking_fun: Optional[Callable] = None
 
+    @walkers.handles(*op.ALL_TYPES)
+    def walk_measure(self, formula, args, **kwargs):
+        return assert_not_none(self._walking_fun)(formula, args, **kwargs)
 
     def set_walking_measure(self, measure: int):
         if measure not in self.measure_to_fun:
             raise NotImplementedError
-        self.set_function(self.measure_to_fun[measure], *op.ALL_TYPES)
+        self._walking_fun = self.measure_to_fun[measure]
 
     def _get_key(self, formula, measure, **kwargs):
         """Memoize using a tuple (measure, formula)."""
