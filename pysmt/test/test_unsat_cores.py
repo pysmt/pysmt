@@ -185,5 +185,15 @@ class TestUnsatCores(TestCase):
                 s.get_unsat_core()
 
 
+    @skipIfNoUnsatCoreSolverForLogic(QF_BOOL)
+    def test_assumptions(self):
+        x = Symbol("x")
+        with UnsatCoreSolver(logic=QF_BOOL) as s:
+            check = s.solve([x, Not(x)])
+            self.assertFalse(check)
+            core = s.get_unsat_core()
+            self.assertEqual(len(core), 2)
+
+
 if __name__ == '__main__':
     main()

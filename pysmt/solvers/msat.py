@@ -314,12 +314,15 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolv
         set of formulae"""
         self._check_unsat_core_config()
         if self.options.unsat_cores_mode == "all":
-
             terms = self._msat_lib.msat_get_unsat_core(self.msat_env())
             if terms is None:
                 raise InternalSolverError(
                     self._msat_lib.msat_last_error_message(self.msat_env()))
-            return set(self.converter.back(t) for t in terms)
+            res = set(self.converter.back(t) for t in terms)
+            uassumptions = self._msat_lib.msat_get_unsat_assumptions(self.msat_env())
+            for t in uassumptions:
+                res.add(self.converter.back(t))
+            return res
         else:
             return set(self.get_named_unsat_core().values())
 
@@ -341,6 +344,11 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolv
                         name = "_a_%d" % cnt
                         cnt += 1
                     res[name] = formula
+                else:
+                    name = "_a_%d" % cnt
+                    cnt += 1
+                    res[name] = key
+
             return res
 
         else:
