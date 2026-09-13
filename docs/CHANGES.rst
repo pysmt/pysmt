@@ -1,6 +1,29 @@
 Change Log
 ==========
 
+(unreleased)
+------------
+
+* Fixed: The assumptions passed to ``solve()`` were missing from the
+  unsat core. ``get_unsat_core()`` now reports them alongside the
+  assertions, in both the "all" and the "named" unsat cores mode
+  (PR #680).
+
+  Assumptions carry no name, so they are *not* reported by
+  ``get_named_unsat_core()``, which keeps returning only the
+  assertions added via ``add_assertion(..., named=...)``.
+
+* Fixed: Boolector's ``get_unsat_core`` and ``get_named_unsat_core``
+  raised ``BoolectorException: 'exp' must be an assumption`` when
+  solving under assumptions, and ``get_named_unsat_core`` could pair a
+  name with the wrong assertion (PR #680).
+
+* Fixed: Boolector dropped the assumptions passed to ``solve()`` when
+  they were given as an iterator rather than as a list (PR #680).
+
+* Docs: README listed Boolector as not supporting unsat cores; it does.
+
+
 0.9.6: 2022-06-24 -- CVC5 and upgraded solvers
 ----------------------------------------------
 

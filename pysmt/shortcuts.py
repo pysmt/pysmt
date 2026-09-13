@@ -1113,6 +1113,11 @@ def get_unsat_core(clauses: Iterable[FNode], solver_name: Optional[str]=None, lo
     """Similar to :py:func:`get_model` but returns the unsat core of the
     conjunction of the input clauses
 
+    Every clause is asserted separately, so the returned core is a
+    subset of ``clauses``. This function takes no assumptions; to get a
+    core under assumptions, call :py:func:`Solver.solve` with them and
+    then :py:func:`UnsatCoreSolver.get_unsat_core`.
+
     :param clauses: Specify the list of input clauses
     :param solver_name: Specify the name of the solver_name
     :param logic: Specify the logic that is going to be used

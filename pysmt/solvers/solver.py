@@ -68,6 +68,13 @@ class Solver(object):
 
         but is in general more efficient.
 
+        The two differ in how they report unsat cores: assumptions are
+        reported individually by
+        :py:func:`UnsatCoreSolver.get_unsat_core`, whereas the encoding
+        above contributes the single conjunction ``And(a1, ..., an)``.
+        Assumptions carry no name and therefore never appear in
+        :py:func:`UnsatCoreSolver.get_named_unsat_core`.
+
         Other convenience methods (is_sat, is_unsat, is_valid) are
         wrappers around this function.
 
@@ -203,7 +210,18 @@ class Solver(object):
         raise NotImplementedError
 
     def add_assertion(self, formula: FNode, named: Optional[str]=None):
-        """Add assertion to the solver."""
+        """Add assertion to the solver.
+
+        The optional ``named`` argument labels the assertion, so that
+        :py:func:`UnsatCoreSolver.get_named_unsat_core` reports it under
+        that name. The label is honored only if the solver was created
+        with the ``unsat_cores_mode="named"`` option; with the other
+        modes some solvers keep it and others replace it with a
+        generated name, so do not rely on it.
+
+        :param formula: The Boolean formula to assert
+        :param named: The name to label this assertion with, if any
+        """
         raise NotImplementedError
 
     def add_assertions(self, formulae: Iterable[FNode]):
@@ -415,7 +433,16 @@ class UnsatCoreSolver(Solver):
         """Returns the unsat core as a set of formulae.
 
         After a call to solve() yielding UNSAT, returns the unsat core
-        as a set of formulae
+        as a set of formulae.
+
+        The core contains the assertions that caused the
+        unsatisfiability, together with the assumptions passed to the
+        failing :py:func:`Solver.solve` call, if any. Both are reported
+        in either unsat cores mode. In ``"named"`` mode only named
+        assertions are considered, so the core is made of the named
+        assertions and of the assumptions.
+
+        :returns: The unsat core, as a set of formulae
         """
         raise NotImplementedError
 
@@ -423,7 +450,14 @@ class UnsatCoreSolver(Solver):
         """Returns the unsat core as a dict of names to formulae.
 
         After a call to solve() yielding UNSAT, returns the unsat core as a
-        dict of names to formulae
+        dict of names to formulae.
+
+        Only assertions added with a ``named`` argument can be reported
+        here. Assumptions passed to :py:func:`Solver.solve` carry no
+        name and are therefore omitted: use
+        :py:func:`get_unsat_core` to obtain them.
+
+        :returns: The unsat core, as a map from assertion name to formula
         """
         raise NotImplementedError
 
