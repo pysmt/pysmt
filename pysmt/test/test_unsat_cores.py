@@ -18,7 +18,7 @@
 from pysmt.test import (TestCase, skipIfSolverNotAvailable,
                         skipIfNoUnsatCoreSolverForLogic, main)
 from pysmt.shortcuts import (get_unsat_core, And, Or, Not, Symbol, UnsatCoreSolver,
-                             Solver, is_unsat, Int, GT)
+                             Solver, is_unsat, Int, GT, get_env)
 from pysmt.typing import INT
 from pysmt.logics import QF_BOOL, QF_BV, QF_LIA
 from pysmt.exceptions import (SolverStatusError, SolverReturnedUnknownResultError,
@@ -193,6 +193,35 @@ class TestUnsatCores(TestCase):
             self.assertFalse(check)
             core = s.get_unsat_core()
             self.assertEqual(len(core), 2)
+
+
+    @skipIfNoUnsatCoreSolverForLogic(QF_BOOL)
+    def test_assumptions_in_unsat_core(self):
+        x, y = Symbol("x"), Symbol("y")
+        for name in get_env().factory.all_unsat_core_solvers(logic=QF_BOOL):
+            for mode in ["all", "named"]:
+                with UnsatCoreSolver(name=name, logic=QF_BOOL,
+                                     unsat_cores_mode=mode) as s:
+                    s.add_assertion(Or(x, y), named="n1")
+                    self.assertFalse(s.solve([Not(x), Not(y)]))
+                    core = s.get_unsat_core()
+                    self.assertEqual(len(core), 3, (name, mode))
+                    self.assertIn(Not(x), core, (name, mode))
+                    self.assertIn(Not(y), core, (name, mode))
+                    if mode == "named":
+                        # assumptions carry no name: they stay out of this core
+                        self.assertEqual(s.get_named_unsat_core(),
+                                         {"n1": Or(x, y)}, name)
+
+
+    @skipIfNoUnsatCoreSolverForLogic(QF_BOOL)
+    def test_assumptions_as_iterator(self):
+        x, y = Symbol("x"), Symbol("y")
+        for name in get_env().factory.all_unsat_core_solvers(logic=QF_BOOL):
+            with UnsatCoreSolver(name=name, logic=QF_BOOL) as s:
+                s.add_assertion(Or(x, y))
+                self.assertFalse(s.solve(a for a in [Not(x), Not(y)]))
+                self.assertEqual(len(s.get_unsat_core()), 3, name)
 
 
 if __name__ == '__main__':
