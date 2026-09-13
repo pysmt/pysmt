@@ -48,7 +48,15 @@ class SolverOptions(object):
       Enable incremental interface (push, pop)
 
     * unsat_cores_mode: None, "named", "all"
-      Enable UNSAT core extraction using "named" or "all" strategy.
+      Enable UNSAT core extraction. With "all", every assertion is a
+      candidate for the core; get_named_unsat_core() still works, but
+      the names it returns are generated ones with no meaning to the
+      caller. With "named", the core is restricted to the assertions
+      added with a name (see Solver.add_assertion), and
+      get_named_unsat_core() reports them under those names. In both
+      modes the assumptions passed to solve() are reported by
+      get_unsat_core(). None (the default) disables core extraction
+      altogether.
 
     * random_seed: None, integer
       Sets the random seed for the solver

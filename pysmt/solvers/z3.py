@@ -235,7 +235,8 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolver):
     def get_unsat_core(self):
         """After a call to solve() yielding UNSAT, returns the unsat core as a
         set of formulae"""
-        return set(self.get_named_unsat_core().values())
+        named, assumptions = self._unsat_core()
+        return set(named.values()) | assumptions
 
     def _named_assertions_map(self):
         if self.options.unsat_cores_mode is not None:
@@ -245,6 +246,12 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolver):
     def get_named_unsat_core(self):
         """After a call to solve() yielding UNSAT, returns the unsat core as a
         dict of names to formulae"""
+        # solve-time assumptions have no name, they are reported by
+        # get_unsat_core() only
+        return self._unsat_core()[0]
+
+    def _unsat_core(self):
+        """Splits the last unsat core into named assertions and assumptions."""
         if self.options.unsat_cores_mode is None:
             raise SolverNotConfiguredForUnsatCoresError
 
@@ -261,6 +268,7 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolver):
         pysmt_assumptions = set(self.converter.back(t) for t in assumptions)
 
         res = {}
+        core_assumptions = set()
         n_ass_map = self._named_assertions_map()
         cnt = 0
         for key in pysmt_assumptions:
@@ -270,7 +278,9 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolver):
                     name = "_a_%d" % cnt
                     cnt += 1
                 res[name] = formula
-        return res
+            else:
+                core_assumptions.add(key)
+        return res, core_assumptions
 
     @clear_pending_pop
     def all_sat(self, important, callback):

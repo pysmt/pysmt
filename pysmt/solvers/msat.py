@@ -314,14 +314,27 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolv
         set of formulae"""
         self._check_unsat_core_config()
         if self.options.unsat_cores_mode == "all":
-
             terms = self._msat_lib.msat_get_unsat_core(self.msat_env())
             if terms is None:
                 raise InternalSolverError(
                     self._msat_lib.msat_last_error_message(self.msat_env()))
-            return set(self.converter.back(t) for t in terms)
+            res = set(self.converter.back(t) for t in terms)
+            return res | self._unsat_assumptions()
         else:
-            return set(self.get_named_unsat_core().values())
+            return set(self.get_named_unsat_core().values()) | \
+                self._unsat_assumptions()
+
+    def _unsat_assumptions(self):
+        """Returns the solve-time assumptions occurring in the last unsat core."""
+        terms = self._msat_lib.msat_get_unsat_assumptions(self.msat_env())
+        if not terms:
+            return set()
+        res = set(self.converter.back(t) for t in terms)
+        n_ass_map = self._named_assertions_map()
+        if n_ass_map is not None:
+            # in named mode the named assertions are passed as assumptions too
+            res -= set(n_ass_map)
+        return res
 
     def get_named_unsat_core(self):
         """After a call to solve() yielding UNSAT, returns the unsat core as a
@@ -341,6 +354,8 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolv
                         name = "_a_%d" % cnt
                         cnt += 1
                     res[name] = formula
+                # solve-time assumptions have no name, they are reported by
+                # get_unsat_core() only
             return res
 
         else:
