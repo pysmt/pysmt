@@ -97,6 +97,29 @@ class TestModelValidation(TestCase):
         simp = simplifier.simplify(formula.substitute(model, interpretations))
         self.assertEqual(simp, self.fm.TRUE())
 
+    def test_same_value_name_different_sorts(self):
+        # SMT-COMP/postprocessors#10: solvers reuse @0 across sorts
+        model_source ="""\
+(model
+  (define-fun a () U (as @0 U))
+  (define-fun c () U (as @1 U))
+  (define-fun b () V (as @0 V))
+  (define-fun d () V (as @0 V))
+)
+"""
+        U = self.tm.Type('U', 0)
+        V = self.tm.Type('V', 0)
+        a = self.fm.Symbol('a', U)
+        b = self.fm.Symbol('b', V)
+        c = self.fm.Symbol('c', U)
+        d = self.fm.Symbol('d', V)
+        formula = self.fm.And(self.fm.Not(self.fm.Equals(a, c)),
+                              self.fm.Equals(b, d))
+
+        model, interpretations = SmtLibParser().parse_model(StringIO(model_source))
+        simp = SmtLibModelValidationSimplifier(self.env).simplify(
+            formula.substitute(model, interpretations))
+        self.assertEqual(simp, self.fm.TRUE())
 
 
 if __name__ == '__main__':

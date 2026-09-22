@@ -561,6 +561,10 @@ class SmtLibParser(object):
                 return res
             stack[-1].append(handler)
         else:
+            # pySMT binds one type per symbol name, but SMT-LIB model values
+            # reuse the same @name across sorts, so we qualify it with the sort
+            if what.startswith('@'):
+                what += "_" + str(ty)
             def handler():
                 return self.env.formula_manager.Symbol(what, ty)
             stack[-1].append(handler)
