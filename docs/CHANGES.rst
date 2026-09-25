@@ -4,6 +4,13 @@ Change Log
 (unreleased)
 ------------
 
+* Fixed: MathSAT segfaulted in ``get_unsat_core()`` after solving under
+  a non-literal assumption, because reading the core popped the
+  assumption level and left MathSAT's core with dangling terms. Z3 did
+  not crash but reported an internal symbol in place of the assumption,
+  and raised on a second core request. Both now report the assumption
+  itself.
+
 * Fixed: The assumptions passed to ``solve()`` were missing from the
   unsat core. ``get_unsat_core()`` now reports them alongside the
   assertions, in both the "all" and the "named" unsat cores mode

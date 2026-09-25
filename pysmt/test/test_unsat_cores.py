@@ -18,7 +18,7 @@
 from pysmt.test import (TestCase, skipIfSolverNotAvailable,
                         skipIfNoUnsatCoreSolverForLogic, main)
 from pysmt.shortcuts import (get_unsat_core, And, Or, Not, Symbol, UnsatCoreSolver,
-                             Solver, is_unsat, Int, GT, get_env)
+                             Solver, is_unsat, Int, GT, GE, LE, get_env)
 from pysmt.typing import INT
 from pysmt.logics import QF_BOOL, QF_BV, QF_LIA
 from pysmt.exceptions import (SolverStatusError, SolverReturnedUnknownResultError,
@@ -212,6 +212,25 @@ class TestUnsatCores(TestCase):
                         # assumptions carry no name: they stay out of this core
                         self.assertEqual(s.get_named_unsat_core(),
                                          {"n1": Or(x, y)}, name)
+
+
+    @skipIfNoUnsatCoreSolverForLogic(QF_LIA)
+    def test_non_literal_assumptions_in_unsat_core(self):
+        a = Symbol("a", INT)
+        pos, neg = GE(a, Int(1)), LE(a, Int(0))
+        for name in get_env().factory.all_unsat_core_solvers(logic=QF_LIA):
+            for mode in ["all", "named"]:
+                with UnsatCoreSolver(name=name, logic=QF_LIA,
+                                     unsat_cores_mode=mode) as s:
+                    s.add_assertion(pos, named="pos")
+                    self.assertFalse(s.solve([neg]))
+                    # twice: reading the core must not pop the assumptions level
+                    for _ in range(2):
+                        self.assertEqual(s.get_unsat_core(), {pos, neg},
+                                         (name, mode))
+                        if mode == "named":
+                            self.assertEqual(s.get_named_unsat_core(),
+                                             {"pos": pos}, (name, mode))
 
 
     @skipIfNoUnsatCoreSolverForLogic(QF_BOOL)
