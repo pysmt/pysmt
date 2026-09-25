@@ -222,6 +222,73 @@ Here is the complete example for reference using the logic QF_LIA:
 .. literalinclude:: code_snippets/hello_world_qf_lia.py
 
 
+.. _gs-unsat-core:
+
+Unsat Cores
+-----------
+
+When a set of formulae is unsatisfiable, not all of them are usually
+responsible for the unsatisfiability. An *unsat core* of the asserted
+formulae is a subset of them whose conjunction is still
+unsatisfiable: removing any single formula from the core makes the
+conjunction satisfiable again. UNSAT cores are a handy debugging tool
+because they pinpoint exactly which assertions of your problem are in
+conflict.
+
+pySMT exposes two ways to obtain an unsat core, both provided by the
+:py:class:`~pysmt.solvers.solver.UnsatCoreSolver` class:
+
+* ``get_unsat_core()`` returns the core as a set of formulae (this is
+  also what the :py:func:`~pysmt.shortcuts.get_unsat_core` shortcut
+  uses);
+* ``get_named_unsat_core()`` returns the core as a dictionary mapping
+  assertion names to formulae.
+
+Named cores are useful when the assertions come from different
+sources (e.g. different rules of a constraint, different parts of the
+input), because the names allow you to map the core back to the
+structure of your original problem.
+
+.. note::
+
+  Not every solver supports unsat-core extraction. You can list the
+  installed solvers that do by looking at the result of
+  ``Factory.all_unsat_core_solvers()`` (see
+  :py:meth:`pysmt.factory.Factory.all_unsat_core_solvers`); as of this
+  writing the supported solvers are z3, MathSAT/OptiMathSAT and
+  Boolector, while cvc5 and Yices do not.
+
+Minimal example
+"""""""""""""""
+
+.. literalinclude:: code_snippets/unsat_core.py
+
+Named cores
+"""""""""""
+
+.. literalinclude:: code_snippets/unsat_core_named.py
+
+.. note::
+
+  Named cores are meaningful only when the solver is created with
+  ``unsat_cores_mode="named"``. In the other modes, some solvers
+  (e.g. z3) keep the names that were given to the assertions while
+  others (e.g. MathSAT, Boolector) replace them with generated,
+  meaningless names; only ``unsat_cores_mode="named"`` is therefore
+  portable if you rely on the names.
+
+Cores under assumptions
+"""""""""""""""""""""""
+
+Assumptions are extra constraints that apply only to a particular call
+of ``solve()``, not to the solver's theory. The following snippet
+shows that ``get_unsat_core()`` reports the assumptions that belong to
+the core (in both unsat cores modes), while ``get_named_unsat_core()``
+ever does, since assumptions carry no name.
+
+.. literalinclude:: code_snippets/unsat_core_assumptions.py
+
+
 What's Next?
 ------------
 
@@ -232,3 +299,7 @@ there with a simple to use interface.
 
 To understand more about other functionalities of pySMT, you can take
 a look at the `examples/ folder <https://github.com/pysmt/pysmt/blob/master/examples/README.rst>`_ .
+
+If a problem you are trying to solve is unsatisfiable, you can
+use unsat-core extraction to debug it: see the :ref:`gs-unsat-core`
+section above for an introduction.
