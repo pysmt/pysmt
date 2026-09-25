@@ -232,6 +232,7 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolv
         self.intType = self._msat_lib.msat_get_integer_type(self.msat_env())
         self.boolType = self._msat_lib.msat_get_bool_type(self.msat_env())
         self.mgr = environment.formula_manager
+        self._assumption_keys: Dict[FNode, FNode] = {}
 
     @clear_pending_pop
     def _reset_assertions(self):
@@ -269,7 +270,9 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolv
 
     def _named_assertions_map(self):
         if self.options.unsat_cores_mode == "named":
-            return dict((t[0], (t[1],t[2])) for t in self.assertions)
+            # not self.assertions: popping the assumptions level would
+            # invalidate the unsat core in MathSAT (dangling terms, segfault)
+            return dict((t[0], (t[1],t[2])) for t in self._assertion_stack)
         return None
 
     @clear_pending_pop
@@ -277,6 +280,8 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolv
         res = None
         bool_ass = []
         other_ass = []
+        # maps the fresh literal standing for each non-literal assumption to it
+        self._assumption_keys = {}
         for x in assumptions if assumptions is not None else []:
             if x.is_literal():
                 bool_ass.append(self.converter.convert(x))
@@ -284,8 +289,14 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolv
                 other_ass.append(x)
         if len(other_ass) > 0:
             self.push()
-            # this introduces new named assertions if named unsat cores.
-            self.add_assertion(self.mgr.And(other_ass))
+            for x in other_ass:
+                key = self.mgr.FreshSymbol(template="_assumption_%d")
+                self._assumption_keys[key] = x
+                term = self.converter.convert(self.mgr.Implies(key, x))
+                if self._msat_lib.msat_assert_formula(self.msat_env(), term) != 0:
+                    raise InternalSolverError(
+                        self._msat_lib.msat_last_error_message(self.msat_env()))
+                bool_ass.append(self.converter.convert(key))
 
         n_ass = self._named_assertions()
         if n_ass is not None and len(n_ass) > 0:
@@ -319,6 +330,9 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolv
                 raise InternalSolverError(
                     self._msat_lib.msat_last_error_message(self.msat_env()))
             res = set(self.converter.back(t) for t in terms)
+            # drop the Implies(key, x) encoding of non-literal assumptions
+            res = set(f for f in res
+                      if not f.get_free_variables() & self._assumption_keys.keys())
             return res | self._unsat_assumptions()
         else:
             return set(self.get_named_unsat_core().values()) | \
@@ -334,7 +348,7 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolv
         if n_ass_map is not None:
             # in named mode the named assertions are passed as assumptions too
             res -= set(n_ass_map)
-        return res
+        return set(self._assumption_keys.get(f, f) for f in res)
 
     def get_named_unsat_core(self):
         """After a call to solve() yielding UNSAT, returns the unsat core as a

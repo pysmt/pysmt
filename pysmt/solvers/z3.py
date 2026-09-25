@@ -177,6 +177,7 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolver):
         self.mgr = environment.formula_manager
 
         self._name_cnt = 0
+        self._assumption_keys: Dict[FNode, FNode] = {}
         return
 
     @clear_pending_pop
@@ -218,9 +219,15 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolver):
                 else:
                     other_ass.append(x)
 
+            # maps the fresh literal standing for each non-literal assumption to it
+            self._assumption_keys = {}
             if len(other_ass) > 0:
                 self.push()
-                self.add_assertion(self.mgr.And(other_ass))
+                for x in other_ass:
+                    key = self.mgr.FreshSymbol(template="_assumption_%d")
+                    self._assumption_keys[key] = x
+                    self.z3.add(self.converter.convert(self.mgr.Implies(key, x)))
+                    bool_ass.append(self.converter.convert(key))
                 self.pending_pop = True
             res = self.z3.check(*bool_ass)
         else:
@@ -240,7 +247,8 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolver):
 
     def _named_assertions_map(self):
         if self.options.unsat_cores_mode is not None:
-            return dict((t[0], (t[1],t[2])) for t in self.assertions)
+            # not self.assertions: that would pop the assumptions level
+            return dict((t[0], (t[1],t[2])) for t in self._assertion_stack)
         return None
 
     def get_named_unsat_core(self):
@@ -279,7 +287,7 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolver):
                     cnt += 1
                 res[name] = formula
             else:
-                core_assumptions.add(key)
+                core_assumptions.add(self._assumption_keys.get(key, key))
         return res, core_assumptions
 
     @clear_pending_pop
