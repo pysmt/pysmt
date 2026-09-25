@@ -29,4 +29,11 @@ then
         echo $ex
         ${PYTHON} $ex
     done
+
+    # xoxo reads the moves from stdin, so play a scripted game instead and
+    # check that it gets as far as announcing a result
+    echo examples/xoxo/xoxo.py
+    xoxo_log=$(${PYTHON} examples/xoxo/xoxo.py --moves 1,2,3,4,5,6,7,8,9)
+    echo "${xoxo_log}"
+    grep -qE "wins|draw" <<< "${xoxo_log}"
 fi
