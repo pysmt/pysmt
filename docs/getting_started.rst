@@ -230,10 +230,10 @@ Unsat Cores
 When a set of formulae is unsatisfiable, not all of them are usually
 responsible for the unsatisfiability. An *unsat core* of the asserted
 formulae is a subset of them whose conjunction is still
-unsatisfiable: removing any single formula from the core makes the
-conjunction satisfiable again. UNSAT cores are a handy debugging tool
-because they pinpoint exactly which assertions of your problem are in
-conflict.
+unsatisfiable. UNSAT cores are a handy debugging tool because they
+narrow down which assertions of your problem are in conflict. The
+core returned by the solver is not guaranteed to be minimal: removing
+a formula from it may leave it unsatisfiable.
 
 pySMT exposes two ways to obtain an unsat core, both provided by the
 :py:class:`~pysmt.solvers.solver.UnsatCoreSolver` class:
@@ -249,6 +249,18 @@ sources (e.g. different rules of a constraint, different parts of the
 input), because the names allow you to map the core back to the
 structure of your original problem.
 
+Core extraction must be enabled when the solver is created, through
+the ``unsat_cores_mode`` option of
+:py:func:`~pysmt.shortcuts.UnsatCoreSolver`:
+
+* ``"all"`` (the default of the shortcut): every assertion is a
+  candidate for the core. Use it when you only need the formulae.
+* ``"named"``: only the assertions added with
+  ``add_assertion(f, named="...")`` are candidates, and
+  ``get_named_unsat_core()`` reports them under the given names. Use it
+  when you need to map the core back to your problem, or when only
+  some of the assertions should be tracked.
+
 .. note::
 
   Not every solver supports unsat-core extraction. You can list the
@@ -257,6 +269,9 @@ structure of your original problem.
   :py:meth:`pysmt.factory.Factory.all_unsat_core_solvers`); as of this
   writing the supported solvers are z3, MathSAT/OptiMathSAT and
   Boolector, while cvc5 and Yices do not.
+  ``UnsatCoreSolver(...)`` raises
+  :py:class:`~pysmt.exceptions.NoSolverAvailableError` if no installed
+  solver supports unsat cores for the requested logic.
 
 Minimal example
 """""""""""""""
@@ -284,7 +299,7 @@ Assumptions are extra constraints that apply only to a particular call
 of ``solve()``, not to the solver's theory. The following snippet
 shows that ``get_unsat_core()`` reports the assumptions that belong to
 the core (in both unsat cores modes), while ``get_named_unsat_core()``
-ever does, since assumptions carry no name.
+never does, since assumptions carry no name.
 
 .. literalinclude:: code_snippets/unsat_core_assumptions.py
 

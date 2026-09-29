@@ -16,7 +16,7 @@
 # This mirrors the split in SMT-LIB between ``get-unsat-core`` and
 # ``get-unsat-assumptions``.
 
-from pysmt.shortcuts import Symbol, Int, Equals, GE, UnsatCoreSolver
+from pysmt.shortcuts import Symbol, UnsatCoreSolver
 from pysmt.typing import INT
 
 a = Symbol("a", INT)

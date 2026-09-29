@@ -3,8 +3,8 @@
 # of ``Factory.all_unsat_core_solvers()``).
 #
 # The shortcut ``get_unsat_core()`` asserts each clause of the input
-# separately and returns a *minimal* subset of them (the UNSAT core)
-# whose conjunction is still unsatisfiable.
+# separately and returns a subset of them (the UNSAT core) whose
+# conjunction is still unsatisfiable. The core need not be minimal.
 
 from pysmt.shortcuts import Symbol, Int, Equals, get_unsat_core
 from pysmt.typing import INT

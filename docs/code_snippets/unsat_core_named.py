@@ -8,7 +8,7 @@
 # theory, user input, ...) and the core must be mapped back to the
 # structure of the original problem.
 
-from pysmt.shortcuts import Symbol, Int, GE, LE, UnsatCoreSolver
+from pysmt.shortcuts import Symbol, UnsatCoreSolver
 from pysmt.typing import INT
 
 a = Symbol("a", INT)
