@@ -62,6 +62,17 @@ Demonstrates how to perform SMT-LIB parsing, dumping and extension
 ------------------------------------------------------------------
 .. literalinclude:: ../examples/smtlib.py
 
+Unsat Cores
+-----------
+
+pySMT can extract an *unsat core* of an unsatisfiable set of
+formulae: a subset of the asserted formulae whose conjunction is
+still unsatisfiable. This is a handy debugging tool to find out
+which assertions of your problem are in conflict. See the
+:ref:`gs-unsat-core` section of the getting started guide for a
+full walkthrough, and note that the example below (``examples/einstein.py``)
+already uses UNSAT cores.
+
 Shows the use of UNSAT Core as debugging tools
 ----------------------------------------------
 .. literalinclude:: ../examples/einstein.py
