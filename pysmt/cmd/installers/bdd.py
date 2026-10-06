@@ -41,8 +41,8 @@ class CuddInstaller(SolverInstaller):
 
         import sysconfig
         PYTHON_INCLUDE_DIR = sysconfig.get_path("include")
-        SolverInstaller.run("make -C %s -f %s PYTHON_INCL=-I%s" %
-                            (self.extract_path, makefile, PYTHON_INCLUDE_DIR))
+        SolverInstaller.run(["make", "-C", self.extract_path, "-f", makefile,
+                             "PYTHON_INCL=-I%s" % PYTHON_INCLUDE_DIR])
 
 
     def move(self):

@@ -114,8 +114,7 @@ class MSatInstaller(SolverInstaller):
             soname = glob.glob(self.bindings_dir + "/_mathsat*.so")[0]
             old_path = "/Users/alb/src/release/build/libmathsat.dylib"
             new_path = "%s/libmathsat.dylib" % self.bindings_dir
-            SolverInstaller.run("install_name_tool -change %s %s %s" %
-                                (old_path, new_path, soname))
+            SolverInstaller.run(["install_name_tool", "-change", old_path, new_path, soname])
 
 
     def get_installed_version(self):
