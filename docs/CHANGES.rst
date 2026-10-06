@@ -4,6 +4,14 @@ Change Log
 (unreleased)
 ------------
 
+* BDD: Upgrade to repycudd 3.0.1, which bundles CUDD 3.0.0 in place of
+  2.4.2 and builds with pip on Linux and 64-bit Windows.
+  ``pysmt-install --bdd`` now works on Windows (it needs the Microsoft
+  C++ Build Tools), and no longer needs ``make`` or a system SWIG on
+  Linux. The repycudd API that pysmt uses is unchanged. Results that
+  depend on CUDD's heuristics, such as BDD sizes after reordering, may
+  differ.
+
 * Fixed: MathSAT segfaulted in ``get_unsat_core()`` after solving under
   a non-literal assumption, because reading the core popped the
   assumption level and left MathSAT's core with dangling terms. Z3 did
