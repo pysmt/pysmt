@@ -79,7 +79,7 @@ class BtorInstaller(SolverInstaller):
             f.write(CYTHON_PATCH.encode())
             f.flush()
             f.seek(0)
-            SolverInstaller.run("patch src/api/python/pyboolector.pyx -i %s" % f.name,
+            SolverInstaller.run(["patch", "src/api/python/pyboolector.pyx", "-i", f.name],
                                 directory=self.extract_path)
 
         # Build lingeling

@@ -57,6 +57,8 @@ setup(
     license='APACHE',
     description='A solver-agnostic library for SMT Formulae manipulation and solving',
     long_description=long_description,
+    # pysmt.cmd.installers.base imports setuptools at runtime
+    install_requires=['setuptools'],
     entry_points={
         'console_scripts': [
             'pysmt-install = pysmt.cmd.install:main',

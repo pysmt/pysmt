@@ -197,8 +197,9 @@ class SolverInstaller(object):
         if sys.executable:
             interpreter = sys.executable
 
-        cmd = '{interpreter} {script}'.format(interpreter=interpreter,
-                                              script=script)
+        if isinstance(script, str):
+            script = script.split()
+        cmd = [interpreter] + script
         return SolverInstaller.run(cmd, directory=directory,
                                    env_variables=env_variables,
                                    get_output=get_output)
@@ -296,7 +297,7 @@ class SolverInstaller(object):
                 env[k] = bindings_dir
 
         try:
-            output = self.run_python("%s %s" % (check_version_script, package),
+            output = self.run_python([check_version_script, package],
                                      env_variables=env,
                                      get_output=True)
             output = output.strip()
