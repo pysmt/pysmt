@@ -4,6 +4,11 @@ Change Log
 (unreleased)
 ------------
 
+* BDD: Upgrade to repycudd 3.0.0, which bundles CUDD 3.0.0 in place of
+  2.4.2. The repycudd API that pysmt uses is unchanged. Results that
+  depend on CUDD's heuristics, such as BDD sizes after reordering, may
+  differ.
+
 * BDD: Upgrade to repycudd 2.1.0, which builds with pip on Linux and
   64-bit Windows. ``pysmt-install --bdd`` now works on Windows (it needs
   the Microsoft C++ Build Tools), and no longer needs ``make`` or a
