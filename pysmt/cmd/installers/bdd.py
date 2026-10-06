@@ -11,8 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import os
-
 from pysmt.cmd.installers.base import SolverInstaller
 
 
@@ -34,22 +32,11 @@ class CuddInstaller(SolverInstaller):
 
 
     def compile(self):
-        # Select the correct Makefile to be used
-        makefile = "Makefile"
-        if self.architecture == "x86_64":
-            makefile = "Makefile_64bit"
-
-        import sysconfig
-        PYTHON_INCLUDE_DIR = sysconfig.get_path("include")
-        SolverInstaller.run(["make", "-C", self.extract_path, "-f", makefile,
-                             "PYTHON_INCL=-I%s" % PYTHON_INCLUDE_DIR])
-
-
-    def move(self):
-        SolverInstaller.mv(os.path.join(self.extract_path, "repycudd.py"),
-                           self.bindings_dir)
-        SolverInstaller.mv(os.path.join(self.extract_path, "_repycudd.so"),
-                           self.bindings_dir)
+        # repycudd's own build fetches SWIG from PyPI and compiles CUDD into
+        # the extension, so this is the same on every OS.
+        SolverInstaller.run_python(["-m", "pip", "install", "--no-deps",
+                                    "--upgrade", "--target", self.bindings_dir,
+                                    self.extract_path])
 
 
     def get_installed_version(self):
