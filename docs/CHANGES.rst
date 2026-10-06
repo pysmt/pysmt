@@ -4,6 +4,11 @@ Change Log
 (unreleased)
 ------------
 
+* BDD: Upgrade to repycudd 2.1.0, which builds with pip on Linux and
+  64-bit Windows. ``pysmt-install --bdd`` now works on Windows (it needs
+  the Microsoft C++ Build Tools), and no longer needs ``make`` or a
+  system SWIG on Linux.
+
 * Fixed: MathSAT segfaulted in ``get_unsat_core()`` after solving under
   a non-literal assumption, because reading the core popped the
   assumption level and left MathSAT's core with dangling terms. Z3 did

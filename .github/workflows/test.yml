@@ -92,6 +92,8 @@ jobs:
             pysmt_solver: msat
           - os: windows-latest
             pysmt_solver: z3
+          - os: windows-latest
+            pysmt_solver: bdd
 
     env:
       PYTHON_VERSION: 3.13
