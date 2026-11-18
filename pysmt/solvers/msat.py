@@ -744,21 +744,31 @@ class MSatConverter(Converter, DagWalker):
         pysmt_type = self._msat_type_to_type(msat_type)
         return self.mgr.Array(pysmt_type.index_type, args[0])
 
+    def _number_payload(self, term: Any) -> Tuple[int, Any]:
+        """Returns the pysmt node type and payload of a MathSAT number."""
+        ty = self._msat_lib.msat_term_get_type(term)
+        rep = self._msat_lib.msat_term_repr(term)
+        if self._msat_lib.msat_is_integer_type(self.msat_env(), ty):
+            return op.INT_CONSTANT, int(rep)
+        elif self._msat_lib.msat_is_rational_type(self.msat_env(), ty):
+            return op.REAL_CONSTANT, Fraction(rep)
+        assert "_" in rep, "Unsupported type for '%s'" % rep
+        val, width = map(int, rep.split("_"))
+        return op.BV_CONSTANT, (val, width)
+
     def _back_tag_unknown(self, term: Any, args: List[Any]) -> FNode:
         """The TAG UNKNOWN is used to represent msat functions.
 
         This includes, Constants, Symbols and UFs.
         """
         if self._msat_lib.msat_term_is_number(self.msat_env(), term):
-            ty = self._msat_lib.msat_term_get_type(term)
-            if self._msat_lib.msat_is_integer_type(self.msat_env(), ty):
-                res = self.mgr.Int(int(self._msat_lib.msat_term_repr(term)))
-            elif self._msat_lib.msat_is_rational_type(self.msat_env(), ty):
-                res = self.mgr.Real(Fraction(self._msat_lib.msat_term_repr(term)))
+            node_type, value = self._number_payload(term)
+            if node_type == op.INT_CONSTANT:
+                res = self.mgr.Int(value)
+            elif node_type == op.REAL_CONSTANT:
+                res = self.mgr.Real(value)
             else:
-                assert "_" in str(term), "Unsupported type for '%s'" % str(term)
-                val, width = map(int, str(term).split("_"))
-                res = self.mgr.BV(val, width)
+                res = self.mgr.BV(*value)
         elif self._msat_lib.msat_term_is_constant(self.msat_env(), term):
             rep = self._restore_empty(self._msat_lib.msat_term_repr(term))
             ty = self._msat_lib.msat_term_get_type(term)
