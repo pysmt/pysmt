@@ -57,15 +57,32 @@ class MSatEnv():
        env = MSatEnv()
        self._msat_lib.function(env())
     """
-    __slots__ = ['msat_env', '_msat_lib']
+    __slots__ = ['msat_env', '_msat_lib', '_sibling', '_children', '_dead']
     __lib_name__ = "mathsat"
 
-    def __init__(self, msat_config: Optional[Any]=None):
+    def __init__(self, msat_config: Optional[Any]=None, sibling: Optional["MSatEnv"]=None):
         self._msat_lib = MSATLibLoader(self.__class__.__lib_name__)
-        self.msat_env = self._do_create_env(msat_config)
+        self._children = 0
+        self._dead = False
+        # Holding the sibling keeps it alive while this env uses its terms
+        self._sibling = sibling
+        self.msat_env = self._do_create_env(msat_config,
+                                            sibling() if sibling is not None else None)
+        if sibling is not None:
+            sibling._children += 1
 
     def __del__(self):
+        # MathSAT segfaults if an env is destroyed before the envs sharing
+        # its terms, and the cycle collector finalizes in any order.
+        if self._children > 0:
+            self._dead = True
+            return
         self._msat_lib.msat_destroy_env(self.msat_env)
+        parent = self._sibling
+        if parent is not None:
+            parent._children -= 1
+            if parent._children == 0 and parent._dead:
+                parent._msat_lib.msat_destroy_env(parent.msat_env)
 
     def __call__(self) -> Any:
         return self.msat_env
