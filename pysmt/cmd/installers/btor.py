@@ -67,6 +67,8 @@ class BtorInstaller(SolverInstaller):
         PYTHON_EXECUTABLE = sys.executable
         CMAKE_OPTS = ' -DPYTHON_INCLUDE_DIR=' + PYTHON_INCLUDE_DIR
         CMAKE_OPTS += ' -DPYTHON_EXECUTABLE=' + PYTHON_EXECUTABLE
+        # CMake 4 rejects Boolector's cmake_minimum_required(VERSION 3.3)
+        CMAKE_OPTS += ' -DCMAKE_POLICY_VERSION_MINIMUM=3.5'
         if PYTHON_LIBRARY:
             CMAKE_OPTS += ' -DPYTHON_LIBRARY=' + PYTHON_LIBRARY
 
