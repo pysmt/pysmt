@@ -34,8 +34,10 @@ class TestNativeMSat(TestCase):
 
     def setUp(self):
         from pysmt.native import NativeEnvironment
+        # Build first: if it raises, the environment stack is left intact
+        env = NativeEnvironment("msat")
         pop_env()
-        push_env(NativeEnvironment("msat"))
+        push_env(env)
         self.env = get_env()
         self.x, self.y = Symbol("x"), Symbol("y")
         self.i, self.j = Symbol("i", INT), Symbol("j", INT)
@@ -151,6 +153,7 @@ class TestNativeMSat(TestCase):
         for g in (f, app, st, LE(Real(0), self.r)):
             self.assertEqual(stc.get_type(g), g.get_type())
 
+    @skipIfSolverNotAvailable("msat")
     @skipIfSolverNotAvailable("z3")
     def test_other_solvers_accept_native_nodes(self):
         f = And(GT(Plus(self.r, ToReal(self.i)), Real(0)), LT(self.i, Int(2)))
