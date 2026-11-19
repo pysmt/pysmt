@@ -21,6 +21,7 @@ singleton objects that are used throughout the system, such as the
 FormulaManager, Simplifier, HRSerializer, SimpleTypeChecker.
 """
 
+import os
 from typing import Callable, Dict, List, Optional, Tuple, Type
 
 import pysmt.simplifier
@@ -197,10 +198,19 @@ def get_env() -> Environment:
     return ENVIRONMENTS_STACK[-1]
 
 
+def _new_env() -> Environment:
+    """Creates the default Environment (a native one if PYSMT_NATIVE is set)."""
+    native = os.environ.get("PYSMT_NATIVE")
+    if native:
+        from pysmt.native import NativeEnvironment
+        return NativeEnvironment(native)
+    return Environment()
+
+
 def push_env(env: Optional[Environment] = None):
     """Push a env in the stack. If env is None, a new Environment is created."""
     if env is None:
-        env = Environment()
+        env = _new_env()
     ENVIRONMENTS_STACK.append(env)
 
 

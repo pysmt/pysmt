@@ -57,15 +57,32 @@ class MSatEnv():
        env = MSatEnv()
        self._msat_lib.function(env())
     """
-    __slots__ = ['msat_env', '_msat_lib']
+    __slots__ = ['msat_env', '_msat_lib', '_sibling', '_children', '_dead']
     __lib_name__ = "mathsat"
 
-    def __init__(self, msat_config: Optional[Any]=None):
+    def __init__(self, msat_config: Optional[Any]=None, sibling: Optional["MSatEnv"]=None):
         self._msat_lib = MSATLibLoader(self.__class__.__lib_name__)
-        self.msat_env = self._do_create_env(msat_config)
+        self._children = 0
+        self._dead = False
+        # Holding the sibling keeps it alive while this env uses its terms
+        self._sibling = sibling
+        self.msat_env = self._do_create_env(msat_config,
+                                            sibling() if sibling is not None else None)
+        if sibling is not None:
+            sibling._children += 1
 
     def __del__(self):
+        # MathSAT segfaults if an env is destroyed before the envs sharing
+        # its terms, and the cycle collector finalizes in any order.
+        if self._children > 0:
+            self._dead = True
+            return
         self._msat_lib.msat_destroy_env(self.msat_env)
+        parent = self._sibling
+        if parent is not None:
+            parent._children -= 1
+            if parent._children == 0 and parent._dead:
+                parent._msat_lib.msat_destroy_env(parent.msat_env)
 
     def __call__(self) -> Any:
         return self.msat_env
@@ -223,7 +240,7 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolv
         self._msat_lib = MSATLibLoader(self.__class__.__lib_name__)
         self.msat_config = self._msat_lib.msat_create_default_config(str(logic))
         self.options(self)
-        self.msat_env = MSATCreateEnv(self.__class__.__lib_name__, self.msat_config)
+        self.msat_env = MSATCreateEnv(self.__class__.__lib_name__, self.msat_config, environment)
         self._msat_lib.msat_destroy_config(self.msat_config)
         self.converter = MSATCreateConverter(self.__class__.__lib_name__, environment, self.msat_env)
 
@@ -744,21 +761,31 @@ class MSatConverter(Converter, DagWalker):
         pysmt_type = self._msat_type_to_type(msat_type)
         return self.mgr.Array(pysmt_type.index_type, args[0])
 
+    def _number_payload(self, term: Any) -> Tuple[int, Any]:
+        """Returns the pysmt node type and payload of a MathSAT number."""
+        ty = self._msat_lib.msat_term_get_type(term)
+        rep = self._msat_lib.msat_term_repr(term)
+        if self._msat_lib.msat_is_integer_type(self.msat_env(), ty):
+            return op.INT_CONSTANT, int(rep)
+        elif self._msat_lib.msat_is_rational_type(self.msat_env(), ty):
+            return op.REAL_CONSTANT, Fraction(rep)
+        assert "_" in rep, "Unsupported type for '%s'" % rep
+        val, width = map(int, rep.split("_"))
+        return op.BV_CONSTANT, (val, width)
+
     def _back_tag_unknown(self, term: Any, args: List[Any]) -> FNode:
         """The TAG UNKNOWN is used to represent msat functions.
 
         This includes, Constants, Symbols and UFs.
         """
         if self._msat_lib.msat_term_is_number(self.msat_env(), term):
-            ty = self._msat_lib.msat_term_get_type(term)
-            if self._msat_lib.msat_is_integer_type(self.msat_env(), ty):
-                res = self.mgr.Int(int(self._msat_lib.msat_term_repr(term)))
-            elif self._msat_lib.msat_is_rational_type(self.msat_env(), ty):
-                res = self.mgr.Real(Fraction(self._msat_lib.msat_term_repr(term)))
+            node_type, value = self._number_payload(term)
+            if node_type == op.INT_CONSTANT:
+                res = self.mgr.Int(value)
+            elif node_type == op.REAL_CONSTANT:
+                res = self.mgr.Real(value)
             else:
-                assert "_" in str(term), "Unsupported type for '%s'" % str(term)
-                val, width = map(int, str(term).split("_"))
-                res = self.mgr.BV(val, width)
+                res = self.mgr.BV(*value)
         elif self._msat_lib.msat_term_is_constant(self.msat_env(), term):
             rep = self._restore_empty(self._msat_lib.msat_term_repr(term))
             ty = self._msat_lib.msat_term_get_type(term)
@@ -1210,7 +1237,7 @@ class MSatQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
         QuantifierEliminator.__init__(self)
         IdentityDagWalker.__init__(self, env=environment)
         self.msat_config = self._msat_lib.msat_create_default_config("QF_LRA")
-        self.msat_env = MSATCreateEnv(self.__class__.__lib_name__, self.msat_config)
+        self.msat_env = MSATCreateEnv(self.__class__.__lib_name__, self.msat_config, environment)
         self._msat_lib.msat_destroy_config(self.msat_config)
 
         self.logic = logic
@@ -1303,7 +1330,7 @@ class MSatInterpolator(Interpolator):
     def __init__(self, environment, logic=None):
         Interpolator.__init__(self)
         self._msat_lib = MSATLibLoader(self.__class__.__lib_name__)
-        self.msat_env = MSATCreateEnv(self.__class__.__lib_name__, None)
+        self.msat_env = MSATCreateEnv(self.__class__.__lib_name__, None, environment)
         self.converter = MSATCreateConverter(self.__class__.__lib_name__, environment, self.msat_env)
         self.environment = environment
         self.logic = logic

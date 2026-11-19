@@ -17,7 +17,7 @@
 #
 
 
-from typing import Any
+from typing import Any, Optional
 import importlib
 
 import pysmt
@@ -33,7 +33,13 @@ def MSATLibLoader(name):
     except ImportError:
         raise SolverAPINotFound
 
-def MSATCreateEnv(name: str, msat_config: Any) -> "pysmt.solvers.msat.MSatEnv":
+def _native_root(name: str, environment: Optional[Environment]) -> Optional["pysmt.solvers.msat.MSatEnv"]:
+    """Returns the root MSatEnv of a native MathSAT environment, if any."""
+    if name != "mathsat" or environment is None:
+        return None
+    return getattr(environment.formula_manager, "msat_root", None)
+
+def MSATCreateEnv(name: str, msat_config: Any, environment: Optional[Environment]=None) -> "pysmt.solvers.msat.MSatEnv":
     map = {
         "mathsat" : {
             "class" : "MSatEnv",
@@ -49,6 +55,9 @@ def MSATCreateEnv(name: str, msat_config: Any) -> "pysmt.solvers.msat.MSatEnv":
 
     EnvClass = getattr(importlib.import_module(map[name]["lib"]), map[name]["class"])
 
+    root = _native_root(name, environment)
+    if root is not None:
+        return EnvClass(msat_config, sibling=root)
     return EnvClass(msat_config)
 
 def MSATCreateConverter(name: str, environment: Environment, msat_env: "pysmt.solvers.msat.MSatEnv") -> "pysmt.solvers.msat.MSatConverter":
@@ -64,6 +73,9 @@ def MSATCreateConverter(name: str, environment: Environment, msat_env: "pysmt.so
     }
     if name not in map.keys():
         raise ValueError(name)
+
+    if _native_root(name, environment) is not None:
+        map[name] = {"class": "NativeMSatConverter", "lib": "pysmt.native.msat"}
 
     ConvClass = getattr(importlib.import_module(map[name]["lib"]), map[name]["class"])
 
