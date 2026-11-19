@@ -50,7 +50,7 @@ class TestNativeMSat(TestCase):
         f = And(self.x, self.y)
         self.assertIs(f, And(self.x, self.y))
         self.assertIs(f, And([self.x, self.y]))
-        self.assertEqual(f.node_id(), mathsat.msat_term_id(f._term))
+        self.assertEqual(f.node_id(), 2 * mathsat.msat_term_id(f._term))
         self.assertIn(f, self.env.formula_manager)
 
     @skipIfSolverNotAvailable("msat")
@@ -109,12 +109,52 @@ class TestNativeMSat(TestCase):
             BVAdd(b8, b4)
 
     @skipIfSolverNotAvailable("msat")
-    def test_int_is_subtype_of_real(self):
-        # MathSAT folds ToReal(i) into i, so mixed Int/Real is accepted
-        self.assertIs(ToReal(self.i), self.i)
-        f = Plus(self.r, ToReal(self.i))
+    def test_int_real_are_strict(self):
+        # pysmt typing: Int is not accepted where Real is expected
+        with self.assertRaises(PysmtTypeError):
+            Plus(self.r, self.i)
+        with self.assertRaises(PysmtTypeError):
+            Equals(self.r, Int(0))
+
+    @skipIfSolverNotAvailable("msat")
+    def test_toreal_is_a_real_view(self):
+        # MathSAT folds ToReal(i) into i: same term, different node
+        ti = ToReal(self.i)
+        self.assertIsNot(ti, self.i)
+        self.assertIs(ti._term, self.i._term)
+        self.assertTrue(ti.is_toreal())
+        self.assertIs(ti.arg(0), self.i)
+        self.assertEqual(ti.get_type(), REAL)
+        self.assertIs(ti, ToReal(self.i))
+        self.assertIsNot(Real(0), Int(0))
+        self.assertTrue(Real(0).is_real_constant(0))
+        self.assertTrue(Int(0).is_int_constant(0))
+        f = Plus(self.r, ti)
         self.assertEqual(f.get_type(), REAL)
-        self.assertIs(f, Plus(self.r, self.i))
+        self.assertTrue(is_valid(Equals(f, Plus(ti, self.r)), solver_name="msat"))
+
+    @skipIfSolverNotAvailable("msat")
+    def test_decoded_terms_are_well_typed(self):
+        # MathSAT builds (+_rat i r): decoding restores ToReal(i)
+        f = Plus(self.r, ToReal(self.i))
+        self.assertIn(ToReal(self.i), f.args())
+        # MathSAT passes i to the Real UF as it is: decoding restores ToReal(i)
+        h = Symbol("h", FunctionType(REAL, [REAL]))
+        app = Function(h, [ToReal(self.i)])
+        self.assertIs(app.arg(0), ToReal(self.i))
+        a = Symbol("a", ArrayType(INT, REAL))
+        st = Store(a, self.i, Real(1))
+        self.assertIs(st.arg(2), Real(1))
+        # A plain pysmt walk agrees with the seeded types
+        from pysmt.type_checker import SimpleTypeChecker
+        stc = SimpleTypeChecker(self.env)
+        for g in (f, app, st, LE(Real(0), self.r)):
+            self.assertEqual(stc.get_type(g), g.get_type())
+
+    @skipIfSolverNotAvailable("z3")
+    def test_other_solvers_accept_native_nodes(self):
+        f = And(GT(Plus(self.r, ToReal(self.i)), Real(0)), LT(self.i, Int(2)))
+        self.assertTrue(is_sat(f, solver_name="z3"))
 
     @skipIfSolverNotAvailable("msat")
     def test_unsupported(self):

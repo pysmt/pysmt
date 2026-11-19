@@ -26,7 +26,7 @@ from typing import Any, Dict, Optional, Tuple
 
 import pysmt.operators as op
 import pysmt.typing as types
-from pysmt.constants import pysmt_integer_from_integer
+from pysmt.constants import Fraction, pysmt_integer_from_integer
 from pysmt.exceptions import (PysmtTypeError, ConvertExpressionError,
                               InternalSolverError)
 from pysmt.fnode import FNode, FNodeContent
@@ -95,15 +95,18 @@ class MSatFNode(FNode):
     """An FNode whose only state is a MathSAT term (or decl).
 
     Function symbols have no MathSAT term, so they hold the msat_decl
-    and _term is None.
+    and _term is None. MathSAT folds ToReal(i) into i, so _as_real marks
+    the Real view of an Int-sorted term (ToReal(i), Real(0)).
     """
-    __slots__ = ["_mgr", "_term", "_decl", "_cache"]
+    __slots__ = ["_mgr", "_term", "_decl", "_as_real", "_cache"]
 
-    def __init__(self, mgr: "MSatFormulaManager", term: Any, decl: Any, node_id: int):
+    def __init__(self, mgr: "MSatFormulaManager", term: Any, decl: Any,
+                 node_id: int, as_real: bool=False):
         # FNode.__init__ is skipped: _content is computed, not stored
         self._mgr = mgr
         self._term = term
         self._decl = decl
+        self._as_real = as_real
         self._cache: Optional[FNodeContent] = None
         self._node_id = node_id
 
@@ -168,35 +171,18 @@ class MSatFormulaManager(FormulaManager):
                 del stc.memoization[tmp]
         if _lib.MSAT_ERROR_TERM(term):
             raise PysmtTypeError(_lib.msat_last_error_message(e))
-        return self._wrap(term)
+        return self._wrap(term, as_real=(ty == types.REAL and self._is_int(term)))
 
     def _check_type(self, tmp: FNode, args: Tuple[FNode, ...]):
         """Type-checks one level of tmp, without memoizing tmp."""
         stc = self.env.stc
         arg_types = [stc.get_type(a) for a in args]
         ty = type(stc).super(stc, tmp, args=arg_types)
-        if ty is None and types.INT in arg_types:
-            # MathSAT folds ToReal(i) into i, so Int is accepted where Real is expected
-            expected = self._expected_types(tmp, arg_types)
-            promoted = [types.REAL if t == types.INT and e in (None, types.REAL) else t
-                        for t, e in zip(arg_types, expected)]
-            ty = type(stc).super(stc, tmp, args=promoted)
         if ty is None:
             raise PysmtTypeError("%s is not well-typed on arguments of type %s"
                                  % (op.op_to_str(tmp.node_type()),
                                     ", ".join(str(t) for t in arg_types)))
         return ty, arg_types
-
-    @staticmethod
-    def _expected_types(tmp: FNode, arg_types):
-        """Argument types required by position, None where any type fits."""
-        nt = tmp.node_type()
-        if nt == op.FUNCTION:
-            return list(tmp.function_name().symbol_type().param_types) # type: ignore[attr-defined]
-        if nt in (op.ARRAY_SELECT, op.ARRAY_STORE) and arg_types[0].is_array_type():
-            at = arg_types[0]
-            return [at, at.index_type, at.elem_type][:len(arg_types)] # type: ignore[attr-defined]
-        return [None] * len(arg_types)
 
     def _make_symbol(self, name: str, typename: types.PySMTType) -> FNode:
         if typename.is_function_type() and \
@@ -217,18 +203,25 @@ class MSatFormulaManager(FormulaManager):
     #
     # Identity
     #
-    def _wrap(self, term: Any) -> MSatFNode:
+    def _wrap(self, term: Any, as_real: bool=False) -> MSatFNode:
         tid = _lib.msat_term_id(term)
-        n = self._nodes.get(("t", tid))
+        key = ("r" if as_real else "t", tid)
+        n = self._nodes.get(key)
         if n is None:
             decl = _lib.msat_term_get_decl(term)
             if _lib.msat_decl_get_arity(decl) > _lib.msat_term_arity(term):
                 # A function symbol (e.g., from a model) is its decl
                 return self._wrap_decl(decl)
-            n = MSatFNode(self, term, None, tid)
-            self._nodes[("t", tid)] = n
-            self.env.stc.memoization[n] = self._to_type(_lib.msat_term_get_type(term))
+            # Two node ids per term: the natural view and the Real view
+            n = MSatFNode(self, term, None, 2 * tid + int(as_real), as_real)
+            self._nodes[key] = n
+            self.env.stc.memoization[n] = types.REAL if as_real else \
+                self._to_type(_lib.msat_term_get_type(term))
         return n
+
+    def _is_int(self, term: Any) -> bool:
+        return bool(_lib.msat_is_integer_type(self.msat_root(),
+                                              _lib.msat_term_get_type(term)))
 
     def _wrap_decl(self, decl: Any, typename: Optional[types.PySMTType]=None) -> MSatFNode:
         did = _lib.msat_decl_id(decl)
@@ -271,9 +264,15 @@ class MSatFormulaManager(FormulaManager):
             return FNodeContent(op.SYMBOL, (), (name, get_type(n)))
 
         t = n._term
+        if n._as_real:
+            if _lib.msat_term_is_number(e, t):
+                _, value = b._number_payload(t)
+                return FNodeContent(op.REAL_CONSTANT, (), Fraction(value))
+            return FNodeContent(op.TOREAL, (self._wrap(t),), None)
+
         decl = _lib.msat_term_get_decl(t)
         tag = _lib.msat_decl_get_tag(e, decl)
-        args = tuple(self._wrap(_lib.msat_term_get_arg(t, i))
+        args = tuple(self._wrap_arg(t, decl, i)
                      for i in range(_lib.msat_term_arity(t)))
         if tag == _lib.MSAT_TAG_TRUE:
             return FNodeContent(op.BOOL_CONSTANT, (), True)
@@ -306,6 +305,14 @@ class MSatFormulaManager(FormulaManager):
                 return FNodeContent(op.FUNCTION, args, self._wrap_decl(decl))
         raise ConvertExpressionError("Unsupported MathSAT term: %s"
                                      % _lib.msat_term_repr(t))
+
+    def _wrap_arg(self, term: Any, decl: Any, i: int) -> MSatFNode:
+        """Wraps the i-th argument, as Real where MathSAT coerced it."""
+        arg = _lib.msat_term_get_arg(term, i)
+        as_real = self._is_int(arg) and i < _lib.msat_decl_get_arity(decl) and \
+            _lib.msat_is_rational_type(self.msat_root(),
+                                       _lib.msat_decl_get_arg_type(decl, i))
+        return self._wrap(arg, as_real=bool(as_real))
 
     def _width(self, term: Any) -> int:
         _, width = _lib.msat_is_bv_type(self.msat_root(), _lib.msat_term_get_type(term))
