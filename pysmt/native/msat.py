@@ -22,7 +22,7 @@ MSatFNode answers the FNode API by decoding that term. The structure is
 the one MathSAT returns (e.g., LT(a, b) is NOT(LE(b, a))), so formulae
 are logically equivalent to, but not shaped like, the plain pysmt ones.
 """
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, cast
 
 import pysmt.operators as op
 import pysmt.typing as types
@@ -110,8 +110,8 @@ class MSatFNode(FNode):
         self._cache: Optional[FNodeContent] = None
         self._node_id = node_id
 
-    @property # type: ignore[override]
-    def _content(self) -> FNodeContent:
+    @property
+    def _content(self) -> FNodeContent: # type: ignore[override]
         if self._cache is None:
             self._cache = self._mgr._decode(self)
         return self._cache
@@ -148,7 +148,8 @@ class MSatFormulaManager(FormulaManager):
             raise NotImplementedError("MathSAT native nodes do not support "
                                       "non-constant exponents")
         if node_type == op.SYMBOL:
-            return self._make_symbol(*payload)
+            name, typename = cast(Tuple[str, types.PySMTType], payload)
+            return self._make_symbol(name, typename)
 
         tmp = FNode(FNodeContent(node_type, args, payload), -1)
         ty, arg_types = self._check_type(tmp, args)
@@ -158,7 +159,7 @@ class MSatFormulaManager(FormulaManager):
             if any(t.is_bool_type() for t in arg_types):
                 raise NotImplementedError("MathSAT does not support UF with "
                                           "Bool arguments")
-            term = _lib.msat_make_uf(e, payload._decl, terms)
+            term = _lib.msat_make_uf(e, cast(MSatFNode, payload)._decl, terms)
         elif node_type == op.BOOL_CONSTANT:
             term = _lib.msat_make_true(e) if payload else _lib.msat_make_false(e)
         else:
@@ -250,7 +251,7 @@ class MSatFormulaManager(FormulaManager):
             is_simple, name = _lib.msat_is_simple_type(e, msat_type)
             if not is_simple:
                 raise
-            return self.env.type_manager.Type(name)
+            return cast(types.PySMTType, self.env.type_manager.Type(name))
 
     #
     # Decoding
@@ -335,4 +336,4 @@ class NativeMSatConverter(MSatConverter):
         return formula._term # type: ignore[attr-defined]
 
     def back(self, expr: Any) -> FNode:
-        return self.mgr._wrap(expr)
+        return cast(MSatFormulaManager, self.mgr)._wrap(expr)

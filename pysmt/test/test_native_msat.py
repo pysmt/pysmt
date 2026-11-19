@@ -46,7 +46,7 @@ class TestNativeMSat(TestCase):
 
     @skipIfSolverNotAvailable("msat")
     def test_identity(self):
-        import mathsat
+        import mathsat # type: ignore[import]
         f = And(self.x, self.y)
         self.assertIs(f, And(self.x, self.y))
         self.assertIs(f, And([self.x, self.y]))
