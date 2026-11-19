@@ -67,6 +67,8 @@ class BtorInstaller(SolverInstaller):
         PYTHON_EXECUTABLE = sys.executable
         CMAKE_OPTS = ' -DPYTHON_INCLUDE_DIR=' + PYTHON_INCLUDE_DIR
         CMAKE_OPTS += ' -DPYTHON_EXECUTABLE=' + PYTHON_EXECUTABLE
+        # CMake 4 rejects Boolector's cmake_minimum_required(VERSION 3.3)
+        CMAKE_OPTS += ' -DCMAKE_POLICY_VERSION_MINIMUM=3.5'
         if PYTHON_LIBRARY:
             CMAKE_OPTS += ' -DPYTHON_LIBRARY=' + PYTHON_LIBRARY
 
@@ -82,9 +84,13 @@ class BtorInstaller(SolverInstaller):
             SolverInstaller.run(["patch", "src/api/python/pyboolector.pyx", "-i", f.name],
                                 directory=self.extract_path)
 
-        # Build lingeling
+        # Build lingeling. Its configure.sh ignores CFLAGS but keeps CC, and
+        # GCC 15 (C23) rejects its unprototyped lock callbacks as incompatible.
+        lingeling_cc = os.environ.get("CC", "gcc") + \
+            " -Wno-error=incompatible-pointer-types"
         SolverInstaller.run("bash ./contrib/setup-lingeling.sh",
-                            directory=self.extract_path)
+                            directory=self.extract_path,
+                            env_variables={"CC": lingeling_cc})
 
         # Build Btor
         SolverInstaller.run("bash ./contrib/setup-btor2tools.sh",
