@@ -7,7 +7,8 @@ files within the `examples/ folder
 the pySMT repository and a basic tutorial on Boolean logic.
 
 If you are interested in helping us create better tutorials, please
-let us know at info@pysmt.org .
+let us know by opening an issue on `GitHub
+<https://github.com/pysmt/pysmt/issues>`_.
 
 
 .. contents::
