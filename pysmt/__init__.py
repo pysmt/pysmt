@@ -19,7 +19,7 @@
 from typing import Tuple, Union
 
 
-VERSION: Union[Tuple[int, int, int], Tuple[int, int, int, str, int]] = (0, 9, 7, "dev", 1)
+VERSION: Union[Tuple[int, int, int], Tuple[int, int, int, str, int]] = (0, 10, 0)
 
 # Try to provide human-readable version of latest commit for dev versions
 # E.g. v0.5.1-4-g49a49f2-wip

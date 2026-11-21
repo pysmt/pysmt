@@ -14,4 +14,4 @@ sed -i "s/\"dev\", 1/\"dev\", $DEV_VERSION/" pysmt/__init__.py
 python3 setup.py sdist --format=gztar
 
 # Wheel file
-python3 setup.py bdist_wheel --universal
+python3 setup.py bdist_wheel

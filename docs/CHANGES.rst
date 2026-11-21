@@ -1,45 +1,189 @@
 Change Log
 ==========
 
-(unreleased)
-------------
+0.10.0: 2026-11-21 -- Optimization, type hints and upgraded solvers
+---------------------------------------------------------------------
 
-* BDD: Upgrade to repycudd 3.0.1, which bundles CUDD 3.0.0 in place of
+**Backwards Incompatible Changes**:
+
+* Python 3.9 or later is now required (``python_requires=">=3.9"``).
+  The CI tests Python 3.13.
+
+* Instance-based walkers have been removed. ``Walker.functions`` no
+  longer exists and ``Walker.set_function`` raises
+  ``NotImplementedError``. Custom walkers must define ``walk_*``
+  methods or use the ``@handles`` decorator. Dynamic walker functions
+  (``add_dynamic_walker_function``) are now local to the environment
+  where they are registered, and registering the same
+  ``(nodetype, walker_class)`` pair twice in one environment fails an
+  assertion (PR #849, supersedes #728, closes #410).
+
+* ``get_unsat_core()`` now includes the assumptions passed to
+  ``solve()`` (see Bugfix below). Code that relied on cores containing
+  only assertions may see extra formulae (PR #680).
+
+* Real constants are printed in SMT-LIB as ``(/ n.0 d.0)`` instead of
+  ``(/ n d)``, so that stricter parsers read them as reals (PR #779,
+  issue #778).
+
+**General**:
+
+* Optimization Modulo Theories: new ``pysmt.optimization`` package
+  with a factory for optimizers, native optimizers for Z3 and
+  OptiMathSAT, and two generic mixins that optimize with any
+  incremental or assumption-based solver through a SAT-side loop
+  (provided for MathSAT and Yices). Supports minimization,
+  maximization, MinMax, MaxMin and MaxSMT goals, and lexicographic,
+  Pareto and boxed multi-objective optimization (PR #439, tests in PR #793 by @Framba-Luca,
+  boxed Z3 fix in PR #853).
+
+* Type hints across the library, checked by mypy in CI (PR #813 by
+  @Framba-Luca).
+
+* Polarity-based CNF conversion (Plaisted and Greenbaum), and no more
+  redundant labeling in the labeling CNF (PR #745 by @masinag, fixes
+  #743 and #403).
+
+* New ``ToInt`` and ``IsInt`` operators from the SMT-LIB Reals_Ints
+  theory (``to_int`` and ``is_int``) (PR #836, fixes #835).
+
+* New ``Abs`` shortcut, defined as ``Ite(x > 0, x, -x)`` (PR #797 by
+  @aemartinez).
+
+* The SMT-LIB parser accepts every left-associative,
+  right-associative and chainable n-ary operator of the standard
+  (PR #837, fixes #638, thanks @jhoenicke for reporting).
+
+* ``minmax`` and ``maxmin`` SMT-LIB commands support the ``:id`` and
+  ``:signed`` options (PR #832 by @lupodevelop).
+
+* Symbols with an empty name (``||`` in SMT-LIB) are supported by all
+  solvers when ``env.allow_empty_var_names`` is set (PR #848,
+  supersedes #588).
+
+* pySMT uses the environment passed to it instead of the global one
+  in several places (PR #839, ports the correctness part of #700 by
+  @enmag).
+
+* Unsat cores are documented in the Getting Started guide, and the
+  documentation snippets are run in CI (PR #854, fixes #851).
+
+* Read the Docs configuration file (PR #775).
+
+**Solvers**:
+
+* Z3 upgraded to 5.1.0 (PR #808 by @Framba-Luca, PR #853).
+
+* MathSAT upgraded to 5.6.16 (PR #827).
+
+* cvc5 upgraded to 1.3.3 (PR #827). Constant arrays are supported, and the
+  quantified array logics AUFLIRA, AUFLIA, AUFNIRA and ALIA are enabled
+  in cvc5 and Z3 (PR #829 by @gianredondi, fixes #828). cvc5 is now
+  tested on macOS (PR #841).
+
+* CVC4: constant arrays are supported (PR #842, revives #546). CVC4 is
+  no longer tested in CI (PR #789).
+
+* MathSAT and OptiMathSAT support nonlinear integer and real
+  arithmetic, including ``Pow`` and ``Div`` (PR #844).
+
+* OptiMathSAT upgraded to 1.7.5 (PR #815 by @masinag, fixes #810).
+
+* BDD: upgraded to repycudd 3.0.1, which bundles CUDD 3.0.0 in place of
   2.4.2 and builds with pip on Linux and 64-bit Windows.
   ``pysmt-install --bdd`` now works on Windows (it needs the Microsoft
   C++ Build Tools), and no longer needs ``make`` or a system SWIG on
   Linux. The repycudd API that pysmt uses is unchanged. Results that
   depend on CUDD's heuristics, such as BDD sizes after reordering, may
-  differ.
+  differ (PR #845, PR #857, PR #858).
 
-* Fixed: MathSAT segfaulted in ``get_unsat_core()`` after solving under
-  a non-literal assumption, because reading the core popped the
+* Boolector builds with GCC 15 and CMake 4 (PR #800, PR #860).
+
+* ``pysmt-install`` works when the Python interpreter or the install
+  paths contain spaces, and ``setuptools`` is declared as a dependency
+  because the installers import it at runtime (PR #855).
+
+**Bugfix**:
+
+* MathSAT segfaulted in ``get_unsat_core()`` after solving under a
+  non-literal assumption, because reading the core popped the
   assumption level and left MathSAT's core with dangling terms. Z3 did
-  not crash but reported an internal symbol in place of the assumption,
-  and raised on a second core request. Both now report the assumption
-  itself.
+  not crash but reported an internal symbol in place of the
+  assumption, and raised on a second core request. Both now report the
+  assumption itself (PR #852).
 
-* Fixed: The assumptions passed to ``solve()`` were missing from the
-  unsat core. ``get_unsat_core()`` now reports them alongside the
-  assertions, in both the "all" and the "named" unsat cores mode
-  (PR #680).
-
+* The assumptions passed to ``solve()`` were missing from the unsat
+  core. ``get_unsat_core()`` now reports them alongside the
+  assertions, in both the "all" and the "named" unsat cores mode.
   Assumptions carry no name, so they are *not* reported by
   ``get_named_unsat_core()``, which keeps returning only the
-  assertions added via ``add_assertion(..., named=...)``.
+  assertions added via ``add_assertion(..., named=...)`` (PR #680).
 
-* Fixed: Boolector's ``get_unsat_core`` and ``get_named_unsat_core``
-  raised ``BoolectorException: 'exp' must be an assumption`` when
-  solving under assumptions, and ``get_named_unsat_core`` could pair a
-  name with the wrong assertion (PR #680).
+* Boolector's ``get_unsat_core`` and ``get_named_unsat_core`` raised
+  ``BoolectorException: 'exp' must be an assumption`` when solving
+  under assumptions, and ``get_named_unsat_core`` could pair a name
+  with the wrong assertion (PR #680).
 
-* Fixed: Boolector dropped the assumptions passed to ``solve()`` when
-  they were given as an iterator rather than as a list (PR #680).
+* Boolector dropped the assumptions passed to ``solve()`` when they
+  were given as an iterator rather than as a list (PR #680).
 
-* Docs: README listed Boolector as not supporting unsat cores; it does.
+* The README listed Boolector as not supporting unsat cores; it does
+  (PR #680).
+
+* SMT-LIB model validation was wrong (PR #691, see
+  SMT-COMP/postprocessors#10).
+
+* Creating a node that already existed in the formula manager skipped
+  type checking, so some ill-typed terms were accepted (PR #785 by
+  @annabeks, fixes #784).
+
+* The substituter did not handle function applications without
+  interpretations (PR #768, fixes #767), and dropped interpretations
+  inside quantifiers (PR #825 by @nafur).
+
+* ``CNFizer`` raised on functions because of an undefined
+  ``function_symbol`` (PR #803 by @Framba-Luca, fixes #801), and did
+  not handle theory operations (PR #806 by @Framba-Luca, fixes #802).
+
+* AllSMT with SMT atoms (not only Boolean variables) as important
+  atoms failed to convert them in MathSAT (PR #756 by @masinag).
+
+* The HR parser misparsed identifiers whose name starts with a keyword
+  (PR #794).
+
+* The SMT-LIB parser now parses value annotations containing ``:`` as
+  keywords (PR #812 by @Framba-Luca, fixes #809).
+
+* MathSAT quantifier elimination was not available by name even when
+  installed (PR #821, fixes #819).
+
+* n-ary bit-vector operations were converted incorrectly to Z3
+  (PR #833, adapted from #772 by @nbailluet).
+
+* The portfolio solver returned models that did not evaluate correctly
+  with Z3 (PR #847 by @enmag, reported in #846).
+
+* OMT weights and values were mishandled when ``gmpy2`` is installed
+  (PR #850).
+
+* The ackermannization test now uses a consistent logic (PR #732 by
+  @marcogario, fixes #731).
+
+**New Contributors**:
+
+* @cespio made their first contribution in https://github.com/pysmt/pysmt/pull/722
+* @annabeks made their first contribution in https://github.com/pysmt/pysmt/pull/785
+* @Framba-Luca made their first contribution in https://github.com/pysmt/pysmt/pull/793
+* @aemartinez made their first contribution in https://github.com/pysmt/pysmt/pull/797
+* @gianredondi made their first contribution in https://github.com/pysmt/pysmt/pull/829
+* @masinag made their first contribution in https://github.com/pysmt/pysmt/pull/815
+* @lupodevelop made their first contribution in https://github.com/pysmt/pysmt/pull/832
+* @nafur made their first contribution in https://github.com/pysmt/pysmt/pull/825
+
+**Full Changelog**: https://github.com/pysmt/pysmt/compare/v0.9.6...v0.10.0
 
 
-0.9.6: 2022-06-24 -- CVC5 and upgraded solvers
+0.9.6: 2024-06-24 -- CVC5 and upgraded solvers
 ----------------------------------------------
 
 **What's Changed**:
@@ -257,7 +401,7 @@ Solvers:
 * Z3: Upgrade to 4.8.4 (PR #550).
   Removed support for interpolation.
   *Known issue*: Some tests on use of tactics exhibit some random
-   failures on Travis.
+  failures on Travis.
 
 * Yices: Add support for OSX (PR #486). Thanks to **Varun Patro** for
   contributing the patch.

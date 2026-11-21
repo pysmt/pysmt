@@ -70,10 +70,10 @@ includes all the tests that are marked as ``slow``, and therefore
 might take some time to complete.
 
 Finally, tests are run across a wide range of solvers, versions of
-python and operating systems using Travis CI.  This happens
+python and operating systems using GitHub Actions. This happens
 automatically when you open a PR. If you want to run this before
-submitting a PR, create a (free) Travis CI account, fork pySMT, and
-enable the testing from Travis webinterface.
+submitting a PR, enable GitHub Actions on your fork of pySMT and push
+your branch there.
 
 All tests should pass for a PR to be merged.
 
@@ -196,17 +196,25 @@ Preparing a Release (Check-List)
 ================================
 
 In order to make a release, the master branch must pass all tests on
-the CI (Travis and Appveyor). The release process is broken down into
-the following steps:
+the CI (GitHub Actions). The release process is broken down into the
+following steps:
 
  * Release branch creation
  * Changelog update
  * Version change
  * Package creation and local testing
- * Merge and Tag
- * PyPi update
+ * Merge (publishes to PyPI)
+ * Tag and GitHub Release
  * Version Bumping
  * Announcement
+
+Every push to master runs the ``deploy-pypi`` job in
+``.github/workflows/test.yml``, which builds the package with
+``make_distrib.sh`` and uploads it to PyPI. On development versions
+(``VERSION`` ending in ``"dev", 1``) this uploads a ``.devN`` build. On
+a release version it uploads the release itself. PyPI does not allow
+re-uploading a version, so merging the release branch is the point of
+no return: everything must be checked before that.
 
 
 Release Branch Creation
@@ -247,6 +255,13 @@ with an issue or PR, it is acceptable to point to the exact commit
 id).  Items should also acknowledge contributors for submitting
 patches, opening tickets or simply discussing a problem.
 
+The changelog ends with the list of new contributors and a link to the
+full diff. GitHub computes the list of new contributors::
+
+  gh api repos/pysmt/pysmt/releases/generate-notes \
+     -f tag_name=va.b.c -f target_commitish=master \
+     -f previous_tag_name=v<previous> --jq .body
+
 Version change
 --------------
 
@@ -256,54 +271,59 @@ show the correct version number: e.g., ``VERSION = (0, 6, 1)``.
 Package creation and local testing
 ----------------------------------
 
-The utility script ``make_distrib.sh`` to create a distribution
-package is located in the root directory of the project. This will
-create various formats.
+The utility script ``make_distrib.sh`` in the root directory of the
+project creates the sdist (``dist/pysmt-a.b.c.tar.gz``) and the wheel.
+Build them from a clean checkout of the release branch (e.g., with
+``git worktree add``), so that untracked files in your working copy do
+not end up in the package.
 
-After running this script, the package ``dist/PySMT-a.b.c.tar.gz``
-(where a.b.c are the release number), needs to be uploaded to
-pypi. Before doing so, however, we test it locally, to make sure that
+Before merging, we test the package locally, to make sure that
 everything works. The most common mistake in this phase is the
-omission of a file in the package.
+omission of a file in the package. Install it in a fresh virtual
+environment and run a copy of the tests against it, from a directory
+that does not contain the ``pysmt`` sources:
 
-To test the package, we create a new hardcopy of the tests of pySMT:
+ 0. ``python3 -m venv venv && . venv/bin/activate``
+ 1. ``pip install pytest dist/pysmt-a.b.c.tar.gz``
+ 2. ``mkdir -p test_pkg/pysmt && cp -a <repo>/pysmt/test test_pkg/pysmt/``
+ 3. ``cd test_pkg && python -m pytest pysmt/test``
 
- 0. ``mkdir -p test_pkg/pysmt``
- 1. ``cp -a github/pysmt/test test_pkg/pysmt/; cd test_pkg``
- 2. This should fail: ``python -m pytest pysmt``
- 3. ``pip install --user github/dist/PySMT-a.b.c.tar.gz``
- 4. ``python -m pytest pysmt``
- 5. ``pip uninstall pysmt``
-
-All tests should pass in order to make the release. Note: It is
+Check that pytest imports pysmt from ``venv`` and not from a source
+tree. All tests should pass in order to make the release. Note: It is
 enough to have one solver installed, in order to test the package. The
 type of issues that might occur during package creation are usually
 independent of the solver.
 
 
-Merge and Tag
--------------
+Merge
+-----
 
-At this point we have created and tested the release, we can merge the
-``rc/`` branch back into master, and tag the release with: ``git
-tag -a va.b.c`` (note the ``v`` before the major version number), and
-finally push the tag to github ``git push origin va.b.c``.
+Open a PR from ``rc/a.b.c`` to master and merge it once the CI is
+green. The ``deploy-pypi`` job on the merge commit uploads ``a.b.c``
+to PyPI. Check that https://pypi.org/project/PySMT/a.b.c/ exists
+before continuing. Do not merge anything else into master until the
+version has been bumped (see below), otherwise the CI tries to upload
+``a.b.c`` again and fails.
 
-Now on github, it is possible to create the release associated with
-this tag. The description of the release is the copy-paste of the
-Changelog. Additionally, we include the wheel file and the tar.gz .
+
+Tag and GitHub Release
+----------------------
+
+Tag the merge commit with ``git tag -a va.b.c`` (note the ``v`` before
+the major version number), and push the tag to GitHub with ``git push
+origin va.b.c``.
+
+Then create the GitHub release associated with this tag. The
+description of the release is the copy-paste of the Changelog.
+Additionally, we attach the wheel and the tar.gz downloaded from PyPI,
+so that they are exactly the published files.
+
+
+Version Bumping
+---------------
 
 Immediately after tagging, make a commit on master bumping the
 version. By default we use ``(a, b, c+1, "dev", 1)``.
-
-
-PyPi update
------------
-
-``twine upload PySMT-a.b.c.tar.gz``
-
-TODO: Figure out how to have shared credentials for pypi. Currently,
-only marcogario has upload privileges.
 
 
 Announcement

@@ -42,7 +42,7 @@ accessible from your PYTHONPATH.
 Wanna know more?
 ================
 
-Visit http://www.pysmt.org
+Visit https://github.com/pysmt/pysmt
 """
 
 
@@ -50,15 +50,15 @@ setup(
     name='PySMT',
     version=pysmt.__version__,
     author='PySMT Team',
-    author_email='info@pysmt.org',
     packages = find_packages(),
     include_package_data = True,
-    url='http://www.pysmt.org',
+    url='https://github.com/pysmt/pysmt',
     license='APACHE',
     description='A solver-agnostic library for SMT Formulae manipulation and solving',
     long_description=long_description,
     # pysmt.cmd.installers.base imports setuptools at runtime
     install_requires=['setuptools'],
+    python_requires='>=3.9',
     entry_points={
         'console_scripts': [
             'pysmt-install = pysmt.cmd.install:main',
