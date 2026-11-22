@@ -26,7 +26,7 @@ class PicoSATInstaller(SolverInstaller):
     def __init__(
         self,
         install_dir,
-        bindings_dir,
+        site_dir,
         solver_version,
         pypicosat_minor_version,
         mirror_link=None,
@@ -36,7 +36,7 @@ class PicoSATInstaller(SolverInstaller):
         SolverInstaller.__init__(
             self,
             install_dir=install_dir,
-            bindings_dir=bindings_dir,
+            site_dir=site_dir,
             solver_version=solver_version,
             mirror_link=mirror_link,
             native_link=None,
@@ -74,7 +74,7 @@ class PicoSATInstaller(SolverInstaller):
         SolverInstaller.run(
             "make", directory=picosat_dir, env_variables={"CFLAGS": " -fPIC"}
         )
-        SolverInstaller.run_python("setup.py build", directory=self.extract_path)
+        SolverInstaller.run_setup_py(["build"], self.extract_path)
 
     def move(self):
         bdir = os.path.join(self.extract_path, "build")
@@ -82,10 +82,8 @@ class PicoSATInstaller(SolverInstaller):
 
         for f in os.listdir(sodir):
             if f.endswith(".so"):
-                SolverInstaller.mv(os.path.join(sodir, f), self.bindings_dir)
-        SolverInstaller.mv(
-            os.path.join(self.extract_path, "picosat.py"), self.bindings_dir
-        )
+                SolverInstaller.mv(os.path.join(sodir, f), self.site_dir)
+        SolverInstaller.mv(os.path.join(self.extract_path, "picosat.py"), self.site_dir)
 
     def get_installed_version(self):
-        return self.get_installed_version_script(self.bindings_dir, "picosat")
+        return self.get_installed_version_script("picosat")

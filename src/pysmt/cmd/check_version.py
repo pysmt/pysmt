@@ -18,13 +18,7 @@ import sys
 
 def check_version(module):
     try:
-        if module == "z3":
-            import z3  # type: ignore[import]
-
-            (major, minor, ver, _) = z3.get_version()
-            version = "%d.%d.%d" % (major, minor, ver)
-
-        elif module in ("msat", "optimsat"):
+        if module in ("msat", "optimsat"):
             if module == "msat":
                 import mathsat  # type: ignore[import]
 
@@ -40,25 +34,6 @@ def check_version(module):
                 m = re.match(r"^MathSAT5 version (\w+) .*$", version_str)
                 if m is not None:
                     version = m.group(1)
-
-        elif module == "cudd":
-            import repycudd  # type: ignore[import]
-
-            doc = repycudd.DOCSTRING
-            m = re.match(r"^PyCUDD (\d+\.\d+\.\d+).*", doc)
-            if m is not None:
-                version = m.group(1)
-
-        elif module == "btor":
-            import pyboolector  # type: ignore[import]  # noqa: F401
-
-            version = "OK"  # Just checking if import succeeds
-
-        elif module == "cvc5":
-            import cvc5  # type: ignore[import]
-
-            solver = cvc5.Solver()
-            version = solver.getVersion().decode("ascii")
 
         elif module == "picosat":
             import picosat  # type: ignore[import]

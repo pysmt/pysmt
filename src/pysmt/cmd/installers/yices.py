@@ -13,7 +13,7 @@
 # limitations under the License.
 import os
 
-from pysmt.cmd.installers.base import SolverInstaller
+from pysmt.cmd.installers.base import SolverInstaller, pip_install
 
 
 class YicesInstaller(SolverInstaller):
@@ -22,7 +22,7 @@ class YicesInstaller(SolverInstaller):
     def __init__(
         self,
         install_dir,
-        bindings_dir,
+        site_dir,
         solver_version,
         mirror_link=None,
         yices_api_version=None,
@@ -33,7 +33,7 @@ class YicesInstaller(SolverInstaller):
         SolverInstaller.__init__(
             self,
             install_dir=install_dir,
-            bindings_dir=bindings_dir,
+            site_dir=site_dir,
             solver_version=solver_version,
             archive_name=archive_name,
             native_link=native_link,
@@ -59,33 +59,14 @@ class YicesInstaller(SolverInstaller):
         SolverInstaller.run("make", directory=self.extract_path)
         SolverInstaller.run("make install", directory=self.extract_path)
 
-        if self.yices_api_version is None:
-            SolverInstaller.run_python(
-                [
-                    "-m",
-                    "pip",
-                    "install",
-                    "--upgrade",
-                    "--target",
-                    self.bindings_dir,
-                    "yices",
-                ]
-            )
-        else:
-            SolverInstaller.run_python(
-                [
-                    "-m",
-                    "pip",
-                    "install",
-                    "--upgrade",
-                    "--target",
-                    self.bindings_dir,
-                    "yices==%s" % self.yices_api_version,
-                ]
-            )
+        requirement = "yices"
+        if self.yices_api_version is not None:
+            requirement += "==%s" % self.yices_api_version
+        # yices_api.py is patched below, so it must land in a known directory
+        pip_install([requirement], target=self.site_dir)
 
         libdir = os.path.join(self.yices_path, "lib")
-        yices_api_file = os.path.join(self.bindings_dir, "yices_api.py")
+        yices_api_file = os.path.join(self.site_dir, "yices_api.py")
         with open(yices_api_file, "r") as f:
             lines = f.readlines()
             if "sys.stderr.write" in lines[215]:
@@ -100,4 +81,4 @@ class YicesInstaller(SolverInstaller):
             f.write("".join(lines))
 
     def get_installed_version(self):
-        return self.get_installed_version_script(self.bindings_dir, "yices")
+        return self.get_installed_version_script("yices")

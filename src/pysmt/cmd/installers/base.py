@@ -11,12 +11,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import importlib.metadata
+import importlib.util
 import os
 import platform
 import shutil
+import site
 import struct
 import subprocess
 import sys
+import sysconfig
 import tarfile
 import urllib.request
 import zipfile
@@ -24,7 +28,7 @@ from contextlib import contextmanager
 from typing import Optional
 from urllib.error import HTTPError, URLError
 
-from setuptools import Distribution
+from pysmt.exceptions import PysmtException
 
 
 @contextmanager
@@ -44,13 +48,13 @@ class SolverInstaller(object):
     def __init__(
         self,
         install_dir,
-        bindings_dir,
+        site_dir,
         solver_version,
         archive_name=None,
         native_link=None,
         mirror_link=None,
     ):
-        self.bindings_dir = bindings_dir
+        self.site_dir = site_dir
         self.install_dir = install_dir
         self.solver_version = solver_version
         self.mirror_link = mirror_link
@@ -145,7 +149,7 @@ class SolverInstaller(object):
         pass
 
     def move(self):
-        """Moves relevant files in bindings_dir"""
+        """Moves relevant files in site_dir"""
         pass
 
     def install(self, force_redo=False):
@@ -303,16 +307,16 @@ class SolverInstaller(object):
         myzip.extractall(directory)
         myzip.close()
 
-    def get_installed_version_script(self, bindings_dir, package):
+    def get_installed_version_script(self, package):
         check_version_script = os.path.abspath(
             os.path.join(os.path.dirname(__file__), "..", "check_version.py")
         )
         env = {}
         for k in ["LD_LIBRARY_PATH", "PATH", "PYTHONPATH"]:
             if k in os.environ:
-                env[k] = bindings_dir + os.pathsep + os.environ[k]
+                env[k] = self.site_dir + os.pathsep + os.environ[k]
             else:
-                env[k] = bindings_dir
+                env[k] = self.site_dir
 
         try:
             output = self.run_python(
@@ -338,69 +342,66 @@ class SolverInstaller(object):
                 break
         return command
 
+    @staticmethod
+    def run_setup_py(args, directory):
+        """Runs a setup.py command, installing setuptools first if it is missing"""
+        if importlib.util.find_spec("setuptools") is None:
+            pip_install(["setuptools"])
+        SolverInstaller.run_python(["setup.py"] + args, directory=directory)
 
-def package_install_site(name="", user=False, plat_specific=False):
-    """pip-inspired method for fetching the
-    default install location (site-packages path).
 
-    Returns virtual environment or system site-packages, unless
-    `user=True` in which case returns user-site (typ. under `~/.local/
-    on linux).
+def site_dir(target=None):
+    """Returns the directory where build-based installers place the bindings."""
+    if target is not None:
+        return target
+    platlib = sysconfig.get_path("platlib")
+    if os.access(platlib, os.W_OK):
+        return platlib
+    user_site = site.getusersitepackages()
+    os.makedirs(user_site, exist_ok=True)
+    return user_site
 
-    If there's a distinction (on a particular system) between platform
-    specific and pure python package locations, set `plat_specific=True`
-    to retrieve the former.
-    """
 
-    dist = Distribution({"name": name})
-    dist.parse_config_files()
-    inst = dist.get_command_obj("install", create=True)
-    # NOTE: specifying user=True will create user-site
-    if user:
-        inst.user = user
-        inst.prefix = ""
-    inst.finalize_options()
-
-    # platform-specific site vs. purelib (platform-independent) site
-    if plat_specific:
-        loc = inst.install_platlib
+def pip_install_command(requirements, target=None, force=False):
+    """Returns the command installing the requirements into the running interpreter."""
+    if importlib.util.find_spec("pip") is not None:
+        cmd = [sys.executable, "-m", "pip", "install"]
+        reinstall = "--force-reinstall"
+    elif shutil.which("uv") is not None:
+        cmd = ["uv", "pip", "install", "--python", sys.executable]
+        reinstall = "--reinstall"
     else:
-        loc = inst.install_purelib
-
-    # install_lib specified in setup.cfg has highest precedence
-    if "install_lib" in dist.get_option_dict("install"):
-        loc = inst.install_lib
-
-    return loc
-
-
-def running_under_virtualenv():
-    """
-    Return True if we're running inside a virtualenv, False otherwise.
-
-    Note: copied from pip.
-    """
-
-    if hasattr(sys, "real_prefix"):
-        return True
-    elif sys.prefix != getattr(sys, "base_prefix", sys.prefix):
-        return True
-
-    return False
+        raise PysmtException(
+            "pysmt-install needs pip or uv to install solvers. "
+            "Install pip in this environment (python -m ensurepip) or install uv."
+        )
+    if target is not None:
+        # pip replaces packages that already exist in the target dir only with --upgrade
+        cmd += ["--target", target, "--upgrade"]
+    if force:
+        cmd.append(reinstall)
+    return cmd + list(requirements)
 
 
-def solver_install_site(plat_specific=False):
-    """Determine solver's install site similarly to pip behaviour on Debian."""
-
-    # install to local user-site, unless in virtualenv or running as root
-    default_user = True
-    if running_under_virtualenv():
-        default_user = False
+def pip_install(requirements, target=None, force=False):
+    """Installs the requirements into the running interpreter (or into target)."""
+    cmd = pip_install_command(requirements, target=target, force=force)
+    print(" ".join(cmd), flush=True)
     try:
-        if os.geteuid() == 0:
-            default_user = False
-    except BaseException:
-        # getuid/geteuid not supported on windows
-        pass
+        subprocess.check_call(cmd)
+    except subprocess.CalledProcessError as e:
+        marker = os.path.join(sysconfig.get_path("stdlib"), "EXTERNALLY-MANAGED")
+        if target is None and os.path.exists(marker) and sys.prefix == sys.base_prefix:
+            raise PysmtException(
+                "This Python environment is externally managed (PEP 668). "
+                "Run pysmt-install from a virtual environment or use --target DIR."
+            ) from e
+        raise
 
-    return package_install_site(user=default_user, plat_specific=plat_specific)
+
+def installed_version(distribution):
+    """Returns the installed version of the distribution, or None."""
+    try:
+        return importlib.metadata.version(distribution)
+    except importlib.metadata.PackageNotFoundError:
+        return None

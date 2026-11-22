@@ -14,40 +14,43 @@
 
 import argparse
 import os
-import platform
+import subprocess
 import sys
 from collections import namedtuple
 
 from pysmt import __version__ as pysmt_version
 from pysmt.cmd.installers import (
-    BtorInstaller,
-    CuddInstaller,
-    CVC5Installer,
     MSatInstaller,
     OptiMSatInstaller,
     PicoSATInstaller,
     YicesInstaller,
-    Z3Installer,
 )
-from pysmt.cmd.installers.base import solver_install_site
+from pysmt.cmd.installers.base import installed_version, pip_install, site_dir
 from pysmt.environment import get_env
 from pysmt.exceptions import PysmtException
 
-# Build a list of installers, one for each solver
-Installer = namedtuple("Installer", ["InstallerClass", "version", "extra_params"])
-INSTALLERS = [
-    Installer(MSatInstaller, "5.6.16", {}),
-    Installer(CVC5Installer, "1.3.3", {}),
-    Installer(Z3Installer, "5.1.0", {}),
-    Installer(YicesInstaller, "2.6.4", {"yices_api_version": "1.1.5"}),
-    Installer(BtorInstaller, "3.2.3", {}),
-    Installer(PicoSATInstaller, "965", {"pypicosat_minor_version": "1708010052"}),
-    Installer(
-        CuddInstaller,
-        "3.0.1",
-        {"git_version": "b87421c596a1bc2cafeb10ec40fcceacc952eda2"},
+# Solvers installed by pip from exact-pinned requirements. The version shown by
+# --check is the installed version of `distribution`.
+PipSolver = namedtuple("PipSolver", ["name", "distribution", "requirements"])
+# Solvers downloaded and built by an installer class (see pysmt.cmd.installers)
+BuildSolver = namedtuple(
+    "BuildSolver", ["name", "InstallerClass", "version", "extra_params"]
+)
+
+# uv only accepts direct URLs that end with an archive extension
+REPYCUDD_URL = "https://github.com/pysmt/repycudd/archive/b87421c596a1bc2cafeb10ec40fcceacc952eda2.tar.gz"
+
+SOLVERS = [
+    BuildSolver("msat", MSatInstaller, "5.6.16", {}),
+    PipSolver("cvc5", "cvc5", ["cvc5==1.4.2"]),
+    PipSolver("z3", "z3-solver", ["z3-solver==5.1.0.0"]),
+    BuildSolver("yices", YicesInstaller, "2.6.4", {"yices_api_version": "1.1.5"}),
+    PipSolver("btor", "pyboolector", ["pyboolector==3.2.4.38488416565"]),
+    BuildSolver(
+        "picosat", PicoSATInstaller, "965", {"pypicosat_minor_version": "1708010052"}
     ),
-    Installer(OptiMSatInstaller, "1.7.5", {}),
+    PipSolver("bdd", "repycudd", ["repycudd @ %s" % REPYCUDD_URL]),
+    BuildSolver("optimsat", OptiMSatInstaller, "1.7.5", {}),
 ]
 
 
@@ -60,31 +63,38 @@ def get_requested_solvers():
         keys = requested_solvers_str.split(",")
         requested_solvers = [x.lower().strip() for x in keys]
         if "all" in requested_solvers:
-            requested_solvers = [x.InstallerClass.SOLVER for x in INSTALLERS]
+            requested_solvers = [x.name for x in SOLVERS]
     return requested_solvers
 
 
-def check_installed(required_solvers, install_dir, bindings_dir, mirror_link):
+def make_installer(solver, install_dir, target, mirror_link):
+    return solver.InstallerClass(
+        install_dir=install_dir,
+        site_dir=site_dir(target),
+        solver_version=solver.version,
+        mirror_link=mirror_link,
+        **solver.extra_params,
+    )
+
+
+def check_installed(required_solvers, install_dir, target, mirror_link):
     """Checks which solvers are visible to pySMT."""
+
+    if target is not None:
+        sys.path.insert(0, target)
 
     # Check which solvers are accessible from the Factory
     pypath_solvers = get_env().factory.all_solvers()
 
     global_solvers_status = []
     print("Installed Solvers:")
-    for i in INSTALLERS:
-        installer_ = i.InstallerClass(
-            install_dir=install_dir,
-            bindings_dir=bindings_dir,
-            solver_version=i.version,
-            mirror_link=mirror_link,
-            **i.extra_params,
-        )
-        solver = installer_.SOLVER
-        version = installer_.get_installed_version()
-        is_installed = version is not None
-        global_solvers_status.append((solver, is_installed, version))
-        del installer_
+    for s in SOLVERS:
+        if isinstance(s, PipSolver):
+            version = installed_version(s.distribution)
+        else:
+            installer = make_installer(s, install_dir, target, mirror_link)
+            version = installer.get_installed_version()
+        global_solvers_status.append((s.name, version is not None, version))
 
     for solver in required_solvers:
         if solver not in pypath_solvers:
@@ -120,8 +130,8 @@ def parse_options():
         description="Install SMT Solvers.\n\n"
         "This script installs the solvers specified"
         " on the command line or in the environment"
-        " variable PYSMT_SOLVER if not already "
-        "instaled on the system."
+        " variable PYSMT_SOLVER into the Python"
+        " interpreter running it."
     )
     parser.add_argument(
         "--version",
@@ -129,14 +139,13 @@ def parse_options():
         version="%(prog)s {version}".format(version=pysmt_version),
     )
 
-    for i in INSTALLERS:
-        name = i.InstallerClass.SOLVER
+    for s in SOLVERS:
         parser.add_argument(
-            "--%s" % name,
-            dest=name,
+            "--%s" % s.name,
+            dest=s.name,
             action="store_true",
             default=False,
-            help="Install %s" % name,
+            help="Install %s" % s.name,
         )
 
     parser.add_argument(
@@ -152,7 +161,7 @@ def parse_options():
         dest="force_redo",
         action="store_true",
         default=False,
-        help="Forcedly rebuild the solvers even if already found",
+        help="Reinstall the solvers even if already installed",
     )
 
     parser.add_argument(
@@ -161,22 +170,6 @@ def parse_options():
         action="store_true",
         default=False,
         help="Checks the installation of the solvers",
-    )
-
-    parser.add_argument(
-        "--env",
-        dest="env",
-        action="store_true",
-        default=False,
-        help="Prints a bash export command to extend the PYTHONPATH",
-    )
-
-    parser.add_argument(
-        "--powershell",
-        dest="powershell",
-        action="store_true",
-        default=False,
-        help="In combination with --env under windows, prints the commands in powershell format",
     )
 
     parser.add_argument(
@@ -194,19 +187,18 @@ def parse_options():
         dest="install_path",
         type=str,
         default=install_path_default,
-        help="The folder to use for the installation (defaults to: {!r})".format(
-            install_path_default
-        ),
+        help="The folder used to download and build the solvers that are not"
+        " installed from PyPI (defaults to: {!r})".format(install_path_default),
     )
 
-    py_bindings = solver_install_site(plat_specific=True)
     parser.add_argument(
-        "--bindings-path",
-        dest="bindings_path",
+        "--target",
+        dest="target",
+        metavar="DIR",
         type=str,
-        default=py_bindings,
-        help="The folder to use for the bindings (defaults to the"
-        " relevant site-packages directory: {!r})".format(py_bindings),
+        default=None,
+        help="Install the solvers into DIR instead of the current environment."
+        " DIR must then be added to PYTHONPATH.",
     )
 
     options = parser.parse_args()
@@ -228,9 +220,9 @@ Notice: the installation process might require building tools
         (e.g., make and gcc).
 """
     print(msg)
-    res = input("Continue? [Y]es/[N]o: ").lower()
+    res = input("Continue? [Y]es/[N]o: ").strip().lower()
 
-    if res != "y":
+    if res not in ("y", "yes"):
         exit(-1)
 
 
@@ -248,17 +240,16 @@ def main():
     if not os.path.exists(install_dir):
         os.makedirs(install_dir)
 
-    # This should work on any platform
-    bindings_dir = os.path.expanduser(options.bindings_path)
-    if not os.path.exists(bindings_dir):
-        os.makedirs(bindings_dir)
+    target = options.target
+    if target is not None:
+        target = os.path.abspath(os.path.expanduser(target))
+        os.makedirs(target, exist_ok=True)
 
     solvers_to_install = []
     all_solvers = options.all_solvers
-    for i in INSTALLERS:
-        name = i.InstallerClass.SOLVER
-        if all_solvers or getattr(options, name):
-            solvers_to_install.append(i)
+    for s in SOLVERS:
+        if all_solvers or getattr(options, s.name):
+            solvers_to_install.append(s)
 
     # Env variable controlling the solvers to be installed or checked
     requested_solvers = get_requested_solvers()
@@ -269,45 +260,33 @@ def main():
         )
     if len(solvers_to_install) == 0:
         # No solver requested from cmd-line, checking ENV
-        for i in INSTALLERS:
-            name = i.InstallerClass.SOLVER
-            if name in requested_solvers:
-                solvers_to_install.append(i)
+        for s in SOLVERS:
+            if s.name in requested_solvers:
+                solvers_to_install.append(s)
 
     if options.check:
         check_installed(
-            [x.InstallerClass.SOLVER for x in solvers_to_install],
+            [x.name for x in solvers_to_install],
             install_dir=install_dir,
-            bindings_dir=bindings_dir,
+            target=target,
             mirror_link=mirror_url,
         )
         exit(0)
 
-    elif options.env:
-        bindings_dir = os.path.expanduser(options.bindings_path)
-        if platform.system().lower() == "windows":
-            if options.powershell:
-                print('$env:PythonPath += ";%s"' % bindings_dir)
+    if len(solvers_to_install) == 0:
+        print("Nothing to do.\nTry with '%s --help'" % sys.argv[0])
+        exit(0)
+
+    # Do the actual install
+    if not options.skip_intro:
+        print_welcome()
+
+    try:
+        for s in solvers_to_install:
+            if isinstance(s, PipSolver):
+                pip_install(s.requirements, target=target, force=options.force_redo)
             else:
-                print("set PYTHONPATH=" + bindings_dir + ";%PYTHONPATH%")
-        else:
-            print('export PYTHONPATH="' + bindings_dir + ':${PYTHONPATH}"')
-
-    else:
-        if len(solvers_to_install) == 0:
-            print("Nothing to do.\nTry with '%s --help'" % sys.argv[0])
-            exit(0)
-
-        # Do the actual install
-        if not options.skip_intro:
-            print_welcome()
-
-        for i in solvers_to_install:
-            installer = i.InstallerClass(
-                install_dir=install_dir,
-                bindings_dir=bindings_dir,
-                solver_version=i.version,
-                mirror_link=mirror_url,
-                **i.extra_params,
-            )
-            installer.install(force_redo=options.force_redo)
+                installer = make_installer(s, install_dir, target, mirror_url)
+                installer.install(force_redo=options.force_redo)
+    except (PysmtException, subprocess.CalledProcessError) as e:
+        sys.exit("Error: %s" % e)
