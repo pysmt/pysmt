@@ -228,6 +228,8 @@ class TestBasic(TestCase):
                 continue
             if logic.theory.strings:
                 continue
+            if logic.theory.floating_point:
+                continue  # FP is only supported by z3
 
             v = is_valid(f, solver_name="msat", logic=logic)
             s = is_sat(f, solver_name="msat", logic=logic)
@@ -260,6 +262,8 @@ class TestBasic(TestCase):
                 continue
             if logic.theory.arrays:
                 continue
+            if logic.theory.floating_point:
+                continue  # FP is only supported by z3
 
             v = is_valid(f, solver_name="yices", logic=logic)
             s = is_sat(f, solver_name="yices", logic=logic)
@@ -279,6 +283,8 @@ class TestBasic(TestCase):
                 continue
             if logic.theory.custom_type:
                 continue
+            if logic.theory.floating_point:
+                continue  # FP is only supported by z3
 
             v = is_valid(f, solver_name="btor", logic=logic)
             s = is_sat(f, solver_name="btor", logic=logic)
