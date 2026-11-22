@@ -1,6 +1,0 @@
-strictness: medium
-
-pylint:
-  disable:
-    - cyclic-import
-    - redefined-builtin
