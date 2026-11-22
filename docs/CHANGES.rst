@@ -1,6 +1,29 @@
 Change Log
 ==========
 
+0.11.0: unreleased
+------------------
+
+**Backwards Incompatible Changes**:
+
+* Python 3.10 or later is now required (#863).
+
+* ``pysmt.VERSION`` has been removed. Use ``pysmt.__version__``, which
+  is now read from the installed package metadata (#863).
+
+* The ``install.py`` script in the sources has been removed. Use
+  ``pysmt-install`` or ``python -m pysmt install`` (#863).
+
+* Development builds on PyPI are now numbered by the total number of
+  commits (e.g., ``0.11.0.dev2047``) instead of the number of commits
+  since the last tag (#863).
+
+**General**:
+
+* Packaging moved from ``setup.py`` to ``pyproject.toml`` with hatchling;
+  the development environment is managed with uv and common tasks with
+  just (#863).
+
 0.10.0: 2026-11-21 -- Optimization, type hints and upgraded solvers
 ---------------------------------------------------------------------
 

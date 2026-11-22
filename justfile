@@ -7,9 +7,13 @@ default:
 install:
     uv sync
 
-# Run the test suite
+# Run the tests not marked as slow, stopping at the first failure
 test *args:
-    uv run pytest pysmt {{args}}
+    uv run pytest -m "not slow" -x {{args}}
+
+# Run all the tests, including the slow ones
+test-all *args:
+    uv run pytest -x {{args}}
 
 # Static type checking
 typecheck:

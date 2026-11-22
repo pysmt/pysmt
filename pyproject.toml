@@ -42,6 +42,7 @@ exclude = ["pysmt/test/smtlib/*/"]
 include = ["/pysmt", "/docs/*.rst", "/README.rst", "/LICENSE", "/NOTICE"]
 
 [tool.pytest.ini_options]
+testpaths = ["pysmt/test"]
 markers = [
     "slow: marks tests as slow, typically these are tests that take more than 10 seconds to run (deselect with '-m \"not slow\"')",
 ]

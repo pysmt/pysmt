@@ -50,6 +50,39 @@ add your name and email address. By doing so, you agree to the CLA.
 You will only have to complete this once, but this applies to **all** your
 contributions.
 
+Development Setup
+=================
+
+pySMT uses `uv <https://docs.astral.sh/uv/>`_ to manage the development
+environment and `just <https://just.systems/>`_ to run common tasks.
+After installing both, run from the root of the repository::
+
+  $ just install
+
+This creates ``.venv`` with pySMT installed in editable mode and the
+development dependencies pinned in ``uv.lock``. Running ``just`` without
+arguments lists all the recipes:
+
+* ``just test`` and ``just test-all``: run the tests (see below)
+* ``just typecheck``: run mypy
+* ``just build``: build the sdist and the wheel into ``dist/``
+* ``just bump VERSION``: set the version in ``pyproject.toml`` and
+  refresh ``uv.lock``
+* ``just clean``: remove build and cache directories
+
+Dependencies are declared in ``pyproject.toml``. After changing them, run
+``uv lock`` and commit the updated ``uv.lock``.
+
+Solvers are installed in the same environment with ``pysmt-install``,
+which currently needs pip inside the environment::
+
+  $ uv pip install pip
+  $ uv run pysmt-install --z3
+
+``uv run`` keeps the installed solvers, but ``just install`` (``uv sync``)
+removes every package that is not in ``uv.lock``, so solvers must be
+installed again after it.
+
 Tests
 ======
 
@@ -57,17 +90,14 @@ Running Tests
 -------------
 
 Tests in pySMT are developed using python's built-in testing framework
-*unittest*.  Each *TestCase* is stored into a separate file,
-and it should be possible to launch it by calling the file directly,
-e.g.: ``$ python test_formula.py``.
+*unittest* and run with pytest::
 
-However, the preferred way is to use pytest, e.g.: ``$ python -m pytest pysmt/tests/test_formula.py``.
+  $ just test                                # skip slow tests, stop at the first failure
+  $ just test-all                            # include the slow tests
+  $ just test pysmt/test/test_formula.py     # run a single file
 
-There are two utility scripts to simplify the testing of pysmt:
-``run_tests.sh`` and ``run_all_tests.sh``.  They both exploit
-additional options for pytest, such as timeouts. ``run_all_tests.sh``
-includes all the tests that are marked as ``slow``, and therefore
-might take some time to complete.
+Extra arguments are passed to pytest. Tests that take more than 10
+seconds should be marked with ``@pytest.mark.slow``.
 
 Finally, tests are run across a wide range of solvers, versions of
 python and operating systems using GitHub Actions. This happens
@@ -173,14 +203,9 @@ extending other walkers to support the new operators.
 Packaging and Distributing PySMT
 ================================
 
-The setup.py script can be used to create packages. The command
-
-``python setup.py bdist --format=gztar``
-
-will produce a tar.gz file inside the ``dist/`` directory.
-
-For convenience the script ``make_distrib.sh`` is provided, this builds
-both the binary and source distributions within ``dist/``.
+Packages are built with `hatchling <https://hatch.pypa.io/>`_, configured
+in ``pyproject.toml``. The command ``just build`` produces the sdist and the
+wheel inside the ``dist/`` directory.
 
 Building Documentation
 ======================
@@ -209,10 +234,13 @@ following steps:
  * Announcement
 
 Every push to master runs the ``deploy-pypi`` job in
-``.github/workflows/test.yml``, which builds the package with
-``make_distrib.sh`` and uploads it to PyPI. On development versions
-(``VERSION`` ending in ``"dev", 1``) this uploads a ``.devN`` build. On
-a release version it uploads the release itself. PyPI does not allow
+``.github/workflows/test.yml``, which builds the package with ``uv
+build`` and uploads it to PyPI through trusted publishing. On
+development versions (``version`` ending in ``.dev0`` in
+``pyproject.toml``) ``ci/stamp_dev_version.py`` first replaces the
+suffix with ``.devN``, where N is the total number of commits, so this
+uploads a ``.devN`` build. On a release version it uploads the release
+itself. PyPI does not allow
 re-uploading a version, so merging the release branch is the point of
 no return: everything must be checked before that.
 
@@ -265,14 +293,13 @@ full diff. GitHub computes the list of new contributors::
 Version change
 --------------
 
-The variable ``VERSION`` in ``pysmt/__init__.py`` must be modified to
-show the correct version number: e.g., ``VERSION = (0, 6, 1)``.
+Set the version in ``pyproject.toml`` with ``just bump a.b.c`` (e.g.,
+``just bump 0.6.1``), which also refreshes ``uv.lock``.
 
 Package creation and local testing
 ----------------------------------
 
-The utility script ``make_distrib.sh`` in the root directory of the
-project creates the sdist (``dist/pysmt-a.b.c.tar.gz``) and the wheel.
+``just build`` creates the sdist (``dist/pysmt-a.b.c.tar.gz``) and the wheel.
 Build them from a clean checkout of the release branch (e.g., with
 ``git worktree add``), so that untracked files in your working copy do
 not end up in the package.
@@ -323,7 +350,7 @@ Version Bumping
 ---------------
 
 Immediately after tagging, make a commit on master bumping the
-version. By default we use ``(a, b, c+1, "dev", 1)``.
+version. By default we use ``just bump a.b.(c+1).dev0``.
 
 
 Announcement
