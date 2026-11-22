@@ -16,18 +16,17 @@
 #   limitations under the License.
 #
 import os
-
 from io import StringIO
 
-from tests.smtlib.parser_utils import SMTLIB_DIR
-from pysmt.smtlib.parser import SmtLibParser
-from pysmt.smtlib.annotations import Annotations
 from pysmt.shortcuts import Symbol
-from tests import TestCase, main
+from pysmt.smtlib.annotations import Annotations
+from pysmt.smtlib.parser import SmtLibParser
 from pysmt.utils import assert_not_none
+from tests import TestCase, main
+from tests.smtlib.parser_utils import SMTLIB_DIR
+
 
 class TestBasic(TestCase):
-
     def test_basic(self):
         ann = Annotations()
         a = Symbol("a")
@@ -42,7 +41,9 @@ class TestBasic(TestCase):
         self.assertIn(a, ann)
         self.assertEqual(set([next_a]), assert_not_none(ann.annotations(a))["next"])
         self.assertEqual(set([init_a]), assert_not_none(ann.annotations(a))["init"])
-        self.assertEqual(set([init_a, next_a]), assert_not_none(ann.annotations(a))["related"])
+        self.assertEqual(
+            set([init_a, next_a]), assert_not_none(ann.annotations(a))["related"]
+        )
         self.assertEqual(set([a]), ann.all_annotated_formulae("next"))
         self.assertEqual(set([a]), ann.all_annotated_formulae("init"))
         self.assertEqual(set([a]), ann.all_annotated_formulae("related"))
@@ -84,7 +85,9 @@ class TestBasic(TestCase):
 
         self.assertNotIn("next", assert_not_none(ann.annotations(a)))
         self.assertEqual(set([init_a]), assert_not_none(ann.annotations(a))["init"])
-        self.assertEqual(set([init_a, next_a]), assert_not_none(ann.annotations(a))["related"])
+        self.assertEqual(
+            set([init_a, next_a]), assert_not_none(ann.annotations(a))["related"]
+        )
         self.assertEqual(set([]), ann.all_annotated_formulae("next"))
         self.assertEqual(set([a]), ann.all_annotated_formulae("init"))
         self.assertEqual(set([a]), ann.all_annotated_formulae("related"))
@@ -101,9 +104,15 @@ class TestBasic(TestCase):
         ann.add(a, "related", next_a)
         ann.add(a, "related", init_a)
 
-        self.assertNotEqual(assert_not_none(ann.annotations(a))["init"], assert_not_none(ann.annotations(a))["related"])
+        self.assertNotEqual(
+            assert_not_none(ann.annotations(a))["init"],
+            assert_not_none(ann.annotations(a))["related"],
+        )
         ann.remove_value(a, "related", next_a)
-        self.assertEqual(assert_not_none(ann.annotations(a))["related"], assert_not_none(ann.annotations(a))["init"])
+        self.assertEqual(
+            assert_not_none(ann.annotations(a))["related"],
+            assert_not_none(ann.annotations(a))["init"],
+        )
 
     def test_vmt(self):
         parser = SmtLibParser()
@@ -130,7 +139,7 @@ class TestBasic(TestCase):
         self.assertEqual(curr_a1, set([a1]))
 
     def test_interpreting_annotations(self):
-        source ="""\
+        source = """\
 (declare-fun |"v__AT0"| () Bool)
 (declare-fun |"v__AT1"| () Bool)
 (define-fun .def_1 () Bool (! |"v__AT0"| :next |"v__AT1"|))
@@ -145,9 +154,8 @@ class TestBasic(TestCase):
         self.env.formula_manager.get_symbol(v1_str)
         self.assertEqual(v1_str, '"v__AT1"')
 
-
     def test_complex_annotations_values(self):
-        source ="""\
+        source = """\
 (declare-fun |"v__AT0"| () Bool)
 (define-fun .def_1 () Bool (! |"v__AT0"| :next (+ 1     meaningless)))
 """
@@ -160,9 +168,8 @@ class TestBasic(TestCase):
         v1_str = next(iter(assert_not_none(ann[v0])["next"]))
         self.assertEqual(v1_str, "(+ 1     meaningless)")
 
-
     def test_annotations_colon_values(self):
-        source ="""\
+        source = """\
 (declare-fun |"v__AT0"| () Bool)
 (define-fun .def_1 () Bool (! |"v__AT0"| :next :this_is_considered_a_value))
 """
@@ -175,5 +182,5 @@ class TestBasic(TestCase):
         self.assertEqual(len(assert_not_none(ann[v0])["this_is_considered_a_value"]), 0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

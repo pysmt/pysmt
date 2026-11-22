@@ -20,14 +20,14 @@
 # It is usually convenient to wrap the solver in a simple shell script.
 # See examples for Z3, Mathsat and Yices in tests/smtlib/bin/*.template
 #
-from pysmt.logics import QF_UFLRA, QF_UFIDL, QF_LRA, QF_IDL, QF_LIA
-from pysmt.shortcuts import get_env, GT, Solver, Symbol
-from pysmt.typing import REAL, INT
 from pysmt.exceptions import NoSolverAvailableError
+from pysmt.logics import QF_IDL, QF_LIA, QF_LRA, QF_UFIDL, QF_UFLRA
+from pysmt.shortcuts import GT, Solver, Symbol, get_env
+from pysmt.typing import INT, REAL
 
-name = "mathsat" # Note: The API version is called 'msat'
-path = ["/tmp/mathsat"] # Path to the solver
-logics = [QF_UFLRA, QF_UFIDL] # Some of the supported logics
+name = "mathsat"  # Note: The API version is called 'msat'
+path = ["/tmp/mathsat"]  # Path to the solver
+logics = [QF_UFLRA, QF_UFIDL]  # Some of the supported logics
 
 env = get_env()
 

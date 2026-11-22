@@ -16,6 +16,7 @@
 #   limitations under the License.
 #
 """FNode are the building blocks of formulae."""
+
 import collections
 from fractions import Fraction
 from typing import Any, Callable, Dict, FrozenSet, Optional, Tuple, Union, cast
@@ -23,43 +24,78 @@ from typing import Any, Callable, Dict, FrozenSet, Optional, Tuple, Union, cast
 import pysmt
 import pysmt.smtlib
 import pysmt.typing as types
-from pysmt.operators import (FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF,
-                             SYMBOL, FUNCTION,
-                             REAL_CONSTANT, BOOL_CONSTANT, INT_CONSTANT,
-                             PLUS, MINUS, TIMES, DIV,
-                             LE, LT, EQUALS,
-                             ITE,
-                             TOREAL, TOINT,
-                             BV_CONSTANT, BV_NOT, BV_AND, BV_OR, BV_XOR,
-                             BV_CONCAT, BV_EXTRACT,
-                             BV_ULT, BV_ULE, BV_NEG, BV_ADD, BV_SUB,
-                             BV_MUL, BV_UDIV, BV_UREM,
-                             BV_LSHL, BV_LSHR,
-                             BV_ROL, BV_ROR,
-                             BV_ZEXT, BV_SEXT,
-                             BV_SLT, BV_SLE,
-                             BV_COMP,
-                             BV_SDIV, BV_SREM,
-                             BV_ASHR,
-                             STR_CONSTANT,
-                             ARRAY_SELECT, ARRAY_STORE, ARRAY_VALUE,
-                             ALGEBRAIC_CONSTANT)
-
-from pysmt.operators import  (BOOL_OPERATORS, THEORY_OPERATORS,
-                              BV_OPERATORS, IRA_OPERATORS, ARRAY_OPERATORS,
-                              STR_OPERATORS,
-                              RELATIONS, CONSTANTS)
-
-from pysmt.typing import PySMTType, BOOL, REAL, INT, BVType, STRING
-from pysmt.decorators import deprecated, assert_infix_enabled
-from pysmt.utils import twos_complement
 from pysmt.constants import is_python_integer
-from pysmt.exceptions import (PysmtValueError, PysmtModeError,
-                              UnsupportedOperatorError)
+from pysmt.decorators import assert_infix_enabled, deprecated
+from pysmt.exceptions import PysmtModeError, PysmtValueError, UnsupportedOperatorError
+from pysmt.operators import (
+    ALGEBRAIC_CONSTANT,
+    AND,
+    ARRAY_OPERATORS,
+    ARRAY_SELECT,
+    ARRAY_STORE,
+    ARRAY_VALUE,
+    BOOL_CONSTANT,
+    BOOL_OPERATORS,
+    BV_ADD,
+    BV_AND,
+    BV_ASHR,
+    BV_COMP,
+    BV_CONCAT,
+    BV_CONSTANT,
+    BV_EXTRACT,
+    BV_LSHL,
+    BV_LSHR,
+    BV_MUL,
+    BV_NEG,
+    BV_NOT,
+    BV_OPERATORS,
+    BV_OR,
+    BV_ROL,
+    BV_ROR,
+    BV_SDIV,
+    BV_SEXT,
+    BV_SLE,
+    BV_SLT,
+    BV_SREM,
+    BV_SUB,
+    BV_UDIV,
+    BV_ULE,
+    BV_ULT,
+    BV_UREM,
+    BV_XOR,
+    BV_ZEXT,
+    CONSTANTS,
+    DIV,
+    EQUALS,
+    EXISTS,
+    FORALL,
+    FUNCTION,
+    IFF,
+    IMPLIES,
+    INT_CONSTANT,
+    IRA_OPERATORS,
+    ITE,
+    LE,
+    LT,
+    MINUS,
+    NOT,
+    OR,
+    PLUS,
+    REAL_CONSTANT,
+    RELATIONS,
+    STR_CONSTANT,
+    STR_OPERATORS,
+    SYMBOL,
+    THEORY_OPERATORS,
+    TIMES,
+    TOINT,
+    TOREAL,
+)
+from pysmt.typing import BOOL, INT, REAL, STRING, BVType, PySMTType
+from pysmt.utils import twos_complement
 
+FNodeContent = collections.namedtuple("FNodeContent", ["node_type", "args", "payload"])
 
-FNodeContent = collections.namedtuple("FNodeContent",
-                                      ["node_type", "args", "payload"])
 
 class FNode(object):
     r"""FNode represent the basic structure for representing a formula.
@@ -78,6 +114,7 @@ class FNode(object):
     The node_id is an integer uniquely identifying the node within the
     FormulaManager it belongs.
     """
+
     __slots__ = ["_content", "_node_id"]
 
     def __init__(self, content: "FNodeContent", node_id: int):
@@ -118,17 +155,24 @@ class FNode(object):
         """Return a simplified version of the formula."""
         return _env().simplifier.simplify(self)
 
-    def substitute(self, subs: Optional[Dict["FNode", "FNode"]]=None, interpretations: Optional[Dict["FNode", "pysmt.substituter.FunctionInterpretation"]]=None) -> "FNode":
+    def substitute(
+        self,
+        subs: Optional[Dict["FNode", "FNode"]] = None,
+        interpretations: Optional[
+            Dict["FNode", "pysmt.substituter.FunctionInterpretation"]
+        ] = None,
+    ) -> "FNode":
         """Return a formula in which subformula have been substituted.
 
         subs is a dictionary mapping terms to be substituted with their
         substitution.
         interpretations is a dictionary mapping function symbols to an FunctionInterpretation objects describing the semantics of the function.
         """
-        return _env().substituter.substitute(self, subs=subs,
-                                             interpretations=interpretations)
+        return _env().substituter.substitute(
+            self, subs=subs, interpretations=interpretations
+        )
 
-    def size(self, measure: Optional[int]=None) -> int:
+    def size(self, measure: Optional[int] = None) -> int:
         """Return the size of the formula according to the given metric.
 
         See :py:class:`SizeOracle`
@@ -142,7 +186,11 @@ class FNode(object):
         """
         return _env().stc.get_type(self)
 
-    def is_constant(self, _type: Optional[PySMTType]=None, value: Optional[Union[bool, int, Fraction, str]]=None) -> bool:
+    def is_constant(
+        self,
+        _type: Optional[PySMTType] = None,
+        value: Optional[Union[bool, int, Fraction, str]] = None,
+    ) -> bool:
         """Test whether the formula is a constant.
 
         Optionally, check that the constant is of the given type and value.
@@ -155,8 +203,10 @@ class FNode(object):
                     if not c.is_constant():
                         return False
                 if _type is not None or value is not None:
-                    raise PysmtValueError("constant type and value checking " \
-                                          "is not available for array values")
+                    raise PysmtValueError(
+                        "constant type and value checking "
+                        "is not available for array values"
+                    )
                 return True
             return False
         if _type is not None:
@@ -176,28 +226,30 @@ class FNode(object):
 
         return value is None or value == self.constant_value()
 
-    def is_bool_constant(self, value: Optional[bool]=None) -> bool:
+    def is_bool_constant(self, value: Optional[bool] = None) -> bool:
         """Test whether the formula is a Boolean constant.
 
         Optionally, check that the constant has the given value.
         """
         return self.is_constant(BOOL, value)
 
-    def is_real_constant(self, value: Optional[Union[int, Fraction]]=None) -> bool:
+    def is_real_constant(self, value: Optional[Union[int, Fraction]] = None) -> bool:
         """Test whether the formula is a Real constant.
 
         Optionally, check that the constant has the given value.
         """
         return self.is_constant(REAL, value)
 
-    def is_int_constant(self, value: Optional[int]=None) -> bool:
+    def is_int_constant(self, value: Optional[int] = None) -> bool:
         """Test whether the formula is an Integer constant.
 
         Optionally, check that the constant has the given value.
         """
         return self.is_constant(INT, value)
 
-    def is_bv_constant(self, value: Optional[int]=None, width: Optional[int]=None) -> bool:
+    def is_bv_constant(
+        self, value: Optional[int] = None, width: Optional[int] = None
+    ) -> bool:
         """Test whether the formula is a BitVector constant.
 
         Optionally, check that the constant has the given value.
@@ -208,7 +260,7 @@ class FNode(object):
         type_ = None if width is None else BVType(width=width)
         return self.is_constant(_type=type_, value=value)
 
-    def is_string_constant(self, value: Optional[str]=None) -> bool:
+    def is_string_constant(self, value: Optional[str] = None) -> bool:
         """Test whether the formula is a String constant.
 
         Optionally, check that the constant has the given value.
@@ -219,14 +271,13 @@ class FNode(object):
         """Test whether the formula is an Algebraic Constant"""
         return self.node_type() == ALGEBRAIC_CONSTANT
 
-    def is_symbol(self, type_: Optional[PySMTType]=None) -> bool:
+    def is_symbol(self, type_: Optional[PySMTType] = None) -> bool:
         """Test whether the formula is a Symbol.
 
         Optionally, check that the symbol has the given type.
         """
         if type_:
-            return self.node_type() == SYMBOL and \
-                   self.symbol_type() == type_
+            return self.node_type() == SYMBOL and self.symbol_type() == type_
         return self.node_type() == SYMBOL
 
     def is_literal(self) -> bool:
@@ -478,7 +529,12 @@ class FNode(object):
             return cast(types._BVType, self.symbol_type()).width
         elif self.is_function_application():
             # Return width defined in the declaration
-            return cast(types._BVType, cast(types._FunctionType, self.function_name().symbol_type()).return_type).width
+            return cast(
+                types._BVType,
+                cast(
+                    types._FunctionType, self.function_name().symbol_type()
+                ).return_type,
+            ).width
         elif self.is_ite():
             # Recursively call bv_width on the left child
             # (The right child has the same width if the node is well-formed)
@@ -519,7 +575,7 @@ class FNode(object):
     def __repr__(self) -> str:
         return str(self)
 
-    def serialize(self, threshold: Optional[int]=None) -> str:
+    def serialize(self, threshold: Optional[int] = None) -> str:
         """Returns a human readable representation of the formula.
 
         The threshold parameter can be used to limit the amount of the
@@ -528,7 +584,7 @@ class FNode(object):
         """
         return _env().serializer.serialize(self, threshold=threshold)
 
-    def to_smtlib(self, daggify: bool=True):
+    def to_smtlib(self, daggify: bool = True):
         """Returns a Smt-Lib string representation of the formula.
 
         The daggify parameter can be used to switch from a linear-size
@@ -582,8 +638,9 @@ class FNode(object):
         elif self.node_type() == STR_CONSTANT:
             return STRING
         else:
-            assert self.node_type() == BV_CONSTANT,\
+            assert self.node_type() == BV_CONSTANT, (
                 "Unsupported method constant_type '%s'" % self
+            )
             return BVType(width=self.bv_width())
 
     def bv2nat(self) -> int:
@@ -602,7 +659,7 @@ class FNode(object):
             raise PysmtValueError("%s is not a BV constant" % str(self))
         return twos_complement(cast(int, self.constant_value()), self.bv_width())
 
-    def bv_str(self, fmt: str='b') -> str:
+    def bv_str(self, fmt: str = "b") -> str:
         """Return a string representation of the BitVector.
 
         fmt: 'b' : Binary
@@ -611,23 +668,23 @@ class FNode(object):
 
         The representation is always unsigned
         """
-        if fmt == 'b':
-            fstr = '{0:0%db}' % self.bv_width()
-        elif fmt == 'd':
-            fstr = '{}'
-        elif fmt == 'x':
-            fstr = '{0:0%dx}' % (self.bv_width()/4)
+        if fmt == "b":
+            fstr = "{0:0%db}" % self.bv_width()
+        elif fmt == "d":
+            fstr = "{}"
+        elif fmt == "x":
+            fstr = "{0:0%dx}" % (self.bv_width() / 4)
         else:
             raise PysmtValueError("Unknown option %s" % str(fmt))
         str_ = fstr.format(self.constant_value())
         return str_
 
-    def bv_bin_str(self, reverse: bool=False) -> str:
+    def bv_bin_str(self, reverse: bool = False) -> str:
         """Return the binary representation of the BitVector as string.
 
         The reverse option is provided to deal with MSB/LSB.
         """
-        bitstr = self.bv_str(fmt='b')
+        bitstr = self.bv_str(fmt="b")
         if reverse:
             bitstr = bitstr[::-1]
         return bitstr
@@ -664,7 +721,6 @@ class FNode(object):
                 start = pivot + 1
         return self.array_value_default()
 
-
     def array_value_assigned_values_map(self) -> Dict["FNode", "FNode"]:
         args = self.args()
         return dict(zip(args[1::2], args[2::2]))
@@ -682,14 +738,16 @@ class FNode(object):
         assert self.is_quantifier()
         return self._content.payload
 
-    def algebraic_approx_value(self, precision: int=10) -> Fraction:
+    def algebraic_approx_value(self, precision: int = 10) -> Fraction:
         value = self.constant_value()
-        approx = value.approx(precision) # type: ignore [union-attr]
+        approx = value.approx(precision)  # type: ignore [union-attr]
         return approx.as_fraction()
 
     # Infix Notation
     @assert_infix_enabled
-    def _apply_infix(self, right: "FNode", function: Callable, bv_function: Optional[Callable]=None) -> "FNode":
+    def _apply_infix(
+        self, right: "FNode", function: Callable, bv_function: Optional[Callable] = None
+    ) -> "FNode":
         # Default bv_function to function
         if bv_function is None:
             bv_function = function
@@ -932,15 +990,17 @@ class FNode(object):
         if isinstance(idx, slice):
             end = idx.stop
             start = idx.start
-            if start is None: start = 0
+            if start is None:
+                start = 0
         else:
             # Single point [idx]
             end = idx
             start = idx
         if self.get_type().is_bv_type():
             return _mgr().BVExtract(self, start=start, end=end)
-        raise UnsupportedOperatorError("Unsupported operation '__getitem__' on '%s'." %
-                                       str(self))
+        raise UnsupportedOperatorError(
+            "Unsupported operation '__getitem__' on '%s'." % str(self)
+        )
 
     def __lshift__(self, right):
         return self._apply_infix(right, None, bv_function=_mgr().BVLShl)
@@ -955,14 +1015,19 @@ class FNode(object):
     def __call__(self, *args) -> "FNode":
         if self.is_symbol() and self.symbol_type().is_function_type():
             param_types = cast(types._FunctionType, self.symbol_type()).param_types
-            if (len(param_types) != len(args)):
-                raise PysmtValueError("Wrong number of parameters passed in "
-                                      "infix 'call' operator")
-            args = tuple(self._infix_prepare_arg(x, t) for x,t in zip(args, param_types))
+            if len(param_types) != len(args):
+                raise PysmtValueError(
+                    "Wrong number of parameters passed in infix 'call' operator"
+                )
+            args = tuple(
+                self._infix_prepare_arg(x, t) for x, t in zip(args, param_types)
+            )
             return _mgr().Function(self, args)
         else:
-            raise PysmtValueError("Call operator can be applied to symbol "
-                                  "types having function type only")
+            raise PysmtValueError(
+                "Call operator can be applied to symbol types having function type only"
+            )
+
 
 # EOC FNode
 

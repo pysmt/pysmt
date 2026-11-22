@@ -15,29 +15,46 @@ from pysmt.cmd.installers.base import SolverInstaller
 
 
 class CuddInstaller(SolverInstaller):
-
     SOLVER = "bdd"
 
-    def __init__(self, install_dir, bindings_dir, solver_version,
-                 mirror_link=None, git_version='HEAD'):
+    def __init__(
+        self,
+        install_dir,
+        bindings_dir,
+        solver_version,
+        mirror_link=None,
+        git_version="HEAD",
+    ):
         archive_name = "repycudd-%s.tar.gz" % git_version
-        native_link = "https://codeload.github.com/pysmt/repycudd/tar.gz/%s" % git_version
-        SolverInstaller.__init__(self, install_dir=install_dir,
-                                 bindings_dir=bindings_dir,
-                                 solver_version=solver_version,
-                                 archive_name=archive_name,
-                                 native_link=native_link,
-                                 mirror_link=mirror_link)
+        native_link = (
+            "https://codeload.github.com/pysmt/repycudd/tar.gz/%s" % git_version
+        )
+        SolverInstaller.__init__(
+            self,
+            install_dir=install_dir,
+            bindings_dir=bindings_dir,
+            solver_version=solver_version,
+            archive_name=archive_name,
+            native_link=native_link,
+            mirror_link=mirror_link,
+        )
         self.git_version = git_version
-
 
     def compile(self):
         # repycudd's own build fetches SWIG from PyPI and compiles CUDD into
         # the extension, so this is the same on every OS.
-        SolverInstaller.run_python(["-m", "pip", "install", "--no-deps",
-                                    "--upgrade", "--target", self.bindings_dir,
-                                    self.extract_path])
-
+        SolverInstaller.run_python(
+            [
+                "-m",
+                "pip",
+                "install",
+                "--no-deps",
+                "--upgrade",
+                "--target",
+                self.bindings_dir,
+                self.extract_path,
+            ]
+        )
 
     def get_installed_version(self):
         return self.get_installed_version_script(self.bindings_dir, "cudd")

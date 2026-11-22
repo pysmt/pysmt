@@ -31,12 +31,23 @@ on a factory service. Each BitVector width is represented by a
 different instance of BVType.
 
 """
+
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    cast,
+)
+
 import pysmt
-
-from pysmt.exceptions import PysmtValueError, PysmtModeError
+from pysmt.exceptions import PysmtModeError, PysmtValueError
 from pysmt.utils import assert_not_none
-
-from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Union, cast
 
 
 class PySMTType(object):
@@ -47,17 +58,22 @@ class PySMTType(object):
 
     """
 
-    def __init__(self, decl: Optional["_TypeDecl"]=None, basename: Optional[str]=None, args: Optional[Sequence["PySMTType"]]=None):
+    def __init__(
+        self,
+        decl: Optional["_TypeDecl"] = None,
+        basename: Optional[str] = None,
+        args: Optional[Sequence["PySMTType"]] = None,
+    ):
         if decl:
             self.decl = decl
             self.basename: Optional[str] = decl.name
             self.arity = decl.arity
-            if (args and self.arity != len(args)) or \
-               (not args and self.arity != 0):
+            if (args and self.arity != len(args)) or (not args and self.arity != 0):
                 assert args is not None
-                raise PysmtValueError("Invalid number of arguments. " +
-                                      "Expected %d, got %d." % (self.arity,
-                                                                len(args)))
+                raise PysmtValueError(
+                    "Invalid number of arguments. "
+                    + "Expected %d, got %d." % (self.arity, len(args))
+                )
             self.custom_type = decl.custom_type
         else:
             self.basename = basename
@@ -83,8 +99,8 @@ class PySMTType(object):
     def is_int_type(self) -> bool:
         return False
 
-    def is_bv_type(self, width: Optional[int]=None) -> bool:
-        #pylint: disable=unused-argument
+    def is_bv_type(self, width: Optional[int] = None) -> bool:
+        # pylint: disable=unused-argument
         return False
 
     def is_array_type(self) -> bool:
@@ -103,9 +119,11 @@ class PySMTType(object):
         return hash(self.name)
 
     def __eq__(self, other: object) -> bool:
-        return isinstance(other, PySMTType) and\
-            self.basename == other.basename and\
-            self.args == other.args
+        return (
+            isinstance(other, PySMTType)
+            and self.basename == other.basename
+            and self.args == other.args
+        )
 
     def __ne__(self, other: object) -> bool:
         return not self.__eq__(other)
@@ -115,12 +133,11 @@ class PySMTType(object):
             return self.__class__.__name__
         return self.name
 
-    def as_smtlib(self, funstyle: bool=True) -> str:
+    def as_smtlib(self, funstyle: bool = True) -> str:
         name = self.name
         if self.args:
             assert self.basename is not None
-            args = " ".join([arg.as_smtlib(funstyle=False) \
-                             for arg in self.args])
+            args = " ".join([arg.as_smtlib(funstyle=False) for arg in self.args])
             name = "(" + self.basename + " " + args + ")"
         if funstyle:
             return "() %s" % name
@@ -130,7 +147,9 @@ class PySMTType(object):
     def __str__(self) -> str:
         return assert_not_none(self.name)
 
+
 # EOC PySMTType
+
 
 # Basic Types Declarations
 class _BoolType(PySMTType):
@@ -141,6 +160,7 @@ class _BoolType(PySMTType):
     def is_bool_type(self) -> bool:
         return True
 
+
 class _IntType(PySMTType):
     def __init__(self):
         decl = _TypeDecl("Int", 0)
@@ -148,6 +168,7 @@ class _IntType(PySMTType):
 
     def is_int_type(self) -> bool:
         return True
+
 
 class _RealType(PySMTType):
     def __init__(self):
@@ -157,6 +178,7 @@ class _RealType(PySMTType):
     def is_real_type(self) -> bool:
         return True
 
+
 class _StringType(PySMTType):
     def __init__(self):
         decl = _TypeDecl("String", 0)
@@ -164,6 +186,7 @@ class _StringType(PySMTType):
 
     def is_string_type(self) -> bool:
         return True
+
 
 # End Basic Types Declarations
 
@@ -174,6 +197,7 @@ class _ArrayType(PySMTType):
     This class should not be instantiated directly, but the factory
     method ArrayType should be used instead.
     """
+
     def __init__(self, index_type: "PySMTType", elem_type: "PySMTType"):
         decl = _TypeDecl("Array", 2)
         PySMTType.__init__(self, decl=decl, args=(index_type, elem_type))
@@ -199,6 +223,7 @@ class _ArrayType(PySMTType):
     def is_array_type(self) -> bool:
         return True
 
+
 # EOC _ArrayType
 
 
@@ -208,7 +233,8 @@ class _BVType(PySMTType):
     This class should not be instantiated directly, but the factory
     method BVType should be used instead.
     """
-    def __init__(self, width: int=32):
+
+    def __init__(self, width: int = 32):
         decl = _TypeDecl("BV{%d}" % width, 0)
         PySMTType.__init__(self, decl=decl, args=None)
         self._width = width
@@ -217,12 +243,12 @@ class _BVType(PySMTType):
     def width(self) -> int:
         return self._width
 
-    def is_bv_type(self, width: Optional[int]=None) -> bool:
+    def is_bv_type(self, width: Optional[int] = None) -> bool:
         if width:
             return self.width == width
         return True
 
-    def as_smtlib(self, funstyle: bool=True) -> str:
+    def as_smtlib(self, funstyle: bool = True) -> str:
         if funstyle:
             return "() (_ BitVec %d)" % self.width
         else:
@@ -234,6 +260,7 @@ class _BVType(PySMTType):
     def __hash__(self) -> int:
         return hash(self.width)
 
+
 # EOC _BVType
 
 
@@ -243,6 +270,7 @@ class _FunctionType(PySMTType):
     This class should not be instantiated directly, but the factory
     method FunctionType should be used instead.
     """
+
     def __init__(self, return_type: PySMTType, param_types: Sequence[PySMTType]):
         PySMTType.__init__(self)
         self._return_type = return_type
@@ -265,7 +293,6 @@ class _FunctionType(PySMTType):
         self.args = (self._return_type,) + self.param_types
         self.arity = len(self.args)
 
-
     @property
     def param_types(self) -> Tuple[PySMTType, ...]:
         """Returns the arguments of the Function Type.
@@ -284,28 +311,28 @@ class _FunctionType(PySMTType):
         """
         return self._return_type
 
-    def as_smtlib(self, funstyle: bool=True) -> str:
-        args = [p.as_smtlib(False)
-                for p in self.param_types]
+    def as_smtlib(self, funstyle: bool = True) -> str:
+        args = [p.as_smtlib(False) for p in self.param_types]
         rtype = self.return_type.as_smtlib(False)
 
         if funstyle:
             res = "(%s) %s" % (" ".join(args), rtype)
         else:
-            res = " -> ".join(args+[rtype])
+            res = " -> ".join(args + [rtype])
         return res
 
     def __str__(self) -> str:
-        return " -> ".join([str(p) for p in self.param_types] +
-                           [str(self.return_type)])
+        return " -> ".join([str(p) for p in self.param_types] + [str(self.return_type)])
 
     def is_function_type(self) -> bool:
         return True
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, _FunctionType):
-            return self.return_type == other.return_type and\
-                self.param_types == other.param_types
+            return (
+                self.return_type == other.return_type
+                and self.param_types == other.param_types
+            )
         return False
 
     def __hash__(self) -> int:
@@ -328,8 +355,9 @@ class _TypeDecl(object):
         env = pysmt.environment.get_env()
         # Note: This uses the global type manager
         if not env.enable_infix_notation:
-            raise PysmtModeError("Infix notation disabled. "
-                                 "Use type_manager.get_type_instance instead.")
+            raise PysmtModeError(
+                "Infix notation disabled. Use type_manager.get_type_instance instead."
+            )
         return env.type_manager.get_type_instance(self, *args)
 
     def __str__(self) -> str:
@@ -339,6 +367,7 @@ class _TypeDecl(object):
         assert self.custom_type == False
         self.custom_type = True
 
+
 # EOC _TypeDecl
 
 
@@ -347,6 +376,7 @@ class PartialType(object):
 
     A partial type is equivalent to SMT-LIB "define-sort" command.
     """
+
     def __init__(self, name: str, definition: Callable[..., PySMTType]):
         self.name = name
         self.definition = definition
@@ -363,22 +393,25 @@ class PartialType(object):
 #
 BOOL = _BoolType()
 REAL = _RealType()
-INT =  _IntType()
+INT = _IntType()
 STRING = _StringType()
 PYSMT_TYPES = frozenset([BOOL, REAL, INT])
 
 # Helper Constants
 BV1, BV8, BV16, BV32, BV64, BV128 = [_BVType(i) for i in [1, 8, 16, 32, 64, 128]]
-ARRAY_INT_INT = _ArrayType(INT,INT)
+ARRAY_INT_INT = _ArrayType(INT, INT)
 
 
 class TypeManager(object):
-
-    def __init__(self, environment: "pysmt.environment.Environment"): # type: ignore [name-defined]
+    def __init__(self, environment: "pysmt.environment.Environment"):  # type: ignore [name-defined]
         self._bv_types: Dict[int, _BVType] = {}
-        self._function_types: Dict[Tuple[PySMTType, Tuple[PySMTType, ...]], _FunctionType] = {}
+        self._function_types: Dict[
+            Tuple[PySMTType, Tuple[PySMTType, ...]], _FunctionType
+        ] = {}
         self._array_types: Dict[Tuple[PySMTType, PySMTType], _ArrayType] = {}
-        self._custom_types: Dict[Tuple[Union[PySMTType, _TypeDecl], Tuple[PySMTType, ...]], PySMTType] = {}
+        self._custom_types: Dict[
+            Tuple[Union[PySMTType, _TypeDecl], Tuple[PySMTType, ...]], PySMTType
+        ] = {}
         self._custom_types_decl: Dict[str, _TypeDecl] = {}
         self._bool: Optional[_BoolType] = None
         self._real: Optional[_RealType] = None
@@ -410,7 +443,7 @@ class TypeManager(object):
     def STRING(self) -> _StringType:
         return assert_not_none(self._string)
 
-    def BVType(self, width: int=32) -> _BVType:
+    def BVType(self, width: int = 32) -> _BVType:
         """Returns the singleton associated to the BV type for the given width.
 
         This function takes care of building and registering the type
@@ -424,7 +457,9 @@ class TypeManager(object):
             self._bv_types[width] = ty
         return ty
 
-    def FunctionType(self, return_type: PySMTType, param_types: Sequence["PySMTType"]) -> "PySMTType":
+    def FunctionType(
+        self, return_type: PySMTType, param_types: Sequence["PySMTType"]
+    ) -> "PySMTType":
         """Returns the singleton of the Function type with the given arguments.
 
         This function takes care of building and registering the type
@@ -444,8 +479,7 @@ class TypeManager(object):
         except KeyError:
             assert_is_type(return_type, __name__)
             assert_are_types(param_types, __name__)
-            ty = _FunctionType(return_type=return_type,
-                               param_types=param_types)
+            ty = _FunctionType(return_type=return_type, param_types=param_types)
             self._function_types[key] = ty
         return ty
 
@@ -465,7 +499,7 @@ class TypeManager(object):
             self._array_types[key] = ty
         return ty
 
-    def Type(self, name: str, arity: int=0) -> Union["_TypeDecl", "PySMTType"]:
+    def Type(self, name: str, arity: int = 0) -> Union["_TypeDecl", "PySMTType"]:
         """Creates a new Type Declaration (sort declaration).
 
         This is equivalent to the SMT-LIB command "declare-sort".  For
@@ -478,8 +512,9 @@ class TypeManager(object):
         try:
             td = self._custom_types_decl[name]
             if td.arity != arity:
-                raise PysmtValueError("Type %s previously declared with arity "\
-                                      " %d." % (name, td.arity))
+                raise PysmtValueError(
+                    "Type %s previously declared with arity  %d." % (name, td.arity)
+                )
         except KeyError:
             td = _TypeDecl(name, arity)
             td.set_custom_type_flag()
@@ -490,7 +525,9 @@ class TypeManager(object):
             return self.get_type_instance(td)
         return td
 
-    def get_type_instance(self, type_decl: Union[PySMTType, _TypeDecl], *args: PySMTType) -> PySMTType:
+    def get_type_instance(
+        self, type_decl: Union[PySMTType, _TypeDecl], *args: PySMTType
+    ) -> PySMTType:
         """Creates an instance of the TypeDecl with the given arguments."""
         assert_are_types(args, __name__)
         key = (type_decl, tuple(args)) if args is not None else type_decl
@@ -512,17 +549,26 @@ class TypeManager(object):
         while stack:
             ty = stack.pop()
             if ty.arity == 0:
-                if (ty.is_bool_type() or ty.is_int_type() or
-                    ty.is_real_type() or ty.is_string_type()):
+                if (
+                    ty.is_bool_type()
+                    or ty.is_int_type()
+                    or ty.is_real_type()
+                    or ty.is_string_type()
+                ):
                     myty = ty
                 elif ty.is_bv_type():
                     myty = self.BVType(cast(_BVType, ty).width)
                 else:
-                    myty = cast(PySMTType, self.Type(assert_not_none(ty.basename), arity=0))
+                    myty = cast(
+                        PySMTType, self.Type(assert_not_none(ty.basename), arity=0)
+                    )
                 typemap[ty] = myty
             else:
-                missing = [subtype for subtype in assert_not_none(ty.args)\
-                           if subtype not in typemap]
+                missing = [
+                    subtype
+                    for subtype in assert_not_none(ty.args)
+                    if subtype not in typemap
+                ]
                 if missing:
                     # At least one type still needs to be converted
                     stack.append(ty)
@@ -533,16 +579,23 @@ class TypeManager(object):
                         elem_type = typemap[cast(_ArrayType, ty).elem_type]
                         myty = self.ArrayType(index_type, elem_type)
                     elif ty.is_function_type():
-                        param_types: Tuple[PySMTType, ...] = tuple((typemap[a] for a in cast(_FunctionType, ty).param_types))
+                        param_types: Tuple[PySMTType, ...] = tuple(
+                            (typemap[a] for a in cast(_FunctionType, ty).param_types)
+                        )
                         return_type = typemap[cast(_FunctionType, ty).return_type]
                         myty = self.FunctionType(return_type, param_types)
                     else:
                         # Custom Type
-                        typedecl = self.Type(assert_not_none(type_.basename), type_.arity)
-                        new_args = tuple(typemap[a] for a in assert_not_none(type_.args))
+                        typedecl = self.Type(
+                            assert_not_none(type_.basename), type_.arity
+                        )
+                        new_args = tuple(
+                            typemap[a] for a in assert_not_none(type_.args)
+                        )
                         myty = self.get_type_instance(typedecl, *new_args)
                     typemap[ty] = myty
         return typemap[type_]
+
 
 # EOC TypeManager
 
@@ -552,28 +605,31 @@ def assert_is_type(target: Any, func_name: str):
     if not isinstance(target, PySMTType):
         raise PysmtValueError("Invalid type '%s' in %s." % (target, func_name))
 
+
 def assert_are_types(targets: Iterable[Any], func_name: str):
     for target in targets:
         assert_is_type(target, func_name)
 
 
-
-def BVType(width: int=32) ->  PySMTType:
+def BVType(width: int = 32) -> PySMTType:
     """Returns the BV type for the given width."""
-    mgr : TypeManager = pysmt.environment.get_env().type_manager # type: ignore[attr-defined]
+    mgr: TypeManager = pysmt.environment.get_env().type_manager  # type: ignore[attr-defined]
     return mgr.BVType(width=width)
 
-def FunctionType(return_type:  PySMTType, param_types: List[ PySMTType]) ->  PySMTType:
+
+def FunctionType(return_type: PySMTType, param_types: List[PySMTType]) -> PySMTType:
     """Returns Function Type with the given arguments."""
-    mgr : TypeManager = pysmt.environment.get_env().type_manager # type: ignore[attr-defined]
+    mgr: TypeManager = pysmt.environment.get_env().type_manager  # type: ignore[attr-defined]
     return mgr.FunctionType(return_type=return_type, param_types=param_types)
 
-def ArrayType(index_type:  PySMTType, elem_type:  PySMTType) ->  PySMTType:
+
+def ArrayType(index_type: PySMTType, elem_type: PySMTType) -> PySMTType:
     """Returns the Array type with the given arguments."""
-    mgr : TypeManager = pysmt.environment.get_env().type_manager # type: ignore[attr-defined]
+    mgr: TypeManager = pysmt.environment.get_env().type_manager  # type: ignore[attr-defined]
     return mgr.ArrayType(index_type=index_type, elem_type=elem_type)
 
-def Type(name: str, arity: int=0) -> Union[PySMTType, _TypeDecl]:
+
+def Type(name: str, arity: int = 0) -> Union[PySMTType, _TypeDecl]:
     """Returns the Type Declaration with the given name (sort declaration)."""
-    mgr: TypeManager = pysmt.environment.get_env().type_manager # type: ignore[attr-defined]
+    mgr: TypeManager = pysmt.environment.get_env().type_manager  # type: ignore[attr-defined]
     return mgr.Type(name=name, arity=arity)

@@ -15,30 +15,26 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import os, sys
+import os
+import sys
 
-from tests import TestCase
-from tests import skipIfSolverNotAvailable
-from tests.examples import get_example_formulae
-from pysmt.logics import QF_LRA, QF_UFLIRA, QF_BOOL
-from pysmt.solvers.portfolio import Portfolio
+from pysmt.logics import QF_BOOL, QF_LRA, QF_UFLIRA
+from pysmt.shortcuts import FALSE, TRUE, Equals, Implies, Symbol, is_sat, reset_env
 from pysmt.smtlib.parser import get_formula_fname
-from pysmt.shortcuts import TRUE, Implies, Equals, Symbol, FALSE
-from pysmt.shortcuts import reset_env, is_sat
-from pysmt.typing import REAL, BOOL
+from pysmt.solvers.portfolio import Portfolio
+from pysmt.typing import BOOL, REAL
+from tests import TestCase, skipIfSolverNotAvailable
+from tests.examples import get_example_formulae
 
 
 class PortfolioTestCase(TestCase):
-
     @skipIfSolverNotAvailable("z3")
     def test_basic_z3(self):
         mgr = self.env.formula_manager
-        x = mgr.Symbol('x', BOOL)
-        y = mgr.Symbol('y', BOOL)
+        x = mgr.Symbol("x", BOOL)
+        y = mgr.Symbol("y", BOOL)
         formula = mgr.And(x, y)
-        with Portfolio(["z3"],
-                       environment=self.env,
-                       logic=QF_LRA) as solver:
+        with Portfolio(["z3"], environment=self.env, logic=QF_LRA) as solver:
             res = solver.is_sat(formula)
             self.assertTrue(res)
             model = solver.get_model()
@@ -49,11 +45,10 @@ class PortfolioTestCase(TestCase):
     @skipIfSolverNotAvailable("msat")
     @skipIfSolverNotAvailable("cvc5")
     def test_basic(self):
-        with Portfolio(["z3", "msat", "cvc5"],
-                       environment=self.env,
-                       logic=QF_LRA) as p:
+        with Portfolio(["z3", "msat", "cvc5"], environment=self.env, logic=QF_LRA) as p:
             for example in get_example_formulae():
-                if not example.logic <= QF_LRA: continue
+                if not example.logic <= QF_LRA:
+                    continue
                 res = p.is_sat(example.expr)
                 self.assertEqual(res, example.is_sat, example.expr)
                 if res:
@@ -63,23 +58,23 @@ class PortfolioTestCase(TestCase):
     @skipIfSolverNotAvailable("cvc5")
     @skipIfSolverNotAvailable("yices")
     def test_smtlib(self):
-        from tests.smtlib.parser_utils import SMTLIB_TEST_FILES, SMTLIB_DIR
+        from tests.smtlib.parser_utils import SMTLIB_DIR, SMTLIB_TEST_FILES
 
-        for (logic, f, expected_result) in SMTLIB_TEST_FILES:
+        for logic, f, expected_result in SMTLIB_TEST_FILES:
             smtfile = os.path.join(SMTLIB_DIR, f)
             if logic <= QF_UFLIRA:
                 self.run_smtlib(smtfile, logic, expected_result)
 
     @skipIfSolverNotAvailable("msat")
     def test_smtlib_multi_msat(self):
-        from tests.smtlib.parser_utils import SMTLIB_TEST_FILES, SMTLIB_DIR
+        from tests.smtlib.parser_utils import SMTLIB_DIR, SMTLIB_TEST_FILES
 
         # On some platforms (Windows x64) the internal pickling process requires
         # quite a lot of recursion...
         old_recursion_limit = sys.getrecursionlimit()
         sys.setrecursionlimit(999999)
 
-        for (logic, f, expected_result) in SMTLIB_TEST_FILES:
+        for logic, f, expected_result in SMTLIB_TEST_FILES:
             smtfile = os.path.join(SMTLIB_DIR, f)
             if logic <= QF_UFLIRA:
                 env = reset_env()
@@ -87,27 +82,33 @@ class PortfolioTestCase(TestCase):
                 # Simplifying the formula to reduce its depth to avoid errors on some
                 # platforms until issue #455 for details.
                 formula = formula.simplify()
-                with Portfolio([("msat", {"random_seed": 1}),
-                                ("msat", {"random_seed": 17}),
-                                ("msat", {"random_seed": 42})],
-                               logic=logic,
-                               environment=env,
-                               incremental=False,
-                               generate_models=False) as s:
+                with Portfolio(
+                    [
+                        ("msat", {"random_seed": 1}),
+                        ("msat", {"random_seed": 17}),
+                        ("msat", {"random_seed": 42}),
+                    ],
+                    logic=logic,
+                    environment=env,
+                    incremental=False,
+                    generate_models=False,
+                ) as s:
                     res = s.is_sat(formula)
                     self.assertEqual(expected_result, res, smtfile)
 
-        #reset recursion limit
+        # reset recursion limit
         sys.setrecursionlimit(old_recursion_limit)
 
     def run_smtlib(self, smtfile, logic, expected_result):
         env = reset_env()
         formula = get_formula_fname(smtfile, env)
-        with Portfolio(["cvc5", "msat", "yices"],
-                       logic=logic,
-                       environment=env,
-                       incremental=False,
-                       generate_models=False) as s:
+        with Portfolio(
+            ["cvc5", "msat", "yices"],
+            logic=logic,
+            environment=env,
+            incremental=False,
+            generate_models=False,
+        ) as s:
             res = s.is_sat(formula)
             self.assertEqual(expected_result, res, smtfile)
 
@@ -115,8 +116,9 @@ class PortfolioTestCase(TestCase):
     @skipIfSolverNotAvailable("cvc5")
     @skipIfSolverNotAvailable("z3")
     def test_shortcuts(self):
-        for (expr, _, sat_res, logic) in get_example_formulae():
-            if not logic <= QF_UFLIRA: continue
+        for expr, _, sat_res, logic in get_example_formulae():
+            if not logic <= QF_UFLIRA:
+                continue
             res = is_sat(expr, portfolio=["z3", "cvc5", "msat"])
             self.assertEqual(res, sat_res, expr)
 
@@ -126,11 +128,13 @@ class PortfolioTestCase(TestCase):
     @skipIfSolverNotAvailable("msat")
     @skipIfSolverNotAvailable("cvc5")
     def test_get_value(self):
-        with Portfolio(["msat", "cvc5"],
-                       logic=QF_UFLIRA,
-                       environment=self.env,
-                       incremental=False,
-                       generate_models=True) as s:
+        with Portfolio(
+            ["msat", "cvc5"],
+            logic=QF_UFLIRA,
+            environment=self.env,
+            incremental=False,
+            generate_models=True,
+        ) as s:
             x, y = Symbol("x"), Symbol("y")
             s.add_assertion(Implies(x, y))
             s.add_assertion(x)
@@ -143,11 +147,13 @@ class PortfolioTestCase(TestCase):
     @skipIfSolverNotAvailable("cvc5")
     @skipIfSolverNotAvailable("yices")
     def test_incrementality(self):
-        with Portfolio(["cvc5", "msat", "yices"],
-                       logic=QF_UFLIRA,
-                       environment=self.env,
-                       incremental=True,
-                       generate_models=True) as s:
+        with Portfolio(
+            ["cvc5", "msat", "yices"],
+            logic=QF_UFLIRA,
+            environment=self.env,
+            incremental=True,
+            generate_models=True,
+        ) as s:
             x, y = Symbol("x"), Symbol("y")
             s.add_assertion(Implies(x, y))
             s.push()
@@ -166,12 +172,14 @@ class PortfolioTestCase(TestCase):
     @skipIfSolverNotAvailable("z3")
     @skipIfSolverNotAvailable("bdd")
     def test_exceptions(self):
-        with Portfolio(["bdd", "z3"],
-                       logic=QF_BOOL,
-                       environment=self.env,
-                       incremental=True,
-                       generate_models=True,
-                       solver_options={"exit_on_exception":False}) as s:
+        with Portfolio(
+            ["bdd", "z3"],
+            logic=QF_BOOL,
+            environment=self.env,
+            incremental=True,
+            generate_models=True,
+            solver_options={"exit_on_exception": False},
+        ) as s:
             s.add_assertion(Equals(Symbol("r", REAL), Symbol("r", REAL)))
             res = s.solve()
             self.assertTrue(res)
@@ -179,12 +187,14 @@ class PortfolioTestCase(TestCase):
             # TODO: How can we make this test more robust?
             # It assumes that bdd will raise an error before z3.
             # It should be so, but this is non-deterministic by nature
-            with Portfolio(["bdd", "z3"],
-                           logic=QF_BOOL,
-                           environment=self.env,
-                           incremental=True,
-                           generate_models=True,
-                           solver_options={"exit_on_exception":True}) as s:
+            with Portfolio(
+                ["bdd", "z3"],
+                logic=QF_BOOL,
+                environment=self.env,
+                incremental=True,
+                generate_models=True,
+                solver_options={"exit_on_exception": True},
+            ) as s:
                 s.add_assertion(Equals(Symbol("r", REAL), Symbol("r", REAL)))
                 with self.assertRaises(Exception):
                     s.solve()
@@ -192,4 +202,5 @@ class PortfolioTestCase(TestCase):
 
 if __name__ == "__main__":
     import unittest
+
     unittest.main()

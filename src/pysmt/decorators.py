@@ -15,18 +15,19 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from functools import wraps
 import warnings
+from functools import wraps
+from typing import Callable, Optional
 
 import pysmt.exceptions
-from typing import Callable, Optional
+
 
 class deprecated(object):
     """This is a decorator which can be used to mark functions
     as deprecated. It will result in a warning being emitted
     when the function is used."""
 
-    def __init__(self, alternative: Optional[str]=None):
+    def __init__(self, alternative: Optional[str] = None):
         self.alternative = alternative
 
     def __call__(self, func: Callable) -> Callable:
@@ -34,11 +35,13 @@ class deprecated(object):
             alt = ""
             if self.alternative is not None:
                 alt = " You should call %s() instead!" % self.alternative
-            warnings.warn("Call to deprecated function %s().%s" % \
-                          (func.__name__, alt),
-                          category=DeprecationWarning,
-                          stacklevel=2)
+            warnings.warn(
+                "Call to deprecated function %s().%s" % (func.__name__, alt),
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
             return func(*args, **kwargs)
+
         newFunc.__name__ = func.__name__
         newFunc.__doc__ = func.__doc__
         newFunc.__dict__.update(func.__dict__)
@@ -63,6 +66,7 @@ def clear_pending_pop(f: Callable) -> Callable:
             self.pending_pop = False
             self.pop()
         return f(self, *args, **kwargs)
+
     return clear_pending_pop_wrap
 
 
@@ -72,7 +76,8 @@ def typecheck_result(f):
     @wraps(f)
     def typecheck_result_wrap(*args, **kwargs):
         res = f(*args, **kwargs)
-        res.get_type() # This raises an exception if an invalid type is found
+        res.get_type()  # This raises an exception if an invalid type is found
+
     return typecheck_result_wrap
 
 
@@ -84,26 +89,32 @@ def catch_conversion_error(f: Callable) -> Callable:
         try:
             res = f(*args, **kwargs)
         except pysmt.exceptions.UnsupportedOperatorError as ex:
-            raise pysmt.exceptions.ConvertExpressionError(message=
-                "Could not convert the input expression. " +
-                "The formula contains unsupported operators. " +
-                "The error was: %s" % ex.message,
-            expression=ex.expression)
+            raise pysmt.exceptions.ConvertExpressionError(
+                message="Could not convert the input expression. "
+                + "The formula contains unsupported operators. "
+                + "The error was: %s" % ex.message,
+                expression=ex.expression,
+            )
         return res
+
     return catch_conversion_error_wrap
 
 
 def assert_infix_enabled(f: Callable) -> Callable:
     """Raise an exception if infix notation is not enabled."""
     from functools import wraps
+
     from pysmt.exceptions import PysmtModeError
+
     INFIX_ERROR_MSG = """Infix notation is not enabled for the current environment.
 Enable it by setting enable_infix_notation to True."""
 
     @wraps(f)
     def assert_infix_enabled_wrap(*args, **kwargs):
         from pysmt.environment import get_env
+
         if not get_env().enable_infix_notation:
             raise PysmtModeError(INFIX_ERROR_MSG)
         return f(*args, **kwargs)
+
     return assert_infix_enabled_wrap

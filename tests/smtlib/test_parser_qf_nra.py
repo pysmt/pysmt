@@ -17,9 +17,12 @@
 #
 import pytest
 
-from pysmt.logics import Logic, QF_NRA
+from pysmt.logics import QF_NRA, Logic
 from tests.smtlib.parser_utils import execute_script_fname, smtlib_tests
 
-@pytest.mark.parametrize("smtfile, logic, expected_result", smtlib_tests(lambda x: x==QF_NRA))
+
+@pytest.mark.parametrize(
+    "smtfile, logic, expected_result", smtlib_tests(lambda x: x == QF_NRA)
+)
 def test_qf_nra(smtfile: str, logic: Logic, expected_result: bool):
     execute_script_fname(smtfile, logic, expected_result)

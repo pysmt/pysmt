@@ -15,26 +15,77 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from pysmt.shortcuts import Solver, BVAnd, BVOr, BVXor, BVConcat, BVULT, BVUGT, \
-    BVULE, BVUGE, BVAdd, BVSub, BVMul, BVUDiv, BVURem, BVLShl, BVLShr, BVNot, \
-    BVNeg, BVZExt, BVSExt, BVRor, BVRol, BV, BVExtract, BVSLT, BVSLE, BVComp, \
-    BVSDiv, BVSRem, BVAShr, EqualsOrIff, BVZero, BVOne, Symbol, Bool
-from pysmt.typing import BVType
-from tests import TestCase, skipIfSolverNotAvailable, main
 from pysmt.logics import QF_BV
+from pysmt.shortcuts import (
+    BV,
+    BVSLE,
+    BVSLT,
+    BVUGE,
+    BVUGT,
+    BVULE,
+    BVULT,
+    Bool,
+    BVAdd,
+    BVAnd,
+    BVAShr,
+    BVComp,
+    BVConcat,
+    BVExtract,
+    BVLShl,
+    BVLShr,
+    BVMul,
+    BVNeg,
+    BVNot,
+    BVOne,
+    BVOr,
+    BVRol,
+    BVRor,
+    BVSDiv,
+    BVSExt,
+    BVSRem,
+    BVSub,
+    BVUDiv,
+    BVURem,
+    BVXor,
+    BVZero,
+    BVZExt,
+    EqualsOrIff,
+    Solver,
+    Symbol,
+)
+from pysmt.typing import BVType
+from tests import TestCase, main, skipIfSolverNotAvailable
 
 
 class TestBvSimplification(TestCase):
-
     def setUp(self):
         # For the preparation of assertValid()
         super(TestBvSimplification, self).setUp()
 
         self.width = 4
-        self.bin_operators = [BVAnd, BVOr, BVXor, BVConcat, BVULT, BVUGT, BVULE,
-                              BVUGE, BVAdd, BVSub, BVMul, BVUDiv, BVURem, BVLShl,
-                              BVLShr, BVSLT, BVSLE, BVComp, BVSDiv, BVSRem,
-                              BVAShr]
+        self.bin_operators = [
+            BVAnd,
+            BVOr,
+            BVXor,
+            BVConcat,
+            BVULT,
+            BVUGT,
+            BVULE,
+            BVUGE,
+            BVAdd,
+            BVSub,
+            BVMul,
+            BVUDiv,
+            BVURem,
+            BVLShl,
+            BVLShr,
+            BVSLT,
+            BVSLE,
+            BVComp,
+            BVSDiv,
+            BVSRem,
+            BVAShr,
+        ]
         self.unary_operators = [BVNot, BVNeg]
         self.special_operators = [BVZExt, BVSExt, BVRor, BVRol]
         self.solver = None
@@ -43,7 +94,7 @@ class TestBvSimplification(TestCase):
     def all_bv_numbers(self, width=None):
         if width is None:
             width = self.width
-        for x in range(2 ** width):
+        for x in range(2**width):
             yield BV(x, width)
 
     @skipIfSolverNotAvailable("msat")
@@ -70,9 +121,13 @@ class TestBvSimplification(TestCase):
                     try:
                         self.check(op(l, r))
                     except AssertionError:
-                        if op in [BVUDiv, BVSDiv, BVSRem, BVURem] and r == BV(0, r.bv_width()):
-                            print("Warning: Division/Reminder value mismatch. (Not an error because division by 0)")
-                            print(l,op,r)
+                        if op in [BVUDiv, BVSDiv, BVSRem, BVURem] and r == BV(
+                            0, r.bv_width()
+                        ):
+                            print(
+                                "Warning: Division/Reminder value mismatch. (Not an error because division by 0)"
+                            )
+                            print(l, op, r)
                         else:
                             raise
 
@@ -89,7 +144,7 @@ class TestBvSimplification(TestCase):
 
     def concat_different_length(self):
         for l in self.all_bv_numbers():
-            for w in [1, self.width-1, self.width+1]:
+            for w in [1, self.width - 1, self.width + 1]:
                 for r in self.all_bv_numbers(w):
                     self.check(BVConcat(l, r))
 
@@ -300,8 +355,8 @@ class TestBvSimplification(TestCase):
         self.check_equal_and_valid(f, BVAnd(x, y))
 
     def test_bv_and_constants(self):
-        f = BVAnd(BV(0xdededede, 32), BV(0xacacacac, 32))
-        self.check_equal_and_valid(f, BV(0x8c8c8c8c, 32))
+        f = BVAnd(BV(0xDEDEDEDE, 32), BV(0xACACACAC, 32))
+        self.check_equal_and_valid(f, BV(0x8C8C8C8C, 32))
 
     def test_bv_or_zero(self):
         x = Symbol("x", BVType(32))
@@ -329,8 +384,8 @@ class TestBvSimplification(TestCase):
         self.check_equal_and_valid(f, BVOr(x, y))
 
     def test_bv_or_constants(self):
-        f = BVOr(BV(0xdededede, 32), BV(0xacacacac, 32))
-        self.check_equal_and_valid(f, BV(0xfefefefe, 32))
+        f = BVOr(BV(0xDEDEDEDE, 32), BV(0xACACACAC, 32))
+        self.check_equal_and_valid(f, BV(0xFEFEFEFE, 32))
 
     def test_bv_sub_zero(self):
         x = Symbol("x", BVType(32))
@@ -353,7 +408,7 @@ class TestBvSimplification(TestCase):
 
     def test_bv_sub_underflow(self):
         f = BVSub(BV(1, 32), BV(2, 32))
-        self.check_equal_and_valid(f, BV(0xffffffff, 32))
+        self.check_equal_and_valid(f, BV(0xFFFFFFFF, 32))
 
     def test_bv_lshl_zero(self):
         x = Symbol("x", BVType(32))
@@ -376,8 +431,8 @@ class TestBvSimplification(TestCase):
         self.check_equal_and_valid(f, BVLShl(x, y))
 
     def test_bv_lshl_constants(self):
-        f = BVLShl(BV(0xff, 32), BVOne(32))
-        self.check_equal_and_valid(f, BV(0x1fe, 32))
+        f = BVLShl(BV(0xFF, 32), BVOne(32))
+        self.check_equal_and_valid(f, BV(0x1FE, 32))
 
     def test_bv_lshr_zero(self):
         x = Symbol("x", BVType(32))
@@ -400,8 +455,8 @@ class TestBvSimplification(TestCase):
         self.check_equal_and_valid(f, BVLShr(x, y))
 
     def test_bv_lshr_constants(self):
-        f = BVLShr(BV(0xff, 32), BVOne(32))
-        self.check_equal_and_valid(f, BV(0x7f, 32))
+        f = BVLShr(BV(0xFF, 32), BVOne(32))
+        self.check_equal_and_valid(f, BV(0x7F, 32))
 
     def test_bv_slt_eq(self):
         x, y = (Symbol(name, BVType(32)) for name in "xy")
@@ -431,5 +486,6 @@ class TestBvSimplification(TestCase):
         f = BVSLE(BV(10, 32), BV(2**32 - 1, 32))
         self.check_equal_and_valid(f, Bool(False))
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

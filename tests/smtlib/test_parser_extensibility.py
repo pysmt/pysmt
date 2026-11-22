@@ -19,18 +19,19 @@ import collections
 from io import StringIO
 from typing import Optional
 
-from tests import TestCase, main
-from pysmt.smtlib.parser import SmtLibParser
-from pysmt.exceptions import UnknownSmtLibCommandError, PysmtValueError
-from pysmt.fnode import FNode
-from pysmt.smtlib.parser.parser import Tokenizer
 from pysmt.environment import Environment
+from pysmt.exceptions import PysmtValueError, UnknownSmtLibCommandError
+from pysmt.fnode import FNode
+from pysmt.smtlib.parser import SmtLibParser
+from pysmt.smtlib.parser.parser import Tokenizer
+from tests import TestCase, main
 
-TS = collections.namedtuple('TS', ['init', 'trans'])
-TSFormula = collections.namedtuple('TSFormula', ['formula', "is_init"])
+TS = collections.namedtuple("TS", ["init", "trans"])
+TSFormula = collections.namedtuple("TSFormula", ["formula", "is_init"])
+
 
 class TSSmtLibParser(SmtLibParser):
-    def __init__(self, env: Optional[Environment]=None, interactive: bool=False):
+    def __init__(self, env: Optional[Environment] = None, interactive: bool = False):
         SmtLibParser.__init__(self, env, interactive)
 
         # Add new commands
@@ -78,12 +79,11 @@ class TSSmtLibParser(SmtLibParser):
         return TS(init, trans)
 
     def get_ts_fname(self, ts_fname):
-        with open(ts_fname, 'r') as script:
+        with open(ts_fname, "r") as script:
             return self.get_ts(script)
 
 
 class TestParserExtensibility(TestCase):
-
     def setUp(self):
         self.ts_parser = TSSmtLibParser()
         self.smt_parser = SmtLibParser()
@@ -115,5 +115,5 @@ class TestParserExtensibility(TestCase):
         self.assertIsNotNone(ts)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

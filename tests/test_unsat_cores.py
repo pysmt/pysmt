@@ -15,30 +15,53 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from tests import (TestCase, skipIfSolverNotAvailable,
-                        skipIfNoUnsatCoreSolverForLogic, main)
-from pysmt.shortcuts import (get_unsat_core, And, Or, Not, Symbol, UnsatCoreSolver,
-                             Solver, is_unsat, Int, GT, GE, LE, get_env)
-from pysmt.typing import INT
+from pysmt.exceptions import (
+    SolverNotConfiguredForUnsatCoresError,
+    SolverReturnedUnknownResultError,
+    SolverStatusError,
+)
 from pysmt.logics import QF_BOOL, QF_BV, QF_LIA
-from pysmt.exceptions import (SolverStatusError, SolverReturnedUnknownResultError,
-                              SolverNotConfiguredForUnsatCoresError)
+from pysmt.shortcuts import (
+    GE,
+    GT,
+    LE,
+    And,
+    Int,
+    Not,
+    Or,
+    Solver,
+    Symbol,
+    UnsatCoreSolver,
+    get_env,
+    get_unsat_core,
+    is_unsat,
+)
+from pysmt.typing import INT
+from tests import (
+    TestCase,
+    main,
+    skipIfNoUnsatCoreSolverForLogic,
+    skipIfSolverNotAvailable,
+)
 from tests.examples import get_example_formulae
 
-class TestUnsatCores(TestCase):
 
+class TestUnsatCores(TestCase):
     def _helper_check_examples(self, solver_name):
-        for (f, _, satisfiability, logic) in get_example_formulae():
-            if not logic.quantifier_free: continue
+        for f, _, satisfiability, logic in get_example_formulae():
+            if not logic.quantifier_free:
+                continue
             if satisfiability == False:
-                with UnsatCoreSolver(name=solver_name,
-                                     unsat_cores_mode="named") as solver:
-                    if logic not in solver.LOGICS: continue
+                with UnsatCoreSolver(
+                    name=solver_name, unsat_cores_mode="named"
+                ) as solver:
+                    if logic not in solver.LOGICS:
+                        continue
                     clauses = [f]
                     if f.is_and():
                         clauses = f.args()
 
-                    for i,c in enumerate(clauses):
+                    for i, c in enumerate(clauses):
                         solver.add_assertion(c, "a%d" % i)
 
                     try:
@@ -46,8 +69,8 @@ class TestUnsatCores(TestCase):
                         self.assertFalse(r)
                     except SolverReturnedUnknownResultError:
                         if QF_BV <= logic:
-                            continue # Unsat-core support for QF_UFBV might be
-                                     # incomplete
+                            continue  # Unsat-core support for QF_UFBV might be
+                            # incomplete
                         else:
                             raise
 
@@ -58,7 +81,6 @@ class TestUnsatCores(TestCase):
                         self.assertIn(k, clauses)
 
                     self.assertTrue(is_unsat(And(core.values()), logic=logic))
-
 
     @skipIfNoUnsatCoreSolverForLogic(QF_BOOL)
     def test_basic(self):
@@ -79,7 +101,6 @@ class TestUnsatCores(TestCase):
             self.assertIn(x, named_core.values())
             self.assertIn(Not(x), named_core.values())
 
-
     @skipIfNoUnsatCoreSolverForLogic(QF_BOOL)
     def test_shortcut(self):
         x = Symbol("x")
@@ -94,7 +115,6 @@ class TestUnsatCores(TestCase):
         gen_f = (x for x in flist)
         ucore = get_unsat_core(gen_f)
         self.assertEqual(len(ucore), 2)
-
 
     @skipIfNoUnsatCoreSolverForLogic(QF_BOOL)
     def test_basic_named(self):
@@ -117,7 +137,6 @@ class TestUnsatCores(TestCase):
             self.assertEqual(named_core["a1"], x)
             self.assertEqual(named_core["a2"], Not(x))
 
-
     @skipIfNoUnsatCoreSolverForLogic(QF_BOOL)
     def test_modify_state(self):
         x = Symbol("x")
@@ -131,7 +150,6 @@ class TestUnsatCores(TestCase):
             with self.assertRaises(SolverStatusError):
                 s.get_unsat_core()
 
-
     @skipIfNoUnsatCoreSolverForLogic(QF_BOOL)
     def test_modify_state_assert(self):
         x = Symbol("x")
@@ -143,7 +161,6 @@ class TestUnsatCores(TestCase):
             s.add_assertion(Symbol("y"))
             with self.assertRaises(SolverStatusError):
                 s.get_unsat_core()
-
 
     @skipIfNoUnsatCoreSolverForLogic(QF_LIA)
     def test_named_unsat_core_with_assumptions(self):
@@ -162,16 +179,13 @@ class TestUnsatCores(TestCase):
             sat = solver.solve([a])
             self.assertFalse(sat)
 
-
     @skipIfSolverNotAvailable("msat")
     def test_examples_msat(self):
         self._helper_check_examples("msat")
 
-
     @skipIfSolverNotAvailable("z3")
     def test_examples_z3(self):
         self._helper_check_examples("z3")
-
 
     @skipIfSolverNotAvailable("msat")
     def test_unsat_core_on_regular_solver(self):
@@ -184,7 +198,6 @@ class TestUnsatCores(TestCase):
             with self.assertRaises(SolverNotConfiguredForUnsatCoresError):
                 s.get_unsat_core()
 
-
     @skipIfNoUnsatCoreSolverForLogic(QF_BOOL)
     def test_assumptions(self):
         x = Symbol("x")
@@ -194,14 +207,14 @@ class TestUnsatCores(TestCase):
             core = s.get_unsat_core()
             self.assertEqual(len(core), 2)
 
-
     @skipIfNoUnsatCoreSolverForLogic(QF_BOOL)
     def test_assumptions_in_unsat_core(self):
         x, y = Symbol("x"), Symbol("y")
         for name in get_env().factory.all_unsat_core_solvers(logic=QF_BOOL):
             for mode in ["all", "named"]:
-                with UnsatCoreSolver(name=name, logic=QF_BOOL,
-                                     unsat_cores_mode=mode) as s:
+                with UnsatCoreSolver(
+                    name=name, logic=QF_BOOL, unsat_cores_mode=mode
+                ) as s:
                     s.add_assertion(Or(x, y), named="n1")
                     self.assertFalse(s.solve([Not(x), Not(y)]))
                     core = s.get_unsat_core()
@@ -210,9 +223,9 @@ class TestUnsatCores(TestCase):
                     self.assertIn(Not(y), core, (name, mode))
                     if mode == "named":
                         # assumptions carry no name: they stay out of this core
-                        self.assertEqual(s.get_named_unsat_core(),
-                                         {"n1": Or(x, y)}, name)
-
+                        self.assertEqual(
+                            s.get_named_unsat_core(), {"n1": Or(x, y)}, name
+                        )
 
     @skipIfNoUnsatCoreSolverForLogic(QF_LIA)
     def test_non_literal_assumptions_in_unsat_core(self):
@@ -220,18 +233,18 @@ class TestUnsatCores(TestCase):
         pos, neg = GE(a, Int(1)), LE(a, Int(0))
         for name in get_env().factory.all_unsat_core_solvers(logic=QF_LIA):
             for mode in ["all", "named"]:
-                with UnsatCoreSolver(name=name, logic=QF_LIA,
-                                     unsat_cores_mode=mode) as s:
+                with UnsatCoreSolver(
+                    name=name, logic=QF_LIA, unsat_cores_mode=mode
+                ) as s:
                     s.add_assertion(pos, named="pos")
                     self.assertFalse(s.solve([neg]))
                     # twice: reading the core must not pop the assumptions level
                     for _ in range(2):
-                        self.assertEqual(s.get_unsat_core(), {pos, neg},
-                                         (name, mode))
+                        self.assertEqual(s.get_unsat_core(), {pos, neg}, (name, mode))
                         if mode == "named":
-                            self.assertEqual(s.get_named_unsat_core(),
-                                             {"pos": pos}, (name, mode))
-
+                            self.assertEqual(
+                                s.get_named_unsat_core(), {"pos": pos}, (name, mode)
+                            )
 
     @skipIfNoUnsatCoreSolverForLogic(QF_BOOL)
     def test_assumptions_as_iterator(self):
@@ -243,5 +256,5 @@ class TestUnsatCores(TestCase):
                 self.assertEqual(len(s.get_unsat_core()), 3, name)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

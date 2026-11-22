@@ -19,11 +19,14 @@ import os
 import runpy
 import unittest
 
-from tests import (TestCase, skipIfSolverNotAvailable,
-                        skipIfNoSolverForLogic,
-                        skipIfNoUnsatCoreSolverForLogic, main)
 from pysmt.logics import QF_LIA
-
+from tests import (
+    TestCase,
+    main,
+    skipIfNoSolverForLogic,
+    skipIfNoUnsatCoreSolverForLogic,
+    skipIfSolverNotAvailable,
+)
 
 SNIPPETS_DIR = os.path.join(os.path.dirname(__file__), "..", "docs", "code_snippets")
 
@@ -31,7 +34,6 @@ SNIPPETS_DIR = os.path.join(os.path.dirname(__file__), "..", "docs", "code_snipp
 # Skip when docs/ is not next to tests/ (e.g. a copy of the test suite alone).
 @unittest.skipIf(not os.path.isdir(SNIPPETS_DIR), "docs/ not available")
 class TestDocSnippets(TestCase):
-
     def setUp(self):
         super().setUp()
         # Match the default environment a reader gets from pysmt.shortcuts.
@@ -40,16 +42,18 @@ class TestDocSnippets(TestCase):
     def run_snippets(self, *names):
         for name in names:
             with self.subTest(snippet=name):
-                runpy.run_path(os.path.join(SNIPPETS_DIR, name + ".py"),
-                               run_name="__main__")
+                runpy.run_path(
+                    os.path.join(SNIPPETS_DIR, name + ".py"), run_name="__main__"
+                )
 
     def test_no_solver(self):
         self.run_snippets("hello_world_opening", "hello_world_infix")
 
     @skipIfNoSolverForLogic(QF_LIA)
     def test_qf_lia(self):
-        self.run_snippets("hello_world_is_sat", "hello_world_get_model",
-                          "hello_world_qf_lia")
+        self.run_snippets(
+            "hello_world_is_sat", "hello_world_get_model", "hello_world_qf_lia"
+        )
 
     @skipIfSolverNotAvailable("z3")
     def test_z3(self):
@@ -57,18 +61,23 @@ class TestDocSnippets(TestCase):
 
     @skipIfNoUnsatCoreSolverForLogic(QF_LIA)
     def test_unsat_cores(self):
-        self.run_snippets("unsat_core", "unsat_core_named",
-                          "unsat_core_assumptions")
+        self.run_snippets("unsat_core", "unsat_core_named", "unsat_core_assumptions")
 
     def test_all_snippets_are_tested(self):
-        tested = {"hello_world_opening", "hello_world_infix",
-                  "hello_world_is_sat", "hello_world_get_model",
-                  "hello_world_qf_lia", "hello_world", "unsat_core",
-                  "unsat_core_named", "unsat_core_assumptions"}
+        tested = {
+            "hello_world_opening",
+            "hello_world_infix",
+            "hello_world_is_sat",
+            "hello_world_get_model",
+            "hello_world_qf_lia",
+            "hello_world",
+            "unsat_core",
+            "unsat_core_named",
+            "unsat_core_assumptions",
+        }
         found = {f[:-3] for f in os.listdir(SNIPPETS_DIR) if f.endswith(".py")}
-        self.assertEqual(found, tested,
-                         "Add new docs/code_snippets files to this test")
+        self.assertEqual(found, tested, "Add new docs/code_snippets files to this test")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

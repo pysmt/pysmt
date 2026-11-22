@@ -15,19 +15,17 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from pysmt.shortcuts import get_env, get_free_variables
-from pysmt.shortcuts import Symbol, Implies, And, Not
-from tests.examples import get_example_formulae
-from tests import TestCase, main
 from pysmt.oracles import get_logic
-from pysmt.typing import BOOL, Type, INT, REAL, FunctionType
+from pysmt.shortcuts import And, Implies, Not, Symbol, get_env, get_free_variables
+from pysmt.typing import BOOL, INT, REAL, FunctionType, Type
+from tests import TestCase, main
+from tests.examples import get_example_formulae
 
 
 class TestOracles(TestCase):
-
     def test_quantifier_oracle(self):
         oracle = get_env().qfo
-        for (f, _, _, logic) in get_example_formulae():
+        for f, _, _, logic in get_example_formulae():
             is_qf = oracle.is_qf(f)
             self.assertEqual(is_qf, logic.quantifier_free, f)
 
@@ -35,22 +33,23 @@ class TestOracles(TestCase):
         for example in get_example_formulae():
             target_logic = example.logic
             res = get_logic(example.expr)
-            self.assertEqual(res, target_logic, "%s - %s != %s" % \
-                              (example.expr, target_logic, res))
+            self.assertEqual(
+                res, target_logic, "%s - %s != %s" % (example.expr, target_logic, res)
+            )
 
     def test_get_free_vars(self):
         x, y = Symbol("x"), Symbol("y")
         f = Implies(x, And(y, Not(x)))
 
         s = get_free_variables(f)
-        self.assertEqual(set([x,y]), s)
+        self.assertEqual(set([x, y]), s)
 
     def test_atoms_oracle(self):
         oracle = get_env().ao
         stc = get_env().stc
-        for (f, _, _, _) in get_example_formulae():
+        for f, _, _, _ in get_example_formulae():
             atoms = oracle.get_atoms(f)
-            if ( atoms is not None):
+            if atoms is not None:
                 if len(f.get_free_variables()) > 0:
                     self.assertTrue(len(atoms) > 0)
             for a in atoms:
@@ -64,7 +63,7 @@ class TestOracles(TestCase):
 
     def test_types_oracle_examples(self):
         oracle = get_env().typeso
-        for (f, _, _, _) in get_example_formulae():
+        for f, _, _, _ in get_example_formulae():
             types_all = oracle.get_types(f)
             types_custom = oracle.get_types(f, custom_only=True)
             # Custom types are a subset of all types
@@ -77,17 +76,17 @@ class TestOracles(TestCase):
             if len(f.get_free_variables()) == 0:
                 continue
             if theory.arrays:
-                self.assertTrue(any(x.is_array_type() for x in types_all),
-                                (f, types_all))
+                self.assertTrue(
+                    any(x.is_array_type() for x in types_all), (f, types_all)
+                )
             if theory.bit_vectors:
-                self.assertTrue(any(x.is_bv_type() for x in types_all),
-                                (f, types_all))
+                self.assertTrue(any(x.is_bv_type() for x in types_all), (f, types_all))
             if theory.integer_arithmetic:
-                self.assertTrue(any(x.is_int_type() for x in types_all),
-                                (f, types_all))
+                self.assertTrue(any(x.is_int_type() for x in types_all), (f, types_all))
             if theory.real_arithmetic:
-                self.assertTrue(any(x.is_real_type() for x in types_all),
-                                (f, types_all))
+                self.assertTrue(
+                    any(x.is_real_type() for x in types_all), (f, types_all)
+                )
 
     def test_types_oracle(self):
         get_env().enable_infix_notation = True
@@ -95,8 +94,7 @@ class TestOracles(TestCase):
         S = Type("S")
         U = Type("U", 1)
         B = Type("B", 2)
-        csort = B(U(S),
-                  B(BOOL, S))
+        csort = B(U(S), B(BOOL, S))
         v = Symbol("v", csort)
         types_all = self.env.typeso.get_types(v)
         types_custom = self.env.typeso.get_types(v, custom_only=True)
@@ -142,11 +140,10 @@ class TestOracles(TestCase):
 
         mgr = self.env.formula_manager
         r = mgr.Symbol("r", REAL)
-        f = mgr.Equals(mgr.Real(4),
-                       mgr.Div(r, mgr.Real(0)))
+        f = mgr.Equals(mgr.Real(4), mgr.Div(r, mgr.Real(0)))
         theory = self.env.theoryo.get_theory(f)
         self.assertFalse(theory.linear)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

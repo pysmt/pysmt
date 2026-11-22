@@ -15,7 +15,6 @@
 # limitations under the License.
 
 import os
-
 from typing import Any, Optional, Type, Union, cast
 
 from pysmt.exceptions import PysmtImportError
@@ -39,7 +38,8 @@ if env_use_gmpy_val is not None:
 
 HAS_GMPY = False
 try:
-    from gmpy2 import mpq, mpz # type: ignore[import]
+    from gmpy2 import mpq, mpz  # type: ignore[import]
+
     HAS_GMPY = True
 except ImportError as ex:
     if ENV_USE_GMPY is True:
@@ -56,7 +56,7 @@ else:
     USE_GMPY = HAS_GMPY
 
 if HAS_GMPY:
-    mpq_type: Optional[Type[Any]] = type(mpq(1,2))
+    mpq_type: Optional[Type[Any]] = type(mpq(1, 2))
     mpz_type: Optional[Type[Any]] = type(mpz(1))
 else:
     mpq_type = None
@@ -67,12 +67,13 @@ else:
 #
 
 from fractions import Fraction as pyFraction
+
 if USE_GMPY:
     Fraction = mpq
 else:
     Fraction = pyFraction
 
-FractionClass = type(Fraction(1,2))
+FractionClass = type(Fraction(1, 2))
 
 
 def is_pysmt_fraction(var: Any) -> bool:
@@ -81,6 +82,7 @@ def is_pysmt_fraction(var: Any) -> bool:
     This takes into account the class being used to represent the Fraction.
     """
     return type(var) == FractionClass
+
 
 #
 # Integers using GMPY2
@@ -147,14 +149,20 @@ def to_python_integer(value):
 
 
 if USE_GMPY:
-    def pysmt_fraction_from_rational(value: Union[float, int, pyFraction]) -> pyFraction:
+
+    def pysmt_fraction_from_rational(
+        value: Union[float, int, pyFraction],
+    ) -> pyFraction:
         """Return a pysmt Fraction for the rational value."""
         if type(value) == FractionClass:
             # Nothing to do
             return cast(pyFraction, value)
         return cast(pyFraction, FractionClass(value))
 else:
-    def pysmt_fraction_from_rational(value: Union[float, int, pyFraction]) -> pyFraction:
+
+    def pysmt_fraction_from_rational(
+        value: Union[float, int, pyFraction],
+    ) -> pyFraction:
         """Return a pysmt Fraction for the rational value."""
         if type(value) == FractionClass:
             # Nothing to do
@@ -177,14 +185,17 @@ else:
 
 USE_Z3 = False
 try:
-    import z3.z3num # type: ignore[import]
+    import z3.z3num  # type: ignore[import]
+
     USE_Z3 = True
 except ImportError:
     pass
 
 if USE_Z3:
+
     class Numeral(z3.z3num.Numeral):
         """Represents a Number (Algebraic)"""
+
         def __hash__(self):
             return hash(self.sexpr())
 
@@ -198,11 +209,16 @@ if USE_Z3:
             pass
 
 else:
-    class Numeral(object): # type: ignore[no-redef]
+
+    class Numeral(object):  # type: ignore[no-redef]
         """Represents a Number (Algebraic)"""
+
         def __init__(self, obj):
-            raise NotImplementedError("Z3 is not installed. "\
-                "We currently do not support stand-alone algebraic numbers.")
+            raise NotImplementedError(
+                "Z3 is not installed. "
+                "We currently do not support stand-alone algebraic numbers."
+            )
+
 
 #
 # Strings

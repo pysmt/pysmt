@@ -16,24 +16,31 @@
 #   limitations under the License.
 #
 
-from pysmt.decorators import clear_pending_pop
-from pysmt.logics import Logic, LRA, LIA
-
-
-from pysmt.exceptions import (SolverReturnedUnknownResultError,
-                              PysmtUnboundedOptimizationError,
-                              GoalNotSupportedError,
-                              PysmtInfinitesimalError)
-from pysmt.optimization.optimizer import Optimizer
-
-from pysmt.solvers.solver import Model
-from pysmt.solvers.msat import MSatEnv, MathSAT5Model, MathSATOptions
-from pysmt.solvers.msat import MathSAT5Solver, MSatConverter, MSatQuantifierEliminator
-from pysmt.solvers.msat import MSatInterpolator, MSatBoolUFRewriter
-from pysmt.environment import Environment
-from pysmt.fnode import FNode
-from pysmt.optimization.goal import Goal, MinMaxGoal, MaxMinGoal, MaxSMTGoal
 from typing import Dict, Iterable, Iterator, List, Optional, Sequence, Tuple
+
+from pysmt.decorators import clear_pending_pop
+from pysmt.environment import Environment
+from pysmt.exceptions import (
+    GoalNotSupportedError,
+    PysmtInfinitesimalError,
+    PysmtUnboundedOptimizationError,
+    SolverReturnedUnknownResultError,
+)
+from pysmt.fnode import FNode
+from pysmt.logics import LIA, LRA, Logic
+from pysmt.optimization.goal import Goal, MaxMinGoal, MaxSMTGoal, MinMaxGoal
+from pysmt.optimization.optimizer import Optimizer
+from pysmt.solvers.msat import (
+    MathSAT5Model,
+    MathSAT5Solver,
+    MathSATOptions,
+    MSatBoolUFRewriter,
+    MSatConverter,
+    MSatEnv,
+    MSatInterpolator,
+    MSatQuantifierEliminator,
+)
+from pysmt.solvers.solver import Model
 
 
 class OptiMSATEnv(MSatEnv):
@@ -42,7 +49,7 @@ class OptiMSATEnv(MSatEnv):
     def __init__(self, msat_config=None):
         MSatEnv.__init__(self, msat_config=msat_config)
 
-    def _do_create_env(self, msat_config=None, msat_env: None=None):
+    def _do_create_env(self, msat_config=None, msat_env: None = None):
         return self._msat_lib.msat_create_opt_env(msat_config, msat_env)
 
 
@@ -50,8 +57,7 @@ class OptiMSATModel(MathSAT5Model):
     __lib_name__ = "optimathsat"
 
     def __init__(self, environment: Environment, msat_env: MSatEnv):
-        MathSAT5Model.__init__(self, environment=environment,
-                               msat_env=msat_env)
+        MathSAT5Model.__init__(self, environment=environment, msat_env=msat_env)
 
 
 class OptiMSATOptions(MathSATOptions):
@@ -72,8 +78,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
     OptionsClass = OptiMSATOptions
 
     def __init__(self, environment: Environment, logic: Logic, **options):
-        MathSAT5Solver.__init__(self, environment=environment,
-                                logic=logic, **options)
+        MathSAT5Solver.__init__(self, environment=environment, logic=logic, **options)
 
     def _assert_msat_goal(self, goal: Goal, goal_id: Optional[int] = None):
 
@@ -82,9 +87,15 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
             assert goal_id is not None
             for tcons, weight in goal.soft:
                 obj_tcons = self.converter.convert(tcons)
-                obj_weight = self._msat_lib.msat_make_number(self.msat_env(), str(weight.constant_value()))
-                self._msat_lib.msat_assert_soft_formula(self.msat_env(), obj_tcons, obj_weight, "__pysmt_" + str(goal_id))
-            obj_fun = self._msat_lib.msat_from_string(self.msat_env(), "__pysmt_" + str(goal_id))
+                obj_weight = self._msat_lib.msat_make_number(
+                    self.msat_env(), str(weight.constant_value())
+                )
+                self._msat_lib.msat_assert_soft_formula(
+                    self.msat_env(), obj_tcons, obj_weight, "__pysmt_" + str(goal_id)
+                )
+            obj_fun = self._msat_lib.msat_from_string(
+                self.msat_env(), "__pysmt_" + str(goal_id)
+            )
             make_fun = self._msat_lib.msat_make_minimize
 
         elif goal.is_minmax_goal() or goal.is_maxmin_goal():
@@ -110,7 +121,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
         else:
             raise GoalNotSupportedError(self, goal)
 
-        msat_obj = make_fun(self.msat_env(), obj_fun, signed = goal.signed)
+        msat_obj = make_fun(self.msat_env(), obj_fun, signed=goal.signed)
         self._msat_lib.msat_assert_objective(self.msat_env(), msat_obj)
         return msat_obj
 
@@ -134,14 +145,14 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
         return self._get_goal_value(msat_obj, goal)
 
     @clear_pending_pop
-    def pareto_optimize(self, goals: Sequence[Goal]) -> Iterator[Tuple[Model, List[FNode]]]:
+    def pareto_optimize(
+        self, goals: Sequence[Goal]
+    ) -> Iterator[Tuple[Model, List[FNode]]]:
         self.push()
         self._check_pareto_lexicographic_goals(goals, "pareto")
         self._msat_lib.msat_set_opt_priority(self.msat_env(), "par")
 
-        msat_objs = {
-            g: self._assert_msat_goal(g) for g in goals
-        }
+        msat_objs = {g: self._assert_msat_goal(g) for g in goals}
 
         while self.solve():
             all_ok = True
@@ -162,27 +173,31 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
         self.pending_pop = True
 
     @clear_pending_pop
-    def lexicographic_optimize(self, goals: Sequence[Goal]) -> Optional[Tuple[Model, List[FNode]]]:
+    def lexicographic_optimize(
+        self, goals: Sequence[Goal]
+    ) -> Optional[Tuple[Model, List[FNode]]]:
         self.push()
         self._check_pareto_lexicographic_goals(goals, "lexicographic")
         self._msat_lib.msat_set_opt_priority(self.msat_env(), "lex")
 
-        msat_objs = {
-            g: self._assert_msat_goal(g) for g in goals
-        }
+        msat_objs = {g: self._assert_msat_goal(g) for g in goals}
 
         rt = self.solve()
         # set after the solve because the solve method has the clear_pending_pop decorator
         self.pending_pop = True
 
-        if rt and all(self._check_unsat_unbound_infinitesimal(mo) for mo in msat_objs.values()):
+        if rt and all(
+            self._check_unsat_unbound_infinitesimal(mo) for mo in msat_objs.values()
+        ):
             model = self.get_model()
             return model, [model.get_value(x.term()) for x in goals]
         else:
             return None
 
     @clear_pending_pop
-    def boxed_optimize(self, goals: Sequence[Goal]) -> Optional[Dict[Goal, Tuple[Model, FNode]]]:
+    def boxed_optimize(
+        self, goals: Sequence[Goal]
+    ) -> Optional[Dict[Goal, Tuple[Model, FNode]]]:
         self.push()
         self._msat_lib.msat_set_opt_priority(self.msat_env(), "box")
         msat_objs = []
@@ -220,17 +235,13 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
             return False
         else:
             unbounded = self._msat_lib.msat_objective_value_is_unbounded(
-                self.msat_env(),
-                msat_obj,
-                self._msat_lib.MSAT_OPTIMUM
+                self.msat_env(), msat_obj, self._msat_lib.MSAT_OPTIMUM
             )
             if unbounded > 0:
                 raise PysmtUnboundedOptimizationError("The optimal value is unbounded")
 
             is_strict = self._msat_lib.msat_objective_value_is_strict(
-                self.msat_env(),
-                msat_obj,
-                self._msat_lib.MSAT_OPTIMUM
+                self.msat_env(), msat_obj, self._msat_lib.MSAT_OPTIMUM
             )
             if is_strict:
                 raise PysmtInfinitesimalError("The optimal value is infinitesimal")
@@ -246,10 +257,11 @@ class OptiMSATConverter(MSatConverter):
     __lib_name__ = "optimathsat"
 
     def __init__(self, environment: Environment, msat_env: OptiMSATEnv):
-        MSatConverter.__init__(self, environment=environment,
-                               msat_env=msat_env)
+        MSatConverter.__init__(self, environment=environment, msat_env=msat_env)
 
-    def _get_bool_uf_rewriter(self, environment: Environment) -> "OptiMSATBoolUFRewriter":
+    def _get_bool_uf_rewriter(
+        self, environment: Environment
+    ) -> "OptiMSATBoolUFRewriter":
         return OptiMSATBoolUFRewriter(environment=environment)
 
 
@@ -258,25 +270,28 @@ class OptiMSATQuantifierEliminator(MSatQuantifierEliminator):
 
     LOGICS = MSatQuantifierEliminator.LOGICS
 
-    def __init__(self, environment, logic=None, algorithm='lw'):
-        MSatQuantifierEliminator.__init__(self, environment=environment,
-                                          logic=logic, algorithm=algorithm)
+    def __init__(self, environment, logic=None, algorithm="lw"):
+        MSatQuantifierEliminator.__init__(
+            self, environment=environment, logic=logic, algorithm=algorithm
+        )
 
 
 class OptiMSATFMQuantifierEliminator(OptiMSATQuantifierEliminator):
     LOGICS = [LRA]
 
     def __init__(self, environment, logic=None):
-        OptiMSATQuantifierEliminator.__init__(self, environment,
-                                              logic=logic, algorithm='fm')
+        OptiMSATQuantifierEliminator.__init__(
+            self, environment, logic=logic, algorithm="fm"
+        )
 
 
 class OptiMSATLWQuantifierEliminator(OptiMSATQuantifierEliminator):
     LOGICS = [LRA, LIA]
 
     def __init__(self, environment, logic=None):
-        OptiMSATQuantifierEliminator.__init__(self, environment,
-                                              logic=logic, algorithm='lw')
+        OptiMSATQuantifierEliminator.__init__(
+            self, environment, logic=logic, algorithm="lw"
+        )
 
 
 class OptiMSATInterpolator(MSatInterpolator):
@@ -284,8 +299,7 @@ class OptiMSATInterpolator(MSatInterpolator):
     LOGICS = MSatInterpolator.LOGICS
 
     def __init__(self, environment, logic=None):
-        MSatInterpolator.__init__(self, environment=environment,
-                                  logic=logic)
+        MSatInterpolator.__init__(self, environment=environment, logic=logic)
 
     def _do_create_env(self, msat_config=None, msat_env=None):
         return self._msat_lib.msat_create_opt_env(msat_config, msat_env)

@@ -16,9 +16,11 @@
 #   limitations under the License.
 #
 
+
 def error():
     print("Invalid option try 'install' or 'shell'")
     exit(-1)
+
 
 if __name__ == "__main__":
     import sys
@@ -26,10 +28,12 @@ if __name__ == "__main__":
     cmd = error
     if len(sys.argv) >= 2:
         sys.argv = sys.argv[1:]
-        if sys.argv[0] == 'install':
+        if sys.argv[0] == "install":
             import pysmt.cmd.install
+
             cmd = pysmt.cmd.install.main
-        elif sys.argv[0] == 'shell':
+        elif sys.argv[0] == "shell":
             import pysmt.cmd.shell
+
             cmd = pysmt.cmd.shell.main
     cmd()

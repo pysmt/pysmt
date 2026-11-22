@@ -15,14 +15,14 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from pysmt.shortcuts import Symbol, Int, And, Or, Not, GT
-from pysmt.typing import INT
 from pysmt.oracles import SizeOracle
+from pysmt.shortcuts import GT, And, Int, Not, Or, Symbol
+from pysmt.typing import INT
 from tests import TestCase, main
 from tests.examples import get_example_formulae
 
-class TestSize(TestCase):
 
+class TestSize(TestCase):
     def test_leaf(self):
         varA = Symbol("A")
         self.assertEqual(varA.size(), 1)
@@ -60,7 +60,7 @@ class TestSize(TestCase):
         self.assertEqual(bool_dag, 4)
 
     def test_examples(self):
-        for (f, _, _, _) in get_example_formulae():
+        for f, _, _, _ in get_example_formulae():
             tree_size = f.size(SizeOracle.MEASURE_TREE_NODES)
             dag_size = f.size(SizeOracle.MEASURE_DAG_NODES)
             leaves = f.size(SizeOracle.MEASURE_LEAVES)
@@ -79,5 +79,5 @@ class TestSize(TestCase):
             varA.size("non-existent")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

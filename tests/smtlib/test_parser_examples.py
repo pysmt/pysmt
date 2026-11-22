@@ -16,29 +16,44 @@
 #   limitations under the License.
 #
 import os
+from io import StringIO
 from tempfile import mkstemp
 
-from io import StringIO
-
 import pysmt.logics as logics
-from tests import TestCase, skipIfNoSolverForLogic, main
-from tests.examples import get_example_formulae
+from pysmt.exceptions import PysmtSyntaxError
+from pysmt.shortcuts import (
+    GE,
+    LT,
+    AllDifferent,
+    And,
+    BVConcat,
+    BVXor,
+    Div,
+    Equals,
+    Iff,
+    Implies,
+    Minus,
+    Plus,
+    Symbol,
+    Times,
+    Xor,
+    get_env,
+    read_smtlib,
+    write_smtlib,
+)
+from pysmt.smtlib.commands import ASSERT
 from pysmt.smtlib.parser import SmtLibParser, Tokenizer
 from pysmt.smtlib.script import smtlibscript_from_formula
-from pysmt.shortcuts import Iff, Symbol, And, Implies, Xor, LT, GE, Equals, \
-    Plus, Minus, Times, Div, AllDifferent, BVXor, BVConcat
-from pysmt.shortcuts import read_smtlib, write_smtlib, get_env
-from pysmt.exceptions import PysmtSyntaxError
-from pysmt.smtlib.commands import ASSERT
-from pysmt.typing import INT, REAL, BV8
+from pysmt.typing import BV8, INT, REAL
+from tests import TestCase, main, skipIfNoSolverForLogic
+from tests.examples import get_example_formulae
 
 
 class TestSMTParseExamples(TestCase):
-
     def test_parse_examples(self):
         fs = get_example_formulae()
 
-        for (f_out, _, _, logic) in fs:
+        for f_out, _, _, logic in fs:
             if logic == logics.QF_BV:
                 # See test_parse_examples_bv
                 continue
@@ -62,7 +77,7 @@ class TestSMTParseExamples(TestCase):
         """
         fs = get_example_formulae()
 
-        for (f_out, _, _, logic) in fs:
+        for f_out, _, _, logic in fs:
             if logic != logics.QF_BV:
                 continue
             buf_out = StringIO()
@@ -79,7 +94,7 @@ class TestSMTParseExamples(TestCase):
     def test_parse_examples_daggified(self):
         fs = get_example_formulae()
 
-        for (f_out, _, _, logic) in fs:
+        for f_out, _, _, logic in fs:
             if logic == logics.QF_BV:
                 # See test_parse_examples_daggified_bv
                 continue
@@ -96,7 +111,7 @@ class TestSMTParseExamples(TestCase):
     def test_parse_examples_daggified_bv(self):
         fs = get_example_formulae()
 
-        for (f_out, _, _, logic) in fs:
+        for f_out, _, _, logic in fs:
             if logic != logics.QF_BV:
                 # See test_parse_examples_daggified
                 continue
@@ -125,7 +140,7 @@ class TestSMTParseExamples(TestCase):
         }
         fs = get_example_formulae()
 
-        for (f_out, _, _, logic) in fs:
+        for f_out, _, _, logic in fs:
             buf_out = StringIO()
             script_out = smtlibscript_from_formula(f_out)
             script_out.serialize(outstream=buf_out)
@@ -138,7 +153,7 @@ class TestSMTParseExamples(TestCase):
                     self.assertEqual(logic_in, rewrite.get(logic, logic))
                     break
             else:  # Loops exited normally
-                print("-"*40)
+                print("-" * 40)
                 print(script_in)
 
     def test_read_and_write_shortcuts(self):
@@ -146,7 +161,7 @@ class TestSMTParseExamples(TestCase):
 
         fdi, tmp_fname = mkstemp()
         os.close(fdi)  # Close initial file descriptor
-        for (f_out, _, _, _) in fs:
+        for f_out, _, _, _ in fs:
             write_smtlib(f_out, tmp_fname)
             # with open(tmp_fname) as fin:
             #     print(fin.read())
@@ -189,8 +204,11 @@ class TestSMTParseExamples(TestCase):
         """
         parser = SmtLibParser()
         script = parser.get_script(StringIO(txt))
-        self.assertEqual(len(get_env().formula_manager.get_all_symbols()),
-                         len(script.get_declared_symbols()) + len(script.get_define_fun_parameter_symbols()))
+        self.assertEqual(
+            len(get_env().formula_manager.get_all_symbols()),
+            len(script.get_declared_symbols())
+            + len(script.get_define_fun_parameter_symbols()),
+        )
 
     @skipIfNoSolverForLogic(logics.QF_ABV)
     def test_nary_bvconcat(self):
@@ -222,12 +240,17 @@ class TestSMTParseExamples(TestCase):
     def test_nary_operators(self):
         """All the SMT-LIB n-ary operators are expanded as the standard
         prescribes: see https://github.com/pysmt/pysmt/issues/638"""
-        INT_DECLS = "(declare-fun a () Int)(declare-fun b () Int)" \
-                    "(declare-fun c () Int)(declare-fun d () Int)"
-        BOOL_DECLS = "(declare-fun p () Bool)(declare-fun q () Bool)" \
-                     "(declare-fun r () Bool)"
-        BV_DECLS = "(declare-fun x () (_ BitVec 8))(declare-fun y () (_ BitVec 8))" \
-                   "(declare-fun z () (_ BitVec 8))"
+        INT_DECLS = (
+            "(declare-fun a () Int)(declare-fun b () Int)"
+            "(declare-fun c () Int)(declare-fun d () Int)"
+        )
+        BOOL_DECLS = (
+            "(declare-fun p () Bool)(declare-fun q () Bool)(declare-fun r () Bool)"
+        )
+        BV_DECLS = (
+            "(declare-fun x () (_ BitVec 8))(declare-fun y () (_ BitVec 8))"
+            "(declare-fun z () (_ BitVec 8))"
+        )
 
         # (declarations, n-ary application, expected expansion)
         cases = [
@@ -259,9 +282,11 @@ class TestSMTParseExamples(TestCase):
             (INT_DECLS, "(< a)", "true"),
         ]
         for decls, nary, expected in cases:
-            self.assertEqual(self._parse_assertion(decls, nary),
-                             self._parse_assertion(decls, expected),
-                             "wrong expansion of %s" % nary)
+            self.assertEqual(
+                self._parse_assertion(decls, nary),
+                self._parse_assertion(decls, expected),
+                "wrong expansion of %s" % nary,
+            )
 
     def test_nary_operators_end_to_end(self):
         """Parse a whole SMT-LIB2 script using the n-ary operators and check
@@ -321,8 +346,12 @@ class TestSMTParseExamples(TestCase):
         ]
 
         parser = SmtLibParser()
-        parsed = [cmd.args[0] for cmd in
-                  parser.get_script(StringIO(script)).filter_by_command_name(ASSERT)]
+        parsed = [
+            cmd.args[0]
+            for cmd in parser.get_script(StringIO(script)).filter_by_command_name(
+                ASSERT
+            )
+        ]
 
         self.assertEqual(len(parsed), len(expected))
         for got, exp in zip(parsed, expected):
@@ -330,7 +359,8 @@ class TestSMTParseExamples(TestCase):
         # ...and the conjunction of all of them is what the script means
         self.assertEqual(
             SmtLibParser().get_script(StringIO(script)).get_last_formula(),
-            And(expected))
+            And(expected),
+        )
 
     def test_nary_div_is_integer_division(self):
         """'div' is the Ints division, so it must not be promoted to Real"""

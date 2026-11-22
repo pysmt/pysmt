@@ -6,7 +6,6 @@ from tests import TestCase, main
 
 
 class TestInstallers(TestCase):
-
     def test_run_python_path_with_space(self):
         with tempfile.TemporaryDirectory() as tmp:
             script = os.path.join(tmp, "with space", "echo.py")

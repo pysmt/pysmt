@@ -11,31 +11,41 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import glob
 import os
 import sys
-import glob
 
 from pysmt.cmd.installers.base import SolverInstaller, TemporaryPath
 
 
 class YicesInstaller(SolverInstaller):
-
     SOLVER = "yices"
 
-    def __init__(self, install_dir, bindings_dir, solver_version,
-                 mirror_link=None, yices_api_version=None):
+    def __init__(
+        self,
+        install_dir,
+        bindings_dir,
+        solver_version,
+        mirror_link=None,
+        yices_api_version=None,
+    ):
 
         archive_name = "Yices-%s.tar.gz" % (solver_version)
         native_link = "https://github.com/SRI-CSL/yices2/archive/{archive_name}"
-        SolverInstaller.__init__(self, install_dir=install_dir,
-                                 bindings_dir=bindings_dir,
-                                 solver_version=solver_version,
-                                 archive_name=archive_name,
-                                 native_link=native_link,
-                                 mirror_link=mirror_link)
+        SolverInstaller.__init__(
+            self,
+            install_dir=install_dir,
+            bindings_dir=bindings_dir,
+            solver_version=solver_version,
+            archive_name=archive_name,
+            native_link=native_link,
+            mirror_link=mirror_link,
+        )
 
         self.yices_api_version = yices_api_version
-        self.extract_path = os.path.join(self.base_dir, "yices2-Yices-%s" % self.solver_version)
+        self.extract_path = os.path.join(
+            self.base_dir, "yices2-Yices-%s" % self.solver_version
+        )
         self.yices_path = os.path.join(self.base_dir, "yices_bin")
 
     def compile(self):
@@ -44,25 +54,51 @@ class YicesInstaller(SolverInstaller):
 
         SolverInstaller.run("autoconf", directory=self.extract_path)
 
-        SolverInstaller.run(["bash", "configure", "--prefix", self.yices_path],
-                            directory=self.extract_path)
+        SolverInstaller.run(
+            ["bash", "configure", "--prefix", self.yices_path],
+            directory=self.extract_path,
+        )
         SolverInstaller.run("make", directory=self.extract_path)
         SolverInstaller.run("make install", directory=self.extract_path)
 
         if self.yices_api_version is None:
-            SolverInstaller.run_python(["-m", "pip", "install", "--upgrade", "--target", self.bindings_dir, "yices"])
+            SolverInstaller.run_python(
+                [
+                    "-m",
+                    "pip",
+                    "install",
+                    "--upgrade",
+                    "--target",
+                    self.bindings_dir,
+                    "yices",
+                ]
+            )
         else:
-            SolverInstaller.run_python(["-m", "pip", "install", "--upgrade", "--target", self.bindings_dir, "yices==%s" % self.yices_api_version])
+            SolverInstaller.run_python(
+                [
+                    "-m",
+                    "pip",
+                    "install",
+                    "--upgrade",
+                    "--target",
+                    self.bindings_dir,
+                    "yices==%s" % self.yices_api_version,
+                ]
+            )
 
         libdir = os.path.join(self.yices_path, "lib")
         yices_api_file = os.path.join(self.bindings_dir, "yices_api.py")
-        with open(yices_api_file, 'r') as f:
+        with open(yices_api_file, "r") as f:
             lines = f.readlines()
             if "sys.stderr.write" in lines[215]:
                 lines.pop(215)
             if "else" in lines[226]:
-                lines.insert(226, "    if _loadYicesFromPath('%s', libyicespath):\n        return\n" % libdir)
-        with open(yices_api_file, 'w') as f:
+                lines.insert(
+                    226,
+                    "    if _loadYicesFromPath('%s', libyicespath):\n        return\n"
+                    % libdir,
+                )
+        with open(yices_api_file, "w") as f:
             f.write("".join(lines))
 
     def get_installed_version(self):

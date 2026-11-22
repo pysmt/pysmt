@@ -16,21 +16,49 @@
 #   limitations under the License.
 #
 
-from tests import TestCase, skipIfNoOptimizerForLogic
-from tests import main
-from tests.optimization_utils import get_non_diverging_optimizers, check_basic, check_lexicographic, check_boxed, check_pareto
+from pysmt.exceptions import PysmtInfinitesimalError, PysmtUnboundedOptimizationError
+from pysmt.logics import QF_BV, QF_LIA, QF_LRA
+from pysmt.optimization.goal import (
+    MaximizationGoal,
+    MaxMinGoal,
+    MaxSMTGoal,
+    MinimizationGoal,
+    MinMaxGoal,
+)
+from pysmt.shortcuts import (
+    BV,
+    BVSGE,
+    BVSGT,
+    BVSLE,
+    BVSLT,
+    GE,
+    GT,
+    INT,
+    LE,
+    LT,
+    REAL,
+    And,
+    BVType,
+    Equals,
+    Int,
+    Minus,
+    Optimizer,
+    Plus,
+    Real,
+    Symbol,
+    get_env,
+)
+from tests import TestCase, main, skipIfNoOptimizerForLogic
+from tests.optimization_utils import (
+    check_basic,
+    check_boxed,
+    check_lexicographic,
+    check_pareto,
+    get_non_diverging_optimizers,
+)
 
-from pysmt.shortcuts import Optimizer, GE, Int, Symbol, INT, LE, GT, REAL, Real, Equals, LT
-from pysmt.shortcuts import BVType, BVSGE, BVSLE, BVSGT, BVSLT, BV
-from pysmt.shortcuts import And, Plus, Minus, get_env
-from pysmt.logics import QF_LIA, QF_LRA, QF_BV
-from pysmt.optimization.goal import MaximizationGoal, MinimizationGoal, \
-    MinMaxGoal, MaxMinGoal, MaxSMTGoal
-
-from pysmt.exceptions import PysmtUnboundedOptimizationError, PysmtInfinitesimalError
 
 class TestOptimization(TestCase):
-
     @skipIfNoOptimizerForLogic(QF_LIA)
     def test_minimization_basic(self):
         x = Symbol("x", INT)
@@ -182,7 +210,9 @@ class TestOptimization(TestCase):
                 models, costs = zip(*opt.pareto_optimize([obj1, obj2]))
                 self.assertEqual(len(models), 11)
                 self.assertTrue(all(m[x].constant_value() == 0 for m in models))
-                self.assertTrue(all(x[0].constant_value() == -x[1].constant_value() for x in costs))
+                self.assertTrue(
+                    all(x[0].constant_value() == -x[1].constant_value() for x in costs)
+                )
 
     @skipIfNoOptimizerForLogic(QF_LIA)
     def test_pareto_unsat(self):
@@ -190,7 +220,9 @@ class TestOptimization(TestCase):
         y = Symbol("y", INT)
         obj1 = MinimizationGoal(Plus(x, y))
         obj2 = MinimizationGoal(Minus(x, y))
-        formula = And(GE(x, Int(0)), GE(y, Int(1)), LE(x, Int(10)), LE(y, Int(10)), LE(y, Int(0)))
+        formula = And(
+            GE(x, Int(0)), GE(y, Int(1)), LE(x, Int(10)), LE(y, Int(10)), LE(y, Int(0))
+        )
         for oname in get_env().factory.all_optimizers(logic=QF_LIA):
             with Optimizer(name=oname) as opt:
                 opt.add_assertion(formula)
@@ -240,8 +272,12 @@ class TestOptimization(TestCase):
         z = Symbol("z", INT)
         t = Symbol("t", INT)
         u = Symbol("u", INT)
-        f1 = And(LE(Int(0), x), LE(Int(0), y), LE(Int(0), z), LE(Int(0), u), LE(Int(0), t))
-        f2 = And(LE(x, Int(5)), LE(y, Int(5)), LE(z, Int(5)), LE(u, Int(5)), LE(t, Int(5)))
+        f1 = And(
+            LE(Int(0), x), LE(Int(0), y), LE(Int(0), z), LE(Int(0), u), LE(Int(0), t)
+        )
+        f2 = And(
+            LE(x, Int(5)), LE(y, Int(5)), LE(z, Int(5)), LE(u, Int(5)), LE(t, Int(5))
+        )
         obj1 = MaximizationGoal(x)
         obj2 = MinimizationGoal(y)
         obj3 = MaximizationGoal(Plus(x, y, z))
@@ -251,7 +287,9 @@ class TestOptimization(TestCase):
             with Optimizer(name=oname) as opt:
                 opt.add_assertion(f1)
                 opt.add_assertion(f2)
-                model, values = opt.lexicographic_optimize([obj1, obj2, obj3, obj4, obj5])
+                model, values = opt.lexicographic_optimize(
+                    [obj1, obj2, obj3, obj4, obj5]
+                )
                 self.assertEqual(values[0], Int(5))
                 self.assertEqual(values[1], Int(0))
                 self.assertEqual(values[2], Int(10))
@@ -262,8 +300,17 @@ class TestOptimization(TestCase):
         z = Symbol("z", INT)
         t = Symbol("t", INT)
         u = Symbol("u", INT)
-        f1 = And(LE(Int(0), x), LE(Int(0), y), LE(Int(0), z), LE(Int(0), u), LE(Int(0), t), LE(t, Int(-1)))
-        f2 = And(LE(x, Int(5)), LE(y, Int(5)), LE(z, Int(5)), LE(u, Int(5)), LE(t, Int(5)))
+        f1 = And(
+            LE(Int(0), x),
+            LE(Int(0), y),
+            LE(Int(0), z),
+            LE(Int(0), u),
+            LE(Int(0), t),
+            LE(t, Int(-1)),
+        )
+        f2 = And(
+            LE(x, Int(5)), LE(y, Int(5)), LE(z, Int(5)), LE(u, Int(5)), LE(t, Int(5))
+        )
         obj1 = MaximizationGoal(x)
         obj2 = MinimizationGoal(y)
         obj3 = MaximizationGoal(Plus(x, y, z))
@@ -286,10 +333,10 @@ class TestOptimization(TestCase):
         obj1 = MinimizationGoal(Minus(x, y))
         for oname in get_env().factory.all_optimizers(logic=QF_LIA):
             with Optimizer(name=oname) as opt:
-                    opt.add_assertion(f1)
-                    opt.add_assertion(f2)
-                    rt = opt.optimize(obj1)
-                    self.assertTrue(rt is None)
+                opt.add_assertion(f1)
+                opt.add_assertion(f2)
+                rt = opt.optimize(obj1)
+                self.assertTrue(rt is None)
 
     @skipIfNoOptimizerForLogic(QF_LIA)
     def test_unbounded(self):
@@ -329,8 +376,12 @@ class TestOptimization(TestCase):
         z = Symbol("z", INT)
         t = Symbol("t", INT)
         u = Symbol("u", INT)
-        f1 = And(LE(Int(0), x), LE(Int(0), y), LE(Int(0), z), LE(Int(0), u), LE(Int(0), t))
-        f2 = And(LE(x, Int(5)), LE(y, Int(5)), LE(z, Int(5)), LE(u, Int(5)), LE(t, Int(5)))
+        f1 = And(
+            LE(Int(0), x), LE(Int(0), y), LE(Int(0), z), LE(Int(0), u), LE(Int(0), t)
+        )
+        f2 = And(
+            LE(x, Int(5)), LE(y, Int(5)), LE(z, Int(5)), LE(u, Int(5)), LE(t, Int(5))
+        )
         obj1 = MaximizationGoal(x)
         obj2 = MinimizationGoal(y)
         obj3 = MaximizationGoal(Plus(x, y, z))
@@ -340,7 +391,9 @@ class TestOptimization(TestCase):
             with Optimizer(name=oname) as opt:
                 opt.add_assertion(f1)
                 opt.add_assertion(f2)
-                model, values = opt.lexicographic_optimize([obj1, obj2, obj3, obj4, obj5])
+                model, values = opt.lexicographic_optimize(
+                    [obj1, obj2, obj3, obj4, obj5]
+                )
                 self.assertEqual(values[0], Int(5))
                 self.assertEqual(values[1], Int(0))
                 self.assertEqual(values[2], Int(10))
@@ -357,7 +410,7 @@ class TestOptimization(TestCase):
 
     def test_maximization_basic_BV(self):
         x = Symbol("x", BVType(32))
-        max = MaximizationGoal(x, signed = True)
+        max = MaximizationGoal(x, signed=True)
         formula = BVSLT(x, BV(10, 32))
         for oname in get_env().factory.all_optimizers(logic=QF_BV):
             with Optimizer(name=oname, logic=QF_BV) as opt:
@@ -370,12 +423,12 @@ class TestOptimization(TestCase):
         y = Symbol("y", BVType(32))
         z = Symbol("z", BVType(32))
 
-        f11 = BVSGE(x, BV(5,32))
-        f12 = BVSLE(x, BV(8,32))
-        f21 = BVSGE(y, BV(11,32))
-        f22 = BVSLE(y, BV(14,32))
-        f31 = BVSGE(z, BV(15,32))
-        f32 = BVSLE(z, BV(18,32))
+        f11 = BVSGE(x, BV(5, 32))
+        f12 = BVSLE(x, BV(8, 32))
+        f21 = BVSGE(y, BV(11, 32))
+        f22 = BVSLE(y, BV(14, 32))
+        f31 = BVSGE(z, BV(15, 32))
+        f32 = BVSLE(z, BV(18, 32))
 
         maxmin = MaxMinGoal([x, y, z])
 
@@ -438,7 +491,13 @@ class TestOptimization(TestCase):
     def test_subsequent_optimizations(self):
         x = Symbol("x", INT)
         y = Symbol("y", INT)
-        formula = And(GE(x, Int(0)), GE(y, Int(0)), LE(x, Int(3)), LE(y, Int(3)), LT(Plus(x, y), Int(4)))
+        formula = And(
+            GE(x, Int(0)),
+            GE(y, Int(0)),
+            LE(x, Int(3)),
+            LE(y, Int(3)),
+            LT(Plus(x, y), Int(4)),
+        )
 
         for oname in get_env().factory.all_optimizers(logic=QF_LIA):
             with Optimizer(name=oname) as opt:
@@ -461,7 +520,13 @@ class TestOptimization(TestCase):
     def test_subsequent_lexicographic_optimizations(self):
         x = Symbol("x", INT)
         y = Symbol("y", INT)
-        formula = And(GE(x, Int(0)), GE(y, Int(0)), LE(x, Int(3)), LE(y, Int(3)), Equals(Plus(x, y), Int(3)))
+        formula = And(
+            GE(x, Int(0)),
+            GE(y, Int(0)),
+            LE(x, Int(3)),
+            LE(y, Int(3)),
+            Equals(Plus(x, y), Int(3)),
+        )
 
         for oname in get_env().factory.all_optimizers(logic=QF_LIA):
             with Optimizer(name=oname) as opt:
@@ -471,14 +536,18 @@ class TestOptimization(TestCase):
                 max_x = MaximizationGoal(x)
                 max_y = MaximizationGoal(y)
                 test_id_str = "test_first_subsequent_optimization %s" % oname
-                model, _ = check_lexicographic(opt, [max_x, max_y], [Int(3), Int(0)], test_id_str)
+                model, _ = check_lexicographic(
+                    opt, [max_x, max_y], [Int(3), Int(0)], test_id_str
+                )
 
                 self.assertEqual(model.get_value(x), Int(3))
                 self.assertEqual(model.get_value(y), Int(0))
 
                 # Second optimization: maximize y
                 test_id_str = "test_second_subsequent_optimization %s" % oname
-                model, _ = check_lexicographic(opt, [max_y, max_x], [Int(3), Int(0)], test_id_str)
+                model, _ = check_lexicographic(
+                    opt, [max_y, max_x], [Int(3), Int(0)], test_id_str
+                )
 
                 self.assertEqual(model.get_value(x), Int(0))
                 self.assertEqual(model.get_value(y), Int(3))
@@ -488,9 +557,14 @@ class TestOptimization(TestCase):
         y = Symbol("y", INT)
         z = Symbol("z", INT)
         formula = And(
-            GE(x, Int(0)), GE(y, Int(0)), GE(z, Int(0)),
-            LE(x, Int(3)), LE(y, Int(3)), LE(z, Int(3)),
-            LE(Plus(x, y, z), Int(3)))
+            GE(x, Int(0)),
+            GE(y, Int(0)),
+            GE(z, Int(0)),
+            LE(x, Int(3)),
+            LE(y, Int(3)),
+            LE(z, Int(3)),
+            LE(Plus(x, y, z), Int(3)),
+        )
 
         for oname in get_env().factory.all_optimizers(logic=QF_LIA):
             with Optimizer(name=oname) as opt:
@@ -502,7 +576,13 @@ class TestOptimization(TestCase):
                 max_z = MaximizationGoal(z)
 
                 test_id_str = "test_first_subsequent_optimization %s" % oname
-                models_costs = check_boxed(opt, [max_x, max_y], [Int(3), Int(3)], test_id_str, also_test_basic=True)
+                models_costs = check_boxed(
+                    opt,
+                    [max_x, max_y],
+                    [Int(3), Int(3)],
+                    test_id_str,
+                    also_test_basic=True,
+                )
 
                 self.assertEqual(len(models_costs), 2)
                 max_x_model, _ = models_costs[max_x]
@@ -514,7 +594,13 @@ class TestOptimization(TestCase):
 
                 # First optimization: maximize x and z
                 test_id_str = "test_second_subsequent_optimization %s" % oname
-                models_costs = check_boxed(opt, [max_x, max_z], [Int(3), Int(3)], test_id_str, also_test_basic=True)
+                models_costs = check_boxed(
+                    opt,
+                    [max_x, max_z],
+                    [Int(3), Int(3)],
+                    test_id_str,
+                    also_test_basic=True,
+                )
 
                 self.assertEqual(len(models_costs), 2)
                 max_x_model, _ = models_costs[max_x]
@@ -529,9 +615,14 @@ class TestOptimization(TestCase):
         y = Symbol("y", INT)
         z = Symbol("z", INT)
         formula = And(
-            GE(x, Int(0)), GE(y, Int(0)), GE(z, Int(0)),
-            LE(x, Int(3)), LE(y, Int(3)), LE(z, Int(3)),
-            LT(Plus(x, y, z), Int(4)))
+            GE(x, Int(0)),
+            GE(y, Int(0)),
+            GE(z, Int(0)),
+            LE(x, Int(3)),
+            LE(y, Int(3)),
+            LE(z, Int(3)),
+            LT(Plus(x, y, z), Int(4)),
+        )
 
         for oname in get_env().factory.all_optimizers(logic=QF_LIA):
             with Optimizer(name=oname) as opt:
@@ -542,7 +633,7 @@ class TestOptimization(TestCase):
                 max_y = MaximizationGoal(y)
                 max_z = MaximizationGoal(z)
 
-                goals_values = [(Int(i), Int(3-i)) for i in range(4)]
+                goals_values = [(Int(i), Int(3 - i)) for i in range(4)]
 
                 test_id_str = "test_first_subsequent_pareto_optimizations %s" % oname
                 check_pareto(opt, [max_x, max_y], goals_values, test_id_str)
@@ -603,5 +694,5 @@ class TestOptimization(TestCase):
                 self.assertEqual(model.get_value(x), Int(6))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -18,43 +18,65 @@
 
 import warnings
 from collections import defaultdict, namedtuple
-from io import TextIOWrapper, StringIO
+from io import StringIO, TextIOWrapper
 from typing import Any, Dict, Iterator, List, Optional, Set, TextIO, Tuple, Union
 
 import pysmt
 import pysmt.smtlib.commands as smtcmd
-from pysmt.smtlib.annotations import Annotations
-from pysmt.exceptions import (UnknownSmtLibCommandError, NoLogicAvailableError,
-                              UndefinedLogicError, PysmtValueError)
-from pysmt.smtlib.printers import SmtPrinter, SmtDagPrinter, quote
-from pysmt.optimization.optimizer import Optimizer
-from pysmt.oracles import get_logic
-from pysmt.logics import get_closer_smtlib_logic, Logic, SMTLIB2_LOGICS
 from pysmt.environment import get_env
-from pysmt.optimization.goal import MaximizationGoal, MinimizationGoal, MinMaxGoal, MaxMinGoal, MaxSMTGoal, Goal
-from pysmt.typing import _TypeDecl
+from pysmt.exceptions import (
+    NoLogicAvailableError,
+    PysmtValueError,
+    UndefinedLogicError,
+    UnknownSmtLibCommandError,
+)
 from pysmt.fnode import FNode
 from pysmt.formula import FormulaManager
+from pysmt.logics import SMTLIB2_LOGICS, Logic, get_closer_smtlib_logic
+from pysmt.optimization.goal import (
+    Goal,
+    MaximizationGoal,
+    MaxMinGoal,
+    MaxSMTGoal,
+    MinimizationGoal,
+    MinMaxGoal,
+)
+from pysmt.optimization.optimizer import Optimizer
+from pysmt.oracles import get_logic
+from pysmt.smtlib.annotations import Annotations
+from pysmt.smtlib.printers import SmtDagPrinter, SmtPrinter, quote
 from pysmt.solvers.smtlib import SmtLibSolver
-from pysmt.solvers.solver import Solver, Model
+from pysmt.solvers.solver import Model, Solver
+from pysmt.typing import _TypeDecl
 
 PrinterType = Union[SmtPrinter, SmtDagPrinter]
 
-def check_sat_filter(log: List[Tuple[str, Optional[Union[Model, bool, Goal, List[Tuple[FNode, FNode]]]]]]) -> bool:
+
+def check_sat_filter(
+    log: List[
+        Tuple[str, Optional[Union[Model, bool, Goal, List[Tuple[FNode, FNode]]]]]
+    ],
+) -> bool:
     """
     Returns the result of the check-sat command from a log.
 
     Raises errors in case a unique check-sat command cannot be located.
     """
-    filtered = [(x,y) for x,y in log if x == smtcmd.CHECK_SAT]
+    filtered = [(x, y) for x, y in log if x == smtcmd.CHECK_SAT]
     assert len(filtered) == 1
     retval = filtered[0][1]
     assert isinstance(retval, bool)
     return retval
 
 
-class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
-    def serialize(self, outstream: Optional[TextIO]=None, printer: Optional[PrinterType]=None, daggify: bool=True, env=None):
+class SmtLibCommand(namedtuple("SmtLibCommand", ["name", "args"])):
+    def serialize(
+        self,
+        outstream: Optional[TextIO] = None,
+        printer: Optional[PrinterType] = None,
+        daggify: bool = True,
+        env=None,
+    ):
         """Serializes the SmtLibCommand into outstream using the given printer.
 
         Exactly one of outstream or printer must be specified. When
@@ -73,17 +95,18 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
             else:
                 printer = SmtPrinter(outstream, env=env)
         else:
-            assert (outstream is not None and printer is not None) or \
-                   (outstream is None and printer is None), \
-                   "Exactly one of outstream and printer must be set."
+            assert (outstream is not None and printer is not None) or (
+                outstream is None and printer is None
+            ), "Exactly one of outstream and printer must be set."
         assert outstream is not None and printer is not None
 
         if self.name == smtcmd.SET_OPTION:
-            outstream.write("(%s %s %s)" % (self.name,self.args[0],self.args[1]))
+            outstream.write("(%s %s %s)" % (self.name, self.args[0], self.args[1]))
 
         elif self.name == smtcmd.SET_INFO:
-            outstream.write("(%s %s %s)" % (self.name,self.args[0],
-                                            quote(self.args[1])))
+            outstream.write(
+                "(%s %s %s)" % (self.name, self.args[0], quote(self.args[1]))
+            )
 
         elif self.name == smtcmd.ASSERT:
             outstream.write("(%s " % self.name)
@@ -144,9 +167,15 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
                 outstream.write(")")
             outstream.write(")")
 
-        elif self.name in [smtcmd.CHECK_SAT, smtcmd.EXIT,
-                           smtcmd.RESET_ASSERTIONS, smtcmd.GET_UNSAT_CORE,
-                           smtcmd.GET_ASSIGNMENT, smtcmd.GET_MODEL, smtcmd.GET_OBJECTIVES]:
+        elif self.name in [
+            smtcmd.CHECK_SAT,
+            smtcmd.EXIT,
+            smtcmd.RESET_ASSERTIONS,
+            smtcmd.GET_UNSAT_CORE,
+            smtcmd.GET_ASSIGNMENT,
+            smtcmd.GET_MODEL,
+            smtcmd.GET_OBJECTIVES,
+        ]:
             outstream.write("(%s)" % self.name)
 
         elif self.name == smtcmd.SET_LOGIC:
@@ -155,20 +184,25 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
         elif self.name in [smtcmd.DECLARE_FUN, smtcmd.DECLARE_CONST]:
             symbol = self.args[0]
             type_str = symbol.symbol_type().as_smtlib()
-            outstream.write("(%s %s %s)" % (self.name,
-                                            quote(symbol.symbol_name()),
-                                            type_str))
+            outstream.write(
+                "(%s %s %s)" % (self.name, quote(symbol.symbol_name()), type_str)
+            )
 
         elif self.name == smtcmd.DEFINE_FUN:
             name = self.args[0]
             params_list = self.args[1]
-            params = " ".join(["(%s %s)" % (v, v.symbol_type().as_smtlib(funstyle=False)) for v in params_list])
+            params = " ".join(
+                [
+                    "(%s %s)" % (v, v.symbol_type().as_smtlib(funstyle=False))
+                    for v in params_list
+                ]
+            )
             rtype = self.args[2]
             expr = self.args[3]
-            outstream.write("(%s %s (%s) %s " % (self.name,
-                                                name,
-                                                params,
-                                                rtype.as_smtlib(funstyle=False)))
+            outstream.write(
+                "(%s %s (%s) %s "
+                % (self.name, name, params, rtype.as_smtlib(funstyle=False))
+            )
             printer.printer(expr)
             outstream.write(")")
 
@@ -180,45 +214,46 @@ class SmtLibCommand(namedtuple('SmtLibCommand', ['name', 'args'])):
             params_list = self.args[1]
             params = " ".join(x.as_smtlib(funstyle=False) for x in params_list)
             rtype = self.args[2]
-            outstream.write("(%s %s (%s) %s)" % (self.name,
-                                                 name,
-                                                 params,
-                                                 rtype.as_smtlib(funstyle=False)))
+            outstream.write(
+                "(%s %s (%s) %s)"
+                % (self.name, name, params, rtype.as_smtlib(funstyle=False))
+            )
         elif self.name == smtcmd.DECLARE_SORT:
             type_decl = self.args[0]
-            outstream.write("(%s %s %d)" % (self.name,
-                                            type_decl.name,
-                                            type_decl.arity))
+            outstream.write("(%s %s %d)" % (self.name, type_decl.name, type_decl.arity))
 
         elif self.name in smtcmd.ALL_COMMANDS:
-            raise NotImplementedError("'%s' is a valid SMT-LIB command "\
-                                      "but it is currently not supported. "\
-                                      "Please open a bug-report." % self.name)
+            raise NotImplementedError(
+                "'%s' is a valid SMT-LIB command "
+                "but it is currently not supported. "
+                "Please open a bug-report." % self.name
+            )
         else:
             raise UnknownSmtLibCommandError(self.name)
 
-    def serialize_to_string(self, daggify: bool=True, env=None) -> str:
+    def serialize_to_string(self, daggify: bool = True, env=None) -> str:
         buf = StringIO()
         self.serialize(buf, daggify=daggify, env=env)
         return buf.getvalue()
 
 
-
 class SmtLibScript(object):
-
     def __init__(self):
         self.annotations: Optional[Annotations] = None
         self.commands: List[SmtLibCommand] = []
 
     def add(self, name: str, args: List[Optional[Union[Logic, _TypeDecl, FNode, str]]]):
         """Adds a new SmtLibCommand with the given name and arguments."""
-        self.add_command(SmtLibCommand(name=name,
-                                       args=args))
+        self.add_command(SmtLibCommand(name=name, args=args))
 
     def add_command(self, command: SmtLibCommand):
         self.commands.append(command)
 
-    def evaluate(self, solver: SmtLibSolver) -> List[Tuple[str, Optional[Union[Model, bool, Goal, List[Tuple[FNode, FNode]]]]]]:
+    def evaluate(
+        self, solver: SmtLibSolver
+    ) -> List[
+        Tuple[str, Optional[Union[Model, bool, Goal, List[Tuple[FNode, FNode]]]]]
+    ]:
         log = []
         inter = InterpreterOMT()
         for cmd in self.commands:
@@ -236,21 +271,28 @@ class SmtLibScript(object):
     def filter_by_command_name(self, command_name_set: List[str]) -> Iterator[Any]:
         return (cmd for cmd in self.commands if cmd.name in command_name_set)
 
-    def get_strict_formula(self, mgr: Optional["pysmt.formula.FormulaManager"]=None) -> FNode:
-        if self.contains_command(smtcmd.PUSH) or \
-           self.contains_command(smtcmd.POP):
+    def get_strict_formula(
+        self, mgr: Optional["pysmt.formula.FormulaManager"] = None
+    ) -> FNode:
+        if self.contains_command(smtcmd.PUSH) or self.contains_command(smtcmd.POP):
             raise PysmtValueError("Was not expecting push-pop commands")
         if self.count_command_occurrences(smtcmd.CHECK_SAT) != 1:
             raise PysmtValueError("Was expecting exactly one check-sat command")
         _And = mgr.And if mgr else get_env().formula_manager.And
 
-        assertions = [cmd.args[0]
-                      for cmd in self.filter_by_command_name([smtcmd.ASSERT])]
+        assertions = [
+            cmd.args[0] for cmd in self.filter_by_command_name([smtcmd.ASSERT])
+        ]
         return _And(assertions)
 
     def get_declared_symbols(self) -> Set[FNode]:
-        return {cmd.args[0] for cmd in self.filter_by_command_name([smtcmd.DECLARE_CONST,
-                                                                    smtcmd.DECLARE_FUN])}
+        return {
+            cmd.args[0]
+            for cmd in self.filter_by_command_name(
+                [smtcmd.DECLARE_CONST, smtcmd.DECLARE_FUN]
+            )
+        }
+
     def get_define_fun_parameter_symbols(self) -> Set[FNode]:
         res = set()
         for cmd in self.filter_by_command_name([smtcmd.DEFINE_FUN]):
@@ -258,7 +300,9 @@ class SmtLibScript(object):
                 res.add(s)
         return res
 
-    def get_last_formula(self, mgr: Optional[FormulaManager]=None, return_optimizations: bool=False) -> Any:
+    def get_last_formula(
+        self, mgr: Optional[FormulaManager] = None, return_optimizations: bool = False
+    ) -> Any:
         """Returns the last formula of the execution of the Script.
 
         This coincides with the conjunction of the assertions that are
@@ -314,24 +358,29 @@ class SmtLibScript(object):
                         del max_smt_goals[k]
                         del max_smt_goals_backtrack[k]
             elif cmd.name == smtcmd.MAXIMIZE:
-                goals.append(MaximizationGoal(cmd.args[0], _command_is_signed(cmd),
-                                              env=mgr.env))
+                goals.append(
+                    MaximizationGoal(cmd.args[0], _command_is_signed(cmd), env=mgr.env)
+                )
             elif cmd.name == smtcmd.MINIMIZE:
-                goals.append(MinimizationGoal(cmd.args[0], _command_is_signed(cmd),
-                                              env=mgr.env))
+                goals.append(
+                    MinimizationGoal(cmd.args[0], _command_is_signed(cmd), env=mgr.env)
+                )
             elif cmd.name == smtcmd.MINMAX:
-                goals.append(MinMaxGoal(cmd.args[0], _command_is_signed(cmd),
-                                        env=mgr.env))
+                goals.append(
+                    MinMaxGoal(cmd.args[0], _command_is_signed(cmd), env=mgr.env)
+                )
             elif cmd.name == smtcmd.MAXMIN:
-                goals.append(MaxMinGoal(cmd.args[0], _command_is_signed(cmd),
-                                        env=mgr.env))
+                goals.append(
+                    MaxMinGoal(cmd.args[0], _command_is_signed(cmd), env=mgr.env)
+                )
             elif cmd.name == smtcmd.ASSERT_SOFT:
                 formula = cmd.args[0]
                 cmd_annotations = dict(cmd.args[1])
                 max_smt_id = cmd_annotations.get(":id", "")
                 max_smt_weight = cmd_annotations.get(":weight", mgr.Int(1))
                 _, goal = max_smt_goals.setdefault(
-                    max_smt_id, (len(goals), MaxSMTGoal(env=mgr.env)))
+                    max_smt_id, (len(goals), MaxSMTGoal(env=mgr.env))
+                )
                 goal.add_soft_clause(formula, max_smt_weight)
                 # if len(goal.soft) > 1 the goal is already in goals
                 if len(goal.soft) == 1:
@@ -345,10 +394,14 @@ class SmtLibScript(object):
         with open(fname, "w") as outstream:
             self.serialize(outstream, daggify=daggify, env=env)
 
-    def serialize(self, outstream: Union[TextIOWrapper, StringIO], daggify: bool=True, env=None):
+    def serialize(
+        self, outstream: Union[TextIOWrapper, StringIO], daggify: bool = True, env=None
+    ):
         """Serializes the SmtLibScript expanding commands"""
         if daggify:
-            printer: PrinterType = SmtDagPrinter(outstream, env=env, annotations=self.annotations)
+            printer: PrinterType = SmtDagPrinter(
+                outstream, env=env, annotations=self.annotations
+            )
         else:
             printer = SmtPrinter(outstream, env=env, annotations=self.annotations)
 
@@ -375,12 +428,17 @@ def _command_is_signed(command: SmtLibCommand) -> bool:
                 if arg[0] == ":signed":
                     singed = arg[1]
                     if not isinstance(singed, bool):
-                        raise PysmtValueError(":signed annotation to a command must be a bool, %s is not" % str(singed))
+                        raise PysmtValueError(
+                            ":signed annotation to a command must be a bool, %s is not"
+                            % str(singed)
+                        )
                 break
     return singed
 
 
-def smtlibscript_from_formula(formula: FNode, logic: Optional[Union[str, int, Logic]]=None, env=None) -> SmtLibScript:
+def smtlibscript_from_formula(
+    formula: FNode, logic: Optional[Union[str, int, Logic]] = None, env=None
+) -> SmtLibScript:
     script = SmtLibScript()
     if env is None:
         env = get_env()
@@ -393,23 +451,26 @@ def smtlibscript_from_formula(formula: FNode, logic: Optional[Union[str, int, Lo
         try:
             smt_logic = get_closer_smtlib_logic(f_logic)
         except NoLogicAvailableError:
-            warnings.warn("The logic %s is not reducible to any SMTLib2 " \
-                          "standard logic. Proceeding with non-standard " \
-                          "logic '%s'" % (f_logic, f_logic),
-                          stacklevel=3)
+            warnings.warn(
+                "The logic %s is not reducible to any SMTLib2 "
+                "standard logic. Proceeding with non-standard "
+                "logic '%s'" % (f_logic, f_logic),
+                stacklevel=3,
+            )
             smt_logic = f_logic
     elif not (isinstance(logic, Logic) or isinstance(logic, str)):
         raise UndefinedLogicError(str(logic))
     else:
         if logic not in SMTLIB2_LOGICS:
-            warnings.warn("The logic %s is not reducible to any SMTLib2 " \
-                          "standard logic. Proceeding with non-standard " \
-                          "logic '%s'" % (logic, logic),
-                          stacklevel=3)
+            warnings.warn(
+                "The logic %s is not reducible to any SMTLib2 "
+                "standard logic. Proceeding with non-standard "
+                "logic '%s'" % (logic, logic),
+                stacklevel=3,
+            )
         smt_logic = logic
 
-    script.add(name=smtcmd.SET_LOGIC,
-               args=[smt_logic])
+    script.add(name=smtcmd.SET_LOGIC, args=[smt_logic])
 
     # Declare all types
     types = env.typeso.get_types(formula, custom_only=True)
@@ -423,25 +484,27 @@ def smtlibscript_from_formula(formula: FNode, logic: Optional[Union[str, int, Lo
         script.add(name=smtcmd.DECLARE_FUN, args=[symbol])
 
     # Assert formula
-    script.add_command(SmtLibCommand(name=smtcmd.ASSERT,
-                                     args=[formula]))
+    script.add_command(SmtLibCommand(name=smtcmd.ASSERT, args=[formula]))
     # check-sat
-    script.add_command(SmtLibCommand(name=smtcmd.CHECK_SAT,
-                                     args=[]))
+    script.add_command(SmtLibCommand(name=smtcmd.CHECK_SAT, args=[]))
     return script
 
 
 class InterpreterSMT(object):
-    def evaluate(self, cmd: SmtLibCommand, solver: SmtLibSolver) -> Optional[Union[Model, bool, Goal, List[Tuple[FNode, FNode]]]]:
+    def evaluate(
+        self, cmd: SmtLibCommand, solver: SmtLibSolver
+    ) -> Optional[Union[Model, bool, Goal, List[Tuple[FNode, FNode]]]]:
         return self._smt_evaluate(cmd, solver)
 
-    def _smt_evaluate(self, cmd: SmtLibCommand, solver: SmtLibSolver) -> Optional[Union[Model, bool, Goal, List[Tuple[FNode, FNode]]]]:
+    def _smt_evaluate(
+        self, cmd: SmtLibCommand, solver: SmtLibSolver
+    ) -> Optional[Union[Model, bool, Goal, List[Tuple[FNode, FNode]]]]:
         if cmd.name == smtcmd.SET_INFO:
             return solver.set_info(cmd.args[0], cmd.args[1])
 
         if cmd.name == smtcmd.SET_OPTION:
             opt = cmd.args[0]
-            if opt[0] == ':':
+            if opt[0] == ":":
                 opt = opt[1:]
             return solver.set_option(opt, cmd.args[1])
 
@@ -499,23 +562,28 @@ class InterpreterSMT(object):
             return solver.get_unsat_core()
 
         elif cmd.name in smtcmd.ALL_COMMANDS:
-            raise NotImplementedError("'%s' is a valid SMT-LIB command "\
-                                      "but it is currently not supported. "\
-                                      "Please open a bug-report." % cmd.name)
+            raise NotImplementedError(
+                "'%s' is a valid SMT-LIB command "
+                "but it is currently not supported. "
+                "Please open a bug-report." % cmd.name
+            )
         else:
             raise UnknownSmtLibCommandError(cmd.name)
 
 
 class InterpreterOMT(InterpreterSMT):
-
     def __init__(self):
         self.optimization_goals: Tuple[List[Goal], List[Tuple[FNode, FNode]]] = ([], [])
         self.opt_priority = "single-obj"
 
-    def evaluate(self, cmd: SmtLibCommand, solver: SmtLibSolver) -> Optional[Union[Model, bool, Goal, List[Tuple[FNode, FNode]]]]:
+    def evaluate(
+        self, cmd: SmtLibCommand, solver: SmtLibSolver
+    ) -> Optional[Union[Model, bool, Goal, List[Tuple[FNode, FNode]]]]:
         return self._omt_evaluate(cmd, solver)
 
-    def _omt_evaluate(self, cmd: SmtLibCommand, optimizer: SmtLibSolver) -> Optional[Union[Model, bool, Goal, List[Tuple[FNode, FNode]]]]:
+    def _omt_evaluate(
+        self, cmd: SmtLibCommand, optimizer: SmtLibSolver
+    ) -> Optional[Union[Model, bool, Goal, List[Tuple[FNode, FNode]]]]:
         if cmd.name == smtcmd.SET_OPTION:
             if cmd.args[0] == ":opt.priority":
                 self.opt_priority = cmd.args[1]
@@ -550,9 +618,11 @@ class InterpreterOMT(InterpreterSMT):
 
             elif self.opt_priority == "pareto":
                 assert isinstance(optimizer, Optimizer)
-                for model, values in optimizer.pareto_optimize(self.optimization_goals[0]):
+                for model, values in optimizer.pareto_optimize(
+                    self.optimization_goals[0]
+                ):
                     rt = True
-                    for (g, v) in zip(self.optimization_goals[0], values):
+                    for g, v in zip(self.optimization_goals[0], values):
                         self.optimization_goals[1].append((g.term(), v))
 
             elif self.opt_priority == "box":
@@ -561,15 +631,19 @@ class InterpreterOMT(InterpreterSMT):
                 if boxed_results is not None:
                     rt = True
                     for g in self.optimization_goals[0]:
-                        self.optimization_goals[1].append((g.term(), boxed_results[g][1]))
+                        self.optimization_goals[1].append(
+                            (g.term(), boxed_results[g][1])
+                        )
 
             elif self.opt_priority == "lex":
                 assert isinstance(optimizer, Optimizer)
-                lex_results = optimizer.lexicographic_optimize(self.optimization_goals[0])
+                lex_results = optimizer.lexicographic_optimize(
+                    self.optimization_goals[0]
+                )
                 if lex_results is not None:
                     _, values = lex_results
                     rt = True
-                    for (g, v) in zip(self.optimization_goals[0], values):
+                    for g, v in zip(self.optimization_goals[0], values):
                         self.optimization_goals[1].append((g.term(), v))
             return rt
 

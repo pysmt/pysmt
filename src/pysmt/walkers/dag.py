@@ -15,11 +15,11 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import pysmt
-
-from pysmt.walkers.generic import Walker
-from pysmt.fnode import FNode
 from typing import Any, Dict, List, Optional, Tuple, Union
+
+import pysmt
+from pysmt.fnode import FNode
+from pysmt.walkers.generic import Walker
 
 
 class DagWalker(Walker):
@@ -38,7 +38,11 @@ class DagWalker(Walker):
     be used in memoization. See substituter for an example.
     """
 
-    def __init__(self, env: Optional["pysmt.environment.Environment"]=None, invalidate_memoization: bool=False):
+    def __init__(
+        self,
+        env: Optional["pysmt.environment.Environment"] = None,
+        invalidate_memoization: bool = False,
+    ):
         """The flag ``invalidate_memoization`` can be used to clear the cache
         after the walk has been completed: the cache is one-time use.
         """
@@ -46,7 +50,9 @@ class DagWalker(Walker):
 
         self.memoization: Dict[FNode, Any] = {}
         self.invalidate_memoization = invalidate_memoization
-        self.stack: List[Tuple[bool, Union[FNode, Any]]] = [] # TODO consider to create a generic type variable instead of Any
+        self.stack: List[
+            Tuple[bool, Union[FNode, Any]]
+        ] = []  # TODO consider to create a generic type variable instead of Any
 
     def _get_children(self, formula: FNode) -> Any:
         return formula.args()
@@ -68,10 +74,13 @@ class DagWalker(Walker):
         """
         key = self._get_key(formula, **kwargs)
         if key not in self.memoization:
-            args = [self.memoization[self._get_key(s, **kwargs)] \
-                    for s in self._get_children(formula)]
-            self.memoization[key] = self.__class__.super(self, formula,
-                                                         args=args, **kwargs)
+            args = [
+                self.memoization[self._get_key(s, **kwargs)]
+                for s in self._get_children(formula)
+            ]
+            self.memoization[key] = self.__class__.super(
+                self, formula, args=args, **kwargs
+            )
         else:
             pass
 
@@ -111,37 +120,39 @@ class DagWalker(Walker):
     def _get_key(self, formula: FNode, **kwargs) -> FNode:
         if not kwargs:
             return formula
-        raise NotImplementedError("DagWalker should redefine '_get_key'" +
-                                  " when using keywords arguments")
+        raise NotImplementedError(
+            "DagWalker should redefine '_get_key'" + " when using keywords arguments"
+        )
 
     def walk_true(self, formula, args, **kwargs):
-        #pylint: disable=unused-argument
-        """ Returns True, independently from the children's value."""
+        # pylint: disable=unused-argument
+        """Returns True, independently from the children's value."""
         return True
 
     def walk_false(self, formula: FNode, args: List[bool], **kwargs) -> bool:
-        #pylint: disable=unused-argument
-        """ Returns False, independently from the children's value."""
+        # pylint: disable=unused-argument
+        """Returns False, independently from the children's value."""
         return False
 
     def walk_none(self, formula, args, **kwargs):
-        #pylint: disable=unused-argument
-        """ Returns None, independently from the children's value."""
+        # pylint: disable=unused-argument
+        """Returns None, independently from the children's value."""
         return None
 
     def walk_identity(self, formula, **kwargs):
-        #pylint: disable=unused-argument
-        """ Returns formula, independently from the childrens's value."""
+        # pylint: disable=unused-argument
+        """Returns formula, independently from the childrens's value."""
         return formula
 
     def walk_any(self, formula, args, **kwargs):
-        #pylint: disable=unused-argument
-        """ Returns True if any of the children returned True. """
+        # pylint: disable=unused-argument
+        """Returns True if any of the children returned True."""
         return any(args)
 
     def walk_all(self, formula: FNode, args: List[Union[Any, bool]], **kwargs) -> bool:
-        #pylint: disable=unused-argument
-        """ Returns True if all the children returned True. """
+        # pylint: disable=unused-argument
+        """Returns True if all the children returned True."""
         return all(args)
+
 
 # EOC DagWalker

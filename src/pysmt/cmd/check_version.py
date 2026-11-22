@@ -12,23 +12,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
 import re
+import sys
 
 
 def check_version(module):
     try:
         if module == "z3":
-            import z3 # type: ignore[import]
+            import z3  # type: ignore[import]
+
             (major, minor, ver, _) = z3.get_version()
             version = "%d.%d.%d" % (major, minor, ver)
 
         elif module in ("msat", "optimsat"):
             if module == "msat":
-                import mathsat # type: ignore[import]
+                import mathsat  # type: ignore[import]
+
                 version_str = mathsat.msat_get_version()
             else:
-                import optimathsat # type: ignore[import]
+                import optimathsat  # type: ignore[import]
+
                 version_str = optimathsat.msat_get_version()
             m = re.match(r"^MathSAT5 version (\d+\.\d+\.\d+) .*$", version_str)
             if m is not None:
@@ -39,30 +42,35 @@ def check_version(module):
                     version = m.group(1)
 
         elif module == "cudd":
-            import repycudd # type: ignore[import]
+            import repycudd  # type: ignore[import]
+
             doc = repycudd.DOCSTRING
             m = re.match(r"^PyCUDD (\d+\.\d+\.\d+).*", doc)
             if m is not None:
                 version = m.group(1)
 
         elif module == "btor":
-            import pyboolector # type: ignore[import]
-            version = "OK" # Just checking if import succeeds
+            import pyboolector  # type: ignore[import]
+
+            version = "OK"  # Just checking if import succeeds
 
         elif module == "cvc5":
-            import cvc5 # type: ignore[import]
+            import cvc5  # type: ignore[import]
+
             solver = cvc5.Solver()
-            version = solver.getVersion().decode('ascii')
+            version = solver.getVersion().decode("ascii")
 
         elif module == "picosat":
-            import picosat # type: ignore[import]
+            import picosat  # type: ignore[import]
+
             version = picosat.picosat_version()
 
         elif module == "yices":
-            import yices_api # type: ignore[import]
+            import yices_api  # type: ignore[import]
+
             version = yices_api.yices_python_version
         else:
-            print("Invalid argument '%s'"  % module)
+            print("Invalid argument '%s'" % module)
             exit(-2)
 
     except ImportError:

@@ -15,16 +15,21 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import pytest
 from io import StringIO
 
-from pysmt.shortcuts import get_env
-from pysmt.logics import QF_LIA, QF_LRA
-from tests import TestCase, skipIfNoOptimizerForLogic, skipIfNoSolverForLogic
-from tests import main
-from tests.optimization_utils import generate_examples_with_solvers, solve_given_example, OptimizationTypes, get_non_diverging_optimizers
-from tests.smtlib.parser_utils import omt_test_cases_from_smtlib_test_set
+import pytest
+
 from pysmt.cmd.shell import PysmtShell
+from pysmt.logics import QF_LIA, QF_LRA
+from pysmt.shortcuts import get_env
+from tests import TestCase, main, skipIfNoOptimizerForLogic, skipIfNoSolverForLogic
+from tests.optimization_utils import (
+    OptimizationTypes,
+    generate_examples_with_solvers,
+    get_non_diverging_optimizers,
+    solve_given_example,
+)
+from tests.smtlib.parser_utils import omt_test_cases_from_smtlib_test_set
 
 
 class TestOmtLibSolver(TestCase):
@@ -55,23 +60,26 @@ class TestOmtLibSolver(TestCase):
 (check-sat)
 (get-objectives)"""
         for oname in get_non_diverging_optimizers(logic=QF_LRA):
-                f_in = StringIO(txt)
-                f_out = StringIO()
-                args = ["-o", oname]
-                pysmtshell = PysmtShell(args)
-                pysmtshell.smtlib_solver(f_in, f_out)
-                self.assertIn(
+            f_in = StringIO(txt)
+            f_out = StringIO()
+            args = ["-o", oname]
+            pysmtshell = PysmtShell(args)
+            pysmtshell.smtlib_solver(f_in, f_out)
+            self.assertIn(
                 f_out.getvalue(),
-                ["""sat
+                [
+                    """sat
 (objectives
   (x 0.0)
 )
-""", """sat
+""",
+                    """sat
 (objectives
   (x 0)
 )
-"""]
-        )
+""",
+                ],
+            )
 
     @skipIfNoOptimizerForLogic(QF_LRA)
     def test_omt_minmax(self):
@@ -90,21 +98,24 @@ class TestOmtLibSolver(TestCase):
         f_in = StringIO(txt)
         f_out = StringIO()
         for oname in get_non_diverging_optimizers(logic=QF_LRA):
-                args = ["-o", oname, "-l", "QF_LRA"]
-                pysmtshell = PysmtShell(args)
-                pysmtshell.smtlib_solver(f_in, f_out)
-                self.assertIn(
+            args = ["-o", oname, "-l", "QF_LRA"]
+            pysmtshell = PysmtShell(args)
+            pysmtshell.smtlib_solver(f_in, f_out)
+            self.assertIn(
                 f_out.getvalue(),
-                ["""sat
+                [
+                    """sat
 (objectives
   (((x <= y) ? y : x) 4.0)
 )
-""", """sat
+""",
+                    """sat
 (objectives
   (((x <= y) ? y : x) 4)
 )
-"""]
-        )
+""",
+                ],
+            )
 
     @skipIfNoOptimizerForLogic(QF_LIA)
     def test_omt_box(self):
@@ -280,14 +291,14 @@ sat
         f_in = StringIO(txt)
         f_out = StringIO()
         for oname in get_non_diverging_optimizers(logic=QF_LRA):
-                args = ["-o", oname, '-l', 'QF_LRA']
-                factory = get_env().factory
-                factory.all_optimizers()
-                pysmtshell = PysmtShell(args)
-                pysmtshell.smtlib_solver(f_in, f_out)
-                self.assertEqual(
-                        f_out.getvalue(),
-                        """sat
+            args = ["-o", oname, "-l", "QF_LRA"]
+            factory = get_env().factory
+            factory.all_optimizers()
+            pysmtshell = PysmtShell(args)
+            pysmtshell.smtlib_solver(f_in, f_out)
+            self.assertEqual(
+                f_out.getvalue(),
+                """sat
 (objectives
   ((x - y) -10.0)
   ((y - x) 10.0)
@@ -304,7 +315,7 @@ sat
   (((x <= y) ? x : y) 10.0)
 )
 """,
-                )
+            )
 
     @skipIfNoOptimizerForLogic(QF_LIA)
     def test_omt_lex_unsat(self):
@@ -339,6 +350,7 @@ sat
 
 
 test_to_skip: dict = {}
+
 
 @pytest.mark.parametrize(
     "optimization_example, solver_name",

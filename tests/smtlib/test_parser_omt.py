@@ -16,40 +16,52 @@
 #   limitations under the License.
 #
 import os
-
 from io import StringIO
-
-from pysmt.shortcuts import reset_env
-from tests import TestCase
-from pysmt.smtlib.parser import SmtLibParser
-from pysmt.exceptions import PysmtSyntaxError
-from pysmt.smtlib.script import SmtLibScript
 from typing import Iterator, List, Tuple
+
+from pysmt.exceptions import PysmtSyntaxError
+from pysmt.shortcuts import reset_env
+from pysmt.smtlib.parser import SmtLibParser
+from pysmt.smtlib.script import SmtLibScript
+from tests import TestCase
 
 
 class TestSmtLibParserOMT(TestCase):
-
     def test_parse_omt(self):
         for file_id, expected, script in self.examples():
             for i, cmd in enumerate(script):
-                self.assertEqual(cmd.name, expected[i],
-                                 "Test %d: %s != %s " %
-                                 (file_id, cmd.name, expected[i]))
+                self.assertEqual(
+                    cmd.name,
+                    expected[i],
+                    "Test %d: %s != %s " % (file_id, cmd.name, expected[i]),
+                )
             # Serialize
             buf = StringIO()
             script.serialize(buf)
             parser = SmtLibParser()
             new_script = parser.get_script(StringIO(buf.getvalue()))
-            self.assertEqual([cmd.name for cmd in script], [cmd.name for cmd in new_script])
+            self.assertEqual(
+                [cmd.name for cmd in script], [cmd.name for cmd in new_script]
+            )
 
     def test_omt_parsing_exception(self):
         parser = SmtLibParser()
         with self.assertRaises(PysmtSyntaxError):
-            parser.get_script(StringIO("(assert-soft false :weight (+ 3 (- 4 2)) :id goal :id goal)"))
+            parser.get_script(
+                StringIO("(assert-soft false :weight (+ 3 (- 4 2)) :id goal :id goal)")
+            )
         with self.assertRaises(PysmtSyntaxError):
-            parser.get_script(StringIO("(assert-soft false :weight (+ 3 (- 4 2)) :id goal :weight z )"))
+            parser.get_script(
+                StringIO(
+                    "(assert-soft false :weight (+ 3 (- 4 2)) :id goal :weight z )"
+                )
+            )
         with self.assertRaises(PysmtSyntaxError):
-            parser.get_script(StringIO("(assert-soft false :weight (+ 3 (- 4 2)) :id goal :not-implemented 12)"))
+            parser.get_script(
+                StringIO(
+                    "(assert-soft false :weight (+ 3 (- 4 2)) :id goal :not-implemented 12)"
+                )
+            )
         with self.assertRaises(PysmtSyntaxError):
             parser.get_script(StringIO("(assert-soft false :not-implemented 12)"))
         with self.assertRaises(PysmtSyntaxError):
@@ -66,39 +78,45 @@ class TestSmtLibParserOMT(TestCase):
     def test_parse_minmax_maxmin_with_options(self):
         parser = SmtLibParser()
 
-        script = parser.get_script(StringIO(
-            "(declare-fun x () Real)\n"
-            "(declare-fun y () Real)\n"
-            "(minmax x y :id g1 :signed)\n"
-        ))
+        script = parser.get_script(
+            StringIO(
+                "(declare-fun x () Real)\n"
+                "(declare-fun y () Real)\n"
+                "(minmax x y :id g1 :signed)\n"
+            )
+        )
         cmd = script.commands[-1]
         self.assertEqual(cmd.name, "minmax")
-        self.assertEqual(cmd.args[1], [(':id', 'g1'), (':signed', True)])
+        self.assertEqual(cmd.args[1], [(":id", "g1"), (":signed", True)])
 
         buf = StringIO()
         script.serialize(buf)
         self.assertIn("(minmax x y :id g1 :signed)", buf.getvalue())
 
-        script = parser.get_script(StringIO(
-            "(declare-fun x () Real)\n"
-            "(declare-fun y () Real)\n"
-            "(maxmin x y :id g2)\n"
-        ))
+        script = parser.get_script(
+            StringIO(
+                "(declare-fun x () Real)\n"
+                "(declare-fun y () Real)\n"
+                "(maxmin x y :id g2)\n"
+            )
+        )
         cmd = script.commands[-1]
         self.assertEqual(cmd.name, "maxmin")
-        self.assertEqual(cmd.args[1], [(':id', 'g2'), (':signed', False)])
+        self.assertEqual(cmd.args[1], [(":id", "g2"), (":signed", False)])
 
     def test_parse_minmax_maxmin_signed_only(self):
         parser = SmtLibParser()
 
-        script = parser.get_script(StringIO(
-            "(declare-fun x () Real)\n"
-            "(declare-fun y () Real)\n"
-            "(maxmin x y :signed)\n"
-        ))
+        script = parser.get_script(
+            StringIO(
+                "(declare-fun x () Real)\n"
+                "(declare-fun y () Real)\n"
+                "(maxmin x y :signed)\n"
+            )
+        )
         cmd = script.commands[-1]
         self.assertEqual(cmd.name, "maxmin")
-        self.assertEqual(cmd.args[1], [(':signed', True)])
+        self.assertEqual(cmd.args[1], [(":signed", True)])
 
         buf = StringIO()
         script.serialize(buf)
@@ -107,25 +125,29 @@ class TestSmtLibParserOMT(TestCase):
     def test_parse_minmax_maxmin_invalid_option(self):
         parser = SmtLibParser()
         with self.assertRaises(PysmtSyntaxError):
-            parser.get_script(StringIO(
-                "(declare-fun x () Real)\n"
-                "(declare-fun y () Real)\n"
-                "(minmax x y :foo 1)\n"
-            ))
+            parser.get_script(
+                StringIO(
+                    "(declare-fun x () Real)\n"
+                    "(declare-fun y () Real)\n"
+                    "(minmax x y :foo 1)\n"
+                )
+            )
 
     def test_parse_minmax_multiple_terms_with_options(self):
         parser = SmtLibParser()
 
-        script = parser.get_script(StringIO(
-            "(declare-fun x () Real)\n"
-            "(declare-fun y () Real)\n"
-            "(declare-fun z () Real)\n"
-            "(minmax x y z :id g1 :signed)\n"
-        ))
+        script = parser.get_script(
+            StringIO(
+                "(declare-fun x () Real)\n"
+                "(declare-fun y () Real)\n"
+                "(declare-fun z () Real)\n"
+                "(minmax x y z :id g1 :signed)\n"
+            )
+        )
         cmd = script.commands[-1]
         self.assertEqual(cmd.name, "minmax")
-        self.assertEqual([term.symbol_name() for term in cmd.args[0]], ['x', 'y', 'z'])
-        self.assertEqual(cmd.args[1], [(':id', 'g1'), (':signed', True)])
+        self.assertEqual([term.symbol_name() for term in cmd.args[0]], ["x", "y", "z"])
+        self.assertEqual(cmd.args[1], [(":id", "g1"), (":signed", True)])
 
         buf = StringIO()
         script.serialize(buf)
@@ -134,14 +156,16 @@ class TestSmtLibParserOMT(TestCase):
     def test_parse_minmax_option_order(self):
         parser = SmtLibParser()
 
-        script = parser.get_script(StringIO(
-            "(declare-fun x () Real)\n"
-            "(declare-fun y () Real)\n"
-            "(maxmin x y :signed :id g2)\n"
-        ))
+        script = parser.get_script(
+            StringIO(
+                "(declare-fun x () Real)\n"
+                "(declare-fun y () Real)\n"
+                "(maxmin x y :signed :id g2)\n"
+            )
+        )
         cmd = script.commands[-1]
         self.assertEqual(cmd.name, "maxmin")
-        self.assertEqual(cmd.args[1], [(':signed', True), (':id', 'g2')])
+        self.assertEqual(cmd.args[1], [(":signed", True), (":id", "g2")])
 
         buf = StringIO()
         script.serialize(buf)
@@ -150,14 +174,16 @@ class TestSmtLibParserOMT(TestCase):
     def test_parse_minmax_reverse_option_order(self):
         parser = SmtLibParser()
 
-        script = parser.get_script(StringIO(
-            "(declare-fun x () Real)\n"
-            "(declare-fun y () Real)\n"
-            "(minmax x y :signed :id g1)\n"
-        ))
+        script = parser.get_script(
+            StringIO(
+                "(declare-fun x () Real)\n"
+                "(declare-fun y () Real)\n"
+                "(minmax x y :signed :id g1)\n"
+            )
+        )
         cmd = script.commands[-1]
         self.assertEqual(cmd.name, "minmax")
-        self.assertEqual(cmd.args[1], [(':signed', True), (':id', 'g1')])
+        self.assertEqual(cmd.args[1], [(":signed", True), (":id", "g1")])
 
         buf = StringIO()
         script.serialize(buf)
@@ -166,17 +192,21 @@ class TestSmtLibParserOMT(TestCase):
     def test_parse_minmax_maxmin_syntax_errors(self):
         parser = SmtLibParser()
         with self.assertRaises(PysmtSyntaxError):
-            parser.get_script(StringIO(
-                "(declare-fun x () Real)\n"
-                "(declare-fun y () Real)\n"
-                "(minmax x y :id)\n"
-            ))
+            parser.get_script(
+                StringIO(
+                    "(declare-fun x () Real)\n"
+                    "(declare-fun y () Real)\n"
+                    "(minmax x y :id)\n"
+                )
+            )
         with self.assertRaises(PysmtSyntaxError):
-            parser.get_script(StringIO(
-                "(declare-fun x () Real)\n"
-                "(declare-fun y () Real)\n"
-                "(maxmin x y :signed true)\n"
-            ))
+            parser.get_script(
+                StringIO(
+                    "(declare-fun x () Real)\n"
+                    "(declare-fun y () Real)\n"
+                    "(maxmin x y :signed true)\n"
+                )
+            )
 
     def test_parse_minmax_maxmin_round_trip(self):
         parser = SmtLibParser()
@@ -223,11 +253,12 @@ TEST_SNIPPETS = [
     ("(maximize z :signed :id abc)", "maximize", 2),
     ("(check-allsat ( a b c ))", "check-allsat", 3),
     ("(load-objective-model 1)", "load-objective-model", 1),
-    ("(get-objectives)", "get-objectives", 0)
+    ("(get-objectives)", "get-objectives", 0),
 ]
 
 TEST_FILES = {
-    1: ["set-option",
+    1: [
+        "set-option",
         "set-logic",
         "define-fun",
         "declare-fun",
@@ -246,8 +277,7 @@ TEST_FILES = {
         "assert",
         "check-allsat",
         "exit",
-        ],
-
+    ],
     2: [
         "set-option",
         "declare-fun",
@@ -262,9 +292,8 @@ TEST_FILES = {
         "check-sat",
         "get-objectives",
         "load-objective-model",
-        "exit"
+        "exit",
     ],
-
     3: [
         "set-option",
         "set-option",
@@ -274,6 +303,6 @@ TEST_FILES = {
         "minimize",
         "check-sat",
         "get-objectives",
-        "exit"
-    ]
+        "exit",
+    ],
 }

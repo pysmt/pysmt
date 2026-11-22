@@ -15,14 +15,13 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+from pysmt.logics import NIA, QF_NIA
 from pysmt.shortcuts import *
 from pysmt.typing import INT, REAL, FunctionType
 from tests import TestCase, main
-from pysmt.logics import QF_NIA, NIA
 
 
 class TestNIA(TestCase):
-
     def test_nia_pos_const_div_pos_const(self):
         """Integer division between positive constants"""
         a = Symbol("a", INT)
@@ -180,8 +179,7 @@ class TestNIA(TestCase):
         i_5 = Int(5)
 
         # a = 5 & b > 0 & (a / b) = 2
-        check = And(Equals(a, i_5), GT(b, i_0),
-                    Equals(Div(a, b), i_2))
+        check = And(Equals(a, i_5), GT(b, i_0), Equals(Div(a, b), i_2))
         for sname in get_env().factory.all_solvers(logic=QF_NIA):
             with Solver(name=sname, logic=QF_NIA) as s:
                 s.add_assertion(check)

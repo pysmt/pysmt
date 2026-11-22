@@ -16,32 +16,29 @@
 #   limitations under the License.
 #
 import logging
-from multiprocessing import Process, Queue, Pipe
+from multiprocessing import Pipe, Process, Queue
 from multiprocessing.connection import Connection
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union, cast
 
 import pysmt
-from pysmt.solvers.solver import IncrementalTrackingSolver, SolverOptions, Solver, Model
 from pysmt.decorators import clear_pending_pop
-from pysmt.logics import convert_logic_from_string, Logic
 from pysmt.fnode import FNode
+from pysmt.logics import Logic, convert_logic_from_string
+from pysmt.solvers.solver import IncrementalTrackingSolver, Model, Solver, SolverOptions
 from pysmt.utils import assert_not_none
-
 
 LOGGER = logging.getLogger(__name__)
 _debug = LOGGER.debug
 
 
 class PortfolioOptions(SolverOptions):
-
     def __init__(self, **base_options):
         SolverOptions.__init__(self, **base_options)
         self.exit_on_exception = False
-        for k,v in self.solver_options.items():
+        for k, v in self.solver_options.items():
             if k == "exit_on_exception":
                 if v not in (True, False):
-                    raise ValueError("Invalid value for %s: %s" % \
-                                     (str(k),str(v)))
+                    raise ValueError("Invalid value for %s: %s" % (str(k), str(v)))
             else:
                 raise ValueError("Unrecognized option '%s'." % k)
             # Store option
@@ -50,14 +47,22 @@ class PortfolioOptions(SolverOptions):
     def __call__(self, solver: Solver):
         pass
 
+
 # EOC PortfolioOptions
 
 
 class Portfolio(IncrementalTrackingSolver):
     """Create a portfolio instance of multiple Solvers."""
+
     OptionsClass = PortfolioOptions
 
-    def __init__(self, solvers_set: Iterable[Union[str, Tuple[str, Dict[str, Dict[str, Any]]]]], environment: "pysmt.environment.Environment", logic: Union[str, Logic], **options):
+    def __init__(
+        self,
+        solvers_set: Iterable[Union[str, Tuple[str, Dict[str, Dict[str, Any]]]]],
+        environment: "pysmt.environment.Environment",
+        logic: Union[str, Logic],
+        **options,
+    ):
         """Creates a portfolio using the specified solvers.
 
         Solver_set is an iterable. Elements of solver_set can be
@@ -77,21 +82,20 @@ class Portfolio(IncrementalTrackingSolver):
         One process will be used for each of the solvers.
         """
         logic = assert_not_none(convert_logic_from_string(logic))
-        IncrementalTrackingSolver.__init__(self,
-                                           environment=environment,
-                                           logic=logic,
-                                           **options)
+        IncrementalTrackingSolver.__init__(
+            self, environment=environment, logic=logic, **options
+        )
         self.solvers: List[Tuple[str, Dict[str, Any]]] = []
         self._process_solver_set(solvers_set)
         # Check that the names are valid ?
         all_solvers = set(self.environment.factory.all_solvers(logic=logic))
-        not_found = {s for s,_ in self.solvers} - all_solvers
+        not_found = {s for s, _ in self.solvers} - all_solvers
         if len(not_found) != 0:
             raise ValueError("Cannot find solvers %s" % not_found)
 
         # After Solving, we only keep the solver that finished first.
         # We can extract models from the solver, unsat cores, etc
-        self._ext_solver: Optional[Process] = None # Existing solver Process
+        self._ext_solver: Optional[Process] = None  # Existing solver Process
         self._ctrl_pipe: Optional[Connection] = None  # Ctrl Pipe to the existing solver
 
     def _process_solver_set(self, sset):
@@ -108,7 +112,7 @@ class Portfolio(IncrementalTrackingSolver):
             else:
                 sname, local_opts = elem
                 opts = dict(global_opts)
-                for k,v in local_opts.items():
+                for k, v in local_opts.items():
                     # local_opts has priority over global_opts
                     opts[k] = v
             self.solvers.append((sname, opts))
@@ -117,19 +121,19 @@ class Portfolio(IncrementalTrackingSolver):
         pass
 
     @clear_pending_pop
-    def _add_assertion(self, formula: FNode, named: Optional[str]=None):
+    def _add_assertion(self, formula: FNode, named: Optional[str] = None):
         return formula
 
     @clear_pending_pop
-    def _push(self, levels: int=1):
+    def _push(self, levels: int = 1):
         pass
 
     @clear_pending_pop
-    def _pop(self, levels: int=1):
+    def _pop(self, levels: int = 1):
         pass
 
     @clear_pending_pop
-    def _solve(self, assumptions: Optional[Iterable[FNode]]=None) -> bool:
+    def _solve(self, assumptions: Optional[Iterable[FNode]] = None) -> bool:
         # We destroy the last solver before solving again. Note: We
         # might be able to do something smarter by keeping track of
         # the state of the solver. This, however, requires more
@@ -147,11 +151,19 @@ class Portfolio(IncrementalTrackingSolver):
         for idx, (sname, opts) in enumerate(self.solvers):
             _debug("Creating instance of %s", sname)
             options = opts
-            _p = Process(name="%d (%s)" % (idx, sname),
-                         target=_run_solver,
-                         args=("%d (%s)" % (idx, sname),
-                               sname, self.logic, options, formula,
-                               signaling_queue, child_ctrl_pipe))
+            _p = Process(
+                name="%d (%s)" % (idx, sname),
+                target=_run_solver,
+                args=(
+                    "%d (%s)" % (idx, sname),
+                    sname,
+                    self.logic,
+                    options,
+                    formula,
+                    signaling_queue,
+                    child_ctrl_pipe,
+                ),
+            )
             processes.append(_p)
             _p.start()
             _debug("Started instance of %s", sname)
@@ -200,7 +212,7 @@ class Portfolio(IncrementalTrackingSolver):
         _normalize = self.environment.formula_manager.normalize
         model_list = self._ctrl_pipe.recv()
         model = {}
-        for k,v in model_list:
+        for k, v in model_list:
             _k, _v = _normalize(k), _normalize(v)
             model[_k] = _v
 
@@ -208,7 +220,7 @@ class Portfolio(IncrementalTrackingSolver):
 
     def _close_existing(self):
         _debug("Closing resources..")
-        if self._ctrl_pipe :
+        if self._ctrl_pipe:
             self._ctrl_pipe.send("exit")
             self._ctrl_pipe = None
         if self._ext_solver and self._ext_solver.is_alive():
@@ -218,7 +230,9 @@ class Portfolio(IncrementalTrackingSolver):
     def _exit(self):
         self._close_existing()
 
+
 # EOC Portfolio
+
 
 # Function to pass to the solver
 def _run_solver(idx, solver, logic, options, formula, signaling_queue, ctrl_pipe):

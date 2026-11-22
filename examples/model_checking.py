@@ -20,13 +20,25 @@
 #     "Efficient implementation of property directed reachability",
 #     FMCAD 2011
 #
-from pysmt.shortcuts import Symbol, Not, And, Or, EqualsOrIff, Implies
-from pysmt.shortcuts import is_sat, is_unsat, Solver, TRUE
+from pysmt.shortcuts import (
+    TRUE,
+    And,
+    EqualsOrIff,
+    Implies,
+    Not,
+    Or,
+    Solver,
+    Symbol,
+    is_sat,
+    is_unsat,
+)
 from pysmt.typing import BOOL
+
 
 def next_var(v):
     """Returns the 'next' of the given variable"""
     return Symbol("next(%s)" % v.symbol_name(), v.symbol_type())
+
 
 def at_time(v, t):
     """Builds an SMT variable representing v at time t"""
@@ -40,6 +52,7 @@ class TransitionSystem(object):
         self.variables = variables
         self.init = init
         self.trans = trans
+
 
 # EOC TransitionSystem
 
@@ -81,7 +94,12 @@ class PDR(object):
     def solve(self, formula):
         """Provides a satisfiable assignment to the state variables that are consistent with the input formula"""
         if self.solver.solve([formula]):
-            return And([EqualsOrIff(v, self.solver.get_value(v)) for v in self.system.variables])
+            return And(
+                [
+                    EqualsOrIff(v, self.solver.get_value(v))
+                    for v in self.system.variables
+                ]
+            )
         return None
 
     def recursive_block(self, cube):
@@ -89,20 +107,26 @@ class PDR(object):
 
         Returns True if the cube cannot be blocked.
         """
-        for i in range(len(self.frames)-1, 0, -1):
-            cubeprime = cube.substitute(dict([(v, next_var(v)) for v in self.system.variables]))
-            cubepre = self.solve(And(self.frames[i-1], self.system.trans, Not(cube), cubeprime))
+        for i in range(len(self.frames) - 1, 0, -1):
+            cubeprime = cube.substitute(
+                dict([(v, next_var(v)) for v in self.system.variables])
+            )
+            cubepre = self.solve(
+                And(self.frames[i - 1], self.system.trans, Not(cube), cubeprime)
+            )
             if cubepre is None:
-                for j in range(1, i+1):
+                for j in range(1, i + 1):
                     self.frames[j] = And(self.frames[j], Not(cube))
                 return False
             cube = cubepre
         return True
 
     def inductive(self):
-        """Checks if last two frames are equivalent """
-        if len(self.frames) > 1 and \
-           self.solve(Not(EqualsOrIff(self.frames[-1], self.frames[-2]))) is None:
+        """Checks if last two frames are equivalent"""
+        if (
+            len(self.frames) > 1
+            and self.solve(Not(EqualsOrIff(self.frames[-1], self.frames[-2]))) is None
+        ):
             return True
         return False
 
@@ -111,7 +135,6 @@ class PDR(object):
 
 
 class BMCInduction(object):
-
     def __init__(self, system):
         self.system = system
 
@@ -120,7 +143,7 @@ class BMCInduction(object):
         subs_i = {}
         for v in self.system.variables:
             subs_i[v] = at_time(v, i)
-            subs_i[next_var(v)] = at_time(v, i+1)
+            subs_i[next_var(v)] = at_time(v, i + 1)
         return subs_i
 
     def get_unrolling(self, k):
@@ -129,7 +152,7 @@ class BMCInduction(object):
         E.g. T(0,1) & T(1,2) & ... & T(k-1,k)
         """
         res = []
-        for i in range(k+1):
+        for i in range(k + 1):
             subs_i = self.get_subs(i)
             res.append(self.system.trans.substitute(subs_i))
         return And(res)
@@ -139,9 +162,9 @@ class BMCInduction(object):
         each time encodes a different state
         """
         res = []
-        for i in range(k+1):
+        for i in range(k + 1):
             subs_i = self.get_subs(i)
-            for j in range(i+1, k+1):
+            for j in range(i + 1, k + 1):
                 state = []
                 subs_j = self.get_subs(j)
                 for v in self.system.variables:
@@ -169,23 +192,25 @@ class BMCInduction(object):
         """Returns the K-Induction encoding at step K"""
         subs_k = self.get_subs(k)
         prop_k = prop.substitute(subs_k)
-        return And(self.get_unrolling(k),
-                   self.get_k_hypothesis(prop, k),
-                   self.get_simple_path(k),
-                   Not(prop_k))
+        return And(
+            self.get_unrolling(k),
+            self.get_k_hypothesis(prop, k),
+            self.get_simple_path(k),
+            Not(prop_k),
+        )
 
     def check_property(self, prop):
         """Interleaves BMC and K-Ind to verify the property."""
         print("Checking property %s..." % prop)
         for b in range(100):
             f = self.get_bmc(prop, b)
-            print("   [BMC]    Checking bound %d..." % (b+1))
+            print("   [BMC]    Checking bound %d..." % (b + 1))
             if is_sat(f):
-                print("--> Bug found at step %d" % (b+1))
+                print("--> Bug found at step %d" % (b + 1))
                 return
 
             f = self.get_k_induction(prop, b)
-            print("   [K-IND]  Checking bound %d..." % (b+1))
+            print("   [K-IND]  Checking bound %d..." % (b + 1))
             if is_unsat(f):
                 print("--> The system is safe!")
                 return
@@ -205,6 +230,7 @@ def counter(bit_count):
     # TRANS: next(bits = 0) <-> next(reset)
 
     from pysmt.typing import BVType
+
     bits = Symbol("bits", BVType(bit_count))
     nbits = next_var(bits)
     reset = Symbol("r", BOOL)
@@ -213,14 +239,13 @@ def counter(bit_count):
 
     init = bits.Equals(0) & Not(reset)
 
-    trans = nbits.Equals(bits + 1) &\
-            (nbits.Equals(0)).Iff(nreset)
+    trans = nbits.Equals(bits + 1) & (nbits.Equals(0)).Iff(nreset)
 
     # A true invariant property: (reset -> bits = 0)
     true_prop = reset.Implies(bits.Equals(0))
 
     # A false invariant property: (bits != 2**bit_count-1)
-    false_prop = bits.NotEquals(2**bit_count -1)
+    false_prop = bits.NotEquals(2**bit_count - 1)
 
     return (TransitionSystem(variables, init, trans), [true_prop, false_prop])
 
@@ -235,6 +260,7 @@ def main():
         bmcind.check_property(prop)
         pdr.check_property(prop)
         print("")
+
 
 if __name__ == "__main__":
     main()

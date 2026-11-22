@@ -16,18 +16,32 @@
 #   limitations under the License.
 #
 import os
+
 import pytest
 
-from pysmt.shortcuts import Implies, is_sat, is_valid, reset_env, Symbol, Iff, Select, ArrayType, INT, BOOL, And, get_env
+from pysmt.logics import QF_ALIA, QF_BOOL, QF_LIA, QF_LRA, QF_UFLIRA, QF_UFLRA
 from pysmt.rewritings import CNFizer, PolarityCNFizer
-from pysmt.logics import QF_BOOL, QF_LRA, QF_LIA, QF_UFLIRA, QF_UFLRA, QF_ALIA
-from tests import TestCase, skipIfNoSolverForLogic, main
-from tests.examples import get_example_formulae
-from tests.smtlib.parser_utils import SMTLIB_TEST_FILES, SMTLIB_DIR
+from pysmt.shortcuts import (
+    BOOL,
+    INT,
+    And,
+    ArrayType,
+    Iff,
+    Implies,
+    Select,
+    Symbol,
+    get_env,
+    is_sat,
+    is_valid,
+    reset_env,
+)
 from pysmt.smtlib.parser import get_formula_fname
+from tests import TestCase, main, skipIfNoSolverForLogic
+from tests.examples import get_example_formulae
+from tests.smtlib.parser_utils import SMTLIB_DIR, SMTLIB_TEST_FILES
+
 
 class TestCnf(TestCase):
-
     def do_examples(self, logic):
         for conv in (CNFizer(), PolarityCNFizer()):
             for example in get_example_formulae():
@@ -39,7 +53,6 @@ class TestCnf(TestCase):
 
                 res = is_sat(cnf, logic=logic)
                 self.assertEqual(res, example.is_sat)
-
 
     @skipIfNoSolverForLogic(QF_BOOL)
     def test_examples_solving_bool(self):
@@ -62,7 +75,7 @@ class TestCnf(TestCase):
     def test_smtlib_cnf_small(self):
         cnt = 0
         max_cnt = 2
-        for (logic, f, expected_result) in SMTLIB_TEST_FILES:
+        for logic, f, expected_result in SMTLIB_TEST_FILES:
             if logic != QF_LRA:
                 continue
             self._smtlib_cnf(f, logic, expected_result)
@@ -73,7 +86,7 @@ class TestCnf(TestCase):
     @pytest.mark.slow
     @skipIfNoSolverForLogic(QF_UFLIRA)
     def test_smtlib_cnf(self):
-        for (logic, f, expected_result) in SMTLIB_TEST_FILES:
+        for logic, f, expected_result in SMTLIB_TEST_FILES:
             if logic != QF_UFLIRA:
                 continue
             self._smtlib_cnf(f, logic, expected_result)
@@ -97,7 +110,7 @@ class TestCnf(TestCase):
 
     @skipIfNoSolverForLogic(QF_BOOL)
     def test_implies(self):
-        a,b,c,d = (Symbol(x) for x in "abcd")
+        a, b, c, d = (Symbol(x) for x in "abcd")
         f = Implies(Iff(a, b), Iff(c, d))
 
         for conv in [CNFizer(), PolarityCNFizer()]:
@@ -111,10 +124,7 @@ class TestCnf(TestCase):
         # (and (select boolean_array idx0) (select boolean_array idx1))
         boolean_array = Symbol("boolean_array", ArrayType(INT, BOOL))
         idx_0, idx_1 = Symbol("idx0", INT), Symbol("idx1", INT)
-        f = And(
-            Select(boolean_array, idx_0),
-            Select(boolean_array, idx_1)
-        )
+        f = And(Select(boolean_array, idx_0), Select(boolean_array, idx_1))
         conv = CNFizer()
         cnf = conv.convert_as_formula(f)
 
@@ -123,11 +133,8 @@ class TestCnf(TestCase):
             # msat needs to be skipped. Check issue #807
             if solver_name in ("msat", "optimsat"):
                 continue
-            self.assertValid(
-                Implies(cnf, f),
-                solver_name=solver_name,
-                logic=test_logic
-            )
+            self.assertValid(Implies(cnf, f), solver_name=solver_name, logic=test_logic)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

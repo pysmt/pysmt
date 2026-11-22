@@ -17,14 +17,35 @@
 #
 from io import StringIO
 
-from pysmt.shortcuts import Or, And, Not, Plus, Iff, Implies
-from pysmt.shortcuts import Exists, ForAll, Ite, ExactlyOne
-from pysmt.shortcuts import Bool, Real, Int, Symbol, Function
-from pysmt.shortcuts import Times, Minus, Equals, LE, LT, ToReal, ToInt, FreshSymbol
-from pysmt.typing import REAL, INT, FunctionType
-from pysmt.smtlib.printers import SmtPrinter, SmtDagPrinter
-from pysmt.smtlib.annotations import Annotations
 from pysmt.printers import smart_serialize
+from pysmt.shortcuts import (
+    LE,
+    LT,
+    And,
+    Bool,
+    Equals,
+    ExactlyOne,
+    Exists,
+    ForAll,
+    FreshSymbol,
+    Function,
+    Iff,
+    Implies,
+    Int,
+    Ite,
+    Minus,
+    Not,
+    Or,
+    Plus,
+    Real,
+    Symbol,
+    Times,
+    ToInt,
+    ToReal,
+)
+from pysmt.smtlib.annotations import Annotations
+from pysmt.smtlib.printers import SmtDagPrinter, SmtPrinter
+from pysmt.typing import INT, REAL, FunctionType
 from tests import TestCase, main
 from tests.examples import get_str_example_formulae
 
@@ -34,31 +55,36 @@ class TestPrinting(TestCase):
         return formula.to_smtlib(daggify=False)
 
     def test_real(self):
-        f = Plus([ Real(1),
-                   Symbol("x", REAL),
-                   Symbol("y", REAL)])
+        f = Plus([Real(1), Symbol("x", REAL), Symbol("y", REAL)])
 
         self.assertEqual(f.to_smtlib(daggify=False), "(+ 1.0 x y)")
-        self.assertEqual(f.to_smtlib(daggify=True), "(let ((.def_0 (+ 1.0 x y))) .def_0)")
+        self.assertEqual(
+            f.to_smtlib(daggify=True), "(let ((.def_0 (+ 1.0 x y))) .def_0)"
+        )
 
     def test_boolean(self):
         x, y, z = Symbol("x"), Symbol("y"), Symbol("z")
         f = Or(And(Not(x), Iff(x, y)), Implies(x, z))
 
-        self.assertEqual(f.to_smtlib(daggify=False),
-                          "(or (and (not x) (= x y)) (=> x z))")
-        self.assertEqual(f.to_smtlib(daggify=True),
-                          "(let ((.def_0 (=> x z))) (let ((.def_1 (= x y))) (let ((.def_2 (not x))) (let ((.def_3 (and .def_2 .def_1))) (let ((.def_4 (or .def_3 .def_0))) .def_4)))))")
+        self.assertEqual(
+            f.to_smtlib(daggify=False), "(or (and (not x) (= x y)) (=> x z))"
+        )
+        self.assertEqual(
+            f.to_smtlib(daggify=True),
+            "(let ((.def_0 (=> x z))) (let ((.def_1 (= x y))) (let ((.def_2 (not x))) (let ((.def_3 (and .def_2 .def_1))) (let ((.def_4 (or .def_3 .def_0))) .def_4)))))",
+        )
 
     def test_int(self):
         p, q = Symbol("p", INT), Symbol("q", INT)
-        f = Or(Equals(Times(p, Int(5)), Minus(p,q)),
-               LT(p,q), LE(Int(6), Int(1)))
+        f = Or(Equals(Times(p, Int(5)), Minus(p, q)), LT(p, q), LE(Int(6), Int(1)))
 
-        self.assertEqual(f.to_smtlib(daggify=False),
-                          "(or (= (* p 5) (- p q)) (< p q) (<= 6 1))")
-        self.assertEqual(f.to_smtlib(daggify=True),
-                          "(let ((.def_0 (<= 6 1))) (let ((.def_1 (< p q))) (let ((.def_2 (- p q))) (let ((.def_3 (* p 5))) (let ((.def_4 (= .def_3 .def_2))) (let ((.def_5 (or .def_4 .def_1 .def_0))) .def_5))))))")
+        self.assertEqual(
+            f.to_smtlib(daggify=False), "(or (= (* p 5) (- p q)) (< p q) (<= 6 1))"
+        )
+        self.assertEqual(
+            f.to_smtlib(daggify=True),
+            "(let ((.def_0 (<= 6 1))) (let ((.def_1 (< p q))) (let ((.def_2 (- p q))) (let ((.def_3 (* p 5))) (let ((.def_4 (= .def_3 .def_2))) (let ((.def_5 (or .def_4 .def_1 .def_0))) .def_5))))))",
+        )
 
     def test_ite(self):
         x = Symbol("x")
@@ -66,25 +92,30 @@ class TestPrinting(TestCase):
 
         f = Ite(x, p, q)
 
-        self.assertEqual(f.to_smtlib(daggify=False),
-                         "(ite x p q)")
-        self.assertEqual(f.to_smtlib(daggify=True),
-                         "(let ((.def_0 (ite x p q))) .def_0)")
+        self.assertEqual(f.to_smtlib(daggify=False), "(ite x p q)")
+        self.assertEqual(
+            f.to_smtlib(daggify=True), "(let ((.def_0 (ite x p q))) .def_0)"
+        )
 
     def test_quantifiers(self):
         x = Symbol("x")
         fa = ForAll([x], And(x, Not(x)))
         fe = Exists([x], And(x, Not(x)))
 
-        self.assertEqual(fa.to_smtlib(daggify=False),
-                         "(forall ((x Bool)) (and x (not x)))")
-        self.assertEqual(fe.to_smtlib(daggify=False),
-                         "(exists ((x Bool)) (and x (not x)))")
-        self.assertEqual(fa.to_smtlib(daggify=True),
-                         "(let ((.def_0 (forall ((x Bool)) (let ((.def_0 (not x))) (let ((.def_1 (and x .def_0))) .def_1))))).def_0)")
-        self.assertEqual(fe.to_smtlib(daggify=True),
-                         "(let ((.def_0 (exists ((x Bool)) (let ((.def_0 (not x))) (let ((.def_1 (and x .def_0))) .def_1))))).def_0)")
-
+        self.assertEqual(
+            fa.to_smtlib(daggify=False), "(forall ((x Bool)) (and x (not x)))"
+        )
+        self.assertEqual(
+            fe.to_smtlib(daggify=False), "(exists ((x Bool)) (and x (not x)))"
+        )
+        self.assertEqual(
+            fa.to_smtlib(daggify=True),
+            "(let ((.def_0 (forall ((x Bool)) (let ((.def_0 (not x))) (let ((.def_1 (and x .def_0))) .def_1))))).def_0)",
+        )
+        self.assertEqual(
+            fe.to_smtlib(daggify=True),
+            "(let ((.def_0 (exists ((x Bool)) (let ((.def_0 (not x))) (let ((.def_1 (and x .def_0))) .def_1))))).def_0)",
+        )
 
     def test_constant(self):
         b1 = Bool(True)
@@ -119,11 +150,11 @@ class TestPrinting(TestCase):
         f1_type = FunctionType(REAL, [REAL, REAL])
         f2_type = FunctionType(REAL, [])
 
-        p,q = Symbol("p", REAL), Symbol("q", REAL)
+        p, q = Symbol("p", REAL), Symbol("q", REAL)
         f1_symbol = Symbol("f1", f1_type)
         f2_symbol = Symbol("f2", f2_type)
 
-        f1 = Function(f1_symbol, [p,q])
+        f1 = Function(f1_symbol, [p, q])
         f2 = Function(f2_symbol, [])
 
         self.assertEqual(f1.to_smtlib(daggify=False), "(f1 p q)")
@@ -137,21 +168,25 @@ class TestPrinting(TestCase):
         rp = ToReal(p)
 
         self.assertEqual(rp.to_smtlib(daggify=False), "(to_real p)")
-        self.assertEqual(rp.to_smtlib(daggify=True), "(let ((.def_0 (to_real p))) .def_0)")
+        self.assertEqual(
+            rp.to_smtlib(daggify=True), "(let ((.def_0 (to_real p))) .def_0)"
+        )
 
     def test_toint(self):
         r = Symbol("r", REAL)
         ir = ToInt(r)
 
         self.assertEqual(ir.to_smtlib(daggify=False), "(to_int r)")
-        self.assertEqual(ir.to_smtlib(daggify=True), "(let ((.def_0 (to_int r))) .def_0)")
+        self.assertEqual(
+            ir.to_smtlib(daggify=True), "(let ((.def_0 (to_int r))) .def_0)"
+        )
         self.assertEqual(ir.serialize(), "ToInt(r)")
 
     def test_threshold_printing(self):
         x = Symbol("x")
-        f = And(x,x)
+        f = And(x, x)
         for _ in range(10):
-            f = And(f,f)
+            f = And(f, f)
 
         short_f_str = str(f)
         long_f_str = f.serialize()
@@ -159,9 +194,9 @@ class TestPrinting(TestCase):
 
     def test_daggify(self):
         x = Symbol("x")
-        f = And(x,x)
+        f = And(x, x)
         for _ in range(10):
-            f = And(f,f)
+            f = And(f, f)
 
         tree_buf = StringIO()
         dag_buf = StringIO()
@@ -183,7 +218,7 @@ class TestPrinting(TestCase):
 
     def test_smart_serialize(self):
         x, y = Symbol("x"), Symbol("y")
-        f1 = And(x,y)
+        f1 = And(x, y)
         f = Implies(x, f1)
         substitutions = {f1: "f1"}  # Mapping FNode -> String
         res = smart_serialize(f, subs=substitutions)
@@ -205,6 +240,7 @@ class TestPrinting(TestCase):
 
     def test_stack_recursion(self):
         import sys
+
         limit = sys.getrecursionlimit()
         f = FreshSymbol()
         p = FreshSymbol()
@@ -215,14 +251,14 @@ class TestPrinting(TestCase):
         self.assertIsNotNone(s)
 
     def test_annotations(self):
-        x = Symbol('x')
-        x_next = Symbol('x.next')
+        x = Symbol("x")
+        x_next = Symbol("x.next")
         f = Iff(x, Not(x_next))
 
         ann = Annotations()
-        ann.add(x, 'next', x_next.symbol_name())
-        ann.add(f, 'trans', 'true')
-        ann.add(x, 'init', 'true')
+        ann.add(x, "next", x_next.symbol_name())
+        ann.add(f, "trans", "true")
+        ann.add(x, "init", "true")
 
         tree_buf = StringIO()
         dag_buf = StringIO()
@@ -232,10 +268,15 @@ class TestPrinting(TestCase):
         dag_printer.printer(f)
         tree_printer.printer(f)
 
-        self.assertEqual(tree_buf.getvalue(),
-                         "(! (= (! x :next x.next :init true) (not x.next)) :trans true)")
-        self.assertEqual(dag_buf.getvalue(),
-                         "(let ((.def_0 (not x.next))) (let ((.def_1 (= (! x :next x.next :init true) .def_0))) (! .def_1 :trans true)))")
+        self.assertEqual(
+            tree_buf.getvalue(),
+            "(! (= (! x :next x.next :init true) (not x.next)) :trans true)",
+        )
+        self.assertEqual(
+            dag_buf.getvalue(),
+            "(let ((.def_0 (not x.next))) (let ((.def_1 (= (! x :next x.next :init true) .def_0))) (! .def_1 :trans true)))",
+        )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

@@ -16,11 +16,13 @@
 #   limitations under the License.
 #
 
+from pysmt.optimization.optimizer import IncrementalOptimizerMixin, SUAOptimizerMixin
 from pysmt.solvers.msat import MathSAT5Solver
-from pysmt.optimization.optimizer import SUAOptimizerMixin, IncrementalOptimizerMixin
+
 
 class MSatSUAOptimizer(MathSAT5Solver, SUAOptimizerMixin):
     pass
+
 
 class MSatIncrementalOptimizer(MathSAT5Solver, IncrementalOptimizerMixin):
     pass

@@ -15,18 +15,32 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from pysmt.shortcuts import FreshSymbol, GT, And, Plus, Real, Int, LE, Iff
-from pysmt.shortcuts import Solver, Symbol, EqualsOrIff
-from pysmt.shortcuts import BVAdd, BVMul, BVAnd, BVOr, BVConcat
-from pysmt.typing import REAL, INT, BVType
-from tests import TestCase, skipIfSolverNotAvailable, main
-from tests.examples import get_example_formulae
-from pysmt.logics import QF_UFLIRA, QF_BV
 from pysmt.exceptions import NoSolverAvailableError
+from pysmt.logics import QF_BV, QF_UFLIRA
+from pysmt.shortcuts import (
+    GT,
+    LE,
+    And,
+    BVAdd,
+    BVAnd,
+    BVConcat,
+    BVMul,
+    BVOr,
+    EqualsOrIff,
+    FreshSymbol,
+    Iff,
+    Int,
+    Plus,
+    Real,
+    Solver,
+    Symbol,
+)
+from pysmt.typing import INT, REAL, BVType
+from tests import TestCase, main, skipIfSolverNotAvailable
+from tests.examples import get_example_formulae
 
 
 class TestBasic(TestCase):
-
     @skipIfSolverNotAvailable("msat")
     def test_msat_back_simple(self):
         msat = Solver(name="msat", logic=QF_UFLIRA)
@@ -74,8 +88,9 @@ class TestBasic(TestCase):
                             res = s.converter.back(term)
                     else:
                         res = s.converter.back(term)
-                    self.assertValid(Iff(formula, res), logic=logic,
-                                     solver_name=solver_name)
+                    self.assertValid(
+                        Iff(formula, res), logic=logic, solver_name=solver_name
+                    )
                 except NoSolverAvailableError:
                     pass
 
@@ -93,7 +108,7 @@ class TestBasic(TestCase):
         # Z3 simplification can produce n-ary (more than two arguments)
         # bit-vector operations. Back-converting them used to fail because
         # only the binary case was handled (unlike the integer operations).
-        import z3 # type: ignore[import]
+        import z3  # type: ignore[import]
 
         s = Solver(name="z3", logic=QF_BV)
         conv = s.converter
@@ -101,18 +116,19 @@ class TestBasic(TestCase):
         b = Symbol("b", BVType(8))
         c = Symbol("c", BVType(8))
 
-        for f in (BVAdd(BVAdd(a, b), c),
-                  BVMul(BVMul(a, b), c),
-                  BVAnd(BVAnd(a, b), c),
-                  BVOr(BVOr(a, b), c),
-                  BVConcat(BVConcat(a, b), c)):
+        for f in (
+            BVAdd(BVAdd(a, b), c),
+            BVMul(BVMul(a, b), c),
+            BVAnd(BVAnd(a, b), c),
+            BVOr(BVOr(a, b), c),
+            BVConcat(BVConcat(a, b), c),
+        ):
             # Simplify in Z3 to flatten the associative operators into a
             # single n-ary application before converting back.
             simplified = z3.simplify(conv.convert(f))
             res = conv.back(simplified)
-            self.assertValid(EqualsOrIff(f, res), logic=QF_BV,
-                             solver_name="z3")
+            self.assertValid(EqualsOrIff(f, res), logic=QF_BV, solver_name="z3")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

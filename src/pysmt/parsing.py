@@ -1,4 +1,4 @@
- #
+#
 # This file is part of pySMT.
 #
 #   Copyright 2014 Andrea Micheli and Marco Gario
@@ -21,13 +21,16 @@ from typing import List, Optional
 
 import pysmt
 import pysmt.typing as types
-from pysmt.environment import get_env
-from pysmt.exceptions import (PysmtSyntaxError, UndefinedSymbolError,
-                             PysmtEmptySymbolNameError)
 from pysmt.constants import Fraction
+from pysmt.environment import get_env
+from pysmt.exceptions import (
+    PysmtEmptySymbolNameError,
+    PysmtSyntaxError,
+    UndefinedSymbolError,
+)
 
 
-def HRParser(env: Optional["pysmt.environment.Environment"]=None):
+def HRParser(env: Optional["pysmt.environment.Environment"] = None):
     """Parser for HR format of pySMT."""
     return PrattParser(HRLexer, env=env)
 
@@ -38,7 +41,7 @@ def parse(string):
 
 
 # Rules for the Lexer
-Rule = namedtuple('Rule', ['regex', 'symbol', 'is_functional'])
+Rule = namedtuple("Rule", ["regex", "symbol", "is_functional"])
 
 
 class Lexer(object):
@@ -48,7 +51,7 @@ class Lexer(object):
     modifying rules.
     """
 
-    def __init__(self, env: Optional["pysmt.environment.Environment"]=None):
+    def __init__(self, env: Optional["pysmt.environment.Environment"] = None):
         if env is None:
             env = get_env()
         self.env = env
@@ -60,8 +63,10 @@ class Lexer(object):
         self.eoi = EndOfInput()
 
     def compile(self):
-        self.scanner = re.compile("|".join(rule.regex for rule in self.rules),
-                                  re.DOTALL | re.VERBOSE)
+        self.scanner = re.compile(
+            "|".join(rule.regex for rule in self.rules), re.DOTALL | re.VERBOSE
+        )
+
     def lexing_error(self, read):
         raise PysmtSyntaxError("Unexpected input: %s" % read)
 
@@ -80,6 +85,7 @@ class Lexer(object):
                     break
         yield self.eoi
 
+
 # EOC Lexer
 
 
@@ -95,8 +101,10 @@ class GrammarSymbol(object):
         raise PysmtSyntaxError("Syntax error at token '%s'." % parser.token)
 
     def led(self, parser, left):
-        raise PysmtSyntaxError("Syntax error at token '%s' (Read: '%s')." % \
-                          (parser.token, left))
+        raise PysmtSyntaxError(
+            "Syntax error at token '%s' (Read: '%s')." % (parser.token, left)
+        )
+
 
 #
 # Precedence table (from low priority to high priority):
@@ -114,97 +122,130 @@ class GrammarSymbol(object):
 # 200 : ()
 # 300 : []
 
+
 class HRLexer(Lexer):
     """Produces a stream of token objects for the Human-Readable format."""
 
-    def __init__(self, env: Optional["pysmt.environment.Environment"]=None):
+    def __init__(self, env: Optional["pysmt.environment.Environment"] = None):
         Lexer.__init__(self, env=env)
 
         hr_rules = [
-            Rule(r"(\s+)", None, False),                    # whitespace
-            Rule(r"(-?\d+/\d+)", self.real_constant, True), # fractions
-            Rule(r"(-?\d+\.\d+)", self.real_constant, True),# decimals
-            Rule(r"(-?\d+_\d+)", self.bv_constant, True),# bv
-            Rule(r"(-?\d+)", self.int_constant, True),# integer literals
-            Rule(r"\"(.*?)\"", self.string_constant, True), # String Constant
-            Rule(r"BV\{(\d+)\}", self.bv_type, True),# BV Type
-            Rule(r"(Array\{)", OpenArrayTypeTok(), False),# Array Type
-            Rule(r"(&)", InfixOpAdapter(self.AndOrBVAnd, 40), False),# conjunction
-            Rule(r"(\|)", InfixOpAdapter(self.OrOrBVOr, 30), False),# disjunction
-            Rule(r"(!)", UnaryOpAdapter(self.NotOrBVNot, 50), False),# negation
-            Rule(r"(\()", OpenPar(), False),# open parenthesis
-            Rule(r"(\))", ClosePar(), False),# closed parenthesis
-            Rule(r"(\[)", OpenBrak(), False),# open parenthesis
-            Rule(r"(\])", CloseBrak(), False),# closed parenthesis
-            Rule(r"(\})", CloseBrace(), False),# closed parenthesis
-            Rule(r"(<<)", InfixOpAdapter(self.mgr.BVLShl, 90), False),# Shl
-            Rule(r"(>>)", InfixOpAdapter(self.mgr.BVLShr, 90), False),# Shr
-            Rule(r"(a>>)", InfixOpAdapter(self.mgr.BVAShr, 90), False),# AShr
-            Rule(r"(<->)", InfixOpAdapter(self.mgr.Iff, 10), False),# iff
-            Rule(r"(->)", InfixOpAdapter(self.mgr.Implies, 10), False),# implies
-            Rule(r"(u<=)", InfixOpAdapter(self.mgr.BVULE, 60), False),# bvule
-            Rule(r"(u>=)", InfixOpAdapter(self.mgr.BVUGE, 60), False),# bvuge
-            Rule(r"(u<)", InfixOpAdapter(self.mgr.BVULT, 60), False),# bvult
-            Rule(r"(u>)", InfixOpAdapter(self.mgr.BVUGT, 60), False),# bvugt
-            Rule(r"(s<=)", InfixOpAdapter(self.mgr.BVSLE, 60), False),# bvsle
-            Rule(r"(s>=)", InfixOpAdapter(self.mgr.BVSGE, 60), False),# bvsge
-            Rule(r"(s<)", InfixOpAdapter(self.mgr.BVSLT, 60), False),# bvslt
-            Rule(r"(s>)", InfixOpAdapter(self.mgr.BVSGT, 60), False),# bvsgt
-            Rule(r"(>=)", InfixOpAdapter(self.mgr.GE, 60), False),# ge
-            Rule(r"(<=)", InfixOpAdapter(self.mgr.LE, 60), False),# le
-            Rule(r"(>)", InfixOpAdapter(self.mgr.GT, 60), False),# gt
-            Rule(r"(<)", InfixOpAdapter(self.mgr.LT, 60), False),# lt
-            Rule(r"(=)", InfixOpAdapter(self.mgr.Equals, 60), False),# eq
-            Rule(r"(\+)", InfixOpAdapter(self.PlusOrBVAdd, 70), False),# plus
-            Rule(r"(-)", InfixOrUnaryOpAdapter(self.MinusOrBVSub, self.UMinusOrBvNeg, 70, 100), False),# minus
-            Rule(r"(\*)", InfixOpAdapter(self.TimesOrBVMul, 80), False),# times
-            Rule(r"(\^)", InfixOpAdapter(self.mgr.Pow, 80), False),# pow
-            Rule(r"(u/)", InfixOpAdapter(self.mgr.BVUDiv, 80), False),# udiv
-            Rule(r"(s/)", InfixOpAdapter(self.mgr.BVSDiv, 80), False),# sdiv
-            Rule(r"(/)", InfixOpAdapter(self.mgr.Div, 80), False),# div
-            Rule(r"(s%)", InfixOpAdapter(self.mgr.BVSRem, 80), False),# srem
-            Rule(r"(u%)", InfixOpAdapter(self.mgr.BVURem, 80), False),# urem
-            Rule(r"(\?)", ExprIf(), False), # question
-            Rule(r"(:=)", ArrStore(), False),# ArrStore
-            Rule(r"(::)", InfixOpAdapter(self.mgr.BVConcat, 90), False),# BVXor
-            Rule(r"(:)", ExprElse(), False),# colon
-            Rule(r"(,)", ExprComma(), False),# comma
-            Rule(r"(\.)", ExprDot(), False),# dot
-            Rule(r"(forall\s+)", Quantifier(self.mgr.ForAll, 20), False),#
-            Rule(r"(exists\s+)", Quantifier(self.mgr.Exists, 20), False),#
-            Rule(r"(str\.len)", FunctionCallAdapter(self.mgr.StrLength, 100), False), # str_length
-            Rule(r"(str\.\+\+)", FunctionCallAdapter(self.mgr.StrConcat, 100), False), # str_concat
-            Rule(r"(str\.at)", FunctionCallAdapter(self.mgr.StrCharAt, 100), False), # str_charat
-            Rule(r"(str\.contains)", FunctionCallAdapter(self.mgr.StrContains, 100), False), # str_contains
-            Rule(r"(str\.indexof)", FunctionCallAdapter(self.mgr.StrIndexOf, 100), False), # str_indexof
-            Rule(r"(str\.replace)", FunctionCallAdapter(self.mgr.StrReplace, 100), False), # str_replace
-            Rule(r"(str\.substr)", FunctionCallAdapter(self.mgr.StrSubstr, 100), False), # str_substr
-            Rule(r"(str\.prefixof)", FunctionCallAdapter(self.mgr.StrPrefixOf, 100), False), # str_prefixof
-            Rule(r"(str\.suffixof)", FunctionCallAdapter(self.mgr.StrSuffixOf, 100), False), # str_suffixof
-            Rule(r"(str\.to\.int)", FunctionCallAdapter(self.mgr.StrToInt, 100), False), # str_to_int
-            Rule(r"(int\.to\.str)", FunctionCallAdapter(self.mgr.IntToStr, 100), False), # int_to_str
-            Rule(r"'(.*?)'", self.identifier, True), # quoted identifiers
-            Rule(r"([A-Za-z_][A-Za-z0-9_]*)", self.identifier, True),# identifiers
-            Rule(r"(.)", self.lexing_error, True), # input error
+            Rule(r"(\s+)", None, False),  # whitespace
+            Rule(r"(-?\d+/\d+)", self.real_constant, True),  # fractions
+            Rule(r"(-?\d+\.\d+)", self.real_constant, True),  # decimals
+            Rule(r"(-?\d+_\d+)", self.bv_constant, True),  # bv
+            Rule(r"(-?\d+)", self.int_constant, True),  # integer literals
+            Rule(r"\"(.*?)\"", self.string_constant, True),  # String Constant
+            Rule(r"BV\{(\d+)\}", self.bv_type, True),  # BV Type
+            Rule(r"(Array\{)", OpenArrayTypeTok(), False),  # Array Type
+            Rule(r"(&)", InfixOpAdapter(self.AndOrBVAnd, 40), False),  # conjunction
+            Rule(r"(\|)", InfixOpAdapter(self.OrOrBVOr, 30), False),  # disjunction
+            Rule(r"(!)", UnaryOpAdapter(self.NotOrBVNot, 50), False),  # negation
+            Rule(r"(\()", OpenPar(), False),  # open parenthesis
+            Rule(r"(\))", ClosePar(), False),  # closed parenthesis
+            Rule(r"(\[)", OpenBrak(), False),  # open parenthesis
+            Rule(r"(\])", CloseBrak(), False),  # closed parenthesis
+            Rule(r"(\})", CloseBrace(), False),  # closed parenthesis
+            Rule(r"(<<)", InfixOpAdapter(self.mgr.BVLShl, 90), False),  # Shl
+            Rule(r"(>>)", InfixOpAdapter(self.mgr.BVLShr, 90), False),  # Shr
+            Rule(r"(a>>)", InfixOpAdapter(self.mgr.BVAShr, 90), False),  # AShr
+            Rule(r"(<->)", InfixOpAdapter(self.mgr.Iff, 10), False),  # iff
+            Rule(r"(->)", InfixOpAdapter(self.mgr.Implies, 10), False),  # implies
+            Rule(r"(u<=)", InfixOpAdapter(self.mgr.BVULE, 60), False),  # bvule
+            Rule(r"(u>=)", InfixOpAdapter(self.mgr.BVUGE, 60), False),  # bvuge
+            Rule(r"(u<)", InfixOpAdapter(self.mgr.BVULT, 60), False),  # bvult
+            Rule(r"(u>)", InfixOpAdapter(self.mgr.BVUGT, 60), False),  # bvugt
+            Rule(r"(s<=)", InfixOpAdapter(self.mgr.BVSLE, 60), False),  # bvsle
+            Rule(r"(s>=)", InfixOpAdapter(self.mgr.BVSGE, 60), False),  # bvsge
+            Rule(r"(s<)", InfixOpAdapter(self.mgr.BVSLT, 60), False),  # bvslt
+            Rule(r"(s>)", InfixOpAdapter(self.mgr.BVSGT, 60), False),  # bvsgt
+            Rule(r"(>=)", InfixOpAdapter(self.mgr.GE, 60), False),  # ge
+            Rule(r"(<=)", InfixOpAdapter(self.mgr.LE, 60), False),  # le
+            Rule(r"(>)", InfixOpAdapter(self.mgr.GT, 60), False),  # gt
+            Rule(r"(<)", InfixOpAdapter(self.mgr.LT, 60), False),  # lt
+            Rule(r"(=)", InfixOpAdapter(self.mgr.Equals, 60), False),  # eq
+            Rule(r"(\+)", InfixOpAdapter(self.PlusOrBVAdd, 70), False),  # plus
+            Rule(
+                r"(-)",
+                InfixOrUnaryOpAdapter(self.MinusOrBVSub, self.UMinusOrBvNeg, 70, 100),
+                False,
+            ),  # minus
+            Rule(r"(\*)", InfixOpAdapter(self.TimesOrBVMul, 80), False),  # times
+            Rule(r"(\^)", InfixOpAdapter(self.mgr.Pow, 80), False),  # pow
+            Rule(r"(u/)", InfixOpAdapter(self.mgr.BVUDiv, 80), False),  # udiv
+            Rule(r"(s/)", InfixOpAdapter(self.mgr.BVSDiv, 80), False),  # sdiv
+            Rule(r"(/)", InfixOpAdapter(self.mgr.Div, 80), False),  # div
+            Rule(r"(s%)", InfixOpAdapter(self.mgr.BVSRem, 80), False),  # srem
+            Rule(r"(u%)", InfixOpAdapter(self.mgr.BVURem, 80), False),  # urem
+            Rule(r"(\?)", ExprIf(), False),  # question
+            Rule(r"(:=)", ArrStore(), False),  # ArrStore
+            Rule(r"(::)", InfixOpAdapter(self.mgr.BVConcat, 90), False),  # BVXor
+            Rule(r"(:)", ExprElse(), False),  # colon
+            Rule(r"(,)", ExprComma(), False),  # comma
+            Rule(r"(\.)", ExprDot(), False),  # dot
+            Rule(r"(forall\s+)", Quantifier(self.mgr.ForAll, 20), False),  #
+            Rule(r"(exists\s+)", Quantifier(self.mgr.Exists, 20), False),  #
+            Rule(
+                r"(str\.len)", FunctionCallAdapter(self.mgr.StrLength, 100), False
+            ),  # str_length
+            Rule(
+                r"(str\.\+\+)", FunctionCallAdapter(self.mgr.StrConcat, 100), False
+            ),  # str_concat
+            Rule(
+                r"(str\.at)", FunctionCallAdapter(self.mgr.StrCharAt, 100), False
+            ),  # str_charat
+            Rule(
+                r"(str\.contains)",
+                FunctionCallAdapter(self.mgr.StrContains, 100),
+                False,
+            ),  # str_contains
+            Rule(
+                r"(str\.indexof)", FunctionCallAdapter(self.mgr.StrIndexOf, 100), False
+            ),  # str_indexof
+            Rule(
+                r"(str\.replace)", FunctionCallAdapter(self.mgr.StrReplace, 100), False
+            ),  # str_replace
+            Rule(
+                r"(str\.substr)", FunctionCallAdapter(self.mgr.StrSubstr, 100), False
+            ),  # str_substr
+            Rule(
+                r"(str\.prefixof)",
+                FunctionCallAdapter(self.mgr.StrPrefixOf, 100),
+                False,
+            ),  # str_prefixof
+            Rule(
+                r"(str\.suffixof)",
+                FunctionCallAdapter(self.mgr.StrSuffixOf, 100),
+                False,
+            ),  # str_suffixof
+            Rule(
+                r"(str\.to\.int)", FunctionCallAdapter(self.mgr.StrToInt, 100), False
+            ),  # str_to_int
+            Rule(
+                r"(int\.to\.str)", FunctionCallAdapter(self.mgr.IntToStr, 100), False
+            ),  # int_to_str
+            Rule(r"'(.*?)'", self.identifier, True),  # quoted identifiers
+            Rule(r"([A-Za-z_][A-Za-z0-9_]*)", self.identifier, True),  # identifiers
+            Rule(r"(.)", self.lexing_error, True),  # input error
         ]
         self.rules += hr_rules
 
         self._identifier_map = {
-            "False": Constant(self.mgr.FALSE()), # False
-            "True": Constant(self.mgr.TRUE()),# True
-            "xor": InfixOpAdapter(self.mgr.BVXor, 10),# BVXor
-            "bv2nat": UnaryOpAdapter(self.mgr.BVToNatural, 100),#
-            "bvcomp": InfixOpAdapter(self.mgr.BVComp, 90),#
-            "ROR": InfixOpAdapter(self.BVHack(self.mgr.BVRor), 90),# BVRor
-            "ROL": InfixOpAdapter(self.BVHack(self.mgr.BVRol), 90),# BVRol
-            "ZEXT": InfixOpAdapter(self.BVHack(self.mgr.BVZExt), 90),# BVZext
-            "SEXT": InfixOpAdapter(self.BVHack(self.mgr.BVSExt), 90),# BVSext
-            "ToReal": UnaryOpAdapter(self.mgr.ToReal, 100),#
-            "ToInt": UnaryOpAdapter(self.mgr.ToInt, 100),#
-            "IsInt": UnaryOpAdapter(self.mgr.IsInt, 100),#
-            "Int": IntTypeTok(),# Int Type
-            "Real": RealTypeTok(),# Real Type
-            "Bool": BoolTypeTok(),# Bool Type
+            "False": Constant(self.mgr.FALSE()),  # False
+            "True": Constant(self.mgr.TRUE()),  # True
+            "xor": InfixOpAdapter(self.mgr.BVXor, 10),  # BVXor
+            "bv2nat": UnaryOpAdapter(self.mgr.BVToNatural, 100),  #
+            "bvcomp": InfixOpAdapter(self.mgr.BVComp, 90),  #
+            "ROR": InfixOpAdapter(self.BVHack(self.mgr.BVRor), 90),  # BVRor
+            "ROL": InfixOpAdapter(self.BVHack(self.mgr.BVRol), 90),  # BVRol
+            "ZEXT": InfixOpAdapter(self.BVHack(self.mgr.BVZExt), 90),  # BVZext
+            "SEXT": InfixOpAdapter(self.BVHack(self.mgr.BVSExt), 90),  # BVSext
+            "ToReal": UnaryOpAdapter(self.mgr.ToReal, 100),  #
+            "ToInt": UnaryOpAdapter(self.mgr.ToInt, 100),  #
+            "IsInt": UnaryOpAdapter(self.mgr.IsInt, 100),  #
+            "Int": IntTypeTok(),  # Int Type
+            "Real": RealTypeTok(),  # Real Type
+            "Bool": BoolTypeTok(),  # Bool Type
         }
 
         self.compile()
@@ -282,6 +323,7 @@ class HRLexer(Lexer):
                 return op(a, b.constant_value())
             else:
                 raise PysmtSyntaxError("Constant expected, got '%s'" % b)
+
         return _res
 
 
@@ -297,6 +339,7 @@ class HRLexer(Lexer):
 class CloseBrace(GrammarSymbol):
     pass
 
+
 class ArrStore(GrammarSymbol):
     pass
 
@@ -309,17 +352,21 @@ class BVTypeTok(GrammarSymbol):
     def nud(self, parser):
         return parser.env.type_manager.BVType(self.width)
 
+
 class IntTypeTok(GrammarSymbol):
     def nud(self, parser):
         return types.INT
+
 
 class RealTypeTok(GrammarSymbol):
     def nud(self, parser):
         return types.REAL
 
+
 class BoolTypeTok(GrammarSymbol):
     def nud(self, parser):
         return types.BOOL
+
 
 class Constant(GrammarSymbol):
     def __init__(self, value):
@@ -352,7 +399,7 @@ class ExprIf(GrammarSymbol):
     def led(self, parser, left):
         cond_ = left
         then_ = parser.expression(self.lbp)
-        parser.expect(ExprElse, ':')
+        parser.expect(ExprElse, ":")
         else_ = parser.expression(self.lbp)
         return parser.mgr.Ite(cond_, then_, else_)
 
@@ -413,19 +460,17 @@ class OpenBrak(GrammarSymbol):
         op = left
         e1 = parser.expression()
         if type(parser.token) == ExprElse:
-            #BVExtract
+            # BVExtract
             parser.advance()
             end = parser.expression()
             parser.expect(CloseBrak, "]")
-            return parser.mgr.BVExtract(op,
-                                        e1.constant_value(),
-                                        end.constant_value())
+            return parser.mgr.BVExtract(op, e1.constant_value(), end.constant_value())
         elif type(parser.token) == CloseBrak:
             # Select
             parser.advance()
             return parser.mgr.Select(op, e1)
         elif type(parser.token) == ArrStore:
-            #Store
+            # Store
             parser.advance()
             e2 = parser.expression()
             parser.expect(CloseBrak, "]")
@@ -463,7 +508,9 @@ class PrattParser(object):
     The LexerClass is required, and is the one doing the heavy lifting.
     """
 
-    def __init__(self, LexerClass, env: Optional["pysmt.environment.Environment"]=None):
+    def __init__(
+        self, LexerClass, env: Optional["pysmt.environment.Environment"] = None
+    ):
         if env is None:
             env = get_env()
 
@@ -499,15 +546,15 @@ class PrattParser(object):
         result = self.expression()
         try:
             bd = next(self.tokenizer)
-            raise PysmtSyntaxError("Bogus data after expression: '%s' "
-                                   "(Partial: %s)" % (bd, result))
+            raise PysmtSyntaxError(
+                "Bogus data after expression: '%s' (Partial: %s)" % (bd, result)
+            )
         except StopIteration:
             return result
 
     def advance(self):
         """Advance reading of one token"""
         self.token = next(self.tokenizer)
-
 
     def expect(self, token_class, token_repr):
         """
@@ -518,6 +565,7 @@ class PrattParser(object):
             raise PysmtSyntaxError("Expected '%s'" % token_repr)
         self.advance()
 
+
 # EOC PrattParser
 
 #
@@ -525,6 +573,7 @@ class PrattParser(object):
 #
 # These are adapters used to create tokens for various types of symbols
 #
+
 
 class EndOfInput(GrammarSymbol):
     pass
@@ -593,7 +642,7 @@ class FunctionCallAdapter(GrammarSymbol):
         self.lbp = lbp
 
     def nud(self, parser):
-        parser.advance() # OpenPar
+        parser.advance()  # OpenPar
         params = []
         if type(parser.token) != ClosePar:
             while True:

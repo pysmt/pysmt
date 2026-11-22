@@ -21,11 +21,11 @@ from typing import Any, Iterator, Optional, Type, cast
 
 import pysmt
 import pysmt.operators as op
-from pysmt.walkers import TreeWalker
-from pysmt.walkers.generic import handles
-from pysmt.utils import quote
 from pysmt.constants import is_pysmt_fraction, is_pysmt_integer
 from pysmt.fnode import FNode
+from pysmt.utils import quote
+from pysmt.walkers import TreeWalker
+from pysmt.walkers.generic import handles
 
 
 class HRPrinter(TreeWalker):
@@ -34,12 +34,14 @@ class HRPrinter(TreeWalker):
     E.g., Implies(And(Symbol(x), Symbol(y)), Symbol(z))  ~>   '(x * y) -> z'
     """
 
-    def __init__(self, stream: StringIO, env: Optional["pysmt.environment.Environment"]=None):
+    def __init__(
+        self, stream: StringIO, env: Optional["pysmt.environment.Environment"] = None
+    ):
         TreeWalker.__init__(self, env=env)
         self.stream = stream
         self.write = self.stream.write
 
-    def printer(self, f: FNode, threshold: Optional[int]=None):
+    def printer(self, f: FNode, threshold: Optional[int] = None):
         """Performs the serialization of 'f'.
 
         Thresholding can be used to define how deep in the formula to
@@ -60,7 +62,9 @@ class HRPrinter(TreeWalker):
         yield args[-1]
         self.write(")")
 
-    def walk_quantifier(self, op_symbol: str, var_sep: str, sep: str, formula: FNode) -> Iterator[FNode]:
+    def walk_quantifier(
+        self, op_symbol: str, var_sep: str, sep: str, formula: FNode
+    ) -> Iterator[FNode]:
         if len(formula.quantifier_vars()) > 0:
             self.write("(")
             self.write(op_symbol)
@@ -92,8 +96,9 @@ class HRPrinter(TreeWalker):
         self.write(")")
 
     def walk_real_constant(self, formula: FNode):
-        assert is_pysmt_fraction(formula.constant_value()), \
-            "The type was " + str(type(formula.constant_value()))
+        assert is_pysmt_fraction(formula.constant_value()), "The type was " + str(
+            type(formula.constant_value())
+        )
         # TODO: Remove this once issue 113 in gmpy2 is solved
         v = cast(Fraction, formula.constant_value())
         n, d = v.numerator, v.denominator
@@ -103,8 +108,9 @@ class HRPrinter(TreeWalker):
             self.write("%s/%s" % (n, d))
 
     def walk_int_constant(self, formula: FNode):
-        assert is_pysmt_integer(formula.constant_value()), \
-            "The type was " + str(type(formula.constant_value()))
+        assert is_pysmt_integer(formula.constant_value()), "The type was " + str(
+            type(formula.constant_value())
+        )
         self.write(str(formula.constant_value()))
 
     def walk_bool_constant(self, formula: FNode):
@@ -117,16 +123,14 @@ class HRPrinter(TreeWalker):
         # This is the simplest SMT-LIB way of printing the value of a BV
         # self.write("(_ bv%d %d)" % (formula.bv_width(),
         #                             formula.constant_value()))
-        self.write("%d_%d" % (cast(int, formula.constant_value()),
-                              formula.bv_width()))
+        self.write("%d_%d" % (cast(int, formula.constant_value()), formula.bv_width()))
 
     def walk_algebraic_constant(self, formula):
         self.write(str(formula.constant_value()))
 
     def walk_bv_extract(self, formula: FNode) -> Iterator[FNode]:
         yield formula.arg(0)
-        self.write("[%d:%d]" % (formula.bv_extract_start(),
-                                       formula.bv_extract_end()))
+        self.write("[%d:%d]" % (formula.bv_extract_start(), formula.bv_extract_end()))
 
     def walk_bv_neg(self, formula: FNode) -> Iterator[FNode]:
         self.write("(- ")
@@ -184,48 +188,40 @@ class HRPrinter(TreeWalker):
 
     def walk_str_constant(self, formula: FNode):
         formula_value = formula.constant_value()
-        assert isinstance(formula_value, str), \
-            "The type was " + str(type(formula_value))
+        assert isinstance(formula_value, str), "The type was " + str(
+            type(formula_value)
+        )
         self.write('"%s"' % formula_value.replace('"', '""'))
 
-    def walk_str_length(self,formula: FNode):
-        self.write("str.len(" )
+    def walk_str_length(self, formula: FNode):
+        self.write("str.len(")
         self.walk(formula.arg(0))
         self.write(")")
 
-    def walk_str_charat(self,formula: FNode, **kwargs):
-        self.write("str.at(" )
+    def walk_str_charat(self, formula: FNode, **kwargs):
+        self.write("str.at(")
         self.walk(formula.arg(0))
         self.write(", ")
         self.walk(formula.arg(1))
         self.write(")")
 
-    def walk_str_concat(self,formula: FNode, **kwargs):
-        self.write("str.++(" )
+    def walk_str_concat(self, formula: FNode, **kwargs):
+        self.write("str.++(")
         for arg in formula.args()[:-1]:
             self.walk(arg)
             self.write(", ")
         self.walk(formula.args()[-1])
         self.write(")")
 
-    def walk_str_contains(self,formula: FNode, **kwargs):
-        self.write("str.contains(" )
+    def walk_str_contains(self, formula: FNode, **kwargs):
+        self.write("str.contains(")
         self.walk(formula.arg(0))
         self.write(", ")
         self.walk(formula.arg(1))
         self.write(")")
 
-    def walk_str_indexof(self,formula: FNode, **kwargs):
-        self.write("str.indexof(" )
-        self.walk(formula.arg(0))
-        self.write(", ")
-        self.walk(formula.arg(1))
-        self.write(", ")
-        self.walk(formula.arg(2))
-        self.write(")")
-
-    def walk_str_replace(self,formula: FNode, **kwargs):
-        self.write("str.replace(" )
+    def walk_str_indexof(self, formula: FNode, **kwargs):
+        self.write("str.indexof(")
         self.walk(formula.arg(0))
         self.write(", ")
         self.walk(formula.arg(1))
@@ -233,8 +229,8 @@ class HRPrinter(TreeWalker):
         self.walk(formula.arg(2))
         self.write(")")
 
-    def walk_str_substr(self,formula: FNode, **kwargs):
-        self.write("str.substr(" )
+    def walk_str_replace(self, formula: FNode, **kwargs):
+        self.write("str.replace(")
         self.walk(formula.arg(0))
         self.write(", ")
         self.walk(formula.arg(1))
@@ -242,27 +238,36 @@ class HRPrinter(TreeWalker):
         self.walk(formula.arg(2))
         self.write(")")
 
-    def walk_str_prefixof(self,formula: FNode, **kwargs):
-        self.write("str.prefixof(" )
+    def walk_str_substr(self, formula: FNode, **kwargs):
+        self.write("str.substr(")
+        self.walk(formula.arg(0))
+        self.write(", ")
+        self.walk(formula.arg(1))
+        self.write(", ")
+        self.walk(formula.arg(2))
+        self.write(")")
+
+    def walk_str_prefixof(self, formula: FNode, **kwargs):
+        self.write("str.prefixof(")
         self.walk(formula.arg(0))
         self.write(", ")
         self.walk(formula.arg(1))
         self.write(")")
 
-    def walk_str_suffixof(self,formula: FNode, **kwargs):
-        self.write("str.suffixof(" )
+    def walk_str_suffixof(self, formula: FNode, **kwargs):
+        self.write("str.suffixof(")
         self.walk(formula.arg(0))
         self.write(", ")
         self.walk(formula.arg(1))
         self.write(")")
 
-    def walk_str_to_int(self,formula: FNode, **kwargs):
-        self.write("str.to.int(" )
+    def walk_str_to_int(self, formula: FNode, **kwargs):
+        self.write("str.to.int(")
         self.walk(formula.arg(0))
         self.write(")")
 
-    def walk_int_to_str(self,formula: FNode, **kwargs):
-        self.write("int.to.str(" )
+    def walk_int_to_str(self, formula: FNode, **kwargs):
+        self.write("int.to.str(")
         self.walk(formula.arg(0))
         self.write(")")
 
@@ -300,32 +305,84 @@ class HRPrinter(TreeWalker):
         yield formula.arg(0)
         self.write(")")
 
-    def walk_and(self, formula: FNode) -> Iterator[Any]: return self.walk_nary(formula, " & ")
-    def walk_or(self, formula: FNode) -> Iterator[Any]: return self.walk_nary(formula, " | ")
-    def walk_plus(self, formula: FNode) -> Iterator[Any]: return self.walk_nary(formula, " + ")
-    def walk_times(self, formula: FNode) -> Iterator[Any]: return self.walk_nary(formula, " * ")
-    def walk_div(self, formula: FNode) -> Iterator[Any]: return self.walk_nary(formula, " / ")
-    def walk_pow(self, formula: FNode) -> Iterator[Any]: return self.walk_nary(formula, " ^ ")
-    def walk_iff(self, formula: FNode) -> Iterator[Any]: return self.walk_nary(formula, " <-> ")
-    def walk_implies(self, formula: FNode) -> Iterator[Any]: return self.walk_nary(formula, " -> ")
-    def walk_minus(self, formula: FNode) -> Iterator[Any]: return self.walk_nary(formula, " - ")
-    def walk_equals(self, formula: FNode) -> Iterator[Any]: return self.walk_nary(formula, " = ")
-    def walk_le(self, formula: FNode) -> Iterator[Any]: return self.walk_nary(formula, " <= ")
-    def walk_lt(self, formula: FNode) -> Iterator[Any]: return self.walk_nary(formula, " < ")
-    def walk_bv_xor(self, formula: FNode) -> Iterator[Any]: return self.walk_nary(formula, " xor ")
-    def walk_bv_concat(self, formula: FNode) -> Iterator[Any]: return self.walk_nary(formula, "::")
-    def walk_bv_udiv(self, formula: FNode) -> Iterator[Any]: return self.walk_nary(formula, " u/ ")
-    def walk_bv_urem(self, formula: FNode) -> Iterator[Any]: return self.walk_nary(formula, " u% ")
-    def walk_bv_sdiv(self, formula: FNode) -> Iterator[Any]: return self.walk_nary(formula, " s/ ")
-    def walk_bv_srem(self, formula: FNode) -> Iterator[Any]: return self.walk_nary(formula, " s% ")
-    def walk_bv_sle(self, formula: FNode) -> Iterator[Any]: return self.walk_nary(formula, " s<= ")
-    def walk_bv_slt(self, formula: FNode) -> Iterator[Any]: return self.walk_nary(formula, " s< ")
-    def walk_bv_ule(self, formula: FNode) -> Iterator[Any]: return self.walk_nary(formula, " u<= ")
-    def walk_bv_ult(self, formula: FNode) -> Iterator[Any]: return self.walk_nary(formula, " u< ")
-    def walk_bv_lshl(self, formula: FNode) -> Iterator[Any]: return self.walk_nary(formula, " << ")
-    def walk_bv_lshr(self, formula: FNode) -> Iterator[Any]: return self.walk_nary(formula, " >> ")
-    def walk_bv_ashr(self, formula: FNode) -> Iterator[Any]: return self.walk_nary(formula, " a>> ")
-    def walk_bv_comp(self, formula: FNode) -> Iterator[Any]: return self.walk_nary(formula, " bvcomp ")
+    def walk_and(self, formula: FNode) -> Iterator[Any]:
+        return self.walk_nary(formula, " & ")
+
+    def walk_or(self, formula: FNode) -> Iterator[Any]:
+        return self.walk_nary(formula, " | ")
+
+    def walk_plus(self, formula: FNode) -> Iterator[Any]:
+        return self.walk_nary(formula, " + ")
+
+    def walk_times(self, formula: FNode) -> Iterator[Any]:
+        return self.walk_nary(formula, " * ")
+
+    def walk_div(self, formula: FNode) -> Iterator[Any]:
+        return self.walk_nary(formula, " / ")
+
+    def walk_pow(self, formula: FNode) -> Iterator[Any]:
+        return self.walk_nary(formula, " ^ ")
+
+    def walk_iff(self, formula: FNode) -> Iterator[Any]:
+        return self.walk_nary(formula, " <-> ")
+
+    def walk_implies(self, formula: FNode) -> Iterator[Any]:
+        return self.walk_nary(formula, " -> ")
+
+    def walk_minus(self, formula: FNode) -> Iterator[Any]:
+        return self.walk_nary(formula, " - ")
+
+    def walk_equals(self, formula: FNode) -> Iterator[Any]:
+        return self.walk_nary(formula, " = ")
+
+    def walk_le(self, formula: FNode) -> Iterator[Any]:
+        return self.walk_nary(formula, " <= ")
+
+    def walk_lt(self, formula: FNode) -> Iterator[Any]:
+        return self.walk_nary(formula, " < ")
+
+    def walk_bv_xor(self, formula: FNode) -> Iterator[Any]:
+        return self.walk_nary(formula, " xor ")
+
+    def walk_bv_concat(self, formula: FNode) -> Iterator[Any]:
+        return self.walk_nary(formula, "::")
+
+    def walk_bv_udiv(self, formula: FNode) -> Iterator[Any]:
+        return self.walk_nary(formula, " u/ ")
+
+    def walk_bv_urem(self, formula: FNode) -> Iterator[Any]:
+        return self.walk_nary(formula, " u% ")
+
+    def walk_bv_sdiv(self, formula: FNode) -> Iterator[Any]:
+        return self.walk_nary(formula, " s/ ")
+
+    def walk_bv_srem(self, formula: FNode) -> Iterator[Any]:
+        return self.walk_nary(formula, " s% ")
+
+    def walk_bv_sle(self, formula: FNode) -> Iterator[Any]:
+        return self.walk_nary(formula, " s<= ")
+
+    def walk_bv_slt(self, formula: FNode) -> Iterator[Any]:
+        return self.walk_nary(formula, " s< ")
+
+    def walk_bv_ule(self, formula: FNode) -> Iterator[Any]:
+        return self.walk_nary(formula, " u<= ")
+
+    def walk_bv_ult(self, formula: FNode) -> Iterator[Any]:
+        return self.walk_nary(formula, " u< ")
+
+    def walk_bv_lshl(self, formula: FNode) -> Iterator[Any]:
+        return self.walk_nary(formula, " << ")
+
+    def walk_bv_lshr(self, formula: FNode) -> Iterator[Any]:
+        return self.walk_nary(formula, " >> ")
+
+    def walk_bv_ashr(self, formula: FNode) -> Iterator[Any]:
+        return self.walk_nary(formula, " a>> ")
+
+    def walk_bv_comp(self, formula: FNode) -> Iterator[Any]:
+        return self.walk_nary(formula, " bvcomp ")
+
     walk_bv_and = walk_and
     walk_bv_or = walk_or
     walk_bv_not = walk_not
@@ -333,7 +390,8 @@ class HRPrinter(TreeWalker):
     walk_bv_mul = walk_times
     walk_bv_sub = walk_minus
 
-#EOC HRPrinter
+
+# EOC HRPrinter
 
 
 class HRSerializer(object):
@@ -341,11 +399,15 @@ class HRSerializer(object):
 
     PrinterClass = HRPrinter
 
-    def __init__(self, environment: Optional["pysmt.environment.Environment"]=None):
+    def __init__(self, environment: Optional["pysmt.environment.Environment"] = None):
         self.environment = environment
 
-
-    def serialize(self, formula: FNode, printer: Optional[Type[HRPrinter]]=None, threshold: Optional[int]=None) -> str:
+    def serialize(
+        self,
+        formula: FNode,
+        printer: Optional[Type[HRPrinter]] = None,
+        threshold: Optional[int] = None,
+    ) -> str:
         """Returns a string with the human-readable version of the formula.
 
         'printer' is the printer to call to perform the serialization.
@@ -396,7 +458,9 @@ class SmartPrinter(HRPrinter):
         else:
             return HRPrinter.super(self, formula)
 
+
 # EOC SmartPrinter
+
 
 def smart_serialize(formula, subs=None, threshold=None):
     """Creates and calls a SmartPrinter to perform smart serialization."""

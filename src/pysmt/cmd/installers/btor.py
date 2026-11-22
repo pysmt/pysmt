@@ -32,11 +32,16 @@ CYTHON_PATCH = '''\
 
 
 class BtorInstaller(SolverInstaller):
-
     SOLVER = "btor"
 
-    def __init__(self, install_dir, bindings_dir, solver_version,
-                 mirror_link=None, git_version=None):
+    def __init__(
+        self,
+        install_dir,
+        bindings_dir,
+        solver_version,
+        mirror_link=None,
+        git_version=None,
+    ):
         native_link = "https://github.com/Boolector/boolector/archive/%s.tar.gz"
         archive_name = "boolector-%s.tar.gz"
 
@@ -47,71 +52,82 @@ class BtorInstaller(SolverInstaller):
             native_link = native_link % solver_version
             archive_name = archive_name % solver_version
 
-        SolverInstaller.__init__(self, install_dir=install_dir,
-                                 bindings_dir=bindings_dir,
-                                 solver_version=solver_version,
-                                 archive_name=archive_name,
-                                 native_link=native_link,
-                                 mirror_link=mirror_link)
+        SolverInstaller.__init__(
+            self,
+            install_dir=install_dir,
+            bindings_dir=bindings_dir,
+            solver_version=solver_version,
+            archive_name=archive_name,
+            native_link=native_link,
+            mirror_link=mirror_link,
+        )
 
     def compile(self):
         # Override default Python library, include, and interpreter
         # path into Boolector's CMake because CMake can get confused
         # if multiple interpreters are available, especially python 2
         # vs python 3.
-        import sysconfig
         import sys
-        PYTHON_LIBRARY = os.environ.get('PYSMT_PYTHON_LIBDIR')
+        import sysconfig
+
+        PYTHON_LIBRARY = os.environ.get("PYSMT_PYTHON_LIBDIR")
         PYTHON_INCLUDE_DIR = sysconfig.get_path("include")
 
         PYTHON_EXECUTABLE = sys.executable
-        CMAKE_OPTS = ' -DPYTHON_INCLUDE_DIR=' + PYTHON_INCLUDE_DIR
-        CMAKE_OPTS += ' -DPYTHON_EXECUTABLE=' + PYTHON_EXECUTABLE
+        CMAKE_OPTS = " -DPYTHON_INCLUDE_DIR=" + PYTHON_INCLUDE_DIR
+        CMAKE_OPTS += " -DPYTHON_EXECUTABLE=" + PYTHON_EXECUTABLE
         # CMake 4 rejects Boolector's cmake_minimum_required(VERSION 3.3)
-        CMAKE_OPTS += ' -DCMAKE_POLICY_VERSION_MINIMUM=3.5'
+        CMAKE_OPTS += " -DCMAKE_POLICY_VERSION_MINIMUM=3.5"
         if PYTHON_LIBRARY:
-            CMAKE_OPTS += ' -DPYTHON_LIBRARY=' + PYTHON_LIBRARY
+            CMAKE_OPTS += " -DPYTHON_LIBRARY=" + PYTHON_LIBRARY
 
         # Unpack
-        SolverInstaller.untar(os.path.join(self.base_dir, self.archive_name),
-                              self.extract_path)
+        SolverInstaller.untar(
+            os.path.join(self.base_dir, self.archive_name), self.extract_path
+        )
 
         # Patching for cython 3.8
         with NamedTemporaryFile() as f:
             f.write(CYTHON_PATCH.encode())
             f.flush()
             f.seek(0)
-            SolverInstaller.run(["patch", "src/api/python/pyboolector.pyx", "-i", f.name],
-                                directory=self.extract_path)
+            SolverInstaller.run(
+                ["patch", "src/api/python/pyboolector.pyx", "-i", f.name],
+                directory=self.extract_path,
+            )
 
         # Build lingeling. Its configure.sh ignores CFLAGS but keeps CC, and
         # GCC 15 (C23) rejects its unprototyped lock callbacks as incompatible.
-        lingeling_cc = os.environ.get("CC", "gcc") + \
-            " -Wno-error=incompatible-pointer-types"
-        SolverInstaller.run("bash ./contrib/setup-lingeling.sh",
-                            directory=self.extract_path,
-                            env_variables={"CC": lingeling_cc})
+        lingeling_cc = (
+            os.environ.get("CC", "gcc") + " -Wno-error=incompatible-pointer-types"
+        )
+        SolverInstaller.run(
+            "bash ./contrib/setup-lingeling.sh",
+            directory=self.extract_path,
+            env_variables={"CC": lingeling_cc},
+        )
 
         # Build Btor
-        SolverInstaller.run("bash ./contrib/setup-btor2tools.sh",
-                            directory=self.extract_path)
-
+        SolverInstaller.run(
+            "bash ./contrib/setup-btor2tools.sh", directory=self.extract_path
+        )
 
         # Build Boolector Solver
-        SolverInstaller.run("bash ./configure.sh --python",
-                            directory=self.extract_path,
-                            env_variables={"CMAKE_OPTS": CMAKE_OPTS})
+        SolverInstaller.run(
+            "bash ./configure.sh --python",
+            directory=self.extract_path,
+            env_variables={"CMAKE_OPTS": CMAKE_OPTS},
+        )
 
-        SolverInstaller.run("make -j2",
-                            directory=os.path.join(self.extract_path, "build"))
+        SolverInstaller.run(
+            "make -j2", directory=os.path.join(self.extract_path, "build")
+        )
 
     def move(self):
         libdir = os.path.join(self.extract_path, "build", "lib")
         for f in os.listdir(libdir):
             if f.startswith("pyboolector") and f.endswith(".so"):
-                SolverInstaller.mv(os.path.join(libdir, f),
-                                   self.bindings_dir)
-
+                SolverInstaller.mv(os.path.join(libdir, f), self.bindings_dir)
 
     def get_installed_version(self):
         import re
@@ -123,7 +139,7 @@ class BtorInstaller(SolverInstaller):
             try:
                 with open(vfile) as f:
                     content = f.read().strip()
-                    m = re.search('set\(VERSION "(.*)"\)', content)
+                    m = re.search(r'set\(VERSION "(.*)"\)', content)
                 if m is not None:
                     version = m.group(1)
             except OSError:

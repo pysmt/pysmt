@@ -16,11 +16,13 @@
 #   limitations under the License.
 #
 
+from pysmt.optimization.optimizer import IncrementalOptimizerMixin, SUAOptimizerMixin
 from pysmt.solvers.yices import YicesSolver
-from pysmt.optimization.optimizer import SUAOptimizerMixin, IncrementalOptimizerMixin
+
 
 class YicesSUAOptimizer(YicesSolver, SUAOptimizerMixin):
     pass
+
 
 class YicesIncrementalOptimizer(YicesSolver, IncrementalOptimizerMixin):
     pass
