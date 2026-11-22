@@ -53,6 +53,9 @@ Change Log
 
 * cvc5 upgraded to 1.4.2 (#867).
 
+* Z3 upgraded to 5.4.1. The Z3 SMT-LIB parser now also accepts ``**``,
+  which Z3 5.4.0 and later print for the power operator (#867).
+
 * Boolector upgraded to 3.2.4 and installed from the ``pyboolector`` wheels
   on PyPI instead of being built from source. PyPI has no Windows wheels,
   so on Windows pip builds it from the source distribution (#867).

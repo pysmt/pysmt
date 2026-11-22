@@ -43,7 +43,7 @@ REPYCUDD_URL = "https://github.com/pysmt/repycudd/archive/b87421c596a1bc2cafeb10
 SOLVERS = [
     BuildSolver("msat", MSatInstaller, "5.6.16", {}),
     PipSolver("cvc5", "cvc5", ["cvc5==1.4.2"]),
-    PipSolver("z3", "z3-solver", ["z3-solver==5.1.0.0"]),
+    PipSolver("z3", "z3-solver", ["z3-solver==5.4.1.0"]),
     BuildSolver("yices", YicesInstaller, "2.6.4", {"yices_api_version": "1.1.5"}),
     PipSolver("btor", "pyboolector", ["pyboolector==3.2.4.38488416565"]),
     BuildSolver(
