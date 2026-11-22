@@ -485,6 +485,71 @@ arithmetic.""",
     floating_point=True,
 )
 
+# The SMT-LIB logics page does not define the floating-point logics yet.
+# The names below are the ones used by the SMT-LIB benchmark library and
+# by SMT-COMP (division QF_FPArith).
+
+QF_BVFP = Logic(
+    name="QF_BVFP",
+    description="""Closed quantifier-free formulas over the theories of floating-point
+arithmetic and fixed-size bitvectors.""",
+    quantifier_free=True,
+    bit_vectors=True,
+    floating_point=True,
+)
+
+QF_FPLRA = Logic(
+    name="QF_FPLRA",
+    description="""Closed quantifier-free formulas over the theories of floating-point
+arithmetic and linear real arithmetic.""",
+    quantifier_free=True,
+    floating_point=True,
+    real_arithmetic=True,
+)
+
+QF_BVFPLRA = Logic(
+    name="QF_BVFPLRA",
+    description="""Closed quantifier-free formulas over the theories of floating-point
+arithmetic, fixed-size bitvectors and linear real arithmetic.""",
+    quantifier_free=True,
+    bit_vectors=True,
+    floating_point=True,
+    real_arithmetic=True,
+)
+
+QF_ABVFP = Logic(
+    name="QF_ABVFP",
+    description="""Closed quantifier-free formulas over the theories of floating-point
+arithmetic, fixed-size bitvectors and arrays.""",
+    quantifier_free=True,
+    arrays=True,
+    bit_vectors=True,
+    floating_point=True,
+)
+
+QF_ABVFPLRA = Logic(
+    name="QF_ABVFPLRA",
+    description="""Closed quantifier-free formulas over the theories of floating-point
+arithmetic, fixed-size bitvectors, linear real arithmetic and arrays.""",
+    quantifier_free=True,
+    arrays=True,
+    bit_vectors=True,
+    floating_point=True,
+    real_arithmetic=True,
+)
+
+QF_AUFBVFP = Logic(
+    name="QF_AUFBVFP",
+    description="""Closed quantifier-free formulas over the theories of floating-point
+arithmetic, fixed-size bitvectors and arrays extended with free sort and
+function symbols.""",
+    quantifier_free=True,
+    arrays=True,
+    bit_vectors=True,
+    floating_point=True,
+    uninterpreted=True,
+)
+
 BV = Logic(
     name="BV",
     description="""Closed formulas over the theory of fixed-size
@@ -723,6 +788,12 @@ SMTLIB2_LOGICS = frozenset(
         QF_AX,
         QF_BV,
         QF_FP,
+        QF_BVFP,
+        QF_FPLRA,
+        QF_BVFPLRA,
+        QF_ABVFP,
+        QF_ABVFPLRA,
+        QF_AUFBVFP,
         QF_IDL,
         QF_LIA,
         QF_LRA,
@@ -769,6 +840,12 @@ PYSMT_LOGICS = frozenset(
         QF_BV,
         QF_UFBV,
         QF_FP,
+        QF_BVFP,
+        QF_FPLRA,
+        QF_BVFPLRA,
+        QF_ABVFP,
+        QF_ABVFPLRA,
+        QF_AUFBVFP,
         QF_SLIA,
         QF_BV,
         QF_UFBV,

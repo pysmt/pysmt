@@ -21,7 +21,15 @@ from itertools import combinations
 
 from pysmt.environment import Environment
 from pysmt.exceptions import PysmtTypeError, PysmtValueError
-from pysmt.logics import QF_FP
+from pysmt.logics import (
+    QF_ABVFP,
+    QF_ABVFPLRA,
+    QF_AUFBVFP,
+    QF_BVFP,
+    QF_BVFPLRA,
+    QF_FP,
+    QF_FPLRA,
+)
 from pysmt.oracles import get_logic
 from pysmt.shortcuts import (
     BV,
@@ -394,6 +402,54 @@ class TestFP(TestCase):
         nonlinear_theory = self.env.theoryo.get_theory(nonlinear_conversion)
         self.assertTrue(nonlinear_theory.real_arithmetic)
         self.assertFalse(nonlinear_theory.linear)
+
+    def _mixed_logic_cases(self):
+        """Formulas that combine FP with other theories, and their logic."""
+        x = Symbol("mixed_fp_x", FLOAT16)
+        bv = Symbol("mixed_fp_bv", BVType(8))
+        real = Symbol("mixed_fp_real", REAL)
+        array = Symbol("mixed_fp_array", ArrayType(BVType(8), FLOAT16))
+        uf = Symbol("mixed_fp_uf", FunctionType(FLOAT16, [FLOAT16]))
+
+        to_ubv = Equals(FPToUBV(RNE(), x, 8), BVAdd(bv, BV(1, 8)))
+        to_real = Equals(FPToReal(x), real)
+        select = FPIsNaN(Select(array, bv))
+        return [
+            (to_ubv, QF_BVFP),
+            (Equals(FPToSBV(RNE(), x, 8), BV(3, 8)), QF_BVFP),
+            (to_real, QF_FPLRA),
+            (And(to_ubv, to_real), QF_BVFPLRA),
+            (select, QF_ABVFP),
+            (And(select, to_real), QF_ABVFPLRA),
+            (FPIsNaN(Function(uf, [x])), QF_AUFBVFP),
+        ]
+
+    def test_mixed_fp_logics(self):
+        for formula, logic in self._mixed_logic_cases():
+            with self.subTest(logic=logic.name):
+                self.assertEqual(get_logic(formula), logic)
+
+    @skipIfSolverNotAvailable("z3")
+    def test_z3_solves_mixed_fp_logics(self):
+        # No logic is given, so the solver is picked from the detected logic.
+        for formula, logic in self._mixed_logic_cases():
+            with self.subTest(logic=logic.name):
+                self.assertSat(formula)
+
+    def test_smtlib_mixed_fp_logic(self):
+        source = """
+        (set-logic QF_BVFP)
+        (declare-fun x () Float32)
+        (declare-fun y () (_ BitVec 8))
+        (assert (= ((_ fp.to_ubv 8) RNE x) (bvadd y #x01)))
+        (check-sat)
+        """
+        script = SmtLibParser().get_script(StringIO(source))
+        self.assertEqual(get_logic(script.get_last_formula()), QF_BVFP)
+
+        stream = StringIO()
+        script.serialize(stream)
+        self.assertIn("(set-logic QF_BVFP)", stream.getvalue())
 
     def test_smtlib_tree_and_dag_round_trip(self):
         formula = self._all_operators_formula()
