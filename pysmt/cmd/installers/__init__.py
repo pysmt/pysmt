@@ -15,7 +15,6 @@
 from pysmt.cmd.installers.msat import MSatInstaller
 from pysmt.cmd.installers.z3 import Z3Installer
 from pysmt.cmd.installers.cvcfive import CVC5Installer
-from pysmt.cmd.installers.cvcfour import CVC4Installer
 from pysmt.cmd.installers.yices import YicesInstaller
 from pysmt.cmd.installers.btor import BtorInstaller
 from pysmt.cmd.installers.pico import PicoSATInstaller
@@ -24,5 +23,5 @@ from pysmt.cmd.installers.optimsat import OptiMSatInstaller
 
 # asserts to use the imported variables. Done to avoid the unused variables warning
 assert MSatInstaller and Z3Installer and CVC5Installer and YicesInstaller # type: ignore [truthy-function]
-assert BtorInstaller and PicoSATInstaller and CuddInstaller and CVC4Installer # type: ignore [truthy-function]
+assert BtorInstaller and PicoSATInstaller and CuddInstaller # type: ignore [truthy-function]
 assert OptiMSatInstaller # type: ignore [truthy-function]

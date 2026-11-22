@@ -220,22 +220,6 @@ class TestBasic(TestCase):
                 # Logic is not supported by CVC
                 pass
 
-    @skipIfSolverNotAvailable("cvc4")
-    def test_examples_cvc4(self):
-        for (f, validity, satisfiability, logic) in get_example_formulae():
-            if not logic.theory.linear: continue
-            try:
-                v = is_valid(f, solver_name='cvc4', logic=logic)
-                s = is_sat(f, solver_name='cvc4', logic=logic)
-                self.assertEqual(validity, v, f)
-                self.assertEqual(satisfiability, s, f)
-            except SolverReturnedUnknownResultError:
-                # CVC does not handle quantifiers in a complete way
-                self.assertFalse(logic.quantifier_free)
-            except NoSolverAvailableError:
-                # Logic is not supported by CVC
-                pass
-
     @skipIfSolverNotAvailable("yices")
     def test_examples_yices(self):
         for (f, validity, satisfiability, logic) in get_example_formulae():

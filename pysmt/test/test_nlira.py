@@ -81,7 +81,7 @@ class TestNonLinear(TestCase):
                 with Solver(name=sname) as s:
                     with self.assertRaises(ConvertExpressionError):
                         s.is_sat(f)
-            elif sname in ["yices", "cvc4"]:
+            elif sname == "yices":
                 with Solver(name=sname) as s:
                     with self.assertRaises(NonLinearError):
                         s.is_sat(f)
