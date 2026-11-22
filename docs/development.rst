@@ -66,6 +66,7 @@ arguments lists all the recipes:
 * ``just test`` and ``just test-all``: run the tests (see below)
 * ``just typecheck``: run mypy
 * ``just build``: build the sdist and the wheel into ``dist/``
+* ``just docs``: build the HTML documentation into ``docs/_build/html``
 * ``just bump VERSION``: set the version in ``pyproject.toml`` and
   refresh ``uv.lock``
 * ``just clean``: remove build and cache directories
@@ -211,11 +212,9 @@ Building Documentation
 ======================
 
 pySMT uses `Sphinx <http://www.sphinx-doc.org/en/stable/index.html/>`_
-for documentation. To build the documentation you will need Sphinx
-installed, this can be done via pip.
-
-A Makefile in the ``docs/`` directory allows to build the documentation in
-many formats. Among them, we usually consider html and latex.
+for documentation. ``just docs`` builds the HTML documentation into
+``docs/_build/html``; Sphinx runs in a temporary environment through
+``uvx``, so it does not need to be installed.
 
 Preparing a Release (Check-List)
 ================================

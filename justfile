@@ -29,6 +29,10 @@ bump version:
     uv lock
     @echo "Now: git commit -am 'Bump version to {{version}}'"
 
+# Build the HTML documentation into docs/_build/html
+docs:
+    uvx --from sphinx sphinx-build -b html docs docs/_build/html
+
 # Remove build, cache, and tooling artifacts
 clean:
-    rm -rf build/ dist/ .mypy_cache/ .pytest_cache/
+    rm -rf build/ dist/ docs/_build/ .mypy_cache/ .pytest_cache/
