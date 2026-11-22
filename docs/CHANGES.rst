@@ -32,6 +32,9 @@ Change Log
   the development environment is managed with uv and common tasks with
   just (#863).
 
+* The code is linted and formatted with ruff, and pre-commit hooks run
+  the linter and the type checker before each commit (#866).
+
 0.10.0: 2026-11-21 -- Optimization, type hints and upgraded solvers
 ---------------------------------------------------------------------
 

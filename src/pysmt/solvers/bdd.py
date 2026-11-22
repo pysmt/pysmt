@@ -18,20 +18,19 @@
 from pysmt.exceptions import SolverAPINotFound
 
 try:
-    import repycudd # type: ignore[import]
+    import repycudd  # type: ignore[import]
 except ImportError:
     raise SolverAPINotFound
 
 import pysmt.logics
 from pysmt import typing as types
-from pysmt.solvers.solver import Solver, Converter, SolverOptions
-from pysmt.solvers.eager import EagerModel
-from pysmt.walkers import DagWalker
-from pysmt.decorators import clear_pending_pop, catch_conversion_error
-from pysmt.exceptions import (ConvertExpressionError, PysmtValueError,
-                              PysmtTypeError)
+from pysmt.decorators import catch_conversion_error, clear_pending_pop
+from pysmt.exceptions import ConvertExpressionError, PysmtTypeError, PysmtValueError
 from pysmt.oracles import get_logic
+from pysmt.solvers.eager import EagerModel
 from pysmt.solvers.qelim import QuantifierEliminator
+from pysmt.solvers.solver import Converter, Solver, SolverOptions
+from pysmt.walkers import DagWalker
 
 
 class BddOptions(SolverOptions):
@@ -48,31 +47,34 @@ class BddOptions(SolverOptions):
       is enabled.
 
     """
-    ## CUDD Reordering algorithms
-    CUDD_ALL_REORDERING_ALGORITHMS = range(1,23)
 
-    CUDD_REORDER_SAME, \
-    CUDD_REORDER_NONE, \
-    CUDD_REORDER_RANDOM, \
-    CUDD_REORDER_RANDOM_PIVOT, \
-    CUDD_REORDER_SIFT, \
-    CUDD_REORDER_SIFT_CONVERGE, \
-    CUDD_REORDER_SYMM_SIFT, \
-    CUDD_REORDER_SYMM_SIFT_CONV, \
-    CUDD_REORDER_WINDOW2, \
-    CUDD_REORDER_WINDOW3, \
-    CUDD_REORDER_WINDOW4, \
-    CUDD_REORDER_WINDOW2_CONV, \
-    CUDD_REORDER_WINDOW3_CONV, \
-    CUDD_REORDER_WINDOW4_CONV, \
-    CUDD_REORDER_GROUP_SIFT, \
-    CUDD_REORDER_GROUP_SIFT_CONV, \
-    CUDD_REORDER_ANNEALING, \
-    CUDD_REORDER_GENETIC, \
-    CUDD_REORDER_LINEAR, \
-    CUDD_REORDER_LINEAR_CONVERGE, \
-    CUDD_REORDER_LAZY_SIFT, \
-    CUDD_REORDER_EXACT = CUDD_ALL_REORDERING_ALGORITHMS
+    ## CUDD Reordering algorithms
+    CUDD_ALL_REORDERING_ALGORITHMS = range(1, 23)
+
+    (
+        CUDD_REORDER_SAME,
+        CUDD_REORDER_NONE,
+        CUDD_REORDER_RANDOM,
+        CUDD_REORDER_RANDOM_PIVOT,
+        CUDD_REORDER_SIFT,
+        CUDD_REORDER_SIFT_CONVERGE,
+        CUDD_REORDER_SYMM_SIFT,
+        CUDD_REORDER_SYMM_SIFT_CONV,
+        CUDD_REORDER_WINDOW2,
+        CUDD_REORDER_WINDOW3,
+        CUDD_REORDER_WINDOW4,
+        CUDD_REORDER_WINDOW2_CONV,
+        CUDD_REORDER_WINDOW3_CONV,
+        CUDD_REORDER_WINDOW4_CONV,
+        CUDD_REORDER_GROUP_SIFT,
+        CUDD_REORDER_GROUP_SIFT_CONV,
+        CUDD_REORDER_ANNEALING,
+        CUDD_REORDER_GENETIC,
+        CUDD_REORDER_LINEAR,
+        CUDD_REORDER_LINEAR_CONVERGE,
+        CUDD_REORDER_LAZY_SIFT,
+        CUDD_REORDER_EXACT,
+    ) = CUDD_ALL_REORDERING_ALGORITHMS
 
     def __init__(self, **base_options):
         SolverOptions.__init__(self, **base_options)
@@ -82,24 +84,28 @@ class BddOptions(SolverOptions):
         if self.unsat_cores_mode is not None:
             raise PysmtValueError("'unsat_cores_mode' option not supported.")
 
-        for k,v in self.solver_options.items():
+        for k, v in self.solver_options.items():
             if k == "static_ordering":
                 if v is not None:
                     try:
                         valid = all(x.is_symbol(types.BOOL) for x in v)
-                    except:
+                    except BaseException:
                         valid = False
                     if not valid:
-                        raise PysmtValueError("The BDD static ordering must be" \
-                                              " a list of Boolean variables")
+                        raise PysmtValueError(
+                            "The BDD static ordering must be"
+                            " a list of Boolean variables"
+                        )
             elif k == "dynamic_reordering":
                 if v not in (True, False):
-                    raise PysmtValueError("Invalid value %s for '%s'" % \
-                                          (str(k),str(v)))
+                    raise PysmtValueError(
+                        "Invalid value %s for '%s'" % (str(k), str(v))
+                    )
             elif k == "reordering_algorithm":
                 if v not in BddOptions.CUDD_ALL_REORDERING_ALGORITHMS:
-                    raise PysmtValueError("Invalid value %s for '%s'" % \
-                                          (str(k),str(v)))
+                    raise PysmtValueError(
+                        "Invalid value %s for '%s'" % (str(k), str(v))
+                    )
             else:
                 raise PysmtValueError("Unrecognized option '%s'." % k)
             # Store option
@@ -118,8 +124,7 @@ class BddOptions(SolverOptions):
 
         # Consistency check
         if not self.dynamic_reordering and self.reordering_algorithm is not None:
-            raise PysmtValueError("reordering_algorithm requires "
-                                  "dynamic_reordering.")
+            raise PysmtValueError("reordering_algorithm requires dynamic_reordering.")
 
     def __call__(self, solver):
         # Impose initial ordering
@@ -131,24 +136,24 @@ class BddOptions(SolverOptions):
         else:
             solver.ddmanager.AutodynDisable()
 
+
 # EOC BddOptions
 
 
 class BddSolver(Solver):
     """CUDD BDD Solver"""
-    LOGICS = [ pysmt.logics.QF_BOOL, pysmt.logics.BOOL ]
+
+    LOGICS = [pysmt.logics.QF_BOOL, pysmt.logics.BOOL]
     OptionsClass = BddOptions
 
     def __init__(self, environment, logic, **options):
-        Solver.__init__(self,
-                        environment=environment,
-                        logic=logic,
-                        **options)
+        Solver.__init__(self, environment=environment, logic=logic, **options)
 
         self.mgr = environment.formula_manager
         self.ddmanager = repycudd.DdManager()
-        self.converter = BddConverter(environment=self.environment,
-                                      ddmanager=self.ddmanager)
+        self.converter = BddConverter(
+            environment=self.environment, ddmanager=self.ddmanager
+        )
         self.options(self)
 
         # This stack keeps a pair (Expr, Bdd), with the semantics that
@@ -156,7 +161,7 @@ class BddSolver(Solver):
         # the conjunction of all previous expressions.
         # The construction of the Bdd is done during solve()
         self.assertions_stack = None
-        self.reset_assertions() # Initialize the stack
+        self.reset_assertions()  # Initialize the stack
 
         self.backtrack = []
         self.latest_model = None
@@ -164,8 +169,7 @@ class BddSolver(Solver):
     @clear_pending_pop
     def reset_assertions(self):
         true_formula = self.mgr.Bool(True)
-        self.assertions_stack = [(true_formula,
-                                  self.converter.convert(true_formula))]
+        self.assertions_stack = [(true_formula, self.converter.convert(true_formula))]
 
     @clear_pending_pop
     def declare_variable(self, var):
@@ -182,15 +186,15 @@ class BddSolver(Solver):
             self.add_assertion(self.mgr.And(assumptions))
             self.pending_pop = True
 
-        for (i, (expr, bdd)) in enumerate(self.assertions_stack):
+        for i, (expr, bdd) in enumerate(self.assertions_stack):
             if bdd is None:
                 bdd_expr = self.converter.convert(expr)
-                _, previous_bdd = self.assertions_stack[i-1]
+                _, previous_bdd = self.assertions_stack[i - 1]
                 new_bdd = self.ddmanager.And(previous_bdd, bdd_expr)
                 self.assertions_stack[i] = (expr, new_bdd)
 
         _, current_state = self.assertions_stack[-1]
-        res = (current_state != self.ddmanager.Zero())
+        res = current_state != self.ddmanager.Zero()
         # Invalidate cached model
         self.latest_model = None
         return res
@@ -207,22 +211,24 @@ class BddSolver(Solver):
         # operations on the model (e.g., enumeration) in a simple way.
         if self.latest_model is None:
             _, current_state = self.assertions_stack[-1]
-            assert current_state is not None, "solve() should be called before get_model()"
+            assert current_state is not None, (
+                "solve() should be called before get_model()"
+            )
             # Build ddArray of variables
             var_array = self.converter.get_all_vars_array()
-            minterm_set = self.ddmanager.PickOneMinterm(current_state,
-                                                        var_array,
-                                                        len(var_array))
-            minterm = next(repycudd.ForeachCubeIterator(self.ddmanager,
-                                                        minterm_set))
+            minterm_set = self.ddmanager.PickOneMinterm(
+                current_state, var_array, len(var_array)
+            )
+            minterm = next(repycudd.ForeachCubeIterator(self.ddmanager, minterm_set))
             assignment = {}
             for i, node in enumerate(var_array):
                 value = self.mgr.Bool(minterm[i] == 1)
                 key = self.converter.idx2var[node.NodeReadIndex()]
                 assignment[key] = value
 
-            self.latest_model = EagerModel(assignment=assignment,
-                                           environment=self.environment)
+            self.latest_model = EagerModel(
+                assignment=assignment, environment=self.environment
+            )
         return self.latest_model
 
     @clear_pending_pop
@@ -241,7 +247,6 @@ class BddSolver(Solver):
 
 
 class BddConverter(Converter, DagWalker):
-
     def __init__(self, environment, ddmanager):
         DagWalker.__init__(self, env=environment)
 
@@ -286,8 +291,10 @@ class BddConverter(Converter, DagWalker):
 
     def declare_variable(self, var):
         if not var.is_symbol(type_=types.BOOL):
-            raise PysmtTypeError("Trying to declare as a variable something "
-                                 "that is not a symbol: %s" % var)
+            raise PysmtTypeError(
+                "Trying to declare as a variable something "
+                "that is not a symbol: %s" % var
+            )
         if var not in self.var2node:
             node = self.ddmanager.NewVar()
             self.idx2var[node.NodeReadIndex()] = var
@@ -302,7 +309,7 @@ class BddConverter(Converter, DagWalker):
     def walk_or(self, formula, args, **kwargs):
         res = args[0]
         for a in args[1:]:
-            res = self.ddmanager.Or(res,a)
+            res = self.ddmanager.Or(res, a)
         return res
 
     def walk_not(self, formula, args, **kwargs):
@@ -354,8 +361,7 @@ class BddConverter(Converter, DagWalker):
             if current not in self.back_memoization:
                 self.back_memoization[current] = None
                 stack.append(current)
-                if current != self.ddmanager.Zero() and \
-                   current != self.ddmanager.One():
+                if current != self.ddmanager.Zero() and current != self.ddmanager.One():
                     t = current.T()
                     e = current.E()
                     stack.append(t)
@@ -391,11 +397,11 @@ class BddConverter(Converter, DagWalker):
                 pass
         return self.back_memoization[bdd]
 
+
 # EOC BddConverter
 
 
 class BddQuantifierEliminator(QuantifierEliminator):
-
     LOGICS = [pysmt.logics.BOOL]
 
     def __init__(self, environment, logic=None):
@@ -403,15 +409,16 @@ class BddQuantifierEliminator(QuantifierEliminator):
         self.environment = environment
         self.logic = logic
         self.ddmanager = repycudd.DdManager()
-        self.converter = BddConverter(environment=environment,
-                                      ddmanager=self.ddmanager)
+        self.converter = BddConverter(environment=environment, ddmanager=self.ddmanager)
 
     def eliminate_quantifiers(self, formula):
         logic = get_logic(formula, self.environment)
         if not logic <= pysmt.logics.BOOL:
-            raise NotImplementedError("BDD-based quantifier elimination only "\
-                                      "supports pure-boolean formulae."\
-                                      "(detected logic is: %s)" % str(logic))
+            raise NotImplementedError(
+                "BDD-based quantifier elimination only "
+                "supports pure-boolean formulae."
+                "(detected logic is: %s)" % str(logic)
+            )
 
         bdd = self.converter.convert(formula)
         pysmt_res = self.converter.back(bdd)

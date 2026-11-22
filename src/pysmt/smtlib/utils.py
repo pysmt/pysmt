@@ -16,9 +16,11 @@
 #   limitations under the License.
 #
 
-from pysmt.simplifier import Simplifier
-from pysmt.fnode import FNode
 from typing import List
+
+from pysmt.fnode import FNode
+from pysmt.simplifier import Simplifier
+
 
 class SmtLibModelValidationSimplifier(Simplifier):
     """This class is useful to validate SmtLib models produced by
@@ -38,6 +40,7 @@ class SmtLibModelValidationSimplifier(Simplifier):
     assert simp == TRUE()
     ```
     """
+
     def walk_equals(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         assert len(args) == 2
 
@@ -50,9 +53,12 @@ class SmtLibModelValidationSimplifier(Simplifier):
             return self.manager.Bool(l == r)
         elif sl == sr:
             return self.manager.TRUE()
-        elif sl.is_symbol() and sr.is_symbol() and \
-             sl.symbol_name().startswith('@') and \
-             sr.symbol_name().startswith('@'):
+        elif (
+            sl.is_symbol()
+            and sr.is_symbol()
+            and sl.symbol_name().startswith("@")
+            and sr.symbol_name().startswith("@")
+        ):
             return self.manager.Bool(sl == sr)
         else:
             return self.manager.Equals(sl, sr)

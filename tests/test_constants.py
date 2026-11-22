@@ -17,17 +17,24 @@
 #
 from fractions import Fraction as pyFraction
 
+from pysmt.constants import (
+    HAS_GMPY,
+    USE_GMPY,
+    Fraction,
+    Integer,
+    is_pysmt_fraction,
+    is_pysmt_integer,
+    is_python_boolean,
+    is_python_integer,
+    is_python_rational,
+    pysmt_fraction_from_rational,
+    pysmt_integer_from_integer,
+    to_python_integer,
+)
 from tests import TestCase, main, skipIf
-from pysmt.constants import Fraction, Integer, HAS_GMPY, USE_GMPY
-from pysmt.constants import is_pysmt_fraction, is_pysmt_integer
-from pysmt.constants import is_python_integer, is_python_boolean, is_python_rational
-from pysmt.constants import pysmt_integer_from_integer
-from pysmt.constants import to_python_integer
-from pysmt.constants import pysmt_fraction_from_rational
 
 
 class TestConstants(TestCase):
-
     def test_is_methods(self):
         self.assertFalse(is_pysmt_fraction(4))
         self.assertTrue(is_pysmt_fraction(Fraction(4)))
@@ -37,11 +44,13 @@ class TestConstants(TestCase):
 
         self.assertTrue(is_python_integer(int(2)))
         if HAS_GMPY:
-            from gmpy2 import mpz # type: ignore[import]
+            from gmpy2 import mpz  # type: ignore[import]
+
             self.assertTrue(is_python_integer(mpz(1)))
 
         if HAS_GMPY:
-            from gmpy2 import mpz, mpq # type: ignore[import]
+            from gmpy2 import mpq, mpz  # type: ignore[import]
+
             self.assertTrue(is_python_rational(mpz(1)))
             self.assertTrue(is_python_rational(mpq(1)))
 
@@ -61,13 +70,17 @@ class TestConstants(TestCase):
         res = int(4)
         self.assertEqual(res, to_python_integer(pysmt_integer_from_integer(4)))
         self.assertEqual(res, to_python_integer(pysmt_integer_from_integer(Integer(4))))
-        self.assertEqual(res, to_python_integer(pysmt_integer_from_integer(Fraction(4))))
-        self.assertEqual(res, to_python_integer(pysmt_integer_from_integer(pyFraction(4))))
+        self.assertEqual(
+            res, to_python_integer(pysmt_integer_from_integer(Fraction(4)))
+        )
+        self.assertEqual(
+            res, to_python_integer(pysmt_integer_from_integer(pyFraction(4)))
+        )
 
     def test_pysmt_fraction_from_rational(self):
-        self.assertEqual(Fraction(4,5), pysmt_fraction_from_rational("4/5"))
-        self.assertEqual(Fraction(4,5), pysmt_fraction_from_rational(pyFraction(4,5)))
-        self.assertEqual(Fraction(4,5), pysmt_fraction_from_rational(Fraction(4,5)))
+        self.assertEqual(Fraction(4, 5), pysmt_fraction_from_rational("4/5"))
+        self.assertEqual(Fraction(4, 5), pysmt_fraction_from_rational(pyFraction(4, 5)))
+        self.assertEqual(Fraction(4, 5), pysmt_fraction_from_rational(Fraction(4, 5)))
         self.assertEqual(Fraction(4), pysmt_fraction_from_rational(4))
         self.assertEqual(Fraction(4), pysmt_fraction_from_rational(Integer(4)))
 
@@ -115,5 +128,5 @@ class TestConstants(TestCase):
         self.assertEqual(type_5a, type_6a)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

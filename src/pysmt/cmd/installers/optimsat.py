@@ -12,26 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import glob
+import os
 
 from pysmt.cmd.installers.base import SolverInstaller
 
 
 class OptiMSatInstaller(SolverInstaller):
-
     SOLVER = "optimsat"
 
-    def __init__(self, install_dir, bindings_dir, solver_version,
-                 mirror_link=None):
+    def __init__(self, install_dir, bindings_dir, solver_version, mirror_link=None):
 
         # Getting the right archive name
         archive_name_template = "optimathsat-{version}-{os}-{arch}.{ext}"
         format = {
-                "version": solver_version,
-                "os" : self.os_name,
-                "arch": self.architecture,
-                "ext": "tar.gz"
+            "version": solver_version,
+            "os": self.os_name,
+            "arch": self.architecture,
+            "ext": "tar.gz",
         }
         if self.os_name in ["windows", "darwin"]:
             # Since version 1.7.5 the architecture is not included in the
@@ -45,25 +43,36 @@ class OptiMSatInstaller(SolverInstaller):
 
         archive_name = archive_name_template.format(**format)
 
-        native_link = "https://optimathsat.disi.unitn.it/releases/optimathsat-%s/{archive_name}" % solver_version
+        native_link = (
+            "https://optimathsat.disi.unitn.it/releases/optimathsat-%s/{archive_name}"
+            % solver_version
+        )
 
-        SolverInstaller.__init__(self, install_dir=install_dir,
-                                 bindings_dir=bindings_dir,
-                                 solver_version=solver_version,
-                                 archive_name=archive_name,
-                                 native_link = native_link,
-                                 mirror_link=mirror_link)
+        SolverInstaller.__init__(
+            self,
+            install_dir=install_dir,
+            bindings_dir=bindings_dir,
+            solver_version=solver_version,
+            archive_name=archive_name,
+            native_link=native_link,
+            mirror_link=mirror_link,
+        )
 
         self.python_bindings_dir = os.path.join(self.extract_path, "python")
-
 
     def compile(self):
         if self.os_name == "windows":
             libdir = os.path.join(self.python_bindings_dir, "../lib")
             incdir = os.path.join(self.python_bindings_dir, "../include")
             gmp_h_url = "https://github.com/mikand/tamer-windows-deps/raw/master/gmp/include/gmp.h"
-            mpir_dll_url = "https://github.com/Legrandin/mpir-windows-builds/blob/master/mpir-2.6.0_VS2015_%s/mpir.dll?raw=true" % self.bits
-            mpir_lib_url = "https://github.com/Legrandin/mpir-windows-builds/blob/master/mpir-2.6.0_VS2015_%s/mpir.lib?raw=true" % self.bits
+            mpir_dll_url = (
+                "https://github.com/Legrandin/mpir-windows-builds/blob/master/mpir-2.6.0_VS2015_%s/mpir.dll?raw=true"
+                % self.bits
+            )
+            mpir_lib_url = (
+                "https://github.com/Legrandin/mpir-windows-builds/blob/master/mpir-2.6.0_VS2015_%s/mpir.lib?raw=true"
+                % self.bits
+            )
 
             SolverInstaller.do_download(gmp_h_url, os.path.join(incdir, "gmp.h"))
             SolverInstaller.do_download(mpir_dll_url, os.path.join(libdir, "mpir.dll"))
@@ -72,8 +81,9 @@ class OptiMSatInstaller(SolverInstaller):
         if self.os_name in {"darwin"}:
             SolverInstaller.run_python("./setup.py build_ext", self.python_bindings_dir)
         else:
-            SolverInstaller.run_python("./setup.py build_ext -R $ORIGIN", self.python_bindings_dir)
-
+            SolverInstaller.run_python(
+                "./setup.py build_ext -R $ORIGIN", self.python_bindings_dir
+            )
 
     def move(self):
         pdir = self.python_bindings_dir

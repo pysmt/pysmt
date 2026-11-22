@@ -15,13 +15,13 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from tests import TestCase
-from pysmt.type_checker import SimpleTypeChecker
-from pysmt.printers import HRPrinter, HRSerializer
-from pysmt.shortcuts import get_env, Symbol, reset_env
-from pysmt.exceptions import UnsupportedOperatorError
 from pysmt.environment import Environment
-from pysmt.operators import new_node_type, all_types
+from pysmt.exceptions import UnsupportedOperatorError
+from pysmt.operators import all_types, new_node_type
+from pysmt.printers import HRPrinter, HRSerializer
+from pysmt.shortcuts import Symbol, get_env, reset_env
+from pysmt.type_checker import SimpleTypeChecker
+from tests import TestCase
 
 
 class TestExtendSuper(TestCase):
@@ -52,7 +52,7 @@ class TestExtendSuper(TestCase):
         create_node = get_env().formula_manager.create_node
         # Create a test node (This implicitly calls the Type-checker)
         x = Symbol("x")
-        f1 = create_node(node_type=XOR, args=(x,x))
+        f1 = create_node(node_type=XOR, args=(x, x))
         self.assertIsNotNone(f1)
 
         # String conversion should use the function defined above.
@@ -87,7 +87,7 @@ class TestExtendSuper(TestCase):
             create_node = myenv.formula_manager.create_node
             # Create a test node (This implicitly calls the Type-checker)
             x = Symbol("x")
-            f1 = create_node(node_type=XOR, args=(x,x))
+            f1 = create_node(node_type=XOR, args=(x, x))
             self.assertIsNotNone(f1)
 
             # String conversion should use the function defined above.

@@ -16,21 +16,31 @@
 #   limitations under the License.
 #
 
-from tests import TestCase, main
-from tests import skipIfNoSolverForLogic, skipIfSolverNotAvailable
-from pysmt.logics import QF_AUFLIA, QF_AUFBV, get_logic_by_name
-from pysmt.typing import ARRAY_INT_INT, ArrayType, INT, REAL, BV8, BOOL
-from pysmt.shortcuts import (Solver, get_env, simplify,
-                             Symbol, Not, Equals, Int, BV, Real, FreshSymbol,
-                             Select, Store, Array, TRUE)
 from pysmt.exceptions import ConvertExpressionError, PysmtTypeError, PysmtValueError
-
+from pysmt.logics import QF_AUFBV, QF_AUFLIA, get_logic_by_name
+from pysmt.shortcuts import (
+    BV,
+    TRUE,
+    Array,
+    Equals,
+    FreshSymbol,
+    Int,
+    Not,
+    Real,
+    Select,
+    Solver,
+    Store,
+    Symbol,
+    get_env,
+    simplify,
+)
+from pysmt.typing import ARRAY_INT_INT, BOOL, BV8, INT, REAL, ArrayType
+from tests import TestCase, main, skipIfNoSolverForLogic, skipIfSolverNotAvailable
 
 QF_ALIA_CONST = get_logic_by_name("QF_ALIA*")
 
 
 class TestArray(TestCase):
-
     def test_array_type(self):
         aii_type = ARRAY_INT_INT
         aii_type2 = ArrayType(INT, INT)
@@ -47,42 +57,35 @@ class TestArray(TestCase):
         self.assertEqual(elem_type, base)
 
         # Equality tests
-        nested2 = ArrayType(ArrayType(INT, INT),
-                            ArrayType(INT, INT))
+        nested2 = ArrayType(ArrayType(INT, INT), ArrayType(INT, INT))
         self.assertEqual(nested, nested2)
 
-        fake_nested = ArrayType(ArrayType(INT, INT),
-                                ArrayType(INT, REAL))
+        fake_nested = ArrayType(ArrayType(INT, INT), ArrayType(INT, REAL))
         self.assertNotEqual(nested, fake_nested)
-
 
     @skipIfNoSolverForLogic(QF_AUFLIA)
     def test_array(self):
         a = Symbol("a", ARRAY_INT_INT)
-        formula = Equals(Select(Store(a, Int(10), Int(100)), Int(10)),
-                         Int(100))
+        formula = Equals(Select(Store(a, Int(10), Int(100)), Int(10)), Int(100))
         self.assertSat(formula, logic=QF_AUFLIA)
 
     @skipIfNoSolverForLogic(QF_AUFBV)
     def test_bv_array(self):
         a = Symbol("a", ArrayType(BV8, BV8))
-        formula = Equals(Select(Store(a, BV(10, 8), BV(100, 8)), BV(10,8)),
-                         BV(100,8))
+        formula = Equals(Select(Store(a, BV(10, 8), BV(100, 8)), BV(10, 8)), BV(100, 8))
         self.assertSat(formula, logic=QF_AUFBV)
 
     @skipIfSolverNotAvailable("btor")
     def test_btor_does_not_support_int_arrays(self):
         a = Symbol("a", ARRAY_INT_INT)
-        formula = Equals(Select(Store(a, Int(10), Int(100)), Int(10)),
-                         Int(100))
+        formula = Equals(Select(Store(a, Int(10), Int(100)), Int(10)), Int(100))
         btor = Solver(name="btor")
         with self.assertRaises(ConvertExpressionError):
             btor.add_assertion(formula)
 
     @skipIfSolverNotAvailable("btor")
     def test_btor_supports_const_arrays(self):
-        formula = Equals(Array(BV8, BV(0, 8)),
-                                    FreshSymbol(ArrayType(BV8, BV8)))
+        formula = Equals(Array(BV8, BV(0, 8)), FreshSymbol(ArrayType(BV8, BV8)))
         self.assertSat(formula, logic=QF_AUFBV, solver_name="btor")
 
     @skipIfSolverNotAvailable("btor")
@@ -106,24 +109,30 @@ class TestArray(TestCase):
                 s.add_assertion(formula)
                 self.assertTrue(s.solve(), name)
                 model = s.get_value(a)
-                for idx, expected in [(Int(1), Int(5)), (Int(2), Int(7)),
-                                      (Int(42), Int(0))]:
-                    self.assertEqual(simplify(Select(model, idx)), expected,
-                                     (name, model))
+                for idx, expected in [
+                    (Int(1), Int(5)),
+                    (Int(2), Int(7)),
+                    (Int(42), Int(0)),
+                ]:
+                    self.assertEqual(
+                        simplify(Select(model, idx)), expected, (name, model)
+                    )
 
     def test_complex_types(self):
         with self.assertRaises(PysmtTypeError):
             # Not(Store(Array<Real,BV8>(8d_0), 1.0, 8d_5) =
             #     Store(Array<Int,BV8>(8d_0), 1, 8d_5))
-            Not(Equals(Store(Array(REAL, BV(0, 8)), Real(1), BV(5, 8)),
-                       Store(Array(INT,  BV(0, 8)), Int(1), BV(5, 8))))
+            Not(
+                Equals(
+                    Store(Array(REAL, BV(0, 8)), Real(1), BV(5, 8)),
+                    Store(Array(INT, BV(0, 8)), Int(1), BV(5, 8)),
+                )
+            )
 
-        nested_a = Symbol("a_arb_aii", ArrayType(ArrayType(REAL, BV8),
-                                                 ARRAY_INT_INT))
+        nested_a = Symbol("a_arb_aii", ArrayType(ArrayType(REAL, BV8), ARRAY_INT_INT))
         with self.assertRaises(PysmtTypeError):
-        # This is wrong, because the first elemnt of Array must be a Type
-            Equals(nested_a, Array(Array(REAL, BV(0,8)),
-                                   Array(INT, Int(7))))
+            # This is wrong, because the first elemnt of Array must be a Type
+            Equals(nested_a, Array(Array(REAL, BV(0, 8)), Array(INT, Int(7))))
 
     def test_is_array_op(self):
         a = Symbol("a", ARRAY_INT_INT)
@@ -137,12 +146,16 @@ class TestArray(TestCase):
         self.assertFalse(store_.is_select())
 
     def test_array_value_get(self):
-        ax = Array(REAL, Real(0),
-                   {Real(1): Real(2),
-                    Real(2): Real(3),
-                    Real(3): Real(4),
-                    Real(4): Real(5),
-                })
+        ax = Array(
+            REAL,
+            Real(0),
+            {
+                Real(1): Real(2),
+                Real(2): Real(3),
+                Real(3): Real(4),
+                Real(4): Real(5),
+            },
+        )
         self.assertEqual(ax.array_value_get(Real(1)), Real(2))
         self.assertEqual(ax.array_value_get(Real(2)), Real(3))
         self.assertEqual(ax.array_value_get(Real(3)), Real(4))
@@ -167,10 +180,9 @@ class TestArray(TestCase):
 
     def test_infix(self):
         a = Symbol("a", ARRAY_INT_INT)
-        self.assertEqual(a.Select(Int(5)),
-                         Select(a, Int(5)))
-        self.assertEqual(a.Store(Int(5), Int(6)),
-                         Store(a, Int(5), Int(6)))
+        self.assertEqual(a.Select(Int(5)), Select(a, Int(5)))
+        self.assertEqual(a.Store(Int(5), Int(6)), Store(a, Int(5), Int(6)))
+
 
 if __name__ == "__main__":
     main()

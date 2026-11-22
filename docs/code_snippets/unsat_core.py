@@ -6,7 +6,7 @@
 # separately and returns a subset of them (the UNSAT core) whose
 # conjunction is still unsatisfiable. The core need not be minimal.
 
-from pysmt.shortcuts import Symbol, Int, Equals, get_unsat_core
+from pysmt.shortcuts import Equals, Int, Symbol, get_unsat_core
 from pysmt.typing import INT
 
 a = Symbol("a", INT)

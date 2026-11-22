@@ -17,15 +17,13 @@
 #
 
 import pysmt.logics
-from pysmt.shortcuts import And, Symbol, Exists, FALSE, ForAll, Or, TRUE
-from pysmt.shortcuts import qelim
 from pysmt.exceptions import InternalSolverError, NoSolverAvailableError
+from pysmt.shortcuts import FALSE, TRUE, And, Exists, ForAll, Or, Symbol, qelim
 from tests import TestCase, main
 from tests.examples import get_example_formulae
 
 
 class TestNativeQE(TestCase):
-
     def setUp(self):
         TestCase.setUp(self)
         self.x, self.y = Symbol("x"), Symbol("y")
@@ -84,7 +82,8 @@ class TestNativeQE(TestCase):
         for qe in self.qe:
             for example in get_example_formulae():
                 f = example.expr
-                if example.logic.quantifier_free: continue
+                if example.logic.quantifier_free:
+                    continue
                 try:
                     res = qelim(f, solver_name=qe)
                     self.assertIsNotNone(res, (f, qe))
@@ -94,5 +93,5 @@ class TestNativeQE(TestCase):
                     self.assertTrue(example.logic > pysmt.logics.BOOL, (example, qe))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

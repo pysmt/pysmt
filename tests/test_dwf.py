@@ -15,27 +15,30 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from tests import TestCase
-from pysmt.operators import CUSTOM_NODE_TYPES, new_node_type, all_types
-from pysmt.type_checker import SimpleTypeChecker
-from pysmt.printers import HRPrinter
-from pysmt.shortcuts import get_env, Symbol
 from pysmt.exceptions import UnsupportedOperatorError
+from pysmt.operators import CUSTOM_NODE_TYPES, all_types, new_node_type
+from pysmt.printers import HRPrinter
+from pysmt.shortcuts import Symbol, get_env
+from pysmt.type_checker import SimpleTypeChecker
+from tests import TestCase
 
 
 class TestDwf(TestCase):
     # NOTE: We enforce order of execution of the tests, since in the
     # other test we define a custom type.
     def test_00_new_node_type(self):
-        self.assertNotIn(199, CUSTOM_NODE_TYPES,
-                        "Initially there should be no custom node with id 199")
+        self.assertNotIn(
+            199,
+            CUSTOM_NODE_TYPES,
+            "Initially there should be no custom node with id 199",
+        )
         idx = new_node_type(node_id=199)
         self.assertIsNotNone(idx)
         with self.assertRaises(AssertionError):
             new_node_type(idx)
 
-        n = new_node_type(idx+100)
-        self.assertEqual(n, idx+100)
+        n = new_node_type(idx + 100)
+        self.assertEqual(n, idx + 100)
 
     def test_01_dwf(self):
         # Ad-hoc method to handle printing of the new node
@@ -57,7 +60,7 @@ class TestDwf(TestCase):
 
         # Create a test node (This implicitely calls the Type-checker)
         x = Symbol("x")
-        f1 = create_node(node_type=XOR, args=(x,x))
+        f1 = create_node(node_type=XOR, args=(x, x))
         self.assertIsNotNone(f1)
 
         # String conversion should use the function defined above.
@@ -88,6 +91,7 @@ class TestDwf(TestCase):
                 self.stream.write(sep)
                 yield formula.arg(1)
                 self.stream.write(")")
+
             return hrprinter_walk_XOR
 
         XOR = new_node_type()
@@ -98,7 +102,8 @@ class TestDwf(TestCase):
         # type-checker handler. Only env1 gets a printer handler.
         for env in (env1, env2):
             env.add_dynamic_walker_function(
-                XOR, SimpleTypeChecker, SimpleTypeChecker.walk_bool_to_bool)
+                XOR, SimpleTypeChecker, SimpleTypeChecker.walk_bool_to_bool
+            )
         env1.add_dynamic_walker_function(XOR, HRPrinter, make_printer(" *+* "))
 
         x1 = env1.formula_manager.Symbol("x")

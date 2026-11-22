@@ -19,11 +19,10 @@ from typing import Iterable, List, Optional, Sequence
 
 import pysmt
 import pysmt.logics
-
-from pysmt.walkers.identitydag import IdentityDagWalker
-from pysmt.utils import all_assignments
 from pysmt.exceptions import InternalSolverError
 from pysmt.fnode import FNode
+from pysmt.utils import all_assignments
+from pysmt.walkers.identitydag import IdentityDagWalker
 
 
 class QuantifierEliminator(object):
@@ -45,11 +44,11 @@ class QuantifierEliminator(object):
         raise NotImplementedError
 
     def __enter__(self):
-        """ Manage entering a Context (i.e., with statement) """
+        """Manage entering a Context (i.e., with statement)"""
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        """ Manage exiting from Context (i.e., with statement)
+        """Manage exiting from Context (i.e., with statement)
 
         The default behaviour is to explicitly destroy the qelim to free
         the associated resources.
@@ -72,7 +71,11 @@ class ShannonQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
 
     LOGICS = [pysmt.logics.BOOL]
 
-    def __init__(self, environment: "pysmt.environment.Environment", logic: Optional[pysmt.logics.Logic]=None):
+    def __init__(
+        self,
+        environment: "pysmt.environment.Environment",
+        logic: Optional[pysmt.logics.Logic] = None,
+    ):
         IdentityDagWalker.__init__(self, env=environment)
         QuantifierEliminator.__init__(self)
         self.logic = logic
@@ -84,9 +87,10 @@ class ShannonQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
         for v in var_set:
             if not v.symbol_type().is_bool_type():
                 raise InternalSolverError(
-                    "Shannon Quantifier Elimination only supports "\
-                    "quantification over Boolean variables: "\
-                    "(%s is %s)" % (v, v.symbol_type()))
+                    "Shannon Quantifier Elimination only supports "
+                    "quantification over Boolean variables: "
+                    "(%s is %s)" % (v, v.symbol_type())
+                )
 
     def _expand(self, formula: FNode, args: Sequence[FNode]) -> List[FNode]:
         """Returns the list of elements from the Shannon expansion."""
@@ -108,7 +112,9 @@ class ShannonQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
     def _exit(self):
         pass
 
+
 # EOC ShannonQuantifierEliminator
+
 
 class SelfSubstitutionQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
     """Boolean Quantifier Elimination based on Self-Substitution.
@@ -118,9 +124,14 @@ class SelfSubstitutionQuantifierEliminator(QuantifierEliminator, IdentityDagWalk
      Dror Fried, Lucas M. Tabajara, and Moshe Y. Vardi,
      CAV 2016
     """
+
     LOGICS = [pysmt.logics.BOOL]
 
-    def __init__(self, environment: "pysmt.environment.Environment", logic: Optional[pysmt.logics.Logic]=None):
+    def __init__(
+        self,
+        environment: "pysmt.environment.Environment",
+        logic: Optional[pysmt.logics.Logic] = None,
+    ):
         IdentityDagWalker.__init__(self, env=environment)
         QuantifierEliminator.__init__(self)
         self.logic = logic
@@ -128,7 +139,9 @@ class SelfSubstitutionQuantifierEliminator(QuantifierEliminator, IdentityDagWalk
     def eliminate_quantifiers(self, formula: FNode) -> FNode:
         return self.walk(formula)
 
-    def self_substitute(self, formula: FNode, qvars: Sequence[FNode], token: FNode) -> FNode:
+    def self_substitute(
+        self, formula: FNode, qvars: Sequence[FNode], token: FNode
+    ) -> FNode:
         substitute = self.env.substituter.substitute
         for v in qvars[::-1]:
             inner_sub = substitute(formula, {v: token})

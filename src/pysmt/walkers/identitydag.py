@@ -16,11 +16,12 @@
 #   limitations under the License.
 #
 from fractions import Fraction
-import pysmt
-
-from pysmt.walkers.dag import DagWalker
-from pysmt.fnode import FNode
 from typing import Any, List, Optional, Union, cast
+
+import pysmt
+from pysmt.fnode import FNode
+from pysmt.walkers.dag import DagWalker
+
 
 class IdentityDagWalker(DagWalker):
     """This class traverses a formula and rebuilds it recursively
@@ -31,15 +32,18 @@ class IdentityDagWalker(DagWalker):
 
     """
 
-    def __init__(self, env: Optional["pysmt.environment.Environment"]=None, invalidate_memoization: bool=False):
-        DagWalker.__init__(self,
-                           env=env,
-                           invalidate_memoization=invalidate_memoization)
+    def __init__(
+        self,
+        env: Optional["pysmt.environment.Environment"] = None,
+        invalidate_memoization: bool = False,
+    ):
+        DagWalker.__init__(self, env=env, invalidate_memoization=invalidate_memoization)
         self.mgr = self.env.formula_manager
 
-    def walk_symbol(self, formula: FNode, args: List[Union[Any, FNode]], **kwargs) -> FNode:
-        return self.mgr.Symbol(formula.symbol_name(),
-                               formula.symbol_type())
+    def walk_symbol(
+        self, formula: FNode, args: List[Union[Any, FNode]], **kwargs
+    ) -> FNode:
+        return self.mgr.Symbol(formula.symbol_name(), formula.symbol_type())
 
     def walk_algebraic_constant(self, formula, args, **kwargs):
         return self.mgr._Algebraic(formula.constant_value())
@@ -84,13 +88,11 @@ class IdentityDagWalker(DagWalker):
         return self.mgr.LT(args[0], args[1])
 
     def walk_forall(self, formula, args, **kwargs):
-        qvars = [self.walk_symbol(v, args, **kwargs)
-                 for v in formula.quantifier_vars()]
+        qvars = [self.walk_symbol(v, args, **kwargs) for v in formula.quantifier_vars()]
         return self.mgr.ForAll(qvars, args[0])
 
     def walk_exists(self, formula, args, **kwargs):
-        qvars = [self.walk_symbol(v, args, **kwargs)
-                 for v in formula.quantifier_vars()]
+        qvars = [self.walk_symbol(v, args, **kwargs) for v in formula.quantifier_vars()]
         return self.mgr.Exists(qvars, args[0])
 
     def walk_plus(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
@@ -157,9 +159,9 @@ class IdentityDagWalker(DagWalker):
         return self.mgr.BVULE(args[0], args[1])
 
     def walk_bv_extract(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
-        return self.mgr.BVExtract(args[0],
-                                  start=formula.bv_extract_start(),
-                                  end=formula.bv_extract_end())
+        return self.mgr.BVExtract(
+            args[0], start=formula.bv_extract_start(), end=formula.bv_extract_end()
+        )
 
     def walk_bv_ror(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         return self.mgr.BVRor(args[0], formula.bv_rotation_step())
@@ -244,9 +246,7 @@ class IdentityDagWalker(DagWalker):
 
     def walk_array_value(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         assign = dict(zip(args[1::2], args[2::2]))
-        return self.mgr.Array(formula.array_value_index_type(),
-                              args[0],
-                              assign)
+        return self.mgr.Array(formula.array_value_index_type(), args[0], assign)
 
     def walk_div(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
         return self.mgr.Div(args[0], args[1])

@@ -23,12 +23,12 @@ FormulaManager, Simplifier, HRSerializer, SimpleTypeChecker.
 
 from typing import Callable, Dict, List, Optional, Tuple, Type
 
-import pysmt.simplifier
+import pysmt.formula
+import pysmt.oracles
 import pysmt.printers
+import pysmt.simplifier
 import pysmt.substituter
 import pysmt.type_checker
-import pysmt.oracles
-import pysmt.formula
 import pysmt.typing
 
 
@@ -51,7 +51,7 @@ class Environment(object):
     HRSerializerClass = pysmt.printers.HRSerializer
     QuantifierOracleClass = pysmt.oracles.QuantifierOracle
     TheoryOracleClass = pysmt.oracles.TheoryOracle
-    FreeVarsOracleClass= pysmt.oracles.FreeVarsOracle
+    FreeVarsOracleClass = pysmt.oracles.FreeVarsOracle
     SizeOracleClass = pysmt.oracles.SizeOracle
     AtomsOracleClass = pysmt.oracles.AtomsOracle
     TypesOracleClass = pysmt.oracles.TypesOracle
@@ -115,37 +115,37 @@ class Environment(object):
 
     @property
     def stc(self) -> pysmt.type_checker.SimpleTypeChecker:
-        """ Get the Simple Type Checker """
+        """Get the Simple Type Checker"""
         return self._stc
 
     @property
     def qfo(self) -> pysmt.oracles.QuantifierOracle:
-        """ Get the Quantifier Oracle """
+        """Get the Quantifier Oracle"""
         return self._qfo
 
     @property
     def ao(self) -> pysmt.oracles.AtomsOracle:
-        """ Get the Atoms Oracle """
+        """Get the Atoms Oracle"""
         return self._ao
 
     @property
     def theoryo(self) -> pysmt.oracles.TheoryOracle:
-        """ Get the Theory Oracle """
+        """Get the Theory Oracle"""
         return self._theoryo
 
     @property
     def typeso(self) -> pysmt.oracles.TypesOracle:
-        """ Get the Types Oracle """
+        """Get the Types Oracle"""
         return self._typeso
 
     @property
     def fvo(self) -> pysmt.oracles.FreeVarsOracle:
-        """ Get the FreeVars Oracle """
+        """Get the FreeVars Oracle"""
         return self._fvo
 
     @property
     def sizeo(self) -> pysmt.oracles.SizeOracle:
-        """ Get the Size Oracle """
+        """Get the Size Oracle"""
         return self._sizeo
 
     def add_dynamic_walker_function(self, nodetype, walker, function):
@@ -174,12 +174,13 @@ class Environment(object):
     @property
     def factory(self) -> "pysmt.factory.Factory":
         import pysmt.factory
+
         if self._factory is None:
             self._factory = pysmt.factory.Factory(self)
         return self._factory
 
     def __enter__(self) -> "Environment":
-        """Entering a Context """
+        """Entering a Context"""
         push_env(self)
         return self
 
@@ -187,10 +188,12 @@ class Environment(object):
         """Remove environment from global stack."""
         pop_env()
 
+
 # EOC Environment
 
 #### GLOBAL ENVIRONMENTS STACKS ####
 ENVIRONMENTS_STACK: List[Environment] = []
+
 
 def get_env() -> Environment:
     """Returns the Environment at the head of the stack."""
@@ -214,6 +217,7 @@ def reset_env() -> Environment:
     pop_env()
     push_env()
     return get_env()
+
 
 # Create the default environment
 push_env()

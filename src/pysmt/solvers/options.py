@@ -36,7 +36,9 @@ To use the Options it is necessary to:
 
 import abc
 from typing import Any, Dict, Optional
+
 import pysmt
+
 
 class SolverOptions(object):
     """Solver Options shared by most solvers.
@@ -65,44 +67,49 @@ class SolverOptions(object):
       Provides solver specific options
 
     """
+
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, generate_models: bool=True, incremental: bool=True,
-                 unsat_cores_mode: Optional[str]=None, random_seed: Optional[int]=None,
-                 solver_options: Optional[Dict[str, Any]]=None):
+    def __init__(
+        self,
+        generate_models: bool = True,
+        incremental: bool = True,
+        unsat_cores_mode: Optional[str] = None,
+        random_seed: Optional[int] = None,
+        solver_options: Optional[Dict[str, Any]] = None,
+    ):
 
         if generate_models not in (True, False):
-            raise ValueError("Invalid value %s for 'generate_models'" \
-                             % generate_models)
+            raise ValueError("Invalid value %s for 'generate_models'" % generate_models)
         self.generate_models = generate_models
 
         if incremental not in (True, False):
-            raise ValueError("Invalid value %s for 'incremental'" \
-                             % incremental)
+            raise ValueError("Invalid value %s for 'incremental'" % incremental)
         self.incremental = incremental
 
         if unsat_cores_mode not in (None, "named", "all"):
-            raise ValueError("Invalid value %s for 'unsat_cores_mode'" \
-                             % unsat_cores_mode)
+            raise ValueError(
+                "Invalid value %s for 'unsat_cores_mode'" % unsat_cores_mode
+            )
         self.unsat_cores_mode = unsat_cores_mode
 
-        if random_seed is not None and type(random_seed) != int:
-            raise ValueError("Invalid value %s for 'random_seed'" \
-                             % random_seed)
+        if random_seed is not None and type(random_seed) is not int:
+            raise ValueError("Invalid value %s for 'random_seed'" % random_seed)
         self.random_seed = random_seed
 
         if solver_options is not None:
             try:
                 solver_options = dict(solver_options)
-            except:
-                raise ValueError("Invalid value %s for 'solver_options'" \
-                                 % solver_options)
+            except BaseException:
+                raise ValueError(
+                    "Invalid value %s for 'solver_options'" % solver_options
+                )
         else:
             solver_options = dict()
         self.solver_options = solver_options
 
     @abc.abstractmethod
-    def __call__(self, solver: "pysmt.solvers.solver.Solver"): # type: ignore [name-defined]
+    def __call__(self, solver: "pysmt.solvers.solver.Solver"):  # type: ignore [name-defined]
         """Handle the setting options within solver"""
         raise NotImplementedError
 
@@ -112,10 +119,16 @@ class SolverOptions(object):
         This can be used to duplicate the options.
         """
         kwargs = {}
-        for k in ("generate_models", "incremental", "unsat_cores_mode",
-                  "random_seed", "solver_options"):
+        for k in (
+            "generate_models",
+            "incremental",
+            "unsat_cores_mode",
+            "random_seed",
+            "solver_options",
+        ):
             v = getattr(self, k)
             kwargs[k] = v
         return kwargs
+
 
 # EOC SolverOptions

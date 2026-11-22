@@ -15,23 +15,42 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from pysmt.typing import REAL, BOOL, INT, FunctionType, BV8
-from pysmt.type_checker import (assert_no_boolean_in_args,
-                                assert_boolean_args,
-                                assert_same_type_args,
-                                assert_args_type_in)
-from pysmt.shortcuts import (Symbol, And, Plus, Minus, Times, Equals, Or, Iff,
-                             LE, LT, Not, GE, GT, Ite, Bool, Int, Real, Div,
-                             Function)
+from pysmt.decorators import typecheck_result
 from pysmt.environment import get_env
 from pysmt.exceptions import PysmtTypeError
+from pysmt.shortcuts import (
+    GE,
+    GT,
+    LE,
+    LT,
+    And,
+    Bool,
+    Div,
+    Equals,
+    Function,
+    Iff,
+    Int,
+    Ite,
+    Minus,
+    Not,
+    Or,
+    Plus,
+    Real,
+    Symbol,
+    Times,
+)
+from pysmt.type_checker import (
+    assert_args_type_in,
+    assert_boolean_args,
+    assert_no_boolean_in_args,
+    assert_same_type_args,
+)
+from pysmt.typing import BOOL, BV8, INT, REAL, FunctionType
 from tests import TestCase, main
 from tests.examples import get_example_formulae
-from pysmt.decorators import typecheck_result
 
 
 class TestSimpleTypeChecker(TestCase):
-
     def setUp(self):
         super(TestSimpleTypeChecker, self).setUp()
 
@@ -45,20 +64,17 @@ class TestSimpleTypeChecker(TestCase):
 
         self.qfo = get_env().qfo
 
-
     def test_boolean(self):
         varA = Symbol("At", INT)
         varB = Symbol("Bt", INT)
 
-        f = And(LT(varA, Plus(varB, Int(1))),
-                GT(varA, Minus(varB, Int(1))))
+        f = And(LT(varA, Plus(varB, Int(1))), GT(varA, Minus(varB, Int(1))))
         g = Equals(varA, varB)
         h = Iff(f, g)
 
         tc = get_env().stc
         res = tc.walk(h)
         self.assertEqual(res, BOOL)
-
 
     def test_arith_relations(self):
         self.assertEqual(self.tc.walk(LE(self.p, self.q)), BOOL)
@@ -83,7 +99,6 @@ class TestSimpleTypeChecker(TestCase):
         with self.assertRaises(PysmtTypeError):
             LT(bv_a, bv_b)
 
-
     def test_functions(self):
         vi = Symbol("At", INT)
         vr = Symbol("Bt", REAL)
@@ -104,8 +119,6 @@ class TestSimpleTypeChecker(TestCase):
 
         with self.assertRaises(PysmtTypeError):
             LE(Plus(vi, Function(f, [Int(4)])), Int(8))
-
-
 
     def test_walk_type_to_type(self):
         # TODO: this exploits a private service of the type checker,
@@ -136,7 +149,7 @@ class TestSimpleTypeChecker(TestCase):
             GT(self.p, self.q),
             LT(self.p, self.q),
             Bool(True),
-            Ite(self.x, self.y, self.x)
+            Ite(self.x, self.y, self.x),
         ]
 
         # TODO: FORALL EXISTS
@@ -173,7 +186,6 @@ class TestSimpleTypeChecker(TestCase):
             t = self.tc.walk(f)
             self.assertEqual(t, INT, f)
 
-
     def test_assert_args(self):
         assert_no_boolean_in_args([self.r, self.p])
         with self.assertRaises(PysmtTypeError):
@@ -187,24 +199,23 @@ class TestSimpleTypeChecker(TestCase):
         with self.assertRaises(PysmtTypeError):
             assert_same_type_args([self.r, self.p])
 
-        assert_args_type_in([self.x, self.p],
-                            allowed_types=[INT, BOOL])
+        assert_args_type_in([self.x, self.p], allowed_types=[INT, BOOL])
         with self.assertRaises(PysmtTypeError):
-            assert_args_type_in([self.x, self.p],
-                                allowed_types=[REAL, BOOL])
-
+            assert_args_type_in([self.x, self.p], allowed_types=[REAL, BOOL])
 
     def test_decorator_typecheck_result(self):
         from pysmt.fnode import FNode, FNodeContent
         from pysmt.operators import AND
+
         @typecheck_result
         def good_function():
             return self.x
 
         @typecheck_result
         def super_bad_function():
-            sb = FNode(FNodeContent(node_type=AND, args=(self.p, self.p),
-                                    payload=None), -1)
+            sb = FNode(
+                FNodeContent(node_type=AND, args=(self.p, self.p), payload=None), -1
+            )
             return sb
 
         good_function()
@@ -215,6 +226,7 @@ class TestSimpleTypeChecker(TestCase):
     def test_multiple_creations(self):
         def bad_formula():
             return Times(self.p, self.r)
+
         with self.assertRaises(PysmtTypeError):
             bad_formula()
         # When building the same formula a second time, should raise again.
@@ -222,8 +234,9 @@ class TestSimpleTypeChecker(TestCase):
             bad_formula()
 
     def test_examples(self):
-        for (f, _, _, _) in get_example_formulae():
+        for f, _, _, _ in get_example_formulae():
             self.assertIs(f.get_type(), BOOL, f)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

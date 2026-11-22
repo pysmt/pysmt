@@ -18,28 +18,41 @@
 
 from __future__ import absolute_import
 
+from typing import (
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    cast,
+)
+
 from pysmt.decorators import clear_pending_pop
-from pysmt.solvers.solver import Model
-from pysmt.solvers.z3 import Z3Solver, Z3Model
-
-from pysmt.exceptions import PysmtInfinityError, \
-    PysmtUnboundedOptimizationError, PysmtInfinitesimalError, \
-    SolverAPINotFound, GoalNotSupportedError
-
-from pysmt.optimization.optimizer import Optimizer, \
-    SUAOptimizerMixin, IncrementalOptimizerMixin
 from pysmt.environment import Environment
+from pysmt.exceptions import (
+    GoalNotSupportedError,
+    PysmtInfinitesimalError,
+    PysmtInfinityError,
+    PysmtUnboundedOptimizationError,
+    SolverAPINotFound,
+)
 from pysmt.fnode import FNode
 from pysmt.logics import Logic
 from pysmt.optimization.goal import Goal, MaxSMTGoal
-from typing import Dict, Iterable, Iterator, List, Optional, Sequence, Tuple, Union, cast
-
+from pysmt.optimization.optimizer import (
+    IncrementalOptimizerMixin,
+    Optimizer,
+    SUAOptimizerMixin,
+)
+from pysmt.solvers.solver import Model
+from pysmt.solvers.z3 import Z3Model, Z3Solver
 from pysmt.typing import _BVType
-from pysmt.utils import assert_not_none
 
 try:
-    import z3 # type: ignore[import]
-    from z3.z3 import OptimizeObjective # type: ignore[import]
+    import z3  # type: ignore[import]
+    from z3.z3 import OptimizeObjective  # type: ignore[import]
 except ImportError:
     raise SolverAPINotFound
 
@@ -49,11 +62,12 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
     LOGICS: Iterable[Logic] = set(filter(lambda x: x.theory.linear, Z3Solver.LOGICS))
 
     def __init__(self, environment: Environment, logic: Logic, **options):
-        Z3Solver.__init__(self, environment=environment,
-                          logic=logic, **options)
+        Z3Solver.__init__(self, environment=environment, logic=logic, **options)
         self.z3 = z3.Optimize()
 
-    def _assert_z3_goal(self, goal: Goal, goal_id: Optional[int] = None) -> OptimizeObjective:
+    def _assert_z3_goal(
+        self, goal: Goal, goal_id: Optional[int] = None
+    ) -> OptimizeObjective:
         h = None
         if goal.is_maxsmt_goal():
             assert goal_id is not None
@@ -70,7 +84,7 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
             ty = self.environment.stc.get_type(term)
             if goal.signed and ty.is_bv_type():
                 width = cast(_BVType, ty).width
-                term = self.mgr.BVAdd(term, self.mgr.BV(2**(width-1), width))
+                term = self.mgr.BVAdd(term, self.mgr.BV(2 ** (width - 1), width))
             obj = self.converter.convert(term)
             if goal.is_minimization_goal():
                 h = self.z3.minimize(obj)
@@ -78,7 +92,7 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
                 h = self.z3.maximize(obj)
             else:
                 raise GoalNotSupportedError(self, goal)
-        return  h
+        return h
 
     @clear_pending_pop
     def optimize(self, goal: Goal, **kwargs) -> Optional[Tuple[Model, FNode]]:
@@ -98,7 +112,9 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
                         model = Z3Model(self.environment, self.z3.model())
                         return model, model.get_value(goal.term())
                 except PysmtInfinityError:
-                    raise PysmtUnboundedOptimizationError("The optimal value is unbounded")
+                    raise PysmtUnboundedOptimizationError(
+                        "The optimal value is unbounded"
+                    )
                 except PysmtInfinitesimalError:
                     raise PysmtInfinitesimalError("The optimal value is infinitesimal")
             else:
@@ -107,11 +123,13 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
             self.pop()
 
     @clear_pending_pop
-    def pareto_optimize(self, goals: Sequence[Goal]) -> Iterator[Tuple[Model, List[FNode]]]:
+    def pareto_optimize(
+        self, goals: Sequence[Goal]
+    ) -> Iterator[Tuple[Model, List[FNode]]]:
         self._check_pareto_lexicographic_goals(goals, "pareto")
         self.push()
         try:
-            self.z3.set(priority='pareto')
+            self.z3.set(priority="pareto")
             for goal in goals:
                 self._assert_z3_goal(goal)
             while self.z3.check() == z3.sat:
@@ -124,12 +142,16 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
         return False
 
     @clear_pending_pop
-    def boxed_optimize(self, goals: Sequence[Goal]) -> Optional[Dict[Goal, Tuple[Model, FNode]]]:
+    def boxed_optimize(
+        self, goals: Sequence[Goal]
+    ) -> Optional[Dict[Goal, Tuple[Model, FNode]]]:
         self.push()
         try:
-            self.z3.set(priority='box')
-            handles = [self._assert_z3_goal(goal, goal_id)
-                       for goal_id, goal in enumerate(goals)]
+            self.z3.set(priority="box")
+            handles = [
+                self._assert_z3_goal(goal, goal_id)
+                for goal_id, goal in enumerate(goals)
+            ]
             # In box mode, each call to check() yields the optimal model
             # of the next objective, in the order they were asserted
             models: Dict[Goal, Tuple[Model, FNode]] = {}
@@ -144,7 +166,9 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
                         self.converter.back(self.z3.lower(h))
                         models[goal] = (model, model.get_value(goal.term()))
                 except PysmtInfinityError:
-                    raise PysmtUnboundedOptimizationError("The optimal value is unbounded")
+                    raise PysmtUnboundedOptimizationError(
+                        "The optimal value is unbounded"
+                    )
                 except PysmtInfinitesimalError:
                     raise PysmtInfinitesimalError("The optimal value is infinitesimal")
             return models
@@ -152,11 +176,13 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
             self.pop()
 
     @clear_pending_pop
-    def lexicographic_optimize(self, goals: Sequence[Goal]) -> Optional[Tuple[Model, List[FNode]]]:
+    def lexicographic_optimize(
+        self, goals: Sequence[Goal]
+    ) -> Optional[Tuple[Model, List[FNode]]]:
         self._check_pareto_lexicographic_goals(goals, "lexicographic")
         self.push()
         try:
-            self.z3.set(priority='lex')
+            self.z3.set(priority="lex")
             for goal in goals:
                 self._assert_z3_goal(goal)
 

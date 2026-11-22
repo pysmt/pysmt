@@ -17,32 +17,49 @@
 #
 import os
 import warnings
-
 from typing import Callable, Dict, Iterator, List, Optional, Tuple, Union, cast
 
-from pysmt.optimization.goal import Goal
-from tests import SkipTest
-from tests.optimization_utils import OMTTestCase, OptimizationTypes
-from pysmt.shortcuts import get_env, reset_env, Int, Real, BV, SBV
-from pysmt.smtlib.parser import SmtLibParser, get_formula_fname
-from pysmt.smtlib.script import SmtLibScript, check_sat_filter
-from pysmt.solvers.smtlib import SmtLibSolver
-from pysmt.logics import (Logic, QF_LIA, QF_LRA, LRA, QF_UFLIRA, QF_UFBV, QF_BV,
-                          QF_ALIA, QF_ABV, QF_AUFLIA, QF_AUFBV, QF_NRA, QF_NIA,
-                          UFBV, BV as BV_logic, QF_UF)
 from pysmt.exceptions import NoSolverAvailableError, SolverReturnedUnknownResultError
 from pysmt.fnode import FNode
 from pysmt.formula import FormulaManager
+from pysmt.logics import (
+    BV as BV_logic,
+)
+from pysmt.logics import (
+    LRA,
+    QF_ABV,
+    QF_ALIA,
+    QF_AUFBV,
+    QF_AUFLIA,
+    QF_BV,
+    QF_LIA,
+    QF_LRA,
+    QF_NIA,
+    QF_NRA,
+    QF_UF,
+    QF_UFBV,
+    QF_UFLIRA,
+    UFBV,
+    Logic,
+)
+from pysmt.optimization.goal import Goal
+from pysmt.shortcuts import BV, SBV, Int, Real, get_env, reset_env
+from pysmt.smtlib.parser import SmtLibParser, get_formula_fname
+from pysmt.smtlib.script import SmtLibScript, check_sat_filter
+from pysmt.solvers.smtlib import SmtLibSolver
+from tests import SkipTest
+from tests.optimization_utils import OMTTestCase, OptimizationTypes
 
 
 def smtlib_tests(logic_pred: Callable) -> List[Tuple[str, Logic, bool]]:
     """Returns the smtlib instances matching the logic predicate"""
     tests = []
-    for (logic, f, expected_result) in SMTLIB_TEST_FILES:
+    for logic, f, expected_result in SMTLIB_TEST_FILES:
         smtfile = os.path.join(SMTLIB_DIR, f)
         if logic_pred(logic):
             tests.append((smtfile, logic, expected_result))
     return tests
+
 
 # We use test generation in order to be able to obtain a separate
 # test for each file.
@@ -58,23 +75,34 @@ def execute_script_fname(smtfile: str, logic: Logic, expected_result: bool):
     parser = SmtLibParser()
     script = parser.get_script_fname(smtfile)
     try:
-        with Solver(logic=logic, incremental=False,
-                        generate_models=False) as solver:
-            if logic == QF_UF and type(solver).__name__ == 'CVC5Solver':
-                warnings.warn("Test (%s, %s) skipped because CVC5 can't handle QF_UF." % (logic, smtfile))
+        with Solver(logic=logic, incremental=False, generate_models=False) as solver:
+            if logic == QF_UF and type(solver).__name__ == "CVC5Solver":
+                warnings.warn(
+                    "Test (%s, %s) skipped because CVC5 can't handle QF_UF."
+                    % (logic, smtfile)
+                )
                 return
-            if logic == QF_LIA and type(solver).__name__ == 'CVC5Solver':
-                warnings.warn("Test (%s, %s) skipped because CVC5 is very slow on QF_LIA tests" % (logic, smtfile))
+            if logic == QF_LIA and type(solver).__name__ == "CVC5Solver":
+                warnings.warn(
+                    "Test (%s, %s) skipped because CVC5 is very slow on QF_LIA tests"
+                    % (logic, smtfile)
+                )
                 return
-            if logic == QF_UF and type(solver).__name__ == 'BoolectorSolver':
-                warnings.warn("Test (%s, %s) skipped because Boolector can't handle QF_UF." % (logic, smtfile))
+            if logic == QF_UF and type(solver).__name__ == "BoolectorSolver":
+                warnings.warn(
+                    "Test (%s, %s) skipped because Boolector can't handle QF_UF."
+                    % (logic, smtfile)
+                )
                 return
             log = script.evaluate(cast(SmtLibSolver, solver))
     except NoSolverAvailableError:
         raise SkipTest("No solver for logic %s." % logic)
     except SolverReturnedUnknownResultError:
         if not logic.quantifier_free:
-            warnings.warn("Test (%s, %s) could not be solved due to quantifiers." % (logic, smtfile))
+            warnings.warn(
+                "Test (%s, %s) could not be solved due to quantifiers."
+                % (logic, smtfile)
+            )
             return
         raise
 
@@ -82,12 +110,14 @@ def execute_script_fname(smtfile: str, logic: Logic, expected_result: bool):
     assert expected_result == res, (expected_result, res)
 
 
-def formulas_from_smtlib_test_set(logics: Optional[List[Logic]]=None) -> Iterator[Tuple[Logic, str, FNode, bool]]:
+def formulas_from_smtlib_test_set(
+    logics: Optional[List[Logic]] = None,
+) -> Iterator[Tuple[Logic, str, FNode, bool]]:
     """Returns a generator over the test-set of SMT-LIB files.
 
     Note: This resets the Environment at each call.
     """
-    for (logic, fname, expected_result) in SMTLIB_TEST_FILES:
+    for logic, fname, expected_result in SMTLIB_TEST_FILES:
         if logics is not None and logic not in logics:
             continue
         reset_env()
@@ -97,7 +127,7 @@ def formulas_from_smtlib_test_set(logics: Optional[List[Logic]]=None) -> Iterato
 
 
 # Constants to make definition of the benchmarks more readable
-SAT   = True
+SAT = True
 UNSAT = False
 
 # Directory where SMT-LIB files are saved
@@ -158,7 +188,7 @@ SMTLIB_TEST_FILES = [
     #
     # QF_UFBV
     #
-    #(QF_UFBV, "small_set/QF_UFBV/btfnt_atlas_out.smt2.bz2", UNSAT),
+    # (QF_UFBV, "small_set/QF_UFBV/btfnt_atlas_out.smt2.bz2", UNSAT),
     (QF_UFBV, "small_set/QF_UFBV/calc2_sec2_bmc10.smt2.bz2", UNSAT),
     (QF_BV, "small_set/QF_BV/bench_4631_simp.smt2.bz2", SAT),
     (QF_BV, "small_set/QF_BV/bench_5200.smt2.bz2", UNSAT),
@@ -174,21 +204,38 @@ SMTLIB_TEST_FILES = [
     # Arrays
     #
     (QF_ABV, "small_set/QF_ABV/a268test0002.smt2.bz2", SAT),
-    (QF_ABV, "small_set/QF_ABV/com.galois.ecc.P384ECC64.group_add6.short.smt2.bz2", UNSAT),
-
+    (
+        QF_ABV,
+        "small_set/QF_ABV/com.galois.ecc.P384ECC64.group_add6.short.smt2.bz2",
+        UNSAT,
+    ),
     (QF_ALIA, "small_set/QF_ALIA/ios_t1_ios_np_sf_ai_00001_001.cvc.smt2.bz2", UNSAT),
     (QF_ALIA, "small_set/QF_ALIA/pointer-invalid-15.smt2.bz2", SAT),
-
-    (QF_AUFBV, "small_set/QF_AUFBV/com.galois.ecc.P384ECC64.mod_div10.short.smt2.bz2", UNSAT),
-
+    (
+        QF_AUFBV,
+        "small_set/QF_AUFBV/com.galois.ecc.P384ECC64.mod_div10.short.smt2.bz2",
+        UNSAT,
+    ),
     (QF_AUFLIA, "small_set/QF_AUFLIA/array_incompleteness1.smt2.bz2", UNSAT),
-    (QF_AUFLIA, "small_set/QF_AUFLIA/swap_invalid_t1_pp_nf_ai_00002_002.cvc.smt2.bz2", SAT),
+    (
+        QF_AUFLIA,
+        "small_set/QF_AUFLIA/swap_invalid_t1_pp_nf_ai_00002_002.cvc.smt2.bz2",
+        SAT,
+    ),
     #
     # QF_NRA
     #
-    (QF_NRA, "small_set/QF_NRA/ball_count_2d_hill_simple.05.redlog_global_6.smt2.bz2", UNSAT),
+    (
+        QF_NRA,
+        "small_set/QF_NRA/ball_count_2d_hill_simple.05.redlog_global_6.smt2.bz2",
+        UNSAT,
+    ),
     (QF_NRA, "small_set/QF_NRA/cos-problem-12-chunk-0004.smt2.bz2", SAT),
-    (QF_NRA, "small_set/QF_NRA/simple_ballistics_reach.01.seq_lazy_linear_enc_global_10.smt2.bz2", UNSAT),
+    (
+        QF_NRA,
+        "small_set/QF_NRA/simple_ballistics_reach.01.seq_lazy_linear_enc_global_10.smt2.bz2",
+        UNSAT,
+    ),
     #
     # QF_NIA
     #
@@ -202,7 +249,7 @@ SMTLIB_TEST_FILES = [
 ]
 
 
-def omt_test_cases_from_smtlib_test_set(logics: None=None) -> Iterator[OMTTestCase]:
+def omt_test_cases_from_smtlib_test_set(logics: None = None) -> Iterator[OMTTestCase]:
     """
     Returns a generator over the test-set of OMT-LIB test files.
     The method accepts a set of logics; only the test cases
@@ -211,7 +258,7 @@ def omt_test_cases_from_smtlib_test_set(logics: None=None) -> Iterator[OMTTestCa
 
     Note: This resets the Environment at each call.
     """
-    for (logic, fname, is_sat, expected_result) in OMTLIB_TEST_FILES:
+    for logic, fname, is_sat, expected_result in OMTLIB_TEST_FILES:
         if logics is not None and logic not in logics:
             continue
 
@@ -227,8 +274,13 @@ def omt_test_cases_from_smtlib_test_set(logics: None=None) -> Iterator[OMTTestCa
             for optimization_type, expected_values in expected_result.items():
                 if optimization_type == OptimizationTypes.BASIC:
                     assert len(parsed_goals) == len(expected_values)
-                    for parsed_goal, expected_value in zip(parsed_goals, expected_values):
-                        key: Tuple[Tuple[Goal, ...], OptimizationTypes] = (parsed_goal, ), optimization_type
+                    for parsed_goal, expected_value in zip(
+                        parsed_goals, expected_values
+                    ):
+                        key: Tuple[Tuple[Goal, ...], OptimizationTypes] = (
+                            (parsed_goal,),
+                            optimization_type,
+                        )
                         expected_goals[key] = [expected_value]
                 else:
                     key = parsed_goals, optimization_type
@@ -239,7 +291,9 @@ def omt_test_cases_from_smtlib_test_set(logics: None=None) -> Iterator[OMTTestCa
         yield OMTTestCase(test_name, assumptions, logic, is_sat, expected_goals, env)
 
 
-def _extract_assumptions_and_objectives(mgr: FormulaManager, script: SmtLibScript) -> Tuple[List[FNode], Tuple[Goal, ...]]:
+def _extract_assumptions_and_objectives(
+    mgr: FormulaManager, script: SmtLibScript
+) -> Tuple[List[FNode], Tuple[Goal, ...]]:
     goals = []
     formula, goals = script.get_last_formula(mgr, return_optimizations=True)
     assumptions = list(formula.args()) if formula.is_and() else [formula]
@@ -250,75 +304,175 @@ def _extract_assumptions_and_objectives(mgr: FormulaManager, script: SmtLibScrip
 # Directory with the optimal SMT-LIB test files
 FNode_or_Str = Union[FNode, str]
 OMTLIB_DIR = "tests/smtlib/omt/"
-OMTLIB_TEST_FILES: List[Tuple[Logic, str, bool, Dict[OptimizationTypes, List[Union[FNode_or_Str, Tuple[FNode_or_Str, ...]]]]]] = [
-    (QF_LIA, "smtlib2_allsat.smt2", SAT, {
-        OptimizationTypes.LEXICOGRAPHIC: [Int(100), Int(100)],
-        OptimizationTypes.PARETO: [(Int(100), Int(100))],
-        OptimizationTypes.BOXED: [Int(100), Int(100)],
-    }),
-    (QF_LRA, "smtlib2_boxed.smt2", SAT, {
-        OptimizationTypes.BOXED: [Real(42.0), "unbounded", Real(24.0)],
-        OptimizationTypes.LEXICOGRAPHIC: [Real(42.0), Real(42.0), Real(24.0)],
-    }),
-    (QF_LRA, "smtlib2_boxed_variant.smt2", SAT, {
-        OptimizationTypes.BOXED: [Real(42.0), Real(24.0), Real(24.0)],
-        OptimizationTypes.LEXICOGRAPHIC: [Real(42.0), Real(24.0), Real(24.0)],
-    }),
-    (QF_LIA, "smtlib2_boxed_int.smt2", SAT, {
-        OptimizationTypes.BOXED: [Int(42), "unbounded", Int(24)],
-        OptimizationTypes.LEXICOGRAPHIC: [Int(42), Int(42), Int(24)],
-    }),
-    (QF_BV, "smtlib2_bitvector.smt2", SAT, {
-        OptimizationTypes.LEXICOGRAPHIC: [BV(8, 8), BV(8, 8)],
-        OptimizationTypes.PARETO: [(BV(8, 8), BV(8, 8)), (SBV(-105, 8), SBV(-105, 8))],
-        OptimizationTypes.BOXED: [BV(8, 8), SBV(-105, 8)],
-    }),
-    (QF_LIA, "smtlib2_combination.smt2", SAT, {
-        OptimizationTypes.BASIC: [Int(2)],
-    }),
-    (QF_LRA, "smtlib2_incremental.smt2", SAT, {
-        OptimizationTypes.BASIC: [Int(2)],
-    }),
-    (QF_LIA, "smtlib2_lexicographic.smt2", SAT, {
-        OptimizationTypes.BOXED: [Int(4150), Int(3)],
-    }),
-    (QF_LIA, "smtlib2_load_objective_model.smt2", SAT, {
-        OptimizationTypes.BOXED: [Int(3), Int(30)],
-        OptimizationTypes.PARETO: [ # TODO weird. if pareto is tested before boxed in optimsat it works, otherwise it fails
-            (Int(x), Int(2*x + 20)) for x in range(3, 6)
-        ],
-        OptimizationTypes.LEXICOGRAPHIC: [Int(3), Int(26)],
-    }),
-    (QF_LIA, "smtlib2_maxsmt.smt2", SAT, {
-        OptimizationTypes.BASIC: [Int(2)],
-    }),
-    (QF_LRA, "smtlib2_maxsmt_real_weight.smt2", SAT, {
-        OptimizationTypes.BASIC: [Real(1.0)],
-    }),
-    (QF_LRA, "smtlib2_pareto.smt2", SAT, {
-        OptimizationTypes.LEXICOGRAPHIC: [Real(3.0), Real(1.0)],
-        OptimizationTypes.BOXED: [Real(3.0), Real(3.0)],
-        OptimizationTypes.PARETO: [
-            (Real(float(x)), Real(float(4-x))) for x in range(1, 4)
-        ]
-    }),
-    (QF_LRA, "smtlib2_minmax_simple.smt2", SAT, {
-        OptimizationTypes.LEXICOGRAPHIC: [Real(17.0), Real(17.0)],
-        OptimizationTypes.BOXED: [Real(17.0), Real(42.0)],
-    }),
-    (QF_LIA, "clique.smt2", SAT, {
-        OptimizationTypes.BASIC: [Int(3)],
-    }),
-    (QF_LIA, "clique_bool.smt2", SAT, {
-        OptimizationTypes.BASIC: [Int(3)],
-    }),
-    (QF_LIA, "shortpath.smt2", SAT, {
-        OptimizationTypes.BASIC: [Int(17)],
-    }),
-    (QF_LIA, "coloring.smt2", SAT, {
-        OptimizationTypes.BASIC: [Int(7)],
-    }),
-    (QF_LIA, "vertex_cover.smt2", SAT, {
-        OptimizationTypes.BASIC: [Int(4)],
-    }),
+OMTLIB_TEST_FILES: List[
+    Tuple[
+        Logic,
+        str,
+        bool,
+        Dict[OptimizationTypes, List[Union[FNode_or_Str, Tuple[FNode_or_Str, ...]]]],
+    ]
+] = [
+    (
+        QF_LIA,
+        "smtlib2_allsat.smt2",
+        SAT,
+        {
+            OptimizationTypes.LEXICOGRAPHIC: [Int(100), Int(100)],
+            OptimizationTypes.PARETO: [(Int(100), Int(100))],
+            OptimizationTypes.BOXED: [Int(100), Int(100)],
+        },
+    ),
+    (
+        QF_LRA,
+        "smtlib2_boxed.smt2",
+        SAT,
+        {
+            OptimizationTypes.BOXED: [Real(42.0), "unbounded", Real(24.0)],
+            OptimizationTypes.LEXICOGRAPHIC: [Real(42.0), Real(42.0), Real(24.0)],
+        },
+    ),
+    (
+        QF_LRA,
+        "smtlib2_boxed_variant.smt2",
+        SAT,
+        {
+            OptimizationTypes.BOXED: [Real(42.0), Real(24.0), Real(24.0)],
+            OptimizationTypes.LEXICOGRAPHIC: [Real(42.0), Real(24.0), Real(24.0)],
+        },
+    ),
+    (
+        QF_LIA,
+        "smtlib2_boxed_int.smt2",
+        SAT,
+        {
+            OptimizationTypes.BOXED: [Int(42), "unbounded", Int(24)],
+            OptimizationTypes.LEXICOGRAPHIC: [Int(42), Int(42), Int(24)],
+        },
+    ),
+    (
+        QF_BV,
+        "smtlib2_bitvector.smt2",
+        SAT,
+        {
+            OptimizationTypes.LEXICOGRAPHIC: [BV(8, 8), BV(8, 8)],
+            OptimizationTypes.PARETO: [
+                (BV(8, 8), BV(8, 8)),
+                (SBV(-105, 8), SBV(-105, 8)),
+            ],
+            OptimizationTypes.BOXED: [BV(8, 8), SBV(-105, 8)],
+        },
+    ),
+    (
+        QF_LIA,
+        "smtlib2_combination.smt2",
+        SAT,
+        {
+            OptimizationTypes.BASIC: [Int(2)],
+        },
+    ),
+    (
+        QF_LRA,
+        "smtlib2_incremental.smt2",
+        SAT,
+        {
+            OptimizationTypes.BASIC: [Int(2)],
+        },
+    ),
+    (
+        QF_LIA,
+        "smtlib2_lexicographic.smt2",
+        SAT,
+        {
+            OptimizationTypes.BOXED: [Int(4150), Int(3)],
+        },
+    ),
+    (
+        QF_LIA,
+        "smtlib2_load_objective_model.smt2",
+        SAT,
+        {
+            OptimizationTypes.BOXED: [Int(3), Int(30)],
+            OptimizationTypes.PARETO: [  # TODO weird. if pareto is tested before boxed in optimsat it works, otherwise it fails
+                (Int(x), Int(2 * x + 20)) for x in range(3, 6)
+            ],
+            OptimizationTypes.LEXICOGRAPHIC: [Int(3), Int(26)],
+        },
+    ),
+    (
+        QF_LIA,
+        "smtlib2_maxsmt.smt2",
+        SAT,
+        {
+            OptimizationTypes.BASIC: [Int(2)],
+        },
+    ),
+    (
+        QF_LRA,
+        "smtlib2_maxsmt_real_weight.smt2",
+        SAT,
+        {
+            OptimizationTypes.BASIC: [Real(1.0)],
+        },
+    ),
+    (
+        QF_LRA,
+        "smtlib2_pareto.smt2",
+        SAT,
+        {
+            OptimizationTypes.LEXICOGRAPHIC: [Real(3.0), Real(1.0)],
+            OptimizationTypes.BOXED: [Real(3.0), Real(3.0)],
+            OptimizationTypes.PARETO: [
+                (Real(float(x)), Real(float(4 - x))) for x in range(1, 4)
+            ],
+        },
+    ),
+    (
+        QF_LRA,
+        "smtlib2_minmax_simple.smt2",
+        SAT,
+        {
+            OptimizationTypes.LEXICOGRAPHIC: [Real(17.0), Real(17.0)],
+            OptimizationTypes.BOXED: [Real(17.0), Real(42.0)],
+        },
+    ),
+    (
+        QF_LIA,
+        "clique.smt2",
+        SAT,
+        {
+            OptimizationTypes.BASIC: [Int(3)],
+        },
+    ),
+    (
+        QF_LIA,
+        "clique_bool.smt2",
+        SAT,
+        {
+            OptimizationTypes.BASIC: [Int(3)],
+        },
+    ),
+    (
+        QF_LIA,
+        "shortpath.smt2",
+        SAT,
+        {
+            OptimizationTypes.BASIC: [Int(17)],
+        },
+    ),
+    (
+        QF_LIA,
+        "coloring.smt2",
+        SAT,
+        {
+            OptimizationTypes.BASIC: [Int(7)],
+        },
+    ),
+    (
+        QF_LIA,
+        "vertex_cover.smt2",
+        SAT,
+        {
+            OptimizationTypes.BASIC: [Int(4)],
+        },
+    ),
 ]

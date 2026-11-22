@@ -15,11 +15,12 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from pysmt.solvers.solver import Model
+from typing import Dict, Iterable, Iterator, Optional, Tuple
+
 from pysmt.environment import Environment, get_env
 from pysmt.exceptions import PysmtTypeError
 from pysmt.fnode import FNode
-from typing import Dict, Iterable, Iterator, Optional, Tuple
+from pysmt.solvers.solver import Model
 
 
 class EagerModel(Model):
@@ -31,7 +32,9 @@ class EagerModel(Model):
     define a model.
     """
 
-    def __init__(self, assignment: Dict[FNode, FNode], environment: Optional[Environment]=None):
+    def __init__(
+        self, assignment: Dict[FNode, FNode], environment: Optional[Environment] = None
+    ):
         if environment is None:
             environment = get_env()
         Model.__init__(self, environment)
@@ -40,7 +43,7 @@ class EagerModel(Model):
         # Create a copy of the assignments to memoize completions
         self.completed_assignment = dict(self.assignment)
 
-    def get_value(self, formula: FNode, model_completion: bool=True) -> FNode:
+    def get_value(self, formula: FNode, model_completion: bool = True) -> FNode:
         substituter = self.environment.substituter
         if model_completion:
             syms = self.environment.fvo.get_free_variables(formula)
@@ -55,13 +58,12 @@ class EagerModel(Model):
         return res
 
     def _complete_model(self, symbols):
-        undefined_symbols = (s for s in symbols
-                             if s not in self.completed_assignment)
+        undefined_symbols = (s for s in symbols if s not in self.completed_assignment)
         mgr = self.environment.formula_manager
 
         for s in undefined_symbols:
             if not s.is_symbol():
-                raise PysmtTypeError("Was expecting a symbol but got %s" %s)
+                raise PysmtTypeError("Was expecting a symbol but got %s" % s)
 
             if s.symbol_type().is_bool_type():
                 value = mgr.Bool(False)
@@ -72,11 +74,9 @@ class EagerModel(Model):
             elif s.symbol_type().is_bv_type():
                 value = mgr.BVZero(s.bv_width())
             else:
-                raise PysmtTypeError("Unhandled type for %s: %s" %
-                                     (s, s.symbol_type()))
+                raise PysmtTypeError("Unhandled type for %s: %s" % (s, s.symbol_type()))
 
             self.completed_assignment[s] = value
-
 
     def iterator_over(self, language: Iterable[FNode]) -> Iterator[Tuple[FNode, FNode]]:
         for x in language:

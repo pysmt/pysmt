@@ -17,36 +17,49 @@
 #
 import functools
 import itertools
-
-from warnings import warn
 from collections import deque
-from typing import Any, Callable, Dict, Iterator, List, Mapping, Optional, Tuple, TextIO, Union, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    TextIO,
+    Tuple,
+    Union,
+    cast,
+)
+from warnings import warn
 
 import pysmt
 import pysmt.smtlib.commands as smtcmd
-from pysmt.environment import Environment, get_env
-from pysmt.logics import get_logic_by_name, UndefinedLogicError, Logic
-from pysmt.exceptions import UnknownSmtLibCommandError, PysmtSyntaxError
-from pysmt.exceptions import PysmtTypeError
-from pysmt.smtlib.script import SmtLibCommand, SmtLibScript
-from pysmt.smtlib.annotations import Annotations
-from pysmt.utils import interactive_char_iterator, assert_not_none
 from pysmt.constants import Fraction
-from pysmt.typing import PartialType, PySMTType, _TypeDecl, _ArrayType
-from pysmt.substituter import FunctionInterpretation
+from pysmt.environment import Environment, get_env
+from pysmt.exceptions import PysmtSyntaxError, PysmtTypeError, UnknownSmtLibCommandError
 from pysmt.fnode import FNode
 from pysmt.formula import FormulaManager
+from pysmt.logics import Logic, UndefinedLogicError, get_logic_by_name
+from pysmt.smtlib.annotations import Annotations
+from pysmt.smtlib.script import SmtLibCommand, SmtLibScript
+from pysmt.substituter import FunctionInterpretation
+from pysmt.typing import PartialType, PySMTType, _ArrayType, _TypeDecl
+from pysmt.utils import assert_not_none, interactive_char_iterator
 
 
 def open_(fname: str) -> TextIO:
     """Transparently handle .bz2 files."""
     if fname.endswith(".bz2"):
         import bz2
+
         return bz2.open(fname, "rt")
     return open(fname)
 
 
-def get_formula(script_stream: TextIO, environment: Optional[Environment]=None) -> FNode:
+def get_formula(
+    script_stream: TextIO, environment: Optional[Environment] = None
+) -> FNode:
     """
     Returns the formula asserted at the end of the given script
     script_stream is a file descriptor.
@@ -60,7 +73,9 @@ def get_formula(script_stream: TextIO, environment: Optional[Environment]=None) 
     return script.get_last_formula(mgr)
 
 
-def get_formula_strict(script_stream: TextIO, environment: Optional[Environment]=None) -> FNode:
+def get_formula_strict(
+    script_stream: TextIO, environment: Optional[Environment] = None
+) -> FNode:
     """Returns the formula defined in the SMTScript.
     This function assumes that only one formula is defined in the
     SMTScript. It will raise an exception if commands such as pop and
@@ -76,7 +91,9 @@ def get_formula_strict(script_stream: TextIO, environment: Optional[Environment]
     return script.get_strict_formula(mgr)
 
 
-def get_formula_fname(script_fname: str, environment: Optional[Environment]=None, strict: bool=True) -> FNode:
+def get_formula_fname(
+    script_fname: str, environment: Optional[Environment] = None, strict: bool = True
+) -> FNode:
     """Returns the formula asserted at the end of the given script."""
     with open_(script_fname) as script:
         if strict:
@@ -87,10 +104,16 @@ def get_formula_fname(script_fname: str, environment: Optional[Environment]=None
 
 class SmtLibExecutionCache(object):
     """Execution environment for SMT2 script execution"""
+
     def __init__(self, env: Environment):
         self.substitute = env.substituter.substitute
-        self.keys: Dict[str, List[Union[str, Callable, PySMTType, FNode, _TypeDecl]]] = {}
-        self.definitions: Dict[str, Tuple[List[Union[Any, FNode]], Union[PySMTType, FNode, PartialType, str]]] = {}
+        self.keys: Dict[
+            str, List[Union[str, Callable, PySMTType, FNode, _TypeDecl]]
+        ] = {}
+        self.definitions: Dict[
+            str,
+            Tuple[List[Union[Any, FNode]], Union[PySMTType, FNode, PartialType, str]],
+        ] = {}
         self.annotations = Annotations()
 
     def bind(self, name: str, value: Union[str, Callable, PySMTType, FNode, _TypeDecl]):
@@ -102,14 +125,22 @@ class SmtLibExecutionCache(object):
         """Unbinds the last binding of this symbol"""
         self.keys[name].pop()
 
-    def define(self, name: str, parameters: List[FNode], expression: Union[PySMTType, FNode, PartialType, str]):
+    def define(
+        self,
+        name: str,
+        parameters: List[FNode],
+        expression: Union[PySMTType, FNode, PartialType, str],
+    ):
         self.definitions[name] = (parameters, expression)
 
-    def _define_adapter(self, formal_parameters: List[FNode], expression: FNode) -> Callable:
+    def _define_adapter(
+        self, formal_parameters: List[FNode], expression: FNode
+    ) -> Callable:
         def res(*actual_parameters):
             assert len(formal_parameters) == len(actual_parameters)
             submap = dict(zip(formal_parameters, actual_parameters))
             return self.substitute(expression, submap)
+
         return res
 
     def get(self, name: str) -> Any:
@@ -155,7 +186,7 @@ class Tokenizer(object):
     reading from the actual generator.
     """
 
-    def __init__(self, handle: TextIO, interactive: bool=False):
+    def __init__(self, handle: TextIO, interactive: bool = False):
         self.__has_pos_info: bool = False
         self.__col_cnt: int = 0
         self.__row_cnt: int = 0
@@ -176,15 +207,15 @@ class Tokenizer(object):
 
     def consume_maybe(self) -> str:
         """Consumes and returns a single token from the stream.
-           If the stream is empty `StopIteration` is thrown"""
+        If the stream is empty `StopIteration` is thrown"""
         if self.extra_queue:
             return self.extra_queue.popleft()
         else:
             return next(self.generator)
 
-    def consume(self, msg: Optional[str]=None) -> str:
+    def consume(self, msg: Optional[str] = None) -> str:
         """Consumes and returns a single token from the stream.
-           If the stream is empty, a PysmtSyntaxError is thrown"""
+        If the stream is empty, a PysmtSyntaxError is thrown"""
         if self.extra_queue:
             return self.extra_queue.popleft()
         else:
@@ -194,8 +225,7 @@ class Tokenizer(object):
                 if msg:
                     raise PysmtSyntaxError(msg, self.pos_info)
                 else:
-                    raise PysmtSyntaxError("Unexpected end of stream.",
-                                           self.pos_info)
+                    raise PysmtSyntaxError("Unexpected end of stream.", self.pos_info)
             return t
 
     def raw_read(self) -> str:
@@ -213,7 +243,7 @@ class Tokenizer(object):
         This is the method doing the heavy-lifting of tokenization.
         """
         spaces = {" ", "\n", "\t"}
-        separators = {"(", ")", "|", "\""}
+        separators = {"(", ")", "|", '"'}
         specials = spaces | separators | {";", ""}
 
         try:
@@ -236,30 +266,32 @@ class Tokenizer(object):
                                         # Only \| and \\ are supported escapings
                                         raise PysmtSyntaxError(
                                             "Unknown escaping in quoted symbol: "
-                                            "'\\%s'" % c, self.pos_info)
+                                            "'\\%s'" % c,
+                                            self.pos_info,
+                                        )
                                 ls.append(c)
                                 c = next(reader)
                             if not c:
-                                raise PysmtSyntaxError("Expected '|'",
-                                                       self.pos_info)
+                                raise PysmtSyntaxError("Expected '|'", self.pos_info)
                             yield "".join(ls)
                             c = next(reader)
 
-                        elif c == "\"":
+                        elif c == '"':
                             # String literals
                             s = c
                             num_quotes = 0
                             while True:
                                 c = next(reader)
                                 if not c:
-                                    raise PysmtSyntaxError("Expected '\"'",
-                                                           self.pos_info)
+                                    raise PysmtSyntaxError(
+                                        "Expected '\"'", self.pos_info
+                                    )
 
-                                if c != "\"" and num_quotes % 2 != 0:
+                                if c != '"' and num_quotes % 2 != 0:
                                     break
 
                                 s += c
-                                if c == "\"":
+                                if c == '"':
                                     num_quotes += 1
 
                             yield s
@@ -317,24 +349,31 @@ class Tokenizer(object):
 # lenient about this for `and`, `or`, `+` and `*`, and we keep it uniform.
 #
 
+
 def _left_assoc(operator: Callable) -> Callable:
     """(op a b c) is expanded to (op (op a b) c)"""
+
     def res(*args):
         return functools.reduce(operator, args)
+
     return res
 
 
 def _right_assoc(operator: Callable) -> Callable:
     """(op a b c) is expanded to (op a (op b c))"""
+
     def res(*args):
         return functools.reduce(lambda acc, x: operator(x, acc), reversed(args))
+
     return res
 
 
 def _chainable(mgr: FormulaManager, operator: Callable) -> Callable:
     """(op a b c) is expanded to (and (op a b) (op b c))"""
+
     def res(*args):
         return mgr.And([operator(l, r) for l, r in zip(args, args[1:])])
+
     return res
 
 
@@ -350,7 +389,9 @@ class SmtLibParser(object):
     for example with a SMT-Lib2-compliant solver
     """
 
-    def __init__(self, environment: Optional[Environment]=None, interactive: bool=False):
+    def __init__(
+        self, environment: Optional[Environment] = None, interactive: bool = False
+    ):
         self.env = get_env() if environment is None else environment
         self.interactive = interactive
 
@@ -376,7 +417,10 @@ class SmtLibParser(object):
                 get_free_variables = self.env.fvo.get_free_variables
                 changed = False
                 for x in args:
-                    if self.get_type(x).is_int_type() and len(get_free_variables(x)) == 0:
+                    if (
+                        self.get_type(x).is_int_type()
+                        and len(get_free_variables(x)) == 0
+                    ):
                         new_args.append(mgr.ToReal(x))
                         changed = True
                     else:
@@ -402,7 +446,9 @@ class SmtLibParser(object):
         # Each token is handled by a dedicated function that takes the
         # recursion stack, the token stream and the parsed token
         # Common tokens are handled in the _reset function
-        self.interpreted: Dict[str, Callable[[Any, Tokenizer, str], Optional[FNode]]] = {
+        self.interpreted: Dict[
+            str, Callable[[Any, Tokenizer, str], Optional[FNode]]
+        ] = {
             "let": self._enter_let,
             "!": self._enter_annotation,
             "exists": self._enter_quantifier,
@@ -410,125 +456,126 @@ class SmtLibParser(object):
             # '+' and '*' are :left-assoc, but pySMT builds them n-ary
             # natively; the other n-ary operators are folded, see the
             # _left_assoc/_right_assoc/_chainable helpers above.
-            '+': self._operator_adapter(self.Plus),
-            '-': self._operator_adapter(self._minus_or_uminus),
-            '*': self._operator_adapter(self.Times),
-            '/': self._operator_adapter(_left_assoc(self._division)),
-            'div': self._operator_adapter(_left_assoc(mgr.Div)),
-            'pow': self._operator_adapter(mgr.Pow),
-            '>': self._operator_adapter(_chainable(mgr, self.GT)),
-            '<': self._operator_adapter(_chainable(mgr, self.LT)),
-            '>=': self._operator_adapter(_chainable(mgr, self.GE)),
-            '<=': self._operator_adapter(_chainable(mgr, self.LE)),
-            '=': self._operator_adapter(_chainable(mgr, self._equals_or_iff)),
-            'not': self._operator_adapter(mgr.Not),
-            'and': self._operator_adapter(mgr.And),
-            'or': self._operator_adapter(mgr.Or),
-            'xor': self._operator_adapter(_left_assoc(mgr.Xor)),
-            '=>': self._operator_adapter(_right_assoc(mgr.Implies)),
+            "+": self._operator_adapter(self.Plus),
+            "-": self._operator_adapter(self._minus_or_uminus),
+            "*": self._operator_adapter(self.Times),
+            "/": self._operator_adapter(_left_assoc(self._division)),
+            "div": self._operator_adapter(_left_assoc(mgr.Div)),
+            "pow": self._operator_adapter(mgr.Pow),
+            ">": self._operator_adapter(_chainable(mgr, self.GT)),
+            "<": self._operator_adapter(_chainable(mgr, self.LT)),
+            ">=": self._operator_adapter(_chainable(mgr, self.GE)),
+            "<=": self._operator_adapter(_chainable(mgr, self.LE)),
+            "=": self._operator_adapter(_chainable(mgr, self._equals_or_iff)),
+            "not": self._operator_adapter(mgr.Not),
+            "and": self._operator_adapter(mgr.And),
+            "or": self._operator_adapter(mgr.Or),
+            "xor": self._operator_adapter(_left_assoc(mgr.Xor)),
+            "=>": self._operator_adapter(_right_assoc(mgr.Implies)),
             # '<->' is a pySMT extension: treated as :left-assoc, like 'xor'
-            '<->': self._operator_adapter(_left_assoc(mgr.Iff)),
-            'ite': self._operator_adapter(self.Ite),
-            'distinct': self._operator_adapter(self.AllDifferent),
-            'to_real': self._operator_adapter(mgr.ToReal),
-            'to_int': self._operator_adapter(mgr.ToInt),
-            'is_int': self._operator_adapter(mgr.IsInt),
-            'concat': self._operator_adapter(mgr.BVConcat),
-            'bvnot': self._operator_adapter(mgr.BVNot),
-            'bvand': self._operator_adapter(mgr.BVAnd),
-            'bvor': self._operator_adapter(mgr.BVOr),
-            'bvneg': self._operator_adapter(mgr.BVNeg),
-            'bvadd': self._operator_adapter(mgr.BVAdd),
-            'bvmul': self._operator_adapter(mgr.BVMul),
-            'bvudiv': self._operator_adapter(mgr.BVUDiv),
-            'bvurem': self._operator_adapter(mgr.BVURem),
-            'bvshl': self._operator_adapter(mgr.BVLShl),
-            'bvlshr': self._operator_adapter(mgr.BVLShr),
-            'bvsub': self._operator_adapter(mgr.BVSub),
-            'bvult': self._operator_adapter(mgr.BVULT),
-            'bvxor': self._operator_adapter(_left_assoc(mgr.BVXor)),
-            '_': self._smtlib_underscore,
+            "<->": self._operator_adapter(_left_assoc(mgr.Iff)),
+            "ite": self._operator_adapter(self.Ite),
+            "distinct": self._operator_adapter(self.AllDifferent),
+            "to_real": self._operator_adapter(mgr.ToReal),
+            "to_int": self._operator_adapter(mgr.ToInt),
+            "is_int": self._operator_adapter(mgr.IsInt),
+            "concat": self._operator_adapter(mgr.BVConcat),
+            "bvnot": self._operator_adapter(mgr.BVNot),
+            "bvand": self._operator_adapter(mgr.BVAnd),
+            "bvor": self._operator_adapter(mgr.BVOr),
+            "bvneg": self._operator_adapter(mgr.BVNeg),
+            "bvadd": self._operator_adapter(mgr.BVAdd),
+            "bvmul": self._operator_adapter(mgr.BVMul),
+            "bvudiv": self._operator_adapter(mgr.BVUDiv),
+            "bvurem": self._operator_adapter(mgr.BVURem),
+            "bvshl": self._operator_adapter(mgr.BVLShl),
+            "bvlshr": self._operator_adapter(mgr.BVLShr),
+            "bvsub": self._operator_adapter(mgr.BVSub),
+            "bvult": self._operator_adapter(mgr.BVULT),
+            "bvxor": self._operator_adapter(_left_assoc(mgr.BVXor)),
+            "_": self._smtlib_underscore,
             # Extended Functions
-            'bvnand': self._operator_adapter(mgr.BVNand),
-            'bvnor': self._operator_adapter(mgr.BVNor),
-            'bvxnor': self._operator_adapter(_left_assoc(mgr.BVXnor)),
-            'bvcomp': self._operator_adapter(mgr.BVComp),
-            'bvsdiv': self._operator_adapter(mgr.BVSDiv),
-            'bvsrem': self._operator_adapter(mgr.BVSRem),
-            'bvsmod': self._operator_adapter(mgr.BVSMod),
-            'bvashr': self._operator_adapter(mgr.BVAShr),
-            'bvule': self._operator_adapter(mgr.BVULE),
-            'bvugt': self._operator_adapter(mgr.BVUGT),
-            'bvuge': self._operator_adapter(mgr.BVUGE),
-            'bvslt': self._operator_adapter(mgr.BVSLT),
-            'bvsle': self._operator_adapter(mgr.BVSLE),
-            'bvsgt': self._operator_adapter(mgr.BVSGT),
-            'bvsge': self._operator_adapter(mgr.BVSGE),
+            "bvnand": self._operator_adapter(mgr.BVNand),
+            "bvnor": self._operator_adapter(mgr.BVNor),
+            "bvxnor": self._operator_adapter(_left_assoc(mgr.BVXnor)),
+            "bvcomp": self._operator_adapter(mgr.BVComp),
+            "bvsdiv": self._operator_adapter(mgr.BVSDiv),
+            "bvsrem": self._operator_adapter(mgr.BVSRem),
+            "bvsmod": self._operator_adapter(mgr.BVSMod),
+            "bvashr": self._operator_adapter(mgr.BVAShr),
+            "bvule": self._operator_adapter(mgr.BVULE),
+            "bvugt": self._operator_adapter(mgr.BVUGT),
+            "bvuge": self._operator_adapter(mgr.BVUGE),
+            "bvslt": self._operator_adapter(mgr.BVSLT),
+            "bvsle": self._operator_adapter(mgr.BVSLE),
+            "bvsgt": self._operator_adapter(mgr.BVSGT),
+            "bvsge": self._operator_adapter(mgr.BVSGE),
             # Strings
-            'str.len': self._operator_adapter(mgr.StrLength),
-            'str.++': self._operator_adapter(mgr.StrConcat),
-            'str.at': self._operator_adapter(mgr.StrCharAt),
-            'str.contains': self._operator_adapter(mgr.StrContains),
-            'str.indexof': self._operator_adapter(mgr.StrIndexOf),
-            'str.replace': self._operator_adapter(mgr.StrReplace),
-            'str.substr': self._operator_adapter(mgr.StrSubstr),
-            'str.prefixof': self._operator_adapter(mgr.StrPrefixOf),
-            'str.suffixof': self._operator_adapter(mgr.StrSuffixOf),
-            'str.to.int': self._operator_adapter(mgr.StrToInt),
-            'int.to.str': self._operator_adapter(mgr.IntToStr),
-            'bv2nat': self._operator_adapter(mgr.BVToNatural),
+            "str.len": self._operator_adapter(mgr.StrLength),
+            "str.++": self._operator_adapter(mgr.StrConcat),
+            "str.at": self._operator_adapter(mgr.StrCharAt),
+            "str.contains": self._operator_adapter(mgr.StrContains),
+            "str.indexof": self._operator_adapter(mgr.StrIndexOf),
+            "str.replace": self._operator_adapter(mgr.StrReplace),
+            "str.substr": self._operator_adapter(mgr.StrSubstr),
+            "str.prefixof": self._operator_adapter(mgr.StrPrefixOf),
+            "str.suffixof": self._operator_adapter(mgr.StrSuffixOf),
+            "str.to.int": self._operator_adapter(mgr.StrToInt),
+            "int.to.str": self._operator_adapter(mgr.IntToStr),
+            "bv2nat": self._operator_adapter(mgr.BVToNatural),
             # arrays
-            'select': self._operator_adapter(mgr.Select),
-            'store': self._operator_adapter(mgr.Store),
-            'as': self._enter_smtlib_as,
+            "select": self._operator_adapter(mgr.Select),
+            "store": self._operator_adapter(mgr.Store),
+            "as": self._enter_smtlib_as,
         }
 
         # Command tokens
-        self.commands = {smtcmd.ASSERT: self._cmd_assert,
-                         smtcmd.CHECK_SAT: self._cmd_check_sat,
-                         smtcmd.CHECK_SAT_ASSUMING: self._cmd_check_sat_assuming,
-                         smtcmd.DECLARE_CONST: self._cmd_declare_const,
-                         smtcmd.DECLARE_FUN: self._cmd_declare_fun,
-                         smtcmd.DECLARE_SORT: self._cmd_declare_sort,
-                         smtcmd.DEFINE_FUN: self._cmd_define_fun,
-                         smtcmd.DEFINE_FUNS_REC: self._cmd_define_funs_rec,
-                         smtcmd.DEFINE_FUN_REC: self._cmd_define_fun_rec,
-                         smtcmd.DEFINE_SORT: self._cmd_define_sort,
-                         smtcmd.ECHO: self._cmd_echo,
-                         smtcmd.EXIT: self._cmd_exit,
-                         smtcmd.GET_ASSERTIONS: self._cmd_get_assertions,
-                         smtcmd.GET_ASSIGNMENT: self._cmd_get_assignment,
-                         smtcmd.GET_INFO: self._cmd_get_info,
-                         smtcmd.GET_MODEL: self._cmd_get_model,
-                         smtcmd.GET_OPTION: self._cmd_get_option,
-                         smtcmd.GET_PROOF: self._cmd_get_proof,
-                         smtcmd.GET_UNSAT_ASSUMPTIONS: self._cmd_get_unsat_assumptions,
-                         smtcmd.GET_UNSAT_CORE: self._cmd_get_unsat_core,
-                         smtcmd.GET_VALUE: self._cmd_get_value,
-                         smtcmd.POP: self._cmd_pop,
-                         smtcmd.PUSH: self._cmd_push,
-                         smtcmd.RESET: self._cmd_reset,
-                         smtcmd.RESET_ASSERTIONS: self._cmd_reset_assertions,
-                         smtcmd.SET_LOGIC: self._cmd_set_logic,
-                         smtcmd.SET_OPTION: self._cmd_set_option,
-                         smtcmd.SET_INFO: self._cmd_set_info,
-                         # OMT Extension (http://optimathsat.disi.unitn.it/pages/smt2reference.html)
-                         smtcmd.ASSERT_SOFT: self._cmd_assert_soft,
-                         smtcmd.CHECK_ALLSAT: self._cmd_check_allsat,
-                         smtcmd.GET_OBJECTIVES: self._cmd_get_objectives,
-                         smtcmd.MAXIMIZE: self._cmd_objective,
-                         smtcmd.MINIMIZE: self._cmd_objective,
-                         smtcmd.MINMAX: self._cmd_minmax_maxmin_obj,
-                         smtcmd.MAXMIN: self._cmd_minmax_maxmin_obj,
-                         smtcmd.LOAD_OBJECTIVE_MODEL: self._cmd_load_objective_model,
-                         }
+        self.commands = {
+            smtcmd.ASSERT: self._cmd_assert,
+            smtcmd.CHECK_SAT: self._cmd_check_sat,
+            smtcmd.CHECK_SAT_ASSUMING: self._cmd_check_sat_assuming,
+            smtcmd.DECLARE_CONST: self._cmd_declare_const,
+            smtcmd.DECLARE_FUN: self._cmd_declare_fun,
+            smtcmd.DECLARE_SORT: self._cmd_declare_sort,
+            smtcmd.DEFINE_FUN: self._cmd_define_fun,
+            smtcmd.DEFINE_FUNS_REC: self._cmd_define_funs_rec,
+            smtcmd.DEFINE_FUN_REC: self._cmd_define_fun_rec,
+            smtcmd.DEFINE_SORT: self._cmd_define_sort,
+            smtcmd.ECHO: self._cmd_echo,
+            smtcmd.EXIT: self._cmd_exit,
+            smtcmd.GET_ASSERTIONS: self._cmd_get_assertions,
+            smtcmd.GET_ASSIGNMENT: self._cmd_get_assignment,
+            smtcmd.GET_INFO: self._cmd_get_info,
+            smtcmd.GET_MODEL: self._cmd_get_model,
+            smtcmd.GET_OPTION: self._cmd_get_option,
+            smtcmd.GET_PROOF: self._cmd_get_proof,
+            smtcmd.GET_UNSAT_ASSUMPTIONS: self._cmd_get_unsat_assumptions,
+            smtcmd.GET_UNSAT_CORE: self._cmd_get_unsat_core,
+            smtcmd.GET_VALUE: self._cmd_get_value,
+            smtcmd.POP: self._cmd_pop,
+            smtcmd.PUSH: self._cmd_push,
+            smtcmd.RESET: self._cmd_reset,
+            smtcmd.RESET_ASSERTIONS: self._cmd_reset_assertions,
+            smtcmd.SET_LOGIC: self._cmd_set_logic,
+            smtcmd.SET_OPTION: self._cmd_set_option,
+            smtcmd.SET_INFO: self._cmd_set_info,
+            # OMT Extension (http://optimathsat.disi.unitn.it/pages/smt2reference.html)
+            smtcmd.ASSERT_SOFT: self._cmd_assert_soft,
+            smtcmd.CHECK_ALLSAT: self._cmd_check_allsat,
+            smtcmd.GET_OBJECTIVES: self._cmd_get_objectives,
+            smtcmd.MAXIMIZE: self._cmd_objective,
+            smtcmd.MINIMIZE: self._cmd_objective,
+            smtcmd.MINMAX: self._cmd_minmax_maxmin_obj,
+            smtcmd.MAXMIN: self._cmd_minmax_maxmin_obj,
+            smtcmd.LOAD_OBJECTIVE_MODEL: self._cmd_load_objective_model,
+        }
 
     def _reset(self):
         """Resets the parser to the initial state"""
         self.cache = SmtLibExecutionCache(self.env)
         self.logic = None
         mgr = self.env.formula_manager
-        self.cache.update({'false': mgr.FALSE(), 'true': mgr.TRUE()})
+        self.cache.update({"false": mgr.FALSE(), "true": mgr.TRUE()})
 
     def _minus_or_uminus(self, *args) -> FNode:
         """Utility function that handles unary and n-ary minus"""
@@ -548,28 +595,47 @@ class SmtLibParser(object):
         # '-' is :left-assoc: (- a b c) is (- (- a b) c)
         return functools.reduce(self.Minus, args)
 
-    def _enter_smtlib_as(self, stack: List[List[Union[Callable, FNode, Any]]], tokens: Tokenizer, key: str):
+    def _enter_smtlib_as(
+        self,
+        stack: List[List[Union[Callable, FNode, Any]]],
+        tokens: Tokenizer,
+        key: str,
+    ):
         """Utility function that handles 'as' that is a special function in SMTLIB"""
-        #pylint: disable=unused-argument
+        # pylint: disable=unused-argument
         what = self.parse_atom(tokens, "expression")
         ty = cast(PySMTType, self.parse_type(tokens, "expression"))
         if what == "const":
-            assert ty.is_array_type(), "(as const x) is supported only for array constants"
+            assert ty.is_array_type(), (
+                "(as const x) is supported only for array constants"
+            )
+
             def res(expr):
-                return self.env.formula_manager.Array(cast(_ArrayType, ty).index_type, expr)
+                return self.env.formula_manager.Array(
+                    cast(_ArrayType, ty).index_type, expr
+                )
+
             def handler():
                 return res
+
             stack[-1].append(handler)
         else:
             # pySMT binds one type per symbol name, but SMT-LIB model values
             # reuse the same @name across sorts, so we qualify it with the sort
-            if what.startswith('@'):
+            if what.startswith("@"):
                 what += "_" + str(ty)
+
             def handler():
                 return self.env.formula_manager.Symbol(what, ty)
+
             stack[-1].append(handler)
 
-    def _smtlib_underscore(self, stack: List[List[Union[Callable, FNode, Any]]], tokens: Tokenizer, key: str):
+    def _smtlib_underscore(
+        self,
+        stack: List[List[Union[Callable, FNode, Any]]],
+        tokens: Tokenizer,
+        key: str,
+    ):
         # pylint: disable=unused-argument
         """Utility function that handles _ special function in SMTLIB"""
         mgr = self.env.formula_manager
@@ -584,8 +650,9 @@ class SmtLibParser(object):
                 start = int(sstart)
                 end = int(send)
             except ValueError:
-                raise PysmtSyntaxError("Expected number in '_ extract' "
-                                       "expression", tokens.pos_info)
+                raise PysmtSyntaxError(
+                    "Expected number in '_ extract' expression", tokens.pos_info
+                )
             fun = lambda x: mgr.BVExtract(x, start, end)
 
         elif op == "zero_extend":
@@ -593,8 +660,9 @@ class SmtLibParser(object):
             try:
                 width = int(swidth)
             except ValueError:
-                raise PysmtSyntaxError("Expected number in '_ zero_extend' "
-                                       "expression", tokens.pos_info)
+                raise PysmtSyntaxError(
+                    "Expected number in '_ zero_extend' expression", tokens.pos_info
+                )
             fun = lambda x: mgr.BVZExt(x, width)
 
         elif op == "repeat":
@@ -602,8 +670,9 @@ class SmtLibParser(object):
             try:
                 count = int(scount)
             except ValueError:
-                raise PysmtSyntaxError("Expected number in '_ repeat' "
-                                       "expression", tokens.pos_info)
+                raise PysmtSyntaxError(
+                    "Expected number in '_ repeat' expression", tokens.pos_info
+                )
             fun = lambda x: mgr.BVRepeat(x, count)
 
         elif op == "rotate_left":
@@ -611,8 +680,9 @@ class SmtLibParser(object):
             try:
                 step = int(sstep)
             except ValueError:
-                raise PysmtSyntaxError("Expected number in '_ rotate_left' "
-                                       "expression", tokens.pos_info)
+                raise PysmtSyntaxError(
+                    "Expected number in '_ rotate_left' expression", tokens.pos_info
+                )
             fun = lambda x: mgr.BVRol(x, step)
 
         elif op == "rotate_right":
@@ -620,8 +690,9 @@ class SmtLibParser(object):
             try:
                 step = int(sstep)
             except ValueError:
-                raise PysmtSyntaxError("Expected number in '_ rotate_left' "
-                                       "expression", tokens.pos_info)
+                raise PysmtSyntaxError(
+                    "Expected number in '_ rotate_left' expression", tokens.pos_info
+                )
             fun = lambda x: mgr.BVRor(x, step)
 
         elif op == "sign_extend":
@@ -629,8 +700,9 @@ class SmtLibParser(object):
             try:
                 width = int(swidth)
             except ValueError:
-                raise PysmtSyntaxError("Expected number in '(_ sign_extend) "
-                                       "expression'", tokens.pos_info)
+                raise PysmtSyntaxError(
+                    "Expected number in '(_ sign_extend) expression'", tokens.pos_info
+                )
             fun = lambda x: mgr.BVSExt(x, width)
 
         elif op.startswith("bv"):
@@ -638,8 +710,9 @@ class SmtLibParser(object):
                 v = int(op[2:])
                 width = int(self.parse_atom(tokens, "expression"))
             except ValueError:
-                raise PysmtSyntaxError("Expected number in '_ bv' expression: "
-                                       "'%s'" % op, tokens.pos_info)
+                raise PysmtSyntaxError(
+                    "Expected number in '_ bv' expression: '%s'" % op, tokens.pos_info
+                )
             fun = mgr.BV(v, width)
         elif op == "to_bv":
             # this is necessary to the current syntax of _ to_bv, which open an empty stack
@@ -647,22 +720,27 @@ class SmtLibParser(object):
             try:
                 width = int(self.parse_atom(tokens, "expression"))
             except ValueError:
-                raise PysmtSyntaxError("Expected number in '_ to_bv' expression: "
-                                       "'%s'" % op, tokens.pos_info)
+                raise PysmtSyntaxError(
+                    "Expected number in '_ to_bv' expression: '%s'" % op,
+                    tokens.pos_info,
+                )
             self.consume_closing(tokens, "expression")
             fnv = cast(FNode, self.get_expression(tokens))
             if fnv.is_int_constant():
                 v = cast(int, fnv.constant_value())
             else:
-                raise PysmtSyntaxError("Expected number in '_ to_bv' expression: "
-                                       "'%s'" % op, tokens.pos_info)
+                raise PysmtSyntaxError(
+                    "Expected number in '_ to_bv' expression: '%s'" % op,
+                    tokens.pos_info,
+                )
             if v >= 0:
                 fun = mgr.BV(v, width)
             else:
                 fun = mgr.SBV(v, width)
         else:
-            raise PysmtSyntaxError("Unexpected '_' expression '%s'" % op,
-                                   tokens.pos_info)
+            raise PysmtSyntaxError(
+                "Unexpected '_' expression '%s'" % op, tokens.pos_info
+            )
 
         stack[-1].append(lambda: fun)
 
@@ -679,22 +757,23 @@ class SmtLibParser(object):
         """Utility function that builds a division"""
         mgr = self.env.formula_manager
         if left.is_constant() and right.is_constant():
-            return mgr.Real(Fraction(left.constant_value()) /
-                            Fraction(right.constant_value()))
+            return mgr.Real(
+                Fraction(left.constant_value()) / Fraction(right.constant_value())
+            )
         return self.Div(left, right)
 
     def _get_var(self, name: str, type_name: PySMTType) -> FNode:
         """Returns the PySMT variable corresponding to a declaration"""
-        return self.env.formula_manager.Symbol(name=name,
-                                               typename=type_name)
+        return self.env.formula_manager.Symbol(name=name, typename=type_name)
 
     def _get_quantified_var(self, name: str, type_name: PySMTType) -> FNode:
         """Returns the PySMT variable corresponding to a declaration"""
         try:
             return self._get_var(name, type_name)
         except PysmtTypeError:
-            return self.env.formula_manager.FreshSymbol(typename=type_name,
-                                                        template=name + "%d")
+            return self.env.formula_manager.FreshSymbol(
+                typename=type_name, template=name + "%d"
+            )
 
     def atom(self, token: str, mgr: FormulaManager) -> FNode:
         """
@@ -713,8 +792,9 @@ class SmtLibParser(object):
                     value = int("0" + token[1:], 2)
                 else:
                     if token[1] != "x":
-                        raise PysmtSyntaxError("Invalid bit-vector constant "
-                                               "'%s'" % token)
+                        raise PysmtSyntaxError(
+                            "Invalid bit-vector constant '%s'" % token
+                        )
                     width = (len(token) - 2) * 4
                     value = int("0" + token[1:], 16)
                 res = mgr.BV(value, width)
@@ -730,8 +810,7 @@ class SmtLibParser(object):
                     if frac.denominator == 1:
                         # We found an integer, depending on the logic this can be
                         # an Int or a Real
-                        if self.logic is None or \
-                                self.logic.theory.integer_arithmetic:
+                        if self.logic is None or self.logic.theory.integer_arithmetic:
                             if "." in token:
                                 res = mgr.Real(frac)
                             else:
@@ -748,12 +827,14 @@ class SmtLibParser(object):
         return res
 
     def _exit_let(self, varlist, bdy):
-        """ Cleans the execution environment when we exit the scope of a 'let' """
+        """Cleans the execution environment when we exit the scope of a 'let'"""
         for k in varlist:
             self.cache.unbind(k)
         return bdy
 
-    def _exit_quantifier(self, fun: Callable, vrs: List[Tuple[str, FNode]], body: FNode) -> FNode:
+    def _exit_quantifier(
+        self, fun: Callable, vrs: List[Tuple[str, FNode]], body: FNode
+    ) -> FNode:
         """
         Cleans the execution environment when we exit the scope of a quantifier
         """
@@ -763,7 +844,12 @@ class SmtLibParser(object):
             variables.add(var)
         return fun(variables, body)
 
-    def _enter_let(self, stack: List[List[Union[Callable, FNode, List[Tuple[str, FNode]], Any]]], tokens: Tokenizer, key: str):
+    def _enter_let(
+        self,
+        stack: List[List[Union[Callable, FNode, List[Tuple[str, FNode]], Any]]],
+        tokens: Tokenizer,
+        key: str,
+    ):
         """Handles a let expression by recurring on the expression and
         updating the cache
         """
@@ -774,8 +860,7 @@ class SmtLibParser(object):
         self.consume_opening(tokens, "expression")
         while current != ")":
             if current != "(":
-                raise PysmtSyntaxError("Expected '(' in let binding",
-                                       tokens.pos_info)
+                raise PysmtSyntaxError("Expected '(' in let binding", tokens.pos_info)
             vname = self.parse_atom(tokens, "expression")
             expr = cast(Union[str, FNode], assert_not_none(self.get_expression(tokens)))
             newvals[vname] = expr
@@ -786,7 +871,9 @@ class SmtLibParser(object):
         stack[-1].append(self._exit_let)
         stack[-1].append(newvals.keys())
 
-    def _operator_adapter(self, operator: Union[    functools.partial, Callable]) -> Callable:
+    def _operator_adapter(
+        self, operator: Union[functools.partial, Callable]
+    ) -> Callable:
         """Handles generic operator"""
 
         def res(stack, tokens, key):
@@ -795,7 +882,12 @@ class SmtLibParser(object):
 
         return res
 
-    def _enter_quantifier(self, stack: List[List[Union[Callable, FNode, List[Tuple[str, FNode]], Any]]], tokens: Tokenizer, key: str):
+    def _enter_quantifier(
+        self,
+        stack: List[List[Union[Callable, FNode, List[Tuple[str, FNode]], Any]]],
+        tokens: Tokenizer,
+        key: str,
+    ):
         """Handles quantifiers by defining the bound variable in the cache
         before parsing the matrix
         """
@@ -818,7 +910,7 @@ class SmtLibParser(object):
             current = tokens.consume()
 
         quant = None
-        if key == 'forall':
+        if key == "forall":
             quant = mgr.ForAll
         else:
             quant = mgr.Exists
@@ -827,7 +919,12 @@ class SmtLibParser(object):
         stack[-1].append(quant)
         stack[-1].append(vrs)
 
-    def _enter_annotation(self, stack: List[List[Union[Callable, FNode, Any]]], tokens: Tokenizer, key: str):
+    def _enter_annotation(
+        self,
+        stack: List[List[Union[Callable, FNode, Any]]],
+        tokens: Tokenizer,
+        key: str,
+    ):
         """Deals with annotations"""
         # pylint: disable=unused-argument
 
@@ -837,9 +934,11 @@ class SmtLibParser(object):
         tk = tokens.consume()
         while tk != ")":
             if not tk.startswith(":"):
-                raise PysmtSyntaxError("Annotations keyword should start with"
-                                       " colon! Offending token: '%s'" % tk,
-                                       tokens.pos_info)
+                raise PysmtSyntaxError(
+                    "Annotations keyword should start with"
+                    " colon! Offending token: '%s'" % tk,
+                    tokens.pos_info,
+                )
             keyword = tk[1:]
             tk = tokens.consume()
             value = None
@@ -875,7 +974,7 @@ class SmtLibParser(object):
         Returns the pysmt representation of the given parsed expression
         """
         mgr = self.env.formula_manager
-        stack : List[Any] = []
+        stack: List[Any] = []
 
         try:
             while True:
@@ -895,8 +994,7 @@ class SmtLibParser(object):
                         lst = stack.pop()
                         fun = lst.pop(0)
                     except IndexError:
-                        raise PysmtSyntaxError("Unexpected ')'",
-                                               tokens.pos_info)
+                        raise PysmtSyntaxError("Unexpected ')'", tokens.pos_info)
 
                     try:
                         res = fun(*lst)
@@ -942,7 +1040,9 @@ class SmtLibParser(object):
             yield cmd
         return
 
-    def parse_model(self, script: TextIO) -> Tuple[Dict[FNode, FNode], Dict[FNode, FunctionInterpretation]]:
+    def parse_model(
+        self, script: TextIO
+    ) -> Tuple[Dict[FNode, FNode], Dict[FNode, FunctionInterpretation]]:
         """This function pasres the result of a `(get-model)` command and
         returns a model as a dictionary from non-function symbols to
         constant values and an interpretation for uninterpreted
@@ -971,38 +1071,40 @@ class SmtLibParser(object):
         self.cache.update(self.env.type_manager._custom_types_decl)
         tokens = Tokenizer(script, interactive=self.interactive)
         current = tokens.consume()
-        if (current != "("):
+        if current != "(":
             raise PysmtSyntaxError("'(' expected", tokens.pos_info)
         current = tokens.consume()
 
         # Backwards compatibility: skip optional model keyword
-        if (current == "model"):
+        if current == "model":
             current = tokens.consume()
 
         cmd_gen = self.get_command(tokens)
         model, interpretation = {}, {}
         while current != ")":
-            if (current != "("):
+            if current != "(":
                 raise PysmtSyntaxError("'(' expected", tokens.pos_info)
             tokens.add_extra_token(current)
             cmd = next(cmd_gen)
-            if cmd.name != 'define-fun':
+            if cmd.name != "define-fun":
                 raise PysmtSyntaxError("Unsupported model command: %s" % cmd.name)
             vname, formal, rtype, ebody = cmd.args
-            if len(formal) == 0: # Constant assignment
+            if len(formal) == 0:  # Constant assignment
                 model[mgr.Symbol(vname, rtype)] = ebody
-            else: # A function interpretation
+            else:  # A function interpretation
                 ebody_free_vars = self.env.fvo.get_free_variables(ebody)
                 for v in ebody_free_vars:
-                    if not v.symbol_name().startswith('@') and v not in cmd.args[1]:
-                        raise PysmtSyntaxError("Found a non-solver-defined free"
-                                               " variable in the definion of "
-                                               "function %s: %s" % (cmd.args[0],
-                                                                    cmd.args[3]))
+                    if not v.symbol_name().startswith("@") and v not in cmd.args[1]:
+                        raise PysmtSyntaxError(
+                            "Found a non-solver-defined free"
+                            " variable in the definion of "
+                            "function %s: %s" % (cmd.args[0], cmd.args[3])
+                        )
                 tmgr = self.env.type_manager
                 ftype = tmgr.FunctionType(rtype, [x.symbol_type() for x in formal])
-                interpretation[mgr.Symbol(vname, ftype)] = \
-                    FunctionInterpretation(formal, ebody, allow_free_vars=True)
+                interpretation[mgr.Symbol(vname, ftype)] = FunctionInterpretation(
+                    formal, ebody, allow_free_vars=True
+                )
             current = tokens.consume()
         return model, interpretation
 
@@ -1011,7 +1113,13 @@ class SmtLibParser(object):
         with open_(script_fname) as script:
             return self.get_script(script)
 
-    def parse_atoms(self, tokens: Tokenizer, command: str, min_size: int, max_size: Optional[int]=None) -> List[Union[Any, str]]:
+    def parse_atoms(
+        self,
+        tokens: Tokenizer,
+        command: str,
+        min_size: int,
+        max_size: Optional[int] = None,
+    ) -> List[Union[Any, str]]:
         """
         Parses a sequence of N atoms (min_size <= N <= max_size) consuming
         the tokens
@@ -1022,46 +1130,54 @@ class SmtLibParser(object):
         res = []
         current = None
         for _ in range(min_size):
-            current = tokens.consume("Unexpected end of stream in %s "
-                                     "command." % command)
+            current = tokens.consume(
+                "Unexpected end of stream in %s command." % command
+            )
             if current == ")":
-                raise PysmtSyntaxError("Expected at least %d arguments in "
-                                       "%s command." %
-                                       (min_size, command),
-                                       tokens.pos_info)
+                raise PysmtSyntaxError(
+                    "Expected at least %d arguments in "
+                    "%s command." % (min_size, command),
+                    tokens.pos_info,
+                )
             if current == "(":
-                raise PysmtSyntaxError("Unexpected token '(' in %s "
-                                       "command." % command,
-                                       tokens.pos_info)
+                raise PysmtSyntaxError(
+                    "Unexpected token '(' in %s command." % command, tokens.pos_info
+                )
             res.append(current)
         for _ in range(min_size, max_size + 1):
-            current = tokens.consume("Unexpected end of stream in %s "
-                                     "command." % command)
+            current = tokens.consume(
+                "Unexpected end of stream in %s command." % command
+            )
             if current == ")":
                 return res
             if current == "(":
-                raise PysmtSyntaxError("Unexpected token '(' in %s "
-                                       "command." % command,
-                                       tokens.pos_info)
+                raise PysmtSyntaxError(
+                    "Unexpected token '(' in %s command." % command, tokens.pos_info
+                )
             res.append(current)
-        raise PysmtSyntaxError("Unexpected token '%s' in %s command. Expected "
-                               "at most %d arguments." %
-                               (current, command, max_size),
-                               tokens.pos_info)
+        raise PysmtSyntaxError(
+            "Unexpected token '%s' in %s command. Expected "
+            "at most %d arguments." % (current, command, max_size),
+            tokens.pos_info,
+        )
 
-    def parse_type(self, tokens: Tokenizer, command: str, type_params: Optional[List[str]]=None, additional_token: Optional[str]=None) -> Union[PySMTType, PartialType]:
+    def parse_type(
+        self,
+        tokens: Tokenizer,
+        command: str,
+        type_params: Optional[List[str]] = None,
+        additional_token: Optional[str] = None,
+    ) -> Union[PySMTType, PartialType]:
         """Parses a single type name from the tokens"""
         if additional_token is not None:
             var = additional_token
         else:
-            var = tokens.consume("Unexpected end of stream in %s command." %
-                                         command)
+            var = tokens.consume("Unexpected end of stream in %s command." % command)
         res: Optional[Union[PartialType, PySMTType]] = None
         if type_params and var in type_params:
-            return (var,) # type: ignore [return-value] # This is a type parameter, it is handled recursively  # TODO is PartialType also handled recursively?
+            return (var,)  # type: ignore [return-value] # This is a type parameter, it is handled recursively  # TODO is PartialType also handled recursively?
         elif var == "(":
-            op = tokens.consume("Unexpected end of stream in %s command." %
-                                        command)
+            op = tokens.consume("Unexpected end of stream in %s command." % command)
             if op == "Array":
                 idxtype = cast(PySMTType, self.parse_type(tokens, command))
                 elemtype = cast(PySMTType, self.parse_type(tokens, command))
@@ -1069,21 +1185,22 @@ class SmtLibParser(object):
                 res = self.env.type_manager.ArrayType(idxtype, elemtype)
 
             elif op == "_":
-                ts = tokens.consume("Unexpected end of stream in %s command." %
-                                            command)
+                ts = tokens.consume("Unexpected end of stream in %s command." % command)
                 if ts != "BitVec":
-                    raise PysmtSyntaxError("Unexpected token '%s' in %s command." %
-                                           (ts, command),
-                                           tokens.pos_info)
+                    raise PysmtSyntaxError(
+                        "Unexpected token '%s' in %s command." % (ts, command),
+                        tokens.pos_info,
+                    )
 
                 size = 0
                 dim = tokens.consume()
                 try:
                     size = int(dim)
                 except ValueError:
-                    raise PysmtSyntaxError("Unexpected token '%s' in %s command." %
-                                           (dim, command),
-                                           tokens.pos_info)
+                    raise PysmtSyntaxError(
+                        "Unexpected token '%s' in %s command." % (dim, command),
+                        tokens.pos_info,
+                    )
 
                 self.consume_closing(tokens, command)
                 res = self.env.type_manager.BVType(size)
@@ -1091,17 +1208,22 @@ class SmtLibParser(object):
                 # It must be a custom-defined type
                 base_type = self.cache.get(op)
                 if base_type is None or not isinstance(base_type, _TypeDecl):
-                    raise PysmtSyntaxError("Unexpected token '%s' in %s command." %
-                                           (op, command),
-                                           tokens.pos_info)
+                    raise PysmtSyntaxError(
+                        "Unexpected token '%s' in %s command." % (op, command),
+                        tokens.pos_info,
+                    )
                 pparams: List[PySMTType] = []
                 has_free_params = False
                 for _ in range(base_type.arity):
-                    ty = cast(PySMTType, self.parse_type(tokens, command, type_params=type_params))
+                    ty = cast(
+                        PySMTType,
+                        self.parse_type(tokens, command, type_params=type_params),
+                    )
                     pparams.append(ty)
                     if isinstance(ty, tuple):
                         has_free_params = True
                 if has_free_params:
+
                     def definition(*args):
                         params = []
                         for x in pparams:
@@ -1109,7 +1231,9 @@ class SmtLibParser(object):
                                 params.append(args[type_params.index(x[0])])
                             else:
                                 params.append(x)
-                        return self.env.type_manager.get_type_instance(base_type, *params)
+                        return self.env.type_manager.get_type_instance(
+                            base_type, *params
+                        )
 
                     res = PartialType("tmp", definition)
                 else:
@@ -1126,9 +1250,10 @@ class SmtLibParser(object):
         else:
             res = self.cache.get(var)
             if res is None:
-                raise PysmtSyntaxError("Unexpected token '%s' in %s command." %
-                                       (var, command),
-                                       tokens.pos_info)
+                raise PysmtSyntaxError(
+                    "Unexpected token '%s' in %s command." % (var, command),
+                    tokens.pos_info,
+                )
 
         if isinstance(res, _TypeDecl):
             return self.env.type_manager.get_type_instance(res)
@@ -1137,73 +1262,78 @@ class SmtLibParser(object):
 
     def parse_atom(self, tokens: Tokenizer, command: str) -> str:
         """Parses a single name from the tokens"""
-        var = tokens.consume("Unexpected end of stream in %s command." %
-                                     command)
+        var = tokens.consume("Unexpected end of stream in %s command." % command)
         if var == "(" or var == ")":
-            raise PysmtSyntaxError("Unexpected token '%s' in %s command." %
-                                   (var, command),
-                                   tokens.pos_info)
+            raise PysmtSyntaxError(
+                "Unexpected token '%s' in %s command." % (var, command), tokens.pos_info
+            )
         return var
 
     def parse_params(self, tokens: Tokenizer, command: str) -> List[Any]:
         """Parses a list of types from the tokens"""
         self.consume_opening(tokens, command)
-        current = tokens.consume("Unexpected end of stream in %s command." %
-                                         command)
+        current = tokens.consume("Unexpected end of stream in %s command." % command)
         res = []
         while current != ")":
             res.append(self.parse_type(tokens, command, additional_token=current))
-            current = tokens.consume("Unexpected end of stream in %s command." %
-                                             command)
+            current = tokens.consume(
+                "Unexpected end of stream in %s command." % command
+            )
         return res
 
     def parse_named_params(self, tokens: Tokenizer, command: str) -> List[Any]:
         """Parses a list of names and type from the tokens"""
         self.consume_opening(tokens, command)
-        current = tokens.consume("Unexpected end of stream in %s command." %
-                                         command)
+        current = tokens.consume("Unexpected end of stream in %s command." % command)
         res = []
         while current != ")":
             vname = self.parse_atom(tokens, command)
             typename = self.parse_type(tokens, command)
             res.append((vname, typename))
             self.consume_closing(tokens, command)
-            current = tokens.consume("Unexpected end of stream in %s command." %
-                                             command)
+            current = tokens.consume(
+                "Unexpected end of stream in %s command." % command
+            )
         return res
 
-    def parse_expr_list(self, tokens: Tokenizer, command: str) -> List[Union[FNode, str]]:
+    def parse_expr_list(
+        self, tokens: Tokenizer, command: str
+    ) -> List[Union[FNode, str]]:
         """Parses a list of expressions form the tokens"""
         self.consume_opening(tokens, command)
         res: List[Union[FNode, str]] = []
         while True:
             try:
-                current = cast(Union[FNode, str], assert_not_none(self.get_expression(tokens)))
+                current = cast(
+                    Union[FNode, str], assert_not_none(self.get_expression(tokens))
+                )
                 res.append(current)
             except PysmtSyntaxError:
                 return res
 
     def consume_opening(self, tokens: Tokenizer, command: str):
-        """ Consumes a single '(' """
+        """Consumes a single '('"""
         try:
             p = tokens.consume_maybe()
         except StopIteration:
             raise  # Re-raise execption for higher-level management, see get_command()
         if p != "(":
-            raise PysmtSyntaxError("Unexpected token '%s' in %s command. "
-                                   "Expected '('" %
-                                   (p, command), tokens.pos_info)
+            raise PysmtSyntaxError(
+                "Unexpected token '%s' in %s command. Expected '('" % (p, command),
+                tokens.pos_info,
+            )
 
     def consume_closing(self, tokens: Tokenizer, command: str):
-        """ Consumes a single ')' """
+        """Consumes a single ')'"""
         p = tokens.consume("Unexpected end of stream. Expected ')'")
         if p != ")":
-            raise PysmtSyntaxError("Unexpected token '%s' in %s command. "
-                                   "Expected ')'" %
-                                   (p, command), tokens.pos_info)
+            raise PysmtSyntaxError(
+                "Unexpected token '%s' in %s command. Expected ')'" % (p, command),
+                tokens.pos_info,
+            )
 
     def _function_call_helper(self, v: FNode, *args) -> FNode:
-        """ Helper function for dealing with function calls """
+        """Helper function for dealing with function calls"""
         return self.env.formula_manager.Function(v, args)
 
     def get_assignment_list(self, script):
@@ -1276,7 +1406,9 @@ class SmtLibParser(object):
             elif curr_parse == ":id" and term_group_id is None:
                 term_group_id = self.parse_atom(tokens, "assert-soft")
             else:
-                raise PysmtSyntaxError("Incorrect option in the 'assert-soft' command", tokens.pos_info)
+                raise PysmtSyntaxError(
+                    "Incorrect option in the 'assert-soft' command", tokens.pos_info
+                )
             curr = tokens.consume()
 
         # Defaults
@@ -1330,8 +1462,7 @@ class SmtLibParser(object):
             self.logic = get_logic_by_name(name)
             return SmtLibCommand(current, [self.logic])
         except UndefinedLogicError:
-            warn("Unknown logic '" + name +
-                 "'. Ignoring set-logic command.")
+            warn("Unknown logic '" + name + "'. Ignoring set-logic command.")
             return SmtLibCommand(current, [None])
 
     def _cmd_declare_const(self, current: str, tokens: Tokenizer) -> SmtLibCommand:
@@ -1375,13 +1506,15 @@ class SmtLibParser(object):
                     params.append((token, signed))
                 else:
                     raise PysmtSyntaxError(
-                        "Incorrect option in the '%s' command" % token,
-                        tokens.pos_info)
+                        "Incorrect option in the '%s' command" % token, tokens.pos_info
+                    )
             else:
                 if options:
                     raise PysmtSyntaxError(
-                        "Unexpected token '%s' after options in the '%s' command" % (token, current),
-                        tokens.pos_info)
+                        "Unexpected token '%s' after options in the '%s' command"
+                        % (token, current),
+                        tokens.pos_info,
+                    )
                 tokens.add_extra_token(token)
                 terms.append(self.get_expression(tokens))
 
@@ -1406,7 +1539,10 @@ class SmtLibParser(object):
                 signed = True
                 params.append((curr_parse, signed))
             else:
-                raise PysmtSyntaxError("Incorrect option in the 'maximize/minimize' command", tokens.pos_info)
+                raise PysmtSyntaxError(
+                    "Incorrect option in the 'maximize/minimize' command",
+                    tokens.pos_info,
+                )
             curr = tokens.consume()
         tokens.add_extra_token(")")
         self.consume_closing(tokens, current)
@@ -1426,8 +1562,7 @@ class SmtLibParser(object):
 
         v = self._get_var(var, typename)
         if v.symbol_type().is_function_type():
-            self.cache.bind(var,
-                    functools.partial(self._function_call_helper, v))
+            self.cache.bind(var, functools.partial(self._function_call_helper, v))
         else:
             self.cache.bind(var, v)
         return SmtLibCommand(current, [v])
@@ -1437,11 +1572,14 @@ class SmtLibParser(object):
         formal = []
         var = self.parse_atom(tokens, current)
         namedparams = self.parse_named_params(tokens, current)
-        rtype = cast(PySMTType, self.parse_type(tokens, current)) # TODO is this cast correct? WHen can it be a PartialType?
+        rtype = cast(
+            PySMTType, self.parse_type(tokens, current)
+        )  # TODO is this cast correct? WHen can it be a PartialType?
         bindings = []
-        for (x, t) in namedparams:
-            v = self.env.formula_manager.FreshSymbol(typename=t,
-                                                     template="__" + x + "%d")
+        for x, t in namedparams:
+            v = self.env.formula_manager.FreshSymbol(
+                typename=t, template="__" + x + "%d"
+            )
             self.cache.bind(x, v)
             formal.append(v)  # remember the variable
             bindings.append(x)  # remember the name
@@ -1450,17 +1588,18 @@ class SmtLibParser(object):
         ebody_type = self.env.stc.get_type(ebody)
         ebody_vars = self.env.fvo.get_free_variables(ebody)
         # Promote constant integer expression to real
-        if ebody_type.is_int_type() and rtype.is_real_type() and \
-           len(ebody_vars) == 0:
+        if ebody_type.is_int_type() and rtype.is_real_type() and len(ebody_vars) == 0:
             ebody = self.env.formula_manager.ToReal(ebody)
             ebody_type = rtype
         # Check that ebody has the right type
         if ebody_type != rtype:
-            raise PysmtSyntaxError("Typyng error in define-fun command. "
-                                   "The expected type is %s, but the detected "
-                                   "expression type is %s" % (rtype, ebody_type))
+            raise PysmtSyntaxError(
+                "Typyng error in define-fun command. "
+                "The expected type is %s, but the detected "
+                "expression type is %s" % (rtype, ebody_type)
+            )
 
-        #Discard parameters
+        # Discard parameters
         for x in bindings:
             self.cache.unbind(x)
         # Finish Parsing
@@ -1474,8 +1613,9 @@ class SmtLibParser(object):
         try:
             type_ = self.env.type_manager.Type(typename, int(arity))
         except ValueError:
-            raise PysmtSyntaxError("Expected an integer as arity of type %s."%
-                                   typename, tokens.pos_info)
+            raise PysmtSyntaxError(
+                "Expected an integer as arity of type %s." % typename, tokens.pos_info
+            )
         self.cache.bind(typename, type_)
         return SmtLibCommand(current, [type_])
 
@@ -1486,14 +1626,17 @@ class SmtLibParser(object):
 
         params = []
         cur = tokens.consume()
-        while cur != ')':
+        while cur != ")":
             params.append(cur)
             cur = tokens.consume()
 
         rtype = self.parse_type(tokens, current, type_params=params)
         if isinstance(rtype, PartialType):
             rtype.name = name
-        elif isinstance(rtype, tuple): # TODO when does parse_type return a tuple? It should never
+        elif isinstance(
+            rtype, tuple
+        ):  # TODO when does parse_type return a tuple? It should never
+
             def definition(*args):
                 return args[params.index(rtype[0])]
 
@@ -1533,7 +1676,7 @@ class SmtLibParser(object):
         return SmtLibCommand(current, [])
 
     def _cmd_check_sat_assuming(self, current: str, tokens: Tokenizer) -> SmtLibCommand:
-        """(check-sat-assuming (<prop_literal>*) ) """
+        """(check-sat-assuming (<prop_literal>*) )"""
         params = self.parse_expr_list(tokens, current)
         self.consume_closing(tokens, current)
         return SmtLibCommand(current, params)
@@ -1556,7 +1699,9 @@ class SmtLibParser(object):
         self.parse_atoms(tokens, current, 0)
         return SmtLibCommand(current, [])
 
-    def _cmd_get_unsat_assumptions(self, current: str, tokens: Tokenizer) -> SmtLibCommand:
+    def _cmd_get_unsat_assumptions(
+        self, current: str, tokens: Tokenizer
+    ) -> SmtLibCommand:
         """(get-unsat-assumptions)"""
         self.parse_atoms(tokens, current, 0)
         return SmtLibCommand(current, [])
@@ -1571,7 +1716,9 @@ class SmtLibParser(object):
         self.parse_atoms(tokens, current, 0)
         return SmtLibCommand(current, [])
 
-    def _cmd_load_objective_model(self, current: str, tokens: Tokenizer) -> SmtLibCommand:
+    def _cmd_load_objective_model(
+        self, current: str, tokens: Tokenizer
+    ) -> SmtLibCommand:
         """(load-objective-model <numeral>)"""
         elements = self.parse_atoms(tokens, current, 0, 1)
         levels = 1
@@ -1586,7 +1733,11 @@ class SmtLibParser(object):
 class SmtLib20Parser(SmtLibParser):
     """Parser for SMT-LIB 2.0."""
 
-    def __init__(self, environment: Optional["pysmt.environment.Environment"]=None, interactive=False):
+    def __init__(
+        self,
+        environment: Optional["pysmt.environment.Environment"] = None,
+        interactive=False,
+    ):
         SmtLibParser.__init__(self, environment, interactive)
 
         # Remove commands that were introduced in SMT-LIB 2.5
@@ -1609,18 +1760,24 @@ class SmtLibZ3Parser(SmtLibParser):
     Parses extended Z3 SmtLib Syntax
     """
 
-    def __init__(self, environment: Optional["pysmt.environment.Environment"]=None, interactive=False):
+    def __init__(
+        self,
+        environment: Optional["pysmt.environment.Environment"] = None,
+        interactive=False,
+    ):
         SmtLibParser.__init__(self, environment, interactive)
 
         # Z3 prints Pow as "^"
         self.interpreted["^"] = self.interpreted["pow"]
-        self.interpreted["ext_rotate_left"] = \
-            self._operator_adapter(self._ext_rotate_left)
-        self.interpreted["ext_rotate_right"] = \
-            self._operator_adapter(self._ext_rotate_right)
+        self.interpreted["ext_rotate_left"] = self._operator_adapter(
+            self._ext_rotate_left
+        )
+        self.interpreted["ext_rotate_right"] = self._operator_adapter(
+            self._ext_rotate_right
+        )
         mgr = self.env.formula_manager
-        self.interpreted['bv2int'] = self._operator_adapter(mgr.BVToNatural)
-        self.interpreted['ubv_to_int'] = self._operator_adapter(mgr.BVToNatural)
+        self.interpreted["bv2int"] = self._operator_adapter(mgr.BVToNatural)
+        self.interpreted["ubv_to_int"] = self._operator_adapter(mgr.BVToNatural)
 
     def _ext_rotate_left(self, x, y):
         amount = self.env.simplifier.simplify(y).constant_value()
@@ -1629,5 +1786,6 @@ class SmtLibZ3Parser(SmtLibParser):
     def _ext_rotate_right(self, x, y):
         amount = self.env.simplifier.simplify(y).constant_value()
         return self.env.formula_manager.BVRor(x, amount)
+
 
 # EOC SmtLibZ3Parser

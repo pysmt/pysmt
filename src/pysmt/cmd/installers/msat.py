@@ -12,26 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import glob
+import os
 
 from pysmt.cmd.installers.base import SolverInstaller
 
 
 class MSatInstaller(SolverInstaller):
-
     SOLVER = "msat"
 
-    def __init__(self, install_dir, bindings_dir, solver_version,
-                 mirror_link=None):
+    def __init__(self, install_dir, bindings_dir, solver_version, mirror_link=None):
 
         # Getting the right archive name
         archive_name_template = "mathsat-{version}-{os}-{arch}.{ext}"
         format = {
-                "version": solver_version,
-                "os" : self.os_name,
-                "arch": self.architecture,
-                "ext": "tar.gz"
+            "version": solver_version,
+            "os": self.os_name,
+            "arch": self.architecture,
+            "ext": "tar.gz",
         }
         if self.os_name == "windows":
             archive_name_template = "mathsat-{version}-{os}.{ext}"
@@ -47,15 +45,17 @@ class MSatInstaller(SolverInstaller):
 
         native_link = "https://mathsat.fbk.eu/release/{archive_name}"
 
-        SolverInstaller.__init__(self, install_dir=install_dir,
-                                 bindings_dir=bindings_dir,
-                                 solver_version=solver_version,
-                                 archive_name=archive_name,
-                                 native_link = native_link,
-                                 mirror_link=mirror_link)
+        SolverInstaller.__init__(
+            self,
+            install_dir=install_dir,
+            bindings_dir=bindings_dir,
+            solver_version=solver_version,
+            archive_name=archive_name,
+            native_link=native_link,
+            mirror_link=mirror_link,
+        )
 
         self.python_bindings_dir = os.path.join(self.extract_path, "python")
-
 
     def compile(self):
         if self.os_name == "windows":
@@ -73,8 +73,10 @@ class MSatInstaller(SolverInstaller):
             gmp_lib_dir = os.path.join(self.base_dir, "gmp-6.3.0", "lib")
             # gmp_dll_dir = os.path.join(self.base_dir, "gmp-6.3.0", "bin")
             SolverInstaller.mv(os.path.join(gmp_include_dir, "gmp.h"), incdir)
-            SolverInstaller.mv(source=os.path.join(gmp_lib_dir, "gmpdll.lib"),
-                               dest=os.path.join(libdir, "gmp.lib"))
+            SolverInstaller.mv(
+                source=os.path.join(gmp_lib_dir, "gmpdll.lib"),
+                dest=os.path.join(libdir, "gmp.lib"),
+            )
 
             # The MathSAT setup.py expects to link against "mpir" on Windows,
             # but we link against "gmp", so we need to patch the setup.py
@@ -88,8 +90,9 @@ class MSatInstaller(SolverInstaller):
             # NB: -R adds --rpath=$ORIGIN to link step, which makes shared library object
             # searched for in the extension's directory (no need for LD_LIBRARY_PATH)
             # (note: this is the default behavior for DLL discovery on Windows)
-            SolverInstaller.run_python("./setup.py build_ext -R $ORIGIN", self.python_bindings_dir)
-
+            SolverInstaller.run_python(
+                "./setup.py build_ext -R $ORIGIN", self.python_bindings_dir
+            )
 
     def move(self):
         pdir = self.python_bindings_dir
@@ -114,8 +117,9 @@ class MSatInstaller(SolverInstaller):
             soname = glob.glob(self.bindings_dir + "/_mathsat*.so")[0]
             old_path = "/Users/alb/src/release/build/libmathsat.dylib"
             new_path = "%s/libmathsat.dylib" % self.bindings_dir
-            SolverInstaller.run(["install_name_tool", "-change", old_path, new_path, soname])
-
+            SolverInstaller.run(
+                ["install_name_tool", "-change", old_path, new_path, soname]
+            )
 
     def get_installed_version(self):
         return self.get_installed_version_script(self.bindings_dir, "msat")

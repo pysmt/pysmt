@@ -18,19 +18,16 @@
 import os
 from tempfile import NamedTemporaryFile
 
-from pysmt.shortcuts import read_configuration, write_configuration
-from pysmt.shortcuts import get_env
-from pysmt.configuration import (configure_environment,
-                                 write_environment_configuration)
+from pysmt.configuration import configure_environment, write_environment_configuration
 from pysmt.environment import Environment
 from pysmt.exceptions import PysmtIOError
-
+from pysmt.shortcuts import get_env, read_configuration, write_configuration
 from tests import TestCase, main
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 class TestConfiguration(TestCase):
-
     def _get_config_path(self, config_name):
         return os.path.join(BASE_DIR, "configs", config_name)
 
@@ -49,7 +46,6 @@ class TestConfiguration(TestCase):
         self.assertTrue("mathsat-smt" in env.factory.all_solvers())
         self.assertTrue("z3-smt" in env.factory.all_solvers())
 
-
     def test_write(self):
         env = get_env()
         configure_environment(self._get_config_path("config1.ini"), env)
@@ -66,13 +62,11 @@ class TestConfiguration(TestCase):
         except WindowsError:
             print("Error deleting file...")
 
-        self.assertEqual(new_env.enable_infix_notation,
-                          env.enable_infix_notation)
+        self.assertEqual(new_env.enable_infix_notation, env.enable_infix_notation)
         self.assertEqual(new_env.factory.preferences, env.factory.preferences)
 
         self.assertTrue("mathsat-smt" in new_env.factory.all_solvers())
         self.assertTrue("z3-smt" in new_env.factory.all_solvers())
-
 
     def test_write_shortcut(self):
         read_configuration(self._get_config_path("config1.ini"))
@@ -90,8 +84,7 @@ class TestConfiguration(TestCase):
             print("Error deleting file...")
 
         env = get_env()
-        self.assertEqual(new_env.enable_infix_notation,
-                          env.enable_infix_notation)
+        self.assertEqual(new_env.enable_infix_notation, env.enable_infix_notation)
         self.assertEqual(new_env.factory.preferences, env.factory.preferences)
 
         self.assertTrue("mathsat-smt" in new_env.factory.all_solvers())
@@ -106,5 +99,5 @@ class TestConfiguration(TestCase):
             read_configuration(self._get_config_path("config_bad.ini"))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

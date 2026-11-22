@@ -15,26 +15,26 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import os
-
 from io import StringIO
 
 from pysmt.shortcuts import reset_env
-from tests import TestCase
 from pysmt.smtlib.parser import SmtLibParser
 from pysmt.smtlib.script import SmtLibScript
+from tests import TestCase
+
 
 class TestSmtLibParserGriggio(TestCase):
-
     def test_griggio(self):
-        for file_id in range(1,7):
+        for file_id in range(1, 7):
             # Parse
             script = self.parse(file_id)
             # Check cmds
             for i, cmd in enumerate(script):
-                self.assertEqual(cmd.name, TESTS[file_id][i],
-                                 "Test %d: %s != %s " %
-                                 (file_id, cmd.name, TESTS[file_id][i]))
+                self.assertEqual(
+                    cmd.name,
+                    TESTS[file_id][i],
+                    "Test %d: %s != %s " % (file_id, cmd.name, TESTS[file_id][i]),
+                )
             # Serialize
             buf = StringIO()
             script.serialize(buf)
@@ -52,71 +52,71 @@ class TestSmtLibParserGriggio(TestCase):
 SMTLIB_FILE_PATTERN = "tests/smtlib/griggio/test%d.smt2.bz2"
 
 TESTS = {
-
-    1 : ["declare-fun",
-         "set-option",
-         "declare-sort",
-         "declare-fun",
-         "declare-fun",
-         "assert",
-         "assert",
-         "push",
-         "define-fun",
-         "assert",
-         "check-sat",
-         "pop",
-         "define-fun",
-         "exit",
+    1: [
+        "declare-fun",
+        "set-option",
+        "declare-sort",
+        "declare-fun",
+        "declare-fun",
+        "assert",
+        "assert",
+        "push",
+        "define-fun",
+        "assert",
+        "check-sat",
+        "pop",
+        "define-fun",
+        "exit",
     ],
-
-    2 : ["push",
-         "declare-sort",
-         "pop",
-         "declare-fun",
-         "exit",
+    2: [
+        "push",
+        "declare-sort",
+        "pop",
+        "declare-fun",
+        "exit",
     ],
-
-    3 : [ "set-option",
-          "declare-fun",
-          "declare-fun",
-          "assert",
-          "assert",
-          "assert",
-          "check-sat",
-          "get-unsat-core",
-          "exit",
+    3: [
+        "set-option",
+        "declare-fun",
+        "declare-fun",
+        "assert",
+        "assert",
+        "assert",
+        "check-sat",
+        "get-unsat-core",
+        "exit",
     ],
-
-    4 : [ "set-option",
-         "declare-fun",
-         "declare-fun",
-         "assert",
-         "assert",
-         "assert",
-         "check-sat",
-         "get-assignment",
-         "exit",
+    4: [
+        "set-option",
+        "declare-fun",
+        "declare-fun",
+        "assert",
+        "assert",
+        "assert",
+        "check-sat",
+        "get-assignment",
+        "exit",
     ],
-
-    5 : ["set-option",
-         "declare-fun",
-         "declare-fun",
-         "declare-fun",
-         "assert",
-         "assert",
-         "assert",
-         "assert",
-         "check-sat",
-         "get-value",
-         "exit",
+    5: [
+        "set-option",
+        "declare-fun",
+        "declare-fun",
+        "declare-fun",
+        "assert",
+        "assert",
+        "assert",
+        "assert",
+        "check-sat",
+        "get-value",
+        "exit",
     ],
-
-    6 : ["declare-sort",
-         "define-sort",
-         "declare-fun",
-         "declare-fun",
-         "assert",
-         "check-sat",
-         "exit",
-    ]
+    6: [
+        "declare-sort",
+        "define-sort",
+        "declare-fun",
+        "declare-fun",
+        "assert",
+        "check-sat",
+        "exit",
+    ],
 }

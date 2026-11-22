@@ -16,10 +16,10 @@
 #   limitations under the License.
 #
 import os
-
 from typing import Optional
 
 from pysmt.exceptions import PysmtImportError
+
 #
 # Try to import the Cython version of the parser.
 # Fall-back on the pure-python version if:
@@ -34,7 +34,8 @@ if env_use_cython_val is not None:
 
 HAS_CYTHON = False
 try:
-    import pyximport # type: ignore[import]
+    import pyximport  # type: ignore[import]
+
     HAS_CYTHON = True
 except ImportError as ex:
     if ENV_USE_CYTHON:
@@ -89,12 +90,13 @@ else:
     if not hasattr(pyximport, "build_module"):
         if sys.version_info < (3, 5):
             # _pyximport3 module requires at least Python 3.5
-            import pyximport._pyximport2 as pyximport # type: ignore[import]
+            import pyximport._pyximport2 as pyximport  # type: ignore[import]
         else:
-            import pyximport._pyximport3 as pyximport # type: ignore[import]
+            import pyximport._pyximport3 as pyximport  # type: ignore[import]
 
     if not hasattr(pyximport, "build_module"):
         import sys
+
         if sys.version_info < (3, 5):
             # _pyximport3 module requires at least Python 3.5
             import pyximport._pyximport2 as pyximport
@@ -103,15 +105,14 @@ else:
 
     pyx = pyximport.install()
     pyximport.uninstall(*pyx)
-    build_dir = os.path.join(os.path.expanduser('~'), '.pyxbld')
+    build_dir = os.path.join(os.path.expanduser("~"), ".pyxbld")
     path = os.path.join(os.path.dirname(__file__), "parser.py")
-    name="pysmt.smtlib.parser.parser"
+    name = "pysmt.smtlib.parser.parser"
 
-    so_path = pyximport.build_module(name, path,
-                                     pyxbuild_dir=build_dir)
-    spec = importlib.util.spec_from_file_location(name, so_path) # type: ignore[attr-defined]
+    so_path = pyximport.build_module(name, path, pyxbuild_dir=build_dir)
+    spec = importlib.util.spec_from_file_location(name, so_path)  # type: ignore[attr-defined]
     assert spec is not None
-    module = importlib.util.module_from_spec(spec) # type: ignore[attr-defined]
+    module = importlib.util.module_from_spec(spec)  # type: ignore[attr-defined]
     sys.modules[name] = module
     loader = spec.loader
     assert loader is not None
@@ -149,4 +150,5 @@ if __name__ == "__main__":
         print("Done")
         if out is not None:
             res.to_file(out, daggify=True)
+
     main()

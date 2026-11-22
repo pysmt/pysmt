@@ -18,8 +18,9 @@
 from typing import Optional
 
 import pysmt
-from pysmt.walkers.generic import Walker
 from pysmt.fnode import FNode
+from pysmt.walkers.generic import Walker
+
 
 class TreeWalker(Walker):
     """TreeWalker treats the formula as a Tree and does not perform memoization.
@@ -36,11 +37,11 @@ class TreeWalker(Walker):
 
     """
 
-    def __init__(self, env: Optional["pysmt.environment.Environment"]=None):
+    def __init__(self, env: Optional["pysmt.environment.Environment"] = None):
         Walker.__init__(self, env)
         return
 
-    def walk(self, formula: FNode, threshold: Optional[int]=None):
+    def walk(self, formula: FNode, threshold: Optional[int] = None):
         """Generic walk method, will apply the function associated with
         the node.
 
@@ -73,7 +74,7 @@ class TreeWalker(Walker):
         raise NotImplementedError
 
     def walk_skip(self, formula):
-        """ Default function to skip a node and process the children """
+        """Default function to skip a node and process the children"""
         for s in formula.args():
             yield s
         return

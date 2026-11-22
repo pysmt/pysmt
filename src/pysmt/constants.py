@@ -15,7 +15,7 @@
 # limitations under the License.
 
 import os
-
+from fractions import Fraction as pyFraction
 from typing import Any, Optional, Type, Union, cast
 
 from pysmt.exceptions import PysmtImportError
@@ -39,7 +39,8 @@ if env_use_gmpy_val is not None:
 
 HAS_GMPY = False
 try:
-    from gmpy2 import mpq, mpz # type: ignore[import]
+    from gmpy2 import mpq, mpz  # type: ignore[import]
+
     HAS_GMPY = True
 except ImportError as ex:
     if ENV_USE_GMPY is True:
@@ -56,7 +57,7 @@ else:
     USE_GMPY = HAS_GMPY
 
 if HAS_GMPY:
-    mpq_type: Optional[Type[Any]] = type(mpq(1,2))
+    mpq_type: Optional[Type[Any]] = type(mpq(1, 2))
     mpz_type: Optional[Type[Any]] = type(mpz(1))
 else:
     mpq_type = None
@@ -66,13 +67,12 @@ else:
 # Fractions using GMPY2
 #
 
-from fractions import Fraction as pyFraction
 if USE_GMPY:
     Fraction = mpq
 else:
     Fraction = pyFraction
 
-FractionClass = type(Fraction(1,2))
+FractionClass = type(Fraction(1, 2))
 
 
 def is_pysmt_fraction(var: Any) -> bool:
@@ -80,7 +80,8 @@ def is_pysmt_fraction(var: Any) -> bool:
 
     This takes into account the class being used to represent the Fraction.
     """
-    return type(var) == FractionClass
+    return type(var) is FractionClass
+
 
 #
 # Integers using GMPY2
@@ -97,7 +98,7 @@ def is_pysmt_integer(var: Any) -> bool:
 
     This takes into account the class being used to represent the Integer.
     """
-    return type(var) == IntegerClass
+    return type(var) is IntegerClass
 
 
 def is_python_integer(var: Any) -> bool:
@@ -105,9 +106,9 @@ def is_python_integer(var: Any) -> bool:
 
     This accounts for: long, int and mpz (if available).
     """
-    if type(var) == mpz_type:
+    if type(var) is mpz_type:
         return True
-    if type(var) == int:
+    if type(var) is int:
         return True
     return False
 
@@ -117,13 +118,13 @@ def is_python_rational(var: Any) -> bool:
 
     This accounts for: long, int, float, Fraction, mpz, mpq (if available).
     """
-    if type(var) == mpz_type or type(var) == mpq_type:
+    if type(var) is mpz_type or type(var) is mpq_type:
         return True
-    if type(var) == pyFraction:
+    if type(var) is pyFraction:
         return True
-    if type(var) == int:
+    if type(var) is int:
         return True
-    if type(var) == float:
+    if type(var) is float:
         return True
     return False
 
@@ -135,7 +136,7 @@ def is_python_boolean(var: Any):
 
 def pysmt_integer_from_integer(value):
     """Return a pysmt Integer for the given value."""
-    if type(value) == IntegerClass:
+    if type(value) is IntegerClass:
         # Nothing to do
         return value
     return Integer(value)
@@ -147,26 +148,32 @@ def to_python_integer(value):
 
 
 if USE_GMPY:
-    def pysmt_fraction_from_rational(value: Union[float, int, pyFraction]) -> pyFraction:
+
+    def pysmt_fraction_from_rational(
+        value: Union[float, int, pyFraction],
+    ) -> pyFraction:
         """Return a pysmt Fraction for the rational value."""
-        if type(value) == FractionClass:
+        if type(value) is FractionClass:
             # Nothing to do
             return cast(pyFraction, value)
         return cast(pyFraction, FractionClass(value))
 else:
-    def pysmt_fraction_from_rational(value: Union[float, int, pyFraction]) -> pyFraction:
+
+    def pysmt_fraction_from_rational(
+        value: Union[float, int, pyFraction],
+    ) -> pyFraction:
         """Return a pysmt Fraction for the rational value."""
-        if type(value) == FractionClass:
+        if type(value) is FractionClass:
             # Nothing to do
             return cast(pyFraction, value)
         # Python's Fraction is a bit picky, need to
         # construct the object in different ways
-        if type(value) == mpq_type:
+        if type(value) is mpq_type:
             val = cast(Any, value)
             n = Integer(val.numerator())
             d = Integer(val.denominator())
             return cast(pyFraction, Fraction(n, d))
-        elif type(value) == mpz_type:
+        elif type(value) is mpz_type:
             return cast(pyFraction, Fraction(Integer(value)))
         else:
             return cast(pyFraction, Fraction(value))
@@ -177,14 +184,17 @@ else:
 
 USE_Z3 = False
 try:
-    import z3.z3num # type: ignore[import]
+    import z3.z3num  # type: ignore[import]
+
     USE_Z3 = True
 except ImportError:
     pass
 
 if USE_Z3:
+
     class Numeral(z3.z3num.Numeral):
         """Represents a Number (Algebraic)"""
+
         def __hash__(self):
             return hash(self.sexpr())
 
@@ -198,14 +208,19 @@ if USE_Z3:
             pass
 
 else:
-    class Numeral(object): # type: ignore[no-redef]
+
+    class Numeral(object):  # type: ignore[no-redef]
         """Represents a Number (Algebraic)"""
+
         def __init__(self, obj):
-            raise NotImplementedError("Z3 is not installed. "\
-                "We currently do not support stand-alone algebraic numbers.")
+            raise NotImplementedError(
+                "Z3 is not installed. "
+                "We currently do not support stand-alone algebraic numbers."
+            )
+
 
 #
 # Strings
 #
 def is_python_string(str1: str) -> bool:
-    return type(str1) == str
+    return type(str1) is str

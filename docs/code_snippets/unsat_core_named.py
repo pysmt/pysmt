@@ -16,8 +16,7 @@ a = Symbol("a", INT)
 # ``a >= 1`` and ``a <= 0`` are contradictory.  Each assertion is given
 # a name so that the core can be reported by name.
 
-with UnsatCoreSolver(logic="QF_LIA",
-                     unsat_cores_mode="named") as solver:
+with UnsatCoreSolver(logic="QF_LIA", unsat_cores_mode="named") as solver:
     solver.add_assertion(a >= 1, named="a_positive")
     solver.add_assertion(a <= 0, named="a_nonpositive")
     if not solver.solve():

@@ -14,16 +14,20 @@
 
 import time
 from io import TextIOWrapper
-from subprocess import Popen, PIPE
+from subprocess import PIPE, Popen
 
 import pysmt.smtlib.commands as smtcmd
-from pysmt.solvers.eager import EagerModel
+from pysmt.decorators import clear_pending_pop
+from pysmt.exceptions import (
+    PysmtValueError,
+    SolverReturnedUnknownResultError,
+    UnknownSolverAnswerError,
+)
 from pysmt.smtlib.parser import SmtLibParser
 from pysmt.smtlib.script import SmtLibCommand
+from pysmt.solvers.eager import EagerModel
 from pysmt.solvers.solver import Solver, SolverOptions
-from pysmt.exceptions import (SolverReturnedUnknownResultError,
-                              UnknownSolverAnswerError, PysmtValueError)
-from pysmt.decorators import clear_pending_pop
+
 
 class SmtLibOptions(SolverOptions):
     """Options for the SmtLib Solver.
@@ -31,15 +35,16 @@ class SmtLibOptions(SolverOptions):
     * debug_interaction: True, False
       Print the communication between pySMT and the wrapped executable
     """
+
     def __init__(self, **base_options):
         SolverOptions.__init__(self, **base_options)
         if self.unsat_cores_mode is not None:
             raise PysmtValueError("'unsat_cores_mode' option not supported.")
         self.debug_interaction = False
 
-        if 'debug_interaction' in self.solver_options:
-            self.debug_interaction = self.solver_options['debug_interaction']
-            del self.solver_options['debug_interaction']
+        if "debug_interaction" in self.solver_options:
+            self.debug_interaction = self.solver_options["debug_interaction"]
+            del self.solver_options["debug_interaction"]
 
     def __call__(self, solver):
         # These options are needed for the wrapper to work
@@ -54,15 +59,18 @@ class SmtLibOptions(SolverOptions):
         if self.random_seed is not None:
             solver.set_option(":random-seed", str(self.random_seed))
 
-        for k,v in self.solver_options.items():
-            if k in (':print-success', 'diagnostic-output-channel'):
+        for k, v in self.solver_options.items():
+            if k in (":print-success", "diagnostic-output-channel"):
                 raise PysmtValueError("Cannot override %s." % k)
             solver.set_option(k, str(v))
+
 
 # EOC SmtLibOptions
 
 
-class SmtLibSolver(Solver): # TODO this class is defined twice in pysmt. Here and in solvers.smtlib.py
+class SmtLibSolver(
+    Solver
+):  # TODO this class is defined twice in pysmt. Here and in solvers.smtlib.py
     """Wrapper for using a solver via textual SMT-LIB interface.
 
     The solver is launched in a subprocess using args as arguments of
@@ -72,17 +80,14 @@ class SmtLibSolver(Solver): # TODO this class is defined twice in pysmt. Here an
     OptionsClass = SmtLibOptions
 
     def __init__(self, args, environment, logic, LOGICS=None, **options):
-        Solver.__init__(self,
-                        environment,
-                        logic=logic,
-                        **options)
+        Solver.__init__(self, environment, logic=logic, **options)
         self.to = self.environment.typeso
-        if LOGICS is not None: self.LOGICS = LOGICS
+        if LOGICS is not None:
+            self.LOGICS = LOGICS
         self.args = args
         self.declared_vars = [set()]
         self.declared_sorts = [set()]
-        self.solver = Popen(args, stdout=PIPE, stderr=PIPE, stdin=PIPE,
-                            bufsize=-1)
+        self.solver = Popen(args, stdout=PIPE, stderr=PIPE, stdin=PIPE, bufsize=-1)
         # Give time to the process to start-up
         time.sleep(0.01)
         self.parser = SmtLibParser(interactive=True)
@@ -94,8 +99,7 @@ class SmtLibSolver(Solver): # TODO this class is defined twice in pysmt. Here an
         self.set_logic(logic)
 
     def set_option(self, name, value):
-        self._send_silent_command(SmtLibCommand(smtcmd.SET_OPTION,
-                                                [name, value]))
+        self._send_silent_command(SmtLibCommand(smtcmd.SET_OPTION, [name, value]))
 
     def set_logic(self, logic):
         self._send_silent_command(SmtLibCommand(smtcmd.SET_LOGIC, [logic]))

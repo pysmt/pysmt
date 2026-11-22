@@ -24,8 +24,7 @@ a = Symbol("a", INT)
 # The base theory: ``a >= 1``.  On its own it is satisfiable, but the
 # assumption ``a <= 0`` contradicts it.
 
-with UnsatCoreSolver(logic="QF_LIA",
-                     unsat_cores_mode="named") as solver:
+with UnsatCoreSolver(logic="QF_LIA", unsat_cores_mode="named") as solver:
     solver.add_assertion(a >= 1, named="a_positive")
     if not solver.solve([a <= 0]):
         print("UNSAT under the assumption a <= 0.")

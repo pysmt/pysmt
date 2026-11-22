@@ -21,6 +21,7 @@ from typing import Iterable, Optional, Sequence
 import pysmt.logics
 from pysmt.fnode import FNode
 
+
 class Interpolator(object):
     LOGICS: Iterable[pysmt.logics.Logic] = []
 

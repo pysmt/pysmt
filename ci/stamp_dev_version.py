@@ -13,7 +13,11 @@ import subprocess
 py = pathlib.Path("pyproject.toml")
 n = subprocess.check_output(["git", "rev-list", "--count", "HEAD"], text=True).strip()
 text, count = re.subn(
-    r'^(version = "\d+\.\d+\.\d+)\.dev\d+"', rf'\1.dev{n}"', py.read_text(), count=1, flags=re.M
+    r'^(version = "\d+\.\d+\.\d+)\.dev\d+"',
+    rf'\1.dev{n}"',
+    py.read_text(),
+    count=1,
+    flags=re.M,
 )
 py.write_text(text)
 print(f"stamped .dev{n}" if count else "release version, not stamped")

@@ -16,17 +16,16 @@
 #   limitations under the License.
 #
 
-import sys
-import subprocess
-import pkgutil
 import os.path
+import pkgutil
+import subprocess
+import sys
 
-from tests import TestCase, main
 import pysmt
+from tests import TestCase, main
 
 
 class TestImports(TestCase):
-
     EXCLUSION_LIST = ["pysmt.solvers", "pysmt.optimization", "pysmt.cmd"]
 
     def test_imports(self):
@@ -35,11 +34,16 @@ class TestImports(TestCase):
             module_name, module_path = stack.pop()
             for _, name, ispkg in pkgutil.iter_modules(module_path):
                 fullname = "%s.%s" % (module_name, name)
-                command = [sys.executable, '-c', 'import %s' % fullname]
+                command = [sys.executable, "-c", "import %s" % fullname]
                 returncode = subprocess.call(command)
-                self.assertEqual(returncode, 0, msg="Failed to import %s module" % fullname)
+                self.assertEqual(
+                    returncode, 0, msg="Failed to import %s module" % fullname
+                )
                 if ispkg and fullname not in TestImports.EXCLUSION_LIST:
-                    stack.append((fullname, [os.path.join(p, name) for p in module_path]))
+                    stack.append(
+                        (fullname, [os.path.join(p, name) for p in module_path])
+                    )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

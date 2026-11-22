@@ -16,21 +16,35 @@
 #   limitations under the License.
 #
 import sys
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
+
 from pysmt.fnode import FNode
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union, cast, Iterable
 
 if sys.version_info >= (3, 3):
     from collections.abc import Iterable as CollectionsIterable
 else:
     from collections import Iterable as CollectionsIterable
 
-import pysmt.operators as op
 import pysmt.exceptions
+import pysmt.operators as op
+
 
 # NodeType to Function Name
 def nt_to_fun(o: int) -> str:
     """Returns the name of the walk function for the given nodetype."""
     return "walk_%s" % op.op_to_str(o).lower()
+
 
 class handles(object):
     """Decorator for walker functions.
@@ -44,6 +58,7 @@ class handles(object):
          ...
 
     """
+
     def __init__(self, *nodetypes: Union[int, Iterable[int]]):
         if len(nodetypes) == 1 and isinstance(nodetypes[0], CollectionsIterable):
             nt: Iterable[int] = nodetypes[0]
@@ -59,13 +74,19 @@ class handles(object):
         setattr(func, "nodetypes", nodetypes)
         return func
 
+
 class MetaNodeTypeHandler(type):
-    """Metaclass used to intepret the nodehandler decorator. """
-    def __new__(cls: Type["MetaNodeTypeHandler"], name: str, bases: Any, dct: Dict[str, Any]) -> Any:
+    """Metaclass used to intepret the nodehandler decorator."""
+
+    def __new__(
+        cls: Type["MetaNodeTypeHandler"], name: str, bases: Any, dct: Dict[str, Any]
+    ) -> Any:
         obj = type.__new__(cls, name, bases, dct)
         for k, v in dct.items():
             if hasattr(v, "nodetypes"):
-                cast("Walker", obj).set_handler(v, *cast(List[int], getattr(v, "nodetypes")))
+                cast("Walker", obj).set_handler(
+                    v, *cast(List[int], getattr(v, "nodetypes"))
+                )
         return obj
 
 
@@ -75,9 +96,10 @@ class Walker(object, metaclass=MetaNodeTypeHandler):
     Do not subclass directly, use DagWalker or TreeWalker, instead.
     """
 
-    def __init__(self, env: Optional["pysmt.environment.Environment"]=None):
+    def __init__(self, env: Optional["pysmt.environment.Environment"] = None):
         if env is None:
             import pysmt.environment
+
             env = pysmt.environment.get_env()
         self.env: "pysmt.environment.Environment" = env
 
@@ -89,7 +111,8 @@ class Walker(object, metaclass=MetaNodeTypeHandler):
         """
         raise NotImplementedError(
             "Instance-based walkers (<=0.6.0) are deprecated. "
-            "You should use new-style/class based walkers.")
+            "You should use new-style/class based walkers."
+        )
 
     @classmethod
     def set_handler(cls, function: Callable, *node_types):
@@ -117,7 +140,8 @@ class Walker(object, metaclass=MetaNodeTypeHandler):
             fun = self.env.get_dynamic_walker_function(nt, cls)
             if fun is None:
                 raise pysmt.exceptions.UnsupportedOperatorError(
-                    node_type=nt, expression=formula)
+                    node_type=nt, expression=formula
+                )
             return fun(self, formula, *args, **kwargs)
         return f(self, formula, *args, **kwargs)
 
@@ -125,7 +149,9 @@ class Walker(object, metaclass=MetaNodeTypeHandler):
     def walk_error(self, formula, **kwargs):
         """Default function for a node that is not handled by the Walker."""
         node_type = formula.node_type()
-        raise pysmt.exceptions.UnsupportedOperatorError(node_type=node_type,
-                                                        expression=formula)
+        raise pysmt.exceptions.UnsupportedOperatorError(
+            node_type=node_type, expression=formula
+        )
+
 
 # EOC Walker

@@ -1,0 +1,29 @@
+# Test benchmarks, configs and puzzle inputs are data: never rewrite them.
+exclude: ^(tests/smtlib/(?!.*\.py$)|tests/configs/|examples/sudoku/problems/)
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-toml
+      - id: check-yaml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+
+  - repo: local
+    hooks:
+      - id: lint
+        name: just lint
+        entry: just lint
+        language: system
+        pass_filenames: false
+
+  - repo: local
+    hooks:
+      - id: typecheck
+        name: just typecheck
+        entry: just typecheck
+        language: system
+        pass_filenames: false

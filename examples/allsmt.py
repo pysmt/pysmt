@@ -1,5 +1,16 @@
 # This example requires MathSAT to be installed.
-from pysmt.shortcuts import LE, GE, Int, Plus, Equals, Solver, And, Symbol, Or, get_atoms
+from pysmt.shortcuts import (
+    GE,
+    LE,
+    And,
+    Equals,
+    Int,
+    Or,
+    Plus,
+    Solver,
+    Symbol,
+    get_atoms,
+)
 from pysmt.typing import INT
 
 
@@ -19,14 +30,17 @@ def callback(model, converter, result):
 
 def all_smt(formula, important):
     result = []
-    with Solver(name="msat",
-                solver_options={
-                    "dpll.allsat_minimize_model": "false",  # enumerate total models
-                    "dpll.allsat_allow_duplicates": "false",  # enumerate disjoint models
-                    "preprocessor.toplevel_propagation": "false",  # these two options are necessary
-                    "preprocessor.simplification": "0",  # to avoid non-validity-preserving simplifications
-                }
-                ) as msat:
+    with (
+        Solver(
+            name="msat",
+            solver_options={
+                "dpll.allsat_minimize_model": "false",  # enumerate total models
+                "dpll.allsat_allow_duplicates": "false",  # enumerate disjoint models
+                "preprocessor.toplevel_propagation": "false",  # these two options are necessary
+                "preprocessor.simplification": "0",  # to avoid non-validity-preserving simplifications
+            },
+        ) as msat
+    ):
         msat.add_assertion(formula)
         msat.all_sat(important, lambda model: callback(model, msat.converter, result))
     return result
@@ -37,10 +51,14 @@ A1 = Symbol("A1", INT)
 x = Symbol("x")
 y = Symbol("y")
 
-f = And(GE(A0, Int(0)), LE(A0, Int(5)),
-        GE(A1, Int(0)), LE(A1, Int(5)),
-        Equals(Plus(A0, A1), Int(8)),
-        Or(x, y))
+f = And(
+    GE(A0, Int(0)),
+    LE(A0, Int(5)),
+    GE(A1, Int(0)),
+    LE(A1, Int(5)),
+    Equals(Plus(A0, A1), Int(8)),
+    Or(x, y),
+)
 
 important = get_atoms(f) - {y}
 result = all_smt(f, important)

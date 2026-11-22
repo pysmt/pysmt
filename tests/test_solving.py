@@ -16,25 +16,52 @@
 #   limitations under the License.
 #
 import pysmt.operators as op
-
-from pysmt.shortcuts import Symbol, FreshSymbol, And, Not, GT, Function, Plus
-from pysmt.shortcuts import Bool, TRUE, Real, LE, FALSE, Or, Equals, Implies
-from pysmt.shortcuts import Solver
-from pysmt.shortcuts import get_env, get_model, is_valid, is_sat, get_implicant
+from pysmt.exceptions import (
+    ConvertExpressionError,
+    InternalSolverError,
+    NoSolverAvailableError,
+    PysmtTypeError,
+    PysmtValueError,
+    SolverReturnedUnknownResultError,
+    UndefinedLogicError,
+)
+from pysmt.logics import (
+    AUTO,
+    QF_BOOL,
+    QF_BV,
+    QF_LRA,
+    QF_UFLIRA,
+    convert_logic_from_string,
+)
+from pysmt.shortcuts import (
+    FALSE,
+    GT,
+    LE,
+    TRUE,
+    And,
+    Bool,
+    Equals,
+    FreshSymbol,
+    Function,
+    Implies,
+    Not,
+    Or,
+    Plus,
+    Real,
+    Solver,
+    Symbol,
+    get_env,
+    get_implicant,
+    get_model,
+    is_sat,
+    is_valid,
+)
 from pysmt.typing import BOOL, REAL, FunctionType
-from tests import TestCase, skipIfSolverNotAvailable, skipIfNoSolverForLogic
-from tests import main
+from tests import TestCase, main, skipIfNoSolverForLogic, skipIfSolverNotAvailable
 from tests.examples import get_example_formulae
-from pysmt.exceptions import (SolverReturnedUnknownResultError,
-                              InternalSolverError, NoSolverAvailableError,
-                              ConvertExpressionError, UndefinedLogicError,
-                              PysmtTypeError, PysmtValueError)
-from pysmt.logics import QF_UFLIRA, QF_BOOL, QF_LRA, AUTO, QF_BV
-from pysmt.logics import convert_logic_from_string
 
 
 class TestBasic(TestCase):
-
     @skipIfNoSolverForLogic(QF_BOOL)
     def test_create_and_solve(self):
         solver = Solver(logic=QF_BOOL)
@@ -44,7 +71,7 @@ class TestBasic(TestCase):
 
         f = And(varA, Not(varB))
 
-        g = f.substitute({varB:varA})
+        g = f.substitute({varB: varA})
         solver.add_assertion(g)
         res = solver.solve()
         self.assertFalse(res, "Formula was expected to be UNSAT")
@@ -59,14 +86,14 @@ class TestBasic(TestCase):
         varB = Symbol("B", BOOL)
 
         f = And(varA, Not(varB))
-        g = f.substitute({varB:varA})
+        g = f.substitute({varB: varA})
 
-        self.assertUnsat(g, logic=QF_BOOL,
-                         msg="Formula was expected to be UNSAT")
+        self.assertUnsat(g, logic=QF_BOOL, msg="Formula was expected to be UNSAT")
 
         for solver in get_env().factory.all_solvers():
-            self.assertUnsat(g, solver_name=solver,
-                             msg="Formula was expected to be UNSAT")
+            self.assertUnsat(
+                g, solver_name=solver, msg="Formula was expected to be UNSAT"
+            )
 
     # This test works only if is_sat requests QF_BOOL as logic, since
     # that is the only logic handled by BDDs
@@ -95,7 +122,7 @@ class TestBasic(TestCase):
         varA = Symbol("A", BOOL)
         varB = Symbol("B", BOOL)
         f = And(varA, Not(varB))
-        g = f.substitute({varB:varA})
+        g = f.substitute({varB: varA})
 
         res = get_model(g, logic=QF_BOOL)
         self.assertIsNone(res, "Formula was expected to be UNSAT")
@@ -127,7 +154,7 @@ class TestBasic(TestCase):
         varB = Symbol("B", BOOL)
 
         f = And(varA, Not(varB))
-        g = f.substitute({varB:varA})
+        g = f.substitute({varB: varA})
 
         for solver in get_env().factory.all_solvers(logic=QF_BOOL):
             res = get_implicant(g, solver_name=solver)
@@ -168,9 +195,9 @@ class TestBasic(TestCase):
 
     @skipIfNoSolverForLogic(QF_BOOL)
     def test_incremental(self):
-        a = Symbol('a', BOOL)
-        b = Symbol('b', BOOL)
-        c = Symbol('c', BOOL)
+        a = Symbol("a", BOOL)
+        b = Symbol("b", BOOL)
+        c = Symbol("c", BOOL)
 
         for name in get_env().factory.all_solvers(logic=QF_BOOL):
             with Solver(name) as solver:
@@ -196,21 +223,23 @@ class TestBasic(TestCase):
 
     @skipIfSolverNotAvailable("msat")
     def test_examples_msat(self):
-        for (f, validity, satisfiability, logic) in get_example_formulae():
-            if not logic.quantifier_free: continue
-            if logic.theory.strings: continue
+        for f, validity, satisfiability, logic in get_example_formulae():
+            if not logic.quantifier_free:
+                continue
+            if logic.theory.strings:
+                continue
 
-            v = is_valid(f, solver_name='msat', logic=logic)
-            s = is_sat(f, solver_name='msat', logic=logic)
+            v = is_valid(f, solver_name="msat", logic=logic)
+            s = is_sat(f, solver_name="msat", logic=logic)
             self.assertEqual(validity, v, f)
             self.assertEqual(satisfiability, s, f)
 
     @skipIfSolverNotAvailable("cvc5")
     def test_examples_cvc(self):
-        for (f, validity, satisfiability, logic) in get_example_formulae():
+        for f, validity, satisfiability, logic in get_example_formulae():
             try:
-                v = is_valid(f, solver_name='cvc5', logic=logic)
-                s = is_sat(f, solver_name='cvc5', logic=logic)
+                v = is_valid(f, solver_name="cvc5", logic=logic)
+                s = is_sat(f, solver_name="cvc5", logic=logic)
                 self.assertEqual(validity, v, f)
                 self.assertEqual(satisfiability, s, f)
             except SolverReturnedUnknownResultError:
@@ -222,34 +251,47 @@ class TestBasic(TestCase):
 
     @skipIfSolverNotAvailable("yices")
     def test_examples_yices(self):
-        for (f, validity, satisfiability, logic) in get_example_formulae():
-            if not logic.quantifier_free: continue
-            if not logic.theory.linear: continue
-            if logic.theory.strings: continue
-            if logic.theory.arrays: continue
+        for f, validity, satisfiability, logic in get_example_formulae():
+            if not logic.quantifier_free:
+                continue
+            if not logic.theory.linear:
+                continue
+            if logic.theory.strings:
+                continue
+            if logic.theory.arrays:
+                continue
 
-            v = is_valid(f, solver_name='yices', logic=logic)
-            s = is_sat(f, solver_name='yices', logic=logic)
+            v = is_valid(f, solver_name="yices", logic=logic)
+            s = is_sat(f, solver_name="yices", logic=logic)
             self.assertEqual(validity, v, f)
             self.assertEqual(satisfiability, s, f)
 
     @skipIfSolverNotAvailable("btor")
     def test_examples_btor(self):
-        for (f, validity, satisfiability, logic) in get_example_formulae():
-            if not logic.quantifier_free: continue
-            if logic.theory.strings: continue
-            if logic.theory.integer_arithmetic: continue
-            if logic.theory.real_arithmetic: continue
-            if logic.theory.custom_type: continue
+        for f, validity, satisfiability, logic in get_example_formulae():
+            if not logic.quantifier_free:
+                continue
+            if logic.theory.strings:
+                continue
+            if logic.theory.integer_arithmetic:
+                continue
+            if logic.theory.real_arithmetic:
+                continue
+            if logic.theory.custom_type:
+                continue
 
-            v = is_valid(f, solver_name='btor', logic=logic)
-            s = is_sat(f, solver_name='btor', logic=logic)
+            v = is_valid(f, solver_name="btor", logic=logic)
+            s = is_sat(f, solver_name="btor", logic=logic)
             self.assertEqual(validity, v, f)
             self.assertEqual(satisfiability, s, f)
 
     def do_model(self, solver_name):
-        for (f, _, satisfiability, logic) in get_example_formulae():
-            if satisfiability and not logic.theory.uninterpreted and logic.quantifier_free:
+        for f, _, satisfiability, logic in get_example_formulae():
+            if (
+                satisfiability
+                and not logic.theory.uninterpreted
+                and logic.quantifier_free
+            ):
                 try:
                     with Solver(name=solver_name, logic=logic) as s:
                         s.add_assertion(f)
@@ -291,18 +333,24 @@ class TestBasic(TestCase):
 
     @skipIfSolverNotAvailable("z3")
     def test_tactics_z3(self):
-        from z3 import Tactic, Then # type: ignore[import]
+        from z3 import Tactic, Then  # type: ignore[import]
 
-        my_tactic = lambda ctx : Then(Tactic('simplify', ctx),
-                                      Tactic('propagate-values', ctx),
-                                      Tactic('elim-uncnstr', ctx))
+        my_tactic = lambda ctx: Then(
+            Tactic("simplify", ctx),
+            Tactic("propagate-values", ctx),
+            Tactic("elim-uncnstr", ctx),
+        )
 
-        for (f, validity, satisfiability, logic) in get_example_formulae():
-            if not logic.theory.linear: continue
-            if not logic.quantifier_free: continue
-            if logic.theory.strings: continue
-            if logic.theory.bit_vectors: continue
-            s = Solver(name='z3')
+        for f, validity, satisfiability, logic in get_example_formulae():
+            if not logic.theory.linear:
+                continue
+            if not logic.quantifier_free:
+                continue
+            if logic.theory.strings:
+                continue
+            if logic.theory.bit_vectors:
+                continue
+            s = Solver(name="z3")
             z3_f = s.converter.convert(f)
             simp_z3_f = my_tactic(s.z3.ctx)(z3_f)
             simp_f = s.converter.back(simp_z3_f.as_expr())
@@ -313,10 +361,10 @@ class TestBasic(TestCase):
 
     @skipIfSolverNotAvailable("z3")
     def test_examples_z3(self):
-        for (f, validity, satisfiability, logic) in get_example_formulae():
+        for f, validity, satisfiability, logic in get_example_formulae():
             try:
-                v = is_valid(f, solver_name='z3', logic=logic)
-                s = is_sat(f, solver_name='z3', logic=logic)
+                v = is_valid(f, solver_name="z3", logic=logic)
+                s = is_sat(f, solver_name="z3", logic=logic)
 
                 self.assertEqual(validity, v, f)
                 self.assertEqual(satisfiability, s, f)
@@ -326,7 +374,7 @@ class TestBasic(TestCase):
                 assert theory.strings
 
     def test_examples_by_logic(self):
-        for (f, validity, satisfiability, logic) in get_example_formulae():
+        for f, validity, satisfiability, logic in get_example_formulae():
             if len(get_env().factory.all_solvers(logic=logic)) > 0:
                 try:
                     v = is_valid(f, logic=logic)
@@ -336,16 +384,17 @@ class TestBasic(TestCase):
                 except SolverReturnedUnknownResultError:
                     s = Solver(logic=logic)
                     print(s, logic, f.serialize())
-                    self.assertFalse(logic.quantifier_free,
-                                     "Unkown result are accepted only on "\
-                                     "Quantified formulae")
+                    self.assertFalse(
+                        logic.quantifier_free,
+                        "Unkown result are accepted only on Quantified formulae",
+                    )
 
     def test_examples_get_implicant(self):
-        for (f, _, satisfiability, logic) in get_example_formulae():
+        for f, _, satisfiability, logic in get_example_formulae():
             if logic.quantifier_free:
                 for sname in get_env().factory.all_solvers(logic=logic):
-                    if not logic.theory.linear and sname=="cvc5":
-                        continue # TODO: missing implementation for CVC5 Real Algebraic Values
+                    if not logic.theory.linear and sname == "cvc5":
+                        continue  # TODO: missing implementation for CVC5 Real Algebraic Values
                     f_i = get_implicant(f, logic=logic, solver_name=sname)
                     if satisfiability:
                         self.assertValid(Implies(f_i, f), logic=logic, msg=(f_i, f))
@@ -483,9 +532,9 @@ class TestBasic(TestCase):
 
     @skipIfSolverNotAvailable("msat")
     def test_msat_converter_on_msat_error(self):
-        import mathsat # type: ignore[import]
-        from pysmt.solvers.msat import MathSAT5Solver, MSatConverter
+        import mathsat  # type: ignore[import]
 
+        from pysmt.solvers.msat import MathSAT5Solver, MSatConverter
 
         env = get_env()
         msat = MathSAT5Solver(env, logic=QF_UFLIRA)
@@ -512,8 +561,7 @@ class TestBasic(TestCase):
         a, b, c = [Symbol(x) for x in "abc"]
         na, nb, nc = [Not(Symbol(x)) for x in "abc"]
 
-        f = And(Implies(a, And(b,c)),
-                Implies(na, And(nb,nc)))
+        f = And(Implies(a, And(b, c)), Implies(na, And(nb, nc)))
 
         s1 = Solver("msat")
         s1.add_assertion(f)
@@ -535,6 +583,7 @@ class TestBasic(TestCase):
     @skipIfNoSolverForLogic(QF_BOOL)
     def test_conversion_error(self):
         from pysmt.type_checker import SimpleTypeChecker
+
         add_dwf = get_env().add_dynamic_walker_function
         create_node = get_env().formula_manager.create_node
 
@@ -542,7 +591,7 @@ class TestBasic(TestCase):
         idx = op.new_node_type()
         x = Symbol("x")
         add_dwf(idx, SimpleTypeChecker, SimpleTypeChecker.walk_bool_to_bool)
-        invalid_node = create_node(idx, args=(x,x))
+        invalid_node = create_node(idx, args=(x, x))
 
         for sname in get_env().factory.all_solvers(logic=QF_BOOL):
             with self.assertRaises(ConvertExpressionError):
@@ -571,7 +620,7 @@ class TestBasic(TestCase):
         with self.assertRaises(TypeError):
             Solver(logic=QF_BOOL, invalid_option=False)
         with self.assertRaises(PysmtValueError):
-            Solver(logic=QF_BOOL, solver_options={'invalid': None})
+            Solver(logic=QF_BOOL, solver_options={"invalid": None})
 
     @skipIfNoSolverForLogic(QF_BOOL)
     def test_options_random_seed(self):
@@ -585,26 +634,30 @@ class TestBasic(TestCase):
 
     @skipIfSolverNotAvailable("picosat")
     def test_picosat_options(self):
-        from pysmt.solvers.pico import PicosatOptions
         from tempfile import TemporaryFile
+
+        from pysmt.solvers.pico import PicosatOptions
+
         x, y = Symbol("x"), Symbol("y")
         with TemporaryFile() as fout:
-            solver_options = {'preprocessing': False,
-                              'enable_trace_generation': False,
-                              'output': fout,
-                              'global_default_phase': PicosatOptions.GLOBAL_DEFAULT_PHASE_FALSE,
-                              'more_important_lit': [x],
-                              'less_important_lit': [y],
-                              'propagation_limit': 100,
-                              'verbosity': 1,
-                          }
-            with Solver(name='picosat', solver_options=solver_options) as s:
-                s.add_assertion(And(x,y))
+            solver_options = {
+                "preprocessing": False,
+                "enable_trace_generation": False,
+                "output": fout,
+                "global_default_phase": PicosatOptions.GLOBAL_DEFAULT_PHASE_FALSE,
+                "more_important_lit": [x],
+                "less_important_lit": [y],
+                "propagation_limit": 100,
+                "verbosity": 1,
+            }
+            with Solver(name="picosat", solver_options=solver_options) as s:
+                s.add_assertion(And(x, y))
                 s.solve()
 
     @skipIfNoSolverForLogic(QF_BOOL)
     def test_incremental_is_sat(self):
         from pysmt.exceptions import SolverStatusError
+
         with Solver(incremental=False, logic=QF_BOOL) as s:
             self.assertTrue(s.is_sat(Symbol("x")))
             with self.assertRaises(SolverStatusError):
@@ -612,16 +665,20 @@ class TestBasic(TestCase):
 
     @skipIfSolverNotAvailable("btor")
     def test_btor_options(self):
-        for (f, _, sat, logic) in get_example_formulae():
+        for f, _, sat, logic in get_example_formulae():
             if logic == QF_BV:
-                solver = Solver(name="btor",
-                                solver_options={"rewrite-level":0,
-                                                "fun-dual-prop":1,
-                                                "eliminate-slices":1})
+                solver = Solver(
+                    name="btor",
+                    solver_options={
+                        "rewrite-level": 0,
+                        "fun-dual-prop": 1,
+                        "eliminate-slices": 1,
+                    },
+                )
                 solver.add_assertion(f)
                 res = solver.solve()
                 self.assertTrue(res == sat)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

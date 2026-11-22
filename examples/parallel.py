@@ -30,9 +30,22 @@
 from multiprocessing import Pool, TimeoutError
 from time import sleep
 
-from pysmt.shortcuts import is_sat, is_valid, is_unsat
-from pysmt.shortcuts import And, Or, Not, Implies, Equals, GT, LE, Plus
-from pysmt.shortcuts import Symbol, Int, Real
+from pysmt.shortcuts import (
+    GT,
+    LE,
+    And,
+    Equals,
+    Implies,
+    Int,
+    Not,
+    Or,
+    Plus,
+    Real,
+    Symbol,
+    is_sat,
+    is_unsat,
+    is_valid,
+)
 from pysmt.typing import INT, REAL
 
 a, b = Symbol("a"), Symbol("b")
@@ -50,11 +63,12 @@ EXAMPLES = [
     (Implies(And(GT(r, s), GT(s, Real(0))), GT(r, Real(0))), True),
 ]
 
+
 # Ignore this for now
 def check_validity_and_test(args):
     """Checks expression and compare the outcome against a known value."""
 
-    expr, expected = args # IMPORTANT: Unpack args !!!
+    expr, expected = args  # IMPORTANT: Unpack args !!!
     local_res = is_valid(expr)
     return local_res == expected
 
@@ -71,7 +85,7 @@ res = pool.map(is_sat, f_gen)
 # The result is a list of True/False, in the same order as the input.
 print(res)
 
-sleep(1) # Have some time to look at the result
+sleep(1)  # Have some time to look at the result
 
 # Notice that all shortcuts (is_sat, qelim, etc) require only one
 # mandatory argument. To pass multiple arguments, we need to pack them
@@ -120,7 +134,7 @@ print("This is non-blocking...")
 # See multiprocessing.pool.AsyncResult for more options
 sat_res = future_res_sat.get(10)  # Get result after 10 seconds or kill
 try:
-    unsat_res = future_res_unsat.get(0) # No wait
+    unsat_res = future_res_unsat.get(0)  # No wait
 except TimeoutError:
     print("UNSAT result was not ready!")
     unsat_res = None

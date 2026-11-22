@@ -15,14 +15,17 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import re
 import itertools
-
+import re
 from typing import Dict, Iterator, Optional, Sequence, Tuple, TypeVar, cast
 
 import pysmt
 
-def all_assignments(bool_variables: Sequence["pysmt.fnode.FNode"], env: "pysmt.environment.Environment") -> Iterator[Dict["pysmt.fnode.FNode", "pysmt.fnode.FNode"]]: # type: ignore [name-defined]
+
+def all_assignments(
+    bool_variables: Sequence["pysmt.fnode.FNode"],  # type: ignore [name-defined]
+    env: "pysmt.environment.Environment",  # type: ignore [name-defined]
+) -> Iterator[Dict["pysmt.fnode.FNode", "pysmt.fnode.FNode"]]:  # type: ignore [name-defined]
     """Generates all possible assignments for a set of boolean variables."""
     mgr = env.formula_manager
     for set_ in powerset(bool_variables):
@@ -30,18 +33,22 @@ def all_assignments(bool_variables: Sequence["pysmt.fnode.FNode"], env: "pysmt.e
 
 
 T = TypeVar("T")
+
+
 def powerset(elements: Sequence[T]) -> Iterator[Tuple[T, ...]]:
     """Generates the powerset of the given elements set.
 
     E.g., powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)
     """
-    return itertools.chain.from_iterable(itertools.combinations(elements, r)
-                                         for r in range(len(elements)+1))
+    return itertools.chain.from_iterable(
+        itertools.combinations(elements, r) for r in range(len(elements) + 1)
+    )
+
 
 #
 # Bit Operations
 #
-def set_bit(v, index, x): # TODO type of this?
+def set_bit(v, index, x):  # TODO type of this?
     """Set the index:th bit of v to x, and return the new value."""
     mask = 1 << index
     if x:
@@ -53,14 +60,15 @@ def set_bit(v, index, x): # TODO type of this?
 
 def twos_complement(val: int, bits: int) -> int:
     """Retuns the 2-complemented value of val assuming bits word width"""
-    if (val & (1 << (bits - 1))) != 0: # if sign bit is set
-        val = val - (2 ** bits)        # compute negative value
+    if (val & (1 << (bits - 1))) != 0:  # if sign bit is set
+        val = val - (2**bits)  # compute negative value
     return val
 
 
 #
 # Python Compatibility Functions
 #
+
 
 def interactive_char_iterator(handle):
     c = handle.read(1)
@@ -72,10 +80,13 @@ def interactive_char_iterator(handle):
 #
 # Symbol (un)quoting
 #
-_simple_symbol_prog = re.compile(r"^[~!@\$%\^&\*_\-+=<>\.\?\/A-Za-z][~!@\$%\^&\*_\-+=<>\.\?\/A-Za-z0-9]*$")
+_simple_symbol_prog = re.compile(
+    r"^[~!@\$%\^&\*_\-+=<>\.\?\/A-Za-z][~!@\$%\^&\*_\-+=<>\.\?\/A-Za-z0-9]*$"
+)
 _keywords = set(["Int", "Real", "Bool"])
 
-def quote(name: str, style: str='|') -> str:
+
+def quote(name: str, style: str = "|") -> str:
     if name in _keywords or _simple_symbol_prog.match(name) is None:
         name = name.replace("\\", "\\\\").replace("%s" % style, "\\%s" % style)
         return "%s%s%s" % (style, name, style)

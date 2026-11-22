@@ -16,20 +16,25 @@
 #   limitations under the License.
 #
 
-from pysmt.fnode import FNode
 from typing import Any, Dict, Optional, Set, Union
+
+from pysmt.fnode import FNode
+
 
 class Annotations(object):
     """Handles and stores (key,value) annotations for formulae"""
 
-    def __init__(self, initial_annotations: Optional[Dict[FNode, Dict[str, Any]]]=None):
+    def __init__(
+        self, initial_annotations: Optional[Dict[FNode, Dict[str, Any]]] = None
+    ):
         if initial_annotations is not None:
             self._annotations: Dict[FNode, Dict[str, Any]] = initial_annotations
         else:
             self._annotations = {}
 
-
-    def add(self, formula: FNode, annotation: str, value: Optional[Union[FNode, str]]=None):
+    def add(
+        self, formula: FNode, annotation: str, value: Optional[Union[FNode, str]] = None
+    ):
         """Adds an annotation for the given formula, possibly with the
         specified value"""
         term_annotations = self._annotations.setdefault(formula, {})
@@ -37,19 +42,16 @@ class Annotations(object):
         if value is not None:
             values.add(value)
 
-
     def remove(self, formula: FNode):
         """Removes all the annotations for the given formula"""
         if formula in self._annotations:
             del self._annotations[formula]
-
 
     def remove_annotation(self, formula: FNode, annotation: str):
         """Removes the given annotation for the given formula"""
         if formula in self._annotations:
             if annotation in self._annotations[formula]:
                 del self._annotations[formula][annotation]
-
 
     def remove_value(self, formula: FNode, annotation: str, value: FNode):
         """Removes the given annotation for the given formula"""
@@ -59,8 +61,9 @@ class Annotations(object):
                 if value in d:
                     d.remove(value)
 
-
-    def has_annotation(self, formula: FNode, annotation: str, value: Optional[str]=None) -> bool:
+    def has_annotation(
+        self, formula: FNode, annotation: str, value: Optional[str] = None
+    ) -> bool:
         """Returns True iff the given formula has the given annotation. If
         Value is specified, True is returned only if the value is
         matching.
@@ -70,9 +73,8 @@ class Annotations(object):
                 if value is None:
                     return True
                 else:
-                    return (value in self._annotations[formula][annotation])
+                    return value in self._annotations[formula][annotation]
         return False
-
 
     def annotations(self, formula: FNode) -> Optional[Dict[str, Set[Any]]]:
         """Returns a dictionary containing all the annotations for the given
@@ -84,8 +86,9 @@ class Annotations(object):
         except KeyError:
             return None
 
-
-    def all_annotated_formulae(self, annotation: str, value: Optional[str]=None) -> Set[FNode]:
+    def all_annotated_formulae(
+        self, annotation: str, value: Optional[str] = None
+    ) -> Set[FNode]:
         """Returns the set of all the formulae having the given annotation
         key. If Value is specified, only the formula having the
         specified value are returned.
@@ -101,11 +104,9 @@ class Annotations(object):
                         res.append(f)
         return set(res)
 
-
     def __contains__(self, formula: Union[FNode, str]) -> bool:
         """Checks if formula has at least one annotation"""
         return formula in self._annotations
-
 
     def __str__(self) -> str:
         res = ["Annotations: {"]
@@ -118,6 +119,7 @@ class Annotations(object):
                 res.append("} ")
         return "".join(res + ["}"])
 
-
-    def __getitem__(self, formula: FNode) -> Optional[Dict[str, Union[Set[str], Set[Any]]]]:
+    def __getitem__(
+        self, formula: FNode
+    ) -> Optional[Dict[str, Union[Set[str], Set[Any]]]]:
         return self.annotations(formula)

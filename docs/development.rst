@@ -64,7 +64,10 @@ development dependencies pinned in ``uv.lock``. Running ``just`` without
 arguments lists all the recipes:
 
 * ``just test`` and ``just test-all``: run the tests (see below)
+* ``just lint``: check linting and formatting with ruff
+* ``just format``: format the code and apply the automatic lint fixes
 * ``just typecheck``: run mypy
+* ``just precommit``: run all the pre-commit hooks on the whole repository
 * ``just build``: build the sdist and the wheel into ``dist/``
 * ``just docs``: build the HTML documentation into ``docs/_build/html``
 * ``just bump VERSION``: set the version in ``pyproject.toml`` and
@@ -83,6 +86,24 @@ which currently needs pip inside the environment::
 ``uv run`` keeps the installed solvers, but ``just install`` (``uv sync``)
 removes every package that is not in ``uv.lock``, so solvers must be
 installed again after it.
+
+Code Style
+----------
+
+pySMT uses `ruff <https://docs.astral.sh/ruff/>`_ for linting and
+formatting, with a line length of 88 columns. The rules and the
+exceptions are configured in ``pyproject.toml``. ``just format`` fixes
+most issues, and ``just lint`` checks what the CI checks.
+
+The pre-commit hooks run the linter, the type checker and a few file
+checks before each commit. Enable them once per clone::
+
+  $ uv run pre-commit install
+
+The commit that reformatted the code base is listed in
+``.git-blame-ignore-revs``. To make ``git blame`` skip it, run::
+
+  $ git config blame.ignoreRevsFile .git-blame-ignore-revs
 
 Tests
 ======

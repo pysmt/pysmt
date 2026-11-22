@@ -17,12 +17,13 @@
 #
 
 
-from typing import Any
 import importlib
+from typing import Any
 
 import pysmt
 from pysmt.environment import Environment
 from pysmt.exceptions import SolverAPINotFound
+
 
 def MSATLibLoader(name):
     if name not in ["mathsat", "optimathsat"]:
@@ -33,16 +34,11 @@ def MSATLibLoader(name):
     except ImportError:
         raise SolverAPINotFound
 
+
 def MSATCreateEnv(name: str, msat_config: Any) -> "pysmt.solvers.msat.MSatEnv":
     map = {
-        "mathsat" : {
-            "class" : "MSatEnv",
-            "lib"   : "pysmt.solvers.msat"
-        },
-        "optimathsat": {
-            "class" : "OptiMSATEnv",
-            "lib"   : "pysmt.optimization.optimsat"
-        }
+        "mathsat": {"class": "MSatEnv", "lib": "pysmt.solvers.msat"},
+        "optimathsat": {"class": "OptiMSATEnv", "lib": "pysmt.optimization.optimsat"},
     }
     if name not in map.keys():
         raise ValueError(name)
@@ -51,16 +47,16 @@ def MSATCreateEnv(name: str, msat_config: Any) -> "pysmt.solvers.msat.MSatEnv":
 
     return EnvClass(msat_config)
 
-def MSATCreateConverter(name: str, environment: Environment, msat_env: "pysmt.solvers.msat.MSatEnv") -> "pysmt.solvers.msat.MSatConverter":
+
+def MSATCreateConverter(
+    name: str, environment: Environment, msat_env: "pysmt.solvers.msat.MSatEnv"
+) -> "pysmt.solvers.msat.MSatConverter":
     map = {
-        "mathsat" : {
-            "class" : "MSatConverter",
-            "lib"   : "pysmt.solvers.msat"
-        },
+        "mathsat": {"class": "MSatConverter", "lib": "pysmt.solvers.msat"},
         "optimathsat": {
-            "class" : "OptiMSATConverter",
-            "lib"   : "pysmt.optimization.optimsat"
-        }
+            "class": "OptiMSATConverter",
+            "lib": "pysmt.optimization.optimsat",
+        },
     }
     if name not in map.keys():
         raise ValueError(name)

@@ -17,64 +17,89 @@
 #
 """This module contains all custom exceptions of pySMT."""
 
-import pysmt.operators as op
 from typing import Optional, Tuple
+
+import pysmt.operators as op
 
 
 class PysmtException(Exception):
     """Base class for all custom exceptions of pySMT"""
+
     pass
+
 
 class UnknownSmtLibCommandError(PysmtException):
     """Raised when the parser finds an unknown command."""
+
     pass
+
 
 class SolverReturnedUnknownResultError(PysmtException):
     """This exception is raised if a solver returns 'unknown' as a result"""
+
     pass
+
 
 class UnknownSolverAnswerError(PysmtException):
     """Raised when the a solver returns an invalid response."""
+
     pass
+
 
 class NoSolverAvailableError(PysmtException):
     """No solver is available for the selected Logic."""
+
     pass
+
 
 class NonLinearError(PysmtException):
     """The provided expression is not linear."""
+
     pass
+
 
 class UndefinedLogicError(PysmtException):
     """This exception is raised if an undefined Logic is attempted to be used."""
+
     pass
+
 
 class InternalSolverError(PysmtException):
     """Generic exception to capture errors provided by a solver."""
+
     pass
+
 
 class NoLogicAvailableError(PysmtException):
     """Generic exception to capture errors caused by missing support for logics."""
+
     pass
+
 
 class SolverRedefinitionError(PysmtException):
     """Exception representing errors caused by multiple definition of solvers
-       having the same name."""
+    having the same name."""
+
     pass
+
 
 class SolverNotConfiguredForUnsatCoresError(PysmtException):
     """
     Exception raised if a solver not configured for generating unsat
     cores is required to produce a core.
     """
+
     pass
+
 
 class SolverStatusError(PysmtException):
     """
     Exception raised if a method requiring a specific solver status is
     incorrectly called in the wrong status.
     """
+
     pass
+
 
 class ConvertExpressionError(PysmtException):
     """Exception raised if the converter cannot convert an expression."""
@@ -82,10 +107,11 @@ class ConvertExpressionError(PysmtException):
     def __init__(self, message=None, expression=None):
         PysmtException.__init__(self)
         self.message = message
-        self.expression=expression
+        self.expression = expression
 
     def __str__(self):
         return self.message
+
 
 class UnsupportedOperatorError(PysmtException):
     """The expression contains an operator that is not supported.
@@ -95,7 +121,10 @@ class UnsupportedOperatorError(PysmtException):
 
     def __init__(self, message=None, node_type=None, expression=None):
         if message is None:
-            message = "Unsupported operator '%s' (node_type: %d)" % (op.op_to_str(node_type), node_type)
+            message = "Unsupported operator '%s' (node_type: %d)" % (
+                op.op_to_str(node_type),
+                node_type,
+            )
         PysmtException.__init__(self)
         self.message = message
         self.expression = expression
@@ -107,6 +136,7 @@ class UnsupportedOperatorError(PysmtException):
 
 class SolverAPINotFound(PysmtException):
     """The Python API of the selected solver cannot be found."""
+
     pass
 
 
@@ -120,16 +150,20 @@ class UndefinedSymbolError(PysmtException):
     def __str__(self):
         return "'%s' is not defined!" % self.name
 
+
 class PysmtModeError(PysmtException):
     """The current mode is not supported for this operation"""
+
     pass
 
 
 class PysmtImportError(PysmtException, ImportError):
     pass
 
+
 class PysmtValueError(PysmtException, ValueError):
     pass
+
 
 class PysmtEmptySymbolNameError(PysmtValueError):
     """A symbol with the empty name was built, but they are not enabled."""
@@ -139,13 +173,16 @@ class PysmtEmptySymbolNameError(PysmtValueError):
             self,
             "The empty string is not a valid symbol name. SMT-LIB allows it "
             "(as `||`), but not every solver does, so pySMT requires it to be "
-            "enabled explicitly by setting `env.allow_empty_var_names = True`.")
+            "enabled explicitly by setting `env.allow_empty_var_names = True`.",
+        )
+
 
 class PysmtTypeError(PysmtException, TypeError):
     pass
 
+
 class PysmtSyntaxError(PysmtException, SyntaxError):
-    def __init__(self, message: str, pos_info: Optional[Tuple[int, int]]=None):
+    def __init__(self, message: str, pos_info: Optional[Tuple[int, int]] = None):
         super(PysmtSyntaxError, self).__init__(message)
         self.pos_info = pos_info
         self.message = message
@@ -160,17 +197,24 @@ class PysmtSyntaxError(PysmtException, SyntaxError):
 class PysmtIOError(PysmtException, IOError):
     pass
 
+
 class PysmtInfinityError(PysmtException):
     """Infinite value in expressions."""
+
     pass
+
 
 class PysmtInfinitesimalError(PysmtException):
     """Infinite value in expressions."""
+
     pass
+
 
 class PysmtUnboundedOptimizationError(PysmtException):
     """Infinite optimal value in optimization."""
+
     pass
+
 
 class GoalNotSupportedError(PysmtException):
     """
@@ -184,6 +228,7 @@ class GoalNotSupportedError(PysmtException):
     - lexicographic
     - pareto
     """
+
     def __init__(self, solver, goal, mode=None):
         self._solver = solver
         self._goal = goal
@@ -203,4 +248,6 @@ class GoalNotSupportedError(PysmtException):
 
     def __str__(self):
         mode_str = (" in mode '%s'" % self.mode) if self.mode else ""
-        return "Optimizer '%s' does not support goal '%s'%s" % tuple(map(str, (type(self.solver).__name__, self.goal, mode_str)))
+        return "Optimizer '%s' does not support goal '%s'%s" % tuple(
+            map(str, (type(self.solver).__name__, self.goal, mode_str))
+        )
