@@ -27,6 +27,8 @@ dev = [
     "pytest",
     "mypy",
     "types-setuptools",
+    "ruff==0.17.0",
+    "pre-commit==4.6.2",
 ]
 docs = ["sphinx"]
 
@@ -45,6 +47,21 @@ testpaths = ["tests"]
 markers = [
     "slow: marks tests as slow, typically these are tests that take more than 10 seconds to run (deselect with '-m \"not slow\"')",
 ]
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = [
+    "E501",  # line-too-long: handled by the formatter; the rest are unsplittable
+    "F403",  # star imports are deliberate in tests and examples
+    "F405",  # names from star imports, see F403
+]
+
+[tool.ruff.format]
 
 [tool.mypy]
 files = ["src/pysmt", "tests"]
