@@ -1086,14 +1086,9 @@ class Z3QuantifierEliminator(QuantifierEliminator):
                 "(detected logic is: %s)" % str(logic)
             )
 
-        simplifier = z3.Tactic("simplify")
         eliminator = z3.Tactic("qe")
 
         f = self.converter.convert(formula)
-        # s is unused since qe runs on f; eliminator(s) may have been intended
-        s = simplifier(  # noqa: F841
-            f, elim_and=True, pull_cheap_ite=True, ite_extra_rules=True
-        ).as_expr()
         res = eliminator(f).as_expr()
 
         pysmt_res = None
