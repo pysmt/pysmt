@@ -175,8 +175,8 @@ combinations. The following solvers are supported through native APIs:
 
 Additionally, you can use any SMT-LIB 2 compliant solver.
 
-PySMT assumes that the python bindings for the SMT Solver are
-installed and accessible from your ``PYTHONPATH``.
+PySMT assumes that the Python bindings for the SMT solver are
+installed and importable by the Python interpreter running pySMT.
 
 Installation
 ============
@@ -189,7 +189,7 @@ be used to install the solvers: e.g., ::
 
   $ pysmt-install --check
 
-will show you which solvers have been found in your ``PYTHONPATH``.
+will show you which solvers pySMT can find.
 PySMT does not depend directly on any solver, but if you want to
 perform solving, you need to have at least one solver installed. This
 can be used by pySMT via its native API, or passing through an SMT-LIB
@@ -201,12 +201,20 @@ The script *pysmt-install* can be used to simplify the installation of the solve
 
 will install MathSAT 5.
 
-By default the solvers are downloaded, unpacked and built in your home directory
-in the ``.smt_solvers`` folder. Compiled libraries and actual solver packages are
-installed in the relevant ``site-packages`` directory (e.g. virtual environment's
-packages root or local user-site). ``pysmt-install`` has many options to
-customize its behavior. If you have multiple versions of python in your system,
-we recommend the following syntax to run pysmt-install: ``python -m pysmt install``.
+``pysmt-install`` installs the solvers into the Python interpreter that
+runs it (e.g., the active virtual environment). It uses ``pip`` from that
+interpreter, or ``uv pip`` when ``pip`` is not available (as in
+environments created by uv). Z3, cvc5, Boolector and CUDD are installed
+as regular packages, so they can be upgraded or removed with the same
+tool (e.g., ``pip uninstall z3-solver``). If you
+cannot write to the environment, ``--target DIR`` installs the solvers
+into ``DIR``, which you then need to add to your ``PYTHONPATH``, and
+``pysmt-install --check --target DIR`` checks the solvers in ``DIR``.
+MathSAT, OptiMathSAT, Yices and PicoSAT are downloaded and built in the
+``.smt_solvers`` folder in your home directory (see ``--install-path``)
+before being installed. If you have multiple versions of Python in your
+system, we recommend the following syntax to run pysmt-install:
+``python -m pysmt install``.
 
 
 *Note:* This script does not install required

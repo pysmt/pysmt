@@ -1767,8 +1767,9 @@ class SmtLibZ3Parser(SmtLibParser):
     ):
         SmtLibParser.__init__(self, environment, interactive)
 
-        # Z3 prints Pow as "^"
+        # Z3 prints Pow as "^", and as "**" since 5.4.0
         self.interpreted["^"] = self.interpreted["pow"]
+        self.interpreted["**"] = self.interpreted["pow"]
         self.interpreted["ext_rotate_left"] = self._operator_adapter(
             self._ext_rotate_left
         )

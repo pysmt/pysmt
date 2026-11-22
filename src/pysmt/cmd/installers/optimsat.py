@@ -21,7 +21,7 @@ from pysmt.cmd.installers.base import SolverInstaller
 class OptiMSatInstaller(SolverInstaller):
     SOLVER = "optimsat"
 
-    def __init__(self, install_dir, bindings_dir, solver_version, mirror_link=None):
+    def __init__(self, install_dir, site_dir, solver_version, mirror_link=None):
 
         # Getting the right archive name
         archive_name_template = "optimathsat-{version}-{os}-{arch}.{ext}"
@@ -51,7 +51,7 @@ class OptiMSatInstaller(SolverInstaller):
         SolverInstaller.__init__(
             self,
             install_dir=install_dir,
-            bindings_dir=bindings_dir,
+            site_dir=site_dir,
             solver_version=solver_version,
             archive_name=archive_name,
             native_link=native_link,
@@ -79,10 +79,10 @@ class OptiMSatInstaller(SolverInstaller):
             SolverInstaller.do_download(mpir_lib_url, os.path.join(libdir, "mpir.lib"))
 
         if self.os_name in {"darwin"}:
-            SolverInstaller.run_python("./setup.py build_ext", self.python_bindings_dir)
+            SolverInstaller.run_setup_py(["build_ext"], self.python_bindings_dir)
         else:
-            SolverInstaller.run_python(
-                "./setup.py build_ext -R $ORIGIN", self.python_bindings_dir
+            SolverInstaller.run_setup_py(
+                ["build_ext", "-R", "$ORIGIN"], self.python_bindings_dir
             )
 
     def move(self):
@@ -94,14 +94,14 @@ class OptiMSatInstaller(SolverInstaller):
         # First, we need the SWIG-generated wrapper
         for f in os.listdir(sodir):
             if f.endswith(".so") or f.endswith(".pyd"):
-                SolverInstaller.mv(os.path.join(sodir, f), self.bindings_dir)
-        SolverInstaller.mv(os.path.join(pdir, "optimathsat.py"), self.bindings_dir)
+                SolverInstaller.mv(os.path.join(sodir, f), self.site_dir)
+        SolverInstaller.mv(os.path.join(pdir, "optimathsat.py"), self.site_dir)
 
         # Since MathSAT 5.5.0 we also need the SO/DLL/DYLIB of mathsat in the PATH
         # Under Windows, we also need the DLLs of MPIR in the PATH
         for f in os.listdir(libdir):
             if f.endswith(".so") or f.endswith(".dll") or f.endswith(".dylib"):
-                SolverInstaller.mv(os.path.join(libdir, f), self.bindings_dir)
+                SolverInstaller.mv(os.path.join(libdir, f), self.site_dir)
 
     def get_installed_version(self):
-        return self.get_installed_version_script(self.bindings_dir, "optimsat")
+        return self.get_installed_version_script("optimsat")

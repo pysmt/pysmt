@@ -8,8 +8,7 @@ license = "Apache-2.0"
 license-files = ["LICENSE", "NOTICE"]
 authors = [{ name = "PySMT Team" }]
 urls = { "Homepage" = "https://github.com/pysmt/pysmt", "Documentation" = "https://pysmt.readthedocs.io" }
-# pysmt.cmd.installers.base imports setuptools at runtime (removed in #867)
-dependencies = ["setuptools"]
+dependencies = []
 classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
@@ -26,7 +25,6 @@ pysmt-install = "pysmt.cmd.install:main"
 dev = [
     "pytest",
     "mypy",
-    "types-setuptools",
     "ruff==0.17.0",
     "pre-commit==4.6.2",
 ]
