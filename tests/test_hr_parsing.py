@@ -22,9 +22,9 @@ from fractions import Fraction
 
 from pysmt.parsing import HRParser, parse
 from pysmt.shortcuts import Iff, Symbol, And, Or, LE, GT, Real, Plus, Minus
-from pysmt.test.examples import get_example_formulae
+from tests.examples import get_example_formulae
 from pysmt.exceptions import NoSolverAvailableError
-from pysmt.test import TestCase
+from tests import TestCase
 from pysmt.typing import REAL
 
 

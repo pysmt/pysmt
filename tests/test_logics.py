@@ -23,7 +23,7 @@ from pysmt.logics import Theory
 from pysmt.exceptions import (UndefinedLogicError, NoSolverAvailableError,
                               NoLogicAvailableError)
 from pysmt.shortcuts import Solver, get_env
-from pysmt.test import TestCase, main
+from tests import TestCase, main
 
 class TestLogic(TestCase):
 

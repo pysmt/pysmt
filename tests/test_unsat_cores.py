@@ -15,7 +15,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from pysmt.test import (TestCase, skipIfSolverNotAvailable,
+from tests import (TestCase, skipIfSolverNotAvailable,
                         skipIfNoUnsatCoreSolverForLogic, main)
 from pysmt.shortcuts import (get_unsat_core, And, Or, Not, Symbol, UnsatCoreSolver,
                              Solver, is_unsat, Int, GT, GE, LE, get_env)
@@ -23,7 +23,7 @@ from pysmt.typing import INT
 from pysmt.logics import QF_BOOL, QF_BV, QF_LIA
 from pysmt.exceptions import (SolverStatusError, SolverReturnedUnknownResultError,
                               SolverNotConfiguredForUnsatCoresError)
-from pysmt.test.examples import get_example_formulae
+from tests.examples import get_example_formulae
 
 class TestUnsatCores(TestCase):
 

@@ -18,8 +18,8 @@
 from pysmt.shortcuts import Symbol, Int, And, Or, Not, GT
 from pysmt.typing import INT
 from pysmt.oracles import SizeOracle
-from pysmt.test import TestCase, main
-from pysmt.test.examples import get_example_formulae
+from tests import TestCase, main
+from tests.examples import get_example_formulae
 
 class TestSize(TestCase):
 

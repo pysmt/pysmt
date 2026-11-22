@@ -21,6 +21,11 @@ Change Log
 * The CVC4 solver has been removed, since CVC4 is archived upstream.
   Use cvc5 instead (#864).
 
+* ``pysmt.test`` (the test helpers and the test suite) is no longer
+  shipped in the package. The sources now use the ``src/`` layout and
+  the tests live in the top-level ``tests/`` directory of the
+  repository (#865).
+
 **General**:
 
 * Packaging moved from ``setup.py`` to ``pyproject.toml`` with hatchling;

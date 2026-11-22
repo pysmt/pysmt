@@ -25,7 +25,7 @@ from pysmt.configuration import (configure_environment,
 from pysmt.environment import Environment
 from pysmt.exceptions import PysmtIOError
 
-from pysmt.test import TestCase, main
+from tests import TestCase, main
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 

@@ -20,10 +20,10 @@ from io import StringIO
 
 from pysmt.shortcuts import get_env
 from pysmt.logics import QF_LIA, QF_LRA
-from pysmt.test import TestCase, skipIfNoOptimizerForLogic, skipIfNoSolverForLogic
-from pysmt.test import main
-from pysmt.test.optimization_utils import generate_examples_with_solvers, solve_given_example, OptimizationTypes, get_non_diverging_optimizers
-from pysmt.test.smtlib.parser_utils import omt_test_cases_from_smtlib_test_set
+from tests import TestCase, skipIfNoOptimizerForLogic, skipIfNoSolverForLogic
+from tests import main
+from tests.optimization_utils import generate_examples_with_solvers, solve_given_example, OptimizationTypes, get_non_diverging_optimizers
+from tests.smtlib.parser_utils import omt_test_cases_from_smtlib_test_set
 from pysmt.cmd.shell import PysmtShell
 
 

@@ -22,9 +22,9 @@ from pysmt.shortcuts import Bool, TRUE, Real, LE, FALSE, Or, Equals, Implies
 from pysmt.shortcuts import Solver
 from pysmt.shortcuts import get_env, get_model, is_valid, is_sat, get_implicant
 from pysmt.typing import BOOL, REAL, FunctionType
-from pysmt.test import TestCase, skipIfSolverNotAvailable, skipIfNoSolverForLogic
-from pysmt.test import main
-from pysmt.test.examples import get_example_formulae
+from tests import TestCase, skipIfSolverNotAvailable, skipIfNoSolverForLogic
+from tests import main
+from tests.examples import get_example_formulae
 from pysmt.exceptions import (SolverReturnedUnknownResultError,
                               InternalSolverError, NoSolverAvailableError,
                               ConvertExpressionError, UndefinedLogicError,

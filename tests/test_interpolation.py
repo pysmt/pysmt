@@ -17,7 +17,7 @@
 #
 from pysmt.shortcuts import *
 from pysmt.typing import REAL, INT
-from pysmt.test import TestCase, skipIfSolverNotAvailable, main
+from tests import TestCase, skipIfSolverNotAvailable, main
 from pysmt.exceptions import NoSolverAvailableError
 from pysmt.logics import UFLIRA
 

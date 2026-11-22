@@ -25,13 +25,13 @@ from pysmt.shortcuts import (Real, Plus, Symbol, Equals, And, Bool, Or, Not,
                              Select, Array, Ite, String, Function, to_smtlib, ForAll)
 from pysmt.shortcuts import Solver, get_env, qelim, get_model, TRUE, ExactlyOne
 from pysmt.typing import REAL, BOOL, INT, BVType, FunctionType, ArrayType
-from pysmt.test import (TestCase, skipIfSolverNotAvailable, skipIfNoSolverForLogic,
+from tests import (TestCase, skipIfSolverNotAvailable, skipIfNoSolverForLogic,
                         skipIfNoQEForLogic)
-from pysmt.test import main
+from tests import main
 from pysmt.exceptions import (ConvertExpressionError, PysmtValueError,
                               PysmtTypeError, InternalSolverError,
                               PysmtEmptySymbolNameError, UndefinedSymbolError)
-from pysmt.test.examples import get_example_formulae
+from tests.examples import get_example_formulae
 from pysmt.environment import Environment
 from pysmt.rewritings import cnf_as_set
 from pysmt.smtlib.parser import SmtLibParser

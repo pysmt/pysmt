@@ -20,10 +20,10 @@ from pysmt.shortcuts import Minus, Equals, Plus, ToReal, Implies, LE, TRUE, Not
 from pysmt.shortcuts import Times, QuantifierEliminator
 from pysmt.shortcuts import is_sat, is_valid
 from pysmt.typing import REAL, BOOL, INT
-from pysmt.test import TestCase, main
-from pysmt.test import (skipIfNoSolverForLogic, skipIfNoQEForLogic,
+from tests import TestCase, main
+from tests import (skipIfNoSolverForLogic, skipIfNoQEForLogic,
                         skipIfQENotAvailable)
-from pysmt.test.examples import get_example_formulae
+from tests.examples import get_example_formulae
 from pysmt.exceptions import (SolverReturnedUnknownResultError, PysmtValueError,
                               NoSolverAvailableError, ConvertExpressionError)
 from pysmt.logics import LRA, LIA, UFLIRA

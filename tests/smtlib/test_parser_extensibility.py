@@ -19,7 +19,7 @@ import collections
 from io import StringIO
 from typing import Optional
 
-from pysmt.test import TestCase, main
+from tests import TestCase, main
 from pysmt.smtlib.parser import SmtLibParser
 from pysmt.exceptions import UnknownSmtLibCommandError, PysmtValueError
 from pysmt.fnode import FNode

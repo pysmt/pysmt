@@ -18,7 +18,7 @@
 from pysmt.shortcuts import Solver, Symbol, And, Real, GT, LT, Implies, FALSE
 from pysmt.shortcuts import get_env
 from pysmt.typing import BOOL, REAL
-from pysmt.test import TestCase, skipIfNoSolverForLogic, main
+from tests import TestCase, skipIfNoSolverForLogic, main
 from pysmt.logics import QF_UFLIRA, QF_LRA, QF_BOOL
 from pysmt.solvers.eager import EagerModel
 

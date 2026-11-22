@@ -120,15 +120,15 @@ if [ "${PYSMT_SOLVER}" == "all" ] || [ "${PYSMT_SOLVER}" == *"z3_wrap"* ]; then
         wget -O /tmp/z3.zip https://github.com/Z3Prover/z3/releases/download/z3-4.13.0/z3-4.13.0-x64-glibc-2.31.zip
     fi
     unzip /tmp/z3.zip -d /tmp/z3
-    cp -v /tmp/z3/*/bin/z3 pysmt/test/smtlib/bin/z3;
-    chmod +x pysmt/test/smtlib/bin/z3;
-    mv pysmt/test/smtlib/bin/z3.solver.sh.template pysmt/test/smtlib/bin/z3.solver.sh ;
+    cp -v /tmp/z3/*/bin/z3 tests/smtlib/bin/z3;
+    chmod +x tests/smtlib/bin/z3;
+    mv tests/smtlib/bin/z3.solver.sh.template tests/smtlib/bin/z3.solver.sh ;
 fi
 if [ "${PYSMT_SOLVER}" == "all" ] || [ "${PYSMT_SOLVER}" == *"msat_wrap"* ];
 then
     ${PYTHON} -m pysmt install --msat --conf --force;
-    cp -v $(find ~/.smt_solvers/ -name mathsat -type f) pysmt/test/smtlib/bin/mathsat;
-    mv pysmt/test/smtlib/bin/mathsat.solver.sh.template pysmt/test/smtlib/bin/mathsat.solver.sh ;
+    cp -v $(find ~/.smt_solvers/ -name mathsat -type f) tests/smtlib/bin/mathsat;
+    mv tests/smtlib/bin/mathsat.solver.sh.template tests/smtlib/bin/mathsat.solver.sh ;
 fi
 
 # Check that the solvers are installed

@@ -19,8 +19,8 @@ from pysmt.shortcuts import FreshSymbol, GT, And, Plus, Real, Int, LE, Iff
 from pysmt.shortcuts import Solver, Symbol, EqualsOrIff
 from pysmt.shortcuts import BVAdd, BVMul, BVAnd, BVOr, BVConcat
 from pysmt.typing import REAL, INT, BVType
-from pysmt.test import TestCase, skipIfSolverNotAvailable, main
-from pysmt.test.examples import get_example_formulae
+from tests import TestCase, skipIfSolverNotAvailable, main
+from tests.examples import get_example_formulae
 from pysmt.logics import QF_UFLIRA, QF_BV
 from pysmt.exceptions import NoSolverAvailableError
 

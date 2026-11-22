@@ -25,7 +25,7 @@ from pysmt.optimization.goal import (MaxMinGoal, MaximizationGoal,
 from pysmt.rewritings import CNFizer, NNFizer, PrenexNormalizer
 from pysmt.smtlib.printers import to_smtlib
 from pysmt.smtlib.script import smtlibscript_from_formula
-from pysmt.test import TestCase, main
+from tests import TestCase, main
 from pysmt.typing import REAL
 from pysmt.environment import Environment, pop_env, push_env, get_env
 from pysmt.exceptions import NoSolverAvailableError

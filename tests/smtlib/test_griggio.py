@@ -20,7 +20,7 @@ import os
 from io import StringIO
 
 from pysmt.shortcuts import reset_env
-from pysmt.test import TestCase
+from tests import TestCase
 from pysmt.smtlib.parser import SmtLibParser
 from pysmt.smtlib.script import SmtLibScript
 
@@ -49,7 +49,7 @@ class TestSmtLibParserGriggio(TestCase):
         return script
 
 
-SMTLIB_FILE_PATTERN = "pysmt/test/smtlib/griggio/test%d.smt2.bz2"
+SMTLIB_FILE_PATTERN = "tests/smtlib/griggio/test%d.smt2.bz2"
 
 TESTS = {
 

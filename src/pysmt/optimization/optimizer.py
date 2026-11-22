@@ -86,7 +86,7 @@ class Optimizer(Solver):
         The lexicographic method consists of solving a sequence of single-objective optimization problems. The order of
         problems are important because the result of previous goals become a costraint for subsequent goals
 
-        For some implemented examples see file pysmt/test/test_optimization.py
+        For some implemented examples see file tests/test_optimization.py
         """
         raise NotImplementedError
 
@@ -102,7 +102,7 @@ class Optimizer(Solver):
         each other. The order of problems isn't important because the result of previous goals don't change
         any costraint of other goals
 
-        For some implemented examples see file pysmt/test/test_optimization.py
+        For some implemented examples see file tests/test_optimization.py
         """
         raise NotImplementedError
 

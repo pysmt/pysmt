@@ -17,7 +17,7 @@
 #
 import pytest
 
-from pysmt.test.smtlib.parser_utils import execute_script_fname, smtlib_tests, SMTLIB_TEST_FILES, SMTLIB_DIR
+from tests.smtlib.parser_utils import execute_script_fname, smtlib_tests, SMTLIB_TEST_FILES, SMTLIB_DIR
 from pysmt.logics import Logic
 
 @pytest.mark.parametrize("smtfile, logic, expected_result", smtlib_tests(lambda x: x.theory.arrays))

@@ -22,7 +22,7 @@ import pysmt.smtlib.commands as smtcmd
 
 from pysmt.shortcuts import And, Or, Symbol, GT, Real, Not
 from pysmt.typing import REAL
-from pysmt.test import TestCase, main
+from tests import TestCase, main
 from pysmt.smtlib.script import SmtLibScript, SmtLibCommand
 from pysmt.smtlib.script import smtlibscript_from_formula, InterpreterOMT
 from pysmt.smtlib.parser import get_formula_strict, get_formula, SmtLibParser

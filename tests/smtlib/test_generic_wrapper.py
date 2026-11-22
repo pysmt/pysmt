@@ -21,7 +21,7 @@ from unittest import skipIf
 
 from fractions import Fraction
 
-from pysmt.test import TestCase, main
+from tests import TestCase, main
 from pysmt.shortcuts import get_env, Solver, is_valid, is_sat
 from pysmt.shortcuts import LE, LT, Real, GT, Int, Symbol, And, Not, Type
 from pysmt.shortcuts import FunctionType, Equals, Function, TRUE, Implies, Plus
@@ -30,7 +30,7 @@ from pysmt.logics import QF_UFLIRA, QF_UFLRA, QF_UFLIA, QF_BOOL, QF_UFBV, QF_LRA
 from pysmt.exceptions import (SolverRedefinitionError, NoSolverAvailableError,
                               UnknownSolverAnswerError)
 
-from pysmt.test.examples import get_example_formulae
+from tests.examples import get_example_formulae
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ALL_WRAPPERS = []

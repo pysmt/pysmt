@@ -16,8 +16,8 @@
 #   limitations under the License.
 #
 
-from pysmt.test import TestCase, main
-from pysmt.test import skipIfNoSolverForLogic, skipIfSolverNotAvailable
+from tests import TestCase, main
+from tests import skipIfNoSolverForLogic, skipIfSolverNotAvailable
 from pysmt.logics import QF_AUFLIA, QF_AUFBV, get_logic_by_name
 from pysmt.typing import ARRAY_INT_INT, ArrayType, INT, REAL, BV8, BOOL
 from pysmt.shortcuts import (Solver, get_env, simplify,

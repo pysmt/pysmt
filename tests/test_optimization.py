@@ -16,9 +16,9 @@
 #   limitations under the License.
 #
 
-from pysmt.test import TestCase, skipIfNoOptimizerForLogic
-from pysmt.test import main
-from pysmt.test.optimization_utils import get_non_diverging_optimizers, check_basic, check_lexicographic, check_boxed, check_pareto
+from tests import TestCase, skipIfNoOptimizerForLogic
+from tests import main
+from tests.optimization_utils import get_non_diverging_optimizers, check_basic, check_lexicographic, check_boxed, check_pareto
 
 from pysmt.shortcuts import Optimizer, GE, Int, Symbol, INT, LE, GT, REAL, Real, Equals, LT
 from pysmt.shortcuts import BVType, BVSGE, BVSLE, BVSGT, BVSLT, BV

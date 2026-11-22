@@ -21,9 +21,9 @@ import pytest
 from pysmt.shortcuts import Implies, is_sat, is_valid, reset_env, Symbol, Iff, Select, ArrayType, INT, BOOL, And, get_env
 from pysmt.rewritings import CNFizer, PolarityCNFizer
 from pysmt.logics import QF_BOOL, QF_LRA, QF_LIA, QF_UFLIRA, QF_UFLRA, QF_ALIA
-from pysmt.test import TestCase, skipIfNoSolverForLogic, main
-from pysmt.test.examples import get_example_formulae
-from pysmt.test.smtlib.parser_utils import SMTLIB_TEST_FILES, SMTLIB_DIR
+from tests import TestCase, skipIfNoSolverForLogic, main
+from tests.examples import get_example_formulae
+from tests.smtlib.parser_utils import SMTLIB_TEST_FILES, SMTLIB_DIR
 from pysmt.smtlib.parser import get_formula_fname
 
 class TestCnf(TestCase):

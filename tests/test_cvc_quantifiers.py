@@ -15,7 +15,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from pysmt.test import TestCase, main, skipIfSolverNotAvailable
+from tests import TestCase, main, skipIfSolverNotAvailable
 from pysmt.shortcuts import Symbol, ForAll, Solver, LT, Real, Int, Implies
 from pysmt.typing import REAL, INT
 from pysmt.logics import LRA, LIA

@@ -20,7 +20,7 @@ from pysmt.shortcuts import Solver, BVAnd, BVOr, BVXor, BVConcat, BVULT, BVUGT, 
     BVNeg, BVZExt, BVSExt, BVRor, BVRol, BV, BVExtract, BVSLT, BVSLE, BVComp, \
     BVSDiv, BVSRem, BVAShr, EqualsOrIff, BVZero, BVOne, Symbol, Bool
 from pysmt.typing import BVType
-from pysmt.test import TestCase, skipIfSolverNotAvailable, main
+from tests import TestCase, skipIfSolverNotAvailable, main
 from pysmt.logics import QF_BV
 
 

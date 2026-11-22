@@ -2,7 +2,7 @@ import os
 import tempfile
 
 from pysmt.cmd.installers.base import SolverInstaller
-from pysmt.test import TestCase, main
+from tests import TestCase, main
 
 
 class TestInstallers(TestCase):

@@ -15,7 +15,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from pysmt.test import TestCase
+from tests import TestCase
 from pysmt.operators import CUSTOM_NODE_TYPES, new_node_type, all_types
 from pysmt.type_checker import SimpleTypeChecker
 from pysmt.printers import HRPrinter

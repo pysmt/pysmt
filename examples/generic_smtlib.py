@@ -18,7 +18,7 @@
 # - The list of logics supported by the solver
 #
 # It is usually convenient to wrap the solver in a simple shell script.
-# See examples for Z3, Mathsat and Yices in pysmt/test/smtlib/bin/*.template
+# See examples for Z3, Mathsat and Yices in tests/smtlib/bin/*.template
 #
 from pysmt.logics import QF_UFLRA, QF_UFIDL, QF_LRA, QF_IDL, QF_LIA
 from pysmt.shortcuts import get_env, GT, Solver, Symbol

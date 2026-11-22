@@ -16,7 +16,7 @@
 #   limitations under the License.
 #
 
-from pysmt.test import TestCase, skipIfNoSolverForLogic, main
+from tests import TestCase, skipIfNoSolverForLogic, main
 from pysmt.shortcuts import Symbol, And, Symbol, Equals, TRUE
 from pysmt.shortcuts import is_sat, is_valid, get_model, is_unsat
 from pysmt.typing import BVType, BV32, BV128, FunctionType, ArrayType

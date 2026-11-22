@@ -22,7 +22,7 @@ from pysmt.smtlib.parser import SmtLibParser
 from pysmt.smtlib.utils import SmtLibModelValidationSimplifier
 from pysmt.shortcuts import get_env
 from pysmt.typing import FunctionType
-from pysmt.test import TestCase, main
+from tests import TestCase, main
 
 class TestModelValidation(TestCase):
 

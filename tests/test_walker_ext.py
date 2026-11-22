@@ -15,7 +15,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from pysmt.test import TestCase
+from tests import TestCase
 from pysmt.type_checker import SimpleTypeChecker
 from pysmt.printers import HRPrinter, HRSerializer
 from pysmt.shortcuts import get_env, Symbol, reset_env

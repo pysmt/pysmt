@@ -15,7 +15,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from pysmt.test import TestCase, skipIfNoSolverForLogic
+from tests import TestCase, skipIfNoSolverForLogic
 from pysmt.shortcuts import (Not, Implies, Equals, Symbol, GE, GT, LT, And,
                              Int, Plus, TRUE, FALSE)
 from pysmt.shortcuts import (String, StrConcat, StrLength, StrContains,
@@ -208,5 +208,5 @@ class TestString(TestCase):
         self.assertTrue(theory.strings, theory)
 
 if __name__ == "__main__":
-    from pysmt.test import main
+    from tests import main
     main()

@@ -25,8 +25,8 @@ from pysmt.typing import REAL, INT, FunctionType
 from pysmt.smtlib.printers import SmtPrinter, SmtDagPrinter
 from pysmt.smtlib.annotations import Annotations
 from pysmt.printers import smart_serialize
-from pysmt.test import TestCase, main
-from pysmt.test.examples import get_str_example_formulae
+from tests import TestCase, main
+from tests.examples import get_str_example_formulae
 
 
 class TestPrinting(TestCase):

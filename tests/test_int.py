@@ -18,7 +18,7 @@
 from pysmt.shortcuts import (Symbol, And, Iff, Equals, LT, GT, Minus,
                              Plus, Real, Int, ToReal)
 from pysmt.typing import INT, REAL
-from pysmt.test import TestCase, skipIfNoSolverForLogic, main
+from tests import TestCase, skipIfNoSolverForLogic, main
 from pysmt.logics import QF_LIA, QF_UFLIRA
 from pysmt.exceptions import PysmtTypeError
 

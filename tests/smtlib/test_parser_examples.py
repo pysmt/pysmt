@@ -21,8 +21,8 @@ from tempfile import mkstemp
 from io import StringIO
 
 import pysmt.logics as logics
-from pysmt.test import TestCase, skipIfNoSolverForLogic, main
-from pysmt.test.examples import get_example_formulae
+from tests import TestCase, skipIfNoSolverForLogic, main
+from tests.examples import get_example_formulae
 from pysmt.smtlib.parser import SmtLibParser, Tokenizer
 from pysmt.smtlib.script import smtlibscript_from_formula
 from pysmt.shortcuts import Iff, Symbol, And, Implies, Xor, LT, GE, Equals, \

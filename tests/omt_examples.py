@@ -23,7 +23,7 @@ from pysmt.shortcuts import GE, Int, Symbol, INT, LE, REAL, Real, Equals, Times,
 from pysmt.shortcuts import And, Plus, Minus, BOOL, Implies, get_env
 from pysmt.logics import QF_LIA, QF_LRA
 from pysmt.optimization.goal import MaximizationGoal
-from pysmt.test.optimization_utils import OMTTestCase, OptimizationTypes
+from tests.optimization_utils import OMTTestCase, OptimizationTypes
 from pysmt.environment import Environment
 from pysmt.exceptions import PysmtValueError
 

@@ -17,8 +17,8 @@
 #
 from pysmt.shortcuts import get_env, get_free_variables
 from pysmt.shortcuts import Symbol, Implies, And, Not
-from pysmt.test.examples import get_example_formulae
-from pysmt.test import TestCase, main
+from tests.examples import get_example_formulae
+from tests import TestCase, main
 from pysmt.oracles import get_logic
 from pysmt.typing import BOOL, Type, INT, REAL, FunctionType
 

@@ -17,8 +17,8 @@
 #
 import pytest
 
-from pysmt.test import TestCase, skipIfSolverNotAvailable, main
-from pysmt.test.examples import get_example_formulae
+from tests import TestCase, skipIfSolverNotAvailable, main
+from tests.examples import get_example_formulae
 from pysmt.environment import get_env
 from pysmt.shortcuts import (Array, Store, Int, Iff, Symbol, Plus, Equals, And,
                              Real, Times, Not, FALSE, Or, TRUE)

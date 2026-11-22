@@ -17,7 +17,7 @@
 #
 from pysmt.shortcuts import *
 from pysmt.typing import INT, REAL, FunctionType
-from pysmt.test import TestCase, main
+from tests import TestCase, main
 from pysmt.logics import QF_NIA, NIA
 
 

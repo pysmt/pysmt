@@ -12,13 +12,7 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys
-import os
-
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-sys.path.insert(0, os.path.abspath('..'))
+from importlib.metadata import version as _dist_version
 
 # -- General configuration ------------------------------------------------
 
@@ -55,12 +49,8 @@ copyright = u'2014, Andrea Micheli and Marco Gario'
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
-import tomllib
-from pathlib import Path
-
-with open(Path(__file__).parents[1] / "pyproject.toml", "rb") as f:
-    # The full version, including alpha/beta/rc tags.
-    release = tomllib.load(f)["project"]["version"]
+# The full version, including alpha/beta/rc tags.
+release = _dist_version("pysmt")
 # The short X.Y version.
 version = ".".join(release.split(".")[:2])
 

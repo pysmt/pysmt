@@ -22,7 +22,7 @@ import pytest
 from io import StringIO
 
 from pysmt.shortcuts import reset_env
-from pysmt.test import TestCase
+from tests import TestCase
 from pysmt.smtlib.parser import SmtLibParser
 from pysmt.smtlib.script import SmtLibScript
 
@@ -47,7 +47,7 @@ class TestSmtLibParserFuzzer(TestCase):
 #
 
 
-SMTLIB_DIR = "pysmt/test/smtlib/fuzzed"
+SMTLIB_DIR = "tests/smtlib/fuzzed"
 FUZZED_FILES = ["AUFLIA.smt2.bz2",
                 "QF_AUFBV.smt2.bz2",
                 "QF_LRA.smt2.bz2",

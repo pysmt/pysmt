@@ -19,7 +19,7 @@ from pysmt.shortcuts import *
 from pysmt.constants import Fraction
 from pysmt.exceptions import PysmtTypeError
 from pysmt.typing import INT, REAL, FunctionType
-from pysmt.test import TestCase, main
+from tests import TestCase, main
 from pysmt.logics import QF_LIRA, QF_UFLIRA, UFLIRA
 
 class TestLIRA(TestCase):

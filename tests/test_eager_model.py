@@ -15,11 +15,11 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from pysmt.test import TestCase, main
+from tests import TestCase, main
 from pysmt.shortcuts import And, Or, FALSE, TRUE, FreshSymbol, Solver
 from pysmt.solvers.eager import EagerModel
 from pysmt.typing import REAL, INT
-from pysmt.test import skipIfSolverNotAvailable
+from tests import skipIfSolverNotAvailable
 from pysmt.exceptions import PysmtTypeError
 
 

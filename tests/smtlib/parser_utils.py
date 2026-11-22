@@ -21,8 +21,8 @@ import warnings
 from typing import Callable, Dict, Iterator, List, Optional, Tuple, Union, cast
 
 from pysmt.optimization.goal import Goal
-from pysmt.test import SkipTest
-from pysmt.test.optimization_utils import OMTTestCase, OptimizationTypes
+from tests import SkipTest
+from tests.optimization_utils import OMTTestCase, OptimizationTypes
 from pysmt.shortcuts import get_env, reset_env, Int, Real, BV, SBV
 from pysmt.smtlib.parser import SmtLibParser, get_formula_fname
 from pysmt.smtlib.script import SmtLibScript, check_sat_filter
@@ -48,7 +48,7 @@ def smtlib_tests(logic_pred: Callable) -> List[Tuple[str, Logic, bool]]:
 # test for each file.
 # This is a feature of pytest. The correct way to invoke these
 # tests is, e.g.,
-#  $ python -m pytest pysmt/test/smtlib/test_parser_qf_lra.py
+#  $ python -m pytest tests/smtlib/test_parser_qf_lra.py
 # The function 'execute_script_fname' is a general checker that
 # parses and invokes a solver for the given smt file
 def execute_script_fname(smtfile: str, logic: Logic, expected_result: bool):
@@ -101,7 +101,7 @@ SAT   = True
 UNSAT = False
 
 # Directory where SMT-LIB files are saved
-SMTLIB_DIR = "pysmt/test/smtlib/"
+SMTLIB_DIR = "tests/smtlib/"
 SMTLIB_TEST_FILES = [
     #
     # QF_LIA
@@ -249,7 +249,7 @@ def _extract_assumptions_and_objectives(mgr: FormulaManager, script: SmtLibScrip
 
 # Directory with the optimal SMT-LIB test files
 FNode_or_Str = Union[FNode, str]
-OMTLIB_DIR = "pysmt/test/smtlib/omt/"
+OMTLIB_DIR = "tests/smtlib/omt/"
 OMTLIB_TEST_FILES: List[Tuple[Logic, str, bool, Dict[OptimizationTypes, List[Union[FNode_or_Str, Tuple[FNode_or_Str, ...]]]]]] = [
     (QF_LIA, "smtlib2_allsat.smt2", SAT, {
         OptimizationTypes.LEXICOGRAPHIC: [Int(100), Int(100)],

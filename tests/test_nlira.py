@@ -16,8 +16,8 @@
 #   limitations under the License.
 #
 
-from pysmt.test import TestCase, main
-from pysmt.test import skipIfSolverNotAvailable, skipIfNoSolverForLogic
+from tests import TestCase, main
+from tests import skipIfSolverNotAvailable, skipIfNoSolverForLogic
 
 from pysmt.oracles import get_logic
 from pysmt.shortcuts import FreshSymbol, Times, Equals, Div, Real, Int, Pow

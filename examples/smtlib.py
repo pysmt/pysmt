@@ -108,7 +108,7 @@ print("*"*50)
 # We provide now an example on how to define a symbolic transition
 # system as an extension of SMT-LIB.
 # (A more complete version of this example can be found in :
-#    pysmt.tests.smtlib.test_parser_extensibility.py)
+#    tests/smtlib/test_parser_extensibility.py)
 #
 EXT_SMTLIB="""\
 (declare-fun A () Bool)
@@ -154,7 +154,7 @@ class TSSmtLibParser(SmtLibParser):
         # we will rewrite the content of the next without the need of
         # introducing a new pySMT operator. If you are interested in a
         # simple way of handling new operators in pySMT see
-        # pysmt.test.test_dwf.
+        # tests/test_dwf.py.
         self.interpreted["next"] = self._operator_adapter(self._next_var)
 
     def _cmd_init(self, current, tokens):

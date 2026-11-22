@@ -23,9 +23,9 @@ from pysmt.shortcuts import get_env, substitute, TRUE
 from pysmt.typing import INT, BOOL, REAL, FunctionType
 from pysmt.walkers import TreeWalker, DagWalker, IdentityDagWalker, handles
 from pysmt.walkers.generic import nt_to_fun
-from pysmt.test import TestCase, main
+from tests import TestCase, main
 from pysmt.formula import FormulaManager
-from pysmt.test.examples import get_example_formulae
+from tests.examples import get_example_formulae
 from pysmt.exceptions import UnsupportedOperatorError, PysmtTypeError
 from pysmt.substituter import FunctionInterpretation, MSSubstituter, MGSubstituter
 

@@ -25,8 +25,8 @@ from pysmt.shortcuts import (Symbol, And, Plus, Minus, Times, Equals, Or, Iff,
                              Function)
 from pysmt.environment import get_env
 from pysmt.exceptions import PysmtTypeError
-from pysmt.test import TestCase, main
-from pysmt.test.examples import get_example_formulae
+from tests import TestCase, main
+from tests.examples import get_example_formulae
 from pysmt.decorators import typecheck_result
 
 

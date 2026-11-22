@@ -19,17 +19,16 @@ import os
 import runpy
 import unittest
 
-from pysmt.test import (TestCase, skipIfSolverNotAvailable,
+from tests import (TestCase, skipIfSolverNotAvailable,
                         skipIfNoSolverForLogic,
                         skipIfNoUnsatCoreSolverForLogic, main)
 from pysmt.logics import QF_LIA
 
 
-SNIPPETS_DIR = os.path.join(os.path.dirname(__file__),
-                            "..", "..", "docs", "code_snippets")
+SNIPPETS_DIR = os.path.join(os.path.dirname(__file__), "..", "docs", "code_snippets")
 
 
-# The docs are not shipped with the package, so skip when run from an install.
+# Skip when docs/ is not next to tests/ (e.g. a copy of the test suite alone).
 @unittest.skipIf(not os.path.isdir(SNIPPETS_DIR), "docs/ not available")
 class TestDocSnippets(TestCase):
 

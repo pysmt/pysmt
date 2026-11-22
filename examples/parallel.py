@@ -30,9 +30,25 @@
 from multiprocessing import Pool, TimeoutError
 from time import sleep
 
-from pysmt.test.examples import get_example_formulae
 from pysmt.shortcuts import is_sat, is_valid, is_unsat
-from pysmt.shortcuts import And
+from pysmt.shortcuts import And, Or, Not, Implies, Equals, GT, LE, Plus
+from pysmt.shortcuts import Symbol, Int, Real
+from pysmt.typing import INT, REAL
+
+a, b = Symbol("a"), Symbol("b")
+x, y = Symbol("x", INT), Symbol("y", INT)
+r, s = Symbol("r", REAL), Symbol("s", REAL)
+
+# A few formulae, each paired with the expected result of is_valid.
+EXAMPLES = [
+    (Or(a, Not(a)), True),
+    (And(a, b), False),
+    (Implies(And(a, Implies(a, b)), b), True),
+    (LE(x, Plus(x, Int(1))), True),
+    (Equals(Plus(x, y), Int(10)), False),
+    (GT(r, s), False),
+    (Implies(And(GT(r, s), GT(s, Real(0))), GT(r, Real(0))), True),
+]
 
 # Ignore this for now
 def check_validity_and_test(args):
@@ -46,9 +62,8 @@ def check_validity_and_test(args):
 # Create the Pool with 4 workers.
 pool = Pool(4)
 
-# We use the examples formula from the test suite.
 # This generator iterates over all the expressions
-f_gen = (f.expr for f in get_example_formulae())
+f_gen = (f for f, _ in EXAMPLES)
 
 # Call the function is_sat on each expression
 res = pool.map(is_sat, f_gen)
@@ -64,9 +79,7 @@ sleep(1) # Have some time to look at the result
 
 # Lets create a list of (formula, result), where result is the
 # expected result of the is_valid query.
-f_gen = (f.expr for f in get_example_formulae())
-res_gen = (f.is_valid for f in get_example_formulae())
-args_gen = zip(f_gen, res_gen)
+args_gen = iter(EXAMPLES)
 
 # We now define a function that check the formula against the expected
 # value of is_valid: See check_validity_and_test(...) above.
@@ -91,11 +104,7 @@ else:
 # to run multiple solvers.
 
 # Create a formula
-big_f = And(f.expr for f in get_example_formulae() \
-            if not f.logic.theory.bit_vectors and \
-               not f.logic.theory.arrays and \
-               not f.logic.theory.strings and \
-                   f.logic.theory.linear)
+big_f = And(f for f, _ in EXAMPLES)
 
 # Create keyword arguments for the function call.
 # This is the simplest way to pass multiple arguments to apply_async.

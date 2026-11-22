@@ -21,11 +21,11 @@ from pysmt.shortcuts import (And, Iff, Or, Symbol, Implies, Not,
                              LT,
                              Int,
                              is_valid, is_sat, Function)
-from pysmt.test import TestCase, skipIfNoSolverForLogic, main
+from tests import TestCase, skipIfNoSolverForLogic, main
 from pysmt.rewritings import prenex_normal_form, nnf, conjunctive_partition, aig
 from pysmt.rewritings import disjunctive_partition, propagate_toplevel
 from pysmt.rewritings import TimesDistributor, Ackermannizer
-from pysmt.test.examples import get_example_formulae
+from tests.examples import get_example_formulae
 from pysmt.exceptions import SolverReturnedUnknownResultError
 from pysmt.logics import BOOL, QF_NRA, QF_LRA, QF_LIA, QF_AUFLIA
 from pysmt.typing import REAL, INT, FunctionType
@@ -336,7 +336,7 @@ class TestRewritings(TestCase):
 
     @skipIfNoSolverForLogic(QF_NRA)
     def test_times_distributivity_smtlib_nra(self):
-        from pysmt.test.smtlib.parser_utils import formulas_from_smtlib_test_set
+        from tests.smtlib.parser_utils import formulas_from_smtlib_test_set
         test_set = formulas_from_smtlib_test_set(logics=[QF_LRA, QF_NRA])
         for (_, fname, f, _) in test_set:
             td = TimesDistributor()

@@ -17,7 +17,7 @@
 #
 from fractions import Fraction as pyFraction
 
-from pysmt.test import TestCase, main, skipIf
+from tests import TestCase, main, skipIf
 from pysmt.constants import Fraction, Integer, HAS_GMPY, USE_GMPY
 from pysmt.constants import is_pysmt_fraction, is_pysmt_integer
 from pysmt.constants import is_python_integer, is_python_boolean, is_python_rational

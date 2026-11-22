@@ -20,8 +20,8 @@ import pysmt.logics
 from pysmt.shortcuts import And, Symbol, Exists, FALSE, ForAll, Or, TRUE
 from pysmt.shortcuts import qelim
 from pysmt.exceptions import InternalSolverError, NoSolverAvailableError
-from pysmt.test import TestCase, main
-from pysmt.test.examples import get_example_formulae
+from tests import TestCase, main
+from tests.examples import get_example_formulae
 
 
 class TestShannon(TestCase):

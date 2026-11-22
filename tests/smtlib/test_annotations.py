@@ -19,11 +19,11 @@ import os
 
 from io import StringIO
 
-from pysmt.test.smtlib.parser_utils import SMTLIB_DIR
+from tests.smtlib.parser_utils import SMTLIB_DIR
 from pysmt.smtlib.parser import SmtLibParser
 from pysmt.smtlib.annotations import Annotations
 from pysmt.shortcuts import Symbol
-from pysmt.test import TestCase, main
+from tests import TestCase, main
 from pysmt.utils import assert_not_none
 
 class TestBasic(TestCase):

@@ -22,7 +22,7 @@ from pysmt.shortcuts import Array, BV
 from pysmt.typing import INT, BOOL, REAL
 from pysmt.typing import Type, ArrayType, FunctionType, BVType
 from pysmt.typing import PartialType
-from pysmt.test import TestCase, main
+from tests import TestCase, main
 from pysmt.smtlib.parser import SmtLibParser
 from pysmt.exceptions import PysmtValueError, PysmtTypeError
 

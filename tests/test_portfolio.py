@@ -17,9 +17,9 @@
 #
 import os, sys
 
-from pysmt.test import TestCase
-from pysmt.test import skipIfSolverNotAvailable
-from pysmt.test.examples import get_example_formulae
+from tests import TestCase
+from tests import skipIfSolverNotAvailable
+from tests.examples import get_example_formulae
 from pysmt.logics import QF_LRA, QF_UFLIRA, QF_BOOL
 from pysmt.solvers.portfolio import Portfolio
 from pysmt.smtlib.parser import get_formula_fname
@@ -63,7 +63,7 @@ class PortfolioTestCase(TestCase):
     @skipIfSolverNotAvailable("cvc5")
     @skipIfSolverNotAvailable("yices")
     def test_smtlib(self):
-        from pysmt.test.smtlib.parser_utils import SMTLIB_TEST_FILES, SMTLIB_DIR
+        from tests.smtlib.parser_utils import SMTLIB_TEST_FILES, SMTLIB_DIR
 
         for (logic, f, expected_result) in SMTLIB_TEST_FILES:
             smtfile = os.path.join(SMTLIB_DIR, f)
@@ -72,7 +72,7 @@ class PortfolioTestCase(TestCase):
 
     @skipIfSolverNotAvailable("msat")
     def test_smtlib_multi_msat(self):
-        from pysmt.test.smtlib.parser_utils import SMTLIB_TEST_FILES, SMTLIB_DIR
+        from tests.smtlib.parser_utils import SMTLIB_TEST_FILES, SMTLIB_DIR
 
         # On some platforms (Windows x64) the internal pickling process requires
         # quite a lot of recursion...

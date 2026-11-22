@@ -23,7 +23,7 @@ from pysmt.shortcuts import Minus, Times, Xor, And, Or, TRUE, Iff, FALSE, Ite, A
 from pysmt.shortcuts import Equals
 from pysmt.shortcuts import get_env
 from pysmt.environment import Environment
-from pysmt.test import TestCase, skipIfNoSolverForLogic, main
+from tests import TestCase, skipIfNoSolverForLogic, main
 from pysmt.logics import QF_BOOL
 from pysmt.exceptions import (UndefinedSymbolError, UnsupportedOperatorError,
                               PysmtTypeError, PysmtModeError, PysmtValueError)
@@ -730,7 +730,7 @@ class TestFormulaManager(TestCase):
         self.assertEqual(f_new, f, "%s != %s" %(id(a),id(b)))
 
         # Verify that new types do not lead to errors in pickling
-        from pysmt.test.examples import get_example_formulae
+        from tests.examples import get_example_formulae
         for (f, _, _, _) in get_example_formulae():
             pickle.dumps(f, pickle.HIGHEST_PROTOCOL)
 

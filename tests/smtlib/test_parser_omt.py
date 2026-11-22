@@ -20,7 +20,7 @@ import os
 from io import StringIO
 
 from pysmt.shortcuts import reset_env
-from pysmt.test import TestCase
+from tests import TestCase
 from pysmt.smtlib.parser import SmtLibParser
 from pysmt.exceptions import PysmtSyntaxError
 from pysmt.smtlib.script import SmtLibScript
@@ -215,7 +215,7 @@ class TestSmtLibParserOMT(TestCase):
             yield input_command, command, len_args
 
 
-OMT_FILE_PATTERN = "pysmt/test/smtlib/omt/omt_test%d.smt2.bz2"
+OMT_FILE_PATTERN = "tests/smtlib/omt/omt_test%d.smt2.bz2"
 
 TEST_SNIPPETS = [
     ("(assert-soft false :weight 2 :id goal)", "assert-soft", 2),

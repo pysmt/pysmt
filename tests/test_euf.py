@@ -18,8 +18,8 @@
 from pysmt.shortcuts import *
 from pysmt.typing import INT, REAL, FunctionType, BV16
 from pysmt.logics import UFLRA, UFLIRA
-from pysmt.test import TestCase, main
-from pysmt.test import skipIfNoSolverForLogic
+from tests import TestCase, main
+from tests import skipIfNoSolverForLogic
 from pysmt.exceptions import PysmtModeError, PysmtValueError
 
 

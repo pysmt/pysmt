@@ -25,7 +25,7 @@ environment might lead to inconsistency and unexpected bugs. This is
 particularly true for tests. For tests it is recommended to perform an
 environment reset in the setUp phase, to be guaranteed that a fresh
 environment is used (this is the default behavior of
-:py:class:`pysmt.test.TestCase` ).
+``TestCase`` in ``tests/__init__.py`` of the pySMT repository).
 """
 
 # Enable default deprecation warnings!
