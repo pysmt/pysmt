@@ -33,7 +33,6 @@ from pysmt.shortcuts import (
     Equals,
     Exists,
     ForAll,
-    Function,
     Iff,
     Implies,
     Int,
@@ -272,7 +271,7 @@ class TestRewritings(TestCase):
             try:
                 ok = is_valid(Iff(f, fp))
             except SolverReturnedUnknownResultError:
-                ok = not logic.quantifier_free
+                ok = not QF_NRA.quantifier_free
             self.assertTrue(ok)
 
         f = And(LT(Real(4), Times(x, x)), Equals(y, x), Equals(y, Real(1)))
@@ -282,7 +281,7 @@ class TestRewritings(TestCase):
             try:
                 ok = is_valid(Iff(f, fp))
             except SolverReturnedUnknownResultError:
-                ok = not logic.quantifier_free
+                ok = not QF_NRA.quantifier_free
             self.assertTrue(ok)
 
         f = And(Equals(Real(4), x), Equals(y, x), Equals(y, Real(0)))

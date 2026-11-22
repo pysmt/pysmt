@@ -17,7 +17,7 @@ import json
 import os
 import urllib.request
 
-from pysmt.cmd.installers.base import SolverInstaller, TemporaryPath
+from pysmt.cmd.installers.base import SolverInstaller
 
 
 class PicoSATInstaller(SolverInstaller):

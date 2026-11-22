@@ -19,7 +19,7 @@
 
 import collections
 from fractions import Fraction
-from typing import Any, Callable, Dict, FrozenSet, Optional, Tuple, Union, cast
+from typing import Callable, Dict, FrozenSet, Optional, Tuple, Union, cast
 
 import pysmt
 import pysmt.smtlib

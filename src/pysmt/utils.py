@@ -23,7 +23,8 @@ import pysmt
 
 
 def all_assignments(
-    bool_variables: Sequence["pysmt.fnode.FNode"], env: "pysmt.environment.Environment"
+    bool_variables: Sequence["pysmt.fnode.FNode"],  # type: ignore [name-defined]
+    env: "pysmt.environment.Environment",  # type: ignore [name-defined]
 ) -> Iterator[Dict["pysmt.fnode.FNode", "pysmt.fnode.FNode"]]:  # type: ignore [name-defined]
     """Generates all possible assignments for a set of boolean variables."""
     mgr = env.formula_manager

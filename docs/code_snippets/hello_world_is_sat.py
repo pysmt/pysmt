@@ -6,8 +6,6 @@ from pysmt.shortcuts import (
     Int,
     Plus,
     Symbol,
-    Times,
-    get_model,
     is_sat,
 )
 from pysmt.typing import INT

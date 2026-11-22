@@ -414,7 +414,7 @@ class OpenArrayTypeTok(GrammarSymbol):
         parser.expect(ExprComma, ",")
         el_type = parser.expression()
         parser.expect(CloseBrace, "}")
-        if type(parser.token) == OpenPar:
+        if type(parser.token) is OpenPar:
             parser.advance()
             default = parser.expression()
             parser.expect(ClosePar, ")")
@@ -430,7 +430,7 @@ class OpenPar(GrammarSymbol):
 
     def nud(self, parser):
         r = parser.expression()
-        if type(parser.token) != ClosePar:
+        if type(parser.token) is not ClosePar:
             raise SyntaxError("Expected ')', got '%s'" % parser.token)
         parser.advance()
         return r
@@ -439,11 +439,11 @@ class OpenPar(GrammarSymbol):
         # a function call
         fun = left
         params = []
-        if type(parser.token) != ClosePar:
+        if type(parser.token) is not ClosePar:
             while True:
                 r = parser.expression()
                 params.append(r)
-                if type(parser.token) != ExprComma:
+                if type(parser.token) is not ExprComma:
                     break
                 parser.advance()
         parser.expect(ClosePar, ")")
@@ -459,17 +459,17 @@ class OpenBrak(GrammarSymbol):
         # BVExtract, Select or Store
         op = left
         e1 = parser.expression()
-        if type(parser.token) == ExprElse:
+        if type(parser.token) is ExprElse:
             # BVExtract
             parser.advance()
             end = parser.expression()
             parser.expect(CloseBrak, "]")
             return parser.mgr.BVExtract(op, e1.constant_value(), end.constant_value())
-        elif type(parser.token) == CloseBrak:
+        elif type(parser.token) is CloseBrak:
             # Select
             parser.advance()
             return parser.mgr.Select(op, e1)
-        elif type(parser.token) == ArrStore:
+        elif type(parser.token) is ArrStore:
             # Store
             parser.advance()
             e2 = parser.expression()
@@ -487,11 +487,11 @@ class Quantifier(GrammarSymbol):
 
     def nud(self, parser):
         qvars = []
-        if type(parser.token) != ExprDot:
+        if type(parser.token) is not ExprDot:
             while True:
                 r = parser.expression()
                 qvars.append(r)
-                if type(parser.token) != ExprComma:
+                if type(parser.token) is not ExprComma:
                     break
                 parser.advance()
         parser.expect(ExprDot, ".")
@@ -561,7 +561,7 @@ class PrattParser(object):
         Check that the next token is the specified one or fail with a
         ParserError
         """
-        if type(self.token) != token_class:
+        if type(self.token) is not token_class:
             raise PysmtSyntaxError("Expected '%s'" % token_repr)
         self.advance()
 
@@ -644,14 +644,14 @@ class FunctionCallAdapter(GrammarSymbol):
     def nud(self, parser):
         parser.advance()  # OpenPar
         params = []
-        if type(parser.token) != ClosePar:
+        if type(parser.token) is not ClosePar:
             while True:
                 r = parser.expression()
                 params.append(r)
-                if type(parser.token) != ExprComma:
+                if type(parser.token) is not ExprComma:
                     break
                 parser.advance()
-        if type(parser.token) != ClosePar:
+        if type(parser.token) is not ClosePar:
             raise SyntaxError("Expected ')'")
         parser.advance()
         return self.operator(*params)

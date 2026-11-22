@@ -64,7 +64,7 @@ from pysmt.logics import (
 from pysmt.oracles import get_logic
 from pysmt.solvers.interpolation import Interpolator
 from pysmt.solvers.qelim import QuantifierEliminator
-from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
+from pysmt.solvers.smtlib import SmtLibBasicSolver
 from pysmt.solvers.solver import (
     Converter,
     IncrementalTrackingSolver,
@@ -607,7 +607,6 @@ class Z3Converter(Converter, DagWalker):
             or (len(args) == 3 and (z3.is_ite(expr) or z3.is_array_store(expr)))
         ), "Unexpected n-ary term: %s" % expr
 
-        res = None
         try:
             decl = z3.Z3_get_app_decl(expr.ctx_ref(), expr.as_ast())
             kind = z3.Z3_get_decl_kind(expr.ctx.ref(), decl)
@@ -1091,7 +1090,8 @@ class Z3QuantifierEliminator(QuantifierEliminator):
         eliminator = z3.Tactic("qe")
 
         f = self.converter.convert(formula)
-        s = simplifier(
+        # s is unused since qe runs on f; eliminator(s) may have been intended
+        s = simplifier(  # noqa: F841
             f, elim_and=True, pull_cheap_ite=True, ite_extra_rules=True
         ).as_expr()
         res = eliminator(f).as_expr()

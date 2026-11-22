@@ -42,7 +42,7 @@ from pysmt.exceptions import (
     PysmtValueError,
     SolverReturnedUnknownResultError,
 )
-from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
+from pysmt.solvers.smtlib import SmtLibBasicSolver
 from pysmt.solvers.solver import Converter, Solver, SolverOptions
 from pysmt.walkers import DagWalker
 

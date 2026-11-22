@@ -71,7 +71,7 @@ def run_test(y, f):
     print("Testing " + str(f))
     try:
         res = efsmt(y, f, logic=QF_LRA, maxloops=20, verbose=True)
-        if res == False:
+        if res == False:  # noqa: E712
             print("unsat")
         else:
             print("sat : %s" % str(res))

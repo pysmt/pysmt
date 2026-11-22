@@ -136,7 +136,7 @@ class TestGenericWrapper(TestCase):
         b = Symbol("B", BOOL)
         c = Symbol("C", BOOL)
         d = Symbol("D", BOOL)
-        unused = And(c, d)
+        unused = And(c, d)  # noqa: F841
         f = And(a, Not(b))
 
         for n in self.all_solvers:

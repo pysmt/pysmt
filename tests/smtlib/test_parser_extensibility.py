@@ -70,7 +70,7 @@ class TSSmtLibParser(SmtLibParser):
 
         for cmd in self.get_command_generator(script):
             # Simply skip declarations and other commands...
-            if type(cmd) == TSFormula:
+            if type(cmd) is TSFormula:
                 if cmd.is_init:
                     init = cmd.formula
                 else:

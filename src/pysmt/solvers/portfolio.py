@@ -268,7 +268,7 @@ def _run_solver(idx, solver, logic, options, formula, signaling_queue, ctrl_pipe
                 cmd = ctrl_pipe.recv()
             except EOFError:
                 break
-            if type(cmd) == tuple:
+            if type(cmd) is tuple:
                 cmd, args = cmd
             if cmd == "exit":
                 _exit = True

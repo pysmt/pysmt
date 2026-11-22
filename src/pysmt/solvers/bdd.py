@@ -89,7 +89,7 @@ class BddOptions(SolverOptions):
                 if v is not None:
                     try:
                         valid = all(x.is_symbol(types.BOOL) for x in v)
-                    except:
+                    except BaseException:
                         valid = False
                     if not valid:
                         raise PysmtValueError(

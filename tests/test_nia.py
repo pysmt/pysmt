@@ -15,10 +15,10 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from pysmt.logics import NIA, QF_NIA
+from pysmt.logics import QF_NIA
 from pysmt.shortcuts import *
-from pysmt.typing import INT, REAL, FunctionType
-from tests import TestCase, main
+from pysmt.typing import INT
+from tests import TestCase
 
 
 class TestNIA(TestCase):

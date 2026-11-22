@@ -17,7 +17,7 @@
 #
 from pysmt.exceptions import PysmtValueError
 from pysmt.logics import BOOL
-from pysmt.shortcuts import And, Bool, Exists, Not, Or, Solver, Symbol, get_env, qelim
+from pysmt.shortcuts import And, Bool, Exists, Not, Or, Solver, Symbol, qelim
 from tests import TestCase, main, skipIfSolverNotAvailable
 from tests.examples import get_example_formulae
 

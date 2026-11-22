@@ -26,7 +26,6 @@ from typing import (
     Optional,
     Sequence,
     Tuple,
-    Union,
     cast,
 )
 
@@ -50,7 +49,6 @@ from pysmt.optimization.optimizer import (
 from pysmt.solvers.solver import Model
 from pysmt.solvers.z3 import Z3Model, Z3Solver
 from pysmt.typing import _BVType
-from pysmt.utils import assert_not_none
 
 try:
     import z3  # type: ignore[import]

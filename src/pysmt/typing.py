@@ -364,7 +364,7 @@ class _TypeDecl(object):
         return "%s/%s" % (self.name, self.arity)
 
     def set_custom_type_flag(self):
-        assert self.custom_type == False
+        assert not self.custom_type
         self.custom_type = True
 
 

@@ -24,7 +24,6 @@ from pysmt.shortcuts import (
     TRUE,
     And,
     EqualsOrIff,
-    Implies,
     Not,
     Or,
     Solver,

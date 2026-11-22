@@ -19,7 +19,6 @@ import pytest
 
 from tests.omt_examples import get_full_example_omt_formuale
 from tests.optimization_utils import (
-    OptimizationTypes,
     generate_examples_with_solvers,
     solve_given_example,
 )

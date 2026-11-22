@@ -53,7 +53,7 @@ from pysmt.exceptions import (
 )
 from pysmt.logics import ARRAYS_CONST_LOGICS, QF_ABV, QF_AUFBV, QF_AX, QF_BV, QF_UFBV
 from pysmt.solvers.eager import EagerModel
-from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
+from pysmt.solvers.smtlib import SmtLibBasicSolver
 from pysmt.solvers.solver import (
     Converter,
     IncrementalTrackingSolver,

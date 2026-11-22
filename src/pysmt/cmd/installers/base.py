@@ -399,7 +399,7 @@ def solver_install_site(plat_specific=False):
     try:
         if os.geteuid() == 0:
             default_user = False
-    except:
+    except BaseException:
         # getuid/geteuid not supported on windows
         pass
 

@@ -15,7 +15,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import pysmt
 from pysmt.constants import Fraction, Integer
 from pysmt.environment import Environment
 from pysmt.exceptions import (
@@ -49,7 +48,7 @@ from pysmt.shortcuts import (
     get_env,
     is_sat,
 )
-from pysmt.typing import BOOL, BV8, INT, REAL, BVType, FunctionType
+from pysmt.typing import BOOL, BV8, INT, REAL, FunctionType
 from tests import TestCase, main, skipIfNoSolverForLogic
 
 
@@ -825,7 +824,7 @@ class TestFormulaManager(TestCase):
         self.assertEqual(Times(r, Real(1.5)), 1.5 * r)
 
         with self.assertRaises(PysmtTypeError):
-            foo = p + 1.5
+            foo = p + 1.5  # noqa: F841
 
         self.assertEqual(Not(x), ~x)
 
@@ -888,7 +887,6 @@ class TestFormulaManager(TestCase):
 
         # Symbols
         bv8 = self.mgr.FreshSymbol(BV8)
-        bv7 = self.mgr.FreshSymbol(BVType(7))
 
         self.assertEqual(bv8.Equals(const1), bv8.Equals(const1_8))
 

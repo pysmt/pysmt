@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import os
+from fractions import Fraction as pyFraction
 from typing import Any, Optional, Type, Union, cast
 
 from pysmt.exceptions import PysmtImportError
@@ -66,8 +67,6 @@ else:
 # Fractions using GMPY2
 #
 
-from fractions import Fraction as pyFraction
-
 if USE_GMPY:
     Fraction = mpq
 else:
@@ -81,7 +80,7 @@ def is_pysmt_fraction(var: Any) -> bool:
 
     This takes into account the class being used to represent the Fraction.
     """
-    return type(var) == FractionClass
+    return type(var) is FractionClass
 
 
 #
@@ -99,7 +98,7 @@ def is_pysmt_integer(var: Any) -> bool:
 
     This takes into account the class being used to represent the Integer.
     """
-    return type(var) == IntegerClass
+    return type(var) is IntegerClass
 
 
 def is_python_integer(var: Any) -> bool:
@@ -107,9 +106,9 @@ def is_python_integer(var: Any) -> bool:
 
     This accounts for: long, int and mpz (if available).
     """
-    if type(var) == mpz_type:
+    if type(var) is mpz_type:
         return True
-    if type(var) == int:
+    if type(var) is int:
         return True
     return False
 
@@ -119,13 +118,13 @@ def is_python_rational(var: Any) -> bool:
 
     This accounts for: long, int, float, Fraction, mpz, mpq (if available).
     """
-    if type(var) == mpz_type or type(var) == mpq_type:
+    if type(var) is mpz_type or type(var) is mpq_type:
         return True
-    if type(var) == pyFraction:
+    if type(var) is pyFraction:
         return True
-    if type(var) == int:
+    if type(var) is int:
         return True
-    if type(var) == float:
+    if type(var) is float:
         return True
     return False
 
@@ -137,7 +136,7 @@ def is_python_boolean(var: Any):
 
 def pysmt_integer_from_integer(value):
     """Return a pysmt Integer for the given value."""
-    if type(value) == IntegerClass:
+    if type(value) is IntegerClass:
         # Nothing to do
         return value
     return Integer(value)
@@ -154,7 +153,7 @@ if USE_GMPY:
         value: Union[float, int, pyFraction],
     ) -> pyFraction:
         """Return a pysmt Fraction for the rational value."""
-        if type(value) == FractionClass:
+        if type(value) is FractionClass:
             # Nothing to do
             return cast(pyFraction, value)
         return cast(pyFraction, FractionClass(value))
@@ -164,17 +163,17 @@ else:
         value: Union[float, int, pyFraction],
     ) -> pyFraction:
         """Return a pysmt Fraction for the rational value."""
-        if type(value) == FractionClass:
+        if type(value) is FractionClass:
             # Nothing to do
             return cast(pyFraction, value)
         # Python's Fraction is a bit picky, need to
         # construct the object in different ways
-        if type(value) == mpq_type:
+        if type(value) is mpq_type:
             val = cast(Any, value)
             n = Integer(val.numerator())
             d = Integer(val.denominator())
             return cast(pyFraction, Fraction(n, d))
-        elif type(value) == mpz_type:
+        elif type(value) is mpz_type:
             return cast(pyFraction, Fraction(Integer(value)))
         else:
             return cast(pyFraction, Fraction(value))
@@ -224,4 +223,4 @@ else:
 # Strings
 #
 def is_python_string(str1: str) -> bool:
-    return type(str1) == str
+    return type(str1) is str

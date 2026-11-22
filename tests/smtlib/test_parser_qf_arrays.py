@@ -19,8 +19,6 @@ import pytest
 
 from pysmt.logics import Logic
 from tests.smtlib.parser_utils import (
-    SMTLIB_DIR,
-    SMTLIB_TEST_FILES,
     execute_script_fname,
     smtlib_tests,
 )

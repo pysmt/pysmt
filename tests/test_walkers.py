@@ -23,7 +23,6 @@ from pysmt.shortcuts import (
     LT,
     TRUE,
     And,
-    Bool,
     Equals,
     ForAll,
     FreshSymbol,

@@ -51,7 +51,7 @@ class TestUnsatCores(TestCase):
         for f, _, satisfiability, logic in get_example_formulae():
             if not logic.quantifier_free:
                 continue
-            if satisfiability == False:
+            if not satisfiability:
                 with UnsatCoreSolver(
                     name=solver_name, unsat_cores_mode="named"
                 ) as solver:

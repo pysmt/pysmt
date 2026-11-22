@@ -27,7 +27,7 @@ properties of formulae.
 """
 
 from itertools import chain
-from typing import Any, Callable, Dict, FrozenSet, Iterable, List, Optional, Union, cast
+from typing import Callable, Dict, FrozenSet, Iterable, List, Optional, cast
 
 import pysmt
 import pysmt.operators as op
@@ -262,7 +262,6 @@ class TheoryOracle(walkers.DagWalker):
         """Extends the Theory with LIRA."""
         theory_out = args[0].set_lira()  # This makes a copy of args[0]
         return theory_out
-        rtype = formula.symbol_name()
 
     @walkers.handles([op.STR_LENGTH, op.STR_INDEXOF, op.STR_TO_INT])
     def walk_str_int(self, formula: FNode, args: List[Theory], **kwargs) -> Theory:

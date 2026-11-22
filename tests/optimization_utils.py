@@ -1,6 +1,5 @@
 from enum import Enum, auto
 from fractions import Fraction
-from itertools import chain
 from typing import Any, Iterator, List, Optional, Sequence, Set, Tuple, Type, Union
 
 import pytest

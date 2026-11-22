@@ -122,7 +122,6 @@ class TestRegressions(TestCase):
 
     @skipIfSolverNotAvailable("msat")
     def test_msat_bool_back_conversion(self):
-        f = Symbol("A")
         with Solver(name="msat") as solver:
             solver.solve()
             val = solver.get_value(Symbol("A"))
@@ -139,7 +138,6 @@ class TestRegressions(TestCase):
         )
 
     def test_simplifying_int_plus_changes_type_of_expression(self):
-        varA = Symbol("At", INT)
         varB = Symbol("Bt", INT)
         get_type = get_env().stc.get_type
         f = Plus(varB, Int(1))
@@ -193,7 +191,7 @@ class TestRegressions(TestCase):
         # The following raises an exception if not (ft1 == ft2)
         # since the same symbol has already been defined with
         # a "different" type.
-        f1 = Symbol("f1", ft2)
+        f1 = Symbol("f1", ft2)  # noqa: F841
 
     @skipIfSolverNotAvailable("z3")
     def test_z3_iff(self):

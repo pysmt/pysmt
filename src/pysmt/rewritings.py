@@ -19,7 +19,7 @@
 This module defines some rewritings for pySMT formulae.
 """
 
-from itertools import combinations
+from itertools import combinations, product
 from typing import (
     Any,
     Callable,
@@ -885,9 +885,6 @@ class AIGer(DagWalker):
 
 
 # EOC AIGer
-
-
-from itertools import product
 
 
 class TimesDistributor(IdentityDagWalker):

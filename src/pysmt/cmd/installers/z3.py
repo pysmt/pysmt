@@ -13,9 +13,6 @@
 # limitations under the License.
 from __future__ import absolute_import
 
-import glob
-import os
-
 from pysmt.cmd.installers.base import SolverInstaller
 
 

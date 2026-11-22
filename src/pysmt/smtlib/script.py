@@ -46,7 +46,7 @@ from pysmt.oracles import get_logic
 from pysmt.smtlib.annotations import Annotations
 from pysmt.smtlib.printers import SmtDagPrinter, SmtPrinter, quote
 from pysmt.solvers.smtlib import SmtLibSolver
-from pysmt.solvers.solver import Model, Solver
+from pysmt.solvers.solver import Model
 from pysmt.typing import _TypeDecl
 
 PrinterType = Union[SmtPrinter, SmtDagPrinter]

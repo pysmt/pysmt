@@ -144,7 +144,7 @@ class PysmtShell(object):
         if name == ECHO:
             self._print(result, stream_out)
         elif name == CHECK_SAT:
-            if result == True:
+            if result == True:  # noqa: E712
                 self._print("sat", stream_out)
             else:
                 self._print("unsat", stream_out)

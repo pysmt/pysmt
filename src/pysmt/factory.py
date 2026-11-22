@@ -23,6 +23,7 @@ This makes it possible to write algorithms that do not depend on a
 particular solver.
 """
 
+import os
 from functools import partial
 from typing import (
     Any,
@@ -937,8 +938,6 @@ class Factory(object):
 # Otherwise PYSMT_SOLVER is treated as  a comma-separated list: e.g.
 #   "msat, z3, cvc5"
 #
-import os
-
 _pysmt_solver_env = os.environ.get("PYSMT_SOLVER")
 ENV_SOLVER_LIST: Optional[List[str]] = None
 if _pysmt_solver_env is not None:

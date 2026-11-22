@@ -20,7 +20,7 @@ the SMTLIB and provides methods to compare and search for particular
 logics.
 """
 
-from typing import Iterable, Optional, Set, Union
+from typing import Iterable, Optional, Union
 
 from pysmt.exceptions import NoLogicAvailableError, UndefinedLogicError
 

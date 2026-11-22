@@ -136,8 +136,6 @@ class TestOracles(TestCase):
         self.assertEqual(theory, QF_UFIDL.theory)
 
     def test_types_oracle_divby0(self):
-        from pysmt.logics import QF_NRA
-
         mgr = self.env.formula_manager
         r = mgr.Symbol("r", REAL)
         f = mgr.Equals(mgr.Real(4), mgr.Div(r, mgr.Real(0)))

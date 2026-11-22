@@ -50,7 +50,7 @@ def check_version(module):
                 version = m.group(1)
 
         elif module == "btor":
-            import pyboolector  # type: ignore[import]
+            import pyboolector  # type: ignore[import]  # noqa: F401
 
             version = "OK"  # Just checking if import succeeds
 

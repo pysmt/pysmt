@@ -13,10 +13,6 @@
 # limitations under the License.
 from __future__ import absolute_import
 
-import multiprocessing
-import os
-import sys
-
 from pysmt.cmd.installers.base import SolverInstaller
 
 

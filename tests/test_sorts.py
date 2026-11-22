@@ -15,7 +15,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from io import StringIO
 
 from pysmt.exceptions import PysmtTypeError, PysmtValueError
 from pysmt.shortcuts import (
@@ -28,7 +27,6 @@ from pysmt.shortcuts import (
     Function,
     Select,
 )
-from pysmt.smtlib.parser import SmtLibParser
 from pysmt.typing import (
     BOOL,
     INT,

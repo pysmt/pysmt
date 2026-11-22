@@ -38,7 +38,7 @@ from pysmt.oracles import get_logic
 from pysmt.solvers.dynmsat import MSATCreateConverter, MSATCreateEnv, MSATLibLoader
 from pysmt.solvers.interpolation import Interpolator
 from pysmt.solvers.qelim import QuantifierEliminator
-from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
+from pysmt.solvers.smtlib import SmtLibBasicSolver
 from pysmt.solvers.solver import (
     Converter,
     IncrementalTrackingSolver,
@@ -47,7 +47,6 @@ from pysmt.solvers.solver import (
     UnsatCoreSolver,
 )
 from pysmt.typing import PySMTType
-from pysmt.utils import assert_not_none
 from pysmt.walkers import DagWalker
 from pysmt.walkers.generic import handles
 from pysmt.walkers.identitydag import IdentityDagWalker
@@ -423,7 +422,7 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolv
         mval = self._msat_lib.MSAT_UNDEF
         if val is not None:
             mval = (
-                self._msat_lib.MSAT_TRUE if val == True else self._msat_lib.MSAT_FALSE
+                self._msat_lib.MSAT_TRUE if val == True else self._msat_lib.MSAT_FALSE  # noqa: E712
             )
         self._msat_lib.msat_add_preferred_for_branching(self.msat_env(), tvar, mval)
         return

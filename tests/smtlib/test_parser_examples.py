@@ -188,7 +188,6 @@ class TestSMTParseExamples(TestCase):
         )
         """
         tokens = Tokenizer(StringIO(smt_script), interactive=True)
-        parser = SmtLibParser()
         tokens.consume()
         tokens.consume()
         next_token = tokens.consume()

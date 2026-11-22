@@ -88,7 +88,6 @@ class TestEUF(TestCase):
         ftype1 = FunctionType(REAL, [REAL, REAL])
 
         plus = Symbol("plus", ftype1)
-        x = Symbol("x", REAL)
         y = Symbol("y", REAL)
         z = Symbol("z", REAL)
 

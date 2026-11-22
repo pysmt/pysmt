@@ -24,7 +24,6 @@ from pysmt.logics import QF_LIA, QF_LRA
 from pysmt.shortcuts import get_env
 from tests import TestCase, main, skipIfNoOptimizerForLogic, skipIfNoSolverForLogic
 from tests.optimization_utils import (
-    OptimizationTypes,
     generate_examples_with_solvers,
     get_non_diverging_optimizers,
     solve_given_example,

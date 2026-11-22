@@ -41,7 +41,7 @@ from pysmt.exceptions import (
 )
 from pysmt.logics import ALIA, AUFLIA, AUFLIRA, AUFNIRA, PYSMT_LOGICS
 from pysmt.solvers.eager import EagerModel
-from pysmt.solvers.smtlib import SmtLibBasicSolver, SmtLibIgnoreMixin
+from pysmt.solvers.smtlib import SmtLibBasicSolver
 from pysmt.solvers.solver import Converter, Solver, SolverOptions
 from pysmt.walkers import DagWalker
 
@@ -58,7 +58,7 @@ class CVC5Options(SolverOptions):
     def _set_option(cvc5_solver: cvc5.Solver, name: str, value: str):
         try:
             cvc5_solver.setOption(name, value)
-        except:
+        except BaseException:
             raise PysmtValueError("Error setting the option '%s=%s'" % (name, value))
 
     def __call__(self, solver: "CVC5Solver"):
