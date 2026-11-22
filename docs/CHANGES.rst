@@ -26,6 +26,17 @@ Change Log
   the tests live in the top-level ``tests/`` directory of the
   repository (#865).
 
+* ``pysmt-install`` installs the solvers with pip into the Python
+  interpreter running it, or with ``uv pip`` when pip is not available.
+  Z3, cvc5, Boolector and CUDD are installed as regular packages that
+  pip can upgrade or uninstall. The options ``--bindings-path``,
+  ``--env`` and ``--powershell`` have been removed. Use ``--target DIR``
+  to install the solvers into a directory of your choice. ``--install-path``
+  is only used to download and build MathSAT, OptiMathSAT, Yices and
+  PicoSAT (#867).
+
+* pySMT no longer depends on setuptools (#867).
+
 **General**:
 
 * Packaging moved from ``setup.py`` to ``pyproject.toml`` with hatchling;
@@ -34,6 +45,17 @@ Change Log
 
 * The code is linted and formatted with ruff, and pre-commit hooks run
   the linter and the type checker before each commit (#866).
+
+* ``pysmt-install`` no longer prints a setuptools deprecation warning, and
+  its confirmation prompt accepts ``y`` and ``yes`` in any case (#867).
+
+**Solvers**:
+
+* cvc5 upgraded to 1.4.2 (#867).
+
+* Boolector upgraded to 3.2.4 and installed from the ``pyboolector`` wheels
+  on PyPI instead of being built from source. PyPI has no Windows wheels,
+  so on Windows pip builds it from the source distribution (#867).
 
 0.10.0: 2026-11-21 -- Optimization, type hints and upgraded solvers
 ---------------------------------------------------------------------

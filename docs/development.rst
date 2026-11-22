@@ -78,9 +78,8 @@ Dependencies are declared in ``pyproject.toml``. After changing them, run
 ``uv lock`` and commit the updated ``uv.lock``.
 
 Solvers are installed in the same environment with ``pysmt-install``,
-which currently needs pip inside the environment::
+which uses ``uv pip`` since the environment has no pip::
 
-  $ uv pip install pip
   $ uv run pysmt-install --z3
 
 ``uv run`` keeps the installed solvers, but ``just install`` (``uv sync``)

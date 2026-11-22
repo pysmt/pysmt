@@ -24,8 +24,8 @@ solver. Moreover, pySMT can leverage the API of the following solvers:
 * PicoSAT (http://fmv.jku.at/picosat/)
 * Boolector (http://fmv.jku.at/boolector/)
 
-The Python binding for the SMT Solvers must be installed and
-accessible from your ``PYTHONPATH``.
+The Python bindings for the SMT solvers must be installed and
+importable by the Python interpreter running pySMT.
 
 To check which solvers are visible to pySMT, you can use the command
 ``pysmt-install`` (or ``python -m pysmt install``)::
@@ -39,16 +39,18 @@ installed with the same script: e.g., ::
 
 installs the MathSAT5 solver.
 
-By default the solvers are downloaded, unpacked and built in your home directory
-in the ``.smt_solvers`` folder. Compiled libraries and actual solver packages are
-installed in the relevant ``site-packages`` directory (e.g. virtual environment's
-packages root or local user-site).
-
-If you specified a custom ``--bindings-path`` during install, you
-can use the ``--env`` option to obtain a string to update your
-``PYTHONPATH``. When defaults are used, there's not need to update
-the ``PYTHONPATH``. ``pysmt-install`` has many options to
-customize its behavior.
+``pysmt-install`` installs the solvers into the Python interpreter that
+runs it (e.g., the active virtual environment). It uses ``pip`` from that
+interpreter, or ``uv pip`` when ``pip`` is not available (as in
+environments created by uv). Z3, cvc5, Boolector and CUDD are installed
+as regular packages, so they can be upgraded or removed with the same
+tool (e.g., ``pip uninstall z3-solver``). If you
+cannot write to the environment, ``--target DIR`` installs the solvers
+into ``DIR``, which you then need to add to your ``PYTHONPATH``, and
+``pysmt-install --check --target DIR`` checks the solvers in ``DIR``.
+MathSAT, OptiMathSAT, Yices and PicoSAT are downloaded and built in the
+``.smt_solvers`` folder in your home directory (see ``--install-path``)
+before being installed. ``pysmt-install --help`` lists all the options.
 
 .. _gs-hello-world:
 
