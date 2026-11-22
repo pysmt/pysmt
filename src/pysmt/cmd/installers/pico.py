@@ -26,7 +26,7 @@ class PicoSATInstaller(SolverInstaller):
     def __init__(
         self,
         install_dir,
-        site_dir,
+        target,
         solver_version,
         pypicosat_minor_version,
         mirror_link=None,
@@ -36,7 +36,7 @@ class PicoSATInstaller(SolverInstaller):
         SolverInstaller.__init__(
             self,
             install_dir=install_dir,
-            site_dir=site_dir,
+            target=target,
             solver_version=solver_version,
             mirror_link=mirror_link,
             native_link=None,

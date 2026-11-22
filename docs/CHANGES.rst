@@ -60,6 +60,16 @@ Change Log
   on PyPI instead of being built from source. PyPI has no Windows wheels,
   so on Windows pip builds it from the source distribution (#867).
 
+* MathSAT upgraded to 5.6.20 (#869).
+
+* ``pysmt-install`` builds and installs the MathSAT and OptiMathSAT
+  Python bindings with pip (or ``uv pip``) from the ``python/`` directory
+  of the release archive, instead of running ``setup.py build_ext`` and
+  copying the files. The bindings are installed as the ``mathsat`` and
+  ``optimathsat`` packages, whose version is the solver version, so
+  ``pip uninstall mathsat`` removes them and ``--check`` reads their
+  version from the package metadata (#869).
+
 **Bugfix**:
 
 * cvc5: the ``arrays-exp`` option is now enabled only for logics with

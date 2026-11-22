@@ -12,30 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import re
 import sys
 
 
 def check_version(module):
     try:
-        if module in ("msat", "optimsat"):
-            if module == "msat":
-                import mathsat  # type: ignore[import]
-
-                version_str = mathsat.msat_get_version()
-            else:
-                import optimathsat  # type: ignore[import]
-
-                version_str = optimathsat.msat_get_version()
-            m = re.match(r"^MathSAT5 version (\d+\.\d+\.\d+) .*$", version_str)
-            if m is not None:
-                version = m.group(1)
-            else:
-                m = re.match(r"^MathSAT5 version (\w+) .*$", version_str)
-                if m is not None:
-                    version = m.group(1)
-
-        elif module == "picosat":
+        if module == "picosat":
             import picosat  # type: ignore[import]
 
             version = picosat.picosat_version()

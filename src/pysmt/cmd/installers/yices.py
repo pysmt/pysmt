@@ -22,7 +22,7 @@ class YicesInstaller(SolverInstaller):
     def __init__(
         self,
         install_dir,
-        site_dir,
+        target,
         solver_version,
         mirror_link=None,
         yices_api_version=None,
@@ -33,7 +33,7 @@ class YicesInstaller(SolverInstaller):
         SolverInstaller.__init__(
             self,
             install_dir=install_dir,
-            site_dir=site_dir,
+            target=target,
             solver_version=solver_version,
             archive_name=archive_name,
             native_link=native_link,
