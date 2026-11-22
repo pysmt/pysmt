@@ -60,6 +60,12 @@ Change Log
   on PyPI instead of being built from source. PyPI has no Windows wheels,
   so on Windows pip builds it from the source distribution (#867).
 
+**Bugfix**:
+
+* cvc5: the ``arrays-exp`` option is now enabled only for logics with
+  constant arrays. It slowed down every other logic (a QF_LRA benchmark
+  went from 2 s to 22 s with cvc5 1.3.3) and made cvc5 1.4 hang (#880).
+
 0.10.0: 2026-11-21 -- Optimization, type hints and upgraded solvers
 ---------------------------------------------------------------------
 

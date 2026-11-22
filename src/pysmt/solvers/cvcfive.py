@@ -131,10 +131,12 @@ class CVC5Solver(SmtLibBasicSolver):
         # Without this, cvc5 rejects assertions containing constant
         # arrays with "Cannot handle assertion with term of kind
         # STORE_ALL in this configuration."
-        try:
-            self.cvc5_solver.setOption("arrays-exp", "true")
-        except Exception:
-            pass  # older cvc5 versions may not have this option
+        # Only for const-array logics: arrays-exp slows down other logics (cvc5 1.4 hangs on QF_LRA)
+        if logic.theory.arrays_const:
+            try:
+                self.cvc5_solver.setOption("arrays-exp", "true")
+            except Exception:
+                pass  # older cvc5 versions may not have this option
 
         self.options(self)
 
