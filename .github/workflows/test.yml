@@ -24,6 +24,13 @@ jobs:
       - name: MyPy check
         run: uv run --python 3.13 mypy
 
+      # Same paths as lint_paths in the justfile
+      - name: Ruff lint
+        run: uv run --python 3.13 ruff check src tests examples ci docs shell.py
+
+      - name: Ruff format check
+        run: uv run --python 3.13 ruff format --check src tests examples ci docs shell.py
+
   run-tests:
     needs: mypy-check
 
