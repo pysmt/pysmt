@@ -1,4 +1,0 @@
-include LICENSE README.rst
-recursive-include docs *.rst
-include pysmt/test/configs/*
-

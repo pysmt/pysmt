@@ -85,6 +85,7 @@ $PIP_INSTALL configparser
 $PIP_INSTALL wheel
 $PIP_INSTALL pytest
 $PIP_INSTALL setuptools
+$PIP_INSTALL -e .
 
 if [ "${PYSMT_SOLVER}" == "cvc5" ]
 then
@@ -108,7 +109,7 @@ then
 fi
 
 # Install the solver(s)!
-${PYTHON} install.py --confirm-agreement
+${PYTHON} -m pysmt install --confirm-agreement
 
 # Install the binaries for the *_wrap case
 if [ "${PYSMT_SOLVER}" == "all" ] || [ "${PYSMT_SOLVER}" == *"z3_wrap"* ]; then
@@ -125,10 +126,10 @@ if [ "${PYSMT_SOLVER}" == "all" ] || [ "${PYSMT_SOLVER}" == *"z3_wrap"* ]; then
 fi
 if [ "${PYSMT_SOLVER}" == "all" ] || [ "${PYSMT_SOLVER}" == *"msat_wrap"* ];
 then
-    ${PYTHON} install.py --msat --conf --force;
+    ${PYTHON} -m pysmt install --msat --conf --force;
     cp -v $(find ~/.smt_solvers/ -name mathsat -type f) pysmt/test/smtlib/bin/mathsat;
     mv pysmt/test/smtlib/bin/mathsat.solver.sh.template pysmt/test/smtlib/bin/mathsat.solver.sh ;
 fi
 
 # Check that the solvers are installed
-${PYTHON} install.py --check
+${PYTHON} -m pysmt install --check

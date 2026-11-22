@@ -9,7 +9,7 @@ then
 fi
 
 # Check that the solvers are installed
-${PYTHON} install.py --check
+${PYTHON} -m pysmt install --check
 
 # Run the test suite
 ${PYTHON} -m pytest pysmt -v # --with-coverage --cover-package=pysmt
@@ -18,7 +18,7 @@ ${PYTHON} -m pytest pysmt -v # --with-coverage --cover-package=pysmt
 # Test examples in examples/ folder
 if [ "${PYSMT_SOLVER}" == "all" ];
 then
-    ${PYTHON} install.py --msat --conf --force;
+    ${PYTHON} -m pysmt install --msat --conf --force;
     cp -v $(find ~/.smt_solvers/ -name mathsat -type f) /tmp/mathsat;
 
     # since we're relying on relative `pysmt` import in examples,

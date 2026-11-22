@@ -15,16 +15,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 #v4.1.1
 
-      - name: Set up Python
-        uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236 #v4.7.1
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
         with:
-          python-version: 3.13
-
-      - name: Install Development Python dependencies
-        run: python3 -m pip install -r dev-requirements.txt
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
       - name: MyPy check
-        run: python3 -m mypy pysmt
+        run: uv run --python 3.13 mypy
 
   run-tests:
     needs: mypy-check
@@ -124,6 +122,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: [run-tests, run-tests-master] # We only deploy if the tests were successful
     if: github.ref == 'refs/heads/master' # We only deploy on master commits
+    environment: pypi
+    permissions:
+      contents: read
+      id-token: write # PyPI trusted publishing
 
     steps:
     - name: Checkout repo
@@ -131,17 +133,14 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Set up Python 3.13
-      uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236 #v4.7.1
-      with:
-        python-version: 3.13
+    - name: Install uv
+      uses: astral-sh/setup-uv@v7
 
-    - name: Make distrib
-      run: |
-        python3 -m pip install wheel setuptools
-        bash make_distrib.sh
+    - name: Stamp dev version
+      run: python3 ci/stamp_dev_version.py
+
+    - name: Build sdist + wheel
+      run: uv build
 
     - name: Upload to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        password: ${{ secrets.PYPI_API_TOKEN }}
