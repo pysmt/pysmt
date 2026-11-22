@@ -28,30 +28,29 @@ dev = [
     "mypy",
     "types-setuptools",
 ]
+docs = ["sphinx"]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["pysmt"]
-# ponytail: keeps the wheel content of 0.10 (no SMT-LIB benchmarks); goes away when tests move out in #865
-exclude = ["pysmt/test/smtlib/*/"]
+packages = ["src/pysmt"]
 
 [tool.hatch.build.targets.sdist]
-include = ["/pysmt", "/docs/*.rst", "/README.rst", "/LICENSE", "/NOTICE"]
+include = ["/src", "/tests", "/docs/*.rst", "/README.rst", "/LICENSE", "/NOTICE"]
 
 [tool.pytest.ini_options]
-testpaths = ["pysmt/test"]
+testpaths = ["tests"]
 markers = [
     "slow: marks tests as slow, typically these are tests that take more than 10 seconds to run (deselect with '-m \"not slow\"')",
 ]
 
 [tool.mypy]
-files = ["pysmt"]
+files = ["src/pysmt", "tests"]
 
 [tool.coverage.run]
-omit = ["pysmt/cmd/*", "pysmt/test/*"]
+omit = ["src/pysmt/cmd/*", "tests/*"]
 
 [tool.coverage.report]
 exclude_lines = [

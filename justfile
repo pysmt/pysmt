@@ -31,7 +31,7 @@ bump version:
 
 # Build the HTML documentation into docs/_build/html
 docs:
-    uvx --from sphinx sphinx-build -b html docs docs/_build/html
+    uv run --group docs sphinx-build -b html docs docs/_build/html
 
 # Remove build, cache, and tooling artifacts
 clean:

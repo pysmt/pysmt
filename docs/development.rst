@@ -95,7 +95,7 @@ Tests in pySMT are developed using python's built-in testing framework
 
   $ just test                                # skip slow tests, stop at the first failure
   $ just test-all                            # include the slow tests
-  $ just test pysmt/test/test_formula.py     # run a single file
+  $ just test tests/test_formula.py          # run a single file
 
 Extra arguments are passed to pytest. Tests that take more than 10
 seconds should be marked with ``@pytest.mark.slow``.
@@ -111,13 +111,18 @@ All tests should pass for a PR to be merged.
 Writing Tests
 -------------
 
-TestCase should inherit from :py:class:`pysmt.test.TestCase`.  This
-provides a default :py:meth:`~pysmt.test.TestCase.SetUp` for running
-tests in which the global environment is reset after each test is
-executed. This is necessary to avoid interaction between
-tests. Moreover, the class provides some additional assertions:
+The tests live in the top-level ``tests/`` directory, which is not part
+of the installed package. Test cases should inherit from ``TestCase``,
+defined in ``tests/__init__.py`` and imported with ``from tests import
+TestCase``. Its ``setUp`` method resets the global environment before
+each test, which avoids interactions between tests. The class also
+provides the assertions ``assertValid``, ``assertSat`` and
+``assertUnsat``, which check a formula using the solver factory of the
+test environment.
 
-.. autoclass:: pysmt.test.TestCase
+``tests/__init__.py`` also defines decorators, such as
+``skipIfSolverNotAvailable`` and ``skipIfNoSolverForLogic``, that skip
+a test when the solver it needs is not installed.
 
 PYSMT_SOLVER
 ~~~~~~~~~~~~
@@ -169,13 +174,13 @@ handled.
 
 Adding a Theory to the codebase is done by following these steps:
 
-1. Tests: Add a test file ``pysmt/test/test_<theory>.py``, to demonstrate the use for the theory (e.g., ``pysmt/test/test_bv.py``).
+1. Tests: Add a test file ``tests/test_<theory>.py``, to demonstrate the use for the theory (e.g., ``tests/test_bv.py``).
 
-2. Operators: Add the (basic) operators in ``pysmt/operators.py``, create a constant for each operator, and extend the relevant structures.
+2. Operators: Add the (basic) operators in ``src/pysmt/operators.py``, create a constant for each operator, and extend the relevant structures.
 
-3. Typing: Extend ``pysmt/typing.py`` to include the types (sorts) of the new theory.
+3. Typing: Extend ``src/pysmt/typing.py`` to include the types (sorts) of the new theory.
 
-4. Walker: Extend ``pysmt/walkers/generic.py`` to include one ``walk_`` function for each of the basic operators.
+4. Walker: Extend ``src/pysmt/walkers/generic.py`` to include one ``walk_`` function for each of the basic operators.
 
 5. FNode: Extend ``is_*`` methods in :py:class:`pysmt/fnode.py:FNode`. This makes it possible to check the type of an expression, obtaining additional elements (e.g., width of a bitvector constant).
 
@@ -188,13 +193,13 @@ theory. This is a good time to start running your tests.
 
 8. Printers: Extend :py:class:`pysmt/printers.py:HRPrinter` to be able to print expressions in the new theory (you might need to do this earlier, if you need to debug your tests output).
 
-9. Examples: Extend ``pysmt/test/examples.py`` with at least one example formula for each new operator defined in FormulaManager. These examples are used in many tests, and will help you identify parts of the system that still need to be extended (e.g., Simplifier).
+9. Examples: Extend ``tests/examples.py`` with at least one example formula for each new operator defined in FormulaManager. These examples are used in many tests, and will help you identify parts of the system that still need to be extended (e.g., Simplifier).
 
-10. Theories and Logics: Extend ``pysmt/logics.py`` to include the new Theory and possible logics that derive from this Theory. In particular, define logics for each theory combination that makes sense.
+10. Theories and Logics: Extend ``src/pysmt/logics.py`` to include the new Theory and possible logics that derive from this Theory. In particular, define logics for each theory combination that makes sense.
 
-11. SMT-LIB: Extend :py:class:`pysmt/smtlib/parser.py:SmtLibParser` and ``pysmt/smtlib/printers.py`` to support the new operators.
+11. SMT-LIB: Extend :py:class:`pysmt/smtlib/parser.py:SmtLibParser` and ``src/pysmt/smtlib/printers.py`` to support the new operators.
 
-12. Shortcuts: All methods that were added in FormulaManager need to be available in ``pysmt/shortcuts.py``.
+12. Shortcuts: All methods that were added in FormulaManager need to be available in ``src/pysmt/shortcuts.py``.
 
 At this point all pySMT tests should pass. This might require
 extending other walkers to support the new operators.
@@ -311,8 +316,8 @@ that does not contain the ``pysmt`` sources:
 
  0. ``python3 -m venv venv && . venv/bin/activate``
  1. ``pip install pytest dist/pysmt-a.b.c.tar.gz``
- 2. ``mkdir -p test_pkg/pysmt && cp -a <repo>/pysmt/test test_pkg/pysmt/``
- 3. ``cd test_pkg && python -m pytest pysmt/test``
+ 2. ``mkdir test_pkg && cp -a <repo>/tests test_pkg/``
+ 3. ``cd test_pkg && python -m pytest tests``
 
 Check that pytest imports pysmt from ``venv`` and not from a source
 tree. All tests should pass in order to make the release. Note: It is
