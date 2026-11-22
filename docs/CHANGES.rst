@@ -18,6 +18,9 @@ Change Log
   commits (e.g., ``0.11.0.dev2047``) instead of the number of commits
   since the last tag (#863).
 
+* The CVC4 solver has been removed, since CVC4 is archived upstream.
+  Use cvc5 instead (#864).
+
 **General**:
 
 * Packaging moved from ``setup.py`` to ``pyproject.toml`` with hatchling;

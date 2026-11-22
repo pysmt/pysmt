@@ -49,9 +49,9 @@ from pysmt.utils import assert_not_none
 SOLVER_TYPES = ['Solver', 'Solver supporting Unsat Cores',
                 'Quantifier Eliminator', 'Interpolator', 'Optimizer']
 DEFAULT_PREFERENCES = {'Solver': ['msat', 'optimsat', 'z3', 'cvc5', 'yices', 'btor',
-                                  'picosat', 'bdd', 'cvc4'],
+                                  'picosat', 'bdd'],
                        'Solver supporting Unsat Cores': ['optimsat', 'msat', 'z3', 'cvc5',
-                                                         'yices', 'btor', 'picosat', 'bdd', 'cvc4'],
+                                                         'yices', 'btor', 'picosat', 'bdd'],
                        'Quantifier Eliminator': ['z3', 'msat_fm', 'msat_lw',
                                                  'optimsat_fm', 'optimsat_lw',
                                                  'bdd', 'shannon', 'selfsub'],
@@ -274,12 +274,6 @@ class Factory(object):
         try:
             from pysmt.solvers.cvcfive import CVC5Solver
             installed_solvers['cvc5'] = CVC5Solver
-        except SolverAPINotFound:
-            pass
-
-        try:
-            from pysmt.solvers.cvcfour import CVC4Solver
-            installed_solvers['cvc4'] = CVC4Solver
         except SolverAPINotFound:
             pass
 
