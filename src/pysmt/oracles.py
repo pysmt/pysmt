@@ -27,7 +27,7 @@ properties of formulae.
 """
 
 from itertools import chain
-from typing import Callable, Dict, FrozenSet, Iterable, List, Optional, cast
+from typing import Callable, Dict, FrozenSet, Iterable, List, Optional, Tuple, cast
 
 import pysmt
 import pysmt.operators as op
@@ -155,6 +155,23 @@ class QuantifierOracle(walkers.DagWalker):
 # EOC QuantifierOracle
 
 
+def _mentions_type(ty: PySMTType, check: Callable[[PySMTType], bool]) -> bool:
+    """Whether the type, or a type it is built from, satisfies check."""
+    if check(ty):
+        return True
+    if ty.is_array_type():
+        array = cast(types._ArrayType, ty)
+        return _mentions_type(array.index_type, check) or _mentions_type(
+            array.elem_type, check
+        )
+    if ty.is_function_type():
+        function = cast(types._FunctionType, ty)
+        return _mentions_type(function.return_type, check) or any(
+            _mentions_type(p, check) for p in function.param_types
+        )
+    return False
+
+
 class TheoryOracle(walkers.DagWalker):
     def get_theory(self, formula: FNode) -> Theory:
         """Returns the theory for the formula."""
@@ -188,21 +205,48 @@ class TheoryOracle(walkers.DagWalker):
             theory.uninterpreted = True
         return theory
 
-    @staticmethod
-    def _uses_any_operator(formula: FNode, operators: Iterable[int]) -> bool:
-        """Return whether ``formula`` contains one of ``operators``."""
-        operator_set = set(operators)
-        pending = [formula]
-        seen = set()
-        while pending:
-            current = pending.pop()
-            if current in seen:
+    def __init__(
+        self,
+        env: Optional["pysmt.environment.Environment"] = None,
+        invalidate_memoization: bool = False,
+    ):
+        walkers.DagWalker.__init__(
+            self, env=env, invalidate_memoization=invalidate_memoization
+        )
+        # Memoization of _operand_needs
+        self._operand_needs_memo: Dict[FNode, Tuple[bool, bool]] = {}
+
+    def _operand_needs(self, formula: FNode) -> Tuple[bool, bool]:
+        """Whether the BV and the Real theories are needed by ``formula``
+        beyond its literals: it applies a BV (resp. arithmetic) operator or
+        relation, or has a free variable of a BV (resp. Real) sort."""
+        memo = self._operand_needs_memo
+        stack = [formula]
+        while stack:
+            node = stack[-1]
+            if node in memo:
+                stack.pop()
                 continue
-            seen.add(current)
-            if current.node_type() in operator_set:
-                return True
-            pending.extend(current.args())
-        return False
+            pending = [c for c in node.args() if c not in memo]
+            if pending:
+                stack.extend(pending)
+                continue
+            stack.pop()
+            node_type = node.node_type()
+            needs_bv = node_type in op.BV_OPERATORS or node_type in op.BV_RELATIONS
+            needs_real = node_type in op.IRA_OPERATORS or node_type in op.IRA_RELATIONS
+            if node.is_symbol():
+                ty = node.symbol_type()
+                needs_bv = needs_bv or _mentions_type(ty, lambda t: t.is_bv_type())
+                needs_real = needs_real or _mentions_type(
+                    ty, lambda t: t.is_real_type()
+                )
+            for child in node.args():
+                child_bv, child_real = memo[child]
+                needs_bv = needs_bv or child_bv
+                needs_real = needs_real or child_real
+            memo[node] = (needs_bv, needs_real)
+        return memo[formula]
 
     @walkers.handles(op.RELATIONS - op.FP_RELATIONS)
     @walkers.handles(op.BOOL_OPERATORS)
@@ -225,51 +269,35 @@ class TheoryOracle(walkers.DagWalker):
     @walkers.handles(op.FP_RELATIONS)
     @walkers.handles(op.FP_RM_CONSTANTS)
     def walk_fp(self, formula: FNode, args: List[Theory], **kwargs) -> Theory:
-        """Floating-point operators remain within the SMT-LIB FP theory."""
+        """Extends the Theory with FP.
+
+        The BV and Real operands of fp, to_fp and to_fp_unsigned belong to
+        the FP signature when they are built from literals only, e.g. the
+        bit-vectors of (fp #b0 #b01111 #b0000000000) or the real of
+        ((_ to_fp 8 24) RNE 0.5). Operands with BV (resp. arithmetic)
+        operators or with free variables of BV (resp. Real) sort keep their
+        theory.
+        """
         node_type = formula.node_type()
         theory_out = Theory(floating_point=True)
 
         for index, arg_theory in enumerate(args):
-            # BV/Real operands in the standard FP constructors and
-            # conversions belong to the FP theory's signature.  Suppress only
-            # that operand theory while retaining structural theories (for
-            # example arrays or UF) used to produce the operand.
-            suppress_bv = (
-                node_type == op.FP_FROM_COMPONENTS
-                or node_type == op.FP_FROM_IEEE_BV
-                or (index == 1 and node_type == op.FP_TO_FP_UNSIGNED)
-                or (
-                    index == 1
-                    and node_type == op.FP_TO_FP
-                    and formula.arg(index).get_type().is_bv_type()
-                )
-            )
-            if suppress_bv:
-                suppress_bv = not self._uses_any_operator(
-                    formula.arg(index), op.BV_OPERATORS | op.BV_RELATIONS
-                )
-
-            suppress_real = (
-                index == 1
-                and node_type == op.FP_TO_FP
-                and formula.arg(index).get_type().is_real_type()
-            )
-            if suppress_real:
-                suppress_real = not self._uses_any_operator(
-                    formula.arg(index), op.IRA_OPERATORS | op.IRA_RELATIONS
-                )
-
-            if suppress_bv or suppress_real:
-                arg_theory = arg_theory.copy()
-            if suppress_bv:
-                arg_theory.bit_vectors = False
-            if suppress_real:
-                arg_theory.real_arithmetic = False
-                arg_theory.real_difference = False
-                arg_theory.linear = True
-
+            if node_type in (op.FP_FROM_COMPONENTS, op.FP_FROM_IEEE_BV) or (
+                index == 1 and node_type in (op.FP_TO_FP, op.FP_TO_FP_UNSIGNED)
+            ):
+                needs_bv, needs_real = self._operand_needs(formula.arg(index))
+                if not needs_bv or not needs_real:
+                    arg_theory = arg_theory.copy()
+                if not needs_bv:
+                    arg_theory.bit_vectors = False
+                if not needs_real:
+                    arg_theory.real_arithmetic = False
+                    arg_theory.real_difference = False
             theory_out = theory_out.combine(arg_theory)
 
+        # Like a symbol, a conversion out of FP adds the theory of its sort
+        if node_type in (op.FP_TO_UBV, op.FP_TO_SBV, op.FP_TO_REAL):
+            theory_out = theory_out.combine(self._theory_from_type(formula.get_type()))
         return theory_out
 
     @walkers.handles(op.REAL_CONSTANT, op.BOOL_CONSTANT)

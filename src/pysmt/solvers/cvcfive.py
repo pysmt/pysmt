@@ -163,6 +163,10 @@ class CVC5Solver(SmtLibBasicSolver):
             if s.is_term():
                 if s.symbol_type().is_custom_type():
                     continue
+                if self.environment.theoryo.get_theory(s).floating_point:
+                    # The FP logics are not supported (see LOGICS), but the
+                    # environment can still have FP symbols
+                    continue
                 v = self.get_value(s)
                 assignment[s] = v
         return EagerModel(assignment=assignment, environment=self.environment)

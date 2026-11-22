@@ -49,6 +49,22 @@ Change Log
 * ``pysmt-install`` no longer prints a setuptools deprecation warning, and
   its confirmation prompt accepts ``y`` and ``yes`` in any case (#867).
 
+* Floating-point arithmetic, following the SMT-LIB FloatingPoint theory
+  (#285, #632):
+
+  * The types ``FPType(eb, sb)`` (with ``FLOAT16``, ``FLOAT32``,
+    ``FLOAT64`` and ``FLOAT128``) and ``RMType()``, every operator of the
+    theory, and ``FPVal`` to build the FP constant nearest to a Python
+    number.
+
+  * The logics ``QF_FP``, ``QF_BVFP``, ``QF_FPLRA``, ``QF_BVFPLRA``,
+    ``QF_ABVFP``, ``QF_ABVFPLRA`` and ``QF_AUFBVFP``, as named by SMT-COMP.
+
+  * Support in the SMT-LIB parser and printers, and in the Z3 solver.
+
+  * The simplifier evaluates FP operations on constants exactly, so that
+    models can be checked against FP formulas.
+
 **Solvers**:
 
 * cvc5 upgraded to 1.4.2 (#867).
@@ -65,6 +81,13 @@ Change Log
 * cvc5: the ``arrays-exp`` option is now enabled only for logics with
   constant arrays. It slowed down every other logic (a QF_LRA benchmark
   went from 2 s to 22 s with cvc5 1.3.3) and made cvc5 1.4 hang (#880).
+
+* The SMT-LIB parser lets declared and defined functions shadow
+  interpreted symbols of the same name (e.g. a function ``bvadd`` in a
+  logic without bit-vectors) (#632).
+
+* ``propagate_toplevel`` no longer crashes on equalities between String
+  constants (#632).
 
 0.10.0: 2026-11-21 -- Optimization, type hints and upgraded solvers
 ---------------------------------------------------------------------

@@ -586,7 +586,8 @@ class Z3Converter(Converter, DagWalker):
             return z3.FPRef
         elif type_.is_rm_type():
             return z3.FPRMRef
-        raise NotImplementedError(type_)
+        # e.g. custom sorts, for which z3 also uses the generic wrapper
+        return z3.ExprRef
 
     def get_z3_ref(self, formula: FNode) -> Type[z3.ExprRef]:
         if formula.node_type() in op.QUANTIFIERS:

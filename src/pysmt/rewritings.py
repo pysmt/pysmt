@@ -1207,15 +1207,15 @@ def propagate_toplevel(
     assert env is not None
     mgr = env.formula_manager
 
-    # comparison function for ranking
+    # comparison function for ranking: constants first. Two different
+    # constants are never equal, so any order works among them; their values
+    # cannot be subtracted in general (strings, FP and rounding-mode values).
     def compare(a, b):
         if a.node_id() == b.node_id():
             return 0
-        if a.is_constant() and b.is_constant():
-            return a.constant_value() - b.constant_value()
-        if a.is_constant():
+        if a.is_constant() and not b.is_constant():
             return -1
-        if b.is_constant():
+        if b.is_constant() and not a.is_constant():
             return 1
         return a.node_id() - b.node_id()
 

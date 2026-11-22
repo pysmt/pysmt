@@ -537,21 +537,11 @@ class SmtLibParser(object):
             "fp.rem": self._operator_adapter(mgr.FPRem),
             "fp.min": self._operator_adapter(mgr.FPMin),
             "fp.max": self._operator_adapter(mgr.FPMax),
-            "fp.leq": self._operator_adapter(
-                functools.partial(self._chain_relation, mgr.FPLEq)
-            ),
-            "fp.lt": self._operator_adapter(
-                functools.partial(self._chain_relation, mgr.FPLt)
-            ),
-            "fp.geq": self._operator_adapter(
-                functools.partial(self._chain_relation, mgr.FPGEq)
-            ),
-            "fp.gt": self._operator_adapter(
-                functools.partial(self._chain_relation, mgr.FPGt)
-            ),
-            "fp.eq": self._operator_adapter(
-                functools.partial(self._chain_relation, mgr.FPEq)
-            ),
+            "fp.leq": self._operator_adapter(_chainable(mgr, mgr.FPLEq)),
+            "fp.lt": self._operator_adapter(_chainable(mgr, mgr.FPLt)),
+            "fp.geq": self._operator_adapter(_chainable(mgr, mgr.FPGEq)),
+            "fp.gt": self._operator_adapter(_chainable(mgr, mgr.FPGt)),
+            "fp.eq": self._operator_adapter(_chainable(mgr, mgr.FPEq)),
             "fp.isNormal": self._operator_adapter(mgr.FPIsNormal),
             "fp.isSubnormal": self._operator_adapter(mgr.FPIsSubnormal),
             "fp.isZero": self._operator_adapter(mgr.FPIsZero),
@@ -758,13 +748,12 @@ class SmtLibParser(object):
             fun = lambda x: mgr.BVSExt(x, width)
 
         elif op in ("+zero", "-zero", "+oo", "-oo", "NaN"):
-            try:
-                exponent_size = int(self.parse_atom(tokens, "expression"))
-                significand_size = int(self.parse_atom(tokens, "expression"))
-            except ValueError:
-                raise PysmtSyntaxError(
-                    "Expected FP format in indexed constant", tokens.pos_info
-                )
+            exponent_size, significand_size = self._parse_fp_format(
+                self.parse_atom(tokens, "expression"),
+                self.parse_atom(tokens, "expression"),
+                op,
+                tokens,
+            )
             constructors = {
                 "+zero": mgr.FPPlusZero,
                 "-zero": mgr.FPMinusZero,
@@ -775,17 +764,20 @@ class SmtLibParser(object):
             fun = constructors[op](exponent_size, significand_size)
 
         elif op in ("to_fp", "to_fp_unsigned"):
-            try:
-                exponent_size = int(self.parse_atom(tokens, "expression"))
-                significand_size = int(self.parse_atom(tokens, "expression"))
-            except ValueError:
-                raise PysmtSyntaxError(
-                    "Expected FP format in indexed conversion", tokens.pos_info
-                )
-
+            exponent_size, significand_size = self._parse_fp_format(
+                self.parse_atom(tokens, "expression"),
+                self.parse_atom(tokens, "expression"),
+                op,
+                tokens,
+            )
             if op == "to_fp_unsigned":
-                fun = lambda rm, value: mgr.FPToFPUnsigned(
-                    rm, value, exponent_size, significand_size
+                fun = self._fixed_arity(
+                    "(_ to_fp_unsigned %d %d)" % (exponent_size, significand_size),
+                    2,
+                    lambda rm, value: mgr.FPToFPUnsigned(
+                        rm, value, exponent_size, significand_size
+                    ),
+                    tokens,
                 )
             else:
 
@@ -805,16 +797,21 @@ class SmtLibParser(object):
                 fun = to_fp
 
         elif op in ("fp.to_ubv", "fp.to_sbv"):
+            swidth = self.parse_atom(tokens, "expression")
             try:
-                width = int(self.parse_atom(tokens, "expression"))
+                width = int(swidth)
             except ValueError:
+                width = 0
+            if width <= 0:
                 raise PysmtSyntaxError(
-                    "Expected width in indexed FP conversion", tokens.pos_info
+                    "Expected a positive width in '(_ %s %s)'" % (op, swidth),
+                    tokens.pos_info,
                 )
             if op == "fp.to_ubv":
-                fun = lambda rm, value: mgr.FPToUBV(rm, value, width)
+                conversion = lambda rm, value: mgr.FPToUBV(rm, value, width)
             else:
-                fun = lambda rm, value: mgr.FPToSBV(rm, value, width)
+                conversion = lambda rm, value: mgr.FPToSBV(rm, value, width)
+            fun = self._fixed_arity("(_ %s %d)" % (op, width), 2, conversion, tokens)
 
         elif op.startswith("bv"):
             try:
@@ -855,17 +852,38 @@ class SmtLibParser(object):
 
         stack[-1].append(lambda: fun)
 
-    def _chain_relation(self, operator: Callable, *args: FNode) -> FNode:
-        """Lower an SMT-LIB chainable relation to adjacent pairs."""
-        if len(args) < 2:
+    @staticmethod
+    def _parse_fp_format(
+        exponent: str, significand: str, construct: str, tokens: "Tokenizer"
+    ) -> Tuple[int, int]:
+        """Returns the format (eb, sb) indexing an FP sort or operator."""
+        try:
+            exponent_size, significand_size = int(exponent), int(significand)
+        except ValueError:
+            exponent_size, significand_size = 0, 0
+        if exponent_size <= 1 or significand_size <= 1:
             raise PysmtSyntaxError(
-                "Expected at least two operands for a chainable relation"
+                "Expected an FP format with sizes greater than one in "
+                "'(_ %s %s %s)'" % (construct, exponent, significand),
+                tokens.pos_info,
             )
-        if len(args) == 2:
-            return operator(*args)
+        return exponent_size, significand_size
 
-        mgr = self.env.formula_manager
-        return mgr.And(operator(left, right) for left, right in zip(args, args[1:]))
+    @staticmethod
+    def _fixed_arity(
+        name: str, arity: int, fun: Callable, tokens: "Tokenizer"
+    ) -> Callable:
+        """Wraps fun to raise a PysmtSyntaxError on a wrong number of args."""
+
+        def res(*args):
+            if len(args) != arity:
+                raise PysmtSyntaxError(
+                    "%s expects %d arguments, got %d" % (name, arity, len(args)),
+                    tokens.pos_info,
+                )
+            return fun(*args)
+
+        return res
 
     def _equals_or_iff(self, left: FNode, right: FNode) -> FNode:
         """Utility function that treats = between booleans as <->"""
@@ -897,6 +915,18 @@ class SmtLibParser(object):
             return self.env.formula_manager.FreshSymbol(
                 typename=type_name, template=name + "%d"
             )
+
+    def _is_declared(self, name: str) -> bool:
+        """Whether the script declares or defines the function or constant
+        `name`, which then shadows the interpreted symbol of the same name
+        (e.g. a function named `fp` in a logic without floating point)."""
+        if name in self.cache.definitions:
+            return True
+        value = self.cache.get(name)
+        if isinstance(value, functools.partial):
+            # A declared function, see _cmd_declare_fun
+            return value.func == self._function_call_helper
+        return isinstance(value, FNode)
 
     def atom(self, token: str, mgr: FormulaManager) -> FNode:
         """
@@ -1106,7 +1136,7 @@ class SmtLibParser(object):
                     while tk == "(":
                         stack.append([])
                         tk = tokens.consume()
-                    if tk in self.interpreted:
+                    if tk in self.interpreted and not self._is_declared(tk):
                         fun = self.interpreted[tk]
                         fun(stack, tokens, tk)
                     else:
@@ -1320,16 +1350,9 @@ class SmtLibParser(object):
                         )
                     res = self.env.type_manager.BVType(size)
                 elif ts == "FloatingPoint":
-                    exponent_dim = tokens.consume()
-                    significand_dim = tokens.consume()
-                    try:
-                        exponent_size = int(exponent_dim)
-                        significand_size = int(significand_dim)
-                    except ValueError:
-                        raise PysmtSyntaxError(
-                            "Unexpected FP format in %s command." % command,
-                            tokens.pos_info,
-                        )
+                    exponent_size, significand_size = self._parse_fp_format(
+                        tokens.consume(), tokens.consume(), ts, tokens
+                    )
                     res = self.env.type_manager.FPType(exponent_size, significand_size)
                 else:
                     raise PysmtSyntaxError(

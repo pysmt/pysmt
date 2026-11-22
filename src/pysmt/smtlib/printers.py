@@ -67,7 +67,34 @@ FP_NAMED_OPERATORS = (
     (op.FP_OPERATORS | op.FP_RELATIONS)
     - FP_INDEXED_FORMAT_OPERATORS
     - FP_INDEXED_BV_OPERATORS
+    - {op.FP_FROM_COMPONENTS}
 )
+
+
+def fp_special_constant(formula: FNode) -> Optional[str]:
+    """The SMT-LIB spelling of an fp constant that is an infinity or NaN.
+
+    The standard writes these values (_ +oo eb sb), (_ -oo eb sb) and
+    (_ NaN eb sb); every other value is written (fp sign exponent significand).
+    """
+    sign, exponent, significand = formula.args()
+    if not (
+        sign.is_bv_constant()
+        and exponent.is_bv_constant()
+        and significand.is_bv_constant()
+    ):
+        return None
+    eb = exponent.bv_width()
+    if exponent.constant_value() != 2**eb - 1:
+        return None
+    sb = significand.bv_width() + 1
+    if significand.constant_value() != 0:
+        name = "NaN"
+    elif sign.constant_value() == 0:
+        name = "+oo"
+    else:
+        name = "-oo"
+    return "(_ %s %d %d)" % (name, eb, sb)
 
 
 def write_annotations(f: Callable) -> Callable:
@@ -252,6 +279,16 @@ class SmtPrinter(TreeWalker):
     @handles(FP_NAMED_OPERATORS)
     def walk_fp_named(self, formula):
         return self.walk_nary(formula, FP_SMTLIB_NAMES[formula.node_type()])
+
+    def walk_fp_from_components(self, formula):
+        special = fp_special_constant(formula)
+        if special is None:
+            return self.walk_nary(formula, FP_SMTLIB_NAMES[op.FP_FROM_COMPONENTS])
+        return self._walk_fp_special(formula, special)
+
+    @write_annotations
+    def _walk_fp_special(self, formula, special):
+        self.write(special)
 
     @handles(op.FP_RM_CONSTANTS)
     @write_annotations
@@ -675,6 +712,16 @@ class SmtDagPrinter(DagWalker):
     @handles(FP_NAMED_OPERATORS)
     def walk_fp_named(self, formula: FNode, args: List[str]) -> str:
         return self.walk_nary(formula, args, FP_SMTLIB_NAMES[formula.node_type()])
+
+    def walk_fp_from_components(self, formula: FNode, args: List[str]) -> str:
+        special = fp_special_constant(formula)
+        if special is None:
+            return self.walk_nary(formula, args, FP_SMTLIB_NAMES[op.FP_FROM_COMPONENTS])
+        return self._walk_fp_special(formula, special)
+
+    @write_annotations_dag
+    def _walk_fp_special(self, formula: FNode, special: str) -> str:
+        return special
 
     @handles(op.FP_RM_CONSTANTS)
     @write_annotations_dag

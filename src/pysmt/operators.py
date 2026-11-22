@@ -145,10 +145,6 @@ ALL_TYPES = list(range(0, 101))
     FP_TO_REAL,  # Conversions from FP (98-100)
 ) = ALL_TYPES
 
-# Compatibility name used by the original floating-point PR.  The node is a
-# constructor over terms, not a leaf constant.
-FP_CONSTANT = FP_FROM_COMPONENTS
-
 QUANTIFIERS = frozenset([FORALL, EXISTS])
 
 BOOL_CONNECTIVES = frozenset([AND, OR, NOT, IMPLIES, IFF])
@@ -266,6 +262,10 @@ FP_OPERATORS = frozenset(
         FP_TO_REAL,
     ]
 )
+
+# The FP operators whose result the theory leaves unspecified for some
+# arguments (e.g. fp.to_real of an infinity, or fp.min of the two zeros)
+FP_PARTIAL_OPERATORS = frozenset([FP_MIN, FP_MAX, FP_TO_UBV, FP_TO_SBV, FP_TO_REAL])
 
 THEORY_OPERATORS = (
     IRA_OPERATORS | BV_OPERATORS | ARRAY_OPERATORS | STR_OPERATORS | FP_OPERATORS

@@ -785,6 +785,8 @@ class FNode(object):
             # This must be a select over an array with BV value type
             ty = self.arg(0).get_type()
             return cast(types._BVType, cast(types._ArrayType, ty).elem_type).width
+        elif self.node_type() in (op.FP_TO_UBV, op.FP_TO_SBV):
+            return self.fp_conversion_width()
         else:
             # BV Operator
             assert self.is_bv_op(), "Unsupported method bv_width on %s" % self

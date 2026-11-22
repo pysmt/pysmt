@@ -20,28 +20,34 @@ from io import StringIO
 from itertools import combinations
 
 from pysmt.environment import Environment
-from pysmt.exceptions import PysmtTypeError, PysmtValueError
+from pysmt.exceptions import PysmtSyntaxError, PysmtTypeError, PysmtValueError
 from pysmt.logics import (
     QF_ABVFP,
     QF_ABVFPLRA,
     QF_AUFBVFP,
+    QF_AUFBVLIRA,
     QF_BVFP,
     QF_BVFPLRA,
     QF_FP,
     QF_FPLRA,
 )
 from pysmt.oracles import get_logic
+from pysmt.rewritings import propagate_toplevel
 from pysmt.shortcuts import (
     BV,
+    BVULT,
     FP,
     FPFMA,
+    LT,
     RNA,
     RNE,
     RTN,
     RTP,
     RTZ,
     And,
+    Array,
     BVAdd,
+    BVExtract,
     Equals,
     FPAbs,
     FPAdd,
@@ -77,18 +83,25 @@ from pysmt.shortcuts import (
     FPToReal,
     FPToSBV,
     FPToUBV,
+    FPVal,
     Function,
     Iff,
     Int,
+    Ite,
     Not,
+    Plus,
     Real,
     Select,
     Solver,
+    String,
     Symbol,
     Times,
+    Type,
 )
 from pysmt.smtlib.parser import SmtLibParser
+from pysmt.smtlib.printers import to_smtlib
 from pysmt.smtlib.script import smtlibscript_from_formula
+from pysmt.smtlib.utils import SmtLibModelValidationSimplifier
 from pysmt.solvers.eager import EagerModel
 from pysmt.typing import (
     BOOL,
@@ -531,11 +544,15 @@ class TestFP(TestCase):
         self.assertNotEqual(formula.serialize(threshold=1), full)
 
     def test_smt_equality_identifies_nan_encodings(self):
+        # The theory has a single NaN: every encoding builds the same node
         first_nan = FP(BV(0, 1), BV(31, 5), BV(1, 10))
         second_nan = FP(BV(1, 1), BV(31, 5), BV(2, 10))
 
-        self.assertNotEqual(first_nan.constant_value(), second_nan.constant_value())
+        self.assertIs(first_nan, second_nan)
+        self.assertIs(first_nan, FPNaN(5, 11))
+        self.assertEqual(first_nan.constant_value(), (0, 31, 1))
         self.assertTrue(Equals(first_nan, second_nan).simplify().is_true())
+        self.assertTrue(FPEq(first_nan, second_nan).simplify().is_false())
 
     def test_smtlib_literal_spelling(self):
         self.assertEqual(
@@ -622,6 +639,256 @@ class TestFP(TestCase):
         self.assertEqual(value.get_type(), FLOAT16)
         self.assertTrue(value.is_constant())
         self.assertValid(Equals(value, self.one), solver_name="z3", logic=QF_FP)
+
+    # Regressions
+
+    def _parse(self, source):
+        return SmtLibParser().get_script(StringIO(source)).get_last_formula()
+
+    def test_logic_of_formulas_without_fp(self):
+        # An FP logic is never chosen for a formula without FP, although
+        # e.g. QF_ABVFPLRA would win the tie with QF_AUFBVLIRA by name
+        a = Symbol("a", ArrayType(BVType(8), REAL))
+        formula = LT(Select(a, Symbol("i", BVType(8))), Real(1))
+        self.assertEqual(get_logic(formula), QF_AUFBVLIRA)
+        stream = StringIO()
+        smtlibscript_from_formula(formula).serialize(stream)
+        self.assertNotIn("FP", stream.getvalue())
+
+    def test_bv_operators_over_fp_conversions(self):
+        x = Symbol("x", FLOAT16)
+        ubv = FPToUBV(RNE(), x, 8)
+        self.assertEqual(ubv.bv_width(), 8)
+        self.assertEqual(BVAdd(ubv, BV(1, 8)).get_type(), BVType(8))
+        self.assertEqual(BVExtract(FPToSBV(RNE(), x, 8), 0, 3).get_type(), BVType(4))
+        self.assertEqual(Ite(Symbol("c"), ubv, BV(0, 8)).bv_width(), 8)
+        formula = self._parse(
+            """
+            (declare-fun x () Float16)
+            (assert (= (bvadd ((_ fp.to_ubv 8) RNE x) #x01)
+                       ((_ extract 7 0) ((_ fp.to_sbv 8) RNE x))))
+            """
+        )
+        self.assertEqual(get_logic(formula), QF_BVFP)
+
+    def test_nan_encodings_are_one_value(self):
+        x = Symbol("x", FLOAT16)
+        nan1 = FP(BV(0, 1), BV(31, 5), BV(1, 10))
+        nan2 = FP(BV(1, 1), BV(31, 5), BV(512, 10))
+        # Satisfiable: both encodings denote the single NaN
+        self.assertFalse(
+            propagate_toplevel(And(Equals(x, nan1), Equals(x, nan2))).is_false()
+        )
+        self.assertTrue(
+            SmtLibModelValidationSimplifier().simplify(Equals(nan1, nan2)).is_true()
+        )
+        array = Array(FLOAT16, Int(0), {nan1: Int(7)})
+        self.assertEqual(Select(array, nan2).simplify(), Int(7))
+
+    def test_propagate_toplevel_with_fp_constants(self):
+        one = FPVal(1, 5, 11)
+        two = FPVal(2, 5, 11)
+        self.assertTrue(propagate_toplevel(Equals(one, two)).is_false())
+        self.assertTrue(propagate_toplevel(Equals(RNE(), RTZ())).is_false())
+        self.assertTrue(propagate_toplevel(Equals(String("a"), String("b"))).is_false())
+
+    def test_logic_of_operations_over_fp_conversions(self):
+        x, y, z = (Symbol(n, FLOAT16) for n in "xyz")
+        bvult = BVULT(FPToUBV(RNE(), x, 8), FPToUBV(RNE(), y, 8))
+        self.assertEqual(get_logic(bvult), QF_BVFP)
+        lt = LT(Plus(FPToReal(x), FPToReal(y)), FPToReal(z))
+        self.assertEqual(get_logic(lt), QF_FPLRA)
+
+    def test_logic_of_fp_operands(self):
+        x = Symbol("x", FLOAT16)
+        # Literal operands are part of the FP signature
+        self.assertEqual(get_logic(FPEq(x, FPToFP(RNE(), Real(0.5), 5, 11))), QF_FP)
+        self.assertEqual(get_logic(FPEq(x, FPFromIEEEBV(BV(0x3C00, 16), 5, 11))), QF_FP)
+        components = FP(Ite(Symbol("c"), BV(0, 1), BV(1, 1)), BV(15, 5), BV(0, 10))
+        self.assertEqual(get_logic(FPEq(x, components)), QF_FP)
+        # Variables of BV or Real sort are not
+        r = Symbol("r", REAL)
+        bv = Symbol("bv", BVType(16))
+        self.assertEqual(get_logic(FPIsNaN(FPToFP(RNE(), r, 5, 11))), QF_FPLRA)
+        self.assertEqual(get_logic(FPIsNaN(FPFromIEEEBV(bv, 5, 11))), QF_BVFP)
+        self.assertEqual(
+            get_logic(FPIsNaN(FPToFPUnsigned(RNE(), BVExtract(bv, 0, 7), 5, 11))),
+            QF_BVFP,
+        )
+
+    def test_smtlib_declarations_shadow_interpreted_symbols(self):
+        formula = self._parse(
+            "(set-logic QF_UFLIA)(declare-fun fp (Int) Int)(assert (= (fp 1) 2))"
+        )
+        fp = Symbol("fp", FunctionType(INT, [INT]))
+        self.assertEqual(formula, Equals(Function(fp, [Int(1)]), Int(2)))
+
+        formula = self._parse(
+            "(set-logic QF_UFLIA)(declare-fun bvadd (Int) Int)(assert (= (bvadd 1) 2))"
+        )
+        bvadd = Symbol("bvadd", FunctionType(INT, [INT]))
+        self.assertEqual(formula, Equals(Function(bvadd, [Int(1)]), Int(2)))
+
+        formula = self._parse(
+            "(set-logic QF_LIA)(define-fun fp ((a Int)) Int (+ a 1))"
+            "(assert (= (fp 1) 2))"
+        )
+        self.assertEqual(formula, Equals(Plus(Int(1), Int(1)), Int(2)))
+
+    def test_smtlib_fp_syntax_errors(self):
+        for source in [
+            "(declare-fun x () (_ FloatingPoint 1 5))",
+            "(declare-fun x () (_ FloatingPoint 8 x))",
+            "(assert (fp.isZero (_ +zero 8 1)))",
+            "(declare-fun b () (_ BitVec 8))"
+            "(assert (fp.isNaN ((_ to_fp_unsigned 5 11) b)))",
+            "(declare-fun x () Float16)(assert (= ((_ fp.to_ubv 0) RNE x) #b0))",
+            "(declare-fun x () Float16)(assert (= ((_ fp.to_sbv 4) x) #x0))",
+        ]:
+            with self.subTest(source=source):
+                with self.assertRaises(PysmtSyntaxError):
+                    self._parse(source)
+
+    def test_smtlib_special_values(self):
+        x = Symbol("x", FLOAT16)
+        formula = And(
+            FPEq(x, FPPlusInfinity(5, 11)),
+            FPEq(x, FPMinusInfinity(5, 11)),
+            Equals(x, FPNaN(5, 11)),
+            FPEq(x, FPMinusZero(5, 11)),
+        )
+        for daggify in (False, True):
+            with self.subTest(daggify=daggify):
+                printed = to_smtlib(formula, daggify=daggify)
+                for value in ("(_ +oo 5 11)", "(_ -oo 5 11)", "(_ NaN 5 11)"):
+                    self.assertIn(value, printed)
+                self.assertIn("(fp #b1 #b00000 #b0000000000)", printed)
+                source = "(declare-fun x () Float16)(assert %s)" % printed
+                self.assertEqual(self._parse(source), formula)
+
+    def test_fp_val(self):
+        # The Float32 value nearest to 0.1 is 0x3DCCCCCD
+        self.assertEqual(
+            FPVal(0.1, 8, 24), FPFromIEEEBV(BV(0x3DCCCCCD, 32), 8, 24).simplify()
+        )
+        self.assertEqual(FPVal("0.1", 8, 24), FPVal(0.1, 8, 24))
+        self.assertEqual(FPVal(1, 5, 11), self.one)
+        self.assertEqual(FPVal(-1.0, 5, 11), self.minus_one)
+        self.assertEqual(FPVal(float("nan"), 5, 11), FPNaN(5, 11))
+        self.assertEqual(FPVal(float("-inf"), 5, 11), FPMinusInfinity(5, 11))
+        self.assertEqual(FPVal(-0.0, 5, 11), FPMinusZero(5, 11))
+        self.assertEqual(FPVal(0, 5, 11), FPPlusZero(5, 11))
+        # 1/3 rounded down and up
+        third_down = FPVal("1/3", 5, 11, RTZ())
+        third_up = FPVal("1/3", 5, 11, RTP())
+        self.assertEqual(
+            FPAdd(RNE(), third_down, FPVal(2**-12, 5, 11)).simplify(), third_up
+        )
+        self.assertEqual(FPVal(70000, 5, 11), FPPlusInfinity(5, 11))
+        self.assertEqual(FPVal(70000, 5, 11, RTZ()), FPVal(65504, 5, 11))
+        with self.assertRaises(PysmtValueError):
+            FPVal(1, 5, 11, Symbol("rm", RMType()))
+
+    def test_evaluation_of_constant_operations(self):
+        one, two = FPVal(1, 5, 11), FPVal(2, 5, 11)
+        zero, minus_zero = FPPlusZero(5, 11), FPMinusZero(5, 11)
+        self.assertEqual(FPAdd(RNE(), one, one).simplify(), two)
+        self.assertEqual(FPSqrt(RNE(), FPVal(4, 5, 11)).simplify(), two)
+        self.assertEqual(
+            FPMul(RNE(), FPVal(65504, 5, 11), two).simplify(), FPPlusInfinity(5, 11)
+        )
+        # An exact zero sum is +0, or -0 when rounding toward negative
+        self.assertEqual(FPSub(RNE(), one, one).simplify(), zero)
+        self.assertEqual(FPSub(RTN(), one, one).simplify(), minus_zero)
+        self.assertTrue(FPIsNaN(FPDiv(RNE(), zero, zero)).simplify().is_true())
+        self.assertTrue(FPEq(zero, minus_zero).simplify().is_true())
+        self.assertTrue(Equals(zero, minus_zero).simplify().is_false())
+        self.assertEqual(FPToReal(FPVal(0.5, 5, 11)).simplify(), Real(0.5))
+        self.assertEqual(FPToSBV(RTZ(), FPVal(-2.5, 5, 11), 8).simplify(), BV(254, 8))
+        self.assertEqual(FPToFP(RNE(), BV(255, 8), 5, 11).simplify(), self.minus_one)
+        # Unspecified results are kept
+        for term in [
+            FPToReal(FPPlusInfinity(5, 11)),
+            FPToUBV(RNE(), FPVal(-1, 5, 11), 8),
+            FPToSBV(RNE(), FPNaN(5, 11), 8),
+            FPMin(zero, minus_zero),
+        ]:
+            with self.subTest(term=term):
+                self.assertEqual(term.simplify(), term)
+
+    def test_eager_model_evaluates_fp(self):
+        x = Symbol("x", FLOAT16)
+        model = EagerModel({x: FPNaN(5, 11)})
+        self.assertTrue(model.get_value(FPIsNaN(x)).is_true())
+        self.assertTrue(model.satisfies(Not(FPEq(x, x))))
+
+    def test_smtlib_model_validation(self):
+        parser = SmtLibParser()
+        formula = parser.get_script(
+            StringIO(
+                "(declare-fun x () Float16)(declare-fun y () Float16)"
+                "(assert (and (fp.lt x y) (= (fp.add RNE x x) y) (not (= x (_ NaN 5 11)))))"
+            )
+        ).get_last_formula()
+
+        def validate(model_source):
+            model, interpretations = parser.parse_model(StringIO(model_source))
+            return SmtLibModelValidationSimplifier().simplify(
+                formula.substitute(model, interpretations)
+            )
+
+        # x = 1.0, y = 2.0
+        good = validate(
+            "(model (define-fun x () Float16 (fp #b0 #b01111 #b0000000000))"
+            " (define-fun y () Float16 (fp #b0 #b10000 #b0000000000)))"
+        )
+        self.assertTrue(good.is_true())
+        # x is a NaN, with an encoding other than the one of (_ NaN 5 11)
+        bad = validate(
+            "(model (define-fun x () Float16 (fp #b1 #b11111 #b0000000011))"
+            " (define-fun y () Float16 (fp #b0 #b10000 #b0000000000)))"
+        )
+        self.assertTrue(bad.is_false())
+
+    @skipIfSolverNotAvailable("z3")
+    def test_z3_models_satisfy_fp_formulas(self):
+        x, y = Symbol("x", FLOAT16), Symbol("y", FLOAT16)
+        r = Symbol("r", REAL)
+        formulas = [
+            And(FPLt(x, y), FPEq(FPAdd(RNE(), x, self.one), y)),
+            FPIsNaN(FPMul(RTZ(), x, y)),
+            And(FPIsSubnormal(x), FPIsNegative(FPFMA(RTP(), x, y, x))),
+            # Unspecified values, which the model decides
+            And(FPIsInfinite(x), Equals(FPToReal(x), r)),
+            And(
+                Equals(x, FPPlusZero(5, 11)),
+                Equals(y, FPMinusZero(5, 11)),
+                Equals(FPMin(x, y), FPMinusZero(5, 11)),
+            ),
+        ]
+        for formula in formulas:
+            with self.subTest(formula=formula):
+                with Solver(name="z3", logic=QF_FPLRA) as solver:
+                    solver.add_assertion(formula)
+                    self.assertTrue(solver.solve())
+                    model = solver.get_model()
+                    self.assertTrue(model.satisfies(formula, solver))
+
+    @skipIfSolverNotAvailable("z3")
+    def test_z3_converts_selects_over_custom_sorts(self):
+        sort = Type("S")
+        select = Select(Symbol("a", ArrayType(INT, sort)), Int(0))
+        with Solver(name="z3") as solver:
+            self.assertEqual(str(solver.converter.convert(select)), "a[0]")
+
+    @skipIfSolverNotAvailable("cvc5")
+    def test_cvc5_models_with_fp_symbols_in_the_environment(self):
+        Symbol("x", FLOAT16)
+        p = Symbol("p", INT)
+        with Solver(name="cvc5") as solver:
+            solver.add_assertion(Equals(p, Int(3)))
+            self.assertTrue(solver.solve())
+            self.assertEqual(solver.get_model().get_value(p), Int(3))
 
 
 if __name__ == "__main__":

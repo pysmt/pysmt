@@ -212,6 +212,8 @@ class YicesSolver(SmtLibBasicSolver):
                     continue
                 if s.symbol_type().is_custom_type():
                     continue
+                if s.symbol_type().is_fp_type() or s.symbol_type().is_rm_type():
+                    continue
                 v = self.get_value(s)
                 assignment[s] = v
         return EagerModel(assignment=assignment, environment=self.environment)

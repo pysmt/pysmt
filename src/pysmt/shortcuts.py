@@ -874,6 +874,22 @@ def FP(sign: FNode, exponent: FNode, significand: FNode) -> FNode:
     return get_env().formula_manager.FP(sign, exponent, significand)
 
 
+def FPVal(
+    value: Union[int, float, Fraction, str],
+    exponent_size: int,
+    significand_size: int,
+    rounding_mode: Optional[FNode] = None,
+) -> FNode:
+    """Return the FP constant of the given format nearest to a number.
+
+    The number is rounded with the given rounding mode (RNE by default).
+    For example, FPVal(0.1, 8, 24) is the Float32 value nearest to 0.1.
+    """
+    return get_env().formula_manager.FPVal(
+        value, exponent_size, significand_size, rounding_mode
+    )
+
+
 def FPPlusZero(exponent_size: int, significand_size: int) -> FNode:
     """Return positive zero in the requested FP format."""
     return get_env().formula_manager.FPPlusZero(exponent_size, significand_size)
@@ -1082,19 +1098,6 @@ def FPToSBV(rounding_mode: FNode, formula: FNode, width: int) -> FNode:
 def FPToReal(formula: FNode) -> FNode:
     """Convert a finite FP term to a Real term."""
     return get_env().formula_manager.FPToReal(formula)
-
-
-# Compatibility spellings from the original FP pull request.
-FPPositiveZero = FPPlusZero
-FPNegativeZero = FPMinusZero
-FPPositiveInfinity = FPPlusInfinity
-FPNegativeInfinity = FPMinusInfinity
-FPRNE, FPRNA, FPRTP, FPRTN, FPRTZ = RNE, RNA, RTP, RTN, RTZ
-FPLEQ = FPLEq
-FPLT = FPLt
-FPGEQ = FPGEq
-FPGT = FPGt
-FPEQ = FPEq
 
 
 # Strings

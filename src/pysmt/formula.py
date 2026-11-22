@@ -49,6 +49,7 @@ else:
 
 
 import pysmt
+import pysmt.floating_point as floating_point
 import pysmt.operators as op
 import pysmt.typing as types
 from pysmt.constants import (
@@ -1156,9 +1157,59 @@ class FormulaManager(object):
     # Floating-point
 
     def FP(self, sign: FNode, exponent: FNode, significand: FNode) -> FNode:
-        """Build an FP term from its SMT-LIB bit-vector components."""
+        """Build an FP term from its SMT-LIB bit-vector components.
+
+        The theory has a single NaN value, which every exponent of all ones
+        with a non-zero significand encodes. A constant NaN is therefore
+        always built with the encoding of FPNaN, so that equal values are
+        equal nodes.
+        """
+        if (
+            sign.is_bv_constant()
+            and exponent.is_bv_constant()
+            and significand.is_bv_constant()
+            and exponent.constant_value() == 2 ** exponent.bv_width() - 1
+            and significand.constant_value() != 0
+        ):
+            sign = self.BV(0, sign.bv_width())
+            significand = self.BV(1, significand.bv_width())
         return self.create_node(
             node_type=op.FP_FROM_COMPONENTS, args=(sign, exponent, significand)
+        )
+
+    def FPVal(
+        self,
+        value: Union[int, float, fractions.Fraction, str],
+        exponent_size: int,
+        significand_size: int,
+        rounding_mode: Optional[FNode] = None,
+    ) -> FNode:
+        """Return the FP constant of the given format nearest to a number.
+
+        value is an int, a float, a Fraction or a string accepted by
+        fractions.Fraction (e.g. "0.1" or "1/3"). It is rounded with the
+        given rounding mode constant (RNE by default). A float keeps its
+        NaN, its infinities and the sign of its zeros.
+        """
+        self._check_fp_format(exponent_size, significand_size)
+        if rounding_mode is None:
+            rm = floating_point.RNE
+        elif rounding_mode.is_rm_constant():
+            rm = rounding_mode.rounding_mode()
+        else:
+            raise PysmtValueError(
+                "Expected a rounding mode constant, got %s" % rounding_mode
+            )
+        return self._fp_from_value(
+            floating_point.from_number(value, exponent_size, significand_size, rm)
+        )
+
+    def _fp_from_value(self, value: "floating_point.FPValue") -> FNode:
+        """Return the FP constant of an FPValue."""
+        return self.FP(
+            self.BV(value.sign, 1),
+            self.BV(value.exponent, value.eb),
+            self.BV(value.significand, value.sb - 1),
         )
 
     def _check_fp_format(self, exponent_size: int, significand_size: int) -> None:
@@ -1220,17 +1271,6 @@ class FormulaManager(object):
     def RTZ(self) -> FNode:
         return self.create_node(node_type=op.FP_RTZ, args=tuple())
 
-    # Names used by the original FP pull request.
-    FPPositiveZero = FPPlusZero
-    FPNegativeZero = FPMinusZero
-    FPPositiveInfinity = FPPlusInfinity
-    FPNegativeInfinity = FPMinusInfinity
-    FPRNE = RNE
-    FPRNA = RNA
-    FPRTP = RTP
-    FPRTN = RTN
-    FPRTZ = RTZ
-
     def FPAbs(self, formula: FNode) -> FNode:
         return self.create_node(node_type=op.FP_ABS, args=(formula,))
 
@@ -1287,12 +1327,6 @@ class FormulaManager(object):
 
     def FPEq(self, left: FNode, right: FNode) -> FNode:
         return self.create_node(node_type=op.FP_EQ, args=(left, right))
-
-    FPLEQ = FPLEq
-    FPLT = FPLt
-    FPGEQ = FPGEq
-    FPGT = FPGt
-    FPEQ = FPEq
 
     def FPIsNormal(self, formula: FNode) -> FNode:
         return self.create_node(node_type=op.FP_IS_NORMAL, args=(formula,))

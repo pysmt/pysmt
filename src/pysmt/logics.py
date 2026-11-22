@@ -992,6 +992,11 @@ def get_closer_logic(supported_logics: Iterable[Logic], logic: Logic) -> Logic:
 
     """
     candidates = [l for l in supported_logics if logic <= l]
+    if not logic.theory.floating_point:
+        # A logic without floating point is never extended with it: e.g.
+        # QF_ABVFPLRA would otherwise win the tie below over QF_AUFBVLIRA
+        # for arrays of reals, although only FP solvers accept it.
+        candidates = [l for l in candidates if not l.theory.floating_point]
     if len(candidates) == 0:
         raise NoLogicAvailableError("Logic %s is not supported" % logic)
 

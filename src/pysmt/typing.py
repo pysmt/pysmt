@@ -107,8 +107,8 @@ class PySMTType(object):
         self,
         exponent_size: Optional[int] = None,
         significand_size: Optional[int] = None,
-        **kwargs: int,
     ) -> bool:
+        # pylint: disable=unused-argument
         return False
 
     def is_rm_type(self) -> bool:
@@ -308,28 +308,11 @@ class _FPType(PySMTType):
     def significand_size(self) -> int:
         return self._significand_size
 
-    @property
-    def exp_width(self) -> int:
-        """Compatibility alias for :attr:`exponent_size`."""
-        return self.exponent_size
-
-    @property
-    def sig_width(self) -> int:
-        """Compatibility alias for :attr:`significand_size`."""
-        return self.significand_size
-
     def is_fp_type(
         self,
         exponent_size: Optional[int] = None,
         significand_size: Optional[int] = None,
-        **kwargs: int,
     ) -> bool:
-        if "eb" in kwargs:
-            exponent_size = kwargs.pop("eb")
-        if "sb" in kwargs:
-            significand_size = kwargs.pop("sb")
-        if kwargs:
-            raise TypeError("Unexpected FP format arguments: %s" % ", ".join(kwargs))
         if exponent_size is not None and self.exponent_size != exponent_size:
             return False
         if significand_size is not None and self.significand_size != significand_size:
@@ -494,7 +477,6 @@ REAL = _RealType()
 INT = _IntType()
 STRING = _StringType()
 RM = _RMType()
-ROUNDING_MODE = RM
 
 # Helper Constants
 BV1, BV8, BV16, BV32, BV64, BV128 = [_BVType(i) for i in [1, 8, 16, 32, 64, 128]]
@@ -556,16 +538,8 @@ class TypeManager(object):
         """Returns the singleton rounding-mode type."""
         return assert_not_none(self._rm)
 
-    def FPType(
-        self, exponent_size: int = 8, significand_size: int = 24, **kwargs: int
-    ) -> _FPType:
+    def FPType(self, exponent_size: int = 8, significand_size: int = 24) -> _FPType:
         """Returns the canonical floating-point type for a format."""
-        if "eb" in kwargs:
-            exponent_size = kwargs.pop("eb")
-        if "sb" in kwargs:
-            significand_size = kwargs.pop("sb")
-        if kwargs:
-            raise TypeError("Unexpected FP format arguments: %s" % ", ".join(kwargs))
         key = (exponent_size, significand_size)
         try:
             ty = self._fp_types[key]
@@ -753,16 +727,8 @@ def BVType(width: int = 32) -> PySMTType:
     return mgr.BVType(width=width)
 
 
-def FPType(
-    exponent_size: int = 8, significand_size: int = 24, **kwargs: int
-) -> PySMTType:
+def FPType(exponent_size: int = 8, significand_size: int = 24) -> PySMTType:
     """Returns the floating-point type for the given format."""
-    if "eb" in kwargs:
-        exponent_size = kwargs.pop("eb")
-    if "sb" in kwargs:
-        significand_size = kwargs.pop("sb")
-    if kwargs:
-        raise TypeError("Unexpected FP format arguments: %s" % ", ".join(kwargs))
     mgr: TypeManager = pysmt.environment.get_env().type_manager  # type: ignore[attr-defined]
     return mgr.FPType(exponent_size=exponent_size, significand_size=significand_size)
 
