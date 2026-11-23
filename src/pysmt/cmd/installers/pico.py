@@ -29,7 +29,6 @@ class PicoSATInstaller(SolverInstaller):
         target,
         solver_version,
         pypicosat_minor_version,
-        mirror_link=None,
     ):
         self.pypicosat_minor_version = pypicosat_minor_version
         self.complete_version = None
@@ -38,7 +37,6 @@ class PicoSATInstaller(SolverInstaller):
             install_dir=install_dir,
             target=target,
             solver_version=solver_version,
-            mirror_link=mirror_link,
             native_link=None,
             archive_name=None,
         )

@@ -52,13 +52,11 @@ class SolverInstaller(object):
         solver_version,
         archive_name=None,
         native_link=None,
-        mirror_link=None,
     ):
         self.target = target
         self.site_dir = site_dir(target)
         self.install_dir = install_dir
         self.solver_version = solver_version
-        self.mirror_link = mirror_link
 
         self.trials_404 = 3
 
@@ -102,17 +100,13 @@ class SolverInstaller(object):
         return "%d.%d" % sys.version_info[0:2]
 
     def download_links(self):
-        if self.mirror_link is not None:
-            yield self.mirror_link.format(
-                archive_name=self.archive_name, solver_version=self.solver_version
-            )
         if self.native_link is not None:
             yield self.native_link.format(
                 archive_name=self.archive_name, solver_version=self.solver_version
             )
 
     def download(self):
-        """Downloads the archive from one of the mirrors"""
+        """Downloads the archive"""
         if self.archive_path and not os.path.exists(self.archive_path):
             for turn in range(self.trials_404):
                 for i, link in enumerate(self.download_links()):
