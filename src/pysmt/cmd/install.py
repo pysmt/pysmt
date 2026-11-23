@@ -80,17 +80,16 @@ def get_requested_solvers():
     return requested_solvers
 
 
-def make_installer(solver, install_dir, target, mirror_link):
+def make_installer(solver, install_dir, target):
     return solver.InstallerClass(
         install_dir=install_dir,
         target=target,
         solver_version=solver.version,
-        mirror_link=mirror_link,
         **solver.extra_params,
     )
 
 
-def check_installed(required_solvers, install_dir, target, mirror_link):
+def check_installed(required_solvers, install_dir, target):
     """Checks which solvers are visible to pySMT."""
 
     if target is not None:
@@ -105,7 +104,7 @@ def check_installed(required_solvers, install_dir, target, mirror_link):
         if isinstance(s, PipSolver):
             version = installed_version(s.distribution)
         else:
-            installer = make_installer(s, install_dir, target, mirror_link)
+            installer = make_installer(s, install_dir, target)
             version = installer.get_installed_version()
         global_solvers_status.append((s.name, version is not None, version))
 
@@ -242,12 +241,6 @@ Notice: the installation process might require building tools
 def main():
     options = parse_options()
 
-    # Address of a mirror website containing packages to avoid continuous
-    # downloads from original websites in CI
-    mirror_url = os.environ.get("PYSMT_INSTALL_MIRROR")
-    if mirror_url is not None:
-        mirror_url += "/{archive_name}"
-
     # This should work on any platform
     install_dir = os.path.expanduser(options.install_path)
     if not os.path.exists(install_dir):
@@ -282,7 +275,6 @@ def main():
             [x.name for x in solvers_to_install],
             install_dir=install_dir,
             target=target,
-            mirror_link=mirror_url,
         )
         exit(0)
 
@@ -299,7 +291,7 @@ def main():
             if isinstance(s, PipSolver):
                 pip_install(s.requirements, target=target, force=options.force_redo)
             else:
-                installer = make_installer(s, install_dir, target, mirror_url)
+                installer = make_installer(s, install_dir, target)
                 installer.install(force_redo=options.force_redo)
     except (PysmtException, subprocess.CalledProcessError) as e:
         sys.exit("Error: %s" % e)

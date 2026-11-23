@@ -2,7 +2,7 @@
 pySMT: a Python API for SMT
 ===========================
 
-.. image:: https://github.com/pysmt/pysmt/actions/workflows/test.yml/badge.svg
+.. image:: https://github.com/pysmt/pysmt/actions/workflows/build-and-release.yml/badge.svg?branch=master
            :target: https://github.com/pysmt/pysmt/actions
            :alt: CI Status
 

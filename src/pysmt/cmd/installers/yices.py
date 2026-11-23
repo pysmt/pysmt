@@ -35,7 +35,6 @@ class YicesInstaller(SolverInstaller):
         install_dir,
         target,
         solver_version,
-        mirror_link=None,
         yices_api_version=None,
         binaries=None,
     ):
@@ -59,7 +58,6 @@ class YicesInstaller(SolverInstaller):
             solver_version=solver_version,
             archive_name=archive_name,
             native_link=native_link,
-            mirror_link=mirror_link,
         )
         self.yices_api_version = yices_api_version
         # Both the binary and the source archives unpack into yices-<version>

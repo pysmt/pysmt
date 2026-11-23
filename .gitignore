@@ -3,3 +3,8 @@
 *.egg-info/
 dist/
 docs/_build/
+
+# Solver binaries copied by just install-solver z3_wrap / msat_wrap
+tests/smtlib/bin/z3
+tests/smtlib/bin/mathsat
+tests/smtlib/bin/*.solver.sh

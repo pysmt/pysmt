@@ -88,7 +88,7 @@ class MSatInstaller(MathSATFamilyInstaller):
     SOLVER = "msat"
     MODULE = "mathsat"
 
-    def __init__(self, install_dir, target, solver_version, mirror_link=None):
+    def __init__(self, install_dir, target, solver_version):
 
         # Getting the right archive name
         archive_name_template = "mathsat-{version}-{os}-{arch}.{ext}"
@@ -119,7 +119,6 @@ class MSatInstaller(MathSATFamilyInstaller):
             solver_version=solver_version,
             archive_name=archive_name,
             native_link=native_link,
-            mirror_link=mirror_link,
         )
 
     def compile(self):

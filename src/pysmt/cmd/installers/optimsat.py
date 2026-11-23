@@ -22,7 +22,7 @@ class OptiMSatInstaller(MathSATFamilyInstaller):
     SOLVER = "optimsat"
     MODULE = "optimathsat"
 
-    def __init__(self, install_dir, target, solver_version, mirror_link=None):
+    def __init__(self, install_dir, target, solver_version):
 
         # Getting the right archive name
         archive_name_template = "optimathsat-{version}-{os}-{arch}.{ext}"
@@ -56,7 +56,6 @@ class OptiMSatInstaller(MathSATFamilyInstaller):
             solver_version=solver_version,
             archive_name=archive_name,
             native_link=native_link,
-            mirror_link=mirror_link,
         )
 
     def compile(self):

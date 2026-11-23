@@ -178,6 +178,11 @@ class TestGenericWrapper(TestCase):
                     # The solver does not support the specified logic
                     continue
                 except UnknownSolverAnswerError:
+                    if name == "z3.solver.sh":
+                        # z3 rejects the \| escape that pySMT prints for '|' in a symbol
+                        symbols = f.get_free_variables()
+                        self.assertTrue(any("|" in s.symbol_name() for s in symbols), f)
+                        continue
                     # MathSAT does not deal with UF with boolean args.
                     # This is handled via the native API, but not via the
                     # SMT-LIB Wrapper
