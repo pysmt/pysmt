@@ -74,6 +74,7 @@ jobs:
           - { solver: z3, os: macos-latest }
           - { solver: yices, os: macos-latest }
           - { solver: cvc5, os: macos-latest }
+          - { solver: bdd, os: macos-latest }
           # Windows
           - { solver: none, os: windows-latest }
           - { solver: msat, os: windows-latest }

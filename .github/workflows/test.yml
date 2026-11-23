@@ -62,9 +62,9 @@ jobs:
           path: ~/.smt_solvers
           key: smt-solvers-${{ runner.os }}-${{ inputs.solver }}-${{ hashFiles('src/pysmt/cmd/install.py') }}
 
-      # The (Opti)MathSAT bindings need the gmp headers, PicoSAT and CUDD need swig
+      # The (Opti)MathSAT bindings need the gmp headers, PicoSAT needs swig
       - name: Install OS packages (Linux)
-        if: runner.os == 'Linux' && contains(fromJSON('["msat", "optimsat", "msat_wrap", "picosat", "bdd", "all"]'), inputs.solver)
+        if: runner.os == 'Linux' && contains(fromJSON('["msat", "optimsat", "msat_wrap", "picosat", "all"]'), inputs.solver)
         run: |
           sudo apt-get update
           sudo apt-get install -y libgmp-dev swig

@@ -91,6 +91,13 @@ Change Log
   ``pip uninstall mathsat`` removes them and ``--check`` reads their
   version from the package metadata (#869).
 
+* BDD: upgraded to repycudd 3.1.0, the first release on PyPI, which has
+  wheels for Linux (x86_64 and aarch64), macOS (x86_64 and arm64) and
+  Windows (x86_64). ``pysmt-install --bdd`` installs the wheel, so it no
+  longer needs a compiler or swig, and works on Windows without the
+  Microsoft C++ Build Tools. The CI now also tests BDD on macOS (#872,
+  fixes #856).
+
 **Bugfix**:
 
 * cvc5: the ``arrays-exp`` option is now enabled only for logics with
