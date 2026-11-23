@@ -213,7 +213,13 @@ into ``DIR``, which you then need to add to your ``PYTHONPATH``, and
 ``pysmt-install --check --target DIR`` checks the solvers in ``DIR``.
 MathSAT, OptiMathSAT, Yices and PicoSAT are downloaded and built in the
 ``.smt_solvers`` folder in your home directory (see ``--install-path``)
-before being installed. Building the MathSAT and OptiMathSAT bindings
+before being installed. For Yices, ``pysmt-install`` installs SRI's
+``yices`` Python API and copies ``libyices`` next to it, taken from SRI's
+prebuilt release archive on Linux x86_64 and macOS. On other platforms it
+builds ``libyices`` from source, which needs a C compiler, make, gperf
+and the GMP library with its headers. A ``libyices`` installed in the
+system takes precedence over the copy installed by ``pysmt-install``,
+and ``pip uninstall yices`` does not remove the copy. Building the MathSAT and OptiMathSAT bindings
 needs a C++ compiler and the GMP library with its headers (e.g.,
 ``libgmp-dev`` on Debian/Ubuntu, ``gmp`` from Homebrew on macOS). On
 Windows it needs the Microsoft C++ Build Tools, and ``pysmt-install``
@@ -228,9 +234,8 @@ tested mainly on Linux Debian/Ubuntu systems. We suggest that you
 refer to the documentation of each solver to understand how to install
 it with its python bindings.
 
-For Yices, picosat, and CUDD, we use external wrappers:
+For picosat and CUDD, we use external wrappers:
 
-- yicespy (https://github.com/pysmt/yicespy)
 - repycudd (https://github.com/pysmt/repycudd)
 - pyPicoSAT (https://github.com/pysmt/pyPicoSAT)
 

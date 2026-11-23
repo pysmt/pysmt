@@ -14,6 +14,8 @@
 
 import sys
 
+from pysmt.exceptions import SolverAPINotFound
+
 
 def check_version(module):
     try:
@@ -23,14 +25,15 @@ def check_version(module):
             version = picosat.picosat_version()
 
         elif module == "yices":
-            import yices_api  # type: ignore[import]
+            # Loads libyices the way pySMT does, and reports the library version
+            from pysmt.solvers.yices import yices_api
 
-            version = yices_api.yices_python_version
+            version = yices_api.yices_version
         else:
             print("Invalid argument '%s'" % module)
             exit(-2)
 
-    except ImportError:
+    except (ImportError, SolverAPINotFound):
         version = None
 
     return version

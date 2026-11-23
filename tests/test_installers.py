@@ -3,9 +3,10 @@ import sys
 import tempfile
 from unittest import mock
 
-from pysmt.cmd.installers import MSatInstaller, base
+from pysmt.cmd.installers import MSatInstaller, YicesInstaller, base
+from pysmt.cmd.installers import yices as yices_installer
 from pysmt.cmd.installers.base import SolverInstaller, pip_install_command
-from pysmt.exceptions import PysmtException
+from pysmt.exceptions import PysmtException, SolverAPINotFound
 from tests import TestCase, main
 
 
@@ -87,6 +88,56 @@ class TestInstallers(TestCase):
             with open(os.path.join(dist_info, "METADATA"), "w") as f:
                 f.write("Metadata-Version: 2.1\nName: mathsat\nVersion: 5.6.20\n")
             self.assertEqual(installer.get_installed_version(), "5.6.20")
+
+    def yices_installer(self, tmp, system, machine):
+        binaries = {("linux", "x86_64"): "x86_64-pc-linux-gnu"}
+        with (
+            mock.patch.object(yices_installer.platform, "system", return_value=system),
+            mock.patch.object(
+                yices_installer.platform, "machine", return_value=machine
+            ),
+        ):
+            return YicesInstaller(
+                install_dir=tmp,
+                target=os.path.join(tmp, "t"),
+                solver_version="2.8.0",
+                yices_api_version="1.1.6",
+                binaries=binaries,
+            )
+
+    def test_yices_archive(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            binary = self.yices_installer(tmp, "Linux", "x86_64")
+            self.assertEqual(
+                binary.archive_name, "yices-2.8.0-x86_64-pc-linux-gnu-static-gmp.tar.gz"
+            )
+            # No SRI binary for this platform: build from source
+            source = self.yices_installer(tmp, "Linux", "aarch64")
+            self.assertEqual(source.archive_name, "yices-2.8.0-src.tar.gz")
+            self.assertEqual(binary.extract_path, source.extract_path)
+            # Nothing in the target, even if the environment has yices
+            self.assertIsNone(binary.get_installed_version())
+
+    def test_yices_library_lookup(self):
+        try:
+            from pysmt.solvers import yices
+        except SolverAPINotFound:
+            self.skipTest("yices not available")
+        find = yices._find_library_or_installed_yices
+        with tempfile.TemporaryDirectory() as tmp:
+            for name in ["yices_api.py", "libyices.a", "libyices.so.2.8.0"]:
+                open(os.path.join(tmp, name), "w").close()
+            spec = mock.Mock(origin=os.path.join(tmp, "yices_api.py"))
+            with mock.patch.object(
+                yices.importlib.util, "find_spec", return_value=spec
+            ):
+                with mock.patch.object(yices, "_find_library", return_value=None):
+                    installed = os.path.join(tmp, "libyices.so.2.8.0")
+                    self.assertEqual(find("yices"), installed)
+                    self.assertIsNone(find("gmp"))
+                # A system libyices takes precedence over the installed copy
+                with mock.patch.object(yices, "_find_library", return_value="sys"):
+                    self.assertEqual(find("yices"), "sys")
 
 
 # The setup.py shipped in the python/ directory of the MathSAT 5.6.20 archives

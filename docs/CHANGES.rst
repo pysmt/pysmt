@@ -62,6 +62,15 @@ Change Log
 
 * MathSAT upgraded to 5.6.20 (#869).
 
+* Yices upgraded to 2.8.0 with version 1.1.6 of its Python API.
+  ``pysmt-install --yices`` downloads SRI's prebuilt ``libyices`` on
+  Linux x86_64 and macOS, so it no longer needs a compiler there, and
+  builds it from source on other platforms. The library is copied next
+  to the ``yices`` Python API, and pySMT loads it from there when no
+  system ``libyices`` is found, instead of patching ``yices_api.py``. If
+  ``libyices`` cannot be loaded, Yices is reported as not available
+  instead of raising an error (#868).
+
 * ``pysmt-install`` builds and installs the MathSAT and OptiMathSAT
   Python bindings with pip (or ``uv pip``) from the ``python/`` directory
   of the release archive, instead of running ``setup.py build_ext`` and
