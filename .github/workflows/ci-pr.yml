@@ -1,0 +1,88 @@
+name: CI-on-PR
+
+on:
+  pull_request:
+  # Run manually on any branch, e.g. on a fork before opening a PR
+  workflow_dispatch:
+  # build-and-release.yml runs the same checks before building
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.14"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install just
+        uses: extractions/setup-just@v4
+        with:
+          just-version: "1.51.0"
+
+      - name: Sync environment
+        run: uv sync --locked
+
+      - name: Lint
+        run: just lint
+
+      - name: Typecheck
+        run: just typecheck
+
+  test:
+    needs: [lint]
+    strategy:
+      fail-fast: false
+      matrix:
+        # Missing keys take the defaults of test.yml: ubuntu-latest, Python 3.14
+        include:
+          # Linux, Python 3.14: every solver
+          - { solver: none }
+          - { solver: msat }
+          - { solver: z3 }
+          - { solver: yices }
+          - { solver: cvc5 }
+          - { solver: btor }
+          - { solver: picosat }
+          - { solver: bdd }
+          - { solver: optimsat }
+          - { solver: msat_wrap }
+          - { solver: z3_wrap }
+          - { solver: all }
+          # Linux, no solver: every supported Python
+          - { solver: none, python-version: "3.10" }
+          - { solver: none, python-version: "3.11" }
+          - { solver: none, python-version: "3.12" }
+          - { solver: none, python-version: "3.13" }
+          # Linux: gmpy2 and Cython
+          - { solver: none, gmpy: true, cython: true }
+          - { solver: z3, gmpy: true }
+          # macOS
+          - { solver: none, os: macos-latest }
+          - { solver: msat, os: macos-latest }
+          - { solver: z3, os: macos-latest }
+          - { solver: yices, os: macos-latest }
+          - { solver: cvc5, os: macos-latest }
+          # Windows
+          - { solver: none, os: windows-latest }
+          - { solver: msat, os: windows-latest }
+          - { solver: z3, os: windows-latest }
+          - { solver: bdd, os: windows-latest }
+    uses: ./.github/workflows/test.yml
+    with:
+      os: ${{ matrix.os || 'ubuntu-latest' }}
+      python-version: ${{ matrix.python-version || '3.14' }}
+      solver: ${{ matrix.solver }}
+      gmpy: ${{ matrix.gmpy || false }}
+      cython: ${{ matrix.cython || false }}

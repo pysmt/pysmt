@@ -49,6 +49,18 @@ Change Log
 * ``pysmt-install`` no longer prints a setuptools deprecation warning, and
   its confirmation prompt accepts ``y`` and ``yes`` in any case (#867).
 
+* CI: the GitHub Actions workflows are split into ``ci-pr.yml`` (PRs),
+  ``build-and-release.yml`` (master and tags) and the reusable
+  ``test.yml``, and use uv and just instead of the ``ci/*.sh`` scripts.
+  ``just install-solver NAME`` installs and checks a solver as the CI
+  does. The solvers are tested with Python 3.14, and Python 3.10 to 3.13
+  without solvers. The ``z3_wrap`` and ``msat_wrap`` jobs install the
+  Z3 and MathSAT executables again, so the tests of the generic SMT-LIB
+  wrapper are no longer skipped. Pushing a ``v*`` tag publishes the
+  release to PyPI and creates the GitHub release, while master only
+  publishes ``.devN`` builds. ``pysmt-install`` no longer reads
+  ``PYSMT_INSTALL_MIRROR``, since the CI caches the downloads (#870).
+
 **Solvers**:
 
 * cvc5 upgraded to 1.4.2 (#867).

@@ -1,7 +1,13 @@
 set shell := ["bash", "-cu"]
 
+# On Windows, a plain "bash" can resolve to the WSL launcher in System32
+set windows-shell := ["powershell.exe", "-NoLogo", "-NoProfile", "-Command"]
+
 # Paths checked by ruff (lint and format)
 lint_paths := "src tests examples ci docs shell.py"
+
+# Default --install-path of pysmt-install
+solvers_dir := home_directory() / ".smt_solvers"
 
 default:
     @just --list
@@ -9,6 +15,43 @@ default:
 # Sync the environment from uv.lock (project + dev group)
 install:
     uv sync
+
+# Install solver NAME (a pysmt-install solver, all, none, z3_wrap or msat_wrap) and check it
+[unix]
+install-solver name install_path=solvers_dir:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    name="{{name}}"
+    dir="{{install_path}}"
+    bin=tests/smtlib/bin
+    # tests/smtlib/test_generic_wrapper.py runs every tests/smtlib/bin/*.solver.sh
+    wrap() { cp "$2" "$bin/$1"; cp "$bin/$1.solver.sh.template" "$bin/$1.solver.sh"; }
+    mathsat() { find "$dir/msat" -path "*/bin/mathsat" -type f | head -n 1; }
+    case "$name" in
+        none) ;;
+        z3_wrap|msat_wrap)
+            # Keep the bindings out of the environment, so that pySMT sees only the wrapper
+            target=$(mktemp -d)
+            uv run pysmt-install "--${name%_wrap}" --target "$target" --confirm-agreement --install-path "$dir"
+            if [ "$name" = z3_wrap ]; then wrap z3 "$target/bin/z3"; else wrap mathsat "$(mathsat)"; fi
+            rm -rf "$target"
+            ;;
+        *)
+            uv run pysmt-install "--$name" --confirm-agreement --install-path "$dir"
+            uv run pysmt-install --check "--$name" --install-path "$dir"
+            if [ "$name" = all ]; then
+                # The z3-solver wheel installs the z3 executable in the environment
+                wrap z3 "$(uv run python -c 'import shutil; print(shutil.which("z3"))')"
+                wrap mathsat "$(mathsat)"
+            fi
+            ;;
+    esac
+
+# Install solver NAME (a pysmt-install solver, all or none) and check it
+[windows]
+install-solver name install_path=solvers_dir:
+    {{ if name == "none" { "" } else { "uv run pysmt-install --" + name + " --confirm-agreement --install-path '" + install_path + "'" } }}
+    uv run pysmt-install --check {{ if name == "none" { "" } else { "--" + name } }} --install-path '{{install_path}}'
 
 # Run the tests not marked as slow, stopping at the first failure
 test *args:

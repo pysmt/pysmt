@@ -63,6 +63,7 @@ This creates ``.venv`` with pySMT installed in editable mode and the
 development dependencies pinned in ``uv.lock``. Running ``just`` without
 arguments lists all the recipes:
 
+* ``just install-solver NAME``: install a solver and check it (see below)
 * ``just test`` and ``just test-all``: run the tests (see below)
 * ``just lint``: check linting and formatting with ruff
 * ``just format``: format the code and apply the automatic lint fixes
@@ -85,6 +86,34 @@ which uses ``uv pip`` since the environment has no pip::
 ``uv run`` keeps the installed solvers, but ``just install`` (``uv sync``)
 removes every package that is not in ``uv.lock``, so solvers must be
 installed again after it.
+
+``just install-solver NAME`` installs a solver the way the CI does and
+then runs ``pysmt-install --check`` to make sure that pySMT can use it::
+
+  $ just install-solver msat
+  $ just install-solver msat ~/my_solvers   # optional --install-path
+
+NAME is a solver accepted by ``pysmt-install`` (e.g., ``z3``), ``all`` or
+``none``. On Linux and macOS it can also be ``z3_wrap`` or ``msat_wrap``,
+which copy the Z3 or MathSAT executable into ``tests/smtlib/bin``, where
+the tests of the generic SMT-LIB wrapper find it, without installing the
+Python bindings in the environment. ``all`` installs every solver and
+copies both executables.
+
+The recipe does not install OS packages. Z3, cvc5 and Boolector are
+installed from wheels, and Yices uses SRI's prebuilt binaries on Linux
+x86_64 and macOS (elsewhere it is built from source). The other solvers
+are built locally:
+
+* MathSAT and OptiMathSAT need a C compiler and the gmp headers:
+  ``libgmp-dev`` on Debian and Ubuntu, ``brew install gmp`` on macOS
+  (with ``LIBRARY_PATH`` and ``CPATH`` pointing to the ``lib`` and
+  ``include`` directories of ``brew --prefix``). On Windows
+  ``pysmt-install`` downloads gmp itself and needs MSVC.
+* PicoSAT and CUDD (``bdd``) need a C compiler and swig.
+
+On Windows, just runs the recipes with PowerShell, since ``bash`` may
+resolve to the WSL launcher there.
 
 Code Style
 ----------
@@ -121,10 +150,17 @@ Extra arguments are passed to pytest. Tests that take more than 10
 seconds should be marked with ``@pytest.mark.slow``.
 
 Finally, tests are run across a wide range of solvers, versions of
-python and operating systems using GitHub Actions. This happens
-automatically when you open a PR. If you want to run this before
-submitting a PR, enable GitHub Actions on your fork of pySMT and push
-your branch there.
+python and operating systems using GitHub Actions. The workflow
+``.github/workflows/ci-pr.yml`` runs on every PR: it runs ``just lint``
+and ``just typecheck``, then a matrix of jobs defined by the reusable
+workflow ``.github/workflows/test.yml``. Each job runs ``just
+install-solver NAME`` and ``just test-all``. The matrix covers every
+solver on Linux with Python 3.14, Python 3.10 to 3.13 without solvers,
+gmpy2 and Cython, and a subset of the solvers on macOS and Windows. The
+``all`` job also runs the scripts in ``examples/``. If you want to run
+the CI before submitting a PR, enable GitHub Actions on your fork of
+pySMT, push your branch there and start the *CI-on-PR* workflow from the
+Actions tab.
 
 All tests should pass for a PR to be merged.
 
@@ -252,21 +288,27 @@ following steps:
  * Changelog update
  * Version change
  * Package creation and local testing
- * Merge (publishes to PyPI)
- * Tag and GitHub Release
+ * Merge
+ * Tag (publishes to PyPI and creates the GitHub Release)
  * Version Bumping
  * Announcement
 
-Every push to master runs the ``deploy-pypi`` job in
-``.github/workflows/test.yml``, which builds the package with ``uv
-build`` and uploads it to PyPI through trusted publishing. On
-development versions (``version`` ending in ``.dev0`` in
-``pyproject.toml``) ``ci/stamp_dev_version.py`` first replaces the
-suffix with ``.devN``, where N is the total number of commits, so this
-uploads a ``.devN`` build. On a release version it uploads the release
-itself. PyPI does not allow
-re-uploading a version, so merging the release branch is the point of
-no return: everything must be checked before that.
+Every push to master and every ``v*`` tag runs
+``.github/workflows/build-and-release.yml``. It runs the same checks as
+a PR, builds the package with ``just build`` and uploads it to PyPI
+through trusted publishing:
+
+* On master, ``ci/stamp_dev_version.py`` replaces the ``.dev0`` suffix of
+  the version in ``pyproject.toml`` with ``.devN``, where N is the total
+  number of commits, and the ``.devN`` build is uploaded. A release
+  version on master (the merge of a release branch) is built but not
+  uploaded.
+* On a tag ``va.b.c``, the workflow checks that the version in
+  ``pyproject.toml`` is ``a.b.c``, uploads it to PyPI and creates the
+  GitHub Release ``va.b.c`` with the sdist and the wheel attached.
+
+PyPI does not allow re-uploading a version, so pushing the tag is the
+point of no return: everything must be checked before that.
 
 
 Release Branch Creation
@@ -350,24 +392,21 @@ Merge
 -----
 
 Open a PR from ``rc/a.b.c`` to master and merge it once the CI is
-green. The ``deploy-pypi`` job on the merge commit uploads ``a.b.c``
-to PyPI. Check that https://pypi.org/project/PySMT/a.b.c/ exists
-before continuing. Do not merge anything else into master until the
-version has been bumped (see below), otherwise the CI tries to upload
-``a.b.c`` again and fails.
+green. The merge commit is built but not uploaded to PyPI.
 
 
-Tag and GitHub Release
-----------------------
+Tag
+---
 
 Tag the merge commit with ``git tag -a va.b.c`` (note the ``v`` before
 the major version number), and push the tag to GitHub with ``git push
-origin va.b.c``.
+origin va.b.c``. The ``build-and-release`` workflow on the tag runs the
+tests, uploads ``a.b.c`` to PyPI and creates the GitHub release with
+the published wheel and tar.gz attached.
 
-Then create the GitHub release associated with this tag. The
-description of the release is the copy-paste of the Changelog.
-Additionally, we attach the wheel and the tar.gz downloaded from PyPI,
-so that they are exactly the published files.
+Once the workflow is green, check that https://pypi.org/project/pysmt/a.b.c/
+exists, and replace the generated description of the GitHub release
+with the Changelog of the release.
 
 
 Version Bumping
