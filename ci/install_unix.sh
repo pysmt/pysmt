@@ -58,28 +58,19 @@ PIP_INSTALL="${PYTHON} -m pip install --upgrade"
 # Check that the correct version of Python is running.
 ${PYTHON} ${DIR}/check_python_version.py "${PYTHON_VERSION}"
 
-# Install GMP for compiling the (Opti)MathSAT bindings and Yices
+# Install GMP for compiling the (Opti)MathSAT bindings
 if [ "${PYSMT_SOLVER}" == "msat" ] || \
-   [ "${PYSMT_SOLVER}" == "optimsat" ] || \
-   [ "${PYSMT_SOLVER}" == "yices" ]
+   [ "${PYSMT_SOLVER}" == "optimsat" ]
 then
    os_install libgmp-dev
 fi
 
 
-if [ "${PYSMT_SOLVER}" == "yices" ] || \
-   [ "${PYSMT_SOLVER}" == "btor" ] || \
+if [ "${PYSMT_SOLVER}" == "btor" ] || \
    [ "${PYSMT_SOLVER}" == "bdd" ] || \
    [ "${PYSMT_SOLVER}" == "picosat" ]
 then
     os_install swig
-fi
-
-# GPerf is needed to compile Yices
-if [ "${PYSMT_SOLVER}" == "yices" ] || [ "${PYSMT_SOLVER}" == "all" ]
-then
-    os_install gperf
-    os_install autoconf
 fi
 
 # Install dependencies

@@ -16,35 +16,60 @@
 #   limitations under the License.
 #
 import atexit
+import ctypes.util
+import glob
+import importlib.util
+import os
 from fractions import Fraction as pyFraction
 from typing import Any, Dict, List, Optional, Set, cast
 from warnings import warn
 
-from pysmt.environment import Environment
-from pysmt.exceptions import SolverAPINotFound
-from pysmt.fnode import FNode
-from pysmt.solvers.eager import EagerModel
-from pysmt.typing import PySMTType, _BVType, _FunctionType
-
-try:
-    import yices_api  # type: ignore[import]
-except ImportError:
-    raise SolverAPINotFound
-
-
 import pysmt.logics
 from pysmt.constants import Fraction, is_pysmt_integer
 from pysmt.decorators import catch_conversion_error, clear_pending_pop
+from pysmt.environment import Environment
 from pysmt.exceptions import (
     InternalSolverError,
     NonLinearError,
     PysmtTypeError,
     PysmtValueError,
+    SolverAPINotFound,
     SolverReturnedUnknownResultError,
 )
+from pysmt.fnode import FNode
+from pysmt.solvers.eager import EagerModel
 from pysmt.solvers.smtlib import SmtLibBasicSolver
 from pysmt.solvers.solver import Converter, Solver, SolverOptions
+from pysmt.typing import PySMTType, _BVType, _FunctionType
 from pysmt.walkers import DagWalker
+
+_find_library = ctypes.util.find_library
+
+
+def _find_library_or_installed_yices(name: str) -> Optional[str]:
+    """find_library, falling back to the libyices copied next to yices_api."""
+    path = _find_library(name)
+    if path is not None or name != "yices":
+        return path
+    spec = importlib.util.find_spec("yices_api")
+    if spec is None or spec.origin is None:
+        return None
+    libdir = os.path.dirname(spec.origin)
+    for pattern in ("libyices.so*", "libyices*.dylib", "libyices*.dll"):
+        found = sorted(glob.glob(os.path.join(libdir, pattern)))
+        if found:
+            return found[0]
+    return None
+
+
+# yices_api only looks for libyices with ctypes.util.find_library at import time
+ctypes.util.find_library = _find_library_or_installed_yices
+try:
+    import yices_api  # type: ignore[import]
+except Exception:  # yices_api raises its own YicesAPIException when libyices is missing
+    raise SolverAPINotFound
+finally:
+    ctypes.util.find_library = _find_library
 
 
 # Initialization

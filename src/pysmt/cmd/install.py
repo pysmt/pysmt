@@ -44,7 +44,20 @@ SOLVERS = [
     BuildSolver("msat", MSatInstaller, "5.6.20", {}),
     PipSolver("cvc5", "cvc5", ["cvc5==1.4.2"]),
     PipSolver("z3", "z3-solver", ["z3-solver==5.4.1.0"]),
-    BuildSolver("yices", YicesInstaller, "2.6.4", {"yices_api_version": "1.1.5"}),
+    BuildSolver(
+        "yices",
+        YicesInstaller,
+        "2.8.0",
+        {
+            "yices_api_version": "1.1.6",
+            # (system, machine) -> platform of SRI's prebuilt archive for this version
+            "binaries": {
+                ("linux", "x86_64"): "x86_64-pc-linux-gnu",
+                ("darwin", "arm64"): "aarch64-apple-darwin25.6.0",
+                ("darwin", "x86_64"): "x86_64-apple-darwin25.6.0",
+            },
+        },
+    ),
     PipSolver("btor", "pyboolector", ["pyboolector==3.2.4.38488416565"]),
     BuildSolver(
         "picosat", PicoSATInstaller, "965", {"pypicosat_minor_version": "1708010052"}
