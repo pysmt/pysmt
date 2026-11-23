@@ -100,12 +100,16 @@ class CVC5Options(SolverOptions):
 class CVC5Solver(SmtLibBasicSolver):
     # Exclude const-array logics that mix BV with integer/real arithmetic:
     # cvc5 rejects arrays indexed by array types (e.g. QF_AUFBVLIRA*).
-    LOGICS = (PYSMT_LOGICS | {AUFLIRA, AUFLIA, AUFNIRA, ALIA}) - frozenset(
-        l
-        for l in PYSMT_LOGICS
-        if l.theory.arrays_const
-        and l.theory.bit_vectors
-        and (l.theory.integer_arithmetic or l.theory.real_arithmetic)
+    LOGICS = (
+        (PYSMT_LOGICS | {AUFLIRA, AUFLIA, AUFNIRA, ALIA})
+        - frozenset(l for l in PYSMT_LOGICS if l.theory.floating_point)
+        - frozenset(
+            l
+            for l in PYSMT_LOGICS
+            if l.theory.arrays_const
+            and l.theory.bit_vectors
+            and (l.theory.integer_arithmetic or l.theory.real_arithmetic)
+        )
     )
 
     OptionsClass = CVC5Options
@@ -158,6 +162,10 @@ class CVC5Solver(SmtLibBasicSolver):
         for s in self.environment.formula_manager.get_all_symbols():
             if s.is_term():
                 if s.symbol_type().is_custom_type():
+                    continue
+                if self.environment.theoryo.get_theory(s).floating_point:
+                    # The FP logics are not supported (see LOGICS), but the
+                    # environment can still have FP symbols
                     continue
                 v = self.get_value(s)
                 assignment[s] = v

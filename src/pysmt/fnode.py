@@ -22,6 +22,7 @@ from fractions import Fraction
 from typing import Callable, Dict, FrozenSet, Optional, Tuple, Union, cast
 
 import pysmt
+import pysmt.operators as op
 import pysmt.smtlib
 import pysmt.typing as types
 from pysmt.constants import is_python_integer
@@ -189,19 +190,25 @@ class FNode(object):
     def is_constant(
         self,
         _type: Optional[PySMTType] = None,
-        value: Optional[Union[bool, int, Fraction, str]] = None,
+        value: Optional[Union[bool, int, Fraction, str, Tuple[int, int, int]]] = None,
     ) -> bool:
         """Test whether the formula is a constant.
 
         Optionally, check that the constant is of the given type and value.
         """
         if self.node_type() not in CONSTANTS:
-            if self.node_type() == ARRAY_VALUE:
-                # An array value can be a constant if all its children
-                # are constants
+            if self.node_type() in (ARRAY_VALUE, op.FP_FROM_COMPONENTS):
+                # Array values and the SMT-LIB fp constructor are constants
+                # exactly when all their children are constants.
                 for c in self.args():
                     if not c.is_constant():
                         return False
+                if self.node_type() == op.FP_FROM_COMPONENTS:
+                    if _type is not None and (
+                        not _type.is_fp_type() or self.constant_type() != _type
+                    ):
+                        return False
+                    return value is None or value == self.constant_value()
                 if _type is not None or value is not None:
                     raise PysmtValueError(
                         "constant type and value checking "
@@ -223,6 +230,10 @@ class FNode(object):
                     return False
                 if self._content.payload[1] != cast(types._BVType, _type).width:
                     return False
+            if _type.is_fp_type():
+                return False
+            if _type.is_rm_type() and self.node_type() not in op.FP_RM_CONSTANTS:
+                return False
 
         return value is None or value == self.constant_value()
 
@@ -266,6 +277,36 @@ class FNode(object):
         Optionally, check that the constant has the given value.
         """
         return self.is_constant(STRING, value)
+
+    def is_fp_constant(
+        self,
+        value: Optional[Tuple[int, int, int]] = None,
+        exponent_size: Optional[int] = None,
+        significand_size: Optional[int] = None,
+    ) -> bool:
+        """Test whether this is a constant ``fp`` component term.
+
+        Floating-point component terms remain ordinary theory nodes so that
+        symbolic bit-vector components are visible to free-variable and
+        substitution walkers. They are nevertheless values when all three
+        components are constants.
+        """
+        if self.node_type() != op.FP_FROM_COMPONENTS or not all(
+            c.is_constant() for c in self.args()
+        ):
+            return False
+        exp_width, sig_width = self.fp_format()
+        if (exponent_size is not None and exponent_size != exp_width) or (
+            significand_size is not None and significand_size != sig_width
+        ):
+            return False
+        return value is None or value == self.constant_value()
+
+    def is_rm_constant(self, value: Optional[str] = None) -> bool:
+        """Test whether this is a rounding-mode constant."""
+        if self.node_type() not in op.FP_RM_CONSTANTS:
+            return False
+        return value is None or value == self.constant_value()
 
     def is_algebraic_constant(self) -> bool:
         """Test whether the formula is an Algebraic Constant"""
@@ -404,6 +445,116 @@ class FNode(object):
         """Test whether the node is an array operator."""
         return self.node_type() in ARRAY_OPERATORS
 
+    def is_fp_op(self) -> bool:
+        """Test whether the node is a floating-point theory operator."""
+        return self.node_type() in op.FP_OPERATORS
+
+    def is_fp_relation(self) -> bool:
+        """Test whether the node is a floating-point relation."""
+        return self.node_type() in op.FP_RELATIONS
+
+    def is_fp_from_components(self) -> bool:
+        return self.node_type() == op.FP_FROM_COMPONENTS
+
+    def is_fp_rne(self) -> bool:
+        return self.node_type() == op.FP_RNE
+
+    def is_fp_rna(self) -> bool:
+        return self.node_type() == op.FP_RNA
+
+    def is_fp_rtp(self) -> bool:
+        return self.node_type() == op.FP_RTP
+
+    def is_fp_rtn(self) -> bool:
+        return self.node_type() == op.FP_RTN
+
+    def is_fp_rtz(self) -> bool:
+        return self.node_type() == op.FP_RTZ
+
+    def is_fp_abs(self) -> bool:
+        return self.node_type() == op.FP_ABS
+
+    def is_fp_neg(self) -> bool:
+        return self.node_type() == op.FP_NEG
+
+    def is_fp_sqrt(self) -> bool:
+        return self.node_type() == op.FP_SQRT
+
+    def is_fp_round_to_integral(self) -> bool:
+        return self.node_type() == op.FP_ROUND_TO_INTEGRAL
+
+    def is_fp_add(self) -> bool:
+        return self.node_type() == op.FP_ADD
+
+    def is_fp_sub(self) -> bool:
+        return self.node_type() == op.FP_SUB
+
+    def is_fp_mul(self) -> bool:
+        return self.node_type() == op.FP_MUL
+
+    def is_fp_div(self) -> bool:
+        return self.node_type() == op.FP_DIV
+
+    def is_fp_fma(self) -> bool:
+        return self.node_type() == op.FP_FMA
+
+    def is_fp_rem(self) -> bool:
+        return self.node_type() == op.FP_REM
+
+    def is_fp_min(self) -> bool:
+        return self.node_type() == op.FP_MIN
+
+    def is_fp_max(self) -> bool:
+        return self.node_type() == op.FP_MAX
+
+    def is_fp_leq(self) -> bool:
+        return self.node_type() == op.FP_LEQ
+
+    def is_fp_lt(self) -> bool:
+        return self.node_type() == op.FP_LT
+
+    def is_fp_eq(self) -> bool:
+        return self.node_type() == op.FP_EQ
+
+    def is_fp_is_normal(self) -> bool:
+        return self.node_type() == op.FP_IS_NORMAL
+
+    def is_fp_is_subnormal(self) -> bool:
+        return self.node_type() == op.FP_IS_SUBNORMAL
+
+    def is_fp_is_zero(self) -> bool:
+        return self.node_type() == op.FP_IS_ZERO
+
+    def is_fp_is_infinite(self) -> bool:
+        return self.node_type() == op.FP_IS_INFINITE
+
+    def is_fp_is_nan(self) -> bool:
+        return self.node_type() == op.FP_IS_NAN
+
+    def is_fp_is_negative(self) -> bool:
+        return self.node_type() == op.FP_IS_NEGATIVE
+
+    def is_fp_is_positive(self) -> bool:
+        return self.node_type() == op.FP_IS_POSITIVE
+
+    def is_fp_from_ieee_bv(self) -> bool:
+        return self.node_type() == op.FP_FROM_IEEE_BV
+
+    def is_fp_to_fp(self) -> bool:
+        return self.node_type() == op.FP_TO_FP
+
+    def is_fp_to_fp_unsigned(self) -> bool:
+        return self.node_type() == op.FP_TO_FP_UNSIGNED
+
+    def is_fp_to_ubv(self) -> bool:
+        return self.node_type() == op.FP_TO_UBV
+
+    def is_fp_to_sbv(self) -> bool:
+        return self.node_type() == op.FP_TO_SBV
+
+    def is_fp_to_real(self) -> bool:
+        return self.node_type() == op.FP_TO_REAL
+
     def is_bv_not(self) -> bool:
         """Test whether the node is the BVNot operator."""
         return self.node_type() == BV_NOT
@@ -520,6 +671,96 @@ class FNode(object):
         """Test whether the node is an array value operator."""
         return self.node_type() == ARRAY_VALUE
 
+    def rounding_mode(self) -> str:
+        """Return the SMT-LIB short name of a rounding-mode constant."""
+        rounding_modes = {
+            op.FP_RNE: "RNE",
+            op.FP_RNA: "RNA",
+            op.FP_RTP: "RTP",
+            op.FP_RTN: "RTN",
+            op.FP_RTZ: "RTZ",
+        }
+        try:
+            return rounding_modes[self.node_type()]
+        except KeyError:
+            raise PysmtValueError("%s is not a rounding-mode constant" % str(self))
+
+    def fp_conversion_format(self) -> Tuple[int, int]:
+        """Return the indexed target ``(eb, sb)`` of an FP conversion."""
+        if self.node_type() not in (
+            op.FP_FROM_IEEE_BV,
+            op.FP_TO_FP,
+            op.FP_TO_FP_UNSIGNED,
+        ):
+            raise PysmtValueError("%s is not a conversion to FP" % str(self))
+        payload = self._content.payload
+        if (
+            not isinstance(payload, tuple)
+            or len(payload) != 2
+            or not all(isinstance(x, int) and not isinstance(x, bool) for x in payload)
+        ):
+            raise PysmtValueError("Malformed FP conversion format: %s" % (payload,))
+        return cast(Tuple[int, int], payload)
+
+    def fp_conversion_width(self) -> int:
+        """Return the indexed result width of an FP-to-BV conversion."""
+        if self.node_type() not in (op.FP_TO_UBV, op.FP_TO_SBV):
+            raise PysmtValueError("%s is not an FP-to-BV conversion" % str(self))
+        width = self._content.payload
+        if not isinstance(width, int) or isinstance(width, bool):
+            raise PysmtValueError("Malformed FP-to-BV width: %s" % (width,))
+        return width
+
+    def fp_format(self) -> Tuple[int, int]:
+        """Return the relevant floating-point ``(eb, sb)`` format.
+
+        For an FP-valued expression this is its result format. For an
+        FP relation or a conversion from FP, this is the operand format.
+        """
+        if self.is_fp_from_components():
+            if len(self.args()) != 3:
+                raise PysmtValueError("Malformed fp component term: %s" % str(self))
+            return (self.arg(1).bv_width(), self.arg(2).bv_width() + 1)
+
+        if self.node_type() in (op.FP_FROM_IEEE_BV, op.FP_TO_FP, op.FP_TO_FP_UNSIGNED):
+            return self.fp_conversion_format()
+
+        node_type = self.get_type()
+        if node_type.is_fp_type():
+            fp_type = cast(types._FPType, node_type)
+            return fp_type.exponent_size, fp_type.significand_size
+
+        for child in self.args():
+            child_type = child.get_type()
+            if child_type.is_fp_type():
+                fp_type = cast(types._FPType, child_type)
+                return fp_type.exponent_size, fp_type.significand_size
+
+        raise PysmtValueError("%s has no floating-point format" % str(self))
+
+    def fp_exp_width(self) -> int:
+        """Return the floating-point exponent width."""
+        return self.fp_format()[0]
+
+    def fp_sig_width(self) -> int:
+        """Return the floating-point significand precision."""
+        return self.fp_format()[1]
+
+    def fp_sign(self) -> "FNode":
+        """Return the sign bit-vector of an ``fp`` component term."""
+        assert self.is_fp_from_components()
+        return self.arg(0)
+
+    def fp_exponent(self) -> "FNode":
+        """Return the exponent bit-vector of an ``fp`` component term."""
+        assert self.is_fp_from_components()
+        return self.arg(1)
+
+    def fp_significand(self) -> "FNode":
+        """Return the trailing-significand bit-vector of an ``fp`` term."""
+        assert self.is_fp_from_components()
+        return self.arg(2)
+
     def bv_width(self) -> int:
         """Return the BV width of the formula."""
         if self.is_bv_constant():
@@ -544,6 +785,8 @@ class FNode(object):
             # This must be a select over an array with BV value type
             ty = self.arg(0).get_type()
             return cast(types._BVType, cast(types._ArrayType, ty).elem_type).width
+        elif self.node_type() in (op.FP_TO_UBV, op.FP_TO_SBV):
+            return self.fp_conversion_width()
         else:
             # BV Operator
             assert self.is_bv_op(), "Unsupported method bv_width on %s" % self
@@ -620,16 +863,26 @@ class FNode(object):
         assert self.is_symbol()
         return self._content.payload[0]
 
-    def constant_value(self) -> Union[str, bool, Fraction, int]:
+    def constant_value(self) -> Union[str, bool, Fraction, int, Tuple[int, int, int]]:
         """Return the value of the Constant."""
         assert self.is_constant(), "%s is not a constant" % str(self)
         if self.node_type() == BV_CONSTANT:
             return self._content.payload[0]
+        if self.node_type() == op.FP_FROM_COMPONENTS:
+            return cast(
+                Tuple[int, int, int], tuple(c.constant_value() for c in self.args())
+            )
+        if self.node_type() in op.FP_RM_CONSTANTS:
+            return self.rounding_mode()
         return self._content.payload
 
     def constant_type(self) -> PySMTType:
         """Return the type of the Constant."""
-        if self.node_type() == INT_CONSTANT:
+        if self.node_type() == op.FP_FROM_COMPONENTS:
+            return types.FPType(*self.fp_format())
+        elif self.node_type() in op.FP_RM_CONSTANTS:
+            return types.RMType()
+        elif self.node_type() == INT_CONSTANT:
             return INT
         elif self.node_type() == REAL_CONSTANT:
             return REAL

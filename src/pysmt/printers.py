@@ -119,6 +119,86 @@ class HRPrinter(TreeWalker):
         else:
             self.write("False")
 
+    def _walk_fp_function(self, formula: FNode, name: str) -> Iterator[FNode]:
+        self.write(name)
+        self.write("(")
+        for index, arg in enumerate(formula.args()):
+            if index:
+                self.write(", ")
+            yield arg
+        self.write(")")
+
+    @handles(op.FP_RM_CONSTANTS)
+    def walk_fp_rounding_mode(self, formula: FNode):
+        names = {
+            op.FP_RNE: "RNE",
+            op.FP_RNA: "RNA",
+            op.FP_RTP: "RTP",
+            op.FP_RTN: "RTN",
+            op.FP_RTZ: "RTZ",
+        }
+        self.write(names[formula.node_type()])
+
+    @handles(op.FP_FROM_COMPONENTS)
+    def walk_fp_from_components(self, formula: FNode) -> Iterator[FNode]:
+        yield from self._walk_fp_function(formula, "fp")
+
+    @handles(
+        (op.FP_OPERATORS | op.FP_RELATIONS)
+        - {
+            op.FP_FROM_COMPONENTS,
+            op.FP_FROM_IEEE_BV,
+            op.FP_TO_FP,
+            op.FP_TO_FP_UNSIGNED,
+            op.FP_TO_UBV,
+            op.FP_TO_SBV,
+        }
+    )
+    def walk_fp_operator(self, formula: FNode) -> Iterator[FNode]:
+        names = {
+            op.FP_ABS: "fp.abs",
+            op.FP_NEG: "fp.neg",
+            op.FP_SQRT: "fp.sqrt",
+            op.FP_ROUND_TO_INTEGRAL: "fp.roundToIntegral",
+            op.FP_ADD: "fp.add",
+            op.FP_SUB: "fp.sub",
+            op.FP_MUL: "fp.mul",
+            op.FP_DIV: "fp.div",
+            op.FP_FMA: "fp.fma",
+            op.FP_REM: "fp.rem",
+            op.FP_MIN: "fp.min",
+            op.FP_MAX: "fp.max",
+            op.FP_LEQ: "fp.leq",
+            op.FP_LT: "fp.lt",
+            op.FP_EQ: "fp.eq",
+            op.FP_IS_NORMAL: "fp.isNormal",
+            op.FP_IS_SUBNORMAL: "fp.isSubnormal",
+            op.FP_IS_ZERO: "fp.isZero",
+            op.FP_IS_INFINITE: "fp.isInfinite",
+            op.FP_IS_NAN: "fp.isNaN",
+            op.FP_IS_NEGATIVE: "fp.isNegative",
+            op.FP_IS_POSITIVE: "fp.isPositive",
+            op.FP_TO_REAL: "fp.to_real",
+        }
+        yield from self._walk_fp_function(formula, names[formula.node_type()])
+
+    @handles(op.FP_FROM_IEEE_BV, op.FP_TO_FP, op.FP_TO_FP_UNSIGNED)
+    def walk_fp_format_conversion(self, formula: FNode) -> Iterator[FNode]:
+        exponent_size, significand_size = formula._content.payload
+        name = (
+            "to_fp_unsigned" if formula.node_type() == op.FP_TO_FP_UNSIGNED else "to_fp"
+        )
+        yield from self._walk_fp_function(
+            formula, "%s[%d,%d]" % (name, exponent_size, significand_size)
+        )
+
+    @handles(op.FP_TO_UBV, op.FP_TO_SBV)
+    def walk_fp_bv_conversion(self, formula: FNode) -> Iterator[FNode]:
+        name = "fp.to_ubv" if formula.node_type() == op.FP_TO_UBV else "fp.to_sbv"
+        yield from self._walk_fp_function(
+            formula, "%s[%d]" % (name, formula._content.payload)
+        )
+
     def walk_bv_constant(self, formula: FNode):
         # This is the simplest SMT-LIB way of printing the value of a BV
         # self.write("(_ bv%d %d)" % (formula.bv_width(),

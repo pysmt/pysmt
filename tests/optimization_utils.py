@@ -1,6 +1,17 @@
 from enum import Enum, auto
 from fractions import Fraction
-from typing import Any, Iterator, List, Optional, Sequence, Set, Tuple, Type, Union
+from typing import (
+    Any,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
 
 import pytest
 
@@ -296,8 +307,10 @@ def _check_oracle_goal(
         assert cost.is_real_constant() or cost.is_int_constant(), (
             preliminary_checks_fail_str
         )
-        goal_value_constant = goal_value.constant_value()
-        cost_constant = cost.constant_value()
+        goal_value_constant = cast(
+            Union[str, int, Fraction, bool], goal_value.constant_value()
+        )
+        cost_constant = cast(Union[str, int, Fraction, bool], cost.constant_value())
     assert goal_value_constant == cost_constant, (
         "test_id: %s, goal: %s, oracle value: %s, cost returned: %s, extra: %s"
         % (test_id_str, str(goal), str(goal_value), str(cost), str(kwargs))

@@ -78,7 +78,10 @@ class TestHRParser(TestCase):
 
     def test_examples(self):
         p = HRParser()
-        for f, _, _, _ in get_example_formulae():
+        for f, _, _, logic in get_example_formulae():
+            if logic.theory.floating_point:
+                # The HR syntax has no floating-point operators yet
+                continue
             s = f.serialize()
             print(s)
             res = p.parse(s)

@@ -103,6 +103,17 @@ class PySMTType(object):
         # pylint: disable=unused-argument
         return False
 
+    def is_fp_type(
+        self,
+        exponent_size: Optional[int] = None,
+        significand_size: Optional[int] = None,
+    ) -> bool:
+        # pylint: disable=unused-argument
+        return False
+
+    def is_rm_type(self) -> bool:
+        return False
+
     def is_array_type(self) -> bool:
         return False
 
@@ -264,6 +275,76 @@ class _BVType(PySMTType):
 # EOC _BVType
 
 
+class _FPType(PySMTType):
+    """Internal representation of an SMT-LIB floating-point sort."""
+
+    def __init__(self, exponent_size: int, significand_size: int):
+        if (
+            not isinstance(exponent_size, int)
+            or isinstance(exponent_size, bool)
+            or exponent_size <= 1
+        ):
+            raise PysmtValueError(
+                "The exponent size must be an integer greater than one"
+            )
+        if (
+            not isinstance(significand_size, int)
+            or isinstance(significand_size, bool)
+            or significand_size <= 1
+        ):
+            raise PysmtValueError(
+                "The significand size must be an integer greater than one"
+            )
+        decl = _TypeDecl("FP{%d, %d}" % (exponent_size, significand_size), 0)
+        PySMTType.__init__(self, decl=decl, args=None)
+        self._exponent_size = exponent_size
+        self._significand_size = significand_size
+
+    @property
+    def exponent_size(self) -> int:
+        return self._exponent_size
+
+    @property
+    def significand_size(self) -> int:
+        return self._significand_size
+
+    def is_fp_type(
+        self,
+        exponent_size: Optional[int] = None,
+        significand_size: Optional[int] = None,
+    ) -> bool:
+        if exponent_size is not None and self.exponent_size != exponent_size:
+            return False
+        if significand_size is not None and self.significand_size != significand_size:
+            return False
+        return True
+
+    def as_smtlib(self, funstyle: bool = True) -> str:
+        sort = "(_ FloatingPoint %d %d)" % (self.exponent_size, self.significand_size)
+        return "() %s" % sort if funstyle else sort
+
+    def __eq__(self, other: object) -> bool:
+        return (
+            isinstance(other, _FPType)
+            and self.exponent_size == other.exponent_size
+            and self.significand_size == other.significand_size
+        )
+
+    def __hash__(self) -> int:
+        return hash((self.exponent_size, self.significand_size))
+
+
+class _RMType(PySMTType):
+    """Internal representation of the SMT-LIB RoundingMode sort."""
+
+    def __init__(self):
+        decl = _TypeDecl("RoundingMode", 0)
+        PySMTType.__init__(self, decl=decl, args=None)
+
+    def is_rm_type(self) -> bool:
+        return True
+
+
 class _FunctionType(PySMTType):
     """Internal class used to represent a Function type.
 
@@ -395,16 +476,23 @@ BOOL = _BoolType()
 REAL = _RealType()
 INT = _IntType()
 STRING = _StringType()
-PYSMT_TYPES = frozenset([BOOL, REAL, INT])
+RM = _RMType()
 
 # Helper Constants
 BV1, BV8, BV16, BV32, BV64, BV128 = [_BVType(i) for i in [1, 8, 16, 32, 64, 128]]
+FLOAT16, FLOAT32, FLOAT64, FLOAT128 = [
+    _FPType(exponent_size, significand_size)
+    for exponent_size, significand_size in ((5, 11), (8, 24), (11, 53), (15, 113))
+]
+PYSMT_TYPES = frozenset([BOOL, REAL, INT, RM, FLOAT16, FLOAT32, FLOAT64, FLOAT128])
 ARRAY_INT_INT = _ArrayType(INT, INT)
 
 
 class TypeManager(object):
     def __init__(self, environment: "pysmt.environment.Environment"):  # type: ignore [name-defined]
         self._bv_types: Dict[int, _BVType] = {}
+        self._fp_types: Dict[Tuple[int, int], _FPType] = {}
+        self._rm: Optional[_RMType] = None
         self._function_types: Dict[
             Tuple[PySMTType, Tuple[PySMTType, ...]], _FunctionType
         ] = {}
@@ -425,6 +513,9 @@ class TypeManager(object):
         """Register basic global types within the TypeManager."""
         for bvtype in (BV1, BV8, BV16, BV32, BV64, BV128):
             self._bv_types[bvtype.width] = bvtype
+        for fp_type in (FLOAT16, FLOAT32, FLOAT64, FLOAT128):
+            self._fp_types[(fp_type.exponent_size, fp_type.significand_size)] = fp_type
+        self._rm = RM
         self._array_types[(INT, INT)] = ARRAY_INT_INT
         self._bool = BOOL
         self._real = REAL
@@ -442,6 +533,20 @@ class TypeManager(object):
 
     def STRING(self) -> _StringType:
         return assert_not_none(self._string)
+
+    def RMType(self) -> _RMType:
+        """Returns the singleton rounding-mode type."""
+        return assert_not_none(self._rm)
+
+    def FPType(self, exponent_size: int = 8, significand_size: int = 24) -> _FPType:
+        """Returns the canonical floating-point type for a format."""
+        key = (exponent_size, significand_size)
+        try:
+            ty = self._fp_types[key]
+        except KeyError:
+            ty = _FPType(exponent_size=exponent_size, significand_size=significand_size)
+            self._fp_types[key] = ty
+        return ty
 
     def BVType(self, width: int = 32) -> _BVType:
         """Returns the singleton associated to the BV type for the given width.
@@ -558,6 +663,11 @@ class TypeManager(object):
                     myty = ty
                 elif ty.is_bv_type():
                     myty = self.BVType(cast(_BVType, ty).width)
+                elif ty.is_fp_type():
+                    fp_type = cast(_FPType, ty)
+                    myty = self.FPType(fp_type.exponent_size, fp_type.significand_size)
+                elif ty.is_rm_type():
+                    myty = self.RMType()
                 else:
                     myty = cast(
                         PySMTType, self.Type(assert_not_none(ty.basename), arity=0)
@@ -615,6 +725,18 @@ def BVType(width: int = 32) -> PySMTType:
     """Returns the BV type for the given width."""
     mgr: TypeManager = pysmt.environment.get_env().type_manager  # type: ignore[attr-defined]
     return mgr.BVType(width=width)
+
+
+def FPType(exponent_size: int = 8, significand_size: int = 24) -> PySMTType:
+    """Returns the floating-point type for the given format."""
+    mgr: TypeManager = pysmt.environment.get_env().type_manager  # type: ignore[attr-defined]
+    return mgr.FPType(exponent_size=exponent_size, significand_size=significand_size)
+
+
+def RMType() -> PySMTType:
+    """Returns the rounding-mode type."""
+    mgr: TypeManager = pysmt.environment.get_env().type_manager  # type: ignore[attr-defined]
+    return mgr.RMType()
 
 
 def FunctionType(return_type: PySMTType, param_types: List[PySMTType]) -> PySMTType:

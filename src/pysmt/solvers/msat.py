@@ -223,7 +223,7 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolv
     #  - the nonlinear examples and tests run against MathSAT are kept
     #    rational on purpose (e.g. `r * r = 4.0` instead of `r * r = 2.0`).
     LOGICS: Iterable[Logic] = PYSMT_QF_LOGICS - set(
-        l for l in PYSMT_QF_LOGICS if l.theory.strings
+        l for l in PYSMT_QF_LOGICS if l.theory.strings or l.theory.floating_point
     )
 
     OptionsClass = MathSATOptions

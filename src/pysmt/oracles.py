@@ -27,7 +27,7 @@ properties of formulae.
 """
 
 from itertools import chain
-from typing import Callable, Dict, FrozenSet, Iterable, List, Optional, cast
+from typing import Callable, Dict, FrozenSet, Iterable, List, Optional, Tuple, cast
 
 import pysmt
 import pysmt.operators as op
@@ -155,6 +155,23 @@ class QuantifierOracle(walkers.DagWalker):
 # EOC QuantifierOracle
 
 
+def _mentions_type(ty: PySMTType, check: Callable[[PySMTType], bool]) -> bool:
+    """Whether the type, or a type it is built from, satisfies check."""
+    if check(ty):
+        return True
+    if ty.is_array_type():
+        array = cast(types._ArrayType, ty)
+        return _mentions_type(array.index_type, check) or _mentions_type(
+            array.elem_type, check
+        )
+    if ty.is_function_type():
+        function = cast(types._FunctionType, ty)
+        return _mentions_type(function.return_type, check) or any(
+            _mentions_type(p, check) for p in function.param_types
+        )
+    return False
+
+
 class TheoryOracle(walkers.DagWalker):
     def get_theory(self, formula: FNode) -> Theory:
         """Returns the theory for the formula."""
@@ -172,6 +189,8 @@ class TheoryOracle(walkers.DagWalker):
             pass
         elif ty.is_bv_type():
             theory.bit_vectors = True
+        elif ty.is_fp_type() or ty.is_rm_type():
+            theory.floating_point = True
         elif ty.is_array_type():
             assert isinstance(ty, types._ArrayType)
             theory.arrays = True
@@ -186,7 +205,50 @@ class TheoryOracle(walkers.DagWalker):
             theory.uninterpreted = True
         return theory
 
-    @walkers.handles(op.RELATIONS)
+    def __init__(
+        self,
+        env: Optional["pysmt.environment.Environment"] = None,
+        invalidate_memoization: bool = False,
+    ):
+        walkers.DagWalker.__init__(
+            self, env=env, invalidate_memoization=invalidate_memoization
+        )
+        # Memoization of _operand_needs
+        self._operand_needs_memo: Dict[FNode, Tuple[bool, bool]] = {}
+
+    def _operand_needs(self, formula: FNode) -> Tuple[bool, bool]:
+        """Whether the BV and the Real theories are needed by ``formula``
+        beyond its literals: it applies a BV (resp. arithmetic) operator or
+        relation, or has a free variable of a BV (resp. Real) sort."""
+        memo = self._operand_needs_memo
+        stack = [formula]
+        while stack:
+            node = stack[-1]
+            if node in memo:
+                stack.pop()
+                continue
+            pending = [c for c in node.args() if c not in memo]
+            if pending:
+                stack.extend(pending)
+                continue
+            stack.pop()
+            node_type = node.node_type()
+            needs_bv = node_type in op.BV_OPERATORS or node_type in op.BV_RELATIONS
+            needs_real = node_type in op.IRA_OPERATORS or node_type in op.IRA_RELATIONS
+            if node.is_symbol():
+                ty = node.symbol_type()
+                needs_bv = needs_bv or _mentions_type(ty, lambda t: t.is_bv_type())
+                needs_real = needs_real or _mentions_type(
+                    ty, lambda t: t.is_real_type()
+                )
+            for child in node.args():
+                child_bv, child_real = memo[child]
+                needs_bv = needs_bv or child_bv
+                needs_real = needs_real or child_real
+            memo[node] = (needs_bv, needs_real)
+        return memo[formula]
+
+    @walkers.handles(op.RELATIONS - op.FP_RELATIONS)
     @walkers.handles(op.BOOL_OPERATORS)
     @walkers.handles(op.BV_OPERATORS)
     @walkers.handles(
@@ -201,6 +263,41 @@ class TheoryOracle(walkers.DagWalker):
         theory_out = args[0]
         for t in args[1:]:
             theory_out = theory_out.combine(t)
+        return theory_out
+
+    @walkers.handles(op.FP_OPERATORS)
+    @walkers.handles(op.FP_RELATIONS)
+    @walkers.handles(op.FP_RM_CONSTANTS)
+    def walk_fp(self, formula: FNode, args: List[Theory], **kwargs) -> Theory:
+        """Extends the Theory with FP.
+
+        The BV and Real operands of fp, to_fp and to_fp_unsigned belong to
+        the FP signature when they are built from literals only, e.g. the
+        bit-vectors of (fp #b0 #b01111 #b0000000000) or the real of
+        ((_ to_fp 8 24) RNE 0.5). Operands with BV (resp. arithmetic)
+        operators or with free variables of BV (resp. Real) sort keep their
+        theory.
+        """
+        node_type = formula.node_type()
+        theory_out = Theory(floating_point=True)
+
+        for index, arg_theory in enumerate(args):
+            if node_type in (op.FP_FROM_COMPONENTS, op.FP_FROM_IEEE_BV) or (
+                index == 1 and node_type in (op.FP_TO_FP, op.FP_TO_FP_UNSIGNED)
+            ):
+                needs_bv, needs_real = self._operand_needs(formula.arg(index))
+                if not needs_bv or not needs_real:
+                    arg_theory = arg_theory.copy()
+                if not needs_bv:
+                    arg_theory.bit_vectors = False
+                if not needs_real:
+                    arg_theory.real_arithmetic = False
+                    arg_theory.real_difference = False
+            theory_out = theory_out.combine(arg_theory)
+
+        # Like a symbol, a conversion out of FP adds the theory of its sort
+        if node_type in (op.FP_TO_UBV, op.FP_TO_SBV, op.FP_TO_REAL):
+            theory_out = theory_out.combine(self._theory_from_type(formula.get_type()))
         return theory_out
 
     @walkers.handles(op.REAL_CONSTANT, op.BOOL_CONSTANT)
@@ -507,6 +604,8 @@ class TypesOracle(walkers.DagWalker):
                 and not x.is_int_type()
                 and not x.is_real_type()
                 and not x.is_bv_type()
+                and not x.is_fp_type()
+                and not x.is_rm_type()
                 and not x.is_array_type()
                 and not x.is_string_type()
             ]
@@ -540,12 +639,20 @@ class TypesOracle(walkers.DagWalker):
         - set([op.SYMBOL, op.FUNCTION])
         - op.QUANTIFIERS
         - op.CONSTANTS
+        - op.FP_OPERATORS
     )
     def walk_combine(
         self, formula: FNode, args: List[FrozenSet[PySMTType]], **kwargs
     ) -> FrozenSet[PySMTType]:
         # pylint: disable=unused-argument
         return frozenset(chain(*args))
+
+    @walkers.handles(op.FP_OPERATORS)
+    def walk_fp(
+        self, formula: FNode, args: List[FrozenSet[PySMTType]], **kwargs
+    ) -> FrozenSet[PySMTType]:
+        child_types = frozenset(chain(*args))
+        return child_types | frozenset([formula.get_type()])
 
     @walkers.handles(op.SYMBOL)
     def walk_symbol(self, formula: FNode, **kwargs) -> FrozenSet[PySMTType]:

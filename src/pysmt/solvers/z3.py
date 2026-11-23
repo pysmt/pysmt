@@ -18,7 +18,7 @@
 from __future__ import absolute_import
 
 from fractions import Fraction as pyFraction
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Type, cast
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple, Type, cast
 
 from pysmt.environment import Environment
 from pysmt.exceptions import SolverAPINotFound
@@ -373,8 +373,10 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolver):
 
 
 BOOLREF_SET = op.BOOL_OPERATORS | op.RELATIONS
-ARITHREF_SET = op.IRA_OPERATORS
-BITVECREF_SET = op.BV_OPERATORS
+ARITHREF_SET = op.IRA_OPERATORS | frozenset([op.FP_TO_REAL])
+BITVECREF_SET = op.BV_OPERATORS | frozenset([op.FP_TO_UBV, op.FP_TO_SBV])
+FPREF_SET = op.FP_OPERATORS - frozenset([op.FP_TO_UBV, op.FP_TO_SBV, op.FP_TO_REAL])
+FPRMREF_SET = op.FP_RM_CONSTANTS
 
 
 class Z3Converter(Converter, DagWalker):
@@ -459,6 +461,61 @@ class Z3Converter(Converter, DagWalker):
             z3.Z3_OP_EXTRACT: lambda args, expr: self.mgr.BVExtract(
                 args[0], z3.get_payload(expr, 1), z3.get_payload(expr, 0)
             ),
+            z3.Z3_OP_FPA_RM_NEAREST_TIES_TO_EVEN: lambda args, expr: self.mgr.RNE(),
+            z3.Z3_OP_FPA_RM_NEAREST_TIES_TO_AWAY: lambda args, expr: self.mgr.RNA(),
+            z3.Z3_OP_FPA_RM_TOWARD_POSITIVE: lambda args, expr: self.mgr.RTP(),
+            z3.Z3_OP_FPA_RM_TOWARD_NEGATIVE: lambda args, expr: self.mgr.RTN(),
+            z3.Z3_OP_FPA_RM_TOWARD_ZERO: lambda args, expr: self.mgr.RTZ(),
+            z3.Z3_OP_FPA_FP: lambda args, expr: self.mgr.FP(args[0], args[1], args[2]),
+            z3.Z3_OP_FPA_ADD: lambda args, expr: self.mgr.FPAdd(
+                args[0], args[1], args[2]
+            ),
+            z3.Z3_OP_FPA_SUB: lambda args, expr: self.mgr.FPSub(
+                args[0], args[1], args[2]
+            ),
+            z3.Z3_OP_FPA_NEG: lambda args, expr: self.mgr.FPNeg(args[0]),
+            z3.Z3_OP_FPA_MUL: lambda args, expr: self.mgr.FPMul(
+                args[0], args[1], args[2]
+            ),
+            z3.Z3_OP_FPA_DIV: lambda args, expr: self.mgr.FPDiv(
+                args[0], args[1], args[2]
+            ),
+            z3.Z3_OP_FPA_REM: lambda args, expr: self.mgr.FPRem(args[0], args[1]),
+            z3.Z3_OP_FPA_ABS: lambda args, expr: self.mgr.FPAbs(args[0]),
+            z3.Z3_OP_FPA_MIN: lambda args, expr: self.mgr.FPMin(args[0], args[1]),
+            z3.Z3_OP_FPA_MAX: lambda args, expr: self.mgr.FPMax(args[0], args[1]),
+            z3.Z3_OP_FPA_FMA: lambda args, expr: self.mgr.FPFMA(
+                args[0], args[1], args[2], args[3]
+            ),
+            z3.Z3_OP_FPA_SQRT: lambda args, expr: self.mgr.FPSqrt(args[0], args[1]),
+            z3.Z3_OP_FPA_ROUND_TO_INTEGRAL: lambda args, expr: (
+                self.mgr.FPRoundToIntegral(args[0], args[1])
+            ),
+            z3.Z3_OP_FPA_EQ: lambda args, expr: self.mgr.FPEq(args[0], args[1]),
+            z3.Z3_OP_FPA_LT: lambda args, expr: self.mgr.FPLt(args[0], args[1]),
+            z3.Z3_OP_FPA_GT: lambda args, expr: self.mgr.FPGt(args[0], args[1]),
+            z3.Z3_OP_FPA_LE: lambda args, expr: self.mgr.FPLEq(args[0], args[1]),
+            z3.Z3_OP_FPA_GE: lambda args, expr: self.mgr.FPGEq(args[0], args[1]),
+            z3.Z3_OP_FPA_IS_NAN: lambda args, expr: self.mgr.FPIsNaN(args[0]),
+            z3.Z3_OP_FPA_IS_INF: lambda args, expr: self.mgr.FPIsInfinite(args[0]),
+            z3.Z3_OP_FPA_IS_ZERO: lambda args, expr: self.mgr.FPIsZero(args[0]),
+            z3.Z3_OP_FPA_IS_NORMAL: lambda args, expr: self.mgr.FPIsNormal(args[0]),
+            z3.Z3_OP_FPA_IS_SUBNORMAL: lambda args, expr: self.mgr.FPIsSubnormal(
+                args[0]
+            ),
+            z3.Z3_OP_FPA_IS_NEGATIVE: lambda args, expr: self.mgr.FPIsNegative(args[0]),
+            z3.Z3_OP_FPA_IS_POSITIVE: lambda args, expr: self.mgr.FPIsPositive(args[0]),
+            z3.Z3_OP_FPA_NUM: self._back_z3_fp_value,
+            z3.Z3_OP_FPA_PLUS_INF: self._back_z3_fp_value,
+            z3.Z3_OP_FPA_MINUS_INF: self._back_z3_fp_value,
+            z3.Z3_OP_FPA_NAN: self._back_z3_fp_value,
+            z3.Z3_OP_FPA_PLUS_ZERO: self._back_z3_fp_value,
+            z3.Z3_OP_FPA_MINUS_ZERO: self._back_z3_fp_value,
+            z3.Z3_OP_FPA_TO_FP: self._back_z3_to_fp,
+            z3.Z3_OP_FPA_TO_FP_UNSIGNED: self._back_z3_to_fp_unsigned,
+            z3.Z3_OP_FPA_TO_UBV: self._back_z3_to_ubv,
+            z3.Z3_OP_FPA_TO_SBV: self._back_z3_to_sbv,
+            z3.Z3_OP_FPA_TO_REAL: lambda args, expr: self.mgr.FPToReal(args[0]),
             # Complex Back Translation
             z3.Z3_OP_EQ: self._back_z3_eq,
             z3.Z3_OP_UMINUS: self._back_z3_uminus,
@@ -470,6 +527,8 @@ class Z3Converter(Converter, DagWalker):
         self.z3IntSort = z3.IntSort(self.ctx)
         self._z3ArraySorts: Dict[Any, Any] = {}
         self._z3BitVecSorts: Dict[int, z3.BitVecSortRef] = {}
+        self._z3FPSorts: Dict[Tuple[int, int], z3.FPSortRef] = {}
+        self.z3RoundingModeSort = z3.RNE(self.ctx).sort()
         self._z3Sorts: Dict[str, Any] = {}
         # Unique reference to Function Declaration
         self._z3_func_decl_cache: Dict[FNode, Any] = {}
@@ -483,6 +542,16 @@ class Z3Converter(Converter, DagWalker):
             bvsort = z3.BitVecSort(width, self.ctx)
             self._z3BitVecSorts[width] = bvsort
         return bvsort
+
+    def z3FPSort(self, exponent_size: int, significand_size: int) -> z3.FPSortRef:
+        """Return the Z3 floating-point sort for the given format."""
+        key = (exponent_size, significand_size)
+        try:
+            fpsort = self._z3FPSorts[key]
+        except KeyError:
+            fpsort = z3.FPSort(exponent_size, significand_size, self.ctx)
+            self._z3FPSorts[key] = fpsort
+        return fpsort
 
     def z3ArraySort(self, key, value):
         """Return the z3 ArraySort for the given key value."""
@@ -503,8 +572,25 @@ class Z3Converter(Converter, DagWalker):
             self._z3Sorts[name] = sort
         return sort
 
+    def _type_to_z3_ref(self, type_: PySMTType) -> Type[z3.ExprRef]:
+        """Return the Z3 expression wrapper associated with a pySMT type."""
+        if type_.is_bool_type():
+            return z3.BoolRef
+        elif type_.is_real_type() or type_.is_int_type():
+            return z3.ArithRef
+        elif type_.is_array_type():
+            return z3.ArrayRef
+        elif type_.is_bv_type():
+            return z3.BitVecRef
+        elif type_.is_fp_type():
+            return z3.FPRef
+        elif type_.is_rm_type():
+            return z3.FPRMRef
+        # e.g. custom sorts, for which z3 also uses the generic wrapper
+        return z3.ExprRef
+
     def get_z3_ref(self, formula: FNode) -> Type[z3.ExprRef]:
-        if formula.node_type in op.QUANTIFIERS:
+        if formula.node_type() in op.QUANTIFIERS:
             return z3.QuantifierRef
         elif formula.node_type() in BOOLREF_SET:
             return z3.BoolRef
@@ -512,41 +598,25 @@ class Z3Converter(Converter, DagWalker):
             return z3.ArithRef
         elif formula.node_type() in BITVECREF_SET:
             return z3.BitVecRef
+        elif formula.node_type() in FPREF_SET:
+            return z3.FPRef
+        elif formula.node_type() in FPRMREF_SET:
+            return z3.FPRMRef
         elif formula.is_symbol() or formula.is_function_application():
             if formula.is_function_application():
                 type_ = formula.function_name().symbol_type()
                 type_ = cast(types._FunctionType, type_).return_type
             else:
                 type_ = formula.symbol_type()
-
-            if type_.is_bool_type():
-                return z3.BoolRef
-            elif type_.is_real_type() or type_.is_int_type():
-                return z3.ArithRef
-            elif type_.is_array_type():
-                return z3.ArrayRef
-            elif type_.is_bv_type():
-                return z3.BitVecRef
-            else:
-                raise NotImplementedError(formula)
+            return self._type_to_z3_ref(type_)
         elif formula.node_type() in op.ARRAY_OPERATORS:
-            return z3.ArrayRef
+            return self._type_to_z3_ref(self._get_type(formula))
         elif formula.is_ite():
             child = formula.arg(1)
             return self.get_z3_ref(child)
         else:
             assert formula.is_constant(), formula
-            type_ = formula.constant_type()
-            if type_.is_bool_type():
-                return z3.BoolRef
-            elif type_.is_real_type() or type_.is_int_type():
-                return z3.ArithRef
-            elif type_.is_array_type():
-                return z3.ArrayRef
-            elif type_.is_bv_type():
-                return z3.BitVecRef
-            else:
-                raise NotImplementedError(formula)
+            return self._type_to_z3_ref(formula.constant_type())
 
     @catch_conversion_error
     def convert(self, formula: FNode) -> z3.ExprRef:
@@ -604,6 +674,17 @@ class Z3Converter(Converter, DagWalker):
             or z3.is_app_of(expr, z3.Z3_OP_BADD)
             or z3.is_app_of(expr, z3.Z3_OP_BMUL)
             or z3.is_app_of(expr, z3.Z3_OP_CONCAT)
+            or any(
+                z3.is_app_of(expr, kind)
+                for kind in (
+                    z3.Z3_OP_FPA_FP,
+                    z3.Z3_OP_FPA_ADD,
+                    z3.Z3_OP_FPA_SUB,
+                    z3.Z3_OP_FPA_MUL,
+                    z3.Z3_OP_FPA_DIV,
+                    z3.Z3_OP_FPA_FMA,
+                )
+            )
             or (len(args) == 3 and (z3.is_ite(expr) or z3.is_array_store(expr)))
         ), "Unexpected n-ary term: %s" % expr
 
@@ -680,6 +761,50 @@ class Z3Converter(Converter, DagWalker):
         raise ConvertExpressionError(
             message=("Unsupported expression: %s" % (str(expr))), expression=expr
         )
+
+    def _back_z3_fp_value(self, args, expr):
+        assert len(args) == 0
+        fp_type = cast(types._FPType, self._z3_to_type(expr.sort()))
+        eb = fp_type.exponent_size
+        sb = fp_type.significand_size
+        kind = expr.decl().kind()
+        if kind == z3.Z3_OP_FPA_PLUS_INF:
+            return self.mgr.FPPlusInfinity(eb, sb)
+        if kind == z3.Z3_OP_FPA_MINUS_INF:
+            return self.mgr.FPMinusInfinity(eb, sb)
+        if kind == z3.Z3_OP_FPA_PLUS_ZERO:
+            return self.mgr.FPPlusZero(eb, sb)
+        if kind == z3.Z3_OP_FPA_MINUS_ZERO:
+            return self.mgr.FPMinusZero(eb, sb)
+        if kind == z3.Z3_OP_FPA_NAN:
+            return self.mgr.FPNaN(eb, sb)
+        number = cast(z3.FPNumRef, expr)
+        return self.mgr.FP(
+            self.mgr.BV(number.sign_as_bv().as_long(), 1),
+            self.mgr.BV(number.exponent_as_bv(True).as_long(), eb),
+            self.mgr.BV(number.significand_as_bv().as_long(), sb - 1),
+        )
+
+    def _back_z3_to_fp(self, args, expr):
+        fp_type = cast(types._FPType, self._z3_to_type(expr.sort()))
+        eb = fp_type.exponent_size
+        sb = fp_type.significand_size
+        if len(args) == 1:
+            return self.mgr.FPFromIEEEBV(args[0], eb, sb)
+        assert len(args) == 2
+        return self.mgr.FPToFP(args[0], args[1], eb, sb)
+
+    def _back_z3_to_fp_unsigned(self, args, expr):
+        fp_type = cast(types._FPType, self._z3_to_type(expr.sort()))
+        return self.mgr.FPToFPUnsigned(
+            args[0], args[1], fp_type.exponent_size, fp_type.significand_size
+        )
+
+    def _back_z3_to_ubv(self, args, expr):
+        return self.mgr.FPToUBV(args[0], args[1], expr.sort().size())
+
+    def _back_z3_to_sbv(self, args, expr):
+        return self.mgr.FPToSBV(args[0], args[1], expr.sort().size())
 
     def _back_z3_eq(self, args, expr):
         if self._get_type(args[0]).is_bool_type():
@@ -970,6 +1095,86 @@ class Z3Converter(Converter, DagWalker):
             z3.Z3_inc_ref(self.ctx.ref(), z3term)
         return z3term
 
+    def make_walk_fp(func):
+        def walk_fp(self, formula, args, **kwargs):
+            z3term = func(self.ctx.ref(), *args)
+            z3.Z3_inc_ref(self.ctx.ref(), z3term)
+            return z3term
+
+        return walk_fp
+
+    walk_fp_from_components = make_walk_fp(z3.Z3_mk_fpa_fp)
+    walk_fp_rne = make_walk_fp(z3.Z3_mk_fpa_round_nearest_ties_to_even)
+    walk_fp_rna = make_walk_fp(z3.Z3_mk_fpa_round_nearest_ties_to_away)
+    walk_fp_rtp = make_walk_fp(z3.Z3_mk_fpa_round_toward_positive)
+    walk_fp_rtn = make_walk_fp(z3.Z3_mk_fpa_round_toward_negative)
+    walk_fp_rtz = make_walk_fp(z3.Z3_mk_fpa_round_toward_zero)
+    walk_fp_abs = make_walk_fp(z3.Z3_mk_fpa_abs)
+    walk_fp_neg = make_walk_fp(z3.Z3_mk_fpa_neg)
+    walk_fp_sqrt = make_walk_fp(z3.Z3_mk_fpa_sqrt)
+    walk_fp_round_to_integral = make_walk_fp(z3.Z3_mk_fpa_round_to_integral)
+    walk_fp_add = make_walk_fp(z3.Z3_mk_fpa_add)
+    walk_fp_sub = make_walk_fp(z3.Z3_mk_fpa_sub)
+    walk_fp_mul = make_walk_fp(z3.Z3_mk_fpa_mul)
+    walk_fp_div = make_walk_fp(z3.Z3_mk_fpa_div)
+    walk_fp_fma = make_walk_fp(z3.Z3_mk_fpa_fma)
+    walk_fp_rem = make_walk_fp(z3.Z3_mk_fpa_rem)
+    walk_fp_min = make_walk_fp(z3.Z3_mk_fpa_min)
+    walk_fp_max = make_walk_fp(z3.Z3_mk_fpa_max)
+    walk_fp_leq = make_walk_fp(z3.Z3_mk_fpa_leq)
+    walk_fp_lt = make_walk_fp(z3.Z3_mk_fpa_lt)
+    walk_fp_eq = make_walk_fp(z3.Z3_mk_fpa_eq)
+    walk_fp_is_normal = make_walk_fp(z3.Z3_mk_fpa_is_normal)
+    walk_fp_is_subnormal = make_walk_fp(z3.Z3_mk_fpa_is_subnormal)
+    walk_fp_is_zero = make_walk_fp(z3.Z3_mk_fpa_is_zero)
+    walk_fp_is_infinite = make_walk_fp(z3.Z3_mk_fpa_is_infinite)
+    walk_fp_is_nan = make_walk_fp(z3.Z3_mk_fpa_is_nan)
+    walk_fp_is_negative = make_walk_fp(z3.Z3_mk_fpa_is_negative)
+    walk_fp_is_positive = make_walk_fp(z3.Z3_mk_fpa_is_positive)
+    walk_fp_to_real = make_walk_fp(z3.Z3_mk_fpa_to_real)
+
+    def walk_fp_from_ieee_bv(self, formula, args, **kwargs):
+        target_sort = self.z3FPSort(*formula.fp_conversion_format())
+        z3term = z3.Z3_mk_fpa_to_fp_bv(self.ctx.ref(), args[0], target_sort.ast)
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
+        return z3term
+
+    def walk_fp_to_fp(self, formula, args, **kwargs):
+        target_sort = self.z3FPSort(*formula.fp_conversion_format())
+        source_type = self._get_type(formula.arg(1))
+        if source_type.is_fp_type():
+            constructor = z3.Z3_mk_fpa_to_fp_float
+        elif source_type.is_real_type():
+            constructor = z3.Z3_mk_fpa_to_fp_real
+        else:
+            assert source_type.is_bv_type()
+            constructor = z3.Z3_mk_fpa_to_fp_signed
+        z3term = constructor(self.ctx.ref(), args[0], args[1], target_sort.ast)
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
+        return z3term
+
+    def walk_fp_to_fp_unsigned(self, formula, args, **kwargs):
+        target_sort = self.z3FPSort(*formula.fp_conversion_format())
+        z3term = z3.Z3_mk_fpa_to_fp_unsigned(
+            self.ctx.ref(), args[0], args[1], target_sort.ast
+        )
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
+        return z3term
+
+    def walk_fp_to_ubv(self, formula, args, **kwargs):
+        z3term = z3.Z3_mk_fpa_to_ubv(
+            self.ctx.ref(), args[0], args[1], formula.fp_conversion_width()
+        )
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
+        return z3term
+
+    def walk_fp_to_sbv(self, formula, args, **kwargs):
+        z3term = z3.Z3_mk_fpa_to_sbv(
+            self.ctx.ref(), args[0], args[1], formula.fp_conversion_width()
+        )
+        z3.Z3_inc_ref(self.ctx.ref(), z3term)
+        return z3term
+
     def _z3_to_type(self, sort):
         if sort.kind() == z3.Z3_BOOL_SORT:
             return types.BOOL
@@ -983,6 +1188,10 @@ class Z3Converter(Converter, DagWalker):
             )
         elif sort.kind() == z3.Z3_BV_SORT:
             return self.env.type_manager.BVType(sort.size())
+        elif sort.kind() == z3.Z3_FLOATING_POINT_SORT:
+            return self.env.type_manager.FPType(sort.ebits(), sort.sbits())
+        elif sort.kind() == z3.Z3_ROUNDING_MODE_SORT:
+            return self.env.type_manager.RMType()
         else:
             raise NotImplementedError("Unsupported sort in conversion: %s" % sort)
 
@@ -1036,7 +1245,7 @@ class Z3Converter(Converter, DagWalker):
     walk_exists = walk_quantifier
     walk_forall = walk_quantifier
 
-    def _type_to_z3(self, tp: PySMTType) -> z3.BitVecSortRef:
+    def _type_to_z3(self, tp: PySMTType) -> z3.SortRef:
         """Convert a pySMT type into the corresponding Z3 sort."""
         if tp.is_bool_type():
             return self.z3BoolSort
@@ -1050,6 +1259,11 @@ class Z3Converter(Converter, DagWalker):
             return self.z3ArraySort(key_sort, val_sort)
         elif tp.is_bv_type():
             return self.z3BitVecSort(cast(types._BVType, tp).width)
+        elif tp.is_fp_type():
+            fp_type = cast(types._FPType, tp)
+            return self.z3FPSort(fp_type.exponent_size, fp_type.significand_size)
+        elif tp.is_rm_type():
+            return self.z3RoundingModeSort
         else:
             assert tp.is_custom_type(), "Unsupported type '%s'" % tp
             return self.z3Sort(tp)

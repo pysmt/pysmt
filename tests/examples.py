@@ -36,6 +36,8 @@ from pysmt.shortcuts import (
     GT,
     LE,
     LT,
+    RNE,
+    RTZ,
     SBV,
     TRUE,
     And,
@@ -69,6 +71,16 @@ from pysmt.shortcuts import (
     Equals,
     Exists,
     ForAll,
+    FPAdd,
+    FPEq,
+    FPIsNaN,
+    FPLt,
+    FPMul,
+    FPNeg,
+    FPPlusZero,
+    FPToReal,
+    FPToUBV,
+    FPVal,
     Function,
     Iff,
     Implies,
@@ -105,6 +117,7 @@ from pysmt.typing import (
     BOOL,
     BV8,
     BV16,
+    FLOAT16,
     INT,
     REAL,
     STRING,
@@ -158,6 +171,8 @@ def get_full_example_formulae(
         usb1 = Symbol("usb1", unary_sort_bool)
 
         str1 = Symbol("str1", STRING)
+
+        fpx = Symbol("fpx", FLOAT16)
 
         result = [
             # Formula, is_valid, is_sat, is_qf
@@ -1149,6 +1164,51 @@ def get_full_example_formulae(
                 is_valid=True,
                 is_sat=True,
                 logic=pysmt.logics.QF_NIA,
+            ),
+            # Floating point
+            Example(
+                hr="(fp.isNaN(fpx) | fp.eq(fp.add(RNE, fpx, fp(0_1, 0_5, 0_10)), fpx))",
+                expr=Or(FPIsNaN(fpx), FPEq(FPAdd(RNE(), fpx, FPPlusZero(5, 11)), fpx)),
+                is_valid=True,
+                is_sat=True,
+                logic=pysmt.logics.QF_FP,
+            ),
+            Example(
+                hr="fp.lt(fpx, fp.neg(fpx))",
+                expr=FPLt(fpx, FPNeg(fpx)),
+                is_valid=False,
+                is_sat=True,
+                logic=pysmt.logics.QF_FP,
+            ),
+            Example(
+                hr="(fp.isNaN(fpx) & fp.eq(fpx, fpx))",
+                expr=And(FPIsNaN(fpx), FPEq(fpx, fpx)),
+                is_valid=False,
+                is_sat=False,
+                logic=pysmt.logics.QF_FP,
+            ),
+            Example(
+                hr="fp.eq(fp.mul(RNE, fp(0_1, 16_5, 512_10), fp(0_1, 14_5, 0_10)), fp(0_1, 15_5, 512_10))",
+                expr=FPEq(
+                    FPMul(RNE(), FPVal(3, 5, 11), FPVal(0.5, 5, 11)), FPVal(1.5, 5, 11)
+                ),
+                is_valid=True,
+                is_sat=True,
+                logic=pysmt.logics.QF_FP,
+            ),
+            Example(
+                hr="(fp.to_ubv[8](RTZ, fpx) = bv8)",
+                expr=Equals(FPToUBV(RTZ(), fpx, 8), bv8),
+                is_valid=False,
+                is_sat=True,
+                logic=pysmt.logics.QF_BVFP,
+            ),
+            Example(
+                hr="(fp.eq(fpx, fp(0_1, 14_5, 0_10)) & (fp.to_real(fpx) = r))",
+                expr=And(FPEq(fpx, FPVal(0.5, 5, 11)), Equals(FPToReal(fpx), r)),
+                is_valid=False,
+                is_sat=True,
+                logic=pysmt.logics.QF_FPLRA,
             ),
             # Sorts
             Example(

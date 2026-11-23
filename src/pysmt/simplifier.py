@@ -17,9 +17,10 @@
 #
 import math
 from fractions import Fraction
-from typing import Any, Dict, List, Optional, Sequence, Union, cast
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 
 import pysmt
+import pysmt.floating_point as floating_point
 import pysmt.operators as op
 import pysmt.typing as types
 import pysmt.walkers
@@ -27,6 +28,17 @@ from pysmt.exceptions import PysmtValueError
 from pysmt.fnode import FNode
 from pysmt.utils import set_bit
 from pysmt.walkers import handles
+
+# The FP classification predicates, on floating_point.FPValue
+_FP_PREDICATES = {
+    op.FP_IS_NORMAL: floating_point.FPValue.is_normal,
+    op.FP_IS_SUBNORMAL: floating_point.FPValue.is_subnormal,
+    op.FP_IS_ZERO: floating_point.FPValue.is_zero,
+    op.FP_IS_INFINITE: floating_point.FPValue.is_infinite,
+    op.FP_IS_NAN: floating_point.FPValue.is_nan,
+    op.FP_IS_NEGATIVE: floating_point.fp_is_negative,
+    op.FP_IS_POSITIVE: floating_point.fp_is_positive,
+}
 
 
 class Simplifier(pysmt.walkers.DagWalker):
@@ -201,6 +213,8 @@ class Simplifier(pysmt.walkers.DagWalker):
         sl = args[0]
         sr = args[1]
 
+        # FP constants are compared by encoding: FormulaManager.FP builds
+        # every NaN with the same encoding, the theory having a single NaN.
         if sl.is_constant() and sr.is_constant():
             l = sl.constant_value()
             r = sr.constant_value()
@@ -1008,7 +1022,7 @@ class Simplifier(pysmt.walkers.DagWalker):
         s = args[0]
         if s.is_string_constant():
             try:
-                return self.manager.Int(int(s.constant_value()))
+                return self.manager.Int(int(cast(str, s.constant_value())))
             except ValueError:
                 return self.manager.Int(-1)
         return self.manager.StrToInt(s)
@@ -1074,6 +1088,116 @@ class Simplifier(pysmt.walkers.DagWalker):
                 return sl
 
         return self.manager.Div(sl, sr)
+
+    @handles(op.FP_OPERATORS)
+    @handles(op.FP_RELATIONS)
+    @handles(op.FP_RM_CONSTANTS)
+    def walk_fp(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
+        """Evaluates the FP operations whose arguments are all constants.
+
+        The operations whose result the theory leaves unspecified for the
+        given arguments (e.g. fp.to_real of an infinity) are kept.
+        """
+        if formula.is_fp_from_components():
+            return self.manager.FP(args[0], args[1], args[2])
+        if args and all(a.is_constant() for a in args):
+            res = self._evaluate_fp(formula, args)
+            if res is not None:
+                return res
+        return self.manager.create_node(
+            node_type=formula.node_type(),
+            args=tuple(args),
+            payload=formula._content.payload,
+        )
+
+    @staticmethod
+    def _fp_value(node: FNode) -> floating_point.FPValue:
+        exponent_size, significand_size = node.fp_format()
+        sign, exponent, significand = cast(Tuple[int, int, int], node.constant_value())
+        return floating_point.FPValue(
+            exponent_size, significand_size, int(sign), int(exponent), int(significand)
+        )
+
+    def _evaluate_fp(self, formula: FNode, args: List[FNode]) -> Optional[FNode]:
+        """Returns the constant value of an FP operation over constants, or
+        None if the theory does not specify it."""
+        mgr = self.manager
+        fpa = floating_point
+        node_type = formula.node_type()
+
+        if node_type in (op.FP_ABS, op.FP_NEG):
+            fun = fpa.fp_abs if node_type == op.FP_ABS else fpa.fp_neg
+            return mgr._fp_from_value(fun(self._fp_value(args[0])))
+        if node_type in (op.FP_REM, op.FP_MIN, op.FP_MAX):
+            fun2 = {op.FP_REM: fpa.fp_rem, op.FP_MIN: fpa.fp_min, op.FP_MAX: fpa.fp_max}
+            value = fun2[node_type](self._fp_value(args[0]), self._fp_value(args[1]))
+            return None if value is None else mgr._fp_from_value(value)
+        if node_type in (op.FP_LEQ, op.FP_LT, op.FP_EQ):
+            relation = {op.FP_LEQ: fpa.fp_leq, op.FP_LT: fpa.fp_lt, op.FP_EQ: fpa.fp_eq}
+            return mgr.Bool(
+                relation[node_type](self._fp_value(args[0]), self._fp_value(args[1]))
+            )
+        if node_type in _FP_PREDICATES:
+            return mgr.Bool(_FP_PREDICATES[node_type](self._fp_value(args[0])))
+        if node_type == op.FP_FROM_IEEE_BV:
+            exponent_size, significand_size = formula.fp_conversion_format()
+            bits = int(cast(int, args[0].constant_value()))
+            return mgr._fp_from_value(
+                fpa.FPValue.from_ieee_bits(exponent_size, significand_size, bits)
+            )
+        if node_type == op.FP_TO_REAL:
+            real = fpa.fp_to_real(self._fp_value(args[0]))
+            return None if real is None else mgr.Real(real)
+
+        # The remaining operations take a rounding mode first
+        rm = args[0].rounding_mode()
+        if node_type in (op.FP_SQRT, op.FP_ROUND_TO_INTEGRAL):
+            rounded = (
+                fpa.fp_sqrt if node_type == op.FP_SQRT else fpa.fp_round_to_integral
+            )
+            return mgr._fp_from_value(rounded(rm, self._fp_value(args[1])))
+        if node_type in (op.FP_ADD, op.FP_SUB, op.FP_MUL, op.FP_DIV):
+            arith = {
+                op.FP_ADD: fpa.fp_add,
+                op.FP_SUB: fpa.fp_sub,
+                op.FP_MUL: fpa.fp_mul,
+                op.FP_DIV: fpa.fp_div,
+            }
+            return mgr._fp_from_value(
+                arith[node_type](rm, self._fp_value(args[1]), self._fp_value(args[2]))
+            )
+        if node_type == op.FP_FMA:
+            x, y, z = (self._fp_value(a) for a in args[1:])
+            return mgr._fp_from_value(fpa.fp_fma(rm, x, y, z))
+        if node_type in (op.FP_TO_FP, op.FP_TO_FP_UNSIGNED):
+            exponent_size, significand_size = formula.fp_conversion_format()
+            source = args[1]
+            if source.is_fp_constant():
+                value = fpa.fp_to_fp(
+                    rm, self._fp_value(source), exponent_size, significand_size
+                )
+            elif source.is_bv_constant():
+                bits = int(cast(int, source.constant_value()))
+                if node_type == op.FP_TO_FP_UNSIGNED:
+                    value = fpa.ubv_to_fp(rm, bits, exponent_size, significand_size)
+                else:
+                    value = fpa.sbv_to_fp(
+                        rm, bits, source.bv_width(), exponent_size, significand_size
+                    )
+            elif source.is_real_constant():
+                # The value can also be a gmpy2 mpq
+                real = cast(Fraction, source.constant_value())
+                exact = Fraction(int(real.numerator), int(real.denominator))
+                value = fpa.real_to_fp(rm, exact, exponent_size, significand_size)
+            else:
+                return None
+            return mgr._fp_from_value(value)
+        if node_type in (op.FP_TO_UBV, op.FP_TO_SBV):
+            width = formula.fp_conversion_width()
+            fun3 = fpa.fp_to_ubv if node_type == op.FP_TO_UBV else fpa.fp_to_sbv
+            bv = fun3(rm, self._fp_value(args[1]), width)
+            return None if bv is None else mgr.BV(bv, width)
+        return None
 
     @handles(op.SYMBOL)
     @handles(op.REAL_CONSTANT, op.INT_CONSTANT, op.BOOL_CONSTANT)

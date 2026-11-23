@@ -23,7 +23,7 @@ reasoning about the type of formulae.
    arguments of a given function.
 """
 
-from typing import Any, Iterable, List, Optional, Sequence, Set, cast
+from typing import Any, Iterable, List, Optional, Sequence, Set, Tuple, cast
 
 import pysmt
 import pysmt.operators as op
@@ -314,6 +314,234 @@ class SimpleTypeChecker(walkers.DagWalker):
         assert formula is not None
         assert len(args) == 0
         return self.env.type_manager.BVType(formula.bv_width())
+
+    @walkers.handles(op.FP_RM_CONSTANTS)
+    def walk_fp_rounding_mode(
+        self, formula: FNode, args: List[Any], **kwargs
+    ) -> Optional[PySMTType]:
+        # pylint: disable=unused-argument
+        assert formula is not None
+        if len(args) != 0:
+            return None
+        return self.env.type_manager.RMType()
+
+    def walk_fp_from_components(
+        self, formula: FNode, args: List[PySMTType], **kwargs
+    ) -> Optional[PySMTType]:
+        """Type the SMT-LIB ``fp`` constructor.
+
+        The three arguments encode the sign, biased exponent, and trailing
+        significand. SMT-LIB's significand-size includes the implicit
+        leading bit, so the third bit-vector has width ``sb - 1``.
+        """
+        # pylint: disable=unused-argument
+        assert formula is not None
+        if len(args) != 3 or any(a is None or not a.is_bv_type() for a in args):
+            return None
+
+        sign_type = cast(types._BVType, args[0])
+        exponent_type = cast(types._BVType, args[1])
+        significand_type = cast(types._BVType, args[2])
+        if sign_type.width != 1:
+            return None
+        if exponent_type.width <= 1 or significand_type.width < 1:
+            return None
+
+        return self.env.type_manager.FPType(
+            exponent_type.width, significand_type.width + 1
+        )
+
+    @staticmethod
+    def _same_fp_type(args: Sequence[PySMTType]) -> Optional[PySMTType]:
+        """Return the common FP type of ``args``, or ``None``."""
+        if not args or args[0] is None or not args[0].is_fp_type():
+            return None
+        target_type = args[0]
+        if any(a is None or a != target_type for a in args[1:]):
+            return None
+        return target_type
+
+    @walkers.handles(op.FP_ABS, op.FP_NEG)
+    def walk_fp_unary(
+        self, formula: FNode, args: List[PySMTType], **kwargs
+    ) -> Optional[PySMTType]:
+        # pylint: disable=unused-argument
+        assert formula is not None
+        if len(args) != 1:
+            return None
+        return self._same_fp_type(args)
+
+    @walkers.handles(op.FP_SQRT, op.FP_ROUND_TO_INTEGRAL)
+    def walk_fp_rounded_unary(
+        self, formula: FNode, args: List[PySMTType], **kwargs
+    ) -> Optional[PySMTType]:
+        # pylint: disable=unused-argument
+        assert formula is not None
+        if len(args) != 2 or args[0] is None or not args[0].is_rm_type():
+            return None
+        return self._same_fp_type(args[1:])
+
+    @walkers.handles(op.FP_ADD, op.FP_SUB, op.FP_MUL, op.FP_DIV)
+    def walk_fp_rounded_binary(
+        self, formula: FNode, args: List[PySMTType], **kwargs
+    ) -> Optional[PySMTType]:
+        # pylint: disable=unused-argument
+        assert formula is not None
+        if len(args) != 3 or args[0] is None or not args[0].is_rm_type():
+            return None
+        return self._same_fp_type(args[1:])
+
+    def walk_fp_fma(
+        self, formula: FNode, args: List[PySMTType], **kwargs
+    ) -> Optional[PySMTType]:
+        # pylint: disable=unused-argument
+        assert formula is not None
+        if len(args) != 4 or args[0] is None or not args[0].is_rm_type():
+            return None
+        return self._same_fp_type(args[1:])
+
+    @walkers.handles(op.FP_REM, op.FP_MIN, op.FP_MAX)
+    def walk_fp_binary(
+        self, formula: FNode, args: List[PySMTType], **kwargs
+    ) -> Optional[PySMTType]:
+        # pylint: disable=unused-argument
+        assert formula is not None
+        if len(args) != 2:
+            return None
+        return self._same_fp_type(args)
+
+    @walkers.handles(op.FP_LEQ, op.FP_LT, op.FP_EQ)
+    def walk_fp_relation(
+        self, formula: FNode, args: List[PySMTType], **kwargs
+    ) -> Optional[PySMTType]:
+        # pylint: disable=unused-argument
+        assert formula is not None
+        if len(args) != 2 or self._same_fp_type(args) is None:
+            return None
+        return BOOL
+
+    @walkers.handles(
+        op.FP_IS_NORMAL,
+        op.FP_IS_SUBNORMAL,
+        op.FP_IS_ZERO,
+        op.FP_IS_INFINITE,
+        op.FP_IS_NAN,
+        op.FP_IS_NEGATIVE,
+        op.FP_IS_POSITIVE,
+    )
+    def walk_fp_predicate(
+        self, formula: FNode, args: List[PySMTType], **kwargs
+    ) -> Optional[PySMTType]:
+        # pylint: disable=unused-argument
+        assert formula is not None
+        if len(args) != 1 or self._same_fp_type(args) is None:
+            return None
+        return BOOL
+
+    @staticmethod
+    def _valid_fp_format(formula: FNode) -> Optional[Tuple[int, int]]:
+        try:
+            exponent_size, significand_size = formula.fp_conversion_format()
+        except (AssertionError, TypeError, ValueError, PysmtTypeError):
+            return None
+        if (
+            not isinstance(exponent_size, int)
+            or isinstance(exponent_size, bool)
+            or exponent_size <= 1
+            or not isinstance(significand_size, int)
+            or isinstance(significand_size, bool)
+            or significand_size <= 1
+        ):
+            return None
+        return exponent_size, significand_size
+
+    def walk_fp_from_ieee_bv(
+        self, formula: FNode, args: List[PySMTType], **kwargs
+    ) -> Optional[PySMTType]:
+        # pylint: disable=unused-argument
+        assert formula is not None
+        fp_format = self._valid_fp_format(formula)
+        if (
+            len(args) != 1
+            or fp_format is None
+            or args[0] is None
+            or not args[0].is_bv_type()
+        ):
+            return None
+        exponent_size, significand_size = fp_format
+        if cast(types._BVType, args[0]).width != (exponent_size + significand_size):
+            return None
+        return self.env.type_manager.FPType(exponent_size, significand_size)
+
+    def walk_fp_to_fp(
+        self, formula: FNode, args: List[PySMTType], **kwargs
+    ) -> Optional[PySMTType]:
+        # pylint: disable=unused-argument
+        assert formula is not None
+        fp_format = self._valid_fp_format(formula)
+        if (
+            len(args) != 2
+            or fp_format is None
+            or args[0] is None
+            or not args[0].is_rm_type()
+            or args[1] is None
+        ):
+            return None
+        source_type = args[1]
+        if not (
+            source_type.is_fp_type()
+            or source_type.is_real_type()
+            or source_type.is_bv_type()
+        ):
+            return None
+        return self.env.type_manager.FPType(*fp_format)
+
+    def walk_fp_to_fp_unsigned(
+        self, formula: FNode, args: List[PySMTType], **kwargs
+    ) -> Optional[PySMTType]:
+        # pylint: disable=unused-argument
+        assert formula is not None
+        fp_format = self._valid_fp_format(formula)
+        if (
+            len(args) != 2
+            or fp_format is None
+            or args[0] is None
+            or not args[0].is_rm_type()
+            or args[1] is None
+            or not args[1].is_bv_type()
+        ):
+            return None
+        return self.env.type_manager.FPType(*fp_format)
+
+    @walkers.handles(op.FP_TO_UBV, op.FP_TO_SBV)
+    def walk_fp_to_bv(
+        self, formula: FNode, args: List[PySMTType], **kwargs
+    ) -> Optional[PySMTType]:
+        # pylint: disable=unused-argument
+        assert formula is not None
+        if (
+            len(args) != 2
+            or args[0] is None
+            or not args[0].is_rm_type()
+            or self._same_fp_type(args[1:]) is None
+        ):
+            return None
+        try:
+            width = formula.fp_conversion_width()
+        except (AssertionError, TypeError, ValueError, PysmtTypeError):
+            return None
+        if not isinstance(width, int) or isinstance(width, bool) or width <= 0:
+            return None
+        return self.env.type_manager.BVType(width)
+
+    def walk_fp_to_real(
+        self, formula: FNode, args: List[PySMTType], **kwargs
+    ) -> Optional[PySMTType]:
+        # pylint: disable=unused-argument
+        assert formula is not None
+        if len(args) != 1 or self._same_fp_type(args) is None:
+            return None
+        return REAL
 
     def walk_symbol(
         self, formula: FNode, args: List[Any], **kwargs

@@ -49,6 +49,7 @@ else:
 
 
 import pysmt
+import pysmt.floating_point as floating_point
 import pysmt.operators as op
 import pysmt.typing as types
 from pysmt.constants import (
@@ -1152,6 +1153,252 @@ class FormulaManager(object):
         Given a BitVector of width m returns an integer between 0 and 2^m-1
         """
         return self.create_node(node_type=op.BV_TONATURAL, args=(formula,))
+
+    # Floating-point
+
+    def FP(self, sign: FNode, exponent: FNode, significand: FNode) -> FNode:
+        """Build an FP term from its SMT-LIB bit-vector components.
+
+        The theory has a single NaN value, which every exponent of all ones
+        with a non-zero significand encodes. A constant NaN is therefore
+        always built with the encoding of FPNaN, so that equal values are
+        equal nodes.
+        """
+        if (
+            sign.is_bv_constant()
+            and exponent.is_bv_constant()
+            and significand.is_bv_constant()
+            and exponent.constant_value() == 2 ** exponent.bv_width() - 1
+            and significand.constant_value() != 0
+        ):
+            sign = self.BV(0, sign.bv_width())
+            significand = self.BV(1, significand.bv_width())
+        return self.create_node(
+            node_type=op.FP_FROM_COMPONENTS, args=(sign, exponent, significand)
+        )
+
+    def FPVal(
+        self,
+        value: Union[int, float, fractions.Fraction, str],
+        exponent_size: int,
+        significand_size: int,
+        rounding_mode: Optional[FNode] = None,
+    ) -> FNode:
+        """Return the FP constant of the given format nearest to a number.
+
+        value is an int, a float, a Fraction or a string accepted by
+        fractions.Fraction (e.g. "0.1" or "1/3"). It is rounded with the
+        given rounding mode constant (RNE by default). A float keeps its
+        NaN, its infinities and the sign of its zeros.
+        """
+        self._check_fp_format(exponent_size, significand_size)
+        if rounding_mode is None:
+            rm = floating_point.RNE
+        elif rounding_mode.is_rm_constant():
+            rm = rounding_mode.rounding_mode()
+        else:
+            raise PysmtValueError(
+                "Expected a rounding mode constant, got %s" % rounding_mode
+            )
+        return self._fp_from_value(
+            floating_point.from_number(value, exponent_size, significand_size, rm)
+        )
+
+    def _fp_from_value(self, value: "floating_point.FPValue") -> FNode:
+        """Return the FP constant of an FPValue."""
+        return self.FP(
+            self.BV(value.sign, 1),
+            self.BV(value.exponent, value.eb),
+            self.BV(value.significand, value.sb - 1),
+        )
+
+    def _check_fp_format(self, exponent_size: int, significand_size: int) -> None:
+        self.env.type_manager.FPType(exponent_size, significand_size)
+
+    def FPPlusZero(self, exponent_size: int, significand_size: int) -> FNode:
+        """Return positive zero in the requested FP format."""
+        self._check_fp_format(exponent_size, significand_size)
+        return self.FP(
+            self.BV(0, 1), self.BV(0, exponent_size), self.BV(0, significand_size - 1)
+        )
+
+    def FPMinusZero(self, exponent_size: int, significand_size: int) -> FNode:
+        """Return negative zero in the requested FP format."""
+        self._check_fp_format(exponent_size, significand_size)
+        return self.FP(
+            self.BV(1, 1), self.BV(0, exponent_size), self.BV(0, significand_size - 1)
+        )
+
+    def FPPlusInfinity(self, exponent_size: int, significand_size: int) -> FNode:
+        """Return positive infinity in the requested FP format."""
+        self._check_fp_format(exponent_size, significand_size)
+        return self.FP(
+            self.BV(0, 1),
+            self.BV(2**exponent_size - 1, exponent_size),
+            self.BV(0, significand_size - 1),
+        )
+
+    def FPMinusInfinity(self, exponent_size: int, significand_size: int) -> FNode:
+        """Return negative infinity in the requested FP format."""
+        self._check_fp_format(exponent_size, significand_size)
+        return self.FP(
+            self.BV(1, 1),
+            self.BV(2**exponent_size - 1, exponent_size),
+            self.BV(0, significand_size - 1),
+        )
+
+    def FPNaN(self, exponent_size: int, significand_size: int) -> FNode:
+        """Return a canonical NaN in the requested FP format."""
+        self._check_fp_format(exponent_size, significand_size)
+        return self.FP(
+            self.BV(0, 1),
+            self.BV(2**exponent_size - 1, exponent_size),
+            self.BV(1, significand_size - 1),
+        )
+
+    def RNE(self) -> FNode:
+        return self.create_node(node_type=op.FP_RNE, args=tuple())
+
+    def RNA(self) -> FNode:
+        return self.create_node(node_type=op.FP_RNA, args=tuple())
+
+    def RTP(self) -> FNode:
+        return self.create_node(node_type=op.FP_RTP, args=tuple())
+
+    def RTN(self) -> FNode:
+        return self.create_node(node_type=op.FP_RTN, args=tuple())
+
+    def RTZ(self) -> FNode:
+        return self.create_node(node_type=op.FP_RTZ, args=tuple())
+
+    def FPAbs(self, formula: FNode) -> FNode:
+        return self.create_node(node_type=op.FP_ABS, args=(formula,))
+
+    def FPNeg(self, formula: FNode) -> FNode:
+        return self.create_node(node_type=op.FP_NEG, args=(formula,))
+
+    def FPSqrt(self, rounding_mode: FNode, formula: FNode) -> FNode:
+        return self.create_node(node_type=op.FP_SQRT, args=(rounding_mode, formula))
+
+    def FPRoundToIntegral(self, rounding_mode: FNode, formula: FNode) -> FNode:
+        return self.create_node(
+            node_type=op.FP_ROUND_TO_INTEGRAL, args=(rounding_mode, formula)
+        )
+
+    def FPAdd(self, rounding_mode: FNode, left: FNode, right: FNode) -> FNode:
+        return self.create_node(node_type=op.FP_ADD, args=(rounding_mode, left, right))
+
+    def FPSub(self, rounding_mode: FNode, left: FNode, right: FNode) -> FNode:
+        return self.create_node(node_type=op.FP_SUB, args=(rounding_mode, left, right))
+
+    def FPMul(self, rounding_mode: FNode, left: FNode, right: FNode) -> FNode:
+        return self.create_node(node_type=op.FP_MUL, args=(rounding_mode, left, right))
+
+    def FPDiv(self, rounding_mode: FNode, left: FNode, right: FNode) -> FNode:
+        return self.create_node(node_type=op.FP_DIV, args=(rounding_mode, left, right))
+
+    def FPFMA(
+        self, rounding_mode: FNode, first: FNode, second: FNode, third: FNode
+    ) -> FNode:
+        return self.create_node(
+            node_type=op.FP_FMA, args=(rounding_mode, first, second, third)
+        )
+
+    def FPRem(self, left: FNode, right: FNode) -> FNode:
+        return self.create_node(node_type=op.FP_REM, args=(left, right))
+
+    def FPMin(self, left: FNode, right: FNode) -> FNode:
+        return self.create_node(node_type=op.FP_MIN, args=(left, right))
+
+    def FPMax(self, left: FNode, right: FNode) -> FNode:
+        return self.create_node(node_type=op.FP_MAX, args=(left, right))
+
+    def FPLEq(self, left: FNode, right: FNode) -> FNode:
+        return self.create_node(node_type=op.FP_LEQ, args=(left, right))
+
+    def FPLt(self, left: FNode, right: FNode) -> FNode:
+        return self.create_node(node_type=op.FP_LT, args=(left, right))
+
+    def FPGEq(self, left: FNode, right: FNode) -> FNode:
+        return self.FPLEq(right, left)
+
+    def FPGt(self, left: FNode, right: FNode) -> FNode:
+        return self.FPLt(right, left)
+
+    def FPEq(self, left: FNode, right: FNode) -> FNode:
+        return self.create_node(node_type=op.FP_EQ, args=(left, right))
+
+    def FPIsNormal(self, formula: FNode) -> FNode:
+        return self.create_node(node_type=op.FP_IS_NORMAL, args=(formula,))
+
+    def FPIsSubnormal(self, formula: FNode) -> FNode:
+        return self.create_node(node_type=op.FP_IS_SUBNORMAL, args=(formula,))
+
+    def FPIsZero(self, formula: FNode) -> FNode:
+        return self.create_node(node_type=op.FP_IS_ZERO, args=(formula,))
+
+    def FPIsInfinite(self, formula: FNode) -> FNode:
+        return self.create_node(node_type=op.FP_IS_INFINITE, args=(formula,))
+
+    def FPIsNaN(self, formula: FNode) -> FNode:
+        return self.create_node(node_type=op.FP_IS_NAN, args=(formula,))
+
+    def FPIsNegative(self, formula: FNode) -> FNode:
+        return self.create_node(node_type=op.FP_IS_NEGATIVE, args=(formula,))
+
+    def FPIsPositive(self, formula: FNode) -> FNode:
+        return self.create_node(node_type=op.FP_IS_POSITIVE, args=(formula,))
+
+    def FPFromIEEEBV(
+        self, formula: FNode, exponent_size: int, significand_size: int
+    ) -> FNode:
+        self._check_fp_format(exponent_size, significand_size)
+        return self.create_node(
+            node_type=op.FP_FROM_IEEE_BV,
+            args=(formula,),
+            payload=(exponent_size, significand_size),
+        )
+
+    def FPToFP(
+        self,
+        rounding_mode: FNode,
+        formula: FNode,
+        exponent_size: int,
+        significand_size: int,
+    ) -> FNode:
+        self._check_fp_format(exponent_size, significand_size)
+        return self.create_node(
+            node_type=op.FP_TO_FP,
+            args=(rounding_mode, formula),
+            payload=(exponent_size, significand_size),
+        )
+
+    def FPToFPUnsigned(
+        self,
+        rounding_mode: FNode,
+        formula: FNode,
+        exponent_size: int,
+        significand_size: int,
+    ) -> FNode:
+        self._check_fp_format(exponent_size, significand_size)
+        return self.create_node(
+            node_type=op.FP_TO_FP_UNSIGNED,
+            args=(rounding_mode, formula),
+            payload=(exponent_size, significand_size),
+        )
+
+    def FPToUBV(self, rounding_mode: FNode, formula: FNode, width: int) -> FNode:
+        return self.create_node(
+            node_type=op.FP_TO_UBV, args=(rounding_mode, formula), payload=width
+        )
+
+    def FPToSBV(self, rounding_mode: FNode, formula: FNode, width: int) -> FNode:
+        return self.create_node(
+            node_type=op.FP_TO_SBV, args=(rounding_mode, formula), payload=width
+        )
+
+    def FPToReal(self, formula: FNode) -> FNode:
+        return self.create_node(node_type=op.FP_TO_REAL, args=(formula,))
 
     def Select(self, arr: FNode, idx: FNode) -> FNode:
         """Creates a node representing an array selection."""

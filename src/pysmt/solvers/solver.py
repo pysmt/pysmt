@@ -31,6 +31,7 @@ from typing import (
 )
 
 import pysmt.formula
+import pysmt.operators as op
 from pysmt.decorators import clear_pending_pop
 from pysmt.environment import Environment
 from pysmt.exceptions import (
@@ -265,7 +266,9 @@ class Solver(object):
         """
         raise NotImplementedError
 
-    def get_py_value(self, formula: FNode) -> Union[str, bool, Fraction, int]:
+    def get_py_value(
+        self, formula: FNode
+    ) -> Union[str, bool, Fraction, int, Tuple[int, int, int]]:
         """Returns the value of formula as a python type.
 
         E.g., Bool(True) is translated into True.
@@ -277,7 +280,7 @@ class Solver(object):
 
     def get_py_values(
         self, formulae: Iterable[FNode]
-    ) -> Dict[FNode, Union[str, bool, Fraction, int]]:
+    ) -> Dict[FNode, Union[str, bool, Fraction, int, Tuple[int, int, int]]]:
         """Returns the values of the formulae as python types.
 
         Returns a dictionary mapping each formula to its python value.
@@ -528,7 +531,7 @@ class Model(object):
 
     def get_py_value(
         self, formula: FNode, model_completion: bool = True
-    ) -> Union[str, bool, Fraction, int]:
+    ) -> Union[str, bool, Fraction, int, Tuple[int, int, int]]:
         """Returns the value of formula as a python type.
 
         E.g., Bool(True) is translated into True.
@@ -540,7 +543,7 @@ class Model(object):
 
     def get_py_values(
         self, formulae: Iterable[FNode], model_completion: bool = True
-    ) -> Dict[FNode, Union[str, bool, Fraction, int]]:
+    ) -> Dict[FNode, Union[str, bool, Fraction, int, Tuple[int, int, int]]]:
         """Returns the values of the formulae as python types.
 
         Returns the values of the formulae as python types. in the
@@ -571,25 +574,34 @@ class Model(object):
             # Partial model
             return False
 
-        if self.environment.enable_div_by_0 and solver is not None:
-            # Models might not be simplified to a constant value
-            # if there is a division by zero. We find the
-            # division(s) and ask the solver for a replacement
-            # expression.
-            stack = [simp]
-            div_0 = []
-            while stack:
-                x = stack.pop()
-                if x.is_constant():
-                    pass
-                elif x.is_div() and x.arg(1).is_zero():
-                    div_0.append(x)
-                stack += x.args()
-
-            subs = self.get_values(div_0)
-            simp = env.simplifier.simplify(env.substituter.substitute(simp, subs))
-            return simp.is_true()
-        return False
+        # Models might not be simplified to a constant value if there is a
+        # division by zero (when enabled and a solver is given), or an FP
+        # operation whose result the theory leaves unspecified (e.g.
+        # fp.to_real of an infinity). We find them and ask the model for
+        # their value.
+        div_0 = self.environment.enable_div_by_0 and solver is not None
+        stack = [simp]
+        unknown = []
+        while stack:
+            x = stack.pop()
+            if x.is_constant():
+                continue
+            if div_0 and x.is_div() and x.arg(1).is_zero():
+                unknown.append(x)
+            elif x.node_type() in op.FP_PARTIAL_OPERATORS and all(
+                a.is_constant() for a in x.args()
+            ):
+                unknown.append(x)
+            stack += x.args()
+        if not unknown:
+            return False
+        try:
+            subs = self.get_values(unknown)
+        except PysmtTypeError:
+            # The model cannot evaluate them (e.g. an EagerModel)
+            return False
+        simp = env.simplifier.simplify(env.substituter.substitute(simp, subs))
+        return simp.is_true()
 
     @property
     def converter(self):
