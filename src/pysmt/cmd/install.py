@@ -37,9 +37,6 @@ BuildSolver = namedtuple(
     "BuildSolver", ["name", "InstallerClass", "version", "extra_params"]
 )
 
-# uv only accepts direct URLs that end with an archive extension
-REPYCUDD_URL = "https://github.com/pysmt/repycudd/archive/b87421c596a1bc2cafeb10ec40fcceacc952eda2.tar.gz"
-
 SOLVERS = [
     BuildSolver("msat", MSatInstaller, "5.6.20", {}),
     PipSolver("cvc5", "cvc5", ["cvc5==1.4.2"]),
@@ -62,7 +59,7 @@ SOLVERS = [
     BuildSolver(
         "picosat", PicoSATInstaller, "965", {"pypicosat_minor_version": "1708010052"}
     ),
-    PipSolver("bdd", "repycudd", ["repycudd @ %s" % REPYCUDD_URL]),
+    PipSolver("bdd", "repycudd", ["repycudd==3.1.0"]),
     BuildSolver("optimsat", OptiMSatInstaller, "1.7.5", {}),
 ]
 

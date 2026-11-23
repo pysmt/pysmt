@@ -100,17 +100,17 @@ the tests of the generic SMT-LIB wrapper find it, without installing the
 Python bindings in the environment. ``all`` installs every solver and
 copies both executables.
 
-The recipe does not install OS packages. Z3, cvc5 and Boolector are
-installed from wheels, and Yices uses SRI's prebuilt binaries on Linux
-x86_64 and macOS (elsewhere it is built from source). The other solvers
-are built locally:
+The recipe does not install OS packages. Z3, cvc5, Boolector and CUDD
+(``bdd``) are installed from wheels, and Yices uses SRI's prebuilt binaries
+on Linux x86_64 and macOS (elsewhere it is built from source). The other
+solvers are built locally:
 
 * MathSAT and OptiMathSAT need a C compiler and the gmp headers:
   ``libgmp-dev`` on Debian and Ubuntu, ``brew install gmp`` on macOS
   (with ``LIBRARY_PATH`` and ``CPATH`` pointing to the ``lib`` and
   ``include`` directories of ``brew --prefix``). On Windows
   ``pysmt-install`` downloads gmp itself and needs MSVC.
-* PicoSAT and CUDD (``bdd``) need a C compiler and swig.
+* PicoSAT needs a C compiler and swig.
 
 On Windows, just runs the recipes with PowerShell, since ``bash`` may
 resolve to the WSL launcher there.
