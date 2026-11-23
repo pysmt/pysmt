@@ -21,61 +21,67 @@ from pysmt.shortcuts import is_sat
 _info = logging.getLogger(__name__).info
 logging.basicConfig(level=logging.DEBUG)
 
-# A solver set is an iterable of solver names or pairs of
-# solvers+options (See next example)
 
-_info("Example 1: is_sat")
-solvers_set = ["z3", "yices", "msat"]
-res = is_sat(f, portfolio=solvers_set)
-assert res is True
-
-# Behind the scenes, pySMT launched 3 processes and solved the
-# expression in parallel.
-#
-# The is_sat shortcut is useful for prototyping and exploration, but
-# we typically need more control over the solver. The Portfolio class
-# behaves as a solver and as such implements most of the methods of a
-# regular solver.
-from pysmt.logics import QF_UFLIRA
-from pysmt.shortcuts import Portfolio
-
-# The options given to the Portfolio will be passed to all solvers, in
-# particular, we are enabling incrementality and model generation.
-
-_info("Example 2: Portfolio()")
-with Portfolio(
-    solvers_set, logic=QF_UFLIRA, incremental=True, generate_models=True
-) as s:
-    s.add_assertion(f)
-    s.push()
-    s.add_assertion(x)
-    res = s.solve()
-    v_y = s.get_value(y)
-    assert v_y is TRUE()
-
-    s.pop()
-    s.add_assertion(Not(y))
-    res = s.solve()
-    v_x = s.get_value(x)
-    assert v_x is FALSE()
-
-# Portfolio can also be useful to tweak heuristics of the solvers.
-# For supported solver options, please refer to the solver
-# documentation. This is an area of pySMT that could use additional
-# feedback and help!
-
-_info("Example 3: Portfolio w options")
-with Portfolio(
-    [
-        ("msat", {"random_seed": 1}),
-        ("msat", {"random_seed": 17}),
-        ("msat", {"random_seed": 42}),
-        "cvc5",
-        "yices",
-    ],
-    logic=QF_UFLIRA,
-    incremental=False,
-    generate_models=False,
-) as s:
-    res = s.is_sat(f)
+def main():
+    _info("Example 1: is_sat")
+    # A solver set is an iterable of solver names or pairs of
+    # solvers+options (See next example)
+    solvers_set = ["z3", "yices", "msat"]
+    res = is_sat(f, portfolio=solvers_set)
     assert res is True
+
+    # Behind the scenes, pySMT launched 3 processes and solved the
+    # expression in parallel.
+    #
+    # The is_sat shortcut is useful for prototyping and exploration, but
+    # we typically need more control over the solver. The Portfolio class
+    # behaves as a solver and as such implements most of the methods of a
+    # regular solver.
+    from pysmt.logics import QF_UFLIRA
+    from pysmt.shortcuts import Portfolio
+
+    # The options given to the Portfolio will be passed to all solvers, in
+    # particular, we are enabling incrementality and model generation.
+
+    _info("Example 2: Portfolio()")
+    with Portfolio(
+        solvers_set, logic=QF_UFLIRA, incremental=True, generate_models=True
+    ) as s:
+        s.add_assertion(f)
+        s.push()
+        s.add_assertion(x)
+        res = s.solve()
+        v_y = s.get_value(y)
+        assert v_y is TRUE()
+
+        s.pop()
+        s.add_assertion(Not(y))
+        res = s.solve()
+        v_x = s.get_value(x)
+        assert v_x is FALSE()
+
+    # Portfolio can also be useful to tweak heuristics of the solvers.
+    # For supported solver options, please refer to the solver
+    # documentation. This is an area of pySMT that could use additional
+    # feedback and help!
+
+    _info("Example 3: Portfolio w options")
+    with Portfolio(
+        [
+            ("msat", {"random_seed": 1}),
+            ("msat", {"random_seed": 17}),
+            ("msat", {"random_seed": 42}),
+            "cvc5",
+            "yices",
+        ],
+        logic=QF_UFLIRA,
+        incremental=False,
+        generate_models=False,
+    ) as s:
+        res = s.is_sat(f)
+        assert res is True
+
+
+# spawn and forkserver workers re-import this module, so start the solvers only here
+if __name__ == "__main__":
+    main()

@@ -85,6 +85,11 @@ Change Log
   constant arrays. It slowed down every other logic (a QF_LRA benchmark
   went from 2 s to 22 s with cvc5 1.3.3) and made cvc5 1.4 hang (#880).
 
+* ``examples/parallel.py`` and ``examples/portfolio.py`` start their
+  worker processes only when run as scripts. Python 3.14 starts the
+  workers with ``forkserver`` on Linux, which re-imports the example,
+  so they failed (#870).
+
 0.10.0: 2026-11-21 -- Optimization, type hints and upgraded solvers
 ---------------------------------------------------------------------
 
