@@ -204,15 +204,20 @@ will install MathSAT 5.
 ``pysmt-install`` installs the solvers into the Python interpreter that
 runs it (e.g., the active virtual environment). It uses ``pip`` from that
 interpreter, or ``uv pip`` when ``pip`` is not available (as in
-environments created by uv). Z3, cvc5, Boolector and CUDD are installed
-as regular packages, so they can be upgraded or removed with the same
-tool (e.g., ``pip uninstall z3-solver``). If you
+environments created by uv). Z3, cvc5, Boolector, CUDD, MathSAT and
+OptiMathSAT are installed as regular packages, so they can be upgraded
+or removed with the same tool (e.g., ``pip uninstall z3-solver`` or
+``pip uninstall mathsat``; OptiMathSAT is ``optimathsat``). If you
 cannot write to the environment, ``--target DIR`` installs the solvers
 into ``DIR``, which you then need to add to your ``PYTHONPATH``, and
 ``pysmt-install --check --target DIR`` checks the solvers in ``DIR``.
 MathSAT, OptiMathSAT, Yices and PicoSAT are downloaded and built in the
 ``.smt_solvers`` folder in your home directory (see ``--install-path``)
-before being installed. If you have multiple versions of Python in your
+before being installed. Building the MathSAT and OptiMathSAT bindings
+needs a C++ compiler and the GMP library with its headers (e.g.,
+``libgmp-dev`` on Debian/Ubuntu, ``gmp`` from Homebrew on macOS). On
+Windows it needs the Microsoft C++ Build Tools, and ``pysmt-install``
+downloads GMP itself. If you have multiple versions of Python in your
 system, we recommend the following syntax to run pysmt-install:
 ``python -m pysmt install``.
 

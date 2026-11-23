@@ -12,16 +12,83 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import glob
 import os
 
-from pysmt.cmd.installers.base import SolverInstaller
+from pysmt.cmd.installers.base import SolverInstaller, installed_version, pip_install
+from pysmt.exceptions import PysmtException
+
+# Inserted before the setup() call of the bindings' setup.py (see patch_setup_py)
+SETUP_PY_PREAMBLE = """\
+from setuptools.command.build_ext import build_ext as _build_ext
 
 
-class MSatInstaller(SolverInstaller):
+class build_ext(_build_ext):
+    def run(self):
+        super().run()
+        # pysmt: ship the solver's shared libraries (e.g., DLLs) next to the extension
+        for d in ("bin", "lib"):
+            libdir = os.path.join(MATHSAT_DIR, d)
+            for f in os.listdir(libdir):
+                if f.endswith((".dll", ".so", ".dylib")):
+                    self.copy_file(os.path.join(libdir, f), self.build_lib)
+
+
+setup(cmdclass={"build_ext": build_ext}, py_modules=[%r], name="""
+
+
+class MathSATFamilyInstaller(SolverInstaller):
+    """Installs the Python bindings shipped in a MathSAT or OptiMathSAT release."""
+
+    # Name of the Python module, which is also the name of the distribution
+    MODULE: str
+
+    def __init__(self, **kwargs):
+        SolverInstaller.__init__(self, **kwargs)
+        self.python_bindings_dir = os.path.join(self.extract_path, "python")
+
+    def compile(self):
+        self.patch_setup_py()
+        # We get here only if this version is missing or --force was given
+        pip_install(
+            [os.path.abspath(self.python_bindings_dir)], target=self.target, force=True
+        )
+
+    def patch_setup_py(self):
+        """Makes the bindings' setup.py build a complete, versioned package."""
+        path = os.path.join(self.python_bindings_dir, "setup.py")
+        with open(path, "r") as f:
+            content = f.read()
+        mathsat_dir = os.path.abspath(self.extract_path)
+        replacements = [
+            # pip may build in a copy of the directory, where '..' is not the archive
+            ("MATHSAT_DIR = '..'", "MATHSAT_DIR = %r" % mathsat_dir),
+            # The version is what --check and pip report for the installed bindings
+            ("version='0.1',", "version=%r," % self.solver_version),
+            ("setup(name=", SETUP_PY_PREAMBLE % self.MODULE),
+        ]
+        if self.os_name == "linux":
+            # Finds shared libraries placed next to the extension without LD_LIBRARY_PATH
+            replacements.append(
+                ("extra_link_args = []", "extra_link_args = ['-Wl,-rpath,$ORIGIN']")
+            )
+        for old, new in replacements:
+            if content.count(old) != 1:
+                raise PysmtException("Cannot patch %s: %r not found" % (path, old))
+            content = content.replace(old, new)
+        with open(path, "w") as f:
+            f.write(content)
+
+    def get_installed_version(self):
+        # With --target, a copy in the running environment must not count
+        path = None if self.target is None else [self.target]
+        return installed_version(self.MODULE, path=path)
+
+
+class MSatInstaller(MathSATFamilyInstaller):
     SOLVER = "msat"
+    MODULE = "mathsat"
 
-    def __init__(self, install_dir, site_dir, solver_version, mirror_link=None):
+    def __init__(self, install_dir, target, solver_version, mirror_link=None):
 
         # Getting the right archive name
         archive_name_template = "mathsat-{version}-{os}-{arch}.{ext}"
@@ -45,17 +112,15 @@ class MSatInstaller(SolverInstaller):
 
         native_link = "https://mathsat.fbk.eu/release/{archive_name}"
 
-        SolverInstaller.__init__(
+        MathSATFamilyInstaller.__init__(
             self,
             install_dir=install_dir,
-            site_dir=site_dir,
+            target=target,
             solver_version=solver_version,
             archive_name=archive_name,
             native_link=native_link,
             mirror_link=mirror_link,
         )
-
-        self.python_bindings_dir = os.path.join(self.extract_path, "python")
 
     def compile(self):
         if self.os_name == "windows":
@@ -71,7 +136,6 @@ class MSatInstaller(SolverInstaller):
 
             gmp_include_dir = os.path.join(self.base_dir, "gmp-6.3.0", "include")
             gmp_lib_dir = os.path.join(self.base_dir, "gmp-6.3.0", "lib")
-            # gmp_dll_dir = os.path.join(self.base_dir, "gmp-6.3.0", "bin")
             SolverInstaller.mv(os.path.join(gmp_include_dir, "gmp.h"), incdir)
             SolverInstaller.mv(
                 source=os.path.join(gmp_lib_dir, "gmpdll.lib"),
@@ -83,43 +147,4 @@ class MSatInstaller(SolverInstaller):
             setup_py_path = os.path.join(self.python_bindings_dir, "setup.py")
             SolverInstaller.replace_in_file(setup_py_path, "mpir", "gmp")
 
-        # Run setup.py to compile the bindings
-        if self.os_name in {"windows", "darwin"}:
-            SolverInstaller.run_setup_py(["build_ext"], self.python_bindings_dir)
-        else:
-            # NB: -R adds --rpath=$ORIGIN to link step, which makes shared library object
-            # searched for in the extension's directory (no need for LD_LIBRARY_PATH)
-            # (note: this is the default behavior for DLL discovery on Windows)
-            SolverInstaller.run_setup_py(
-                ["build_ext", "-R", "$ORIGIN"], self.python_bindings_dir
-            )
-
-    def move(self):
-        pdir = self.python_bindings_dir
-        bdir = os.path.join(pdir, "build")
-        sodir = glob.glob(bdir + "/lib.*")[0]
-        libdir = os.path.join(self.python_bindings_dir, "../bin")
-
-        # First, we need the SWIG-generated wrapper
-        for f in os.listdir(sodir):
-            if "_mathsat" in f:
-                SolverInstaller.mv(os.path.join(sodir, f), self.site_dir)
-        SolverInstaller.mv(os.path.join(pdir, "mathsat.py"), self.site_dir)
-
-        # Since MathSAT 5.5.0 we also need the SO/DLL/DYLIB of mathsat in the PATH
-        # Under Windows, we also need the DLLs of MPIR in the PATH
-        for f in os.listdir(libdir):
-            if f.endswith(".so") or f.endswith(".dll") or f.endswith(".dylib"):
-                SolverInstaller.mv(os.path.join(libdir, f), self.site_dir)
-
-        # Fix issue in MathSAT 5.6.10 linking to incorrect directory on MacOS
-        if self.os_name == "darwin":
-            soname = glob.glob(self.site_dir + "/_mathsat*.so")[0]
-            old_path = "/Users/alb/src/release/build/libmathsat.dylib"
-            new_path = "%s/libmathsat.dylib" % self.site_dir
-            SolverInstaller.run(
-                ["install_name_tool", "-change", old_path, new_path, soname]
-            )
-
-    def get_installed_version(self):
-        return self.get_installed_version_script("msat")
+        MathSATFamilyInstaller.compile(self)

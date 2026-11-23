@@ -48,13 +48,14 @@ class SolverInstaller(object):
     def __init__(
         self,
         install_dir,
-        site_dir,
+        target,
         solver_version,
         archive_name=None,
         native_link=None,
         mirror_link=None,
     ):
-        self.site_dir = site_dir
+        self.target = target
+        self.site_dir = site_dir(target)
         self.install_dir = install_dir
         self.solver_version = solver_version
         self.mirror_link = mirror_link
@@ -399,9 +400,9 @@ def pip_install(requirements, target=None, force=False):
         raise
 
 
-def installed_version(distribution):
-    """Returns the installed version of the distribution, or None."""
-    try:
-        return importlib.metadata.version(distribution)
-    except importlib.metadata.PackageNotFoundError:
-        return None
+def installed_version(distribution, path=None):
+    """Returns the version of the distribution found in path (default: sys.path)."""
+    dists = importlib.metadata.distributions(name=distribution, path=path or sys.path)
+    for dist in dists:
+        return dist.version
+    return None

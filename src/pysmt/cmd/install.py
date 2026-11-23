@@ -25,7 +25,7 @@ from pysmt.cmd.installers import (
     PicoSATInstaller,
     YicesInstaller,
 )
-from pysmt.cmd.installers.base import installed_version, pip_install, site_dir
+from pysmt.cmd.installers.base import installed_version, pip_install
 from pysmt.environment import get_env
 from pysmt.exceptions import PysmtException
 
@@ -41,7 +41,7 @@ BuildSolver = namedtuple(
 REPYCUDD_URL = "https://github.com/pysmt/repycudd/archive/b87421c596a1bc2cafeb10ec40fcceacc952eda2.tar.gz"
 
 SOLVERS = [
-    BuildSolver("msat", MSatInstaller, "5.6.16", {}),
+    BuildSolver("msat", MSatInstaller, "5.6.20", {}),
     PipSolver("cvc5", "cvc5", ["cvc5==1.4.2"]),
     PipSolver("z3", "z3-solver", ["z3-solver==5.4.1.0"]),
     BuildSolver("yices", YicesInstaller, "2.6.4", {"yices_api_version": "1.1.5"}),
@@ -70,7 +70,7 @@ def get_requested_solvers():
 def make_installer(solver, install_dir, target, mirror_link):
     return solver.InstallerClass(
         install_dir=install_dir,
-        site_dir=site_dir(target),
+        target=target,
         solver_version=solver.version,
         mirror_link=mirror_link,
         **solver.extra_params,
