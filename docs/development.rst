@@ -136,7 +136,8 @@ exceptions are configured in ``pyproject.toml``. ``just format`` fixes
 most issues, and ``just lint`` checks what the CI checks.
 
 The pre-commit hooks run the linter, the type checker and a few file
-checks before each commit. Enable them once per clone::
+checks before each commit. They need Python 3.11 or later, since
+pre-commit is not installed on Python 3.10. Enable them once per clone::
 
   $ uv run pre-commit install
 

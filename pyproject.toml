@@ -26,7 +26,8 @@ dev = [
     "pytest",
     "mypy",
     "ruff==0.17.0",
-    "pre-commit==4.6.2",
+    # filelock, which pre-commit needs, has no security fix for Python 3.10
+    "pre-commit==4.6.2; python_version >= '3.11'",
 ]
 docs = ["sphinx"]
 
