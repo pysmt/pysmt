@@ -53,6 +53,10 @@ install-solver name install_path=solvers_dir:
     {{ if name == "none" { "" } else { "uv run pysmt-install --" + name + " --confirm-agreement --install-path '" + install_path + "'" } }}
     uv run pysmt-install --check {{ if name == "none" { "" } else { "--" + name } }} --install-path '{{install_path}}'
 
+# Report newer solver releases than the pysmt-install pins, without changing them
+solver-updates:
+    uv run python ci/bump_solvers.py --dry-run
+
 # Run the tests not marked as slow, stopping at the first failure
 test *args:
     uv run pytest -m "not slow" -x {{args}}

@@ -64,6 +64,8 @@ development dependencies pinned in ``uv.lock``. Running ``just`` without
 arguments lists all the recipes:
 
 * ``just install-solver NAME``: install a solver and check it (see below)
+* ``just solver-updates``: report newer releases of the solvers than the
+  versions pinned by ``pysmt-install`` (see below)
 * ``just test`` and ``just test-all``: run the tests (see below)
 * ``just lint``: check linting and formatting with ruff
 * ``just format``: format the code and apply the automatic lint fixes
@@ -114,6 +116,16 @@ solvers are built locally:
 
 On Windows, just runs the recipes with PowerShell, since ``bash`` may
 resolve to the WSL launcher there.
+
+The solver versions are pinned in ``src/pysmt/cmd/install.py``. Every
+Monday the ``bump-solvers`` workflow runs ``ci/bump_solvers.py``, which
+bumps the pins of the solvers installed from PyPI (Z3, cvc5, Boolector,
+CUDD and the Yices Python API) and opens or updates the ``deps/solvers``
+pull request, on which the full CI runs. MathSAT, OptiMathSAT, Yices
+(``libyices``) and PicoSAT are bumped by hand: the script only lists
+their newer releases, in the pull request and in the summary of the
+workflow run. ``just solver-updates`` prints the same report without
+changing the pins.
 
 Code Style
 ----------

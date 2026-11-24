@@ -61,6 +61,11 @@ Change Log
   publishes ``.devN`` builds. ``pysmt-install`` no longer reads
   ``PYSMT_INSTALL_MIRROR``, since the CI caches the downloads (#870).
 
+* CI: a weekly ``bump-solvers`` workflow opens a pull request that bumps
+  the PyPI-backed solver pins of ``pysmt-install`` and lists newer
+  MathSAT, OptiMathSAT, Yices and PicoSAT releases. ``just solver-updates``
+  prints the same report locally (#871).
+
 **Solvers**:
 
 * cvc5 upgraded to 1.4.2 (#867).
