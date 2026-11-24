@@ -21,7 +21,7 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@v3
         with:
-          app-id: ${{ secrets.RELEASER_APP_ID }}
+          client-id: Iv23liKrMQC8Kr2eyqfr # pysmt-releaser, public
           private-key: ${{ secrets.RELEASER_APP_PRIVATE_KEY }}
 
       - name: Checkout
