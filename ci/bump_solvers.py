@@ -10,6 +10,7 @@ import argparse
 import json
 import os
 import pathlib
+import re
 import urllib.error
 import urllib.request
 
@@ -39,9 +40,21 @@ def exists(url):
         return False
 
 
+def as_tuple(version):
+    return tuple(int(x) for x in version.split("."))
+
+
+def mathsat_latest():
+    with fetch("https://mathsat.fbk.eu/download.html") as r:
+        html = r.read().decode()
+    # Raises if the page no longer links any archive, so a layout change fails the run
+    return max(re.findall(r"release/mathsat-(\d+(?:\.\d+)+)-", html), key=as_tuple)
+
+
 def successors(version):
-    """Next patch, minor and major version: 5.6.20 -> 5.6.21, 5.7.0, 6.0.0."""
-    # ponytail: misses releases that skip a number; list the release pages if that happens
+    """Next patch, minor and major version: 1.7.5 -> 1.7.6, 1.8.0, 2.0.0."""
+    # OptiMathSAT's download pages lag behind its releases (1.7.5 is not listed),
+    # so probe the archives instead. ponytail: misses a release that skips a number.
     parts = [int(x) for x in version.split(".")]
     for i in reversed(range(len(parts))):
         bumped = parts[:i] + [parts[i] + 1] + [0] * (len(parts) - i - 1)
@@ -86,11 +99,8 @@ def main():
             bumped.append(f"- `{name}` {current} → {latest}")
 
     manual = []
-    msat = newer_archive(
-        solvers["msat"].version,
-        "https://mathsat.fbk.eu/release/mathsat-{v}-linux-x86_64.tar.gz",
-    )
-    if msat:
+    msat = mathsat_latest()
+    if as_tuple(msat) > as_tuple(solvers["msat"].version):
         manual.append(f"- MathSAT {msat} (pinned {solvers['msat'].version})")
     optimsat = newer_archive(
         solvers["optimsat"].version,
