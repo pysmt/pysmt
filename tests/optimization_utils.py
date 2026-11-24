@@ -87,7 +87,7 @@ class OMTTestCase:
             if optimization_type == OptimizationTypes.BASIC:
                 if len(current_goals) != 1 or len(goals_oracle_values) != 1:
                     raise PysmtValueError(
-                        "%s optimization accept only one goal" % optimization_type.name
+                        f"{optimization_type.name} optimization accept only one goal"
                     )
                 single_goal = goals_oracle_values[0]
                 if not isinstance(single_goal, FNode):
@@ -99,7 +99,7 @@ class OMTTestCase:
                 goals_number = len(current_goals)
                 if goals_number == 0:
                     raise PysmtValueError(
-                        "%s needs at least one goal" % optimization_type.name
+                        f"{optimization_type.name} needs at least one goal"
                     )
                 if len(goals_oracle_values) != goals_number:
                     raise PysmtValueError(
@@ -114,22 +114,20 @@ class OMTTestCase:
                 goals_number = len(current_goals)
                 if goals_number == 0:
                     raise PysmtValueError(
-                        "%s needs at least one goal" % optimization_type.name
+                        f"{optimization_type.name} needs at least one goal"
                     )
                 for pareto_goals in goals_oracle_values:
                     if not isinstance(pareto_goals, (list, tuple)):
                         raise PysmtValueError(
-                            "In %s optimization the goals oracle value must be a list or a tuple of FNode"
-                            % optimization_type.name
+                            f"In {optimization_type.name} optimization the goals oracle value must be a list or a tuple of FNode"
                         )
                     if len(pareto_goals) != goals_number:
                         raise PysmtValueError(
-                            "In %s optimization the goals number of goal values must equal the number of given goals"
-                            % optimization_type.name
+                            f"In {optimization_type.name} optimization the goals number of goal values must equal the number of given goals"
                         )
             else:
                 raise NotImplementedError(
-                    "%s optimization is not supported yet" % optimization_type.name
+                    f"{optimization_type.name} optimization is not supported yet"
                 )
 
     @property
@@ -211,11 +209,7 @@ def solve_given_example(
         ) as opt:
             for assertion in optimization_example.assertions:
                 opt.add_assertion(assertion)
-            test_id_str = "test: %s; solver: %s; optimization: %s" % (
-                optimization_example.name,
-                solver_name,
-                optimization_type.name,
-            )
+            test_id_str = f"test: {optimization_example.name}; solver: {solver_name}; optimization: {optimization_type.name}"
             extra_options = {}
             strategies: list[str | None] = (
                 ["linear", "binary"]
@@ -266,7 +260,7 @@ def solve_given_example(
                     )
                 else:
                     raise NotImplementedError(
-                        "Unknown optimization type: %s" % optimization_type
+                        f"Unknown optimization type: {optimization_type}"
                     )
 
 
@@ -274,10 +268,7 @@ def _check_oracle_goal(
     goal: Goal, goal_value: FNode, cost: FNode, test_id_str: str, **kwargs
 ):
     # converts the goal value and cost to constants and then checks if they are equal
-    preliminary_checks_fail_str = (
-        "test: %s, goal: %s, goal_value: %s, cost: %s, extra: %s"
-        % (test_id_str, str(goal), str(goal_value), str(cost), str(kwargs))
-    )
+    preliminary_checks_fail_str = f"test: {test_id_str}, goal: {str(goal)}, goal_value: {str(goal_value)}, cost: {str(cost)}, extra: {str(kwargs)}"
     assert goal_value.is_constant() and cost.is_constant(), preliminary_checks_fail_str
 
     if goal_value.is_bv_constant():
@@ -300,8 +291,7 @@ def _check_oracle_goal(
         goal_value_constant = goal_value.constant_value()
         cost_constant = cost.constant_value()
     assert goal_value_constant == cost_constant, (
-        "test_id: %s, goal: %s, oracle value: %s, cost returned: %s, extra: %s"
-        % (test_id_str, str(goal), str(goal_value), str(cost), str(kwargs))
+        f"test_id: {test_id_str}, goal: {str(goal)}, oracle value: {str(goal_value)}, cost returned: {str(cost)}, extra: {str(kwargs)}"
     )
 
 
@@ -328,7 +318,7 @@ def check_lexicographic(
 ) -> tuple[Model, list[FNode]] | None:
     raised_class = _get_expected_raised_class(goals_values[0])
     assert raised_class is None or len(goals_values) == 1, (
-        "test: %s, goals_values: %s" % (test_id_str, str(goals_values))
+        f"test: {test_id_str}, goals_values: {str(goals_values)}"
     )
     if raised_class is None:
         retval = optimizer.lexicographic_optimize(goals, **kwargs)
@@ -354,7 +344,7 @@ def check_pareto(
 ) -> list[tuple[Model, list[FNode]]] | None:
     raised_class = _get_expected_raised_class(goals_values[0])
     assert raised_class is None or len(goals_values) == 1, (
-        "test: %s, goals_values: %s" % (test_id_str, str(goals_values))
+        f"test: {test_id_str}, goals_values: {str(goals_values)}"
     )
     if raised_class is None:
         retval = optimizer.pareto_optimize(goals, **kwargs)

@@ -130,7 +130,7 @@ class Optimizer(Solver):
         elif otype.is_bv_type():
             return self.environment.type_manager.BVType(otype.width)
         else:
-            raise PysmtValueError("Invalid optimization function type: %s" % otype)
+            raise PysmtValueError(f"Invalid optimization function type: {otype}")
 
     def _get_or(self, objective_formula):
         otype = self.environment.stc.get_type(objective_formula)
@@ -142,7 +142,7 @@ class Optimizer(Solver):
         elif otype.is_bv_type():
             return mgr.BVOr
         else:
-            raise PysmtValueError("Invalid optimization function type: %s" % otype)
+            raise PysmtValueError(f"Invalid optimization function type: {otype}")
 
     def _get_le(self, objective_formula):
         otype = self.environment.stc.get_type(objective_formula)
@@ -154,7 +154,7 @@ class Optimizer(Solver):
         elif otype.is_bv_type():
             return mgr.BVULE
         else:
-            raise PysmtValueError("Invalid optimization function type: %s" % otype)
+            raise PysmtValueError(f"Invalid optimization function type: {otype}")
 
     def _get_lt(self, objective_formula):
         otype = self.environment.stc.get_type(objective_formula)
@@ -166,7 +166,7 @@ class Optimizer(Solver):
         elif otype.is_bv_type():
             return mgr.BVULT
         else:
-            raise PysmtValueError("Invalid optimization function type: %s" % otype)
+            raise PysmtValueError(f"Invalid optimization function type: {otype}")
 
     def _compute_max_smt_cost(self, model: Model, goal: Goal) -> FNode:
         assert isinstance(goal, MaxSMTGoal)
@@ -436,7 +436,7 @@ class OptPareto(OptComparationFunctions):
 
     def get_constraint(self, strict: bool) -> FNode:
         assert self.val is not None
-        assert self.val.is_constant(), "Value %s is not a constant" % str(self.val)
+        assert self.val.is_constant(), f"Value {str(self.val)} is not a constant"
         correct_operator = self.op_ns
         if strict:
             correct_operator = self.op_strict
@@ -549,9 +549,7 @@ class ExternalOptimizerMixin(Optimizer):
                 elif strategy == "binary":
                     lin_assertions = current.binary_search_cut()
                 else:
-                    raise PysmtValueError(
-                        "Unknown optimization strategy '%s'" % strategy
-                    )
+                    raise PysmtValueError(f"Unknown optimization strategy '{strategy}'")
             else:
                 lin_assertions = None
             temp_model = self._optimization_check_progress(
@@ -763,7 +761,7 @@ class IncrementalOptimizerMixin(ExternalOptimizerMixin):
             model = self.get_model() if is_sat else None
             self.pop()
         else:
-            raise PysmtValueError("Unknown optimization strategy '%s'" % strategy)
+            raise PysmtValueError(f"Unknown optimization strategy '{strategy}'")
         return model
 
     def _lexicographic_opt(

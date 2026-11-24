@@ -39,9 +39,9 @@ class PortfolioOptions(SolverOptions):
         for k, v in self.solver_options.items():
             if k == "exit_on_exception":
                 if v not in (True, False):
-                    raise ValueError("Invalid value for %s: %s" % (str(k), str(v)))
+                    raise ValueError(f"Invalid value for {str(k)}: {str(v)}")
             else:
-                raise ValueError("Unrecognized option '%s'." % k)
+                raise ValueError(f"Unrecognized option '{k}'.")
             # Store option
             setattr(self, k, v)
 
@@ -92,7 +92,7 @@ class Portfolio(IncrementalTrackingSolver):
         all_solvers = set(self.environment.factory.all_solvers(logic=logic))
         not_found = {s for s, _ in self.solvers} - all_solvers
         if len(not_found) != 0:
-            raise ValueError("Cannot find solvers %s" % not_found)
+            raise ValueError(f"Cannot find solvers {not_found}")
 
         # After Solving, we only keep the solver that finished first.
         # We can extract models from the solver, unsat cores, etc
@@ -282,4 +282,4 @@ def _run_solver(idx, solver, logic, options, formula, signaling_queue, ctrl_pipe
                 args = env.formula_manager.normalize(args)
                 ctrl_pipe.send(s.get_value(args))
             else:
-                raise ValueError("Unknown command '%s'" % cmd)
+                raise ValueError(f"Unknown command '{cmd}'")

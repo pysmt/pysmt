@@ -78,7 +78,7 @@ import sys
 if len(sys.argv) >= 2:
     user_pass = sys.argv[1]
 else:
-    print("Usage %s <password>" % sys.argv[0])
+    print(f"Usage {sys.argv[0]} <password>")
     user_pass = "ABc"
 
 m1 = get_model(And(password_in.Equals(String(user_pass)), check))

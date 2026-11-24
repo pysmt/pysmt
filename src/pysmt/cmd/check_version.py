@@ -30,7 +30,7 @@ def check_version(module):
 
             version = yices_api.yices_version
         else:
-            print("Invalid argument '%s'" % module)
+            print(f"Invalid argument '{module}'")
             exit(-2)
 
     except (ImportError, SolverAPINotFound):
@@ -41,7 +41,7 @@ def check_version(module):
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("Usage: python %s <solver_name>" % sys.argv[0])
+        print(f"Usage: python {sys.argv[0]} <solver_name>")
         exit(-1)
 
     module = sys.argv[1]

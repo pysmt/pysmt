@@ -546,7 +546,7 @@ class FNode:
             return cast(types._BVType, cast(types._ArrayType, ty).elem_type).width
         else:
             # BV Operator
-            assert self.is_bv_op(), "Unsupported method bv_width on %s" % self
+            assert self.is_bv_op(), f"Unsupported method bv_width on {self}"
             return self._content.payload[0]
 
     def bv_extract_start(self) -> int:
@@ -622,7 +622,7 @@ class FNode:
 
     def constant_value(self) -> str | bool | Fraction | int:
         """Return the value of the Constant."""
-        assert self.is_constant(), "%s is not a constant" % str(self)
+        assert self.is_constant(), f"{str(self)} is not a constant"
         if self.node_type() == BV_CONSTANT:
             return self._content.payload[0]
         return self._content.payload
@@ -639,7 +639,7 @@ class FNode:
             return STRING
         else:
             assert self.node_type() == BV_CONSTANT, (
-                "Unsupported method constant_type '%s'" % self
+                f"Unsupported method constant_type '{self}'"
             )
             return BVType(width=self.bv_width())
 
@@ -650,13 +650,13 @@ class FNode:
     def bv_unsigned_value(self) -> int:
         """Return the unsigned value encoded by the BitVector."""
         if self.node_type() != BV_CONSTANT:
-            raise PysmtValueError("%s is not a BV constant" % str(self))
+            raise PysmtValueError(f"{str(self)} is not a BV constant")
         return cast(int, self.constant_value())
 
     def bv_signed_value(self) -> int:
         """Return the signed value encoded by the BitVector."""
         if self.node_type() != BV_CONSTANT:
-            raise PysmtValueError("%s is not a BV constant" % str(self))
+            raise PysmtValueError(f"{str(self)} is not a BV constant")
         return twos_complement(cast(int, self.constant_value()), self.bv_width())
 
     def bv_str(self, fmt: str = "b") -> str:
@@ -675,7 +675,7 @@ class FNode:
         elif fmt == "x":
             fstr = "{0:0%dx}" % (self.bv_width() / 4)
         else:
-            raise PysmtValueError("Unknown option %s" % str(fmt))
+            raise PysmtValueError(f"Unknown option {str(fmt)}")
         str_ = fstr.format(self.constant_value())
         return str_
 
@@ -774,7 +774,7 @@ class FNode:
         elif expected_type.is_real_type():
             return mgr.Real(arg)
         else:
-            raise PysmtValueError("Unsupported value '%s' in infix operator" % str(arg))
+            raise PysmtValueError(f"Unsupported value '{str(arg)}' in infix operator")
 
     def Implies(self, right: "FNode") -> "FNode":
         return self._apply_infix(right, _mgr().Implies)
@@ -999,7 +999,7 @@ class FNode:
         if self.get_type().is_bv_type():
             return _mgr().BVExtract(self, start=start, end=end)
         raise UnsupportedOperatorError(
-            "Unsupported operation '__getitem__' on '%s'." % str(self)
+            f"Unsupported operation '__getitem__' on '{str(self)}'."
         )
 
     def __lshift__(self, right):

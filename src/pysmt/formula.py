@@ -151,9 +151,8 @@ class FormulaManager:
             return self._create_symbol(name, typename)
         if not s.symbol_type() == typename:
             raise PysmtTypeError(
-                "Trying to redefine symbol '%s' with a new type"
-                ". Previous type was '%s' new type is '%s'"
-                % (name, s.symbol_type(), typename)
+                f"Trying to redefine symbol '{name}' with a new type"
+                f". Previous type was '{s.symbol_type()}' new type is '{typename}'"
             )
         return s
 
@@ -424,7 +423,7 @@ class FormulaManager:
 
     def Bool(self, value: bool) -> FNode:
         if type(value) is not bool:
-            raise PysmtTypeError("Expecting bool, got %s" % type(value))
+            raise PysmtTypeError(f"Expecting bool, got {type(value)}")
 
         if value:
             return self.true_formula
@@ -498,7 +497,7 @@ class FormulaManager:
                 return self.Real(cast(int, formula.constant_value()))
             return self.create_node(node_type=op.TOREAL, args=(formula,))
         else:
-            raise PysmtTypeError("Argument is of type %s, but INT was expected!\n" % t)
+            raise PysmtTypeError(f"Argument is of type {t}, but INT was expected!\n")
 
     def ToInt(self, formula: FNode) -> FNode:
         """Cast a formula to integer type.
@@ -518,7 +517,7 @@ class FormulaManager:
                 return self.Int(value.numerator // value.denominator)
             return self.create_node(node_type=op.TOINT, args=(formula,))
         else:
-            raise PysmtTypeError("Argument is of type %s, but REAL was expected!\n" % t)
+            raise PysmtTypeError(f"Argument is of type {t}, but REAL was expected!\n")
 
     def IsInt(self, formula: FNode) -> FNode:
         """Returns whether the given real formula has an integer value.
@@ -533,7 +532,7 @@ class FormulaManager:
         elif t == types.REAL:
             return self.Equals(formula, self.ToReal(self.ToInt(formula)))
         else:
-            raise PysmtTypeError("Argument is of type %s, but REAL was expected!\n" % t)
+            raise PysmtTypeError(f"Argument is of type {t}, but REAL was expected!\n")
 
     def AtMostOne(self, *args: FNode | Iterable[FNode]) -> FNode:
         """At most one of the bool expressions can be true at anytime.
@@ -666,7 +665,7 @@ class FormulaManager:
                 value = int(value, 2)
             else:
                 raise PysmtValueError(
-                    "Expecting binary value as string, got %s instead." % value
+                    f"Expecting binary value as string, got {value} instead."
                 )
 
             if width is not None and width != str_width:
@@ -688,14 +687,12 @@ class FormulaManager:
             _value = pysmt_integer_from_integer(value)
         else:
             raise PysmtTypeError(
-                "Invalid type in constant. The type was: %s" % str(type(value))
+                f"Invalid type in constant. The type was: {str(type(value))}"
             )
         if _value < 0:
-            raise PysmtValueError("Cannot specify a negative value: %s" % (str(_value)))
+            raise PysmtValueError(f"Cannot specify a negative value: {str(_value)}")
         if _value >= 2**width:
-            raise PysmtValueError(
-                "Cannot express %s in %s bits" % (str(_value), str(width))
-            )
+            raise PysmtValueError(f"Cannot express {str(_value)} in {str(width)} bits")
 
         return self.create_node(
             node_type=op.BV_CONSTANT, args=tuple(), payload=(_value, width)
@@ -901,7 +898,7 @@ class FormulaManager:
     def BVRol(self, formula: FNode, steps: int) -> FNode:
         """Returns the LEFT rotation of the BV by the number of steps."""
         if not is_python_integer(steps):
-            raise PysmtTypeError("BVRol: 'steps' should be an integer. Got %s" % steps)
+            raise PysmtTypeError(f"BVRol: 'steps' should be an integer. Got {steps}")
         return self.create_node(
             node_type=op.BV_ROL, args=(formula,), payload=(formula.bv_width(), steps)
         )
@@ -909,7 +906,7 @@ class FormulaManager:
     def BVRor(self, formula: FNode, steps: int) -> FNode:
         """Returns the RIGHT rotation of the BV by the number of steps."""
         if not is_python_integer(steps):
-            raise PysmtTypeError("BVRor: 'steps' should be an integer. Got %s" % steps)
+            raise PysmtTypeError(f"BVRor: 'steps' should be an integer. Got {steps}")
         return self.create_node(
             node_type=op.BV_ROR, args=(formula,), payload=(formula.bv_width(), steps)
         )
@@ -921,7 +918,7 @@ class FormulaManager:
         """
         if not is_python_integer(increase):
             raise PysmtTypeError(
-                "BVZext: 'increase' should be an integer. Got %s" % increase
+                f"BVZext: 'increase' should be an integer. Got {increase}"
             )
         return self.create_node(
             node_type=op.BV_ZEXT,
@@ -936,7 +933,7 @@ class FormulaManager:
         """
         if not is_python_integer(increase):
             raise PysmtTypeError(
-                "BVSext: 'increase' should be an integer. Got %s" % increase
+                f"BVSext: 'increase' should be an integer. Got {increase}"
             )
         return self.create_node(
             node_type=op.BV_SEXT,
@@ -1162,7 +1159,7 @@ class FormulaManager:
         default and the array is initialized correspondingly.
         """
         if not isinstance(idx_type, types.PySMTType):
-            raise PysmtTypeError("idx_type is not a valid type: '%s'" % idx_type)
+            raise PysmtTypeError(f"idx_type is not a valid type: '{idx_type}'")
 
         args = [default]
         if assigned_values:

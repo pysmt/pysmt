@@ -95,7 +95,7 @@ class skipIfSolverNotAvailable:
         self.solver = solver
 
     def __call__(self, test_fun):
-        msg = "%s not available" % self.solver
+        msg = f"{self.solver} not available"
         cond = self.solver not in get_env().factory.all_solvers()
 
         @unittest.skipIf(cond, msg)
@@ -113,7 +113,7 @@ class skipIfQENotAvailable:
         self.qe = qe
 
     def __call__(self, test_fun):
-        msg = "Quantifier Eliminator %s not available" % self.qe
+        msg = f"Quantifier Eliminator {self.qe} not available"
         cond = self.qe not in get_env().factory.all_quantifier_eliminators()
 
         @unittest.skipIf(cond, msg)
@@ -131,7 +131,7 @@ class skipIfNoSolverForLogic:
         self.logic = logic
 
     def __call__(self, test_fun: Callable) -> Callable:
-        msg = "Solver for %s not available" % self.logic
+        msg = f"Solver for {self.logic} not available"
         cond = not get_env().factory.has_solvers(logic=self.logic)
 
         @unittest.skipIf(cond, msg)
@@ -149,7 +149,7 @@ class skipIfNoUnsatCoreSolverForLogic:
         self.logic = logic
 
     def __call__(self, test_fun):
-        msg = "Unsat Core Solver for %s not available" % self.logic
+        msg = f"Unsat Core Solver for {self.logic} not available"
         cond = len(get_env().factory.all_unsat_core_solvers(logic=self.logic)) == 0
 
         @unittest.skipIf(cond, msg)
@@ -167,7 +167,7 @@ class skipIfNoQEForLogic:
         self.logic = logic
 
     def __call__(self, test_fun):
-        msg = "Quantifier Eliminator for %s not available" % self.logic
+        msg = f"Quantifier Eliminator for {self.logic} not available"
         cond = len(get_env().factory.all_quantifier_eliminators(logic=self.logic)) == 0
 
         @unittest.skipIf(cond, msg)
@@ -185,7 +185,7 @@ class skipIfNoOptimizerForLogic:
         self.logic = logic
 
     def __call__(self, test_fun: Callable) -> Callable:
-        msg = "Optimizer for %s not available" % self.logic
+        msg = f"Optimizer for {self.logic} not available"
         cond = len(get_env().factory.all_optimizers(logic=self.logic)) == 0
 
         @unittest.skipIf(cond, msg)

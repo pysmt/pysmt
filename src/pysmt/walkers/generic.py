@@ -31,7 +31,7 @@ from pysmt.fnode import FNode
 # NodeType to Function Name
 def nt_to_fun(o: int) -> str:
     """Returns the name of the walk function for the given nodetype."""
-    return "walk_%s" % op.op_to_str(o).lower()
+    return f"walk_{op.op_to_str(o).lower()}"
 
 
 class handles:

@@ -60,7 +60,7 @@ class CVC5Options(SolverOptions):
         try:
             cvc5_solver.setOption(name, value)
         except BaseException:
-            raise PysmtValueError("Error setting the option '%s=%s'" % (name, value))
+            raise PysmtValueError(f"Error setting the option '{name}={value}'")
 
     def __call__(self, solver: "CVC5Solver"):
         if solver.logic_name == "QF_SLIA":
@@ -254,8 +254,7 @@ class CVC5Converter(Converter, DagWalker):
     def declare_variable(self, var: FNode):
         if not var.is_symbol():
             raise PysmtTypeError(
-                "Trying to declare as a variable something "
-                "that is not a symbol: %s" % var
+                f"Trying to declare as a variable something that is not a symbol: {var}"
             )
         if var.symbol_name() not in self.declared_vars:
             cvc5_type = self._type_to_cvc5(var.symbol_type())
@@ -593,7 +592,7 @@ class CVC5Converter(Converter, DagWalker):
         elif tp.is_custom_type():
             return self.cvc5_solver.mkUninterpretedSort(str(tp))
         else:
-            raise NotImplementedError("Unsupported type: %s" % tp)
+            raise NotImplementedError(f"Unsupported type: {tp}")
 
     def _cvc5_type_to_type(self, type_):
         if type_.isBoolean():
@@ -618,7 +617,7 @@ class CVC5Converter(Converter, DagWalker):
             )
             return self.env.type_manager.FunctionType(return_type, param_types)
         else:
-            raise NotImplementedError("Unsupported type: %s" % type_)
+            raise NotImplementedError(f"Unsupported type: {type_}")
 
     def _rename_bound_variables(self, formula, variables):
         """Bounds the variables in formula.

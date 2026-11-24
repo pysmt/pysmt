@@ -233,5 +233,5 @@ else:
         s = [x for x in Smoke if model[smoke(h, x)].is_true()][0]
         print(h, c, n, p, d, s)
         if p == "fish":
-            sol = "The '%s' owns the fish!" % n
+            sol = f"The '{n}' owns the fish!"
     print(sol)

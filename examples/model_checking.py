@@ -36,7 +36,7 @@ from pysmt.typing import BOOL
 
 def next_var(v):
     """Returns the 'next' of the given variable"""
-    return Symbol("next(%s)" % v.symbol_name(), v.symbol_type())
+    return Symbol(f"next({v.symbol_name()})", v.symbol_type())
 
 
 def at_time(v, t):
@@ -65,7 +65,7 @@ class PDR:
 
     def check_property(self, prop):
         """Property Directed Reachability approach without optimizations."""
-        print("Checking property %s..." % prop)
+        print(f"Checking property {prop}...")
 
         while True:
             cube = self.get_bad_state(prop)
@@ -75,7 +75,7 @@ class PDR:
                     print("--> Bug found at step %d" % (len(self.frames)))
                     break
                 else:
-                    print("   [PDR] Cube blocked '%s'" % str(cube))
+                    print(f"   [PDR] Cube blocked '{str(cube)}'")
             else:
                 # Checking if the last two frames are equivalent i.e., are inductive
                 if self.inductive():
@@ -200,7 +200,7 @@ class BMCInduction:
 
     def check_property(self, prop):
         """Interleaves BMC and K-Ind to verify the property."""
-        print("Checking property %s..." % prop)
+        print(f"Checking property {prop}...")
         for b in range(100):
             f = self.get_bmc(prop, b)
             print("   [BMC]    Checking bound %d..." % (b + 1))

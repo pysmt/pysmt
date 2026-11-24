@@ -124,9 +124,7 @@ class YicesOptions(SolverOptions):
             # provided to the parameter is invalid.
             err = yices_api.yices_error_code()
             if err == 502:  # CTX_INVALID_PARAMETER_VALUE:
-                raise PysmtValueError(
-                    "Error setting the option '%s=%s'" % (name, value)
-                )
+                raise PysmtValueError(f"Error setting the option '{name}={value}'")
 
     def __call__(self, solver: "YicesSolver"):
         if self.generate_models:
@@ -159,7 +157,7 @@ class YicesOptions(SolverOptions):
         for k, v in self.solver_options.items():
             rv = yices_api.yices_set_param(params, k, v)
             if rv != 0:
-                raise PysmtValueError("Error setting the option '%s=%s'" % (k, v))
+                raise PysmtValueError(f"Error setting the option '{k}={v}'")
         solver.yices_params = params
 
 
@@ -189,7 +187,7 @@ class YicesSolver(SmtLibBasicSolver):
             )
             != 0
         ):
-            warn("Error setting config for logic %s" % logic)
+            warn(f"Error setting config for logic {logic}")
         self.yices_params: Any  # This is set in the self.options(self) call
         self.options(self)
         assert isinstance(self.options, YicesOptions)
@@ -220,7 +218,7 @@ class YicesSolver(SmtLibBasicSolver):
             if code == -1 and "non-linear arithmetic" in msg:
                 raise NonLinearError(formula)
             raise InternalSolverError(
-                "Yices returned non-zero code upon assert: %s (code: %s)" % (msg, code)
+                f"Yices returned non-zero code upon assert: {msg} (code: {code})"
             )
 
     def get_model(self) -> EagerModel:
@@ -281,7 +279,7 @@ class YicesSolver(SmtLibBasicSolver):
                     self.failed_pushes += 1
                 else:
                     raise InternalSolverError(
-                        "Error in push: %s" % yices_api.yices_error_string()
+                        f"Error in push: {yices_api.yices_error_string()}"
                     )
 
     @clear_pending_pop
@@ -293,7 +291,7 @@ class YicesSolver(SmtLibBasicSolver):
                 c = yices_api.yices_pop(self.yices)
                 if c != 0:
                     raise InternalSolverError(
-                        "Error in pop: %s" % yices_api.yices_error_string()
+                        f"Error in pop: {yices_api.yices_error_string()}"
                     )
 
     def print_model(self, name_filter=None):
@@ -720,8 +718,7 @@ class YicesConverter(Converter, DagWalker):
     def declare_variable(self, var: FNode):
         if not var.is_symbol():
             raise PysmtTypeError(
-                "Trying to declare as a variable something "
-                "that is not a symbol: %s" % var
+                f"Trying to declare as a variable something that is not a symbol: {var}"
             )
         if var.symbol_name() not in self.symbol_to_decl:
             tp = self._type_to_yices(var.symbol_type())

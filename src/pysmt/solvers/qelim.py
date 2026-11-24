@@ -89,7 +89,7 @@ class ShannonQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
                 raise InternalSolverError(
                     "Shannon Quantifier Elimination only supports "
                     "quantification over Boolean variables: "
-                    "(%s is %s)" % (v, v.symbol_type())
+                    f"({v} is {v.symbol_type()})"
                 )
 
     def _expand(self, formula: FNode, args: Sequence[FNode]) -> list[FNode]:

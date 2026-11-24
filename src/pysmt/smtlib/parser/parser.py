@@ -256,7 +256,7 @@ class Tokenizer:
                                         # Only \| and \\ are supported escapings
                                         raise PysmtSyntaxError(
                                             "Unknown escaping in quoted symbol: "
-                                            "'\\%s'" % c,
+                                            f"'\\{c}'",
                                             self.pos_info,
                                         )
                                 ls.append(c)
@@ -699,7 +699,7 @@ class SmtLibParser:
                 width = int(self.parse_atom(tokens, "expression"))
             except ValueError:
                 raise PysmtSyntaxError(
-                    "Expected number in '_ bv' expression: '%s'" % op, tokens.pos_info
+                    f"Expected number in '_ bv' expression: '{op}'", tokens.pos_info
                 )
             fun = mgr.BV(v, width)
         elif op == "to_bv":
@@ -709,7 +709,7 @@ class SmtLibParser:
                 width = int(self.parse_atom(tokens, "expression"))
             except ValueError:
                 raise PysmtSyntaxError(
-                    "Expected number in '_ to_bv' expression: '%s'" % op,
+                    f"Expected number in '_ to_bv' expression: '{op}'",
                     tokens.pos_info,
                 )
             self.consume_closing(tokens, "expression")
@@ -718,7 +718,7 @@ class SmtLibParser:
                 v = cast(int, fnv.constant_value())
             else:
                 raise PysmtSyntaxError(
-                    "Expected number in '_ to_bv' expression: '%s'" % op,
+                    f"Expected number in '_ to_bv' expression: '{op}'",
                     tokens.pos_info,
                 )
             if v >= 0:
@@ -726,9 +726,7 @@ class SmtLibParser:
             else:
                 fun = mgr.SBV(v, width)
         else:
-            raise PysmtSyntaxError(
-                "Unexpected '_' expression '%s'" % op, tokens.pos_info
-            )
+            raise PysmtSyntaxError(f"Unexpected '_' expression '{op}'", tokens.pos_info)
 
         stack[-1].append(lambda: fun)
 
@@ -780,9 +778,7 @@ class SmtLibParser:
                     value = int("0" + token[1:], 2)
                 else:
                     if token[1] != "x":
-                        raise PysmtSyntaxError(
-                            "Invalid bit-vector constant '%s'" % token
-                        )
+                        raise PysmtSyntaxError(f"Invalid bit-vector constant '{token}'")
                     width = (len(token) - 2) * 4
                     value = int("0" + token[1:], 16)
                 res = mgr.BV(value, width)
@@ -922,7 +918,7 @@ class SmtLibParser:
             if not tk.startswith(":"):
                 raise PysmtSyntaxError(
                     "Annotations keyword should start with"
-                    " colon! Offending token: '%s'" % tk,
+                    f" colon! Offending token: '{tk}'",
                     tokens.pos_info,
                 )
             keyword = tk[1:]
@@ -986,7 +982,7 @@ class SmtLibParser:
                         res = fun(*lst)
                     except TypeError as err:
                         if not callable(fun):
-                            raise NotImplementedError("Unknown function '%s'" % fun)
+                            raise NotImplementedError(f"Unknown function '{fun}'")
                         raise err
 
                     if len(stack) > 0:
@@ -1072,7 +1068,7 @@ class SmtLibParser:
             tokens.add_extra_token(current)
             cmd = next(cmd_gen)
             if cmd.name != "define-fun":
-                raise PysmtSyntaxError("Unsupported model command: %s" % cmd.name)
+                raise PysmtSyntaxError(f"Unsupported model command: {cmd.name}")
             vname, formal, rtype, ebody = cmd.args
             if len(formal) == 0:  # Constant assignment
                 model[mgr.Symbol(vname, rtype)] = ebody
@@ -1083,7 +1079,7 @@ class SmtLibParser:
                         raise PysmtSyntaxError(
                             "Found a non-solver-defined free"
                             " variable in the definion of "
-                            "function %s: %s" % (cmd.args[0], cmd.args[3])
+                            f"function {cmd.args[0]}: {cmd.args[3]}"
                         )
                 tmgr = self.env.type_manager
                 ftype = tmgr.FunctionType(rtype, [x.symbol_type() for x in formal])
@@ -1115,9 +1111,7 @@ class SmtLibParser:
         res = []
         current = None
         for _ in range(min_size):
-            current = tokens.consume(
-                "Unexpected end of stream in %s command." % command
-            )
+            current = tokens.consume(f"Unexpected end of stream in {command} command.")
             if current == ")":
                 raise PysmtSyntaxError(
                     "Expected at least %d arguments in "
@@ -1126,18 +1120,16 @@ class SmtLibParser:
                 )
             if current == "(":
                 raise PysmtSyntaxError(
-                    "Unexpected token '(' in %s command." % command, tokens.pos_info
+                    f"Unexpected token '(' in {command} command.", tokens.pos_info
                 )
             res.append(current)
         for _ in range(min_size, max_size + 1):
-            current = tokens.consume(
-                "Unexpected end of stream in %s command." % command
-            )
+            current = tokens.consume(f"Unexpected end of stream in {command} command.")
             if current == ")":
                 return res
             if current == "(":
                 raise PysmtSyntaxError(
-                    "Unexpected token '(' in %s command." % command, tokens.pos_info
+                    f"Unexpected token '(' in {command} command.", tokens.pos_info
                 )
             res.append(current)
         raise PysmtSyntaxError(
@@ -1157,12 +1149,12 @@ class SmtLibParser:
         if additional_token is not None:
             var = additional_token
         else:
-            var = tokens.consume("Unexpected end of stream in %s command." % command)
+            var = tokens.consume(f"Unexpected end of stream in {command} command.")
         res: PartialType | PySMTType | None = None
         if type_params and var in type_params:
             return (var,)  # type: ignore [return-value] # This is a type parameter, it is handled recursively  # TODO is PartialType also handled recursively?
         elif var == "(":
-            op = tokens.consume("Unexpected end of stream in %s command." % command)
+            op = tokens.consume(f"Unexpected end of stream in {command} command.")
             if op == "Array":
                 idxtype = cast(PySMTType, self.parse_type(tokens, command))
                 elemtype = cast(PySMTType, self.parse_type(tokens, command))
@@ -1170,10 +1162,10 @@ class SmtLibParser:
                 res = self.env.type_manager.ArrayType(idxtype, elemtype)
 
             elif op == "_":
-                ts = tokens.consume("Unexpected end of stream in %s command." % command)
+                ts = tokens.consume(f"Unexpected end of stream in {command} command.")
                 if ts != "BitVec":
                     raise PysmtSyntaxError(
-                        "Unexpected token '%s' in %s command." % (ts, command),
+                        f"Unexpected token '{ts}' in {command} command.",
                         tokens.pos_info,
                     )
 
@@ -1183,7 +1175,7 @@ class SmtLibParser:
                     size = int(dim)
                 except ValueError:
                     raise PysmtSyntaxError(
-                        "Unexpected token '%s' in %s command." % (dim, command),
+                        f"Unexpected token '{dim}' in {command} command.",
                         tokens.pos_info,
                     )
 
@@ -1194,7 +1186,7 @@ class SmtLibParser:
                 base_type = self.cache.get(op)
                 if base_type is None or not isinstance(base_type, _TypeDecl):
                     raise PysmtSyntaxError(
-                        "Unexpected token '%s' in %s command." % (op, command),
+                        f"Unexpected token '{op}' in {command} command.",
                         tokens.pos_info,
                     )
                 pparams: list[PySMTType] = []
@@ -1236,7 +1228,7 @@ class SmtLibParser:
             res = self.cache.get(var)
             if res is None:
                 raise PysmtSyntaxError(
-                    "Unexpected token '%s' in %s command." % (var, command),
+                    f"Unexpected token '{var}' in {command} command.",
                     tokens.pos_info,
                 )
 
@@ -1247,38 +1239,34 @@ class SmtLibParser:
 
     def parse_atom(self, tokens: Tokenizer, command: str) -> str:
         """Parses a single name from the tokens"""
-        var = tokens.consume("Unexpected end of stream in %s command." % command)
+        var = tokens.consume(f"Unexpected end of stream in {command} command.")
         if var == "(" or var == ")":
             raise PysmtSyntaxError(
-                "Unexpected token '%s' in %s command." % (var, command), tokens.pos_info
+                f"Unexpected token '{var}' in {command} command.", tokens.pos_info
             )
         return var
 
     def parse_params(self, tokens: Tokenizer, command: str) -> list[Any]:
         """Parses a list of types from the tokens"""
         self.consume_opening(tokens, command)
-        current = tokens.consume("Unexpected end of stream in %s command." % command)
+        current = tokens.consume(f"Unexpected end of stream in {command} command.")
         res = []
         while current != ")":
             res.append(self.parse_type(tokens, command, additional_token=current))
-            current = tokens.consume(
-                "Unexpected end of stream in %s command." % command
-            )
+            current = tokens.consume(f"Unexpected end of stream in {command} command.")
         return res
 
     def parse_named_params(self, tokens: Tokenizer, command: str) -> list[Any]:
         """Parses a list of names and type from the tokens"""
         self.consume_opening(tokens, command)
-        current = tokens.consume("Unexpected end of stream in %s command." % command)
+        current = tokens.consume(f"Unexpected end of stream in {command} command.")
         res = []
         while current != ")":
             vname = self.parse_atom(tokens, command)
             typename = self.parse_type(tokens, command)
             res.append((vname, typename))
             self.consume_closing(tokens, command)
-            current = tokens.consume(
-                "Unexpected end of stream in %s command." % command
-            )
+            current = tokens.consume(f"Unexpected end of stream in {command} command.")
         return res
 
     def parse_expr_list(self, tokens: Tokenizer, command: str) -> list[FNode | str]:
@@ -1302,7 +1290,7 @@ class SmtLibParser:
             raise  # Re-raise execption for higher-level management, see get_command()
         if p != "(":
             raise PysmtSyntaxError(
-                "Unexpected token '%s' in %s command. Expected '('" % (p, command),
+                f"Unexpected token '{p}' in {command} command. Expected '('",
                 tokens.pos_info,
             )
 
@@ -1311,7 +1299,7 @@ class SmtLibParser:
         p = tokens.consume("Unexpected end of stream. Expected ')'")
         if p != ")":
             raise PysmtSyntaxError(
-                "Unexpected token '%s' in %s command. Expected ')'" % (p, command),
+                f"Unexpected token '{p}' in {command} command. Expected ')'",
                 tokens.pos_info,
             )
 
@@ -1357,7 +1345,7 @@ class SmtLibParser:
                 raise UnknownSmtLibCommandError(current)
 
     def _cmd_not_implemented(self, current: str, tokens: Tokenizer):
-        raise NotImplementedError("'%s' has not been implemented yet" % current)
+        raise NotImplementedError(f"'{current}' has not been implemented yet")
 
     def _cmd_set_info(self, current: str, tokens: Tokenizer) -> SmtLibCommand:
         """(set-info <attribute>)"""
@@ -1489,13 +1477,12 @@ class SmtLibParser:
                     params.append((token, signed))
                 else:
                     raise PysmtSyntaxError(
-                        "Incorrect option in the '%s' command" % token, tokens.pos_info
+                        f"Incorrect option in the '{token}' command", tokens.pos_info
                     )
             else:
                 if options:
                     raise PysmtSyntaxError(
-                        "Unexpected token '%s' after options in the '%s' command"
-                        % (token, current),
+                        f"Unexpected token '{token}' after options in the '{current}' command",
                         tokens.pos_info,
                     )
                 tokens.add_extra_token(token)
@@ -1578,8 +1565,8 @@ class SmtLibParser:
         if ebody_type != rtype:
             raise PysmtSyntaxError(
                 "Typyng error in define-fun command. "
-                "The expected type is %s, but the detected "
-                "expression type is %s" % (rtype, ebody_type)
+                f"The expected type is {rtype}, but the detected "
+                f"expression type is {ebody_type}"
             )
 
         # Discard parameters
@@ -1597,7 +1584,7 @@ class SmtLibParser:
             type_ = self.env.type_manager.Type(typename, int(arity))
         except ValueError:
             raise PysmtSyntaxError(
-                "Expected an integer as arity of type %s." % typename, tokens.pos_info
+                f"Expected an integer as arity of type {typename}.", tokens.pos_info
             )
         self.cache.bind(typename, type_)
         return SmtLibCommand(current, [type_])

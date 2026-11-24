@@ -214,10 +214,10 @@ from pysmt.exceptions import UnknownSmtLibCommandError
 try:
     parser.get_script(StringIO(EXT_SMTLIB))
 except UnknownSmtLibCommandError as ex:
-    print("Unsupported command: %s" % ex)
+    print(f"Unsupported command: {ex}")
 
 # The new parser can parse our example, and returns the (init, trans) pair
 ts_parser = TSSmtLibParser()
 init, trans = ts_parser.get_ts(StringIO(EXT_SMTLIB))
-print("INIT: %s" % init.serialize())
-print("TRANS: %s" % trans.serialize())
+print(f"INIT: {init.serialize()}")
+print(f"TRANS: {trans.serialize()}")

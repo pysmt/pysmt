@@ -69,7 +69,7 @@ class TestInstallers(TestCase):
             with open(setup_py) as f:
                 content = f.read()
             compile(content, setup_py, "exec")
-            self.assertIn("MATHSAT_DIR = %r" % installer.extract_path, content)
+            self.assertIn(f"MATHSAT_DIR = {installer.extract_path!r}", content)
             self.assertIn("version='5.6.20'", content)
             self.assertIn("py_modules=['mathsat'], name='mathsat'", content)
 

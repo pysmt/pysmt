@@ -59,7 +59,7 @@ class TestSimplify(TestCase):
                 Iff(f, sf),
                 solver_name=sname,
                 msg="Simplification did not provide equivalent "
-                + "result:\n f= %s\n sf = %s" % (f, sf),
+                + f"result:\n f= {f}\n sf = {sf}",
             )
 
     @pytest.mark.slow
@@ -76,7 +76,7 @@ class TestSimplify(TestCase):
                 Iff(f, sf),
                 solver_name="z3",
                 msg="Simplification did not provide equivalent "
-                + "result:\n f= %s\n sf = %s" % (f, sf),
+                + f"result:\n f= {f}\n sf = {sf}",
             )
 
     def test_array_value(self):

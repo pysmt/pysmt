@@ -507,13 +507,13 @@ class TestOptimization(TestCase):
                 max_y = MaximizationGoal(y)
 
                 # First optimization: maximize x
-                test_id_str = "test_first_subsequent_optimization %s" % oname
+                test_id_str = f"test_first_subsequent_optimization {oname}"
                 model, _ = check_basic(opt, max_x, Int(3), test_id_str)
                 self.assertEqual(model.get_value(y), Int(0))
 
                 # Second optimization: maximize y
                 opt.add_assertion(formula)
-                test_id_str = "test_second_subsequent_optimization %s" % oname
+                test_id_str = f"test_second_subsequent_optimization {oname}"
                 model, _ = check_basic(opt, max_y, Int(3), test_id_str)
                 self.assertEqual(model.get_value(x), Int(0))
 
@@ -535,7 +535,7 @@ class TestOptimization(TestCase):
                 # First optimization: maximize x
                 max_x = MaximizationGoal(x)
                 max_y = MaximizationGoal(y)
-                test_id_str = "test_first_subsequent_optimization %s" % oname
+                test_id_str = f"test_first_subsequent_optimization {oname}"
                 model, _ = check_lexicographic(
                     opt, [max_x, max_y], [Int(3), Int(0)], test_id_str
                 )
@@ -544,7 +544,7 @@ class TestOptimization(TestCase):
                 self.assertEqual(model.get_value(y), Int(0))
 
                 # Second optimization: maximize y
-                test_id_str = "test_second_subsequent_optimization %s" % oname
+                test_id_str = f"test_second_subsequent_optimization {oname}"
                 model, _ = check_lexicographic(
                     opt, [max_y, max_x], [Int(3), Int(0)], test_id_str
                 )
@@ -575,7 +575,7 @@ class TestOptimization(TestCase):
                 max_y = MaximizationGoal(y)
                 max_z = MaximizationGoal(z)
 
-                test_id_str = "test_first_subsequent_optimization %s" % oname
+                test_id_str = f"test_first_subsequent_optimization {oname}"
                 models_costs = check_boxed(
                     opt,
                     [max_x, max_y],
@@ -593,7 +593,7 @@ class TestOptimization(TestCase):
                 self.assertEqual(max_y_model.get_value(y), Int(3))
 
                 # First optimization: maximize x and z
-                test_id_str = "test_second_subsequent_optimization %s" % oname
+                test_id_str = f"test_second_subsequent_optimization {oname}"
                 models_costs = check_boxed(
                     opt,
                     [max_x, max_z],
@@ -635,10 +635,10 @@ class TestOptimization(TestCase):
 
                 goals_values = [(Int(i), Int(3 - i)) for i in range(4)]
 
-                test_id_str = "test_first_subsequent_pareto_optimizations %s" % oname
+                test_id_str = f"test_first_subsequent_pareto_optimizations {oname}"
                 check_pareto(opt, [max_x, max_y], goals_values, test_id_str)
 
-                test_id_str = "test_second_subsequent_pareto_optimizations %s" % oname
+                test_id_str = f"test_second_subsequent_pareto_optimizations {oname}"
                 check_pareto(opt, [max_x, max_z], goals_values, test_id_str)
 
     def test_subsequent_maxsmt_optimizations(self):
@@ -655,10 +655,10 @@ class TestOptimization(TestCase):
             with Optimizer(name=oname) as opt:
                 opt.add_assertion(formula)
 
-                test_id_str = "test_first_subsequent_maxsmt_optimizations %s" % oname
+                test_id_str = f"test_first_subsequent_maxsmt_optimizations {oname}"
                 check_basic(opt, first_max_smt_goal, Int(7), test_id_str)
 
-                test_id_str = "test_second_subsequent_maxsmt_optimizations %s" % oname
+                test_id_str = f"test_second_subsequent_maxsmt_optimizations {oname}"
                 check_basic(opt, second_max_smt_goal, Int(1), test_id_str)
 
     def test_same_maxsmt_formulae(self):
@@ -675,7 +675,7 @@ class TestOptimization(TestCase):
             with Optimizer(name=oname) as opt:
                 opt.add_assertion(formula)
 
-                test_id_str = "test_first_subsequent_maxsmt_optimizations %s" % oname
+                test_id_str = f"test_first_subsequent_maxsmt_optimizations {oname}"
                 model, _ = check_basic(opt, max_smt_goal, Int(8), test_id_str)
                 self.assertEqual(model.get_value(x), Int(6))
 
@@ -689,7 +689,7 @@ class TestOptimization(TestCase):
             with Optimizer(name=oname) as opt:
                 opt.add_assertion(formula)
 
-                test_id_str = "test_first_subsequent_maxsmt_optimizations %s" % oname
+                test_id_str = f"test_first_subsequent_maxsmt_optimizations {oname}"
                 model, _ = check_basic(opt, max_smt_goal, Int(12), test_id_str)
                 self.assertEqual(model.get_value(x), Int(6))
 

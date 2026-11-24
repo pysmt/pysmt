@@ -307,7 +307,7 @@ class Solver:
         Raises TypeError.
         """
         if self.environment.stc.get_type(formula) != BOOL:
-            raise PysmtTypeError("Argument '%s' must be boolean." % formula)
+            raise PysmtTypeError(f"Argument '{formula}' must be boolean.")
 
 
 class IncrementalTrackingSolver(Solver):
@@ -443,8 +443,8 @@ class UnsatCoreSolver(Solver):
         if self.last_command != "solve":
             raise SolverStatusError(
                 "The solver status has been modified by a"
-                " '%s' command after the last call to"
-                " solve()" % self.last_command
+                f" '{self.last_command}' command after the last call to"
+                " solve()"
             )
 
     def get_unsat_core(self) -> set[FNode]:
@@ -597,7 +597,7 @@ class Model:
         return self.get_value(idx, model_completion=True)
 
     def __str__(self):
-        return "\n".join(["%s := %s" % (var, value) for (var, value) in self])
+        return "\n".join([f"{var} := {value}" for (var, value) in self])
 
     def __iter__(self) -> Iterator[tuple[FNode, FNode]]:
         """This method must be implemented by subclasses"""

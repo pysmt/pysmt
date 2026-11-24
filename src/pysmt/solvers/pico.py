@@ -86,23 +86,23 @@ class PicosatOptions(SolverOptions):
         for k, v in self.solver_options.items():
             if k == "enable_trace_generation":
                 if v not in (True, False):
-                    raise PysmtValueError("Invalid value for %s: %s" % (str(k), str(v)))
+                    raise PysmtValueError(f"Invalid value for {str(k)}: {str(v)}")
             elif k == "output":
                 if v is not None and not hasattr(v, "fileno"):
-                    raise PysmtValueError("Invalid value for %s: %s" % (str(k), str(v)))
+                    raise PysmtValueError(f"Invalid value for {str(k)}: {str(v)}")
 
             elif k == "global_default_phase":
                 if v is not None and v not in PicosatOptions.ALL_GLOBAL_DEFAULT_PHASE:
-                    raise PysmtValueError("Invalid value for %s: %s" % (str(k), str(v)))
+                    raise PysmtValueError(f"Invalid value for {str(k)}: {str(v)}")
             elif k == "preprocessing":
                 if v not in (True, False):
-                    raise PysmtValueError("Invalid value for %s: %s" % (str(k), str(v)))
+                    raise PysmtValueError(f"Invalid value for {str(k)}: {str(v)}")
             elif k == "verbosity":
                 if not is_python_integer(v):
-                    raise PysmtValueError("Invalid value for %s: %s" % (str(k), str(v)))
+                    raise PysmtValueError(f"Invalid value for {str(k)}: {str(v)}")
             elif k == "propagation_limit":
                 if not is_python_integer(v):
-                    raise PysmtValueError("Invalid value for %s: %s" % (str(k), str(v)))
+                    raise PysmtValueError(f"Invalid value for {str(k)}: {str(v)}")
             elif k in ("more_important_lit", "less_important_lit"):
                 if v is not None:
                     try:
@@ -116,7 +116,7 @@ class PicosatOptions(SolverOptions):
                             "list of Boolean variables"
                         )
             else:
-                raise PysmtValueError("Unrecognized option '%s'." % k)
+                raise PysmtValueError(f"Unrecognized option '{k}'.")
             # Store option
             setattr(self, k, v)
 

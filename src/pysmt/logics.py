@@ -211,18 +211,18 @@ class Theory:
 
     def __str__(self):
         return (
-            "Arrays: %s, " % self.arrays
-            + "ArraysConst: %s, " % self.arrays_const
-            + "BV: %s, " % self.bit_vectors
-            + "FP: %s, " % self.floating_point
-            + "IA: %s, " % self.integer_arithmetic
-            + "RA: %s, " % self.real_arithmetic
-            + "ID: %s, " % self.integer_difference
-            + "RD: %s, " % self.real_difference
-            + "Linear: %s, " % self.linear
-            + "EUF: %s, " % self.uninterpreted
-            + "Type: %s, " % self.custom_type
-            + "String: %s" % self.strings
+            f"Arrays: {self.arrays}, "
+            + f"ArraysConst: {self.arrays_const}, "
+            + f"BV: {self.bit_vectors}, "
+            + f"FP: {self.floating_point}, "
+            + f"IA: {self.integer_arithmetic}, "
+            + f"RA: {self.real_arithmetic}, "
+            + f"ID: {self.integer_difference}, "
+            + f"RD: {self.real_difference}, "
+            + f"Linear: {self.linear}, "
+            + f"EUF: {self.uninterpreted}, "
+            + f"Type: {self.custom_type}, "
+            + f"String: {self.strings}"
         )
 
     __repr__ = __str__
@@ -891,7 +891,7 @@ def most_generic_logic(logics: Iterable[Logic]) -> Logic:
     res = [l for l in logics if all(l >= x for x in logics)]
     if len(res) != 1:
         raise NoLogicAvailableError(
-            "Could not find the most generic logic for %s." % str(logics)
+            f"Could not find the most generic logic for {str(logics)}."
         )
     return res[0]
 
@@ -905,7 +905,7 @@ def get_closer_logic(supported_logics: Iterable[Logic], logic: Logic) -> Logic:
     """
     candidates = [l for l in supported_logics if logic <= l]
     if len(candidates) == 0:
-        raise NoLogicAvailableError("Logic %s is not supported" % logic)
+        raise NoLogicAvailableError(f"Logic {logic} is not supported")
 
     # We remove from the candidates, the logics that subsume another candidate
     # (i.e. that are more general) because we are looking for the closer logic

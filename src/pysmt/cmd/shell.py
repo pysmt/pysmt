@@ -151,12 +151,12 @@ class PysmtShell:
         elif name == GET_VALUE:
             self._print("(", stream_out)
             for k, r in result.items():
-                self._print("  (%s %s)" % (k, r), stream_out)
+                self._print(f"  ({k} {r})", stream_out)
             self._print(")", stream_out)
         elif name == GET_OBJECTIVES:
             self._print("(objectives", stream_out)
             for r in result:
-                self._print("  (%s %s)" % (r[0], r[1]), stream_out)
+                self._print(f"  ({r[0]} {r[1]})", stream_out)
             self._print(")", stream_out)
 
     def smtlib_solver(self, stream_in: StringIO, stream_out: StringIO):

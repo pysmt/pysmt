@@ -174,14 +174,13 @@ class BoolectorOptions(SolverOptions):
         try:
             btor.Set_opt(available_options[name], value)
         except TypeError:
-            raise PysmtValueError("Error setting the option '%s=%s'" % (name, value))
+            raise PysmtValueError(f"Error setting the option '{name}={value}'")
         except pyboolector.BoolectorException:
-            raise PysmtValueError("Error setting the option '%s=%s'" % (name, value))
+            raise PysmtValueError(f"Error setting the option '{name}={value}'")
         except KeyError:
             raise PysmtValueError(
-                "Unable to set non-existing option '%s'. "
-                "The accepted options options are: %s"
-                % (
+                "Unable to set non-existing option '{}'. "
+                "The accepted options options are: {}".format(
                     name,
                     ", ".join(
                         pyboolector.BoolectorOpt(btor, io).lng
@@ -339,7 +338,7 @@ class BoolectorSolver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSol
     def print_model(self, name_filter=None):
         for var in self.declarations:
             if name_filter is None or not var.symbol_name().startswith(name_filter):
-                print("%s = %s" % (var.symbol_name(), self.get_value(var)))
+                print(f"{var.symbol_name()} = {self.get_value(var)}")
 
     def get_value(self, item):
         self._assert_no_function_type(item)
@@ -452,7 +451,7 @@ class BTORConverter(Converter, DagWalker):
             ):
                 raise ConvertExpressionError(
                     "BTOR supports only Array(BV,BV). "
-                    "Type '%s' was given." % str(symbol_type)
+                    f"Type '{str(symbol_type)}' was given."
                 )
             index_width = index_type.width if index_type.is_bv_type() else 1
             elem_width = elem_type.width if elem_type.is_bv_type() else 1
@@ -607,7 +606,7 @@ class BTORConverter(Converter, DagWalker):
                 self._type_to_btor(tp.index_type), self._type_to_btor(tp.elem_type)
             )
         else:
-            assert tp.is_function_type(), "Unsupported type '%s'" % tp
+            assert tp.is_function_type(), f"Unsupported type '{tp}'"
             stps = [self._type_to_btor(x) for x in tp.param_types]
             rtp = self._type_to_btor(tp.return_type)
             return self._btor.FunSort(stps, rtp)

@@ -43,6 +43,6 @@ with Solver() as solver:
     solver.add_assertion(formula)
     if solver.solve():
         for l in letters:
-            print("%s = %s" % (l, solver.get_value(l)))
+            print(f"{l} = {solver.get_value(l)}")
     else:
         print("No solution found")

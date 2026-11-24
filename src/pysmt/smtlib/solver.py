@@ -61,7 +61,7 @@ class SmtLibOptions(SolverOptions):
 
         for k, v in self.solver_options.items():
             if k in (":print-success", "diagnostic-output-channel"):
-                raise PysmtValueError("Cannot override %s." % k)
+                raise PysmtValueError(f"Cannot override {k}.")
             solver.set_option(k, str(v))
 
 
@@ -145,7 +145,7 @@ class SmtLibSolver(
     def _check_success(self):
         res = self._get_answer()
         if res != "success":
-            raise UnknownSolverAnswerError("Solver returned: '%s'" % res)
+            raise UnknownSolverAnswerError(f"Solver returned: '{res}'")
 
     @clear_pending_pop
     def solve(self, assumptions=None):
@@ -204,7 +204,7 @@ class SmtLibSolver(
         if name_filter is not None:
             raise NotImplementedError
         for v in self.declared_vars:
-            print("%s = %s" % (v, self.get_value(v)))
+            print(f"{v} = {self.get_value(v)}")
 
     def get_model(self):
         assignment = {}

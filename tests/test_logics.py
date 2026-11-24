@@ -48,7 +48,7 @@ class TestLogic(TestCase):
     def test_get_logic_by_name(self):
         for l in pysmt.logics.LOGICS:
             l_out = get_logic_by_name(l.name)
-            self.assertEqual(l_out, l, "Expecting %s, got %s instead" % (l, l_out))
+            self.assertEqual(l_out, l, f"Expecting {l}, got {l_out} instead")
 
     def test_get_logic_by_name_error(self):
         with self.assertRaises(UndefinedLogicError):
@@ -71,7 +71,7 @@ class TestLogic(TestCase):
                 custom_type=l.theory.custom_type,
                 strings=l.theory.strings,
             )
-            self.assertEqual(l_out, l, "Expected %s, got %s instead" % (l, l_out))
+            self.assertEqual(l_out, l, f"Expected {l}, got {l_out} instead")
 
     def test_get_logics_min(self):
         tests = [
@@ -156,7 +156,7 @@ class TestLogic(TestCase):
 
         for t in tests:
             self.assertEqual(
-                t[0], t[1], "Expected %s, got %s instead" % (t[0].name, t[1].name)
+                t[0], t[1], f"Expected {t[0].name}, got {t[1].name} instead"
             )
 
     def test_get_solver_by_logic(self):

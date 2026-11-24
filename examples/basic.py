@@ -14,8 +14,8 @@ g = f.substitute({varB: varA})
 
 res = is_sat(f)
 assert res  # SAT
-print("f := %s is SAT? %s" % (f, res))
+print(f"f := {f} is SAT? {res}")
 
 res = is_sat(g)
-print("g := %s is SAT? %s" % (g, res))
+print(f"g := {g} is SAT? {res}")
 assert not res  # UNSAT

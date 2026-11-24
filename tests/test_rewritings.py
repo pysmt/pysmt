@@ -304,7 +304,7 @@ class TestRewritings(TestCase):
                     ok = is_valid(Iff(f, f_aig), logic=logic)
                 except SolverReturnedUnknownResultError:
                     ok = not logic.quantifier_free
-                self.assertTrue(ok, "Was: %s\n Got:%s" % (f, f_aig))
+                self.assertTrue(ok, f"Was: {f}\n Got:{f_aig}")
 
     @skipIfNoSolverForLogic(QF_NRA)
     def test_times_distributivity(self):

@@ -89,13 +89,13 @@ _keywords = set(["Int", "Real", "Bool"])
 
 def quote(name: str, style: str = "|") -> str:
     if name in _keywords or _simple_symbol_prog.match(name) is None:
-        name = name.replace("\\", "\\\\").replace("%s" % style, "\\%s" % style)
-        return "%s%s%s" % (style, name, style)
+        name = name.replace("\\", "\\\\").replace(f"{style}", f"\\{style}")
+        return f"{style}{name}{style}"
     else:
         return name
 
 
 # utility function to narrow a type from Optional[T] to [T] without having to assert it is not None
 def assert_not_none(value: T | None) -> T:
-    assert value is not None, "Value: '%s' must not be None" % str(value)
+    assert value is not None, f"Value: '{str(value)}' must not be None"
     return cast(T, value)

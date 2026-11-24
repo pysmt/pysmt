@@ -760,7 +760,7 @@ class TestFormulaManager(TestCase):
         self.assertEqual(
             str(args[0]),
             "A",
-            "Expecting symbol A, " + "symbol %s found instead" % str(args[0]),
+            "Expecting symbol A, " + f"symbol {str(args[0])} found instead",
         )
 
         a = dst_mgr.Symbol("A")
@@ -768,14 +768,14 @@ class TestFormulaManager(TestCase):
         g = dst_mgr.And(a, dst_mgr.Not(b))
 
         # Contextualized formula is memoized
-        self.assertEqual(f_new, g, "%s != %s" % (id(f_new), id(g)))
+        self.assertEqual(f_new, g, f"{id(f_new)} != {id(g)}")
         # But it differs from the one in the other formula manager
         self.assertNotEqual(f_new, f)
 
         # Normalizing a formula in the same manager should not
         # be a problem
         f_new = src_mgr.normalize(f)
-        self.assertEqual(f_new, f, "%s != %s" % (id(a), id(b)))
+        self.assertEqual(f_new, f, f"{id(a)} != {id(b)}")
 
         # Verify that new types do not lead to errors in pickling
         from tests.examples import get_example_formulae

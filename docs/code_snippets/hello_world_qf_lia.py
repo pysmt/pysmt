@@ -26,6 +26,6 @@ with Solver(logic="QF_LIA") as solver:
     solver.add_assertion(problem)
     if solver.solve():
         for l in letters:
-            print("%s = %s" % (l, solver.get_value(l)))
+            print(f"{l} = {solver.get_value(l)}")
     else:
         print("No solution found")

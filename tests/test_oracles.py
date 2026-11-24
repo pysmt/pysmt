@@ -34,7 +34,7 @@ class TestOracles(TestCase):
             target_logic = example.logic
             res = get_logic(example.expr)
             self.assertEqual(
-                res, target_logic, "%s - %s != %s" % (example.expr, target_logic, res)
+                res, target_logic, f"{example.expr} - {target_logic} != {res}"
             )
 
     def test_get_free_vars(self):

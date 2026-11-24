@@ -136,7 +136,7 @@ class SolverInstaller:
             elif path.endswith(".tar.gz"):
                 SolverInstaller.untar(path, directory=self.base_dir)
             else:
-                raise ValueError("Unsupported archive for extraction: %s" % path)
+                raise ValueError(f"Unsupported archive for extraction: {path}")
 
     def compile(self):
         """Performs the compilation if needed"""
@@ -178,7 +178,7 @@ class SolverInstaller:
         meta = u.info()
         if meta.get("Content-Length") and len(meta.get("Content-Length")) > 0:
             file_size = int(meta.get("Content-Length"))
-            print("Downloading: %s Bytes: %s" % (file_name, file_size))
+            print(f"Downloading: {file_name} Bytes: {file_size}")
 
         block_sz = 8192
         count = 0
@@ -195,7 +195,7 @@ class SolverInstaller:
             ):
                 count += len(buff)
                 perc = (float(count) / float(file_size)) * 100.0
-                str_perc = "%.1f%%" % perc
+                str_perc = f"{perc:.1f}%"
                 sys.stdout.write("\r")
                 sys.stdout.write(str_perc)
                 sys.stdout.write(" " * (10 - len(str_perc)))
@@ -318,7 +318,7 @@ class SolverInstaller:
             )
             output = output.strip()
         except Exception:
-            print("Error while checking %s" % package)
+            print(f"Error while checking {package}")
             return None
 
         if output == "NOT INSTALLED":

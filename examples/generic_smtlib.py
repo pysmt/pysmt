@@ -43,13 +43,13 @@ f_idl = GT(p, q)
 # PySMT takes care of recognizing that QF_LRA can be solved by a QF_UFLRA solver.
 with Solver(name=name, logic=QF_LRA) as s:
     res = s.solve()
-    assert res, "Was expecting '%s' to be SAT" % f_lra
+    assert res, f"Was expecting '{f_lra}' to be SAT"
 
 
 with Solver(name=name, logic=QF_IDL) as s:
     s.add_assertion(f_idl)
     res = s.solve()
-    assert res, "Was expecting '%s' to be SAT" % f_idl
+    assert res, f"Was expecting '{f_idl}' to be SAT"
 
 try:
     with Solver(name=name, logic=QF_LIA) as s:
@@ -57,4 +57,4 @@ try:
 except NoSolverAvailableError:
     # If we ask for a logic that is not contained by any of the
     # supported logics an exception is thrown
-    print("%s does not support QF_LIA" % name)
+    print(f"{name} does not support QF_LIA")

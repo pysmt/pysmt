@@ -79,30 +79,26 @@ def execute_script_fname(smtfile: str, logic: Logic, expected_result: bool):
         with Solver(logic=logic, incremental=False, generate_models=False) as solver:
             if logic == QF_UF and type(solver).__name__ == "CVC5Solver":
                 warnings.warn(
-                    "Test (%s, %s) skipped because CVC5 can't handle QF_UF."
-                    % (logic, smtfile)
+                    f"Test ({logic}, {smtfile}) skipped because CVC5 can't handle QF_UF."
                 )
                 return
             if logic == QF_LIA and type(solver).__name__ == "CVC5Solver":
                 warnings.warn(
-                    "Test (%s, %s) skipped because CVC5 is very slow on QF_LIA tests"
-                    % (logic, smtfile)
+                    f"Test ({logic}, {smtfile}) skipped because CVC5 is very slow on QF_LIA tests"
                 )
                 return
             if logic == QF_UF and type(solver).__name__ == "BoolectorSolver":
                 warnings.warn(
-                    "Test (%s, %s) skipped because Boolector can't handle QF_UF."
-                    % (logic, smtfile)
+                    f"Test ({logic}, {smtfile}) skipped because Boolector can't handle QF_UF."
                 )
                 return
             log = script.evaluate(cast(SmtLibSolver, solver))
     except NoSolverAvailableError:
-        raise SkipTest("No solver for logic %s." % logic)
+        raise SkipTest(f"No solver for logic {logic}.")
     except SolverReturnedUnknownResultError:
         if not logic.quantifier_free:
             warnings.warn(
-                "Test (%s, %s) could not be solved due to quantifiers."
-                % (logic, smtfile)
+                f"Test ({logic}, {smtfile}) could not be solved due to quantifiers."
             )
             return
         raise
@@ -267,7 +263,7 @@ def omt_test_cases_from_smtlib_test_set(logics: None = None) -> Iterator[OMTTest
         mgr = env.formula_manager
         smtfile = os.path.join(OMTLIB_DIR, fname)
         parser = SmtLibParser()
-        test_name = "%s - %s" % (logic.name, fname)
+        test_name = f"{logic.name} - {fname}"
         script = parser.get_script_fname(smtfile)
         assumptions, parsed_goals = _extract_assumptions_and_objectives(mgr, script)
         if is_sat:

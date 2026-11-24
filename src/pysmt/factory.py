@@ -228,20 +228,18 @@ class Factory:
         logic: str | Logic | None = None,
     ) -> Any:
         if len(solver_list) == 0:
-            raise NoSolverAvailableError("No %s is available" % solver_type)
+            raise NoSolverAvailableError(f"No {solver_type} is available")
 
         logic = convert_logic_from_string(logic)
         if name is not None:
             if name not in solver_list:
-                raise NoSolverAvailableError(
-                    "%s '%s' is not available" % (solver_type, name)
-                )
+                raise NoSolverAvailableError(f"{solver_type} '{name}' is not available")
 
             if logic is not None and name not in self._filter_solvers(
                 solver_list, logic=logic
             ):
                 raise NoSolverAvailableError(
-                    "%s '%s' does not support logic %s" % (solver_type, name, logic)
+                    f"{solver_type} '{name}' does not support logic {logic}"
                 )
 
             SolverClass = solver_list[name]
@@ -277,7 +275,7 @@ class Factory:
 
         else:
             raise NoSolverAvailableError(
-                "No %s is available for logic %s" % (solver_type, logic)
+                f"No {solver_type} is available for logic {logic}"
             )
 
     def _pick_favorite(
@@ -300,7 +298,7 @@ class Factory:
             if candidate in solvers:
                 return solver_list[candidate]
         raise NoSolverAvailableError(
-            "Cannot find a matching solver in the preference list: %s " % solvers
+            f"Cannot find a matching solver in the preference list: {solvers} "
         )
 
     def add_generic_solver(
@@ -313,7 +311,7 @@ class Factory:
         from pysmt.smtlib.solver import SmtLibSolver
 
         if name in self._all_solvers:
-            raise SolverRedefinitionError("Solver %s already defined" % name)
+            raise SolverRedefinitionError(f"Solver {name} already defined")
         self._generic_solvers[name] = (args, logics)
         solver = cast(type[SmtLibSolver], partial(SmtLibSolver, args, LOGICS=logics))
         solver.LOGICS = logics

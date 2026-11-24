@@ -54,7 +54,7 @@ class EagerModel(Model):
 
         res = self.environment.simplifier.simplify(r)
         if not res.is_constant():
-            raise PysmtTypeError("Was expecting a constant but got %s" % res)
+            raise PysmtTypeError(f"Was expecting a constant but got {res}")
         return res
 
     def _complete_model(self, symbols):
@@ -63,7 +63,7 @@ class EagerModel(Model):
 
         for s in undefined_symbols:
             if not s.is_symbol():
-                raise PysmtTypeError("Was expecting a symbol but got %s" % s)
+                raise PysmtTypeError(f"Was expecting a symbol but got {s}")
 
             if s.symbol_type().is_bool_type():
                 value = mgr.Bool(False)
@@ -74,7 +74,7 @@ class EagerModel(Model):
             elif s.symbol_type().is_bv_type():
                 value = mgr.BVZero(s.bv_width())
             else:
-                raise PysmtTypeError("Unhandled type for %s: %s" % (s, s.symbol_type()))
+                raise PysmtTypeError(f"Unhandled type for {s}: {s.symbol_type()}")
 
             self.completed_assignment[s] = value
 

@@ -107,31 +107,31 @@ def check_installed(required_solvers, install_dir, target):
 
     for solver in required_solvers:
         if solver not in pypath_solvers:
-            raise PysmtException("Was expecting to find %s installed" % solver)
+            raise PysmtException(f"Was expecting to find {solver} installed")
 
     #
     # Output information
     #
     for solver, is_installed, version in global_solvers_status:
-        msg = "  %s%s " % (solver.ljust(10), is_installed)
-        msg += ("(%s)" % version).ljust(20)
+        msg = f"  {solver.ljust(10)}{is_installed} "
+        msg += (f"({version})").ljust(20)
         if solver not in pypath_solvers:
             msg += "Not in Python's path!"
         print(msg)
     print("")
 
-    print("Solvers: %s" % ", ".join(name for name in pypath_solvers))
+    print("Solvers: {}".format(", ".join(name for name in pypath_solvers)))
     qes = get_env().factory.all_quantifier_eliminators()
-    print("Quantifier Eliminators: %s" % ", ".join(name for name in qes))
+    print("Quantifier Eliminators: {}".format(", ".join(name for name in qes)))
 
     ucs = get_env().factory.all_unsat_core_solvers()
-    print("UNSAT-Cores: %s" % ", ".join(name for name in ucs))
+    print("UNSAT-Cores: {}".format(", ".join(name for name in ucs)))
 
     interps = get_env().factory.all_interpolators()
-    print("Interpolators: %s" % ", ".join(name for name in interps))
+    print("Interpolators: {}".format(", ".join(name for name in interps)))
 
     opts = get_env().factory.all_optimizers()
-    print("Optimizers: %s" % ", ".join(name for name in opts))
+    print("Optimizers: {}".format(", ".join(name for name in opts)))
 
 
 def parse_options():
@@ -150,11 +150,11 @@ def parse_options():
 
     for s in SOLVERS:
         parser.add_argument(
-            "--%s" % s.name,
+            f"--{s.name}",
             dest=s.name,
             action="store_true",
             default=False,
-            help="Install %s" % s.name,
+            help=f"Install {s.name}",
         )
 
     parser.add_argument(
@@ -276,7 +276,7 @@ def main():
         exit(0)
 
     if len(solvers_to_install) == 0:
-        print("Nothing to do.\nTry with '%s --help'" % sys.argv[0])
+        print(f"Nothing to do.\nTry with '{sys.argv[0]} --help'")
         exit(0)
 
     # Do the actual install
@@ -291,4 +291,4 @@ def main():
                 installer = make_installer(s, install_dir, target)
                 installer.install(force_redo=options.force_redo)
     except (PysmtException, subprocess.CalledProcessError) as e:
-        sys.exit("Error: %s" % e)
+        sys.exit(f"Error: {e}")

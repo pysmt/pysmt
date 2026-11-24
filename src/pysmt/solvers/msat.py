@@ -166,7 +166,7 @@ class MathSATOptions(SolverOptions):
         """Sets the given option. Might raise a ValueError."""
         check = self._msat_lib.msat_set_option(msat_config, name, value)
         if check != 0:
-            raise PysmtValueError("Error setting the option '%s=%s'" % (name, value))
+            raise PysmtValueError(f"Error setting the option '{name}={value}'")
 
     def __call__(self, solver: "MathSAT5Solver"):
         if self.generate_models:
@@ -695,7 +695,7 @@ class MSatConverter(Converter, DagWalker):
             elif self._msat_lib.msat_is_rational_type(self.msat_env(), ty):
                 res = types.REAL
             else:
-                assert "_" in str(term), "Unrecognized type for '%s'" % str(term)
+                assert "_" in str(term), f"Unrecognized type for '{str(term)}'"
                 width = int(str(term).split("_")[1])
                 res = self.tm.BVType(width)
             return res
@@ -794,7 +794,7 @@ class MSatConverter(Converter, DagWalker):
             elif self._msat_lib.msat_is_rational_type(self.msat_env(), ty):
                 res = self.mgr.Real(Fraction(self._msat_lib.msat_term_repr(term)))
             else:
-                assert "_" in str(term), "Unsupported type for '%s'" % str(term)
+                assert "_" in str(term), f"Unsupported type for '{str(term)}'"
                 val, width = map(int, str(term).split("_"))
                 res = self.mgr.BV(val, width)
         elif self._msat_lib.msat_term_is_constant(self.msat_env(), term):
@@ -817,7 +817,7 @@ class MSatConverter(Converter, DagWalker):
                 else:
                     _, width = self._msat_lib.msat_is_bv_type(self.msat_env(), ty)
                     assert isinstance(width, int), (
-                        "Unsupported variable type for '%s'" % str(term)
+                        f"Unsupported variable type for '{str(term)}'"
                     )
                     res = self.mgr.Symbol(rep, self.tm.BVType(width))
 
@@ -1179,7 +1179,7 @@ class MSatConverter(Converter, DagWalker):
         elif tp.is_custom_type():
             return self._msat_lib.msat_get_simple_type(self.msat_env(), str(tp))
         else:
-            raise NotImplementedError("Usupported type for '%s'" % tp)
+            raise NotImplementedError(f"Usupported type for '{tp}'")
 
     def _msat_type_to_type(self, tp):
         """Converts a MathSAT type into a PySMT type."""
@@ -1208,8 +1208,7 @@ class MSatConverter(Converter, DagWalker):
     def declare_variable(self, var: FNode):
         if not var.is_symbol():
             raise PysmtTypeError(
-                "Trying to declare as a variable something "
-                "that is not a symbol: %s" % var
+                f"Trying to declare as a variable something that is not a symbol: {var}"
             )
         if var not in self.symbol_to_decl:
             tp = self._type_to_msat(var.symbol_type())
@@ -1270,7 +1269,7 @@ class MSatQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
             raise PysmtValueError(
                 "MathSAT quantifier elimination only"
                 " supports LRA or LIA (detected logic "
-                "is: %s)" % str(logic)
+                f"is: {str(logic)})"
             )
 
         if not logic <= LRA and self.algorithm != "lw":
@@ -1295,11 +1294,11 @@ class MSatQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
             raise ConvertExpressionError(
                 message=(
                     "Unable to represent"
-                    "expression %s in pySMT: the quantifier elimination for "
+                    f"expression {str(res)} in pySMT: the quantifier elimination for "
                     "LIA is incomplete as it requires the modulus. You can "
                     "find the MathSAT term representing the quantifier "
                     "elimination as the attribute 'expression' of this "
-                    "exception object" % str(res)
+                    "exception object"
                 ),
                 expression=res,
             )
@@ -1370,7 +1369,7 @@ class MSatInterpolator(Interpolator):
             if not ok:
                 raise PysmtValueError(
                     "Logic not supported by MathSAT "
-                    "interpolation. (detected logic is: %s)" % str(logic)
+                    f"interpolation. (detected logic is: {str(logic)})"
                 )
 
     def binary_interpolant(self, a, b):
@@ -1405,8 +1404,7 @@ class MSatInterpolator(Interpolator):
             res = self._msat_lib.msat_solve(env)
             if res == self._msat_lib.MSAT_UNKNOWN:
                 raise InternalSolverError(
-                    "Error in mathsat interpolation: %s"
-                    % self._msat_lib.msat_last_error_message(env)
+                    f"Error in mathsat interpolation: {self._msat_lib.msat_last_error_message(env)}"
                 )
 
             if res == self._msat_lib.MSAT_SAT:

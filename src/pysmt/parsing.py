@@ -68,7 +68,7 @@ class Lexer:
         )
 
     def lexing_error(self, read):
-        raise PysmtSyntaxError("Unexpected input: %s" % read)
+        raise PysmtSyntaxError(f"Unexpected input: {read}")
 
     def tokenize(self, data):
         """The token generator for the given string"""
@@ -98,11 +98,11 @@ class GrammarSymbol:
         self.payload = payload
 
     def nud(self, parser):
-        raise PysmtSyntaxError("Syntax error at token '%s'." % parser.token)
+        raise PysmtSyntaxError(f"Syntax error at token '{parser.token}'.")
 
     def led(self, parser, left):
         raise PysmtSyntaxError(
-            "Syntax error at token '%s' (Read: '%s')." % (parser.token, left)
+            f"Syntax error at token '{parser.token}' (Read: '{left}')."
         )
 
 
@@ -322,7 +322,7 @@ class HRLexer(Lexer):
             if b.is_constant():
                 return op(a, b.constant_value())
             else:
-                raise PysmtSyntaxError("Constant expected, got '%s'" % b)
+                raise PysmtSyntaxError(f"Constant expected, got '{b}'")
 
         return _res
 
@@ -431,7 +431,7 @@ class OpenPar(GrammarSymbol):
     def nud(self, parser):
         r = parser.expression()
         if type(parser.token) is not ClosePar:
-            raise SyntaxError("Expected ')', got '%s'" % parser.token)
+            raise SyntaxError(f"Expected ')', got '{parser.token}'")
         parser.advance()
         return r
 
@@ -547,7 +547,7 @@ class PrattParser:
         try:
             bd = next(self.tokenizer)
             raise PysmtSyntaxError(
-                "Bogus data after expression: '%s' (Partial: %s)" % (bd, result)
+                f"Bogus data after expression: '{bd}' (Partial: {result})"
             )
         except StopIteration:
             return result
@@ -562,7 +562,7 @@ class PrattParser:
         ParserError
         """
         if type(self.token) is not token_class:
-            raise PysmtSyntaxError("Expected '%s'" % token_repr)
+            raise PysmtSyntaxError(f"Expected '{token_repr}'")
         self.advance()
 
 

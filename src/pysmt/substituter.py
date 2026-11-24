@@ -232,12 +232,12 @@ class Substituter(pysmt.walkers.IdentityDagWalker):
             if not k.is_term():
                 raise PysmtTypeError(
                     "Only terms should be provided as substitutions."
-                    + " Non-term '%s' found." % k
+                    + f" Non-term '{k}' found."
                 )
             if not v.is_term():
                 raise PysmtTypeError(
                     "Only terms should be provided as substitutions."
-                    + " Non-term '%s' found." % v
+                    + f" Non-term '{v}' found."
                 )
             # Check that substitutions belong to the current formula manager
             if k not in self.manager:
@@ -254,13 +254,13 @@ class Substituter(pysmt.walkers.IdentityDagWalker):
             if not k.is_symbol() or k.is_term():
                 raise PysmtTypeError(
                     "Only function symbols should be provided as interpretation"
-                    " keys. Non-function '%s' found." % k
+                    f" keys. Non-function '{k}' found."
                 )
             if not isinstance(f, FunctionInterpretation):
                 raise PysmtTypeError(
                     "Only FunctionInterpretation objects should be provided as "
-                    "interpretation values. Object '%s' of type %s "
-                    "found." % (f, type(f))
+                    f"interpretation values. Object '{f}' of type {type(f)} "
+                    "found."
                 )
             # Check that interpretations belong to the current formula manager
             if k not in self.manager:

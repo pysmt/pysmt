@@ -120,7 +120,7 @@ class HRPrinter(pysmt.printers.HRPrinter):
     def walk_ltl(self, formula):
         node_type = formula.node_type()
         op_symbol = LTL_TYPE_TO_STR[node_type]
-        self.stream.write("(%s " % op_symbol)
+        self.stream.write(f"({op_symbol} ")
         yield formula.arg(0)
         self.stream.write(")")
 

@@ -37,9 +37,9 @@ def write_annotations(f: Callable) -> Callable:
             yield from res
         if annots is not None and formula in annots:
             for key, values in annots[formula].items():
-                self.write(" :%s" % str(key))
+                self.write(f" :{str(key)}")
                 for value in values:
-                    self.write(" %s" % str(value))
+                    self.write(f" {str(value)}")
             self.write(")")
 
     return resf
@@ -78,7 +78,7 @@ class SmtPrinter(TreeWalker):
 
     @write_annotations
     def walk_nary(self, formula, operator):
-        self.write("(%s" % operator)
+        self.write(f"({operator}")
         for s in formula.args():
             self.write(" ")
             yield s
@@ -260,12 +260,12 @@ class SmtPrinter(TreeWalker):
     @write_annotations
     def _walk_quantifier(self, operator, formula):
         assert len(formula.quantifier_vars()) > 0
-        self.write("(%s (" % operator)
+        self.write(f"({operator} (")
 
         for s in formula.quantifier_vars():
             self.write("(")
             yield s
-            self.write(" %s)" % s.symbol_type().as_smtlib(False))
+            self.write(f" {s.symbol_type().as_smtlib(False)})")
 
         self.write(") ")
         yield formula.arg(0)
@@ -398,7 +398,7 @@ class SmtPrinter(TreeWalker):
         for _ in range(len(assign)):
             self.write("(store ")
 
-        self.write("((as const %s) " % self.env.stc.get_type(formula).as_smtlib(False))
+        self.write(f"((as const {self.env.stc.get_type(formula).as_smtlib(False)}) ")
         yield formula.array_value_default()
         self.write(")")
 
@@ -467,7 +467,7 @@ class SmtDagPrinter(DagWalker):
         assert formula is not None
         sym = self._new_symbol()
         self.openings += 1
-        self.write("(let ((%s (%s" % (sym, operator))
+        self.write(f"(let (({sym} ({operator}")
         for s in args:
             self.write(" ")
             self.write(s)
@@ -661,12 +661,12 @@ class SmtDagPrinter(DagWalker):
         sym = self._new_symbol()
         self.openings += 1
 
-        self.write("(let ((%s (%s (" % (sym, operator))
+        self.write(f"(let (({sym} ({operator} (")
 
         for s in formula.quantifier_vars():
             self.write("(")
             self.write(quote(s.symbol_name()))
-            self.write(" %s)" % s.symbol_type().as_smtlib(False))
+            self.write(f" {s.symbol_type().as_smtlib(False)})")
         self.write(") ")
 
         subprinter = SmtDagPrinter(self.stream, env=self.env)
@@ -734,17 +734,17 @@ class SmtDagPrinter(DagWalker):
 
     @write_annotations_dag
     def walk_str_length(self, formula, args, **kwargs):
-        return "(str.len %s)" % args[0]
+        return f"(str.len {args[0]})"
 
     @write_annotations_dag
     def walk_str_charat(self, formula, args, **kwargs):
-        return "( str.at %s %s )" % (args[0], args[1])
+        return f"( str.at {args[0]} {args[1]} )"
 
     @write_annotations_dag
     def walk_str_concat(self, formula, args, **kwargs):
         sym = self._new_symbol()
         self.openings += 1
-        self.write("(let ((%s (%s" % (sym, "str.++ "))
+        self.write("(let (({} ({}".format(sym, "str.++ "))
         for s in args:
             self.write(" ")
             self.write(s)
@@ -753,46 +753,46 @@ class SmtDagPrinter(DagWalker):
 
     @write_annotations_dag
     def walk_str_contains(self, formula, args, **kwargs):
-        return "( str.contains %s %s)" % (args[0], args[1])
+        return f"( str.contains {args[0]} {args[1]})"
 
     @write_annotations_dag
     def walk_str_indexof(self, formula, args, **kwargs):
-        return "( str.indexof %s %s %s )" % (args[0], args[1], args[2])
+        return f"( str.indexof {args[0]} {args[1]} {args[2]} )"
 
     @write_annotations_dag
     def walk_str_replace(self, formula, args, **kwargs):
-        return "( str.replace %s %s %s )" % (args[0], args[1], args[2])
+        return f"( str.replace {args[0]} {args[1]} {args[2]} )"
 
     @write_annotations_dag
     def walk_str_substr(self, formula, args, **kwargs):
-        return "( str.substr %s %s %s)" % (args[0], args[1], args[2])
+        return f"( str.substr {args[0]} {args[1]} {args[2]})"
 
     @write_annotations_dag
     def walk_str_prefixof(self, formula, args, **kwargs):
-        return "( str.prefixof %s %s )" % (args[0], args[1])
+        return f"( str.prefixof {args[0]} {args[1]} )"
 
     @write_annotations_dag
     def walk_str_suffixof(self, formula, args, **kwargs):
-        return "( str.suffixof %s %s )" % (args[0], args[1])
+        return f"( str.suffixof {args[0]} {args[1]} )"
 
     @write_annotations_dag
     def walk_str_to_int(self, formula, args, **kwargs):
-        return "( str.to.int %s )" % args[0]
+        return f"( str.to.int {args[0]} )"
 
     @write_annotations_dag
     def walk_int_to_str(self, formula, args, **kwargs):
-        return "( int.to.str %s )" % args[0]
+        return f"( int.to.str {args[0]} )"
 
     @write_annotations_dag
     def walk_array_value(self, formula, args, **kwargs):
         sym = self._new_symbol()
         self.openings += 1
-        self.write("(let ((%s " % sym)
+        self.write(f"(let (({sym} ")
 
         for _ in range((len(args) - 1) // 2):
             self.write("(store ")
 
-        self.write("((as const %s) " % self.env.stc.get_type(formula).as_smtlib(False))
+        self.write(f"((as const {self.env.stc.get_type(formula).as_smtlib(False)}) ")
         self.write(args[0])
         self.write(")")
 

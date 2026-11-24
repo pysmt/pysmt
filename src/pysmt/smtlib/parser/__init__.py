@@ -130,7 +130,7 @@ if __name__ == "__main__":
         if len(args) == 3:
             out = args[2]
         elif len(args) != 2:
-            print("Usage %s <file.smt2> [out.smt2]" % args[0])
+            print(f"Usage {args[0]} <file.smt2> [out.smt2]")
             exit(1)
 
         fname = args[1]

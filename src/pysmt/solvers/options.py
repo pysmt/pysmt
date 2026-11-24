@@ -80,30 +80,26 @@ class SolverOptions:
     ):
 
         if generate_models not in (True, False):
-            raise ValueError("Invalid value %s for 'generate_models'" % generate_models)
+            raise ValueError(f"Invalid value {generate_models} for 'generate_models'")
         self.generate_models = generate_models
 
         if incremental not in (True, False):
-            raise ValueError("Invalid value %s for 'incremental'" % incremental)
+            raise ValueError(f"Invalid value {incremental} for 'incremental'")
         self.incremental = incremental
 
         if unsat_cores_mode not in (None, "named", "all"):
-            raise ValueError(
-                "Invalid value %s for 'unsat_cores_mode'" % unsat_cores_mode
-            )
+            raise ValueError(f"Invalid value {unsat_cores_mode} for 'unsat_cores_mode'")
         self.unsat_cores_mode = unsat_cores_mode
 
         if random_seed is not None and type(random_seed) is not int:
-            raise ValueError("Invalid value %s for 'random_seed'" % random_seed)
+            raise ValueError(f"Invalid value {random_seed} for 'random_seed'")
         self.random_seed = random_seed
 
         if solver_options is not None:
             try:
                 solver_options = dict(solver_options)
             except BaseException:
-                raise ValueError(
-                    "Invalid value %s for 'solver_options'" % solver_options
-                )
+                raise ValueError(f"Invalid value {solver_options} for 'solver_options'")
         else:
             solver_options = dict()
         self.solver_options = solver_options

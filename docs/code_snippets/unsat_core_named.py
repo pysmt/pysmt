@@ -23,4 +23,4 @@ with UnsatCoreSolver(logic="QF_LIA", unsat_cores_mode="named") as solver:
         core = solver.get_named_unsat_core()
         print("The named unsat core:")
         for name, f in sorted(core.items()):
-            print("  %s -> %s" % (name, f.serialize()))
+            print(f"  {name} -> {f.serialize()}")

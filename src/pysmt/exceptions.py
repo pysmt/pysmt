@@ -146,7 +146,7 @@ class UndefinedSymbolError(PysmtException):
         self.name = name
 
     def __str__(self):
-        return "'%s' is not defined!" % self.name
+        return f"'{self.name}' is not defined!"
 
 
 class PysmtModeError(PysmtException):
@@ -245,7 +245,7 @@ class GoalNotSupportedError(PysmtException):
         return self._mode
 
     def __str__(self):
-        mode_str = (" in mode '%s'" % self.mode) if self.mode else ""
-        return "Optimizer '%s' does not support goal '%s'%s" % tuple(
-            map(str, (type(self.solver).__name__, self.goal, mode_str))
+        mode_str = (f" in mode '{self.mode}'") if self.mode else ""
+        return "Optimizer '{}' does not support goal '{}'{}".format(
+            *tuple(map(str, (type(self.solver).__name__, self.goal, mode_str)))
         )

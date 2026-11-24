@@ -77,7 +77,7 @@ class PySMTType:
 
         self.args = args
         if self.args:
-            args_str = "{%s}" % ", ".join(str(a) for a in self.args)
+            args_str = "{{{}}}".format(", ".join(str(a) for a in self.args))
         else:
             args_str = ""
         if self.basename is not None:
@@ -135,7 +135,7 @@ class PySMTType:
             args = " ".join([arg.as_smtlib(funstyle=False) for arg in self.args])
             name = "(" + self.basename + " " + args + ")"
         if funstyle:
-            return "() %s" % name
+            return f"() {name}"
         else:
             return assert_not_none(name)
 
@@ -311,7 +311,7 @@ class _FunctionType(PySMTType):
         rtype = self.return_type.as_smtlib(False)
 
         if funstyle:
-            res = "(%s) %s" % (" ".join(args), rtype)
+            res = "({}) {}".format(" ".join(args), rtype)
         else:
             res = " -> ".join(args + [rtype])
         return res
@@ -356,7 +356,7 @@ class _TypeDecl:
         return env.type_manager.get_type_instance(self, *args)
 
     def __str__(self) -> str:
-        return "%s/%s" % (self.name, self.arity)
+        return f"{self.name}/{self.arity}"
 
     def set_custom_type_flag(self):
         assert not self.custom_type
@@ -377,7 +377,7 @@ class PartialType:
         self.definition = definition
 
     def __str__(self) -> str:
-        return "PartialType(%s)" % (self.name)
+        return f"PartialType({self.name})"
 
     def __call__(self, *args: PySMTType):
         return self.definition(*args)
@@ -598,7 +598,7 @@ class TypeManager:
 # Util
 def assert_is_type(target: Any, func_name: str):
     if not isinstance(target, PySMTType):
-        raise PysmtValueError("Invalid type '%s' in %s." % (target, func_name))
+        raise PysmtValueError(f"Invalid type '{target}' in {func_name}.")
 
 
 def assert_are_types(targets: Iterable[Any], func_name: str):

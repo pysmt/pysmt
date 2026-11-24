@@ -104,9 +104,9 @@ class HRPrinter(TreeWalker):
         v = cast(Fraction, formula.constant_value())
         n, d = v.numerator, v.denominator
         if d == 1:
-            self.write("%s.0" % n)
+            self.write(f"{n}.0")
         else:
-            self.write("%s/%s" % (n, d))
+            self.write(f"{n}/{d}")
 
     def walk_int_constant(self, formula: FNode):
         assert is_pysmt_integer(formula.constant_value()), "The type was " + str(
@@ -192,7 +192,7 @@ class HRPrinter(TreeWalker):
         assert isinstance(formula_value, str), "The type was " + str(
             type(formula_value)
         )
-        self.write('"%s"' % formula_value.replace('"', '""'))
+        self.write('"{}"'.format(formula_value.replace('"', '""')))
 
     def walk_str_length(self, formula: FNode):
         self.write("str.len(")
