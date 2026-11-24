@@ -20,7 +20,7 @@ import warnings
 from collections import defaultdict, namedtuple
 from collections.abc import Iterator
 from io import StringIO, TextIOWrapper
-from typing import Any, Optional, TextIO, Union
+from typing import Any, Optional, TextIO
 
 import pysmt
 import pysmt.smtlib.commands as smtcmd
@@ -50,7 +50,7 @@ from pysmt.solvers.smtlib import SmtLibSolver
 from pysmt.solvers.solver import Model
 from pysmt.typing import _TypeDecl
 
-PrinterType = Union[SmtPrinter, SmtDagPrinter]
+PrinterType = SmtPrinter | SmtDagPrinter
 
 
 def check_sat_filter(

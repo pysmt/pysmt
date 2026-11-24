@@ -18,7 +18,7 @@
 import os
 import warnings
 from collections.abc import Callable, Iterator
-from typing import Union, cast
+from typing import cast
 
 from pysmt.exceptions import NoSolverAvailableError, SolverReturnedUnknownResultError
 from pysmt.fnode import FNode
@@ -303,7 +303,7 @@ def _extract_assumptions_and_objectives(
 
 
 # Directory with the optimal SMT-LIB test files
-FNode_or_Str = Union[FNode, str]
+FNode_or_Str = FNode | str
 OMTLIB_DIR = "tests/smtlib/omt/"
 OMTLIB_TEST_FILES: list[
     tuple[

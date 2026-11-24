@@ -1,2 +1,5 @@
 # Apply ruff format and safe ruff fixes (mechanical, #866)
 317cd8179e12ba60b60e636e3242852d6a0734a9
+
+# Apply the ruff UP (pyupgrade) auto-fixes (#873)
+9a10fb7da17d3716c5957a63d9aa08211de71c5e

@@ -1,7 +1,7 @@
 from collections.abc import Iterator, Sequence
 from enum import Enum, auto
 from fractions import Fraction
-from typing import Any, Union
+from typing import Any
 
 import pytest
 
@@ -23,7 +23,7 @@ from pysmt.optimization.optimizer import (
 from pysmt.shortcuts import get_env
 from pysmt.solvers.solver import Model
 
-FNode_or_Str = Union[FNode, str]
+FNode_or_Str = FNode | str
 
 
 class OptimizationTypes(Enum):

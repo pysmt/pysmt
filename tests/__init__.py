@@ -18,7 +18,6 @@
 import unittest
 from collections.abc import Callable
 from functools import wraps
-from typing import Optional, Tuple, Union
 
 from pysmt.environment import get_env, reset_env
 from pysmt.fnode import FNode

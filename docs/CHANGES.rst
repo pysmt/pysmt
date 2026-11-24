@@ -46,6 +46,9 @@ Change Log
 * The code is linted and formatted with ruff, and pre-commit hooks run
   the linter and the type checker before each commit (#866).
 
+* The code uses the Python 3.10 syntax enforced by the ruff ``UP``
+  rules, e.g., ``list[int]`` and ``int | None`` in annotations (#873).
+
 * ``pysmt-install`` no longer prints a setuptools deprecation warning, and
   its confirmation prompt accepts ``y`` and ``yes`` in any case (#867).
 
