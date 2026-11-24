@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # pySMT documentation build configuration file, created by
 # sphinx-quickstart on Sun Feb 16 16:14:52 2014.

@@ -16,7 +16,7 @@
 #   limitations under the License.
 #
 
-from typing import List, Optional, Tuple, Type, cast
+from typing import cast
 
 from pysmt.environment import Environment, get_env
 from pysmt.exceptions import PysmtValueError
@@ -25,7 +25,7 @@ from pysmt.logics import BV, LIA, LRA, Logic
 from pysmt.oracles import get_logic
 
 
-class Goal(object):
+class Goal:
     """
     This class defines goals for solvers.
     Warning: this class is not instantiable
@@ -54,9 +54,9 @@ class Goal(object):
 
     # The class-level default keeps subclasses that do not call Goal.__init__
     # working against the global environment, as they did before.
-    _env: Optional[Environment] = None
+    _env: Environment | None = None
 
-    def __init__(self, env: Optional[Environment] = None):
+    def __init__(self, env: Environment | None = None):
         """
         :param env: The environment the goal lives in; the global one if None
         """
@@ -106,7 +106,7 @@ class Goal(object):
     def term(self) -> FNode:
         raise NotImplementedError
 
-    def opt(self) -> Type["Goal"]:
+    def opt(self) -> type["Goal"]:
         raise NotImplementedError
 
 
@@ -118,7 +118,7 @@ class MaximizationGoal(Goal):
     """
 
     def __init__(
-        self, formula: FNode, signed: bool = False, env: Optional[Environment] = None
+        self, formula: FNode, signed: bool = False, env: Environment | None = None
     ):
         """
         :param formula: The target formula
@@ -129,7 +129,7 @@ class MaximizationGoal(Goal):
         self.formula = formula
         self._bv_signed = signed
 
-    def opt(self) -> Type["Goal"]:
+    def opt(self) -> type["Goal"]:
         return MaximizationGoal
 
     def term(self) -> FNode:
@@ -150,7 +150,7 @@ class MinimizationGoal(Goal):
     """
 
     def __init__(
-        self, formula: FNode, sign: bool = False, env: Optional[Environment] = None
+        self, formula: FNode, sign: bool = False, env: Environment | None = None
     ):
         """
         :param formula: The target formula
@@ -161,7 +161,7 @@ class MinimizationGoal(Goal):
         self.formula = formula
         self._bv_signed = sign
 
-    def opt(self) -> Type["Goal"]:
+    def opt(self) -> type["Goal"]:
         return MinimizationGoal
 
     def term(self) -> FNode:
@@ -183,7 +183,7 @@ class MinMaxGoal(MinimizationGoal):
     """
 
     def __init__(
-        self, terms: List[FNode], sign: bool = False, env: Optional[Environment] = None
+        self, terms: list[FNode], sign: bool = False, env: Environment | None = None
     ):
         """
         :param terms: List of FNode
@@ -216,7 +216,7 @@ class MaxMinGoal(MaximizationGoal):
     """
 
     def __init__(
-        self, terms: List[FNode], sign: bool = False, env: Optional[Environment] = None
+        self, terms: list[FNode], sign: bool = False, env: Environment | None = None
     ):
         """
         :param terms: List of FNode
@@ -245,13 +245,13 @@ class MaxSMTGoal(Goal):
     MaxSMT goal common to all solvers.
     """
 
-    def __init__(self, real_weights: bool = True, env: Optional[Environment] = None):
+    def __init__(self, real_weights: bool = True, env: Environment | None = None):
         """Accepts soft clauses and the relative weights
 
         :param env: The environment the goal lives in; the global one if None
         """
         Goal.__init__(self, env)
-        self.soft: List[Tuple[FNode, FNode]] = []
+        self.soft: list[tuple[FNode, FNode]] = []
         self._bv_signed = False
         self._real_weights = real_weights
 
@@ -309,7 +309,7 @@ class MaxSMTGoal(Goal):
         assert formula is not None, "Empty MaxSMT goal passed"
         return formula
 
-    def opt(self) -> Type["Goal"]:
+    def opt(self) -> type["Goal"]:
         return MaximizationGoal
 
     def __repr__(self) -> str:

@@ -25,7 +25,6 @@ import tarfile
 import urllib.request
 import zipfile
 from contextlib import contextmanager
-from typing import Optional
 from urllib.error import HTTPError, URLError
 
 from pysmt.exceptions import PysmtException
@@ -42,8 +41,8 @@ def TemporaryPath(path):
         sys.path = old_path
 
 
-class SolverInstaller(object):
-    SOLVER: Optional[str] = None
+class SolverInstaller:
+    SOLVER: str | None = None
 
     def __init__(
         self,
@@ -255,7 +254,7 @@ class SolverInstaller(object):
     @staticmethod
     def replace_in_file(file_path, old_str, new_str):
         """Replaces all occurrences of old_str with new_str in the given file"""
-        with open(file_path, "r") as f:
+        with open(file_path) as f:
             content = f.read()
         content = content.replace(old_str, new_str)
         with open(file_path, "w") as f:

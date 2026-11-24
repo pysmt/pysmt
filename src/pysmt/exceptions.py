@@ -17,8 +17,6 @@
 #
 """This module contains all custom exceptions of pySMT."""
 
-from typing import Optional, Tuple
-
 import pysmt.operators as op
 
 
@@ -182,8 +180,8 @@ class PysmtTypeError(PysmtException, TypeError):
 
 
 class PysmtSyntaxError(PysmtException, SyntaxError):
-    def __init__(self, message: str, pos_info: Optional[Tuple[int, int]] = None):
-        super(PysmtSyntaxError, self).__init__(message)
+    def __init__(self, message: str, pos_info: tuple[int, int] | None = None):
+        super().__init__(message)
         self.pos_info = pos_info
         self.message = message
 

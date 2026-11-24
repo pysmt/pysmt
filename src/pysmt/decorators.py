@@ -16,18 +16,18 @@
 #   limitations under the License.
 #
 import warnings
+from collections.abc import Callable
 from functools import wraps
-from typing import Callable, Optional
 
 import pysmt.exceptions
 
 
-class deprecated(object):
+class deprecated:
     """This is a decorator which can be used to mark functions
     as deprecated. It will result in a warning being emitted
     when the function is used."""
 
-    def __init__(self, alternative: Optional[str] = None):
+    def __init__(self, alternative: str | None = None):
         self.alternative = alternative
 
     def __call__(self, func: Callable) -> Callable:

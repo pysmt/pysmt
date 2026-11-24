@@ -17,7 +17,6 @@
 #
 import os.path as path
 from itertools import chain
-from typing import Optional
 
 from pysmt.environment import Environment
 from pysmt.exceptions import PysmtValueError
@@ -60,7 +59,7 @@ def _slow_examples():
 
 
 def get_full_example_omt_formuale(
-    environment: Optional[Environment] = None, fast: bool = True, slow: bool = True
+    environment: Environment | None = None, fast: bool = True, slow: bool = True
 ):
     """Return a list of OMTTestCases using the given environment."""
 

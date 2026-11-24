@@ -18,8 +18,9 @@
 
 import warnings
 from collections import defaultdict, namedtuple
+from collections.abc import Iterator
 from io import StringIO, TextIOWrapper
-from typing import Any, Dict, Iterator, List, Optional, Set, TextIO, Tuple, Union
+from typing import Any, Optional, TextIO, Union
 
 import pysmt
 import pysmt.smtlib.commands as smtcmd
@@ -53,9 +54,7 @@ PrinterType = Union[SmtPrinter, SmtDagPrinter]
 
 
 def check_sat_filter(
-    log: List[
-        Tuple[str, Optional[Union[Model, bool, Goal, List[Tuple[FNode, FNode]]]]]
-    ],
+    log: list[tuple[str, Model | bool | Goal | list[tuple[FNode, FNode]] | None]],
 ) -> bool:
     """
     Returns the result of the check-sat command from a log.
@@ -72,8 +71,8 @@ def check_sat_filter(
 class SmtLibCommand(namedtuple("SmtLibCommand", ["name", "args"])):
     def serialize(
         self,
-        outstream: Optional[TextIO] = None,
-        printer: Optional[PrinterType] = None,
+        outstream: TextIO | None = None,
+        printer: PrinterType | None = None,
         daggify: bool = True,
         env=None,
     ):
@@ -237,12 +236,12 @@ class SmtLibCommand(namedtuple("SmtLibCommand", ["name", "args"])):
         return buf.getvalue()
 
 
-class SmtLibScript(object):
+class SmtLibScript:
     def __init__(self):
-        self.annotations: Optional[Annotations] = None
-        self.commands: List[SmtLibCommand] = []
+        self.annotations: Annotations | None = None
+        self.commands: list[SmtLibCommand] = []
 
-    def add(self, name: str, args: List[Optional[Union[Logic, _TypeDecl, FNode, str]]]):
+    def add(self, name: str, args: list[Logic | _TypeDecl | FNode | str | None]):
         """Adds a new SmtLibCommand with the given name and arguments."""
         self.add_command(SmtLibCommand(name=name, args=args))
 
@@ -251,9 +250,7 @@ class SmtLibScript(object):
 
     def evaluate(
         self, solver: SmtLibSolver
-    ) -> List[
-        Tuple[str, Optional[Union[Model, bool, Goal, List[Tuple[FNode, FNode]]]]]
-    ]:
+    ) -> list[tuple[str, Model | bool | Goal | list[tuple[FNode, FNode]] | None]]:
         log = []
         inter = InterpreterOMT()
         for cmd in self.commands:
@@ -268,7 +265,7 @@ class SmtLibScript(object):
     def count_command_occurrences(self, command_name: str) -> int:
         return sum(1 for cmd in self.commands if cmd.name == command_name)
 
-    def filter_by_command_name(self, command_name_set: List[str]) -> Iterator[Any]:
+    def filter_by_command_name(self, command_name_set: list[str]) -> Iterator[Any]:
         return (cmd for cmd in self.commands if cmd.name in command_name_set)
 
     def get_strict_formula(
@@ -285,7 +282,7 @@ class SmtLibScript(object):
         ]
         return _And(assertions)
 
-    def get_declared_symbols(self) -> Set[FNode]:
+    def get_declared_symbols(self) -> set[FNode]:
         return {
             cmd.args[0]
             for cmd in self.filter_by_command_name(
@@ -293,7 +290,7 @@ class SmtLibScript(object):
             )
         }
 
-    def get_define_fun_parameter_symbols(self) -> Set[FNode]:
+    def get_define_fun_parameter_symbols(self) -> set[FNode]:
         res = set()
         for cmd in self.filter_by_command_name([smtcmd.DEFINE_FUN]):
             for s in cmd.args[1]:
@@ -301,7 +298,7 @@ class SmtLibScript(object):
         return res
 
     def get_last_formula(
-        self, mgr: Optional[FormulaManager] = None, return_optimizations: bool = False
+        self, mgr: FormulaManager | None = None, return_optimizations: bool = False
     ) -> Any:
         """Returns the last formula of the execution of the Script.
 
@@ -313,12 +310,12 @@ class SmtLibScript(object):
         script and the second element is the tuple containing the last goals
         defined.
         """
-        stack: List[FNode] = []
-        backtrack: List[int] = []
-        goals: List[Goal] = []
-        goals_backtrack: List[int] = []
-        max_smt_goals: Dict[Optional[str], Tuple[int, MaxSMTGoal]] = {}
-        max_smt_goals_backtrack: Dict[Optional[str], List[int]] = defaultdict(list)
+        stack: list[FNode] = []
+        backtrack: list[int] = []
+        goals: list[Goal] = []
+        goals_backtrack: list[int] = []
+        max_smt_goals: dict[str | None, tuple[int, MaxSMTGoal]] = {}
+        max_smt_goals_backtrack: dict[str | None, list[int]] = defaultdict(list)
         if mgr is None:
             mgr = get_env().formula_manager
 
@@ -395,7 +392,7 @@ class SmtLibScript(object):
             self.serialize(outstream, daggify=daggify, env=env)
 
     def serialize(
-        self, outstream: Union[TextIOWrapper, StringIO], daggify: bool = True, env=None
+        self, outstream: TextIOWrapper | StringIO, daggify: bool = True, env=None
     ):
         """Serializes the SmtLibScript expanding commands"""
         if daggify:
@@ -416,7 +413,7 @@ class SmtLibScript(object):
         return iter(self.commands)
 
     def __str__(self):
-        return "\n".join((str(cmd) for cmd in self.commands))
+        return "\n".join(str(cmd) for cmd in self.commands)
 
 
 def _command_is_signed(command: SmtLibCommand) -> bool:
@@ -437,7 +434,7 @@ def _command_is_signed(command: SmtLibCommand) -> bool:
 
 
 def smtlibscript_from_formula(
-    formula: FNode, logic: Optional[Union[str, int, Logic]] = None, env=None
+    formula: FNode, logic: str | int | Logic | None = None, env=None
 ) -> SmtLibScript:
     script = SmtLibScript()
     if env is None:
@@ -447,7 +444,7 @@ def smtlibscript_from_formula(
         # Get the simplest SmtLib logic that contains the formula
         f_logic = get_logic(formula, env=env)
 
-        smt_logic: Optional[Union[Logic, str]] = None
+        smt_logic: Logic | str | None = None
         try:
             smt_logic = get_closer_smtlib_logic(f_logic)
         except NoLogicAvailableError:
@@ -490,15 +487,15 @@ def smtlibscript_from_formula(
     return script
 
 
-class InterpreterSMT(object):
+class InterpreterSMT:
     def evaluate(
         self, cmd: SmtLibCommand, solver: SmtLibSolver
-    ) -> Optional[Union[Model, bool, Goal, List[Tuple[FNode, FNode]]]]:
+    ) -> Model | bool | Goal | list[tuple[FNode, FNode]] | None:
         return self._smt_evaluate(cmd, solver)
 
     def _smt_evaluate(
         self, cmd: SmtLibCommand, solver: SmtLibSolver
-    ) -> Optional[Union[Model, bool, Goal, List[Tuple[FNode, FNode]]]]:
+    ) -> Model | bool | Goal | list[tuple[FNode, FNode]] | None:
         if cmd.name == smtcmd.SET_INFO:
             return solver.set_info(cmd.args[0], cmd.args[1])
 
@@ -573,17 +570,17 @@ class InterpreterSMT(object):
 
 class InterpreterOMT(InterpreterSMT):
     def __init__(self):
-        self.optimization_goals: Tuple[List[Goal], List[Tuple[FNode, FNode]]] = ([], [])
+        self.optimization_goals: tuple[list[Goal], list[tuple[FNode, FNode]]] = ([], [])
         self.opt_priority = "single-obj"
 
     def evaluate(
         self, cmd: SmtLibCommand, solver: SmtLibSolver
-    ) -> Optional[Union[Model, bool, Goal, List[Tuple[FNode, FNode]]]]:
+    ) -> Model | bool | Goal | list[tuple[FNode, FNode]] | None:
         return self._omt_evaluate(cmd, solver)
 
     def _omt_evaluate(
         self, cmd: SmtLibCommand, optimizer: SmtLibSolver
-    ) -> Optional[Union[Model, bool, Goal, List[Tuple[FNode, FNode]]]]:
+    ) -> Model | bool | Goal | list[tuple[FNode, FNode]] | None:
         if cmd.name == smtcmd.SET_OPTION:
             if cmd.args[0] == ":opt.priority":
                 self.opt_priority = cmd.args[1]

@@ -15,7 +15,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from typing import Dict, Iterable, Iterator, Optional, Tuple
+from collections.abc import Iterable, Iterator
 
 from pysmt.environment import Environment, get_env
 from pysmt.exceptions import PysmtTypeError
@@ -33,7 +33,7 @@ class EagerModel(Model):
     """
 
     def __init__(
-        self, assignment: Dict[FNode, FNode], environment: Optional[Environment] = None
+        self, assignment: dict[FNode, FNode], environment: Environment | None = None
     ):
         if environment is None:
             environment = get_env()
@@ -78,11 +78,11 @@ class EagerModel(Model):
 
             self.completed_assignment[s] = value
 
-    def iterator_over(self, language: Iterable[FNode]) -> Iterator[Tuple[FNode, FNode]]:
+    def iterator_over(self, language: Iterable[FNode]) -> Iterator[tuple[FNode, FNode]]:
         for x in language:
             yield x, self.get_value(x, model_completion=True)
 
-    def __iter__(self) -> Iterator[Tuple[FNode, FNode]]:
+    def __iter__(self) -> Iterator[tuple[FNode, FNode]]:
         """Overloading of iterator from Model.  We iterate only on the
         variables defined in the assignment.
         """

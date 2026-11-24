@@ -145,7 +145,7 @@ def parse_options():
     parser.add_argument(
         "--version",
         action="version",
-        version="%(prog)s {version}".format(version=pysmt_version),
+        version=f"%(prog)s {pysmt_version}",
     )
 
     for s in SOLVERS:
@@ -197,7 +197,7 @@ def parse_options():
         type=str,
         default=install_path_default,
         help="The folder used to download and build the solvers that are not"
-        " installed from PyPI (defaults to: {!r})".format(install_path_default),
+        f" installed from PyPI (defaults to: {install_path_default!r})",
     )
 
     parser.add_argument(

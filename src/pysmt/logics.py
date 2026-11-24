@@ -20,28 +20,28 @@ the SMTLIB and provides methods to compare and search for particular
 logics.
 """
 
-from typing import Iterable, Optional, Union
+from collections.abc import Iterable
 
 from pysmt.exceptions import NoLogicAvailableError, UndefinedLogicError
 
 
-class Theory(object):
+class Theory:
     """Describes a theory similarly to the SMTLIB 2.0."""
 
     def __init__(
         self,
-        arrays: Optional[bool] = None,
-        arrays_const: Optional[bool] = None,
-        bit_vectors: Optional[bool] = None,
-        floating_point: Optional[bool] = None,
-        integer_arithmetic: Optional[bool] = None,
-        real_arithmetic: Optional[bool] = None,
-        integer_difference: Optional[bool] = None,
-        real_difference: Optional[bool] = None,
-        linear: Optional[bool] = None,
-        uninterpreted: Optional[bool] = None,
-        custom_type: Optional[bool] = None,
-        strings: Optional[bool] = None,
+        arrays: bool | None = None,
+        arrays_const: bool | None = None,
+        bit_vectors: bool | None = None,
+        floating_point: bool | None = None,
+        integer_arithmetic: bool | None = None,
+        real_arithmetic: bool | None = None,
+        integer_difference: bool | None = None,
+        real_difference: bool | None = None,
+        linear: bool | None = None,
+        uninterpreted: bool | None = None,
+        custom_type: bool | None = None,
+        strings: bool | None = None,
     ):
         self.arrays = arrays or False
         self.arrays_const = arrays_const or False
@@ -228,7 +228,7 @@ class Theory(object):
     __repr__ = __str__
 
 
-class Logic(object):
+class Logic:
     """Describes a Logic similarly to the way they are defined in the SMTLIB 2.0
 
     Note: We define more Logics than the ones defined in the SMTLib
@@ -241,7 +241,7 @@ class Logic(object):
         name: str,
         description: str,
         quantifier_free: bool = False,
-        theory: Optional[Theory] = None,
+        theory: Theory | None = None,
         **theory_kwargs,
     ):
         self.name = name
@@ -825,7 +825,7 @@ def get_logic_by_name(name: str) -> Logic:
     raise UndefinedLogicError(name)
 
 
-def convert_logic_from_string(name: Optional[Union[str, Logic]]) -> Optional[Logic]:
+def convert_logic_from_string(name: str | Logic | None) -> Logic | None:
     """Helper function to parse function arguments.
 
     This takes a logic or a string or None, and returns a logic or None.

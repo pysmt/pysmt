@@ -17,7 +17,6 @@
 #
 import collections
 from io import StringIO
-from typing import Optional
 
 from pysmt.environment import Environment
 from pysmt.exceptions import PysmtValueError, UnknownSmtLibCommandError
@@ -31,7 +30,7 @@ TSFormula = collections.namedtuple("TSFormula", ["formula", "is_init"])
 
 
 class TSSmtLibParser(SmtLibParser):
-    def __init__(self, env: Optional[Environment] = None, interactive: bool = False):
+    def __init__(self, env: Environment | None = None, interactive: bool = False):
         SmtLibParser.__init__(self, env, interactive)
 
         # Add new commands
@@ -79,7 +78,7 @@ class TSSmtLibParser(SmtLibParser):
         return TS(init, trans)
 
     def get_ts_fname(self, ts_fname):
-        with open(ts_fname, "r") as script:
+        with open(ts_fname) as script:
             return self.get_ts(script)
 
 

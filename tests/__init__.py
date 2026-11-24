@@ -16,8 +16,9 @@
 #   limitations under the License.
 #
 import unittest
+from collections.abc import Callable
 from functools import wraps
-from typing import Callable, Optional, Tuple, Union
+from typing import Optional, Tuple, Union
 
 from pysmt.environment import get_env, reset_env
 from pysmt.fnode import FNode
@@ -45,9 +46,9 @@ class TestCase(unittest.TestCase):
     def assertValid(
         self,
         formula: FNode,
-        msg: Optional[Union[str, Tuple[FNode, FNode], FNode]] = None,
+        msg: str | tuple[FNode, FNode] | FNode | None = None,
         solver_name: None = None,
-        logic: Optional[Logic] = None,
+        logic: Logic | None = None,
     ):
         """Assert that formula is VALID."""
         self.assertTrue(
@@ -88,7 +89,7 @@ class TestCase(unittest.TestCase):
         )
 
 
-class skipIfSolverNotAvailable(object):
+class skipIfSolverNotAvailable:
     """Skip a test if the given solver is not available."""
 
     def __init__(self, solver):
@@ -106,7 +107,7 @@ class skipIfSolverNotAvailable(object):
         return wrapper
 
 
-class skipIfQENotAvailable(object):
+class skipIfQENotAvailable:
     """Skip a test if the given solver does not support quantifier elimination."""
 
     def __init__(self, qe):
@@ -124,7 +125,7 @@ class skipIfQENotAvailable(object):
         return wrapper
 
 
-class skipIfNoSolverForLogic(object):
+class skipIfNoSolverForLogic:
     """Skip a test if there is no solver for the given logic."""
 
     def __init__(self, logic: Logic):
@@ -142,7 +143,7 @@ class skipIfNoSolverForLogic(object):
         return wrapper
 
 
-class skipIfNoUnsatCoreSolverForLogic(object):
+class skipIfNoUnsatCoreSolverForLogic:
     """Skip a test if there is no solver for the given logic."""
 
     def __init__(self, logic):
@@ -160,7 +161,7 @@ class skipIfNoUnsatCoreSolverForLogic(object):
         return wrapper
 
 
-class skipIfNoQEForLogic(object):
+class skipIfNoQEForLogic:
     """Skip a test if there is no quantifier eliminator for the given logic."""
 
     def __init__(self, logic):
@@ -178,7 +179,7 @@ class skipIfNoQEForLogic(object):
         return wrapper
 
 
-class skipIfNoOptimizerForLogic(object):
+class skipIfNoOptimizerForLogic:
     """Skip a test if there is no optimizer for the given logic."""
 
     def __init__(self, logic: Logic):

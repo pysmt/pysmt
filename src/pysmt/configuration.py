@@ -143,5 +143,5 @@ def write_environment_configuration(config_filename, environment):
             config.set(sec_name, "logics", " ".join(str(l) for l in logics))
 
     # Writing the configuration to file
-    with open(config_filename, "wt") as configfile:
+    with open(config_filename, "w") as configfile:
         config.write(configfile)

@@ -15,29 +15,17 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import sys
+from collections.abc import Callable, Iterable
+from collections.abc import Iterable as CollectionsIterable
 from typing import (
     Any,
-    Callable,
-    Dict,
-    Iterable,
-    List,
     Optional,
-    Tuple,
-    Type,
-    Union,
     cast,
 )
 
-from pysmt.fnode import FNode
-
-if sys.version_info >= (3, 3):
-    from collections.abc import Iterable as CollectionsIterable
-else:
-    from collections import Iterable as CollectionsIterable
-
 import pysmt.exceptions
 import pysmt.operators as op
+from pysmt.fnode import FNode
 
 
 # NodeType to Function Name
@@ -46,7 +34,7 @@ def nt_to_fun(o: int) -> str:
     return "walk_%s" % op.op_to_str(o).lower()
 
 
-class handles(object):
+class handles:
     """Decorator for walker functions.
 
     Use it by specifying the nodetypes that need to be handled by the
@@ -59,18 +47,18 @@ class handles(object):
 
     """
 
-    def __init__(self, *nodetypes: Union[int, Iterable[int]]):
+    def __init__(self, *nodetypes: int | Iterable[int]):
         if len(nodetypes) == 1 and isinstance(nodetypes[0], CollectionsIterable):
             nt: Iterable[int] = nodetypes[0]
         else:
             assert all(isinstance(x, int) for x in nodetypes)
-            nt = cast(Tuple[int], nodetypes)
-        self.nodetypes: List[int] = list(cast(Iterable[int], nt))
+            nt = cast(tuple[int], nodetypes)
+        self.nodetypes: list[int] = list(cast(Iterable[int], nt))
 
     def __call__(self, func: Callable) -> Callable:
         nodetypes = self.nodetypes
         if hasattr(func, "nodetypes"):
-            nodetypes = cast(List[int], getattr(func, "nodetypes")) + nodetypes
+            nodetypes = cast(list[int], getattr(func, "nodetypes")) + nodetypes
         setattr(func, "nodetypes", nodetypes)
         return func
 
@@ -79,18 +67,18 @@ class MetaNodeTypeHandler(type):
     """Metaclass used to intepret the nodehandler decorator."""
 
     def __new__(
-        cls: Type["MetaNodeTypeHandler"], name: str, bases: Any, dct: Dict[str, Any]
+        cls: type["MetaNodeTypeHandler"], name: str, bases: Any, dct: dict[str, Any]
     ) -> Any:
         obj = type.__new__(cls, name, bases, dct)
         for k, v in dct.items():
             if hasattr(v, "nodetypes"):
                 cast("Walker", obj).set_handler(
-                    v, *cast(List[int], getattr(v, "nodetypes"))
+                    v, *cast(list[int], getattr(v, "nodetypes"))
                 )
         return obj
 
 
-class Walker(object, metaclass=MetaNodeTypeHandler):
+class Walker(metaclass=MetaNodeTypeHandler):
     """Base Abstract Walker class.
 
     Do not subclass directly, use DagWalker or TreeWalker, instead.
@@ -101,7 +89,7 @@ class Walker(object, metaclass=MetaNodeTypeHandler):
             import pysmt.environment
 
             env = pysmt.environment.get_env()
-        self.env: "pysmt.environment.Environment" = env
+        self.env: pysmt.environment.Environment = env
 
     def set_function(self, function, *node_types):
         """Instance-based walkers (<=0.6.0) are no longer supported.

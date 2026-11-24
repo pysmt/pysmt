@@ -44,7 +44,7 @@ def at_time(v, t):
     return Symbol("%s@%d" % (v.symbol_name(), t), v.symbol_type())
 
 
-class TransitionSystem(object):
+class TransitionSystem:
     """Trivial representation of a Transition System."""
 
     def __init__(self, variables, init, trans):
@@ -56,7 +56,7 @@ class TransitionSystem(object):
 # EOC TransitionSystem
 
 
-class PDR(object):
+class PDR:
     def __init__(self, system):
         self.system = system
         self.frames = [system.init]
@@ -133,7 +133,7 @@ class PDR(object):
         self.solver.exit()
 
 
-class BMCInduction(object):
+class BMCInduction:
     def __init__(self, system):
         self.system = system
 

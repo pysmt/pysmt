@@ -28,7 +28,7 @@ from pysmt.exceptions import PysmtImportError
 #    Cython was not specified (unset env variable)
 #
 env_use_cython_val = os.environ.get("PYSMT_CYTHON")
-ENV_USE_CYTHON: Optional[bool] = None
+ENV_USE_CYTHON: bool | None = None
 if env_use_cython_val is not None:
     ENV_USE_CYTHON = env_use_cython_val.lower() in ["true", "1"]
 
@@ -88,20 +88,12 @@ else:
     import sys
 
     if not hasattr(pyximport, "build_module"):
-        if sys.version_info < (3, 5):
-            # _pyximport3 module requires at least Python 3.5
-            import pyximport._pyximport2 as pyximport  # type: ignore[import]
-        else:
-            import pyximport._pyximport3 as pyximport  # type: ignore[import]
+        import pyximport._pyximport3 as pyximport  # type: ignore[import]
 
     if not hasattr(pyximport, "build_module"):
         import sys
 
-        if sys.version_info < (3, 5):
-            # _pyximport3 module requires at least Python 3.5
-            import pyximport._pyximport2 as pyximport
-        else:
-            import pyximport._pyximport3 as pyximport
+        import pyximport._pyximport3 as pyximport
 
     pyx = pyximport.install()
     pyximport.uninstall(*pyx)

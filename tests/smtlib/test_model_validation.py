@@ -27,7 +27,7 @@ from tests import TestCase, main
 
 class TestModelValidation(TestCase):
     def setUp(self):
-        super(TestModelValidation, self).setUp()
+        super().setUp()
         self.env = get_env()
         self.tm = self.env.type_manager
         self.fm = self.env.formula_manager

@@ -21,7 +21,7 @@ import glob
 import importlib.util
 import os
 from fractions import Fraction as pyFraction
-from typing import Any, Dict, List, Optional, Set, cast
+from typing import Any, cast
 from warnings import warn
 
 import pysmt.logics
@@ -46,7 +46,7 @@ from pysmt.walkers import DagWalker
 _find_library = ctypes.util.find_library
 
 
-def _find_library_or_installed_yices(name: str) -> Optional[str]:
+def _find_library_or_installed_yices(name: str) -> str | None:
     """find_library, falling back to the libyices copied next to yices_api."""
     path = _find_library(name)
     if path is not None or name != "yices":
@@ -181,7 +181,7 @@ class YicesSolver(SmtLibBasicSolver):
     def __init__(self, environment: Environment, logic: pysmt.logics.Logic, **options):
         Solver.__init__(self, environment=environment, logic=logic, **options)
 
-        self.declarations: Set[FNode] = set()
+        self.declarations: set[FNode] = set()
         self.yices_config = yices_api.yices_new_config()
         if (
             yices_api.yices_default_config_for_logic(
@@ -242,7 +242,7 @@ class YicesSolver(SmtLibBasicSolver):
         return EagerModel(assignment=assignment, environment=self.environment)
 
     @clear_pending_pop
-    def solve(self, assumptions: Optional[List[FNode]] = None) -> bool:
+    def solve(self, assumptions: list[FNode] | None = None) -> bool:
         if assumptions is not None:
             self.push()
             self.add_assertion(self.mgr.And(assumptions))
@@ -359,10 +359,10 @@ class YicesConverter(Converter, DagWalker):
         self._get_type = environment.stc.get_type
 
         # Maps a Symbol into the corresponding internal yices instance
-        self.symbol_to_decl: Dict[FNode, Any] = {}
+        self.symbol_to_decl: dict[FNode, Any] = {}
         # Maps an internal yices instance into the corresponding symbol
-        self.decl_to_symbol: Dict[Any, FNode] = {}
-        self._yicesSort: Dict[str, Any] = {}
+        self.decl_to_symbol: dict[Any, FNode] = {}
+        self._yicesSort: dict[str, Any] = {}
 
     @catch_conversion_error
     def convert(self, formula: FNode) -> int:
@@ -373,19 +373,19 @@ class YicesConverter(Converter, DagWalker):
             err = yices_api.yices_error_string()
             raise InternalSolverError("Yices returned an error: " + err)
 
-    def walk_and(self, formula: FNode, args: List[int], **kwargs) -> int:
+    def walk_and(self, formula: FNode, args: list[int], **kwargs) -> int:
         values = (yices_api.term_t * len(args))(*args)
         res = yices_api.yices_and(len(args), values)
         self._check_term_result(res)
         return res
 
-    def walk_or(self, formula: FNode, args: List[int], **kwargs) -> int:
+    def walk_or(self, formula: FNode, args: list[int], **kwargs) -> int:
         values = (yices_api.term_t * len(args))(*args)
         res = yices_api.yices_or(len(args), values)
         self._check_term_result(res)
         return res
 
-    def walk_not(self, formula: FNode, args: List[int], **kwargs) -> int:
+    def walk_not(self, formula: FNode, args: list[int], **kwargs) -> int:
         res = yices_api.yices_not(args[0])
         self._check_term_result(res)
         return res
@@ -405,27 +405,27 @@ class YicesConverter(Converter, DagWalker):
         yices_api.yices_set_term_name(term, var.symbol_name())
         return term
 
-    def walk_iff(self, formula: FNode, args: List[int], **kwargs) -> int:
+    def walk_iff(self, formula: FNode, args: list[int], **kwargs) -> int:
         res = yices_api.yices_iff(args[0], args[1])
         self._check_term_result(res)
         return res
 
-    def walk_implies(self, formula: FNode, args: List[int], **kwargs) -> int:
+    def walk_implies(self, formula: FNode, args: list[int], **kwargs) -> int:
         res = yices_api.yices_implies(args[0], args[1])
         self._check_term_result(res)
         return res
 
-    def walk_le(self, formula: FNode, args: List[int], **kwargs) -> int:
+    def walk_le(self, formula: FNode, args: list[int], **kwargs) -> int:
         res = yices_api.yices_arith_leq_atom(args[0], args[1])
         self._check_term_result(res)
         return res
 
-    def walk_lt(self, formula: FNode, args: List[int], **kwargs) -> int:
+    def walk_lt(self, formula: FNode, args: list[int], **kwargs) -> int:
         res = yices_api.yices_arith_lt_atom(args[0], args[1])
         self._check_term_result(res)
         return res
 
-    def walk_ite(self, formula: FNode, args: List[int], **kwargs) -> int:
+    def walk_ite(self, formula: FNode, args: list[int], **kwargs) -> int:
         i, t, e = args
         res = yices_api.yices_ite(i, t, e)
         self._check_term_result(res)
@@ -485,7 +485,7 @@ class YicesConverter(Converter, DagWalker):
         )
         return (new_formula, new_vars)
 
-    def walk_plus(self, formula: FNode, args: List[int], **kwargs) -> int:
+    def walk_plus(self, formula: FNode, args: list[int], **kwargs) -> int:
         values = (yices_api.term_t * len(args))(*args)
         res = yices_api.yices_sum(len(args), values)
         self._check_term_result(res)
@@ -496,7 +496,7 @@ class YicesConverter(Converter, DagWalker):
         self._check_term_result(res)
         return res
 
-    def walk_equals(self, formula: FNode, args: List[int], **kwargs) -> int:
+    def walk_equals(self, formula: FNode, args: list[int], **kwargs) -> int:
         tp = self._get_type(formula.arg(0))
         res = None
         if tp.is_bv_type():
@@ -509,7 +509,7 @@ class YicesConverter(Converter, DagWalker):
         self._check_term_result(res)
         return res
 
-    def walk_times(self, formula: FNode, args: List[int], **kwargs) -> int:
+    def walk_times(self, formula: FNode, args: list[int], **kwargs) -> int:
         res = args[0]
         for x in args[1:]:
             res = yices_api.yices_mul(res, x)
@@ -549,12 +549,12 @@ class YicesConverter(Converter, DagWalker):
         self._check_term_result(res)
         return res
 
-    def walk_bv_ult(self, formula: FNode, args: List[int], **kwargs) -> int:
+    def walk_bv_ult(self, formula: FNode, args: list[int], **kwargs) -> int:
         res = yices_api.yices_bvlt_atom(args[0], args[1])
         self._check_term_result(res)
         return res
 
-    def walk_bv_ule(self, formula: FNode, args: List[int], **kwargs) -> int:
+    def walk_bv_ule(self, formula: FNode, args: list[int], **kwargs) -> int:
         res = yices_api.yices_bvle_atom(args[0], args[1])
         self._check_term_result(res)
         return res
@@ -651,12 +651,12 @@ class YicesConverter(Converter, DagWalker):
         self._check_term_result(res)
         return res
 
-    def walk_bv_slt(self, formula: FNode, args: List[int], **kwargs) -> int:
+    def walk_bv_slt(self, formula: FNode, args: list[int], **kwargs) -> int:
         res = yices_api.yices_bvslt_atom(args[0], args[1])
         self._check_term_result(res)
         return res
 
-    def walk_bv_sle(self, formula: FNode, args: List[int], **kwargs) -> int:
+    def walk_bv_sle(self, formula: FNode, args: list[int], **kwargs) -> int:
         res = yices_api.yices_bvsle_atom(args[0], args[1])
         self._check_term_result(res)
         return res

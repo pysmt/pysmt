@@ -18,8 +18,9 @@
 """FNode are the building blocks of formulae."""
 
 import collections
+from collections.abc import Callable
 from fractions import Fraction
-from typing import Callable, Dict, FrozenSet, Optional, Tuple, Union, cast
+from typing import Union, cast
 
 import pysmt
 import pysmt.smtlib
@@ -97,7 +98,7 @@ from pysmt.utils import twos_complement
 FNodeContent = collections.namedtuple("FNodeContent", ["node_type", "args", "payload"])
 
 
-class FNode(object):
+class FNode:
     r"""FNode represent the basic structure for representing a formula.
 
     FNodes are built using the FormulaManager, and should not be
@@ -135,7 +136,7 @@ class FNode(object):
     def node_type(self) -> int:
         return self._content.node_type
 
-    def args(self) -> Tuple["FNode", ...]:
+    def args(self) -> tuple["FNode", ...]:
         """Returns the subformulae."""
         return self._content.args
 
@@ -143,11 +144,11 @@ class FNode(object):
         """Return the given subformula at the given position."""
         return self._content.args[idx]
 
-    def get_free_variables(self) -> FrozenSet["FNode"]:
+    def get_free_variables(self) -> frozenset["FNode"]:
         """Return the set of Symbols that are free in the formula."""
         return _env().fvo.get_free_variables(self)
 
-    def get_atoms(self) -> FrozenSet["FNode"]:
+    def get_atoms(self) -> frozenset["FNode"]:
         """Return the set of atoms appearing in the formula."""
         return _env().ao.get_atoms(self)
 
@@ -157,10 +158,9 @@ class FNode(object):
 
     def substitute(
         self,
-        subs: Optional[Dict["FNode", "FNode"]] = None,
-        interpretations: Optional[
-            Dict["FNode", "pysmt.substituter.FunctionInterpretation"]
-        ] = None,
+        subs: dict["FNode", "FNode"] | None = None,
+        interpretations: dict["FNode", "pysmt.substituter.FunctionInterpretation"]
+        | None = None,
     ) -> "FNode":
         """Return a formula in which subformula have been substituted.
 
@@ -172,7 +172,7 @@ class FNode(object):
             self, subs=subs, interpretations=interpretations
         )
 
-    def size(self, measure: Optional[int] = None) -> int:
+    def size(self, measure: int | None = None) -> int:
         """Return the size of the formula according to the given metric.
 
         See :py:class:`SizeOracle`
@@ -188,8 +188,8 @@ class FNode(object):
 
     def is_constant(
         self,
-        _type: Optional[PySMTType] = None,
-        value: Optional[Union[bool, int, Fraction, str]] = None,
+        _type: PySMTType | None = None,
+        value: bool | int | Fraction | str | None = None,
     ) -> bool:
         """Test whether the formula is a constant.
 
@@ -226,21 +226,21 @@ class FNode(object):
 
         return value is None or value == self.constant_value()
 
-    def is_bool_constant(self, value: Optional[bool] = None) -> bool:
+    def is_bool_constant(self, value: bool | None = None) -> bool:
         """Test whether the formula is a Boolean constant.
 
         Optionally, check that the constant has the given value.
         """
         return self.is_constant(BOOL, value)
 
-    def is_real_constant(self, value: Optional[Union[int, Fraction]] = None) -> bool:
+    def is_real_constant(self, value: int | Fraction | None = None) -> bool:
         """Test whether the formula is a Real constant.
 
         Optionally, check that the constant has the given value.
         """
         return self.is_constant(REAL, value)
 
-    def is_int_constant(self, value: Optional[int] = None) -> bool:
+    def is_int_constant(self, value: int | None = None) -> bool:
         """Test whether the formula is an Integer constant.
 
         Optionally, check that the constant has the given value.
@@ -248,7 +248,7 @@ class FNode(object):
         return self.is_constant(INT, value)
 
     def is_bv_constant(
-        self, value: Optional[int] = None, width: Optional[int] = None
+        self, value: int | None = None, width: int | None = None
     ) -> bool:
         """Test whether the formula is a BitVector constant.
 
@@ -260,7 +260,7 @@ class FNode(object):
         type_ = None if width is None else BVType(width=width)
         return self.is_constant(_type=type_, value=value)
 
-    def is_string_constant(self, value: Optional[str] = None) -> bool:
+    def is_string_constant(self, value: str | None = None) -> bool:
         """Test whether the formula is a String constant.
 
         Optionally, check that the constant has the given value.
@@ -271,7 +271,7 @@ class FNode(object):
         """Test whether the formula is an Algebraic Constant"""
         return self.node_type() == ALGEBRAIC_CONSTANT
 
-    def is_symbol(self, type_: Optional[PySMTType] = None) -> bool:
+    def is_symbol(self, type_: PySMTType | None = None) -> bool:
         """Test whether the formula is a Symbol.
 
         Optionally, check that the symbol has the given type.
@@ -575,7 +575,7 @@ class FNode(object):
     def __repr__(self) -> str:
         return str(self)
 
-    def serialize(self, threshold: Optional[int] = None) -> str:
+    def serialize(self, threshold: int | None = None) -> str:
         """Returns a human readable representation of the formula.
 
         The threshold parameter can be used to limit the amount of the
@@ -620,7 +620,7 @@ class FNode(object):
         assert self.is_symbol()
         return self._content.payload[0]
 
-    def constant_value(self) -> Union[str, bool, Fraction, int]:
+    def constant_value(self) -> str | bool | Fraction | int:
         """Return the value of the Constant."""
         assert self.is_constant(), "%s is not a constant" % str(self)
         if self.node_type() == BV_CONSTANT:
@@ -721,7 +721,7 @@ class FNode(object):
                 start = pivot + 1
         return self.array_value_default()
 
-    def array_value_assigned_values_map(self) -> Dict["FNode", "FNode"]:
+    def array_value_assigned_values_map(self) -> dict["FNode", "FNode"]:
         args = self.args()
         return dict(zip(args[1::2], args[2::2]))
 
@@ -733,7 +733,7 @@ class FNode(object):
         assert self.is_function_application()
         return self._content.payload
 
-    def quantifier_vars(self) -> Tuple["FNode", ...]:
+    def quantifier_vars(self) -> tuple["FNode", ...]:
         """Return the list of quantified variables."""
         assert self.is_quantifier()
         return self._content.payload
@@ -746,7 +746,7 @@ class FNode(object):
     # Infix Notation
     @assert_infix_enabled
     def _apply_infix(
-        self, right: "FNode", function: Callable, bv_function: Optional[Callable] = None
+        self, right: "FNode", function: Callable, bv_function: Callable | None = None
     ) -> "FNode":
         # Default bv_function to function
         if bv_function is None:
@@ -986,7 +986,7 @@ class FNode(object):
         return _mgr().Not(self)
 
     @assert_infix_enabled
-    def __getitem__(self, idx: Union[int, slice]) -> "FNode":
+    def __getitem__(self, idx: int | slice) -> "FNode":
         if isinstance(idx, slice):
             end = idx.stop
             start = idx.start

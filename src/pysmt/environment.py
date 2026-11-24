@@ -21,7 +21,7 @@ singleton objects that are used throughout the system, such as the
 FormulaManager, Simplifier, HRSerializer, SimpleTypeChecker.
 """
 
-from typing import Callable, Dict, List, Optional, Tuple, Type
+from collections.abc import Callable
 
 import pysmt.formula
 import pysmt.oracles
@@ -32,7 +32,7 @@ import pysmt.type_checker
 import pysmt.typing
 
 
-class Environment(object):
+class Environment:
     """The Environment provides global singleton instances of various objects.
 
     FormulaManager and the TypeChecker are among the most commonly used ones.
@@ -91,7 +91,7 @@ class Environment(object):
         # keyed by (nodetype, walker_class). Kept local to this
         # environment so registrations never leak across environments.
         # See: add_dynamic_walker_function
-        self.dwf: Dict[Tuple[int, Type], Callable] = {}
+        self.dwf: dict[tuple[int, type], Callable] = {}
 
     @property
     def formula_manager(self) -> pysmt.formula.FormulaManager:
@@ -192,7 +192,7 @@ class Environment(object):
 # EOC Environment
 
 #### GLOBAL ENVIRONMENTS STACKS ####
-ENVIRONMENTS_STACK: List[Environment] = []
+ENVIRONMENTS_STACK: list[Environment] = []
 
 
 def get_env() -> Environment:
@@ -200,7 +200,7 @@ def get_env() -> Environment:
     return ENVIRONMENTS_STACK[-1]
 
 
-def push_env(env: Optional[Environment] = None):
+def push_env(env: Environment | None = None):
     """Push a env in the stack. If env is None, a new Environment is created."""
     if env is None:
         env = Environment()

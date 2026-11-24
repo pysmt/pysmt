@@ -445,7 +445,7 @@ class TestRegressions(TestCase):
 
     def test_exactly_one_unpacking(self):
         s1, s2 = Symbol("x"), Symbol("y")
-        f1 = ExactlyOne((s for s in [s1, s2]))
+        f1 = ExactlyOne(s for s in [s1, s2])
         f2 = ExactlyOne([s1, s2])
         f3 = ExactlyOne(s1, s2)
 

@@ -15,7 +15,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 import pysmt
 import pysmt.operators as op
@@ -56,7 +56,7 @@ class FunctionInterpretation:
 
     def __init__(
         self,
-        formal_params: List[FNode],
+        formal_params: list[FNode],
         function_body: FNode,
         allow_free_vars: bool = False,
     ):
@@ -86,7 +86,7 @@ class FunctionInterpretation:
         self.function_body = function_body
 
     def interpret(
-        self, env: "pysmt.environment.Environment", actual_params: List[FNode]
+        self, env: "pysmt.environment.Environment", actual_params: list[FNode]
     ) -> FNode:
         """Given a set of actual parameter, returns the 'value' of the
         function by substituting formal parameters with their actual
@@ -187,8 +187,8 @@ class Substituter(pysmt.walkers.IdentityDagWalker):
     def substitute(
         self,
         formula: FNode,
-        subs: Optional[Dict[FNode, FNode]] = None,
-        interpretations: Optional[Dict[FNode, FunctionInterpretation]] = None,
+        subs: dict[FNode, FNode] | None = None,
+        interpretations: dict[FNode, FunctionInterpretation] | None = None,
     ) -> FNode:
         """Replaces any subformula in formula with the definition in subs (if
         any) and interprets function symbols with the interpretations
@@ -271,7 +271,7 @@ class Substituter(pysmt.walkers.IdentityDagWalker):
         res = self.walk(formula, substitutions=subs, interpretations=interpretations)
         return res
 
-    def walk_function(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
+    def walk_function(self, formula: FNode, args: list[FNode], **kwargs) -> FNode:
         f = formula.function_name()
         interpretations = kwargs["interpretations"]
         if f in interpretations:
@@ -294,7 +294,7 @@ class MGSubstituter(Substituter):
 
     @handles(set(op.ALL_TYPES) - op.QUANTIFIERS)
     def walk_identity_or_replace(
-        self, formula: FNode, args: List[Union[Any, FNode]], **kwargs
+        self, formula: FNode, args: list[Any | FNode], **kwargs
     ) -> FNode:
         """
         If the formula appears in the substitution, return the substitution.
@@ -306,7 +306,7 @@ class MGSubstituter(Substituter):
             res = Substituter.super(self, formula, args=args, **kwargs)
         return res
 
-    def walk_forall(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
+    def walk_forall(self, formula: FNode, args: list[FNode], **kwargs) -> FNode:
         substitutions = kwargs["substitutions"]
         res = substitutions.get(formula, None)
         if res is None:
@@ -317,7 +317,7 @@ class MGSubstituter(Substituter):
             res = self.mgr.ForAll(qvars, args[0])
         return res
 
-    def walk_exists(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
+    def walk_exists(self, formula: FNode, args: list[FNode], **kwargs) -> FNode:
         substitutions = kwargs["substitutions"]
         res = substitutions.get(formula, None)
         if res is None:

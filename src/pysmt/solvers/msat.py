@@ -15,8 +15,9 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+from collections.abc import Callable, Iterable
 from fractions import Fraction as pyFraction
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union, cast
+from typing import Any, cast
 from warnings import warn
 
 import pysmt.operators as op
@@ -66,7 +67,7 @@ class MSatEnv:
     __slots__ = ["msat_env", "_msat_lib"]
     __lib_name__ = "mathsat"
 
-    def __init__(self, msat_config: Optional[Any] = None):
+    def __init__(self, msat_config: Any | None = None):
         self._msat_lib = MSATLibLoader(self.__class__.__lib_name__)
         self.msat_env = self._do_create_env(msat_config)
 
@@ -77,7 +78,7 @@ class MSatEnv:
         return self.msat_env
 
     def _do_create_env(
-        self, msat_config: Optional[Any] = None, msat_env: None = None
+        self, msat_config: Any | None = None, msat_env: None = None
     ) -> Any:
         return self._msat_lib.msat_create_env(msat_config, msat_env)
 
@@ -246,7 +247,7 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolv
         self.intType = self._msat_lib.msat_get_integer_type(self.msat_env())
         self.boolType = self._msat_lib.msat_get_bool_type(self.msat_env())
         self.mgr = environment.formula_manager
-        self._assumption_keys: Dict[FNode, FNode] = {}
+        self._assumption_keys: dict[FNode, FNode] = {}
 
     @clear_pending_pop
     def _reset_assertions(self):
@@ -258,11 +259,11 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolv
 
     @clear_pending_pop
     def _add_assertion(
-        self, formula: FNode, named: Optional[str] = None
-    ) -> Union[FNode, Tuple[FNode, Optional[str], FNode]]:
+        self, formula: FNode, named: str | None = None
+    ) -> FNode | tuple[FNode, str | None, FNode]:
         self._assert_is_boolean(formula)
 
-        result: Union[FNode, Tuple[FNode, Optional[str], FNode]] = formula
+        result: FNode | tuple[FNode, str | None, FNode] = formula
         if self.options.unsat_cores_mode == "named":
             # If we want named unsat cores, we need to rewrite the
             # formulae as implications
@@ -279,7 +280,7 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolv
 
         return result
 
-    def _named_assertions(self) -> Optional[List[FNode]]:
+    def _named_assertions(self) -> list[FNode] | None:
         if self.options.unsat_cores_mode == "named":
             return [t[0] for t in self.assertions]
         return None
@@ -292,7 +293,7 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolv
         return None
 
     @clear_pending_pop
-    def _solve(self, assumptions: Optional[List[FNode]] = None) -> bool:
+    def _solve(self, assumptions: list[FNode] | None = None) -> bool:
         res = None
         bool_ass = []
         other_ass = []
@@ -465,18 +466,18 @@ class MSatConverter(Converter, DagWalker):
         self._get_type = environment.stc.get_type
 
         # Maps a Symbol into the corresponding msat_decl instance in the msat_env
-        self.symbol_to_decl: Dict[FNode, Any] = {}
+        self.symbol_to_decl: dict[FNode, Any] = {}
         # Maps a msat_decl instance inside the msat_env into the corresponding
         # Symbol
-        self.decl_to_symbol: Dict[Any, FNode] = {}
+        self.decl_to_symbol: dict[Any, FNode] = {}
 
         self.boolType = self._msat_lib.msat_get_bool_type(self.msat_env())
         self.realType = self._msat_lib.msat_get_rational_type(self.msat_env())
         self.intType = self._msat_lib.msat_get_integer_type(self.msat_env())
 
         # Back Conversion
-        self.back_memoization: Dict[Any, Optional[FNode]] = {}
-        self.back_fun: Dict[Any, Callable[..., FNode]] = {
+        self.back_memoization: dict[Any, FNode | None] = {}
+        self.back_fun: dict[Any, Callable[..., FNode]] = {
             self._msat_lib.MSAT_TAG_TRUE: lambda term, args: self.mgr.TRUE(),
             self._msat_lib.MSAT_TAG_FALSE: lambda term, args: self.mgr.FALSE(),
             self._msat_lib.MSAT_TAG_AND: self._back_adapter(self.mgr.And),
@@ -605,7 +606,7 @@ class MSatConverter(Converter, DagWalker):
         assert ty2 in [types.REAL, types.INT], str(ty2)
         return types.REAL
 
-    def _get_signature(self, term: Any, args: List[Any]) -> PySMTType:
+    def _get_signature(self, term: Any, args: list[Any]) -> PySMTType:
         """Returns the signature of the given term.
         For example:
         - a term x & y returns a function type Bool -> Bool -> Bool,
@@ -684,7 +685,7 @@ class MSatConverter(Converter, DagWalker):
         pyty = self._msat_type_to_type(ty)
         return self.tm.FunctionType(pyty, [pyty.elem_type])
 
-    def _sig_unknown(self, term: Any, args: List[Any]) -> PySMTType:
+    def _sig_unknown(self, term: Any, args: list[Any]) -> PySMTType:
         if self._msat_lib.msat_term_is_boolean_constant(self.msat_env(), term):
             return types.BOOL
         elif self._msat_lib.msat_term_is_number(self.msat_env(), term):
@@ -710,7 +711,7 @@ class MSatConverter(Converter, DagWalker):
         )
 
     def _back_single_term(
-        self, term: Any, mgr: FormulaManager, args: List[Any]
+        self, term: Any, mgr: FormulaManager, args: list[Any]
     ) -> FNode:
         """Builds the pysmt formula given a term and the list of formulae
         obtained by converting the term children.
@@ -781,7 +782,7 @@ class MSatConverter(Converter, DagWalker):
         pysmt_type = self._msat_type_to_type(msat_type)
         return self.mgr.Array(pysmt_type.index_type, args[0])
 
-    def _back_tag_unknown(self, term: Any, args: List[Any]) -> FNode:
+    def _back_tag_unknown(self, term: Any, args: list[Any]) -> FNode:
         """The TAG UNKNOWN is used to represent msat functions.
 
         This includes, Constants, Symbols and UFs.
@@ -885,19 +886,19 @@ class MSatConverter(Converter, DagWalker):
             warn("MathSAT convert(): UF with bool arguments have been translated")
         return res
 
-    def walk_and(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_and(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         res = self._msat_lib.msat_make_true(self.msat_env())
         for a in args:
             res = self._msat_lib.msat_make_and(self.msat_env(), res, a)
         return res
 
-    def walk_or(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_or(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         res = self._msat_lib.msat_make_false(self.msat_env())
         for a in args:
             res = self._msat_lib.msat_make_or(self.msat_env(), res, a)
         return res
 
-    def walk_not(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_not(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         return self._msat_lib.msat_make_not(self.msat_env(), args[0])
 
     def walk_symbol(self, formula: FNode, **kwargs) -> Any:
@@ -906,14 +907,14 @@ class MSatConverter(Converter, DagWalker):
         decl = self.symbol_to_decl[formula]
         return self._msat_lib.msat_make_constant(self.msat_env(), decl)
 
-    def walk_le(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_le(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         return self._msat_lib.msat_make_leq(self.msat_env(), args[0], args[1])
 
-    def walk_lt(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_lt(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         leq = self._msat_lib.msat_make_leq(self.msat_env(), args[1], args[0])
         return self._msat_lib.msat_make_not(self.msat_env(), leq)
 
-    def walk_ite(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_ite(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         i = args[0]
         t = args[1]
         e = args[2]
@@ -945,7 +946,7 @@ class MSatConverter(Converter, DagWalker):
         if val.is_irrational():
             raise ConvertExpressionError("Cannot convert irrational constant")
         num, den = val.numerator(), val.denominator()
-        rep = "{}/{}".format(str(num), str(den))
+        rep = f"{str(num)}/{str(den)}"
         return self._msat_lib.msat_make_number(self.msat_env(), rep)
 
     def walk_bool_constant(self, formula: FNode, **kwargs) -> Any:
@@ -959,22 +960,22 @@ class MSatConverter(Converter, DagWalker):
         width = formula.bv_width()
         return self._msat_lib.msat_make_bv_number(self.msat_env(), rep, width, 10)
 
-    def walk_bv_ult(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_bv_ult(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         return self._msat_lib.msat_make_bv_ult(self.msat_env(), args[0], args[1])
 
-    def walk_bv_ule(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_bv_ule(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         return self._msat_lib.msat_make_bv_uleq(self.msat_env(), args[0], args[1])
 
-    def walk_bv_slt(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_bv_slt(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         return self._msat_lib.msat_make_bv_slt(self.msat_env(), args[0], args[1])
 
-    def walk_bv_sle(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_bv_sle(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         return self._msat_lib.msat_make_bv_sleq(self.msat_env(), args[0], args[1])
 
-    def walk_bv_concat(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_bv_concat(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         return self._msat_lib.msat_make_bv_concat(self.msat_env(), args[0], args[1])
 
-    def walk_bv_extract(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_bv_extract(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         return self._msat_lib.msat_make_bv_extract(
             self.msat_env(),
             formula.bv_extract_end(),
@@ -982,107 +983,107 @@ class MSatConverter(Converter, DagWalker):
             args[0],
         )
 
-    def walk_bv_or(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_bv_or(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         return self._msat_lib.msat_make_bv_or(self.msat_env(), args[0], args[1])
 
-    def walk_bv_not(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_bv_not(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         return self._msat_lib.msat_make_bv_not(self.msat_env(), args[0])
 
-    def walk_bv_and(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_bv_and(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         return self._msat_lib.msat_make_bv_and(self.msat_env(), args[0], args[1])
 
-    def walk_bv_xor(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_bv_xor(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         return self._msat_lib.msat_make_bv_xor(self.msat_env(), args[0], args[1])
 
-    def walk_bv_add(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_bv_add(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         return self._msat_lib.msat_make_bv_plus(self.msat_env(), args[0], args[1])
 
-    def walk_bv_sub(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_bv_sub(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         return self._msat_lib.msat_make_bv_minus(self.msat_env(), args[0], args[1])
 
-    def walk_bv_neg(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_bv_neg(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         return self._msat_lib.msat_make_bv_neg(self.msat_env(), args[0])
 
-    def walk_bv_mul(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_bv_mul(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         return self._msat_lib.msat_make_bv_times(self.msat_env(), args[0], args[1])
 
-    def walk_bv_udiv(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_bv_udiv(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         return self._msat_lib.msat_make_bv_udiv(self.msat_env(), args[0], args[1])
 
-    def walk_bv_urem(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_bv_urem(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         return self._msat_lib.msat_make_bv_urem(self.msat_env(), args[0], args[1])
 
-    def walk_bv_lshl(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_bv_lshl(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         return self._msat_lib.msat_make_bv_lshl(self.msat_env(), args[0], args[1])
 
-    def walk_bv_lshr(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_bv_lshr(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         return self._msat_lib.msat_make_bv_lshr(self.msat_env(), args[0], args[1])
 
-    def walk_bv_rol(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_bv_rol(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         return self._msat_lib.msat_make_bv_rol(
             self.msat_env(), formula.bv_rotation_step(), args[0]
         )
 
-    def walk_bv_ror(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_bv_ror(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         return self._msat_lib.msat_make_bv_ror(
             self.msat_env(), formula.bv_rotation_step(), args[0]
         )
 
-    def walk_bv_zext(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_bv_zext(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         return self._msat_lib.msat_make_bv_zext(
             self.msat_env(), formula.bv_extend_step(), args[0]
         )
 
-    def walk_bv_sext(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_bv_sext(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         return self._msat_lib.msat_make_bv_sext(
             self.msat_env(), formula.bv_extend_step(), args[0]
         )
 
-    def walk_bv_comp(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_bv_comp(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         return self._msat_lib.msat_make_bv_comp(self.msat_env(), args[0], args[1])
 
-    def walk_bv_sdiv(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_bv_sdiv(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         return self._msat_lib.msat_make_bv_sdiv(self.msat_env(), args[0], args[1])
 
-    def walk_bv_srem(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_bv_srem(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         return self._msat_lib.msat_make_bv_srem(self.msat_env(), args[0], args[1])
 
-    def walk_bv_ashr(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_bv_ashr(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         return self._msat_lib.msat_make_bv_ashr(self.msat_env(), args[0], args[1])
 
-    def walk_plus(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_plus(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         res = self._msat_lib.msat_make_number(self.msat_env(), "0")
         for a in args:
             res = self._msat_lib.msat_make_plus(self.msat_env(), res, a)
         return res
 
-    def walk_minus(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_minus(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         n_one = self._msat_lib.msat_make_number(self.msat_env(), "-1")
         n_s2 = self._msat_lib.msat_make_times(self.msat_env(), n_one, args[1])
         return self._msat_lib.msat_make_plus(self.msat_env(), args[0], n_s2)
 
-    def walk_equals(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_equals(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         return self._msat_lib.msat_make_equal(self.msat_env(), args[0], args[1])
 
-    def walk_iff(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_iff(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         return self._msat_lib.msat_make_iff(self.msat_env(), args[0], args[1])
 
-    def walk_implies(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_implies(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         neg = self.walk_not(self.mgr.Not(formula.arg(0)), [args[0]])
         return self._msat_lib.msat_make_or(self.msat_env(), neg, args[1])
 
-    def walk_times(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_times(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         res = args[0]
         for x in args[1:]:
             res = self._msat_lib.msat_make_times(self.msat_env(), res, x)
         return res
 
-    def walk_pow(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_pow(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         # MathSAT rejects exponents it cannot handle by returning an error
         # term, which convert() turns into an InternalSolverError.
         return self._msat_lib.msat_make_pow(self.msat_env(), args[0], args[1])
 
-    def walk_div(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_div(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         num, den = args
         if self.env.stc.get_type(formula).is_real_type():
             return self._msat_lib.msat_make_divide(self.msat_env(), num, den)
@@ -1106,32 +1107,32 @@ class MSatConverter(Converter, DagWalker):
         )
         return self._msat_lib.msat_make_term_ite(self.msat_env(), cond, div, n_div)
 
-    def walk_function(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_function(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         name = formula.function_name()
         if name not in self.symbol_to_decl:
             self.declare_variable(name)
         decl = self.symbol_to_decl[name]
         return self._msat_lib.msat_make_uf(self.msat_env(), decl, args)
 
-    def walk_toreal(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_toreal(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         # In mathsat toreal is implicit
         return args[0]
 
-    def walk_toint(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_toint(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         return self._msat_lib.msat_make_floor(self.msat_env(), args[0])
 
-    def walk_bv_tonatural(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_bv_tonatural(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         return self._msat_lib.msat_make_int_from_ubv(self.msat_env(), args[0])
 
-    def walk_array_select(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_array_select(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         return self._msat_lib.msat_make_array_read(self.msat_env(), args[0], args[1])
 
-    def walk_array_store(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_array_store(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         return self._msat_lib.msat_make_array_write(
             self.msat_env(), args[0], args[1], args[2]
         )
 
-    def walk_array_value(self, formula: FNode, args: List[Any], **kwargs) -> Any:
+    def walk_array_value(self, formula: FNode, args: list[Any], **kwargs) -> Any:
         arr_type = self.env.stc.get_type(formula)
         rval = self._msat_lib.msat_make_array_const(
             self.msat_env(), self._type_to_msat(arr_type), args[0]
@@ -1444,7 +1445,7 @@ class MSatBoolUFRewriter(IdentityDagWalker):
         self.mgr = self.env.formula_manager
         self.tm = self.env.type_manager
 
-    def walk_function(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
+    def walk_function(self, formula: FNode, args: list[FNode], **kwargs) -> FNode:
         # Separate arguments
         bool_args = []
         other_args = []

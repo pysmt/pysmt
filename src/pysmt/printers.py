@@ -15,9 +15,10 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+from collections.abc import Iterator
 from fractions import Fraction
 from io import StringIO
-from typing import Any, Iterator, Optional, Type, cast
+from typing import Any, Optional, cast
 
 import pysmt
 import pysmt.operators as op
@@ -41,7 +42,7 @@ class HRPrinter(TreeWalker):
         self.stream = stream
         self.write = self.stream.write
 
-    def printer(self, f: FNode, threshold: Optional[int] = None):
+    def printer(self, f: FNode, threshold: int | None = None):
         """Performs the serialization of 'f'.
 
         Thresholding can be used to define how deep in the formula to
@@ -394,7 +395,7 @@ class HRPrinter(TreeWalker):
 # EOC HRPrinter
 
 
-class HRSerializer(object):
+class HRSerializer:
     """Return the serialized version of the formula as a string."""
 
     PrinterClass = HRPrinter
@@ -405,8 +406,8 @@ class HRSerializer(object):
     def serialize(
         self,
         formula: FNode,
-        printer: Optional[Type[HRPrinter]] = None,
-        threshold: Optional[int] = None,
+        printer: type[HRPrinter] | None = None,
+        threshold: int | None = None,
     ) -> str:
         """Returns a string with the human-readable version of the formula.
 

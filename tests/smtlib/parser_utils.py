@@ -17,7 +17,8 @@
 #
 import os
 import warnings
-from typing import Callable, Dict, Iterator, List, Optional, Tuple, Union, cast
+from collections.abc import Callable, Iterator
+from typing import Union, cast
 
 from pysmt.exceptions import NoSolverAvailableError, SolverReturnedUnknownResultError
 from pysmt.fnode import FNode
@@ -51,7 +52,7 @@ from tests import SkipTest
 from tests.optimization_utils import OMTTestCase, OptimizationTypes
 
 
-def smtlib_tests(logic_pred: Callable) -> List[Tuple[str, Logic, bool]]:
+def smtlib_tests(logic_pred: Callable) -> list[tuple[str, Logic, bool]]:
     """Returns the smtlib instances matching the logic predicate"""
     tests = []
     for logic, f, expected_result in SMTLIB_TEST_FILES:
@@ -111,8 +112,8 @@ def execute_script_fname(smtfile: str, logic: Logic, expected_result: bool):
 
 
 def formulas_from_smtlib_test_set(
-    logics: Optional[List[Logic]] = None,
-) -> Iterator[Tuple[Logic, str, FNode, bool]]:
+    logics: list[Logic] | None = None,
+) -> Iterator[tuple[Logic, str, FNode, bool]]:
     """Returns a generator over the test-set of SMT-LIB files.
 
     Note: This resets the Environment at each call.
@@ -277,7 +278,7 @@ def omt_test_cases_from_smtlib_test_set(logics: None = None) -> Iterator[OMTTest
                     for parsed_goal, expected_value in zip(
                         parsed_goals, expected_values
                     ):
-                        key: Tuple[Tuple[Goal, ...], OptimizationTypes] = (
+                        key: tuple[tuple[Goal, ...], OptimizationTypes] = (
                             (parsed_goal,),
                             optimization_type,
                         )
@@ -293,7 +294,7 @@ def omt_test_cases_from_smtlib_test_set(logics: None = None) -> Iterator[OMTTest
 
 def _extract_assumptions_and_objectives(
     mgr: FormulaManager, script: SmtLibScript
-) -> Tuple[List[FNode], Tuple[Goal, ...]]:
+) -> tuple[list[FNode], tuple[Goal, ...]]:
     goals = []
     formula, goals = script.get_last_formula(mgr, return_optimizations=True)
     assumptions = list(formula.args()) if formula.is_and() else [formula]
@@ -304,12 +305,12 @@ def _extract_assumptions_and_objectives(
 # Directory with the optimal SMT-LIB test files
 FNode_or_Str = Union[FNode, str]
 OMTLIB_DIR = "tests/smtlib/omt/"
-OMTLIB_TEST_FILES: List[
-    Tuple[
+OMTLIB_TEST_FILES: list[
+    tuple[
         Logic,
         str,
         bool,
-        Dict[OptimizationTypes, List[Union[FNode_or_Str, Tuple[FNode_or_Str, ...]]]],
+        dict[OptimizationTypes, list[FNode_or_Str | tuple[FNode_or_Str, ...]]],
     ]
 ] = [
     (

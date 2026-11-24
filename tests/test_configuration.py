@@ -59,7 +59,7 @@ class TestConfiguration(TestCase):
         configure_environment(fname, new_env)
         try:
             os.remove(fname)
-        except WindowsError:
+        except OSError:
             print("Error deleting file...")
 
         self.assertEqual(new_env.enable_infix_notation, env.enable_infix_notation)
@@ -80,7 +80,7 @@ class TestConfiguration(TestCase):
         read_configuration(fname, new_env)
         try:
             os.remove(fname)
-        except WindowsError:
+        except OSError:
             print("Error deleting file...")
 
         env = get_env()

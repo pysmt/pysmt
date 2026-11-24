@@ -15,8 +15,9 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+from collections.abc import Callable
 from io import StringIO
-from typing import Callable, List, Optional, Set, TextIO, Union
+from typing import TextIO
 
 import pysmt.operators as op
 from pysmt.fnode import FNode
@@ -33,8 +34,7 @@ def write_annotations(f: Callable) -> Callable:
         res = f(self, formula, *args, **kwargs)
         # all of the items must be yielded to avoid printing out of order
         if res is not None:
-            for item in res:
-                yield item
+            yield from res
         if annots is not None and formula in annots:
             for key, values in annots[formula].items():
                 self.write(" :%s" % str(key))
@@ -415,7 +415,7 @@ class SmtDagPrinter(DagWalker):
         self,
         stream: TextIO,
         template: str = ".def_%d",
-        annotations: Optional[Annotations] = None,
+        annotations: Annotations | None = None,
         env=None,
     ):
         DagWalker.__init__(self, env=env, invalidate_memoization=True)
@@ -424,7 +424,7 @@ class SmtDagPrinter(DagWalker):
         self.openings = 0
         self.name_seed = 0
         self.template = template
-        self.names: Optional[Set[str]] = None
+        self.names: set[str] | None = None
         self.mgr = self.env.formula_manager
         self.annotations = annotations
 
@@ -474,132 +474,132 @@ class SmtDagPrinter(DagWalker):
         self.write("))) ")
         return sym
 
-    def walk_and(self, formula: FNode, args: List[str]) -> str:
+    def walk_and(self, formula: FNode, args: list[str]) -> str:
         return self.walk_nary(formula, args, "and")
 
-    def walk_or(self, formula: FNode, args: List[str]) -> str:
+    def walk_or(self, formula: FNode, args: list[str]) -> str:
         return self.walk_nary(formula, args, "or")
 
-    def walk_not(self, formula: FNode, args: List[str]) -> str:
+    def walk_not(self, formula: FNode, args: list[str]) -> str:
         return self.walk_nary(formula, args, "not")
 
-    def walk_implies(self, formula: FNode, args: List[str]) -> str:
+    def walk_implies(self, formula: FNode, args: list[str]) -> str:
         return self.walk_nary(formula, args, "=>")
 
-    def walk_iff(self, formula: FNode, args: List[str]) -> str:
+    def walk_iff(self, formula: FNode, args: list[str]) -> str:
         return self.walk_nary(formula, args, "=")
 
-    def walk_plus(self, formula: FNode, args: List[str]) -> str:
+    def walk_plus(self, formula: FNode, args: list[str]) -> str:
         return self.walk_nary(formula, args, "+")
 
-    def walk_minus(self, formula: FNode, args: List[str]) -> str:
+    def walk_minus(self, formula: FNode, args: list[str]) -> str:
         return self.walk_nary(formula, args, "-")
 
-    def walk_times(self, formula: FNode, args: List[str]) -> str:
+    def walk_times(self, formula: FNode, args: list[str]) -> str:
         return self.walk_nary(formula, args, "*")
 
-    def walk_equals(self, formula: FNode, args: List[str]) -> str:
+    def walk_equals(self, formula: FNode, args: list[str]) -> str:
         return self.walk_nary(formula, args, "=")
 
-    def walk_le(self, formula: FNode, args: List[str]) -> str:
+    def walk_le(self, formula: FNode, args: list[str]) -> str:
         return self.walk_nary(formula, args, "<=")
 
-    def walk_lt(self, formula: FNode, args: List[str]) -> str:
+    def walk_lt(self, formula: FNode, args: list[str]) -> str:
         return self.walk_nary(formula, args, "<")
 
-    def walk_ite(self, formula: FNode, args: List[str]) -> str:
+    def walk_ite(self, formula: FNode, args: list[str]) -> str:
         return self.walk_nary(formula, args, "ite")
 
-    def walk_toreal(self, formula: FNode, args: List[str]) -> str:
+    def walk_toreal(self, formula: FNode, args: list[str]) -> str:
         return self.walk_nary(formula, args, "to_real")
 
-    def walk_toint(self, formula: FNode, args: List[str]) -> str:
+    def walk_toint(self, formula: FNode, args: list[str]) -> str:
         return self.walk_nary(formula, args, "to_int")
 
-    def walk_div(self, formula: FNode, args: List[str]) -> str:
+    def walk_div(self, formula: FNode, args: list[str]) -> str:
         return self.walk_nary(formula, args, "/")
 
-    def walk_pow(self, formula: FNode, args: List[str]) -> str:
+    def walk_pow(self, formula: FNode, args: list[str]) -> str:
         return self.walk_nary(formula, args, "pow")
 
-    def walk_bv_and(self, formula: FNode, args: List[str]) -> str:
+    def walk_bv_and(self, formula: FNode, args: list[str]) -> str:
         return self.walk_nary(formula, args, "bvand")
 
-    def walk_bv_or(self, formula: FNode, args: List[str]) -> str:
+    def walk_bv_or(self, formula: FNode, args: list[str]) -> str:
         return self.walk_nary(formula, args, "bvor")
 
-    def walk_bv_not(self, formula: FNode, args: List[str]) -> str:
+    def walk_bv_not(self, formula: FNode, args: list[str]) -> str:
         return self.walk_nary(formula, args, "bvnot")
 
-    def walk_bv_xor(self, formula: FNode, args: List[str]) -> str:
+    def walk_bv_xor(self, formula: FNode, args: list[str]) -> str:
         return self.walk_nary(formula, args, "bvxor")
 
-    def walk_bv_add(self, formula: FNode, args: List[str]) -> str:
+    def walk_bv_add(self, formula: FNode, args: list[str]) -> str:
         return self.walk_nary(formula, args, "bvadd")
 
-    def walk_bv_sub(self, formula: FNode, args: List[str]) -> str:
+    def walk_bv_sub(self, formula: FNode, args: list[str]) -> str:
         return self.walk_nary(formula, args, "bvsub")
 
-    def walk_bv_neg(self, formula: FNode, args: List[str]) -> str:
+    def walk_bv_neg(self, formula: FNode, args: list[str]) -> str:
         return self.walk_nary(formula, args, "bvneg")
 
-    def walk_bv_mul(self, formula: FNode, args: List[str]) -> str:
+    def walk_bv_mul(self, formula: FNode, args: list[str]) -> str:
         return self.walk_nary(formula, args, "bvmul")
 
-    def walk_bv_udiv(self, formula: FNode, args: List[str]) -> str:
+    def walk_bv_udiv(self, formula: FNode, args: list[str]) -> str:
         return self.walk_nary(formula, args, "bvudiv")
 
-    def walk_bv_urem(self, formula: FNode, args: List[str]) -> str:
+    def walk_bv_urem(self, formula: FNode, args: list[str]) -> str:
 
         return self.walk_nary(formula, args, "bvurem")
 
-    def walk_bv_lshl(self, formula: FNode, args: List[str]) -> str:
+    def walk_bv_lshl(self, formula: FNode, args: list[str]) -> str:
         return self.walk_nary(formula, args, "bvshl")
 
-    def walk_bv_lshr(self, formula: FNode, args: List[str]) -> str:
+    def walk_bv_lshr(self, formula: FNode, args: list[str]) -> str:
         return self.walk_nary(formula, args, "bvlshr")
 
-    def walk_bv_ult(self, formula: FNode, args: List[str]) -> str:
+    def walk_bv_ult(self, formula: FNode, args: list[str]) -> str:
         return self.walk_nary(formula, args, "bvult")
 
-    def walk_bv_ule(self, formula: FNode, args: List[str]) -> str:
+    def walk_bv_ule(self, formula: FNode, args: list[str]) -> str:
         return self.walk_nary(formula, args, "bvule")
 
-    def walk_bv_slt(self, formula: FNode, args: List[str]) -> str:
+    def walk_bv_slt(self, formula: FNode, args: list[str]) -> str:
         return self.walk_nary(formula, args, "bvslt")
 
-    def walk_bv_sle(self, formula: FNode, args: List[str]) -> str:
+    def walk_bv_sle(self, formula: FNode, args: list[str]) -> str:
         return self.walk_nary(formula, args, "bvsle")
 
-    def walk_bv_concat(self, formula: FNode, args: List[str]) -> str:
+    def walk_bv_concat(self, formula: FNode, args: list[str]) -> str:
         return self.walk_nary(formula, args, "concat")
 
-    def walk_bv_comp(self, formula: FNode, args: List[str]) -> str:
+    def walk_bv_comp(self, formula: FNode, args: list[str]) -> str:
         return self.walk_nary(formula, args, "bvcomp")
 
-    def walk_bv_ashr(self, formula: FNode, args: List[str]) -> str:
+    def walk_bv_ashr(self, formula: FNode, args: list[str]) -> str:
         return self.walk_nary(formula, args, "bvashr")
 
-    def walk_bv_sdiv(self, formula: FNode, args: List[str]) -> str:
+    def walk_bv_sdiv(self, formula: FNode, args: list[str]) -> str:
         return self.walk_nary(formula, args, "bvsdiv")
 
-    def walk_bv_srem(self, formula: FNode, args: List[str]) -> str:
+    def walk_bv_srem(self, formula: FNode, args: list[str]) -> str:
         return self.walk_nary(formula, args, "bvsrem")
 
-    def walk_bv_tonatural(self, formula: FNode, args: List[str]) -> str:
+    def walk_bv_tonatural(self, formula: FNode, args: list[str]) -> str:
         return self.walk_nary(formula, args, "bv2nat")
 
-    def walk_array_select(self, formula: FNode, args: List[str]) -> str:
+    def walk_array_select(self, formula: FNode, args: list[str]) -> str:
         return self.walk_nary(formula, args, "select")
 
-    def walk_array_store(self, formula: FNode, args: List[str]) -> str:
+    def walk_array_store(self, formula: FNode, args: list[str]) -> str:
         return self.walk_nary(formula, args, "store")
 
     @write_annotations_dag
     def walk_symbol(self, formula, **kwargs):
         return quote(formula.symbol_name())
 
-    def walk_function(self, formula: FNode, args: List[str], **kwargs) -> str:
+    def walk_function(self, formula: FNode, args: list[str], **kwargs) -> str:
         return self.walk_nary(
             formula, args, quote(formula.function_name().symbol_name())
         )
@@ -817,7 +817,7 @@ def to_smtlib(formula: FNode, daggify: bool = True, env=None) -> str:
     See :py:class:`SmtPrinter`
     """
     buf = StringIO()
-    p: Union[SmtDagPrinter, SmtPrinter]
+    p: SmtDagPrinter | SmtPrinter
     if daggify:
         p = SmtDagPrinter(buf, env=env)
     else:

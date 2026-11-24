@@ -15,10 +15,10 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from __future__ import absolute_import
 
+from collections.abc import Iterable, Sequence
 from fractions import Fraction as pyFraction
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Type, cast
+from typing import Any, cast
 
 from pysmt.environment import Environment
 from pysmt.exceptions import SolverAPINotFound
@@ -219,12 +219,12 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolver):
         else:
             self.z3 = z3.Solver()
         self.options(self)
-        self.declarations: Set[FNode] = set()
+        self.declarations: set[FNode] = set()
         self.converter = Z3Converter(environment, z3_ctx=self.z3.ctx)
         self.mgr = environment.formula_manager
 
         self._name_cnt = 0
-        self._assumption_keys: Dict[FNode, FNode] = {}
+        self._assumption_keys: dict[FNode, FNode] = {}
         return
 
     @clear_pending_pop
@@ -237,7 +237,7 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolver):
         raise NotImplementedError
 
     @clear_pending_pop
-    def _add_assertion(self, formula: FNode, named: Optional[str] = None):
+    def _add_assertion(self, formula: FNode, named: str | None = None):
         self._assert_is_boolean(formula)
         term = self.converter.convert(formula)
 
@@ -256,7 +256,7 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolver):
         return Z3Model(self.environment, self.z3.model())
 
     @clear_pending_pop
-    def _solve(self, assumptions: Optional[List[FNode]] = None) -> bool:
+    def _solve(self, assumptions: list[FNode] | None = None) -> bool:
         if assumptions is not None:
             bool_ass = []
             other_ass = []
@@ -382,7 +382,7 @@ class Z3Converter(Converter, DagWalker):
         DagWalker.__init__(self, environment)
         self.mgr = environment.formula_manager
         self._get_type = environment.stc.get_type
-        self._back_memoization: Dict[Any, Optional[FNode]] = {}
+        self._back_memoization: dict[Any, FNode | None] = {}
         self.ctx = z3_ctx
 
         # Back Conversion
@@ -468,11 +468,11 @@ class Z3Converter(Converter, DagWalker):
         self.z3RealSort = z3.RealSort(self.ctx)
         self.z3BoolSort = z3.BoolSort(self.ctx)
         self.z3IntSort = z3.IntSort(self.ctx)
-        self._z3ArraySorts: Dict[Any, Any] = {}
-        self._z3BitVecSorts: Dict[int, z3.BitVecSortRef] = {}
-        self._z3Sorts: Dict[str, Any] = {}
+        self._z3ArraySorts: dict[Any, Any] = {}
+        self._z3BitVecSorts: dict[int, z3.BitVecSortRef] = {}
+        self._z3Sorts: dict[str, Any] = {}
         # Unique reference to Function Declaration
-        self._z3_func_decl_cache: Dict[FNode, Any] = {}
+        self._z3_func_decl_cache: dict[FNode, Any] = {}
         return
 
     def z3BitVecSort(self, width: int) -> z3.BitVecSortRef:
@@ -503,7 +503,7 @@ class Z3Converter(Converter, DagWalker):
             self._z3Sorts[name] = sort
         return sort
 
-    def get_z3_ref(self, formula: FNode) -> Type[z3.ExprRef]:
+    def get_z3_ref(self, formula: FNode) -> type[z3.ExprRef]:
         if formula.node_type in op.QUANTIFIERS:
             return z3.QuantifierRef
         elif formula.node_type() in BOOLREF_SET:
@@ -554,7 +554,7 @@ class Z3Converter(Converter, DagWalker):
         ref_class = self.get_z3_ref(formula)
         return ref_class(z3term, self.ctx)
 
-    def back(self, expr: z3.ExprRef, model: Optional[z3.ModelRef] = None) -> FNode:
+    def back(self, expr: z3.ExprRef, model: z3.ModelRef | None = None) -> FNode:
         """Convert a Z3 expression back into a pySMT expression.
 
         This is done using the Z3 API. For very big expressions, it is
@@ -585,7 +585,7 @@ class Z3Converter(Converter, DagWalker):
         return retval
 
     def _back_single_term(
-        self, expr: z3.ExprRef, args: List[Any], model: Optional[z3.ModelRef] = None
+        self, expr: z3.ExprRef, args: list[Any], model: z3.ModelRef | None = None
     ) -> FNode:
         assert z3.is_expr(expr)
 
@@ -733,7 +733,7 @@ class Z3Converter(Converter, DagWalker):
         return _args, sz
 
     def walk_not(
-        self, formula: Optional[FNode], args: Sequence[z3.Ast], **kwargs
+        self, formula: FNode | None, args: Sequence[z3.Ast], **kwargs
     ) -> z3.Ast:
         z3term = z3.Z3_mk_not(self.ctx.ref(), args[0])
         z3.Z3_inc_ref(self.ctx.ref(), z3term)

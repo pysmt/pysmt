@@ -18,7 +18,6 @@
 import inspect
 from enum import Enum
 from math import ceil, log
-from typing import Dict, Set
 
 from pysmt.exceptions import SolverAPINotFound
 from pysmt.fnode import FNode
@@ -301,7 +300,7 @@ class BoolectorSolver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSol
         else:
             raise SolverReturnedUnknownResultError
 
-    def get_unsat_core(self) -> Set[FNode]:
+    def get_unsat_core(self) -> set[FNode]:
         """After a call to solve() yielding UNSAT, returns the unsat core as a
         set of formulae"""
         self._check_unsat_core_config()
@@ -313,7 +312,7 @@ class BoolectorSolver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSol
                 self._core_assumptions
             )
 
-    def get_named_unsat_core(self) -> Dict[str, FNode]:
+    def get_named_unsat_core(self) -> dict[str, FNode]:
         """After a call to solve() yielding UNSAT, returns the unsat core as a
         dict of names to formulae"""
         self._check_unsat_core_config()

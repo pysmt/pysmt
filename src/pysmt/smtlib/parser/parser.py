@@ -18,17 +18,11 @@
 import functools
 import itertools
 from collections import deque
+from collections.abc import Callable, Iterator, Mapping
 from typing import (
     Any,
-    Callable,
-    Dict,
-    Iterator,
-    List,
-    Mapping,
     Optional,
     TextIO,
-    Tuple,
-    Union,
     cast,
 )
 from warnings import warn
@@ -57,9 +51,7 @@ def open_(fname: str) -> TextIO:
     return open(fname)
 
 
-def get_formula(
-    script_stream: TextIO, environment: Optional[Environment] = None
-) -> FNode:
+def get_formula(script_stream: TextIO, environment: Environment | None = None) -> FNode:
     """
     Returns the formula asserted at the end of the given script
     script_stream is a file descriptor.
@@ -74,7 +66,7 @@ def get_formula(
 
 
 def get_formula_strict(
-    script_stream: TextIO, environment: Optional[Environment] = None
+    script_stream: TextIO, environment: Environment | None = None
 ) -> FNode:
     """Returns the formula defined in the SMTScript.
     This function assumes that only one formula is defined in the
@@ -92,7 +84,7 @@ def get_formula_strict(
 
 
 def get_formula_fname(
-    script_fname: str, environment: Optional[Environment] = None, strict: bool = True
+    script_fname: str, environment: Environment | None = None, strict: bool = True
 ) -> FNode:
     """Returns the formula asserted at the end of the given script."""
     with open_(script_fname) as script:
@@ -102,21 +94,19 @@ def get_formula_fname(
             return get_formula(script, environment)
 
 
-class SmtLibExecutionCache(object):
+class SmtLibExecutionCache:
     """Execution environment for SMT2 script execution"""
 
     def __init__(self, env: Environment):
         self.substitute = env.substituter.substitute
-        self.keys: Dict[
-            str, List[Union[str, Callable, PySMTType, FNode, _TypeDecl]]
-        ] = {}
-        self.definitions: Dict[
+        self.keys: dict[str, list[str | Callable | PySMTType | FNode | _TypeDecl]] = {}
+        self.definitions: dict[
             str,
-            Tuple[List[Union[Any, FNode]], Union[PySMTType, FNode, PartialType, str]],
+            tuple[list[Any | FNode], PySMTType | FNode | PartialType | str],
         ] = {}
         self.annotations = Annotations()
 
-    def bind(self, name: str, value: Union[str, Callable, PySMTType, FNode, _TypeDecl]):
+    def bind(self, name: str, value: str | Callable | PySMTType | FNode | _TypeDecl):
         """Binds a symbol in this environment"""
         lst = self.keys.setdefault(name, [])
         lst.append(value)
@@ -128,13 +118,13 @@ class SmtLibExecutionCache(object):
     def define(
         self,
         name: str,
-        parameters: List[FNode],
-        expression: Union[PySMTType, FNode, PartialType, str],
+        parameters: list[FNode],
+        expression: PySMTType | FNode | PartialType | str,
     ):
         self.definitions[name] = (parameters, expression)
 
     def _define_adapter(
-        self, formal_parameters: List[FNode], expression: FNode
+        self, formal_parameters: list[FNode], expression: FNode
     ) -> Callable:
         def res(*actual_parameters):
             assert len(formal_parameters) == len(actual_parameters)
@@ -160,7 +150,7 @@ class SmtLibExecutionCache(object):
         else:
             return None
 
-    def update(self, value_map: Mapping[str, Union[_TypeDecl, FNode]]):
+    def update(self, value_map: Mapping[str, _TypeDecl | FNode]):
         """Binds all the symbols in 'value_map'"""
         for k, val in value_map.items():
             self.bind(k, val)
@@ -174,7 +164,7 @@ class SmtLibExecutionCache(object):
 # EOC SmtLibExecutionCache
 
 
-class Tokenizer(object):
+class Tokenizer:
     """Takes a file-like object and produces a stream of tokens following
     the LISP rules.
 
@@ -213,7 +203,7 @@ class Tokenizer(object):
         else:
             return next(self.generator)
 
-    def consume(self, msg: Optional[str] = None) -> str:
+    def consume(self, msg: str | None = None) -> str:
         """Consumes and returns a single token from the stream.
         If the stream is empty, a PysmtSyntaxError is thrown"""
         if self.extra_queue:
@@ -232,7 +222,7 @@ class Tokenizer(object):
         return next(self.reader)
 
     @property
-    def pos_info(self) -> Optional[Tuple[int, int]]:
+    def pos_info(self) -> tuple[int, int] | None:
         if self.__has_pos_info:
             return (self.__row_cnt, self.__col_cnt)
         return None
@@ -377,7 +367,7 @@ def _chainable(mgr: FormulaManager, operator: Callable) -> Callable:
     return res
 
 
-class SmtLibParser(object):
+class SmtLibParser:
     """Parse an SmtLib file and builds an SmtLibScript object.
     The main function is get_script (and its wrapper
     get_script_fname).  This function relies on the tokenizer function
@@ -390,14 +380,14 @@ class SmtLibParser(object):
     """
 
     def __init__(
-        self, environment: Optional[Environment] = None, interactive: bool = False
+        self, environment: Environment | None = None, interactive: bool = False
     ):
         self.env = get_env() if environment is None else environment
         self.interactive = interactive
 
         # Placeholders for fields filled by self._reset
         self.cache: SmtLibExecutionCache
-        self.logic: Optional[Logic] = None
+        self.logic: Logic | None = None
         self._reset()
 
         mgr = self.env.formula_manager
@@ -446,9 +436,7 @@ class SmtLibParser(object):
         # Each token is handled by a dedicated function that takes the
         # recursion stack, the token stream and the parsed token
         # Common tokens are handled in the _reset function
-        self.interpreted: Dict[
-            str, Callable[[Any, Tokenizer, str], Optional[FNode]]
-        ] = {
+        self.interpreted: dict[str, Callable[[Any, Tokenizer, str], FNode | None]] = {
             "let": self._enter_let,
             "!": self._enter_annotation,
             "exists": self._enter_quantifier,
@@ -597,7 +585,7 @@ class SmtLibParser(object):
 
     def _enter_smtlib_as(
         self,
-        stack: List[List[Union[Callable, FNode, Any]]],
+        stack: list[list[Callable | FNode | Any]],
         tokens: Tokenizer,
         key: str,
     ):
@@ -632,7 +620,7 @@ class SmtLibParser(object):
 
     def _smtlib_underscore(
         self,
-        stack: List[List[Union[Callable, FNode, Any]]],
+        stack: list[list[Callable | FNode | Any]],
         tokens: Tokenizer,
         key: str,
     ):
@@ -833,7 +821,7 @@ class SmtLibParser(object):
         return bdy
 
     def _exit_quantifier(
-        self, fun: Callable, vrs: List[Tuple[str, FNode]], body: FNode
+        self, fun: Callable, vrs: list[tuple[str, FNode]], body: FNode
     ) -> FNode:
         """
         Cleans the execution environment when we exit the scope of a quantifier
@@ -846,7 +834,7 @@ class SmtLibParser(object):
 
     def _enter_let(
         self,
-        stack: List[List[Union[Callable, FNode, List[Tuple[str, FNode]], Any]]],
+        stack: list[list[Callable | FNode | list[tuple[str, FNode]] | Any]],
         tokens: Tokenizer,
         key: str,
     ):
@@ -862,7 +850,7 @@ class SmtLibParser(object):
             if current != "(":
                 raise PysmtSyntaxError("Expected '(' in let binding", tokens.pos_info)
             vname = self.parse_atom(tokens, "expression")
-            expr = cast(Union[str, FNode], assert_not_none(self.get_expression(tokens)))
+            expr = cast(str | FNode, assert_not_none(self.get_expression(tokens)))
             newvals[vname] = expr
             self.cache.bind(vname, expr)
             self.consume_closing(tokens, "expression")
@@ -871,9 +859,7 @@ class SmtLibParser(object):
         stack[-1].append(self._exit_let)
         stack[-1].append(newvals.keys())
 
-    def _operator_adapter(
-        self, operator: Union[functools.partial, Callable]
-    ) -> Callable:
+    def _operator_adapter(self, operator: functools.partial | Callable) -> Callable:
         """Handles generic operator"""
 
         def res(stack, tokens, key):
@@ -884,7 +870,7 @@ class SmtLibParser(object):
 
     def _enter_quantifier(
         self,
-        stack: List[List[Union[Callable, FNode, List[Tuple[str, FNode]], Any]]],
+        stack: list[list[Callable | FNode | list[tuple[str, FNode]] | Any]],
         tokens: Tokenizer,
         key: str,
     ):
@@ -921,7 +907,7 @@ class SmtLibParser(object):
 
     def _enter_annotation(
         self,
-        stack: List[List[Union[Callable, FNode, Any]]],
+        stack: list[list[Callable | FNode | Any]],
         tokens: Tokenizer,
         key: str,
     ):
@@ -969,12 +955,12 @@ class SmtLibParser(object):
         tokens.add_extra_token(")")
         stack[-1].append(lambda: term)
 
-    def get_expression(self, tokens: Tokenizer) -> Optional[FNode]:
+    def get_expression(self, tokens: Tokenizer) -> FNode | None:
         """
         Returns the pysmt representation of the given parsed expression
         """
         mgr = self.env.formula_manager
-        stack: List[Any] = []
+        stack: list[Any] = []
 
         try:
             while True:
@@ -1036,13 +1022,12 @@ class SmtLibParser(object):
         whole command is read from the script.
         """
         tokens = Tokenizer(script, interactive=self.interactive)
-        for cmd in self.get_command(tokens):
-            yield cmd
+        yield from self.get_command(tokens)
         return
 
     def parse_model(
         self, script: TextIO
-    ) -> Tuple[Dict[FNode, FNode], Dict[FNode, FunctionInterpretation]]:
+    ) -> tuple[dict[FNode, FNode], dict[FNode, FunctionInterpretation]]:
         """This function pasres the result of a `(get-model)` command and
         returns a model as a dictionary from non-function symbols to
         constant values and an interpretation for uninterpreted
@@ -1118,8 +1103,8 @@ class SmtLibParser(object):
         tokens: Tokenizer,
         command: str,
         min_size: int,
-        max_size: Optional[int] = None,
-    ) -> List[Union[Any, str]]:
+        max_size: int | None = None,
+    ) -> list[Any | str]:
         """
         Parses a sequence of N atoms (min_size <= N <= max_size) consuming
         the tokens
@@ -1165,15 +1150,15 @@ class SmtLibParser(object):
         self,
         tokens: Tokenizer,
         command: str,
-        type_params: Optional[List[str]] = None,
-        additional_token: Optional[str] = None,
-    ) -> Union[PySMTType, PartialType]:
+        type_params: list[str] | None = None,
+        additional_token: str | None = None,
+    ) -> PySMTType | PartialType:
         """Parses a single type name from the tokens"""
         if additional_token is not None:
             var = additional_token
         else:
             var = tokens.consume("Unexpected end of stream in %s command." % command)
-        res: Optional[Union[PartialType, PySMTType]] = None
+        res: PartialType | PySMTType | None = None
         if type_params and var in type_params:
             return (var,)  # type: ignore [return-value] # This is a type parameter, it is handled recursively  # TODO is PartialType also handled recursively?
         elif var == "(":
@@ -1212,7 +1197,7 @@ class SmtLibParser(object):
                         "Unexpected token '%s' in %s command." % (op, command),
                         tokens.pos_info,
                     )
-                pparams: List[PySMTType] = []
+                pparams: list[PySMTType] = []
                 has_free_params = False
                 for _ in range(base_type.arity):
                     ty = cast(
@@ -1269,7 +1254,7 @@ class SmtLibParser(object):
             )
         return var
 
-    def parse_params(self, tokens: Tokenizer, command: str) -> List[Any]:
+    def parse_params(self, tokens: Tokenizer, command: str) -> list[Any]:
         """Parses a list of types from the tokens"""
         self.consume_opening(tokens, command)
         current = tokens.consume("Unexpected end of stream in %s command." % command)
@@ -1281,7 +1266,7 @@ class SmtLibParser(object):
             )
         return res
 
-    def parse_named_params(self, tokens: Tokenizer, command: str) -> List[Any]:
+    def parse_named_params(self, tokens: Tokenizer, command: str) -> list[Any]:
         """Parses a list of names and type from the tokens"""
         self.consume_opening(tokens, command)
         current = tokens.consume("Unexpected end of stream in %s command." % command)
@@ -1296,16 +1281,14 @@ class SmtLibParser(object):
             )
         return res
 
-    def parse_expr_list(
-        self, tokens: Tokenizer, command: str
-    ) -> List[Union[FNode, str]]:
+    def parse_expr_list(self, tokens: Tokenizer, command: str) -> list[FNode | str]:
         """Parses a list of expressions form the tokens"""
         self.consume_opening(tokens, command)
-        res: List[Union[FNode, str]] = []
+        res: list[FNode | str] = []
         while True:
             try:
                 current = cast(
-                    Union[FNode, str], assert_not_none(self.get_expression(tokens))
+                    FNode | str, assert_not_none(self.get_expression(tokens))
                 )
                 res.append(current)
             except PysmtSyntaxError:
@@ -1487,7 +1470,7 @@ class SmtLibParser(object):
 
     def _cmd_minmax_maxmin_obj(self, current: str, tokens: Tokenizer) -> SmtLibCommand:
         """(minmax | maxmin <term>+ )"""
-        params: List[Tuple[str, Union[str, bool]]] = []
+        params: list[tuple[str, str | bool]] = []
         terms = []
         signed = False
         options = False
@@ -1526,7 +1509,7 @@ class SmtLibParser(object):
     def _cmd_objective(self, current: str, tokens: Tokenizer) -> SmtLibCommand:
         """(maximize | minimize <term>"""
         obj = self.get_expression(tokens)
-        params: List[Tuple[str, Union[str, bool]]] = []
+        params: list[tuple[str, str | bool]] = []
         curr = tokens.consume()
         signed = False
         while curr != ")":

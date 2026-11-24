@@ -17,7 +17,6 @@
 #
 import os
 from fractions import Fraction
-from typing import List
 from unittest import skipIf
 
 from pysmt.exceptions import (
@@ -54,7 +53,7 @@ from tests.examples import get_example_formulae
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ALL_WRAPPERS = []
 
-fnames: List[str]
+fnames: list[str]
 for _1, _2, fnames in os.walk(BASE_DIR):
     for f in fnames:
         if f.endswith(".solver.sh"):

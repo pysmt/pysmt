@@ -54,7 +54,7 @@ from tests import TestCase, main, skipIfNoSolverForLogic
 
 class TestFormulaManager(TestCase):
     def setUp(self):
-        super(TestFormulaManager, self).setUp()
+        super().setUp()
 
         self.env = get_env()
         self.mgr = self.env.formula_manager
@@ -622,7 +622,7 @@ class TestFormulaManager(TestCase):
 
         s1 = self.mgr.Symbol("x")
         s2 = self.mgr.Symbol("x")
-        f1 = self.mgr.ExactlyOne((s for s in [s1, s2]))
+        f1 = self.mgr.ExactlyOne(s for s in [s1, s2])
         f2 = self.mgr.ExactlyOne([s1, s2])
         f3 = self.mgr.ExactlyOne(s1, s2)
 
@@ -1094,7 +1094,7 @@ class TestFormulaManager(TestCase):
         v_base = Integer(1)
         c_base = self.mgr.Int(v_base)
 
-        v_int = int(1)
+        v_int = 1
         c_int = self.mgr.Int(v_int)
         self.assertIs(c_base, c_int)
 

@@ -20,7 +20,7 @@
 import argparse
 import sys
 from io import StringIO
-from typing import Any, List
+from typing import Any
 from warnings import warn
 
 import pysmt.solvers
@@ -60,8 +60,8 @@ Happy Solving!
 """
 
 
-class PysmtShell(object):
-    def __init__(self, argv: List[str]):
+class PysmtShell:
+    def __init__(self, argv: list[str]):
         self.env = get_env()
         self.solvers = list(self.env.factory.all_solvers().keys())
         self.optimizers = list(self.env.factory.all_optimizers().keys())
@@ -75,7 +75,7 @@ class PysmtShell(object):
         parser.add_argument(
             "--version",
             action="version",
-            version="%(prog)s {version}".format(version=__version__),
+            version=f"%(prog)s {__version__}",
         )
         parser.add_argument(
             "--file",
@@ -169,7 +169,7 @@ class PysmtShell(object):
 
         if opt_name is not None:
             if opt_name == "auto":
-                solver: "pysmt.solvers.solver.Solver" = Optimizer(logic=logic)
+                solver: pysmt.solvers.solver.Solver = Optimizer(logic=logic)
             else:
                 solver = Optimizer(name=opt_name, logic=logic)
             inter: InterpreterSMT = InterpreterOMT()
@@ -196,7 +196,7 @@ class PysmtShell(object):
             if self.args.file is None:
                 self.smtlib_solver(sys.stdin, sys.stdout)
             else:
-                with open(self.args.file, "r") as input_stream:
+                with open(self.args.file) as input_stream:
                     self.smtlib_solver(input_stream, sys.stdout)
 
 

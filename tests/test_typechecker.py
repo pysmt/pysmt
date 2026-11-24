@@ -52,7 +52,7 @@ from tests.examples import get_example_formulae
 
 class TestSimpleTypeChecker(TestCase):
     def setUp(self):
-        super(TestSimpleTypeChecker, self).setUp()
+        super().setUp()
 
         self.tc = get_env().stc
         self.x = Symbol("x", BOOL)

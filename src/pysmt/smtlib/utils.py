@@ -16,7 +16,6 @@
 #   limitations under the License.
 #
 
-from typing import List
 
 from pysmt.fnode import FNode
 from pysmt.simplifier import Simplifier
@@ -41,7 +40,7 @@ class SmtLibModelValidationSimplifier(Simplifier):
     ```
     """
 
-    def walk_equals(self, formula: FNode, args: List[FNode], **kwargs) -> FNode:
+    def walk_equals(self, formula: FNode, args: list[FNode], **kwargs) -> FNode:
         assert len(args) == 2
 
         sl = args[0]

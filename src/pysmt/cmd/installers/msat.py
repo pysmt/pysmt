@@ -56,7 +56,7 @@ class MathSATFamilyInstaller(SolverInstaller):
     def patch_setup_py(self):
         """Makes the bindings' setup.py build a complete, versioned package."""
         path = os.path.join(self.python_bindings_dir, "setup.py")
-        with open(path, "r") as f:
+        with open(path) as f:
             content = f.read()
         mathsat_dir = os.path.abspath(self.extract_path)
         replacements = [

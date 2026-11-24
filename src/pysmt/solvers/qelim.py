@@ -15,7 +15,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from typing import Iterable, List, Optional, Sequence
+from collections.abc import Iterable, Sequence
 
 import pysmt
 import pysmt.logics
@@ -25,7 +25,7 @@ from pysmt.utils import all_assignments
 from pysmt.walkers.identitydag import IdentityDagWalker
 
 
-class QuantifierEliminator(object):
+class QuantifierEliminator:
     LOGICS: Iterable[pysmt.logics.Logic] = []
 
     def __init__(self):
@@ -74,7 +74,7 @@ class ShannonQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
     def __init__(
         self,
         environment: "pysmt.environment.Environment",
-        logic: Optional[pysmt.logics.Logic] = None,
+        logic: pysmt.logics.Logic | None = None,
     ):
         IdentityDagWalker.__init__(self, env=environment)
         QuantifierEliminator.__init__(self)
@@ -92,7 +92,7 @@ class ShannonQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
                     "(%s is %s)" % (v, v.symbol_type())
                 )
 
-    def _expand(self, formula: FNode, args: Sequence[FNode]) -> List[FNode]:
+    def _expand(self, formula: FNode, args: Sequence[FNode]) -> list[FNode]:
         """Returns the list of elements from the Shannon expansion."""
         qvars = formula.quantifier_vars()
         self._assert_vars_boolean(qvars)
@@ -130,7 +130,7 @@ class SelfSubstitutionQuantifierEliminator(QuantifierEliminator, IdentityDagWalk
     def __init__(
         self,
         environment: "pysmt.environment.Environment",
-        logic: Optional[pysmt.logics.Logic] = None,
+        logic: pysmt.logics.Logic | None = None,
     ):
         IdentityDagWalker.__init__(self, env=environment)
         QuantifierEliminator.__init__(self)

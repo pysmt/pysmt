@@ -17,7 +17,7 @@ from pysmt.shortcuts import (
 )
 
 
-class Sudoku(object):
+class Sudoku:
     """A sudoku problem representation and solving"""
 
     def __init__(self, size=3, solver_name=None, use_bv=None):
@@ -135,11 +135,10 @@ def read_constraints(fname):
     """
 
     def reader(fname):
-        with open(fname, "r") as f:
+        with open(fname) as f:
             for line in f:
                 r = line.split()
-                for x in r:
-                    yield x
+                yield from r
 
     r = reader(fname)
     size = int(next(r))

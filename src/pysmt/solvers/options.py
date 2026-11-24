@@ -35,12 +35,12 @@ To use the Options it is necessary to:
 """
 
 import abc
-from typing import Any, Dict, Optional
+from typing import Any
 
 import pysmt
 
 
-class SolverOptions(object):
+class SolverOptions:
     """Solver Options shared by most solvers.
 
     * generate_models : True, False
@@ -74,9 +74,9 @@ class SolverOptions(object):
         self,
         generate_models: bool = True,
         incremental: bool = True,
-        unsat_cores_mode: Optional[str] = None,
-        random_seed: Optional[int] = None,
-        solver_options: Optional[Dict[str, Any]] = None,
+        unsat_cores_mode: str | None = None,
+        random_seed: int | None = None,
+        solver_options: dict[str, Any] | None = None,
     ):
 
         if generate_models not in (True, False):
@@ -113,7 +113,7 @@ class SolverOptions(object):
         """Handle the setting options within solver"""
         raise NotImplementedError
 
-    def as_kwargs(self) -> Dict[str, Any]:
+    def as_kwargs(self) -> dict[str, Any]:
         """Construct a dictionary object that can be used as **kwargs.
 
         This can be used to duplicate the options.
