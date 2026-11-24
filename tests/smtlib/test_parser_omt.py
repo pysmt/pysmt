@@ -32,7 +32,7 @@ class TestSmtLibParserOMT(TestCase):
                 self.assertEqual(
                     cmd.name,
                     expected[i],
-                    "Test %d: %s != %s " % (file_id, cmd.name, expected[i]),
+                    f"Test {file_id}: {cmd.name} != {expected[i]} ",
                 )
             # Serialize
             buf = StringIO()

@@ -241,12 +241,10 @@ class Substituter(pysmt.walkers.IdentityDagWalker):
                 )
             # Check that substitutions belong to the current formula manager
             if k not in self.manager:
-                raise PysmtTypeError(
-                    "Key %d does not belong to the Formula Manager." % i
-                )
+                raise PysmtTypeError(f"Key {i} does not belong to the Formula Manager.")
             if v not in self.manager:
                 raise PysmtTypeError(
-                    "Value %d does not belong to the Formula Manager." % i
+                    f"Value {i} does not belong to the Formula Manager."
                 )
 
         for i, (k, f) in enumerate(interpretations.items()):
@@ -264,9 +262,7 @@ class Substituter(pysmt.walkers.IdentityDagWalker):
                 )
             # Check that interpretations belong to the current formula manager
             if k not in self.manager:
-                raise PysmtTypeError(
-                    "Key %d does not belong to the Formula Manager." % i
-                )
+                raise PysmtTypeError(f"Key {i} does not belong to the Formula Manager.")
 
         res = self.walk(formula, substitutions=subs, interpretations=interpretations)
         return res

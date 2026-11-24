@@ -62,7 +62,7 @@ class TestUnsatCores(TestCase):
                         clauses = f.args()
 
                     for i, c in enumerate(clauses):
-                        solver.add_assertion(c, "a%d" % i)
+                        solver.add_assertion(c, f"a{i}")
 
                     try:
                         r = solver.solve()
@@ -175,7 +175,7 @@ class TestUnsatCores(TestCase):
         formulae = [Or(b, n_a), Or(c, n_a), Or(n_a, n_b, n_c)]
         with UnsatCoreSolver(logic=QF_LIA, unsat_cores_mode="named") as solver:
             for i, f in enumerate(formulae):
-                solver.add_assertion(f, named="f%d" % i)
+                solver.add_assertion(f, named=f"f{i}")
             sat = solver.solve([a])
             self.assertFalse(sat)
 

@@ -124,14 +124,14 @@ class HRPrinter(TreeWalker):
         # This is the simplest SMT-LIB way of printing the value of a BV
         # self.write("(_ bv%d %d)" % (formula.bv_width(),
         #                             formula.constant_value()))
-        self.write("%d_%d" % (cast(int, formula.constant_value()), formula.bv_width()))
+        self.write(f"{cast(int, formula.constant_value())}_{formula.bv_width()}")
 
     def walk_algebraic_constant(self, formula):
         self.write(str(formula.constant_value()))
 
     def walk_bv_extract(self, formula: FNode) -> Iterator[FNode]:
         yield formula.arg(0)
-        self.write("[%d:%d]" % (formula.bv_extract_start(), formula.bv_extract_end()))
+        self.write(f"[{formula.bv_extract_start()}:{formula.bv_extract_end()}]")
 
     def walk_bv_neg(self, formula: FNode) -> Iterator[FNode]:
         self.write("(- ")
@@ -142,25 +142,25 @@ class HRPrinter(TreeWalker):
         self.write("(")
         yield formula.arg(0)
         self.write(" ROR ")
-        self.write("%d)" % formula.bv_rotation_step())
+        self.write(f"{formula.bv_rotation_step()})")
 
     def walk_bv_rol(self, formula: FNode) -> Iterator[FNode]:
         self.write("(")
         yield formula.arg(0)
         self.write(" ROL ")
-        self.write("%d)" % formula.bv_rotation_step())
+        self.write(f"{formula.bv_rotation_step()})")
 
     def walk_bv_zext(self, formula: FNode) -> Iterator[FNode]:
         self.write("(")
         yield formula.arg(0)
         self.write(" ZEXT ")
-        self.write("%d)" % formula.bv_extend_step())
+        self.write(f"{formula.bv_extend_step()})")
 
     def walk_bv_sext(self, formula: FNode) -> Iterator[FNode]:
         self.write("(")
         yield formula.arg(0)
         self.write(" SEXT ")
-        self.write("%d)" % formula.bv_extend_step())
+        self.write(f"{formula.bv_extend_step()})")
 
     def walk_ite(self, formula: FNode) -> Iterator[FNode]:
         self.write("(")

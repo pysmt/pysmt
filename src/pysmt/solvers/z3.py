@@ -331,7 +331,7 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolver):
             if key in n_ass_map:
                 (name, formula) = n_ass_map[key]
                 if name is None:
-                    name = "_a_%d" % cnt
+                    name = f"_a_{cnt}"
                     cnt += 1
                 res[name] = formula
             else:

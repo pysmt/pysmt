@@ -208,8 +208,8 @@ class FormulaManager:
         lpt = len(cast(types._FunctionType, vname.symbol_type()).param_types)
         if len(params) != lpt:
             raise PysmtValueError(
-                "Incorrect number of parameters in function creation: got %d expected %d"
-                % (len(params), lpt)
+                "Incorrect number of parameters in function creation: "
+                f"got {len(params)} expected {lpt}"
             )
         return self.create_node(
             node_type=op.FUNCTION, args=tuple(params), payload=vname
@@ -671,7 +671,7 @@ class FormulaManager:
             if width is not None and width != str_width:
                 raise PysmtValueError(
                     "Specified width does not match string "
-                    "width (%d != %d)" % (width, str_width)
+                    f"width ({width} != {str_width})"
                 )
             width = str_width
 
@@ -714,13 +714,13 @@ class FormulaManager:
             max_val = (2 ** (width - 1)) - 1
             if value < min_val:
                 raise PysmtValueError(
-                    "Cannot represent a value (%s) lower "
-                    "than %d in %d bits" % (str(value), min_val, width)
+                    f"Cannot represent a value ({value}) lower "
+                    f"than {min_val} in {width} bits"
                 )
             if value > max_val:
                 raise PysmtValueError(
-                    "Cannot represent a value (%s) greater "
-                    "than %d in %d bits" % (str(value), max_val, width)
+                    f"Cannot represent a value ({value}) greater "
+                    f"than {max_val} in {width} bits"
                 )
 
             if value >= 0:
@@ -800,12 +800,11 @@ class FormulaManager:
         if end is None:
             end = formula.bv_width() - 1
         assert is_python_integer(start) and is_python_integer(end)
-        assert end >= start and start >= 0, "Start: %d ; End: %d" % (start, end)
+        assert end >= start and start >= 0, f"Start: {start} ; End: {end}"
         size = end - start + 1
 
         assert size <= formula.bv_width(), (
-            "Invalid size: start=%d, end=%d, width=%d"
-            % (start, end, formula.bv_width())
+            f"Invalid size: start={start}, end={end}, width={formula.bv_width()}"
         )
         return self.create_node(
             node_type=op.BV_EXTRACT, args=(formula,), payload=(size, start, end)

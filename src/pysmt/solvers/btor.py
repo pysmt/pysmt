@@ -325,7 +325,7 @@ class BoolectorSolver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSol
                 if a in self._named_assertions
             )
         else:
-            return dict(("_a%d" % i, f) for i, f in enumerate(self.get_unsat_core()))
+            return {f"_a{i}": f for i, f in enumerate(self.get_unsat_core())}
 
     @clear_pending_pop
     def _push(self, levels=1):

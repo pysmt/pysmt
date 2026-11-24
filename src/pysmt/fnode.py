@@ -669,11 +669,12 @@ class FNode:
         The representation is always unsigned
         """
         if fmt == "b":
-            fstr = "{0:0%db}" % self.bv_width()
+            fstr = f"{{0:0{self.bv_width()}b}}"
         elif fmt == "d":
             fstr = "{}"
         elif fmt == "x":
-            fstr = "{0:0%dx}" % (self.bv_width() / 4)
+            # Floor division keeps the padding of widths not divisible by 4 unchanged
+            fstr = f"{{0:0{self.bv_width() // 4}x}}"
         else:
             raise PysmtValueError(f"Unknown option {str(fmt)}")
         str_ = fstr.format(self.constant_value())

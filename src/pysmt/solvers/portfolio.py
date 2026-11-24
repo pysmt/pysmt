@@ -153,10 +153,10 @@ class Portfolio(IncrementalTrackingSolver):
             _debug("Creating instance of %s", sname)
             options = opts
             _p = Process(
-                name="%d (%s)" % (idx, sname),
+                name=f"{idx} ({sname})",
                 target=_run_solver,
                 args=(
-                    "%d (%s)" % (idx, sname),
+                    f"{idx} ({sname})",
                     sname,
                     self.logic,
                     options,

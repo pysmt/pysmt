@@ -41,7 +41,7 @@ def next_var(v):
 
 def at_time(v, t):
     """Builds an SMT variable representing v at time t"""
-    return Symbol("%s@%d" % (v.symbol_name(), t), v.symbol_type())
+    return Symbol(f"{v.symbol_name()}@{t}", v.symbol_type())
 
 
 class TransitionSystem:
@@ -72,7 +72,7 @@ class PDR:
             if cube is not None:
                 # Blocking phase of a bad state
                 if self.recursive_block(cube):
-                    print("--> Bug found at step %d" % (len(self.frames)))
+                    print(f"--> Bug found at step {len(self.frames)}")
                     break
                 else:
                     print(f"   [PDR] Cube blocked '{str(cube)}'")
@@ -82,7 +82,7 @@ class PDR:
                     print("--> The system is safe!")
                     break
                 else:
-                    print("   [PDR] Adding frame %d..." % (len(self.frames)))
+                    print(f"   [PDR] Adding frame {len(self.frames)}...")
                     self.frames.append(TRUE())
 
     def get_bad_state(self, prop):
@@ -203,13 +203,13 @@ class BMCInduction:
         print(f"Checking property {prop}...")
         for b in range(100):
             f = self.get_bmc(prop, b)
-            print("   [BMC]    Checking bound %d..." % (b + 1))
+            print(f"   [BMC]    Checking bound {b + 1}...")
             if is_sat(f):
-                print("--> Bug found at step %d" % (b + 1))
+                print(f"--> Bug found at step {b + 1}")
                 return
 
             f = self.get_k_induction(prop, b)
-            print("   [K-IND]  Checking bound %d..." % (b + 1))
+            print(f"   [K-IND]  Checking bound {b + 1}...")
             if is_unsat(f):
                 print("--> The system is safe!")
                 return

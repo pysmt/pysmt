@@ -96,7 +96,7 @@ class SolverInstaller:
 
     @property
     def python_version(self):
-        return "%d.%d" % sys.version_info[0:2]
+        return f"{sys.version_info.major}.{sys.version_info.minor}"
 
     def download_links(self):
         if self.native_link is not None:
@@ -116,12 +116,12 @@ class SolverInstaller:
                             raise
                         print(
                             "HTTP 404 while trying to get the archive using link"
-                            " '%s' (trial %d/%d)" % (link, turn + 1, self.trials_404)
+                            f" '{link}' (trial {turn + 1}/{self.trials_404})"
                         )
                     except URLError as e:
                         print(
                             "Error while trying to get the archive using link"
-                            " '%s' (trial %d/%d)" % (link, turn + 1, self.trials_404)
+                            f" '{link}' (trial {turn + 1}/{self.trials_404})"
                         )
                         raise e
 

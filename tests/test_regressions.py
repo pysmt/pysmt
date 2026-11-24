@@ -272,7 +272,7 @@ class TestRegressions(TestCase):
     def test_determinism(self):
         def get_set(env):
             mgr = env.formula_manager
-            r = set(mgr.Symbol("x%d" % i) for i in range(1000))
+            r = set(mgr.Symbol(f"x{i}") for i in range(1000))
             for f, _, _, _ in get_example_formulae(env):
                 r |= set([f])
             return r
@@ -283,7 +283,7 @@ class TestRegressions(TestCase):
         # We try this ten times...
         for _ in range(10):
             # Do something to screw up memory layout...
-            for y in (Symbol("y%d" % i) for i in range(1000)):
+            for y in (Symbol(f"y{i}") for i in range(1000)):
                 self.assertIsNotNone(y)
 
             with Environment() as new_env:

@@ -60,7 +60,6 @@ ignore = [
     "F405",  # names from star imports, see F403
     "E731",  # lambda-assignment: the small inline lambdas here read fine
     "E741",  # ambiguous-variable-name: `l` is used throughout for logics and lists
-    "UP031",  # printf-string-formatting: `%d` truncates floats, convert by hand later
 ]
 
 [tool.ruff.lint.per-file-ignores]

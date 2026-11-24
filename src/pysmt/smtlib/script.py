@@ -201,7 +201,7 @@ class SmtLibCommand(namedtuple("SmtLibCommand", ["name", "args"])):
             outstream.write(")")
 
         elif self.name in [smtcmd.PUSH, smtcmd.POP, smtcmd.LOAD_OBJECTIVE_MODEL]:
-            outstream.write("(%s %d)" % (self.name, self.args[0]))
+            outstream.write(f"({self.name} {self.args[0]})")
 
         elif self.name == smtcmd.DEFINE_SORT:
             name = self.args[0]
@@ -213,7 +213,7 @@ class SmtLibCommand(namedtuple("SmtLibCommand", ["name", "args"])):
             )
         elif self.name == smtcmd.DECLARE_SORT:
             type_decl = self.args[0]
-            outstream.write("(%s %s %d)" % (self.name, type_decl.name, type_decl.arity))
+            outstream.write(f"({self.name} {type_decl.name} {type_decl.arity})")
 
         elif self.name in smtcmd.ALL_COMMANDS:
             raise NotImplementedError(

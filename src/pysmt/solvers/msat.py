@@ -390,7 +390,7 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolv
                 if key in n_ass_map:
                     (name, formula) = n_ass_map[key]
                     if name is None:
-                        name = "_a_%d" % cnt
+                        name = f"_a_{cnt}"
                         cnt += 1
                     res[name] = formula
                 # solve-time assumptions have no name, they are reported by
@@ -398,7 +398,7 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolv
             return res
 
         else:
-            return dict(("_a%d" % i, f) for i, f in enumerate(self.get_unsat_core()))
+            return {f"_a{i}": f for i, f in enumerate(self.get_unsat_core())}
 
     @clear_pending_pop
     def all_sat(self, important, callback):
@@ -1470,7 +1470,7 @@ class MSatBoolUFRewriter(IdentityDagWalker):
         # Base-case
         stack = []
         for i in range(2 ** len(bool_args)):
-            fname = self.mgr.Symbol("%s#%i" % (formula.function_name(), i), ftype)
+            fname = self.mgr.Symbol(f"{formula.function_name()}#{i}", ftype)
             if len(ptype) == 0:
                 stack.append(fname)
             else:

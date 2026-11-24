@@ -119,9 +119,9 @@ class UnsupportedOperatorError(PysmtException):
 
     def __init__(self, message=None, node_type=None, expression=None):
         if message is None:
-            message = "Unsupported operator '%s' (node_type: %d)" % (
-                op.op_to_str(node_type),
-                node_type,
+            message = (
+                f"Unsupported operator '{op.op_to_str(node_type)}' "
+                f"(node_type: {node_type})"
             )
         PysmtException.__init__(self)
         self.message = message
@@ -187,7 +187,7 @@ class PysmtSyntaxError(PysmtException, SyntaxError):
 
     def __str__(self):
         if self.pos_info:
-            return "Line %d, Col %d: " % self.pos_info + self.message
+            return f"Line {self.pos_info[0]}, Col {self.pos_info[1]}: {self.message}"
         else:
             return self.message
 
@@ -246,6 +246,7 @@ class GoalNotSupportedError(PysmtException):
 
     def __str__(self):
         mode_str = (f" in mode '{self.mode}'") if self.mode else ""
-        return "Optimizer '{}' does not support goal '{}'{}".format(
-            *tuple(map(str, (type(self.solver).__name__, self.goal, mode_str)))
+        return (
+            f"Optimizer '{type(self.solver).__name__}' "
+            f"does not support goal '{self.goal}'{mode_str}"
         )

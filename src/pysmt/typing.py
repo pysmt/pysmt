@@ -67,7 +67,7 @@ class PySMTType:
                 assert args is not None
                 raise PysmtValueError(
                     "Invalid number of arguments. "
-                    + "Expected %d, got %d." % (self.arity, len(args))
+                    f"Expected {self.arity}, got {len(args)}."
                 )
             self.custom_type = decl.custom_type
         else:
@@ -230,7 +230,7 @@ class _BVType(PySMTType):
     """
 
     def __init__(self, width: int = 32):
-        decl = _TypeDecl("BV{%d}" % width, 0)
+        decl = _TypeDecl(f"BV{{{width}}}", 0)
         PySMTType.__init__(self, decl=decl, args=None)
         self._width = width
 
@@ -245,9 +245,9 @@ class _BVType(PySMTType):
 
     def as_smtlib(self, funstyle: bool = True) -> str:
         if funstyle:
-            return "() (_ BitVec %d)" % self.width
+            return f"() (_ BitVec {self.width})"
         else:
-            return "(_ BitVec %d)" % self.width
+            return f"(_ BitVec {self.width})"
 
     def __eq__(self, other: object) -> bool:
         return isinstance(other, _BVType) and self.width == other.width
@@ -508,7 +508,7 @@ class TypeManager:
             td = self._custom_types_decl[name]
             if td.arity != arity:
                 raise PysmtValueError(
-                    "Type %s previously declared with arity  %d." % (name, td.arity)
+                    f"Type {name} previously declared with arity  {td.arity}."
                 )
         except KeyError:
             td = _TypeDecl(name, arity)

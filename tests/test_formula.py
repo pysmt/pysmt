@@ -609,7 +609,7 @@ class TestFormulaManager(TestCase):
         self.assertEqual(one, self.p)
 
     def test_exactly_one(self):
-        symbols = [self.mgr.Symbol("s%d" % i, BOOL) for i in range(5)]
+        symbols = [self.mgr.Symbol(f"s{i}", BOOL) for i in range(5)]
         c = self.mgr.ExactlyOne(symbols)
 
         self.assertTrue(len(c.args()) > 1)
@@ -631,7 +631,7 @@ class TestFormulaManager(TestCase):
 
     @skipIfNoSolverForLogic(QF_BOOL)
     def test_exactly_one_is_sat(self):
-        symbols = [self.mgr.Symbol("s%d" % i, BOOL) for i in range(5)]
+        symbols = [self.mgr.Symbol(f"s{i}", BOOL) for i in range(5)]
         c = self.mgr.ExactlyOne(symbols)
         all_zero = self.mgr.And(
             [self.mgr.Iff(s, self.mgr.Bool(False)) for s in symbols]
@@ -643,7 +643,7 @@ class TestFormulaManager(TestCase):
         )
 
     def test_at_most_one(self):
-        symbols = [self.mgr.Symbol("s%d" % i, BOOL) for i in range(5)]
+        symbols = [self.mgr.Symbol(f"s{i}", BOOL) for i in range(5)]
         c = self.mgr.AtMostOne(symbols)
 
         self.assertTrue(len(c.args()) > 1)
@@ -674,7 +674,7 @@ class TestFormulaManager(TestCase):
 
     def test_all_different(self):
         many = 5
-        symbols = [self.mgr.Symbol("s%d" % i, INT) for i in range(many)]
+        symbols = [self.mgr.Symbol(f"s{i}", INT) for i in range(many)]
         f = self.mgr.AllDifferent(symbols)
 
         one = self.mgr.Int(1)

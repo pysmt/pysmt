@@ -52,7 +52,7 @@ def efsmt(
                 tau = {v: esolver.get_value(v) for v in x}
                 sub_phi = phi.substitute(tau).simplify()
                 if verbose:
-                    print("%d: Tau = %s" % (loops, tau))
+                    print(f"{loops}: Tau = {tau}")
 
                 fmodel = get_model(Not(sub_phi), logic=logic, solver_name=fsolver_name)
                 if fmodel is None:
@@ -61,7 +61,7 @@ def efsmt(
                     sigma = {v: fmodel[v] for v in y}
                     sub_phi = phi.substitute(sigma).simplify()
                     if verbose:
-                        print("%d: Sigma = %s" % (loops, sigma))
+                        print(f"{loops}: Sigma = {sigma}")
                     esolver.add_assertion(sub_phi)
 
         raise SolverReturnedUnknownResultError

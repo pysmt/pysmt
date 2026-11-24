@@ -1114,8 +1114,7 @@ class SmtLibParser:
             current = tokens.consume(f"Unexpected end of stream in {command} command.")
             if current == ")":
                 raise PysmtSyntaxError(
-                    "Expected at least %d arguments in "
-                    "%s command." % (min_size, command),
+                    f"Expected at least {min_size} arguments in {command} command.",
                     tokens.pos_info,
                 )
             if current == "(":
@@ -1133,8 +1132,8 @@ class SmtLibParser:
                 )
             res.append(current)
         raise PysmtSyntaxError(
-            "Unexpected token '%s' in %s command. Expected "
-            "at most %d arguments." % (current, command, max_size),
+            f"Unexpected token '{current}' in {command} command. Expected "
+            f"at most {max_size} arguments.",
             tokens.pos_info,
         )
 

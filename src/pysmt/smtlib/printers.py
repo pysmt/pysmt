@@ -274,8 +274,7 @@ class SmtPrinter(TreeWalker):
     @write_annotations
     def walk_bv_extract(self, formula):
         self.write(
-            "((_ extract %d %d) "
-            % (formula.bv_extract_end(), formula.bv_extract_start())
+            f"((_ extract {formula.bv_extract_end()} {formula.bv_extract_start()}) "
         )
         yield formula.arg(0)
         self.write(")")
@@ -288,7 +287,7 @@ class SmtPrinter(TreeWalker):
         else:
             assert formula.is_bv_rol()
             rotate_type = "rotate_left"
-        self.write("((_ %s %d) " % (rotate_type, formula.bv_rotation_step()))
+        self.write(f"((_ {rotate_type} {formula.bv_rotation_step()}) ")
         yield formula.arg(0)
         self.write(")")
 
@@ -300,7 +299,7 @@ class SmtPrinter(TreeWalker):
         else:
             assert formula.is_bv_sext()
             extend_type = "sign_extend"
-        self.write("((_ %s %d) " % (extend_type, formula.bv_extend_step()))
+        self.write(f"((_ {extend_type} {formula.bv_extend_step()}) ")
         yield formula.arg(0)
         self.write(")")
 
@@ -681,8 +680,8 @@ class SmtDagPrinter(DagWalker):
         sym = self._new_symbol()
         self.openings += 1
         self.write(
-            "(let ((%s ((_ extract %d %d)"
-            % (sym, formula.bv_extract_end(), formula.bv_extract_start())
+            f"(let (({sym} ((_ extract "
+            f"{formula.bv_extract_end()} {formula.bv_extract_start()})"
         )
         for s in args:
             self.write(" ")
@@ -702,9 +701,7 @@ class SmtDagPrinter(DagWalker):
 
         sym = self._new_symbol()
         self.openings += 1
-        self.write(
-            "(let ((%s ((_ %s %d)" % (sym, extend_type, formula.bv_extend_step())
-        )
+        self.write(f"(let (({sym} ((_ {extend_type} {formula.bv_extend_step()})")
         for s in args:
             self.write(" ")
             self.write(s)
@@ -723,9 +720,7 @@ class SmtDagPrinter(DagWalker):
 
         sym = self._new_symbol()
         self.openings += 1
-        self.write(
-            "(let ((%s ((_ %s %d)" % (sym, rotate_type, formula.bv_rotation_step())
-        )
+        self.write(f"(let (({sym} ((_ {rotate_type} {formula.bv_rotation_step()})")
         for s in args:
             self.write(" ")
             self.write(s)

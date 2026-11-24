@@ -103,12 +103,9 @@ class OMTTestCase:
                     )
                 if len(goals_oracle_values) != goals_number:
                     raise PysmtValueError(
-                        "In %s optimization the number of goals values must be the same of the number of the given goals: %s, %d"
-                        % (
-                            optimization_type.name,
-                            str(goals_oracle_values),
-                            goals_number,
-                        )
+                        f"In {optimization_type.name} optimization the number of goals values "
+                        "must be the same of the number of the given goals: "
+                        f"{goals_oracle_values}, {goals_number}"
                     )
             elif optimization_type == OptimizationTypes.PARETO:
                 goals_number = len(current_goals)

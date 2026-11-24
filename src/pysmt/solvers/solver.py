@@ -637,9 +637,9 @@ class Converter:
             return name
         if self._empty_name_subst is None:
             i = 0
-            while ("__pysmt_empty_name_%d" % i) in self.mgr.symbols:
+            while f"__pysmt_empty_name_{i}" in self.mgr.symbols:
                 i += 1
-            self._empty_name_subst = "__pysmt_empty_name_%d" % i
+            self._empty_name_subst = f"__pysmt_empty_name_{i}"
         return self._empty_name_subst
 
     def _restore_empty(self, name: str) -> str:
