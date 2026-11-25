@@ -6,3 +6,6 @@
 
 # Apply the ruff UP031 auto-fixes (#873)
 5e46e23f02e177bb68285b16b70ed59df6e9ab98
+
+# Apply the ruff B (flake8-bugbear) auto-fixes (#873)
+4194acca25b237dd4556e141ef02e3706df5eeb5
