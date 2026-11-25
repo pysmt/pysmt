@@ -76,7 +76,7 @@ finally:
 def init():
     if not getattr(init, "initialized", False):
         yices_api.yices_init()
-    setattr(init, "initialized", True)
+    init.initialized = True
 
 
 def reset_yices():

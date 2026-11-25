@@ -58,7 +58,7 @@ class handles:
     def __call__(self, func: Callable) -> Callable:
         nodetypes = self.nodetypes
         if hasattr(func, "nodetypes"):
-            nodetypes = cast(list[int], getattr(func, "nodetypes")) + nodetypes
+            nodetypes = cast(list[int], func.nodetypes) + nodetypes
         # mypy: Callable has no attribute nodetypes
         setattr(func, "nodetypes", nodetypes)  # noqa: B010
         return func
@@ -73,9 +73,7 @@ class MetaNodeTypeHandler(type):
         obj = type.__new__(cls, name, bases, dct)
         for k, v in dct.items():
             if hasattr(v, "nodetypes"):
-                cast("Walker", obj).set_handler(
-                    v, *cast(list[int], getattr(v, "nodetypes"))
-                )
+                cast("Walker", obj).set_handler(v, *cast(list[int], v.nodetypes))
         return obj
 
 
