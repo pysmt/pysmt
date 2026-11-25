@@ -213,7 +213,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
 
         rt = {}
 
-        for msat_obj, goal in zip(msat_objs, goals):
+        for msat_obj, goal in zip(msat_objs, goals, strict=True):
             model_value = self._get_goal_value(msat_obj, goal)
             if model_value is None:
                 return None

@@ -128,7 +128,7 @@ class SmtLibExecutionCache:
     ) -> Callable:
         def res(*actual_parameters):
             assert len(formal_parameters) == len(actual_parameters)
-            submap = dict(zip(formal_parameters, actual_parameters))
+            submap = dict(zip(formal_parameters, actual_parameters, strict=True))
             return self.substitute(expression, submap)
 
         return res
@@ -364,7 +364,7 @@ def _chainable(mgr: FormulaManager, operator: Callable) -> Callable:
     """(op a b c) is expanded to (and (op a b) (op b c))"""
 
     def res(*args):
-        return mgr.And([operator(l, r) for l, r in zip(args, args[1:])])
+        return mgr.And([operator(l, r) for l, r in zip(args, args[1:], strict=False)])
 
     return res
 

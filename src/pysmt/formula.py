@@ -1254,7 +1254,7 @@ class FormulaContextualizer(IdentityDagWalker):
         self, formula: FNode, args: Sequence[FNode], **kwargs
     ) -> FNode:
         # Recreate the ArrayValue taking into account the type information
-        assign = dict(zip(args[1::2], args[2::2]))
+        assign = dict(zip(args[1::2], args[2::2], strict=True))
         ty = self.type_normalize(formula.array_value_index_type())
         return self.mgr.Array(ty, args[0], assign)
 

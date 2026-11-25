@@ -271,7 +271,11 @@ class BoolectorSolver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSol
         if len(formulae) == 0:
             return []
         terms = [self.converter.convert(f) for f in formulae]
-        return [f for f, failed in zip(formulae, self.btor.Failed(*terms)) if failed]
+        return [
+            f
+            for f, failed in zip(formulae, self.btor.Failed(*terms), strict=True)
+            if failed
+        ]
 
     @clear_pending_pop
     def _solve(self, assumptions=None):

@@ -322,7 +322,7 @@ def check_lexicographic(
         assert retval is not None, test_id_str
         _, costs = retval
         assert len(goals) == len(goals_values) == len(costs), test_id_str
-        for goal, goal_value, cost in zip(goals, goals_values, costs):
+        for goal, goal_value, cost in zip(goals, goals_values, costs, strict=True):
             assert isinstance(goal_value, FNode)
             _check_oracle_goal(goal, goal_value, cost, test_id_str, **kwargs)
         return retval
@@ -351,10 +351,14 @@ def check_pareto(
         sorted_goals_values = sorted(goals_values, key=str)
 
         assert len(sorted_costs) == len(sorted_goals_values), test_id_str
-        for costs, current_goals_values in zip(sorted_costs, sorted_goals_values):
+        for costs, current_goals_values in zip(
+            sorted_costs, sorted_goals_values, strict=True
+        ):
             assert len(goals) == len(costs) == len(current_goals_values), test_id_str
 
-            for goal, goal_value, cost in zip(goals, current_goals_values, costs):
+            for goal, goal_value, cost in zip(
+                goals, current_goals_values, costs, strict=True
+            ):
                 assert isinstance(goal_value, FNode)
                 _check_oracle_goal(goal, goal_value, cost, test_id_str, **kwargs)
 
@@ -385,7 +389,7 @@ def check_boxed(
     if raised_class is None:
         retval = optimizer.boxed_optimize(goals, **kwargs)
         assert retval is not None, test_id_str
-        for goal, goal_value in zip(goals, goals_values):
+        for goal, goal_value in zip(goals, goals_values, strict=True):
             _, cost = retval[goal]
             assert isinstance(goal_value, FNode)
             _check_oracle_goal(goal, goal_value, cost, test_id_str, **kwargs)
@@ -395,7 +399,7 @@ def check_boxed(
 
     # test single optimizations separately
     if also_test_basic:
-        for goal, goal_value in zip(goals, goals_values):
+        for goal, goal_value in zip(goals, goals_values, strict=True):
             check_basic(optimizer, goal, goal_value, test_id_str, **kwargs)
 
     if raised_class is None:

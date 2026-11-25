@@ -272,7 +272,7 @@ def omt_test_cases_from_smtlib_test_set(logics: None = None) -> Iterator[OMTTest
                 if optimization_type == OptimizationTypes.BASIC:
                     assert len(parsed_goals) == len(expected_values)
                     for parsed_goal, expected_value in zip(
-                        parsed_goals, expected_values
+                        parsed_goals, expected_values, strict=True
                     ):
                         key: tuple[tuple[Goal, ...], OptimizationTypes] = (
                             (parsed_goal,),

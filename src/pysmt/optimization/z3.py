@@ -150,7 +150,7 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
             # In box mode, each call to check() yields the optimal model
             # of the next objective, in the order they were asserted
             models: dict[Goal, tuple[Model, FNode]] = {}
-            for goal, h in zip(goals, handles):
+            for goal, h in zip(goals, handles, strict=True):
                 if self.z3.check() != z3.sat:
                     return None
                 try:

@@ -724,7 +724,7 @@ class FNode:
 
     def array_value_assigned_values_map(self) -> dict["FNode", "FNode"]:
         args = self.args()
-        return dict(zip(args[1::2], args[2::2]))
+        return dict(zip(args[1::2], args[2::2], strict=True))
 
     def array_value_default(self) -> "FNode":
         return self.args()[0]
@@ -1021,7 +1021,8 @@ class FNode:
                     "Wrong number of parameters passed in infix 'call' operator"
                 )
             args = tuple(
-                self._infix_prepare_arg(x, t) for x, t in zip(args, param_types)
+                self._infix_prepare_arg(x, t)
+                for x, t in zip(args, param_types, strict=True)
             )
             return _mgr().Function(self, args)
         else:
