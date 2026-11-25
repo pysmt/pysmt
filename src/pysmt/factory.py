@@ -315,7 +315,8 @@ class Factory:
         self._generic_solvers[name] = (args, logics)
         solver = cast(type[SmtLibSolver], partial(SmtLibSolver, args, LOGICS=logics))
         solver.LOGICS = logics
-        setattr(solver, "UNSAT_CORE_SUPPORT", unsat_core_support)
+        # mypy: UNSAT_CORE_SUPPORT is declared on UnsatCoreSolver, not SmtLibSolver
+        setattr(solver, "UNSAT_CORE_SUPPORT", unsat_core_support)  # noqa: B010
         self._all_solvers[name] = solver
         # Extend preference list accordingly
         self.preferences["Solver"].append(name)

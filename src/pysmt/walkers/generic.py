@@ -59,7 +59,8 @@ class handles:
         nodetypes = self.nodetypes
         if hasattr(func, "nodetypes"):
             nodetypes = cast(list[int], getattr(func, "nodetypes")) + nodetypes
-        setattr(func, "nodetypes", nodetypes)
+        # mypy: Callable has no attribute nodetypes
+        setattr(func, "nodetypes", nodetypes)  # noqa: B010
         return func
 
 
