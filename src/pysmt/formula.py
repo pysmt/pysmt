@@ -291,7 +291,7 @@ class FormulaManager:
         ) and self.env.enable_div_by_0:
             # Allow division by 0 byt warn the user
             # This can only happen in non-linear logics
-            warnings.warn("Warning: Division by 0")
+            warnings.warn("Warning: Division by 0", stacklevel=2)
         elif right.is_constant(types.REAL):
             # If right is a constant we rewrite as left * 1/right
             inverse = Fraction(1) / right.constant_value()

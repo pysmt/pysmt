@@ -1111,7 +1111,7 @@ def is_sat(
     """
     env = get_env()
     if formula not in env.formula_manager:
-        warnings.warn("Warning: Contextualizing formula during is_sat")
+        warnings.warn("Warning: Contextualizing formula during is_sat", stacklevel=2)
         formula = env.formula_manager.normalize(formula)
 
     return env.factory.is_sat(
@@ -1136,7 +1136,7 @@ def get_model(
     """
     env = get_env()
     if formula not in env.formula_manager:
-        warnings.warn("Warning: Contextualizing formula during get_model")
+        warnings.warn("Warning: Contextualizing formula during get_model", stacklevel=2)
         formula = env.formula_manager.normalize(formula)
 
     return env.factory.get_model(formula, solver_name=solver_name, logic=logic)
@@ -1161,7 +1161,7 @@ def get_implicant(
     """
     env = get_env()
     if formula not in env.formula_manager:
-        warnings.warn("Warning: Contextualizing formula during get_model")
+        warnings.warn("Warning: Contextualizing formula during get_model", stacklevel=2)
         formula = env.formula_manager.normalize(formula)
 
     return env.factory.get_implicant(formula, solver_name=solver_name, logic=logic)
@@ -1188,7 +1188,7 @@ def get_unsat_core(
     env = get_env()
     clauses = list(clauses)
     if any(c not in env.formula_manager for c in clauses):
-        warnings.warn("Warning: Contextualizing formula during get_model")
+        warnings.warn("Warning: Contextualizing formula during get_model", stacklevel=2)
         clauses = [env.formula_manager.normalize(c) for c in clauses]
 
     return env.factory.get_unsat_core(clauses, solver_name=solver_name, logic=logic)
@@ -1212,7 +1212,7 @@ def is_valid(
     """
     env = get_env()
     if formula not in env.formula_manager:
-        warnings.warn("Warning: Contextualizing formula during is_valid")
+        warnings.warn("Warning: Contextualizing formula during is_valid", stacklevel=2)
         formula = env.formula_manager.normalize(formula)
 
     return env.factory.is_valid(
@@ -1238,7 +1238,7 @@ def is_unsat(
     """
     env = get_env()
     if formula not in env.formula_manager:
-        warnings.warn("Warning: Contextualizing formula during is_unsat")
+        warnings.warn("Warning: Contextualizing formula during is_unsat", stacklevel=2)
         formula = env.formula_manager.normalize(formula)
 
     return env.factory.is_unsat(
@@ -1261,7 +1261,7 @@ def qelim(
     """
     env = get_env()
     if formula not in env.formula_manager:
-        warnings.warn("Warning: Contextualizing formula during is_unsat")
+        warnings.warn("Warning: Contextualizing formula during is_unsat", stacklevel=2)
         formula = env.formula_manager.normalize(formula)
 
     return env.factory.qelim(formula, solver_name=solver_name, logic=logic)
@@ -1289,7 +1289,10 @@ def binary_interpolant(
     formulas = [formula_a, formula_b]
     for i, f in enumerate(formulas):
         if f not in env.formula_manager:
-            warnings.warn("Warning: Contextualizing formula during binary_interpolant")
+            warnings.warn(
+                "Warning: Contextualizing formula during binary_interpolant",
+                stacklevel=2,
+            )
             formulas[i] = env.formula_manager.normalize(f)
 
     return env.factory.binary_interpolant(
@@ -1318,7 +1321,8 @@ def sequence_interpolant(
     for i, f in enumerate(formulas):
         if f not in env.formula_manager:
             warnings.warn(
-                "Warning: Contextualizing formula during sequence_interpolant"
+                "Warning: Contextualizing formula during sequence_interpolant",
+                stacklevel=2,
             )
             formulas[i] = env.formula_manager.normalize(f)
 

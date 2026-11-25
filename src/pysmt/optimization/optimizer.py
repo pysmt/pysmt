@@ -448,7 +448,8 @@ def _warn_diverge_real_goal(goal: Goal, env: Environment):
         goal.is_maximization_goal() or goal.is_minimization_goal()
     ) and env.stc.get_type(goal.term()).is_real_type():
         warnings.warn(
-            "Algorithm might diverge on Real minimization/maximization objectives."
+            "Algorithm might diverge on Real minimization/maximization objectives.",
+            stacklevel=2,
         )
 
 

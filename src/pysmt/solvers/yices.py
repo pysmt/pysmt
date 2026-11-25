@@ -188,7 +188,7 @@ class YicesSolver(SmtLibBasicSolver):
             )
             != 0
         ):
-            warn(f"Error setting config for logic {logic}")
+            warn(f"Error setting config for logic {logic}", stacklevel=2)
         self.yices_params: Any  # This is set in the self.options(self) call
         self.options(self)
         assert isinstance(self.options, YicesOptions)

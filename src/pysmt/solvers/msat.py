@@ -883,7 +883,10 @@ class MSatConverter(Converter, DagWalker):
             msat_msg = self._msat_lib.msat_last_error_message(self.msat_env())
             raise InternalSolverError(msat_msg)
         if rformula != formula:
-            warn("MathSAT convert(): UF with bool arguments have been translated")
+            warn(
+                "MathSAT convert(): UF with bool arguments have been translated",
+                stacklevel=2,
+            )
         return res
 
     def walk_and(self, formula: FNode, args: list[Any], **kwargs) -> Any:

@@ -1438,7 +1438,10 @@ class SmtLibParser:
             self.logic = get_logic_by_name(name)
             return SmtLibCommand(current, [self.logic])
         except UndefinedLogicError:
-            warn("Unknown logic '" + name + "'. Ignoring set-logic command.")
+            warn(
+                "Unknown logic '" + name + "'. Ignoring set-logic command.",
+                stacklevel=2,
+            )
             return SmtLibCommand(current, [None])
 
     def _cmd_declare_const(self, current: str, tokens: Tokenizer) -> SmtLibCommand:

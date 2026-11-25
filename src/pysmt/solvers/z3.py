@@ -669,7 +669,7 @@ class Z3Converter(Converter, DagWalker):
                     import warnings
 
                     symb_type = self._z3_to_type(expr.sort())
-                    warnings.warn(f"Defining new symbol: {str(expr)}")
+                    warnings.warn(f"Defining new symbol: {str(expr)}", stacklevel=2)
                     return self.mgr.FreshSymbol(symb_type, template="__z3_%d")
         elif z3.is_function(expr):
             # This needs to be after we try to convert regular Symbols
