@@ -230,8 +230,6 @@ class BoolectorSolver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSol
 
         # EOC BoolectorOptions
 
-        pass
-
     @clear_pending_pop
     def _reset_assertions(self):
         self.btor = pyboolector.Boolector()

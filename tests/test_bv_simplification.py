@@ -138,7 +138,7 @@ class TestBvSimplification(TestCase):
 
     def extract(self):
         for l in self.all_bv_numbers():
-            for s in range(0, self.width):
+            for s in range(self.width):
                 for e in range(s, self.width):
                     self.check(BVExtract(l, start=s, end=e))
 
@@ -150,7 +150,7 @@ class TestBvSimplification(TestCase):
 
     def all_special(self):
         for l in self.all_bv_numbers():
-            for n in range(0, self.width + 1):
+            for n in range(self.width + 1):
                 for op in self.special_operators:
                     self.check(op(l, n))
 

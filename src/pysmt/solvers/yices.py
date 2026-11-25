@@ -337,7 +337,7 @@ class YicesSolver(SmtLibBasicSolver):
             bvarray = yices_api.make_empty_int32_array(cast(_BVType, ty).width)
             errcode = yices_api.yices_val_get_bv(self.model, yval, bvarray)
             self._check_error(errcode)
-            res = [bvarray[i] for i in range(0, cast(_BVType, ty).width)]
+            res = [bvarray[i] for i in range(cast(_BVType, ty).width)]
             str_val = "".join(str(x) for x in reversed(res))
             return self.mgr.BV("#b" + str_val)
         else:

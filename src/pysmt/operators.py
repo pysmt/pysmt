@@ -24,7 +24,7 @@ these operators.
 
 from itertools import chain
 
-ALL_TYPES = list(range(0, 67))
+ALL_TYPES = list(range(67))
 
 (
     FORALL,
