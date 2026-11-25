@@ -46,8 +46,8 @@ from pysmt.typing import _BVType
 try:
     import z3  # type: ignore[import]
     from z3.z3 import OptimizeObjective  # type: ignore[import]
-except ImportError:
-    raise SolverAPINotFound
+except ImportError as ex:
+    raise SolverAPINotFound from ex
 
 
 class Z3NativeOptimizer(Optimizer, Z3Solver):
@@ -104,12 +104,14 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
                         self.converter.back(opt_value)
                         model = Z3Model(self.environment, self.z3.model())
                         return model, model.get_value(goal.term())
-                except PysmtInfinityError:
+                except PysmtInfinityError as ex:
                     raise PysmtUnboundedOptimizationError(
                         "The optimal value is unbounded"
-                    )
-                except PysmtInfinitesimalError:
-                    raise PysmtInfinitesimalError("The optimal value is infinitesimal")
+                    ) from ex
+                except PysmtInfinitesimalError as ex:
+                    raise PysmtInfinitesimalError(
+                        "The optimal value is infinitesimal"
+                    ) from ex
             else:
                 return None
         finally:
@@ -158,12 +160,14 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
                     else:
                         self.converter.back(self.z3.lower(h))
                         models[goal] = (model, model.get_value(goal.term()))
-                except PysmtInfinityError:
+                except PysmtInfinityError as ex:
                     raise PysmtUnboundedOptimizationError(
                         "The optimal value is unbounded"
-                    )
-                except PysmtInfinitesimalError:
-                    raise PysmtInfinitesimalError("The optimal value is infinitesimal")
+                    ) from ex
+                except PysmtInfinitesimalError as ex:
+                    raise PysmtInfinitesimalError(
+                        "The optimal value is infinitesimal"
+                    ) from ex
             return models
         finally:
             self.pop()

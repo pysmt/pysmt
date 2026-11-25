@@ -66,8 +66,9 @@ def _find_library_or_installed_yices(name: str) -> str | None:
 ctypes.util.find_library = _find_library_or_installed_yices
 try:
     import yices_api  # type: ignore[import]
-except Exception:  # yices_api raises its own YicesAPIException when libyices is missing
-    raise SolverAPINotFound
+# yices_api raises its own YicesAPIException when libyices is missing
+except Exception as ex:
+    raise SolverAPINotFound from ex
 finally:
     ctypes.util.find_library = _find_library
 

@@ -620,7 +620,7 @@ class MSatConverter(Converter, DagWalker):
         except KeyError:
             raise ConvertExpressionError(
                 "Unsupported expression:", self._msat_lib.msat_term_repr(term)
-            )
+            ) from None
 
     def _sig_binary(self, term, args):
         t = self.env.stc.get_type(args[0])
@@ -739,7 +739,7 @@ class MSatConverter(Converter, DagWalker):
         except KeyError:
             raise ConvertExpressionError(
                 "Unsupported expression:", self._msat_lib.msat_term_repr(term)
-            )
+            ) from None
 
     def _back_adapter(self, op: Callable) -> Callable:
         """Create a function that for the given op.
@@ -1288,7 +1288,7 @@ class MSatQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
 
         try:
             return self.converter.back(res)
-        except ConvertExpressionError:
+        except ConvertExpressionError as ex:
             if logic <= LRA:
                 raise
             raise ConvertExpressionError(
@@ -1301,7 +1301,7 @@ class MSatQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
                     "exception object"
                 ),
                 expression=res,
-            )
+            ) from ex
 
     def walk_forall(self, formula, args, **kwargs):
         assert formula.is_forall()

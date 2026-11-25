@@ -94,7 +94,7 @@ def execute_script_fname(smtfile: str, logic: Logic, expected_result: bool):
                 return
             log = script.evaluate(cast(SmtLibSolver, solver))
     except NoSolverAvailableError:
-        raise SkipTest(f"No solver for logic {logic}.")
+        raise SkipTest(f"No solver for logic {logic}.") from None
     except SolverReturnedUnknownResultError:
         if not logic.quantifier_free:
             warnings.warn(

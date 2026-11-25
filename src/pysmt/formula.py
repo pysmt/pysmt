@@ -140,7 +140,7 @@ class FormulaManager:
         try:
             return self.symbols[name]
         except KeyError:
-            raise UndefinedSymbolError(name)
+            raise UndefinedSymbolError(name) from None
 
     def get_all_symbols(self) -> Iterable[FNode]:
         return self.symbols.values()

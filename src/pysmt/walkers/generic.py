@@ -128,7 +128,7 @@ class Walker(metaclass=MetaNodeTypeHandler):
             if fun is None:
                 raise pysmt.exceptions.UnsupportedOperatorError(
                     node_type=nt, expression=formula
-                )
+                ) from None
             return fun(self, formula, *args, **kwargs)
         return f(self, formula, *args, **kwargs)
 

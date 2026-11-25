@@ -38,7 +38,7 @@ try:
     HAS_CYTHON = True
 except ImportError as ex:
     if ENV_USE_CYTHON:
-        raise PysmtImportError(str(ex))
+        raise PysmtImportError(str(ex)) from ex
 
 if HAS_CYTHON and (ENV_USE_CYTHON or ENV_USE_CYTHON is None):
     USE_CYTHON = True
@@ -54,7 +54,7 @@ if USE_CYTHON:
             # If not specified, fall-ack
             USE_CYTHON = False
         else:
-            raise PysmtImportError(str(ex))
+            raise PysmtImportError(str(ex)) from ex
 
 if not USE_CYTHON:
     from pysmt.smtlib.parser.parser import *

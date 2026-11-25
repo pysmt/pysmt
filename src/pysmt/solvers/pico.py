@@ -19,8 +19,8 @@ from pysmt.exceptions import SolverAPINotFound
 
 try:
     import picosat  # type: ignore[import]
-except ImportError:
-    raise SolverAPINotFound
+except ImportError as ex:
+    raise SolverAPINotFound from ex
 
 import pysmt.logics
 from pysmt import typing as types

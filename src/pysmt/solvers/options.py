@@ -98,8 +98,10 @@ class SolverOptions:
         if solver_options is not None:
             try:
                 solver_options = dict(solver_options)
-            except BaseException:
-                raise ValueError(f"Invalid value {solver_options} for 'solver_options'")
+            except BaseException as ex:
+                raise ValueError(
+                    f"Invalid value {solver_options} for 'solver_options'"
+                ) from ex
         else:
             solver_options = dict()
         self.solver_options = solver_options

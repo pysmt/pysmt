@@ -28,8 +28,8 @@ from pysmt.typing import PySMTType
 
 try:
     import z3  # type: ignore[import]
-except ImportError:
-    raise SolverAPINotFound
+except ImportError as ex:
+    raise SolverAPINotFound from ex
 
 # Keep array models expressed as values instead of Lambdas
 # (see https://github.com/Z3Prover/z3/issues/1769)
@@ -144,10 +144,10 @@ class Z3Options(SolverOptions):
     def _set_option(z3solver: z3.Solver, name: str, value: Any):
         try:
             z3solver.set(name, value)
-        except z3.Z3Exception:
-            raise PysmtValueError(f"Error setting the option '{name}={value}'")
-        except z3.z3types.Z3Exception:
-            raise PysmtValueError(f"Error setting the option '{name}={value}'")
+        except z3.Z3Exception as ex:
+            raise PysmtValueError(f"Error setting the option '{name}={value}'") from ex
+        except z3.z3types.Z3Exception as ex:
+            raise PysmtValueError(f"Error setting the option '{name}={value}'") from ex
 
     def __call__(self, solver: "Z3Solver"):
         self._set_option(solver.z3, "model", self.generate_models)
@@ -158,10 +158,10 @@ class Z3Options(SolverOptions):
         for k, v in self.solver_options.items():
             try:
                 self._set_option(solver.z3, str(k), v)
-            except z3.Z3Exception:
-                raise PysmtValueError(f"Error setting the option '{k}={v}'")
-            except z3.z3types.Z3Exception:
-                raise PysmtValueError(f"Error setting the option '{k}={v}'")
+            except z3.Z3Exception as ex:
+                raise PysmtValueError(f"Error setting the option '{k}={v}'") from ex
+            except z3.z3types.Z3Exception as ex:
+                raise PysmtValueError(f"Error setting the option '{k}={v}'") from ex
 
 
 # EOC Z3Options
@@ -1099,7 +1099,7 @@ class Z3QuantifierEliminator(QuantifierEliminator):
         pysmt_res = None
         try:
             pysmt_res = self.converter.back(res)
-        except ConvertExpressionError:
+        except ConvertExpressionError as ex:
             if logic <= LRA:
                 raise
             raise ConvertExpressionError(
@@ -1112,7 +1112,7 @@ class Z3QuantifierEliminator(QuantifierEliminator):
                     "exception object"
                 ),
                 expression=res,
-            )
+            ) from ex
 
         return pysmt_res
 
