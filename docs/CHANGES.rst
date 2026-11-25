@@ -63,6 +63,9 @@ Change Log
   uses literals and comprehensions instead of ``set``, ``dict``,
   ``list`` and ``tuple`` calls where possible (#873).
 
+* The ruff ``PIE`` (flake8-pie) rules are enabled, so the code has no
+  redundant ``pass`` statements or ``range`` start arguments (#873).
+
 * ``pysmt-install`` no longer prints a setuptools deprecation warning, and
   its confirmation prompt accepts ``y`` and ``yes`` in any case (#867).
 
