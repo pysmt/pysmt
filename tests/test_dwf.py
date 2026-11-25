@@ -75,7 +75,7 @@ class TestDwf(TestCase):
         old_types_set = set(all_types())
         new_t = new_node_type()
         new_types_set = set(all_types())
-        self.assertEqual(new_types_set - old_types_set, set([new_t]))
+        self.assertEqual(new_types_set - old_types_set, {new_t})
 
     def test_03_dwf_is_environment_local(self):
         # A DWF registered in one environment must not leak into another.

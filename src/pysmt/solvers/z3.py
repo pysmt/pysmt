@@ -168,9 +168,9 @@ class Z3Options(SolverOptions):
 
 
 class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolver):
-    LOGICS: Iterable[Logic] = (PYSMT_LOGICS | {AUFLIRA, AUFLIA, AUFNIRA, ALIA}) - set(
+    LOGICS: Iterable[Logic] = (PYSMT_LOGICS | {AUFLIRA, AUFLIA, AUFNIRA, ALIA}) - {
         x for x in PYSMT_LOGICS if x.theory.strings
-    )
+    }
     OptionsClass = Z3Options
 
     SOLVERFOR_LOGIC_NAMES = [
@@ -295,7 +295,7 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolver):
     def _named_assertions_map(self):
         if self.options.unsat_cores_mode is not None:
             # not self.assertions: that would pop the assumptions level
-            return dict((t[0], (t[1], t[2])) for t in self._assertion_stack)
+            return {t[0]: (t[1], t[2]) for t in self._assertion_stack}
         return None
 
     def get_named_unsat_core(self):
@@ -321,7 +321,7 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolver):
             )
 
         assumptions = self.z3.unsat_core()
-        pysmt_assumptions = set(self.converter.back(t) for t in assumptions)
+        pysmt_assumptions = {self.converter.back(t) for t in assumptions}
 
         res = {}
         core_assumptions = set()

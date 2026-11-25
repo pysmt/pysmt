@@ -272,9 +272,9 @@ class TestRegressions(TestCase):
     def test_determinism(self):
         def get_set(env):
             mgr = env.formula_manager
-            r = set(mgr.Symbol(f"x{i}") for i in range(1000))
+            r = {mgr.Symbol(f"x{i}") for i in range(1000)}
             for f, _, _, _ in get_example_formulae(env):
-                r |= set([f])
+                r |= {f}
             return r
 
         # As first thing on the environment we build the set of formulae

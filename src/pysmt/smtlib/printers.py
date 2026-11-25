@@ -51,7 +51,7 @@ def write_annotations_dag(f: Callable) -> Callable:
         res = f(self, formula, *args, **kwargs)
         if annots is None or formula not in annots:
             return res
-        items = list()
+        items = []
         for key, values in annots[formula].items():
             items.append(f" :{key}")
             items.extend(f" {v}" for v in values)
@@ -445,9 +445,9 @@ class SmtDagPrinter(DagWalker):
     def printer(self, f: FNode):
         self.openings = 0
         self.name_seed = 0
-        self.names = set(
+        self.names = {
             quote(x.symbol_name()) for x in self.env.fvo.get_free_variables(f)
-        )
+        }
 
         key = self.walk(f)
         self.write(key)

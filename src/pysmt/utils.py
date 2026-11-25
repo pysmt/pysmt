@@ -30,7 +30,7 @@ def all_assignments(
     """Generates all possible assignments for a set of boolean variables."""
     mgr = env.formula_manager
     for set_ in powerset(bool_variables):
-        yield dict((v, mgr.Bool(v in set_)) for v in bool_variables)
+        yield {v: mgr.Bool(v in set_) for v in bool_variables}
 
 
 T = TypeVar("T")
@@ -84,7 +84,7 @@ def interactive_char_iterator(handle):
 _simple_symbol_prog = re.compile(
     r"^[~!@\$%\^&\*_\-+=<>\.\?\/A-Za-z][~!@\$%\^&\*_\-+=<>\.\?\/A-Za-z0-9]*$"
 )
-_keywords = set(["Int", "Real", "Bool"])
+_keywords = {"Int", "Real", "Bool"}
 
 
 def quote(name: str, style: str = "|") -> str:

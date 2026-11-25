@@ -154,7 +154,7 @@ class TestFormulaManager(TestCase):
         n = self.mgr.And(self.x, self.y)
         self.assertIsNotNone(n)
         self.assertTrue(n.is_and())
-        self.assertEqual(n.get_free_variables(), set([self.x, self.y]))
+        self.assertEqual(n.get_free_variables(), {self.x, self.y})
 
         m = self.mgr.And([self.x, self.y])
         self.assertEqual(m, n, "And(1,2) != And([1,2]")
@@ -175,7 +175,7 @@ class TestFormulaManager(TestCase):
         n = self.mgr.Or(self.x, self.y)
         self.assertIsNotNone(n)
         self.assertTrue(n.is_or())
-        self.assertEqual(n.get_free_variables(), set([self.x, self.y]))
+        self.assertEqual(n.get_free_variables(), {self.x, self.y})
 
         m = self.mgr.Or([self.x, self.y])
         self.assertEqual(m, n, "Or(1,2) != Or([1,2]")
@@ -198,7 +198,7 @@ class TestFormulaManager(TestCase):
         self.assertIsNotNone(n)
 
         self.assertTrue(n.is_not())
-        self.assertEqual(n.get_free_variables(), set([self.x]))
+        self.assertEqual(n.get_free_variables(), {self.x})
 
         args = n.args()
         self.assertIn(self.x, args)
@@ -212,7 +212,7 @@ class TestFormulaManager(TestCase):
         self.assertIsNotNone(n)
 
         self.assertTrue(n.is_implies())
-        self.assertEqual(n.get_free_variables(), set([self.x, self.y]))
+        self.assertEqual(n.get_free_variables(), {self.x, self.y})
 
         args = n.args()
         self.assertEqual(self.x, args[0])
@@ -225,7 +225,7 @@ class TestFormulaManager(TestCase):
         self.assertIsNotNone(n)
 
         self.assertTrue(n.is_iff())
-        self.assertEqual(n.get_free_variables(), set([self.x, self.y]))
+        self.assertEqual(n.get_free_variables(), {self.x, self.y})
 
         args = n.args()
         self.assertIn(self.x, args)
@@ -287,7 +287,7 @@ class TestFormulaManager(TestCase):
         self.assertIsNotNone(n)
 
         self.assertTrue(n.is_minus())
-        self.assertEqual(n.get_free_variables(), set([self.p, self.q]))
+        self.assertEqual(n.get_free_variables(), {self.p, self.q})
         self.assertTrue(n.is_theory_op())
 
         with self.assertRaises(PysmtTypeError):
@@ -320,7 +320,7 @@ class TestFormulaManager(TestCase):
         n = self.mgr.Times(self.r, self.s)
         self.assertIsNotNone(n)
         self.assertTrue(n.is_times())
-        self.assertEqual(n.get_free_variables(), set([self.r, self.s]))
+        self.assertEqual(n.get_free_variables(), {self.r, self.s})
 
         n = self.mgr.Times(self.iconst, self.q)
         self.assertIsNotNone(n)
@@ -390,7 +390,7 @@ class TestFormulaManager(TestCase):
         self.assertIsNotNone(n)
 
         self.assertTrue(n.is_equals())
-        self.assertEqual(n.get_free_variables(), set([self.p, self.q]))
+        self.assertEqual(n.get_free_variables(), {self.p, self.q})
         self.assertTrue(n.is_theory_relation())
 
         with self.assertRaises(PysmtTypeError):
@@ -447,7 +447,7 @@ class TestFormulaManager(TestCase):
         self.assertIsNotNone(n)
 
         self.assertTrue(n.is_le())
-        self.assertEqual(n.get_free_variables(), set([self.r, self.s]))
+        self.assertEqual(n.get_free_variables(), {self.r, self.s})
 
         args = n.args()
         self.assertIn(self.r, args)
@@ -475,7 +475,7 @@ class TestFormulaManager(TestCase):
         self.assertIsNotNone(n)
 
         self.assertTrue(n.is_lt())
-        self.assertEqual(n.get_free_variables(), set([self.r, self.s]))
+        self.assertEqual(n.get_free_variables(), {self.r, self.s})
 
         args = n.args()
         self.assertIn(self.r, args)
@@ -499,7 +499,7 @@ class TestFormulaManager(TestCase):
         self.assertIsNotNone(n)
 
         self.assertTrue(n.is_ite())
-        self.assertEqual(n.get_free_variables(), set([self.x, self.p, self.q]))
+        self.assertEqual(n.get_free_variables(), {self.x, self.p, self.q})
 
         with self.assertRaises(PysmtTypeError):
             self.mgr.Ite(self.x, self.p, self.r)
@@ -514,7 +514,7 @@ class TestFormulaManager(TestCase):
         self.assertEqual(len(args), 2)
 
         self.assertTrue(n.is_function_application())
-        self.assertEqual(n.get_free_variables(), set([self.f, self.r, self.s]))
+        self.assertEqual(n.get_free_variables(), {self.f, self.r, self.s})
 
     def test_0arity_function(self):
         # Calling FunctionType on a 0-arity list of parameters returns
@@ -603,7 +603,7 @@ class TestFormulaManager(TestCase):
         self.assertEqual(n1, n2, "Constructed Plus expression do not match")
 
         self.assertTrue(n1.is_plus())
-        self.assertEqual(set([self.r, self.s]), n1.get_free_variables())
+        self.assertEqual({self.r, self.s}, n1.get_free_variables())
 
         one = self.mgr.Plus([self.p])
         self.assertEqual(one, self.p)
@@ -688,7 +688,7 @@ class TestFormulaManager(TestCase):
                         "AllDifferent should not allow 2 symbols to be 1",
                     )
 
-        c = f.substitute(dict((symbols[i], self.mgr.Int(i)) for i in range(many)))
+        c = f.substitute({symbols[i]: self.mgr.Int(i) for i in range(many)})
         self.assertEqual(
             c.simplify(),
             self.mgr.Bool(True),
@@ -1010,7 +1010,7 @@ class TestFormulaManager(TestCase):
         self.assertEqual(f1, f2)
 
         self.assertTrue(f1.is_toreal())
-        self.assertEqual(set([self.p]), f1.get_free_variables())
+        self.assertEqual({self.p}, f1.get_free_variables())
 
         f3 = self.mgr.Equals(self.iconst, self.p)
         with self.assertRaises(PysmtTypeError):
