@@ -71,35 +71,35 @@ Houses = range(0, 5)
 def color(number, name):
     assert name in Color
     if number in Houses:
-        return Symbol("%d_color_%s" % (number, name))
+        return Symbol(f"{number}_color_{name}")
     return FALSE()
 
 
 def nat(number, name):
     assert name in Nat
     if number in Houses:
-        return Symbol("%d_nat_%s" % (number, name))
+        return Symbol(f"{number}_nat_{name}")
     return FALSE()
 
 
 def pet(number, name):
     assert name in Pet
     if number in Houses:
-        return Symbol("%d_pet_%s" % (number, name))
+        return Symbol(f"{number}_pet_{name}")
     return FALSE()
 
 
 def drink(number, name):
     assert name in Drink
     if number in Houses:
-        return Symbol("%d_drink_%s" % (number, name))
+        return Symbol(f"{number}_drink_{name}")
     return FALSE()
 
 
 def smoke(number, name):
     assert name in Smoke
     if number in Houses:
-        return Symbol("%d_smoke_%s" % (number, name))
+        return Symbol(f"{number}_smoke_{name}")
     return FALSE()
 
 
@@ -199,7 +199,7 @@ if model is None:
 
     conj = conjunctive_partition(problem)
     ucore = get_unsat_core(conj)
-    print("UNSAT-Core size '%d'" % len(ucore))
+    print(f"UNSAT-Core size '{len(ucore)}'")
     for f in ucore:
         print(f.serialize())
 
@@ -233,5 +233,5 @@ else:
         s = [x for x in Smoke if model[smoke(h, x)].is_true()][0]
         print(h, c, n, p, d, s)
         if p == "fish":
-            sol = "The '%s' owns the fish!" % n
+            sol = f"The '{n}' owns the fish!"
     print(sol)

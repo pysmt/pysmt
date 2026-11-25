@@ -17,7 +17,7 @@
 #
 import re
 from collections import namedtuple
-from typing import List, Optional
+from typing import Optional
 
 import pysmt
 import pysmt.typing as types
@@ -44,7 +44,7 @@ def parse(string):
 Rule = namedtuple("Rule", ["regex", "symbol", "is_functional"])
 
 
-class Lexer(object):
+class Lexer:
     """This class produces a stream of token objects for the Pratt-parser.
 
     The rules for the token are store in self.rules. Call self.compile() after
@@ -58,7 +58,7 @@ class Lexer(object):
         self.mgr = env.formula_manager
         self.get_type = env.stc.get_type
 
-        self.rules: List[Rule] = []
+        self.rules: list[Rule] = []
         self.scanner = None
         self.eoi = EndOfInput()
 
@@ -68,7 +68,7 @@ class Lexer(object):
         )
 
     def lexing_error(self, read):
-        raise PysmtSyntaxError("Unexpected input: %s" % read)
+        raise PysmtSyntaxError(f"Unexpected input: {read}")
 
     def tokenize(self, data):
         """The token generator for the given string"""
@@ -89,7 +89,7 @@ class Lexer(object):
 # EOC Lexer
 
 
-class GrammarSymbol(object):
+class GrammarSymbol:
     """Base class for all the parsing tokens"""
 
     def __init__(self, lbp=0, value=None, payload=None):
@@ -98,11 +98,11 @@ class GrammarSymbol(object):
         self.payload = payload
 
     def nud(self, parser):
-        raise PysmtSyntaxError("Syntax error at token '%s'." % parser.token)
+        raise PysmtSyntaxError(f"Syntax error at token '{parser.token}'.")
 
     def led(self, parser, left):
         raise PysmtSyntaxError(
-            "Syntax error at token '%s' (Read: '%s')." % (parser.token, left)
+            f"Syntax error at token '{parser.token}' (Read: '{left}')."
         )
 
 
@@ -322,7 +322,7 @@ class HRLexer(Lexer):
             if b.is_constant():
                 return op(a, b.constant_value())
             else:
-                raise PysmtSyntaxError("Constant expected, got '%s'" % b)
+                raise PysmtSyntaxError(f"Constant expected, got '{b}'")
 
         return _res
 
@@ -431,7 +431,7 @@ class OpenPar(GrammarSymbol):
     def nud(self, parser):
         r = parser.expression()
         if type(parser.token) is not ClosePar:
-            raise SyntaxError("Expected ')', got '%s'" % parser.token)
+            raise SyntaxError(f"Expected ')', got '{parser.token}'")
         parser.advance()
         return r
 
@@ -499,7 +499,7 @@ class Quantifier(GrammarSymbol):
         return self.operator(qvars, matrix)
 
 
-class PrattParser(object):
+class PrattParser:
     """The Pratt-Parser
 
     This parser is explained in:
@@ -535,7 +535,7 @@ class PrattParser(object):
 
     def parse_fname(self, fname):
         """Parses the content of the given file name"""
-        with open(fname, "r") as f:
+        with open(fname) as f:
             return self.parse(f.read())
 
     def parse(self, string):
@@ -547,7 +547,7 @@ class PrattParser(object):
         try:
             bd = next(self.tokenizer)
             raise PysmtSyntaxError(
-                "Bogus data after expression: '%s' (Partial: %s)" % (bd, result)
+                f"Bogus data after expression: '{bd}' (Partial: {result})"
             )
         except StopIteration:
             return result
@@ -562,7 +562,7 @@ class PrattParser(object):
         ParserError
         """
         if type(self.token) is not token_class:
-            raise PysmtSyntaxError("Expected '%s'" % token_repr)
+            raise PysmtSyntaxError(f"Expected '{token_repr}'")
         self.advance()
 
 

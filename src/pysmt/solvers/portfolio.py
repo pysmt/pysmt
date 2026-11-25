@@ -16,9 +16,10 @@
 #   limitations under the License.
 #
 import logging
+from collections.abc import Iterable
 from multiprocessing import Pipe, Process, Queue
 from multiprocessing.connection import Connection
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Union, cast
+from typing import Any, cast
 
 import pysmt
 from pysmt.decorators import clear_pending_pop
@@ -38,9 +39,9 @@ class PortfolioOptions(SolverOptions):
         for k, v in self.solver_options.items():
             if k == "exit_on_exception":
                 if v not in (True, False):
-                    raise ValueError("Invalid value for %s: %s" % (str(k), str(v)))
+                    raise ValueError(f"Invalid value for {str(k)}: {str(v)}")
             else:
-                raise ValueError("Unrecognized option '%s'." % k)
+                raise ValueError(f"Unrecognized option '{k}'.")
             # Store option
             setattr(self, k, v)
 
@@ -58,9 +59,9 @@ class Portfolio(IncrementalTrackingSolver):
 
     def __init__(
         self,
-        solvers_set: Iterable[Union[str, Tuple[str, Dict[str, Dict[str, Any]]]]],
+        solvers_set: Iterable[str | tuple[str, dict[str, dict[str, Any]]]],
         environment: "pysmt.environment.Environment",
-        logic: Union[str, Logic],
+        logic: str | Logic,
         **options,
     ):
         """Creates a portfolio using the specified solvers.
@@ -85,18 +86,18 @@ class Portfolio(IncrementalTrackingSolver):
         IncrementalTrackingSolver.__init__(
             self, environment=environment, logic=logic, **options
         )
-        self.solvers: List[Tuple[str, Dict[str, Any]]] = []
+        self.solvers: list[tuple[str, dict[str, Any]]] = []
         self._process_solver_set(solvers_set)
         # Check that the names are valid ?
         all_solvers = set(self.environment.factory.all_solvers(logic=logic))
         not_found = {s for s, _ in self.solvers} - all_solvers
         if len(not_found) != 0:
-            raise ValueError("Cannot find solvers %s" % not_found)
+            raise ValueError(f"Cannot find solvers {not_found}")
 
         # After Solving, we only keep the solver that finished first.
         # We can extract models from the solver, unsat cores, etc
-        self._ext_solver: Optional[Process] = None  # Existing solver Process
-        self._ctrl_pipe: Optional[Connection] = None  # Ctrl Pipe to the existing solver
+        self._ext_solver: Process | None = None  # Existing solver Process
+        self._ctrl_pipe: Connection | None = None  # Ctrl Pipe to the existing solver
 
     def _process_solver_set(self, sset):
         """The sset can contain both solver names and pairs name options."""
@@ -121,7 +122,7 @@ class Portfolio(IncrementalTrackingSolver):
         pass
 
     @clear_pending_pop
-    def _add_assertion(self, formula: FNode, named: Optional[str] = None):
+    def _add_assertion(self, formula: FNode, named: str | None = None):
         return formula
 
     @clear_pending_pop
@@ -133,7 +134,7 @@ class Portfolio(IncrementalTrackingSolver):
         pass
 
     @clear_pending_pop
-    def _solve(self, assumptions: Optional[Iterable[FNode]] = None) -> bool:
+    def _solve(self, assumptions: Iterable[FNode] | None = None) -> bool:
         # We destroy the last solver before solving again. Note: We
         # might be able to do something smarter by keeping track of
         # the state of the solver. This, however, requires more
@@ -152,10 +153,10 @@ class Portfolio(IncrementalTrackingSolver):
             _debug("Creating instance of %s", sname)
             options = opts
             _p = Process(
-                name="%d (%s)" % (idx, sname),
+                name=f"{idx} ({sname})",
                 target=_run_solver,
                 args=(
-                    "%d (%s)" % (idx, sname),
+                    f"{idx} ({sname})",
                     sname,
                     self.logic,
                     options,
@@ -281,4 +282,4 @@ def _run_solver(idx, solver, logic, options, formula, signaling_queue, ctrl_pipe
                 args = env.formula_manager.normalize(args)
                 ctrl_pipe.send(s.get_value(args))
             else:
-                raise ValueError("Unknown command '%s'" % cmd)
+                raise ValueError(f"Unknown command '{cmd}'")

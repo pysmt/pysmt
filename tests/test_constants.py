@@ -42,7 +42,7 @@ class TestConstants(TestCase):
         self.assertFalse(is_pysmt_integer(4.0))
         self.assertTrue(is_pysmt_integer(Integer(4)))
 
-        self.assertTrue(is_python_integer(int(2)))
+        self.assertTrue(is_python_integer(2))
         if HAS_GMPY:
             from gmpy2 import mpz  # type: ignore[import]
 
@@ -67,7 +67,7 @@ class TestConstants(TestCase):
         self.assertEqual(Integer(4), pysmt_integer_from_integer(pyFraction(4)))
 
     def test_to_python_integer(self):
-        res = int(4)
+        res = 4
         self.assertEqual(res, to_python_integer(pysmt_integer_from_integer(4)))
         self.assertEqual(res, to_python_integer(pysmt_integer_from_integer(Integer(4))))
         self.assertEqual(

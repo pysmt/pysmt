@@ -36,15 +36,15 @@ from pysmt.typing import BOOL
 
 def next_var(v):
     """Returns the 'next' of the given variable"""
-    return Symbol("next(%s)" % v.symbol_name(), v.symbol_type())
+    return Symbol(f"next({v.symbol_name()})", v.symbol_type())
 
 
 def at_time(v, t):
     """Builds an SMT variable representing v at time t"""
-    return Symbol("%s@%d" % (v.symbol_name(), t), v.symbol_type())
+    return Symbol(f"{v.symbol_name()}@{t}", v.symbol_type())
 
 
-class TransitionSystem(object):
+class TransitionSystem:
     """Trivial representation of a Transition System."""
 
     def __init__(self, variables, init, trans):
@@ -56,7 +56,7 @@ class TransitionSystem(object):
 # EOC TransitionSystem
 
 
-class PDR(object):
+class PDR:
     def __init__(self, system):
         self.system = system
         self.frames = [system.init]
@@ -65,24 +65,24 @@ class PDR(object):
 
     def check_property(self, prop):
         """Property Directed Reachability approach without optimizations."""
-        print("Checking property %s..." % prop)
+        print(f"Checking property {prop}...")
 
         while True:
             cube = self.get_bad_state(prop)
             if cube is not None:
                 # Blocking phase of a bad state
                 if self.recursive_block(cube):
-                    print("--> Bug found at step %d" % (len(self.frames)))
+                    print(f"--> Bug found at step {len(self.frames)}")
                     break
                 else:
-                    print("   [PDR] Cube blocked '%s'" % str(cube))
+                    print(f"   [PDR] Cube blocked '{str(cube)}'")
             else:
                 # Checking if the last two frames are equivalent i.e., are inductive
                 if self.inductive():
                     print("--> The system is safe!")
                     break
                 else:
-                    print("   [PDR] Adding frame %d..." % (len(self.frames)))
+                    print(f"   [PDR] Adding frame {len(self.frames)}...")
                     self.frames.append(TRUE())
 
     def get_bad_state(self, prop):
@@ -133,7 +133,7 @@ class PDR(object):
         self.solver.exit()
 
 
-class BMCInduction(object):
+class BMCInduction:
     def __init__(self, system):
         self.system = system
 
@@ -200,16 +200,16 @@ class BMCInduction(object):
 
     def check_property(self, prop):
         """Interleaves BMC and K-Ind to verify the property."""
-        print("Checking property %s..." % prop)
+        print(f"Checking property {prop}...")
         for b in range(100):
             f = self.get_bmc(prop, b)
-            print("   [BMC]    Checking bound %d..." % (b + 1))
+            print(f"   [BMC]    Checking bound {b + 1}...")
             if is_sat(f):
-                print("--> Bug found at step %d" % (b + 1))
+                print(f"--> Bug found at step {b + 1}")
                 return
 
             f = self.get_k_induction(prop, b)
-            print("   [K-IND]  Checking bound %d..." % (b + 1))
+            print(f"   [K-IND]  Checking bound {b + 1}...")
             if is_unsat(f):
                 print("--> The system is safe!")
                 return

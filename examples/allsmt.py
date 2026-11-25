@@ -63,4 +63,4 @@ f = And(
 important = get_atoms(f) - {y}
 result = all_smt(f, important)
 
-print("'exists y . %s'\nis equivalent to\n'%s'" % (f, Or(result).serialize()))
+print(f"'exists y . {f}'\nis equivalent to\n'{Or(result).serialize()}'")

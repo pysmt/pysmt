@@ -42,12 +42,9 @@ class PicoSATInstaller(SolverInstaller):
         )
 
     def download(self):
-        self.complete_version = "%s.%s" % (
-            self.solver_version,
-            self.pypicosat_minor_version,
-        )
+        self.complete_version = f"{self.solver_version}.{self.pypicosat_minor_version}"
         pypi_link = (
-            "https://pypi.python.org/pypi/pyPicoSAT/%s/json" % self.complete_version
+            f"https://pypi.python.org/pypi/pyPicoSAT/{self.complete_version}/json"
         )
         response = urllib.request.urlopen(pypi_link)
         reader = codecs.getreader("utf-8")
@@ -61,9 +58,7 @@ class PicoSATInstaller(SolverInstaller):
         SolverInstaller.download(self)
 
     def compile(self):
-        picosat_dir = os.path.join(
-            self.extract_path, "picosat-%s" % self.solver_version
-        )
+        picosat_dir = os.path.join(self.extract_path, f"picosat-{self.solver_version}")
         SolverInstaller.run(
             "bash configure.sh",
             directory=picosat_dir,

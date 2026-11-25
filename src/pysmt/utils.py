@@ -17,7 +17,8 @@
 #
 import itertools
 import re
-from typing import Dict, Iterator, Optional, Sequence, Tuple, TypeVar, cast
+from collections.abc import Iterator, Sequence
+from typing import TypeVar, cast
 
 import pysmt
 
@@ -25,7 +26,7 @@ import pysmt
 def all_assignments(
     bool_variables: Sequence["pysmt.fnode.FNode"],  # type: ignore [name-defined]
     env: "pysmt.environment.Environment",  # type: ignore [name-defined]
-) -> Iterator[Dict["pysmt.fnode.FNode", "pysmt.fnode.FNode"]]:  # type: ignore [name-defined]
+) -> Iterator[dict["pysmt.fnode.FNode", "pysmt.fnode.FNode"]]:  # type: ignore [name-defined]
     """Generates all possible assignments for a set of boolean variables."""
     mgr = env.formula_manager
     for set_ in powerset(bool_variables):
@@ -35,7 +36,7 @@ def all_assignments(
 T = TypeVar("T")
 
 
-def powerset(elements: Sequence[T]) -> Iterator[Tuple[T, ...]]:
+def powerset(elements: Sequence[T]) -> Iterator[tuple[T, ...]]:
     """Generates the powerset of the given elements set.
 
     E.g., powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)
@@ -88,13 +89,13 @@ _keywords = set(["Int", "Real", "Bool"])
 
 def quote(name: str, style: str = "|") -> str:
     if name in _keywords or _simple_symbol_prog.match(name) is None:
-        name = name.replace("\\", "\\\\").replace("%s" % style, "\\%s" % style)
-        return "%s%s%s" % (style, name, style)
+        name = name.replace("\\", "\\\\").replace(f"{style}", f"\\{style}")
+        return f"{style}{name}{style}"
     else:
         return name
 
 
 # utility function to narrow a type from Optional[T] to [T] without having to assert it is not None
-def assert_not_none(value: Optional[T]) -> T:
-    assert value is not None, "Value: '%s' must not be None" % str(value)
+def assert_not_none(value: T | None) -> T:
+    assert value is not None, f"Value: '{str(value)}' must not be None"
     return cast(T, value)

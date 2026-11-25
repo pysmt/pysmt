@@ -28,25 +28,14 @@ its definition.
 """
 
 import fractions
-import sys
 import warnings
+from collections.abc import Callable, Iterable, Sequence
+from collections.abc import Iterable as CollectionsIterable
 from typing import (
     Any,
-    Callable,
-    Dict,
-    Iterable,
     Optional,
-    Sequence,
-    Tuple,
-    Union,
     cast,
 )
-
-if sys.version_info >= (3, 3):
-    from collections.abc import Iterable as CollectionsIterable
-else:
-    from collections import Iterable as CollectionsIterable
-
 
 import pysmt
 import pysmt.operators as op
@@ -74,24 +63,24 @@ from pysmt.utils import assert_not_none
 from pysmt.walkers.identitydag import IdentityDagWalker
 
 
-class FormulaManager(object):
+class FormulaManager:
     """FormulaManager is responsible for the creation of all formulae."""
 
     def __init__(self, env: "pysmt.environment.Environment"):
         self.env = env
         # Attributes for handling symbols and formulae
-        self.formulae: Dict[FNodeContent, FNode] = {}
-        self.symbols: Dict[str, FNode] = {}
+        self.formulae: dict[FNodeContent, FNode] = {}
+        self.symbols: dict[str, FNode] = {}
         self._fresh_guess = 0
         # get_type() from TypeChecker will be initialized lazily
-        self.get_type: Optional[Callable[[FNode], Optional[PySMTType]]] = None
+        self.get_type: Callable[[FNode], PySMTType | None] | None = None
         self._next_free_id = 1
 
-        self.int_constants: Dict[int, FNode] = {}
-        self.real_constants: Dict[
-            Union[Tuple[int, int], int, fractions.Fraction, float], FNode
+        self.int_constants: dict[int, FNode] = {}
+        self.real_constants: dict[
+            tuple[int, int] | int | fractions.Fraction | float, FNode
         ] = {}
-        self.string_constants: Dict[str, FNode] = {}
+        self.string_constants: dict[str, FNode] = {}
 
         self.true_formula = self.create_node(
             node_type=op.BOOL_CONSTANT, args=tuple(), payload=True
@@ -99,7 +88,7 @@ class FormulaManager(object):
         self.false_formula = self.create_node(
             node_type=op.BOOL_CONSTANT, args=tuple(), payload=False
         )
-        self._normalizer: Optional[FormulaContextualizer] = None
+        self._normalizer: FormulaContextualizer | None = None
 
     def _do_type_check_real(self, formula: FNode):
         assert self.get_type is not None
@@ -111,7 +100,7 @@ class FormulaManager(object):
         return self._do_type_check(formula)
 
     def create_node(
-        self, node_type: int, args: Tuple[FNode, ...], payload: Optional[Any] = None
+        self, node_type: int, args: tuple[FNode, ...], payload: Any | None = None
     ) -> FNode:
         content = FNodeContent(node_type, args, payload)
         if content in self.formulae:
@@ -162,9 +151,8 @@ class FormulaManager(object):
             return self._create_symbol(name, typename)
         if not s.symbol_type() == typename:
             raise PysmtTypeError(
-                "Trying to redefine symbol '%s' with a new type"
-                ". Previous type was '%s' new type is '%s'"
-                % (name, s.symbol_type(), typename)
+                f"Trying to redefine symbol '{name}' with a new type"
+                f". Previous type was '{s.symbol_type()}' new type is '{typename}'"
             )
         return s
 
@@ -174,7 +162,7 @@ class FormulaManager(object):
         return self.get_or_create_symbol(name, typename)
 
     def FreshSymbol(
-        self, typename: PySMTType = types.BOOL, template: Optional[str] = None
+        self, typename: PySMTType = types.BOOL, template: str | None = None
     ) -> FNode:
         if template is None:
             return self.new_fresh_symbol(typename)
@@ -220,8 +208,8 @@ class FormulaManager(object):
         lpt = len(cast(types._FunctionType, vname.symbol_type()).param_types)
         if len(params) != lpt:
             raise PysmtValueError(
-                "Incorrect number of parameters in function creation: got %d expected %d"
-                % (len(params), lpt)
+                "Incorrect number of parameters in function creation: "
+                f"got {len(params)} expected {lpt}"
             )
         return self.create_node(
             node_type=op.FUNCTION, args=tuple(params), payload=vname
@@ -261,7 +249,7 @@ class FormulaManager(object):
         """
         return self.create_node(node_type=op.MINUS, args=(left, right))
 
-    def Times(self, *args: Union[FNode, Iterable[FNode]]) -> FNode:
+    def Times(self, *args: FNode | Iterable[FNode]) -> FNode:
         """Creates a multiplication of terms
 
         This function has polymorphic n-arguments:
@@ -290,8 +278,8 @@ class FormulaManager(object):
             raise PysmtValueError("The exponent of POW must be a constant.", exponent)
 
         if base.is_constant():
-            val = cast(Union[int, fractions.Fraction], base.constant_value()) ** cast(
-                Union[int, fractions.Fraction], exponent.constant_value()
+            val = cast(int | fractions.Fraction, base.constant_value()) ** cast(
+                int | fractions.Fraction, exponent.constant_value()
             )
             return self.Real(val)
         return self.create_node(node_type=op.POW, args=(base, exponent))
@@ -365,9 +353,7 @@ class FormulaManager(object):
         """
         return self.create_node(node_type=op.ITE, args=(iff, left, right))
 
-    def Real(
-        self, value: Union[Tuple[int, int], int, fractions.Fraction, float]
-    ) -> FNode:
+    def Real(self, value: tuple[int, int] | int | fractions.Fraction | float) -> FNode:
         """Returns a Real-type constant of the given value.
 
         value can be:
@@ -437,14 +423,14 @@ class FormulaManager(object):
 
     def Bool(self, value: bool) -> FNode:
         if type(value) is not bool:
-            raise PysmtTypeError("Expecting bool, got %s" % type(value))
+            raise PysmtTypeError(f"Expecting bool, got {type(value)}")
 
         if value:
             return self.true_formula
         else:
             return self.false_formula
 
-    def And(self, *args: Union[FNode, Iterable[FNode]]) -> FNode:
+    def And(self, *args: FNode | Iterable[FNode]) -> FNode:
         """Returns a conjunction of terms.
 
         This function has polymorphic arguments:
@@ -462,7 +448,7 @@ class FormulaManager(object):
         else:
             return self.create_node(node_type=op.AND, args=tuple_args)
 
-    def Or(self, *args: Union[FNode, Iterable[FNode]]) -> FNode:
+    def Or(self, *args: FNode | Iterable[FNode]) -> FNode:
         """Returns an disjunction of terms.
 
         This function has polymorphic n-arguments:
@@ -480,7 +466,7 @@ class FormulaManager(object):
         else:
             return self.create_node(node_type=op.OR, args=tuple_args)
 
-    def Plus(self, *args: Union[FNode, Iterable[FNode]]) -> FNode:
+    def Plus(self, *args: FNode | Iterable[FNode]) -> FNode:
         """Returns an sum of terms.
 
         This function has polymorphic n-arguments:
@@ -511,7 +497,7 @@ class FormulaManager(object):
                 return self.Real(cast(int, formula.constant_value()))
             return self.create_node(node_type=op.TOREAL, args=(formula,))
         else:
-            raise PysmtTypeError("Argument is of type %s, but INT was expected!\n" % t)
+            raise PysmtTypeError(f"Argument is of type {t}, but INT was expected!\n")
 
     def ToInt(self, formula: FNode) -> FNode:
         """Cast a formula to integer type.
@@ -531,7 +517,7 @@ class FormulaManager(object):
                 return self.Int(value.numerator // value.denominator)
             return self.create_node(node_type=op.TOINT, args=(formula,))
         else:
-            raise PysmtTypeError("Argument is of type %s, but REAL was expected!\n" % t)
+            raise PysmtTypeError(f"Argument is of type {t}, but REAL was expected!\n")
 
     def IsInt(self, formula: FNode) -> FNode:
         """Returns whether the given real formula has an integer value.
@@ -546,9 +532,9 @@ class FormulaManager(object):
         elif t == types.REAL:
             return self.Equals(formula, self.ToReal(self.ToInt(formula)))
         else:
-            raise PysmtTypeError("Argument is of type %s, but REAL was expected!\n" % t)
+            raise PysmtTypeError(f"Argument is of type {t}, but REAL was expected!\n")
 
-    def AtMostOne(self, *args: Union[FNode, Iterable[FNode]]) -> FNode:
+    def AtMostOne(self, *args: FNode | Iterable[FNode]) -> FNode:
         """At most one of the bool expressions can be true at anytime.
 
         This using a quadratic encoding:
@@ -561,7 +547,7 @@ class FormulaManager(object):
             constraints.append(self.Implies(elem, self.Not(self.Or(bool_exprs[i:]))))
         return self.And(constraints)
 
-    def ExactlyOne(self, *args: Union[FNode, Iterable[FNode]]) -> FNode:
+    def ExactlyOne(self, *args: FNode | Iterable[FNode]) -> FNode:
         """Encodes an exactly-one constraint on the boolean symbols.
 
         This using a quadratic encoding:
@@ -572,7 +558,7 @@ class FormulaManager(object):
         args = self._polymorph_args_to_tuple(args)
         return self.And(self.Or(*args), self.AtMostOne(*args))
 
-    def AllDifferent(self, *args: Union[FNode, Iterable[FNode]]) -> FNode:
+    def AllDifferent(self, *args: FNode | Iterable[FNode]) -> FNode:
         """Encodes the 'all-different' constraint using two possible
         encodings.
 
@@ -590,7 +576,7 @@ class FormulaManager(object):
         return self.Not(self.Iff(left, right))
 
     def _MinWrap(
-        self, le: Callable[[FNode, FNode], FNode], *args: Union[FNode, Iterable[FNode]]
+        self, le: Callable[[FNode, FNode], FNode], *args: FNode | Iterable[FNode]
     ) -> FNode:
         """Returns the encoding of the minimum expression within args using the specified 'Lower-Equal' operator"""
         exprs = self._polymorph_args_to_tuple(args)
@@ -607,7 +593,7 @@ class FormulaManager(object):
             )
 
     def _MaxWrap(
-        self, le: Callable[[FNode, FNode], FNode], *args: Union[FNode, Iterable[FNode]]
+        self, le: Callable[[FNode, FNode], FNode], *args: FNode | Iterable[FNode]
     ) -> FNode:
         """Returns the encoding of the maximum expression within args using the specified 'Lower-Equal' operator"""
         exprs = self._polymorph_args_to_tuple(args)
@@ -623,25 +609,25 @@ class FormulaManager(object):
                 le, self._MaxWrap(le, exprs[0:h]), self._MaxWrap(le, exprs[h:])
             )
 
-    def MinBV(self, sign: bool, *args: Union[FNode, Iterable[FNode]]) -> FNode:
+    def MinBV(self, sign: bool, *args: FNode | Iterable[FNode]) -> FNode:
         """Returns the encoding of the minimum expression within args"""
         le = self.BVULE
         if sign:
             le = self.BVSLE
         return self._MinWrap(le, *args)
 
-    def MaxBV(self, sign: bool, *args: Union[FNode, Iterable[FNode]]) -> FNode:
+    def MaxBV(self, sign: bool, *args: FNode | Iterable[FNode]) -> FNode:
         """Returns the encoding of the maximum expression within args"""
         le = self.BVULE
         if sign:
             le = self.BVSLE
         return self._MaxWrap(le, *args)
 
-    def Min(self, *args: Union[FNode, Iterable[FNode]]) -> FNode:
+    def Min(self, *args: FNode | Iterable[FNode]) -> FNode:
         """Returns the encoding of the minimum expression within args"""
         return self._MinWrap(self.LE, *args)
 
-    def Max(self, *args: Union[FNode, Iterable[FNode]]) -> FNode:
+    def Max(self, *args: FNode | Iterable[FNode]) -> FNode:
         """Returns the encoding of the maximum expression within args"""
         return self._MaxWrap(self.LE, *args)
 
@@ -658,7 +644,7 @@ class FormulaManager(object):
             return self.Equals(left, right)
 
     # BitVectors
-    def BV(self, value: Union[str, int], width: Optional[int] = None) -> FNode:
+    def BV(self, value: str | int, width: int | None = None) -> FNode:
         """Return a constant of type BitVector.
 
         value can be either:
@@ -679,13 +665,13 @@ class FormulaManager(object):
                 value = int(value, 2)
             else:
                 raise PysmtValueError(
-                    "Expecting binary value as string, got %s instead." % value
+                    f"Expecting binary value as string, got {value} instead."
                 )
 
             if width is not None and width != str_width:
                 raise PysmtValueError(
                     "Specified width does not match string "
-                    "width (%d != %d)" % (width, str_width)
+                    f"width ({width} != {str_width})"
                 )
             width = str_width
 
@@ -701,20 +687,18 @@ class FormulaManager(object):
             _value = pysmt_integer_from_integer(value)
         else:
             raise PysmtTypeError(
-                "Invalid type in constant. The type was: %s" % str(type(value))
+                f"Invalid type in constant. The type was: {str(type(value))}"
             )
         if _value < 0:
-            raise PysmtValueError("Cannot specify a negative value: %s" % (str(_value)))
+            raise PysmtValueError(f"Cannot specify a negative value: {str(_value)}")
         if _value >= 2**width:
-            raise PysmtValueError(
-                "Cannot express %s in %s bits" % (str(_value), str(width))
-            )
+            raise PysmtValueError(f"Cannot express {str(_value)} in {str(width)} bits")
 
         return self.create_node(
             node_type=op.BV_CONSTANT, args=tuple(), payload=(_value, width)
         )
 
-    def SBV(self, value: Union[int, str], width: Optional[int] = None) -> FNode:
+    def SBV(self, value: int | str, width: int | None = None) -> FNode:
         """Returns a constant of type BitVector interpreting the sign.
 
         If the specified value is an integer, it is converted in the
@@ -730,13 +714,13 @@ class FormulaManager(object):
             max_val = (2 ** (width - 1)) - 1
             if value < min_val:
                 raise PysmtValueError(
-                    "Cannot represent a value (%s) lower "
-                    "than %d in %d bits" % (str(value), min_val, width)
+                    f"Cannot represent a value ({value}) lower "
+                    f"than {min_val} in {width} bits"
                 )
             if value > max_val:
                 raise PysmtValueError(
-                    "Cannot represent a value (%s) greater "
-                    "than %d in %d bits" % (str(value), max_val, width)
+                    f"Cannot represent a value ({value}) greater "
+                    f"than {max_val} in {width} bits"
                 )
 
             if value >= 0:
@@ -761,7 +745,7 @@ class FormulaManager(object):
             node_type=op.BV_NOT, args=(formula,), payload=(formula.bv_width(),)
         )
 
-    def BVAnd(self, *args: Union[FNode, Sequence[FNode]]) -> FNode:
+    def BVAnd(self, *args: FNode | Sequence[FNode]) -> FNode:
         """Returns the Bit-wise AND of bitvectors of the same size.
         If more than 2 arguments are passed, a left-associative formula is generated."""
         args = self._polymorph_args_to_tuple(args)
@@ -774,7 +758,7 @@ class FormulaManager(object):
             )
         return res
 
-    def BVOr(self, *args: Union[FNode, Sequence[FNode]]) -> FNode:
+    def BVOr(self, *args: FNode | Sequence[FNode]) -> FNode:
         """Returns the Bit-wise OR of bitvectors of the same size.
         If more than 2 arguments are passed, a left-associative formula is generated."""
         args = self._polymorph_args_to_tuple(args)
@@ -793,7 +777,7 @@ class FormulaManager(object):
             node_type=op.BV_XOR, args=(left, right), payload=(left.bv_width(),)
         )
 
-    def BVConcat(self, *args: Union[FNode, Sequence[FNode]]) -> FNode:
+    def BVConcat(self, *args: FNode | Sequence[FNode]) -> FNode:
         """Returns the Concatenation of the given BVs"""
         ex = self._polymorph_args_to_tuple(args)
         base = self.create_node(
@@ -810,18 +794,17 @@ class FormulaManager(object):
         return base
 
     def BVExtract(
-        self, formula: FNode, start: int = 0, end: Optional[int] = None
+        self, formula: FNode, start: int = 0, end: int | None = None
     ) -> FNode:
         """Returns the slice of formula from start to end (inclusive)."""
         if end is None:
             end = formula.bv_width() - 1
         assert is_python_integer(start) and is_python_integer(end)
-        assert end >= start and start >= 0, "Start: %d ; End: %d" % (start, end)
+        assert end >= start and start >= 0, f"Start: {start} ; End: {end}"
         size = end - start + 1
 
         assert size <= formula.bv_width(), (
-            "Invalid size: start=%d, end=%d, width=%d"
-            % (start, end, formula.bv_width())
+            f"Invalid size: start={start}, end={end}, width={formula.bv_width()}"
         )
         return self.create_node(
             node_type=op.BV_EXTRACT, args=(formula,), payload=(size, start, end)
@@ -849,7 +832,7 @@ class FormulaManager(object):
             node_type=op.BV_NEG, args=(formula,), payload=(formula.bv_width(),)
         )
 
-    def BVAdd(self, *args: Union[FNode, Sequence[FNode]]) -> FNode:
+    def BVAdd(self, *args: FNode | Sequence[FNode]) -> FNode:
         """Returns the sum of BV.
         If more than 2 arguments are passed, a left-associative formula is generated."""
         args = self._polymorph_args_to_tuple(args)
@@ -868,7 +851,7 @@ class FormulaManager(object):
             node_type=op.BV_SUB, args=(left, right), payload=(left.bv_width(),)
         )
 
-    def BVMul(self, *args: Union[FNode, Sequence[FNode]]) -> FNode:
+    def BVMul(self, *args: FNode | Sequence[FNode]) -> FNode:
         """Returns the product of BV.
         If more than 2 arguments are passed, a left-associative formula is generated."""
         args = self._polymorph_args_to_tuple(args)
@@ -893,7 +876,7 @@ class FormulaManager(object):
             node_type=op.BV_UREM, args=(left, right), payload=(left.bv_width(),)
         )
 
-    def BVLShl(self, left: FNode, right: Union[FNode, int]) -> FNode:
+    def BVLShl(self, left: FNode, right: FNode | int) -> FNode:
         """Returns the logical left shift the BV."""
         if is_python_integer(right):
             right = self.BV(cast(int, right), left.bv_width())
@@ -902,7 +885,7 @@ class FormulaManager(object):
             node_type=op.BV_LSHL, args=(left, right), payload=(left.bv_width(),)
         )
 
-    def BVLShr(self, left: FNode, right: Union[FNode, int]) -> FNode:
+    def BVLShr(self, left: FNode, right: FNode | int) -> FNode:
         """Returns the logical right shift the BV."""
         if is_python_integer(right):
             right = self.BV(cast(int, right), left.bv_width())
@@ -914,7 +897,7 @@ class FormulaManager(object):
     def BVRol(self, formula: FNode, steps: int) -> FNode:
         """Returns the LEFT rotation of the BV by the number of steps."""
         if not is_python_integer(steps):
-            raise PysmtTypeError("BVRol: 'steps' should be an integer. Got %s" % steps)
+            raise PysmtTypeError(f"BVRol: 'steps' should be an integer. Got {steps}")
         return self.create_node(
             node_type=op.BV_ROL, args=(formula,), payload=(formula.bv_width(), steps)
         )
@@ -922,7 +905,7 @@ class FormulaManager(object):
     def BVRor(self, formula: FNode, steps: int) -> FNode:
         """Returns the RIGHT rotation of the BV by the number of steps."""
         if not is_python_integer(steps):
-            raise PysmtTypeError("BVRor: 'steps' should be an integer. Got %s" % steps)
+            raise PysmtTypeError(f"BVRor: 'steps' should be an integer. Got {steps}")
         return self.create_node(
             node_type=op.BV_ROR, args=(formula,), payload=(formula.bv_width(), steps)
         )
@@ -934,7 +917,7 @@ class FormulaManager(object):
         """
         if not is_python_integer(increase):
             raise PysmtTypeError(
-                "BVZext: 'increase' should be an integer. Got %s" % increase
+                f"BVZext: 'increase' should be an integer. Got {increase}"
             )
         return self.create_node(
             node_type=op.BV_ZEXT,
@@ -949,7 +932,7 @@ class FormulaManager(object):
         """
         if not is_python_integer(increase):
             raise PysmtTypeError(
-                "BVSext: 'increase' should be an integer. Got %s" % increase
+                f"BVSext: 'increase' should be an integer. Got {increase}"
             )
         return self.create_node(
             node_type=op.BV_SEXT,
@@ -1070,7 +1053,7 @@ class FormulaManager(object):
         """Returns the length of a formula resulting a String"""
         return self.create_node(node_type=op.STR_LENGTH, args=(formula,))
 
-    def StrConcat(self, *args: Union[FNode, Sequence[FNode]]) -> FNode:
+    def StrConcat(self, *args: FNode | Sequence[FNode]) -> FNode:
         """Returns the concatenation of n Strings.
 
         s1, s2, ..., and sn are String terms.
@@ -1165,7 +1148,7 @@ class FormulaManager(object):
         self,
         idx_type: PySMTType,
         default: FNode,
-        assigned_values: Optional[Dict[FNode, FNode]] = None,
+        assigned_values: dict[FNode, FNode] | None = None,
     ) -> FNode:
         """Creates a node representing an array having index type equal to
         idx_type, initialized with default values.
@@ -1175,7 +1158,7 @@ class FormulaManager(object):
         default and the array is initialized correspondingly.
         """
         if not isinstance(idx_type, types.PySMTType):
-            raise PysmtTypeError("idx_type is not a valid type: '%s'" % idx_type)
+            raise PysmtTypeError(f"idx_type is not a valid type: '{idx_type}'")
 
         args = [default]
         if assigned_values:
@@ -1217,8 +1200,8 @@ class FormulaManager(object):
         return assert_not_none(self._normalizer).walk(formula)
 
     def _polymorph_args_to_tuple(
-        self, args: Sequence[Union[FNode, Iterable[FNode]]]
-    ) -> Tuple[FNode, ...]:
+        self, args: Sequence[FNode | Iterable[FNode]]
+    ) -> tuple[FNode, ...]:
         """Helper function to return a tuple of arguments from args.
 
         This function is used to allow N-ary operators to express their arguments
@@ -1231,7 +1214,7 @@ class FormulaManager(object):
         else:
             itargs = cast(Sequence[FNode], args)
 
-        def _check_fnode(f: Union[FNode, Iterable[FNode]]) -> FNode:
+        def _check_fnode(f: FNode | Iterable[FNode]) -> FNode:
             if not isinstance(f, FNode):
                 raise PysmtTypeError("Typing not respected")
             return f

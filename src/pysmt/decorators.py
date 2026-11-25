@@ -16,27 +16,27 @@
 #   limitations under the License.
 #
 import warnings
+from collections.abc import Callable
 from functools import wraps
-from typing import Callable, Optional
 
 import pysmt.exceptions
 
 
-class deprecated(object):
+class deprecated:
     """This is a decorator which can be used to mark functions
     as deprecated. It will result in a warning being emitted
     when the function is used."""
 
-    def __init__(self, alternative: Optional[str] = None):
+    def __init__(self, alternative: str | None = None):
         self.alternative = alternative
 
     def __call__(self, func: Callable) -> Callable:
         def newFunc(*args, **kwargs):
             alt = ""
             if self.alternative is not None:
-                alt = " You should call %s() instead!" % self.alternative
+                alt = f" You should call {self.alternative}() instead!"
             warnings.warn(
-                "Call to deprecated function %s().%s" % (func.__name__, alt),
+                f"Call to deprecated function {func.__name__}().{alt}",
                 category=DeprecationWarning,
                 stacklevel=2,
             )
@@ -92,7 +92,7 @@ def catch_conversion_error(f: Callable) -> Callable:
             raise pysmt.exceptions.ConvertExpressionError(
                 message="Could not convert the input expression. "
                 + "The formula contains unsupported operators. "
-                + "The error was: %s" % ex.message,
+                + f"The error was: {ex.message}",
                 expression=ex.expression,
             )
         return res

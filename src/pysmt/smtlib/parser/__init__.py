@@ -16,7 +16,6 @@
 #   limitations under the License.
 #
 import os
-from typing import Optional
 
 from pysmt.exceptions import PysmtImportError
 
@@ -28,7 +27,7 @@ from pysmt.exceptions import PysmtImportError
 #    Cython was not specified (unset env variable)
 #
 env_use_cython_val = os.environ.get("PYSMT_CYTHON")
-ENV_USE_CYTHON: Optional[bool] = None
+ENV_USE_CYTHON: bool | None = None
 if env_use_cython_val is not None:
     ENV_USE_CYTHON = env_use_cython_val.lower() in ["true", "1"]
 
@@ -88,20 +87,12 @@ else:
     import sys
 
     if not hasattr(pyximport, "build_module"):
-        if sys.version_info < (3, 5):
-            # _pyximport3 module requires at least Python 3.5
-            import pyximport._pyximport2 as pyximport  # type: ignore[import]
-        else:
-            import pyximport._pyximport3 as pyximport  # type: ignore[import]
+        import pyximport._pyximport3 as pyximport  # type: ignore[import]
 
     if not hasattr(pyximport, "build_module"):
         import sys
 
-        if sys.version_info < (3, 5):
-            # _pyximport3 module requires at least Python 3.5
-            import pyximport._pyximport2 as pyximport
-        else:
-            import pyximport._pyximport3 as pyximport
+        import pyximport._pyximport3 as pyximport
 
     pyx = pyximport.install()
     pyximport.uninstall(*pyx)
@@ -139,7 +130,7 @@ if __name__ == "__main__":
         if len(args) == 3:
             out = args[2]
         elif len(args) != 2:
-            print("Usage %s <file.smt2> [out.smt2]" % args[0])
+            print(f"Usage {args[0]} <file.smt2> [out.smt2]")
             exit(1)
 
         fname = args[1]

@@ -33,7 +33,7 @@ class TestSmtLibParserGriggio(TestCase):
                 self.assertEqual(
                     cmd.name,
                     TESTS[file_id][i],
-                    "Test %d: %s != %s " % (file_id, cmd.name, TESTS[file_id][i]),
+                    f"Test {file_id}: {cmd.name} != {TESTS[file_id][i]} ",
                 )
             # Serialize
             buf = StringIO()

@@ -56,14 +56,14 @@ class MathSATFamilyInstaller(SolverInstaller):
     def patch_setup_py(self):
         """Makes the bindings' setup.py build a complete, versioned package."""
         path = os.path.join(self.python_bindings_dir, "setup.py")
-        with open(path, "r") as f:
+        with open(path) as f:
             content = f.read()
         mathsat_dir = os.path.abspath(self.extract_path)
         replacements = [
             # pip may build in a copy of the directory, where '..' is not the archive
-            ("MATHSAT_DIR = '..'", "MATHSAT_DIR = %r" % mathsat_dir),
+            ("MATHSAT_DIR = '..'", f"MATHSAT_DIR = {mathsat_dir!r}"),
             # The version is what --check and pip report for the installed bindings
-            ("version='0.1',", "version=%r," % self.solver_version),
+            ("version='0.1',", f"version={self.solver_version!r},"),
             ("setup(name=", SETUP_PY_PREAMBLE % self.MODULE),
         ]
         if self.os_name == "linux":
@@ -73,7 +73,7 @@ class MathSATFamilyInstaller(SolverInstaller):
             )
         for old, new in replacements:
             if content.count(old) != 1:
-                raise PysmtException("Cannot patch %s: %r not found" % (path, old))
+                raise PysmtException(f"Cannot patch {path}: {old!r} not found")
             content = content.replace(old, new)
         with open(path, "w") as f:
             f.write(content)

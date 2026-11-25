@@ -54,7 +54,7 @@ def configure_environment(config_filename, environment):
     factory = environment.factory
 
     if not os.path.exists(config_filename):
-        raise PysmtIOError("File '%s' does not exists." % config_filename)
+        raise PysmtIOError(f"File '{config_filename}' does not exists.")
 
     # We do not use variable inside the config file
     config = cp.RawConfigParser()
@@ -69,13 +69,13 @@ def configure_environment(config_filename, environment):
 
         cmd = config.get(s, "command")
         assert cmd is not None, (
-            "Missing 'command' value in definitionof '%s' solver" % name
+            f"Missing 'command' value in definitionof '{name}' solver"
         )
 
         logics_string = config.get(s, "logics")
         if logics_string is None:
             warn(
-                "Missing 'logics' value in definition of '%s' solver" % name,
+                f"Missing 'logics' value in definition of '{name}' solver",
                 stacklevel=2,
             )
             continue
@@ -93,22 +93,22 @@ def configure_environment(config_filename, environment):
             elif infix.lower() == "false":
                 environment.enable_infix_notation = True
             else:
-                warn("Unknown value for 'use_infix_notation': %s" % infix, stacklevel=2)
+                warn(f"Unknown value for 'use_infix_notation': {infix}", stacklevel=2)
 
         if pref_list is not None:
             prefs = pref_list.split()
             for s in prefs:
                 if s not in factory.all_solvers():
                     warn(
-                        "Unknown solver '%s' in solver_preference_list" % s,
+                        f"Unknown solver '{s}' in solver_preference_list",
                         stacklevel=2,
                     )
 
             for s in factory.all_solvers():
                 if s not in prefs:
                     warn(
-                        "Solver '%s' is not in the preference list, "
-                        "and will be disabled." % s,
+                        f"Solver '{s}' is not in the preference list, "
+                        "and will be disabled.",
                         stacklevel=2,
                     )
 
@@ -136,12 +136,12 @@ def write_environment_configuration(config_filename, environment):
         if factory.is_generic_solver(s):
             args, logics = factory.get_generic_solver_info(s)
 
-            sec_name = "smtlibsolver %s" % s
+            sec_name = f"smtlibsolver {s}"
             config.add_section(sec_name)
 
             config.set(sec_name, "command", " ".join(args))
             config.set(sec_name, "logics", " ".join(str(l) for l in logics))
 
     # Writing the configuration to file
-    with open(config_filename, "wt") as configfile:
+    with open(config_filename, "w") as configfile:
         config.write(configfile)

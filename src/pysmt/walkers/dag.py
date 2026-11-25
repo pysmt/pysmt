@@ -15,7 +15,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Optional
 
 import pysmt
 from pysmt.fnode import FNode
@@ -48,10 +48,10 @@ class DagWalker(Walker):
         """
         Walker.__init__(self, env)
 
-        self.memoization: Dict[FNode, Any] = {}
+        self.memoization: dict[FNode, Any] = {}
         self.invalidate_memoization = invalidate_memoization
-        self.stack: List[
-            Tuple[bool, Union[FNode, Any]]
+        self.stack: list[
+            tuple[bool, FNode | Any]
         ] = []  # TODO consider to create a generic type variable instead of Any
 
     def _get_children(self, formula: FNode) -> Any:
@@ -129,7 +129,7 @@ class DagWalker(Walker):
         """Returns True, independently from the children's value."""
         return True
 
-    def walk_false(self, formula: FNode, args: List[bool], **kwargs) -> bool:
+    def walk_false(self, formula: FNode, args: list[bool], **kwargs) -> bool:
         # pylint: disable=unused-argument
         """Returns False, independently from the children's value."""
         return False
@@ -149,7 +149,7 @@ class DagWalker(Walker):
         """Returns True if any of the children returned True."""
         return any(args)
 
-    def walk_all(self, formula: FNode, args: List[Union[Any, bool]], **kwargs) -> bool:
+    def walk_all(self, formula: FNode, args: list[Any | bool], **kwargs) -> bool:
         # pylint: disable=unused-argument
         """Returns True if all the children returned True."""
         return all(args)

@@ -25,7 +25,6 @@ import tarfile
 import urllib.request
 import zipfile
 from contextlib import contextmanager
-from typing import Optional
 from urllib.error import HTTPError, URLError
 
 from pysmt.exceptions import PysmtException
@@ -42,8 +41,8 @@ def TemporaryPath(path):
         sys.path = old_path
 
 
-class SolverInstaller(object):
-    SOLVER: Optional[str] = None
+class SolverInstaller:
+    SOLVER: str | None = None
 
     def __init__(
         self,
@@ -97,7 +96,7 @@ class SolverInstaller(object):
 
     @property
     def python_version(self):
-        return "%d.%d" % sys.version_info[0:2]
+        return f"{sys.version_info.major}.{sys.version_info.minor}"
 
     def download_links(self):
         if self.native_link is not None:
@@ -117,12 +116,12 @@ class SolverInstaller(object):
                             raise
                         print(
                             "HTTP 404 while trying to get the archive using link"
-                            " '%s' (trial %d/%d)" % (link, turn + 1, self.trials_404)
+                            f" '{link}' (trial {turn + 1}/{self.trials_404})"
                         )
                     except URLError as e:
                         print(
                             "Error while trying to get the archive using link"
-                            " '%s' (trial %d/%d)" % (link, turn + 1, self.trials_404)
+                            f" '{link}' (trial {turn + 1}/{self.trials_404})"
                         )
                         raise e
 
@@ -137,7 +136,7 @@ class SolverInstaller(object):
             elif path.endswith(".tar.gz"):
                 SolverInstaller.untar(path, directory=self.base_dir)
             else:
-                raise ValueError("Unsupported archive for extraction: %s" % path)
+                raise ValueError(f"Unsupported archive for extraction: {path}")
 
     def compile(self):
         """Performs the compilation if needed"""
@@ -179,7 +178,7 @@ class SolverInstaller(object):
         meta = u.info()
         if meta.get("Content-Length") and len(meta.get("Content-Length")) > 0:
             file_size = int(meta.get("Content-Length"))
-            print("Downloading: %s Bytes: %s" % (file_name, file_size))
+            print(f"Downloading: {file_name} Bytes: {file_size}")
 
         block_sz = 8192
         count = 0
@@ -196,7 +195,7 @@ class SolverInstaller(object):
             ):
                 count += len(buff)
                 perc = (float(count) / float(file_size)) * 100.0
-                str_perc = "%.1f%%" % perc
+                str_perc = f"{perc:.1f}%"
                 sys.stdout.write("\r")
                 sys.stdout.write(str_perc)
                 sys.stdout.write(" " * (10 - len(str_perc)))
@@ -255,7 +254,7 @@ class SolverInstaller(object):
     @staticmethod
     def replace_in_file(file_path, old_str, new_str):
         """Replaces all occurrences of old_str with new_str in the given file"""
-        with open(file_path, "r") as f:
+        with open(file_path) as f:
             content = f.read()
         content = content.replace(old_str, new_str)
         with open(file_path, "w") as f:
@@ -319,7 +318,7 @@ class SolverInstaller(object):
             )
             output = output.strip()
         except Exception:
-            print("Error while checking %s" % package)
+            print(f"Error while checking {package}")
             return None
 
         if output == "NOT INSTALLED":

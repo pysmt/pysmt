@@ -16,7 +16,7 @@
 #   limitations under the License.
 #
 from collections import namedtuple
-from typing import List, Optional
+from typing import Optional
 
 import pysmt.logics
 from pysmt.constants import Fraction
@@ -119,8 +119,8 @@ SimpleExample = namedtuple("SimpleExample", ["expr", "is_valid", "is_sat", "logi
 
 
 def get_full_example_formulae(
-    environment: Optional[Environment] = None,
-) -> List[Example]:
+    environment: Environment | None = None,
+) -> list[Example]:
     """Return a list of Examples using the given environment."""
 
     if environment is None:

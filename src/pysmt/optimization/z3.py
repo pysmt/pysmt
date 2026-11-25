@@ -16,16 +16,9 @@
 #   limitations under the License.
 #
 
-from __future__ import absolute_import
 
+from collections.abc import Iterable, Iterator, Sequence
 from typing import (
-    Dict,
-    Iterable,
-    Iterator,
-    List,
-    Optional,
-    Sequence,
-    Tuple,
     cast,
 )
 
@@ -66,7 +59,7 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
         self.z3 = z3.Optimize()
 
     def _assert_z3_goal(
-        self, goal: Goal, goal_id: Optional[int] = None
+        self, goal: Goal, goal_id: int | None = None
     ) -> OptimizeObjective:
         h = None
         if goal.is_maxsmt_goal():
@@ -95,7 +88,7 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
         return h
 
     @clear_pending_pop
-    def optimize(self, goal: Goal, **kwargs) -> Optional[Tuple[Model, FNode]]:
+    def optimize(self, goal: Goal, **kwargs) -> tuple[Model, FNode] | None:
         self.push()
         try:
             h = self._assert_z3_goal(goal, 0)
@@ -125,7 +118,7 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
     @clear_pending_pop
     def pareto_optimize(
         self, goals: Sequence[Goal]
-    ) -> Iterator[Tuple[Model, List[FNode]]]:
+    ) -> Iterator[tuple[Model, list[FNode]]]:
         self._check_pareto_lexicographic_goals(goals, "pareto")
         self.push()
         try:
@@ -144,7 +137,7 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
     @clear_pending_pop
     def boxed_optimize(
         self, goals: Sequence[Goal]
-    ) -> Optional[Dict[Goal, Tuple[Model, FNode]]]:
+    ) -> dict[Goal, tuple[Model, FNode]] | None:
         self.push()
         try:
             self.z3.set(priority="box")
@@ -154,7 +147,7 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
             ]
             # In box mode, each call to check() yields the optimal model
             # of the next objective, in the order they were asserted
-            models: Dict[Goal, Tuple[Model, FNode]] = {}
+            models: dict[Goal, tuple[Model, FNode]] = {}
             for goal, h in zip(goals, handles):
                 if self.z3.check() != z3.sat:
                     return None
@@ -178,7 +171,7 @@ class Z3NativeOptimizer(Optimizer, Z3Solver):
     @clear_pending_pop
     def lexicographic_optimize(
         self, goals: Sequence[Goal]
-    ) -> Optional[Tuple[Model, List[FNode]]]:
+    ) -> tuple[Model, list[FNode]] | None:
         self._check_pareto_lexicographic_goals(goals, "lexicographic")
         self.push()
         try:

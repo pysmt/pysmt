@@ -44,10 +44,7 @@ class OptiMSatInstaller(MathSATFamilyInstaller):
 
         archive_name = archive_name_template.format(**format)
 
-        native_link = (
-            "https://optimathsat.disi.unitn.it/releases/optimathsat-%s/{archive_name}"
-            % solver_version
-        )
+        native_link = f"https://optimathsat.disi.unitn.it/releases/optimathsat-{solver_version}/{{archive_name}}"
 
         MathSATFamilyInstaller.__init__(
             self,
@@ -63,14 +60,8 @@ class OptiMSatInstaller(MathSATFamilyInstaller):
             libdir = os.path.join(self.python_bindings_dir, "../lib")
             incdir = os.path.join(self.python_bindings_dir, "../include")
             gmp_h_url = "https://github.com/mikand/tamer-windows-deps/raw/master/gmp/include/gmp.h"
-            mpir_dll_url = (
-                "https://github.com/Legrandin/mpir-windows-builds/blob/master/mpir-2.6.0_VS2015_%s/mpir.dll?raw=true"
-                % self.bits
-            )
-            mpir_lib_url = (
-                "https://github.com/Legrandin/mpir-windows-builds/blob/master/mpir-2.6.0_VS2015_%s/mpir.lib?raw=true"
-                % self.bits
-            )
+            mpir_dll_url = f"https://github.com/Legrandin/mpir-windows-builds/blob/master/mpir-2.6.0_VS2015_{self.bits}/mpir.dll?raw=true"
+            mpir_lib_url = f"https://github.com/Legrandin/mpir-windows-builds/blob/master/mpir-2.6.0_VS2015_{self.bits}/mpir.lib?raw=true"
 
             SolverInstaller.do_download(gmp_h_url, os.path.join(incdir, "gmp.h"))
             SolverInstaller.do_download(mpir_dll_url, os.path.join(libdir, "mpir.dll"))

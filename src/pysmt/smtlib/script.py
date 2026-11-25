@@ -18,8 +18,9 @@
 
 import warnings
 from collections import defaultdict, namedtuple
+from collections.abc import Iterator
 from io import StringIO, TextIOWrapper
-from typing import Any, Dict, Iterator, List, Optional, Set, TextIO, Tuple, Union
+from typing import Any, Optional, TextIO
 
 import pysmt
 import pysmt.smtlib.commands as smtcmd
@@ -49,13 +50,11 @@ from pysmt.solvers.smtlib import SmtLibSolver
 from pysmt.solvers.solver import Model
 from pysmt.typing import _TypeDecl
 
-PrinterType = Union[SmtPrinter, SmtDagPrinter]
+PrinterType = SmtPrinter | SmtDagPrinter
 
 
 def check_sat_filter(
-    log: List[
-        Tuple[str, Optional[Union[Model, bool, Goal, List[Tuple[FNode, FNode]]]]]
-    ],
+    log: list[tuple[str, Model | bool | Goal | list[tuple[FNode, FNode]] | None]],
 ) -> bool:
     """
     Returns the result of the check-sat command from a log.
@@ -72,8 +71,8 @@ def check_sat_filter(
 class SmtLibCommand(namedtuple("SmtLibCommand", ["name", "args"])):
     def serialize(
         self,
-        outstream: Optional[TextIO] = None,
-        printer: Optional[PrinterType] = None,
+        outstream: TextIO | None = None,
+        printer: PrinterType | None = None,
         daggify: bool = True,
         env=None,
     ):
@@ -101,63 +100,61 @@ class SmtLibCommand(namedtuple("SmtLibCommand", ["name", "args"])):
         assert outstream is not None and printer is not None
 
         if self.name == smtcmd.SET_OPTION:
-            outstream.write("(%s %s %s)" % (self.name, self.args[0], self.args[1]))
+            outstream.write(f"({self.name} {self.args[0]} {self.args[1]})")
 
         elif self.name == smtcmd.SET_INFO:
-            outstream.write(
-                "(%s %s %s)" % (self.name, self.args[0], quote(self.args[1]))
-            )
+            outstream.write(f"({self.name} {self.args[0]} {quote(self.args[1])})")
 
         elif self.name == smtcmd.ASSERT:
-            outstream.write("(%s " % self.name)
+            outstream.write(f"({self.name} ")
             printer.printer(self.args[0])
             outstream.write(")")
 
         elif self.name == smtcmd.ASSERT_SOFT:
-            outstream.write("(%s " % self.name)
+            outstream.write(f"({self.name} ")
             printer.printer(self.args[0])
             for a in self.args[1]:
                 option_name, value = a
                 if option_name == ":weight":
-                    outstream.write(" %s " % option_name)
+                    outstream.write(f" {option_name} ")
                     printer.printer(value)
                 else:
-                    outstream.write(" %s %s" % (option_name, value))
+                    outstream.write(f" {option_name} {value}")
             outstream.write(")")
 
         elif self.name == smtcmd.GET_VALUE:
-            outstream.write("(%s (" % self.name)
+            outstream.write(f"({self.name} (")
             for a in self.args:
                 printer.printer(a)
                 outstream.write(" ")
             outstream.write("))")
 
         elif self.name in [smtcmd.MAXIMIZE, smtcmd.MINIMIZE]:
-            outstream.write("(%s " % self.name)
+            outstream.write(f"({self.name} ")
             printer.printer(self.args[0])
             for a in self.args[1]:
                 option_name, value = a
                 if ":signed" != option_name:
-                    outstream.write(" %s %s" % (option_name, value))
+                    outstream.write(f" {option_name} {value}")
                 else:
-                    outstream.write(" %s " % option_name)
+                    outstream.write(f" {option_name} ")
             outstream.write(")")
 
         elif self.name in [smtcmd.MINMAX, smtcmd.MAXMIN]:
-            outstream.write("(%s" % self.name)
+            outstream.write(f"({self.name}")
             for a in self.args[0]:
                 outstream.write(" ")
                 printer.printer(a)
             for option_name, value in self.args[1] or []:
                 if option_name == ":signed":
                     if value:
-                        outstream.write(" %s" % option_name)
+                        outstream.write(f" {option_name}")
                 else:
-                    outstream.write(" %s %s" % (option_name, value))
+                    outstream.write(f" {option_name} {value}")
             outstream.write(")")
 
         elif self.name == smtcmd.CHECK_ALLSAT:
-            outstream.write("(%s " % self.name)
+            outstream.write(f"({self.name} ")
             if self.args:
                 outstream.write("(")
                 for expr in self.args[:-1]:
@@ -176,38 +173,35 @@ class SmtLibCommand(namedtuple("SmtLibCommand", ["name", "args"])):
             smtcmd.GET_MODEL,
             smtcmd.GET_OBJECTIVES,
         ]:
-            outstream.write("(%s)" % self.name)
+            outstream.write(f"({self.name})")
 
         elif self.name == smtcmd.SET_LOGIC:
-            outstream.write("(%s %s)" % (self.name, self.args[0]))
+            outstream.write(f"({self.name} {self.args[0]})")
 
         elif self.name in [smtcmd.DECLARE_FUN, smtcmd.DECLARE_CONST]:
             symbol = self.args[0]
             type_str = symbol.symbol_type().as_smtlib()
-            outstream.write(
-                "(%s %s %s)" % (self.name, quote(symbol.symbol_name()), type_str)
-            )
+            outstream.write(f"({self.name} {quote(symbol.symbol_name())} {type_str})")
 
         elif self.name == smtcmd.DEFINE_FUN:
             name = self.args[0]
             params_list = self.args[1]
             params = " ".join(
                 [
-                    "(%s %s)" % (v, v.symbol_type().as_smtlib(funstyle=False))
+                    f"({v} {v.symbol_type().as_smtlib(funstyle=False)})"
                     for v in params_list
                 ]
             )
             rtype = self.args[2]
             expr = self.args[3]
             outstream.write(
-                "(%s %s (%s) %s "
-                % (self.name, name, params, rtype.as_smtlib(funstyle=False))
+                f"({self.name} {name} ({params}) {rtype.as_smtlib(funstyle=False)} "
             )
             printer.printer(expr)
             outstream.write(")")
 
         elif self.name in [smtcmd.PUSH, smtcmd.POP, smtcmd.LOAD_OBJECTIVE_MODEL]:
-            outstream.write("(%s %d)" % (self.name, self.args[0]))
+            outstream.write(f"({self.name} {self.args[0]})")
 
         elif self.name == smtcmd.DEFINE_SORT:
             name = self.args[0]
@@ -215,18 +209,17 @@ class SmtLibCommand(namedtuple("SmtLibCommand", ["name", "args"])):
             params = " ".join(x.as_smtlib(funstyle=False) for x in params_list)
             rtype = self.args[2]
             outstream.write(
-                "(%s %s (%s) %s)"
-                % (self.name, name, params, rtype.as_smtlib(funstyle=False))
+                f"({self.name} {name} ({params}) {rtype.as_smtlib(funstyle=False)})"
             )
         elif self.name == smtcmd.DECLARE_SORT:
             type_decl = self.args[0]
-            outstream.write("(%s %s %d)" % (self.name, type_decl.name, type_decl.arity))
+            outstream.write(f"({self.name} {type_decl.name} {type_decl.arity})")
 
         elif self.name in smtcmd.ALL_COMMANDS:
             raise NotImplementedError(
-                "'%s' is a valid SMT-LIB command "
+                f"'{self.name}' is a valid SMT-LIB command "
                 "but it is currently not supported. "
-                "Please open a bug-report." % self.name
+                "Please open a bug-report."
             )
         else:
             raise UnknownSmtLibCommandError(self.name)
@@ -237,12 +230,12 @@ class SmtLibCommand(namedtuple("SmtLibCommand", ["name", "args"])):
         return buf.getvalue()
 
 
-class SmtLibScript(object):
+class SmtLibScript:
     def __init__(self):
-        self.annotations: Optional[Annotations] = None
-        self.commands: List[SmtLibCommand] = []
+        self.annotations: Annotations | None = None
+        self.commands: list[SmtLibCommand] = []
 
-    def add(self, name: str, args: List[Optional[Union[Logic, _TypeDecl, FNode, str]]]):
+    def add(self, name: str, args: list[Logic | _TypeDecl | FNode | str | None]):
         """Adds a new SmtLibCommand with the given name and arguments."""
         self.add_command(SmtLibCommand(name=name, args=args))
 
@@ -251,9 +244,7 @@ class SmtLibScript(object):
 
     def evaluate(
         self, solver: SmtLibSolver
-    ) -> List[
-        Tuple[str, Optional[Union[Model, bool, Goal, List[Tuple[FNode, FNode]]]]]
-    ]:
+    ) -> list[tuple[str, Model | bool | Goal | list[tuple[FNode, FNode]] | None]]:
         log = []
         inter = InterpreterOMT()
         for cmd in self.commands:
@@ -268,7 +259,7 @@ class SmtLibScript(object):
     def count_command_occurrences(self, command_name: str) -> int:
         return sum(1 for cmd in self.commands if cmd.name == command_name)
 
-    def filter_by_command_name(self, command_name_set: List[str]) -> Iterator[Any]:
+    def filter_by_command_name(self, command_name_set: list[str]) -> Iterator[Any]:
         return (cmd for cmd in self.commands if cmd.name in command_name_set)
 
     def get_strict_formula(
@@ -285,7 +276,7 @@ class SmtLibScript(object):
         ]
         return _And(assertions)
 
-    def get_declared_symbols(self) -> Set[FNode]:
+    def get_declared_symbols(self) -> set[FNode]:
         return {
             cmd.args[0]
             for cmd in self.filter_by_command_name(
@@ -293,7 +284,7 @@ class SmtLibScript(object):
             )
         }
 
-    def get_define_fun_parameter_symbols(self) -> Set[FNode]:
+    def get_define_fun_parameter_symbols(self) -> set[FNode]:
         res = set()
         for cmd in self.filter_by_command_name([smtcmd.DEFINE_FUN]):
             for s in cmd.args[1]:
@@ -301,7 +292,7 @@ class SmtLibScript(object):
         return res
 
     def get_last_formula(
-        self, mgr: Optional[FormulaManager] = None, return_optimizations: bool = False
+        self, mgr: FormulaManager | None = None, return_optimizations: bool = False
     ) -> Any:
         """Returns the last formula of the execution of the Script.
 
@@ -313,12 +304,12 @@ class SmtLibScript(object):
         script and the second element is the tuple containing the last goals
         defined.
         """
-        stack: List[FNode] = []
-        backtrack: List[int] = []
-        goals: List[Goal] = []
-        goals_backtrack: List[int] = []
-        max_smt_goals: Dict[Optional[str], Tuple[int, MaxSMTGoal]] = {}
-        max_smt_goals_backtrack: Dict[Optional[str], List[int]] = defaultdict(list)
+        stack: list[FNode] = []
+        backtrack: list[int] = []
+        goals: list[Goal] = []
+        goals_backtrack: list[int] = []
+        max_smt_goals: dict[str | None, tuple[int, MaxSMTGoal]] = {}
+        max_smt_goals_backtrack: dict[str | None, list[int]] = defaultdict(list)
         if mgr is None:
             mgr = get_env().formula_manager
 
@@ -395,7 +386,7 @@ class SmtLibScript(object):
             self.serialize(outstream, daggify=daggify, env=env)
 
     def serialize(
-        self, outstream: Union[TextIOWrapper, StringIO], daggify: bool = True, env=None
+        self, outstream: TextIOWrapper | StringIO, daggify: bool = True, env=None
     ):
         """Serializes the SmtLibScript expanding commands"""
         if daggify:
@@ -416,7 +407,7 @@ class SmtLibScript(object):
         return iter(self.commands)
 
     def __str__(self):
-        return "\n".join((str(cmd) for cmd in self.commands))
+        return "\n".join(str(cmd) for cmd in self.commands)
 
 
 def _command_is_signed(command: SmtLibCommand) -> bool:
@@ -429,15 +420,14 @@ def _command_is_signed(command: SmtLibCommand) -> bool:
                     singed = arg[1]
                     if not isinstance(singed, bool):
                         raise PysmtValueError(
-                            ":signed annotation to a command must be a bool, %s is not"
-                            % str(singed)
+                            f":signed annotation to a command must be a bool, {str(singed)} is not"
                         )
                 break
     return singed
 
 
 def smtlibscript_from_formula(
-    formula: FNode, logic: Optional[Union[str, int, Logic]] = None, env=None
+    formula: FNode, logic: str | int | Logic | None = None, env=None
 ) -> SmtLibScript:
     script = SmtLibScript()
     if env is None:
@@ -447,14 +437,14 @@ def smtlibscript_from_formula(
         # Get the simplest SmtLib logic that contains the formula
         f_logic = get_logic(formula, env=env)
 
-        smt_logic: Optional[Union[Logic, str]] = None
+        smt_logic: Logic | str | None = None
         try:
             smt_logic = get_closer_smtlib_logic(f_logic)
         except NoLogicAvailableError:
             warnings.warn(
-                "The logic %s is not reducible to any SMTLib2 "
+                f"The logic {f_logic} is not reducible to any SMTLib2 "
                 "standard logic. Proceeding with non-standard "
-                "logic '%s'" % (f_logic, f_logic),
+                f"logic '{f_logic}'",
                 stacklevel=3,
             )
             smt_logic = f_logic
@@ -463,9 +453,9 @@ def smtlibscript_from_formula(
     else:
         if logic not in SMTLIB2_LOGICS:
             warnings.warn(
-                "The logic %s is not reducible to any SMTLib2 "
+                f"The logic {logic} is not reducible to any SMTLib2 "
                 "standard logic. Proceeding with non-standard "
-                "logic '%s'" % (logic, logic),
+                f"logic '{logic}'",
                 stacklevel=3,
             )
         smt_logic = logic
@@ -490,15 +480,15 @@ def smtlibscript_from_formula(
     return script
 
 
-class InterpreterSMT(object):
+class InterpreterSMT:
     def evaluate(
         self, cmd: SmtLibCommand, solver: SmtLibSolver
-    ) -> Optional[Union[Model, bool, Goal, List[Tuple[FNode, FNode]]]]:
+    ) -> Model | bool | Goal | list[tuple[FNode, FNode]] | None:
         return self._smt_evaluate(cmd, solver)
 
     def _smt_evaluate(
         self, cmd: SmtLibCommand, solver: SmtLibSolver
-    ) -> Optional[Union[Model, bool, Goal, List[Tuple[FNode, FNode]]]]:
+    ) -> Model | bool | Goal | list[tuple[FNode, FNode]] | None:
         if cmd.name == smtcmd.SET_INFO:
             return solver.set_info(cmd.args[0], cmd.args[1])
 
@@ -563,9 +553,9 @@ class InterpreterSMT(object):
 
         elif cmd.name in smtcmd.ALL_COMMANDS:
             raise NotImplementedError(
-                "'%s' is a valid SMT-LIB command "
+                f"'{cmd.name}' is a valid SMT-LIB command "
                 "but it is currently not supported. "
-                "Please open a bug-report." % cmd.name
+                "Please open a bug-report."
             )
         else:
             raise UnknownSmtLibCommandError(cmd.name)
@@ -573,17 +563,17 @@ class InterpreterSMT(object):
 
 class InterpreterOMT(InterpreterSMT):
     def __init__(self):
-        self.optimization_goals: Tuple[List[Goal], List[Tuple[FNode, FNode]]] = ([], [])
+        self.optimization_goals: tuple[list[Goal], list[tuple[FNode, FNode]]] = ([], [])
         self.opt_priority = "single-obj"
 
     def evaluate(
         self, cmd: SmtLibCommand, solver: SmtLibSolver
-    ) -> Optional[Union[Model, bool, Goal, List[Tuple[FNode, FNode]]]]:
+    ) -> Model | bool | Goal | list[tuple[FNode, FNode]] | None:
         return self._omt_evaluate(cmd, solver)
 
     def _omt_evaluate(
         self, cmd: SmtLibCommand, optimizer: SmtLibSolver
-    ) -> Optional[Union[Model, bool, Goal, List[Tuple[FNode, FNode]]]]:
+    ) -> Model | bool | Goal | list[tuple[FNode, FNode]] | None:
         if cmd.name == smtcmd.SET_OPTION:
             if cmd.args[0] == ":opt.priority":
                 self.opt_priority = cmd.args[1]

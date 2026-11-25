@@ -131,9 +131,11 @@ Code Style
 ----------
 
 pySMT uses `ruff <https://docs.astral.sh/ruff/>`_ for linting and
-formatting, with a line length of 88 columns. The rules and the
-exceptions are configured in ``pyproject.toml``. ``just format`` fixes
-most issues, and ``just lint`` checks what the CI checks.
+formatting, with a line length of 88 columns. The enabled rule families
+are pycodestyle (``E``, ``W``), Pyflakes (``F``), isort (``I``) and
+pyupgrade (``UP``). The rules and the exceptions are configured in
+``pyproject.toml``. ``just format`` fixes most issues, and ``just lint``
+checks what the CI checks.
 
 The pre-commit hooks run the linter, the type checker and a few file
 checks before each commit. They need Python 3.11 or later, since
@@ -141,8 +143,9 @@ pre-commit is not installed on Python 3.10. Enable them once per clone::
 
   $ uv run pre-commit install
 
-The commit that reformatted the code base is listed in
-``.git-blame-ignore-revs``. To make ``git blame`` skip it, run::
+The commits that reformatted the code base or applied automatic lint
+fixes are listed in ``.git-blame-ignore-revs``. To make ``git blame``
+skip them, run::
 
   $ git config blame.ignoreRevsFile .git-blame-ignore-revs
 

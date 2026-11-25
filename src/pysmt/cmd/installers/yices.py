@@ -41,12 +41,9 @@ class YicesInstaller(SolverInstaller):
         machine = (platform.system().lower(), platform.machine().lower())
         self.binary = (binaries or {}).get(machine)
         if self.binary is not None:
-            archive_name = "yices-%s-%s-static-gmp.tar.gz" % (
-                solver_version,
-                self.binary,
-            )
+            archive_name = f"yices-{solver_version}-{self.binary}-static-gmp.tar.gz"
         else:
-            archive_name = "yices-%s-src.tar.gz" % solver_version
+            archive_name = f"yices-{solver_version}-src.tar.gz"
         native_link = (
             "https://github.com/SRI-CSL/yices2/releases/download/"
             "yices-{solver_version}/{archive_name}"
@@ -61,7 +58,7 @@ class YicesInstaller(SolverInstaller):
         )
         self.yices_api_version = yices_api_version
         # Both the binary and the source archives unpack into yices-<version>
-        self.extract_path = os.path.join(self.base_dir, "yices-%s" % solver_version)
+        self.extract_path = os.path.join(self.base_dir, f"yices-{solver_version}")
 
     def compile(self):
         libdir = os.path.join(self.extract_path, "lib")
@@ -76,7 +73,7 @@ class YicesInstaller(SolverInstaller):
             libdir = os.path.join(prefix, "lib")
 
         pip_install(
-            ["yices==%s" % self.yices_api_version], target=self.target, force=True
+            [f"yices=={self.yices_api_version}"], target=self.target, force=True
         )
 
         # A stale libyices of another version would be found first

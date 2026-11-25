@@ -41,7 +41,7 @@ class TreeWalker(Walker):
         Walker.__init__(self, env)
         return
 
-    def walk(self, formula: FNode, threshold: Optional[int] = None):
+    def walk(self, formula: FNode, threshold: int | None = None):
         """Generic walk method, will apply the function associated with
         the node.
 
@@ -75,8 +75,7 @@ class TreeWalker(Walker):
 
     def walk_skip(self, formula):
         """Default function to skip a node and process the children"""
-        for s in formula.args():
-            yield s
+        yield from formula.args()
         return
 
 

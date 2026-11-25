@@ -284,7 +284,7 @@ class TestSMTParseExamples(TestCase):
             self.assertEqual(
                 self._parse_assertion(decls, nary),
                 self._parse_assertion(decls, expected),
-                "wrong expansion of %s" % nary,
+                f"wrong expansion of {nary}",
             )
 
     def test_nary_operators_end_to_end(self):
@@ -368,7 +368,7 @@ class TestSMTParseExamples(TestCase):
 
     @staticmethod
     def _parse_assertion(declarations, expression):
-        script = "%s (assert %s)" % (declarations, expression)
+        script = f"{declarations} (assert {expression})"
         parser = SmtLibParser()
         return parser.get_script(StringIO(script)).get_last_formula()
 

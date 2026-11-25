@@ -16,7 +16,7 @@
 
 import os
 from fractions import Fraction as pyFraction
-from typing import Any, Optional, Type, Union, cast
+from typing import Any, cast
 
 from pysmt.exceptions import PysmtImportError
 
@@ -32,7 +32,7 @@ from pysmt.exceptions import PysmtImportError
 # If set to True, Python's Fraction module will be used instead.
 #
 
-ENV_USE_GMPY: Optional[bool] = None
+ENV_USE_GMPY: bool | None = None
 env_use_gmpy_val = os.environ.get("PYSMT_GMPY")
 if env_use_gmpy_val is not None:
     ENV_USE_GMPY = env_use_gmpy_val.lower() in ["true", "1"]
@@ -57,8 +57,8 @@ else:
     USE_GMPY = HAS_GMPY
 
 if HAS_GMPY:
-    mpq_type: Optional[Type[Any]] = type(mpq(1, 2))
-    mpz_type: Optional[Type[Any]] = type(mpz(1))
+    mpq_type: type[Any] | None = type(mpq(1, 2))
+    mpz_type: type[Any] | None = type(mpz(1))
 else:
     mpq_type = None
     mpz_type = None
@@ -150,7 +150,7 @@ def to_python_integer(value):
 if USE_GMPY:
 
     def pysmt_fraction_from_rational(
-        value: Union[float, int, pyFraction],
+        value: float | int | pyFraction,
     ) -> pyFraction:
         """Return a pysmt Fraction for the rational value."""
         if type(value) is FractionClass:
@@ -160,7 +160,7 @@ if USE_GMPY:
 else:
 
     def pysmt_fraction_from_rational(
-        value: Union[float, int, pyFraction],
+        value: float | int | pyFraction,
     ) -> pyFraction:
         """Return a pysmt Fraction for the rational value."""
         if type(value) is FractionClass:
@@ -209,7 +209,7 @@ if USE_Z3:
 
 else:
 
-    class Numeral(object):  # type: ignore[no-redef]
+    class Numeral:  # type: ignore[no-redef]
         """Represents a Number (Algebraic)"""
 
         def __init__(self, obj):

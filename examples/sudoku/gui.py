@@ -97,8 +97,8 @@ def main():
         try:
             size = int(sys.argv[1])
         except ValueError:
-            print("Unknown number %s" % sys.argv[1])
-            print("Usage: %s [number of tiles]" % sys.argv[0])
+            print(f"Unknown number {sys.argv[1]}")
+            print(f"Usage: {sys.argv[0]} [number of tiles]")
             exit(1)
 
     win = GridWindow(size)

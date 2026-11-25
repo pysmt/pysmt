@@ -31,18 +31,12 @@ environment is used (this is the default behavior of
 # Enable default deprecation warnings!
 import os
 import warnings
+from collections.abc import Iterable, Sequence
 from fractions import Fraction
 from typing import (
     TYPE_CHECKING,
     Any,
-    Dict,
-    FrozenSet,
-    Iterable,
     Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Union,
 )
 
 if TYPE_CHECKING:
@@ -93,7 +87,7 @@ get_env().enable_infix_notation = True
 
 
 ##### Shortcuts for FormulaManager #####
-def get_type(formula: FNode) -> Optional[PySMTType]:
+def get_type(formula: FNode) -> PySMTType | None:
     """Returns the type of the formula.
 
     :param formula: The target formula
@@ -116,8 +110,8 @@ def simplify(formula: FNode) -> FNode:
 
 def substitute(
     formula: FNode,
-    subs: Optional[Dict[FNode, FNode]] = None,
-    interpretations: Optional[Dict[FNode, FunctionInterpretation]] = None,
+    subs: dict[FNode, FNode] | None = None,
+    interpretations: dict[FNode, FunctionInterpretation] | None = None,
 ) -> FNode:
     """Applies the substitutions defined in the dictionary to the formula.
 
@@ -133,7 +127,7 @@ def substitute(
     return get_env().substituter.substitute(formula, subs, interpretations)
 
 
-def serialize(formula: FNode, threshold: Optional[int] = None) -> str:
+def serialize(formula: FNode, threshold: int | None = None) -> str:
     """Provides a string representing the formula.
 
     :param formula: The target formula
@@ -146,7 +140,7 @@ def serialize(formula: FNode, threshold: Optional[int] = None) -> str:
     return get_env().serializer.serialize(formula, threshold=threshold)
 
 
-def get_free_variables(formula: FNode) -> FrozenSet[FNode]:
+def get_free_variables(formula: FNode) -> frozenset[FNode]:
     """Returns the free variables of the formula.
 
     :param formula: The target formula
@@ -156,7 +150,7 @@ def get_free_variables(formula: FNode) -> FrozenSet[FNode]:
     return get_env().fvo.get_free_variables(formula)
 
 
-def get_atoms(formula: FNode) -> FrozenSet[FNode]:
+def get_atoms(formula: FNode) -> frozenset[FNode]:
     """Returns the set of atoms of the formula.
 
     :param formula: The target formula
@@ -166,7 +160,7 @@ def get_atoms(formula: FNode) -> FrozenSet[FNode]:
     return get_env().ao.get_atoms(formula)
 
 
-def get_formula_size(formula: FNode, measure: Optional[int] = None) -> int:
+def get_formula_size(formula: FNode, measure: int | None = None) -> int:
     """Returns the size of the formula as measured by the given counting type.
 
     See pysmt.oracles.SizeOracle for details.
@@ -222,7 +216,7 @@ def Minus(left: FNode, right: FNode) -> FNode:
     return get_env().formula_manager.Minus(left, right)
 
 
-def Times(*args: Union[FNode, Iterable[FNode]]) -> FNode:
+def Times(*args: FNode | Iterable[FNode]) -> FNode:
     r""".. math:: x_1 \times x_2 \cdots \times x_n"""
     return get_env().formula_manager.Times(*args)
 
@@ -304,7 +298,7 @@ def Symbol(name: str, typename: PySMTType = types.BOOL) -> FNode:
     return get_env().formula_manager.Symbol(name, typename)
 
 
-def FreshSymbol(typename: PySMTType = types.BOOL, template: Optional[str] = None):
+def FreshSymbol(typename: PySMTType = types.BOOL, template: str | None = None):
     """Returns a symbol with a fresh name and given type.
 
     :param typename: Specify the typename
@@ -332,7 +326,7 @@ def Bool(value: bool) -> FNode:
     return get_env().formula_manager.Bool(value)
 
 
-def Real(value: Union[Tuple[int, int], Fraction, int, float]) -> FNode:
+def Real(value: tuple[int, int] | Fraction | int | float) -> FNode:
     """Returns a Real constant with the given value.
 
     :param value: Specify the value
@@ -362,17 +356,17 @@ def FALSE() -> FNode:
     return get_env().formula_manager.FALSE()
 
 
-def And(*args: Union[FNode, Iterable[FNode]]) -> FNode:
+def And(*args: FNode | Iterable[FNode]) -> FNode:
     r""".. math:: \varphi_0 \land \cdots \land \varphi_n"""
     return get_env().formula_manager.And(*args)
 
 
-def Or(*args: Union[FNode, Iterable[FNode]]) -> FNode:
+def Or(*args: FNode | Iterable[FNode]) -> FNode:
     r""".. math:: \varphi_0 \lor \cdots \lor \varphi_n"""
     return get_env().formula_manager.Or(*args)
 
 
-def Plus(*args: Union[FNode, Iterable[FNode]]) -> FNode:
+def Plus(*args: FNode | Iterable[FNode]) -> FNode:
     r""".. math:: \varphi_0 + \cdots + \varphi_n"""
     return get_env().formula_manager.Plus(*args)
 
@@ -395,7 +389,7 @@ def IsInt(formula: FNode) -> FNode:
     return get_env().formula_manager.IsInt(formula)
 
 
-def AtMostOne(*args: Union[FNode, Iterable[FNode]]) -> FNode:
+def AtMostOne(*args: FNode | Iterable[FNode]) -> FNode:
     """At most one can be true at anytime.
 
     Cardinality constraint over a set of boolean expressions.
@@ -403,12 +397,12 @@ def AtMostOne(*args: Union[FNode, Iterable[FNode]]) -> FNode:
     return get_env().formula_manager.AtMostOne(*args)
 
 
-def ExactlyOne(*args: Union[FNode, Iterable[FNode]]) -> FNode:
+def ExactlyOne(*args: FNode | Iterable[FNode]) -> FNode:
     """Given a set of boolean expressions requires that exactly one holds."""
     return get_env().formula_manager.ExactlyOne(*args)
 
 
-def AllDifferent(*args: Union[FNode, Iterable[FNode]]) -> FNode:
+def AllDifferent(*args: FNode | Iterable[FNode]) -> FNode:
     """Given a set of non-boolean expressions, requires that each of them
     has value different from all the others
     """
@@ -427,12 +421,12 @@ def Xor(left: FNode, right: FNode) -> FNode:
     return get_env().formula_manager.Xor(left, right)
 
 
-def Min(*args: Union[FNode, Sequence[FNode]]) -> FNode:
+def Min(*args: FNode | Sequence[FNode]) -> FNode:
     """Minimum over a set of real or integer terms."""
     return get_env().formula_manager.Min(*args)
 
 
-def Max(*args: Union[FNode, Sequence[FNode]]) -> FNode:
+def Max(*args: FNode | Sequence[FNode]) -> FNode:
     """Maximum over a set of real or integer terms"""
     return get_env().formula_manager.Max(*args)
 
@@ -449,7 +443,7 @@ def EqualsOrIff(left: FNode, right: FNode) -> FNode:
 #
 # Bit Vectors
 #
-def BV(value: Union[str, int], width: Optional[int] = None) -> FNode:
+def BV(value: str | int, width: int | None = None) -> FNode:
     """Returns a constant of type BitVector.
 
     value can be either:
@@ -468,7 +462,7 @@ def BV(value: Union[str, int], width: Optional[int] = None) -> FNode:
     return get_env().formula_manager.BV(value, width)
 
 
-def SBV(value: Union[str, int], width: Optional[int] = None) -> FNode:
+def SBV(value: str | int, width: int | None = None) -> FNode:
     """Returns a constant of type BitVector interpreting the sign.
 
     If the specified value is an integer, it is converted in the
@@ -513,7 +507,7 @@ def BVNot(formula: FNode) -> FNode:
     return get_env().formula_manager.BVNot(formula)
 
 
-def BVAnd(*args: Union[FNode, Sequence[FNode]]) -> FNode:
+def BVAnd(*args: FNode | Sequence[FNode]) -> FNode:
     """Returns the Bit-wise AND of bitvectors of the same size.
     If more than 2 arguments are passed, a left-associative formula is generated.
 
@@ -524,7 +518,7 @@ def BVAnd(*args: Union[FNode, Sequence[FNode]]) -> FNode:
     return get_env().formula_manager.BVAnd(*args)
 
 
-def BVOr(*args: Union[FNode, Sequence[FNode]]) -> FNode:
+def BVOr(*args: FNode | Sequence[FNode]) -> FNode:
     """Returns the Bit-wise OR of bitvectors of the same size.
     If more than 2 arguments are passed, a left-associative formula is generated.
 
@@ -546,7 +540,7 @@ def BVXor(left: FNode, right: FNode) -> FNode:
     return get_env().formula_manager.BVXor(left, right)
 
 
-def BVConcat(*args: Union[FNode, Sequence[FNode]]) -> FNode:
+def BVConcat(*args: FNode | Sequence[FNode]) -> FNode:
     """Returns the Concatenation of the two BVs
 
     :param args: Specify the bitvectors to concatenate
@@ -556,7 +550,7 @@ def BVConcat(*args: Union[FNode, Sequence[FNode]]) -> FNode:
     return get_env().formula_manager.BVConcat(*args)
 
 
-def BVExtract(formula: FNode, start: int = 0, end: Optional[int] = None) -> FNode:
+def BVExtract(formula: FNode, start: int = 0, end: int | None = None) -> FNode:
     """Returns the slice of formula from start to end (inclusive).
 
     :param formula: The target formula
@@ -622,7 +616,7 @@ def BVNeg(formula: FNode) -> FNode:
     return get_env().formula_manager.BVNeg(formula)
 
 
-def BVAdd(*args: Union[FNode, Sequence[FNode]]) -> FNode:
+def BVAdd(*args: FNode | Sequence[FNode]) -> FNode:
     """Returns the sum of BV.
     If more than 2 arguments are passed, a left-associative formula is generated.
 
@@ -644,7 +638,7 @@ def BVSub(left: FNode, right: FNode) -> FNode:
     return get_env().formula_manager.BVSub(left, right)
 
 
-def BVMul(*args: Union[FNode, Sequence[FNode]]) -> FNode:
+def BVMul(*args: FNode | Sequence[FNode]) -> FNode:
     """Returns the product of BV.
     If more than 2 arguments are passed, a left-associative formula is generated.
 
@@ -677,7 +671,7 @@ def BVURem(left: FNode, right: FNode) -> FNode:
     return get_env().formula_manager.BVURem(left, right)
 
 
-def BVLShl(left: FNode, right: Union[FNode, int]) -> FNode:
+def BVLShl(left: FNode, right: FNode | int) -> FNode:
     """Returns the logical left shift the BV.
 
     :param left: Specify the left bitvector
@@ -688,7 +682,7 @@ def BVLShl(left: FNode, right: Union[FNode, int]) -> FNode:
     return get_env().formula_manager.BVLShl(left, right)
 
 
-def BVLShr(left: FNode, right: Union[FNode, int]) -> FNode:
+def BVLShr(left: FNode, right: FNode | int) -> FNode:
     """Returns the logical right shift the BV.
 
     :param left: Specify the left bitvector
@@ -966,7 +960,7 @@ def Store(array: FNode, index: FNode, value: FNode) -> FNode:
 def Array(
     idx_type: PySMTType,
     default: FNode,
-    assigned_values: Optional[Dict[FNode, FNode]] = None,
+    assigned_values: dict[FNode, FNode] | None = None,
 ) -> FNode:
     """Returns an Array with the given index type and initialization.
 
@@ -991,7 +985,7 @@ def Array(
 ## Shortcuts for Solvers Factory
 ##
 def Solver(
-    name: Optional[str] = None, logic: Optional[Union[str, Logic]] = None, **kwargs
+    name: str | None = None, logic: str | Logic | None = None, **kwargs
 ) -> "pysmt.solvers.solver.Solver":
     """Returns a solver.
 
@@ -1003,8 +997,8 @@ def Solver(
 
 
 def UnsatCoreSolver(
-    name: Optional[str] = None,
-    logic: Optional[Union[str, Logic]] = None,
+    name: str | None = None,
+    logic: str | Logic | None = None,
     unsat_cores_mode: str = "all",
     **kwargs,
 ) -> "pysmt.solvers.solver.UnsatCoreSolver":
@@ -1022,7 +1016,7 @@ def UnsatCoreSolver(
 
 
 def QuantifierEliminator(
-    name: Optional[str] = None, logic: Optional[Union[str, Logic]] = None
+    name: str | None = None, logic: str | Logic | None = None
 ) -> "pysmt.solvers.qelim.QuantifierEliminator":
     """Returns a quantifier eliminator.
 
@@ -1036,7 +1030,7 @@ def QuantifierEliminator(
 
 
 def Interpolator(
-    name: Optional[str] = None, logic: Optional[Union[str, Logic]] = None
+    name: str | None = None, logic: str | Logic | None = None
 ) -> "pysmt.solvers.interpolation.Interpolator":
     """Returns an interpolator
 
@@ -1049,8 +1043,8 @@ def Interpolator(
 
 
 def Portfolio(
-    solvers_set: Iterable[Union[str, Tuple[str, Dict[str, Any]]]],
-    logic: Union[str, Logic],
+    solvers_set: Iterable[str | tuple[str, dict[str, Any]]],
+    logic: str | Logic,
     **options,
 ) -> "pysmt.solvers.portfolio.Portfolio":
     """Creates a portfolio using the specified solvers.
@@ -1085,7 +1079,7 @@ def Portfolio(
 
 
 def Optimizer(
-    name: Optional[str] = None, logic: Optional[Union[str, Logic]] = None, **options
+    name: str | None = None, logic: str | Logic | None = None, **options
 ) -> "pysmt.optimization.optimizer.Optimizer":
     """Returns an Optimizer
 
@@ -1099,9 +1093,9 @@ def Optimizer(
 
 def is_sat(
     formula: FNode,
-    solver_name: Optional[str] = None,
-    logic: Optional[Union[str, Logic]] = None,
-    portfolio: Optional[Iterable[str]] = None,
+    solver_name: str | None = None,
+    logic: str | Logic | None = None,
+    portfolio: Iterable[str] | None = None,
 ) -> bool:
     """Returns whether a formula is satisfiable.
 
@@ -1128,8 +1122,8 @@ def is_sat(
 # TODO also here mypy didn't notice that the model was not Optional (a mistake)
 def get_model(
     formula: FNode,
-    solver_name: Optional[str] = None,
-    logic: Optional[Union[str, Logic]] = None,
+    solver_name: str | None = None,
+    logic: str | Logic | None = None,
 ) -> Optional["pysmt.solvers.solver.Model"]:
     """Similar to :py:func:`is_sat` but returns a model if the formula is
     satisfiable, otherwise None
@@ -1150,9 +1144,9 @@ def get_model(
 
 def get_implicant(
     formula: FNode,
-    solver_name: Optional[str] = None,
-    logic: Optional[Union[str, Logic]] = None,
-) -> Optional[FNode]:
+    solver_name: str | None = None,
+    logic: str | Logic | None = None,
+) -> FNode | None:
     """Returns a formula f_i such that Implies(f_i, formula) is valid or None
     if formula is unsatisfiable.
 
@@ -1175,9 +1169,9 @@ def get_implicant(
 
 def get_unsat_core(
     clauses: Iterable[FNode],
-    solver_name: Optional[str] = None,
-    logic: Optional[Union[str, Logic]] = None,
-) -> Optional[Set[FNode]]:
+    solver_name: str | None = None,
+    logic: str | Logic | None = None,
+) -> set[FNode] | None:
     """Similar to :py:func:`get_model` but returns the unsat core of the
     conjunction of the input clauses
 
@@ -1202,11 +1196,9 @@ def get_unsat_core(
 
 def is_valid(
     formula: FNode,
-    solver_name: Optional[str] = None,
-    logic: Optional[Union[str, Logic]] = None,
-    portfolio: Optional[
-        Union[Iterable[str], Iterable[Tuple[str, Dict[str, Any]]]]
-    ] = None,
+    solver_name: str | None = None,
+    logic: str | Logic | None = None,
+    portfolio: Iterable[str] | Iterable[tuple[str, dict[str, Any]]] | None = None,
 ) -> bool:
     """Similar to :py:func:`is_sat` but checks validity.
 
@@ -1230,11 +1222,9 @@ def is_valid(
 
 def is_unsat(
     formula: FNode,
-    solver_name: Optional[str] = None,
-    logic: Optional[Union[str, Logic]] = None,
-    portfolio: Optional[
-        Union[Iterable[str], Iterable[Tuple[str, Dict[str, Any]]]]
-    ] = None,
+    solver_name: str | None = None,
+    logic: str | Logic | None = None,
+    portfolio: Iterable[str] | Iterable[tuple[str, dict[str, Any]]] | None = None,
 ) -> bool:
     """Similar to :py:func:`is_sat` but checks unsatisfiability.
 
@@ -1258,8 +1248,8 @@ def is_unsat(
 
 def qelim(
     formula: FNode,
-    solver_name: Optional[str] = None,
-    logic: Optional[Union[str, Logic]] = None,
+    solver_name: str | None = None,
+    logic: str | Logic | None = None,
 ) -> FNode:
     """Performs quantifier elimination of the given formula.
 
@@ -1280,9 +1270,9 @@ def qelim(
 def binary_interpolant(
     formula_a: FNode,
     formula_b: FNode,
-    solver_name: Optional[str] = None,
-    logic: Optional[Union[str, Logic]] = None,
-) -> Optional[FNode]:
+    solver_name: str | None = None,
+    logic: str | Logic | None = None,
+) -> FNode | None:
     """Computes an interpolant of (formula_a, formula_b).
 
     Returns None if the conjunction is satisfiable
@@ -1309,9 +1299,9 @@ def binary_interpolant(
 
 def sequence_interpolant(
     formulas: Sequence[FNode],
-    solver_name: Optional[str] = None,
-    logic: Optional[Union[str, Logic]] = None,
-) -> Optional[FNode]:
+    solver_name: str | None = None,
+    logic: str | Logic | None = None,
+) -> FNode | None:
     """Computes a sequence interpolant of the formulas.
 
     Returns None if the conjunction is satisfiable.
@@ -1338,7 +1328,7 @@ def sequence_interpolant(
 
 
 def read_configuration(
-    config_filename: Union[str, os.PathLike],
+    config_filename: str | os.PathLike,
     environment: Optional["pysmt.environment.Environment"] = None,
 ):
     """Reads the pysmt configuration of the given file path and applies
@@ -1354,7 +1344,7 @@ def read_configuration(
 
 
 def write_configuration(
-    config_filename: Union[str, os.PathLike],
+    config_filename: str | os.PathLike,
     environment: Optional["pysmt.environment.Environment"] = None,
 ):
     """Dumps the current pysmt configuration to the specified file path
@@ -1379,7 +1369,7 @@ def read_smtlib(fname: str) -> FNode:
     return pysmt.smtlib.parser.get_formula_fname(fname)
 
 
-def write_smtlib(formula: FNode, fname: Union[str, os.PathLike]):
+def write_smtlib(formula: FNode, fname: str | os.PathLike):
     """Writes the given formula in Smt-Lib format to the given file.
 
     :param formula: Specify the SMT formula to be written

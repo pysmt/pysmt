@@ -304,7 +304,7 @@ class TestRewritings(TestCase):
                     ok = is_valid(Iff(f, f_aig), logic=logic)
                 except SolverReturnedUnknownResultError:
                     ok = not logic.quantifier_free
-                self.assertTrue(ok, "Was: %s\n Got:%s" % (f, f_aig))
+                self.assertTrue(ok, f"Was: {f}\n Got:{f_aig}")
 
     @skipIfNoSolverForLogic(QF_NRA)
     def test_times_distributivity(self):
@@ -390,7 +390,7 @@ class TestRewritings(TestCase):
         res = td.walk(src)
         self.assertValid(Equals(src, res))
         # root is Plus.
-        self.assertTrue(res.is_plus(), "Expeted summation, got: {}".format(res))
+        self.assertTrue(res.is_plus(), f"Expeted summation, got: {res}")
         # no other Plus in children: only Times of symbs and constants.
         stack = list(res.args())
         while stack:
@@ -400,7 +400,7 @@ class TestRewritings(TestCase):
             else:
                 self.assertTrue(
                     curr.is_symbol() or curr.is_constant(),
-                    "Expected leaf, got: {}".format(res),
+                    f"Expected leaf, got: {res}",
                 )
 
 

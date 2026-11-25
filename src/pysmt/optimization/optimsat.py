@@ -16,7 +16,7 @@
 #   limitations under the License.
 #
 
-from typing import Dict, Iterable, Iterator, List, Optional, Sequence, Tuple
+from collections.abc import Iterable, Iterator, Sequence
 
 from pysmt.decorators import clear_pending_pop
 from pysmt.environment import Environment
@@ -80,7 +80,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
     def __init__(self, environment: Environment, logic: Logic, **options):
         MathSAT5Solver.__init__(self, environment=environment, logic=logic, **options)
 
-    def _assert_msat_goal(self, goal: Goal, goal_id: Optional[int] = None):
+    def _assert_msat_goal(self, goal: Goal, goal_id: int | None = None):
 
         if goal.is_maxsmt_goal():
             assert isinstance(goal, MaxSMTGoal)
@@ -125,7 +125,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
         self._msat_lib.msat_assert_objective(self.msat_env(), msat_obj)
         return msat_obj
 
-    def _get_goal_value(self, msat_obj, goal: Goal) -> Optional[Tuple[Model, FNode]]:
+    def _get_goal_value(self, msat_obj, goal: Goal) -> tuple[Model, FNode] | None:
         if not self._check_unsat_unbound_infinitesimal(msat_obj):
             return None
         model = self.get_model()
@@ -134,7 +134,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
         return model, model.get_value(goal.term())
 
     @clear_pending_pop
-    def optimize(self, goal: Goal, **kwargs) -> Optional[Tuple[Model, FNode]]:
+    def optimize(self, goal: Goal, **kwargs) -> tuple[Model, FNode] | None:
         self.push()
 
         msat_obj = self._assert_msat_goal(goal, 0)
@@ -147,7 +147,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
     @clear_pending_pop
     def pareto_optimize(
         self, goals: Sequence[Goal]
-    ) -> Iterator[Tuple[Model, List[FNode]]]:
+    ) -> Iterator[tuple[Model, list[FNode]]]:
         self.push()
         self._check_pareto_lexicographic_goals(goals, "pareto")
         self._msat_lib.msat_set_opt_priority(self.msat_env(), "par")
@@ -175,7 +175,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
     @clear_pending_pop
     def lexicographic_optimize(
         self, goals: Sequence[Goal]
-    ) -> Optional[Tuple[Model, List[FNode]]]:
+    ) -> tuple[Model, list[FNode]] | None:
         self.push()
         self._check_pareto_lexicographic_goals(goals, "lexicographic")
         self._msat_lib.msat_set_opt_priority(self.msat_env(), "lex")
@@ -197,7 +197,7 @@ class OptiMSATSolver(MathSAT5Solver, Optimizer):
     @clear_pending_pop
     def boxed_optimize(
         self, goals: Sequence[Goal]
-    ) -> Optional[Dict[Goal, Tuple[Model, FNode]]]:
+    ) -> dict[Goal, tuple[Model, FNode]] | None:
         self.push()
         self._msat_lib.msat_set_opt_priority(self.msat_env(), "box")
         msat_objs = []

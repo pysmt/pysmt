@@ -33,11 +33,11 @@ class TestImports(TestCase):
         while stack:
             module_name, module_path = stack.pop()
             for _, name, ispkg in pkgutil.iter_modules(module_path):
-                fullname = "%s.%s" % (module_name, name)
-                command = [sys.executable, "-c", "import %s" % fullname]
+                fullname = f"{module_name}.{name}"
+                command = [sys.executable, "-c", f"import {fullname}"]
                 returncode = subprocess.call(command)
                 self.assertEqual(
-                    returncode, 0, msg="Failed to import %s module" % fullname
+                    returncode, 0, msg=f"Failed to import {fullname} module"
                 )
                 if ispkg and fullname not in TestImports.EXCLUSION_LIST:
                     stack.append(

@@ -15,7 +15,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from typing import Iterable, Optional, Union
+from collections.abc import Iterable
 
 from pysmt.environment import Environment
 from pysmt.fnode import FNode
@@ -23,7 +23,7 @@ from pysmt.logics import Logic
 from pysmt.solvers.solver import Model, Solver
 
 
-class SmtLibSolver(object):
+class SmtLibSolver:
     # Implementations combine this interface with Solver (see
     # SmtLibIgnoreMixin below), so they carry the environment they work in.
     environment: Environment
@@ -31,7 +31,7 @@ class SmtLibSolver(object):
     #
     # SMT-LIB 2 Interface
     #
-    def set_logic(self, logic: Optional[Union[str, Logic]]) -> bool:
+    def set_logic(self, logic: str | Logic | None) -> bool:
         """Defines the logic in use.
 
         E.g., set_logic("QF_LIA")
@@ -84,7 +84,7 @@ class SmtLibSolver(object):
         """
         raise NotImplementedError
 
-    def declare_sort(self, name: Optional[str], cardinality: Optional[int]):
+    def declare_sort(self, name: str | None, cardinality: int | None):
         """Declares a new sort with the given name and cardinality.
 
         Restrictions: Only after set-logic.
@@ -118,7 +118,7 @@ class SmtLibSolver(object):
         """
         raise NotImplementedError
 
-    def check_sat(self, assumptions: Optional[Iterable[FNode]] = None):
+    def check_sat(self, assumptions: Iterable[FNode] | None = None):
         """Checks the satisfiability of the formula.
 
         Restrictions: Only after set-logic.
@@ -237,7 +237,7 @@ class SmtLibSolver(object):
         """Clears all asserted formulae"""
         raise NotImplementedError
 
-    def get_model(self) -> Optional[Model]:
+    def get_model(self) -> Model | None:
         """Returns a model of the formula or None if unsat"""
         raise NotImplementedError
 
@@ -251,7 +251,7 @@ class SmtLibSolver(object):
 
 
 class SmtLibIgnoreMixin(Solver, SmtLibSolver):
-    def set_logic(self, logic: Optional[Union[str, Logic]]) -> bool:
+    def set_logic(self, logic: str | Logic | None) -> bool:
         return True
 
     def declare_fun(self, symbol: FNode):
@@ -263,7 +263,7 @@ class SmtLibIgnoreMixin(Solver, SmtLibSolver):
     def define_fun(self, name, args, rtype, expr):
         return None
 
-    def declare_sort(self, name: Optional[str], cardinality: Optional[int]):
+    def declare_sort(self, name: str | None, cardinality: int | None):
         return None
 
     def define_sort(self, name, args, sort_expr):
@@ -305,7 +305,7 @@ class SmtLibIgnoreMixin(Solver, SmtLibSolver):
     def get_info(self, name):
         return None
 
-    def set_info(self, name: Optional[str], value: Optional[str]):
+    def set_info(self, name: str | None, value: str | None):
         return None
 
     def exit(self):
@@ -313,10 +313,10 @@ class SmtLibIgnoreMixin(Solver, SmtLibSolver):
 
 
 class SmtLibBasicSolver(SmtLibIgnoreMixin):
-    def assert_(self, expr: FNode, named: Optional[str] = None):
+    def assert_(self, expr: FNode, named: str | None = None):
         return self.add_assertion(expr, named)
 
-    def check_sat(self, assumptions: Optional[Iterable[FNode]] = None) -> bool:
+    def check_sat(self, assumptions: Iterable[FNode] | None = None) -> bool:
         return self.solve(assumptions=assumptions)
 
     def get_values(self, exprs):

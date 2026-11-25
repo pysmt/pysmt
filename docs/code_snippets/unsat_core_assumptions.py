@@ -35,4 +35,4 @@ with UnsatCoreSolver(logic="QF_LIA", unsat_cores_mode="named") as solver:
         named = solver.get_named_unsat_core()
         print("Named core (note: the assumption is not in it):")
         for name, f in named.items():
-            print("  %s -> %s" % (name, f.serialize()))
+            print(f"  {name} -> {f.serialize()}")

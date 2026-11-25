@@ -15,8 +15,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+from collections.abc import Iterator
 from io import StringIO
-from typing import Iterator, List, Tuple
 
 from pysmt.exceptions import PysmtSyntaxError
 from pysmt.shortcuts import reset_env
@@ -32,7 +32,7 @@ class TestSmtLibParserOMT(TestCase):
                 self.assertEqual(
                     cmd.name,
                     expected[i],
-                    "Test %d: %s != %s " % (file_id, cmd.name, expected[i]),
+                    f"Test {file_id}: {cmd.name} != {expected[i]} ",
                 )
             # Serialize
             buf = StringIO()
@@ -233,15 +233,14 @@ class TestSmtLibParserOMT(TestCase):
         self.assertIsNotNone(script)
         return script
 
-    def examples(self) -> Iterator[Tuple[int, List[str], SmtLibScript]]:
+    def examples(self) -> Iterator[tuple[int, list[str], SmtLibScript]]:
         for file_id in TEST_FILES:
             script = self.parse_from_file(file_id)
             yield file_id, TEST_FILES[file_id], script
 
     @staticmethod
-    def snippet_examples() -> Iterator[Tuple[str, str, int]]:
-        for input_command, command, len_args in TEST_SNIPPETS:
-            yield input_command, command, len_args
+    def snippet_examples() -> Iterator[tuple[str, str, int]]:
+        yield from TEST_SNIPPETS
 
 
 OMT_FILE_PATTERN = "tests/smtlib/omt/omt_test%d.smt2.bz2"

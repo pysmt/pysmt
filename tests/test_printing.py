@@ -230,9 +230,9 @@ class TestPrinting(TestCase):
         self.assertIsNotNone(res)
         self.assertEqual(str(f), res)
 
-        fvars = [Symbol("x%d" % i) for i in range(5)]
+        fvars = [Symbol(f"x{i}") for i in range(5)]
         ex = ExactlyOne(fvars)
-        substitutions = {ex: "ExactlyOne(%s)" % ",".join(str(v) for v in fvars)}
+        substitutions = {ex: "ExactlyOne({})".format(",".join(str(v) for v in fvars))}
         old_str = ex.serialize()
         smart_str = smart_serialize(ex, subs=substitutions)
         self.assertTrue(len(old_str) > len(smart_str))

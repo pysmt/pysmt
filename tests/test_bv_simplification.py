@@ -60,7 +60,7 @@ from tests import TestCase, main, skipIfSolverNotAvailable
 class TestBvSimplification(TestCase):
     def setUp(self):
         # For the preparation of assertValid()
-        super(TestBvSimplification, self).setUp()
+        super().setUp()
 
         self.width = 4
         self.bin_operators = [

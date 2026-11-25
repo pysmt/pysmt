@@ -15,9 +15,10 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+from collections.abc import Iterator
 from fractions import Fraction
 from io import StringIO
-from typing import Any, Iterator, Optional, Type, cast
+from typing import Any, Optional, cast
 
 import pysmt
 import pysmt.operators as op
@@ -41,7 +42,7 @@ class HRPrinter(TreeWalker):
         self.stream = stream
         self.write = self.stream.write
 
-    def printer(self, f: FNode, threshold: Optional[int] = None):
+    def printer(self, f: FNode, threshold: int | None = None):
         """Performs the serialization of 'f'.
 
         Thresholding can be used to define how deep in the formula to
@@ -103,9 +104,9 @@ class HRPrinter(TreeWalker):
         v = cast(Fraction, formula.constant_value())
         n, d = v.numerator, v.denominator
         if d == 1:
-            self.write("%s.0" % n)
+            self.write(f"{n}.0")
         else:
-            self.write("%s/%s" % (n, d))
+            self.write(f"{n}/{d}")
 
     def walk_int_constant(self, formula: FNode):
         assert is_pysmt_integer(formula.constant_value()), "The type was " + str(
@@ -123,14 +124,14 @@ class HRPrinter(TreeWalker):
         # This is the simplest SMT-LIB way of printing the value of a BV
         # self.write("(_ bv%d %d)" % (formula.bv_width(),
         #                             formula.constant_value()))
-        self.write("%d_%d" % (cast(int, formula.constant_value()), formula.bv_width()))
+        self.write(f"{cast(int, formula.constant_value())}_{formula.bv_width()}")
 
     def walk_algebraic_constant(self, formula):
         self.write(str(formula.constant_value()))
 
     def walk_bv_extract(self, formula: FNode) -> Iterator[FNode]:
         yield formula.arg(0)
-        self.write("[%d:%d]" % (formula.bv_extract_start(), formula.bv_extract_end()))
+        self.write(f"[{formula.bv_extract_start()}:{formula.bv_extract_end()}]")
 
     def walk_bv_neg(self, formula: FNode) -> Iterator[FNode]:
         self.write("(- ")
@@ -141,25 +142,25 @@ class HRPrinter(TreeWalker):
         self.write("(")
         yield formula.arg(0)
         self.write(" ROR ")
-        self.write("%d)" % formula.bv_rotation_step())
+        self.write(f"{formula.bv_rotation_step()})")
 
     def walk_bv_rol(self, formula: FNode) -> Iterator[FNode]:
         self.write("(")
         yield formula.arg(0)
         self.write(" ROL ")
-        self.write("%d)" % formula.bv_rotation_step())
+        self.write(f"{formula.bv_rotation_step()})")
 
     def walk_bv_zext(self, formula: FNode) -> Iterator[FNode]:
         self.write("(")
         yield formula.arg(0)
         self.write(" ZEXT ")
-        self.write("%d)" % formula.bv_extend_step())
+        self.write(f"{formula.bv_extend_step()})")
 
     def walk_bv_sext(self, formula: FNode) -> Iterator[FNode]:
         self.write("(")
         yield formula.arg(0)
         self.write(" SEXT ")
-        self.write("%d)" % formula.bv_extend_step())
+        self.write(f"{formula.bv_extend_step()})")
 
     def walk_ite(self, formula: FNode) -> Iterator[FNode]:
         self.write("(")
@@ -191,7 +192,7 @@ class HRPrinter(TreeWalker):
         assert isinstance(formula_value, str), "The type was " + str(
             type(formula_value)
         )
-        self.write('"%s"' % formula_value.replace('"', '""'))
+        self.write('"{}"'.format(formula_value.replace('"', '""')))
 
     def walk_str_length(self, formula: FNode):
         self.write("str.len(")
@@ -394,7 +395,7 @@ class HRPrinter(TreeWalker):
 # EOC HRPrinter
 
 
-class HRSerializer(object):
+class HRSerializer:
     """Return the serialized version of the formula as a string."""
 
     PrinterClass = HRPrinter
@@ -405,8 +406,8 @@ class HRSerializer(object):
     def serialize(
         self,
         formula: FNode,
-        printer: Optional[Type[HRPrinter]] = None,
-        threshold: Optional[int] = None,
+        printer: type[HRPrinter] | None = None,
+        threshold: int | None = None,
     ) -> str:
         """Returns a string with the human-readable version of the formula.
 

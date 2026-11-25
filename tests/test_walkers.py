@@ -132,7 +132,7 @@ class TestWalkers(TestCase):
 
         # Use a mixin to handle the node type (the method name matches
         # nt_to_fun, so it is picked up by class-based dispatch).
-        class FancyNewNodeWalkerMixin(object):
+        class FancyNewNodeWalkerMixin:
             def walk_fancy_new_node(self, formula, args, **kwargs):
                 raise UnsupportedOperatorError
 

@@ -98,16 +98,12 @@ class BddOptions(SolverOptions):
                         )
             elif k == "dynamic_reordering":
                 if v not in (True, False):
-                    raise PysmtValueError(
-                        "Invalid value %s for '%s'" % (str(k), str(v))
-                    )
+                    raise PysmtValueError(f"Invalid value {str(k)} for '{str(v)}'")
             elif k == "reordering_algorithm":
                 if v not in BddOptions.CUDD_ALL_REORDERING_ALGORITHMS:
-                    raise PysmtValueError(
-                        "Invalid value %s for '%s'" % (str(k), str(v))
-                    )
+                    raise PysmtValueError(f"Invalid value {str(k)} for '{str(v)}'")
             else:
-                raise PysmtValueError("Unrecognized option '%s'." % k)
+                raise PysmtValueError(f"Unrecognized option '{k}'.")
             # Store option
             setattr(self, k, v)
 
@@ -292,8 +288,7 @@ class BddConverter(Converter, DagWalker):
     def declare_variable(self, var):
         if not var.is_symbol(type_=types.BOOL):
             raise PysmtTypeError(
-                "Trying to declare as a variable something "
-                "that is not a symbol: %s" % var
+                f"Trying to declare as a variable something that is not a symbol: {var}"
             )
         if var not in self.var2node:
             node = self.ddmanager.NewVar()
@@ -317,7 +312,7 @@ class BddConverter(Converter, DagWalker):
 
     def walk_symbol(self, formula, **kwargs):
         if not formula.is_symbol(types.BOOL):
-            raise ConvertExpressionError("Cannot handle given type: %s" % str(formula))
+            raise ConvertExpressionError(f"Cannot handle given type: {str(formula)}")
         if formula not in self.var2node:
             self.declare_variable(formula)
         res = self.var2node[formula]
@@ -417,7 +412,7 @@ class BddQuantifierEliminator(QuantifierEliminator):
             raise NotImplementedError(
                 "BDD-based quantifier elimination only "
                 "supports pure-boolean formulae."
-                "(detected logic is: %s)" % str(logic)
+                f"(detected logic is: {str(logic)})"
             )
 
         bdd = self.converter.convert(formula)

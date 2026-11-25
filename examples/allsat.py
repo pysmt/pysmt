@@ -26,5 +26,5 @@ with Solver(name="msat") as msat:
     msat.add_assertion(f)
     msat.all_sat([x], lambda model: callback(model, converter, result))
 
-    print("'exists y . %s' is equivalent to '%s'" % (f, Or(result)))
+    print(f"'exists y . {f}' is equivalent to '{Or(result)}'")
     # exists y . (x | y) is equivalent to ((! x) | x)

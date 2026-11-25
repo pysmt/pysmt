@@ -15,18 +15,11 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+from collections.abc import Iterable, Iterator
 from fractions import Fraction
 from typing import (
     Any,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
     Optional,
-    Set,
-    Tuple,
-    Type,
-    Union,
     cast,
 )
 
@@ -46,14 +39,14 @@ from pysmt.solvers.options import SolverOptions
 from pysmt.typing import BOOL
 
 
-class Solver(object):
+class Solver:
     """Represents a generic SMT Solver."""
 
     # Define the supported logics for the Solver
     LOGICS: Iterable[Logic] = []
 
     # Class defining options for the Solver
-    OptionsClass: Optional[Type[SolverOptions]] = None
+    OptionsClass: type[SolverOptions] | None = None
 
     def __init__(self, environment: Environment, logic: Logic, **options):
         if logic is None:
@@ -67,7 +60,7 @@ class Solver(object):
         self._destroyed = False
         self.converter: Converter
 
-    def solve(self, assumptions: Optional[Iterable[FNode]] = None) -> bool:
+    def solve(self, assumptions: Iterable[FNode] | None = None) -> bool:
         """Returns the satisfiability value of the asserted formulas.
 
         Assumptions is a list of Boolean variables or negations of
@@ -184,7 +177,7 @@ class Solver(object):
         """
         return not self.is_sat(formula)
 
-    def get_values(self, formulae: Iterable[FNode]) -> Dict[FNode, FNode]:
+    def get_values(self, formulae: Iterable[FNode]) -> dict[FNode, FNode]:
         """Returns the value of the expressions if a model was found.
 
         Requires option generate_models to be set to true (default)
@@ -231,7 +224,7 @@ class Solver(object):
         """Removes all defined assertions."""
         raise NotImplementedError
 
-    def add_assertion(self, formula: FNode, named: Optional[str] = None):
+    def add_assertion(self, formula: FNode, named: str | None = None):
         """Add assertion to the solver.
 
         The optional ``named`` argument labels the assertion, so that
@@ -250,7 +243,7 @@ class Solver(object):
         for formula in formulae:
             self.add_assertion(formula)
 
-    def print_model(self, name_filter: Optional[str] = None):
+    def print_model(self, name_filter: str | None = None):
         """Prints the model (if one exists).
 
         An optional function can be passed, that will be called on each symbol
@@ -265,7 +258,7 @@ class Solver(object):
         """
         raise NotImplementedError
 
-    def get_py_value(self, formula: FNode) -> Union[str, bool, Fraction, int]:
+    def get_py_value(self, formula: FNode) -> str | bool | Fraction | int:
         """Returns the value of formula as a python type.
 
         E.g., Bool(True) is translated into True.
@@ -277,7 +270,7 @@ class Solver(object):
 
     def get_py_values(
         self, formulae: Iterable[FNode]
-    ) -> Dict[FNode, Union[str, bool, Fraction, int]]:
+    ) -> dict[FNode, str | bool | Fraction | int]:
         """Returns the values of the formulae as python types.
 
         Returns a dictionary mapping each formula to its python value.
@@ -314,7 +307,7 @@ class Solver(object):
         Raises TypeError.
         """
         if self.environment.stc.get_type(formula) != BOOL:
-            raise PysmtTypeError("Argument '%s' must be boolean." % formula)
+            raise PysmtTypeError(f"Argument '{formula}' must be boolean.")
 
 
 class IncrementalTrackingSolver(Solver):
@@ -343,11 +336,11 @@ class IncrementalTrackingSolver(Solver):
         """See py:func:`Solver.__init__()`."""
         Solver.__init__(self, environment, logic, **options)
 
-        self._last_result: Optional[str] = None
-        self._last_command: Optional[str] = None
+        self._last_result: str | None = None
+        self._last_command: str | None = None
 
-        self._assertion_stack: List[FNode] = []
-        self._backtrack_points: List[int] = []
+        self._assertion_stack: list[FNode] = []
+        self._backtrack_points: list[int] = []
 
     @property
     def last_command(self):
@@ -394,7 +387,7 @@ class IncrementalTrackingSolver(Solver):
         """
         raise NotImplementedError
 
-    def add_assertion(self, formula: FNode, named: Optional[str] = None):
+    def add_assertion(self, formula: FNode, named: str | None = None):
         tracked = self._add_assertion(formula, named=named)
         self._assertion_stack.append(tracked)
         self._last_command = "assert"
@@ -402,7 +395,7 @@ class IncrementalTrackingSolver(Solver):
     def _solve(self, assumptions=None):
         raise NotImplementedError
 
-    def solve(self, assumptions: Optional[Iterable[FNode]] = None) -> bool:
+    def solve(self, assumptions: Iterable[FNode] | None = None) -> bool:
         try:
             res = self._solve(assumptions=assumptions)
             self._last_result = res
@@ -450,11 +443,11 @@ class UnsatCoreSolver(Solver):
         if self.last_command != "solve":
             raise SolverStatusError(
                 "The solver status has been modified by a"
-                " '%s' command after the last call to"
-                " solve()" % self.last_command
+                f" '{self.last_command}' command after the last call to"
+                " solve()"
             )
 
-    def get_unsat_core(self) -> Set[FNode]:
+    def get_unsat_core(self) -> set[FNode]:
         """Returns the unsat core as a set of formulae.
 
         After a call to solve() yielding UNSAT, returns the unsat core
@@ -471,7 +464,7 @@ class UnsatCoreSolver(Solver):
         """
         raise NotImplementedError
 
-    def get_named_unsat_core(self) -> Dict[str, FNode]:
+    def get_named_unsat_core(self) -> dict[str, FNode]:
         """Returns the unsat core as a dict of names to formulae.
 
         After a call to solve() yielding UNSAT, returns the unsat core as a
@@ -490,7 +483,7 @@ class UnsatCoreSolver(Solver):
         return cast(UnsatCoreSolver, super().__enter__())
 
 
-class Model(object):
+class Model:
     """An abstract Model for a Solver.
 
     This class provides basic services to operate on a model returned
@@ -514,7 +507,7 @@ class Model(object):
 
     def get_values(
         self, formulae: Iterable[FNode], model_completion: bool = True
-    ) -> Dict[FNode, FNode]:
+    ) -> dict[FNode, FNode]:
         """Evaluates the values of the formulae in the current model.
 
         Evaluates the values of the formulae in the current model
@@ -528,7 +521,7 @@ class Model(object):
 
     def get_py_value(
         self, formula: FNode, model_completion: bool = True
-    ) -> Union[str, bool, Fraction, int]:
+    ) -> str | bool | Fraction | int:
         """Returns the value of formula as a python type.
 
         E.g., Bool(True) is translated into True.
@@ -540,7 +533,7 @@ class Model(object):
 
     def get_py_values(
         self, formulae: Iterable[FNode], model_completion: bool = True
-    ) -> Dict[FNode, Union[str, bool, Fraction, int]]:
+    ) -> dict[FNode, str | bool | Fraction | int]:
         """Returns the values of the formulae as python types.
 
         Returns the values of the formulae as python types. in the
@@ -550,7 +543,7 @@ class Model(object):
             f: self.get_py_value(f, model_completion=model_completion) for f in formulae
         }
 
-    def satisfies(self, formula: FNode, solver: Optional[Solver] = None) -> bool:
+    def satisfies(self, formula: FNode, solver: Solver | None = None) -> bool:
         """Checks whether the model satisfies the formula.
 
         The optional solver argument is used to complete partial
@@ -604,9 +597,9 @@ class Model(object):
         return self.get_value(idx, model_completion=True)
 
     def __str__(self):
-        return "\n".join(["%s := %s" % (var, value) for (var, value) in self])
+        return "\n".join([f"{var} := {value}" for (var, value) in self])
 
-    def __iter__(self) -> Iterator[Tuple[FNode, FNode]]:
+    def __iter__(self) -> Iterator[tuple[FNode, FNode]]:
         """This method must be implemented by subclasses"""
         raise NotImplementedError()
 
@@ -615,7 +608,7 @@ class Model(object):
         raise NotImplementedError()
 
 
-class Converter(object):
+class Converter:
     """A Converter implements functionalities to convert expressions.
 
     There are two key methods: convert() and back().
@@ -635,7 +628,7 @@ class Converter(object):
     # solvers refuse to declare it (MathSAT) or cannot print it back
     # (Z3). Those converters rename it to a fresh, unused name on the
     # way in and undo the renaming on the way out.
-    _empty_name_subst: Optional[str] = None
+    _empty_name_subst: str | None = None
     mgr: "pysmt.formula.FormulaManager"
 
     def _rename_empty(self, name: str) -> str:
@@ -644,9 +637,9 @@ class Converter(object):
             return name
         if self._empty_name_subst is None:
             i = 0
-            while ("__pysmt_empty_name_%d" % i) in self.mgr.symbols:
+            while f"__pysmt_empty_name_{i}" in self.mgr.symbols:
                 i += 1
-            self._empty_name_subst = "__pysmt_empty_name_%d" % i
+            self._empty_name_subst = f"__pysmt_empty_name_{i}"
         return self._empty_name_subst
 
     def _restore_empty(self, name: str) -> str:

@@ -16,26 +16,26 @@
 #   limitations under the License.
 #
 
-from typing import Iterable, Optional, Sequence
+from collections.abc import Iterable, Sequence
 
 import pysmt.logics
 from pysmt.fnode import FNode
 
 
-class Interpolator(object):
+class Interpolator:
     LOGICS: Iterable[pysmt.logics.Logic] = []
 
     def __init__(self):
         self._destroyed = False
 
-    def binary_interpolant(self, a: FNode, b: FNode) -> Optional[FNode]:
+    def binary_interpolant(self, a: FNode, b: FNode) -> FNode | None:
         """Returns a binary interpolant for the pair (a, b), if And(a, b) is
         unsatisfiable, or None if And(a, b) is satisfiable.
 
         """
         raise NotImplementedError
 
-    def sequence_interpolant(self, formulas: Sequence[FNode]) -> Optional[FNode]:
+    def sequence_interpolant(self, formulas: Sequence[FNode]) -> FNode | None:
         """Returns a sequence interpolant for the conjunction of formulas, or
         None if the problem is satisfiable.
 

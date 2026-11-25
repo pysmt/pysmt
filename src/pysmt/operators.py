@@ -23,7 +23,6 @@ these operators.
 """
 
 from itertools import chain
-from typing import List
 
 ALL_TYPES = list(range(0, 67))
 
@@ -182,7 +181,7 @@ ARRAY_OPERATORS = frozenset([ARRAY_SELECT, ARRAY_STORE, ARRAY_VALUE])
 
 THEORY_OPERATORS = IRA_OPERATORS | BV_OPERATORS | ARRAY_OPERATORS | STR_OPERATORS
 
-CUSTOM_NODE_TYPES: List[int] = []
+CUSTOM_NODE_TYPES: list[int] = []
 
 assert (
     BOOL_OPERATORS
@@ -212,7 +211,7 @@ def new_node_type(node_id=None, node_str=None):
     assert node_id not in CUSTOM_NODE_TYPES
     CUSTOM_NODE_TYPES.append(node_id)
     if node_str is None:
-        node_str = "Node_%d" % node_id
+        node_str = f"Node_{node_id}"
     __OP_STR__[node_id] = node_str
     return node_id
 

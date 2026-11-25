@@ -54,7 +54,7 @@ from tests import TestCase, main, skipIfNoSolverForLogic
 
 class TestFormulaManager(TestCase):
     def setUp(self):
-        super(TestFormulaManager, self).setUp()
+        super().setUp()
 
         self.env = get_env()
         self.mgr = self.env.formula_manager
@@ -609,7 +609,7 @@ class TestFormulaManager(TestCase):
         self.assertEqual(one, self.p)
 
     def test_exactly_one(self):
-        symbols = [self.mgr.Symbol("s%d" % i, BOOL) for i in range(5)]
+        symbols = [self.mgr.Symbol(f"s{i}", BOOL) for i in range(5)]
         c = self.mgr.ExactlyOne(symbols)
 
         self.assertTrue(len(c.args()) > 1)
@@ -622,7 +622,7 @@ class TestFormulaManager(TestCase):
 
         s1 = self.mgr.Symbol("x")
         s2 = self.mgr.Symbol("x")
-        f1 = self.mgr.ExactlyOne((s for s in [s1, s2]))
+        f1 = self.mgr.ExactlyOne(s for s in [s1, s2])
         f2 = self.mgr.ExactlyOne([s1, s2])
         f3 = self.mgr.ExactlyOne(s1, s2)
 
@@ -631,7 +631,7 @@ class TestFormulaManager(TestCase):
 
     @skipIfNoSolverForLogic(QF_BOOL)
     def test_exactly_one_is_sat(self):
-        symbols = [self.mgr.Symbol("s%d" % i, BOOL) for i in range(5)]
+        symbols = [self.mgr.Symbol(f"s{i}", BOOL) for i in range(5)]
         c = self.mgr.ExactlyOne(symbols)
         all_zero = self.mgr.And(
             [self.mgr.Iff(s, self.mgr.Bool(False)) for s in symbols]
@@ -643,7 +643,7 @@ class TestFormulaManager(TestCase):
         )
 
     def test_at_most_one(self):
-        symbols = [self.mgr.Symbol("s%d" % i, BOOL) for i in range(5)]
+        symbols = [self.mgr.Symbol(f"s{i}", BOOL) for i in range(5)]
         c = self.mgr.AtMostOne(symbols)
 
         self.assertTrue(len(c.args()) > 1)
@@ -674,7 +674,7 @@ class TestFormulaManager(TestCase):
 
     def test_all_different(self):
         many = 5
-        symbols = [self.mgr.Symbol("s%d" % i, INT) for i in range(many)]
+        symbols = [self.mgr.Symbol(f"s{i}", INT) for i in range(many)]
         f = self.mgr.AllDifferent(symbols)
 
         one = self.mgr.Int(1)
@@ -760,7 +760,7 @@ class TestFormulaManager(TestCase):
         self.assertEqual(
             str(args[0]),
             "A",
-            "Expecting symbol A, " + "symbol %s found instead" % str(args[0]),
+            "Expecting symbol A, " + f"symbol {str(args[0])} found instead",
         )
 
         a = dst_mgr.Symbol("A")
@@ -768,14 +768,14 @@ class TestFormulaManager(TestCase):
         g = dst_mgr.And(a, dst_mgr.Not(b))
 
         # Contextualized formula is memoized
-        self.assertEqual(f_new, g, "%s != %s" % (id(f_new), id(g)))
+        self.assertEqual(f_new, g, f"{id(f_new)} != {id(g)}")
         # But it differs from the one in the other formula manager
         self.assertNotEqual(f_new, f)
 
         # Normalizing a formula in the same manager should not
         # be a problem
         f_new = src_mgr.normalize(f)
-        self.assertEqual(f_new, f, "%s != %s" % (id(a), id(b)))
+        self.assertEqual(f_new, f, f"{id(a)} != {id(b)}")
 
         # Verify that new types do not lead to errors in pickling
         from tests.examples import get_example_formulae
@@ -1094,7 +1094,7 @@ class TestFormulaManager(TestCase):
         v_base = Integer(1)
         c_base = self.mgr.Int(v_base)
 
-        v_int = int(1)
+        v_int = 1
         c_int = self.mgr.Int(v_int)
         self.assertIs(c_base, c_int)
 

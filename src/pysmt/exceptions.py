@@ -17,8 +17,6 @@
 #
 """This module contains all custom exceptions of pySMT."""
 
-from typing import Optional, Tuple
-
 import pysmt.operators as op
 
 
@@ -121,9 +119,9 @@ class UnsupportedOperatorError(PysmtException):
 
     def __init__(self, message=None, node_type=None, expression=None):
         if message is None:
-            message = "Unsupported operator '%s' (node_type: %d)" % (
-                op.op_to_str(node_type),
-                node_type,
+            message = (
+                f"Unsupported operator '{op.op_to_str(node_type)}' "
+                f"(node_type: {node_type})"
             )
         PysmtException.__init__(self)
         self.message = message
@@ -148,7 +146,7 @@ class UndefinedSymbolError(PysmtException):
         self.name = name
 
     def __str__(self):
-        return "'%s' is not defined!" % self.name
+        return f"'{self.name}' is not defined!"
 
 
 class PysmtModeError(PysmtException):
@@ -182,14 +180,14 @@ class PysmtTypeError(PysmtException, TypeError):
 
 
 class PysmtSyntaxError(PysmtException, SyntaxError):
-    def __init__(self, message: str, pos_info: Optional[Tuple[int, int]] = None):
-        super(PysmtSyntaxError, self).__init__(message)
+    def __init__(self, message: str, pos_info: tuple[int, int] | None = None):
+        super().__init__(message)
         self.pos_info = pos_info
         self.message = message
 
     def __str__(self):
         if self.pos_info:
-            return "Line %d, Col %d: " % self.pos_info + self.message
+            return f"Line {self.pos_info[0]}, Col {self.pos_info[1]}: {self.message}"
         else:
             return self.message
 
@@ -247,7 +245,8 @@ class GoalNotSupportedError(PysmtException):
         return self._mode
 
     def __str__(self):
-        mode_str = (" in mode '%s'" % self.mode) if self.mode else ""
-        return "Optimizer '%s' does not support goal '%s'%s" % tuple(
-            map(str, (type(self.solver).__name__, self.goal, mode_str))
+        mode_str = (f" in mode '{self.mode}'") if self.mode else ""
+        return (
+            f"Optimizer '{type(self.solver).__name__}' "
+            f"does not support goal '{self.goal}'{mode_str}"
         )
