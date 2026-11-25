@@ -140,7 +140,7 @@ class FormulaManager:
         try:
             return self.symbols[name]
         except KeyError:
-            raise UndefinedSymbolError(name)
+            raise UndefinedSymbolError(name) from None
 
     def get_all_symbols(self) -> Iterable[FNode]:
         return self.symbols.values()
@@ -291,7 +291,7 @@ class FormulaManager:
         ) and self.env.enable_div_by_0:
             # Allow division by 0 byt warn the user
             # This can only happen in non-linear logics
-            warnings.warn("Warning: Division by 0")
+            warnings.warn("Warning: Division by 0", stacklevel=2)
         elif right.is_constant(types.REAL):
             # If right is a constant we rewrite as left * 1/right
             inverse = Fraction(1) / right.constant_value()
@@ -1254,7 +1254,7 @@ class FormulaContextualizer(IdentityDagWalker):
         self, formula: FNode, args: Sequence[FNode], **kwargs
     ) -> FNode:
         # Recreate the ArrayValue taking into account the type information
-        assign = dict(zip(args[1::2], args[2::2]))
+        assign = dict(zip(args[1::2], args[2::2], strict=True))
         ty = self.type_normalize(formula.array_value_index_type())
         return self.mgr.Array(ty, args[0], assign)
 

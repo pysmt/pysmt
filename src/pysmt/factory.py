@@ -246,13 +246,13 @@ class Factory:
             if logic is None:
                 try:
                     logic = most_generic_logic(SolverClass.LOGICS)
-                except NoLogicAvailableError:
+                except NoLogicAvailableError as ex:
                     if default_logic in SolverClass.LOGICS:
                         logic = default_logic
                     else:
                         raise NoLogicAvailableError(
                             "Cannot automatically select a logic"
-                        )
+                        ) from ex
 
             closer_logic = get_closer_logic(SolverClass.LOGICS, logic)
 
@@ -315,7 +315,8 @@ class Factory:
         self._generic_solvers[name] = (args, logics)
         solver = cast(type[SmtLibSolver], partial(SmtLibSolver, args, LOGICS=logics))
         solver.LOGICS = logics
-        setattr(solver, "UNSAT_CORE_SUPPORT", unsat_core_support)
+        # mypy: UNSAT_CORE_SUPPORT is declared on UnsatCoreSolver, not SmtLibSolver
+        setattr(solver, "UNSAT_CORE_SUPPORT", unsat_core_support)  # noqa: B010
         self._all_solvers[name] = solver
         # Extend preference list accordingly
         self.preferences["Solver"].append(name)
@@ -433,8 +434,8 @@ class Factory:
             try:
                 MSatFMQuantifierEliminator(self.environment)
                 MSatLWQuantifierEliminator(self.environment)
-            except NotImplementedError:
-                raise SolverAPINotFound
+            except NotImplementedError as ex:
+                raise SolverAPINotFound from ex
 
             self._all_qelims["msat_fm"] = MSatFMQuantifierEliminator
             self._all_qelims["msat_lw"] = MSatLWQuantifierEliminator
@@ -453,8 +454,8 @@ class Factory:
             try:
                 OptiMSATFMQuantifierEliminator(self.environment)
                 OptiMSATLWQuantifierEliminator(self.environment)
-            except NotImplementedError:
-                raise SolverAPINotFound
+            except NotImplementedError as ex:
+                raise SolverAPINotFound from ex
 
             self._all_qelims["optimsat_fm"] = OptiMSATFMQuantifierEliminator
             self._all_qelims["optimsat_lw"] = OptiMSATLWQuantifierEliminator

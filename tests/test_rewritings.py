@@ -351,7 +351,7 @@ class TestRewritings(TestCase):
         from tests.smtlib.parser_utils import formulas_from_smtlib_test_set
 
         test_set = formulas_from_smtlib_test_set(logics=[QF_LRA, QF_NRA])
-        for _, fname, f, _ in test_set:
+        for _, _fname, f, _ in test_set:
             td = TimesDistributor()
             _ = td.walk(f)
             for old, new in td.memoization.items():

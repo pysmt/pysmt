@@ -79,26 +79,30 @@ def execute_script_fname(smtfile: str, logic: Logic, expected_result: bool):
         with Solver(logic=logic, incremental=False, generate_models=False) as solver:
             if logic == QF_UF and type(solver).__name__ == "CVC5Solver":
                 warnings.warn(
-                    f"Test ({logic}, {smtfile}) skipped because CVC5 can't handle QF_UF."
+                    f"Test ({logic}, {smtfile}) skipped because CVC5 can't handle QF_UF.",
+                    stacklevel=2,
                 )
                 return
             if logic == QF_LIA and type(solver).__name__ == "CVC5Solver":
                 warnings.warn(
-                    f"Test ({logic}, {smtfile}) skipped because CVC5 is very slow on QF_LIA tests"
+                    f"Test ({logic}, {smtfile}) skipped because CVC5 is very slow on QF_LIA tests",
+                    stacklevel=2,
                 )
                 return
             if logic == QF_UF and type(solver).__name__ == "BoolectorSolver":
                 warnings.warn(
-                    f"Test ({logic}, {smtfile}) skipped because Boolector can't handle QF_UF."
+                    f"Test ({logic}, {smtfile}) skipped because Boolector can't handle QF_UF.",
+                    stacklevel=2,
                 )
                 return
             log = script.evaluate(cast(SmtLibSolver, solver))
     except NoSolverAvailableError:
-        raise SkipTest(f"No solver for logic {logic}.")
+        raise SkipTest(f"No solver for logic {logic}.") from None
     except SolverReturnedUnknownResultError:
         if not logic.quantifier_free:
             warnings.warn(
-                f"Test ({logic}, {smtfile}) could not be solved due to quantifiers."
+                f"Test ({logic}, {smtfile}) could not be solved due to quantifiers.",
+                stacklevel=2,
             )
             return
         raise
@@ -272,7 +276,7 @@ def omt_test_cases_from_smtlib_test_set(logics: None = None) -> Iterator[OMTTest
                 if optimization_type == OptimizationTypes.BASIC:
                     assert len(parsed_goals) == len(expected_values)
                     for parsed_goal, expected_value in zip(
-                        parsed_goals, expected_values
+                        parsed_goals, expected_values, strict=True
                     ):
                         key: tuple[tuple[Goal, ...], OptimizationTypes] = (
                             (parsed_goal,),

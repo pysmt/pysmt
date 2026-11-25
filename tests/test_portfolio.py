@@ -18,6 +18,7 @@
 import os
 import sys
 
+from pysmt.exceptions import ConvertExpressionError
 from pysmt.logics import QF_BOOL, QF_LRA, QF_UFLIRA
 from pysmt.shortcuts import FALSE, TRUE, Equals, Implies, Symbol, is_sat, reset_env
 from pysmt.smtlib.parser import get_formula_fname
@@ -196,7 +197,7 @@ class PortfolioTestCase(TestCase):
                 solver_options={"exit_on_exception": True},
             ) as s:
                 s.add_assertion(Equals(Symbol("r", REAL), Symbol("r", REAL)))
-                with self.assertRaises(Exception):
+                with self.assertRaises(ConvertExpressionError):
                     s.solve()
 
 

@@ -207,7 +207,7 @@ class TestOptimization(TestCase):
         for oname in get_env().factory.all_optimizers(logic=QF_LIA):
             with Optimizer(name=oname) as opt:
                 opt.add_assertion(formula)
-                models, costs = zip(*opt.pareto_optimize([obj1, obj2]))
+                models, costs = zip(*opt.pareto_optimize([obj1, obj2]), strict=True)
                 self.assertEqual(len(models), 11)
                 self.assertTrue(all(m[x].constant_value() == 0 for m in models))
                 self.assertTrue(
@@ -226,7 +226,7 @@ class TestOptimization(TestCase):
         for oname in get_env().factory.all_optimizers(logic=QF_LIA):
             with Optimizer(name=oname) as opt:
                 opt.add_assertion(formula)
-                for x in opt.pareto_optimize([obj1, obj2]):
+                for _ in opt.pareto_optimize([obj1, obj2]):
                     self.assertTrue(False)
 
     @skipIfNoOptimizerForLogic(QF_LIA)

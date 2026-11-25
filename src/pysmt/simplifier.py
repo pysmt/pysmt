@@ -1042,7 +1042,7 @@ class Simplifier(pysmt.walkers.DagWalker):
         return self.manager.Store(a, i, v)
 
     def walk_array_value(self, formula: FNode, args: list[FNode], **kwargs) -> FNode:
-        assign = dict(zip(args[1::2], args[2::2]))
+        assign = dict(zip(args[1::2], args[2::2], strict=True))
         return self.manager.Array(formula.array_value_index_type(), args[0], assign)
 
     def walk_div(self, formula: FNode, args: list[FNode], **kwargs) -> FNode:

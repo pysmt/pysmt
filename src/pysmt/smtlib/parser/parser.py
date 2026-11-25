@@ -128,7 +128,7 @@ class SmtLibExecutionCache:
     ) -> Callable:
         def res(*actual_parameters):
             assert len(formal_parameters) == len(actual_parameters)
-            submap = dict(zip(formal_parameters, actual_parameters))
+            submap = dict(zip(formal_parameters, actual_parameters, strict=True))
             return self.substitute(expression, submap)
 
         return res
@@ -213,9 +213,11 @@ class Tokenizer:
                 t = self.consume_maybe()
             except StopIteration:
                 if msg:
-                    raise PysmtSyntaxError(msg, self.pos_info)
+                    raise PysmtSyntaxError(msg, self.pos_info) from None
                 else:
-                    raise PysmtSyntaxError("Unexpected end of stream.", self.pos_info)
+                    raise PysmtSyntaxError(
+                        "Unexpected end of stream.", self.pos_info
+                    ) from None
             return t
 
     def raw_read(self) -> str:
@@ -362,7 +364,7 @@ def _chainable(mgr: FormulaManager, operator: Callable) -> Callable:
     """(op a b c) is expanded to (and (op a b) (op b c))"""
 
     def res(*args):
-        return mgr.And([operator(l, r) for l, r in zip(args, args[1:])])
+        return mgr.And([operator(l, r) for l, r in zip(args, args[1:], strict=False)])
 
     return res
 
@@ -637,81 +639,81 @@ class SmtLibParser:
             try:
                 start = int(sstart)
                 end = int(send)
-            except ValueError:
+            except ValueError as ex:
                 raise PysmtSyntaxError(
                     "Expected number in '_ extract' expression", tokens.pos_info
-                )
+                ) from ex
             fun = lambda x: mgr.BVExtract(x, start, end)
 
         elif op == "zero_extend":
             swidth = self.parse_atom(tokens, "expression")
             try:
                 width = int(swidth)
-            except ValueError:
+            except ValueError as ex:
                 raise PysmtSyntaxError(
                     "Expected number in '_ zero_extend' expression", tokens.pos_info
-                )
+                ) from ex
             fun = lambda x: mgr.BVZExt(x, width)
 
         elif op == "repeat":
             scount = self.parse_atom(tokens, "expression")
             try:
                 count = int(scount)
-            except ValueError:
+            except ValueError as ex:
                 raise PysmtSyntaxError(
                     "Expected number in '_ repeat' expression", tokens.pos_info
-                )
+                ) from ex
             fun = lambda x: mgr.BVRepeat(x, count)
 
         elif op == "rotate_left":
             sstep = self.parse_atom(tokens, "expression")
             try:
                 step = int(sstep)
-            except ValueError:
+            except ValueError as ex:
                 raise PysmtSyntaxError(
                     "Expected number in '_ rotate_left' expression", tokens.pos_info
-                )
+                ) from ex
             fun = lambda x: mgr.BVRol(x, step)
 
         elif op == "rotate_right":
             sstep = self.parse_atom(tokens, "expression")
             try:
                 step = int(sstep)
-            except ValueError:
+            except ValueError as ex:
                 raise PysmtSyntaxError(
                     "Expected number in '_ rotate_left' expression", tokens.pos_info
-                )
+                ) from ex
             fun = lambda x: mgr.BVRor(x, step)
 
         elif op == "sign_extend":
             swidth = self.parse_atom(tokens, "expression")
             try:
                 width = int(swidth)
-            except ValueError:
+            except ValueError as ex:
                 raise PysmtSyntaxError(
                     "Expected number in '(_ sign_extend) expression'", tokens.pos_info
-                )
+                ) from ex
             fun = lambda x: mgr.BVSExt(x, width)
 
         elif op.startswith("bv"):
             try:
                 v = int(op[2:])
                 width = int(self.parse_atom(tokens, "expression"))
-            except ValueError:
+            except ValueError as ex:
                 raise PysmtSyntaxError(
                     f"Expected number in '_ bv' expression: '{op}'", tokens.pos_info
-                )
+                ) from ex
             fun = mgr.BV(v, width)
         elif op == "to_bv":
             # this is necessary to the current syntax of _ to_bv, which open an empty stack
             stack.pop()
             try:
                 width = int(self.parse_atom(tokens, "expression"))
-            except ValueError:
+            except ValueError as ex:
                 raise PysmtSyntaxError(
                     f"Expected number in '_ to_bv' expression: '{op}'",
                     tokens.pos_info,
-                )
+                ) from ex
             self.consume_closing(tokens, "expression")
             fnv = cast(FNode, self.get_expression(tokens))
             if fnv.is_int_constant():
@@ -976,13 +978,17 @@ class SmtLibParser:
                         lst = stack.pop()
                         fun = lst.pop(0)
                     except IndexError:
-                        raise PysmtSyntaxError("Unexpected ')'", tokens.pos_info)
+                        raise PysmtSyntaxError(
+                            "Unexpected ')'", tokens.pos_info
+                        ) from None
 
                     try:
                         res = fun(*lst)
                     except TypeError as err:
                         if not callable(fun):
-                            raise NotImplementedError(f"Unknown function '{fun}'")
+                            raise NotImplementedError(
+                                f"Unknown function '{fun}'"
+                            ) from None
                         raise err
 
                     if len(stack) > 0:
@@ -1172,11 +1178,11 @@ class SmtLibParser:
                 dim = tokens.consume()
                 try:
                     size = int(dim)
-                except ValueError:
+                except ValueError as ex:
                     raise PysmtSyntaxError(
                         f"Unexpected token '{dim}' in {command} command.",
                         tokens.pos_info,
-                    )
+                    ) from ex
 
                 self.consume_closing(tokens, command)
                 res = self.env.type_manager.BVType(size)
@@ -1432,7 +1438,10 @@ class SmtLibParser:
             self.logic = get_logic_by_name(name)
             return SmtLibCommand(current, [self.logic])
         except UndefinedLogicError:
-            warn("Unknown logic '" + name + "'. Ignoring set-logic command.")
+            warn(
+                "Unknown logic '" + name + "'. Ignoring set-logic command.",
+                stacklevel=2,
+            )
             return SmtLibCommand(current, [None])
 
     def _cmd_declare_const(self, current: str, tokens: Tokenizer) -> SmtLibCommand:
@@ -1581,10 +1590,10 @@ class SmtLibParser:
         (typename, arity) = self.parse_atoms(tokens, current, 2)
         try:
             type_ = self.env.type_manager.Type(typename, int(arity))
-        except ValueError:
+        except ValueError as ex:
             raise PysmtSyntaxError(
                 f"Expected an integer as arity of type {typename}.", tokens.pos_info
-            )
+            ) from ex
         self.cache.bind(typename, type_)
         return SmtLibCommand(current, [type_])
 

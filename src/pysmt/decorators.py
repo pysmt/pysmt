@@ -94,7 +94,7 @@ def catch_conversion_error(f: Callable) -> Callable:
                 + "The formula contains unsupported operators. "
                 + f"The error was: {ex.message}",
                 expression=ex.expression,
-            )
+            ) from ex
         return res
 
     return catch_conversion_error_wrap

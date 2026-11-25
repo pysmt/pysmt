@@ -31,8 +31,8 @@ def MSATLibLoader(name):
 
     try:
         return importlib.import_module(name)
-    except ImportError:
-        raise SolverAPINotFound
+    except ImportError as ex:
+        raise SolverAPINotFound from ex
 
 
 def MSATCreateEnv(name: str, msat_config: Any) -> "pysmt.solvers.msat.MSatEnv":

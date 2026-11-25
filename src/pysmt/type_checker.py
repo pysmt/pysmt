@@ -345,7 +345,9 @@ class SimpleTypeChecker(walkers.DagWalker):
         if len(args) != len(cast(types._FunctionType, tp).param_types):
             return None
 
-        for arg, p_type in zip(args, cast(types._FunctionType, tp).param_types):
+        for arg, p_type in zip(
+            args, cast(types._FunctionType, tp).param_types, strict=True
+        ):
             if arg != p_type:
                 return None
 

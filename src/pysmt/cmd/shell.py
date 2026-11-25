@@ -190,7 +190,10 @@ class PysmtShell:
                 print("Unable to execute in interactive mode with an input file")
                 sys.exit(1)
             if self.args.solver != "auto":
-                warn("The solver option will be ignored in interactive mode")
+                warn(
+                    "The solver option will be ignored in interactive mode",
+                    stacklevel=2,
+                )
             self.interactive()
         else:
             if self.args.file is None:

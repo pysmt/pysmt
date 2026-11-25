@@ -608,11 +608,11 @@ class InterpreterOMT(InterpreterSMT):
 
             elif self.opt_priority == "pareto":
                 assert isinstance(optimizer, Optimizer)
-                for model, values in optimizer.pareto_optimize(
+                for _model, values in optimizer.pareto_optimize(
                     self.optimization_goals[0]
                 ):
                     rt = True
-                    for g, v in zip(self.optimization_goals[0], values):
+                    for g, v in zip(self.optimization_goals[0], values, strict=True):
                         self.optimization_goals[1].append((g.term(), v))
 
             elif self.opt_priority == "box":
@@ -633,7 +633,7 @@ class InterpreterOMT(InterpreterSMT):
                 if lex_results is not None:
                     _, values = lex_results
                     rt = True
-                    for g, v in zip(self.optimization_goals[0], values):
+                    for g, v in zip(self.optimization_goals[0], values, strict=True):
                         self.optimization_goals[1].append((g.term(), v))
             return rt
 

@@ -66,8 +66,9 @@ def _find_library_or_installed_yices(name: str) -> str | None:
 ctypes.util.find_library = _find_library_or_installed_yices
 try:
     import yices_api  # type: ignore[import]
-except Exception:  # yices_api raises its own YicesAPIException when libyices is missing
-    raise SolverAPINotFound
+# yices_api raises its own YicesAPIException when libyices is missing
+except Exception as ex:
+    raise SolverAPINotFound from ex
 finally:
     ctypes.util.find_library = _find_library
 
@@ -76,7 +77,7 @@ finally:
 def init():
     if not getattr(init, "initialized", False):
         yices_api.yices_init()
-    setattr(init, "initialized", True)
+    init.initialized = True
 
 
 def reset_yices():
@@ -187,7 +188,7 @@ class YicesSolver(SmtLibBasicSolver):
             )
             != 0
         ):
-            warn(f"Error setting config for logic {logic}")
+            warn(f"Error setting config for logic {logic}", stacklevel=2)
         self.yices_params: Any  # This is set in the self.options(self) call
         self.options(self)
         assert isinstance(self.options, YicesOptions)

@@ -976,7 +976,7 @@ class Ackermannizer(IdentityDagWalker):
         self, option1: Sequence[FNode], option2: Sequence[FNode], f: FNode
     ) -> FNode:
         left_conjuncts = set()
-        for term1, term2 in zip(option1, option2):
+        for term1, term2 in zip(option1, option2, strict=True):
             if term1.is_function_application():
                 term1 = self._terms_dict[term1]
             if term2.is_function_application():

@@ -58,8 +58,9 @@ class handles:
     def __call__(self, func: Callable) -> Callable:
         nodetypes = self.nodetypes
         if hasattr(func, "nodetypes"):
-            nodetypes = cast(list[int], getattr(func, "nodetypes")) + nodetypes
-        setattr(func, "nodetypes", nodetypes)
+            nodetypes = cast(list[int], func.nodetypes) + nodetypes
+        # mypy: Callable has no attribute nodetypes
+        setattr(func, "nodetypes", nodetypes)  # noqa: B010
         return func
 
 
@@ -70,11 +71,9 @@ class MetaNodeTypeHandler(type):
         cls: type["MetaNodeTypeHandler"], name: str, bases: Any, dct: dict[str, Any]
     ) -> Any:
         obj = type.__new__(cls, name, bases, dct)
-        for k, v in dct.items():
+        for v in dct.values():
             if hasattr(v, "nodetypes"):
-                cast("Walker", obj).set_handler(
-                    v, *cast(list[int], getattr(v, "nodetypes"))
-                )
+                cast("Walker", obj).set_handler(v, *cast(list[int], v.nodetypes))
         return obj
 
 
@@ -129,7 +128,7 @@ class Walker(metaclass=MetaNodeTypeHandler):
             if fun is None:
                 raise pysmt.exceptions.UnsupportedOperatorError(
                     node_type=nt, expression=formula
-                )
+                ) from None
             return fun(self, formula, *args, **kwargs)
         return f(self, formula, *args, **kwargs)
 

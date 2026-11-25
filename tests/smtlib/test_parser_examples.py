@@ -353,7 +353,7 @@ class TestSMTParseExamples(TestCase):
         ]
 
         self.assertEqual(len(parsed), len(expected))
-        for got, exp in zip(parsed, expected):
+        for got, exp in zip(parsed, expected, strict=True):
             self.assertEqual(got, exp)
         # ...and the conjunction of all of them is what the script means
         self.assertEqual(

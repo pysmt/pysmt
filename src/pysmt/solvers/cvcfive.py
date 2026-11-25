@@ -26,8 +26,8 @@ from pysmt.typing import PySMTType, _ArrayType, _BVType, _FunctionType
 
 try:
     import cvc5  # type: ignore[import]
-except ImportError:
-    raise SolverAPINotFound
+except ImportError as ex:
+    raise SolverAPINotFound from ex
 
 from cvc5 import Kind  # type: ignore[import]
 
@@ -59,8 +59,8 @@ class CVC5Options(SolverOptions):
     def _set_option(cvc5_solver: cvc5.Solver, name: str, value: str):
         try:
             cvc5_solver.setOption(name, value)
-        except BaseException:
-            raise PysmtValueError(f"Error setting the option '{name}={value}'")
+        except BaseException as ex:
+            raise PysmtValueError(f"Error setting the option '{name}={value}'") from ex
 
     def __call__(self, solver: "CVC5Solver"):
         if solver.logic_name == "QF_SLIA":
@@ -172,7 +172,7 @@ class CVC5Solver(SmtLibBasicSolver):
             try:
                 res = self.cvc5_solver.checkSat()
             except Exception as ex:
-                raise InternalSolverError(str(ex))
+                raise InternalSolverError(str(ex)) from ex
 
         # Convert returned type
         if res.isUnknown():

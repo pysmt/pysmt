@@ -97,7 +97,7 @@ class FunctionInterpretation:
                 "The number of actual parameters does not match "
                 "with the number of formal parameters"
             )
-        subs = dict(zip(self.formal_params, actual_params))
+        subs = dict(zip(self.formal_params, actual_params, strict=True))
         SubsClass = type(env.substituter)
         return SubsClass(env).substitute(self.function_body, subs)
 

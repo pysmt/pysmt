@@ -39,8 +39,8 @@ try:
     for x in enums:
         pyboolector.__dict__.update(x.__members__)
 
-except ImportError:
-    raise SolverAPINotFound
+except ImportError as ex:
+    raise SolverAPINotFound from ex
 
 
 from pysmt.constants import to_python_integer
@@ -173,10 +173,10 @@ class BoolectorOptions(SolverOptions):
         }
         try:
             btor.Set_opt(available_options[name], value)
-        except TypeError:
-            raise PysmtValueError(f"Error setting the option '{name}={value}'")
-        except pyboolector.BoolectorException:
-            raise PysmtValueError(f"Error setting the option '{name}={value}'")
+        except TypeError as ex:
+            raise PysmtValueError(f"Error setting the option '{name}={value}'") from ex
+        except pyboolector.BoolectorException as ex:
+            raise PysmtValueError(f"Error setting the option '{name}={value}'") from ex
         except KeyError:
             raise PysmtValueError(
                 "Unable to set non-existing option '{}'. "
@@ -187,7 +187,7 @@ class BoolectorOptions(SolverOptions):
                         for io in self.internal_options
                     ),
                 )
-            )
+            ) from None
 
     def __call__(self, solver):
         if self.generate_models:
@@ -271,7 +271,11 @@ class BoolectorSolver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSol
         if len(formulae) == 0:
             return []
         terms = [self.converter.convert(f) for f in formulae]
-        return [f for f, failed in zip(formulae, self.btor.Failed(*terms)) if failed]
+        return [
+            f
+            for f, failed in zip(formulae, self.btor.Failed(*terms), strict=True)
+            if failed
+        ]
 
     @clear_pending_pop
     def _solve(self, assumptions=None):

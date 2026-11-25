@@ -44,7 +44,7 @@ try:
     HAS_GMPY = True
 except ImportError as ex:
     if ENV_USE_GMPY is True:
-        raise PysmtImportError(str(ex))
+        raise PysmtImportError(str(ex)) from ex
 
 if ENV_USE_GMPY is False:
     # Explicitely disable GMPY
