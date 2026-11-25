@@ -83,10 +83,10 @@ class FormulaManager:
         self.string_constants: dict[str, FNode] = {}
 
         self.true_formula = self.create_node(
-            node_type=op.BOOL_CONSTANT, args=tuple(), payload=True
+            node_type=op.BOOL_CONSTANT, args=(), payload=True
         )
         self.false_formula = self.create_node(
-            node_type=op.BOOL_CONSTANT, args=tuple(), payload=False
+            node_type=op.BOOL_CONSTANT, args=(), payload=False
         )
         self._normalizer: FormulaContextualizer | None = None
 
@@ -119,9 +119,7 @@ class FormulaManager:
             raise PysmtEmptySymbolNameError()
         if not isinstance(typename, types.PySMTType):
             raise PysmtValueError("typename must be a PySMTType.")
-        n = self.create_node(
-            node_type=op.SYMBOL, args=tuple(), payload=(name, typename)
-        )
+        n = self.create_node(node_type=op.SYMBOL, args=(), payload=(name, typename))
         self.symbols[name] = n
         return n
 
@@ -378,7 +376,7 @@ class FormulaManager:
                 "Invalid type in constant. The type was:" + str(type(value))
             )
 
-        n = self.create_node(node_type=op.REAL_CONSTANT, args=tuple(), payload=val)
+        n = self.create_node(node_type=op.REAL_CONSTANT, args=(), payload=val)
         self.real_constants[value] = n
         return n
 
@@ -395,7 +393,7 @@ class FormulaManager:
             raise PysmtTypeError(
                 "Invalid type in constant. The type was:" + str(type(value))
             )
-        n = self.create_node(node_type=op.INT_CONSTANT, args=tuple(), payload=val)
+        n = self.create_node(node_type=op.INT_CONSTANT, args=(), payload=val)
         self.int_constants[value] = n
         return n
 
@@ -405,7 +403,7 @@ class FormulaManager:
             return self.string_constants[value]
 
         if is_python_string(value):
-            n = self.create_node(node_type=op.STR_CONSTANT, args=tuple(), payload=value)
+            n = self.create_node(node_type=op.STR_CONSTANT, args=(), payload=value)
             self.string_constants[value] = n
             return n
         else:
@@ -695,7 +693,7 @@ class FormulaManager:
             raise PysmtValueError(f"Cannot express {str(_value)} in {str(width)} bits")
 
         return self.create_node(
-            node_type=op.BV_CONSTANT, args=tuple(), payload=(_value, width)
+            node_type=op.BV_CONSTANT, args=(), payload=(_value, width)
         )
 
     def SBV(self, value: int | str, width: int | None = None) -> FNode:
@@ -1177,9 +1175,7 @@ class FormulaManager:
 
     def _Algebraic(self, val: Numeral) -> FNode:
         """Returns the algebraic number val."""
-        return self.create_node(
-            node_type=op.ALGEBRAIC_CONSTANT, args=tuple(), payload=val
-        )
+        return self.create_node(node_type=op.ALGEBRAIC_CONSTANT, args=(), payload=val)
 
     #
     # Helper functions

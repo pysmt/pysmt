@@ -169,11 +169,11 @@ class YicesSolver(SmtLibBasicSolver):
     LOGICS = (
         pysmt.logics.PYSMT_QF_LOGICS
         - pysmt.logics.ARRAYS_LOGICS
-        - set(
+        - {
             l
             for l in pysmt.logics.PYSMT_QF_LOGICS
             if not l.theory.linear or l.theory.strings
-        )
+        }
     )
     OptionsClass = YicesOptions
 

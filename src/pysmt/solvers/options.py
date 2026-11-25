@@ -103,7 +103,7 @@ class SolverOptions:
                     f"Invalid value {solver_options} for 'solver_options'"
                 ) from ex
         else:
-            solver_options = dict()
+            solver_options = {}
         self.solver_options = solver_options
 
     @abc.abstractmethod

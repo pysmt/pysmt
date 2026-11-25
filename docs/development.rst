@@ -133,9 +133,10 @@ Code Style
 pySMT uses `ruff <https://docs.astral.sh/ruff/>`_ for linting and
 formatting, with a line length of 88 columns. The enabled rule families
 are pycodestyle (``E``, ``W``), Pyflakes (``F``), isort (``I``),
-pyupgrade (``UP``) and flake8-bugbear (``B``). The rules and the
-exceptions are configured in ``pyproject.toml``. ``just format`` fixes
-most issues, and ``just lint`` checks what the CI checks.
+pyupgrade (``UP``), flake8-bugbear (``B``) and flake8-comprehensions
+(``C4``). The rules and the exceptions are configured in
+``pyproject.toml``. ``just format`` fixes most issues, and ``just lint``
+checks what the CI checks.
 
 The pre-commit hooks run the linter, the type checker and a few file
 checks before each commit. They need Python 3.11 or later, since

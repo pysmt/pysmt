@@ -190,9 +190,7 @@ class TheoryOracle(walkers.DagWalker):
     @walkers.handles(op.RELATIONS)
     @walkers.handles(op.BOOL_OPERATORS)
     @walkers.handles(op.BV_OPERATORS)
-    @walkers.handles(
-        op.STR_OPERATORS - set([op.STR_LENGTH, op.STR_INDEXOF, op.STR_TO_INT])
-    )
+    @walkers.handles(op.STR_OPERATORS - {op.STR_LENGTH, op.STR_INDEXOF, op.STR_TO_INT})
     @walkers.handles(op.ITE, op.ARRAY_SELECT, op.ARRAY_STORE, op.MINUS)
     def walk_combine(self, formula: FNode, args: list[Theory], **kwargs) -> Theory:
         """Combines the current theory value of the children"""
@@ -355,7 +353,7 @@ class TheoryOracle(walkers.DagWalker):
 
 # Operators for which Args is an FNode
 DEPENDENCIES_SIMPLE_ARGS = set(op.ALL_TYPES) - (
-    set([op.SYMBOL, op.FUNCTION]) | op.QUANTIFIERS | op.CONSTANTS
+    {op.SYMBOL, op.FUNCTION} | op.QUANTIFIERS | op.CONSTANTS
 )
 
 
@@ -401,7 +399,7 @@ class FreeVarsOracle(walkers.DagWalker):
     def walk_function(
         self, formula: FNode, args: list[frozenset[FNode]], **kwargs
     ) -> frozenset[FNode]:
-        res = set([formula.function_name()])
+        res = {formula.function_name()}
         for arg in args:
             res.update(arg)
         return frozenset(chain([formula.function_name()], *args))
@@ -535,10 +533,7 @@ class TypesOracle(walkers.DagWalker):
         return expanded
 
     @walkers.handles(
-        set(op.ALL_TYPES)
-        - set([op.SYMBOL, op.FUNCTION])
-        - op.QUANTIFIERS
-        - op.CONSTANTS
+        set(op.ALL_TYPES) - {op.SYMBOL, op.FUNCTION} - op.QUANTIFIERS - op.CONSTANTS
     )
     def walk_combine(
         self, formula: FNode, args: list[frozenset[PySMTType]], **kwargs

@@ -251,7 +251,7 @@ class TestWalkers(TestCase):
             f = And(f, f)
 
         cone = f.get_free_variables()
-        self.assertEqual(cone, set([Symbol("x")]))
+        self.assertEqual(cone, {Symbol("x")})
 
     def test_walk_error(self):
         """All walk methods by default call walk_error."""

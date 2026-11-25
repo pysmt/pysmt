@@ -39,14 +39,14 @@ class TestBasic(TestCase):
         ann.add(a, "related", init_a)
 
         self.assertIn(a, ann)
-        self.assertEqual(set([next_a]), assert_not_none(ann.annotations(a))["next"])
-        self.assertEqual(set([init_a]), assert_not_none(ann.annotations(a))["init"])
+        self.assertEqual({next_a}, assert_not_none(ann.annotations(a))["next"])
+        self.assertEqual({init_a}, assert_not_none(ann.annotations(a))["init"])
         self.assertEqual(
-            set([init_a, next_a]), assert_not_none(ann.annotations(a))["related"]
+            {init_a, next_a}, assert_not_none(ann.annotations(a))["related"]
         )
-        self.assertEqual(set([a]), ann.all_annotated_formulae("next"))
-        self.assertEqual(set([a]), ann.all_annotated_formulae("init"))
-        self.assertEqual(set([a]), ann.all_annotated_formulae("related"))
+        self.assertEqual({a}, ann.all_annotated_formulae("next"))
+        self.assertEqual({a}, ann.all_annotated_formulae("init"))
+        self.assertEqual({a}, ann.all_annotated_formulae("related"))
         self.assertEqual(set(), ann.all_annotated_formulae("non-existent"))
 
     def test_remove(self):
@@ -65,9 +65,9 @@ class TestBasic(TestCase):
         self.assertNotIn(a, ann)
 
         self.assertEqual(None, ann.annotations(a))
-        self.assertEqual(set([]), ann.all_annotated_formulae("next"))
-        self.assertEqual(set([]), ann.all_annotated_formulae("init"))
-        self.assertEqual(set([]), ann.all_annotated_formulae("related"))
+        self.assertEqual(set(), ann.all_annotated_formulae("next"))
+        self.assertEqual(set(), ann.all_annotated_formulae("init"))
+        self.assertEqual(set(), ann.all_annotated_formulae("related"))
         self.assertEqual(set(), ann.all_annotated_formulae("non-existent"))
 
     def test_remove_annotation(self):
@@ -84,13 +84,13 @@ class TestBasic(TestCase):
         ann.remove_annotation(a, "next")
 
         self.assertNotIn("next", assert_not_none(ann.annotations(a)))
-        self.assertEqual(set([init_a]), assert_not_none(ann.annotations(a))["init"])
+        self.assertEqual({init_a}, assert_not_none(ann.annotations(a))["init"])
         self.assertEqual(
-            set([init_a, next_a]), assert_not_none(ann.annotations(a))["related"]
+            {init_a, next_a}, assert_not_none(ann.annotations(a))["related"]
         )
-        self.assertEqual(set([]), ann.all_annotated_formulae("next"))
-        self.assertEqual(set([a]), ann.all_annotated_formulae("init"))
-        self.assertEqual(set([a]), ann.all_annotated_formulae("related"))
+        self.assertEqual(set(), ann.all_annotated_formulae("next"))
+        self.assertEqual({a}, ann.all_annotated_formulae("init"))
+        self.assertEqual({a}, ann.all_annotated_formulae("related"))
         self.assertEqual(set(), ann.all_annotated_formulae("non-existent"))
 
     def test_remove_value(self):
@@ -136,7 +136,7 @@ class TestBasic(TestCase):
         self.assertIn("A_1__AT1", assert_not_none(ann[a1])["next"])
 
         curr_a1 = ann.all_annotated_formulae("next", "A_1__AT1")
-        self.assertEqual(curr_a1, set([a1]))
+        self.assertEqual(curr_a1, {a1})
 
     def test_interpreting_annotations(self):
         source = """\

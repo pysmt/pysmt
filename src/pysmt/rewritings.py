@@ -656,16 +656,16 @@ class PrenexNormalizer(DagWalker):
                 needs_rename = q_vars & reserved
                 if len(needs_rename) > 0:
                     # we need alpha-renaming: prepare the substitution map
-                    sub = dict(
-                        (v, self.mgr.FreshSymbol(v.symbol_type())) for v in needs_rename
-                    )
+                    sub = {
+                        v: self.mgr.FreshSymbol(v.symbol_type()) for v in needs_rename
+                    }
                     sub_matrix = self.env.substituter.substitute(sub_matrix, sub)
 
                     # The new variables for this quantifiers will be
                     # its old variables, minus the one needing
                     # renaming, that are renamed.
                     new_q_vars = q_vars - needs_rename
-                    new_q_vars |= set(sub[x] for x in needs_rename)
+                    new_q_vars |= {sub[x] for x in needs_rename}
                 else:
                     # No need to alpha-rename this quantifier, we keep
                     # as it is the set of variables.
@@ -765,7 +765,7 @@ class PrenexNormalizer(DagWalker):
     ) -> tuple[list[tuple[Callable, set[FNode]]], FNode]:
         # pylint: disable=unused-argument
         quantifiers, matrix = args[0]
-        qvars = set(v for _, qv in quantifiers for v in qv)
+        qvars = {v for _, qv in quantifiers for v in qv}
         nq = set(formula.quantifier_vars()) - qvars
 
         # If nq is empty, it means that inner quantifiers shadow all
@@ -955,7 +955,7 @@ class Ackermannizer(IdentityDagWalker):
         return self._terms_dict
 
     def get_const_to_term_dict(self) -> dict[FNode, FNode]:
-        return dict((v, k) for k, v in self._terms_dict.items())
+        return {v: k for k, v in self._terms_dict.items()}
 
     def _get_equality_implications(self) -> set[FNode]:
         result = set()
@@ -1075,7 +1075,7 @@ class DisjointSet:
                 if self.comp is not None and self.comp(a, b) > 0:
                     a, b = b, a
                 self.leader[a] = self.leader[b] = a
-                self.group[a] = set([a, b])
+                self.group[a] = {a, b}
 
     def find(self, k: FNode) -> FNode:
         """Find the root of k in the set"""

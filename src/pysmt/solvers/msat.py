@@ -223,9 +223,9 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolv
     #    complete NRA decision procedure (z3, cvc5);
     #  - the nonlinear examples and tests run against MathSAT are kept
     #    rational on purpose (e.g. `r * r = 4.0` instead of `r * r = 2.0`).
-    LOGICS: Iterable[Logic] = PYSMT_QF_LOGICS - set(
+    LOGICS: Iterable[Logic] = PYSMT_QF_LOGICS - {
         l for l in PYSMT_QF_LOGICS if l.theory.strings
-    )
+    }
 
     OptionsClass = MathSATOptions
 
@@ -289,7 +289,7 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolv
         if self.options.unsat_cores_mode == "named":
             # not self.assertions: popping the assumptions level would
             # invalidate the unsat core in MathSAT (dangling terms, segfault)
-            return dict((t[0], (t[1], t[2])) for t in self._assertion_stack)
+            return {t[0]: (t[1], t[2]) for t in self._assertion_stack}
         return None
 
     @clear_pending_pop
@@ -352,13 +352,13 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolv
                 raise InternalSolverError(
                     self._msat_lib.msat_last_error_message(self.msat_env())
                 )
-            res = set(self.converter.back(t) for t in terms)
+            res = {self.converter.back(t) for t in terms}
             # drop the Implies(key, x) encoding of non-literal assumptions
-            res = set(
+            res = {
                 f
                 for f in res
                 if not f.get_free_variables() & self._assumption_keys.keys()
-            )
+            }
             return res | self._unsat_assumptions()
         else:
             return set(self.get_named_unsat_core().values()) | self._unsat_assumptions()
@@ -368,12 +368,12 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolv
         terms = self._msat_lib.msat_get_unsat_assumptions(self.msat_env())
         if not terms:
             return set()
-        res = set(self.converter.back(t) for t in terms)
+        res = {self.converter.back(t) for t in terms}
         n_ass_map = self._named_assertions_map()
         if n_ass_map is not None:
             # in named mode the named assertions are passed as assumptions too
             res -= set(n_ass_map)
-        return set(self._assumption_keys.get(f, f) for f in res)
+        return {self._assumption_keys.get(f, f) for f in res}
 
     def get_named_unsat_core(self):
         """After a call to solve() yielding UNSAT, returns the unsat core as a
@@ -381,7 +381,7 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolv
         self._check_unsat_core_config()
         if self.options.unsat_cores_mode == "named":
             assumptions = self._msat_lib.msat_get_unsat_assumptions(self.msat_env())
-            pysmt_assumptions = set(self.converter.back(t) for t in assumptions)
+            pysmt_assumptions = {self.converter.back(t) for t in assumptions}
 
             res = {}
             n_ass_map = self._named_assertions_map()

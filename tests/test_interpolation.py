@@ -73,7 +73,7 @@ class TestInterpolation(TestCase):
             self.assertTrue(len(i) == 1)
             i = i[0]
 
-        self.assertTrue(i.get_free_variables() == set([y]))
+        self.assertTrue(i.get_free_variables() == {y})
         self.assertValid(Implies(a, i))
         self.assertUnsat(And(i, b))
 
@@ -95,7 +95,7 @@ class TestInterpolation(TestCase):
             self.assertTrue(len(i) == 1)
             i = i[0]
 
-        self.assertTrue(i.get_free_variables() == set([y]))
+        self.assertTrue(i.get_free_variables() == {y})
         self.assertValid(Implies(a, i))
         self.assertUnsat(And(i, b))
 
@@ -117,7 +117,7 @@ class TestInterpolation(TestCase):
             self.assertTrue(len(i) == 1)
             i = i[0]
 
-        self.assertTrue(i.get_free_variables() == set([y]))
+        self.assertTrue(i.get_free_variables() == {y})
         self.assertValid(Implies(a, i))
         self.assertUnsat(And(i, b))
 

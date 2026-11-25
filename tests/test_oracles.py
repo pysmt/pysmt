@@ -42,7 +42,7 @@ class TestOracles(TestCase):
         f = Implies(x, And(y, Not(x)))
 
         s = get_free_variables(f)
-        self.assertEqual(set([x, y]), s)
+        self.assertEqual({x, y}, s)
 
     def test_atoms_oracle(self):
         oracle = get_env().ao

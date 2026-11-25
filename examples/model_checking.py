@@ -61,7 +61,7 @@ class PDR:
         self.system = system
         self.frames = [system.init]
         self.solver = Solver()
-        self.prime_map = dict([(v, next_var(v)) for v in self.system.variables])
+        self.prime_map = {v: next_var(v) for v in self.system.variables}
 
     def check_property(self, prop):
         """Property Directed Reachability approach without optimizations."""
@@ -107,9 +107,7 @@ class PDR:
         Returns True if the cube cannot be blocked.
         """
         for i in range(len(self.frames) - 1, 0, -1):
-            cubeprime = cube.substitute(
-                dict([(v, next_var(v)) for v in self.system.variables])
-            )
+            cubeprime = cube.substitute({v: next_var(v) for v in self.system.variables})
             cubepre = self.solve(
                 And(self.frames[i - 1], self.system.trans, Not(cube), cubeprime)
             )

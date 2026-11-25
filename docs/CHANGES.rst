@@ -59,6 +59,10 @@ Change Log
   call. Internal ``zip`` calls over sequences that must have the same
   length raise ``ValueError`` on a mismatch instead of truncating.
 
+* The ruff ``C4`` (flake8-comprehensions) rules are enabled, so the code
+  uses literals and comprehensions instead of ``set``, ``dict``,
+  ``list`` and ``tuple`` calls where possible (#873).
+
 * ``pysmt-install`` no longer prints a setuptools deprecation warning, and
   its confirmation prompt accepts ``y`` and ``yes`` in any case (#867).
 

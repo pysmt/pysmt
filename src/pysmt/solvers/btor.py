@@ -323,11 +323,11 @@ class BoolectorSolver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSol
         if self.options.unsat_cores_mode == "named":
             # solve-time assumptions have no name, they are reported by
             # get_unsat_core() only
-            return dict(
-                (self._named_assertions[a], a)
+            return {
+                self._named_assertions[a]: a
                 for a in self._core
                 if a in self._named_assertions
-            )
+            }
         else:
             return {f"_a{i}": f for i, f in enumerate(self.get_unsat_core())}
 
