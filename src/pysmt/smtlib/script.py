@@ -608,7 +608,7 @@ class InterpreterOMT(InterpreterSMT):
 
             elif self.opt_priority == "pareto":
                 assert isinstance(optimizer, Optimizer)
-                for model, values in optimizer.pareto_optimize(
+                for _model, values in optimizer.pareto_optimize(
                     self.optimization_goals[0]
                 ):
                     rt = True

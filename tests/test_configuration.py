@@ -16,6 +16,7 @@
 #   limitations under the License.
 #
 import os
+from configparser import MissingSectionHeaderError
 from tempfile import NamedTemporaryFile
 
 from pysmt.configuration import configure_environment, write_environment_configuration
@@ -95,7 +96,7 @@ class TestConfiguration(TestCase):
             read_configuration("/tmp/nonexistent")
 
     def test_bad_conf(self):
-        with self.assertRaises(Exception):
+        with self.assertRaises(MissingSectionHeaderError):
             read_configuration(self._get_config_path("config_bad.ini"))
 
 

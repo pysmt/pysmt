@@ -71,7 +71,7 @@ class MetaNodeTypeHandler(type):
         cls: type["MetaNodeTypeHandler"], name: str, bases: Any, dct: dict[str, Any]
     ) -> Any:
         obj = type.__new__(cls, name, bases, dct)
-        for k, v in dct.items():
+        for v in dct.values():
             if hasattr(v, "nodetypes"):
                 cast("Walker", obj).set_handler(v, *cast(list[int], v.nodetypes))
         return obj

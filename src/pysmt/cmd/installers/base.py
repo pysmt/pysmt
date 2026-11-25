@@ -108,7 +108,7 @@ class SolverInstaller:
         """Downloads the archive"""
         if self.archive_path and not os.path.exists(self.archive_path):
             for turn in range(self.trials_404):
-                for i, link in enumerate(self.download_links()):
+                for link in self.download_links():
                     try:
                         return self.do_download(link, self.archive_path)
                     except HTTPError as e:

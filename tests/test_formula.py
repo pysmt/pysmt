@@ -789,7 +789,7 @@ class TestFormulaManager(TestCase):
         with self.assertRaises(PysmtModeError):
             x.Implies(y)
         with self.assertRaises(PysmtModeError):
-            ~x
+            _ = ~x
         with self.assertRaises(PysmtModeError):
             x[1]
         with self.assertRaises(PysmtModeError):
@@ -846,7 +846,7 @@ class TestFormulaManager(TestCase):
         self.assertEqual(Or(x, y), x.Or(y))
 
         self.assertEqual(Ite(x, TRUE(), FALSE()), x.Ite(TRUE(), FALSE()))
-        with self.assertRaises(Exception):
+        with self.assertRaises(PysmtModeError):
             x.Ite(1, 2)
 
         self.assertEqual(6 - r, Plus(Times(r, Real(-1)), Real(6)))

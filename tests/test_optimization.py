@@ -226,7 +226,7 @@ class TestOptimization(TestCase):
         for oname in get_env().factory.all_optimizers(logic=QF_LIA):
             with Optimizer(name=oname) as opt:
                 opt.add_assertion(formula)
-                for x in opt.pareto_optimize([obj1, obj2]):
+                for _ in opt.pareto_optimize([obj1, obj2]):
                     self.assertTrue(False)
 
     @skipIfNoOptimizerForLogic(QF_LIA)

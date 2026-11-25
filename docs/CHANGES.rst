@@ -50,6 +50,15 @@ Change Log
   rules, e.g., ``list[int]`` and ``int | None`` in annotations and
   f-strings instead of ``%``-formatting (#873).
 
+* The ruff ``B`` (flake8-bugbear) rules are enabled (#873). Exceptions
+  raised while handling another exception are now chained with
+  ``from``, so tracebacks show the original error as the direct cause
+  (or hide it, where it only repeats the new message). Warnings issued
+  by pySMT report the calling function as their location (for the
+  ``shortcuts`` functions, the user's call) instead of the ``warn``
+  call. Internal ``zip`` calls over sequences that must have the same
+  length raise ``ValueError`` on a mismatch instead of truncating.
+
 * ``pysmt-install`` no longer prints a setuptools deprecation warning, and
   its confirmation prompt accepts ``y`` and ``yes`` in any case (#867).
 
