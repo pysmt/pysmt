@@ -96,12 +96,9 @@ class ShannonQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
         """Returns the list of elements from the Shannon expansion."""
         qvars = formula.quantifier_vars()
         self._assert_vars_boolean(qvars)
-        res = []
         f = args[0]
         substitute = self.env.substituter.substitute
-        for subs in all_assignments(qvars, self.env):
-            res.append(substitute(f, subs))
-        return res
+        return [substitute(f, subs) for subs in all_assignments(qvars, self.env)]
 
     def walk_forall(self, formula: FNode, args: Sequence[FNode], **kwargs) -> FNode:
         return self.mgr.And(self._expand(formula, args))

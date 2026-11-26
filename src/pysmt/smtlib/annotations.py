@@ -110,8 +110,7 @@ class Annotations:
             res.append(str(t) + " -> ")
             for a, lst in m.items():
                 res.append(":" + str(a) + "{")
-                for v in lst:
-                    res.append(str(v) + ", ")
+                res.extend(str(v) + ", " for v in lst)
                 res.append("} ")
         return "".join(res + ["}"])
 

@@ -248,11 +248,8 @@ def main():
         target = os.path.abspath(os.path.expanduser(target))
         os.makedirs(target, exist_ok=True)
 
-    solvers_to_install = []
     all_solvers = options.all_solvers
-    for s in SOLVERS:
-        if all_solvers or getattr(options, s.name):
-            solvers_to_install.append(s)
+    solvers_to_install = [s for s in SOLVERS if all_solvers or getattr(options, s.name)]
 
     # Env variable controlling the solvers to be installed or checked
     requested_solvers = get_requested_solvers()
@@ -263,9 +260,7 @@ def main():
         )
     if len(solvers_to_install) == 0:
         # No solver requested from cmd-line, checking ENV
-        for s in SOLVERS:
-            if s.name in requested_solvers:
-                solvers_to_install.append(s)
+        solvers_to_install.extend(s for s in SOLVERS if s.name in requested_solvers)
 
     if options.check:
         check_installed(
