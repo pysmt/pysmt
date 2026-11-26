@@ -135,9 +135,7 @@ class Optimizer(Solver):
     def _get_or(self, objective_formula):
         otype = self.environment.stc.get_type(objective_formula)
         mgr = self.environment.formula_manager
-        if otype.is_int_type():
-            return mgr.Or
-        elif otype.is_real_type():
+        if otype.is_int_type() or otype.is_real_type():
             return mgr.Or
         elif otype.is_bv_type():
             return mgr.BVOr
@@ -147,9 +145,7 @@ class Optimizer(Solver):
     def _get_le(self, objective_formula):
         otype = self.environment.stc.get_type(objective_formula)
         mgr = self.environment.formula_manager
-        if otype.is_int_type():
-            return mgr.LE
-        elif otype.is_real_type():
+        if otype.is_int_type() or otype.is_real_type():
             return mgr.LE
         elif otype.is_bv_type():
             return mgr.BVULE
@@ -159,9 +155,7 @@ class Optimizer(Solver):
     def _get_lt(self, objective_formula):
         otype = self.environment.stc.get_type(objective_formula)
         mgr = self.environment.formula_manager
-        if otype.is_int_type():
-            return mgr.LT
-        elif otype.is_real_type():
+        if otype.is_int_type() or otype.is_real_type():
             return mgr.LT
         elif otype.is_bv_type():
             return mgr.BVULT

@@ -678,10 +678,9 @@ class TestRegressions(TestCase):
     def test_yices_quantifier(self):
         x = Symbol("x", REAL)
         f = ForAll([x], LE(x, Real(0)))
-        with self.assertRaises(InternalSolverError):
-            with Solver(name="yices") as s:
-                s.add_assertion(f)
-                self.assertFalse(s.solve())
+        with self.assertRaises(InternalSolverError), Solver(name="yices") as s:
+            s.add_assertion(f)
+            self.assertFalse(s.solve())
 
     @skipIfSolverNotAvailable("msat")
     def test_msat_all_sat_theory_atoms(self):

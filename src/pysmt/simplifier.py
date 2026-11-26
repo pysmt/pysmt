@@ -1064,13 +1064,11 @@ class Simplifier(pysmt.walkers.DagWalker):
                 if r < 0:
                     return self.manager.Int(math.ceil(float(l) / r))
 
-        if sl.is_constant():
-            if sl.is_zero():
-                return sl
+        if sl.is_constant() and sl.is_zero():
+            return sl
 
-        if sr.is_constant():
-            if sr.is_one():
-                return sl
+        if sr.is_constant() and sr.is_one():
+            return sl
 
         return self.manager.Div(sl, sr)
 

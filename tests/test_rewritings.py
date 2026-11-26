@@ -59,7 +59,7 @@ class TestRewritings(TestCase):
         # Two prenex normal forms are possible
         my_prenex_1 = Exists([c], ForAll([b], Not(And(a, And(a, b), Or(a, c)))))
         my_prenex_2 = ForAll([b], Exists([c], Not(And(a, And(a, b), Or(a, c)))))
-        self.assertTrue(prenex == my_prenex_1 or prenex == my_prenex_2)
+        self.assertTrue(prenex in (my_prenex_1, my_prenex_2))
 
     @skipIfNoSolverForLogic(BOOL)
     def test_prenex_simple_exists(self):

@@ -170,7 +170,7 @@ class Substituter(pysmt.walkers.IdentityDagWalker):
             res_formula = sub.substitute(
                 formula.arg(0),
                 subs=new_subs,
-                interpretations=kwargs.get("interpretations", None),
+                interpretations=kwargs.get("interpretations"),
             )
 
             # 3. We invoke the relevant function (walk_exists or

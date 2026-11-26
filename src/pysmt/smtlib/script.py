@@ -134,7 +134,7 @@ class SmtLibCommand(namedtuple("SmtLibCommand", ["name", "args"])):
             printer.printer(self.args[0])
             for a in self.args[1]:
                 option_name, value = a
-                if ":signed" != option_name:
+                if option_name != ":signed":
                     outstream.write(f" {option_name} {value}")
                 else:
                     outstream.write(f" {option_name} ")

@@ -68,7 +68,7 @@ class TestUnsatCores(TestCase):
                         r = solver.solve()
                         self.assertFalse(r)
                     except SolverReturnedUnknownResultError:
-                        if QF_BV <= logic:
+                        if logic >= QF_BV:
                             continue  # Unsat-core support for QF_UFBV might be
                             # incomplete
                         else:
