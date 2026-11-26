@@ -44,8 +44,18 @@ class TestInstallers(TestCase):
         cmd = self.pip_command(False, "/bin/uv", target="/tmp/t", force=True)
         self.assertEqual(
             cmd,
-            ["uv", "pip", "install", "--python", sys.executable]
-            + ["--target", "/tmp/t", "--upgrade", "--reinstall", "z3-solver==1.0"],
+            [
+                "uv",
+                "pip",
+                "install",
+                "--python",
+                sys.executable,
+                "--target",
+                "/tmp/t",
+                "--upgrade",
+                "--reinstall",
+                "z3-solver==1.0",
+            ],
         )
 
     def test_pip_install_command_without_pip_or_uv(self):

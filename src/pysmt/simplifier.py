@@ -80,7 +80,7 @@ class Simplifier(pysmt.walkers.DagWalker):
         test = Equals(formula, res) if ltype != BOOL else Iff(formula, res)
         assert (ltype == rtype) and is_valid(
             test, solver_name=self.validate_simplifications
-        ), f"Was: {str(formula)} \n Obtained: {str(res)}\n"
+        ), f"Was: {formula!s} \n Obtained: {res!s}\n"
         return res
 
     def walk_and(self, formula: FNode, args: list[FNode], **kwargs) -> FNode:
@@ -1162,7 +1162,7 @@ class BddSimplifier(Simplifier):
             is_valid = self.env.factory.is_valid
             sname = self._validation_sname
             assert is_valid(Iff(old, new), solver_name=sname), (
-                f"Was: {str(old)} \n Obtained: {str(new)}\n"
+                f"Was: {old!s} \n Obtained: {new!s}\n"
             )
 
     def abstract_and_simplify(self, formula: FNode) -> FNode:

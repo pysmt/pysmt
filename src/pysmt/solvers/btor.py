@@ -207,10 +207,15 @@ class BoolectorOptions(SolverOptions):
 
 
 class BoolectorSolver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolver):
-    LOGICS = [QF_BV, QF_UFBV, QF_ABV, QF_AUFBV, QF_AX] + list(
-        filter(
+    LOGICS = (
+        QF_BV,
+        QF_UFBV,
+        QF_ABV,
+        QF_AUFBV,
+        QF_AX,
+        *filter(
             lambda l: l.name in {"QF_ABV*", "QF_AUFBV*", "QF_AX*"}, ARRAYS_CONST_LOGICS
-        )
+        ),
     )
     OptionsClass = BoolectorOptions
 
@@ -447,7 +452,7 @@ class BTORConverter(Converter, DagWalker):
             ):
                 raise ConvertExpressionError(
                     "BTOR supports only Array(BV,BV). "
-                    f"Type '{str(symbol_type)}' was given."
+                    f"Type '{symbol_type!s}' was given."
                 )
             index_width = index_type.width if index_type.is_bv_type() else 1
             elem_width = elem_type.width if elem_type.is_bv_type() else 1
@@ -608,7 +613,7 @@ class BTORConverter(Converter, DagWalker):
     def _extend_bv_pow2(self, btor_formula, signed=False):
         """BTOR requires that many operands have width that is a power of 2"""
         w = btor_formula.width
-        target_w = 2 ** int(ceil(log(w, 2)))
+        target_w = 2 ** ceil(log(w, 2))
         # Skip if width is ok
         if target_w == w:
             return btor_formula

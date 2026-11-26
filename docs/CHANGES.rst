@@ -74,6 +74,11 @@ Change Log
   merges nested ``if`` and ``with`` statements and ``if`` branches with
   the same body, and opens files with context managers (#873).
 
+* The ruff ``RUF`` (Ruff-specific) rules are enabled, so the code uses
+  conversion flags instead of ``str`` and ``repr`` calls in f-strings,
+  unpacking instead of list and tuple concatenation, and tuples instead
+  of mutable lists for class-level constants such as ``LOGICS`` (#873).
+
 * ``pysmt-install`` no longer prints a setuptools deprecation warning, and
   its confirmation prompt accepts ``y`` and ``yes`` in any case (#867).
 

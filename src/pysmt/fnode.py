@@ -622,7 +622,7 @@ class FNode:
 
     def constant_value(self) -> str | bool | Fraction | int:
         """Return the value of the Constant."""
-        assert self.is_constant(), f"{str(self)} is not a constant"
+        assert self.is_constant(), f"{self!s} is not a constant"
         if self.node_type() == BV_CONSTANT:
             return self._content.payload[0]
         return self._content.payload
@@ -650,13 +650,13 @@ class FNode:
     def bv_unsigned_value(self) -> int:
         """Return the unsigned value encoded by the BitVector."""
         if self.node_type() != BV_CONSTANT:
-            raise PysmtValueError(f"{str(self)} is not a BV constant")
+            raise PysmtValueError(f"{self!s} is not a BV constant")
         return cast(int, self.constant_value())
 
     def bv_signed_value(self) -> int:
         """Return the signed value encoded by the BitVector."""
         if self.node_type() != BV_CONSTANT:
-            raise PysmtValueError(f"{str(self)} is not a BV constant")
+            raise PysmtValueError(f"{self!s} is not a BV constant")
         return twos_complement(cast(int, self.constant_value()), self.bv_width())
 
     def bv_str(self, fmt: str = "b") -> str:
@@ -676,7 +676,7 @@ class FNode:
             # Floor division keeps the padding of widths not divisible by 4 unchanged
             fstr = f"{{0:0{self.bv_width() // 4}x}}"
         else:
-            raise PysmtValueError(f"Unknown option {str(fmt)}")
+            raise PysmtValueError(f"Unknown option {fmt!s}")
         str_ = fstr.format(self.constant_value())
         return str_
 
@@ -775,7 +775,7 @@ class FNode:
         elif expected_type.is_real_type():
             return mgr.Real(arg)
         else:
-            raise PysmtValueError(f"Unsupported value '{str(arg)}' in infix operator")
+            raise PysmtValueError(f"Unsupported value '{arg!s}' in infix operator")
 
     def Implies(self, right: "FNode") -> "FNode":
         return self._apply_infix(right, _mgr().Implies)
@@ -1000,7 +1000,7 @@ class FNode:
         if self.get_type().is_bv_type():
             return _mgr().BVExtract(self, start=start, end=end)
         raise UnsupportedOperatorError(
-            f"Unsupported operation '__getitem__' on '{str(self)}'."
+            f"Unsupported operation '__getitem__' on '{self!s}'."
         )
 
     def __lshift__(self, right):

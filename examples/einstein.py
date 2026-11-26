@@ -226,11 +226,11 @@ if model is None:
 else:
     for h in Houses:
         # Extract the relevants bits to get some pretty-printing
-        c = [x for x in Color if model[color(h, x)].is_true()][0]
-        n = [x for x in Nat if model[nat(h, x)].is_true()][0]
-        p = [x for x in Pet if model[pet(h, x)].is_true()][0]
-        d = [x for x in Drink if model[drink(h, x)].is_true()][0]
-        s = [x for x in Smoke if model[smoke(h, x)].is_true()][0]
+        c = next(x for x in Color if model[color(h, x)].is_true())
+        n = next(x for x in Nat if model[nat(h, x)].is_true())
+        p = next(x for x in Pet if model[pet(h, x)].is_true())
+        d = next(x for x in Drink if model[drink(h, x)].is_true())
+        s = next(x for x in Smoke if model[smoke(h, x)].is_true())
         print(h, c, n, p, d, s)
         if p == "fish":
             sol = f"The '{n}' owns the fish!"

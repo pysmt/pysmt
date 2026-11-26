@@ -109,7 +109,7 @@ class Annotations:
                 res.append(":" + str(a) + "{")
                 res.extend(str(v) + ", " for v in lst)
                 res.append("} ")
-        return "".join(res + ["}"])
+        return "".join([*res, "}"])
 
     def __getitem__(self, formula: FNode) -> dict[str, set[str] | set[Any]] | None:
         return self.annotations(formula)

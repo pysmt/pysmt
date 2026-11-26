@@ -86,20 +86,20 @@ class PicosatOptions(SolverOptions):
         for k, v in self.solver_options.items():
             if k == "enable_trace_generation":
                 if v not in (True, False):
-                    raise PysmtValueError(f"Invalid value for {str(k)}: {str(v)}")
+                    raise PysmtValueError(f"Invalid value for {k!s}: {v!s}")
             elif k == "output":
                 if v is not None and not hasattr(v, "fileno"):
-                    raise PysmtValueError(f"Invalid value for {str(k)}: {str(v)}")
+                    raise PysmtValueError(f"Invalid value for {k!s}: {v!s}")
 
             elif k == "global_default_phase":
                 if v is not None and v not in PicosatOptions.ALL_GLOBAL_DEFAULT_PHASE:
-                    raise PysmtValueError(f"Invalid value for {str(k)}: {str(v)}")
+                    raise PysmtValueError(f"Invalid value for {k!s}: {v!s}")
             elif k == "preprocessing":
                 if v not in (True, False):
-                    raise PysmtValueError(f"Invalid value for {str(k)}: {str(v)}")
+                    raise PysmtValueError(f"Invalid value for {k!s}: {v!s}")
             elif k in ("verbosity", "propagation_limit"):
                 if not is_python_integer(v):
-                    raise PysmtValueError(f"Invalid value for {str(k)}: {str(v)}")
+                    raise PysmtValueError(f"Invalid value for {k!s}: {v!s}")
             elif k in ("more_important_lit", "less_important_lit"):
                 if v is not None:
                     try:
@@ -166,7 +166,7 @@ class PicosatOptions(SolverOptions):
 class PicosatSolver(Solver):
     """PicoSAT solver"""
 
-    LOGICS = [pysmt.logics.QF_BOOL]
+    LOGICS = (pysmt.logics.QF_BOOL,)
     OptionsClass = PicosatOptions
 
     def __init__(self, environment, logic, **options):

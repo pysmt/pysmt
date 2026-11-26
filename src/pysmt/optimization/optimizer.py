@@ -431,7 +431,7 @@ class OptPareto(OptComparationFunctions):
 
     def get_constraint(self, strict: bool) -> FNode:
         assert self.val is not None
-        assert self.val.is_constant(), f"Value {str(self.val)} is not a constant"
+        assert self.val.is_constant(), f"Value {self.val!s} is not a constant"
         correct_operator = self.op_ns
         if strict:
             correct_operator = self.op_strict
@@ -700,7 +700,7 @@ class SUAOptimizerMixin(ExternalOptimizerMixin):
     ) -> Model | None:
         assum = extra_assumption if extra_assumption is not None else []
         if formula is not None:
-            assum = assum + [formula]
+            assum = [*assum, formula]
         is_sat = self.solve(assumptions=assum)
         model = self.get_model() if is_sat else None
         return model

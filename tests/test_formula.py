@@ -760,7 +760,7 @@ class TestFormulaManager(TestCase):
         self.assertEqual(
             str(args[0]),
             "A",
-            "Expecting symbol A, " + f"symbol {str(args[0])} found instead",
+            "Expecting symbol A, " + f"symbol {args[0]!s} found instead",
         )
 
         a = dst_mgr.Symbol("A")

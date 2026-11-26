@@ -265,7 +265,7 @@ def _check_oracle_goal(
     goal: Goal, goal_value: FNode, cost: FNode, test_id_str: str, **kwargs
 ):
     # converts the goal value and cost to constants and then checks if they are equal
-    preliminary_checks_fail_str = f"test: {test_id_str}, goal: {str(goal)}, goal_value: {str(goal_value)}, cost: {str(cost)}, extra: {str(kwargs)}"
+    preliminary_checks_fail_str = f"test: {test_id_str}, goal: {goal!s}, goal_value: {goal_value!s}, cost: {cost!s}, extra: {kwargs!s}"
     assert goal_value.is_constant() and cost.is_constant(), preliminary_checks_fail_str
 
     if goal_value.is_bv_constant():
@@ -288,7 +288,7 @@ def _check_oracle_goal(
         goal_value_constant = goal_value.constant_value()
         cost_constant = cost.constant_value()
     assert goal_value_constant == cost_constant, (
-        f"test_id: {test_id_str}, goal: {str(goal)}, oracle value: {str(goal_value)}, cost returned: {str(cost)}, extra: {str(kwargs)}"
+        f"test_id: {test_id_str}, goal: {goal!s}, oracle value: {goal_value!s}, cost returned: {cost!s}, extra: {kwargs!s}"
     )
 
 
@@ -315,7 +315,7 @@ def check_lexicographic(
 ) -> tuple[Model, list[FNode]] | None:
     raised_class = _get_expected_raised_class(goals_values[0])
     assert raised_class is None or len(goals_values) == 1, (
-        f"test: {test_id_str}, goals_values: {str(goals_values)}"
+        f"test: {test_id_str}, goals_values: {goals_values!s}"
     )
     if raised_class is None:
         retval = optimizer.lexicographic_optimize(goals, **kwargs)
@@ -341,7 +341,7 @@ def check_pareto(
 ) -> list[tuple[Model, list[FNode]]] | None:
     raised_class = _get_expected_raised_class(goals_values[0])
     assert raised_class is None or len(goals_values) == 1, (
-        f"test: {test_id_str}, goals_values: {str(goals_values)}"
+        f"test: {test_id_str}, goals_values: {goals_values!s}"
     )
     if raised_class is None:
         retval = optimizer.pareto_optimize(goals, **kwargs)

@@ -548,7 +548,7 @@ class TypesOracle(walkers.DagWalker):
     @walkers.handles(op.FUNCTION)
     def walk_function(self, formula: FNode, **kwargs) -> frozenset[PySMTType]:
         ftype = cast(types._FunctionType, formula.function_name().symbol_type())
-        return frozenset([ftype.return_type] + list(ftype.param_types))
+        return frozenset([ftype.return_type, *ftype.param_types])
 
     @walkers.handles(op.QUANTIFIERS)
     def walk_quantifier(

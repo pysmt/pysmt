@@ -35,7 +35,7 @@ class Sudoku:
         if use_bv:
             logic = QF_BV
             # Compute the minimum BV size needed for this problem
-            self.bv_size = int(math.floor(math.log(self.size**2, 2))) + 1
+            self.bv_size = math.floor(math.log(self.size**2, 2)) + 1
 
         # Build a solver initialized with the proper assertions and
         # the matrix of SMT-variables representing each cell.
@@ -176,7 +176,7 @@ def main():
         "-s",
         metavar="name",
         type=str,
-        choices=["auto"] + list(env.factory.all_solvers().keys()),
+        choices=["auto", *env.factory.all_solvers()],
         default="auto",
         help="The solver to use (default: auto)",
     )

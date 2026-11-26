@@ -686,12 +686,12 @@ class FormulaManager:
             _value = pysmt_integer_from_integer(value)
         else:
             raise PysmtTypeError(
-                f"Invalid type in constant. The type was: {str(type(value))}"
+                f"Invalid type in constant. The type was: {type(value)!s}"
             )
         if _value < 0:
-            raise PysmtValueError(f"Cannot specify a negative value: {str(_value)}")
+            raise PysmtValueError(f"Cannot specify a negative value: {_value!s}")
         if _value >= 2**width:
-            raise PysmtValueError(f"Cannot express {str(_value)} in {str(width)} bits")
+            raise PysmtValueError(f"Cannot express {_value!s} in {width!s} bits")
 
         return self.create_node(
             node_type=op.BV_CONSTANT, args=(), payload=(_value, width)

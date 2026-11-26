@@ -265,21 +265,21 @@ class MaxSMTGoal(Goal):
         get_type = self.env.stc.get_type
         if not get_type(clause).is_bool_type():
             raise PysmtValueError(
-                f"Clause '{str(clause)}' has to be a boolean formula; given type is: '{str(get_type(clause))}'"
+                f"Clause '{clause!s}' has to be a boolean formula; given type is: '{get_type(clause)!s}'"
             )
         if isinstance(weight, FNode):
             if not weight.is_constant():
                 raise PysmtValueError(
-                    f"Weight '{str(weight)}' has to be a constant; given type is: '{str(get_type(weight))}'"
+                    f"Weight '{weight!s}' has to be a constant; given type is: '{get_type(weight)!s}'"
                 )
             weight_type = get_type(weight)
             if not weight_type.is_real_type() and not weight_type.is_int_type():
                 raise PysmtValueError(
-                    f"Weight '{str(weight)}' has to be a real or integer type; given type is: '{str(weight_type)}'"
+                    f"Weight '{weight!s}' has to be a real or integer type; given type is: '{weight_type!s}'"
                 )
             if weight_type.is_real_type() and not self._real_weights:
                 raise PysmtValueError(
-                    f"Weight '{str(weight)}' has to be an integer because the flag 'real_weights' is set to 'False'; given type is: '{str(weight_type)}'"
+                    f"Weight '{weight!s}' has to be an integer because the flag 'real_weights' is set to 'False'; given type is: '{weight_type!s}'"
                 )
             if weight_type.is_int_type() and self._real_weights:
                 weight = mgr.Real(cast(int, weight.constant_value()))

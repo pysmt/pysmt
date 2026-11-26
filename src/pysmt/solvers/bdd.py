@@ -98,10 +98,10 @@ class BddOptions(SolverOptions):
                         )
             elif k == "dynamic_reordering":
                 if v not in (True, False):
-                    raise PysmtValueError(f"Invalid value {str(k)} for '{str(v)}'")
+                    raise PysmtValueError(f"Invalid value {k!s} for '{v!s}'")
             elif k == "reordering_algorithm":
                 if v not in BddOptions.CUDD_ALL_REORDERING_ALGORITHMS:
-                    raise PysmtValueError(f"Invalid value {str(k)} for '{str(v)}'")
+                    raise PysmtValueError(f"Invalid value {k!s} for '{v!s}'")
             else:
                 raise PysmtValueError(f"Unrecognized option '{k}'.")
             # Store option
@@ -139,7 +139,7 @@ class BddOptions(SolverOptions):
 class BddSolver(Solver):
     """CUDD BDD Solver"""
 
-    LOGICS = [pysmt.logics.QF_BOOL, pysmt.logics.BOOL]
+    LOGICS = (pysmt.logics.QF_BOOL, pysmt.logics.BOOL)
     OptionsClass = BddOptions
 
     def __init__(self, environment, logic, **options):
@@ -312,7 +312,7 @@ class BddConverter(Converter, DagWalker):
 
     def walk_symbol(self, formula, **kwargs):
         if not formula.is_symbol(types.BOOL):
-            raise ConvertExpressionError(f"Cannot handle given type: {str(formula)}")
+            raise ConvertExpressionError(f"Cannot handle given type: {formula!s}")
         if formula not in self.var2node:
             self.declare_variable(formula)
         res = self.var2node[formula]
@@ -397,7 +397,7 @@ class BddConverter(Converter, DagWalker):
 
 
 class BddQuantifierEliminator(QuantifierEliminator):
-    LOGICS = [pysmt.logics.BOOL]
+    LOGICS = (pysmt.logics.BOOL,)
 
     def __init__(self, environment, logic=None):
         QuantifierEliminator.__init__(self)
@@ -412,7 +412,7 @@ class BddQuantifierEliminator(QuantifierEliminator):
             raise NotImplementedError(
                 "BDD-based quantifier elimination only "
                 "supports pure-boolean formulae."
-                f"(detected logic is: {str(logic)})"
+                f"(detected logic is: {logic!s})"
             )
 
         bdd = self.converter.convert(formula)

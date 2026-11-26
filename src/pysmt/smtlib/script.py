@@ -420,7 +420,7 @@ def _command_is_signed(command: SmtLibCommand) -> bool:
                     singed = arg[1]
                     if not isinstance(singed, bool):
                         raise PysmtValueError(
-                            f":signed annotation to a command must be a bool, {str(singed)} is not"
+                            f":signed annotation to a command must be a bool, {singed!s} is not"
                         )
                 break
     return singed

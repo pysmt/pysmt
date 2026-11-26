@@ -285,7 +285,7 @@ class _FunctionType(PySMTType):
         #
         # In order to make this possible, we need to combine the
         # return typ and param_types for FunctionType.
-        self.args = (self._return_type,) + self.param_types
+        self.args = (self._return_type, *self.param_types)
         self.arity = len(self.args)
 
     @property
@@ -313,7 +313,7 @@ class _FunctionType(PySMTType):
         if funstyle:
             res = "({}) {}".format(" ".join(args), rtype)
         else:
-            res = " -> ".join(args + [rtype])
+            res = " -> ".join([*args, rtype])
         return res
 
     def __str__(self) -> str:

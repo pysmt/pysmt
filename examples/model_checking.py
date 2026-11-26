@@ -75,7 +75,7 @@ class PDR:
                     print(f"--> Bug found at step {len(self.frames)}")
                     break
                 else:
-                    print(f"   [PDR] Cube blocked '{str(cube)}'")
+                    print(f"   [PDR] Cube blocked '{cube!s}'")
             else:
                 # Checking if the last two frames are equivalent i.e., are inductive
                 if self.inductive():
