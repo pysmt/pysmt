@@ -139,7 +139,7 @@ class BddOptions(SolverOptions):
 class BddSolver(Solver):
     """CUDD BDD Solver"""
 
-    LOGICS = [pysmt.logics.QF_BOOL, pysmt.logics.BOOL]
+    LOGICS = (pysmt.logics.QF_BOOL, pysmt.logics.BOOL)
     OptionsClass = BddOptions
 
     def __init__(self, environment, logic, **options):
@@ -397,7 +397,7 @@ class BddConverter(Converter, DagWalker):
 
 
 class BddQuantifierEliminator(QuantifierEliminator):
-    LOGICS = [pysmt.logics.BOOL]
+    LOGICS = (pysmt.logics.BOOL,)
 
     def __init__(self, environment, logic=None):
         QuantifierEliminator.__init__(self)

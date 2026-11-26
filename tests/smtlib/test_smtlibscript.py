@@ -66,7 +66,9 @@ class TestSmtLibScript(TestCase):
         class SmtLibIgnore(SmtLibIgnoreMixin):
             OptionsClass = SolverOptionsIgnore
 
-            declare_sort_history = []
+            def __init__(self, environment, logic):
+                super().__init__(environment, logic)
+                self.declare_sort_history = []
 
             def declare_sort(self, name, arity):
                 self.declare_sort_history.append((name, arity))

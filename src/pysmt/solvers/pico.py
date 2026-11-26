@@ -166,7 +166,7 @@ class PicosatOptions(SolverOptions):
 class PicosatSolver(Solver):
     """PicoSAT solver"""
 
-    LOGICS = [pysmt.logics.QF_BOOL]
+    LOGICS = (pysmt.logics.QF_BOOL,)
     OptionsClass = PicosatOptions
 
     def __init__(self, environment, logic, **options):

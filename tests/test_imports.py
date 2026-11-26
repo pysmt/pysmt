@@ -20,13 +20,18 @@ import os.path
 import pkgutil
 import subprocess
 import sys
+from typing import ClassVar
 
 import pysmt
 from tests import TestCase, main
 
 
 class TestImports(TestCase):
-    EXCLUSION_LIST = ["pysmt.solvers", "pysmt.optimization", "pysmt.cmd"]
+    EXCLUSION_LIST: ClassVar[list[str]] = [
+        "pysmt.solvers",
+        "pysmt.optimization",
+        "pysmt.cmd",
+    ]
 
     def test_imports(self):
         stack = [(pysmt.__name__, pysmt.__path__)]

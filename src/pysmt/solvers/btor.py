@@ -207,10 +207,15 @@ class BoolectorOptions(SolverOptions):
 
 
 class BoolectorSolver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolver):
-    LOGICS = [QF_BV, QF_UFBV, QF_ABV, QF_AUFBV, QF_AX] + list(
-        filter(
+    LOGICS = (
+        QF_BV,
+        QF_UFBV,
+        QF_ABV,
+        QF_AUFBV,
+        QF_AX,
+        *filter(
             lambda l: l.name in {"QF_ABV*", "QF_AUFBV*", "QF_AX*"}, ARRAYS_CONST_LOGICS
-        )
+        ),
     )
     OptionsClass = BoolectorOptions
 

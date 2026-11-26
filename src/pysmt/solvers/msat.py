@@ -1228,7 +1228,7 @@ class MSatConverter(Converter, DagWalker):
 class MSatQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
     __lib_name__ = "mathsat"
 
-    LOGICS = [LRA, LIA]
+    LOGICS: Iterable[Logic] = (LRA, LIA)
 
     def __init__(self, environment, logic=None, algorithm="lw"):
         """Initialize the Quantifier Eliminator using 'fm' or 'lw'.
@@ -1330,7 +1330,7 @@ class MSatQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
 
 
 class MSatFMQuantifierEliminator(MSatQuantifierEliminator):
-    LOGICS = [LRA]
+    LOGICS = (LRA,)
 
     def __init__(self, environment, logic=None):
         MSatQuantifierEliminator.__init__(
@@ -1339,7 +1339,7 @@ class MSatFMQuantifierEliminator(MSatQuantifierEliminator):
 
 
 class MSatLWQuantifierEliminator(MSatQuantifierEliminator):
-    LOGICS = [LRA, LIA]
+    LOGICS = (LRA, LIA)
 
     def __init__(self, environment, logic=None):
         MSatQuantifierEliminator.__init__(
@@ -1350,7 +1350,7 @@ class MSatLWQuantifierEliminator(MSatQuantifierEliminator):
 class MSatInterpolator(Interpolator):
     __lib_name__ = "mathsat"
 
-    LOGICS = [QF_UFLIA, QF_UFLRA, QF_BV]
+    LOGICS = (QF_UFLIA, QF_UFLRA, QF_BV)
 
     def __init__(self, environment, logic=None):
         Interpolator.__init__(self)

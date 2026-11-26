@@ -18,7 +18,7 @@
 
 from collections.abc import Iterable, Sequence
 from fractions import Fraction as pyFraction
-from typing import Any, cast
+from typing import Any, ClassVar, cast
 
 from pysmt.environment import Environment
 from pysmt.exceptions import SolverAPINotFound
@@ -173,7 +173,7 @@ class Z3Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolver):
     }
     OptionsClass = Z3Options
 
-    SOLVERFOR_LOGIC_NAMES = [
+    SOLVERFOR_LOGIC_NAMES: ClassVar[list[str]] = [
         "AUFLIA",
         "ALIA",
         "AUFLIRA",
@@ -1068,7 +1068,7 @@ class Z3Converter(Converter, DagWalker):
 
 
 class Z3QuantifierEliminator(QuantifierEliminator):
-    LOGICS = [LIA, LRA]
+    LOGICS = (LIA, LRA)
 
     def __init__(self, environment, logic=None):
         QuantifierEliminator.__init__(self)
@@ -1120,7 +1120,7 @@ class Z3QuantifierEliminator(QuantifierEliminator):
 
 
 class Z3Interpolator(Interpolator):
-    LOGICS = [QF_UFLIA, QF_UFLRA]
+    LOGICS = (QF_UFLIA, QF_UFLRA)
 
     def __init__(self, environment, logic=None):
         Interpolator.__init__(self)

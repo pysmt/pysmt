@@ -277,7 +277,7 @@ class OptiMSATQuantifierEliminator(MSatQuantifierEliminator):
 
 
 class OptiMSATFMQuantifierEliminator(OptiMSATQuantifierEliminator):
-    LOGICS = [LRA]
+    LOGICS = (LRA,)
 
     def __init__(self, environment, logic=None):
         OptiMSATQuantifierEliminator.__init__(
@@ -286,7 +286,7 @@ class OptiMSATFMQuantifierEliminator(OptiMSATQuantifierEliminator):
 
 
 class OptiMSATLWQuantifierEliminator(OptiMSATQuantifierEliminator):
-    LOGICS = [LRA, LIA]
+    LOGICS = (LRA, LIA)
 
     def __init__(self, environment, logic=None):
         OptiMSATQuantifierEliminator.__init__(

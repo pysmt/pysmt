@@ -69,7 +69,7 @@ class QuantifierEliminator:
 class ShannonQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
     """Quantifier Elimination using Shannon Expansion."""
 
-    LOGICS = [pysmt.logics.BOOL]
+    LOGICS = (pysmt.logics.BOOL,)
 
     def __init__(
         self,
@@ -122,7 +122,7 @@ class SelfSubstitutionQuantifierEliminator(QuantifierEliminator, IdentityDagWalk
      CAV 2016
     """
 
-    LOGICS = [pysmt.logics.BOOL]
+    LOGICS = (pysmt.logics.BOOL,)
 
     def __init__(
         self,
