@@ -96,9 +96,7 @@ class CNFizer(DagWalker):
         """
         lsts = self.convert(formula)
 
-        conj = []
-        for clause in lsts:
-            conj.append(self.mgr.Or(clause))
+        conj = [self.mgr.Or(clause) for clause in lsts]
         return self.mgr.And(conj)
 
     def serialize(self, _cnf):
@@ -120,8 +118,7 @@ class CNFizer(DagWalker):
         _cnf = [frozenset([k] + [self.simplify(self.mgr.Not(a)) for a, _ in args])]
         for a, c in args:
             _cnf.append(frozenset([a, self.mgr.Not(k)]))
-            for clause in c:
-                _cnf.append(clause)
+            _cnf.extend(c)
         return k, frozenset(_cnf)
 
     def walk_or(self, formula, args, **kwargs):
@@ -131,8 +128,7 @@ class CNFizer(DagWalker):
         _cnf = [frozenset([self.mgr.Not(k)] + [a for a, _ in args])]
         for a, c in args:
             _cnf.append(frozenset([k, self.mgr.Not(a)]))
-            for clause in c:
-                _cnf.append(clause)
+            _cnf.extend(c)
         return k, frozenset(_cnf)
 
     def walk_not(self, formula, args, **kwargs):

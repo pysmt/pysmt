@@ -155,13 +155,14 @@ class Substituter(pysmt.walkers.IdentityDagWalker):
             #    bound variables from the substitution map
             substitutions = kwargs["substitutions"]
             get_free_vars = self.env.fvo.get_free_variables
-            new_subs = {}
-            for k, v in substitutions.items():
-                # If at least one bound variable is in the cone of k,
-                # we do not consider this substitution in the body of
-                # the quantifier.
-                if all(m not in formula.quantifier_vars() for m in get_free_vars(k)):
-                    new_subs[k] = v
+            # If at least one bound variable is in the cone of k,
+            # we do not consider this substitution in the body of
+            # the quantifier.
+            new_subs = {
+                k: v
+                for k, v in substitutions.items()
+                if all(m not in formula.quantifier_vars() for m in get_free_vars(k))
+            }
 
             # 2. We apply the substitution on the quantifier body with
             #    the new 'reduced' map

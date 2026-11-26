@@ -563,10 +563,11 @@ class FormulaManager:
         AllDifferent(x, y, z) := (x != y) & (x != z) & (y != z)
         """
         exprs = self._polymorph_args_to_tuple(args)
-        res = []
-        for i, a in enumerate(exprs):
-            for b in exprs[i + 1 :]:
-                res.append(self.Not(self.EqualsOrIff(a, b)))
+        res = [
+            self.Not(self.EqualsOrIff(a, b))
+            for i, a in enumerate(exprs)
+            for b in exprs[i + 1 :]
+        ]
         return self.And(res)
 
     def Xor(self, left: FNode, right: FNode) -> FNode:

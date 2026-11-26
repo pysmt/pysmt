@@ -32,10 +32,11 @@ try:
     # relied on the old behavior of cython, Here, we first collect all the nums
     # in the module and then we add their enumerands to the pyboolector module,
     # making it work on either cython 3.0 or 3.1.
-    enums = []
-    for x in pyboolector.__dict__.values():
-        if inspect.isclass(x) and issubclass(x, Enum):
-            enums.append(x)
+    enums = [
+        x
+        for x in pyboolector.__dict__.values()
+        if inspect.isclass(x) and issubclass(x, Enum)
+    ]
     for x in enums:
         pyboolector.__dict__.update(x.__members__)
 
@@ -252,9 +253,7 @@ class BoolectorSolver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSol
         return formula
 
     def get_model(self):
-        assignment = {}
-        for s, _ in self.converter.declared_vars.items():
-            assignment[s] = self.get_value(s)
+        assignment = {s: self.get_value(s) for s in self.converter.declared_vars}
         return EagerModel(assignment=assignment, environment=self.environment)
 
     def _failed(self, formulae):

@@ -568,8 +568,7 @@ class Z3Converter(Converter, DagWalker):
             if key not in self._back_memoization:
                 self._back_memoization[key] = None
                 stack.append(current)
-                for c in current.children():
-                    stack.append(c)
+                stack.extend(current.children())
             elif self._back_memoization[key] is None:
                 args = [
                     self._back_memoization[(askey(c), model)]
