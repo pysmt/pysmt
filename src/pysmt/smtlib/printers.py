@@ -37,9 +37,9 @@ def write_annotations(f: Callable) -> Callable:
             yield from res
         if annots is not None and formula in annots:
             for key, values in annots[formula].items():
-                self.write(f" :{str(key)}")
+                self.write(f" :{key!s}")
                 for value in values:
-                    self.write(f" {str(value)}")
+                    self.write(f" {value!s}")
             self.write(")")
 
     return resf

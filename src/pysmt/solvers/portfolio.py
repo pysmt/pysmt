@@ -39,7 +39,7 @@ class PortfolioOptions(SolverOptions):
         for k, v in self.solver_options.items():
             if k == "exit_on_exception":
                 if v not in (True, False):
-                    raise ValueError(f"Invalid value for {str(k)}: {str(v)}")
+                    raise ValueError(f"Invalid value for {k!s}: {v!s}")
             else:
                 raise ValueError(f"Unrecognized option '{k}'.")
             # Store option

@@ -64,7 +64,7 @@ class MSatEnv:
        self._msat_lib.function(env())
     """
 
-    __slots__ = ["msat_env", "_msat_lib"]
+    __slots__ = ["_msat_lib", "msat_env"]
     __lib_name__ = "mathsat"
 
     def __init__(self, msat_config: Any | None = None):
@@ -695,7 +695,7 @@ class MSatConverter(Converter, DagWalker):
             elif self._msat_lib.msat_is_rational_type(self.msat_env(), ty):
                 res = types.REAL
             else:
-                assert "_" in str(term), f"Unrecognized type for '{str(term)}'"
+                assert "_" in str(term), f"Unrecognized type for '{term!s}'"
                 width = int(str(term).split("_")[1])
                 res = self.tm.BVType(width)
             return res
@@ -794,7 +794,7 @@ class MSatConverter(Converter, DagWalker):
             elif self._msat_lib.msat_is_rational_type(self.msat_env(), ty):
                 res = self.mgr.Real(Fraction(self._msat_lib.msat_term_repr(term)))
             else:
-                assert "_" in str(term), f"Unsupported type for '{str(term)}'"
+                assert "_" in str(term), f"Unsupported type for '{term!s}'"
                 val, width = map(int, str(term).split("_"))
                 res = self.mgr.BV(val, width)
         elif self._msat_lib.msat_term_is_constant(self.msat_env(), term):
@@ -817,7 +817,7 @@ class MSatConverter(Converter, DagWalker):
                 else:
                     _, width = self._msat_lib.msat_is_bv_type(self.msat_env(), ty)
                     assert isinstance(width, int), (
-                        f"Unsupported variable type for '{str(term)}'"
+                        f"Unsupported variable type for '{term!s}'"
                     )
                     res = self.mgr.Symbol(rep, self.tm.BVType(width))
 
@@ -949,7 +949,7 @@ class MSatConverter(Converter, DagWalker):
         if val.is_irrational():
             raise ConvertExpressionError("Cannot convert irrational constant")
         num, den = val.numerator(), val.denominator()
-        rep = f"{str(num)}/{str(den)}"
+        rep = f"{num!s}/{den!s}"
         return self._msat_lib.msat_make_number(self.msat_env(), rep)
 
     def walk_bool_constant(self, formula: FNode, **kwargs) -> Any:
@@ -1272,7 +1272,7 @@ class MSatQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
             raise PysmtValueError(
                 "MathSAT quantifier elimination only"
                 " supports LRA or LIA (detected logic "
-                f"is: {str(logic)})"
+                f"is: {logic!s})"
             )
 
         if not logic <= LRA and self.algorithm != "lw":
@@ -1297,7 +1297,7 @@ class MSatQuantifierEliminator(QuantifierEliminator, IdentityDagWalker):
             raise ConvertExpressionError(
                 message=(
                     "Unable to represent"
-                    f"expression {str(res)} in pySMT: the quantifier elimination for "
+                    f"expression {res!s} in pySMT: the quantifier elimination for "
                     "LIA is incomplete as it requires the modulus. You can "
                     "find the MathSAT term representing the quantifier "
                     "elimination as the attribute 'expression' of this "
@@ -1372,7 +1372,7 @@ class MSatInterpolator(Interpolator):
             if not ok:
                 raise PysmtValueError(
                     "Logic not supported by MathSAT "
-                    f"interpolation. (detected logic is: {str(logic)})"
+                    f"interpolation. (detected logic is: {logic!s})"
                 )
 
     def binary_interpolant(self, a, b):

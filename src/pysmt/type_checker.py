@@ -54,7 +54,7 @@ class SimpleTypeChecker(walkers.DagWalker):
         """
         res = self.walk(formula)
         if not self.be_nice and res is None:
-            raise PysmtTypeError(f"The formula '{str(formula)}' is not well-formed")
+            raise PysmtTypeError(f"The formula '{formula!s}' is not well-formed")
         return cast(PySMTType, res)
 
     def walk_type_to_type(
@@ -246,7 +246,7 @@ class SimpleTypeChecker(walkers.DagWalker):
         # pylint: disable=unused-argument
         if args[0].is_bool_type():
             raise PysmtTypeError(
-                f"The formula '{str(formula)}' is not well-formed."
+                f"The formula '{formula!s}' is not well-formed."
                 "Equality operator is not supported for Boolean"
                 " terms. Use Iff instead."
             )
@@ -474,5 +474,5 @@ def assert_args_type_in(args: Iterable[FNode], allowed_types: set[PySMTType]):
         t = arg.get_type()
         if t not in allowed_types:
             raise PysmtTypeError(
-                f"Argument is of type {t}, but one of {str(allowed_types)} was expected!\n"
+                f"Argument is of type {t}, but one of {allowed_types!s} was expected!\n"
             )

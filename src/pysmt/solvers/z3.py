@@ -668,7 +668,7 @@ class Z3Converter(Converter, DagWalker):
                     import warnings
 
                     symb_type = self._z3_to_type(expr.sort())
-                    warnings.warn(f"Defining new symbol: {str(expr)}", stacklevel=2)
+                    warnings.warn(f"Defining new symbol: {expr!s}", stacklevel=2)
                     return self.mgr.FreshSymbol(symb_type, template="__z3_%d")
         elif z3.is_function(expr):
             # This needs to be after we try to convert regular Symbols
@@ -677,7 +677,7 @@ class Z3Converter(Converter, DagWalker):
 
         # If we reach this point, we did not manage to translate the expression
         raise ConvertExpressionError(
-            message=(f"Unsupported expression: {str(expr)}"), expression=expr
+            message=(f"Unsupported expression: {expr!s}"), expression=expr
         )
 
     def _back_z3_eq(self, args, expr):
@@ -752,7 +752,7 @@ class Z3Converter(Converter, DagWalker):
             sort_ast = self._type_to_z3(symbol_type).ast
         elif symbol_type.is_string_type():
             raise ConvertExpressionError(
-                message=(f"Unsupported string symbol: {str(formula)}"),
+                message=(f"Unsupported string symbol: {formula!s}"),
                 expression=formula,
             )
         else:
@@ -1082,7 +1082,7 @@ class Z3QuantifierEliminator(QuantifierEliminator):
             raise PysmtValueError(
                 "Z3 quantifier elimination only "
                 "supports LRA or LIA without combination."
-                f"(detected logic is: {str(logic)})"
+                f"(detected logic is: {logic!s})"
             )
 
         simplifier = z3.Tactic("simplify")
@@ -1104,7 +1104,7 @@ class Z3QuantifierEliminator(QuantifierEliminator):
             raise ConvertExpressionError(
                 message=(
                     "Unable to represent"
-                    f"expression {str(res)} in pySMT: the quantifier elimination for "
+                    f"expression {res!s} in pySMT: the quantifier elimination for "
                     "LIA is incomplete as it requires the modulus. You can "
                     "find the Z3 expression representing the quantifier "
                     "elimination as the attribute 'expression' of this "
@@ -1135,7 +1135,7 @@ class Z3Interpolator(Interpolator):
             if not ok:
                 raise PysmtValueError(
                     "Logic not supported by Z3 interpolation."
-                    f"(detected logic is: {str(logic)})"
+                    f"(detected logic is: {logic!s})"
                 )
 
     def binary_interpolant(self, a, b):

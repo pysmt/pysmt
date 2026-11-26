@@ -74,7 +74,7 @@ def run_test(y, f):
         if res == False:  # noqa: E712
             print("unsat")
         else:
-            print(f"sat : {str(res)}")
+            print(f"sat : {res!s}")
     except SolverReturnedUnknownResultError:
         print("unknown")
     print("\n\n")

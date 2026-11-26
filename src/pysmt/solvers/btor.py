@@ -447,7 +447,7 @@ class BTORConverter(Converter, DagWalker):
             ):
                 raise ConvertExpressionError(
                     "BTOR supports only Array(BV,BV). "
-                    f"Type '{str(symbol_type)}' was given."
+                    f"Type '{symbol_type!s}' was given."
                 )
             index_width = index_type.width if index_type.is_bv_type() else 1
             elem_width = elem_type.width if elem_type.is_bv_type() else 1
