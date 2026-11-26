@@ -40,8 +40,8 @@ installed with the same script: e.g., ::
 installs the MathSAT5 solver.
 
 ``pysmt-install`` installs the solvers into the Python interpreter that
-runs it (e.g., the active virtual environment). It uses ``pip`` from that
-interpreter, or ``uv pip`` when ``pip`` is not available (as in
+runs it (e.g., the active virtual environment). It uses ``pip`` from
+that interpreter, or ``uv pip`` when ``pip`` is not available (as in
 environments created by uv). Z3, cvc5, Boolector, CUDD, MathSAT and
 OptiMathSAT are installed as regular packages, so they can be upgraded
 or removed with the same tool (e.g., ``pip uninstall z3-solver`` or
@@ -49,21 +49,20 @@ or removed with the same tool (e.g., ``pip uninstall z3-solver`` or
 cannot write to the environment, ``--target DIR`` installs the solvers
 into ``DIR``, which you then need to add to your ``PYTHONPATH``, and
 ``pysmt-install --check --target DIR`` checks the solvers in ``DIR``.
-MathSAT, OptiMathSAT, Yices and PicoSAT are downloaded and built in the
-``.smt_solvers`` folder in your home directory (see ``--install-path``)
-before being installed. For Yices, ``pysmt-install`` installs SRI's
-``yices`` Python API and copies ``libyices`` next to it, taken from SRI's
-prebuilt release archive on Linux x86_64 and macOS. On other platforms it
-builds ``libyices`` from source, which needs a C compiler, make, gperf
-and the GMP library with its headers. A ``libyices`` installed in the
-system takes precedence over the copy installed by ``pysmt-install``,
-and ``pip uninstall yices`` does not remove the copy. Building the MathSAT and OptiMathSAT bindings
-needs a C++ compiler and the GMP library with its headers (e.g.,
-``libgmp-dev`` on Debian/Ubuntu, ``gmp`` from Homebrew on macOS). On
-Windows it needs the Microsoft C++ Build Tools, and ``pysmt-install``
-downloads GMP itself. ``pysmt-install --help`` lists all the options.
-
-.. _gs-hello-world:
+MathSAT, OptiMathSAT, Yices and PicoSAT are downloaded (and built, where
+needed) in the ``.smt_solvers`` folder in your home directory (see
+``--install-path``) before being installed. For Yices, ``pysmt-install``
+installs SRI's ``yices`` Python API and copies ``libyices`` next to it,
+taken from SRI's prebuilt release archive on Linux x86_64 and macOS. On
+other platforms it builds ``libyices`` from source, which needs a C
+compiler, make, gperf and the GMP library with its headers. A
+``libyices`` installed in the system takes precedence over the copy
+installed by ``pysmt-install``, and ``pip uninstall yices`` does not
+remove the copy. Building the MathSAT and OptiMathSAT bindings needs a
+C++ compiler and the GMP library with its headers (e.g., ``libgmp-dev``
+on Debian/Ubuntu, ``gmp`` from Homebrew on macOS). On Windows it needs
+the Microsoft C++ Build Tools, and ``pysmt-install`` downloads GMP
+itself. ``pysmt-install --help`` lists all the options.
 
 GMPY2
 """""
@@ -76,7 +75,7 @@ perform operations on big numbers, especially when fractions are
 involved. The gmpy library is used by default if it is installed,
 otherwise the ``fractions`` module from Python's standard library is
 used. The use of the gmpy library can be controlled by setting the
-system environment variables ``PYSMT_GMPY2`` to ``True`` or
+system environment variable ``PYSMT_GMPY`` to ``True`` or
 ``False``. If this is set to true and the gmpy library cannot be
 imported, an exception will be thrown.
 
@@ -88,8 +87,12 @@ improve the performances of some internal component. If Cython is
 installed, this will be used (by default) to compile the SMT-LIB
 parser. The use of Cython can be controlled by setting the environment
 variable ``PYSMT_CYTHON`` to ``True`` or ``False``. If set to false,
-the default pure python implementation will be used.
+the default pure python implementation will be used. On Python 3.12
+and later, Cython's ``pyximport`` also needs ``setuptools`` to be
+installed.
 
+
+.. _gs-hello-world:
 
 Hello World
 -----------

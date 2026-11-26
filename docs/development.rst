@@ -107,7 +107,7 @@ The recipe does not install OS packages. Z3, cvc5, Boolector and CUDD
 on Linux x86_64 and macOS (elsewhere it is built from source). The other
 solvers are built locally:
 
-* MathSAT and OptiMathSAT need a C compiler and the gmp headers:
+* MathSAT and OptiMathSAT need a C++ compiler and the gmp headers:
   ``libgmp-dev`` on Debian and Ubuntu, ``brew install gmp`` on macOS
   (with ``LIBRARY_PATH`` and ``CPATH`` pointing to the ``lib`` and
   ``include`` directories of ``brew --prefix``). On Windows
@@ -152,7 +152,7 @@ skip them, run::
   $ git config blame.ignoreRevsFile .git-blame-ignore-revs
 
 Tests
-======
+=====
 
 Running Tests
 -------------
@@ -292,8 +292,10 @@ Building Documentation
 
 pySMT uses `Sphinx <http://www.sphinx-doc.org/en/stable/index.html/>`_
 for documentation. ``just docs`` builds the HTML documentation into
-``docs/_build/html``; Sphinx runs in a temporary environment through
-``uvx``, so it does not need to be installed.
+``docs/_build/html``. Sphinx comes from the ``docs`` dependency group in
+``pyproject.toml``, which ``uv run --group docs`` installs on demand, so
+it does not need to be installed separately. Read the Docs installs the
+same group (see ``.readthedocs.yaml``).
 
 Preparing a Release (Check-List)
 ================================
