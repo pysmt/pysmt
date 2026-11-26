@@ -18,3 +18,6 @@
 
 # Apply the ruff SIM (flake8-simplify) auto-fixes (#873)
 42b118840aaa93fc75a582590f49773a7658126e
+
+# Apply the ruff RUF (Ruff-specific) auto-fixes (#873)
+5ef49c4c2297afcb23bc7d77edc46f7c52708e57
