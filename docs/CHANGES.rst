@@ -6,17 +6,12 @@ Change Log
 
 **Backwards Incompatible Changes**:
 
+The following changes affect users upgrading from 0.10:
+
 * Python 3.10 or later is now required (#863).
 
 * ``pysmt.VERSION`` has been removed. Use ``pysmt.__version__``, which
   is now read from the installed package metadata (#863).
-
-* The ``install.py`` script in the sources has been removed. Use
-  ``pysmt-install`` or ``python -m pysmt install`` (#863).
-
-* Development builds on PyPI are now numbered by the total number of
-  commits (e.g., ``0.11.0.dev2047``) instead of the number of commits
-  since the last tag (#863).
 
 * The CVC4 solver has been removed, since CVC4 is archived upstream.
   Use cvc5 instead (#864).
@@ -35,13 +30,32 @@ Change Log
   is only used to download and build MathSAT, OptiMathSAT, Yices and
   PicoSAT (#867).
 
-* pySMT no longer depends on setuptools (#867).
+* ``pysmt-install`` no longer reads ``PYSMT_INSTALL_MIRROR``, since the
+  CI caches the downloads (#870).
+
+* The ``install.py`` script in the sources has been removed. Use
+  ``pysmt-install`` or ``python -m pysmt install`` (#863).
+
+* pySMT no longer depends on setuptools. Install it explicitly if your
+  code needs it (#867).
+
+* The ``LOGICS`` class attributes that were lists (in the Boolector,
+  PicoSAT and BDD solvers and in several quantifier eliminators and
+  interpolators) are now tuples. Code that appends to them or
+  concatenates them with a list needs to use tuples (#873).
+
+* Development builds on PyPI are now numbered by the total number of
+  commits (e.g., ``0.11.0.dev2047``) instead of the number of commits
+  since the last tag (#863).
 
 **General**:
 
 * Packaging moved from ``setup.py`` to ``pyproject.toml`` with hatchling;
   the development environment is managed with uv and common tasks with
   just (#863).
+
+* ``pysmt-install`` no longer prints a setuptools deprecation warning, and
+  its confirmation prompt accepts ``y`` and ``yes`` in any case (#867).
 
 * The code is linted and formatted with ruff, and pre-commit hooks run
   the linter and the type checker before each commit (#866).
@@ -79,9 +93,6 @@ Change Log
   unpacking instead of list and tuple concatenation, and tuples instead
   of mutable lists for class-level constants such as ``LOGICS`` (#873).
 
-* ``pysmt-install`` no longer prints a setuptools deprecation warning, and
-  its confirmation prompt accepts ``y`` and ``yes`` in any case (#867).
-
 * CI: the GitHub Actions workflows are split into ``ci-pr.yml`` (PRs),
   ``build-and-release.yml`` (master and tags) and the reusable
   ``test.yml``, and use uv and just instead of the ``ci/*.sh`` scripts.
@@ -91,8 +102,7 @@ Change Log
   Z3 and MathSAT executables again, so the tests of the generic SMT-LIB
   wrapper are no longer skipped. Pushing a ``v*`` tag publishes the
   release to PyPI and creates the GitHub release, while master only
-  publishes ``.devN`` builds. ``pysmt-install`` no longer reads
-  ``PYSMT_INSTALL_MIRROR``, since the CI caches the downloads (#870).
+  publishes ``.devN`` builds (#870).
 
 * CI: a weekly ``bump-solvers`` workflow opens a pull request that bumps
   the PyPI-backed solver pins of ``pysmt-install`` and lists newer
@@ -110,8 +120,6 @@ Change Log
   on PyPI instead of being built from source. PyPI has no Windows wheels,
   so on Windows pip builds it from the source distribution (#867).
 
-* MathSAT upgraded to 5.6.20 (#869).
-
 * Yices upgraded to 2.8.0 with version 1.1.6 of its Python API.
   ``pysmt-install --yices`` downloads SRI's prebuilt ``libyices`` on
   Linux x86_64 and macOS, so it no longer needs a compiler there, and
@@ -120,6 +128,8 @@ Change Log
   system ``libyices`` is found, instead of patching ``yices_api.py``. If
   ``libyices`` cannot be loaded, Yices is reported as not available
   instead of raising an error (#868).
+
+* MathSAT upgraded to 5.6.20 (#869).
 
 * ``pysmt-install`` builds and installs the MathSAT and OptiMathSAT
   Python bindings with pip (or ``uv pip``) from the ``python/`` directory
