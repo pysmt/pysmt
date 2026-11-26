@@ -15,7 +15,7 @@ pySMT: a Python API for SMT
            :alt: Documentation Status
 
 .. image:: https://img.shields.io/pypi/v/pysmt.svg
-           :target: https://pypi.python.org/pypi/pySMT/
+           :target: https://pypi.org/project/pysmt/
            :alt: Latest PyPI version
 
 .. image:: https://img.shields.io/pypi/l/pysmt.svg
@@ -180,7 +180,8 @@ installed and importable by the Python interpreter running pySMT.
 
 Installation
 ============
-You can install the latest stable release of pySMT from PyPI::
+pySMT requires Python 3.10 or later. You can install the latest stable
+release of pySMT from PyPI::
 
   $ pip install pysmt
 
@@ -202,8 +203,8 @@ The script *pysmt-install* can be used to simplify the installation of the solve
 will install MathSAT 5.
 
 ``pysmt-install`` installs the solvers into the Python interpreter that
-runs it (e.g., the active virtual environment). It uses ``pip`` from that
-interpreter, or ``uv pip`` when ``pip`` is not available (as in
+runs it (e.g., the active virtual environment). It uses ``pip`` from
+that interpreter, or ``uv pip`` when ``pip`` is not available (as in
 environments created by uv). Z3, cvc5, Boolector, CUDD, MathSAT and
 OptiMathSAT are installed as regular packages, so they can be upgraded
 or removed with the same tool (e.g., ``pip uninstall z3-solver`` or
@@ -211,20 +212,21 @@ or removed with the same tool (e.g., ``pip uninstall z3-solver`` or
 cannot write to the environment, ``--target DIR`` installs the solvers
 into ``DIR``, which you then need to add to your ``PYTHONPATH``, and
 ``pysmt-install --check --target DIR`` checks the solvers in ``DIR``.
-MathSAT, OptiMathSAT, Yices and PicoSAT are downloaded and built in the
-``.smt_solvers`` folder in your home directory (see ``--install-path``)
-before being installed. For Yices, ``pysmt-install`` installs SRI's
-``yices`` Python API and copies ``libyices`` next to it, taken from SRI's
-prebuilt release archive on Linux x86_64 and macOS. On other platforms it
-builds ``libyices`` from source, which needs a C compiler, make, gperf
-and the GMP library with its headers. A ``libyices`` installed in the
-system takes precedence over the copy installed by ``pysmt-install``,
-and ``pip uninstall yices`` does not remove the copy. Building the MathSAT and OptiMathSAT bindings
-needs a C++ compiler and the GMP library with its headers (e.g.,
-``libgmp-dev`` on Debian/Ubuntu, ``gmp`` from Homebrew on macOS). On
-Windows it needs the Microsoft C++ Build Tools, and ``pysmt-install``
-downloads GMP itself. If you have multiple versions of Python in your
-system, we recommend the following syntax to run pysmt-install:
+MathSAT, OptiMathSAT, Yices and PicoSAT are downloaded (and built, where
+needed) in the ``.smt_solvers`` folder in your home directory (see
+``--install-path``) before being installed. For Yices, ``pysmt-install``
+installs SRI's ``yices`` Python API and copies ``libyices`` next to it,
+taken from SRI's prebuilt release archive on Linux x86_64 and macOS. On
+other platforms it builds ``libyices`` from source, which needs a C
+compiler, make, gperf and the GMP library with its headers. A
+``libyices`` installed in the system takes precedence over the copy
+installed by ``pysmt-install``, and ``pip uninstall yices`` does not
+remove the copy. Building the MathSAT and OptiMathSAT bindings needs a
+C++ compiler and the GMP library with its headers (e.g., ``libgmp-dev``
+on Debian/Ubuntu, ``gmp`` from Homebrew on macOS). On Windows it needs
+the Microsoft C++ Build Tools, and ``pysmt-install`` downloads GMP
+itself. If you have multiple versions of Python in your system, we
+recommend the following syntax to run pysmt-install:
 ``python -m pysmt install``.
 
 
@@ -239,7 +241,7 @@ For picosat and CUDD, we use external wrappers:
 - repycudd (https://github.com/pysmt/repycudd)
 - pyPicoSAT (https://github.com/pysmt/pyPicoSAT)
 
-For instruction on how to use any SMT-LIB complaint solver with pySMT
+For instruction on how to use any SMT-LIB compliant solver with pySMT
 see `examples/generic_smtlib.py </examples/generic_smtlib.py>`_
 
 For more information, refer to online `documentation on ReadTheDocs <http://pysmt.readthedocs.io>`_
@@ -272,6 +274,14 @@ each of the available solvers.
 
 
 
+
+Contributing
+============
+
+To contribute to pySMT, see the `development guide
+<https://pysmt.readthedocs.io/en/latest/development.html>`_
+(``docs/development.rst``), which describes the development setup, the
+tests and the code style.
 
 License
 =======

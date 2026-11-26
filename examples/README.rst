@@ -9,7 +9,7 @@ This directory contains examples to get you started using pySMT. Suggested order
 4. `combine_solvers.py </examples/combine_solvers.py>`_ : Combine multiple solvers to solve the same
 5. `model_checking.py </examples/model_checking.py>`_ : Model-Checking an infinite state system (BMC+K-Induction) in ~150 lines
 6. `allsat.py </examples/allsat.py>`_ : How to access functionalities of solvers not currently wrapped by pySMT.
-7. `generic_smtlib.py </examples/generic_smtlib.py>`_ : Shows how to use any SMT-LIB complaint SMT solver
+7. `generic_smtlib.py </examples/generic_smtlib.py>`_ : Shows how to use any SMT-LIB compliant SMT solver
 8. `efsmt.py </examples/efsmt.py>`_ : Shows how to combine two different solvers to solve an Exists Forall problem.
 9. `allsmt.py </examples/allsmt.py>`_ : How to detect the logic of a formula and perform model enumeration.
 10. `sudoku/ </examples/sudoku/>`_ : Solves sudoku problems using a simple encoding using either QF_LIA or QF_BV
@@ -21,3 +21,4 @@ This directory contains examples to get you started using pySMT. Suggested order
 16. `theory_combination.py </examples/theory_combination.py>`_ : Combine multiple theories (Array, BitVectors, Integer, and Reals) in the same formula
 17. `portfolio.py </examples/portfolio.py>`_ : Portfolio solving
 18. `strings.py </examples/strings.py>`_ : Example on the theory of Strings
+19. `ltl.py </examples/ltl.py>`_ : Extend pySMT with new operators (Linear Temporal Logic) without modifying its source code
