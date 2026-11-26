@@ -45,17 +45,15 @@ class Annotations:
 
     def remove_annotation(self, formula: FNode, annotation: str):
         """Removes the given annotation for the given formula"""
-        if formula in self._annotations:
-            if annotation in self._annotations[formula]:
-                del self._annotations[formula][annotation]
+        if formula in self._annotations and annotation in self._annotations[formula]:
+            del self._annotations[formula][annotation]
 
     def remove_value(self, formula: FNode, annotation: str, value: FNode):
         """Removes the given annotation for the given formula"""
-        if formula in self._annotations:
-            if annotation in self._annotations[formula]:
-                d = self._annotations[formula][annotation]
-                if value in d:
-                    d.remove(value)
+        if formula in self._annotations and annotation in self._annotations[formula]:
+            d = self._annotations[formula][annotation]
+            if value in d:
+                d.remove(value)
 
     def has_annotation(
         self, formula: FNode, annotation: str, value: str | None = None
@@ -64,12 +62,11 @@ class Annotations:
         Value is specified, True is returned only if the value is
         matching.
         """
-        if formula in self._annotations:
-            if annotation in self._annotations[formula]:
-                if value is None:
-                    return True
-                else:
-                    return value in self._annotations[formula][annotation]
+        if formula in self._annotations and annotation in self._annotations[formula]:
+            if value is None:
+                return True
+            else:
+                return value in self._annotations[formula][annotation]
         return False
 
     def annotations(self, formula: FNode) -> dict[str, set[Any]] | None:

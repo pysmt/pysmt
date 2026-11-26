@@ -180,9 +180,12 @@ class TestRewritings(TestCase):
 
     def test_ackermannization_for_examples(self):
         for f, _, _, logic in get_example_formulae():
-            if not logic.is_quantified() and logic.theory.uninterpreted:
-                if self.env.factory.has_solvers(logic=logic):
-                    self._verify_ackermannization(f, logic)
+            if (
+                not logic.is_quantified()
+                and logic.theory.uninterpreted
+                and self.env.factory.has_solvers(logic=logic)
+            ):
+                self._verify_ackermannization(f, logic)
 
     def test_ackermannization_dictionaries(self):
         self.env.enable_infix_notation = True

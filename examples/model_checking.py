@@ -120,12 +120,10 @@ class PDR:
 
     def inductive(self):
         """Checks if last two frames are equivalent"""
-        if (
+        return (
             len(self.frames) > 1
             and self.solve(Not(EqualsOrIff(self.frames[-1], self.frames[-2]))) is None
-        ):
-            return True
-        return False
+        )
 
     def __del__(self):
         self.solver.exit()

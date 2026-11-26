@@ -172,34 +172,33 @@ class SolverInstaller:
     def do_download(url, file_name):
         """Downloads the given url into the given file name"""
         u = urllib.request.urlopen(url)
-        f = open(file_name, "wb")
-        meta = u.info()
-        if meta.get("Content-Length") and len(meta.get("Content-Length")) > 0:
-            file_size = int(meta.get("Content-Length"))
-            print(f"Downloading: {file_name} Bytes: {file_size}")
+        with open(file_name, "wb") as f:
+            meta = u.info()
+            if meta.get("Content-Length") and len(meta.get("Content-Length")) > 0:
+                file_size = int(meta.get("Content-Length"))
+                print(f"Downloading: {file_name} Bytes: {file_size}")
 
-        block_sz = 8192
-        count = 0
-        while True:
-            buff = u.read(block_sz)
-            if not buff:
-                break
+            block_sz = 8192
+            count = 0
+            while True:
+                buff = u.read(block_sz)
+                if not buff:
+                    break
 
-            f.write(buff)
-            if (
-                meta.get("Content-Length")
-                and len(meta.get("Content-Length")) > 0
-                and sys.stdout.isatty()
-            ):
-                count += len(buff)
-                perc = (float(count) / float(file_size)) * 100.0
-                str_perc = f"{perc:.1f}%"
-                sys.stdout.write("\r")
-                sys.stdout.write(str_perc)
-                sys.stdout.write(" " * (10 - len(str_perc)))
+                f.write(buff)
+                if (
+                    meta.get("Content-Length")
+                    and len(meta.get("Content-Length")) > 0
+                    and sys.stdout.isatty()
+                ):
+                    count += len(buff)
+                    perc = (float(count) / float(file_size)) * 100.0
+                    str_perc = f"{perc:.1f}%"
+                    sys.stdout.write("\r")
+                    sys.stdout.write(str_perc)
+                    sys.stdout.write(" " * (10 - len(str_perc)))
 
         print("")
-        f.close()
         return True
 
     @staticmethod
@@ -230,24 +229,18 @@ class SolverInstaller:
             for k, v in env_variables.items():
                 environment[k] = v
 
-        stderr = None
-        if suppress_stderr:
-            stderr = open(os.devnull, "w")
+        stderr = subprocess.DEVNULL if suppress_stderr else None
         if isinstance(program, str):
             program = program.split()
         if get_output:
             output = subprocess.check_output(
                 program, env=environment, cwd=directory, stderr=stderr
             )
-            if suppress_stderr:
-                stderr.close()
             return output.decode("ascii")
         else:
             subprocess.check_call(
                 program, env=environment, cwd=directory, stderr=stderr
             )
-            if suppress_stderr:
-                stderr.close()
 
     @staticmethod
     def replace_in_file(file_path, old_str, new_str):
@@ -289,8 +282,8 @@ class SolverInstaller:
     @staticmethod
     def untar(fname, directory, mode="r:gz"):
         """Extracts the tarfile using the specified mode in the given directory."""
-        tfile = tarfile.open(fname, mode)
-        tfile.extractall(directory)
+        with tarfile.open(fname, mode) as tfile:
+            tfile.extractall(directory)
 
     @staticmethod
     def unzip(fname, directory):

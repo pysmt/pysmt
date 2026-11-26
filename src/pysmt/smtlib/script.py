@@ -448,7 +448,7 @@ def smtlibscript_from_formula(
                 stacklevel=3,
             )
             smt_logic = f_logic
-    elif not (isinstance(logic, Logic) or isinstance(logic, str)):
+    elif not isinstance(logic, (Logic, str)):
         raise UndefinedLogicError(str(logic))
     else:
         if logic not in SMTLIB2_LOGICS:

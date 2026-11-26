@@ -106,11 +106,7 @@ def is_python_integer(var: Any) -> bool:
 
     This accounts for: long, int and mpz (if available).
     """
-    if type(var) is mpz_type:
-        return True
-    if type(var) is int:
-        return True
-    return False
+    return type(var) is mpz_type or type(var) is int
 
 
 def is_python_rational(var: Any) -> bool:
@@ -118,15 +114,13 @@ def is_python_rational(var: Any) -> bool:
 
     This accounts for: long, int, float, Fraction, mpz, mpq (if available).
     """
-    if type(var) is mpz_type or type(var) is mpq_type:
-        return True
-    if type(var) is pyFraction:
-        return True
-    if type(var) is int:
-        return True
-    if type(var) is float:
-        return True
-    return False
+    return (
+        type(var) is mpz_type
+        or type(var) is mpq_type
+        or type(var) is pyFraction
+        or type(var) is int
+        or type(var) is float
+    )
 
 
 def is_python_boolean(var: Any):
