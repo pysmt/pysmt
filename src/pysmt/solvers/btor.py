@@ -226,11 +226,6 @@ class BoolectorSolver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSol
         self._assumptions = []
         self._core = []
         self._core_assumptions = []
-        return
-
-        # EOC BoolectorOptions
-
-        pass
 
     @clear_pending_pop
     def _reset_assertions(self):

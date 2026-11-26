@@ -56,7 +56,7 @@ Nat = "german", "swedish", "british", "norwegian", "danish"
 Pet = "birds", "cats", "horses", "fish", "dogs"
 Drink = "beer", "water", "tea", "milk", "coffee"
 Smoke = "blends", "pall_mall", "prince", "bluemasters", "dunhill"
-Houses = range(0, 5)
+Houses = range(5)
 
 
 #

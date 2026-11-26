@@ -12,3 +12,6 @@
 
 # Apply the ruff C4 (flake8-comprehensions) auto-fixes (#873)
 8977530ca58e81b1e86021e081b84feae677b610
+
+# Apply the ruff PIE (flake8-pie) auto-fixes (#873)
+6781cc95de385e3caacd72b95cc138c475b98577

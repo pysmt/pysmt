@@ -23,62 +23,42 @@ import pysmt.operators as op
 class PysmtException(Exception):
     """Base class for all custom exceptions of pySMT"""
 
-    pass
-
 
 class UnknownSmtLibCommandError(PysmtException):
     """Raised when the parser finds an unknown command."""
-
-    pass
 
 
 class SolverReturnedUnknownResultError(PysmtException):
     """This exception is raised if a solver returns 'unknown' as a result"""
 
-    pass
-
 
 class UnknownSolverAnswerError(PysmtException):
     """Raised when the a solver returns an invalid response."""
-
-    pass
 
 
 class NoSolverAvailableError(PysmtException):
     """No solver is available for the selected Logic."""
 
-    pass
-
 
 class NonLinearError(PysmtException):
     """The provided expression is not linear."""
-
-    pass
 
 
 class UndefinedLogicError(PysmtException):
     """This exception is raised if an undefined Logic is attempted to be used."""
 
-    pass
-
 
 class InternalSolverError(PysmtException):
     """Generic exception to capture errors provided by a solver."""
-
-    pass
 
 
 class NoLogicAvailableError(PysmtException):
     """Generic exception to capture errors caused by missing support for logics."""
 
-    pass
-
 
 class SolverRedefinitionError(PysmtException):
     """Exception representing errors caused by multiple definition of solvers
     having the same name."""
-
-    pass
 
 
 class SolverNotConfiguredForUnsatCoresError(PysmtException):
@@ -87,16 +67,12 @@ class SolverNotConfiguredForUnsatCoresError(PysmtException):
     cores is required to produce a core.
     """
 
-    pass
-
 
 class SolverStatusError(PysmtException):
     """
     Exception raised if a method requiring a specific solver status is
     incorrectly called in the wrong status.
     """
-
-    pass
 
 
 class ConvertExpressionError(PysmtException):
@@ -135,8 +111,6 @@ class UnsupportedOperatorError(PysmtException):
 class SolverAPINotFound(PysmtException):
     """The Python API of the selected solver cannot be found."""
 
-    pass
-
 
 class UndefinedSymbolError(PysmtException):
     """The given Symbol is not in the FormulaManager."""
@@ -151,8 +125,6 @@ class UndefinedSymbolError(PysmtException):
 
 class PysmtModeError(PysmtException):
     """The current mode is not supported for this operation"""
-
-    pass
 
 
 class PysmtImportError(PysmtException, ImportError):
@@ -199,19 +171,13 @@ class PysmtIOError(PysmtException, IOError):
 class PysmtInfinityError(PysmtException):
     """Infinite value in expressions."""
 
-    pass
-
 
 class PysmtInfinitesimalError(PysmtException):
     """Infinite value in expressions."""
 
-    pass
-
 
 class PysmtUnboundedOptimizationError(PysmtException):
     """Infinite optimal value in optimization."""
-
-    pass
 
 
 class GoalNotSupportedError(PysmtException):

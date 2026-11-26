@@ -140,11 +140,9 @@ class SolverInstaller:
 
     def compile(self):
         """Performs the compilation if needed"""
-        pass
 
     def move(self):
         """Moves relevant files in site_dir"""
-        pass
 
     def install(self, force_redo=False):
         """Performs the installation of the solver"""

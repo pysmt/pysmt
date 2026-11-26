@@ -22,7 +22,7 @@ map_type = ArrayType(BV8, REAL)
 my_map = Symbol("my_map", map_type)
 
 # Fill-up the map, by defining all 256 values:
-for i in range(0, 255):
+for i in range(255):
     my_map = my_map.Store(BV(i, 8), Real(i))
 
 # We want to find find a value for which our relation does not work.
