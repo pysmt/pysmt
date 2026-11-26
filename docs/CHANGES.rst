@@ -70,6 +70,10 @@ Change Log
   lists and dicts with comprehensions and ``extend`` instead of adding
   one element per loop iteration (#873).
 
+* The ruff ``SIM`` (flake8-simplify) rules are enabled, so the code
+  merges nested ``if`` and ``with`` statements and ``if`` branches with
+  the same body, and opens files with context managers (#873).
+
 * ``pysmt-install`` no longer prints a setuptools deprecation warning, and
   its confirmation prompt accepts ``y`` and ``yes`` in any case (#867).
 
@@ -137,6 +141,9 @@ Change Log
   worker processes only when run as scripts. Python 3.14 starts the
   workers with ``forkserver`` on Linux, which re-imports the example,
   so they failed (#870).
+
+* Setting ``use_infix_notation`` to ``false`` in a configuration file
+  now disables infix notation. It used to enable it (#873).
 
 0.10.0: 2026-11-21 -- Optimization, type hints and upgraded solvers
 ---------------------------------------------------------------------

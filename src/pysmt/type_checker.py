@@ -124,7 +124,7 @@ class SimpleTypeChecker(walkers.DagWalker):
         # We check that all children are BV and the same size
         target_bv_type = self.env.type_manager.BVType(formula.bv_width())
         for a in args:
-            if not a == target_bv_type:
+            if a != target_bv_type:
                 return None
         return target_bv_type
 
@@ -196,7 +196,7 @@ class SimpleTypeChecker(walkers.DagWalker):
             target_width = formula.bv_width()
         except AttributeError:
             return None
-        if not l_width + r_width == target_width:
+        if l_width + r_width != target_width:
             return None
         return self.env.type_manager.BVType(target_width)
 

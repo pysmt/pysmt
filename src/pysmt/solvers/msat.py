@@ -431,7 +431,7 @@ class MathSAT5Solver(IncrementalTrackingSolver, UnsatCoreSolver, SmtLibBasicSolv
     def print_model(self, name_filter=None):
         if name_filter is not None:
             raise NotImplementedError
-        for v in self.converter.symbol_to_decl.keys():
+        for v in self.converter.symbol_to_decl:
             var = self.mgr.Symbol(v)
             assert var is not None
             print("%s = %s", (v, self.get_value(var)))

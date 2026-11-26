@@ -97,10 +97,7 @@ class PicosatOptions(SolverOptions):
             elif k == "preprocessing":
                 if v not in (True, False):
                     raise PysmtValueError(f"Invalid value for {str(k)}: {str(v)}")
-            elif k == "verbosity":
-                if not is_python_integer(v):
-                    raise PysmtValueError(f"Invalid value for {str(k)}: {str(v)}")
-            elif k == "propagation_limit":
+            elif k in ("verbosity", "propagation_limit"):
                 if not is_python_integer(v):
                     raise PysmtValueError(f"Invalid value for {str(k)}: {str(v)}")
             elif k in ("more_important_lit", "less_important_lit"):

@@ -163,7 +163,7 @@ def generate_examples_with_solvers(
     """
     has_real_minimization_or_maximization = lambda opt_example: any(
         not g.is_maxsmt_goal() and g.term().get_type().is_real_type()
-        for goals, _ in opt_example.goals.keys()
+        for goals, _ in opt_example.goals
         for g in goals
     )
     for optimization_example in optimization_examples:
@@ -191,7 +191,7 @@ def solve_given_example(
     """
     # test basic in boxed only if there is no basic optimization explicitly specified
     test_basic_in_boxed = all(
-        ot != OptimizationTypes.BASIC for _, ot in optimization_example.goals.keys()
+        ot != OptimizationTypes.BASIC for _, ot in optimization_example.goals
     )
 
     for (goals, optimization_type), goals_values in optimization_example.goals.items():

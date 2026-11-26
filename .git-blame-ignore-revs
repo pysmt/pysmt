@@ -15,3 +15,6 @@
 
 # Apply the ruff PIE (flake8-pie) auto-fixes (#873)
 6781cc95de385e3caacd72b95cc138c475b98577
+
+# Apply the ruff SIM (flake8-simplify) auto-fixes (#873)
+42b118840aaa93fc75a582590f49773a7658126e

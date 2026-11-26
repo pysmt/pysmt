@@ -89,13 +89,11 @@ class TestNonLinear(TestCase):
         f = Equals(Times(x, x), Real(4))
         for sname in self.env.factory.all_solvers():
             if sname in ["bdd", "picosat", "btor"]:
-                with Solver(name=sname) as s:
-                    with self.assertRaises(ConvertExpressionError):
-                        s.is_sat(f)
+                with Solver(name=sname) as s, self.assertRaises(ConvertExpressionError):
+                    s.is_sat(f)
             elif sname == "yices":
-                with Solver(name=sname) as s:
-                    with self.assertRaises(NonLinearError):
-                        s.is_sat(f)
+                with Solver(name=sname) as s, self.assertRaises(NonLinearError):
+                    s.is_sat(f)
             else:
                 with Solver(name=sname, logic=QF_NRA) as s:
                     self.assertTrue(s.is_sat(f), sname)

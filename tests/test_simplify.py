@@ -151,11 +151,7 @@ class TestSimplify(TestCase):
         stack = [res]
         while stack:
             curr = stack.pop()
-            if curr.is_plus():
-                stack.extend(curr.args())
-            elif curr.is_minus():
-                stack.extend(curr.args())
-            elif curr.is_times():
+            if curr.is_plus() or curr.is_minus() or curr.is_times():
                 stack.extend(curr.args())
             elif curr.is_constant():
                 self.assertNotEqual(curr, m_1)

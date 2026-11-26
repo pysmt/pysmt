@@ -169,25 +169,26 @@ class Theory:
         return not (self == other)
 
     def __le__(self, other: "Theory") -> bool:
-        if self.integer_difference == other.integer_difference:
+        # Each branch below is a separate case of the order on one feature.
+        if self.integer_difference == other.integer_difference:  # noqa: SIM114
             le_integer_difference = True
-        elif self.integer_difference and other.integer_arithmetic:
+        elif self.integer_difference and other.integer_arithmetic:  # noqa: SIM114
             le_integer_difference = True
         elif not self.integer_arithmetic and other.integer_arithmetic:
             le_integer_difference = True
         else:
             le_integer_difference = False
 
-        if self.real_difference == other.real_difference:
+        if self.real_difference == other.real_difference:  # noqa: SIM114
             le_real_difference = True
-        elif self.real_difference and other.real_arithmetic:
+        elif self.real_difference and other.real_arithmetic:  # noqa: SIM114
             le_real_difference = True
         elif not self.real_arithmetic and other.real_arithmetic:
             le_real_difference = True
         else:
             le_real_difference = False
 
-        if self.linear == other.linear:
+        if self.linear == other.linear:  # noqa: SIM114
             le_linear = True
         elif self.linear and not other.linear:
             le_linear = True

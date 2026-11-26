@@ -436,9 +436,7 @@ class BTORConverter(Converter, DagWalker):
         symbol_type = formula.symbol_type()
         if symbol_type.is_bool_type():
             res = self._btor.Var(self._btor.BitVecSort(1), formula.symbol_name())
-        elif symbol_type.is_real_type():
-            raise ConvertExpressionError
-        elif symbol_type.is_int_type():
+        elif symbol_type.is_real_type() or symbol_type.is_int_type():
             raise ConvertExpressionError
         elif symbol_type.is_array_type():
             # BTOR supports only Arrays of Type (BV, BV)
@@ -593,9 +591,7 @@ class BTORConverter(Converter, DagWalker):
     def _type_to_btor(self, tp):
         if tp.is_bool_type():
             return self._btor.BoolSort()
-        elif tp.is_real_type():
-            raise ConvertExpressionError
-        elif tp.is_int_type():
+        elif tp.is_real_type() or tp.is_int_type():
             raise ConvertExpressionError
         elif tp.is_bv_type():
             return self._btor.BitVecSort(tp.width)

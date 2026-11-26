@@ -227,9 +227,7 @@ class CNFizer(DagWalker):
     @handles(op.CONSTANTS)
     def walk_constant(self, formula, **kwargs):
         # pylint: disable=unused-argument
-        if formula.is_true():
-            return formula, CNFizer.TRUE_CNF
-        elif formula.is_false():
+        if formula.is_true() or formula.is_false():
             return formula, CNFizer.TRUE_CNF
         else:
             return CNFizer.THEORY_PLACEHOLDER
@@ -457,9 +455,7 @@ class NNFizer(DagWalker):
             s = formula.arg(0)
             if s.is_not():
                 return [s.arg(0)]
-            elif s.is_and():
-                return [mgr.Not(x) for x in s.args()]
-            elif s.is_or():
+            elif s.is_and() or s.is_or():
                 return [mgr.Not(x) for x in s.args()]
             elif s.is_implies():
                 return [s.arg(0), mgr.Not(s.arg(1))]
@@ -509,7 +505,8 @@ class NNFizer(DagWalker):
             return args[0]
         elif s.is_and():
             return self.mgr.Or(args)
-        elif s.is_or():
+        # One branch per operator: the negations agree only because of _get_children.
+        elif s.is_or():  # noqa: SIM114
             return self.mgr.And(args)
         elif s.is_implies():
             return self.mgr.And(args)
@@ -606,7 +603,8 @@ class PrenexNormalizer(DagWalker):
         return res
 
     def _invert_quantifier(self, Q: Callable) -> Callable:
-        if Q == self.mgr.Exists:
+        # Q is a variable, not a constant, so this is not a Yoda condition.
+        if Q == self.mgr.Exists:  # noqa: SIM300
             return self.mgr.ForAll
         return self.mgr.Exists
 

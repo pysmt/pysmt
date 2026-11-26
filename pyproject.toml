@@ -53,7 +53,7 @@ target-version = "py310"
 src = ["src", "tests"]
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "UP", "B", "C4", "PIE", "PERF"]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "PIE", "PERF", "SIM"]
 ignore = [
     "E501",  # line-too-long: handled by the formatter; the rest are unsplittable
     "F403",  # star imports are deliberate in tests and examples
@@ -61,9 +61,13 @@ ignore = [
     "E731",  # lambda-assignment: the small inline lambdas here read fine
     "E741",  # ambiguous-variable-name: `l` is used throughout for logics and lists
     "PERF203",  # try-except-in-loop: free on Python 3.11+ when no exception is raised; none of these loops is hot
+    "SIM105",  # suppressible-exception: try/except/pass is as clear as contextlib.suppress and needs no import
+    "SIM108",  # if-else-block-instead-of-if-exp: the if/else blocks read fine, and several are module-level setup switches
 ]
 
 [tool.ruff.lint.per-file-ignores]
+# The snippet shows infix notation with the constant on the left (literalinclude, so no noqa).
+"docs/code_snippets/hello_world_infix.py" = ["SIM300"]
 # Tutorials introduce each import next to the code that first uses it.
 "examples/*" = ["E402"]
 # O is the LTL "once" operator.
