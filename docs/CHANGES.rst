@@ -66,6 +66,10 @@ Change Log
 * The ruff ``PIE`` (flake8-pie) rules are enabled, so the code has no
   redundant ``pass`` statements or ``range`` start arguments (#873).
 
+* The ruff ``PERF`` (Perflint) rules are enabled, so the code builds
+  lists and dicts with comprehensions and ``extend`` instead of adding
+  one element per loop iteration (#873).
+
 * ``pysmt-install`` no longer prints a setuptools deprecation warning, and
   its confirmation prompt accepts ``y`` and ``yes`` in any case (#867).
 
