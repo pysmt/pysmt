@@ -275,6 +275,14 @@ each of the available solvers.
 
 
 
+Contributing
+============
+
+To contribute to pySMT, see the `development guide
+<https://pysmt.readthedocs.io/en/latest/development.html>`_
+(``docs/development.rst``), which describes the development setup, the
+tests and the code style.
+
 License
 =======
 
