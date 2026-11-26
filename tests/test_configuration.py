@@ -91,6 +91,18 @@ class TestConfiguration(TestCase):
         self.assertTrue("mathsat-smt" in new_env.factory.all_solvers())
         self.assertTrue("z3-smt" in new_env.factory.all_solvers())
 
+    def test_infix_notation_false(self):
+        env = Environment()
+        env.enable_infix_notation = False
+        fname = self._get_tmp_file().name
+        write_environment_configuration(fname, env)
+
+        new_env = Environment()
+        new_env.enable_infix_notation = True
+        configure_environment(fname, new_env)
+        os.remove(fname)
+        self.assertFalse(new_env.enable_infix_notation)
+
     def test_nonexistent_conf(self):
         with self.assertRaises(PysmtIOError):
             read_configuration("/tmp/nonexistent")

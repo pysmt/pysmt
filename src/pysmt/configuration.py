@@ -91,7 +91,7 @@ def configure_environment(config_filename, environment):
             if infix.lower() == "true":
                 environment.enable_infix_notation = True
             elif infix.lower() == "false":
-                environment.enable_infix_notation = True
+                environment.enable_infix_notation = False
             else:
                 warn(f"Unknown value for 'use_infix_notation': {infix}", stacklevel=2)
 
