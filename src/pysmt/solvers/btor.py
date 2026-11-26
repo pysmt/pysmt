@@ -613,7 +613,7 @@ class BTORConverter(Converter, DagWalker):
     def _extend_bv_pow2(self, btor_formula, signed=False):
         """BTOR requires that many operands have width that is a power of 2"""
         w = btor_formula.width
-        target_w = 2 ** int(ceil(log(w, 2)))
+        target_w = 2 ** ceil(log(w, 2))
         # Skip if width is ok
         if target_w == w:
             return btor_formula

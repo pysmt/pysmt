@@ -114,7 +114,7 @@ class TestEnvironment(TestCase):
         nodes owned by the wrong formula manager.
         """
         global_env = get_env()
-        env, x, y, f = self._local_env_formula()
+        env, x, _y, f = self._local_env_formula()
         self.assertNotEqual(global_env, env)
         mgr = env.formula_manager
         qf = mgr.Exists([x], f)

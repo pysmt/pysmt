@@ -364,7 +364,7 @@ def _chainable(mgr: FormulaManager, operator: Callable) -> Callable:
     """(op a b c) is expanded to (and (op a b) (op b c))"""
 
     def res(*args):
-        return mgr.And([operator(l, r) for l, r in zip(args, args[1:], strict=False)])
+        return mgr.And([operator(l, r) for l, r in itertools.pairwise(args)])
 
     return res
 

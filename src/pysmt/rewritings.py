@@ -103,7 +103,7 @@ class CNFizer(DagWalker):
         clauses = []
         for clause in _cnf:
             clauses += [" { " + " ".join(str(lit) for lit in clause) + "} "]
-        res = ["{"] + clauses + ["}"]
+        res = ["{", *clauses, "}"]
         return "".join(res)
 
     @handles(op.QUANTIFIERS)
@@ -767,9 +767,9 @@ class PrenexNormalizer(DagWalker):
         # be removed.
         if len(nq) > 0:
             if formula.is_exists():
-                return (quantifiers + [(self.mgr.Exists, nq)]), matrix
+                return [*quantifiers, (self.mgr.Exists, nq)], matrix
             else:
-                return (quantifiers + [(self.mgr.ForAll, nq)]), matrix
+                return [*quantifiers, (self.mgr.ForAll, nq)], matrix
         return quantifiers, matrix
 
     @handles(op.THEORY_OPERATORS)

@@ -67,7 +67,7 @@ class TestOptimization(TestCase):
         for oname in get_env().factory.all_optimizers(logic=QF_LIA):
             with Optimizer(name=oname) as opt:
                 opt.add_assertion(formula)
-                model, cost = opt.optimize(min)
+                model, _cost = opt.optimize(min)
                 self.assertEqual(model[x], Int(10))
 
     @skipIfNoOptimizerForLogic(QF_LIA)
@@ -78,7 +78,7 @@ class TestOptimization(TestCase):
         for oname in get_env().factory.all_optimizers(logic=QF_LIA):
             with Optimizer(name=oname) as opt:
                 opt.add_assertion(formula)
-                model, cost = opt.optimize(max)
+                model, _cost = opt.optimize(max)
                 self.assertEqual(model[x], Int(10))
 
     @skipIfNoOptimizerForLogic(QF_LIA)
@@ -107,7 +107,7 @@ class TestOptimization(TestCase):
                 opt.add_assertion(f31)
                 opt.add_assertion(f32)
 
-                model, cost = opt.optimize(maxmin)
+                model, _cost = opt.optimize(maxmin)
                 self.assertEqual(model[maxmin.term()], Int(8))
 
     @skipIfNoOptimizerForLogic(QF_LIA)
@@ -136,7 +136,7 @@ class TestOptimization(TestCase):
                 opt.add_assertion(f31)
                 opt.add_assertion(f32)
 
-                model, cost = opt.optimize(minmax)
+                model, _cost = opt.optimize(minmax)
                 self.assertEqual(model[minmax.term()], Int(15))
 
     @skipIfNoOptimizerForLogic(QF_LRA)
@@ -165,7 +165,7 @@ class TestOptimization(TestCase):
                 opt.add_assertion(f31)
                 opt.add_assertion(f32)
 
-                model, cost = opt.optimize(maxmin)
+                model, _cost = opt.optimize(maxmin)
                 self.assertEqual(model[maxmin.term()], Real(8.0))
 
     @skipIfNoOptimizerForLogic(QF_LRA)
@@ -194,7 +194,7 @@ class TestOptimization(TestCase):
                 opt.add_assertion(f31)
                 opt.add_assertion(f32)
 
-                model, cost = opt.optimize(minmax)
+                model, _cost = opt.optimize(minmax)
                 self.assertEqual(model[minmax.term()], Real(15.0))
 
     @skipIfNoOptimizerForLogic(QF_LIA)
@@ -287,7 +287,7 @@ class TestOptimization(TestCase):
             with Optimizer(name=oname) as opt:
                 opt.add_assertion(f1)
                 opt.add_assertion(f2)
-                model, values = opt.lexicographic_optimize(
+                _model, values = opt.lexicographic_optimize(
                     [obj1, obj2, obj3, obj4, obj5]
                 )
                 self.assertEqual(values[0], Int(5))
@@ -391,7 +391,7 @@ class TestOptimization(TestCase):
             with Optimizer(name=oname) as opt:
                 opt.add_assertion(f1)
                 opt.add_assertion(f2)
-                model, values = opt.lexicographic_optimize(
+                _model, values = opt.lexicographic_optimize(
                     [obj1, obj2, obj3, obj4, obj5]
                 )
                 self.assertEqual(values[0], Int(5))
@@ -405,7 +405,7 @@ class TestOptimization(TestCase):
         for oname in get_env().factory.all_optimizers(logic=QF_BV):
             with Optimizer(name=oname, logic=QF_BV) as opt:
                 opt.add_assertion(formula)
-                model, cost = opt.optimize(min)
+                model, _cost = opt.optimize(min)
                 self.assertEqual(model[x], BV(11, 32))
 
     def test_maximization_basic_BV(self):
@@ -415,7 +415,7 @@ class TestOptimization(TestCase):
         for oname in get_env().factory.all_optimizers(logic=QF_BV):
             with Optimizer(name=oname, logic=QF_BV) as opt:
                 opt.add_assertion(formula)
-                model, cost = opt.optimize(max)
+                model, _cost = opt.optimize(max)
                 self.assertEqual(model[x], BV(9, 32))
 
     def test_maxmin_basic_BV(self):
@@ -443,7 +443,7 @@ class TestOptimization(TestCase):
                 opt.add_assertion(f31)
                 opt.add_assertion(f32)
 
-                model, cost = opt.optimize(maxmin)
+                model, _cost = opt.optimize(maxmin)
                 self.assertEqual(model[maxmin.term()], BV(8, 32))
 
     def test_minmax_basic_BV(self):
@@ -471,7 +471,7 @@ class TestOptimization(TestCase):
                 opt.add_assertion(f31)
                 opt.add_assertion(f32)
 
-                model, cost = opt.optimize(minmax)
+                model, _cost = opt.optimize(minmax)
                 self.assertEqual(model[minmax.term()], BV(15, 32))
 
     def test_maxsmt_basic(self):
@@ -485,7 +485,7 @@ class TestOptimization(TestCase):
         for oname in get_env().factory.all_optimizers(logic=QF_LIA):
             with Optimizer(name=oname) as opt:
                 opt.add_assertion(formula)
-                model, cost = opt.optimize(maxsmt)
+                model, _cost = opt.optimize(maxsmt)
                 self.assertEqual(model[x], Int(9))
 
     def test_subsequent_optimizations(self):

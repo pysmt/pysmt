@@ -700,7 +700,7 @@ class SUAOptimizerMixin(ExternalOptimizerMixin):
     ) -> Model | None:
         assum = extra_assumption if extra_assumption is not None else []
         if formula is not None:
-            assum = assum + [formula]
+            assum = [*assum, formula]
         is_sat = self.solve(assumptions=assum)
         model = self.get_model() if is_sat else None
         return model

@@ -97,7 +97,7 @@ class PysmtShell:
             "-s",
             metavar="name",
             type=str,
-            choices=["auto"] + self.solvers,
+            choices=["auto", *self.solvers],
             default=None,
             help="The solver to use (default: auto)",
         )
@@ -106,7 +106,7 @@ class PysmtShell:
             "-o",
             metavar="opt_name",
             type=str,
-            choices=["auto"] + self.optimizers,
+            choices=["auto", *self.optimizers],
             default=None,
             help="The OMT optimizer to use (default: auto)",
         )

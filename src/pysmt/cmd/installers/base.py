@@ -210,7 +210,7 @@ class SolverInstaller:
 
         if isinstance(script, str):
             script = script.split()
-        cmd = [interpreter] + script
+        cmd = [interpreter, *script]
         return SolverInstaller.run(
             cmd, directory=directory, env_variables=env_variables, get_output=get_output
         )
@@ -332,7 +332,7 @@ class SolverInstaller:
         """Runs a setup.py command, installing setuptools first if it is missing"""
         if importlib.util.find_spec("setuptools") is None:
             pip_install(["setuptools"])
-        SolverInstaller.run_python(["setup.py"] + args, directory=directory)
+        SolverInstaller.run_python(["setup.py", *args], directory=directory)
 
 
 def site_dir(target=None):
