@@ -509,7 +509,8 @@ class NNFizer(DagWalker):
             return args[0]
         elif s.is_and():
             return self.mgr.Or(args)
-        elif s.is_or():
+        # One branch per operator: the negations agree only because of _get_children.
+        elif s.is_or():  # noqa: SIM114
             return self.mgr.And(args)
         elif s.is_implies():
             return self.mgr.And(args)
@@ -606,7 +607,8 @@ class PrenexNormalizer(DagWalker):
         return res
 
     def _invert_quantifier(self, Q: Callable) -> Callable:
-        if Q == self.mgr.Exists:
+        # Q is a variable, not a constant, so this is not a Yoda condition.
+        if Q == self.mgr.Exists:  # noqa: SIM300
             return self.mgr.ForAll
         return self.mgr.Exists
 

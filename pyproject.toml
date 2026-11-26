@@ -66,6 +66,8 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
+# The snippet shows infix notation with the constant on the left (literalinclude, so no noqa).
+"docs/code_snippets/hello_world_infix.py" = ["SIM300"]
 # Tutorials introduce each import next to the code that first uses it.
 "examples/*" = ["E402"]
 # O is the LTL "once" operator.

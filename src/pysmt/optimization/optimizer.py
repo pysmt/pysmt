@@ -403,7 +403,8 @@ class OptSearchInterval(OptComparationFunctions):
         if self._obj.is_minimization_goal():
             if self._upper is None or self._upper > model_value:
                 self._upper = model_value
-        elif self._obj.is_maximization_goal():
+        # Kept nested to mirror the minimization branch above.
+        elif self._obj.is_maximization_goal():  # noqa: SIM102
             if self._lower is None or self._lower < model_value:
                 self._lower = model_value
 
